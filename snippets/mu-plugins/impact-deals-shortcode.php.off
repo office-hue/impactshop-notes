@@ -1,0 +1,133 @@
+<?php
+/**
+ * Impact Deals Shortcode – termék/akció kártyák go-deal linkkel (default_d1 támogatással)
+ * Shortcode: [impactshop_deals limit="12"]
+ * Függ: SHARITY_DEALS_API_URL (Apps Script JSON), Shops (impactshop_get_shops() VAGY publish-CSV)
+ * UTF-8 BOM nélkül; nincs záró "?>"
+ */
+
+if (!defined('SHARITY_DEALS_API_URL')) {
+  define('SHARITY_DEALS_API_URL', 'https://script.google.com/macros/s/AKfycbzM_2ZzmFxhawR2iT7_V16eTeHIxHK3y0VgAFbKoRBFoiabLI01JeQMyYMxxsLTB6nM/exec');
+}
+if (!defined('SHARITY_SHOPS_PUB_CSV')) {
+  define('SHARITY_SHOPS_PUB_CSV', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=0&single=true&output=csv');
+}
+if (!defined('SHARITY_GLOBAL_DEFAULT_D1')) {
+  define('SHARITY_GLOBAL_DEFAULT_D1', 'bator-tabor-alapitvany'); // site-wide fallback
+}
+
+function id_slug($s){ return strtolower(preg_replace('~[^a-z0-9\-]+~','-', (string)$s)); }
+function id_b64url($s){ return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
+
+function id_http_get($url,$timeout=8){
+  $r = wp_remote_get($url, ['timeout'=>$timeout,'redirection'=>3]);
+  if (is_wp_error($r)) return [0,''];
+  return [(int)wp_remote_retrieve_response_code($r), (string)wp_remote_retrieve_body($r)];
+}
+
+/** Shops → [slug => default_d1] */
+function id_default_d1_map(){
+  $key='impact_deals_d1_map_v1';
+  if (($m=get_transient($key)) && is_array($m)) return $m;
+  $m=[];
+
+  if (function_exists('impactshop_get_shops')) {
+    try {
+      foreach ((array)impactshop_get_shops() as $r){
+        $slug=id_slug($r['shop_slug']??''); $d=id_slug($r['default_d1']??'');
+        if($slug && $d) $m[$slug]=$d;
+      }
+    } catch (\Throwable $e) {}
+  }
+  if (!$m && SHARITY_SHOPS_PUB_CSV){
+    list($code,$csv)=id_http_get(SHARITY_SHOPS_PUB_CSV,6);
+    if($code===200 && $csv){
+      $lines=preg_split("/\r\n|\r|\n/", trim($csv)); $hdr=[];
+      foreach($lines as $i=>$ln){
+        if($ln==='') continue;
+        $cols=str_getcsv($ln);
+        if(!$i){ $hdr=$cols; continue; }
+        $rec=[]; foreach($cols as $j=>$v){ $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; }
+        $slug=id_slug($rec['shop_slug']??''); $d=id_slug($rec['default_d1']??'');
+        if($slug && $d) $m[$slug]=$d;
+      }
+    }
+  }
+  set_transient($key,$m,5*MINUTE_IN_SECONDS);
+  return $m;
+}
+
+function id_default_d1_for($slug){
+  $map=id_default_d1_map(); $slug=id_slug($slug);
+  if(isset($map[$slug])) return $map[$slug];
+  $fb=id_slug(SHARITY_GLOBAL_DEFAULT_D1);
+  return $fb ?: '';
+}
+
+/** Shortcode */
+add_shortcode('impactshop_deals', function($atts){
+  $a = shortcode_atts(['limit'=>'12'], $atts, 'impactshop_deals');
+  $limit = max(1, (int)$a['limit']);
+
+  list($code,$body) = id_http_get(SHARITY_DEALS_API_URL,8);
+  if($code!==200 || !$body) return '<div>Nem érhető el az akció-feed.</div>';
+
+  $json = json_decode($body, true);
+  $items = isset($json['items']) && is_array($json['items']) ? $json['items'] : [];
+  if(!$items) return '<div>Jelenleg nincs megjeleníthető ajánlat.</div>';
+
+  $out = [];
+  $count = 0;
+  foreach ($items as $it){
+    if($count >= $limit) break;
+    $slug = id_slug($it['slug'] ?? '');
+    $href = esc_url_raw($it['href'] ?? '');
+    if(!$slug || !$href) continue;
+
+    $d1   = id_default_d1_for($slug); // ha üres, a backend MU helperünk akkor is pótolja
+    $go   = add_query_arg([
+              'u'   => id_b64url($href),
+              'src' => 'impactshop',
+            ] + ($d1 ? ['d1'=>$d1] : []),
+            home_url('/go-deal/'. rawurlencode($slug))
+           );
+
+    $img  = esc_url($it['img'] ?? '');
+    $lab  = is_array($it['label'] ?? null) ? $it['label'] : [];
+    $title= esc_html($lab['title'] ?? 'Ajánlat');
+    $price= esc_html($lab['price'] ?? '');
+    $old  = esc_html($lab['old_price'] ?? '');
+    $pct  = (int)($lab['discount_pct'] ?? 0);
+    $cat  = esc_html($it['category'] ?? '');
+
+    $card = '<a class="impact-deal-card" href="'.esc_url($go).'" target="_blank" rel="nofollow sponsored noopener">'
+          .   '<div class="thumb">'.($img?'<img src="'.esc_url($img).'" alt="">':'<div class="ph"></div>').'</div>'
+          .   '<div class="body">'
+          .     '<div class="title">'.$title.'</div>'
+          .     '<div class="row">'
+          .       ($old?'<s class="old">'.$old.'</s>':'')
+          .       ($price?'<span class="price">'.$price.'</span>':'')
+          .       ($pct>0?'<span class="badge">-'.$pct.'%</span>':'')
+          .     '</div>'
+          .     ($cat?'<div class="cat">'.$cat.'</div>':'')
+          .   '</div>'
+          . '</a>';
+    $out[] = $card; $count++;
+  }
+
+  $css = '<style>
+    .impact-deals {display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .impact-deal-card{display:flex;gap:.75rem;padding:.75rem;border:1px solid #eee;border-radius:14px;
+      text-decoration:none;color:inherit;background:#fff;transition:transform .12s, box-shadow .12s}
+    .impact-deal-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+    .impact-deal-card .thumb{flex:0 0 auto}
+    .impact-deal-card img,.impact-deal-card .ph{width:88px;height:88px;object-fit:cover;border-radius:10px;background:#f7f7f7;display:block}
+    .impact-deal-card .title{font-weight:600;line-height:1.25;margin-bottom:.25rem}
+    .impact-deal-card .row{display:flex;align-items:center;gap:.5rem}
+    .impact-deal-card .old{opacity:.6;text-decoration:line-through}
+    .impact-deal-card .badge{font-size:.85em;padding:.15rem .4rem;border-radius:6px;background:#ffe8e8}
+    .impact-deal-card .cat{font-size:.8em;opacity:.7;margin-top:.25rem}
+  </style>';
+
+  return $css.'<div class="impact-deals">'.implode('', $out).'</div>';
+});

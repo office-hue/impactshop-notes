@@ -1,0 +1,2401 @@
+.about-wrap {
+  overflow: hidden
+}
+
+.about-wrap .about-title {
+  margin-right: 0
+}
+
+.about-wrap .about-title sup {
+  background: #fff;
+  color: #666;
+  font-size: 33.333%;
+  font-weight: 700;
+  padding: 5px 10px;
+  white-space: nowrap
+}
+
+.about-wrap .about-title+p {
+  font-size: 1.2em
+}
+
+.about-wrap img.about-logo {
+  width: 280px !important;
+  margin-right: 5px
+}
+
+.about-wrap h2.nav-tab-wrapper {
+  float: left;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 1em
+}
+
+.about-wrap h2.nav-tab-wrapper .nav-tab {
+  float: left;
+  font-weight: 400;
+  margin-bottom: 0
+}
+
+.about-wrap h2.nav-tab-wrapper .nav-tab.hidden {
+  display: none
+}
+
+.about-wrap h2.nav-tab-wrapper .nav-tab-active,
+.about-wrap h2.nav-tab-wrapper .nav-tab-active:hover {
+  border-bottom: 0
+}
+
+.about-wrap h2.nav-tab-wrapper .nav-tab-active {
+  position: relative
+}
+
+.about-wrap h2.nav-tab-wrapper .nav-tab-active:after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  bottom: -1px;
+  height: 1px;
+  left: 0;
+  background: #f1f1f1
+}
+
+.about-wrap .hellopack-notice:not(.hidden) {
+  display: block !important;
+  margin-top: 15px;
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 0.35em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hellopack-notice p {
+  margin: 0.4em !important;
+}
+
+.about-wrap .last-feature {
+  margin-right: 0 !important
+}
+
+.about-wrap .panel {
+  border-bottom: none;
+  display: none;
+  float: left;
+  width: 100%
+}
+
+.about-wrap .panel:first-child {
+  display: block
+}
+
+.js .about-wrap .panel {
+  display: none
+}
+
+.about-wrap .panel .submit {
+  clear: both
+}
+
+.about-wrap .hellopack-client-plugin {
+  width: auto;
+  margin: 0;
+}
+
+.about-wrap .hellopack-plugin-pagination {
+  width: 100%;
+  margin: 0;
+}
+
+.about-wrap .hellopack-client-block ol ul {
+  padding: 10px 0 5px 17px;
+  list-style: disc
+}
+
+.about-wrap .screenshot-image {
+  text-align: right
+}
+
+.about-wrap .screenshot-image img {
+  max-width: 100%;
+  height: auto
+}
+
+.about-wrap .screenshot-image span {
+  background: #0074a2;
+  color: #fff;
+  font-size: .618em;
+  text-transform: uppercase;
+  padding: .53em 1em;
+  position: absolute;
+  top: 0;
+  right: 0
+}
+
+.about-wrap .plugin-card {
+  width: 100%
+}
+
+.about-wrap .plugin-card .plugin-action-buttons {
+  font-size: 13px
+}
+
+.about-wrap #hellopack-client-items {
+  margin: 0;
+  padding: 0
+}
+
+.about-wrap #hellopack-client-items li {
+  background-color: #fff;
+  border: 1px solid #dedede;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 10px;
+  padding-right: 40px;
+  position: relative
+}
+
+.about-wrap #hellopack-client-items li.not-authorized {
+  border-color: #dc3232
+}
+
+.about-wrap #hellopack-client-items .item-delete {
+  background: 0 0;
+  border: none;
+  box-shadow: none;
+  color: #b3b9be;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 38px;
+  height: 38px
+}
+
+.about-wrap #hellopack-client-items .item-delete:focus,
+.about-wrap #hellopack-client-items .item-delete:hover {
+  color: #d61c00
+}
+
+.about-wrap #hellopack-client-items .item-delete:focus {
+  -webkit-box-shadow: 0 0 0 1px #5b9dd9, 0 0 2px 1px rgba(30, 140, 190, .8);
+  box-shadow: 0 0 0 1px #5b9dd9, 0 0 2px 1px rgba(30, 140, 190, .8)
+}
+
+#hellopack-client-dialog-form div.notice,
+#hellopack-client-dialog-remove div.notice {
+  margin: 0 0 10px 0 !important;
+}
+
+.hellopack-card {
+  background-color: #fff;
+  border-radius: 0.35em;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 10px rgba(0, 0, 0, 0.08);
+  margin: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%
+}
+
+.hellopack-card.active {
+  border-color: #aaa
+}
+
+.hellopack-card .hellopack-card-top {
+  min-height: 100px;
+  padding: 20px;
+  position: relative;
+  flex-grow: 1
+}
+
+.hellopack-card .hellopack-card-top .column-icon {
+  height: 80px;
+  left: 20px;
+  margin: 0 20px 20px 0;
+  position: absolute;
+  top: 20px;
+  width: 80px
+}
+
+.hellopack-card .hellopack-card-top .column-name {
+  margin-left: 100px
+}
+
+.hellopack-card .hellopack-card-top .column-name h4 {
+  font-size: 18px;
+  line-height: 1.3;
+  margin: 0 0 12px
+}
+
+.hellopack-card .hellopack-card-top .column-name h4 span {
+  color: #999;
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 5px
+}
+
+.hellopack-card .hellopack-card-top .column-description {
+  margin-left: 100px
+}
+
+.hellopack-card .hellopack-card-top .column-description .description {
+  display: block;
+  width: 100%
+}
+
+.hellopack-card .hellopack-card-top .column-description .description.closed {
+  max-height: 45px;
+  overflow: hidden
+}
+
+.hellopack-card .hellopack-card-top .column-description .description p:last-child {
+  margin: 0
+}
+
+.hellopack-card .hellopack-card-top .column-description a.read-more {
+  margin-top: .5em
+}
+
+.hellopack-card .hellopack-card-top .column-description a.read-more:active,
+.hellopack-card .hellopack-card-top .column-description a.read-more:focus {
+  -webkit-box-shadow: none;
+  box-shadow: none
+}
+
+.hellopack-card .hellopack-card-top .column-description .author {
+  margin-bottom: 0
+}
+
+.hellopack-card .hellopack-card-top .column-update {
+  background: #d54e21;
+  background: rgba(213, 78, 33, .9);
+  color: #fff;
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  min-height: 48px;
+  line-height: 1;
+  padding: 0 10px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-top-left-radius: 0.35em;
+  border-top-right-radius: 0.35em;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box
+}
+
+.hellopack-card .hellopack-card-top .column-update.update-complete {
+  background: #79ba49;
+  background: rgba(121, 186, 73, .9)
+}
+
+.hellopack-card .hellopack-card-top .column-update a {
+  color: #fff;
+  outline: 0;
+  text-decoration: none
+}
+
+.hellopack-card .hellopack-card-top .column-update a:hover {
+  text-decoration: underline
+}
+
+.hellopack-card .hellopack-card-top .column-update a:active,
+.hellopack-card .hellopack-card-top .column-update a:focus {
+  outline: 0;
+  box-shadow: none
+}
+
+.hellopack-card .hellopack-card-top .column-update .update-now {
+  display: block;
+  float: left;
+  padding: 12px 0
+}
+
+.hellopack-card .hellopack-card-top .column-update .update-now:before {
+  color: #fff;
+  content: '\f463';
+  display: inline-block;
+  font: normal 20px/1 dashicons;
+  margin: 0 5px -1px 0;
+  speak: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  vertical-align: text-bottom
+}
+
+.hellopack-card .hellopack-card-top .column-update .updating-message:before {
+  content: '\f463';
+  -webkit-animation: rotation 2s infinite linear;
+  animation: rotation 2s infinite linear
+}
+
+.hellopack-card .hellopack-card-top .column-update .updated-message:before {
+  content: '\f147'
+}
+
+.hellopack-card .hellopack-card-top .column-update .details {
+  display: block;
+  float: right;
+  padding: 18px 0 8px
+}
+
+.hellopack-card .hellopack-card-bottom {
+
+  border-top: 1px solid #f0f0f1;
+  clear: both;
+  overflow: hidden;
+  padding: 12px 20px
+}
+
+.hellopack-card .hellopack-card-bottom .column-rating {
+  float: left;
+  margin-top: 4px
+}
+
+.hellopack-card .hellopack-card-bottom .column-actions {
+  float: right
+}
+
+.hellopack-card .hellopack-card-bottom .column-actions .button {
+  margin-left: 5px;
+  margin-bottom: 0 !important
+}
+
+.hellopack-card .hellopack-card-bottom .column-actions .button:first-child {
+  margin-left: 0
+}
+
+.hellopack-card .hellopack-card-bottom .star-rating {
+  display: inline
+}
+
+.hellopack-card .hellopack-card-bottom .num-ratings {
+  font-size: 13px;
+  line-height: 23px
+}
+
+
+
+.hellopack-card .button-delete {
+  display: inline-block;
+  background-color: #ff3960;
+  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1), background-color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+  border-radius: 4px;
+  height: 35px;
+  min-height: 30px;
+  padding-left: 10px;
+  padding-right: 10px;
+  text-align: center;
+  line-height: 34px;
+}
+
+.hellopack-card .button-delete:hover {
+  color: white;
+  background-color: #d31c40;
+}
+
+@-webkit-keyframes rotation {
+  0% {
+    -webkit-transform: rotate(0);
+    transform: rotate(0)
+  }
+
+  100% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg)
+  }
+}
+
+@keyframes rotation {
+  0% {
+    -webkit-transform: rotate(0);
+    transform: rotate(0)
+  }
+
+  100% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg)
+  }
+}
+
+@media screen and (min-width:783px) and (max-width:1030px) {
+  .hellopack-card .hellopack-card-bottom .num-ratings {
+    display: none
+  }
+}
+
+@media screen and (min-width:783px) {
+  .about-wrap h2.nav-tab-wrapper .nav-tab-active {
+    box-shadow: none
+  }
+
+  .about-wrap #settings .form-table td,
+  .about-wrap #settings .form-table th {
+    float: left;
+    display: block;
+    width: 100%
+  }
+
+  .about-wrap #settings .form-table th {
+    padding-bottom: 0
+  }
+
+  .about-wrap #settings .form-table td {
+    padding-left: 0;
+    padding-right: 0
+  }
+
+  .about-wrap p.submit {
+    margin-top: 0;
+    padding-top: 0
+  }
+}
+
+@media screen and (max-width:782px) {
+  .about-wrap h2.nav-tab-wrapper {
+    border: none;
+    padding: 0
+  }
+
+  .about-wrap h2.nav-tab-wrapper .nav-tab {
+    border-bottom: 1px solid #ccc;
+    text-align: center;
+    margin: 0 0 1% 0;
+    padding: 2%;
+    width: 100%;
+    box-sizing: border-box
+  }
+
+  .about-wrap h2.nav-tab-wrapper .nav-tab-active,
+  .about-wrap h2.nav-tab-wrapper .nav-tab-active:hover {
+    background: #fff;
+    border-bottom: 1px solid #ccc
+  }
+
+  .about-wrap h2.nav-tab-wrapper .nav-tab-active:after,
+  .about-wrap h2.nav-tab-wrapper .nav-tab-active:hover:after {
+    display: none
+  }
+
+  .about-wrap .hellopack-client-block {
+    width: 100%
+  }
+
+  .about-wrap #plugins>div:first-child,
+  .about-wrap #themes>div:first-child {
+    margin-top: 0 !important
+  }
+
+  .about-wrap p.submit {
+    float: left;
+    margin-top: 1.25em;
+    width: 100%
+  }
+
+  .about-wrap .screenshot-image {
+    text-align: left
+  }
+
+  .about-wrap .screenshot-image img {
+    max-width: 100%
+  }
+
+  .about-wrap .button-delete {
+    font-size: 15px
+  }
+
+  .about-wrap .column-description .description {
+    max-height: none !important;
+    overflow: visible !important
+  }
+
+  .about-wrap .column-description a.read-more {
+    display: none !important
+  }
+}
+
+.healthcheck-error,
+.healthcheck-item,
+.healthcheck-ok {
+  padding: 14px 0 14px 25px;
+  position: relative
+}
+
+.healthcheck-ok {
+  border-left: 5px solid #23d160;
+}
+
+.healthcheck-error {
+  border-left: 5px solid #ff3960;
+}
+
+
+.healthcheck-item-title {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.healthcheck-item-message {
+  margin-left: 5px
+}
+
+.hellopack-client-healthcheck li:nth-child(2n+1) {
+  background-color: #f4f8fb;
+}
+
+
+/* Hide notices */
+
+.notice.updated.is-dismissible,
+.update-nag {
+
+  display: none !important;
+}
+
+/* Alapértelmezett .notice elemek elrejtése */
+.notice {
+  display: none !important;
+}
+
+
+
+/* Fix padding */
+
+.wrap.about-wrap.full-width-layout {
+  padding: 5px;
+}
+
+
+/* Buttons */
+
+.wp-core-ui .button,
+.wp-core-ui .button-secondary {
+  color: rgba(14, 122, 189, 0.95);
+  border-color: rgba(14, 122, 189, 0.95);
+  background: #fff;
+  vertical-align: top;
+}
+
+.wp-core-ui .button-primary {
+  background: rgba(14, 122, 189, 0.95);
+  border-color: rgba(14, 122, 189, 0.95);
+  color: #fff;
+  text-decoration: none;
+  text-shadow: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* header version */
+
+#hellopack-admin-version {
+  margin-left: 10px;
+  padding: 6px 8px;
+  background-color: #eef2f5;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 13px;
+  color: #53627C;
+}
+
+.hellopack-db-logo-image {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+
+.hellopack-db-menu-item-text svg {
+  width: 16px;
+  height: 16px;
+  margin: 1px 4px 0 0;
+  vertical-align: top;
+}
+
+
+.hellopack-dashboard h3 svg {
+  width: 30px;
+  height: 30px;
+  margin: 1px 2px 0 0;
+  vertical-align: top;
+}
+
+
+/* Plugin search */
+
+
+/* Plugin search block styling */
+#search.hellopack-plugin-search-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1em;
+  border-radius: 0.35em;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
+
+.hellopack-client-plugin-search {
+  width: 100%;
+}
+
+/* Client plugin search form styling */
+.hellopack-client-plugin-search form {
+  display: flex;
+  width: 100%;
+}
+
+/* Input text field styling to grow and fill available space */
+.hellopack-client-plugin-search input[type="text"] {
+  flex-grow: 1;
+  /* This will make the input grow and fill the available space */
+  padding: 10px;
+  margin-right: 8px;
+  /* Space between input text and submit button */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Submit button styling */
+.hellopack-client-plugin-search input[type="submit"] {
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #198fd9;
+  color: #fff;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  /* Prevent the button from shrinking */
+}
+
+/* Submit button hover effect */
+.hellopack-client-plugin-search input[type="submit"]:hover {
+  background-color: #0e7abd;
+}
+
+
+
+/* Dashboard */
+
+.hellopack-dashboard {
+  max-width: 1200px;
+  scroll-behavior: smooth;
+  font-style: normal;
+  color: #555d66;
+  font-size: 16px;
+}
+
+.hellopack-dashboard .hellopack-db-demos-notices>h1 {
+  display: none;
+}
+
+.hellopack-dashboard .hellopack-db-demos-notices .notice-flex-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.4em;
+}
+
+.hellopack-dashboard.hellopack-db-studio {
+  max-width: 1200px;
+}
+
+.appearance_page_hellopack_options .hellopack-dashboard {
+  margin: 0;
+  max-width: 1200px;
+}
+
+.hellopack-dashboard .hellopack-db-menu {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 0 -1.4em;
+}
+
+.hellopack-dashboard .hellopack-db-menu-item {
+  display: inline-block;
+  position: relative;
+  margin: 0 1.4em;
+}
+
+.hellopack-dashboard .hellopack-db-menu-item:hover .hellopack-db-menu-item-link,
+.hellopack-dashboard .hellopack-db-menu-item:focus .hellopack-db-menu-item-link,
+.hellopack-dashboard .hellopack-db-menu-item:active .hellopack-db-menu-item-link {
+  color: #198fd9;
+}
+
+.hellopack-dashboard .hellopack-db-menu-item:hover .hellopack-db-menu-item-link:after,
+.hellopack-dashboard .hellopack-db-menu-item:focus .hellopack-db-menu-item-link:after,
+.hellopack-dashboard .hellopack-db-menu-item:active .hellopack-db-menu-item-link:after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.hellopack-dashboard .hellopack-db-menu-item:hover .hellopack-db-menu-sub {
+  z-index: 11;
+  visibility: visible;
+  opacity: 1;
+  margin-top: 0;
+}
+
+.hellopack-dashboard .hellopack-db-menu-item-link {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  margin: 0 -0.4em;
+  padding: 2.1em 0;
+  text-decoration: none;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: inherit;
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+  outline: none;
+  box-shadow: none;
+}
+
+.hellopack-dashboard .hellopack-db-menu-item-link:after {
+  content: " ";
+  opacity: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  margin: 0 0.4em;
+  width: calc(100% - 0.8em);
+  border-bottom: 3px solid #198fd9;
+  transform: scaleX(0);
+  transition: transform 0.2s cubic-bezier(0.21, 0.6, 0.35, 1), opacity 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-menu-item-link.hellopack-db-active {
+  color: #198fd9;
+}
+
+.hellopack-dashboard .hellopack-db-menu-item-link.hellopack-db-active:after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.hellopack-dashboard .hellopack-db-menu-item-link i {
+  margin: 0 0.4em;
+  font-size: 1.2em;
+}
+
+.hellopack-dashboard .hellopack-db-menu-item-link .hellopack-db-menu-item-text {
+  margin: 0 0.4em;
+  white-space: nowrap;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub-options,
+.hellopack-dashboard .hellopack-db-menu-sub-sliders {
+  min-width: 250px;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub-maintenance {
+  min-width: 260px;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub-layouts,
+.hellopack-dashboard .hellopack-db-menu-sub-forms {
+  min-width: 230px;
+}
+
+.hellopack-dashboard .hellopack-db-header-main {
+  padding: 0 1.4em;
+  border-radius: 0.35em;
+  border-bottom: 1px solid #f8f8f8;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-header-main-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -1.7em;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-logo {
+  display: flex;
+  align-items: center;
+  margin: 0.6em 0.6em;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: none;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-logo .hellopack-db-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.5em;
+  width: 36px;
+  height: 36px;
+  background-color: #65bc7b;
+  border-radius: 0.35em;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-logo .hellopack-db-logo-icon:before {
+  font-size: 22px;
+  color: #fff;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-logo .hellopack-db-logo-image {
+  margin: 0 1em;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-logo .hellopack-db-logo-image img {
+  display: block;
+  width: 125px;
+  margin-top: 8px;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-logo .hellopack-db-logo-version {
+  margin-top: 0.2em;
+  padding: 0.3em 0.4em;
+  font-size: 0.7em;
+  line-height: 1;
+  background-color: #f8f8f8;
+  border-radius: 0.35em;
+  white-space: nowrap;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-menu-main {
+  flex-grow: 2;
+  margin: 0 1.7em;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-menu-main .hellopack-db-menu-maintenance {
+  display: none;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-maintenance-counter {
+  display: none;
+  width: 5px;
+  height: 5px;
+  background-color: #65bc7b;
+  border-radius: 50%;
+  align-self: start;
+}
+
+.hellopack-dashboard .hellopack-db-header-main .hellopack-db-live {
+  margin: 0 1.7em;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky {
+  z-index: 10;
+  position: sticky;
+  top: 32px;
+  margin-bottom: 1.7em;
+  padding: 0 1.4em;
+  background-color: #fff;
+  border-bottom-left-radius: 0.35em;
+  border-bottom-right-radius: 0.35em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -1.7em;
+  min-height: 2.5em;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-label {
+  margin: 0 1.7em;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-label>span {
+  opacity: 0.5;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8em;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-label .hellopack-db-registered {
+  display: none;
+  color: #65bc7b;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-label .hellopack-db-unregistered {
+  color: #dc3232;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-label .hellopack-db-version-label {
+  opacity: 1;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-label.completed .hellopack-db-registered {
+  display: inline;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-label.completed .hellopack-db-unregistered {
+  display: none;
+}
+
+.hellopack-dashboard .hellopack-db-header-sticky .hellopack-db-menu-sticky-nav {
+  flex-grow: 2;
+  margin: 0 1.7em;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub {
+  z-index: -1;
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  margin-top: 0.7em;
+  padding: 1.4em;
+  background-color: #fff;
+  border-radius: 0.35em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s cubic-bezier(0.21, 0.6, 0.35, 1), margin 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item {
+  margin-bottom: 1.4em;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item:last-child {
+  margin-bottom: 0;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link {
+  display: flex;
+  margin: 0 -0.4em;
+  text-decoration: none;
+  font-size: 0.9em;
+  color: inherit;
+  outline: none;
+  box-shadow: none;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link:hover i,
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link:focus i,
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link.hellopack-db-active i,
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link:hover .hellopack-db-menu-sub-item-label,
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link:focus .hellopack-db-menu-sub-item-label,
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link.hellopack-db-active .hellopack-db-menu-sub-item-label {
+  color: #198fd9;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link i {
+  margin: 0 0.4em;
+  font-size: 1.2em;
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link .hellopack-db-menu-sub-item-text {
+  margin: 0 0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link .hellopack-db-menu-sub-item-label {
+  font-weight: 600;
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-link .hellopack-db-menu-sub-item-desc {
+  margin-top: 0.5em;
+  font-size: 0.9em;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-patcher>a {
+  display: flex;
+}
+
+.hellopack-dashboard .hellopack-db-menu-sub .hellopack-db-menu-sub-item-patcher>a .update-plugins {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 0.5em !important;
+  width: 1.5em;
+  height: 1.5em;
+  background-color: #65bc7b;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.8em;
+}
+
+.hellopack-dashboard .hellopack-db-changelog {
+  display: none;
+  z-index: 10000;
+  position: fixed;
+  top: 10%;
+  right: 10%;
+  left: 10%;
+  bottom: 10%;
+  background-color: #fff;
+}
+
+.hellopack-dashboard .hellopack-db-changelog .hellopack-db-changelog-heading {
+  display: flex;
+  justify-content: space-between;
+}
+
+.hellopack-dashboard .hellopack-db-changelog .hellopack-db-changelog-heading i {
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+.hellopack-dashboard .hellopack-db-changelog iframe {
+  width: 100%;
+  height: calc(100% - 3em);
+}
+
+.hellopack-dashboard .hellopack-db-overlay {
+  display: none;
+  z-index: 9999;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.hellopack-dashboard.hellopack-db-welcome .hellopack-db-header-sticky {
+  margin-bottom: 0;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-wrapper {
+  display: flex;
+  flex-flow: column;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup {
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup.hellopack-db-card {
+  padding: 0;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-intro,
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-media-container {
+  flex: 1;
+  margin: 0 1.4em;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-heading {
+  font-size: 2.2em;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-text {
+  margin-bottom: 1.4em;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-video {
+  display: flex;
+  align-items: center;
+  margin: 0 -0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-video .hellopack-db-welcome-video-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0.4em;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  background-color: #198fd9;
+  transition: background-color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-video .hellopack-db-welcome-video-icon .hellopack-db-triangle {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 0.4em solid transparent;
+  border-left: 0.6em solid #fff;
+  border-bottom: 0.4em solid transparent;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-video:hover .hellopack-db-welcome-video-icon {
+  background-color: #0e7abd;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-video .hellopack-db-welcome-video-text {
+  margin: 0 0.4em;
+  text-align: start;
+  font-size: 1.125em;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-media-container {
+  position: relative;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-media-container.hellopack-db-active .hellopack-db-welcome-image {
+  opacity: 0;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-media-container.hellopack-db-active .hellopack-db-welcome-video-iframe {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-video-iframe {
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: opacity 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+  pointer-events: none;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-image {
+  max-width: 600px;
+  transition: opacity 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-container {
+  display: flex;
+  align-items: center;
+  padding: 2.8em 1.4em;
+  background-color: transparent;
+  overflow: hidden;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-container .hellopack-db-welcome-media-container {
+  margin: -2.8em -1.4em;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-container .hellopack-db-welcome-intro .hellopack-db-get-started-button {
+  display: inline-block;
+  padding: 15px 30px;
+  background: #65bc7b;
+  box-shadow: 0 1px 3px rgba(101, 188, 123, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 20px;
+  transition: background-color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-welcome-setup .hellopack-db-welcome-container .hellopack-db-welcome-intro .hellopack-db-get-started-button:hover {
+  background: #4fa063;
+}
+
+.hellopack-dashboard .hellopack-db-registration {
+  order: 1;
+}
+
+.hellopack-dashboard .hellopack-db-registration.hellopack-db-onload-completed {
+  order: 2;
+}
+
+.hellopack-dashboard .hellopack-db-registration.hellopack-db-completed .hellopack-db-reg-input-wrapper {
+  background-color: #f8f8f8;
+}
+
+.hellopack-dashboard .hellopack-db-registration.hellopack-db-completed .hellopack-db-registration-input {
+  pointer-events: none;
+  background-color: #f8f8f8;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-heading {
+  display: flex;
+  align-items: center;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-heading>i {
+  font-size: 0.7em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-heading .hellopacka-verified {
+  color: #65bc7b;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-heading .hellopacka-cross {
+  color: #dc3232;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-heading .hellopack-db-reg-heading-text {
+  margin: 0 0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-heading .hellopack-db-card-heading-badge-howto {
+  cursor: pointer;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-form {
+  display: flex;
+  align-items: stretch;
+  margin: 0 -0.5em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin: 0 0.5em;
+  padding: 0.4em 0.8em;
+  border: 1px solid #dfdfdf;
+  border-radius: 0.35em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-input-wrapper .hellopack-db-reg-input-icon {
+  margin: 0 0.5em;
+  color: #aaaeb2;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-input-wrapper input {
+  margin: 0 0.5em;
+  padding: 0.4em 0;
+  width: 100%;
+  font-size: inherit;
+  border: none;
+  box-shadow: none;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-button {
+  margin: 0 0.5em;
+  padding: 0 2em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-howto {
+  display: none;
+  margin-top: 1.4em;
+  padding: 1.4em;
+  border: 1px solid #dfdfdf;
+  border-radius: 0.7em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-howto-list {
+  margin: 0 0 0 1em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-loader {
+  display: none;
+  flex-shrink: 0;
+}
+
+.ltr .hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-loader {
+  margin-right: 0.2em;
+}
+
+.rtl .hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-loader {
+  margin-left: 0.2em;
+}
+
+.hellopack-dashboard .hellopack-db-registration .hellopack-db-reg-loader .hellopack-db-loader {
+  display: block;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-resources img,
+.hellopack-dashboard .hellopack-db-welcome-partners img {
+  margin: 0;
+  width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-resources {
+  order: 1;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-resources .hellopack-db-card-heading-with-badge .hellopack-db-card-heading-badge {
+  background-color: #65bc7b;
+  color: #fff;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-resources .hellopack-db-imgae-link {
+  display: block;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-resources .hellopack-db-imgae-link img {
+  max-width: 400px;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-resources .hellopack-db-welcome-resources-hosting .hellopack-db-card-notice-heading-image-half {
+  display: flex;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-resources .hellopack-db-welcome-resources-hosting .hellopack-db-card-notice-heading-image-half img {
+  max-width: 200px;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-partners {
+  order: 1;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-partners .hellopack-db-card-heading-with-badge .hellopack-db-card-heading-badge {
+  background-color: #198fd9;
+  color: #fff;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-partners .hellopack-db-imgae-link {
+  display: block;
+}
+
+.hellopack-dashboard .hellopack-db-welcome-partners .hellopack-db-imgae-link img {
+  max-width: 400px;
+}
+
+.hellopack-dashboard .hellopack-layout-sections-table {
+  margin-top: 1.7em;
+}
+
+.hellopack-dashboard h1,
+.hellopack-dashboard h2,
+.hellopack-dashboard h3,
+.hellopack-dashboard h4,
+.hellopack-dashboard .heading,
+.hellopack-dashboard .hellopack-db-settings-error-heading {
+  margin: 0 0 0.5em 0;
+  padding: 0;
+  line-height: 1.3;
+  font-weight: 600;
+  color: #32373c;
+}
+
+.hellopack-dashboard h1 {
+  font-size: 1.5rem;
+}
+
+.hellopack-dashboard h2,
+.hellopack-dashboard .hellopack-db-settings-error-heading {
+  font-size: 1.4em;
+  text-align: start;
+}
+
+.hellopack-dashboard h3 {
+  font-size: 1.5em;
+}
+
+.hellopack-dashboard h4 {
+  font-size: 1em;
+}
+
+.hellopack-dashboard p {
+  margin: 0 0 1em 0;
+  font-size: inherit;
+  line-height: 1.7;
+}
+
+.hellopack-dashboard p:last-child {
+  margin-bottom: 0;
+}
+
+.hellopack-dashboard a,
+.hellopack-dashboard .button-link {
+  color: #198fd9;
+  text-decoration: none;
+  outline: none;
+  box-shadow: none;
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+  cursor: pointer;
+}
+
+.hellopack-dashboard a:hover,
+.hellopack-dashboard .button-link:hover,
+.hellopack-dashboard a:focus,
+.hellopack-dashboard .button-link:focus,
+.hellopack-dashboard a:active,
+.hellopack-dashboard .button-link:active {
+  color: #0e7abd;
+}
+
+.hellopack-dashboard .button,
+.hellopack-dashboard .button.active,
+.hellopack-dashboard .page-title-action,
+.hellopack-dashboard #delete-link .delete {
+  border: 0px;
+  display: inline-block;
+  background-color: #198fd9;
+  /* Háttérszín módosítása fehérre */
+  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  /* Szöveg színe sötétszürkére változtatva a kontraszt érdekében */
+
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1), background-color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+  border-radius: 4px;
+  height: 35px;
+  min-height: 30px;
+  padding-left: 10px;
+  padding-right: 10px;
+  text-align: center;
+  line-height: 34px;
+}
+
+.hellopack-dashboard .button:hover,
+.hellopack-dashboard .button.active:hover,
+.hellopack-dashboard .page-title-action:hover,
+.hellopack-dashboard #delete-link .delete:hover,
+.hellopack-dashboard .button:focus,
+.hellopack-dashboard .button.active:focus,
+.hellopack-dashboard .page-title-action:focus,
+.hellopack-dashboard #delete-link .delete:focus,
+.hellopack-dashboard .button:active,
+.hellopack-dashboard .button.active:active,
+.hellopack-dashboard .page-title-action:active,
+.hellopack-dashboard #delete-link .delete:active {
+  background-color: #0e7abd;
+  border-color: #dfdfdf;
+  color: #fff;
+
+}
+
+.hellopack-dashboard .button .awb-text-wrapper,
+.hellopack-dashboard .button.active .awb-text-wrapper,
+.hellopack-dashboard .page-title-action .awb-text-wrapper,
+.hellopack-dashboard #delete-link .delete .awb-text-wrapper {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 -0.25em;
+}
+
+.hellopack-dashboard .button .awb-text-wrapper i,
+.hellopack-dashboard .button.active .awb-text-wrapper i,
+.hellopack-dashboard .page-title-action .awb-text-wrapper i,
+.hellopack-dashboard #delete-link .delete .awb-text-wrapper i,
+.hellopack-dashboard .button .awb-text-wrapper span,
+.hellopack-dashboard .button.active .awb-text-wrapper span,
+.hellopack-dashboard .page-title-action .awb-text-wrapper span,
+.hellopack-dashboard #delete-link .delete .awb-text-wrapper span {
+  margin: 0 0.25em;
+}
+
+.hellopack-dashboard #delete-link .delete {
+  color: #dc3232 !important;
+}
+
+.hellopack-dashboard #delete-link .delete:hover,
+.hellopack-dashboard #delete-link .delete:focus,
+.hellopack-dashboard #delete-link .delete:active {
+  color: #a00 !important;
+  border: 1px solid #dfdfdf !important;
+}
+
+.hellopack-dashboard .button-primary {
+
+  border: 0 !important;
+  background-color: #23d160;
+  font-weight: 600;
+  font-size: 13px;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1), background-color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+  border-radius: 4px;
+  height: 35px;
+  min-height: 30px;
+  padding-left: 10px;
+  padding-right: 10px;
+  text-align: center;
+  line-height: 34px;
+}
+
+.hellopack-dashboard .button-primary:hover,
+.hellopack-dashboard .button-primary:focus,
+.hellopack-dashboard .button-primary:active {
+
+  color: white;
+  background-color: #22a851;
+}
+
+.hellopack-dashboard .hellopack-db-single-button-set {
+  display: flex;
+  align-items: start;
+  margin-right: -0.25em;
+  margin-left: -0.25em;
+}
+
+.hellopack-dashboard .hellopack-db-single-button-set .button,
+.hellopack-dashboard .hellopack-db-single-button-set .button-primary {
+  margin: 0 0.25em;
+}
+
+.hellopack-dashboard .ui-buttonset {
+  display: flex;
+}
+
+.hellopack-dashboard .ui-buttonset .ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.6em 0.8em;
+  height: auto;
+  border: none;
+  background: #f2f3f5;
+  border-radius: 0;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: normal;
+  min-width: 60px;
+  color: #93999f;
+  box-shadow: none;
+  transition: all 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ltr .hellopack-dashboard .ui-buttonset .ui-button:first-of-type {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.ltr .hellopack-dashboard .ui-buttonset .ui-button:last-of-type {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  border-right: none;
+}
+
+.rtl .hellopack-dashboard .ui-buttonset .ui-button:first-of-type {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  border-right: none;
+}
+
+.rtl .hellopack-dashboard .ui-buttonset .ui-button:last-of-type {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.hellopack-dashboard .ui-buttonset .ui-button.ui-state-active {
+  background-color: #198fd9;
+  color: #fff;
+}
+
+.hellopack-dashboard .ui-buttonset .ui-button.ui-state-active[data-value="0"],
+.hellopack-dashboard .ui-buttonset .ui-button.ui-state-active[data-value="no"],
+.hellopack-dashboard .ui-buttonset .ui-button.ui-state-active[data-value="disabled"],
+.hellopack-dashboard .ui-buttonset .ui-button.ui-state-active[data-value="false"],
+.hellopack-dashboard .ui-buttonset .ui-button.ui-state-active[data-value="off"] {
+  background-color: #2a3035;
+  color: #fff;
+}
+
+.hellopack-dashboard input[type="text"],
+.hellopack-dashboard input[type="search"],
+.hellopack-dashboard select,
+.hellopack-dashboard textarea {
+  padding: 0.4em 0.8em;
+  /* Because of line-height */
+  border: 1px solid #dfdfdf;
+  border-radius: 0.35em;
+  font-size: inherit;
+  box-shadow: none;
+  line-height: 1.7;
+  transition: border-color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard input[type="text"]:hover,
+.hellopack-dashboard input[type="search"]:hover,
+.hellopack-dashboard select:hover,
+.hellopack-dashboard textarea:hover,
+.hellopack-dashboard input[type="text"]:focus,
+.hellopack-dashboard input[type="search"]:focus,
+.hellopack-dashboard select:focus,
+.hellopack-dashboard textarea:focus,
+.hellopack-dashboard input[type="text"]:active,
+.hellopack-dashboard input[type="search"]:active,
+.hellopack-dashboard select:active,
+.hellopack-dashboard textarea:active {
+  border-color: #198fd9;
+}
+
+.hellopack-dashboard input.current-page {
+  padding: 0 0.3em 1px;
+}
+
+.hellopack-dashboard textarea {
+  padding: 1em;
+  font-size: 0.8em;
+  background: #fff;
+}
+
+.hellopack-dashboard select {
+  padding: 0.4em 1.6em 0.4em 0.8em;
+  background: #fff url("data:image/svg+xml,%3Csvg width='9' height='5' viewBox='0 0 9 5' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.87498 0.399963L4.49998 3.02496L7.12498 0.399963L8.17498 0.924964L4.49998 4.59996L0.824982 0.924964L1.87498 0.399963Z' fill='%2393999F'/%3E%3C/svg%3E%0A") no-repeat right 0.8em top 50%;
+  box-shadow: none !important;
+}
+
+.hellopack-dashboard select:focus {
+  color: inherit !important;
+}
+
+.hellopack-dashboard select:focus>option:checked {
+  color: inherit !important;
+}
+
+.hellopack-dashboard select:focus>option:hover {
+  background-color: #198fd9;
+}
+
+.rtl .hellopack-dashboard select {
+  padding: 0.4em 0.8em 0.4em 1.6em;
+  background-position: left 0.8em top 50%;
+}
+
+.hellopack-dashboard .wp-picker-container .wp-color-result {
+  border-radius: 0.35em;
+  font-weight: inherit;
+}
+
+.hellopack-dashboard .wp-picker-container input[type="button"] {
+  border-radius: 0.35em;
+  font-weight: inherit;
+}
+
+.hellopack-dashboard .wp-picker-container .iris-picker {
+  border-radius: 0.35em;
+}
+
+.hellopack-dashboard .form-wrap,
+.hellopack-dashboard .form-table {
+  font-size: inherit;
+}
+
+.hellopack-dashboard .form-wrap td,
+.hellopack-dashboard .form-table td {
+  font-size: inherit;
+}
+
+.hellopack-dashboard .form-wrap .form-field,
+.hellopack-dashboard .form-table .form-field {
+  margin: 0 0 2em 0;
+}
+
+.hellopack-dashboard .form-wrap .form-field label,
+.hellopack-dashboard .form-table .form-field label {
+  width: 100%;
+  font-weight: 600;
+}
+
+.hellopack-dashboard .form-wrap .form-field input[type="text"],
+.hellopack-dashboard .form-table .form-field input[type="text"],
+.hellopack-dashboard .form-wrap .form-field select,
+.hellopack-dashboard .form-table .form-field select {
+  margin: 0.5em 0;
+  width: 100%;
+  max-width: none;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-double-fields,
+.hellopack-dashboard .form-table .form-field .hellopack-double-fields {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 -0.25em;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-double-fields .hellopack-field,
+.hellopack-dashboard .form-table .form-field .hellopack-double-fields .hellopack-field {
+  margin: 0 0.25em;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-double-fields .hellopack-field input,
+.hellopack-dashboard .form-table .form-field .hellopack-double-fields .hellopack-field input {
+  width: 100%;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-field label,
+.hellopack-dashboard .form-table .form-field .hellopack-field label {
+  font-weight: 400;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator,
+.hellopack-dashboard .form-table .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  position: absolute;
+  margin: 0.5em 0;
+  height: 42px;
+  width: 36px;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator i,
+.hellopack-dashboard .form-table .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator i {
+  font-size: 0.8em;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator .hellopack-db-rotate-45,
+.hellopack-dashboard .form-table .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator .hellopack-db-rotate-45 {
+  transform: rotate(45deg);
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator .hellopack-db-rotate-m45,
+.hellopack-dashboard .form-table .form-field .hellopack-field.hellopack-db-input-indicator .hellopack-db-indicator .hellopack-db-rotate-m45 {
+  transform: rotate(-45deg);
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-field.hellopack-db-input-indicator input,
+.hellopack-dashboard .form-table .form-field .hellopack-field.hellopack-db-input-indicator input {
+  padding-right: 2.1em;
+  padding-left: 2.1em;
+}
+
+.hellopack-dashboard .form-wrap .form-field.form-field-checkbox .description,
+.hellopack-dashboard .form-table .form-field.form-field-checkbox .description {
+  flex: 2;
+  margin: 0 0.5em;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-db-checkbox-wrapper,
+.hellopack-dashboard .form-table .form-field .hellopack-db-checkbox-wrapper {
+  display: flex;
+  margin: 0.5em 0;
+}
+
+.hellopack-dashboard .form-wrap .form-field .hellopack-db-checkbox-wrapper input,
+.hellopack-dashboard .form-table .form-field .hellopack-db-checkbox-wrapper input {
+  margin-top: 0.2em;
+}
+
+.hellopack-dashboard .form-wrap .submit,
+.hellopack-dashboard .form-table .submit {
+  margin-top: 1em;
+  padding: 0;
+}
+
+.hellopack-dashboard .form-wrap .submit input[type="submit"],
+.hellopack-dashboard .form-table .submit input[type="submit"] {
+  margin: 0;
+}
+
+.hellopack-dashboard .hellopack-db-table {
+  margin-top: 1.7em;
+}
+
+.hellopack-dashboard .hellopack-db-table .wp-list-table {
+  margin-top: 1.7em;
+  border: none;
+}
+
+.hellopack-dashboard .subsubsub {
+  margin-top: 0;
+  font-size: 0.8em;
+  color: inherit;
+}
+
+.hellopack-dashboard:not(.hellopack-db-slides) .tablenav {
+  height: auto;
+}
+
+.hellopack-dashboard .wp-list-table {
+  border: 1px solid #dfdfdf;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 0.35em;
+}
+
+.hellopack-dashboard .wp-list-table .column-title strong {
+  font-weight: 400;
+}
+
+.hellopack-dashboard .wp-list-table thead th,
+.hellopack-dashboard .wp-list-table thead td {
+  border-bottom: 1px solid #dfdfdf;
+}
+
+.hellopack-dashboard .wp-list-table tfoot th,
+.hellopack-dashboard .wp-list-table tfoot td {
+  border-top: 1px solid #dfdfdf;
+}
+
+/* BOXOK */
+
+/* General card styling */
+.hellopack-dashboard .hellopack-db-card {
+  margin-top: 1rem;
+  padding: 1.8em;
+  font-size: inherit;
+  background-color: #fff;
+  border-radius: 0.35em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-card-transparent {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-text-small {
+  font-size: 0.8em;
+  line-height: 1.6;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-heading-with-badge {
+  display: flex;
+  align-items: center;
+  margin: 0 -0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-heading-with-badge .hellopack-db-card-heading-text {
+  margin: 0 0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-heading-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.2em;
+  padding: 0.3em 0.35em;
+  font-size: 0.55em;
+  line-height: 1;
+  font-weight: 400;
+  background-color: #f8f8f8;
+  border-radius: 0.35em;
+  white-space: nowrap;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-heading-badge i,
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-heading-badge .hellopack-db-card-heading-badge-text {
+  margin: 0 0.15em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-grid {
+  display: flex;
+  margin: 1.7em -0.85em 0 -0.85em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-grid .hellopack-db-card-notice {
+  flex-flow: column;
+  flex: 1;
+  align-items: center;
+  margin: 0 0.85em;
+  text-align: center;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-grid .hellopack-db-card-notice.hellopack-db-sale {
+  overflow: hidden;
+  position: relative;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-grid .hellopack-db-card-notice.hellopack-db-sale:before {
+  content: attr(data-sale);
+  position: absolute;
+  top: -25px;
+  right: -25px;
+  padding: 5px 10px;
+  width: 135px;
+  transform: translateX(30%) rotate(45deg);
+  transform-origin: top left;
+  background-color: #65bc7b;
+  color: #fff;
+  text-transform: uppercase;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-grid .hellopack-db-card-notice .hellopack-db-card-notice-heading {
+  display: flex;
+  margin: 0 -0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-grid .hellopack-db-card-notice .hellopack-db-card-notice-heading h3 {
+  margin: 0 0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-card .notice-dismiss,
+.hellopack-dashboard .hellopack-db-card .hellopack-db-more-info {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  margin: 1.2em;
+  padding: 0.2em;
+  border: none;
+  background: 0 0;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+  box-shadow: none;
+}
+
+.hellopack-dashboard .hellopack-db-card .notice-dismiss:before,
+.hellopack-dashboard .hellopack-db-card .hellopack-db-more-info:before {
+  content: "\e92f";
+  opacity: 0.4;
+  font-size: 0.8em;
+  font-family: icomoon;
+  color: inherit;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-more-info {
+  transition: color 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-more-info:before {
+  content: "\e907";
+  font-size: inherit;
+  transition: opacity 0.2s cubic-bezier(0.21, 0.6, 0.35, 1);
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-more-info:hover {
+  color: #198fd9;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-more-info:hover:before {
+  opacity: 1;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-tooltip .hellopack-db-tooltip-text {
+  display: block;
+  opacity: 0;
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  margin: 0 auto;
+  background: #2a3035;
+  color: #fff;
+  padding: 0.8em;
+  font-size: 0.65em;
+  border-radius: 0.35em;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.21, 0.6, 0.35, 1) 0.2s;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-tooltip .hellopack-db-tooltip-text:before {
+  content: "";
+  border: 5px solid transparent;
+  border-top-color: transparent;
+  border-top-color: #2a3035;
+  bottom: -8px;
+  z-index: 2;
+  transition: all 0.2s cubic-bezier(0.21, 0.6, 0.35, 1) 0.2s;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  line-height: normal;
+  pointer-events: none;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-tooltip:hover .hellopack-db-tooltip-text {
+  opacity: 1;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice {
+  display: flex;
+  margin: 1em -0.4em 0 -0.4em;
+  padding: 1.4em;
+  border-radius: 0.7em;
+  background-color: #f8f8f8;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice i {
+  color: #32373c;
+  line-height: 1.5em;
+  font-size: 1.2em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice h3 {
+  line-height: 1.5em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice .hellopacka-info-circle {
+  color: #198fd9;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice i,
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice .hellopack-db-card-notice-heading {
+  margin: 0 0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice .hellopack-db-card-notice-content {
+  margin: 1em 0.4em 0 0.4em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice-button {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  margin: 1em -2px 0 -2px;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice-button .hellopack-db-card-notice {
+  margin: 0 2px;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-notice-button .hellopack-db-card-notice.notice-button {
+  align-items: center;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-error {
+  margin-top: 1em;
+  padding: 1.4em;
+  background-color: #dc3232;
+  box-shadow: 0 1px 3px rgba(220, 50, 50, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  color: #fff;
+  border-radius: 0.35em;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-db-card-error a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice {
+  position: relative;
+  margin: 1.7em 0;
+  padding: 2.8em;
+  max-width: none;
+  border-top: none;
+  border-bottom: none;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice h2 {
+  color: #dc3232;
+}
+
+.ltr.hellopack-dashboard .hellopack-db-card.hellopack-db-notice {
+  border-left: 4px solid #dc3232;
+  border-right: none;
+}
+
+.rtl.hellopack-dashboard .hellopack-db-card.hellopack-db-notice {
+  border-right: 4px solid #dc3232;
+  border-left: none;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice p,
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice .hellopack-db-settings-error-p {
+  display: block;
+  margin: 0 0 1em 0;
+  padding: 0;
+  line-height: 1.7em;
+  font-weight: 400;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice p:last-of-type,
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice .hellopack-db-settings-error-p:last-of-type {
+  margin-bottom: 0;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice ul {
+  margin: 0 1em 1em 1em;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice ul li {
+  margin-bottom: 0.5em;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice ul li:last-child {
+  margin-bottom: 0;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice ul li:before {
+  content: "\e90b";
+  font-family: icomoon;
+  font-size: 0.8em;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice ul li span {
+  margin: 0 0.5em;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice table {
+  margin-top: 1em;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice.settings-error>p {
+  margin: 0;
+  padding: 0;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice.settings-error .hellopack-db-settings-error-heading {
+  display: block;
+  color: #dc3232;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice.hellopack-db-notice-success {
+  border-color: #65bc7b;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice.hellopack-db-notice-success h2 {
+  color: #65bc7b;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice.hellopack-db-notice-info {
+  border-color: #198fd9;
+}
+
+.hellopack-dashboard .hellopack-db-card.hellopack-db-notice.hellopack-db-notice-info h2 {
+  color: #198fd9;
+}
+
+.hellopack-dashboard .hellopack-db-card .registration-form-container {
+  float: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.hellopack-dashboard .hellopack-db-card .hellopack-patcher-table {
+  width: 100%;
+}
+
+.hellopack-dashboard #remote-media-found-in-hellopack-options {
+  display: block !important;
+  position: relative;
+}
+
+.hellopack-dashboard #remote-media-found-in-hellopack-options ul li:before {
+  content: "\f0ac";
+}
+
+.hellopackredux-container {
+  margin-top: 1.7em;
+}
+
+/* column styling */
+
+.hellopack-client-column {
+  background-color: #fff;
+  border-radius: 0.35em;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 10px rgba(0, 0, 0, 0.08);
+  margin-top: 16px;
+  margin-bottom: 16px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.4em;
+}
+
+h1.hellopack-panel-title>svg {
+  width: 23px;
+  height: 23px;
+  margin: 4px 4px 0 0;
+  vertical-align: top;
+}
+
+/* pagnaition styling */
+
+/* A lapozó konténerének stílusai */
+.hellopack-plugin-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* A lapozó számok és a lapozó gombok stílusai */
+.hellopack-plugin-pagination-numbers {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.hellopack-plugin-pagination-numbers .button {
+  color: #333;
+  border: 1px solid #ddd;
+  background-color: white;
+  margin-left: 5px;
+}
+
+.hellopack-plugin-pagination-numbers .button:hover,
+.hellopack-plugin-pagination-numbers .button:active {
+  color: #333;
+  border: 1px solid #bdbcbc;
+  background-color: white;
+}
+
+.submit.hellopack-settings-save .button {
+height: 40px;
+line-height: 39px;
+font-size: 15px;
+}
+
+/* mobile styling */
+
+
+@media (max-width: 1050px) {
+
+  .hellopack-link-support {
+    display: none !important;
+  }
+
+}
+
+@media (max-width: 1115px) {
+
+  .hellopack-db-logo-image code {
+    display: none !important;
+  }
+
+}
+
+@media (max-width: 675px) {
+
+  .hellopack-menu-item-text {
+    display: none !important;
+  }
+
+  .hellopack-dashboard .hellopack-db-header-main .hellopack-db-logo .hellopack-db-logo-image img {
+    display: none;
+  }
+
+  .hellopack-plugin-search {
+    margin-bottom: 16px;
+  }
+
+  .hellopack-plugin-search input {
+    max-width: 200px;
+  }
+
+}
+
+/* Hidden until HelloPack 2.1.0 */
+
+.star-rating {
+  display: none !important;
+}
+
+
+.about-wrap p.submit {
+  margin-top: 1rem;
+
+}
+
+/* color */
+
+.danger {
+  color: #ff3960 !important;
+}
+
+.success {
+  color: #00d27a !important;
+}
+
+.hellopack-client-column textarea {
+  max-width: 100%;
+  padding: 8px;
+  border: 0;
+  height: 300px !important;;
+  width: 100%;
+  border-radius: 4px;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  background-color: #f4f8fb;
+  color: #4c5866;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  -webkit-transition: background-color .3s ease-in-out, opacity .3s ease-in-out;
+  transition: background-color .3s ease-in-out, opacity .3s ease-in-out;
+}
+
+.hellopack-plugin-pagination-text{
+  font-size: 14px;
+}
+
+.full-w{
+  width: 100%;
+}
+
+.hellopack-card-top > .column-description{
+  font-size: 0.9rem;
+}
+
+.about-wrap.full-width-layout{
+  max-width: 100%;
+}
+
+.hellopack-dashboard{
+  max-width: 100%;
+}
+
+  h4.hellopack-client-whitelabel-logo  {
+  margin-bottom: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #32373c;
+}
+
+.hellopack-dashboard .fs-sticky{
+  position: relative !important;
+}
+
+/* Grid - thx to @simkoG */
+.about-wrap .hellopack-client-blocks {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+}
+
+.about-wrap .hellopack-client-blocks > .hellopack-plugin-pagination {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+}
+
+.about-wrap .hellopack-client-blocks > .hellopack-plugin-pagination-top {
+  margin-bottom: -0.5rem;
+}
+
+.about-wrap .hellopack-client-blocks > .hellopack-plugin-pagination-bottom {
+  margin-top: -0.5rem;
+}
+
+#themes .hellopack-db-card-first {
+  margin-bottom: 1rem;
+}
+
+.hellopack-builder-option{
+  display: flex;
+  margin: 0 -1.7em;
+  padding: 0;
+}
+
+.hellopack-builder-option-title{
+  flex: 1.5;
+  margin: 0 1.7em;
+}
+
+.hellopack-builder-option-field{
+  flex: 0;
+  margin: 0 1.7em;
+}
+
+.hellopack-builder-option-description{
+  margin-top: 1rem;
+  display: block;
+  border-top: 1px solid #f0f0f1;
+  padding-top: 1rem;
+}
+
+a.anc-github::after {
+	content: "";
+	display: inline-block;
+	background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8.33321 3H12.9999V7.66667H11.9999V4.70711L8.02009 8.68689L7.31299 7.97978L11.2928 4H8.33321V3Z' fill='%23646970'/%3E%3Cpath d='M6.33333 4.1665H4.33333C3.8731 4.1665 3.5 4.5396 3.5 4.99984V11.6665C3.5 12.1267 3.8731 12.4998 4.33333 12.4998H11C11.4602 12.4998 11.8333 12.1267 11.8333 11.6665V9.6665' stroke='%23646970'/%3E%3C/svg%3E%0A");
+	width: 16px;
+	height: 16px;
+	background-repeat: no-repeat;
+	vertical-align: text-top;
+	margin-left: -3px;
+  margin-top: 2px;
+}
+
+a.anc-github::after {
+	background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8.33321 3H12.9999V7.66667H11.9999V4.70711L8.02009 8.68689L7.31299 7.97978L11.2928 4H8.33321V3Z' fill='%23135E96'/%3E%3Cpath d='M6.33333 4.1665H4.33333C3.8731 4.1665 3.5 4.5396 3.5 4.99984V11.6665C3.5 12.1267 3.8731 12.4998 4.33333 12.4998H11C11.4602 12.4998 11.8333 12.1267 11.8333 11.6665V9.6665' stroke='%23135E96'/%3E%3C/svg%3E%0A");
+}
+
+li.hellopack-domain strong{
+  border-bottom: 3px solid #23d160;
+}

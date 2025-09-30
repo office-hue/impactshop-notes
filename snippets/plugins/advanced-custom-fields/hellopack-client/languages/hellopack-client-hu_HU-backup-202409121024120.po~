@@ -1,0 +1,1087 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-02-13 13:25+0000\n"
+"PO-Revision-Date: 2024-03-19 16:59+0000\n"
+"Last-Translator: \n"
+"Language-Team: Hungarian\n"
+"Language: hu_HU\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.6; wp-6.4.3"
+
+#. translators: %1$s is the desired memory limit in MB, %2$s is the current memory limit in MB.
+#: inc/admin/class-hellopack-client-admin.php:1397
+msgid ""
+"%1$s may be enough, however, for proper functioning of Elementor Pro, a "
+"minimum of %2$sM memory limit is recommended. If you are having issues "
+"please set your PHP memory limit to at least %3$s - or ask your hosting "
+"provider to do this if you're unsure."
+msgstr ""
+"A %1$s lehet, hogy elegendő, de az Elementor Pro megfelelő működéséhez "
+"ajánlott minimum %2$sM memória limit. Ha problémáid vannak, kérjük, állítsd "
+"a PHP memória limitet legalább %3$s-re - vagy ha nem vagy biztos benne, "
+"kérdezd meg a tárhelyszolgáltatódat, hogy ezt megtegye helyetted."
+
+#. translators: %1$s is the current input vars, %2$s is the desired input vars.
+#: inc/admin/class-hellopack-client-admin.php:1446
+msgid ""
+"%1$s may be too small. If you are having issues please set your PHP max "
+"input vars to at least %2$s - or ask your hosting provider to do this if "
+"you're unsure."
+msgstr ""
+"A %1$s lehet, hogy túl kevés. Ha problémáid vannak, kérjük, állítsd a PHP "
+"max_input_vars értékét legalább %2$s-re - vagy ha nem vagy biztos benne, "
+"kérdezd meg a tárhelyszolgáltatódat, hogy ezt megtegye helyetted."
+
+#. translators: %1$s is the current upload limit in MB, %2$s is the desired upload limit in MB.
+#: inc/admin/class-hellopack-client-admin.php:1421
+msgid ""
+"%1$s may be too small. If you are having issues please set your PHP upload "
+"limits to at least %2$sM - or ask your hosting provider to do this if you're "
+"unsure."
+msgstr ""
+"A %1$s lehet, hogy túl alacsony. Ha problémáid adódnak, kérjük, állítsd a "
+"PHP feltöltési limitjeidet legalább %2$sM-re - vagy ha nem vagy biztos benne,"
+" kérdezd meg a tárhelyszolgáltatódat, hogy végezze el ezt helyetted."
+
+#: inc/admin/functions.php:256
+msgid "%1$s plugins found. Page %2$s of %3$s"
+msgstr "%1$s találat. Oldal %2$s / %3$s"
+
+#. translators: %1$s is the current execution time in seconds, %2$s is the desired execution time in seconds.
+#: inc/admin/class-hellopack-client-admin.php:1474
+msgid ""
+"%1$s seconds is too small. Please set your PHP max execution time to at "
+"least %2$s seconds - or ask your hosting provider to do this if you're "
+"unsure."
+msgstr ""
+"A %1$s másodperc túl rövid idő. Kérjük, állítsd a PHP maximális végrehajtási "
+"idejét legalább %2$s másodpercre - vagy ha nem vagy biztos benne, kérdezd "
+"meg a tárhelyszolgáltatódat, hogy végezze el ezt helyetted."
+
+#. translators: %1$s and %2$s are the opening and closing <a> tags.
+#: inc/class-hellopack-client-github.php:307
+msgid ""
+"%1$sActivate the HelloPack Client plugin%2$s to get updates for your plugins "
+"and themes."
+msgstr ""
+
+#. translators: %1$s and %2$s are the opening and closing <a> tags, %3$s is the plugin name.
+#: inc/class-hellopack-client-github.php:322
+msgid ""
+"%1$sInstall the HelloPack Client plugin%2$s to get updates for your themes "
+"and plugins."
+msgstr ""
+
+#. translators: %1$s is the desired memory limit in MB, %2$s is the current memory limit in MB.
+#: inc/admin/class-hellopack-client-admin.php:1372
+msgid ""
+"%s may be too small. If you are having issues please set your PHP memory "
+"limit to at least 256M - or ask your hosting provider to do this if you're "
+"unsure."
+msgstr ""
+"A %s lehet, hogy túl kicsi. Ha problémáid vannak, kérlek állítsd be a PHP "
+"memória limitjét legalább 256M-ra - vagy kérdezd meg a tárhelyszolgáltatódat,"
+" ha nem vagy biztos benne."
+
+#: inc/admin/functions.php:271
+msgid "&laquo; Previous"
+msgstr "&laquo; Előző"
+
+#. translators: %s: theme name.
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:66
+#: inc/admin/functions.php:138 inc/admin/functions.php:486
+msgid "Activate"
+msgstr "Aktiválás"
+
+#. translators: %s: plugin name.
+#: inc/admin/functions.php:489
+msgid "Activate %s"
+msgstr "%s aktiválása"
+
+#. translators: %s: theme name.
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:66
+#: inc/admin/functions.php:138
+msgid "Activate &#8220;%s&#8221;"
+msgstr "Aktiválás &#8220;%s&#8221;"
+
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:103
+msgid "Activate Plugin"
+msgstr "Bővítmény aktiválása"
+
+#: inc/admin/class-hellopack-client-admin.php:1645
+msgid "Active Plugins:"
+msgstr "Aktív bővítmények:"
+
+#: inc/admin/view/callback/section/items.php:10
+msgid ""
+"Add HelloPack Client themes & plugins using multiple OAuth tokens. This is "
+"especially useful when an item has been purchased on behalf of a third-party."
+" This works similarly to the global OAuth Personal Token, but for individual "
+"items and additionally requires the HelloPack Client item ID."
+msgstr ""
+"Adj hozzá HelloPack Kliens témákat és bővítményeket több OAuth token "
+"segítségével. Ez különösen hasznos, amikor egy elemet harmadik fél nevében "
+"vásároltak meg. Ez hasonlóan működik, mint a globális OAuth Személyes Token, "
+"de egyedi elemekhez, és továbbá szükséges a HelloPack Kliens elem "
+"azonosítója."
+
+#: inc/admin/class-hellopack-client-admin.php:546
+#: inc/admin/view/callback/setting/items.php:37
+msgid "Add Item"
+msgstr "Elem hozzáadása"
+
+#: inc/admin/view/notice/error-details.php:12
+msgid "Additional Error Details:"
+msgstr "Hiba történt az aktiválás során:"
+
+#: inc/admin/view/partials/settings.php:93
+msgid "Admin Notification Cleaner"
+msgstr "Admin Notification Cleaner (csendes üzemmód)"
+
+#: inc/admin/view/partials/settings.php:166
+msgid "Admin Notification Cleaner repository"
+msgstr ""
+
+#: inc/admin/view/partials/settings.php:62
+msgid ""
+"After installing the HelloPack package manager, the next step is to activate "
+"it on your website. To do this, you need to create an API key on the HelloWP."
+"io site, which you can then enter in the HelloPack package manager on your "
+"WordPress website to activate the plugin. For more details,"
+msgstr ""
+"A HelloPack csomagkezelő telepítése után a következő lépés, hogy aktiváld a "
+"csomagkezelőt az API-kulcsoddal. Ennek érdekében szükséged lesz egy API "
+"kulcsra, amit a HelloWP.io oldalán hozhatsz létre, majd ezt követően "
+"beillesztheted a lenti API-kulcs mezőbe. Dokumentáció: "
+
+#: inc/admin/view/notice/success-single-use.php:11
+msgid "All Single Use OAuth Personal Tokens have been verified."
+msgstr "Minden egyszer használatos OAuth Személyes Token ellenőrizve lett."
+
+#: inc/class-hellopack-client-api.php:127
+msgid "An API token is required."
+msgstr "Egy API token szükséges."
+
+#: inc/admin/class-hellopack-client-admin.php:1093
+#: inc/admin/class-hellopack-client-admin.php:1152
+msgid "An error occurred, please check that the item ID is correct."
+msgstr "Hiba történt, kérlek ellenőrizd, hogy az elem azonosító helyes-e."
+
+#: inc/class-hellopack-client-api.php:160
+#: inc/class-hellopack-client-api.php:164
+msgid "An unknown API error occurred."
+msgstr "Ismeretlen API hiba történt."
+
+#: inc/admin/class-hellopack-client-admin.php:1274
+msgid "An unknown error occurred."
+msgstr "Ismeretlen hiba történt."
+
+#: inc/admin/class-hellopack-client-admin.php:488
+msgid "An unknown error occurred. Try again."
+msgstr "Ismeretlen hiba történt. Próbáld újra."
+
+#: inc/admin/view/partials/settings.php:66
+msgid "API Key Generator"
+msgstr "API-kulcskészítő"
+
+#: inc/admin/class-hellopack-client-admin.php:630
+msgid "API-key"
+msgstr "API-kulcs"
+
+#: inc/admin/view/partials/settings.php:162
+msgid ""
+"Are you encountering an annoying notification in the WordPress admin area? "
+"Contribute to the growth of the Admin Notification Cleaner collection. "
+"Submit the CSS class on GitHub at the"
+msgstr ""
+"Találkoztál már zavaró értesítésekkel a WordPress admin felületén? Járulj "
+"hozzá az Admin Notification Cleaner gyűjtemény bővítéséhez. Küldd be a CSS "
+"osztályt a GitHubon: "
+
+#: inc/admin/class-hellopack-client-admin.php:1587
+msgid "Authenticated successfully"
+msgstr "Sikeres hitelesítés"
+
+#: inc/admin/class-hellopack-client-admin.php:591 inc/admin/functions.php:195
+#: inc/admin/functions.php:555
+msgid "By"
+msgstr "Készítette: "
+
+#: inc/admin/class-hellopack-client-admin.php:487
+msgid "Cancel"
+msgstr "Mégse"
+
+#: inc/admin/class-hellopack-client-admin.php:78
+#: inc/admin/class-hellopack-client-admin.php:88
+#: inc/class-hellopack-client-api.php:80 inc/class-hellopack-client-api.php:90
+#: inc/class-hellopack-client-github.php:87
+#: inc/class-hellopack-client-github.php:97
+#: inc/class-hellopack-client-items.php:100
+#: inc/class-hellopack-client-items.php:110 inc/class-hellopack-client.php:151
+#: inc/class-hellopack-client.php:161
+msgid "Cheatin&#8217; huh?"
+msgstr ""
+
+#: inc/admin/view/partials/help.php:62
+msgid ""
+"Checking the required storage settings and the communication between servers."
+msgstr ""
+"A szükséges tárhely beállítások és a szerverek közötti kommunikáció "
+"ellenőrzése."
+
+#: inc/admin/view/partials/settings.php:62
+msgid "click here"
+msgstr "kattints ide"
+
+#: inc/admin/view/partials/settings.php:47
+msgid "Congratulations, and thank you for registering your website."
+msgstr ""
+"Sikeresen aktiváltad a HelloPack klienst az oldalon. Köszönjük, hogy velünk "
+"alkotsz."
+
+#: inc/admin/class-hellopack-client-admin.php:1522
+msgid "Connected ok."
+msgstr "A kapcsolat rendben."
+
+#. translators: %1$s is the host name, %2$s is the error message.
+#: inc/admin/class-hellopack-client-admin.php:1543
+msgid ""
+"Connection failed. Please contact the hosting provider and ensure PHP is "
+"allowed to connect to the host '%1$s'. %2$s"
+msgstr ""
+
+#. translators: %1$s is the response code, %2$s is the host name, %3$s is the error message.
+#: inc/admin/class-hellopack-client-admin.php:1530
+msgid ""
+"Connection failed. Status '%1$s'. Please ensure PHP is allowed to connect to "
+"the host '%2$s' - or ask your hosting provider to do this if you’re unsure. "
+"%3$s"
+msgstr ""
+
+#: inc/admin/view/partials/help.php:79
+msgid "Copy and Paste:"
+msgstr "Másolás és beillesztés:"
+
+#: inc/admin/view/partials/settings.php:68
+msgid "Copy the received API key here."
+msgstr "Illeszd be az API kulcsot ide."
+
+#: inc/admin/functions.php:100
+msgid "Customize"
+msgstr "Testreszabás"
+
+#. translators: %s: theme name.
+#: inc/admin/functions.php:102
+msgid "Customize &#8220;%s&#8221;"
+msgstr "Testreszabás &#8220;%s&#8221;"
+
+#: inc/admin/functions.php:444
+msgid "Deactivate"
+msgstr "Deaktiválás"
+
+#. translators: %s: plugin name.
+#: inc/admin/functions.php:447
+msgid "Deactivate %s"
+msgstr "%s deaktiválása"
+
+#: inc/admin/class-hellopack-client-admin.php:1569
+msgid "Default"
+msgstr "Alapértelmezett"
+
+#: inc/admin/class-hellopack-client-admin.php:518 inc/admin/functions.php:465
+#: inc/admin/view/callback/setting/items.php:24
+msgid "Delete"
+msgstr "Törlés"
+
+#. translators: %s: plugin name.
+#: inc/admin/functions.php:468
+msgid "Delete %s"
+msgstr "%s törlése"
+
+#: inc/admin/class-hellopack-client-theme-upgrader.php:45
+#: inc/admin/class-hellopack-client-theme-upgrader.php:83
+#| msgid "Downloading the HelloPack Client install package…"
+msgid "Downloading the HelloPack Client install package&#8230;"
+msgstr "A HelloPack Kliens telepítőcsomagjának letöltése…"
+
+#: inc/admin/class-hellopack-client-theme-upgrader.php:34
+#: inc/admin/class-hellopack-client-theme-upgrader.php:72
+#| msgid "Downloading the HelloPack Client upgrade package…"
+msgid "Downloading the HelloPack Client upgrade package&#8230;"
+msgstr "A HelloPack Kliens frissítőcsomagjának letöltése…"
+
+#: inc/admin/view/partials/settings.php:97
+msgid "Enable the Admin Notification Cleaner throughout the admin area."
+msgstr ""
+"A csendes üzemmód bekapcsolásával tisztábbá és átláthatóvá válhat az "
+"adminisztrációs felület."
+
+#: inc/admin/view/partials/help.php:25
+msgid ""
+"Encountered problems? Here you can find the tester and here you can get "
+"additional information on how to solve common issues."
+msgstr ""
+"Problémába ütköztél? Itt találhatod a tesztert, és itt kaphatsz további "
+"információkat a gyakori problémák megoldásához."
+
+#: inc/admin/view/partials/settings.php:67
+msgid "Enter the following domain name:"
+msgstr "Add meg a következő domain nevet:"
+
+#: inc/admin/class-hellopack-client-admin.php:552
+msgid "Enter the HelloPack API Personal Token."
+msgstr "Add meg a HelloPack API Személyes Tokenjét."
+
+#: inc/admin/class-hellopack-client-admin.php:556
+msgid "Enter the HelloPack Item ID."
+msgstr "Add meg a HelloPack Elem Azonosítóját."
+
+#: inc/admin/view/callback/setting/token.php:15
+msgid ""
+"Enter your API-key for verification. Do not worry, this key can only be used "
+"on this website."
+msgstr ""
+"Add meg az API-kulcsodat ellenőrzésre. Ne aggódj, ezt a kulcsot csak ezen a "
+"weboldalon lehet használni."
+
+#: inc/admin/class-hellopack-client-admin.php:1455
+msgid ""
+"Failed to check input vars limit. If you are having issues please ask "
+"hosting provider to raise the input vars limit for you."
+msgstr ""
+"Nem sikerült ellenőrizni a bemeneti változók limitjét. Ha problémáid vannak, "
+"kérlek kérdezd meg a tárhelyszolgáltatódat, hogy növelje meg a bemeneti "
+"változók limitjét."
+
+#: inc/admin/class-hellopack-client-admin.php:1380
+#: inc/admin/class-hellopack-client-admin.php:1404
+msgid ""
+"Failed to check memory limit. If you are having issues please ask hosting "
+"provider to raise the memory limit for you."
+msgstr ""
+"Nem sikerült ellenőrizni a memória limitet. Ha problémáid vannak, kérlek "
+"kérdezd meg a tárhelyszolgáltatódat, hogy növelje meg a memória limitet."
+
+#: inc/admin/class-hellopack-client-admin.php:1483
+msgid ""
+"Failed to check PHP execution time limit. Please ask hosting provider to "
+"raise this limit for you."
+msgstr ""
+"Nem sikerült ellenőrizni a PHP végrehajtási idő limitjét. Kérlek kérdezd meg "
+"a tárhelyszolgáltatódat, hogy növelje meg ezt a limitet."
+
+#: inc/admin/class-hellopack-client-admin.php:1427
+msgid ""
+"Failed to check upload limit. If you are having issues please ask hosting "
+"provider to raise the upload limit for you."
+msgstr ""
+"Nem sikerült ellenőrizni a feltöltési limitet. Ha problémáid vannak, kérlek "
+"kérdezd meg a tárhelyszolgáltatódat, hogy növelje meg a feltöltési limitet."
+
+#: inc/admin/view/notice/error-http.php:11
+#| msgid ""
+#| "Failed to connect to the HelloPack API. Please contact the hosting "
+#| "provider with this message: \"The HelloPack Client WordPress plugin "
+#| "requires TLS version 1.2 or above, please confirm if this hosting account "
+#| "supports TLS version 1.2 and allows connections from WordPress to the "
+#| "host api.v2.wp-json.app\"."
+msgid ""
+"Failed to connect to the HelloPack API. Please contact the hosting providier "
+"with this message: \"The HelloPack Client WordPress plugin requires TLS "
+"version 1.2 or above, please confirm if this hosting account supports TLS "
+"version 1.2 and allows connections from WordPress to the host api.v2.wp-json."
+"app\"."
+msgstr ""
+"Nem sikerült csatlakozni a HelloPack API szerverhez. Kérlek, vedd fel a "
+"kapcsolatot a tárhelyszolgáltatóddal ezzel az üzenettel: \"A HelloPack "
+"WordPress bővítmény TLS 1.2-es vagy annál magasabb verziót igényel. Kérlek, "
+"erősítsd meg, hogy az oldalt kezelő szerver támogatja-e a TLS 1.2-es verziót "
+"és engedélyezi-e a WordPress és a api.v2.wp-json.app host közötti "
+"kapcsolatot\"."
+
+#. translators: %s: link to the downloads page
+#: inc/admin/view/notice/error-missing-zip.php:15
+#| msgid ""
+#| "Failed to locate the package file for this item. install/upgrade the item "
+#| "manually from the %s."
+msgid ""
+"Failed to locate the package file for this item.  install/upgrade the item "
+"manually from the %s."
+msgstr ""
+"Nem sikerült megtalálni a csomagfájlt ehhez az elemhez. Telepítsd/frissítsd "
+"az elemet manuálisan innen: %s."
+
+#: inc/admin/class-hellopack-client-admin.php:910
+msgid ""
+"Failed to query total number of items in API response. A common issue is "
+"incorrectly entering the wrong domain during API key creation. Please verify "
+"that you have entered it correctly. You can see the correct domain under the "
+"\"Enter the following domain name\" section"
+msgstr ""
+"Nem sikerült az API-kulcsot hitelesíteni. Gyakran előforduló probléma, hogy "
+"rossz domain-t írnak be az API-kulcs létrehozása során. Ellenőrizd, hogy jól "
+"adtad-e meg. A megfelelő domaint a \"Add meg a következő domain nevet\" "
+"résznél látod"
+
+#: inc/admin/view/partials/help.php:46
+msgid "guide."
+msgstr "útmutatót."
+
+#: inc/admin/class-hellopack-client-admin.php:413
+#: inc/admin/class-hellopack-client-admin.php:414
+#: inc/admin/view/partials/intro.php:35
+msgid "HelloPack"
+msgstr "HelloPack"
+
+#: inc/admin/view/partials/intro.php:31
+msgid "hellopack"
+msgstr "hellopack"
+
+#: inc/admin/class-hellopack-client-admin.php:622
+msgid "HelloPack activation"
+msgstr "HelloPack aktiválás"
+
+#: inc/admin/class-hellopack-client-admin.php:1558
+#: inc/admin/class-hellopack-client-admin.php:1564
+#: inc/admin/class-hellopack-client-admin.php:1586
+msgid "HelloPack API Authentication:"
+msgstr "HelloPack API Hitelesítés:"
+
+#. Plugin Name of the plugin
+msgid "HelloPack Client"
+msgstr "HelloPack csomagkezelő"
+
+#: inc/admin/class-hellopack-client-admin.php:1504
+msgid "HelloPack Client API"
+msgstr "HelloPack Kliens API"
+
+#. translators: %s: URL to the correct zip file
+#: hellopack-client.php:109
+msgid ""
+"HelloPack Client plugin is not installed correctly. Please delete this "
+"plugin and get the correct zip file from %s."
+msgstr ""
+"A HelloPack Kliens bővítmény nem megfelelően van telepítve. Kérjük, törölje "
+"ezt a bővítményt és szerezze be a helyes zip fájlt innen: %s."
+
+#: inc/class-hellopack-client-cli.php:83
+msgid "HelloPack is already in an inactive status."
+msgstr "A HelloPack már inaktív státuszban van."
+
+#: inc/admin/view/partials/settings.php:57
+msgid "HelloPack is not active"
+msgstr "A HelloPack nem aktív"
+
+#: inc/class-hellopack-client-cli.php:89
+msgid "HelloPack license deactivated."
+msgstr "HelloPack bővítmény deaktiválva."
+
+#: inc/admin/class-hellopack-client-admin.php:1499
+msgid "HelloWP API"
+msgstr "HelloWP API"
+
+#. Author of the plugin
+msgid "HelloWP.io"
+msgstr "HelloWP.io"
+
+#: inc/admin/view/partials/help.php:21 inc/admin/view/partials/intro.php:98
+#: inc/admin/view/partials/tabs.php:48
+msgid "Help"
+msgstr "Súgó"
+
+#: inc/admin/view/partials/plugins.php:36
+msgid ""
+"Here you can find the latest version of the plugins in the HelloPack "
+"repository. You can also install and update them."
+msgstr ""
+"Itt találod a HelloPack könyvtárban lévő bővítményeket. Telepítheted és "
+"frissítheted is őket."
+
+#: inc/admin/view/partials/themes.php:26
+msgid ""
+"Here you can find the latest version of the themes in the HelloPack "
+"repository. You can also install and update them."
+msgstr ""
+"Itt találod a HelloPack könyvtárban lévő frissíthető és telepíthető "
+"sablonokat. Telepítheted és frissítheted is őket."
+
+#: inc/admin/view/partials/settings.php:29
+msgid ""
+"Here you can set up your API key and make various configurations related to "
+"the updater."
+msgstr ""
+"Itt beállíthatod az API-kulcsodat és különböző konfigurációkat végezhetsz, "
+"amelyek a frissítővel kapcsolatosak."
+
+#: inc/admin/view/partials/settings.php:64
+msgid "How to Create an API Key?"
+msgstr "Hogyan hozz létre egy API kulcsot?"
+
+#. Author URI of the plugin
+msgid "https://hellowp.io"
+msgstr "https://hellowp.io"
+
+#. Plugin URI of the plugin
+msgid "https://hellowp.io/"
+msgstr "https://hellowp.io/"
+
+#: inc/admin/class-hellopack-client-admin.php:515
+#: inc/admin/view/callback/setting/items.php:22
+msgid "ID"
+msgstr "Azonosító"
+
+#: inc/admin/class-hellopack-client-admin.php:1598
+msgid ""
+"If you’re on a production website, it’s best to set WP_DEBUG to false, "
+"please ask your hosting provider to do this if you’re unsure."
+msgstr ""
+"Ha egy éles weboldalon vagy, a legjobb, ha a WP_DEBUG-ot FALSE-ra állítod, "
+"kérlek kérdezd meg a tárhelyszolgáltatódat, hogy megtegye ezt, ha nem vagy "
+"biztos benne."
+
+#: inc/class-hellopack-client-cli.php:37
+msgid "Incorrect API key – the license key must be exactly 42 characters long."
+msgstr ""
+"Helytelen API kulcs – a licenckulcsnak pontosan 42 karakter hosszúnak kell "
+"lennie."
+
+#: inc/admin/class-hellopack-client-admin.php:598
+#: inc/admin/class-hellopack-client-admin.php:599 inc/admin/functions.php:161
+#: inc/admin/functions.php:525
+msgid "Install"
+msgstr "Telepítés"
+
+#. translators: %s: theme name.
+#: inc/admin/functions.php:164 inc/admin/functions.php:526
+msgid "Install %s"
+msgstr "%s telepítése"
+
+#: inc/admin/class-hellopack-client-admin.php:1067
+#: inc/admin/class-hellopack-client-admin.php:1092
+msgid "Installing Plugin..."
+msgstr "Bővítmény telepítése..."
+
+#. translators: %s is the plugin name and version
+#: inc/admin/class-hellopack-client-admin.php:1100
+msgid "Installing Plugin: %s"
+msgstr "Bővítmény telepítése: %s"
+
+#: inc/admin/class-hellopack-client-admin.php:1126
+#: inc/admin/class-hellopack-client-admin.php:1151
+msgid "Installing Theme..."
+msgstr "Téma telepítése..."
+
+#. translators: %s is the theme name and version
+#: inc/admin/class-hellopack-client-admin.php:1160
+msgid "Installing Theme: %s"
+msgstr "Téma telepítése: %s"
+
+#. translators: %1$s is the desired memory limit in MB, %2$s is the current memory limit in MB.
+#. translators: %1$s is the current upload limit in MB, %2$s is the desired upload limit in MB.
+#. translators: %s is the current input vars.
+#: inc/admin/class-hellopack-client-admin.php:1368
+#: inc/admin/class-hellopack-client-admin.php:1397
+#: inc/admin/class-hellopack-client-admin.php:1421
+#: inc/admin/class-hellopack-client-admin.php:1442
+msgid "is ok at %s."
+msgstr ""
+
+#: inc/admin/class-hellopack-client-admin.php:1637
+msgid "is ok."
+msgstr "rendben van."
+
+#: inc/admin/class-hellopack-client-admin.php:554
+msgid "Item ID"
+msgstr "Elem Azonosító"
+
+#: inc/admin/view/partials/intro.php:23
+msgid "Link to hellopack dashboard"
+msgstr "Link a hellopack irányítópulthoz"
+
+#. translators: %s: theme name.
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:57
+#: inc/admin/functions.php:145
+msgid "Live Preview"
+msgstr "Élő Előnézet"
+
+#. translators: %s: theme name.
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:57
+#: inc/admin/functions.php:145
+msgid "Live Preview &#8220;%s&#8221;"
+msgstr "Előnézet &#8220;%s&#8221;"
+
+#: inc/admin/view/partials/settings.php:66
+msgid "Log in to the HelloWP.io site and click on the"
+msgstr "Jelentkezz be a HelloWP.io oldalra és kattints a"
+
+#: inc/admin/view/partials/settings.php:66
+msgid "menu item."
+msgstr "menüpontra."
+
+#: inc/admin/class-hellopack-client-admin.php:1565
+msgid ""
+"Missing API permissions. Please re-create your HelloPack API token with the "
+"correct permissions."
+msgstr ""
+"Hiányzó API engedély. Kérlek, hozd létre újra a HelloPack API kulcsodat."
+
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:110
+#: inc/admin/functions.php:501
+msgid "Network Activate"
+msgstr "Hálózati Aktiválás"
+
+#. translators: %s: plugin name.
+#: inc/admin/functions.php:505
+msgid "Network Activate %s"
+msgstr "Hálózati Aktiválás: %s"
+
+#. translators: %s: theme name.
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:62
+#: inc/admin/functions.php:118
+msgid "Network Enable"
+msgstr "Hálózati Engedélyezés"
+
+#. translators: %s: theme name.
+#: inc/admin/functions.php:120
+msgid "Network Enable &#8220;%s&#8221;"
+msgstr "Hálózati Engedélyezés &#8220;%s&#8221;"
+
+#: inc/admin/functions.php:281
+msgid "Next &raquo;"
+msgstr "Következő &raquo;"
+
+#: inc/admin/view/partials/plugin-no-result.php:5
+msgid "No Results Found!"
+msgstr "Nincs találat!"
+
+#: inc/admin/class-hellopack-client-admin.php:1559
+msgid ""
+"Not currently authenticated with the HelloPack API. Please add your API "
+"token."
+msgstr ""
+"Jelenleg nincs hitelesítve a HelloPack API-val. Kérlek, add hozzá az API-"
+"kulcsodat."
+
+#: inc/admin/view/partials/settings.php:120
+msgid "Off"
+msgstr "Ki"
+
+#: inc/admin/view/partials/settings.php:113
+msgid "On"
+msgstr "Be"
+
+#: inc/admin/view/notice/error-single-use.php:11
+msgid ""
+"One or more Single Use OAuth Personal Tokens could not be verified and "
+"should be removed."
+msgstr ""
+"Egy vagy több Egyszer Használatos OAuth Személyes Token nem ellenőrizhető és "
+"el kell távolítani."
+
+#. translators: %s is the current execution time in seconds.
+#: inc/admin/class-hellopack-client-admin.php:1470
+msgid "PHP execution time limit is ok at %s seconds."
+msgstr "A PHP végrehajtási idő limitje rendben van, %s másodperc."
+
+#: inc/admin/class-hellopack-client-admin.php:1467
+#: inc/admin/class-hellopack-client-admin.php:1481
+msgid "PHP Execution Time:"
+msgstr "PHP Végrehajtási Idő:"
+
+#: inc/admin/class-hellopack-client-admin.php:1439
+#: inc/admin/class-hellopack-client-admin.php:1453
+msgid "PHP Max Input Vars:"
+msgstr "PHP Max Bemeneti Változók:"
+
+#: inc/admin/class-hellopack-client-admin.php:1365
+#: inc/admin/class-hellopack-client-admin.php:1378
+#: inc/admin/class-hellopack-client-admin.php:1394
+#: inc/admin/class-hellopack-client-admin.php:1402
+msgid "PHP Memory Limit:"
+msgstr "PHP Memória Limit:"
+
+#: inc/admin/class-hellopack-client-admin.php:1419
+#: inc/admin/class-hellopack-client-admin.php:1425
+msgid "PHP Upload Limits:"
+msgstr "PHP Feltöltési Limitjei:"
+
+#. translators: %s is the current PHP version.
+#: inc/admin/class-hellopack-client-admin.php:1614
+msgid "PHP version is ok at %s."
+msgstr "A PHP verzió rendben van: %s."
+
+#: inc/admin/class-hellopack-client-admin.php:1611
+msgid "PHP Version:"
+msgstr "PHP Verzió:"
+
+#. translators: %s is the current PHP version.
+#: inc/admin/class-hellopack-client-admin.php:1618
+msgid ""
+"Please ask the hosting provider to upgrade your PHP version to at least 7.4 "
+"or above."
+msgstr ""
+"Kérlek, kérdezd meg a tárhelyszolgáltatódat, hogy frissítse a PHP verziódat "
+"legalább 7.4-re vagy annál magasabbra."
+
+#: inc/admin/class-hellopack-client-admin.php:1627
+msgid ""
+"Please enable WordPress FS_METHOD direct - or ask your hosting provider to "
+"do this if you’re unsure."
+msgstr ""
+"Kérlek, engedélyezd a WordPress FS_METHOD direct-et - vagy kérdezd meg a "
+"tárhelyszolgáltatódat, ha nem vagy biztos benne."
+
+#: inc/admin/view/notice/error-permissions.php:13
+msgid "Please ensure only the following permissions are enabled: "
+msgstr ""
+"Kérlek, győződj meg róla, hogy csak a következő engedélyek vannak "
+"engedélyezve: "
+
+#: inc/admin/class-hellopack-client-admin.php:1637
+msgid ""
+"Please set correct WordPress PHP write permissions for the wp-content "
+"directory - or ask your hosting provider to do this if you’re unsure."
+msgstr ""
+"Kérlek, állítsd be helyesen a WordPress PHP írási jogosultságait a wp-"
+"content mappához - vagy kérdezd meg a tárhelyszolgáltatódat, ha nem vagy "
+"biztos benne."
+
+#: inc/admin/class-hellopack-client-admin.php:1646
+msgid ""
+"Please try to reduce the number of active plugins on your WordPress site, as "
+"this will slow things down."
+msgstr ""
+"Kérlek, próbáld meg csökkenteni az aktív bővítmények számát a WordPress "
+"oldaladon, mivel ez lassítja a rendszert."
+
+#: inc/admin/class-hellopack-client-admin.php:1494
+msgid "Plugin Update API"
+msgstr "Bővítmény Frissítési API"
+
+#: inc/class-hellopack-client-cli.php:53
+msgid "Plugin update data loaded. No available updates."
+msgstr "A bővítmény frissítési adatai betöltve. Nincs elérhető frissítés."
+
+#: inc/class-hellopack-client-cli.php:51
+msgid "Plugin update data loaded. Number of available updates: %d"
+msgstr "A bővítmény frissítési adatai betöltve. Elérhető frissítések száma: %d"
+
+#: inc/admin/view/partials/intro.php:55 inc/admin/view/partials/plugins.php:25
+#: inc/admin/view/partials/tabs.php:28
+msgid "Plugins"
+msgstr "Bővítmények"
+
+#: inc/admin/view/partials/help.php:65
+msgid ""
+"Problem starting healthcheck. Please check javascript console for errors."
+msgstr ""
+"Probléma a rendszerellenőrzés indításakor. Kérlek, ellenőrizd a JavaScript "
+"konzolt hibákért."
+
+#: inc/admin/class-hellopack-client-admin.php:486
+msgid "Remove"
+msgstr "Eltávolítás"
+
+#: inc/admin/class-hellopack-client-admin.php:539
+msgid "Remove Item"
+msgstr "Elem Eltávolítása"
+
+#: inc/admin/class-hellopack-client-admin.php:1069
+#: inc/admin/class-hellopack-client-admin.php:1094
+#: inc/admin/class-hellopack-client-admin.php:1153
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:114
+msgid "Return to Plugin Installer"
+msgstr "Vissza a Bővítmény Telepítőhöz"
+
+#: inc/admin/class-hellopack-client-admin.php:1128
+#: inc/admin/class-hellopack-client-theme-installer-skin.php:68
+msgid "Return to Theme Installer"
+msgstr "Vissza a Téma Telepítőhöz"
+
+#: inc/admin/class-hellopack-client-admin.php:485
+msgid "Save"
+msgstr "Mentés"
+
+#: inc/admin/view/partials/settings.php:178
+msgid "Save Changes"
+msgstr "Változtatások Mentése"
+
+#: inc/admin/view/partials/plugin-search.php:10
+msgid "Search"
+msgstr "Keresés"
+
+#: inc/admin/view/partials/plugin-search.php:8
+msgid "Search in HelloPack repository..."
+msgstr "Keresés a HelloPack bővítménykönyvtárban..."
+
+#: inc/admin/view/partials/intro.php:84 inc/admin/view/partials/settings.php:26
+#: inc/admin/view/partials/tabs.php:45
+msgid "Settings"
+msgstr "Beállítások"
+
+#: inc/admin/class-hellopack-client-admin.php:639
+msgid "Single Item Tokens (Advanced)"
+msgstr "Egyedi Elem Tokenek (Haladó)"
+
+#: inc/admin/view/partials/intro.php:106
+msgid "Support"
+msgstr "Támogatás"
+
+#: inc/admin/class-hellopack-client-admin.php:510
+#: inc/admin/view/partials/settings.php:182
+msgid "Test API Connection"
+msgstr "API Kapcsolat Tesztelése"
+
+#: inc/admin/view/partials/help.php:60
+msgid "Testing Server and Communication:"
+msgstr "Szerver és Kommunikáció Tesztelése:"
+
+#: inc/legacy/modules/module-plugin-jetHelloPack.php:11
+msgid ""
+"The <strong>JetHelloPack</strong> plugin is active on your site, but it is "
+"no longer needed. You can safely deactivate and delete it."
+msgstr ""
+"A <strong>JetHelloPack</strong> bővítmény aktív a weboldaladon, de már nincs "
+"rá szükség. Biztonságosan kikapcsolhatod és törölheted."
+
+#: inc/admin/view/partials/settings.php:158
+msgid ""
+"The Admin Notification Cleaner is a carefully selected compilation of "
+"JavaScript and CSS snippets aimed at streamlining the WordPress admin "
+"interface. It removes superfluous notifications that plugin developers often "
+"introduce. The goal is to foster a tidier and more concentrated admin "
+"dashboard, thereby boosting productivity and improving the user experience."
+msgstr ""
+"Az Admin Notification Cleaner egy gondosan összeválogatott gyűjteménye a "
+"JavaScript és a CSS kódrészleteknek, amelyek a WordPress adminisztrációs "
+"felületének korszerűsítésére irányulnak. Kikapcsolja azokat a felesleges és "
+"zavaró értesítéseket, amelyeket gyakran használnak a bővítményfejlesztők. A "
+"cél egy rendezettebb és koncentráltabb adminisztrációs munkaterület "
+"megteremtése, ezáltal növelve a termelékenységet és javítva a felhasználói "
+"élményt."
+
+#: hellopack-client.php:90
+msgid ""
+"The HelloPack Client plugin requires PHP version 7.4+, plugin is currently "
+"NOT ACTIVE. Please\n"
+"contact the hosting provider to upgrade the version of PHP."
+msgstr ""
+"A HelloPack Kliens bővítmény PHP 7.4+ verziót igényel, jelenleg NEM AKTÍV. "
+"Kérlek,\n"
+"lépj kapcsolatba a tárhelyszolgáltatóddal a PHP verzió frissítése érdekében."
+
+#: inc/class-hellopack-client-cli.php:108
+msgid "The HelloPack license is active. Key: %s"
+msgstr "A HelloPack licenc aktív. Kulcs: %s"
+
+#: inc/class-hellopack-client-cli.php:106
+msgid "The HelloPack license is not activated."
+msgstr "A HelloPack licenc nincs aktiválva."
+
+#: inc/admin/functions.php:676
+msgid ""
+"The HelloPack plugin is not active, the site is not receiving security "
+"updates."
+msgstr ""
+"A HelloPack bővítmény nem aktív, az oldal nem kap biztonsági frissítéseket."
+
+#: inc/admin/class-hellopack-client-admin.php:1205
+msgid "The item cannot be downloaded."
+msgstr "Az elem nem tölthető le."
+
+#: inc/admin/class-hellopack-client-admin.php:1190
+#: inc/admin/class-hellopack-client-admin.php:1291
+msgid "The Item ID is missing."
+msgstr "Az elem azonosítója hiányzik."
+
+#: inc/admin/view/notice/error.php:11
+msgid ""
+"The OAuth Personal Token could not be verified. Please check that the Token "
+"has been entered correctly and has the minimum required permissions."
+msgstr ""
+"Az API-kulcs nem ellenőrizhető. Kérlek, ellenőrizd, hogy a kulcs helyesen "
+"lett-e megadva."
+
+#: inc/admin/class-hellopack-client-admin.php:1188
+msgid "The Token is missing."
+msgstr "A token hiányzik."
+
+#: inc/admin/class-hellopack-client-admin.php:1201
+msgid "The Token or Item ID is incorrect."
+msgstr "A token vagy az elem azonosítója helytelen."
+
+#: inc/admin/view/partials/intro.php:70 inc/admin/view/partials/tabs.php:42
+#: inc/admin/view/partials/themes.php:23
+msgid "Themes"
+msgstr "Sablonok"
+
+#: inc/admin/view/partials/plugin-no-result.php:8
+msgid ""
+"There is currently no such plugin in the package. Please choose another one."
+msgstr "Jelenleg nincs ilyen bővítmény a csomagban. Kérlek, válassz másikat."
+
+#: inc/admin/class-hellopack-client-admin.php:549
+msgid "Token"
+msgstr "Token"
+
+#: inc/admin/view/partials/help.php:45
+msgid "Troubleshooting"
+msgstr "Hibaelhárítás"
+
+#: inc/admin/view/partials/help.php:42
+msgid "Troubleshooting:"
+msgstr "Hibaelhárítás:"
+
+#: inc/admin/class-hellopack-client-admin.php:1362
+#: inc/admin/class-hellopack-client-admin.php:1391
+#: inc/admin/class-hellopack-client-admin.php:1415
+msgid "Unlimited"
+msgstr "Korlátlan"
+
+#. translators: %1$s: theme name, %2$s: theme slug, %3$s: theme version, %4$s: update text.
+#: inc/admin/functions.php:72 inc/admin/functions.php:409
+msgid "Update %s now"
+msgstr "Frissítsd most: %s"
+
+#: inc/admin/functions.php:76 inc/admin/functions.php:414
+msgid "Update Available"
+msgstr "Frissítés Elérhető"
+
+#: js/updates.js:466
+msgid "Update in progress, really leave?"
+msgstr "Frissítés folyamatban, tényleg el akarsz menni?"
+
+#: js/updates.js:262
+msgid "Updated!"
+msgstr "Frissítve!"
+
+#. translators: %s: plugin name
+#: js/updates.js:144 js/updates.js:197 js/updates.js:257
+msgid "Updating %s..."
+msgstr "%s frissítése..."
+
+#: js/updates.js:298
+msgid "Updating failed"
+msgstr "A frissítés sikertelen"
+
+#. translators: %s: plugin name
+#: js/updates.js:302
+msgid "Updating failed %s..."
+msgstr "A frissítés sikertelen: %s..."
+
+#: inc/admin/class-hellopack-client-admin.php:582
+msgid "Version"
+msgstr "Verzió"
+
+#. translators: Version %s refers to the version number
+#: inc/admin/class-hellopack-client-admin.php:581 inc/admin/functions.php:184
+#: inc/admin/functions.php:185 inc/admin/functions.php:544
+#: inc/admin/functions.php:545
+msgid "Version %s"
+msgstr "Verzió %s"
+
+#. translators: %s: theme version.
+#: inc/admin/functions.php:85 inc/admin/functions.php:422
+msgid "View version %1$s details."
+msgstr ""
+
+#: inc/admin/view/callback/section/items.php:12
+msgid "Warning: These tokens can be revoked by the account holder at any time."
+msgstr ""
+"Figyelmeztetés: Ezeket a tokeneket a fióktulajdonos bármikor visszavonhatja."
+
+#: inc/admin/view/partials/help.php:43
+msgid ""
+"We have compiled a list of issues that typically cause problems when using "
+"HelloPack. Please review the"
+msgstr ""
+"Összeállítottunk egy listát a tipikus problémákról, amelyek a HelloPack "
+"használatakor merülhetnek fel. Kérlek, tekintsd meg a"
+
+#: inc/admin/class-hellopack-client-admin.php:1636
+msgid "WordPress File Permissions:"
+msgstr "WordPress Fájl Jogosultságok:"
+
+#: inc/admin/class-hellopack-client-admin.php:1626
+msgid "WordPress Filesystem:"
+msgstr "WordPress Fájlrendszer:"
+
+#. Description of the plugin
+msgid "WordPress Theme & Plugin management for the HelloPack Client."
+msgstr "WordPress sablon- és bővítménykezelés. "
+
+#: inc/admin/class-hellopack-client-admin.php:1598
+msgid "WP Debug is disabled, all ok."
+msgstr "A WP Debug ki van kapcsolva, minden rendben."
+
+#: inc/admin/class-hellopack-client-admin.php:1597
+msgid "WP Debug:"
+msgstr "WP Debug:"
+
+#: inc/admin/class-hellopack-client-admin.php:540
+msgid ""
+"You are about to remove the connection between the HelloPack Client API and "
+"this item. You cannot undo this action."
+msgstr ""
+"Éppen megszakítani készülsz a kapcsolatot a HelloPack Kliens API és ez az "
+"elem között. Ezt a műveletet nem lehet visszavonni."
+
+#: inc/admin/view/partials/help.php:81
+msgid ""
+"You can easily copy this text. Just click into it and press the Ctrl+C and "
+"Ctrl+V keys | ⌘+C and ⌘+V keys:"
+msgstr ""
+"Ezt a szöveget könnyedén kimásolhatod. Csak kattints bele és nyomd meg a "
+"Ctrl+C és Ctrl+V billentyűket | ⌘+C és ⌘+V billentyűket: "
+
+#: inc/admin/class-hellopack-client-admin.php:285
+msgid "You do not have sufficient permissions to delete transients."
+msgstr "Nincs elegendő jogosultságod az átmeneti adatok törléséhez."
+
+#: inc/admin/class-hellopack-client-admin.php:1068
+msgid "You do not have sufficient permissions to install plugins on this site."
+msgstr ""
+"Nincs elegendő jogosultságod bővítmények telepítéséhez ezen az oldalon."
+
+#: inc/admin/class-hellopack-client-admin.php:1127
+msgid "You do not have sufficient permissions to install themes on this site."
+msgstr "Nincs elegendő jogosultságod sablonok telepítéséhez ezen az oldalon."
+
+#: inc/admin/view/notice/success.php:11
+msgid "Your HelloPack API-key has been verified."
+msgstr "Sikeres HelloPack aktiválás!"
+
+#: inc/admin/view/notice/success-no-items.php:11
+msgid ""
+"Your HelloPack API-key has been verified. However, there are no WordPress "
+"downloadable items in your account."
+msgstr ""
+"A HelloPack API-kulcsod ellenőrizve lett. Azonban nincsenek letölthető "
+"WordPress elemek a fiókodban."
+
+#: inc/admin/view/partials/settings.php:45
+msgid "Your Website is Registered"
+msgstr "A HelloPack aktív"
+
+#: inc/admin/class-hellopack-client-admin.php:1605
+msgid "ZipArchive is available."
+msgstr "A ZipArchive elérhető."
+
+#: inc/admin/class-hellopack-client-admin.php:1605
+msgid ""
+"ZipArchive is not available. If you have issues installing or updating items "
+"please ask your hosting provider to enable ZipArchive."
+msgstr ""
+"A ZipArchive nem érhető el. Ha problémáid vannak elemek telepítésével vagy "
+"frissítésével, kérlek kérdezd meg a tárhelyszolgáltatódat, hogy engedélyezze "
+"a ZipArchive-et."
+
+#: inc/admin/class-hellopack-client-admin.php:1604
+msgid "ZipArchive Support:"
+msgstr "ZipArchive Támogatás:"

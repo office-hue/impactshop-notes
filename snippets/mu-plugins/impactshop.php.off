@@ -1,0 +1,468 @@
+<?php
+/**
+ * ImpactShop – MU plugin (Dognet API + Redirect + UI + Report) – COMPAT
+ * Helye: wp-content/mu-plugins/impactshop.php
+ */
+
+/* ============================== KONFIG ============================== */
+if (!defined('DOGNET_LOGIN_EMAIL'))    define('DOGNET_LOGIN_EMAIL',    'office@sharity.hu');
+if (!defined('DOGNET_LOGIN_PASSWORD')) define('DOGNET_LOGIN_PASSWORD', 'kudwyr-wavgaf-tYtzo2');
+if (!defined('DOGNET_API_TOKEN'))      define('DOGNET_API_TOKEN', '');
+if (!defined('DOGNET_AD_CHANNEL_ID'))  define('DOGNET_AD_CHANNEL_ID', 0);
+if (!defined('IMPACTSHOP_CACHE_TTL'))  define('IMPACTSHOP_CACHE_TTL', 15 * MINUTE_IN_SECONDS);
+if (!defined('DOGNET_TOKEN_TTL'))      define('DOGNET_TOKEN_TTL', 20 * HOUR_IN_SECONDS);
+
+/* ============================== BEÁLLÍTÁS ============================== */
+function impactshop_settings() {
+  return array(
+    'shops_csv_url'   => 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=0&single=true&output=csv',
+    'banners_csv_url' => 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=328401803&single=true&output=csv&v=4',
+    'fillout_url'     => 'https://form.fillout.com/t/eM61RLkz6jus',
+    'cache_ttl'       => IMPACTSHOP_CACHE_TTL,
+  );
+}
+
+/* ============================ KIS SEGÉDEK ============================ */
+function impactshop_q($key, $def='') {
+  return isset($_GET[$key]) ? sanitize_text_field($_GET[$key]) : $def;
+}
+function impactshop_slugify_header($s) {
+  $s = trim(mb_strtolower($s, 'UTF-8'));
+  $map = array('á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ö'=>'o','ő'=>'o','ú'=>'u','ü'=>'u','ű'=>'u','ä'=>'a','ë'=>'e','ï'=>'i','ö'=>'o','ü'=>'u');
+  $s = strtr($s, $map);
+  $s = preg_replace('~[^a-z0-9]+~u', '_', $s);
+  return trim($s, '_');
+}
+function impactshop_fetch_csv_assoc($url, $cache_key, $ttl) {
+  $cached = get_transient($cache_key);
+  if ($cached !== false) return $cached;
+
+  $resp = wp_remote_get($url, array('timeout'=>20));
+  if (is_wp_error($resp)) return array();
+  $body = wp_remote_retrieve_body($resp);
+  if (!$body) return array();
+
+  if (substr($body,0,3) === "\xEF\xBB\xBF") $body = substr($body,3);
+  $lines = preg_split("/\r\n|\n|\r/", $body);
+  if (!$lines || count($lines) < 1) return array();
+
+  $first  = $lines[0];
+  $delim  = (substr_count($first, ';') > substr_count($first, ',')) ? ';' : ',';
+  $headers_raw = str_getcsv($first, $delim);
+  $headers = array();
+  foreach ($headers_raw as $h) { $headers[] = impactshop_slugify_header($h); }
+
+  $rows = array();
+  for ($i=1; $i<count($lines); $i++) {
+    if ($lines[$i] === '' || $lines[$i] === false) continue;
+    $cols = str_getcsv($lines[$i], $delim);
+    if (count($cols) == 1 && $cols[0] === null) continue;
+    $row = array();
+    foreach ($headers as $idx=>$key) {
+      $row[$key] = isset($cols[$idx]) ? trim($cols[$idx]) : '';
+    }
+    if (implode('', $row) === '') continue;
+    $rows[] = $row;
+  }
+  set_transient($cache_key, $rows, $ttl);
+  return $rows;
+}
+
+/* ======================= SHOPS & BANNERS ====================== */
+function impactshop_get_shops_raw() {
+  $s = impactshop_settings();
+  return impactshop_fetch_csv_assoc($s['shops_csv_url'], 'impactshop_csv_shops', $s['cache_ttl']);
+}
+function impactshop_get_banners_raw() {
+  $s = impactshop_settings();
+  return impactshop_fetch_csv_assoc($s['banners_csv_url'], 'impactshop_csv_banners', $s['cache_ttl']);
+}
+function impactshop_get_shops() {
+  $rows = impactshop_get_shops_raw();
+  $out = array();
+  foreach ($rows as $r) {
+    $name   = isset($r['name']) ? $r['name'] : (isset($r['nev']) ? $r['nev'] : '');
+    $slug   = isset($r['shop_slug']) ? $r['shop_slug'] : (isset($r['slug']) ? $r['slug'] : (isset($r['go_slug']) ? $r['go_slug'] : ''));
+    $cat    = isset($r['category']) ? $r['category'] : (isset($r['kategoria']) ? $r['kategoria'] : 'Egyéb');
+    $logo   = isset($r['logo_url']) ? $r['logo_url'] : (isset($r['logo']) ? $r['logo'] : (isset($r['image']) ? $r['image'] : ''));
+    if (!$name || !$slug) continue;
+    $out[] = array(
+      'name'           => $name,
+      'shop_slug'      => $slug,
+      'category'       => $cat ? $cat : 'Egyéb',
+      'logo'           => $logo,
+      'dognet_base'    => isset($r['dognet_base']) ? $r['dognet_base'] : '',
+      'deeplink_param' => isset($r['pdognet_deeplink_param']) ? $r['pdognet_deeplink_param'] : (isset($r['dognet_deeplink_param']) ? $r['dognet_deeplink_param'] : 'url'),
+      'product_url'    => isset($r['product_url']) ? $r['product_url'] : (isset($r['homepage']) ? $r['homepage'] : ''),
+      'commission_min' => isset($r['commission_min']) ? $r['commission_min'] : '',
+      'commission_max' => isset($r['commission_max']) ? $r['commission_max'] : '',
+      'deals_feed'     => isset($r['deals_feed']) ? $r['deals_feed'] : '',
+    );
+  }
+  return $out;
+}
+function impactshop_find_shop($slug) {
+  $slug = trim(strtolower($slug));
+  foreach (impactshop_get_shops() as $s) {
+    if (strtolower($s['shop_slug']) === $slug) return $s;
+  }
+  return null;
+}
+function impactshop_error($msg) {
+  status_header(400);
+  wp_die('<div style="padding:24px;font:16px/1.5 system-ui">'. esc_html($msg) .'</div>', 'ImpactShop hiba');
+}
+
+/* ====================== DOGNET API ====================== */
+function dognet_extract_campaign_id_from_base($dognet_base) {
+  if (!$dognet_base) return 0;
+  $qs = parse_url($dognet_base, PHP_URL_QUERY);
+  $parts = array();
+  if ($qs) parse_str($qs,$parts);
+  return isset($parts['cid']) ? intval($parts['cid']) : 0;
+}
+function dognet_get_token($force_refresh = false, $diag = false) {
+  if (DOGNET_API_TOKEN) return DOGNET_API_TOKEN;
+  $key = 'dognet_api_token_cache_v1';
+  if (!$force_refresh) {
+    $tok = get_transient($key);
+    if ($tok) return $tok;
+  }
+  $attempts = array(
+    array('POST','/auth/login', array('email'=>DOGNET_LOGIN_EMAIL,'password'=>DOGNET_LOGIN_PASSWORD), 'json'),
+    array('POST','/auth/login', array('email'=>DOGNET_LOGIN_EMAIL,'password'=>DOGNET_LOGIN_PASSWORD), 'form'),
+  );
+  $ok = '';
+  foreach ($attempts as $a) {
+    $m=$a[0]; $p=$a[1]; $b=$a[2]; $fmt=$a[3];
+    $args = array('timeout'=>20,'headers'=>array('Content-Type'=>$fmt==='json'?'application/json':'application/x-www-form-urlencoded'));
+    $args['body'] = ($fmt==='json') ? wp_json_encode($b) : http_build_query($b);
+    $resp = wp_remote_request('https://api.app.dognet.com/api/v1'.$p, $args);
+    if (is_wp_error($resp)) { if($diag) echo "• $p → WP_Error\n"; continue; }
+    $code = wp_remote_retrieve_response_code($resp);
+    $json = json_decode(wp_remote_retrieve_body($resp), true);
+    if ($code>=200 && $code<300 && is_array($json)) {
+      $token = isset($json['token']) ? $json['token'] : (isset($json['data']['token']) ? $json['data']['token'] : '');
+      if ($token) { $ok = $token; break; }
+    }
+  }
+  if ($ok) { set_transient($key, $ok, DOGNET_TOKEN_TTL); return $ok; }
+  return '';
+}
+function dognet_api_request($method, $path, $body=null) {
+  $token = dognet_get_token(false);
+  if (!$token) return new WP_Error('no_token','Dognet API token nem elérhető');
+  $url = 'https://api.app.dognet.com/api/v1'.$path;
+  $args = array(
+    'timeout'=>30,
+    'headers'=>array('Authorization'=>'Bearer '.$token,'Content-Type'=>'application/json','Accept'=>'application/json'),
+    'method'=>$method,
+  );
+  if ($body!==null) $args['body']=wp_json_encode($body);
+  $resp = wp_remote_request($url,$args);
+  if (is_wp_error($resp)) return $resp;
+  $code = wp_remote_retrieve_response_code($resp);
+  $raw  = wp_remote_retrieve_body($resp);
+  $json = json_decode($raw,true);
+  if ($code==401) {
+    delete_transient('dognet_api_token_cache_v1');
+    $token = dognet_get_token(true);
+    if ($token) return dognet_api_request($method,$path,$body);
+  }
+  if ($code<200||$code>=300) {
+    return new WP_Error('api_error','Dognet API hiba '.$code,array('resp'=>$json?$json:$raw,'code'=>$code,'path'=>$path,'method'=>$method));
+  }
+  return $json ? $json : array();
+}
+
+/* ==== KONVERZIÓK LEKÉRÉSE – metódus/endpoint fallback === */
+function dognet_api_list_conversions_page($params, $page = 1, $per_page = 100) {
+  $page = max(1, intval($page)); $per_page = max(1, min(200, intval($per_page)));
+  $payload = array('page'=>$page,'per_page'=>$per_page);
+
+  if (!empty($params['date_from']))  $payload['date_from']=$params['date_from'];
+  if (!empty($params['date_to']))    $payload['date_to']=$params['date_to'];
+  if (!empty($params['campaign_id']))$payload['campaign_id']=intval($params['campaign_id']);
+  if (!empty($params['status']) && $params['status']!=='all') $payload['status']=$params['status'];
+
+  $candidates = array(
+    array('POST','/publisher/conversions/search'),
+    array('POST','/conversions/search'),
+    array('GET', '/publisher/conversions'),
+    array('GET', '/conversions'),
+  );
+
+  $lastErr = null;
+  foreach($candidates as $cand){
+    $method=$cand[0]; $path=$cand[1];
+    if($method==='GET'){
+      $qs = array();
+      foreach(array('page','per_page','date_from','date_to','status','campaign_id') as $k){
+        if (isset($payload[$k]) && $payload[$k]!=='' && $payload[$k]!==null) $qs[$k]=$payload[$k];
+      }
+      $resp = dognet_api_request('GET',$path.( $qs ? ('?'.http_build_query($qs)) : '' ));
+    } else {
+      $resp = dognet_api_request('POST',$path,$payload);
+    }
+    if(is_wp_error($resp)){ $lastErr=$resp; continue; }
+
+    $raw = $resp; $items=array(); $last_page=$page;
+    if(isset($raw['data']['data']) && is_array($raw['data']['data'])){
+      $items=$raw['data']['data']; $last_page=intval(isset($raw['data']['last_page'])?$raw['data']['last_page']:$page);
+      return array('items'=>$items,'last_page'=>$last_page,'source'=>$path.' '.$method);
+    }
+    if(isset($raw['data']) && is_array($raw['data']) && isset($raw['meta'])){
+      $items=$raw['data']; $last_page=intval(isset($raw['meta']['last_page'])?$raw['meta']['last_page']:$page);
+      return array('items'=>$items,'last_page'=>$last_page,'source'=>$path.' '.$method);
+    }
+    if(isset($raw['data']) && is_array($raw['data'])){
+      $items=$raw['data']; return array('items'=>$items,'last_page'=>$last_page,'source'=>$path.' '.$method);
+    }
+    if(is_array($raw) && isset($raw[0])){
+      $items=$raw; return array('items'=>$items,'last_page'=>$last_page,'source'=>$path.' '.$method);
+    }
+    $lastErr = new WP_Error('bad_shape','Ismeretlen API válaszforma',array('resp'=>$raw,'endpoint'=>$path,'method'=>$method));
+  }
+  if($lastErr) return $lastErr;
+  return new WP_Error('no_endpoint','Nincs működő Dognet konverzió végpont');
+}
+
+/* ==================== REDIRECTEK (/go és /go-deal) =================== */
+function impactshop_add_rewrites() {
+  add_rewrite_rule('^go/([^/]+)/?$',      'index.php?impactshop_go=1&impactshop_slug=$matches[1]',   'top');
+  add_rewrite_rule('^go/?$',              'index.php?impactshop_go=1',                                'top');
+  add_rewrite_rule('^go-deal/([^/]+)/?$', 'index.php?impactshop_deal=1&impactshop_slug=$matches[1]', 'top');
+  add_rewrite_rule('^go-deal/?$',         'index.php?impactshop_deal=1',                              'top');
+}
+add_action('init','impactshop_add_rewrites');
+function impactshop_add_query_vars($vars) { $vars[]='impactshop_go'; $vars[]='impactshop_deal'; $vars[]='impactshop_slug'; return $vars; }
+add_filter('query_vars','impactshop_add_query_vars');
+
+function dognet_api_pick_ad_channel_id() {
+  if (DOGNET_AD_CHANNEL_ID) return DOGNET_AD_CHANNEL_ID;
+  $list = dognet_api_request('GET','/ad-channels');
+  if (is_wp_error($list) || empty($list['data'])) return 0;
+  foreach ($list['data'] as $c) {
+    if (isset($c['type']) && stripos($c['type'],'web')!==false) return intval($c['id']);
+  }
+  return intval($list['data'][0]['id']);
+}
+function dognet_api_generate_link($campaign_id,$deeplink='',$d1='',$d2='') {
+  $ad_channel_id = dognet_api_pick_ad_channel_id();
+  if (!$ad_channel_id) return new WP_Error('no_channel','Nincs ad_channel');
+  $body = array('ad_channel_id'=>$ad_channel_id,'campaign_id'=>intval($campaign_id),'url_type'=>3);
+  if ($deeplink) $body['url']=$deeplink;
+  if ($d1) $body['data1']=$d1;
+  if ($d2) $body['data2']=$d2;
+  $json = dognet_api_request('POST','/campaigns/links/generate',$body);
+  if (is_wp_error($json)) return $json;
+  foreach(array('url','short_url','full_url') as $k){
+    if(!empty($json[$k])) return $json[$k];
+    if(!empty($json['data'][$k])) return $json['data'][$k];
+  }
+  return new WP_Error('bad_api','Ismeretlen API válasz');
+}
+function impactshop_redirect_with_propagation($url,$amb,$src) {
+  $add=array();
+  if($amb&&strpos($url,'amb=')===false)$add['amb']=$amb;
+  if($src&&strpos($url,'src=')===false)$add['src']=$src;
+  if(strpos($url,'utm_source=')===false)$add['utm_source']='sharity';
+  if(strpos($url,'utm_medium=')===false)$add['utm_medium']='impactshop';
+  if($add)$url.=(strpos($url,'?')===false?'?':'&').http_build_query($add);
+  wp_redirect($url,307);exit;
+}
+function impactshop_handle_go($is_deal) {
+  $shop=impactshop_q('shop'); if(!$shop){ $shop = get_query_var('impactshop_slug'); }
+  $ngo=impactshop_q('d1'); $u=impactshop_q('u'); $amb=impactshop_q('amb'); $src=impactshop_q('src')?:'impactshop';
+  if(!$shop||!$ngo)impactshop_error('Hiányzó paraméter (shop/d1).');
+  $row=impactshop_find_shop($shop); if(!$row)impactshop_error('Ismeretlen shop: '.esc_html($shop));
+
+  $targetUrl=''; if($is_deal){ $targetUrl=$u?:($row['product_url']? $row['product_url'] : ''); }
+  $final=null; $cid=dognet_extract_campaign_id_from_base(isset($row['dognet_base'])?$row['dognet_base']:'');
+  if($cid){
+    $deeplink=$targetUrl;
+    if($deeplink && preg_match('~^[A-Za-z0-9+/]+={0,2}$~',$deeplink)){
+      $tmp=base64_decode($deeplink,true);
+      if($tmp!==false && preg_match('~^https?://~i',$tmp)) $deeplink=$tmp;
+    }
+    $api=dognet_api_generate_link($cid,$deeplink,$ngo,'');
+    if(!is_wp_error($api) && $api) $final=$api;
+  }
+  if(!$final){
+    $base=isset($row['dognet_base'])?$row['dognet_base']:'';
+    if($base){
+      $params=array('d1'=>$ngo);
+      if(!empty($targetUrl)){
+        $deeplink = $targetUrl;
+        if (preg_match('~^[A-Za-z0-9+/]+={0,2}$~', $deeplink)) {
+          $tmp = base64_decode($deeplink, true);
+          if ($tmp !== false && preg_match('~^https?://~i', $tmp)) { $deeplink = $tmp; }
+        }
+        $deeplinkParam = !empty($row['deeplink_param']) ? $row['deeplink_param'] : 'url';
+        $params[$deeplinkParam] = $deeplink;
+      }
+      $final = $base . ((strpos($base,'?')===false)?'?':'&') . http_build_query($params);
+    }
+  }
+  if(!$final)impactshop_error('Nem sikerült a partner linket előállítani.');
+  impactshop_redirect_with_propagation($final,$amb,$src);
+}
+function impactshop_template_redirect(){
+  if(get_query_var('impactshop_go')){impactshop_handle_go(false);exit;}
+  if(get_query_var('impactshop_deal')){impactshop_handle_go(true);exit;}
+}
+add_action('template_redirect','impactshop_template_redirect');
+
+/* ==================== KÉZI REFRESH/DIAG ==================== */
+function impactshop_init_tools(){
+  if (is_admin()) return;
+  if (current_user_can('manage_options') && isset($_GET['impactshop_refresh'])) {
+    flush_rewrite_rules();
+    wp_die('<div style="padding:14px;font:15px system-ui;color:#070">OK: rewrite szabályok frissítve.</div>','ImpactShop');
+  }
+  if (current_user_can('manage_options') && isset($_GET['impactshop_token'])) {
+    $do = sanitize_text_field($_GET['impactshop_token']);
+    if ($do==='refresh') delete_transient('dognet_api_token_cache_v1');
+    $tok = dognet_get_token(true, isset($_GET['diag']));
+    if ($tok) wp_die('<div style="padding:14px;font:15px system-ui;color:#070">OK: új Dognet token cache-ben.</div>','ImpactShop');
+    wp_die('<div style="padding:14px;font:15px system-ui;color:#b00">HIBA: nem sikerült új Dognet tokent kérni.</div>','ImpactShop');
+  }
+}
+add_action('init','impactshop_init_tools');
+
+/* ==================== DIAG SHORTCODE ==================== */
+function impactshop_shortcode_diag() {
+  $shops = impactshop_get_shops();
+  $out = '<div style="font:14px/1.5 system-ui"><h3>Impact Shop diagnosztika</h3>';
+  $out .= '<p>Shops betöltve: <b>'.count($shops).'</b></p>';
+  $miss = array();
+  foreach ($shops as $s) {
+    if (empty($s['dognet_base']))    $miss[] = $s['shop_slug'].' (dognet_base)';
+    if (empty($s['deeplink_param'])) $miss[] = $s['shop_slug'].' (pdognet_deeplink_param)';
+  }
+  if ($miss) { $out .= '<p style="color:#b00">Hiányzó mezők:<br>'.esc_html(implode(', ', $miss)).'</p>'; }
+  else { $out .= '<p style="color:#070">dognet_base + deeplink_param mindenhol rendben.</p>'; }
+  $out .= '</div>';
+  return $out;
+}
+add_shortcode('impactshop_diag','impactshop_shortcode_diag');
+
+/* ==================== REPORT REST + SHORTCODE ==================== */
+function impactshop_build_campaign_map() {
+  $map = array(); $shops=impactshop_get_shops();
+  foreach($shops as $s){
+    $cid = dognet_extract_campaign_id_from_base(isset($s['dognet_base'])?$s['dognet_base']:'');
+    if ($cid) {
+      $map[$cid] = array('shop'=>$s['name'], 'shop_slug'=>$s['shop_slug'], 'ngo'=>null);
+    }
+  }
+  return $map;
+}
+function impactshop_accumulate_row(&$out,$map,$group,$it){
+  $cid = intval(isset($it['campaign_id']) ? $it['campaign_id'] : (isset($it['campaignId']) ? $it['campaignId'] : 0));
+  $d1  = trim((string)(isset($it['data1']) ? $it['data1'] : (isset($it['d1']) ? $it['d1'] : '')));
+  $shopName = isset($map[$cid]['shop']) ? $map[$cid]['shop'] : '(ismeretlen shop)';
+  $ngo = $d1 ? $d1 : '(ismeretlen NGO)';
+  if ($group==='shop') $key=$shopName;
+  elseif ($group==='ngo') $key=$ngo;
+  else $key=$shopName.' — '.$ngo;
+  if (!isset($out[$key])) $out[$key] = array('count'=>0,'amount'=>0.0,'commission'=>0.0);
+  $out[$key]['count']++;
+  $out[$key]['amount']     += floatval(isset($it['amount'])?$it['amount']:(isset($it['price'])?$it['price']:0));
+  $out[$key]['commission'] += floatval(isset($it['commission'])?$it['commission']:(isset($it['publisher_commission'])?$it['publisher_commission']:0));
+}
+function impactshop_totals_collect($from,$to,$status='all',$group='shop_ngo') {
+  $from = date('Y-m-d', strtotime($from));
+  $to   = date('Y-m-d', strtotime($to));
+  $key = 'impactshop_totals_'.md5($from.'|'.$to.'|'.$status.'|'.$group);
+  $cached = get_transient($key);
+  if ($cached!==false) return $cached;
+
+  $map = impactshop_build_campaign_map();
+  $out = array(); $page=1; $per=100; $maxloop=50;
+
+  do {
+    $params = array('date_from'=>$from,'date_to'=>$to,'status'=>$status);
+    $res = dognet_api_list_conversions_page($params,$page,$per);
+    if (is_wp_error($res)) {
+      $any=false;
+      foreach(array_keys($map) as $cid){
+        $res2 = dognet_api_list_conversions_page(array('date_from'=>$from,'date_to'=>$to,'status'=>$status,'campaign_id'=>$cid),1,$per);
+        if (!is_wp_error($res2) && !empty($res2['items'])) {
+          foreach($res2['items'] as $it){ $any=true; impactshop_accumulate_row($out,$map,$group,$it); }
+        }
+      }
+      if(!$any) return $res;
+      break;
+    }
+    if(isset($res['items'])){
+      foreach($res['items'] as $it){ impactshop_accumulate_row($out,$map,$group,$it); }
+    }
+    $last = intval(isset($res['last_page'])?$res['last_page']:$page);
+    $page++;
+  } while ($page <= $last && $page <= $maxloop);
+
+  ksort($out);
+  set_transient($key,$out,IMPACTSHOP_CACHE_TTL);
+  return $out;
+}
+function impactshop_rest_totals($req){
+  $from = sanitize_text_field($req->get_param('from') ? $req->get_param('from') : date('Y-m-01'));
+  $to   = sanitize_text_field($req->get_param('to') ? $req->get_param('to') : date('Y-m-t'));
+  $status = sanitize_text_field($req->get_param('status') ? $req->get_param('status') : 'all');
+  $group  = sanitize_text_field($req->get_param('group') ? $req->get_param('group') : 'shop_ngo');
+  $tot = impactshop_totals_collect($from,$to,$status,$group);
+  if (is_wp_error($tot)) {
+    return new WP_REST_Response(array('code'=>$tot->get_error_code(),'message'=>$tot->get_error_message(),'data'=>$tot->get_error_data()), 502);
+  }
+  $rows=array();
+  foreach($tot as $k=>$v){
+    $rows[] = array('key'=>$k,'orders'=>$v['count'],'amount'=>round($v['amount'],2),'commission'=>round($v['commission'],2));
+  }
+  return array('from'=>$from,'to'=>$to,'status'=>$status,'group'=>$group,'rows'=>$rows);
+}
+function impactshop_register_rest(){
+  register_rest_route('impactshop/v1','/totals',array(
+    'methods'=>'GET','callback'=>'impactshop_rest_totals','permission_callback'=>'__return_true'
+  ));
+}
+add_action('rest_api_init','impactshop_register_rest');
+
+function impactshop_shortcode_report($atts){
+  $a = shortcode_atts(array('from'=>date('Y-m-01'),'to'=>date('Y-m-t'),'status'=>'all','group'=>'shop_ngo'), $atts);
+  $tot = impactshop_totals_collect($a['from'],$a['to'],$a['status'],$a['group']);
+  if (is_wp_error($tot)) { $msg = esc_html($tot->get_error_message()); return '<div style="color:#b00;font:14px system-ui">Dognet API hiba: '.$msg.'</div>'; }
+  if (!$tot) return '<div style="font:14px system-ui">Nincs adat a megadott szűrésre.</div>';
+  $rows=array();
+  foreach($tot as $k=>$v){ $rows[]=array('k'=>$k,'c'=>$v['count'],'a'=>$v['amount'],'cm'=>$v['commission']); }
+  usort($rows, function($x,$y){ return ($y['cm']<$x['cm']) ? -1 : (($y['cm']==$x['cm'])?0:1); });
+  ob_start(); ?>
+  <div class="impactshop-report" style="font:14px/1.45 system-ui">
+    <div style="margin:0 0 8px 0;color:#444">Időszak: <b><?php echo esc_html($a['from'].' → '.$a['to']); ?></b>
+      &nbsp;•&nbsp; Státusz: <b><?php echo esc_html($a['status']); ?></b>
+      &nbsp;•&nbsp; Csoportosítás: <b><?php echo esc_html($a['group']); ?></b>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:#f5f5f7">
+          <th style="text-align:left;padding:8px;border:1px solid #eee">Csoport</th>
+          <th style="text-align:right;padding:8px;border:1px solid #eee">Rendelések</th>
+          <th style="text-align:right;padding:8px;border:1px solid #eee">Kosárérték</th>
+          <th style="text-align:right;padding:8px;border:1px solid #eee">Jutalék</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach($rows as $r): ?>
+          <tr>
+            <td style="padding:8px;border:1px solid #eee"><?php echo esc_html($r['k']); ?></td>
+            <td style="padding:8px;border:1px solid #eee;text-align:right"><?php echo number_format($r['c'],0,',',' '); ?></td>
+            <td style="padding:8px;border:1px solid #eee;text-align:right"><?php echo number_format($r['a'],2,',',' '); ?> Ft</td>
+            <td style="padding:8px;border:1px solid #eee;text-align:right"><b><?php echo number_format($r['cm'],2,',',' '); ?> Ft</b></td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php return ob_get_clean();
+}
+add_shortcode('impactshop_report','impactshop_shortcode_report');

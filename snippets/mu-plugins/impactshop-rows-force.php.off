@@ -1,0 +1,46 @@
+<?php
+/**
+ * ImpactShop – rows shortcode kényszerített alapértelmezések (MU)
+ * Cél: a [impactshop_rows] MINDIG a ticker/leaderboard szűrésével fusson.
+ * - ad_channel = 26081
+ * - status = all
+ * - only_d1 = 1
+ * A kényszer csak akkor érvényesül, ha az adott attr nincs explicit megadva.
+ * Ha a shortcode motor ignorálja az atts-et, a filter így is beégeti.
+ */
+
+if (!defined('IMPACTSHOP_AD_CHANNEL_ID')) {
+  define('IMPACTSHOP_AD_CHANNEL_ID', 26081);
+}
+
+add_filter('shortcode_atts_impactshop_rows', function($out, $pairs, $atts){
+  // ha NINCS megadva, kényszerítsük
+  if (!isset($atts['ad_channel']) || $atts['ad_channel'] === '' || $atts['ad_channel'] === '0') {
+    $out['ad_channel'] = (string)IMPACTSHOP_AD_CHANNEL_ID;
+  }
+  if (!isset($atts['status']) || $atts['status'] === '') {
+    $out['status'] = 'all'; // A + P
+  }
+  if (!isset($atts['only_d1']) || $atts['only_d1'] === '') {
+    $out['only_d1'] = '1';  // csak data1-es sorok
+  }
+  return $out;
+}, 10, 3);
+
+/**
+ * Biztonsági öv: ha a shortcode motor valahol mégis 0-ra állítaná,
+ * a renderelés ELŐTT még egyszer felülírjuk a globális $_GET/$_REQUEST mappát,
+ * ha a rows saját belseje onnan olvasna (egyes régi implementációk ilyenek).
+ */
+add_action('init', function(){
+  if (!empty($_REQUEST['impactshop_rows_context'])) return; // ne hurkázódjon
+  // csak frontenden, sima kérésre
+  if (is_admin() || wp_doing_ajax() || wp_doing_cron()) return;
+
+  // kényszerített defaultok, ha 0 vagy üres
+  foreach (['ad_channel' => (string)IMPACTSHOP_AD_CHANNEL_ID, 'status' => 'all', 'only_d1' => '1'] as $k => $v) {
+    if (!isset($_GET[$k]) || $_GET[$k]==='' || $_GET[$k]==='0') {
+      $_GET[$k] = $_REQUEST[$k] = $v;
+    }
+  }
+}, 1);

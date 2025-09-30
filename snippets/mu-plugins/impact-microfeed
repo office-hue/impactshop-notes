@@ -1,0 +1,359 @@
+<?php
+/**
+ * Impact Microfeed – Gen Z + Shop/NGO névfeloldás CSV-ből
+ * Shortcode:
+ * [impact_microfeed show_form="1" show_fb="1" fb_page="https://www.facebook.com/thinkwisesharesmart"
+ *                   max_items="60" rate_huf="392.5"
+ *                   shops_csv="https://.../output=csv" ngos_csv="https://.../output=csv"]
+ */
+
+if (!defined('IMPACT_API_BASE_HOST')) define('IMPACT_API_BASE_HOST','https://app.sharity.hu');
+
+if (!function_exists('sharity_impact_fetch')) {
+  function sharity_impact_fetch($path){
+    $url = rtrim(IMPACT_API_BASE_HOST,'/').$path;
+    $res = wp_remote_get($url, ['timeout'=>15, 'headers'=>['Accept'=>'application/json']]);
+    if (is_wp_error($res)) return null;
+    $code = wp_remote_retrieve_response_code($res);
+    if ($code < 200 || $code >= 300) return null;
+    return json_decode(wp_remote_retrieve_body($res), true);
+  }
+}
+
+if (!defined('IMPACT_MICROFEED_OPT')) define('IMPACT_MICROFEED_OPT', 'impact_microfeed_msgs_v1');
+if (!defined('IMPACT_MICROFEED_MAX')) define('IMPACT_MICROFEED_MAX', 300);
+
+/* ---------- REST: üzenetek ---------- */
+add_action('rest_api_init', function(){
+  register_rest_route('impact/v1','/microfeed',[
+    'methods'=>'GET',
+    'callback'=>function(WP_REST_Request $req){
+      $max = max(1, min(IMPACT_MICROFEED_MAX, intval($req->get_param('max') ?: 60)));
+      $all = get_option(IMPACT_MICROFEED_OPT, []);
+      if (!is_array($all)) $all = [];
+      $out = array_slice(array_reverse($all), 0, $max);
+      return rest_ensure_response(['items'=>$out,'count'=>count($out)]);
+    },
+    'permission_callback'=>'__return_true'
+  ]);
+
+  register_rest_route('impact/v1','/microfeed',[
+    'methods'=>'POST',
+    'callback'=>'impact_microfeed_post_message',
+    'permission_callback'=>function(){ return is_user_logged_in() || wp_verify_nonce($_REQUEST['_wpnonce'] ?? '', 'wp_rest'); }
+  ]);
+});
+
+function impact_microfeed_post_message(WP_REST_Request $req){
+  $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+  $key = 'impact_microfeed_rl_'.md5($ip);
+  if (get_transient($key)) {
+    return new WP_Error('ratelimit','Túl gyorsan küldesz. Próbáld újra kicsit később.',['status'=>429]);
+  }
+  set_transient($key, 1, 60);
+
+  $name = trim(wp_strip_all_tags((string)$req->get_param('name')));
+  $text = trim((string)$req->get_param('text'));
+  $hp   = trim((string)$req->get_param('company')); // honeypot
+  if ($hp !== '') return new WP_Error('spam','Hiba.',['status'=>400]);
+  if ($name==='' || $text==='') return new WP_Error('badreq','Név és üzenet kötelező.',['status'=>400]);
+
+  $name = mb_substr($name, 0, 60);
+  $text = wp_kses($text, []);
+  $text = preg_replace('/\s+/', ' ', $text);
+  $text = mb_substr($text, 0, 280);
+
+  $row = ['ts'=>current_time('mysql'),'name'=>$name,'text'=>$text];
+  $all = get_option(IMPACT_MICROFEED_OPT, []);
+  if (!is_array($all)) $all = [];
+  $all[] = $row;
+
+  $maxStored = max(1, min(IMPACT_MICROFEED_MAX, intval(get_option('impact_microfeed_max_items', 300))));
+  if (count($all) > $maxStored) $all = array_slice($all, -$maxStored);
+  update_option(IMPACT_MICROFEED_OPT, $all, false);
+
+  return rest_ensure_response(['ok'=>true,'item'=>$row]);
+}
+
+/* ---------- Shortcode + UI ---------- */
+add_shortcode('impact_microfeed', function($atts){
+  $a = shortcode_atts([
+    'show_form' => '1',
+    'show_fb'   => '1',
+    'fb_page'   => '',
+    'max_items' => '60',
+    'title'     => 'Közösségi fal',
+    'rate_huf'  => '392.5',
+    'shops_csv' => '',
+    'ngos_csv'  => '',
+  ], $atts, 'impact_microfeed');
+
+  $nonce = wp_create_nonce('wp_rest');
+  $api_base   = esc_url_raw(rest_url('impact/v1/microfeed'));
+  $activityEP = esc_url_raw(rtrim(IMPACT_API_BASE_HOST,'/').'/wp-json/impact/v1/activity');
+
+  ob_start(); ?>
+  <style>
+    .imf-wrap{--ring:#e5e7eb;--card:#ffffff;--ink:#0b0f19;--muted:#667085;--accent:#7c3aed;--bg:#f8fafc}
+    @media (prefers-color-scheme: dark){
+      .imf-wrap{--ring:#1f2937;--card:#0b0f19;--ink:#e5e7eb;--muted:#9aa4b2;--accent:#8b5cf6;--bg:#04070d}
+    }
+    .imf-wrap{background:var(--bg);padding:8px;border-radius:16px}
+    .imf-tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .imf-tab{cursor:pointer;padding:8px 12px;border:1px solid var(--ring);border-radius:999px;font-weight:700}
+    .imf-tab.active{background:linear-gradient(135deg,var(--accent),#22c55e);color:white;border-color:transparent;box-shadow:0 6px 20px rgba(124,58,237,.25)}
+    .imf-grid{display:grid;gap:14px}
+    .imf-card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:12px;box-shadow:0 10px 30px rgba(2,6,23,.04)}
+    .imf-card h3{margin:0 0 10px 0;font:700 18px/1.2 system-ui;color:var(--ink)}
+    .imf-list{display:grid;gap:10px;max-height:420px;overflow:auto;padding-right:4px}
+    .imf-item{display:flex;gap:10px;align-items:flex-start}
+    .imf-avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#22c55e);color:white;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 40px;filter:saturate(1.1)}
+    .imf-meta{font-size:12px;color:var(--muted)}
+    .imf-msg{font-size:14px;margin-top:2px;color:var(--ink)}
+    .imf-form{display:grid;gap:8px}
+    .imf-form input,.imf-form textarea{width:100%;padding:12px;border:1px solid var(--ring);border-radius:12px;background:var(--card);color:var(--ink)}
+    .imf-form button{padding:12px 16px;border-radius:12px;border:0;background:linear-gradient(135deg,var(--accent),#22c55e);color:#fff;font-weight:800;cursor:pointer;letter-spacing:.2px}
+    .imf-activity ul{margin:0;padding-left:1rem;display:grid;gap:.4rem}
+    .imf-note{font-size:12px;color:var(--muted);margin-top:6px}
+    .imf-hidden{display:none}
+    .imf-fb .fb-page{width:100%}
+  </style>
+
+  <div class="imf-wrap"
+       data-api="<?php echo esc_attr($api_base); ?>"
+       data-activity="<?php echo esc_attr($activityEP); ?>"
+       data-nonce="<?php echo esc_attr($nonce); ?>"
+       data-max="<?php echo intval($a['max_items']); ?>"
+       data-rate="<?php echo esc_attr($a['rate_huf']); ?>"
+       data-shops="<?php echo esc_url($a['shops_csv']); ?>"
+       data-ngos="<?php echo esc_url($a['ngos_csv']); ?>">
+    <div class="imf-tabs">
+      <div class="imf-tab active" data-tab="chat">Chat</div>
+      <div class="imf-tab" data-tab="donations">Adományok</div>
+      <?php if ($a['show_fb']==='1' && $a['fb_page']): ?>
+        <div class="imf-tab" data-tab="facebook">Facebook</div>
+      <?php endif; ?>
+    </div>
+
+    <div class="imf-grid">
+      <!-- CHAT -->
+      <div class="imf-card" data-panel="chat">
+        <h3><?php echo esc_html($a['title']); ?></h3>
+        <div class="imf-list" id="imf-list" aria-live="polite"></div>
+        <?php if ($a['show_form']==='1'): ?>
+        <form class="imf-form" id="imf-form">
+          <input type="text" name="name" placeholder="Neved" maxlength="60" required>
+          <textarea name="text" rows="3" placeholder="Írj valamit (max 280 karakter)..." maxlength="280" required></textarea>
+          <input type="text" name="company" value="" style="display:none">
+          <button type="submit">Küldés</button>
+          <div id="imf-status" class="imf-note"></div>
+        </form>
+        <?php endif; ?>
+      </div>
+
+      <!-- ADOMÁNYOK -->
+      <div class="imf-card imf-hidden" data-panel="donations">
+        <h3>Friss adományok</h3>
+        <ul id="imf-activity"></ul>
+        <div class="imf-note">Automatikus frissítés 30 mp-enként</div>
+      </div>
+
+      <!-- FACEBOOK -->
+      <?php if ($a['show_fb']==='1' && $a['fb_page']): ?>
+      <div class="imf-card imf-fb imf-hidden" data-panel="facebook">
+        <h3>Facebook</h3>
+        <div id="fb-root"></div>
+        <div class="fb-page"
+             data-href="<?php echo esc_attr($a['fb_page']); ?>"
+             data-tabs="timeline"
+             data-width="1000"
+             data-height=""
+             data-small-header="false"
+             data-adapt-container-width="true"
+             data-hide-cover="false"
+             data-show-facepile="true"></div>
+        <script async defer crossorigin="anonymous" src="https://connect.facebook.net/hu_HU/sdk.js#xfbml=1&version=v17.0"></script>
+        <div class="imf-note">Ha itt nem látszik semmi: ellenőrizd a Page URL-t, az ország/korhatár korlátozást és a cookie-banner „marketing” engedélyt.</div>
+      </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    var root = document.currentScript.previousElementSibling;
+    var api   = root.getAttribute('data-api');
+    var act   = root.getAttribute('data-activity');
+    var max   = parseInt(root.getAttribute('data-max')||'60',10);
+    var rate  = parseFloat(root.getAttribute('data-rate')||'392.5');
+    var shopsCsv = root.getAttribute('data-shops')||'';
+    var ngosCsv  = root.getAttribute('data-ngos')||'';
+    var nonce = root.getAttribute('data-nonce');
+
+    var list = root.querySelector('#imf-list');
+    var form = root.querySelector('#imf-form');
+    var status = root.querySelector('#imf-status');
+    var ulAct = root.querySelector('#imf-activity');
+
+    // Tabs
+    root.querySelectorAll('.imf-tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        root.querySelectorAll('.imf-tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        var id = tab.getAttribute('data-tab');
+        root.querySelectorAll('[data-panel]').forEach(p=>{
+          p.classList.toggle('imf-hidden', p.getAttribute('data-panel')!==id);
+        });
+      });
+    });
+
+    function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+    function initials(n){var p=(n||'').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();return p||'😊';}
+    function titleize(slug){return (slug||'').replace(/[-_]+/g,' ').replace(/\b\w/g, c=>c.toUpperCase()).trim();}
+    function eurToHuf(eur){var v = Math.round((parseFloat(eur||0)||0)*rate); return v.toLocaleString('hu-HU');}
+
+    // CSV (Google Sheets publish → CSV): 1. oszlop = slug, 2. = név
+    var MAP_SHOP = Object.create(null), MAP_NGO = Object.create(null);
+    function parseCSV(text){
+      // egyszerű, idézőjeles értékekre is működő parser
+      var rows=[], i=0, field='', row=[], inQ=false;
+      for(; i<text.length; i++){
+        var c=text[i], n=text[i+1];
+        if(inQ){
+          if(c==='"' && n==='"'){ field+='"'; i++; }
+          else if(c==='"'){ inQ=false; }
+          else field+=c;
+        }else{
+          if(c==='"'){ inQ=true; }
+          else if(c===','){ row.push(field); field=''; }
+          else if(c==='\n'){ row.push(field); rows.push(row); field=''; row=[]; }
+          else if(c!=='\r'){ field+=c; }
+        }
+      }
+      if(field.length || row.length) { row.push(field); rows.push(row); }
+      return rows;
+    }
+    async function loadMap(url, target){
+      if(!url) return;
+      try{
+        let r = await fetch(url, {cache:'no-store'});
+        if(!r.ok) throw 0;
+        let t = await r.text();
+        let rows = parseCSV(t);
+        rows.forEach(function(cols){
+          var slug = (cols[0]||'').trim();
+          var name = (cols[1]||'').trim();
+          if(slug && name){ target[slug] = name; }
+        });
+      }catch(e){ /* csendes fallback */ }
+    }
+
+    // Chat
+    async function loadChat(){
+      try{
+        let r = await fetch(api + '?max=' + encodeURIComponent(max), {headers:{'Accept':'application/json'}});
+        if(!r.ok) throw 0;
+        let j = await r.json();
+        list.innerHTML = (j.items||[]).map(it=>{
+          return '<div class="imf-item">'
+               +   '<div class="imf-avatar">'+esc(initials(it.name||''))+'</div>'
+               +   '<div class="imf-body"><div class="imf-meta">'+esc(it.name||'Ismeretlen')+' • '+esc(it.ts||'')+'</div>'
+               +   '<div class="imf-msg">'+esc(it.text||'')+'</div></div>'
+               + '</div>';
+        }).join('') || '<div class="imf-note">Még nincs üzenet.</div>';
+      }catch(e){
+        list.innerHTML = '<div style="color:#dc2626">Hiba a chat betöltésekor.</div>';
+      }
+    }
+
+    // Activity render: próbálunk shop+ngo+eur+date mintát, különben fallback
+    function friendlyName(map, slug){
+      return map[slug] || titleize(slug||'');
+    }
+    function renderActivityRow(txtOrObj){
+      var shopSlug='', ngoSlug='', eur='', when='';
+      if (typeof txtOrObj === 'object' && txtOrObj){
+        shopSlug = txtOrObj.shop || '';
+        ngoSlug  = txtOrObj.ngo  || '';
+        eur      = (''+(txtOrObj.amount_eur ?? txtOrObj.eur ?? '')).replace(',','.');
+        when     = txtOrObj.ts || txtOrObj.date || '';
+      } else {
+        var txt = ''+txtOrObj;
+        var parts = txt.split('•').map(s=>s.trim());
+        if(parts.length >= 4){
+          // shop • ngo • eur € • date
+          shopSlug = parts[0]; ngoSlug = parts[1];
+          eur = (parts[2]||'').replace('€','').trim().replace(',','.');
+          when = parts.slice(3).join(' • ');
+        } else if (parts.length === 3){
+          // ngo • eur € • date (régi)
+          ngoSlug = parts[0];
+          eur = (parts[1]||'').replace('€','').trim().replace(',','.');
+          when = parts[2];
+        } else {
+          return '<li>'+esc(txt)+'</li>';
+        }
+      }
+
+      var huf = eurToHuf(eur);
+      var ngoName  = friendlyName(MAP_NGO, ngoSlug);
+      var shopName = shopSlug ? friendlyName(MAP_SHOP, shopSlug) : '';
+      var sentence = shopName
+        ? ('Az '+shopName+' webshopon történt vásárlással a(z) '+ngoName+' '+huf+' forinttal lett támogatva.')
+        : ('Egy vásárlással a(z) '+ngoName+' '+huf+' forinttal lett támogatva.');
+      if (when) sentence += ' ('+when+')';
+      return '<li>'+esc(sentence)+'</li>';
+    }
+
+    async function loadActivity(){
+      try{
+        let r = await fetch(act, {headers:{'Accept':'application/json'}, cache:'no-store'});
+        if(!r.ok) throw 0;
+        let j = await r.json();
+        if(!Array.isArray(j)) j = [];
+        ulAct.innerHTML = j.map(row => renderActivityRow(row.text ?? row)).join('') || '<li class="imf-note">Még nincs friss aktivitás.</li>';
+      }catch(e){
+        ulAct.innerHTML = '<li style="color:#dc2626">Hiba az aktivitás betöltésekor.</li>';
+      }
+    }
+
+    if (form){
+      form.addEventListener('submit', async function(ev){
+        ev.preventDefault();
+        status.textContent = 'Küldés…';
+        let fd = new FormData(form);
+        try{
+          let r = await fetch(api, { method:'POST', headers:{'X-WP-Nonce': nonce}, body: fd });
+          let ok = r.ok;
+          let j = await r.json().catch(()=>({}));
+          if(!ok) throw (j && j.message) || 'Ismeretlen hiba';
+          form.reset();
+          status.textContent = 'Elmentve.';
+          loadChat();
+          setTimeout(()=>status.textContent='',1500);
+        }catch(err){
+          status.textContent = 'Hiba: '+(err && err.toString ? err.toString() : 'ismeretlen');
+        }
+      });
+    }
+
+    // Start: előbb töltsük be a mappingeket, aztán rendereljünk activity-t
+    Promise.all([ loadMap(shopsCsv, MAP_SHOP), loadMap(ngosCsv, MAP_NGO) ]).then(function(){
+      loadChat(); loadActivity();
+      setInterval(loadActivity, 30000);
+    });
+  })();
+  </script>
+  <?php
+  return ob_get_clean();
+});
+
+/* ---------- Admin: max tárolt üzenetek ---------- */
+add_action('admin_init', function(){
+  register_setting('reading','impact_microfeed_max_items',['type'=>'integer','default'=>300]);
+  add_settings_field('impact_microfeed_max_items','Impact Microfeed – max üzenet (tárolt)','impact_microfeed_max_items_cb','reading');
+});
+function impact_microfeed_max_items_cb(){
+  $v = intval(get_option('impact_microfeed_max_items',300));
+  echo '<input type="number" min="10" max="'.IMPACT_MICROFEED_MAX.'" name="impact_microfeed_max_items" value="'.esc_attr($v).'"> <small>Mentett chat bejegyzések felső határa</small>';
+}
