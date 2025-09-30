@@ -19,3 +19,5 @@
 
 ## 4. Megfigyelések / hibák
 - Ha a REST `url` sekély (`/` vagy egy szegmens), akkor nagy eséllyel főoldal → bannerrel felülírni.
+
+- 2025-09-30: próbasor a commit teszthez.).
