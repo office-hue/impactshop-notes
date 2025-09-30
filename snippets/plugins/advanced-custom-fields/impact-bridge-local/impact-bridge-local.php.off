@@ -1,0 +1,437 @@
+<?php
+/**
+ * Plugin Name: Impact Bridge Local (ticker/leaderboard/activity/total – WP JSON)
+ * Description: Helyi REST végpontok az Impact frontnak. A Dognet Publisher API-ból számol ticker/leaderboard/activity/total értékeket, cache-sel.
+ * Version: 1.5.0
+ * Author: Sharity
+ */
+
+if (!defined('ABSPATH')) exit;
+
+/* ===== LOCAL CONFIG betöltése (NE módosíts wp-configot) ===== */
+$__impact_local_cfg = WP_CONTENT_DIR . '/impact-bridge-local.php';
+if (file_exists($__impact_local_cfg)) { include_once $__impact_local_cfg; }
+
+/* ===== KONFIG / VÉDŐSÍNEK ===== */
+if (!defined('DOGNET_API_BASE'))          define('DOGNET_API_BASE', 'https://api.app.dognet.com/api/v1');
+if (!defined('DOGNET_LOGIN_EMAIL'))       define('DOGNET_LOGIN_EMAIL', getenv('DOGNET_LOGIN_EMAIL') ?: '');
+if (!defined('DOGNET_LOGIN_PASSWORD'))    define('DOGNET_LOGIN_PASSWORD', getenv('DOGNET_LOGIN_PASSWORD') ?: '');
+if (!defined('DOGNET_API_TOKEN'))         define('DOGNET_API_TOKEN', '');
+if (!defined('DOGNET_TOKEN_TTL'))         define('DOGNET_TOKEN_TTL', 20 * HOUR_IN_SECONDS);
+if (!defined('IMPACT_BRIDGE_USER_AGENT')) define('IMPACT_BRIDGE_USER_AGENT','SharityImpactBridge/1.0');
+if (!defined('IMPACT_BRIDGE_TIMEOUT'))    define('IMPACT_BRIDGE_TIMEOUT', 25);
+
+/* ===== Élő beállítások (egy helyen kapcsolhatók) ===== */
+// Csak olyan sorok számolása, ahol van választott szervezet (data1)
+if (!defined('IMPACT_REQUIRE_NGO')) define('IMPACT_REQUIRE_NGO', true);
+// "Live" alap státusz minden modulhoz: 'all' = P + A együtt (D külön kiszűrve)
+if (!defined('IMPACT_LIVE_STATUS')) define('IMPACT_LIVE_STATUS', 'all');
+// Activity időablak napokban
+if (!defined('IMPACT_ACTIVITY_DAYS')) define('IMPACT_ACTIVITY_DAYS', 30);
+// Összadomány cache (all-time): 30 perc
+if (!defined('IMPACT_TOTAL_CACHE_TTL')) define('IMPACT_TOTAL_CACHE_TTL', 30 * MINUTE_IN_SECONDS);
+// Összadomány cache (időszakos): 10 perc
+if (!defined('IMPACT_TOTAL_RANGE_CACHE_TTL')) define('IMPACT_TOTAL_RANGE_CACHE_TTL', 10 * MINUTE_IN_SECONDS);
+
+/* Kompat aliasok */
+if (!defined('DOGNET_EMAIL') && defined('DOGNET_LOGIN_EMAIL'))         define('DOGNET_EMAIL', DOGNET_LOGIN_EMAIL);
+if (!defined('DOGNET_PASSWORD') && defined('DOGNET_LOGIN_PASSWORD'))   define('DOGNET_PASSWORD', DOGNET_LOGIN_PASSWORD);
+
+/* ===== DOGNET auth + request ===== */
+function ibl__dognet_try_login_once($payload, $headers){
+  $ep = rtrim(DOGNET_API_BASE,'/').'/auth/login';
+  $headers = array_merge(['User-Agent'=>IMPACT_BRIDGE_USER_AGENT, 'Accept'=>'application/json'], $headers);
+  $resp = wp_remote_post($ep, ['timeout'=>IMPACT_BRIDGE_TIMEOUT,'headers'=>$headers,'body'=>$payload,'redirection'=>3,'sslverify'=>true]);
+  if (is_wp_error($resp)) return ['ok'=>false,'why'=>$resp->get_error_message()];
+  $code = wp_remote_retrieve_response_code($resp);
+  $body = wp_remote_retrieve_body($resp);
+  $j = json_decode($body, true); $tok = '';
+  if (is_array($j)) {
+    foreach (['token','access_token','data','result'] as $k) {
+      if ($k==='data' || $k==='result') {
+        if (!empty($j[$k]['token']))        { $tok=$j[$k]['token']; break; }
+        if (!empty($j[$k]['access_token'])) { $tok=$j[$k]['access_token']; break; }
+      } elseif (!empty($j[$k]) && is_string($j[$k])) { $tok = $j[$k]; break; }
+    }
+  }
+  return ($code>=200 && $code<300 && $tok) ? ['ok'=>true,'token'=>$tok] : ['ok'=>false,'why'=>'HTTP '.$code];
+}
+
+function ibl_dognet_get_token($force=false){
+  if (DOGNET_API_TOKEN) return DOGNET_API_TOKEN;
+  $key='ibl_dognet_tok_v1';
+  if (!$force){ $t = get_transient($key); if ($t) return $t; }
+  $email = DOGNET_LOGIN_EMAIL; $pass = DOGNET_LOGIN_PASSWORD;
+  if (!$email || !$pass) return '';
+
+  $r = ibl__dognet_try_login_once(wp_json_encode(['email'=>$email,'password'=>$pass]), ['Content-Type'=>'application/json']);
+  if (!empty($r['ok'])){ set_transient($key,$r['token'], DOGNET_TOKEN_TTL); return $r['token']; }
+  $r = ibl__dognet_try_login_once(http_build_query(['email'=>$email,'password'=>$pass]), ['Content-Type'=>'application/x-www-form-urlencoded']);
+  if (!empty($r['ok'])){ set_transient($key,$r['token'], DOGNET_TOKEN_TTL); return $r['token']; }
+  return '';
+}
+
+function ibl_dognet_request($method,$path,$body=null){
+  $tok = ibl_dognet_get_token(false);
+  if (!$tok) return new WP_Error('no_token','Dognet token hiba – hiányzik az e-mail/jelszó a wp-content/impact-bridge-local.php-ban');
+
+  $url = (stripos($path,'http')===0)? $path : rtrim(DOGNET_API_BASE,'/').$path;
+  $args = [
+    'timeout'  => IMPACT_BRIDGE_TIMEOUT,
+    'method'   => $method,
+    'headers'  => [
+      'Authorization' => 'Bearer '.$tok,
+      'Accept'        => 'application/json',
+      'Content-Type'  => 'application/json',
+      'User-Agent'    => IMPACT_BRIDGE_USER_AGENT,
+    ],
+    'redirection'=>3, 'sslverify'=>true,
+  ];
+  if ($body!==null) $args['body']=wp_json_encode($body);
+
+  $r = wp_remote_request($url,$args);
+  if (is_wp_error($r)) return $r;
+  $code = wp_remote_retrieve_response_code($r);
+  $j    = json_decode(wp_remote_retrieve_body($r), true);
+
+  if ($code==401){
+    delete_transient('ibl_dognet_tok_v1');
+    $tok=ibl_dognet_get_token(true);
+    if(!$tok) return new WP_Error('no_token','401 + token refresh fail');
+    $args['headers']['Authorization']='Bearer '.$tok;
+    $r=wp_remote_request($url,$args);
+    if (is_wp_error($r)) return $r;
+    $code=wp_remote_retrieve_response_code($r);
+    $j=json_decode(wp_remote_retrieve_body($r), true);
+  }
+  if ($code<200 || $code>=300) return new WP_Error('api_error','Dognet API '.$code,['resp'=>$j]);
+  return $j;
+}
+
+/* ===== Segédek ===== */
+function ibl__num($v){ return is_numeric($v)? floatval($v) : 0.0; }
+
+/**
+ * NGO/azonosító kiválasztása (ref/d1…d5/subid…data1…data5/utm)
+ * - Eldobja a számnak látszó ÉS a JSON-nak tűnő értékeket
+ * - Key=Value stringből és teljes URL queryből is próbál olvasni (ngo|ngo_name|d1|org|org_name|utm_term)
+ */
+function ibl__pick_d1($row){
+  $cands = [
+    'd1','d2','d3','d4','d5',
+    'data1','data2','data3','data4','data5',
+    'ref1','ref2','ref3',
+    'sub_id','sub_id1','sub_id2','subid','subid1','subid2',
+    'ngo','ngo_name','campaign_name','note','comment'
+  ];
+  foreach($cands as $k){
+    if (!isset($row[$k]) || $row[$k]==='' || is_array($row[$k])) continue;
+    $v = trim((string)$row[$k]);
+
+    // 1) "a=b&..." jelleg: próbáljunk kulcsból olvasni
+    if (strpos($v,'=') !== false && strpos($v,' ') === false) {
+      parse_str($v, $qs);
+      foreach (['ngo','ngo_name','d1','org','org_name','utm_term'] as $qq) {
+        if (!empty($qs[$qq])) { $v = trim((string)$qs[$qq]); break; }
+      }
+    }
+
+    // 2) Teljes URL → query bontás
+    if (filter_var($v, FILTER_VALIDATE_URL)) {
+      $parts = parse_url($v);
+      if (!empty($parts['query'])) {
+        parse_str($parts['query'], $qs);
+        foreach (['ngo','ngo_name','d1','org','org_name','utm_term'] as $qq) {
+          if (!empty($qs[$qq])) { $v = trim((string)$qs[$qq]); break; }
+        }
+      }
+    }
+
+    // 3) Kidobandók: üres, szám, JSON-szerű
+    if ($v === '' || is_numeric($v)) continue;
+    $fv = ltrim($v);
+    if ((strlen($fv)>1) && (($fv[0]==='{') || ($fv[0]==='['))) continue;
+
+    return $v;
+  }
+  return '';
+}
+
+// --- elutasított (declined) sor felismerése ---
+function ibl__is_declined($row){
+  $rs  = strtoupper((string)($row['rstatus'] ?? ''));                      // 'A' | 'P' | 'D'
+  $txt = strtolower((string)($row['status']  ?? ($row['state'] ?? '')));   // 'approved'|'pending'|'rejected' stb.
+  return ($rs === 'D' || $txt === 'rejected' || $txt === 'declined');
+}
+
+/* ===== Alap lekérdező: raw-transactions/filter (last_id görgetés) ===== */
+function ibl_fetch_transactions($from, $to, $status='approved', $maxBatches=60, $perPage=200){
+  $fromDt = $from.' 00:00:00';
+  $toDt   = $to  .' 23:59:59';
+  $filter = [ ['created_at'=>['gte'=>$fromDt]], ['created_at'=>['lte'=>$toDt]] ];
+
+  if (defined('DOGNET_AD_CHANNEL_ID') && DOGNET_AD_CHANNEL_ID){
+    $filter[] = ['ad_channel_id'=> ['eq'=>(int)DOGNET_AD_CHANNEL_ID]];
+  }
+
+  $stat = strtolower(trim($status));
+  if ($stat==='approved') $filter[]=['rstatus'=>['in'=>['A']]];
+  elseif ($stat==='pending') $filter[]=['rstatus'=>['in'=>['P']]];
+  elseif ($stat==='rejected') $filter[]=['rstatus'=>['in'=>['D']]];
+  // 'all' → nincs rstatus filter (P + A + D visszajön, de D-t lokálisan kiszűrjük)
+
+  $items=[]; $lastId=null;
+  for($i=0;$i<$maxBatches;$i++){
+    $body=['per-page'=>$perPage,'filter'=>$filter]; if ($lastId!==null) $body['last_id']=intval($lastId);
+    $resp = ibl_dognet_request('POST','/raw-transactions/filter',$body);
+    if (is_wp_error($resp)) return $resp;
+    $rows = $resp['data'] ?? ($resp['items'] ?? []);
+    if (!$rows) break;
+    $items = array_merge($items, $rows);
+    $lastId = $resp['meta']['last_id'] ?? null;
+    if ($lastId===null){
+      foreach($rows as $r){
+        foreach(['id','transaction_id','tid'] as $k){ if(isset($r[$k]) && is_numeric($r[$k])) $lastId=max((int)$lastId,(int)$r[$k]); }
+      }
+      if ($lastId===null) break;
+    }
+  }
+  return $items;
+}
+
+/* ===== Ticker / Leaderboard / Activity ===== */
+
+// NGO-guard
+function ibl__has_valid_ngo($ngo){
+  $ngo_trim = strtolower(trim((string)$ngo));
+  if ($ngo_trim==='' || $ngo_trim==='(nincs d1)' || $ngo_trim==='(ismeretlen)') return false;
+  return true;
+}
+
+function ibl_build_ticker(){
+  $status = IMPACT_LIVE_STATUS; // 'all'
+  $from   = date('Y-m-01');
+  $to     = date('Y-m-d');
+
+  $cache  = 'ibl_ticker_v2_'.$status.'_'.substr($from,0,7);
+  $c=get_transient($cache); if($c!==false) return $c;
+
+  $rows = ibl_fetch_transactions($from,$to,$status);
+  if (is_wp_error($rows)) return ['error'=>$rows->get_error_message()];
+
+  $total=0.0; $todaySum=0.0; $today=date('Y-m-d');
+  foreach($rows as $r){
+    if (ibl__is_declined($r)) continue; // D → kihagyjuk
+    $ngo = ibl__pick_d1($r);
+    if (IMPACT_REQUIRE_NGO && !ibl__has_valid_ngo($ngo)) continue;
+
+    $comm = ibl__num($r['publisher_commission'] ?? ($r['commission'] ?? ($r['payout'] ?? 0)));
+    $total += $comm;
+
+    $created = substr((string)($r['created_at'] ?? $r['created'] ?? ''),0,10);
+    if ($created===$today) $todaySum += $comm;
+  }
+  $out=['total'=>$total*0.5, 'today'=>$todaySum*0.5, 'generated_at'=>current_time('mysql'), 'status'=>$status];
+  set_transient($cache,$out, 180); return $out;
+}
+
+function ibl_build_leaderboard($tab='ngo'){
+  $status = IMPACT_LIVE_STATUS; // 'all'
+  $from   = date('Y-m-01'); $to=date('Y-m-d');
+
+  $cache='ibl_lb_v3_'.$tab.'_'.$status.'_'.substr($from,0,7);
+  $c=get_transient($cache); if($c!==false) return $c;
+
+  $rows = ibl_fetch_transactions($from,$to,$status);
+  if (is_wp_error($rows)) return ['error'=>$rows->get_error_message()];
+
+  $map=[];
+  if ($tab==='ngo'){
+    foreach($rows as $r){
+      if (ibl__is_declined($r)) continue; // D → kihagyjuk
+      $ngo  = ibl__pick_d1($r);
+      if (IMPACT_REQUIRE_NGO && !ibl__has_valid_ngo($ngo)) continue;
+      if ($ngo==='' || is_numeric($ngo)) continue; // extra védelem
+
+      $comm = ibl__num($r['publisher_commission'] ?? ($r['commission'] ?? ($r['payout'] ?? 0)));
+      $map[$ngo]=($map[$ngo]??0)+($comm*0.5);
+    }
+  } else {
+    foreach($rows as $r){
+      if (ibl__is_declined($r)) continue; // D → kihagyjuk
+      $ngo  = ibl__pick_d1($r);
+      if (IMPACT_REQUIRE_NGO && !ibl__has_valid_ngo($ngo)) continue;
+
+      $cid = 0; foreach(['campaign_id','campaignId','cid','campaign'] as $k){
+        if(isset($r[$k])){ $v=$r[$k]; $cid=is_array($v)?intval($v['id']??0):intval($v); break; }
+      }
+      $name = $cid ? ('cid '.$cid) : '(ismeretlen shop)';
+      $comm = ibl__num($r['publisher_commission'] ?? ($r['commission'] ?? ($r['payout'] ?? 0)));
+      $map[$name]=($map[$name]??0)+($comm*0.5);
+    }
+  }
+  $out=[]; foreach($map as $name=>$amount){ $out[]=['name'=>$name,'amount'=>$amount]; }
+  usort($out, fn($a,$b)=> ($b['amount']<=>$a['amount']) ?: strcasecmp($a['name'],$b['name']));
+  set_transient($cache,$out, 300); return $out;
+}
+
+function ibl_build_activity(){
+  $status = IMPACT_LIVE_STATUS; // 'all'
+  $from   = date('Y-m-d', strtotime('-'.intval(IMPACT_ACTIVITY_DAYS).' days'));
+  $to     = date('Y-m-d');
+
+  $cache='ibl_activity_v3_'.$status.'_'.intval(IMPACT_ACTIVITY_DAYS);
+  $c=get_transient($cache); if($c!==false) return $c;
+
+  $rows = ibl_fetch_transactions($from,$to,$status, 20, 200);
+  if (is_wp_error($rows)) return ['error'=>$rows->get_error_message()];
+
+  usort($rows, function($a,$b){
+    $da = strtotime($a['created_at'] ?? ($a['created'] ?? ''));
+    $db = strtotime($b['created_at'] ?? ($b['created'] ?? ''));
+    return $db <=> $da;
+  });
+
+  $out=[];
+  foreach($rows as $r){
+    if (ibl__is_declined($r)) continue; // D → kihagyjuk
+    $ngo = ibl__pick_d1($r);
+    if (IMPACT_REQUIRE_NGO && !ibl__has_valid_ngo($ngo)) continue;
+
+    $comm = ibl__num($r['publisher_commission'] ?? ($r['commission'] ?? ($r['payout'] ?? 0)));
+    $don  = $comm * 0.5;
+    $out[]=['text'=> sprintf('%s támogatást hozott ~%s € adományban', $ngo, number_format($don,2,',',' '))];
+    if (count($out)>=10) break;
+  }
+  set_transient($cache,$out, 120); return $out;
+}
+
+/* ===== Összadomány (all-time + időszakos) ===== */
+
+/**
+ * Alapértelmezett all-time kezdődátum:
+ * - Első híváskor elmentjük: option 'impact_total_since' = ma (YYYY-MM-DD)
+ * - Később ez lesz a DEFAULT "from" (úgy, ahogy kérted: „indulhat mától és örökre számol”)
+ */
+function ibl_get_total_since(){
+  $opt = get_option('impact_total_since', '');
+  if (!$opt){
+    $opt = date('Y-m-d');
+    update_option('impact_total_since', $opt, false);
+  }
+  return $opt;
+}
+
+/** Összadomány számítás (P + A együtt, D kizárva, csak data1-es sorok) */
+function ibl_build_total($from=null, $to=null){
+  $status = 'all'; // itt mindig P + A együtt, D-t lokálisan szűrjük
+
+  // Időszak: ha nincs megadva, all-time (a mentett kezdőnaptól máig)
+  if (!$from) $from = ibl_get_total_since();
+  if (!$to)   $to   = date('Y-m-d');
+
+  $is_all_time = ($from === get_option('impact_total_since') && $to === date('Y-m-d'));
+
+  $ckey = 'ibl_total_'.md5($from.'|'.$to).'_'.$status;
+  $ttl  = $is_all_time ? IMPACT_TOTAL_CACHE_TTL : IMPACT_TOTAL_RANGE_CACHE_TTL;
+  $c=get_transient($ckey); if($c!==false) return $c;
+
+  $sum = 0.0;
+  $rows = ibl_fetch_transactions($from,$to,$status);
+  if (is_wp_error($rows)) return ['error'=>$rows->get_error_message()];
+
+  foreach($rows as $r){
+    if (ibl__is_declined($r)) continue; // D → kihagyjuk
+    $ngo = ibl__pick_d1($r);
+    if (IMPACT_REQUIRE_NGO && !ibl__has_valid_ngo($ngo)) continue;
+
+    $comm = ibl__num($r['publisher_commission'] ?? ($r['commission'] ?? ($r['payout'] ?? 0)));
+    $sum += ($comm * 0.5);
+  }
+
+  $out = ['total'=>$sum, 'from'=>$from, 'to'=>$to, 'status'=>$status, 'generated_at'=>current_time('mysql')];
+  set_transient($ckey,$out,$ttl);
+  return $out;
+}
+
+/* ===== REST: /wp-json/impact/v1/{ticker|leaderboard|activity|total} ===== */
+add_action('rest_api_init', function(){
+  register_rest_route('impact/v1','/ticker', [
+    'methods'=>'GET','permission_callback'=>'__return_true',
+    'callback'=>function(){
+      $d=ibl_build_ticker();
+      return is_array($d)? rest_ensure_response($d) : new WP_Error('err','Hiba');
+    }
+  ]);
+  register_rest_route('impact/v1','/leaderboard', [
+    'methods'=>'GET','permission_callback'=>'__return_true',
+    'callback'=>function(WP_REST_Request $req){
+      $tab = sanitize_text_field($req->get_param('tab') ?: 'ngo');
+      $d=ibl_build_leaderboard($tab);
+      if (isset($d['error'])) return new WP_Error('dognet_err','Dognet hiba: '.$d['error'],['status'=>502]);
+      return rest_ensure_response($d);
+    }
+  ]);
+  register_rest_route('impact/v1','/activity', [
+    'methods'=>'GET','permission_callback'=>'__return_true',
+    'callback'=>function(){
+      $d=ibl_build_activity();
+      if (isset($d['error'])) return new WP_Error('dognet_err','Dognet hiba: '.$d['error'],['status'=>502]);
+      return rest_ensure_response($d);
+    }
+  ]);
+  register_rest_route('impact/v1','/total', [
+    'methods'=>'GET','permission_callback'=>'__return_true',
+    'callback'=>function(WP_REST_Request $req){
+      $from = sanitize_text_field($req->get_param('from') ?: '');
+      $to   = sanitize_text_field($req->get_param('to')   ?: '');
+      $d = ibl_build_total($from ?: null, $to ?: null);
+      if (isset($d['error'])) return new WP_Error('dognet_err','Dognet hiba: '.$d['error'],['status'=>502]);
+      return rest_ensure_response($d);
+    }
+  ]);
+});
+
+/* ===== Shortcode-ok az összadományhoz ===== */
+/**
+ * [impact_total]
+ * – All-time összadomány: az első hívás napjától (mentve: option 'impact_total_since') a mai napig (P + A, D nélkül, csak data1)
+ */
+add_shortcode('impact_total', function($atts){
+  $d = ibl_build_total(null, null);
+  if (isset($d['error'])) return '<div class="card" style="padding:12px">Hiba: '.esc_html($d['error']).'</div>';
+  $fmt = function($n){ return number_format((float)$n, 2, ',', ' ') . ' €'; };
+  return '<div class="kpis card"><div class="kpi"><div class="label">Összadomány (all-time)</div><div class="value">'.$fmt($d['total']).'</div><div class="sub">Mióta: '.esc_html($d['from']).'</div></div></div>';
+});
+
+/**
+ * [impact_total_range from="YYYY-MM-DD" to="YYYY-MM-DD"]
+ * – Időszakos összadomány (P + A, D nélkül, csak data1)
+ */
+add_shortcode('impact_total_range', function($atts){
+  $a = shortcode_atts(['from'=>'','to'=>''], $atts);
+  $from = $a['from'] ?: date('Y-m-01');
+  $to   = $a['to']   ?: date('Y-m-d');
+  $d = ibl_build_total($from, $to);
+  if (isset($d['error'])) return '<div class="card" style="padding:12px">Hiba: '.esc_html($d['error']).'</div>';
+  $fmt = function($n){ return number_format((float)$n, 2, ',', ' ') . ' €'; };
+  return '<div class="kpis card"><div class="kpi"><div class="label">Összadomány ('.$from.' → '.$to.')</div><div class="value">'.$fmt($d['total']).'</div><div class="sub">P + A · D nélkül · csak szervezet-választással</div></div></div>';
+});
+
+/* ===== (Opcionális) Debug: kulcsok mintavétele ===== */
+add_action('rest_api_init', function(){
+  register_rest_route('impact/v1','/debug/sample', [
+    'methods'=>'GET','permission_callback'=>'__return_true',
+    'callback'=>function(){
+      $from = date('Y-m-d', strtotime('-30 days'));
+      $to   = date('Y-m-d');
+      $rows = ibl_fetch_transactions($from,$to, IMPACT_LIVE_STATUS, 3, 50);
+      if (is_wp_error($rows) || !$rows) return ['keys'=>[],'sample'=>[]];
+      $first = (array)$rows[0];
+      $keys = array_keys($first);
+      $sample = [];
+      foreach($first as $k=>$v){ $sample[$k] = is_scalar($v) ? mb_substr((string)$v,0,80) : (is_array($v)?'[array]':'[obj]'); }
+      return ['keys'=>$keys, 'sample'=>$sample, 'status'=>IMPACT_LIVE_STATUS];
+    }
+  ]);
+});

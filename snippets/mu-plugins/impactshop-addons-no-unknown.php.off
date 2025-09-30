@@ -1,0 +1,405 @@
+<?php
+/**
+ * Plugin Name: ImpactShop Addons – No-Unknown + Ticker/Leaderboard/Activity (MU)
+ * Description: Két új kimutatás (ismeretlenek kiszűrése) + egyszerű ticker/leaderboard/activity shortcodo k. Nem ír felül semmit.
+ * Version: 1.0.0
+ * Author: Sharity
+ */
+
+if (!defined('ABSPATH')) exit;
+
+/* ---------------------- Segéd: NGO slug pick ---------------------- */
+/* Ha már létezik a core-ban, akkor azt használjuk; különben adunk egy light verziót. */
+if (!function_exists('impactshop_pick_ngo_from_row')) {
+  function impactshop_pick_ngo_from_row($row){
+    $cands=[];
+    foreach (['d1','data1','ref1','sub_id','subid','sub_id1','ngo','ngo_name',
+              'last_click_data1','last_click_d1','last_click_subid'] as $k){
+      if (!empty($row[$k]) && !is_array($row[$k])) {
+        $v=trim((string)$row[$k]); if($v!=='') $cands[]=$v;
+      }
+    }
+    if (!$cands) return '';
+    foreach($cands as $v){ // szép slug
+      if(preg_match('~^[a-z0-9._-]{3,}$~i',$v) && preg_match('~[a-z]~i',$v)) return sanitize_title($v);
+    }
+    foreach($cands as $v){ // nem numerikus fallback
+      if(!preg_match('~^\d+(?:\.\d+)?$~',$v)) return sanitize_title($v);
+    }
+    return '';
+  }
+}
+
+/* ---------------------- Segéd: commission + fetch ---------------------- */
+if (!function_exists('impactshop__num_commission')) {
+  function impactshop__num_commission($row){
+    foreach(['publisher_commission','commission','payout','publisherPayout','commission_publisher'] as $k){
+      if(isset($row[$k]) && is_numeric($row[$k])) return (float)$row[$k];
+    }
+    return 0.0;
+  }
+}
+if (!function_exists('impactshop__fetch_tx')) {
+  function impactshop__fetch_tx($from,$to,$status='all'){
+    if(!function_exists('dognet_api_list_conversions_all')) return [];
+    $res = dognet_api_list_conversions_all($from,$to,$status,80,200);
+    return $res['items'] ?? [];
+  }
+}
+
+/* =======================================================================
+   1) ÚJ KIMUTATÁS: [impactshop_report_no_unknown]
+   – ugyanaz, mint az eredeti report, de kihagyja az „(nincs d1)”, „(ismeretlen)”,
+     „(ismeretlen shop)” sorokat, és újraszámolja az összesítőt.
+   ======================================================================= */
+if (!function_exists('impactshop_shortcode_report_no_unknown')) {
+  function impactshop_shortcode_report_no_unknown($atts) {
+    $a = shortcode_atts([
+      'from'   => date('Y-m-01'),
+      'to'     => date('Y-m-d'),
+      'status' => 'approved',
+      'group'  => 'shop_ngo',   // ngo | shop | shop_ngo
+      'ngo'    => '',
+    ], $atts, 'impactshop_report_no_unknown');
+
+    if (!function_exists('impactshop_aggregate_conversions')) {
+      return '<div style="color:#b00">Hiányzik a core: impactshop_aggregate_conversions</div>';
+    }
+
+    $data = impactshop_aggregate_conversions($a['from'],$a['to'],$a['status'],$a['group'],$a['ngo']);
+    if (!empty($data['meta']['error'])) {
+      return '<div style="color:#b00">Dognet API hiba: '. esc_html($data['meta']['error']) .'</div>';
+    }
+
+    $rows = $data['rows'] ?? [];
+
+    $is_unk_ngo  = function($v){
+      $v = trim((string)$v);
+      return $v==='' || $v==='(nincs d1)' || $v==='(ismeretlen)';
+    };
+    $is_unk_shop = function($slug,$name){
+      $slug = trim((string)$slug); $name = trim((string)$name);
+      return $slug==='' || $slug==='(ismeretlen shop)' || stripos($name,'(ismeretlen shop)')!==false;
+    };
+
+    $filtered=[];
+    foreach($rows as $r){
+      if ($a['group']==='ngo') {
+        if ($is_unk_ngo($r['ngo'] ?? '')) continue;
+      } elseif ($a['group']==='shop') {
+        if ($is_unk_shop(($r['shop_slug'] ?? ''), ($r['shop_name'] ?? ''))) continue;
+      } else { // shop_ngo
+        if ($is_unk_ngo($r['ngo'] ?? '')) continue;
+        if ($is_unk_shop(($r['shop_slug'] ?? ''), ($r['shop_name'] ?? ''))) continue;
+      }
+      $filtered[]=$r;
+    }
+
+    $grand=['orders'=>0,'order_value'=>0.0,'commission'=>0.0];
+    foreach($filtered as $r){
+      $grand['orders']      += (int)($r['orders'] ?? 0);
+      $grand['order_value'] += (float)($r['order_value'] ?? 0);
+      $grand['commission']  += (float)($r['commission'] ?? 0);
+    }
+    $eur = fn($n)=> number_format((float)$n, 2, ',', ' ') . ' €';
+
+    ob_start(); ?>
+    <div class="impactshop-report impactshop-report-no-unknown" style="font:14px/1.5 system-ui">
+      <div style="margin:8px 0 12px 0">
+        <b>Időszak:</b> <?php echo esc_html($a['from'].' → '.$a['to']); ?> &nbsp; |
+        <b>Státusz:</b> <?php echo esc_html($a['status']); ?> &nbsp; |
+        <b>Bontás:</b> <?php echo esc_html($a['group']); ?>
+        <?php if (!empty($a['ngo'])): ?> &nbsp; | <b>NGO:</b> <?php echo esc_html($a['ngo']); ?> <?php endif; ?>
+        &nbsp; | <span style="color:#666">„ismeretlen” sorok kiszűrve</span>
+      </div>
+      <div style="overflow:auto">
+        <table style="border-collapse:separate;border-spacing:0;width:100%;min-width:680px">
+          <thead>
+          <tr style="background:#f6f7f8">
+            <?php if ($a['group']==='ngo'): ?>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:8px 0 0 0">Szervezet (data1)</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Rendelések</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Kosárérték</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:0 8px 0 0">Jutalék</th>
+            <?php elseif ($a['group']==='shop'): ?>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:8px 0 0 0">Webshop</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Rendelések</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Kosárérték</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:0 8px 0 0">Jutalék</th>
+            <?php else: ?>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:8px 0 0 0">Webshop</th>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Szervezet (data1)</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Rendelések</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Kosárérték</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:0 8px 0 0">Jutalék</th>
+            <?php endif; ?>
+          </tr>
+          </thead>
+          <tbody>
+          <?php if (!$filtered): ?>
+            <tr><td colspan="5" style="padding:10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 8px 8px;color:#666">Nincs megjeleníthető adat.</td></tr>
+          <?php else: foreach ($filtered as $r): ?>
+            <tr>
+              <?php if ($a['group']==='ngo'): ?>
+                <td style="padding:8px 10px;border-left:1px solid #e6e8ea"><?php echo esc_html($r['ngo']); ?></td>
+                <td style="text-align:right;padding:8px 10px"><?php echo number_format($r['orders'],0,',',' '); ?></td>
+                <td style="text-align:right;padding:8px 10px"><?php echo $eur($r['order_value']); ?></td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e6e8ea"><?php echo $eur($r['commission']); ?></td>
+              <?php elseif ($a['group']==='shop'): ?>
+                <td style="padding:8px 10px;border-left:1px solid #e6e8ea"><?php echo esc_html($r['shop_name'].' ('.$r['shop_slug'].')'); ?></td>
+                <td style="text-align:right;padding:8px 10px"><?php echo number_format($r['orders'],0,',',' '); ?></td>
+                <td style="text-align:right;padding:8px 10px"><?php echo $eur($r['order_value']); ?></td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e6e8ea"><?php echo $eur($r['commission']); ?></td>
+              <?php else: ?>
+                <td style="padding:8px 10px;border-left:1px solid #e6e8ea"><?php echo esc_html($r['shop_name']); ?></td>
+                <td style="padding:8px 10px"><?php echo esc_html($r['ngo']); ?></td>
+                <td style="text-align:right;padding:8px 10px"><?php echo number_format($r['orders'],0,',',' '); ?></td>
+                <td style="text-align:right;padding:8px 10px"><?php echo $eur($r['order_value']); ?></td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e6e8ea"><?php echo $eur($r['commission']); ?></td>
+              <?php endif; ?>
+            </tr>
+          <?php endforeach; endif; ?>
+          </tbody>
+          <tfoot>
+          <tr style="background:#fbfbfc">
+            <?php if ($a['group']==='ngo'): ?>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 0 8px">Összesen</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0"><?php echo number_format($grand['orders'],0,',',' '); ?></th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0"><?php echo $eur($grand['order_value']); ?></th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 8px 0"><?php echo $eur($grand['commission']); ?></th>
+            <?php elseif ($a['group']==='shop'): ?>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 0 8px">Összesen</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0"><?php echo number_format($grand['orders'],0,',',' '); ?></th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0"><?php echo $eur($grand['order_value']); ?></th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 8px 0"><?php echo $eur($grand['commission']); ?></th>
+            <?php else: ?>
+              <th colspan="3" style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 0 8px">Összesen</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0"><?php echo $eur($grand['order_value']); ?></th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 8px 0"><?php echo $eur($grand['commission']); ?></th>
+            <?php endif; ?>
+          </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <?php
+    return ob_get_clean();
+  }
+  add_shortcode('impactshop_report_no_unknown','impactshop_shortcode_report_no_unknown');
+}
+
+/* =======================================================================
+   2) ÚJ NYERS SOROS NÉZET: [impactshop_rows_no_unknown]
+   – a nyers listát kirakja, de csak érvényes NGO sluggal és ismert shoppal.
+   ======================================================================= */
+if (!function_exists('impactshop_shortcode_rows_no_unknown')) {
+  function impactshop_shortcode_rows_no_unknown($atts){
+    $a = shortcode_atts([
+      'from'   => date('Y-m-01'),
+      'to'     => date('Y-m-d'),
+      'status' => 'approved', // approved|pending|rejected|all
+      'limit'  => 0           // 0 = összes
+    ], $atts, 'impactshop_rows_no_unknown');
+
+    if (!function_exists('impactshop_build_campaign_map')) {
+      return '<div style="color:#b00">Hiányzik a core: impactshop_build_campaign_map</div>';
+    }
+
+    $items = impactshop__fetch_tx($a['from'],$a['to'],$a['status']);
+    $maps  = impactshop_build_campaign_map(); $by_cid = $maps['by_cid'];
+
+    $rows=[]; $sum=0.0;
+    foreach ($items as $it) {
+      $ngo = impactshop_pick_ngo_from_row($it);
+      if ($ngo==='') continue; // ismeretlen NGO → szűrés
+
+      // shop azonosítás
+      $cid=0;
+      foreach (['campaign_id','campaignId','cid','campaign'] as $k) {
+        if (isset($it[$k])) { $cid = is_array($it[$k]) ? intval($it[$k]['id'] ?? 0) : intval($it[$k]); break; }
+      }
+      if (!$cid || empty($by_cid[$cid])) continue; // ismeretlen shop → szűrés
+
+      $shopSlug = $by_cid[$cid]['slug']; $shopName = $by_cid[$cid]['name'];
+
+      $comm = impactshop__num_commission($it);
+      $sum += $comm;
+      $dt = '';
+      foreach (['created_at','createdAt','created','time','datetime'] as $k) { if (!empty($it[$k])) { $dt=(string)$it[$k]; break; } }
+      $rows[] = ['dt'=>$dt, 'shop'=>$shopName.' ('.$shopSlug.')', 'ngo'=>$ngo, 'commission'=>$comm];
+    }
+
+    // rendezés idő szerint (legújabb felül) és limit
+    usort($rows, fn($a,$b)=> strcmp($b['dt'],$a['dt']));
+    if (intval($a['limit'])>0) $rows = array_slice($rows, 0, intval($a['limit']));
+
+    ob_start(); ?>
+    <div class="impactshop-rows-no-unknown" style="font:14px/1.5 system-ui">
+      <div style="margin:6px 0 10px 0">
+        <b>Időszak:</b> <?php echo esc_html($a['from'].' → '.$a['to']); ?> |
+        <b>Státusz:</b> <?php echo esc_html($a['status']); ?> |
+        <span style="color:#666">„ismeretlen” NGO/shop sorok kiszűrve</span>
+      </div>
+      <div style="overflow:auto">
+        <table style="border-collapse:separate;border-spacing:0;width:100%;min-width:680px">
+          <thead>
+            <tr style="background:#f6f7f8">
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:8px 0 0 0">Dátum</th>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Webshop</th>
+              <th style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0">Szervezet (data1)</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-bottom:0;border-radius:0 8px 0 0">Jutalék</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (!$rows): ?>
+              <tr><td colspan="4" style="padding:10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 8px 8px;color:#666">Nincs megjeleníthető adat.</td></tr>
+            <?php else: foreach ($rows as $r): ?>
+              <tr>
+                <td style="padding:8px 10px;border-left:1px solid #e6e8ea"><?php echo esc_html($r['dt'] ?: '—'); ?></td>
+                <td style="padding:8px 10px"><?php echo esc_html($r['shop']); ?></td>
+                <td style="padding:8px 10px"><?php echo esc_html($r['ngo']); ?></td>
+                <td style="text-align:right;padding:8px 10px;border-right:1px solid #e6e8ea"><?php echo number_format($r['commission'],2,',',' '); ?> €</td>
+              </tr>
+            <?php endforeach; endif; ?>
+          </tbody>
+          <tfoot>
+            <tr style="background:#fbfbfc">
+              <th colspan="3" style="text-align:left;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 0 8px">Összesen</th>
+              <th style="text-align:right;padding:8px 10px;border:1px solid #e6e8ea;border-top:0;border-radius:0 0 8px 0"><?php echo number_format($sum,2,',',' '); ?> €</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <?php
+    return ob_get_clean();
+  }
+  add_shortcode('impactshop_rows_no_unknown', 'impactshop_shortcode_rows_no_unknown');
+}
+
+/* =======================================================================
+   3) Ticker / Leaderboard / Activity – egyszerű shortcodo k
+   – rejected (D) kizárva, csak érvényes NGO sluggal (d1) számolunk
+   ======================================================================= */
+if (!function_exists('impactshop__norm_status')) {
+  function impactshop__norm_status($row){
+    $s = strtolower($row['status'] ?? $row['rstatus'] ?? $row['state'] ?? '');
+    return $s;
+  }
+}
+
+/* ---- Ticker építés ---- */
+if (!function_exists('impactshop__build_ticker_vals')) {
+  function impactshop__build_ticker_vals(){
+    $from = date('Y-m-01'); $to = date('Y-m-d'); $today = date('Y-m-d');
+    $rows = impactshop__fetch_tx($from,$to,'all');
+    $sum=0.0; $todaySum=0.0;
+    foreach($rows as $r){
+      $ngo = impactshop_pick_ngo_from_row($r); if($ngo==='') continue;
+      $st = impactshop__norm_status($r); if ($st==='d' || $st==='rejected') continue;
+      $c = impactshop__num_commission($r);
+      $sum += $c;
+      $dt = substr((string)($r['created_at']??$r['created']??''),0,10);
+      if($dt===$today) $todaySum += $c;
+    }
+    // félre osztás (adomány)
+    return ['total'=>$sum*0.5, 'today'=>$todaySum*0.5];
+  }
+}
+
+/* ---- Shortcode: [impactshop_ticker] ---- */
+if (!function_exists('impactshop_shortcode_ticker')) {
+  function impactshop_shortcode_ticker(){
+    $v = impactshop__build_ticker_vals();
+    return '<div class="impactshop-ticker" style="font:600 16px/1.4 system-ui">'
+         . 'Havi adomány: <span>'.number_format($v['total'],2,',',' ').' €</span>'
+         . ' &nbsp; | &nbsp; Ma: <span>'.number_format($v['today'],2,',',' ').' €</span>'
+         . '</div>';
+  }
+  add_shortcode('impactshop_ticker','impactshop_shortcode_ticker');
+}
+
+/* ---- Leaderboard építés ---- */
+if (!function_exists('impactshop__build_leaderboard')) {
+  function impactshop__build_leaderboard($tab='ngo'){
+    $from=date('Y-m-01'); $to=date('Y-m-d');
+    $rows=impactshop__fetch_tx($from,$to,'all');
+    $map=[];
+    foreach($rows as $r){
+      $ngo=impactshop_pick_ngo_from_row($r); if($ngo==='') continue;
+      $st=impactshop__norm_status($r); if($st==='d'||$st==='rejected') continue;
+      $amt=impactshop__num_commission($r)*0.5;
+      if($tab==='shop'){
+        // shop név (ha map elérhető)
+        $cid=0; foreach(['campaign_id','campaignId','cid','campaign'] as $k){ if(isset($r[$k])){ $cid=is_array($r[$k])?intval($r[$k]['id']??0):intval($r[$k]); break; } }
+        $name='(ismeretlen shop)';
+        if (function_exists('impactshop_build_campaign_map')) {
+          $maps = impactshop_build_campaign_map(); $by_cid = $maps['by_cid'];
+          if ($cid && !empty($by_cid[$cid]['name'])) $name = $by_cid[$cid]['name'].' ('.$by_cid[$cid]['slug'].')';
+        } else {
+          $name = 'cid '.$cid;
+        }
+        if ($name==='(ismeretlen shop)') continue; // dobjuk az ismeretlen shopot
+        $map[$name]=($map[$name]??0)+$amt;
+      } else {
+        $map[$ngo]=($map[$ngo]??0)+$amt;
+      }
+    }
+    $out=[]; foreach($map as $name=>$amt){ $out[]=['name'=>$name,'amount'=>$amt]; }
+    usort($out, fn($a,$b)=> $b['amount']<=>$a['amount']);
+    return $out;
+  }
+}
+
+/* ---- Shortcode: [impactshop_leaderboard tab="ngo|shop" top="10"] ---- */
+if (!function_exists('impactshop_shortcode_leaderboard')) {
+  function impactshop_shortcode_leaderboard($atts){
+    $a = shortcode_atts(['tab'=>'ngo','top'=>'10'], $atts, 'impactshop_leaderboard');
+    $tab = strtolower($a['tab'])==='shop' ? 'shop' : 'ngo';
+    $top = max(1, intval($a['top']));
+    $rows = array_slice(impactshop__build_leaderboard($tab), 0, $top);
+    ob_start(); ?>
+    <div class="impactshop-leaderboard" style="font:14px/1.5 system-ui">
+      <div style="margin:6px 0 10px 0"><b>Top <?php echo (int)$top; ?></b> – <?php echo $tab==='shop'?'Webshopok':'Szervezetek'; ?> (rejected nélkül)</div>
+      <ol style="margin:0;padding-left:18px">
+        <?php foreach($rows as $r): ?>
+          <li><?php echo esc_html($r['name']); ?> — <b><?php echo number_format($r['amount'],2,',',' '); ?> €</b></li>
+        <?php endforeach; ?>
+      </ol>
+    </div>
+    <?php
+    return ob_get_clean();
+  }
+  add_shortcode('impactshop_leaderboard','impactshop_shortcode_leaderboard');
+}
+
+/* ---- Shortcode: [impactshop_activity limit="10"] ---- */
+if (!function_exists('impactshop_shortcode_activity')) {
+  function impactshop_shortcode_activity($atts){
+    $a = shortcode_atts(['limit'=>'10'], $atts, 'impactshop_activity');
+    $limit = max(1, intval($a['limit']));
+    $from=date('Y-m-d',strtotime('-14 days')); $to=date('Y-m-d');
+    $rows=impactshop__fetch_tx($from,$to,'all');
+    $list=[];
+    foreach($rows as $r){
+      $ngo=impactshop_pick_ngo_from_row($r); if($ngo==='') continue;
+      $st=impactshop__norm_status($r); if($st==='d'||$st==='rejected') continue;
+      $c=impactshop__num_commission($r)*0.5;
+      $dt=substr((string)($r['created_at']??$r['created']??''),0,16);
+      $list[]=['text'=>sprintf('%s • %s € • %s',$ngo,number_format($c,2,',',' '),$dt),'dt'=>$dt];
+    }
+    usort($list, fn($a,$b)=> strcmp($b['dt'],$a['dt']));
+    $list = array_slice($list, 0, $limit);
+    ob_start(); ?>
+    <div class="impactshop-activity" style="font:14px/1.5 system-ui">
+      <ul style="margin:0;padding-left:18px">
+        <?php foreach($list as $it): ?>
+          <li><?php echo esc_html($it['text']); ?></li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+    <?php
+    return ob_get_clean();
+  }
+  add_shortcode('impactshop_activity','impactshop_shortcode_activity');
+}

@@ -1,0 +1,158 @@
+<?php
+/**
+ * Impact MINI Addons v3 – shops + deals shortcodes
+ * Shortcodes:
+ *   [impactshop_shops title="..." category="Tech,Divat,Sport" limit="12"]
+ *   [impactshop_deals limit="12" force="0"]
+ */
+
+if (!defined('SHARITY_SHOPS_PUB_CSV')) {
+  define('SHARITY_SHOPS_PUB_CSV','https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=0&single=true&output=csv');
+}
+if (!defined('SHARITY_DEALS_API_URL')) {
+  define('SHARITY_DEALS_API_URL','https://script.google.com/macros/s/AKfycbzM_2ZzmFxhawR2iT7_V16eTeHIxHK3y0VgAFbKoRBFoiabLI01JeQMyYMxxsLTB6nM/exec');
+}
+if (!defined('SHARITY_FILL_URL')) {
+  define('SHARITY_FILL_URL','https://form.fillout.com/t/eM61RLkz6jus');
+}
+if (!defined('SHARITY_GLOBAL_DEFAULT_D1')) {
+  define('SHARITY_GLOBAL_DEFAULT_D1','bator-tabor-alapitvany');
+}
+
+/* helpers */
+function imx_slug($s){ return strtolower(preg_replace('~[^a-z0-9\-]+~','-', (string)$s)); }
+function imx_b64url($s){ return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
+function imx_http_get($u,$t=7){ $r=wp_remote_get($u,['timeout'=>$t,'redirection'=>3]); return is_wp_error($r)?[0,'']:[(int)wp_remote_retrieve_response_code($r),(string)wp_remote_retrieve_body($r)]; }
+function imx_host($u){ $p=wp_parse_url($u); return isset($p['host'])?strtolower($p['host']):''; }
+function imx_same_host_or_sub($a,$b){ $h1=imx_host($a); $h2=imx_host($b); if(!$h1||!$h2)return false; $h1=ltrim(preg_replace('~^www\.~','',$h1)); $h2=ltrim(preg_replace('~^www\.~','',$h2)); return $h1===$h2 || (substr($h1,-strlen($h2)-1)==='.'. $h2); }
+
+/* Shops load → [slug=>['title','category','logo','site','default_d1']] */
+function imx_get_shops(){
+  static $C=null; if($C!==null) return $C;
+  $out=[];
+  if(function_exists('impactshop_get_shops')){
+    try{
+      foreach((array)impactshop_get_shops() as $r){
+        $slug=imx_slug($r['shop_slug']??''); if(!$slug) continue;
+        $out[$slug]=[
+          'title'=>$r['title']??($r['name']??$slug),
+          'category'=>$r['category']??'',
+          'logo'=>$r['logo']??($r['img']??''),
+          'site'=>$r['site']??($r['url']??$r['website']??''),
+          'default_d1'=>imx_slug($r['default_d1']??''),
+        ];
+      }
+    }catch(\Throwable $e){}
+  }
+  if(!$out && SHARITY_SHOPS_PUB_CSV){
+    list($code,$csv)=imx_http_get(SHARITY_SHOPS_PUB_CSV,7);
+    if($code===200 && $csv){
+      $lines=preg_split("/\r\n|\r|\n/",trim($csv)); $hdr=[];
+      foreach($lines as $i=>$ln){
+        if($ln==='') continue; $cols=str_getcsv($ln);
+        if(!$i){ $hdr=$cols; continue; }
+        $rec=[]; foreach($cols as $j=>$v){ $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; }
+        $slug=imx_slug($rec['shop_slug']??''); if(!$slug) continue;
+        $out[$slug]=[
+          'title'=>$rec['title']??$rec['name']??$slug,
+          'category'=>$rec['category']??'',
+          'logo'=>$rec['logo']??$rec['img']??'',
+          'site'=>$rec['site']??$rec['url']??$rec['website']??'',
+          'default_d1'=>imx_slug($rec['default_d1']??''),
+        ];
+      }
+    }
+  }
+  return $C=$out;
+}
+function imx_default_d1_for($slug){
+  $slug=imx_slug($slug); $shops=imx_get_shops();
+  if(isset($shops[$slug]['default_d1']) && $shops[$slug]['default_d1']) return $shops[$slug]['default_d1'];
+  $fb=imx_slug((string)SHARITY_GLOBAL_DEFAULT_D1); return $fb?:'';
+}
+function imx_build_go($slug,$d1='',$args=[]){ $q=array_merge(['src'=>'impactshop'],$args); if($d1)$q['d1']=$d1; return add_query_arg($q, home_url('/go/'.rawurlencode(imx_slug($slug)))); }
+function imx_build_go_deal($slug,$product,$d1='',$args=[]){ $q=array_merge(['src'=>'impactshop','u'=>imx_b64url($product)],$args); if($d1)$q['d1']=$d1; return add_query_arg($q, home_url('/go-deal/'.rawurlencode(imx_slug($slug)))); }
+
+/* [impactshop_shops] */
+add_shortcode('impactshop_shops', function($atts){
+  $a=shortcode_atts(['category'=>'','limit'=>'12','title'=>''], $atts,'impactshop_shops');
+  $shops=imx_get_shops(); if(!$shops) return '<div>Nem érhető el a Shops adatforrás.</div>';
+
+  if(($cat=trim($a['category']))!==''){
+    $needles=array_filter(array_map('trim', preg_split('~[|,]~',$cat)));
+    $shops=array_filter($shops,function($s)use($needles){
+      $hay=' '.strtolower((string)$s['category']).' ';
+      foreach($needles as $n){ if($n!=='' && str_contains($hay, strtolower($n))) return true; }
+      return false;
+    });
+  }
+  $shops=array_slice($shops,0,max(1,(int)$a['limit']),true);
+
+  $cards=[];
+  foreach($shops as $slug=>$s){
+    $d1=imx_default_d1_for($slug);
+    $href=$d1?imx_build_go($slug,$d1):add_query_arg(['shop'=>$slug,'src'=>'impactshop'],SHARITY_FILL_URL);
+    $img=$s['logo']?'<img src="'.esc_url($s['logo']).'" alt="'.esc_attr($s['title']).'">':'';
+    $cards[]='<article class="card item"><div class="thumb">'.$img.'</div><div class="meta"><div class="title">'.esc_html($s['title']).'</div><div class="cta"><a href="'.esc_url($href).'" rel="noopener">Megnézem →</a></div></div></article>';
+  }
+
+  $title=$a['title']?'<h3>'.esc_html($a['title']).'</h3>':'';
+  $css='<style>.imx-shops{display:flex;gap:12px;overflow:auto;padding:6px}
+  .imx-shops .card{min-width:240px;border:1px solid #eee;border-radius:14px;padding:10px;background:#fff}
+  .imx-shops .thumb img{width:100%;height:120px;object-fit:contain;border-radius:10px;background:#f7f7f7}
+  .imx-shops .title{font-weight:600;margin:.25rem 0}.imx-shops .cta a{text-decoration:none}</style>';
+
+  return $css.$title.'<div class="imx-shops">'.implode('', $cards).'</div>';
+});
+
+/* [impactshop_deals] – force=1 → mindig termék deeplink; force=0 → host-guard */
+add_shortcode('impactshop_deals', function($atts){
+  $a=shortcode_atts(['limit'=>'12','force'=>'0'], $atts,'impactshop_deals');
+  $limit=max(1,(int)$a['limit']); $force=(string)$a['force']==='1';
+
+  list($code,$body)=imx_http_get(SHARITY_DEALS_API_URL,8);
+  if($code!==200||!$body) return '<div>Nem érhető el az akció-feed.</div>';
+  $data=json_decode($body,true); $items=is_array($data['items']??null)?$data['items']:[];
+  if(!$items) return '<div>Jelenleg nincs megjeleníthető ajánlat.</div>';
+
+  $shops=imx_get_shops(); $out=[]; $n=0;
+  foreach($items as $it){
+    if($n>=$limit) break;
+    $slug=imx_slug($it['slug']??''); $href=esc_url_raw($it['href']??'');
+    if(!$slug||!$href) continue;
+
+    // label: top-level + label JSON kombó
+    $lab=$it['label']??[];
+    if(is_string($lab)){ $d=json_decode($lab,true); if(is_array($d)) $lab=$d; }
+    $title=esc_html($it['title']??($lab['title']??'Ajánlat'));
+    $price=esc_html($it['price']??($lab['price']??'')); $old=esc_html($it['old_price']??($lab['old_price']??'')); $pct=(int)($it['discount_pct']??($lab['discount_pct']??0));
+    $img=esc_url($it['img']??''); $d1=imx_default_d1_for($slug);
+    $site=$shops[$slug]['site']??'';
+
+    // Linképítés
+    if($force){
+      // Mindig mélylinkezzünk a termékre (vállalva, hogy néha Dognet hibát dobhat)
+      $go=imx_build_go_deal($slug,$href,$d1);
+    }else{
+      // Biztonságos mód: csak akkor deeplink, ha host-match; különben főoldal
+      $go = ($site && imx_same_host_or_sub($href,$site)) ? imx_build_go_deal($slug,$href,$d1) : imx_build_go($slug,$d1);
+    }
+
+    $card='<a class="imx-deal" href="'.esc_url($go).'" target="_blank" rel="nofollow sponsored noopener">'
+        .  '<div class="thumb">'.($img?'<img src="'.esc_url($img).'" alt="">':'<div class="ph"></div>').'</div>'
+        .  '<div class="body"><div class="title">'.$title.'</div><div class="row">'
+        .  ($old?'<s class="old">'.$old.'</s>':'').($price?'<span class="price">'.$price.'</span>':'').($pct>0?'<span class="badge">-'.$pct.'%</span>':'')
+        .  '</div>'.((string)($it['category']??'')!==''?'<div class="cat">'.esc_html($it['category']).'</div>':'').'</div></a>';
+    $out[]=$card; $n++;
+  }
+
+  $css='<style>.imx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+  .imx-deal{display:flex;gap:.75rem;padding:.75rem;border:1px solid #eee;border-radius:14px;text-decoration:none;color:inherit;background:#fff;transition:transform .12s,box-shadow .12s}
+  .imx-deal:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+  .imx-deal .thumb{flex:0 0 auto}.imx-deal img,.imx-deal .ph{width:88px;height:88px;object-fit:cover;border-radius:10px;background:#f7f7f7;display:block}
+  .imx-deal .title{font-weight:600;line-height:1.25;margin-bottom:.25rem}.imx-deal .row{display:flex;align-items:center;gap:.5rem}
+  .imx-deal .old{opacity:.6;text-decoration:line-through}.imx-deal .badge{font-size:.85em;padding:.15rem .4rem;border-radius:6px;background:#ffe8e8}
+  .imx-deal .cat{font-size:.8em;opacity:.7;margin-top:.25rem}</style>';
+
+  return $css.'<div class="imx-grid">'.implode('', $out).'</div>';
+});
