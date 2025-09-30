@@ -1,4 +1,3 @@
-# impactshop-notes
 # ImpactShop – Projekt Napló
 
 Cél: ImpactShop/WordPress integráció, akciós termékek linkjeinek javítása, karbantartása.
