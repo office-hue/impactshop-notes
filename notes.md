@@ -19,3 +19,4 @@
 
 ## 4. Megfigyelések / hibák
 - Ha a REST `url` sekély (`/` vagy egy szegmens), akkor nagy eséllyel főoldal → bannerrel felülírni.
+-
