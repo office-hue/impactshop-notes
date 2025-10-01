@@ -11,6 +11,11 @@
       "name": "impact-api-url-fix",
       "path": "mu-plugins/impact-api-url-fix.php",
       "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/mu-plugins/impact-api-url-fix.php"
+    },
+    {
+      "name": "banner-fix-instant",
+      "path": "mu-plugins/banner-fix-instant.php",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/mu-plugins/banner-fix-instant.php"
     }
   ],
   "snippets": [
