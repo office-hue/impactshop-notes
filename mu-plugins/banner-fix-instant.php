@@ -1,10 +1,8 @@
 <?php
-<?php
 /**
- * Banner Link Fix - AZONNALI VÉGREHAJTÁS
+ * Banner Link Fix - JAVÍTOTT VERZIÓ
  * 
- * Ez a plugin automatikusan javítja a banner linkeket
- * amikor aktiválódik - REST API megkerülésével!
+ * Megfelelő function_exists védelem és függvény lezárás
  */
 
 add_action('init', function() {
@@ -24,20 +22,40 @@ function banner_fix_execute() {
     
     if ($wpdb->get_var("SHOW TABLES LIKE '$snippets_table'") == $snippets_table) {
         
-        // 1. Function_exists védelem hozzáadása
-        $function_fixes = $wpdb->query("
-            UPDATE $snippets_table 
-            SET code = REPLACE(code, 
-                'function impactshop_shortcode_scroller', 
-                'if (!function_exists(\"impactshop_shortcode_scroller\")) {\nfunction impactshop_shortcode_scroller'
-            )
+        // 1. JAVÍTOTT Function_exists védelem - teljes snippet cseréje
+        $snippets = $wpdb->get_results("
+            SELECT id, code 
+            FROM $snippets_table 
             WHERE active = 1 
             AND code LIKE '%function impactshop_shortcode_scroller%' 
             AND code NOT LIKE '%function_exists%'
         ");
         
-        // 2. Banner href javítás hozzáadása
-        $banner_fixes = $wpdb->query("
+        foreach ($snippets as $snippet) {
+            $code = $snippet->code;
+            
+            // Teljes függvény körülvétele function_exists-szel
+            $code = str_replace(
+                'function impactshop_shortcode_scroller',
+                'if (!function_exists(\'impactshop_shortcode_scroller\')) {' . "\n" . 'function impactshop_shortcode_scroller',
+                $code
+            );
+            
+            // Snippet végéhez } hozzáadása
+            $code = rtrim($code) . "\n}";
+            
+            // Frissítés
+            $wpdb->update(
+                $snippets_table,
+                ['code' => $code],
+                ['id' => $snippet->id],
+                ['%s'],
+                ['%d']
+            );
+        }
+        
+        // 2. Banner href javítás
+        $wpdb->query("
             UPDATE $snippets_table 
             SET code = REPLACE(code, 
                 '\$banner_href = \$banner[\"href\"];', 
@@ -49,23 +67,57 @@ function banner_fix_execute() {
         ");
         
         // 3. Dupla PHP tag javítás
-        $php_fixes = $wpdb->query("
+        $wpdb->query("
             UPDATE $snippets_table 
             SET code = REPLACE(code, '<?php\n<?php', '<?php')
             WHERE active = 1 
             AND code LIKE '%<?php%<?php%'
         ");
         
-        // Log eredmény
-        error_log("Banner fix executed: function_fixes=$function_fixes, banner_fixes=$banner_fixes, php_fixes=$php_fixes at " . current_time('mysql'));
+        error_log("Banner fix executed with improved function protection at " . current_time('mysql'));
     }
 }
 
-// Manuális futtatás admin oldalon
+// Manuális futtatás
 add_action('admin_notices', function() {
     if (isset($_GET['run_banner_fix'])) {
         banner_fix_execute();
         echo '<div class="notice notice-success"><p>Banner fix executed successfully!</p></div>';
+    }
+    
+    // Debug info megjelenítése
+    if (isset($_GET['debug_snippets'])) {
+        global $wpdb;
+        $snippets_table = $wpdb->prefix . 'snippets';
+        $snippets = $wpdb->get_results("SELECT id, name, active FROM $snippets_table WHERE code LIKE '%impactshop_shortcode_scroller%'");
+        
+        echo '<div class="notice notice-info"><p><strong>Snippets with impactshop_shortcode_scroller:</strong><br>';
+        foreach ($snippets as $snippet) {
+            $status = $snippet->active ? 'ACTIVE' : 'INACTIVE';
+            echo "ID: {$snippet->id}, Name: {$snippet->name}, Status: $status<br>";
+        }
+        echo '</p></div>';
+    }
+});
+
+// RESET funkció - törli a rossz function_exists védelmet
+add_action('admin_notices', function() {
+    if (isset($_GET['reset_function_exists'])) {
+        global $wpdb;
+        $snippets_table = $wpdb->prefix . 'snippets';
+        
+        // Törli a rossz function_exists védelmet
+        $wpdb->query("
+            UPDATE $snippets_table 
+            SET code = REPLACE(
+                REPLACE(code, 'if (!function_exists(\"impactshop_shortcode_scroller\")) {', ''),
+                'if (!function_exists(\"impactshop_shortcode_scroller\")) {\nfunction', 'function'
+            )
+            WHERE active = 1 
+            AND code LIKE '%function_exists%impactshop_shortcode_scroller%'
+        ");
+        
+        echo '<div class="notice notice-warning"><p>Function_exists protection reset! Run banner fix again.</p></div>';
     }
 });
 ?>
