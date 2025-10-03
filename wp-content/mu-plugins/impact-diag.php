@@ -17,12 +17,15 @@ if (!defined('IMPACT_API_BASE')) {
 /* =========================
  * URL helper – pontosan 1× rakja rá az /impact/v1-et
  * ========================= */
-if (!function_exists('impact_diag__build_url')) {
+if (!function_exists('impact_diag__normalize_base_host')) {
   function impact_diag__normalize_base_host() {
     $host = rtrim(IMPACT_API_BASE, '/');
     // ha véletlen maradt a végén /api, /api/v1, /impact, /impact/v1 → levágjuk
     return preg_replace('~/(api|impact)(/v1)?$~', '', $host);
   }
+}
+
+if (!function_exists('impact_diag__build_url')) {
   function impact_diag__build_url($path) {
     $host = impact_diag__normalize_base_host();
     $p = '/' . ltrim($path, '/');

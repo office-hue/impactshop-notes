@@ -46,3 +46,17 @@ wp-config.php
 # Note: If you wish to whitelist themes,
 # uncomment the next line
 #/wp-content/themes
+# Local backups & QA artifacts
+.backups/
+*.tar.gz
+critical-*/
+bin/impact-safety-qa.log
+
+# Staging and deployment artifacts
+.backups/
+staging-*.log
+staging-certification-*.log
+rollback-*.log
+deploy-*.log
+.staging_env
+.production_env
