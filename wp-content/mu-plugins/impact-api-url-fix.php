@@ -13,10 +13,12 @@ if (!defined('IMPACT_API_BASE')) {
 }
 
 /** Normalizált host (levág minden /api, /impact vagy /wp-json toldalékot a végéről) */
-function impact__normalize_host_for_rest() {
-  $host = rtrim(IMPACT_API_BASE, '/');
-  $host = preg_replace('~/(api|impact|wp-json)(/v1)?$~i', '', $host);
-  return $host;
+if (!function_exists('impact__normalize_host_for_rest')) {
+  function impact__normalize_host_for_rest() {
+    $host = rtrim(IMPACT_API_BASE, '/');
+    $host = preg_replace('~/(api|impact|wp-json)(/v1)?$~i', '', $host);
+    return $host;
+  }
 }
 
 /**
