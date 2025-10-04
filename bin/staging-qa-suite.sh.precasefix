@@ -65,10 +65,98 @@ run_test() {
   echo "🧪 Test: $name"
 
   case "$mode" in
+        http)
+            # Soha ne álljunk le csővezeték-hibán: (eval "$command" || true)
+            status=$(((eval "$command" || true) 2>/dev/null | awk 'NR==1{print $2}'))
+            if [[ "$status" =~ ^(200|30[12])$ ]]; then
+                echo "   ✅ PASSED (HTTP $status)"
+                PASSED=$((PASSED + 1))
+            else
+                echo "   ❌ FAILED (HTTP ${status:-000})"
+                {
+                    echo "[HTTP FAIL] $name"
+                    echo "Command: $command"
+                    echo "Status: ${status:-000}"
+                } >>"$LOG_FILE"
+            fi
+            ;;
+        ssh)
+            if ssh_with_timeout 30 "$DEPLOY_HOST" "$command" >/dev/null 2>&1; then
+                echo "   ✅ PASSED"
+                PASSED=$((PASSED + 1))
+            else
+                echo "   ❌ FAILED"
+                {
+                    echo "[SSH FAIL] $name"
+                    echo "Command: ssh $DEPLOY_HOST '$command'"
+                } >>"$LOG_FILE"
+            fi
+            ;;
+        output)
+            if (eval "$command" || true) 2>/dev/null | grep -Eq "$expected"; then
+                echo "   ✅ PASSED"
+                PASSED=$((PASSED + 1))
+            else
+                echo "   ❌ FAILED"
+                {
+                    echo "[OUTPUT FAIL] $name"
+                    echo "Command: $command"
+                    echo "Expected: $expected"
+                } >>"$LOG_FILE"
+            fi
+            ;;
+        *)
+            echo "   ⚠️ Unknown test mode: $mode" | tee -a "$LOG_FILE"
+            ;;
+    esac
+        http)
+            # tolerate curl/openssl/network failures; never exit early
+            status=$(((eval "$command" || true) 2>/dev/null | awk 'NR==1{print $2}'))
+            if [[ "$status" =~ ^(200|30[12])$ ]]; then
+                echo "   ✅ PASSED (HTTP $status)"
+                PASSED=$((PASSED + 1))
+            else
+                echo "   ❌ FAILED (HTTP ${status:-000})"
+                {
+                    echo "[HTTP FAIL] $name"
+                    echo "Command: $command"
+                    echo "Status: ${status:-000}"
+                } >>"$LOG_FILE"
+            fi
+            ;;
+        ssh)
+            if ssh_with_timeout 30 "$DEPLOY_HOST" "$command" >/dev/null 2>&1; then
+                echo "   ✅ PASSED"
+                PASSED=$((PASSED + 1))
+            else
+                echo "   ❌ FAILED"
+                {
+                    echo "[SSH FAIL] $name"
+                    echo "Command: ssh $DEPLOY_HOST '$command'"
+                } >>"$LOG_FILE"
+            fi
+            ;;
+        output)
+            if (eval "$command" || true) 2>/dev/null | grep -Eq "$expected"; then
+                echo "   ✅ PASSED"
+                PASSED=$((PASSED + 1))
+            else
+                echo "   ❌ FAILED"
+                {
+                    echo "[OUTPUT FAIL] $name"
+                    echo "Command: $command"
+                    echo "Expected: $expected"
+                } >>"$LOG_FILE"
+            fi
+            ;;
+        *)
+            echo "   ⚠️ Unknown test mode: $mode" | tee -a "$LOG_FILE"
+            ;;
+    esac
     http)
       local expect_re="${expected:-^(200|30[12])$}"
       local status
-      status=$((eval "$command" || true) 2>/dev/null | awk 'NR==1{print $2}')
+      status=$(eval "$command" 2>/dev/null | awk 'NR==1{print $2}')
       if [[ "${status:-000}" =~ $expect_re ]]; then
         echo "   ✅ PASSED (HTTP ${status:-000})"
         PASSED=$((PASSED + 1))
@@ -95,7 +183,7 @@ run_test() {
       fi
       ;;
     output)
-      if (eval "$command" || true) 2>/dev/null | grep -Eq "$expected"; then
+      if eval "$command" 2>/dev/null | grep -Eq "$expected"; then
         echo "   ✅ PASSED"
         PASSED=$((PASSED + 1))
       else
@@ -199,7 +287,7 @@ echo "---------------------------"
 run_test "wp-config readable"     "test -r '$APP_PATH/wp-config.php'"                         "" ssh
 run_test "No .env"                 "! test -f '$APP_PATH/.env'"                               "" ssh
 run_test "No .git"                 "! test -d '$APP_PATH/.git'"                               "" ssh
-run_test "Releases populated"     "test -d '$DEPLOY_PATH/releases'"                           "" ssh
+run_test "Releases populated"     "if [ -d '$DEPLOY_PATH/releases' ]; then count=\$(ls '$DEPLOY_PATH/releases' | wc -l); [ \"\$count\" -ge 1 ]; else exit 1; fi" "" ssh
 echo ""
 
 echo "5️⃣ SERVICES"
