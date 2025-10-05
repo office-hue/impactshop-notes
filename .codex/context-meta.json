@@ -1,0 +1,12 @@
+{
+  "project": "Sharity ImpactShop",
+  "description": "WordPress + Elementor affiliate platform integrating Dognet Publisher API through local REST endpoints (Impact Bridge Local) with mu-plugins for donation tracking and deploy automation.",
+  "components": [
+    "impactctl",
+    "bin/deploy-wpcontent-map.sh",
+    "bin/preflight-check.sh",
+    "bin/post-deploy-activate.sh",
+    "wp-content/mu-plugins"
+  ],
+  "last_snapshot": "2025-10-05 17:43:31"
+}
