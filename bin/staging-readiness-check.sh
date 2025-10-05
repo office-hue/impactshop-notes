@@ -18,7 +18,7 @@ declare -a endpoints=(
 
 for ep in "${endpoints[@]}"; do
   printf "🔎 %-50s " "$ep"
-  code=$(curl -s -o /dev/null -w "%{http_code}" "${STAGING_URL}${ep}")
+  code=$(curl -s -I -L -o /dev/null -w "%{http_code} %{url_effective}" "${STAGING_URL}${ep}")
   if [ "$code" = "200" ]; then
     echo "✅ ${code}"
   else
