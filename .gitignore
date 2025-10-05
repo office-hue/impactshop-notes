@@ -1,63 +1,23 @@
-# Wordpress - ignore core, configuration, examples, uploads and logs.
-# https://github.com/github/gitignore/blob/main/WordPress.gitignore
-
-# Core
-#
-# Note: if you want to stage/commit WP core files
-# you can delete this whole section/until Configuration.
-/wp-admin/
-/wp-content/index.php
-/wp-content/languages
-/wp-content/plugins/index.php
-/wp-content/themes/index.php
-/wp-includes/
-/index.php
-/license.txt
-/readme.html
-/wp-*.php
-/xmlrpc.php
-
-# Configuration
-wp-config.php
-
-# Example themes
-/wp-content/themes/twenty*/
-
-# Example plugin
-/wp-content/plugins/hello.php
-
-# Uploads
-/wp-content/uploads/
-
-# Log files
+# WordPress zajok / cache / ideiglenes
+wp-content/cache/
+wp-content/upgrade/
+wp-content/ai1wm-backups/
+wp-content/uploads/**/*.log
+wp-content/uploads/**/*.zip
 *.log
-
-# htaccess
-/.htaccess
-
-# All plugins
-#
-# Note: If you wish to whitelist plugins,
-# uncomment the next line
-#/wp-content/plugins
-
-# All themes
-#
-# Note: If you wish to whitelist themes,
-# uncomment the next line
-#/wp-content/themes
-# Local backups & QA artifacts
-.backups/
-*.tar.gz
-critical-*/
-bin/impact-safety-qa.log
-
-# Staging and deployment artifacts
-.backups/
-staging-*.log
-staging-certification-*.log
-rollback-*.log
-deploy-*.log
-.staging_env
-.production_env
 .DS_Store
+Thumbs.db
+*.swp
+
+# 3rd-party, NEM verziózott pluginek (példák – tartsd karban a mappingekhez)
+wp-content/plugins/**/vendor/
+wp-content/plugins/advanced-custom-fields/
+wp-content/plugins/**/.DS_Store
+
+# Lokális segédszkriptek/artefaktok
+bin/*.log
+tmp/
+.idea/
+.vscode/
+.env
+.deploy.local.*
