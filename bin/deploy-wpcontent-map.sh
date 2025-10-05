@@ -1,8 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ $# -gt 1 ]]; then
+  echo "Usage: $0 [--staging|--production|--env=FILE|ENV_FILE]" >&2
+  exit 2
+fi
+
+case "${1:-}" in
+  "" ) ENV_FILE=".deploy.staging.env" ;;
+  --staging|-s ) ENV_FILE=".deploy.staging.env" ;;
+  --production|-p ) ENV_FILE=".deploy.production.env" ;;
+  --env=* ) ENV_FILE="${1#--env=}" ;;
+  -* )
+    echo "❌ Ismeretlen opció: $1" >&2
+    echo "Használat: $0 [--staging|--production|--env=FILE|ENV_FILE]" >&2
+    exit 2
+    ;;
+  * ) ENV_FILE="$1" ;;
+esac
+
 echo "🚚 WP-CONTENT DEPLOY (MAPPING SYSTEM)"
-[ -f .deploy.staging.env ] || { echo "❌ .deploy.staging.env hiányzik"; exit 1; }
-source .deploy.staging.env
+[ -f "$ENV_FILE" ] || { echo "❌ ${ENV_FILE} hiányzik"; exit 1; }
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+
+ENV_PATH="$ENV_FILE"
+if [[ "$ENV_PATH" != /* ]]; then
+  ENV_PATH="$(pwd)/$ENV_PATH"
+fi
+
+if [[ -z "${SKIP_PREFLIGHT:-}" ]]; then
+  PREFLIGHT_SCRIPT="$SCRIPT_DIR/preflight-check.sh"
+  if [[ -x "$PREFLIGHT_SCRIPT" ]]; then
+    if [[ -n "${PREFLIGHT_BASE_URL:-}" ]]; then
+      echo "🧪 Preflight futtatása…"
+      if ! "$PREFLIGHT_SCRIPT" "$ENV_PATH"; then
+        echo "❌ Preflight hiba – deploy megszakítva"
+        exit 1
+      fi
+    else
+      echo "⚠️ Preflight kihagyva (PREFLIGHT_BASE_URL nincs megadva)"
+    fi
+  else
+    echo "⚠️ Preflight kihagyva (bin/preflight-check.sh hiányzik vagy nem futtatható)"
+  fi
+else
+  echo "⏭️ Preflight kihagyva (SKIP_PREFLIGHT=1)"
+fi
 
 echo "🎯 Cél: $SSH_HOST:$REMOTE_WP_CONTENT"
 ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
