@@ -60,3 +60,4 @@ rollback-*.log
 deploy-*.log
 .staging_env
 .production_env
+.DS_Store
