@@ -26,3 +26,5 @@ wp-content/plugins/complianz-terms-conditions/
 wp-content/plugins/hellopack-client/
 wp-content/uploads/**/*.zip
 wp-content/uploads/**/*.log
+.codex/_preflight_*
+.codex/deploy-log.txt
