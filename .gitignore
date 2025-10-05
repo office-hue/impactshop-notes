@@ -28,3 +28,4 @@ wp-content/uploads/**/*.zip
 wp-content/uploads/**/*.log
 .codex/_preflight_*
 .codex/deploy-log.txt
+.codex/_go_no_go_*
