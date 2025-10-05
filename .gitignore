@@ -21,3 +21,8 @@ tmp/
 .vscode/
 .env
 .deploy.local.*
+wp-content/plugins/complianz-gdpr/
+wp-content/plugins/complianz-terms-conditions/
+wp-content/plugins/hellopack-client/
+wp-content/uploads/**/*.zip
+wp-content/uploads/**/*.log
