@@ -29,3 +29,6 @@ wp-content/uploads/**/*.log
 .codex/_preflight_*
 .codex/deploy-log.txt
 .codex/_go_no_go_*
+.backups/
+.codex/_preflight_*
+wp-content/index.php
