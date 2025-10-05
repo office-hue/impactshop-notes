@@ -7,8 +7,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_REFRESH="$ROOT/bin/codex-refresh.sh"
 DEPLOY_SCRIPT="$ROOT/bin/deploy-wpcontent-map.sh"
 PREFLIGHT_SCRIPT="$ROOT/bin/preflight-check.sh"
+PREFLIGHT_RUNNER="$ROOT/bin/preflight-run.sh"
 DEFAULT_STAGING_ENV="$ROOT/.deploy.staging.env"
 DEFAULT_PROD_ENV="$ROOT/.deploy.production.env"
+CURRENT_ENV_LABEL=""
+CURRENT_ENV_FILE=""
 
 usage() {
   cat <<'USG'
@@ -29,37 +32,45 @@ error() { echo "❌ $*" >&2; exit 1; }
 warn() { echo "⚠️ $*" >&2; }
 info() { echo "$*"; }
 
-resolve_env_file() {
+resolve_env() {
   local key="${1:-staging}"
-  local file
   case "$key" in
     ""|staging|stage|stg)
-      file="$DEFAULT_STAGING_ENV"
+      CURRENT_ENV_LABEL="staging"
+      CURRENT_ENV_FILE="$DEFAULT_STAGING_ENV"
       ;;
     production|prod)
-      file="$DEFAULT_PROD_ENV"
+      CURRENT_ENV_LABEL="production"
+      CURRENT_ENV_FILE="$DEFAULT_PROD_ENV"
       ;;
     --env=*)
-      file="${key#--env=}"
+      CURRENT_ENV_LABEL="$(basename "${key#--env=}")"
+      CURRENT_ENV_FILE="${key#--env=}"
       ;;
     *)
       if [[ -f "$key" ]]; then
-        file="$key"
+        CURRENT_ENV_LABEL="$(basename "$key")"
+        CURRENT_ENV_FILE="$key"
       elif [[ -f "$ROOT/$key" ]]; then
-        file="$ROOT/$key"
+        CURRENT_ENV_LABEL="$(basename "$key")"
+        CURRENT_ENV_FILE="$ROOT/$key"
       else
         error "Ismeretlen környezet vagy fájl: $key"
       fi
       ;;
   esac
-  [[ -f "$file" ]] || error "Környezeti fájl hiányzik: $file"
-  printf '%s\n' "$file"
+  [[ -f "$CURRENT_ENV_FILE" ]] || error "Környezeti fájl hiányzik: $CURRENT_ENV_FILE"
 }
 
 run_preflight() {
-  local env_file="$1"
-  [[ -x "$PREFLIGHT_SCRIPT" ]] || error "Hiányzik a preflight script: $PREFLIGHT_SCRIPT"
-  "$PREFLIGHT_SCRIPT" "$env_file"
+  local label="$1"
+  local env_file="$2"
+  if [[ -x "$PREFLIGHT_RUNNER" ]]; then
+    "$PREFLIGHT_RUNNER" "$label"
+  else
+    [[ -x "$PREFLIGHT_SCRIPT" ]] || error "Hiányzik a preflight script: $PREFLIGHT_SCRIPT"
+    "$PREFLIGHT_SCRIPT" "$env_file"
+  fi
 }
 
 codex_refresh() {
@@ -76,23 +87,22 @@ codex_refresh() {
 deploy_cmd() {
   local env_key="${1:-staging}"
   [[ -x "$DEPLOY_SCRIPT" ]] || error "Hiányzik a deploy script: $DEPLOY_SCRIPT"
-  local env_file
-  env_file="$(resolve_env_file "$env_key")"
+  resolve_env "$env_key"
 
   if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
-    info "🔎 Preflight (deploy előtt) → $env_file"
-    run_preflight "$env_file"
+    info "🔎 Preflight (deploy előtt) → $CURRENT_ENV_FILE"
+    run_preflight "$CURRENT_ENV_LABEL" "$CURRENT_ENV_FILE"
   else
     info "⏭️  Preflight kihagyva (SKIP_PREFLIGHT=1)"
   fi
 
-  local env_arg="--env=$env_file"
-  info "🚀 Deploy futtatása ($env_file)…"
+  local env_arg="--env=$CURRENT_ENV_FILE"
+  info "🚀 Deploy futtatása ($CURRENT_ENV_FILE)…"
   "$DEPLOY_SCRIPT" "$env_arg"
 
   if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
-    info "🔎 Preflight (deploy után) → $env_file"
-    run_preflight "$env_file"
+    info "🔎 Preflight (deploy után) → $CURRENT_ENV_FILE"
+    run_preflight "$CURRENT_ENV_LABEL" "$CURRENT_ENV_FILE"
   fi
 
   codex_refresh
@@ -100,9 +110,8 @@ deploy_cmd() {
 
 preflight_cmd() {
   local env_key="${1:-staging}"
-  local env_file
-  env_file="$(resolve_env_file "$env_key")"
-  run_preflight "$env_file"
+  resolve_env "$env_key"
+  run_preflight "$CURRENT_ENV_LABEL" "$CURRENT_ENV_FILE"
 }
 
 refresh_cmd() {
