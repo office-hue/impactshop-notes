@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# ImpactCtl – Sharity ImpactShop terminálos vezérlő
+# Deploy előtt/után REST preflight + Codex context refresh automatizálása
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODEX_REFRESH="$ROOT/bin/codex-refresh.sh"
+DEPLOY_SCRIPT="$ROOT/bin/deploy-wpcontent-map.sh"
+PREFLIGHT_SCRIPT="$ROOT/bin/preflight-check.sh"
+DEFAULT_STAGING_ENV="$ROOT/.deploy.staging.env"
+DEFAULT_PROD_ENV="$ROOT/.deploy.production.env"
+
+usage() {
+  cat <<'USG'
+ImpactCtl – Sharity ImpactShop vezérlő
+
+Használat:
+  ./impactctl deploy [staging|production|<env-file>]
+  ./impactctl preflight [staging|production|<env-file>]
+  ./impactctl refresh
+  ./impactctl help
+
+Környezeti változók:
+  SKIP_PREFLIGHT=1   – preflight QA kihagyása (nem ajánlott)
+USG
+}
+
+error() { echo "❌ $*" >&2; exit 1; }
+warn() { echo "⚠️ $*" >&2; }
+info() { echo "$*"; }
+
+resolve_env_file() {
+  local key="${1:-staging}"
+  local file
+  case "$key" in
+    ""|staging|stage|stg)
+      file="$DEFAULT_STAGING_ENV"
+      ;;
+    production|prod)
+      file="$DEFAULT_PROD_ENV"
+      ;;
+    --env=*)
+      file="${key#--env=}"
+      ;;
+    *)
+      if [[ -f "$key" ]]; then
+        file="$key"
+      elif [[ -f "$ROOT/$key" ]]; then
+        file="$ROOT/$key"
+      else
+        error "Ismeretlen környezet vagy fájl: $key"
+      fi
+      ;;
+  esac
+  [[ -f "$file" ]] || error "Környezeti fájl hiányzik: $file"
+  printf '%s\n' "$file"
+}
+
+run_preflight() {
+  local env_file="$1"
+  [[ -x "$PREFLIGHT_SCRIPT" ]] || error "Hiányzik a preflight script: $PREFLIGHT_SCRIPT"
+  "$PREFLIGHT_SCRIPT" "$env_file"
+}
+
+codex_refresh() {
+  if [[ -x "$CODEX_REFRESH" ]]; then
+    info "🧠 Codex context refresh futtatása…"
+    if ! "$CODEX_REFRESH"; then
+      warn "codex-refresh közben hiba történt (folytatok)."
+    fi
+  else
+    warn "codex-refresh kihagyva (bin/codex-refresh.sh nem futtatható)."
+  fi
+}
+
+deploy_cmd() {
+  local env_key="${1:-staging}"
+  [[ -x "$DEPLOY_SCRIPT" ]] || error "Hiányzik a deploy script: $DEPLOY_SCRIPT"
+  local env_file
+  env_file="$(resolve_env_file "$env_key")"
+
+  if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
+    info "🔎 Preflight (deploy előtt) → $env_file"
+    run_preflight "$env_file"
+  else
+    info "⏭️  Preflight kihagyva (SKIP_PREFLIGHT=1)"
+  fi
+
+  local env_arg="--env=$env_file"
+  info "🚀 Deploy futtatása ($env_file)…"
+  "$DEPLOY_SCRIPT" "$env_arg"
+
+  if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
+    info "🔎 Preflight (deploy után) → $env_file"
+    run_preflight "$env_file"
+  fi
+
+  codex_refresh
+}
+
+preflight_cmd() {
+  local env_key="${1:-staging}"
+  local env_file
+  env_file="$(resolve_env_file "$env_key")"
+  run_preflight "$env_file"
+}
+
+refresh_cmd() {
+  codex_refresh
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  deploy)     deploy_cmd "$@" ;;
+  preflight)  preflight_cmd "$@" ;;
+  refresh)    refresh_cmd ;;
+  help|-h|--help|"") usage ;;
+  *) error "Ismeretlen parancs: $cmd" ;;
+esac
