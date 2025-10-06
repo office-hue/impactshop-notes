@@ -26,6 +26,24 @@ echo "🚚 WP-CONTENT DEPLOY (MAPPING SYSTEM)"
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 
+IS_STAGING=0
+if [[ "${REMOTE_WP_PATH:-}" == */app-staging* ]] || [[ "$ENV_FILE" == *staging* ]]; then
+  IS_STAGING=1
+fi
+
+if [[ $IS_STAGING -eq 1 ]]; then
+  if [ -x "$SCRIPT_DIR/impactctl-guard-staging.sh" ]; then
+    "$SCRIPT_DIR/impactctl-guard-staging.sh"
+  else
+    echo "⚠️  Guard script nem található ($SCRIPT_DIR/impactctl-guard-staging.sh)" >&2
+  fi
+fi
+
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  echo "🛡️ DRY-RUN MODE ENABLED — rsync nem ír a távoli szerverre."
+  RSYNC_OPTS="${RSYNC_OPTS:-} -n"
+fi
+
 ENV_PATH="$ENV_FILE"
 if [[ "$ENV_PATH" != /* ]]; then
   ENV_PATH="$(pwd)/$ENV_PATH"
@@ -54,7 +72,7 @@ echo "🎯 Cél: $SSH_HOST:$REMOTE_WP_CONTENT"
 ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
 
 # Szelídített rsync opciók (régi verziókhoz is)
-RSYNC_OPTS_SAFE="$RSYNC_OPTS"
+RSYNC_OPTS_SAFE="${RSYNC_OPTS:-}"
 RSYNC_OPTS_SAFE="${RSYNC_OPTS_SAFE//--info=progress2/}"
 RSYNC_OPTS_SAFE="${RSYNC_OPTS_SAFE//  / }"
 
