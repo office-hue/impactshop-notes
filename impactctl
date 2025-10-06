@@ -6,6 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_REFRESH="$ROOT/bin/codex-refresh.sh"
 DEPLOY_SCRIPT="$ROOT/bin/deploy-wpcontent-map.sh"
+GUARD_SCRIPT="$ROOT/bin/impactctl-guard-staging.sh"
 PREFLIGHT_SCRIPT="$ROOT/bin/preflight-check.sh"
 PREFLIGHT_RUNNER="$ROOT/bin/preflight-run.sh"
 DEFAULT_STAGING_ENV="$ROOT/.deploy.staging.env"
@@ -120,6 +121,19 @@ deploy_cmd() {
   local env_key="${1:-staging}"
   [[ -x "$DEPLOY_SCRIPT" ]] || error "Hiányzik a deploy script: $DEPLOY_SCRIPT"
   resolve_env "$env_key"
+
+  local is_staging_target=0
+  if [[ "$CURRENT_ENV_LABEL" == "staging" ]] || [[ "$CURRENT_ENV_FILE" == *staging* ]]; then
+    is_staging_target=1
+  fi
+
+  if [[ $is_staging_target -eq 1 ]]; then
+    if [[ -x "$GUARD_SCRIPT" ]]; then
+      "$GUARD_SCRIPT"
+    else
+      warn "Guard kihagyva: $GUARD_SCRIPT nem futtatható"
+    fi
+  fi
 
   if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
     info "🔎 Preflight (deploy előtt) → $CURRENT_ENV_FILE"
