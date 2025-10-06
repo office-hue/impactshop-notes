@@ -4,6 +4,43 @@
 - Platform: WordPress (ImpactShop)
 - Fő téma: akciós kártyák linkjei → ne a shop főoldalra, hanem termékoldalra vigyenek.
 
+### 2025-10-06 – Codex context refresh
+- ✅ `./impactctl refresh` lefutott, friss snapshot: `.codex/context-20251006-102244.json` + `context-latest.json`.
+
+### 2025-10-06 – Staging rewrite/cache flush
+- 🔁 `bin/staging-qa-suite.sh` --no-block + full 404-k továbbra is fennállnak (`/wp-admin`, totals, `/go*`), `Impact_Safety`/`link_guard` aktív státusz nélkül.
+
+- 🛠️ Staging `releases/` mappa létrehozva (`/home/sharityh/app-staging/releases`) a QA ellenőrzéshez.
+
+- ✅ `wp rewrite flush --hard --allow-root` és `wp cache flush --allow-root` futott a staging szerveren (`sharityh@cp40.ezit.hu`).
+- ⚠️ WP CLI figyelmeztetés: `complianz-terms-conditions` fordítás túl korai betöltése (WP 6.7.0 notice).
+
+### 2025-10-06 – impactctl-resume helper
+- ✅ `bin/impactctl-resume.sh` indításkor ssh-agentet konfigurál, biztosítja a `cp40.ezit.hu` blokkot és automatikusan elindítja a Codex CLI-t projekt kontextussal.
+- 🧰 `~/.zshrc` aliasok (`impactresume`, `impactcd`, `impactenv`, `impactconnect`, `impactrefresh`) a gyors eléréshez frissítve.
+- 📌 A helper `.codex/context-latest.json` hiányában automatikus frissítést kér az `impactctl refresh`/`codex-refresh` scriptből.
+
+### 2025-10-06 – SSH agent config frissítés
+- ✅ `~/.ssh/config` csak a `cp40.ezit.hu` blokkot tartalmazza `StrictHostKeyChecking accept-new` beállítással, a hibás `yesHost` sor törölve lett.
+- 🔐 `ssh-agent` a `~/.ssh/impactshop-agent.sock` socketen fut, az `id_ed25519` kulcs betöltve (`ssh-add -l`).
+- 📝 Biztonsági másolat: `~/.ssh/config.bak.20251006-095915`.
+
+### 2025-10-06 – Codex SSH helper
+- ✅ `bin/codex-with-ssh.sh` script indításkor elindítja az SSH agentet, betölti az `id_ed25519` kulcsot és átadja a socketet a `codex` CLI-nek.
+- ℹ️ A helper a repo gyökerébe lép be, így a Codex azonnal a projekt kontextusával indul.
+- 📝 Nyitott teendő nincs, kizárólag lokális fejlesztői kényelmi script.
+
+### 2025-10-06 – Staging QA 301 vizsgálat
+- 🔁 QA újrafuttatva (`--no-block`, full): 11/19 → 12/19 siker (további 404-ek: `/wp-admin`, impact totals, `/go` redirectek; `Impact_Safety`, `link_guard` hiányos).
+- 📄 Friss logok: `staging-qa-20251006-102156.log`, `staging-qa-20251006-102219.log`.
+
+- 🔴 `bin/staging-qa-suite.sh` (no-block + full) 10/19-re futott (HTTP 404 a `/wp-admin`, impact totals, `/go*` redirect utak; hiányzó `Impact_Safety`, `link_guard`, üres releases mappa).
+- 📄 Logok: `staging-qa-20251006-100440.log`, `staging-qa-20251006-100505.log`.
+
+- ✅ `bin/staging-qa-suite.sh` HTTP tesztjei most már követik a 301 átirányításokat és a végső státuszkódot logolják (curl `-L`, AWK utolsó `HTTP` sor).
+- ✅ Impact totals endpoint választó is `-L` paramétert használ, így a fallback döntés a valós HTTP kód alapján történik.
+- ⚠️ Nyitott: Staging REST végpontokat élesben validálni (várható 200/OK a symlink + WP URL fix után). A QA scriptet lokálból nem futtattuk, mert ssh + HTTP ellenőrzéshez távoli hozzáférés szükséges.
+
 ## 1. Döntésnapló
 ## Döntési napló
 

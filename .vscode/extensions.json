@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "bmewburn.vscode-intelephense-client",
+    "usernamehw.errorlens",
+    "github.vscode-pull-request-github",
+    "github.copilot",
+    "junstyle.php-cs-fixer"
+  ]
+}

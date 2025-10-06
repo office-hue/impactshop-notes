@@ -1,0 +1,33 @@
+{
+  "ts": "20251006-074424",
+  "project_root": "/Users/bujdosoarnold/Documents/GitHub/impactshop-notes",
+  "staging_url": "https://sharity.hu/impactshop-staging",
+  "prod_url": "https://app.sharity.hu/impactshop",
+  "ssh_host": "sharityh@cp40.ezit.hu",
+  "remote_wp_path": "/home/sharityh/app",
+  "notes": "ImpactShop Codex context seed – staging/prod pipeline, env & meta for ChatGPT seeding.",
+  "deploy_log_tail": "timestamp,env,status,warns,max_latency_s,endpoints_ok,rest_fail_count,exit_code
+2025-10-05 18:17:03,staging,PASS_WITH_WARN,2,0,0
+0,0
+0,0
+2025-10-05 18:18:52,staging,PASS,0,1.036,5,0,0
+2025-10-05 18:27:45,staging,PASS_WITH_WARN,2,7.861,3,0,0
+2025-10-05 18:28:04,staging,PASS,0,1.079,5,0,0
+2025-10-05 18:28:29,staging,PASS,0,1.060,5,0,0
+2025-10-05 18:28:48,staging,PASS,0,1.004,5,0,0
+2025-10-05 18:44:33,staging,PASS_WITH_WARN,2,8.125,3,0,0
+2025-10-05 18:45:41,production,FAIL,4,0.000,0,0,1
+2025-10-05 18:49:42,production,FAIL,4,0.000,0,0,1
+2025-10-05 18:55:36,production,FAIL,4,3.426,3,0,1
+2025-10-05 18:56:59,production,PASS_WITH_WARN,4,0.698,5,0,0
+2025-10-05 18:58:03,production,PASS,0,1.101,6,0,0
+2025-10-05 18:58:20,production,PASS,0,0.773,6,0,0
+2025-10-05 18:59:40,production,PASS,0,0.851,6,0,0
+2025-10-05 19:01:14,production,FAIL,0,8.295,4,0,1
+2025-10-05 19:02:18,production,PASS,0,0.803,6,0,0
+2025-10-05 19:03:37,production,PASS,0,1.123,6,0,0
+2025-10-05 19:04:29,production,PASS,0,1.065,6,0,0
+2025-10-05 19:57:29,staging,PASS_WITH_WARN,2,8.509,3,0,0
+2025-10-06 07:43:47,staging,PASS_WITH_WARN,2,8.444,3,0,0
+2025-10-06 07:44:24,staging,PASS,0,0.970,5,0,0"
+}
