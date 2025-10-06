@@ -1,4 +1,4 @@
-📅 2025-10-05 17:43:31
+📅 2025-10-05 22:30:34
 # Project: Sharity ImpactShop
 # Components: WordPress + Elementor, Dognet Publisher API, Impact Bridge Local REST, mu-plugins, deploy pipeline
 # Key scripts: impactctl, bin/deploy-wpcontent-map.sh, bin/preflight-check.sh, bin/post-deploy-activate.sh
@@ -14,17 +14,17 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CODEX_REFRESH="$ROOT/bin/codex-refresh.sh"
 DEPLOY_SCRIPT="$ROOT/bin/deploy-wpcontent-map.sh"
 PREFLIGHT_SCRIPT="$ROOT/bin/preflight-check.sh"
+PREFLIGHT_RUNNER="$ROOT/bin/preflight-run.sh"
 DEFAULT_STAGING_ENV="$ROOT/.deploy.staging.env"
 DEFAULT_PROD_ENV="$ROOT/.deploy.production.env"
+CURRENT_ENV_LABEL=""
+CURRENT_ENV_FILE=""
 
 usage() {
   cat <<'USG'
 ImpactCtl – Sharity ImpactShop vezérlő
 
 Használat:
-  ./impactctl deploy [staging|production|<env-file>]
-  ./impactctl preflight [staging|production|<env-file>]
-  ./impactctl refresh
 
 ### bin/deploy-wpcontent-map.sh
 #!/usr/bin/env bash
@@ -50,25 +50,25 @@ case "${1:-}" in
 
 ### bin/preflight-check.sh
 #!/usr/bin/env bash
+# ImpactShop REST preflight checker with latency/content guards
 set -euo pipefail
 
 ENV_FILE="${1:-.deploy.staging.env}"
-if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "❌ Preflight config missing: ${ENV_FILE}" >&2
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "❌ Preflight config missing: $ENV_FILE" >&2
   exit 1
 fi
 
-# Resolve absolute path so sourced file works regardless of cwd
-if [[ "${ENV_FILE}" != /* ]]; then
-  ENV_FILE="$(pwd)/${ENV_FILE}"
+if [[ "$ENV_FILE" != /* ]]; then
+  ENV_FILE="$(pwd)/$ENV_FILE"
 fi
 
 # shellcheck disable=SC1090
-source "${ENV_FILE}"
+source "$ENV_FILE"
 
 BASE_URL="${PREFLIGHT_BASE_URL:-}"
-if [[ -z "${BASE_URL}" ]]; then
-  echo "⚠️  Preflight skipped: PREFLIGHT_BASE_URL not set in ${ENV_FILE}" >&2
+if [[ -z "$BASE_URL" ]]; then
+  echo "⚠️  Preflight skipped: PREFLIGHT_BASE_URL not set in $ENV_FILE" >&2
 
 ### bin/post-deploy-activate.sh
 #!/usr/bin/env bash
@@ -561,6 +561,28 @@ wp-content/plugins/impact-local-tops           -> plugins/impact-local-tops
 wp-content/plugins/impact-mini-shortcodes      -> plugins/impact-mini-shortcodes
 wp-content/plugins/impact-report-mvp           -> plugins/impact-report-mvp
 wp-content/plugins/impact-short codes-legacy   -> plugins/impact-short codes-legacy
+
+### .deploy.production.env
+SSH_HOST="sharityh@cp40.ezit.hu"
+REMOTE_WP_PATH="/home/sharityh/app"
+REMOTE_WP_CONTENT="$REMOTE_WP_PATH/wp-content"
+
+MAPPINGS='
+wp-content/mu-plugins                          -> mu-plugins
+wp-content/plugins/advanced-custom-fields      -> plugins/advanced-custom-fields
+wp-content/plugins/complianz-gdpr              -> plugins/complianz-gdpr
+wp-content/plugins/complianz-terms-conditions  -> plugins/complianz-terms-conditions
+wp-content/plugins/dognet-pap-publisher        -> plugins/dognet-pap-publisher
+wp-content/plugins/hellopack-client            -> plugins/hellopack-client
+wp-content/plugins/impact-bridge-local         -> plugins/impact-bridge-local
+wp-content/plugins/impact-local-tops           -> plugins/impact-local-tops
+wp-content/plugins/impact-mini-shortcodes      -> plugins/impact-mini-shortcodes
+wp-content/plugins/impact-report-mvp           -> plugins/impact-report-mvp
+wp-content/plugins/impact-short codes-legacy   -> plugins/impact-short codes-legacy
+wp-content/plugins/impact-shortcodes           -> plugins/impact-shortcodes
+wp-content/plugins/impact-simple-widgets       -> plugins/impact-simple-widgets
+wp-content/plugins/impactshop-dognet-report    -> plugins/impactshop-dognet-report
+wp-content/plugins/impactshop-report-compat    -> plugins/impactshop-report-compat
 
 ### Repository tree
 wp-content/active-snippets.md

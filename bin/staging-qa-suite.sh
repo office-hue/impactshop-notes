@@ -97,16 +97,17 @@ run_test() {
     http)
       local expect_re="${expected:-^(200|30[12])$}"
       local status
-      status=$((eval "$command" || true) 2>/dev/null | awk 'NR==1{print $2}')
-      if [[ "${status:-000}" =~ $expect_re ]]; then
-        echo "   ✅ PASSED (HTTP ${status:-000})"
+      status=$((eval "$command" || true) 2>/dev/null | awk '/^HTTP/{code=$2} END{print code}')
+      status=${status:-000}
+      if [[ "$status" =~ $expect_re ]]; then
+        echo "   ✅ PASSED (HTTP $status)"
         PASSED=$((PASSED + 1))
       else
-        echo "   ❌ FAILED (HTTP ${status:-000})"
+        echo "   ❌ FAILED (HTTP $status)"
         {
           echo "[HTTP FAIL] $name"
           echo "Command: $command"
-          echo "Status: ${status:-000}"
+          echo "Status: $status"
           echo "Expected: $expect_re"
         } >>"$LOG_FILE"
       fi
@@ -152,7 +153,7 @@ select_total_endpoint() {
   fi
 
   local status_primary
-  status_primary=$(curl -s -m 10 -o /dev/null -w "%{http_code}" "$base/$primary" 2>/dev/null || echo "000")
+  status_primary=$(curl -s -L -m 10 -o /dev/null -w "%{http_code}" "$base/$primary" 2>/dev/null || echo "000")
 
   TOTAL_ENDPOINT_PRIMARY="$primary"
   TOTAL_ENDPOINT="$base/$primary"
@@ -162,7 +163,7 @@ select_total_endpoint() {
 
   if [[ "$status_primary" =~ ^(404|000)$ ]]; then
     local status_fallback
-    status_fallback=$(curl -s -m 10 -o /dev/null -w "%{http_code}" "$base/$fallback" 2>/dev/null || echo "000")
+    status_fallback=$(curl -s -L -m 10 -o /dev/null -w "%{http_code}" "$base/$fallback" 2>/dev/null || echo "000")
     if [[ "$status_fallback" =~ ^2[0-9][0-9]$ ]]; then
       TOTAL_ENDPOINT="$base/$fallback"
       TOTAL_ENDPOINT_STATUS="$status_fallback"
@@ -220,8 +221,8 @@ echo ""
 
 echo "🏥 QUICK SANITY"
 echo "================"
-curl -sI "$STAGING_URL" | head -1 | sed 's/^/   /'
-if curl -sI "$STAGING_URL/wp-json/impact/v1/ticker" >/dev/null 2>&1; then
+curl -sIL "$STAGING_URL" | head -1 | sed 's/^/   /'
+if curl -sIL "$STAGING_URL/wp-json/impact/v1/ticker" >/dev/null 2>&1; then
   echo "   ✅ Impact REST (ticker) reachable"
 else
   echo "   ⚠️ Impact REST ticker unreachable"

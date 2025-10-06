@@ -4,3 +4,7 @@ SSH_HOST="sharityh@cp40.ezit.hu"
 REMOTE_WP_PATH="/home/sharityh/app-staging"
 REMOTE_WP_CONTENT="/home/sharityh/app-staging/wp-content"
 IMPACT_TOTAL_EP="total"
+# --- QA kompat miatt: hostnév külön is kell ---
+export DEPLOY_HOST="cp40.ezit.hu"
+# (opcionális, de hasznos a naplókhoz)
+export DEPLOY_USER="sharityh"
