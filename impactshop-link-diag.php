@@ -711,10 +711,12 @@ class ImpactShop_Link_Diagnostics {
     }
     
     public function export_csv() {
-        if (!current_user_can('manage_options') || !wp_verify_nonce($_GET['_wpnonce'], 'export_diag_csv')) {
-            wp_die('Insufficient permissions');
+        if (!current_user_can('manage_options') || !wp_verify_nonce($_GET['_wpnonce'] ?? '', 'export_diag_csv')) {
+            wp_die('Insufficient permissions', 'Export blocked', 403);
         }
-        
+        // Friss diagnosztika export előtt
+        $this->run_full_diagnostics();
+
         $type = sanitize_text_field($_GET['type'] ?? 'all');
         $timestamp = date('Y-m-d_H-i-s');
         
@@ -782,32 +784,97 @@ class ImpactShop_Link_Diagnostics {
     }
     
     private function export_all_csv($timestamp) {
-        // Create a comprehensive CSV with all issues
+        // Create a comprehensive CSV with all issues (flattened)
         $filename = "impactshop_diagnostics_$timestamp.csv";
         $filepath = $this->csv_dir . $filename;
-        
+
         $fp = fopen($filepath, 'w');
         fputcsv($fp, ['Category', 'Type', 'File', 'Line', 'Issue', 'Code', 'Suggestion']);
-        
-        // Export all issue types
+
         foreach ($this->issues as $category => $issues) {
-            if ($category === 'sample_analysis') continue;
-            
-            foreach ($issues as $issue_key => $issue_data) {
-                if (is_array($issue_data) && isset($issue_data['file'])) {
+            if ($category === 'sample_analysis') {
+                continue; // skip sample_analysis in all export
+            }
+            $cat = ucfirst(str_replace('_', ' ', $category));
+
+            // Function collisions: map name => [defs]
+            if ($category === 'function_collisions' && is_array($issues)) {
+                foreach ($issues as $func => $defs) {
+                    foreach ((array)$defs as $def) {
+                        fputcsv($fp, [
+                            $cat,
+                            $func,
+                            $def['file'] ?? '',
+                            $def['line'] ?? '',
+                            'Function collision',
+                            $def['code'] ?? '',
+                            (!empty($def['has_protection'])) ? 'OK' : "Add function_exists('$func')"
+                        ]);
+                    }
+                }
+                continue;
+            }
+
+            // Shortcode collisions: map shortcode => [defs]
+            if ($category === 'shortcode_collisions' && is_array($issues)) {
+                foreach ($issues as $shortcode => $defs) {
+                    foreach ((array)$defs as $def) {
+                        fputcsv($fp, [
+                            $cat,
+                            $shortcode,
+                            $def['file'] ?? '',
+                            $def['line'] ?? '',
+                            'Shortcode collision',
+                            $def['code'] ?? '',
+                            'Use unique shortcode name'
+                        ]);
+                    }
+                }
+                continue;
+            }
+
+            // Flat arrays of issues
+            if (is_array($issues)) {
+                foreach ($issues as $item) {
+                    if (!is_array($item)) continue;
                     fputcsv($fp, [
-                        ucfirst(str_replace('_', ' ', $category)),
-                        $issue_key,
-                        $issue_data['file'],
-                        $issue_data['line'],
-                        $issue_data['issue'] ?? 'Function collision',
-                        $issue_data['code'],
-                        $issue_data['suggestion'] ?? 'Review and fix'
+                        $cat,
+                        $item['type'] ?? ($item['issue'] ?? ''),
+                        $item['file'] ?? '',
+                        $item['line'] ?? '',
+                        $item['issue'] ?? '',
+                        $item['code'] ?? '',
+                        $item['suggestion'] ?? 'Review and fix'
                     ]);
                 }
             }
         }
-        
+
+        fclose($fp);
+        $this->download_file($filepath, $filename);
+    }
+
+    private function export_shortcodes_csv($timestamp) {
+        $filename = "shortcodes_collisions_$timestamp.csv";
+        $filepath = $this->csv_dir . $filename;
+
+        $fp = fopen($filepath, 'w');
+        fputcsv($fp, ['Shortcode', 'File', 'Line', 'Code', 'Suggestion']);
+
+        if (!empty($this->issues['shortcode_collisions'])) {
+            foreach ($this->issues['shortcode_collisions'] as $shortcode => $defs) {
+                foreach ((array)$defs as $def) {
+                    fputcsv($fp, [
+                        $shortcode,
+                        $def['file'] ?? '',
+                        $def['line'] ?? '',
+                        $def['code'] ?? '',
+                        'Use unique shortcode name'
+                    ]);
+                }
+            }
+        }
+
         fclose($fp);
         $this->download_file($filepath, $filename);
     }

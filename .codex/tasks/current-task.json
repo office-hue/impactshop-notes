@@ -1,0 +1,7 @@
+{
+  "goal": "BRIDGE-TEST",
+  "priority": "p2",
+  "steps": [
+    { "id": "noop", "desc": "no-op" }
+  ]
+}
