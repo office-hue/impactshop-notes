@@ -735,7 +735,7 @@ class ImpactShop_Link_Diagnostics {
         }
     }
     
-    private function export_functions_csv($timestamp) {
+    private function export_functions_csv($timestamp, $stream = true) {
         $filename = "functions_collisions_$timestamp.csv";
         $filepath = $this->csv_dir . $filename;
         
@@ -756,10 +756,10 @@ class ImpactShop_Link_Diagnostics {
         }
         
         fclose($fp);
-        $this->download_file($filepath, $filename);
+        if ($stream) { $this->download_file($filepath, $filename); } else { echo $filepath; }
     }
     
-    private function export_samples_csv($timestamp) {
+    private function export_samples_csv($timestamp, $stream = true) {
         $filename = "sample_analysis_$timestamp.csv";
         $filepath = $this->csv_dir . $filename;
         
@@ -780,10 +780,10 @@ class ImpactShop_Link_Diagnostics {
         }
         
         fclose($fp);
-        $this->download_file($filepath, $filename);
+        if ($stream) { $this->download_file($filepath, $filename); } else { echo $filepath; }
     }
     
-    private function export_all_csv($timestamp) {
+    private function export_all_csv($timestamp, $stream = true) {
         // Create a comprehensive CSV with all issues (flattened)
         $filename = "impactshop_diagnostics_$timestamp.csv";
         $filepath = $this->csv_dir . $filename;
@@ -851,10 +851,10 @@ class ImpactShop_Link_Diagnostics {
         }
 
         fclose($fp);
-        $this->download_file($filepath, $filename);
+        if ($stream) { $this->download_file($filepath, $filename); } else { echo $filepath; }
     }
 
-    private function export_shortcodes_csv($timestamp) {
+    private function export_shortcodes_csv($timestamp, $stream = true) {
         $filename = "shortcodes_collisions_$timestamp.csv";
         $filepath = $this->csv_dir . $filename;
 
@@ -876,7 +876,7 @@ class ImpactShop_Link_Diagnostics {
         }
 
         fclose($fp);
-        $this->download_file($filepath, $filename);
+        if ($stream) { $this->download_file($filepath, $filename); } else { echo $filepath; }
     }
     
     private function download_file($filepath, $filename) {
@@ -886,6 +886,29 @@ class ImpactShop_Link_Diagnostics {
         readfile($filepath);
         exit;
     }
+}
+
+// WP-CLI parancs: CSV export közvetlenül
+if (defined('WP_CLI') && WP_CLI) {
+    \WP_CLI::add_command('impactshop diag-export', function($args){
+        $type = $args[0] ?? 'all';
+        $obj = new ImpactShop_Link_Diagnostics();
+        // Privát diagnosztika futtatása publikus út nélkül: trükk – admin_page()-t nem hívjuk
+        // Ehelyett a publikus export_csv-et kerüljük és közvetlen CSV írást választunk
+        $ref = new ReflectionClass($obj);
+        $method = $ref->getMethod('run_full_diagnostics');
+        $method->setAccessible(true);
+        $method->invoke($obj);
+
+        $timestamp = date('Y-m-d_H-i-s');
+        switch ($type) {
+            case 'functions': $obj->export_functions_csv($timestamp, false); break;
+            case 'shortcodes': $obj->export_shortcodes_csv($timestamp, false); break;
+            case 'samples': $obj->export_samples_csv($timestamp, false); break;
+            default: $obj->export_all_csv($timestamp, false); break;
+        }
+        \WP_CLI::success('CSV elkészült');
+    });
 }
 
 // Initialize the diagnostics
