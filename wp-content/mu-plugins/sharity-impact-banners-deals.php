@@ -41,8 +41,12 @@ function sib_site($slug){ $m=sib_shops_minimap(); $slug=sib_slug($slug); return 
 // Last-good tároló/olvasó (12 óra)
 if (!defined('SIB_LAST_GOOD_OPTION')) define('SIB_LAST_GOOD_OPTION','sib_last_good_banners');
 if (!defined('SIB_LAST_GOOD_TTL')) define('SIB_LAST_GOOD_TTL', 12*60*60);
-function sib_store_last_good(array $rows){ if($rows){ update_option(SIB_LAST_GOOD_OPTION, ['rows'=>array_values($rows),'ts'=>time()], false); } }
-function sib_load_last_good(){ $d=get_option(SIB_LAST_GOOD_OPTION); if(is_array($d)&&!empty($d['rows'])){ $ts=(int)($d['ts']??0); if($ts && (time()-$ts)<=SIB_LAST_GOOD_TTL) return (array)$d['rows']; } return []; }
+if (!function_exists('sib_store_last_good')){
+  function sib_store_last_good(array $rows){ if($rows){ update_option(SIB_LAST_GOOD_OPTION, ['rows'=>array_values($rows),'ts'=>time()], false); } }
+}
+if (!function_exists('sib_load_last_good')){
+  function sib_load_last_good(){ $d=get_option(SIB_LAST_GOOD_OPTION); if(is_array($d)&&!empty($d['rows'])){ $ts=(int)($d['ts']??0); if($ts && (time()-$ts)<=SIB_LAST_GOOD_TTL) return (array)$d['rows']; } return []; }
+}
 
 // Banners betöltés + last-good fallback
 function sib_load_banners(){
@@ -97,4 +101,3 @@ add_action('init', function(){ global $shortcode_tags; if (empty($shortcode_tags
 
 // Probe
 add_action('init', function(){ if (!isset($_GET['impact_mini_probe'])) return; header('Content-Type: application/json; charset=utf-8'); global $shortcode_tags; $who = isset($shortcode_tags['impactshop_deals']) ? (is_array($shortcode_tags['impactshop_deals']) ? 'callable array' : (is_string($shortcode_tags['impactshop_deals'])?$shortcode_tags['impactshop_deals']:'callable')) : 'none'; $b = sib_load_banners(); $shops = sib_shops_minimap(); $sample = isset($b[0]) ? ['slug'=>$b[0]['slug'],'href'=>$b[0]['href'],'built_link'=> sib_build_deal_link($b[0]['slug'],$b[0]['href'], true),'default_d1'=> sib_default_d1($b[0]['slug']),] : null; echo wp_json_encode(['plugin' => 'sharity-impact-banners-deals (MU)','impactshop_deals_owner' => $who,'banners_count' => count($b),'shops_count' => count($shops),'sample' => $sample,], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); exit; });
-
