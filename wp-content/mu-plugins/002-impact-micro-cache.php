@@ -60,3 +60,29 @@ add_action('template_redirect', function() {
         return $buffer;
     });
 });
+
+
+// ——— Mikrocache melegítő (WP-Cron) ———
+add_filter('cron_schedules', function($schedules){
+    if (!isset($schedules['impact_90s'])){
+        $schedules['impact_90s'] = [ 'interval' => 90, 'display' => 'Impact 90 seconds' ];
+    }
+    return $schedules;
+});
+
+add_action('init', function(){
+    if (!wp_next_scheduled('impact_microcache_warm')){
+        wp_schedule_event(time() + 60, 'impact_90s', 'impact_microcache_warm');
+    }
+});
+
+add_action('impact_microcache_warm', function(){
+    // Loopback kérés az oldalra a cache töltéséhez
+    $url = home_url('/impactshop/');
+    wp_remote_get($url, [
+        'timeout' => 1.5,
+        'redirection' => 1,
+        'sslverify' => false,
+        'headers' => ['User-Agent' => 'ImpactMicroCacheWarmer/1.0']
+    ]);
+});
