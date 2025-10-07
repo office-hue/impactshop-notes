@@ -1,20 +1,22 @@
 {
-  "goal": "Staging host fix (3–6. lépés) + REST ellenőrzés",
+  "goal": "SSH Bridge Doctor – kapcsolat, környezet és staging smoke-teszt",
   "host": "cp40.ezit.hu",
   "user": "sharityh",
   "workdir": "/home/sharityh",
   "actions": [
-    "wp --allow-root --path=/home/sharityh/app-staging option update home https://app.sharity.hu/impactshop-staging",
-    "wp --allow-root --path=/home/sharityh/app-staging option update siteurl https://app.sharity.hu/impactshop-staging",
-    "bash -lc 'cat > /home/sharityh/app-staging/.htaccess <<\'\'\'HT\'\'\'\n# WordPress (.htaccess) – ImpactShop STAGING\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteBase /impactshop-staging/\nRewriteRule ^index\\.php$ - [L]\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteRule . /impactshop-staging/index.php [L]\n</IfModule>\nHT'",
-    "wp --allow-root --path=/home/sharityh/app-staging rewrite flush --hard",
-    "wp --allow-root --path=/home/sharityh/app-staging transient delete --all",
-    "wp --allow-root --path=/home/sharityh/app-staging cache flush || true",
-    "curl -ILs https://app.sharity.hu/impactshop-staging/ | sed -n '1,10p'",
-    "curl -ILs https://app.sharity.hu/impactshop-staging/wp-json/ | sed -n '1,10p'",
-    "curl -ILs https://app.sharity.hu/impactshop-staging/wp-json/impact/v1/total | sed -n '1,10p'"
+    "echo '== Doctor: env check ==' && command -v bash && command -v wp && wp cli version --allow-root || true",
+    "echo '== Doctor: identity ==' && hostname && whoami && pwd",
+    "echo '== Doctor: uptime ==' && uptime || true",
+    "echo '== Doctor: disk ==' && df -h . | sed -n '1,2p'",
+    "echo '== Doctor: ssh pubkeys head ==' && test -f ~/.ssh/authorized_keys && head -n 2 ~/.ssh/authorized_keys || echo 'no authorized_keys'",
+    "echo '== Doctor: wp info (staging) ==' && wp --allow-root --path=/home/sharityh/app-staging cli info || true",
+    "echo '== Doctor: wp core is-installed (staging) ==' && wp --allow-root --path=/home/sharityh/app-staging core is-installed && echo OK || echo FAIL",
+    "echo '== Doctor: staging HOME/SITEURL ==' && wp --allow-root --path=/home/sharityh/app-staging option get home && wp --allow-root --path=/home/sharityh/app-staging option get siteurl",
+    "echo '== Doctor: write/read test ==' && echo BRIDGE-OK-$(date +%s) > ~/bridge_doctor_test.txt && tail -n1 ~/bridge_doctor_test.txt",
+    "echo '== Doctor: HTTP smoke (APP host) ==' && curl -ILs https://app.sharity.hu/impactshop-staging/ | sed -n '1,8p'",
+    "echo '== Doctor: REST smoke (APP host) ==' && curl -ILs https://app.sharity.hu/impactshop-staging/wp-json/impact/v1/total | sed -n '1,8p'"
   ],
-  "expected": "All REST endpoints 200",
+  "expected": "Minden parancs fut; staging HTTP/REST elérhető (200 vagy egyszeri 301 → 200).",
   "timeout_sec": 600
 }
 
