@@ -486,22 +486,26 @@ class ImpactShop_Link_Diagnostics {
     
     private function get_php_files($dir) {
         $files = [];
-        
         if (!is_dir($dir)) {
             return $files;
         }
-        
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir)
-        );
-        
+        try {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS)
+            );
+        } catch (Exception $e) {
+            return $files;
+        }
         foreach ($iterator as $file) {
-            if ($file->getExtension() === 'php' && 
-                strpos($file->getPathname(), 'vendor') === false) {
-                $files[] = $file->getPathname();
+            try {
+                if ($file->isFile() && strtolower($file->getExtension()) === 'php' &&
+                    strpos($file->getPathname(), 'vendor') === false) {
+                    $files[] = $file->getPathname();
+                }
+            } catch (Exception $e) {
+                continue;
             }
         }
-        
         return $files;
     }
     
