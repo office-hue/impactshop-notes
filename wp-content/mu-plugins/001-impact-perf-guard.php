@@ -7,7 +7,7 @@
  */
 if (!defined('ABSPATH')) exit;
 
-// define('IMPACT_DEFENSIVE_TOTALS', true); // ideiglenesen bekapcsolható
+define('IMPACT_DEFENSIVE_TOTALS', true); // ideiglenesen bekapcsolható
 
 add_filter('rest_pre_dispatch', function($result, $server, $request){
     if (!($request instanceof WP_REST_Request)) return $result;
@@ -50,7 +50,7 @@ add_filter('rest_request_after_callbacks', function($response, $handler, $reques
 add_filter('http_request_args', function($args, $url){
     $host = parse_url($url, PHP_URL_HOST) ?: '';
     if (preg_match('~(dognet|api|sharity)\.~i', $host)) {
-        $args['timeout'] = min((float)($args['timeout'] ?? 5), 2.5);
+        $args['timeout'] = min((float)($args['timeout'] ?? 5), 1.5);
         $args['redirection'] = 2;
         $args['blocking'] = true;
     }
