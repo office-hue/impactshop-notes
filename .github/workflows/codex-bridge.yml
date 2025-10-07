@@ -1,0 +1,57 @@
+name: Codex Bridge Executor
+
+on:
+  workflow_dispatch: {}           # kézi indítás az Actions fülről
+  push:
+    paths:
+      - ".codex/bridge/current-task.json"
+      - ".codex/bridge/execute.sh"
+      - ".codex/bridge/tasks/**"
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Prepare SSH from secrets
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY:  ${{ secrets.SSH_KEY }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${SSH_KEY}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          cat >> ~/.ssh/config <<CFG
+          Host target
+            HostName ${SSH_HOST}
+            User ${SSH_USER}
+            IdentityFile ~/.ssh/id_ed25519
+            Port ${SSH_PORT}
+            StrictHostKeyChecking no
+          CFG
+
+      - name: Run bridge executor (calls remote via ssh inside)
+        run: |
+          sed -i 's/"\$$user@\$$host"/"target"/g' .codex/bridge/execute.sh
+          JOB_START=$(date +%s)
+          bash .codex/bridge/execute.sh
+          JOB_END=$(date +%s)
+          D=$((JOB_END-JOB_START))
+          node -e "const fs=require('fs');const f='.codex/bridge/usage.json';let j={};try{j=JSON.parse(fs.readFileSync(f,'utf8'))}catch{}; j.actions_wallclock_sec=(j.actions_wallclock_sec||0)+${D}; j.updated_at=new Date().toISOString(); fs.writeFileSync(f, JSON.stringify(j,null,2)); console.log('Actions seconds added:', ${D});"
+
+      - name: Commit back artifacts
+        if: always()
+        run: |
+          git config user.name "codex-bridge-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add .codex/bridge/last-run.json .codex/bridge/usage.json .codex/bridge/DOCTOR.md || true
+          git commit -m "bridge: update last-run & usage [skip ci]" || echo "nothing to commit"
+          git push || true
