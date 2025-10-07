@@ -39,6 +39,13 @@ class ImpactShop_Link_Diagnostics {
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('wp_ajax_export_diag_csv', [$this, 'export_csv']);
     }
+
+    // CLI-hoz: felülírható scan útvonalak
+    public function set_scan_paths_override($paths) {
+        if (is_array($paths) && !empty($paths)) {
+            $this->scan_paths = $paths;
+        }
+    }
     
     public function add_admin_menu() {
         add_management_page(
@@ -893,6 +900,8 @@ if (defined('WP_CLI') && WP_CLI) {
     \WP_CLI::add_command('impactshop diag-export', function($args){
         $type = $args[0] ?? 'all';
         $obj = new ImpactShop_Link_Diagnostics();
+        // Csak MU plugineket szkennelünk CLI alatt a jogosultság/engedély hibák elkerülésére
+        $obj->set_scan_paths_override([ 'mu_plugins' => WPMU_PLUGIN_DIR ]);
         // Privát diagnosztika futtatása publikus út nélkül: trükk – admin_page()-t nem hívjuk
         // Ehelyett a publikus export_csv-et kerüljük és közvetlen CSV írást választunk
         $ref = new ReflectionClass($obj);
