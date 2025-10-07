@@ -4,7 +4,7 @@ set -e
 echo "🧪 IMPACTSHOP STAGING READINESS CHECK"
 echo "====================================="
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S')"
-echo "🌍 STAGING_URL: ${STAGING_URL:-https://sharity.hu/impactshop-staging}"
+echo "🌍 STAGING_URL: ${STAGING_URL:-https://app.sharity.hu/impactshop-staging}"
 echo
 
 # --- REST endpointok ellenőrzése ---

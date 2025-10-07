@@ -1,7 +1,7 @@
 {
-  "ts": "20251006-214430",
+  "ts": "20251006-200409",
   "project_root": "/Users/bujdosoarnold/Documents/GitHub/impactshop-notes",
-  "staging_url": "https://app.sharity.hu/impactshop-staging",
+  "staging_url": "https://sharity.hu/impactshop-staging",
   "prod_url": "https://app.sharity.hu/impactshop",
   "ssh_host": "sharityh@cp40.ezit.hu",
   "remote_wp_path": "/home/sharityh/app",
@@ -34,7 +34,5 @@
 2025-10-06 07:45:03,staging,PASS,0,1.118,5,0,0
 2025-10-06 20:03:26,staging,PASS_WITH_WARN,2,7.960,3,0,0
 2025-10-06 20:03:38,staging,PASS,0,1.008,5,0,0
-2025-10-06 20:04:09,staging,PASS,0,1.662,5,0,0
-2025-10-06 20:05:45,production,PASS,0,1.000,6,0,0
-2025-10-06 20:06:15,production,PASS,0,0.753,6,0,0"
+2025-10-06 20:04:09,staging,PASS,0,1.662,5,0,0"
 }

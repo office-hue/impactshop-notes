@@ -30,7 +30,7 @@ echo "========================================"
 echo "📅 $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
-STAGING_URL="${STAGING_URL:-https://sharity.hu/impactshop-staging}"
+STAGING_URL="${STAGING_URL:-https://app.sharity.hu/impactshop-staging}"
 IMPACT_TOTAL_EP="${IMPACT_TOTAL_EP:-total}"
 DEPLOY_HOST="${DEPLOY_HOST:-${SSH_HOST:-}}"
 DEPLOY_PATH_RAW="${DEPLOY_PATH:-${STAGING_PATH:-}}"

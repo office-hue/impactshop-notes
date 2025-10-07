@@ -13,7 +13,7 @@ cd "$ROOT"; mkdir -p .codex
 [ -f .production_env ] && source .production_env || true
 
 SSH_HOST="${SSH_HOST:-}"
-STAGING_URL="${STAGING_URL:-https://sharity.hu/impactshop-staging}"
+STAGING_URL="${STAGING_URL:-https://app.sharity.hu/impactshop-staging}"
 STAGING_PATH="${STAGING_PATH:-/home/sharityh/app-staging}"
 PROD_URL="${DEPLOY_URL:-https://app.sharity.hu/impactshop}"
 REMOTE_WP_PATH="${REMOTE_WP_PATH:-/home/sharityh/app}"

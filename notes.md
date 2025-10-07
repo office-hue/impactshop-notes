@@ -41,6 +41,19 @@
 - ✅ Impact totals endpoint választó is `-L` paramétert használ, így a fallback döntés a valós HTTP kód alapján történik.
 - ⚠️ Nyitott: Staging REST végpontokat élesben validálni (várható 200/OK a symlink + WP URL fix után). A QA scriptet lokálból nem futtattuk, mert ssh + HTTP ellenőrzéshez távoli hozzáférés szükséges.
 
+### 2025-10-06 – Staging host kanonizálás
+- ✅ Új MU guard: `wp-content/mu-plugins/impact-staging-host-guard.php` a staging `home`/`siteurl` értékét tartósan `https://app.sharity.hu/impactshop-staging`-re kényszeríti (WP-CLI + web request alatt is), így a `home_url()` hívások nem esnek vissza a `sharity.hu` hostra.
+- ✅ Lokális scriptek és env fájlok (`.staging_env`, `.deploy.staging.env`, `bin/codex-refresh.sh`, `bin/staging-qa-suite.sh`, `bin/impactctl-connect.sh`, `bin/setup-sharity-environment.sh`) alapértelmezései frissítve az `app.sharity.hu` hostname-re. Új Codex snapshot: `.codex/context-20251006-214430.json`.
+- 🔁 Teendő: a távoli staging instancián futtasd le a `bin/staging-rest-fix.sh` scriptet (vagy a benne lévő `wp option update` + `.htaccess` lépéseket), majd inkognitóban ellenőrizd a `https://app.sharity.hu/impactshop-staging/` frontot és a `wp-json` végpontokat.
+
+### 2025-10-07 – Codex bridge automatizmus
+- ✅ Új `./codex/bridge` rendszer: JSON alapú feladatleírás (`current-task.json`) + SSH végrehajtó script (`execute.sh`), ami a kimenetet `last-run.json`-ba menti.
+- ✅ GitHub Actions workflow (`.github/workflows/codex-bridge.yml`) push esetén automatikusan futtatja a bridge-et és visszacommitolja az eredményt.
+- ✅ Lokális futtatáshoz `make run-task` / `make show-last` parancsok; dokumentáció: `.codex/bridge/README.md`, biztonsági jegyzet: `.codex/bridge/SECURITY.md`.
+- 🔁 Teendő: GitHub Secrets feltöltése (`SSH_HOST`, `SSH_USER`, `SSH_PORT`, `SSH_KEY`), majd próbaként futtasd a minta staging-host fix feladatot.
+- ✅ Kvótafigyelés: `execute.sh` most parancsonként méri a futási időt/kimenetméretet, `usage.json` gördülő összesítést tart fenn (Actions alatt a teljes job-idő is bekerül). Új Makefile cél: `make show-usage`.
+- ✅ "SSH Bridge Doctor" feladat (`tasks/current-task.doctor.json`) + `make doctor` parancs: titkok/SSH kapcsolat/WP-CLI/HTTP smoke automatizált validálása; Action trigger a bridge fájlokra is kiterjesztve; `DOCTOR.md` dokumentálja a használatot.
+
 ## 1. Döntésnapló
 ## Döntési napló
 

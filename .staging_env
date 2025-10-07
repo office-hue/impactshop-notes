@@ -1,4 +1,4 @@
-STAGING_URL="https://sharity.hu/impactshop-staging"
+STAGING_URL="https://app.sharity.hu/impactshop-staging"
 STAGING_PATH="/home/sharityh/app-staging"
 SSH_HOST="sharityh@cp40.ezit.hu"
 REMOTE_WP_PATH="/home/sharityh/app-staging"

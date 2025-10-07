@@ -11,7 +11,7 @@ mkdir -p .codex
 [ -f .production_env ] && source .production_env || true
 
 TS="$(date +%Y%m%d-%H%M%S)"
-STAGING_URL="${STAGING_URL:-https://sharity.hu/impactshop-staging}"
+STAGING_URL="${STAGING_URL:-https://app.sharity.hu/impactshop-staging}"
 PROD_URL="${DEPLOY_URL:-https://app.sharity.hu/impactshop}"
 SSH_HOST="${SSH_HOST:-}"
 REMOTE_WP_PATH="${REMOTE_WP_PATH:-/home/sharityh/app}"

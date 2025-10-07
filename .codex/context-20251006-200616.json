@@ -1,7 +1,7 @@
 {
-  "ts": "20251006-214430",
+  "ts": "20251006-200616",
   "project_root": "/Users/bujdosoarnold/Documents/GitHub/impactshop-notes",
-  "staging_url": "https://app.sharity.hu/impactshop-staging",
+  "staging_url": "https://sharity.hu/impactshop-staging",
   "prod_url": "https://app.sharity.hu/impactshop",
   "ssh_host": "sharityh@cp40.ezit.hu",
   "remote_wp_path": "/home/sharityh/app",
