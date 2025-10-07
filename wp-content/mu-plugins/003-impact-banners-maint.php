@@ -11,6 +11,7 @@ define('SIB_LAST_GOOD_OPTION', 'sib_last_good_banners');
 define('SIB_LAST_GOOD_TTL', 12 * 60 * 60); // 12 óra
 define('SIB_EMPTY_COUNT_OPTION', 'sib_banners_empty_count');
 define('SIB_LAST_KICK_OPTION', 'sib_banners_last_kick_ts');
+define('SIB_AGGR_UNTIL_OPTION', 'sib_banners_aggr_until_ts');
 
 // Apps Script webhook feloldása (ENV vagy WP option)
 function sib_gas_webhook_url(){
@@ -60,10 +61,19 @@ add_action('sib_banners_refresh', function(){
             if ($rows){
                 sib_store_last_good($rows);
                 update_option(SIB_EMPTY_COUNT_OPTION, 0, false);
+                // Aggresszív figyelés leállítása
+                update_option(SIB_AGGR_UNTIL_OPTION, 0, false);
             } else {
                 // Üres: számláló növelés + Apps Script kick (ha engedélyezett)
                 $n = (int)get_option(SIB_EMPTY_COUNT_OPTION, 0) + 1;
                 update_option(SIB_EMPTY_COUNT_OPTION, $n, false);
+                // Aggresszív figyelés bekapcsolása 10 percre
+                $until = (int)get_option(SIB_AGGR_UNTIL_OPTION, 0);
+                if ($until < time()) { $until = 0; }
+                $target = time() + 10*60; // 10 perc
+                if ($target > $until) {
+                    update_option(SIB_AGGR_UNTIL_OPTION, $target, false);
+                }
                 if ($n >= 2){
                     $url = sib_gas_webhook_url();
                     $last = (int)get_option(SIB_LAST_KICK_OPTION, 0);
@@ -85,9 +95,11 @@ add_action('sib_banners_refresh', function(){
     wp_remote_get($url, [ 'timeout' => 1.5, 'redirection' => 1, 'sslverify' => false, 'headers' => ['User-Agent' => 'ImpactBannersMaint/1.0'] ]);
 
     // Ha üres állapotot észlelünk (n>=1), ütemezzünk egy gyors egyszeri próbát 60s múlva
-    $n = (int)get_option(SIB_EMPTY_COUNT_OPTION, 0);
-    if ($n >= 1){
-        if (!wp_next_scheduled('sib_banners_refresh')){
+    // Aggresszív mód: amíg tart az ablak, 60 mp-enként újrapróbáljuk
+    $until = (int)get_option(SIB_AGGR_UNTIL_OPTION, 0);
+    if ($until > time()){
+        $next = wp_next_scheduled('sib_banners_refresh');
+        if (!$next || $next > (time() + 90)){
             wp_schedule_single_event(time() + 60, 'sib_banners_refresh');
         }
     }
