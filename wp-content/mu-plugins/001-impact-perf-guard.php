@@ -46,14 +46,17 @@ add_filter('rest_request_after_callbacks', function($response, $handler, $reques
     return $response;
 }, 10, 3);
 
-// Rövidebb timeout a távoli kérésekre (Dognet/API)
+// Rövidebb timeout a távoli kérésekre (Dognet / külső API-k) – Sharity hostok kivételek
 add_filter('http_request_args', function($args, $url){
     $host = parse_url($url, PHP_URL_HOST) ?: '';
-    if (preg_match('~(dognet|api|sharity)\.~i', $host)) {
+    // Csak dognet domainek és tipikus api.* aldomain – a sharity.hu / app.sharity.hu NEM!
+    $is_dognet = (bool)preg_match('~dognet~i', $host);
+    $is_api_sub = (bool)preg_match('~^api\..+~i', $host);
+    $is_sharity = (bool)preg_match('~(^|\.)sharity\.hu$~i', $host);
+    if (($is_dognet || $is_api_sub) && !$is_sharity) {
         $args['timeout'] = min((float)($args['timeout'] ?? 5), 1.5);
         $args['redirection'] = 2;
         $args['blocking'] = true;
     }
     return $args;
 }, 10, 2);
-

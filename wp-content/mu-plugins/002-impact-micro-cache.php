@@ -52,6 +52,11 @@ add_action('template_redirect', function() {
     ob_start(function($buffer) {
         // Csak HTML-t mentsünk
         if (!is_string($buffer) || $buffer === '') return $buffer;
+        // Ne cache-eljünk üres/hibás állapotot
+        $lower = strtolower($buffer);
+        if (strpos($lower, 'nincs megjeleníthető adat') !== false || strpos($lower, 'no data') !== false) {
+            return $buffer;
+        }
         $key = defined('IMPACT_HTML_MICROCACHE_KEY') ? IMPACT_HTML_MICROCACHE_KEY : '';
         $ttl = defined('IMPACT_HTML_MICROCACHE_TTL') ? IMPACT_HTML_MICROCACHE_TTL : 120;
         if ($key) {
