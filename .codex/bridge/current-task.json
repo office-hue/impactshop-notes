@@ -1,0 +1,20 @@
+{
+  "goal": "Staging host fix (3–6. lépés) + REST ellenőrzés",
+  "host": "cp40.ezit.hu",
+  "user": "sharityh",
+  "workdir": "/home/sharityh",
+  "actions": [
+    "wp --allow-root --path=/home/sharityh/app-staging option update home https://app.sharity.hu/impactshop-staging",
+    "wp --allow-root --path=/home/sharityh/app-staging option update siteurl https://app.sharity.hu/impactshop-staging",
+    "bash -lc 'cat > /home/sharityh/app-staging/.htaccess <<\'\'\'HT\'\'\'\n# WordPress (.htaccess) – ImpactShop STAGING\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteBase /impactshop-staging/\nRewriteRule ^index\\.php$ - [L]\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteRule . /impactshop-staging/index.php [L]\n</IfModule>\nHT'",
+    "wp --allow-root --path=/home/sharityh/app-staging rewrite flush --hard",
+    "wp --allow-root --path=/home/sharityh/app-staging transient delete --all",
+    "wp --allow-root --path=/home/sharityh/app-staging cache flush || true",
+    "curl -ILs https://app.sharity.hu/impactshop-staging/ | sed -n '1,10p'",
+    "curl -ILs https://app.sharity.hu/impactshop-staging/wp-json/ | sed -n '1,10p'",
+    "curl -ILs https://app.sharity.hu/impactshop-staging/wp-json/impact/v1/total | sed -n '1,10p'"
+  ],
+  "expected": "All REST endpoints 200",
+  "timeout_sec": 600
+}
+
