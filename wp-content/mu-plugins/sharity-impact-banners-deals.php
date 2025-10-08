@@ -46,9 +46,18 @@ if (!function_exists('sib_shops_csv_url')){
 function sib_shops_minimap(){
   static $C=null; if($C!==null) return $C; $map=[];
   if(function_exists('impactshop_get_shops')){
-    try{ foreach((array)impactshop_get_shops() as $r){ $slug=sib_slug($r['shop_slug']??''); if(!$slug) continue; $map[$slug]=['site'=>$r['site']??($r['url']??$r['website']??''),'d1'=>sib_slug($r['default_d1']??'')]; } }catch(\Throwable $e){}
+    try{
+      foreach((array)impactshop_get_shops() as $r){
+        $rec = array_change_key_case((array)$r, CASE_LOWER);
+        $slug = sib_slug($rec['shop_slug']??''); if(!$slug) continue;
+        $map[$slug]=[
+          'site'=>$rec['site']??($rec['url']??$rec['website']??''),
+          'd1'  =>sib_slug($rec['default_d1']??($rec['default1']??($rec['d1']??($rec['ngo']??'')))),
+        ];
+      }
+    }catch(\Throwable $e){}
   }
-  if(!$map){ list($code,$csv)=sib_http_get(sib_shops_csv_url(),7); if($code===200 && $csv){ $lines=preg_split("/\r\n|\r|\n/",trim($csv)); $hdr=[]; foreach($lines as $i=>$ln){ if($ln==='') continue; $cols=str_getcsv($ln); if(!$i){ $hdr=$cols; continue; } $rec=[]; foreach($cols as $j=>$v){ $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; } $slug=sib_slug($rec['shop_slug']??''); if(!$slug) continue; $map[$slug]=['site'=>$rec['site']??$rec['url']??$rec['website']??'','d1'=>sib_slug($rec['default_d1']??'')]; } } }
+  if(!$map){ list($code,$csv)=sib_http_get(sib_shops_csv_url(),7); if($code===200 && $csv){ $lines=preg_split("/\r\n|\r|\n/",trim($csv)); $hdr=[]; foreach($lines as $i=>$ln){ if($ln==='') continue; $cols=str_getcsv($ln); if(!$i){ $hdr=$cols; continue; } $row=[]; foreach($cols as $j=>$v){ $k=strtolower(trim($hdr[$j]??('c'.$j))); $row[$k]=$v; } $slug=sib_slug($row['shop_slug']??($row['slug']??'')); if(!$slug) continue; $map[$slug]=['site'=>$row['site']??($row['url']??($row['website']??'')),'d1'=>sib_slug($row['default_d1']??($row['default1']??($row['d1']??($row['ngo']??''))))]; } } }
   return $C=$map;
 }
 function sib_default_d1($slug){ $m=sib_shops_minimap(); $slug=sib_slug($slug); $d=$m[$slug]['d1']??''; return $d?:sib_slug(SHARITY_GLOBAL_DEFAULT_D1); }
@@ -97,7 +106,13 @@ function sib_load_banners(){
 // Linképítés
 function sib_build_deal_link($slug,$href,$force=true){
   $slug=sib_slug($slug); $d1=sib_default_d1($slug);
-  if (strpos(sib_host($href),'fillout.com')!==false){ $p=wp_parse_url($href); $q=[]; if(!empty($p['query'])) parse_str($p['query'],$q); if(!empty($q['shop'])) $slug=sib_slug($q['shop']); if(!empty($q['u'])){ $b64=strtr($q['u'],'-_','+/'); $pad=strlen($b64)%4; if($pad)$b64.=str_repeat('=',4-$pad); $prod=base64_decode($b64)?:''; if($prod!==''){ return add_query_arg(['d1'=>$d1,'src'=>'impactshop','u'=>sib_b64url($prod)], home_url('/go-deal/'.rawurlencode($slug))); } } return add_query_arg(['d1'=>$d1,'src'=>'impactshop'], home_url('/go/'.rawurlencode($slug))); }
+  if (strpos(sib_host($href),'fillout.com')!==false){
+    $p=wp_parse_url($href); $q=[]; if(!empty($p['query'])) parse_str($p['query'],$q);
+    if(!empty($q['shop'])) $slug=sib_slug($q['shop']);
+    if(!$d1){ $d1 = sib_slug($q['d1'] ?? ($q['ngo'] ?? '')); }
+    if(!empty($q['u'])){ $b64=strtr($q['u'],'-_','+/'); $pad=strlen($b64)%4; if($pad)$b64.=str_repeat('=',4-$pad); $prod=base64_decode($b64)?:''; if($prod!==''){ return add_query_arg(['d1'=>$d1?:sib_slug(SHARITY_GLOBAL_DEFAULT_D1),'src'=>'impactshop','u'=>sib_b64url($prod)], home_url('/go-deal/'.rawurlencode($slug))); } }
+    return add_query_arg(['d1'=>$d1?:sib_slug(SHARITY_GLOBAL_DEFAULT_D1),'src'=>'impactshop'], home_url('/go/'.rawurlencode($slug)));
+  }
   if($force){ return add_query_arg(['d1'=>$d1,'src'=>'impactshop','u'=>sib_b64url($href)], home_url('/go-deal/'.rawurlencode($slug))); }
   $site=sib_site($slug); $h1=ltrim(preg_replace('~^www\.~','', sib_host($href))); $h2=ltrim(preg_replace('~^www\.~','', sib_host($site))); $ok=($h1&&$h2)&&($h1===$h2 || (substr($h1,-strlen($h2)-1)==='.'.$h2)); if($ok){ return add_query_arg(['d1'=>$d1,'src'=>'impactshop','u'=>sib_b64url($href)], home_url('/go-deal/'.rawurlencode($slug))); } return add_query_arg(['d1'=>$d1,'src'=>'impactshop'], home_url('/go/'.rawurlencode($slug))); }
 
