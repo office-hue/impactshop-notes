@@ -45,6 +45,7 @@ if (!function_exists('sib_shops_csv_url')){
 // Shops mini-térkép
 function sib_shops_minimap(){
   static $C=null; if($C!==null) return $C; $map=[];
+  // 1) Alap térkép: impactshop_get_shops (ha van)
   if(function_exists('impactshop_get_shops')){
     try{
       foreach((array)impactshop_get_shops() as $r){
@@ -57,7 +58,20 @@ function sib_shops_minimap(){
       }
     }catch(\Throwable $e){}
   }
-  if(!$map){ list($code,$csv)=sib_http_get(sib_shops_csv_url(),7); if($code===200 && $csv){ $lines=preg_split("/\r\n|\r|\n/",trim($csv)); $hdr=[]; foreach($lines as $i=>$ln){ if($ln==='') continue; $cols=str_getcsv($ln); if(!$i){ $hdr=$cols; continue; } $row=[]; foreach($cols as $j=>$v){ $k=strtolower(trim($hdr[$j]??('c'.$j))); $row[$k]=$v; } $slug=sib_slug($row['shop_slug']??($row['slug']??'')); if(!$slug) continue; $map[$slug]=['site'=>$row['site']??($row['url']??($row['website']??'')),'d1'=>sib_slug($row['default_d1']??($row['default1']??($row['d1']??($row['ngo']??''))))]; } } }
+  // 2) CSV térkép és felülírás (CSV d1 elsőbbség)
+  $code=0; $csv=''; list($code,$csv)=sib_http_get(sib_shops_csv_url(),7);
+  if($code===200 && $csv){
+    $lines=preg_split("/\r\n|\r|\n/",trim($csv)); $hdr=[];
+    foreach($lines as $i=>$ln){ if($ln==='') continue; $cols=str_getcsv($ln); if(!$i){ $hdr=$cols; continue; }
+      $row=[]; foreach($cols as $j=>$v){ $k=strtolower(trim($hdr[$j]??('c'.$j))); $row[$k]=$v; }
+      $slug=sib_slug($row['shop_slug']??($row['slug']??'')); if(!$slug) continue;
+      $site=$row['site']??($row['url']??($row['website']??''));
+      $d1 =sib_slug($row['default_d1']??($row['default1']??($row['d1']??($row['ngo']??''))));
+      if(!isset($map[$slug])) $map[$slug]=['site'=>'','d1'=>''];
+      if($site && !$map[$slug]['site']) $map[$slug]['site']=$site;
+      if($d1) $map[$slug]['d1']=$d1;
+    }
+  }
   return $C=$map;
 }
 function sib_default_d1($slug){ $m=sib_shops_minimap(); $slug=sib_slug($slug); $d=$m[$slug]['d1']??''; return $d?:sib_slug(SHARITY_GLOBAL_DEFAULT_D1); }
