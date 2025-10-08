@@ -26,13 +26,29 @@ function sib_b64url($s){ return rtrim(strtr(base64_encode($s), '+/', '-_'), '=')
 function sib_http_get($u,$t=7){ $r=wp_remote_get($u,['timeout'=>$t,'redirection'=>3]); return is_wp_error($r)?[0,'']:[(int)wp_remote_retrieve_response_code($r),(string)wp_remote_retrieve_body($r)]; }
 function sib_host($u){ $p=wp_parse_url($u); return isset($p['host'])?strtolower($p['host']):''; }
 
+// Konfiguráció: URL-ek opcióból is felülírhatók
+if (!function_exists('sib_banners_csv_url')){
+  function sib_banners_csv_url(){
+    $opt = get_option('sib_banners_csv_url');
+    if (is_string($opt) && $opt !== '') return $opt;
+    return SHARITY_BANNERS_CSV;
+  }
+}
+if (!function_exists('sib_shops_csv_url')){
+  function sib_shops_csv_url(){
+    $opt = get_option('sib_shops_csv_url');
+    if (is_string($opt) && $opt !== '') return $opt;
+    return SHARITY_SHOPS_PUB_CSV;
+  }
+}
+
 // Shops mini-térkép
 function sib_shops_minimap(){
   static $C=null; if($C!==null) return $C; $map=[];
   if(function_exists('impactshop_get_shops')){
     try{ foreach((array)impactshop_get_shops() as $r){ $slug=sib_slug($r['shop_slug']??''); if(!$slug) continue; $map[$slug]=['site'=>$r['site']??($r['url']??$r['website']??''),'d1'=>sib_slug($r['default_d1']??'')]; } }catch(\Throwable $e){}
   }
-  if(!$map){ list($code,$csv)=sib_http_get(SHARITY_SHOPS_PUB_CSV,7); if($code===200 && $csv){ $lines=preg_split("/\r\n|\r|\n/",trim($csv)); $hdr=[]; foreach($lines as $i=>$ln){ if($ln==='') continue; $cols=str_getcsv($ln); if(!$i){ $hdr=$cols; continue; } $rec=[]; foreach($cols as $j=>$v){ $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; } $slug=sib_slug($rec['shop_slug']??''); if(!$slug) continue; $map[$slug]=['site'=>$rec['site']??$rec['url']??$rec['website']??'','d1'=>sib_slug($rec['default_d1']??'')]; } } }
+  if(!$map){ list($code,$csv)=sib_http_get(sib_shops_csv_url(),7); if($code===200 && $csv){ $lines=preg_split("/\r\n|\r|\n/",trim($csv)); $hdr=[]; foreach($lines as $i=>$ln){ if($ln==='') continue; $cols=str_getcsv($ln); if(!$i){ $hdr=$cols; continue; } $rec=[]; foreach($cols as $j=>$v){ $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; } $slug=sib_slug($rec['shop_slug']??''); if(!$slug) continue; $map[$slug]=['site'=>$rec['site']??$rec['url']??$rec['website']??'','d1'=>sib_slug($rec['default_d1']??'')]; } } }
   return $C=$map;
 }
 function sib_default_d1($slug){ $m=sib_shops_minimap(); $slug=sib_slug($slug); $d=$m[$slug]['d1']??''; return $d?:sib_slug(SHARITY_GLOBAL_DEFAULT_D1); }
@@ -50,7 +66,7 @@ if (!function_exists('sib_load_last_good')){
 
 // Banners betöltés + last-good fallback
 function sib_load_banners(){
-  list($c,$csv)=sib_http_get(SHARITY_BANNERS_CSV,7);
+  list($c,$csv)=sib_http_get(sib_banners_csv_url(),7);
   if($c!==200 || !$csv){ list($c,$csv)=sib_http_get(SHARITY_BANNERS_TMP_CSV,7); }
   $out=[];
   if($c===200 && $csv){
