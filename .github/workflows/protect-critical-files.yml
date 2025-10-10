@@ -1,21 +1,44 @@
 name: protect-critical-files
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 jobs:
   guard:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fail if critical files changed without security-approved label
+        with:
+          fetch-depth: 0
+      - name: Ensure jq is present
         run: |
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(impact-tools/(access-guard\.sh|ssh-recovery\.sh|impact-restore\.sh|impact-rollback\.sh))$' || true)
-          if [ -n "$CHANGED" ]; then
-            echo "Changed critical files: $CHANGED"
-            LABELS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              ${{ github.api_url }}/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels | jq -r '.[].name')
-            if ! echo "$LABELS" | grep -q '^security-approved$'; then
-              echo "Missing required label: security-approved"
-              exit 1
-            fi
+          if ! command -v jq >/dev/null; then
+            sudo apt-get update -y
+            sudo apt-get install -y jq
           fi
+      - name: Fetch base branch
+        run: |
+          git fetch origin "${{ github.base_ref }}":"refs/remotes/origin/${{ github.base_ref }}"
+      - name: Detect critical file changes
+        id: detect
+        run: |
+          CHANGED="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+            | grep -E '^(impact-tools/(access-guard\.sh|ssh-recovery\.sh|impact-restore\.sh|impact-rollback\.sh))$' || true)"
+          echo "changed<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          if [ -n "$CHANGED" ]; then
+            echo "Critical files changed:"
+            echo "$CHANGED"
+          else
+            echo "No critical file changes."
+          fi
+      - name: Require 'security-approved' label if critical files changed
+        if: steps.detect.outputs.changed != ''
+        run: |
+          # labels a payloadból (GITHUB_EVENT_PATH)
+          LABELS=$(jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH")
+          echo "PR labels: $LABELS"
+          echo "$LABELS" | grep -qx 'security-approved' || { 
+            echo "Missing required label: security-approved";
+            exit 1;
+          }
