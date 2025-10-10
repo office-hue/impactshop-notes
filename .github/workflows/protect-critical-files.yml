@@ -12,15 +12,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PROTECTED_FILES=$'# List (one per line)\nbin/impactctl\nimpact-tools/access-guard.sh\nimpact-tools/ssh-recovery.sh\nwp-content/mu-plugins/impact-safety-suite.php\n.deploy.production.env\n'
+          PROTECTED_FILES="$(cat .github/protected-files.txt)"
           BASE="${{ github.base_ref || github.event.pull_request.base.ref }}"
           git fetch origin "$BASE" >/dev/null 2>&1 || true
           CHANGED="$(git diff --name-only "origin/${BASE}...HEAD" || true)"
-          echo "ℹ️ Changed files:"; printf '%s\n' "$CHANGED"
+          echo "Changed files:"; printf '%s\n' "$CHANGED"
           while IFS= read -r FILE; do
             [ -n "$FILE" ] || continue
             if printf '%s\n' "$CHANGED" | grep -qx -- "$FILE"; then
-              echo "❌ PR módosít védett fájlt: $FILE"; exit 1
+              echo "PR modifies protected file: $FILE"
+              exit 1
             fi
-          done <<<"$(printf '%s' "$PROTECTED_FILES")"
-          echo "✅ védett fájlok érintetlenek"
+          done <<<"$PROTECTED_FILES"
+          echo "protected files untouched"
