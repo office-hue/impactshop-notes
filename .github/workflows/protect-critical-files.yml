@@ -1,0 +1,21 @@
+name: protect-critical-files
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if critical files changed without security-approved label
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(impact-tools/(access-guard\.sh|ssh-recovery\.sh|impact-restore\.sh|impact-rollback\.sh))$' || true)
+          if [ -n "$CHANGED" ]; then
+            echo "Changed critical files: $CHANGED"
+            LABELS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              ${{ github.api_url }}/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels | jq -r '.[].name')
+            if ! echo "$LABELS" | grep -q '^security-approved$'; then
+              echo "Missing required label: security-approved"
+              exit 1
+            fi
+          fi

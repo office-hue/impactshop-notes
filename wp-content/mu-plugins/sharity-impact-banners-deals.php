@@ -17,7 +17,16 @@ if (!defined('SHARITY_SHOPS_PUB_CSV')) {
   define('SHARITY_SHOPS_PUB_CSV', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=0&single=true&output=csv');
 }
 if (!defined('SHARITY_GLOBAL_DEFAULT_D1')) {
-  define('SHARITY_GLOBAL_DEFAULT_D1', 'bator-tabor-alapitvany');
+  define('SHARITY_GLOBAL_DEFAULT_D1', 'kozos-ugyunk-az-allatvedelem');
+}
+// Stagingen a default1 nélküli shopoknál NE essünk vissza a globális d1-re,
+// hogy a Fillout választhasson NGO-t. Productionön külön konstanssal engedélyezhető.
+if (!defined('SHARITY_DEAL_LINK_STRICT_DEFAULT')) {
+  // staging autodetect
+  $___contentDir = defined('WP_CONTENT_DIR') ? WP_CONTENT_DIR : '';
+  $___absPath    = defined('ABSPATH') ? ABSPATH : '';
+  $___isStaging  = (strpos($___contentDir, 'app-staging') !== false) || (strpos($___absPath, 'app-staging') !== false);
+  define('SHARITY_DEAL_LINK_STRICT_DEFAULT', $___isStaging);
 }
 
 // segédek
@@ -75,6 +84,7 @@ function sib_shops_minimap(){
   return $C=$map;
 }
 function sib_default_d1($slug){ $m=sib_shops_minimap(); $slug=sib_slug($slug); $d=$m[$slug]['d1']??''; return $d?:sib_slug(SHARITY_GLOBAL_DEFAULT_D1); }
+function sib_default_d1_strict($slug){ $m=sib_shops_minimap(); $slug=sib_slug($slug); return $m[$slug]['d1']??''; }
 function sib_site($slug){ $m=sib_shops_minimap(); $slug=sib_slug($slug); return $m[$slug]['site']??''; }
 
 // Last-good tároló/olvasó (12 óra)
@@ -119,7 +129,8 @@ function sib_load_banners(){
 
 // Linképítés
 function sib_build_deal_link($slug,$href,$force=true){
-  $slug=sib_slug($slug); $d1=sib_default_d1($slug);
+  $slug=sib_slug($slug);
+  $d1 = SHARITY_DEAL_LINK_STRICT_DEFAULT ? sib_default_d1_strict($slug) : sib_default_d1($slug);
   if (strpos(sib_host($href),'fillout.com')!==false){
     $p=wp_parse_url($href); $q=[]; if(!empty($p['query'])) parse_str($p['query'],$q);
     if(!empty($q['shop'])) $slug=sib_slug($q['shop']);

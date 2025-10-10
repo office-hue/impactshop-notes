@@ -14,7 +14,7 @@ if (!defined('SHARITY_SHOPS_PUB_CSV')) {
 
 /** 2) (OPCIONÁLIS, de erősen ajánlott) Globális fallback NGO – ha egy shop nincs a táblában */
 if (!defined('SHARITY_GLOBAL_DEFAULT_D1')) {
-  define('SHARITY_GLOBAL_DEFAULT_D1', 'bator-tabor-alapitvany');  // ← ide írd a “site-wide” alap NGO slugot
+  define('SHARITY_GLOBAL_DEFAULT_D1', 'kozos-ugyunk-az-allatvedelem');  // ← ide írd a “site-wide” alap NGO slugot
 }
 
 /** ---- Segédek ---- */
@@ -23,7 +23,8 @@ function sh_d1_is_front(){ return !is_admin() && !wp_doing_ajax() && !wp_doing_c
 
 /** Shops → [shop_slug => default_d1] (5 perces cache) */
 function sh_d1_map(){
-  $key='sharity_default_d1_map_v3';
+  // bump key to invalidate old cache after parser improvements
+  $key='sharity_default_d1_map_v4';
   $m=get_transient($key);
   if(is_array($m)) return $m;
   $m=[];
@@ -51,11 +52,17 @@ function sh_d1_map(){
         foreach($lines as $i=>$ln){
           if($ln==='') continue;
           $cols = str_getcsv($ln);
-          if(!$i){ $header=$cols; continue; }
+          if(!$i){
+            // normalize headers to lowercase for robust lookup
+            foreach($cols as $h){ $header[] = strtolower(trim($h)); }
+            continue;
+          }
           $rec=[];
-          foreach($cols as $j=>$val){ $k=isset($header[$j])?trim($header[$j]):('c'.$j); $rec[$k]=$val; }
-          $slug = isset($rec['shop_slug']) ? sh_d1_sanitize_slug($rec['shop_slug']) : '';
-          $d1   = isset($rec['default_d1']) ? sh_d1_sanitize_slug($rec['default_d1']) : '';
+          foreach($cols as $j=>$val){ $k=isset($header[$j])?$header[$j]:('c'.$j); $rec[$k]=$val; }
+          // support multiple synonyms: shop_slug|slug|go_slug ; default_d1|default1|d1|ngo
+          $slug = sh_d1_sanitize_slug($rec['shop_slug'] ?? ($rec['slug'] ?? ($rec['go_slug'] ?? '')));
+          $d1raw = $rec['default_d1'] ?? ($rec['default1'] ?? ($rec['d1'] ?? ($rec['ngo'] ?? '')));
+          $d1   = sh_d1_sanitize_slug((string)$d1raw);
           if($slug && $d1) $m[$slug]=$d1;
         }
       }
