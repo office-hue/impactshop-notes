@@ -1,0 +1,26 @@
+name: protect-critical-files
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail on protected file changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROTECTED_FILES=$'# List (one per line)\nbin/impactctl\nimpact-tools/access-guard.sh\nimpact-tools/ssh-recovery.sh\nwp-content/mu-plugins/impact-safety-suite.php\n.deploy.production.env\n'
+          BASE="${{ github.base_ref || github.event.pull_request.base.ref }}"
+          git fetch origin "$BASE" >/dev/null 2>&1 || true
+          CHANGED="$(git diff --name-only "origin/${BASE}...HEAD" || true)"
+          echo "ℹ️ Changed files:"; printf '%s\n' "$CHANGED"
+          while IFS= read -r FILE; do
+            [ -n "$FILE" ] || continue
+            if printf '%s\n' "$CHANGED" | grep -qx -- "$FILE"; then
+              echo "❌ PR módosít védett fájlt: $FILE"; exit 1
+            fi
+          done <<<"$(printf '%s' "$PROTECTED_FILES")"
+          echo "✅ védett fájlok érintetlenek"
