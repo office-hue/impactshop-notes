@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+SNAP="${1:-}"
+FILE="${2:-}"
+[ -n "$SNAP" ] && [ -n "$FILE" ] || { echo "Használat: tm-diff <snap-YYYYmmdd_HHMMSS> <útvonal>"; exit 1; }
+ARCHIVE="$ROOT/.codex/tm/$SNAP/files.tar.gz"
+[ -f "$ARCHIVE" ] || { echo "Nem találom a snapshotot: $ARCHIVE"; exit 2; }
+TMP="$ROOT/.codex/tm/_tmp"
+mkdir -p "$TMP"
+tar -xzf "$ARCHIVE" -C "$TMP" "$FILE" || { echo "Fájl nincs a snapshotban: $FILE"; exit 3; }
+diff -u "$TMP/$FILE" "$ROOT/$FILE" || true

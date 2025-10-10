@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+SNAP="${1:-}"
+if [ -z "$SNAP" ]; then
+  SNAP="$(cat "$ROOT/.codex/tm/last" 2>/dev/null || true)"
+fi
+[ -n "$SNAP" ] || { echo "Nincs SNAP megadva és last sincs."; exit 1; }
+ARCHIVE="$ROOT/.codex/tm/$SNAP/files.tar.gz"
+HASH_FILE="$ROOT/.codex/tm/$SNAP/hash.txt"
+[ -f "$ARCHIVE" ] && [ -f "$HASH_FILE" ] || { echo "Hiányos snapshot: $SNAP"; exit 2; }
+TMP="$ROOT/.codex/tm/_tmp_verify"
+rm -rf "$TMP" 2>/dev/null || true
+mkdir -p "$TMP"
+tar -xzf "$ARCHIVE" -C "$TMP"
+BAD=0
+while read -r sha file; do
+  [ -f "$TMP/$file" ] || continue
+  calc=$(shasum -a 256 "$TMP/$file" | awk '{print $1}')
+  if [ "$sha" != "$calc" ]; then
+    echo "Hash eltérés: $file"
+    BAD=1
+  fi
+done < "$HASH_FILE"
+rm -rf "$TMP" 2>/dev/null || true
+if [ "$BAD" -eq 0 ]; then
+  echo "OK: $SNAP érvényes"
+else
+  echo "HIBA: $SNAP sérült"
+  exit 3
+fi

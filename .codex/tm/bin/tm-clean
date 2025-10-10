@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+KEEP="${1:-20}"  # hány snapshot maradjon
+cd "$ROOT/.codex/tm"
+(ls -1dt snap-* 2>/dev/null || true) | tail -n +$((KEEP+1)) | xargs -I{} rm -rf "{}" 2>/dev/null || true
+echo "✓ TM cleanup kész (megtartva: $KEEP)"

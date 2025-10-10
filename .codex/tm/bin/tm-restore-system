@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+SNAP="${1:-}"
+[ -n "$SNAP" ] || { echo "Használat: tm-restore-system <snap-YYYYmmdd_HHMMSS>"; exit 1; }
+ARCHIVE="$ROOT/.codex/tm/$SNAP/files.tar.gz"
+[ -f "$ARCHIVE" ] || { echo "Nem találom a snapshotot: $ARCHIVE"; exit 2; }
+tar -xzf "$ARCHIVE" -C "$ROOT"
+echo "TELJES VISSZAÁLLÍTÁS KÉSZ: $SNAP"

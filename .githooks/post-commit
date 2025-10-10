@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+set -eu
+ROOT="$(git rev-parse --show-toplevel)"
+LAST="$(cat "$ROOT/.codex/tm/last" 2>/dev/null || true)"
+[ -n "$LAST" ] && echo "Snapshot készült: $LAST" || true
+exit 0
