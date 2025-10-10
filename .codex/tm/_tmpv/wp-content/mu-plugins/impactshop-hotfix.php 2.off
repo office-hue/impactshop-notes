@@ -1,0 +1,151 @@
+<?php
+/**
+ * Plugin Name: ImpactShop – HOTFIX (ticker/activity/rows)
+ * Description: Minimal javító MU: Ticker + Activity + Rows, csatornafüggetlenül, csak A|P és csak data1-es sorokkal.
+ * Version: 0.1
+ * Author: Sharity
+ */
+
+if (!defined('ABSPATH')) exit;
+
+/* ------- d1 (NGO) felderítése: Fillout -> Bridge helper -> Shops default_d1 ------- */
+function ishf_pick_d1(array $row): string {
+  // 1) Fillout / közvetlen mezők
+  foreach (['data1','d1','ngo','ngo_slug','ngo_name'] as $k) {
+    if (!empty($row[$k]) && is_string($row[$k])) {
+      $v = trim((string)$row[$k]);
+      if ($v !== '' && strtolower($v) !== '(ismeretlen)' && !is_numeric($v)) return $v;
+    }
+  }
+  // 2) Bridge Local okos kinyerő (URL, kv-pár stb.)
+  if (function_exists('ibl__pick_d1')) {
+    $v = trim((string)ibl__pick_d1($row));
+    if ($v !== '' && strtolower($v) !== '(ismeretlen)' && !is_numeric($v)) return $v;
+  }
+  // 3) Shops default_d1 (ha van ilyen helper)
+  $shop = (string)($row['shop_slug'] ?? $row['shop_name'] ?? $row['shop'] ?? $row['program'] ?? '');
+  $shop_slug = sanitize_title($shop);
+  foreach (['sharity_default_d1_for_shop','impactshop_default_d1_for_shop','impact_get_default_d1_for_shop'] as $fn){
+    if (function_exists($fn)) {
+      try {
+        $v = trim((string)call_user_func($fn, $shop_slug, $row));
+        if ($v !== '' && strtolower($v) !== '(ismeretlen)' && !is_numeric($v)) return $v;
+      } catch (\Throwable $e) {}
+    }
+  }
+  return '';
+}
+
+/* ------- közös fetch + szűrés: A|P + kötelező d1 ------- */
+function ishf_fetch($from, $to, $limit = 2000): array {
+  // backend: Bridge Local kötelező (nem nyúlunk más pluginhoz)
+  if (!function_exists('ibl_fetch_transactions')) {
+    return ['rows'=>[], 'error'=>'Bridge Local nincs aktívban (hiányzik az ibl_fetch_transactions())'];
+  }
+
+  // minden csatornát lehúzunk → helyben szűrünk
+  try {
+    $res = ibl_fetch_transactions($from, $to, 'all', 120, 250);
+    if (is_wp_error($res)) return ['rows'=>[], 'error'=>$res->get_error_message()];
+    $rows = is_array($res) ? $res : [];
+  } catch (\Throwable $e) {
+    return ['rows'=>[], 'error'=>$e->getMessage()];
+  }
+
+  $out = [];
+  foreach ($rows as $r) {
+    $st = strtolower(trim($r['status'] ?? $r['rstatus'] ?? ''));
+    // csak Approved|Pending (A|P)
+    if (!in_array($st, ['approved','pending','a','p'], true)) continue;
+
+    $d1 = ishf_pick_d1($r);
+    if ($d1 === '') continue; // data1 kötelező
+
+    // alap mezők
+    $comm = (float)str_replace([',','€',' '], ['.','',''], (string)($r['publisher_commission'] ?? $r['commission'] ?? $r['payout'] ?? 0));
+    $dt   = (string)($r['created_at'] ?? $r['created'] ?? $r['date'] ?? '');
+    $shop = (string)($r['shop_name'] ?? $r['shop'] ?? $r['program'] ?? '');
+
+    $out[] = [
+      'datetime'   => $dt,
+      'shop'       => $shop,
+      'ngo'        => $d1,
+      'status'     => in_array($st,['a','p'],true) ? ($st==='a'?'approved':'pending') : $st,
+      'commission' => $comm,
+    ];
+  }
+
+  // legújabb elöl + limit
+  usort($out, fn($a,$b) => strcmp($b['datetime'], $a['datetime']));
+  if ($limit && count($out) > $limit) $out = array_slice($out, 0, $limit);
+
+  return ['rows'=>$out, 'error'=>null];
+}
+
+function ishf_donation($c){ return round(0.5 * (float)$c, 2); }
+
+/* ------- [impact_ticker_fix] – hónap + ma ------- */
+add_shortcode('impact_ticker_fix', function(){
+  $from = date('Y-m-01'); $to = date('Y-m-d');
+  $res = ishf_fetch($from, $to, 5000);
+  if (!empty($res['error'])) return '<div style="color:#b00">HOTFIX ticker hiba: '.esc_html($res['error']).'</div>';
+
+  $total = 0.0; $today = 0.0; $ymd = date('Y-m-d');
+  foreach ($res['rows'] as $r) {
+    $d = ishf_donation($r['commission']);
+    $total += $d;
+    if (substr($r['datetime'],0,10) === $ymd) $today += $d;
+  }
+
+  return '<style>.ishf-ticker{display:flex;gap:12px}.ishf-card{flex:1;padding:14px;border-radius:12px;background:linear-gradient(90deg,#e7f0ff,#f4eefe)}.ishf-card .k{opacity:.7;font-size:.9rem;margin-bottom:4px}.ishf-card .v{font-size:1.6rem;font-weight:700}</style>'
+       . '<div class="ishf-ticker">'
+       .   '<div class="ishf-card"><div class="k">Összegyűjtve (hó)</div><div class="v">€ '.number_format($total,2,',',' ').'</div></div>'
+       .   '<div class="ishf-card"><div class="k">Ma</div><div class="v">€ '.number_format($today,2,',',' ').'</div></div>'
+       . '</div>';
+});
+
+/* ------- [impact_activity_fix] – utolsó 14 nap, max 10 sor ------- */
+add_shortcode('impact_activity_fix', function(){
+  $from = date('Y-m-d', strtotime('-13 days')); $to = date('Y-m-d');
+  $res = ishf_fetch($from, $to, 300);
+  if (!empty($res['error'])) return '<div style="color:#b00">HOTFIX activity hiba: '.esc_html($res['error']).'</div>';
+
+  $rows = array_slice($res['rows'], 0, 10);
+  if (!$rows) return '<div>Még nincsenek friss aktivitások.</div>';
+
+  $li=''; foreach ($rows as $r){
+    $li .= '<li><strong>'.esc_html($r['shop']).'</strong> → '.esc_html($r['ngo']).' • '
+         . esc_html(substr($r['datetime'],0,16)).' • € '.number_format(ishf_donation($r['commission']),2,',',' ')
+         . ' <span style="opacity:.6">'.esc_html($r['status']).'</span></li>';
+  }
+  return '<ul style="line-height:1.4;padding-left:18px">'.$li.'</ul>';
+});
+
+/* ------- [impact_rows_fix] – diagnosztikai lista tetszőleges időszakra ------- */
+add_shortcode('impact_rows_fix', function($atts){
+  $a = shortcode_atts(['from'=>date('Y-m-01'),'to'=>date('Y-m-d')], $atts);
+  $res = ishf_fetch($a['from'], $a['to'], 5000);
+  if (!empty($res['error'])) return '<div style="color:#b00">HOTFIX rows hiba: '.esc_html($res['error']).'</div>';
+
+  $sum = 0.0;
+  foreach ($res['rows'] as $r) $sum += ishf_donation($r['commission']);
+
+  $trs=''; foreach ($res['rows'] as $r){
+    $trs .= '<tr>'
+          . '<td>'.esc_html($r['datetime']).'</td>'
+          . '<td>'.esc_html($r['shop']).'</td>'
+          . '<td>'.esc_html($r['ngo']).'</td>'
+          . '<td>'.esc_html($r['status']).'</td>'
+          . '<td style="text-align:right">€ '.number_format((float)$r['commission'],2,',',' ').'</td>'
+          . '<td style="text-align:right">€ '.number_format(ishf_donation($r['commission']),2,',',' ').'</td>'
+          . '</tr>';
+  }
+
+  return '<style>.ishf-table{width:100%;border-collapse:collapse}.ishf-table th,.ishf-table td{border:1px solid #eee;padding:6px}.ishf-table th{background:#fafafa;text-align:left}</style>'
+       . '<table class="ishf-table">'
+       .   '<tr><th>Dátum</th><th>Webshop</th><th>Szervezet (data1)</th><th>Státusz</th><th>Jutalék</th><th>Adomány (50%)</th></tr>'
+       .   $trs
+       .   '<tr><th colspan="5" style="text-align:right">Összesen</th>'
+       .       '<th style="text-align:right">€ '.number_format($sum,2,',',' ').'</th></tr>'
+       . '</table>';
+});

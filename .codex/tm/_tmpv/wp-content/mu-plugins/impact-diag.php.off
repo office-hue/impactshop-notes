@@ -1,0 +1,46 @@
+<?php
+/**
+ * Plugin Name: Impact Diag & Flush
+ * Description: Gyors teszt a 3 végpontra + cache ürítés.
+ */
+if (!defined('ABSPATH')) exit;
+
+add_shortcode('impact_diag', function () {
+  $checks = ['ticker','leaderboard?tab=ngo','activity'];
+  $out = [];
+  $out[] = '<div style="padding:10px;border-radius:8px;background:#0b1220;color:#cde">'
+        .  '<b>IMPACT_API_BASE</b>: '.esc_html(defined('IMPACT_API_BASE')?IMPACT_API_BASE:'(nincs)')
+        .  ' · <a style="color:#9f9" href="?impact_flush=1">cache flush</a></div>';
+
+  $ok_all = true;
+  foreach ($checks as $p) {
+    $url = impact_api_url($p);
+    $r = wp_remote_get($url, ['timeout'=>10,'headers'=>['Accept'=>'application/json']]);
+    $err = is_wp_error($r) ? $r->get_error_message() : '';
+    $code = is_wp_error($r) ? 0 : wp_remote_retrieve_response_code($r);
+    $body = is_wp_error($r) ? '' : wp_remote_retrieve_body($r);
+    $is_json = (json_decode($body, true) !== null);
+    $ok = ($code===200 && $is_json);
+    $ok_all = $ok_all && $ok;
+    $out[] = '<div style="margin-top:8px;padding:8px;border-radius:6px;background:#111827;color:'.($ok?'#22c55e':'#fca5a5').'">'
+          .  '<b>'.esc_html($p).'</b>: HTTP '.$code.' · '.($is_json?'JSON':'nem JSON')
+          .  '<br><code style="color:#cbd5e1">'.esc_html($url).'</code>'
+          .  ($err?'<br><small style="color:#fca5a5">'.esc_html($err).'</small>':'')
+          .  '</div>';
+  }
+  if (!$ok_all) {
+    $out[] = '<div style="margin-top:8px;padding:10px;border-radius:8px;background:#3b1d1d;color:#fee2e2">'
+           . 'Legalább egy végpont nem 200+JSON. Cache ürítés után frissíts, vagy nézd meg a kiszolgálót.</div>';
+  }
+  return implode('', $out);
+});
+
+add_action('init', function(){
+  if (!is_admin() && isset($_GET['impact_flush'])) {
+    delete_transient('impact_ticker_json');
+    delete_transient('impact_activity');
+    global $wpdb;
+    $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_impact_leaderboard_%' OR option_name LIKE '_transient_timeout_impact_leaderboard_%'");
+    wp_die('<div style="padding:16px;font:14px/1.5 system-ui;color:#22c55e">Impact cache ürítve. <a href="'.esc_url(remove_query_arg('impact_flush')).'">Vissza</a></div>', 'Impact');
+  }
+});

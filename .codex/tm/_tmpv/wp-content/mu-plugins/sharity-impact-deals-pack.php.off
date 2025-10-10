@@ -1,0 +1,316 @@
+<?php
+/**
+ * Sharity – Impact Deals PACK (MU)
+ * - Banners-alapú deals shortcode: [impactshop_deals_banners limit="12" category="" force="1"]
+ *   • force="1": mindig deeplink (/go-deal). force="0": óvatos mód (host-match kell, különben /go).
+ * - Alias: ha szabad, regisztrálja: [impactshop_deals] -> ugyanaz mint fent.
+ * - /go-deal vészfék: ha a deeplink host NEM egyezik a shop "site" (vagy product_url) domainjével,
+ *   akkor automatikusan /go/{shop}-ra esik vissza (u paraméter nélkül). Ha nincs "site", NEM korlátoz.
+ * - Diagnosztika: ?impact_mini_probe=1 → JSON állapot.
+ *
+ * NEM SZABAD záró "?>" és BOM!
+ */
+
+/* ===========================
+ *  KONFIG
+ * ===========================
+ */
+if (!defined('SHARITY_BANNERS_CSV')) {
+  define('SHARITY_BANNERS_CSV', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=328401803&single=true&output=csv'); // Banners
+}
+if (!defined('SHARITY_BANNERS_TMP_CSV')) {
+  define('SHARITY_BANNERS_TMP_CSV', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=470200079&single=true&output=csv'); // Banners_tmp
+}
+if (!defined('SHARITY_SHOPS_PUB_CSV')) {
+  define('SHARITY_SHOPS_PUB_CSV', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=0&single=true&output=csv'); // Shops
+}
+if (!defined('SHARITY_GLOBAL_DEFAULT_D1')) {
+  define('SHARITY_GLOBAL_DEFAULT_D1', 'bator-tabor-alapitvany'); // site-wide fallback NGO
+}
+
+/* ===========================
+ *  SEGÉDEK
+ * ===========================
+ */
+function sid_slug($s){ return strtolower(preg_replace('~[^a-z0-9\-]+~','-', (string)$s)); }
+function sid_b64url($s){ return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
+function sid_http_get($u,$t=7){
+  $r = wp_remote_get($u, ['timeout'=>$t,'redirection'=>3]);
+  return is_wp_error($r) ? [0,''] : [(int)wp_remote_retrieve_response_code($r),(string)wp_remote_retrieve_body($r)];
+}
+function sid_host($u){ $p = wp_parse_url($u); return isset($p['host']) ? strtolower($p['host']) : ''; }
+function sid_norm_host($h){ return ltrim(preg_replace('~^www\.~','', strtolower((string)$h))); }
+
+/* ===========================
+ *  SHOPS mini-térkép
+ *  [slug => ['site','d1']]
+ *  "site" = preferáljuk a 'site' mezőt, ha üres: 'product_url', aztán url/website
+ * ===========================
+ */
+function sid_shops_minimap(){
+  static $C=null; if($C!==null) return $C;
+  $map = [];
+
+  if (function_exists('impactshop_get_shops')){
+    try{
+      foreach ((array)impactshop_get_shops() as $r){
+        $slug = sid_slug($r['shop_slug'] ?? ''); if(!$slug) continue;
+        $site = $r['site'] ?? ($r['product_url'] ?? ($r['url'] ?? ($r['website'] ?? '')));
+        $map[$slug] = [
+          'site' => $site,
+          'd1'   => sid_slug($r['default_d1'] ?? ''),
+        ];
+      }
+    }catch(\Throwable $e){}
+  }
+
+  if (!$map){
+    list($code,$csv) = sid_http_get(SHARITY_SHOPS_PUB_CSV,7);
+    if ($code===200 && $csv){
+      $lines = preg_split("/\r\n|\r|\n/", trim($csv));
+      $hdr = [];
+      foreach ($lines as $i=>$ln){
+        if ($ln==='') continue;
+        $cols = str_getcsv($ln);
+        if(!$i){ $hdr=$cols; continue; }
+        $rec = [];
+        foreach($cols as $j=>$v){ $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; }
+        $slug = sid_slug($rec['shop_slug'] ?? ''); if(!$slug) continue;
+        $site = $rec['site'] ?? ($rec['product_url'] ?? ($rec['url'] ?? ($rec['website'] ?? '')));
+        $map[$slug] = [
+          'site' => $site,
+          'd1'   => sid_slug($rec['default_d1'] ?? ''),
+        ];
+      }
+    }
+  }
+
+  return $C = $map;
+}
+function sid_default_d1($slug){
+  $m = sid_shops_minimap(); $slug=sid_slug($slug);
+  $d = $m[$slug]['d1'] ?? '';
+  return $d ?: sid_slug(SHARITY_GLOBAL_DEFAULT_D1);
+}
+function sid_site($slug){
+  $m = sid_shops_minimap(); $slug=sid_slug($slug);
+  return (string)($m[$slug]['site'] ?? '');
+}
+
+/* ===========================
+ *  BANNERS betöltés (CSV → tömb)
+ *  label: HTML-escapelt JSON is lehet → decode + json_decode
+ * ===========================
+ */
+function sid_load_banners(){
+  list($c,$csv) = sid_http_get(SHARITY_BANNERS_CSV,7);
+  if($c!==200 || !$csv){ list($c,$csv) = sid_http_get(SHARITY_BANNERS_TMP_CSV,7); }
+  if($c!==200 || !$csv) return [];
+
+  $lines = preg_split("/\r\n|\r|\n/", trim($csv));
+  $hdr = []; $out = [];
+  foreach ($lines as $i=>$ln){
+    if($ln==='') continue;
+    $cols = str_getcsv($ln);
+    if(!$i){ $hdr=$cols; continue; }
+    $rec=[]; foreach($cols as $j=>$v){ $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; }
+
+    $slug = sid_slug($rec['slug'] ?? ($rec['shop_slug'] ?? '')); if(!$slug) continue;
+    $href = trim((string)($rec['href'] ?? '')); if(!$href) continue;
+
+    // label (árak) – HTML entitások → JSON
+    $label = $rec['label'] ?? [];
+    if (is_string($label)){
+      $raw = html_entity_decode($label, ENT_QUOTES | ENT_HTML5, 'UTF-8'); // &quot; → "
+      $d = json_decode($raw, true);
+      if (is_array($d)) $label = $d;
+    }
+
+    $out[] = [
+      'slug'       => $slug,
+      'href'       => $href,
+      'title'      => (string)($label['title'] ?? ($rec['title'] ?? 'Ajánlat')),
+      'price'      => (string)($label['price'] ?? ($rec['price'] ?? '')),
+      'old_price'  => (string)($label['old_price'] ?? ($rec['old_price'] ?? '')),
+      'pct'        => (int)   ($label['discount_pct'] ?? ($rec['discount_pct'] ?? 0)),
+      'category'   => (string)($rec['category'] ?? ''),
+      'img'        => (string)($rec['img'] ?? ($rec['image'] ?? '')),
+    ];
+  }
+  return $out;
+}
+
+/* ===========================
+ *  Linképítés Banners rekordhoz
+ *  – Fillout href felismerés (u= base64 terméklink) → közvetlen go-deal
+ *  – force mód: mindig deeplink; óvatos mód: csak host-match esetén
+ * ===========================
+ */
+function sid_build_deal_link($slug,$href,$force=true){
+  $slug = sid_slug($slug);
+  $d1   = sid_default_d1($slug);
+
+  // Fillout-link?
+  if (strpos(sid_host($href), 'fillout.com') !== false){
+    $p = wp_parse_url($href); $q=[]; if(!empty($p['query'])) parse_str($p['query'],$q);
+    if(!empty($q['shop'])) $slug = sid_slug($q['shop']);
+    if(!empty($q['u'])){
+      // base64url → url
+      $b64 = strtr($q['u'], '-_', '+/'); $pad = strlen($b64)%4; if($pad) $b64 .= str_repeat('=', 4-$pad);
+      $prod = base64_decode($b64) ?: '';
+      if($prod!==''){
+        return add_query_arg(['d1'=>$d1,'src'=>'impactshop','u'=>sid_b64url($prod)], home_url('/go-deal/'.rawurlencode($slug)));
+      }
+    }
+    // nincs u → sima /go (kihagyjuk a Filloutot)
+    return add_query_arg(['d1'=>$d1,'src'=>'impactshop'], home_url('/go/'.rawurlencode($slug)));
+  }
+
+  // Direkt terméklink
+  if ($force){
+    return add_query_arg(['d1'=>$d1,'src'=>'impactshop','u'=>sid_b64url($href)], home_url('/go-deal/'.rawurlencode($slug)));
+  }
+
+  // Óvatos mód: csak host-match esetén deeplink
+  $site = sid_site($slug);
+  $h1 = sid_norm_host(sid_host($href));
+  $h2 = sid_norm_host(sid_host($site));
+  $ok = ($h1 && $h2) && ($h1===$h2 || (substr($h1, -strlen($h2)-1) === '.'.$h2));
+  if($ok){
+    return add_query_arg(['d1'=>$d1,'src'=>'impactshop','u'=>sid_b64url($href)], home_url('/go-deal/'.rawurlencode($slug)));
+  }
+  return add_query_arg(['d1'=>$d1,'src'=>'impactshop'], home_url('/go/'.rawurlencode($slug)));
+}
+
+/* ===========================
+ *  Shortcode: [impactshop_deals_banners]
+ * ===========================
+ */
+function sid_sc_deals($atts){
+  $a = shortcode_atts([
+    'limit'    => '12',
+    'category' => '',   // OR-szűrés: vesszővel vagy | jellel
+    'force'    => '1',
+  ], $atts, 'impactshop_deals_banners');
+
+  $force = $a['force'] === '1';
+  $items = sid_load_banners();
+  if(!$items) return '<div>Jelenleg nincs megjeleníthető ajánlat.</div>';
+
+  $catf = array_filter(array_map('trim', preg_split('~[|,]~', (string)$a['category'])));
+  if($catf){
+    $items = array_filter($items, function($it) use($catf){
+      $hay = ' '.strtolower((string)$it['category']).' ';
+      foreach($catf as $n){ if($n!=='' && str_contains($hay, strtolower($n))) return true; }
+      return false;
+    });
+  }
+
+  $items = array_slice(array_values($items), 0, max(1, (int)$a['limit']));
+  $cards = [];
+  foreach($items as $it){
+    $go  = sid_build_deal_link($it['slug'], $it['href'], $force);
+    $img = $it['img'] ? '<img src="'.esc_url($it['img']).'" alt="">' : '<div class="ph"></div>';
+    $old = $it['old_price'] ? '<s class="old">'.esc_html($it['old_price']).'</s>' : '';
+    $pr  = $it['price'] ? '<span class="price">'.esc_html($it['price']).'</span>' : '';
+    $pct = (int)$it['pct']>0 ? '<span class="badge">-'.(int)$it['pct'].'%</span>' : '';
+    $cat = $it['category'] ? '<div class="cat">'.esc_html($it['category']).'</div>' : '';
+
+    $cards[] =
+      '<a class="sid-deal" href="'.esc_url($go).'" target="_blank" rel="nofollow sponsored noopener">'
+      .  '<div class="thumb">'.$img.'</div>'
+      .  '<div class="body"><div class="title">'.esc_html($it['title']).'</div>'
+      .  '<div class="row">'.$old.$pr.$pct.'</div>'.$cat.'</div>'
+      .'</a>';
+  }
+
+  $css = '<style>
+    .sid-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .sid-deal{display:flex;gap:.75rem;padding:.75rem;border:1px solid #eee;border-radius:14px;
+      text-decoration:none;color:inherit;background:#fff;transition:transform .12s,box-shadow .12s}
+    .sid-deal:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+    .sid-deal .thumb{flex:0 0 auto}
+    .sid-deal img,.sid-deal .ph{width:88px;height:88px;object-fit:cover;border-radius:10px;background:#f7f7f7;display:block}
+    .sid-deal .title{font-weight:600;line-height:1.25;margin-bottom:.25rem}
+    .sid-deal .row{display:flex;align-items:center;gap:.5rem}
+    .sid-deal .old{opacity:.6;text-decoration:line-through}
+    .sid-deal .badge{font-size:.85em;padding:.15rem .4rem;border-radius:6px;background:#ffe8e8}
+    .sid-deal .cat{font-size:.8em;opacity:.7;margin-top:.25rem}
+  </style>';
+
+  return $css.'<div class="sid-grid">'.implode('', $cards).'</div>';
+}
+add_shortcode('impactshop_deals_banners', 'sid_sc_deals');
+
+/* Ha nincs más definíció, adjuk aliasként az "impactshop_deals" taget is. */
+add_action('init', function(){
+  global $shortcode_tags;
+  if (empty($shortcode_tags['impactshop_deals'])) {
+    add_shortcode('impactshop_deals', 'sid_sc_deals');
+  }
+}, 1);
+
+/* ===========================
+ *  /go-deal vészfék
+ *  – csak akkor fallback /go/{shop}, ha VAN 'site' ÉS tényleg nem egyezik a host
+ *  – ha nincs 'site', NEM korlátozunk (deeplink mehet)
+ * ===========================
+ */
+add_action('template_redirect', function () {
+  if (is_admin() || wp_doing_ajax() || wp_doing_cron()) return;
+
+  $req = $_SERVER['REQUEST_URI'] ?? '';
+  if (!$req || !preg_match('~/(?:go-deal)/([^/?#]+)~', $req, $m)) return;
+
+  $shop = sid_slug($m[1] ?? '');
+  $u    = isset($_GET['u']) ? (string)$_GET['u'] : '';
+  if (!$shop || !$u) return;
+
+  // base64url → nyers URL
+  $b64 = strtr($u, '-_', '+/'); $pad = strlen($b64)%4; if ($pad) $b64 .= str_repeat('=', 4 - $pad);
+  $prod = @base64_decode($b64) ?: '';
+
+  $site = sid_site($shop);
+  $hProd = sid_norm_host(sid_host($prod));
+  $hSite = sid_norm_host(sid_host($site));
+  $ok = ($hProd && $hSite) && ( $hProd === $hSite || (substr($hProd, -strlen($hSite)-1) === '.'.$hSite) );
+
+  // Csak akkor essünk vissza, ha VAN site és nem egyezik (vagy nincs u/rossz prod)
+  if (!$prod || ($site && !$ok)) {
+    $q = $_GET; unset($q['u']); // mélylink param ki
+    if (empty($q['src'])) $q['src'] = 'impactshop';
+    $fallback = add_query_arg($q, home_url('/go/'. rawurlencode($shop)));
+    wp_safe_redirect($fallback, 302);
+    exit;
+  }
+}, 0);
+
+/* ===========================
+ *  Diagnosztika: ?impact_mini_probe=1
+ * ===========================
+ */
+add_action('init', function(){
+  if (!isset($_GET['impact_mini_probe'])) return;
+  header('Content-Type: application/json; charset=utf-8');
+  global $shortcode_tags;
+  $who = isset($shortcode_tags['impactshop_deals'])
+          ? (is_array($shortcode_tags['impactshop_deals']) ? 'callable array' : (is_string($shortcode_tags['impactshop_deals'])?$shortcode_tags['impactshop_deals']:'callable'))
+          : 'none';
+  $b = sid_load_banners();
+  $shops = sid_shops_minimap();
+  $sample = isset($b[0]) ? [
+    'slug'       => $b[0]['slug'],
+    'href'       => $b[0]['href'],
+    'built_link' => sid_build_deal_link($b[0]['slug'], $b[0]['href'], true),
+    'default_d1' => sid_default_d1($b[0]['slug']),
+    'site_host'  => sid_norm_host(sid_host(sid_site($b[0]['slug']))),
+  ] : null;
+  echo wp_json_encode([
+    'plugin' => 'sharity-impact-deals-pack (MU)',
+    'impactshop_deals_owner' => $who,
+    'banners_count' => count($b),
+    'shops_count' => count($shops),
+    'sample' => $sample,
+  ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+  exit;
+});

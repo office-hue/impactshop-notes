@@ -36,3 +36,5 @@ wp-content/index.php
 # Impact Time Machine – keep system tracked, snapshots local
 .codex/tm/snap-*
 !.codex/tm/bin/
+corridor-audit-*.md
+audit-*.md

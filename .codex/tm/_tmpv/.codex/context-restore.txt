@@ -1,0 +1,4 @@
+Ez az ImpactShop projekt folytatása.
+Töltsd be a feltöltött `.codex/context-latest.json` fájlt a memóriába,
+és állítsd vissza a teljes projektállapotot (Codex, deploy pipeline, gate, staging/prod, snippetek).
+Innen folytatjuk a Sora → `impactctl media-import` integráció tervezését.

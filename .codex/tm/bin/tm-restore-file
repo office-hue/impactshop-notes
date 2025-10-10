@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+SNAP="${1:-}"
+FILE="${2:-}"
+[ -n "$SNAP" ] && [ -n "$FILE" ] || { echo "Használat: tm-restore-file <snap-YYYYmmdd_HHMMSS> <útvonal>"; exit 1; }
+ARC="$ROOT/.codex/tm/$SNAP/files.tar.gz"
+[ -f "$ARC" ] || { echo "Nem találom a snapshotot: $ARC"; exit 2; }
+mkdir -p "$ROOT/.codex/tm/_tmp"
+tar -xzf "$ARC" -C "$ROOT/.codex/tm/_tmp" "$FILE" || { echo "Fájl nincs a snapshotban: $FILE"; exit 3; }
+mkdir -p "$(dirname "$ROOT/$FILE")"
+cp "$ROOT/.codex/tm/_tmp/$FILE" "$ROOT/$FILE"
+echo "VISSZAÁLLÍTVA: $FILE  <-  $SNAP"

@@ -1,0 +1,277 @@
+#!/usr/bin/env bash
+# ImpactCtl – Sharity ImpactShop terminálos vezérlő
+# Deploy előtt/után REST preflight + Codex context refresh automatizálása
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CODEX_REFRESH="$ROOT/bin/codex-refresh.sh"
+DEPLOY_SCRIPT="$ROOT/bin/deploy-wpcontent-map.sh"
+GUARD_SCRIPT="$ROOT/bin/impactctl-guard-staging.sh"
+PREFLIGHT_SCRIPT="$ROOT/bin/preflight-check.sh"
+PREFLIGHT_RUNNER="$ROOT/bin/preflight-run.sh"
+DEFAULT_STAGING_ENV="$ROOT/.deploy.staging.env"
+DEFAULT_PROD_ENV="$ROOT/.deploy.production.env"
+CURRENT_ENV_LABEL=""
+CURRENT_ENV_FILE=""
+
+usage() {
+  cat <<'USG'
+ImpactCtl – Sharity ImpactShop vezérlő
+
+Használat:
+  ./impactctl deploy [staging|production|<env-file>]
+  ./impactctl preflight [staging|production|<env-file>]
+  ./impactctl gate [staging|production] [--strict]
+  ./impactctl refresh
+  ./impactctl help
+
+Környezeti változók:
+  SKIP_PREFLIGHT=1   – preflight QA kihagyása (nem ajánlott)
+USG
+}
+
+error() { echo "❌ $*" >&2; exit 1; }
+warn() { echo "⚠️ $*" >&2; }
+info() { echo "$*"; }
+
+resolve_env() {
+  local key="${1:-staging}"
+  case "$key" in
+    ""|staging|stage|stg)
+      CURRENT_ENV_LABEL="staging"
+      CURRENT_ENV_FILE="$DEFAULT_STAGING_ENV"
+      ;;
+    production|prod)
+      CURRENT_ENV_LABEL="production"
+      CURRENT_ENV_FILE="$DEFAULT_PROD_ENV"
+      ;;
+    --env=*)
+      CURRENT_ENV_LABEL="$(basename "${key#--env=}")"
+      CURRENT_ENV_FILE="${key#--env=}"
+      ;;
+    *)
+      if [[ -f "$key" ]]; then
+        CURRENT_ENV_LABEL="$(basename "$key")"
+        CURRENT_ENV_FILE="$key"
+      elif [[ -f "$ROOT/$key" ]]; then
+        CURRENT_ENV_LABEL="$(basename "$key")"
+        CURRENT_ENV_FILE="$ROOT/$key"
+      else
+        error "Ismeretlen környezet vagy fájl: $key"
+      fi
+      ;;
+  esac
+  [[ -f "$CURRENT_ENV_FILE" ]] || error "Környezeti fájl hiányzik: $CURRENT_ENV_FILE"
+}
+
+run_preflight() {
+  local label="$1"
+  local env_file="$2"
+  if [[ -x "$PREFLIGHT_RUNNER" ]]; then
+    "$PREFLIGHT_RUNNER" "$label"
+  else
+    [[ -x "$PREFLIGHT_SCRIPT" ]] || error "Hiányzik a preflight script: $PREFLIGHT_SCRIPT"
+    "$PREFLIGHT_SCRIPT" "$env_file"
+  fi
+}
+
+latest_log_entry() {
+  local env="$1"
+  local log="$ROOT/.codex/deploy-log.txt"
+  python3 - <<'PY' "$log" "$env"
+import csv, sys
+path, env = sys.argv[1:3]
+try:
+    rows = list(csv.DictReader(open(path)))
+except FileNotFoundError:
+    print("")
+    raise SystemExit
+rows = [row for row in rows if row.get('env') == env]
+if not rows:
+    print("")
+else:
+    row = rows[-1]
+    print(row.get('status',''), row.get('warns','0'), row.get('rest_fail_count','0'), row.get('max_latency_s','0'), row.get('endpoints_ok','0'), row.get('exit_code','0'))
+PY
+}
+
+append_log_entry() {
+  local env="$1" status="$2" warns="$3" maxlat="$4" oks="$5" rest_fail="$6" exit_code="$7"
+  local log="$ROOT/.codex/deploy-log.txt"
+  mkdir -p "$ROOT/.codex"
+  if [[ ! -s "$log" ]]; then
+    echo "timestamp,env,status,warns,max_latency_s,endpoints_ok,rest_fail_count,exit_code" > "$log"
+  fi
+  printf '%s,%s,%s,%s,%s,%s,%s,%s\n' \
+    "$(date '+%Y-%m-%d %H:%M:%S')" "$env" "$status" "$warns" "$maxlat" "$oks" "$rest_fail" "$exit_code" >> "$log"
+}
+
+codex_refresh() {
+  if [[ -x "$CODEX_REFRESH" ]]; then
+    info "🧠 Codex context refresh futtatása…"
+    if ! "$CODEX_REFRESH"; then
+      warn "codex-refresh közben hiba történt (folytatok)."
+    fi
+  else
+    warn "codex-refresh kihagyva (bin/codex-refresh.sh nem futtatható)."
+  fi
+}
+
+deploy_cmd() {
+  local env_key="${1:-staging}"
+  [[ -x "$DEPLOY_SCRIPT" ]] || error "Hiányzik a deploy script: $DEPLOY_SCRIPT"
+  resolve_env "$env_key"
+
+  local is_staging_target=0
+  if [[ "$CURRENT_ENV_LABEL" == "staging" ]] || [[ "$CURRENT_ENV_FILE" == *staging* ]]; then
+    is_staging_target=1
+  fi
+
+  if [[ $is_staging_target -eq 1 ]]; then
+    if [[ -x "$GUARD_SCRIPT" ]]; then
+      "$GUARD_SCRIPT"
+    else
+      warn "Guard kihagyva: $GUARD_SCRIPT nem futtatható"
+    fi
+  fi
+
+  if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
+    info "🔎 Preflight (deploy előtt) → $CURRENT_ENV_FILE"
+    run_preflight "$CURRENT_ENV_LABEL" "$CURRENT_ENV_FILE"
+  else
+    info "⏭️  Preflight kihagyva (SKIP_PREFLIGHT=1)"
+  fi
+
+  local env_arg="--env=$CURRENT_ENV_FILE"
+  info "🚀 Deploy futtatása ($CURRENT_ENV_FILE)…"
+  "$DEPLOY_SCRIPT" "$env_arg"
+
+  if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
+    info "🔎 Preflight (deploy után) → $CURRENT_ENV_FILE"
+    run_preflight "$CURRENT_ENV_LABEL" "$CURRENT_ENV_FILE"
+  fi
+
+  codex_refresh
+}
+
+preflight_cmd() {
+  local env_key="${1:-staging}"
+  resolve_env "$env_key"
+  run_preflight "$CURRENT_ENV_LABEL" "$CURRENT_ENV_FILE"
+}
+
+refresh_cmd() {
+  codex_refresh
+}
+
+gate_cmd() {
+  local env="${1:-staging}"
+  local strict=0
+  shift || true
+  while [[ "${1:-}" == --* ]]; do
+    case "$1" in
+      --strict) strict=1 ;;
+      --env) shift; env="${1:-$env}" ;;
+      *) error "Ismeretlen opció: $1" ;;
+    esac
+    shift || true
+  done
+
+  local gate_script="$ROOT/bin/go-no-go-check.sh"
+  local rc
+
+  if [[ -x "$gate_script" ]]; then
+    if [[ $strict -eq 1 ]]; then
+      "$gate_script" --strict "$env"
+    else
+      "$gate_script" "$env"
+    fi
+    rc=$?
+    return $rc
+  fi
+
+  resolve_env "$env"
+  local log="$ROOT/.codex/deploy-log.txt"
+
+  if [[ -x "$PREFLIGHT_RUNNER" ]]; then
+    "$PREFLIGHT_RUNNER" "$CURRENT_ENV_LABEL"
+    rc=$?
+    read status warns rest_fail maxlat oks exit_code <<< "$(latest_log_entry "$CURRENT_ENV_LABEL" || true)"
+    if [[ -z "$status" ]]; then
+      status=""
+      warns=0
+      rest_fail=0
+      maxlat=0
+      oks=0
+      exit_code=$rc
+    fi
+    if [[ "$status" == "FAIL" || "$status" == "NO-GO" || "${rest_fail}" -gt 0 || "${exit_code}" != "0" ]]; then
+      rc=2
+    elif [[ "$status" == "PASS_WITH_WARN" || "${warns}" -gt 0 ]]; then
+      rc=1
+    else
+      rc=0
+    fi
+  elif [[ -x "$PREFLIGHT_SCRIPT" ]]; then
+    local tmp="$(mktemp)"
+    set +e
+    "$PREFLIGHT_SCRIPT" "$CURRENT_ENV_FILE" | tee "$tmp"
+    rc=${PIPESTATUS[0]}
+    set -e
+    read warns oks rest_fail maxlat <<< "$(python3 - <<'PY' "$tmp"
+import re, sys
+path = sys.argv[1]
+warns = ok = rest_fail = 0
+latmax = 0.0
+with open(path) as fh:
+    for line in fh:
+        if '⚠️' in line or 'WARN' in line:
+            warns += 1
+        if '✅' in line:
+            ok += 1
+        if '❌ REST' in line or ('❌' in line and 'HTTP' in line):
+            rest_fail += 1
+        for match in re.findall(r'([0-9]+\.[0-9]+)s', line):
+            latmax = max(latmax, float(match))
+        for match in re.findall(r'([0-9]+)ms', line):
+            latmax = max(latmax, float(match)/1000.0)
+print(warns, ok, rest_fail, f"{latmax:.3f}")
+PY
+)"
+    rm -f "$tmp"
+    local status="GO"
+    if [[ $rc -ne 0 || ${rest_fail:-0} -gt 0 ]]; then
+      status="NO-GO"
+      rc=2
+    elif [[ ${warns:-0} -gt 0 ]]; then
+      status="PASS_WITH_WARN"
+      rc=1
+    else
+      status="PASS"
+      rc=0
+    fi
+    append_log_entry "$CURRENT_ENV_LABEL" "$status" "${warns:-0}" "${maxlat:-0}" "${oks:-0}" "${rest_fail:-0}" "$rc"
+    echo "───────────────────────────────────────────────"
+    echo "📊 Result:  ${status/PASS/GO} (env=$CURRENT_ENV_LABEL)"
+    echo "📉 Max latency: ${maxlat}s"
+    echo "🧾 WARN count: ${warns} | REST fails: ${rest_fail}"
+    echo "📈 Log: $log"
+  else
+    error "preflight script nem elérhető"
+  fi
+
+  if [[ $strict -eq 1 && $rc -eq 1 ]]; then
+    return 1
+  fi
+  return $rc
+}
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+  deploy)     deploy_cmd "$@" ;;
+  preflight)  preflight_cmd "$@" ;;
+  gate)       gate_cmd "$@" ;;
+  refresh)    refresh_cmd ;;
+  help|-h|--help|"") usage ;;
+  *) error "Ismeretlen parancs: $cmd" ;;
+esac

@@ -1,0 +1,50 @@
+{
+  // Általános
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+  // Prettier – JS/TS/CSS/JSON/MD
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  // PHP – a CS Fixer legyen az alap formázó
+  "[php]": {
+    "editor.defaultFormatter": "junstyle.php-cs-fixer"
+  },
+  // CS Fixer beállítások
+  "php-cs-fixer.config": ".php-cs-fixer.php",
+  "php-cs-fixer.onsave": true,
+  "php-cs-fixer.executablePath": "vendor/bin/php-cs-fixer",
+  // A formázáshoz a PHP 8.3 binárisát használd (Homebrew):
+  "php.validate.executablePath": "/opt/homebrew/opt/php@8.3/bin/php",
+  // Néhány bővítmény külön kérheti a PHP útvonalát is:
+  "php-cs-fixer.phpExecutablePath": "/opt/homebrew/opt/php@8.3/bin/php",
+  // Intelephense (okos PHP autocomplete)
+  "intelephense.stubs": [
+    "wordpress",
+    "woocommerce",
+    "pdo",
+    "curl",
+    "date",
+    "json",
+    "mbstring"
+  ],
+  "intelephense.environment.includePaths": []
+}

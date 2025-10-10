@@ -1,0 +1,49 @@
+{
+  "version": "2025-10-01",
+  "description": "ImpactShop AI index – innen a ChatGPT mindent elér",
+  "mu_plugins": [
+    {
+      "name": "impactshop-boot",
+      "path": "mu-plugins/impactshop-boot.php",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/mu-plugins/impactshop-boot.php"
+    },
+    {
+      "name": "impact-api-url-fix",
+      "path": "mu-plugins/impact-api-url-fix.php",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/mu-plugins/impact-api-url-fix.php"
+    },
+    {
+      "name": "banner-fix-instant",
+      "path": "mu-plugins/banner-fix-instant.php",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/mu-plugins/banner-fix-instant.php"
+    }
+  ],
+  "snippets": [
+    {
+      "name": "impact_coupons_netflix",
+      "path": "snippets/impact_coupons_netflix.php",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/snippets/impact_coupons_netflix.php"
+    }
+  ],
+  "apps_script": [
+    {
+      "name": "patrol",
+      "path": "apps-script/patrol.gs",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/apps-script/patrol.gs"
+    }
+  ],
+  "data": [
+    {
+      "name": "ngo_codes",
+      "path": "data/ngo_codes.csv",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/data/ngo_codes.csv"
+    }
+  ],
+  "notes": [
+    {
+      "name": "project_notes",
+      "path": "notes.md",
+      "raw": "https://raw.githubusercontent.com/office-hue/impactshop-notes/main/notes.md"
+    }
+  ]
+}

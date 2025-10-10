@@ -1,0 +1,71 @@
+<?php
+/**
+ * Sharity – /go-deal biztonságos visszaesés (MU plugin)
+ * Ha a /go-deal/{shop}?u=... termék-URL hostja nem egyezik a shop "site" domainjével,
+ * automatikusan /go/{shop}-ra irányít (ugyanazokkal a paraméterekkel, csak u nélkül).
+ * UTF-8 BOM nélkül; NINCS záró "?>"
+ */
+
+if (!defined('SHARITY_SHOPS_PUB_CSV')) {
+  // Ha van publish-CSV a Shops lapról, ide beteheted (shop_slug, site, default_d1)
+  define('SHARITY_SHOPS_PUB_CSV', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=0&single=true&output=csv');
+}
+
+add_action('template_redirect', function () {
+  if (is_admin() || wp_doing_ajax() || wp_doing_cron()) return;
+
+  $req = $_SERVER['REQUEST_URI'] ?? '';
+  if (!$req || !preg_match('~/(?:go-deal)/([^/?#]+)~', $req, $m)) return;
+
+  $shop = strtolower(preg_replace('~[^a-z0-9\-]+~', '-', $m[1]));
+  $u    = isset($_GET['u']) ? (string)$_GET['u'] : '';
+  if (!$shop || !$u) return;
+
+  // base64url → URL
+  $b64 = strtr($u, '-_', '+/');
+  $pad = strlen($b64) % 4; if ($pad) $b64 .= str_repeat('=', 4 - $pad);
+  $prod = @base64_decode($b64) ?: '';
+
+  // shop "site" felderítése (impactshop_get_shops(), majd CSV fallback)
+  $site = '';
+  if (function_exists('impactshop_get_shops')) {
+    try {
+      foreach ((array)impactshop_get_shops() as $r) {
+        $slug = strtolower(preg_replace('~[^a-z0-9\-]+~','-', $r['shop_slug'] ?? ''));
+        if ($slug === $shop) { $site = $r['site'] ?? ($r['url'] ?? $r['website'] ?? ''); break; }
+      }
+    } catch (\Throwable $e) {}
+  }
+  if (!$site && SHARITY_SHOPS_PUB_CSV) {
+    $res = wp_remote_get(SHARITY_SHOPS_PUB_CSV, ['timeout'=>5,'redirection'=>3]);
+    if (!is_wp_error($res)) {
+      $csv = (string)wp_remote_retrieve_body($res);
+      if ($csv) {
+        $lines = preg_split("/\r\n|\r|\n/", trim($csv));
+        $hdr = [];
+        foreach ($lines as $i=>$ln) {
+          if ($ln==='') continue;
+          $cols = str_getcsv($ln);
+          if (!$i) { $hdr = $cols; continue; }
+          $rec=[]; foreach ($cols as $j=>$v) { $k=$hdr[$j]??('c'.$j); $rec[trim($k)]=$v; }
+          $slug = strtolower(preg_replace('~[^a-z0-9\-]+~','-', $rec['shop_slug'] ?? ''));
+          if ($slug === $shop) { $site = $rec['site'] ?? $rec['url'] ?? $rec['website'] ?? ''; break; }
+        }
+      }
+    }
+  }
+
+  // host összevetés: ha nincs site VAGY nem egyezik → fallback /go/{shop}
+  $norm = function($h){ $h = strtolower((string)$h); return ltrim(preg_replace('~^www\.~','', $h)); };
+  $hProd = $norm(parse_url($prod, PHP_URL_HOST));
+  $hSite = $norm(parse_url($site, PHP_URL_HOST));
+  $ok = ($hProd && $hSite) && ( $hProd === $hSite || (substr($hProd, -strlen($hSite)-1) === '.'.$hSite) );
+
+  if (!$prod || !$ok) {
+    $q = $_GET; unset($q['u']); // mélylink param kidobása
+    if (empty($q['src'])) $q['src'] = 'impactshop';
+    $fallback = add_query_arg($q, home_url('/go/'. rawurlencode($shop)));
+    wp_safe_redirect($fallback, 302);
+    exit;
+  }
+});

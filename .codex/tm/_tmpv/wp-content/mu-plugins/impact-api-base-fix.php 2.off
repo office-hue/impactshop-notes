@@ -1,0 +1,27 @@
+<?php
+/**
+ * Plugin Name: Impact API BASE fix (host only)
+ * Description: IMPACT_API_BASE csak hosttal, útvonal nélkül (nincs /api, nincs /impact/v1).
+ * Author: Sharity
+ * Version: 1.0.0
+ */
+if (!defined('ABSPATH')) exit;
+
+if (!defined('IMPACT_API_BASE')) {
+  // csak a host!
+  define('IMPACT_API_BASE', 'https://app.sharity.hu');
+}
+
+/**
+ * Közös helper: pontosan egyszer fűzi hozzá az /impact/v1/ előtagot,
+ * és normalizál, ha a hívó véletlenül már tartalmazná.
+ */
+if (!function_exists('impact_api_url')) {
+  function impact_api_url($path){
+    $host = rtrim(IMPACT_API_BASE, '/');
+    $p = '/impact/v1/' . ltrim((string)$path, '/');
+    // duplázás elleni védőkorlát: /impact[/v1]… → /impact/v1/…
+    $p = preg_replace('~(/impact(?:/v1)?/)+~', '/impact/v1/', $p, 1);
+    return $host . $p;
+  }
+}

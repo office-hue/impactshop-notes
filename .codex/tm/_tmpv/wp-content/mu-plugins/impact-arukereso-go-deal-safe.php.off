@@ -1,0 +1,135 @@
+<?php
+/**
+ * Plugin Name: Impact – Árukereső go-deal SAFE (termék-deeplink kényszerítés)
+ * Description: Új végpont: /go-deal-safe/{shop}. Árukeresőnél MINDIG termék-deeplinket generál Dognet API-val, így nem esik vissza a főoldalra.
+ * Version: 1.0.1
+ * Author: Sharity
+ */
+
+if (!defined('ABSPATH')) exit;
+
+/* ===== segédek ===== */
+
+if (!function_exists('iags_is_arukereso_host')) {
+  function iags_is_arukereso_host($host){
+    if (!$host) return false;
+    return (bool)preg_match('~(^|\.)arukereso\.[a-z.]+$~i', strtolower($host));
+  }
+}
+
+if (!function_exists('iags_clean_url')) {
+  function iags_clean_url($u){
+    if (!$u) return $u;
+    // 1) HTML entity & duplikált ampersand rendbetétel
+    $u = html_entity_decode($u, ENT_QUOTES, 'UTF-8');
+    $u = str_replace(['&amp;','amp%3B','%26amp%3B'], '&', $u);
+    // 2) base64 gyanu → ha http(s) URL-re bomlik, azt használjuk
+    if (preg_match('~^[A-Za-z0-9+/]+={0,2}$~', $u)) {
+      $tmp = base64_decode($u, true);
+      if ($tmp !== false && preg_match('~^https?://~i', $tmp)) $u = $tmp;
+    }
+    // 3) dupla %-kódolás
+    $u = preg_replace_callback('~%25([0-9A-F]{2})~i', fn($m)=>'%'.$m[1], $u);
+    // 4) affil-zaj paramok dobása (ha netán a “rossz” minta jönne a Fillouttól)
+    $kill = ['a_bid','a_aid','a_cid','chan','data1','ref','refid','utm_source','utm_medium','utm_campaign','utm_term'];
+    $p = parse_url($u);
+    if (!empty($p['query'])) {
+      parse_str($p['query'], $qs);
+      foreach($kill as $k) unset($qs[$k]);
+      $u = (isset($p['scheme'])?$p['scheme'].'://':'')
+         . ($p['host']??'')
+         . ($p['path']??'')
+         . ($qs ? ('?'.http_build_query($qs)) : '')
+         . (isset($p['fragment']) ? '#'.$p['fragment'] : '');
+    }
+    return $u;
+  }
+}
+
+if (!function_exists('iags_redirect_with_propagation')) {
+  function iags_redirect_with_propagation($url,$amb,$src){
+    $add=[];
+    if ($amb && strpos($url,'amb=')===false) $add['amb']=$amb;
+    if ($src && strpos($url,'src=')===false) $add['src']=$src;
+    if (strpos($url,'utm_source=')===false) $add['utm_source']='sharity';
+    if (strpos($url,'utm_medium=')===false) $add['utm_medium']='impactshop';
+    if ($add) $url .= (strpos($url,'?')===false ? '?' : '&') . http_build_query($add);
+    wp_redirect($url, 307);
+    exit;
+  }
+}
+
+/* ===== rewrite: /go-deal-safe/{shop} ===== */
+
+add_action('init', function(){
+  add_rewrite_rule('^go-deal-safe/([^/]+)/?$', 'index.php?iags_deal_safe=1&iags_shop=$matches[1]', 'top');
+});
+add_filter('query_vars', function($vars){
+  $vars[]='iags_deal_safe';
+  $vars[]='iags_shop';
+  return $vars;
+});
+
+/* ===== fő logika ===== */
+
+add_action('template_redirect', function(){
+  if (!get_query_var('iags_deal_safe')) return;
+
+  // bemenet
+  $shop = get_query_var('iags_shop');
+  if (!$shop && isset($_GET['shop'])) $shop = sanitize_text_field($_GET['shop']);
+  $shop = sanitize_text_field($shop);
+  $ngo  = isset($_GET['d1'])  ? sanitize_text_field($_GET['d1'])  : '';
+  $u    = isset($_GET['u'])   ? (string)$_GET['u'] : '';
+  $amb  = isset($_GET['amb']) ? sanitize_text_field($_GET['amb']) : '';
+  $src  = isset($_GET['src']) ? sanitize_text_field($_GET['src']) : 'impactshop';
+
+  if (!$shop) { status_header(400); wp_die('Hiányzó shop.', 'ImpactSafe'); }
+  if (!$ngo)  { status_header(400); wp_die('Hiányzó d1 (NGO).', 'ImpactSafe'); }
+
+  // Shop meta (a nagy snippet függvényeire támaszkodunk, de NEM módosítjuk őket)
+  $row = function_exists('impactshop_find_shop') ? impactshop_find_shop($shop) : null;
+  $slug = strtolower($row['shop_slug'] ?? $shop);
+
+  // cél URL kibontása és normalizálása
+  $target = iags_clean_url($u);
+  if (!$target && !empty($row['product_url'])) $target = iags_clean_url($row['product_url']);
+
+  $is_arukereso = false;
+  $host = parse_url($target ?: '', PHP_URL_HOST);
+  if ($host && iags_is_arukereso_host($host)) $is_arukereso = true;
+  if (!$is_arukereso && strpos($slug,'arukereso')!==false) $is_arukereso = true;
+
+  // kampány/cid feloldása
+  $cid = 0;
+  if (!empty($row['dognet_base']) && function_exists('dognet_extract_campaign_id_from_base')) {
+    $cid = dognet_extract_campaign_id_from_base($row['dognet_base']);
+  }
+
+  $final = '';
+
+  // --- Árukereső: kényszerített API-generált deeplink a KONKRÉT termék URL-re ---
+  if ($is_arukereso && $cid && $target && function_exists('dognet_api_generate_link')) {
+    $api = dognet_api_generate_link($cid, $target, $ngo, '');
+    if (!is_wp_error($api) && $api) $final = $api;
+  }
+
+  // --- Ha fenti nem ment, próbáljuk általánosan (nem Árukeresőre is jó) ---
+  if (!$final && $cid && function_exists('dognet_api_generate_link')) {
+    // ha van target, deeplinkeljünk; ha nincs, csak d1
+    $api = dognet_api_generate_link($cid, $target ?: '', $ngo, '');
+    if (!is_wp_error($api) && $api) $final = $api;
+  }
+
+  // --- Utolsó mentsvár: BASE + d1 (deeplink nélkül) ---
+  if (!$final && !empty($row['dognet_base'])) {
+    $base = $row['dognet_base'];
+    $params = ['d1'=>$ngo];
+    $final = $base . ((strpos($base,'?')===false)?'?':'&') . http_build_query($params);
+  }
+
+  if (!$final) { status_header(502); wp_die('Nem sikerült a partner linket előállítani (SAFE).', 'ImpactSafe'); }
+
+  iags_redirect_with_propagation($final, $amb, $src);
+  exit;
+}, 1);

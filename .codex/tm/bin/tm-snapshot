@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+TS="${1:-$(date +%Y%m%d_%H%M%S)}"
+DEST_LOCAL="$ROOT/.codex/tm/snap-$TS"
+DEST_HOME="$HOME/ImpactTimeMachine/$(basename "$ROOT")/snap-$TS"
+mkdir -p "$DEST_LOCAL" "$DEST_HOME"
+
+# manifeszt + hash
+cd "$ROOT"
+LIST_FILE="$DEST_LOCAL/files.list"
+git -c core.quotePath=false ls-files > "$LIST_FILE"
+cp "$LIST_FILE" "$DEST_HOME/files.list"
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  if [ -f "$f" ]; then
+    sha=$(shasum -a 256 "$f" | awk '{print $1}')
+    printf "%s  %s\n" "$sha" "$f"
+  fi
+done > "$DEST_LOCAL/hash.txt" < "$LIST_FILE"
+cp "$DEST_LOCAL/hash.txt" "$DEST_HOME/hash.txt"
+
+# tartalom tömörítése (repo tracked fájlok)
+tar -czf "/files.tar.gz" -T "/filelist.txt"
+cp "/files.tar.gz" "/files.tar.gz"

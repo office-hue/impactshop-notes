@@ -1,0 +1,177 @@
+<?php
+/**
+ * ImpactShop – d1 Inspector (MU)
+ * Shortcode: [impact_d1_inspect from="YYYY-MM-DD" to="YYYY-MM-DD" limit="50"]
+ * Megmutatja: nyers Dognet sor fő mezőit + minden lehetséges d1 forrást + végső d1.
+ */
+if (!defined('ABSPATH')) exit;
+
+function d1i_pick_default_for_shop($shopSlug, $row){
+  foreach (['sharity_default_d1_for_shop','impactshop_default_d1_for_shop','impact_get_default_d1_for_shop'] as $fn){
+    if (function_exists($fn)) {
+      try {
+        $v = trim((string)call_user_func($fn, sanitize_title($shopSlug), $row));
+        if ($v!=='') return $v;
+      } catch (\Throwable $e) {}
+    }
+  }
+  return '';
+}
+
+function d1i_from_any(array $row){
+  $cands = [
+    'data1','d1','ref1','ref','sub_id','subid','sub_id1','subid1',
+    'note','comment','utm_term','utm_content','tracking','tracking_code'
+  ];
+  $raw = [];
+  foreach ($cands as $k) {
+    if (isset($row[$k]) && is_string($row[$k]) && trim($row[$k])!=='') {
+      $raw[$k] = trim($row[$k]);
+    }
+  }
+
+  // ha bármelyik érték "key=value" szerű és nincs benne szóköz, bontsuk szét
+  $kv = [];
+  foreach ($raw as $k=>$v){
+    if (strpos($v,'=')!==false && strpos($v,' ')===false){
+      parse_str($v,$tmp);
+      $kv = array_merge($kv,$tmp);
+    }
+  }
+
+  // URL query-kből is halásszunk (deeplink lehet bármely mezőben)
+  $q = [];
+  foreach (array_values($raw) as $v){
+    if (filter_var($v, FILTER_VALIDATE_URL)) {
+      $p = parse_url($v);
+      if (!empty($p['query'])) { parse_str($p['query'],$tmp); $q = array_merge($q,$tmp); }
+    }
+  }
+
+  // jelöltek sorrendben
+  $candVals = [];
+  foreach (['data1','d1','ngo','ngo_slug','ngo_name'] as $k){ if(!empty($row[$k])) $candVals[]=$row[$k]; }
+  foreach (['d1','data1','ngo','ngo_slug','ngo_name','org','org_name','utm_term'] as $k){ if(!empty($kv[$k])) $candVals[]=$kv[$k]; }
+  foreach (['d1','data1','ngo','ngo_slug','ngo_name','org','org_name','utm_term'] as $k){ if(!empty($q[$k]))  $candVals[]=$q[$k]; }
+
+  // Bridge helper (okos kivonó) a végén, ha még nincs
+  if (function_exists('ibl__pick_d1')) {
+    try { $candVals[] = ibl__pick_d1($row); } catch (\Throwable $e) {}
+  }
+
+  // normalizálás és első értelmes találat visszaadása
+  foreach ($candVals as $v){
+    $v = is_string($v) ? trim($v) : '';
+    if ($v==='' || is_numeric($v)) continue;
+    $vv = mb_strtolower($v);
+    if ($vv==='(ismeretlen)') continue;
+    // slug-osítás light módon
+    $slug = sanitize_title($v);
+    if ($slug!=='') return [$v, $slug];
+  }
+  return ['', '']; // nincs d1
+}
+
+add_shortcode('impact_d1_inspect', function($atts){
+  $a = shortcode_atts([
+    'from'  => date('Y-m-01'),
+    'to'    => date('Y-m-d'),
+    'limit' => 50,
+  ], $atts);
+
+  if (!function_exists('ibl_fetch_transactions')) {
+    return '<div style="color:#b00">Hiba: Impact Bridge Local nincs aktívban (ibl_fetch_transactions() hiányzik).</div>';
+  }
+
+  try {
+    $rows = ibl_fetch_transactions($a['from'],$a['to'],'all', 20, 200);
+    if (is_wp_error($rows)) return '<div style="color:#b00">Hiba: '.esc_html($rows->get_error_message()).'</div>';
+    $rows = is_array($rows) ? $rows : [];
+  } catch (\Throwable $e) {
+    return '<div style="color:#b00">Hiba: '.esc_html($e->getMessage()).'</div>';
+  }
+
+  // csak A/P
+  $tmp = [];
+  foreach ($rows as $r){
+    $st = strtolower(trim($r['status'] ?? $r['rstatus'] ?? ''));
+    if (!in_array($st,['a','approved','p','pending'], true)) continue;
+    $tmp[] = $r;
+  }
+  $rows = $tmp;
+
+  // legújabb elöl
+  usort($rows, function($a,$b){
+    $da = strtotime($a['created_at'] ?? ($a['created'] ?? ''));
+    $db = strtotime($b['created_at'] ?? ($b['created'] ?? ''));
+    return $db <=> $da;
+  });
+
+  $rows = array_slice($rows, 0, (int)$a['limit']);
+
+  ob_start();
+  ?>
+  <div style="font:14px/1.45 system-ui">
+    <div><strong>Időszak:</strong> <?=esc_html($a['from'])?> → <?=esc_html($a['to'])?> • <strong>Sorok (A+P):</strong> <?=count($rows)?></div>
+    <table style="width:100%;border-collapse:collapse;margin-top:.5rem">
+      <tr>
+        <th style="text-align:left;border-bottom:1px solid #eee">Dátum</th>
+        <th style="text-align:left;border-bottom:1px solid #eee">Shop</th>
+        <th style="text-align:left;border-bottom:1px solid #eee">Státusz</th>
+        <th style="text-align:left;border-bottom:1px solid #eee">data1/d1/ref/sub…</th>
+        <th style="text-align:left;border-bottom:1px solid #eee">URL-query d1/data1</th>
+        <th style="text-align:left;border-bottom:1px solid #eee">ibl__pick_d1()</th>
+        <th style="text-align:left;border-bottom:1px solid #eee">default_d1(Shop)</th>
+        <th style="text-align:left;border-bottom:1px solid #eee">VÉGSŐ d1 (slug)</th>
+      </tr>
+      <?php foreach($rows as $r):
+        // nyers jelöltek összefoglalója
+        $candRaw = [];
+        foreach (['data1','d1','ref1','ref','sub_id','subid','sub_id1','subid1','note','comment','utm_term','utm_content','tracking','tracking_code'] as $k){
+          if (!empty($r[$k]) && is_string($r[$k])) $candRaw[$k] = $r[$k];
+        }
+        $rawStr = $candRaw ? implode(', ', array_map(fn($k,$v)=> $k.': '.$v, array_keys($candRaw), $candRaw)) : '—';
+
+        // URL query d1/data1
+        $qStr = '—';
+        foreach ($candRaw as $v){
+          if (filter_var($v, FILTER_VALIDATE_URL)) {
+            $p = parse_url($v); if(!empty($p['query'])){ parse_str($p['query'],$qs);
+              $hits=[]; foreach(['d1','data1','ngo','org','utm_term'] as $kk){ if(!empty($qs[$kk])) $hits[]="$kk: ".$qs[$kk]; }
+              if ($hits) { $qStr = implode(', ',$hits); break; }
+            }
+          }
+        }
+
+        // ibl__pick_d1
+        $picked = (function($row){
+          if (function_exists('ibl__pick_d1')) {
+            try { $v = trim((string)ibl__pick_d1($row)); if ($v!=='') return $v; } catch (\Throwable $e) {}
+          }
+          return '';
+        })($r);
+
+        // shop → default_d1
+        $shop = (string)($r['shop_slug'] ?? $r['shop_name'] ?? $r['shop'] ?? $r['program'] ?? '');
+        $def  = d1i_pick_default_for_shop($shop, $r);
+
+        // végső: sorrend = explicit/URL → ibl__pick_d1 → default_d1
+        [$explicit, $explicitSlug] = d1i_from_any($r);
+        $final = $explicitSlug ?: ($picked ? sanitize_title($picked) : sanitize_title($def));
+        ?>
+        <tr>
+          <td style="border-bottom:1px solid #f3f3f3"><?=esc_html(substr((string)($r['created_at'] ?? $r['created'] ?? ''),0,19))?></td>
+          <td style="border-bottom:1px solid #f3f3f3"><?=esc_html($shop)?></td>
+          <td style="border-bottom:1px solid #f3f3f3"><?=esc_html(strtolower($r['status'] ?? $r['rstatus'] ?? ''))?></td>
+          <td style="border-bottom:1px solid #f3f3f3"><?=esc_html($rawStr)?></td>
+          <td style="border-bottom:1px solid #f3f3f3"><?=esc_html($qStr)?></td>
+          <td style="border-bottom:1px solid #f3f3f3"><?=esc_html($picked ?: '—')?></td>
+          <td style="border-bottom:1px solid #f3f3f3"><?=esc_html($def ?: '—')?></td>
+          <td style="border-bottom:1px solid #f3f3f3"><strong><?= $final ? esc_html($final) : '—' ?></strong></td>
+        </tr>
+      <?php endforeach; ?>
+    </table>
+  </div>
+  <?php
+  return ob_get_clean();
+});

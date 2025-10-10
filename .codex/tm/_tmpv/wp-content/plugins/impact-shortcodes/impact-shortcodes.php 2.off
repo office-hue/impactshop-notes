@@ -1,0 +1,197 @@
+<?php
+/**
+ * Plugin Name: Impact Shortcodes (Sharity)
+ * Description: [impact_ticker], [impact_leaderboard], [impact_activity] – gyors, cache-elt REST proxyval. LIVE módban 120–300 mp cache.
+ * Version: 1.1.1
+ * Author: Sharity
+ */
+
+if (!defined('ABSPATH')) exit;
+
+/* =========================
+ * Alapbeállítások (BASE csak host!)
+ * ========================= */
+if (!defined('IMPACT_API_BASE')) {
+  // csak host, NINCS /impact, NINCS /v1, NINCS /wp-json
+  define('IMPACT_API_BASE', 'https://app.sharity.hu');
+}
+
+/* =========================================================
+ * URL helper – pontosan egyszer adja hozzá a **/wp-json/impact/v1**-et
+ * + kezeli az opcionális IMPACT_ENDPOINT_* konstansokat
+ * ========================================================= */
+function impact__normalize_base_host() {
+  $host = rtrim(IMPACT_API_BASE, '/');
+  // ha véletlen a BASE végén ott maradt valami API útvonal, levágjuk
+  $host = preg_replace('~/(api|impact|wp-json)(/v1)?$~', '', $host);
+  return $host;
+}
+
+function impact__build_url_from_path($path) {
+  $host = impact__normalize_base_host();
+
+  // normalizált path
+  $p = '/' . ltrim($path, '/');
+
+  // ha már tartalmaz bármilyen impact útvonalat, egységesítsük /wp-json/impact/v1-re
+  // (pl. /impact/v1/ticker, /wp-json/impact/ticker, stb.)
+  $p = preg_replace('~(/wp-json)?/impact(/v1)?/~', '/wp-json/impact/v1/', $p, 1);
+
+  // ha még mindig nem /wp-json/impact/v1/-gyel indul, tegyük elé
+  if (!preg_match('~^/wp-json/impact/v1/~', $p)) {
+    $p = '/wp-json/impact/v1' . $p;
+  }
+
+  return $host . $p;
+}
+
+function impact_api_url($which) {
+  // Opcionális fix végpontok wp-configból
+  if ($which === 'ticker' && defined('IMPACT_ENDPOINT_TICKER')) {
+    return impact__build_url_from_path(IMPACT_ENDPOINT_TICKER);
+  }
+  if ($which === 'leaderboard' && defined('IMPACT_ENDPOINT_LEADERBOARD')) {
+    return impact__build_url_from_path(IMPACT_ENDPOINT_LEADERBOARD);
+  }
+  if ($which === 'activity' && defined('IMPACT_ENDPOINT_ACTIVITY')) {
+    return impact__build_url_from_path(IMPACT_ENDPOINT_ACTIVITY);
+  }
+
+  // Alapértelmezett utak (WP REST)
+  if     ($which === 'ticker')      return impact__build_url_from_path('/ticker');
+  elseif ($which === 'leaderboard') return impact__build_url_from_path('/leaderboard');
+  elseif ($which === 'activity')    return impact__build_url_from_path('/activity');
+
+  // fallback: szabad sztringként kapott path
+  return impact__build_url_from_path($which);
+}
+
+/* ======================================
+ * HTTP GET JSON + transient cache
+ * ====================================== */
+function impact_http_get_json_cached($url, $cache_key, $ttl = 180) {
+  $cached = get_transient($cache_key);
+  if ($cached !== false) return $cached;
+
+  $resp = wp_remote_get($url, [
+    'timeout' => 10,
+    'headers' => ['Accept' => 'application/json'],
+  ]);
+
+  if (is_wp_error($resp)) {
+    return ['error' => 'Hálózati hiba', 'details' => $resp->get_error_message()];
+  }
+
+  $code = wp_remote_retrieve_response_code($resp);
+  $body = wp_remote_retrieve_body($resp);
+  $data = json_decode($body, true);
+
+  if ($code !== 200 || !is_array($data)) {
+    return ['error' => 'API hiba', 'status' => $code, 'body' => $body];
+  }
+
+  set_transient($cache_key, $data, $ttl);
+  return $data;
+}
+
+/* ======================================
+ * Frontbarát hibaüzenet
+ * ====================================== */
+function impact_friendly_error($msg = 'Jelenleg nem elérhető. Próbáld újra később!') {
+  return '<div class="impact-error" role="status" aria-live="polite">' . esc_html($msg) . '</div>';
+}
+
+/* ======================================
+ * [impact_ticker]
+ * Várt API: GET /wp-json/impact/v1/ticker -> { total, today }
+ * Cache: 180s
+ * ====================================== */
+add_shortcode('impact_ticker', function($atts) {
+  $ttl = 180;
+  $url  = impact_api_url('ticker');
+  $data = impact_http_get_json_cached($url, 'impact_ticker_json', $ttl);
+  if (isset($data['error'])) return impact_friendly_error('Ticker: ' . $data['error']);
+
+  $total = isset($data['total']) ? floatval($data['total']) : 0;
+  $today = isset($data['today']) ? floatval($data['today']) : 0;
+
+  ob_start(); ?>
+  <div class="impact-ticker" data-total="<?php echo esc_attr($total); ?>" data-today="<?php echo esc_attr($today); ?>">
+    <div class="impact-ticker-row">
+      <span class="label">Összegyűjtve</span>
+      <span class="value" id="impact-total"><?php echo number_format_i18n($total, 0); ?> Ft</span>
+    </div>
+    <div class="impact-ticker-row">
+      <span class="label">Ma</span>
+      <span class="value" id="impact-today"><?php echo number_format_i18n($today, 0); ?> Ft</span>
+    </div>
+  </div>
+  <script>document.dispatchEvent(new CustomEvent('impact:updated',{detail:{source:'ticker'}}));</script>
+  <?php
+  return ob_get_clean();
+});
+
+/* ======================================
+ * [impact_leaderboard tab="ngo|shop"]
+ * Várt API: GET /wp-json/impact/v1/leaderboard?tab=ngo -> [ { name, amount }, ... ]
+ * Cache: 300s
+ * ====================================== */
+add_shortcode('impact_leaderboard', function($atts) {
+  $a   = shortcode_atts(['tab' => 'ngo'], $atts, 'impact_leaderboard');
+  $tab = sanitize_text_field($a['tab']);
+  $ttl = 300;
+
+  // base URL + query
+  $base = impact_api_url('leaderboard');
+  $url  = add_query_arg(['tab' => $tab], $base);
+
+  $data = impact_http_get_json_cached($url, 'impact_leaderboard_' . md5($tab), $ttl);
+  if (isset($data['error']) || !is_array($data)) return impact_friendly_error('Leaderboard: nem elérhető.');
+
+  ob_start(); ?>
+  <div class="impact-leaderboard" data-tab="<?php echo esc_attr($tab); ?>">
+    <ol class="impact-leaderboard-list">
+      <?php foreach ($data as $row): ?>
+        <li>
+          <span class="name"><?php echo esc_html($row['name'] ?? '—'); ?></span>
+          <span class="amount"><?php echo number_format_i18n(floatval($row['amount'] ?? 0), 0); ?> Ft</span>
+        </li>
+      <?php endforeach; ?>
+    </ol>
+  </div>
+  <script>document.dispatchEvent(new CustomEvent('impact:updated',{detail:{source:'leaderboard',tab:<?php echo json_encode($tab); ?>}}));</script>
+  <?php
+  return ob_get_clean();
+});
+
+/* ======================================
+ * [impact_activity]
+ * Várt API: GET /wp-json/impact/v1/activity -> [ { text }, ... ]
+ * Cache: 120s
+ * ====================================== */
+add_shortcode('impact_activity', function($atts) {
+  $ttl = 120;
+  $url  = impact_api_url('activity');
+  $data = impact_http_get_json_cached($url, 'impact_activity', $ttl);
+  if (isset($data['error']) || !is_array($data)) return impact_friendly_error('Aktivitás: nem elérhető.');
+
+  ob_start(); ?>
+  <div class="impact-activity">
+    <ul>
+      <?php foreach ($data as $row): ?>
+        <li><?php echo esc_html($row['text'] ?? ''); ?></li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
+  <script>document.dispatchEvent(new CustomEvent('impact:updated',{detail:{source:'activity'}}));</script>
+  <?php
+  return ob_get_clean();
+});
+
+/* ======================================
+ * Opcionális alap CSS
+ * ====================================== */
+add_action('wp_enqueue_scripts', function(){
+  wp_register_style('impact-shortcodes', plugins_url('impact-shortcodes.css', __FILE__), [], '1.1.1');
+  wp_enqueue_style('impact-shortcodes');
+});

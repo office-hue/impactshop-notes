@@ -1,0 +1,89 @@
+<?php
+/**
+ * ImpactShop – NGO (data1) pick fix: Last-Click priority
+ */
+if (!defined('ABSPATH')) exit;
+
+/**
+ * Visszaad egy emberi NGO-slugot egy Dognet tranzakciós sorból.
+ * PRIORITÁS: last_click.* → közvetlen d1/data1/ref1/subid… → URL/query → JSON → bármi nem numerikus → (ismeretlen)
+ */
+if (!function_exists('impactshop_pick_ngo_from_row')) {
+  function impactshop_pick_ngo_from_row($row){
+
+    // 0) Segédek
+    $is_numericish = static function($v){ return (bool)preg_match('~^\d+(?:\.\d+)?$~', $v); };
+    $is_slug_like  = static function($v){ return (bool)(preg_match('~^[a-z0-9._-]{3,}$~i', $v) && preg_match('~[a-z]~i', $v)); };
+    $pick_from_query = static function($q){
+      parse_str($q, $p);
+      foreach (['d1','ngo','org','utm_term'] as $kk) if (!empty($p[$kk]) && is_string($p[$kk])) return trim($p[$kk]);
+      return '';
+    };
+    $pick_from_json = static function($s){
+      $j = json_decode($s, true);
+      if (!is_array($j)) return '';
+      foreach (['d1','ngo','org','data1','ref1'] as $kk) if (!empty($j[$kk]) && is_string($j[$kk])) return trim($j[$kk]);
+      return '';
+    };
+
+    // 1) LAST-CLICK mezők elsőbbséggel (különböző lehetséges kulcsok)
+    $lastClickCandidates = [];
+    foreach ([
+      'last_click_data1','last_click_d1','last_click_data_1',
+      'last_click'
+    ] as $k) {
+      if (isset($row[$k]) && $row[$k] !== '' && !is_array($row[$k])) $lastClickCandidates[] = trim((string)$row[$k]);
+      if ($k==='last_click' && !empty($row['last_click']) && is_array($row['last_click'])) {
+        foreach (['data1','d1','utm_term'] as $kk) {
+          if (!empty($row['last_click'][$kk]) && is_string($row['last_click'][$kk])) {
+            $lastClickCandidates[] = trim($row['last_click'][$kk]);
+          }
+        }
+      }
+    }
+    foreach ($lastClickCandidates as $v) {
+      if ($is_slug_like($v)) return $v;
+      // ha URL/query jött, nézzük ki belőle a d1-et
+      if (stripos($v,'http://')===0 || stripos($v,'https://')===0) {
+        $qs = parse_url($v, PHP_URL_QUERY);
+        if ($qs) { $z = $pick_from_query($qs); if ($is_slug_like($z)) return $z; }
+      }
+      if (strpos($v,'=')!==false && strpos($v,'&')!==false) {
+        $z = $pick_from_query($v); if ($is_slug_like($z)) return $z;
+      }
+      if (($v[0]??'')==='{' || ($v[0]??'')==='[') {
+        $z = $pick_from_json($v); if ($is_slug_like($z)) return $z;
+      }
+    }
+
+    // 2) Eredeti, “bárhonnan” jelöltek (kompat.)
+    $cands = [];
+    foreach (['d1','data1','ref1','sub_id','subid','sub_id1','ngo','ngo_name'] as $k) {
+      if (isset($row[$k]) && !is_array($row[$k])) {
+        $v = trim((string)$row[$k]);
+        if ($v !== '') $cands[] = $v;
+      }
+    }
+
+    foreach ($cands as $v) if ($is_slug_like($v)) return $v;
+
+    foreach ($cands as $v) {
+      if (stripos($v,'http://')===0 || stripos($v,'https://')===0) {
+        $qs = parse_url($v, PHP_URL_QUERY);
+        if ($qs) { $z = $pick_from_query($qs); if ($is_slug_like($z)) return $z; }
+      }
+      if (strpos($v,'=')!==false && strpos($v,'&')!==false) {
+        $z = $pick_from_query($v); if ($is_slug_like($z)) return $z;
+      }
+    }
+    foreach ($cands as $v) {
+      $t = trim($v);
+      if ($t !== '' && (($t[0]??'')==='{' || ($t[0]??'')==='[')) {
+        $z = $pick_from_json($t); if ($is_slug_like($z)) return $z;
+      }
+    }
+    foreach ($cands as $v) if (!$is_numericish($v)) return $v;
+
+    return '(ismeretlen)';
+  }
+}

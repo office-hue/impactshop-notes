@@ -1,0 +1,79 @@
+<?php
+/**
+ * ImpactShop – d1 fallback by Shop default
+ * Ha a tranzakcióban NINCS d1/data1, a Shop default_d1-ját használjuk.
+ */
+if (!defined('ABSPATH')) exit;
+
+/**
+ * Shop → default_d1 lekérő – a nálad már meglevő helper(ek)re támaszkodunk.
+ * Ha több név létezik, bármelyik elérhető függvényből megpróbáljuk kiszedni.
+ */
+function ishop__get_default_d1_for_shop($shopSlug, $row = []){
+  foreach ([
+    'sharity_default_d1_for_shop',
+    'impactshop_default_d1_for_shop',
+    'impact_get_default_d1_for_shop',
+  ] as $fn){
+    if (function_exists($fn)) {
+      try {
+        $v = trim((string)call_user_func($fn, sanitize_title($shopSlug), $row));
+        if ($v !== '') return $v;
+      } catch (\Throwable $e) {}
+    }
+  }
+  return '';
+}
+
+/**
+ * Nyers sorból Shop sluggá konvertálunk.
+ */
+function ishop__pick_shop_slug($row){
+  foreach (['shop_slug','shop','shop_name','program','campaign_name','campaign'] as $k){
+    if (!empty($row[$k]) && is_string($row[$k])) {
+      $slug = sanitize_title($row[$k]);
+      if ($slug !== '') return $slug;
+    }
+  }
+  return '';
+}
+
+/**
+ * Fő d1-pick: először explicit (ibl__pick_d1), ha nincs → shop default_d1.
+ * Ezt a függvényt hívjuk minden aggregálásnál.
+ */
+if (!function_exists('impactshop_pick_ngo_from_row')) {
+  function impactshop_pick_ngo_from_row(array $row){
+    // 1) explicit d1, ha van
+    if (function_exists('ibl__pick_d1')) {
+      try {
+        $v = trim((string)ibl__pick_d1($row));
+        if ($v !== '' && strtolower($v) !== '(ismeretlen)' && !is_numeric($v)) {
+          return sanitize_title($v);
+        }
+      } catch (\Throwable $e) {}
+    }
+
+    // 2) ha nincs, visszaesünk a Shop → default_d1-re
+    $shop = ishop__pick_shop_slug($row);
+    if ($shop !== '') {
+      $def = ishop__get_default_d1_for_shop($shop, $row);
+      if ($def !== '' && !is_numeric($def)) {
+        return sanitize_title($def);
+      }
+    }
+
+    // 3) nincs értelmes d1 → jelezzük a hívónak, hogy ezt a sort hagyja ki
+    return '';
+  }
+}
+
+/**
+ * Egységes szűrés: A + P mehet, D kizárva.
+ */
+if (!function_exists('impactshop_is_countable_status')) {
+  function impactshop_is_countable_status($row){
+    $st = strtolower(trim((string)($row['rstatus'] ?? $row['status'] ?? '')));
+    return in_array($st, ['a','approved','p','pending'], true);
+  }
+}

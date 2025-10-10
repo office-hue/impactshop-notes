@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "generated_at": "2025-10-06 19:22:49 +0200",
+    "host": "Bujdoso-Mac-mini",
+    "impact_env": "local",
+    "ssh_host": ""
+  },
+  "git": {
+    "branch": "main",
+    "hash": "b0ab8bc",
+    "dirty_files": 33
+  },
+  "project": {
+    "name": "Sharity ImpactShop",
+    "stack": [
+      "WordPress",
+      "Elementor",
+      "Dognet Publisher API",
+      "Local REST",
+      "MINI Shortcodes"
+    ],
+    "shortcodes": [
+      "impact_ticker",
+      "impact_leaderboard",
+      "impact_activity",
+      "impact_total",
+      "impact_total_range"
+    ],
+    "summary": "Sharity ImpactShop – WordPress + Elementor + Dognet Publisher API + Impact Bridge Local + MINI Shortcodes. REST: /impact/v1/{ticker,leaderboard,activity,total}."
+  },
+  "health": {
+    "staging": {
+      "label": "staging",
+      "url": "https://app.sharity.hu/impactshop-staging/wp-json/impact/v1/total",
+      "code": 0,
+      "latency_ms": 0,
+      "status": "unreachable"
+    },
+    "production": {
+      "label": "production",
+      "url": "https://app.sharity.hu/?rest_route=/impact/v1/total",
+      "code": 0,
+      "latency_ms": 0,
+      "status": "unreachable"
+    }
+  }
+}
