@@ -5,3 +5,4 @@
 /.deploy.production.env               @office-hue/maintainers
 
 .github/protected-files.txt @office-hue/maintainers
+.github/workflows/protect-critical-files.yml @office-hue/maintainers

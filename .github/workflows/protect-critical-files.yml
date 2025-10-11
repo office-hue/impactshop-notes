@@ -1,57 +1,107 @@
-name: protect-critical-files
+name: Protect critical files
 
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  check:
-    name: protect-critical-files / check
+  guard:
+    name: Guard protected files (tamper-proof)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
     steps:
-      # Fontos: a PR HEAD commitját ellenőrizzük, de a workflow maga a base-ről fut
-      - name: Checkout PR head (read-only)
+      - name: Checkout base (trusted)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.base_ref }}
           fetch-depth: 0
 
-      - name: Fail on protected file changes
+      - name: Fetch PR head (untrusted) without checkout
+        run: |
+          git fetch origin "+refs/pull/${{ github.event.pull_request.number }}/head:pr_head"
+
+      - name: Read protected list from trusted base
+        id: protected
         shell: bash
         run: |
           set -euo pipefail
+          BASE_REF="${{ github.base_ref }}"
+          LIST_PATH=".github/protected-files.txt"
 
-          BASE="${{ github.base_ref || github.event.pull_request.base.ref }}"
-          git fetch origin "$BASE"
-
-          # 1) Tiltás: a lista PR-ben nem módosítható
-          CHANGED="$(git diff --name-only "origin/${BASE}...HEAD")"
-          if printf '%s\n' "$CHANGED" | grep -qx ".github/protected-files.txt"; then
-            echo "❌ PR modifies .github/protected-files.txt (forbidden)"; exit 1
+          if ! git show "origin/${BASE_REF}:${LIST_PATH}" > /tmp/protected-files.txt 2>/dev/null; then
+            echo "❌ Missing ${LIST_PATH} on base branch (${BASE_REF})." >&2
+            exit 1
           fi
 
-          # 2) A védett lista mindig a base ágról jön (PR nem írhatja felül)
-          if ! PROTECTED_FILES="$(git show "origin/${BASE}:.github/protected-files.txt" 2>/dev/null)"; then
-            echo "❌ Error: cannot read .github/protected-files.txt from base branch (${BASE})"; exit 2
+          # Szűrés: üres sorok és # kommentek eldobása
+          grep -v -E '^\s*#' /tmp/protected-files.txt | sed '/^\s*$/d' > /tmp/protected-files.clean
+          if [[ ! -s /tmp/protected-files.clean ]]; then
+            echo "❌ ${LIST_PATH} is empty on base branch. Failing closed." >&2
+            exit 1
           fi
-          if [ -z "$PROTECTED_FILES" ]; then
-            echo "❌ Error: .github/protected-files.txt on base is empty"; exit 2
-          fi
 
-          echo "ℹ️ Changed files:"; printf '%s\n' "$CHANGED" | sed '/^$/d' || true
+          echo "Protected patterns (from base):"
+          cat /tmp/protected-files.clean
 
-          # 3) Ellenőrzés: módosult-e bármely védett útvonal (pontos egyezés)
-          while IFS= read -r FILE; do
-            # üres sorok / kommentek kihagyása
-            [ -n "${FILE// }" ] || continue
-            case "$FILE" in \#*) continue;; esac
+      - name: Compute changed files in PR head
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout pr_head
+          # Listázd a BASE..HEAD diffben érintett fájlokat (A/M/D/R)
+          git diff --name-only --diff-filter=ACDMR "origin/${{ github.base_ref }}" pr_head > /tmp/changed.txt || true
+          echo "Changed files:"
+          cat /tmp/changed.txt || true
 
-            if printf '%s\n' "$CHANGED" | grep -qx -- "$FILE"; then
-              echo "❌ PR modifies a protected file: $FILE"; exit 1
+      - name: Match changes against protected patterns
+        id: match
+        shell: bash
+        run: |
+          set -euo pipefail
+          touch /tmp/violations.txt
+          while IFS= read -r pat; do
+            while IFS= read -r f; do
+              python3 - <<'PY' "$pat" "$f" >> /tmp/violations.txt
+import fnmatch, sys
+pat = sys.argv[1].strip()
+fn = sys.argv[2].strip()
+if fnmatch.fnmatch(fn, pat):
+    print(fn)
+PY
+            done < /tmp/changed.txt
+          done < /tmp/protected-files.clean
+
+          # Tiltás: a lista önmódosítása is védett
+          if grep -Fx ".github/protected-files.txt" /tmp/protected-files.clean >/dev/null 2>&1; then
+            if grep -Fx ".github/protected-files.txt" /tmp/changed.txt >/dev/null 2>&1; then
+              echo ".github/protected-files.txt" >> /tmp/violations.txt
             fi
-          done <<<"$PROTECTED_FILES"
+          fi
 
-          echo "✅ Protected files untouched"
+          sort -u /tmp/violations.txt -o /tmp/violations.txt
+          echo "violations<<EOF" >> "$GITHUB_OUTPUT"
+          cat /tmp/violations.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          echo "Recorded protected matches:"
+          cat /tmp/violations.txt || true
+
+      - name: Fail if protected files were modified
+        if: ${{ steps.match.outputs.violations != '' }}
+        shell: bash
+        run: |
+          echo "❌ PR modifies protected files:" >&2
+          cat <<'LIST' >&2
+${{ steps.match.outputs.violations }}
+LIST
+          echo ""
+          echo "This repository uses a tamper-proof protection: the list is loaded from the trusted base branch and cannot be modified by PRs." >&2
+          exit 1
+
+      - name: Pass (no protected files were touched)
+        if: ${{ steps.match.outputs.violations == '' }}
+        run: echo "✅ No protected files modified."

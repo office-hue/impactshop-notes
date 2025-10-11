@@ -1,0 +1,15 @@
+# Critical scripts and deploy tools
+bin/impactctl
+impact-tools/**
+bin/deploy*.sh
+bin/staging-qa-suite.sh
+bin/error-reporter.sh
+
+# MU plugins & production env
+wp-content/mu-plugins/**
+.deploy.production.env
+.deploy.staging.env
+
+# Security workflows and lists
+.github/workflows/protect-critical-files.yml
+.github/protected-files.txt
