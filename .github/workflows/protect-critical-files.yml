@@ -25,24 +25,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           LIST_FILE=".github/protected-files.txt"
           BASE_REF="${{ github.base_ref }}"
           if [ -z "$BASE_REF" ]; then
             BASE_REF="${{ github.event.pull_request.base.ref }}"
           fi
+
           if [ ! -f "$LIST_FILE" ]; then
             echo "❌ $LIST_FILE missing." >&2
             exit 2
           fi
+
           grep -v -E '^\s*#' "$LIST_FILE" | sed '/^\s*$/d' > /tmp/protected.clean
           if [ ! -s /tmp/protected.clean ]; then
             echo "❌ $LIST_FILE is empty." >&2
             exit 2
           fi
+
           git fetch origin "$BASE_REF" --quiet || true
           git diff --name-only "origin/$BASE_REF...HEAD" > /tmp/changed.txt || true
           echo "ℹ️ Changed files:"
           cat /tmp/changed.txt || true
+
           : > /tmp/violations.txt
           while IFS= read -r pattern; do
             [ -n "${pattern//[[:space:]]/}" ] || continue
