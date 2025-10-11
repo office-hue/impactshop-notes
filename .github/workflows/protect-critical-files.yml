@@ -11,7 +11,7 @@ permissions:
 jobs:
   Guard:
     name: Guard
-    runs-on: ubuntu-latest
+    runs-run: ubuntu-latest
     concurrency:
       group: protect-critical-files-${{ github.event.pull_request.number }}
       cancel-in-progress: true
