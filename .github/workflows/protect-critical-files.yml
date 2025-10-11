@@ -1,26 +1,53 @@
 name: protect-critical-files
+
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+
 jobs:
   check:
-    name: check
+    name: protect-critical-files / check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Fail on protected file changes
         shell: bash
         run: |
           set -euo pipefail
-          PROTECTED_FILES=$'# List (one per line)\nbin/impactctl\nimpact-tools/access-guard.sh\nimpact-tools/ssh-recovery.sh\nwp-content/mu-plugins/impact-safety-suite.php\n.deploy.production.env\n'
-          BASE="${{ github.base_ref || github.event.pull_request.base.ref }}"
-          git fetch origin "$BASE" >/dev/null 2>&1 || true
-          CHANGED="$(git diff --name-only "origin/${BASE}...HEAD" || true)"
-          echo "ℹ️ Changed files:"; printf '%s\n' "$CHANGED"
-          while IFS= read -r FILE; do
-            [ -n "$FILE" ] || continue
-            if printf '%s\n' "$CHANGED" | grep -qx -- "$FILE"; then
-              echo "❌ PR módosít védett fájlt: $FILE"; exit 1
+
+          BASE="${{ github.event.pull_request.base.ref || github.base_ref || 'main' }}"
+
+          # 1) A védelem ALAPLISTÁJA mindig a BASE ágról jön (PR nem tudja felülírni)
+          if ! PROTECTED_FILES="$(git show "origin/${BASE}:.github/protected-files.txt" 2>/dev/null)"; then
+            echo "❌ Error: cannot read .github/protected-files.txt from base branch (${BASE})"
+            exit 2
+          fi
+          if [ -z "$PROTECTED_FILES" ]; then
+            echo "❌ Error: .github/protected-files.txt on base branch is empty"
+            exit 2
+          fi
+
+          # 2) Ha maga a lista változott a PR-ben → azonnali bukás (nem lehet önszerkeszteni)
+          git fetch origin "${BASE}"
+          CHANGED="$(git diff --name-only "origin/${BASE}...HEAD")"
+          if echo "$CHANGED" | grep -Fx ".github/protected-files.txt" >/dev/null; then
+            echo "❌ PR attempts to modify .github/protected-files.txt (forbidden)"
+            exit 1
+          fi
+
+          # 3) Nézzük, módosult-e bármely védett útvonal
+          while IFS= read -r protected; do
+            # üres sorok/kommentek átugrása
+            [ -n "${protected// }" ] || continue
+            case "$protected" in \#*) continue;; esac
+
+            if echo "$CHANGED" | grep -Fx "$protected" >/dev/null; then
+              echo "❌ Protected path changed in PR: $protected"
+              exit 1
             fi
-          done <<<"$(printf '%s' "$PROTECTED_FILES")"
-          echo "✅ védett fájlok érintetlenek"
+          done <<< "$PROTECTED_FILES"
+
+          echo "✅ No protected files modified"
