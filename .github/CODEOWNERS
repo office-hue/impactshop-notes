@@ -3,3 +3,5 @@
 /impact-tools/ssh-recovery.sh         @office-hue/maintainers
 /wp-content/mu-plugins/impact-safety-suite.php  @office-hue/maintainers
 /.deploy.production.env               @office-hue/maintainers
+
+.github/protected-files.txt @office-hue/maintainers

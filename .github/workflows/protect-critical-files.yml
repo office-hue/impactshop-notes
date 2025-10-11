@@ -1,26 +1,57 @@
 name: protect-critical-files
+
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
+
 jobs:
   check:
-    name: check
+    name: protect-critical-files / check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      # Fontos: a PR HEAD commitját ellenőrizzük, de a workflow maga a base-ről fut
+      - name: Checkout PR head (read-only)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
       - name: Fail on protected file changes
         shell: bash
         run: |
           set -euo pipefail
-          PROTECTED_FILES=$'# List (one per line)\nbin/impactctl\nimpact-tools/access-guard.sh\nimpact-tools/ssh-recovery.sh\nwp-content/mu-plugins/impact-safety-suite.php\n.deploy.production.env\n'
+
           BASE="${{ github.base_ref || github.event.pull_request.base.ref }}"
-          git fetch origin "$BASE" >/dev/null 2>&1 || true
-          CHANGED="$(git diff --name-only "origin/${BASE}...HEAD" || true)"
-          echo "ℹ️ Changed files:"; printf '%s\n' "$CHANGED"
+          git fetch origin "$BASE"
+
+          # 1) Tiltás: a lista PR-ben nem módosítható
+          CHANGED="$(git diff --name-only "origin/${BASE}...HEAD")"
+          if printf '%s\n' "$CHANGED" | grep -qx ".github/protected-files.txt"; then
+            echo "❌ PR modifies .github/protected-files.txt (forbidden)"; exit 1
+          fi
+
+          # 2) A védett lista mindig a base ágról jön (PR nem írhatja felül)
+          if ! PROTECTED_FILES="$(git show "origin/${BASE}:.github/protected-files.txt" 2>/dev/null)"; then
+            echo "❌ Error: cannot read .github/protected-files.txt from base branch (${BASE})"; exit 2
+          fi
+          if [ -z "$PROTECTED_FILES" ]; then
+            echo "❌ Error: .github/protected-files.txt on base is empty"; exit 2
+          fi
+
+          echo "ℹ️ Changed files:"; printf '%s\n' "$CHANGED" | sed '/^$/d' || true
+
+          # 3) Ellenőrzés: módosult-e bármely védett útvonal (pontos egyezés)
           while IFS= read -r FILE; do
-            [ -n "$FILE" ] || continue
+            # üres sorok / kommentek kihagyása
+            [ -n "${FILE// }" ] || continue
+            case "$FILE" in \#*) continue;; esac
+
             if printf '%s\n' "$CHANGED" | grep -qx -- "$FILE"; then
-              echo "❌ PR módosít védett fájlt: $FILE"; exit 1
+              echo "❌ PR modifies a protected file: $FILE"; exit 1
             fi
-          done <<<"$(printf '%s' "$PROTECTED_FILES")"
-          echo "✅ védett fájlok érintetlenek"
+          done <<<"$PROTECTED_FILES"
+
+          echo "✅ Protected files untouched"
