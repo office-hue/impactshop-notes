@@ -1,0 +1,10 @@
+# Critical deploy & guard
+bin/impactctl
+impact-tools/**
+wp-content/mu-plugins/**
+.deploy.production.env
+.deploy.staging.env
+
+# Self-protection
+.github/workflows/protect-critical-files.yml
+.github/protected-files.txt

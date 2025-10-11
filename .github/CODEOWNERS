@@ -1,5 +1,8 @@
-/bin/impactctl                        @office-hue/maintainers
-/impact-tools/access-guard.sh         @office-hue/maintainers
-/impact-tools/ssh-recovery.sh         @office-hue/maintainers
-/wp-content/mu-plugins/impact-safety-suite.php  @office-hue/maintainers
-/.deploy.production.env               @office-hue/maintainers
+# Protected files require maintainer approval
+/bin/impactctl                        @office-hue
+/impact-tools/**                      @office-hue
+/wp-content/mu-plugins/**             @office-hue
+/.deploy.production.env               @office-hue
+/.deploy.staging.env                  @office-hue
+.github/protected-files.txt           @office-hue
+.github/workflows/protect-critical-files.yml @office-hue

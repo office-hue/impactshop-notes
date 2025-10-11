@@ -1,26 +1,69 @@
 name: protect-critical-files
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  check:
-    name: check
+  protect-critical-files:
+    name: protect-critical-files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Fail on protected file changes
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate protected files stay untouched
         shell: bash
         run: |
           set -euo pipefail
-          PROTECTED_FILES=$'# List (one per line)\nbin/impactctl\nimpact-tools/access-guard.sh\nimpact-tools/ssh-recovery.sh\nwp-content/mu-plugins/impact-safety-suite.php\n.deploy.production.env\n'
-          BASE="${{ github.base_ref || github.event.pull_request.base.ref }}"
-          git fetch origin "$BASE" >/dev/null 2>&1 || true
-          CHANGED="$(git diff --name-only "origin/${BASE}...HEAD" || true)"
-          echo "ℹ️ Changed files:"; printf '%s\n' "$CHANGED"
-          while IFS= read -r FILE; do
-            [ -n "$FILE" ] || continue
-            if printf '%s\n' "$CHANGED" | grep -qx -- "$FILE"; then
-              echo "❌ PR módosít védett fájlt: $FILE"; exit 1
-            fi
-          done <<<"$(printf '%s' "$PROTECTED_FILES")"
-          echo "✅ védett fájlok érintetlenek"
+
+          LIST_FILE=".github/protected-files.txt"
+          BASE_REF="${{ github.base_ref || github.event.pull_request.base.ref }}"
+
+          if [ ! -f "$LIST_FILE" ]; then
+            echo "❌ $LIST_FILE hiányzik." >&2
+            exit 2
+          fi
+
+          grep -v -E '^\s*#' "$LIST_FILE" | sed '/^\s*$/d' > /tmp/protected.clean
+          if [ ! -s /tmp/protected.clean ]; then
+            echo "❌ $LIST_FILE üres." >&2
+            exit 2
+          fi
+
+          git fetch origin "$BASE_REF" --quiet || true
+          git diff --name-only "origin/$BASE_REF...HEAD" > /tmp/changed.txt || true
+
+          echo "ℹ️ Changed files:"
+          cat /tmp/changed.txt || true
+
+          touch /tmp/violations.txt
+          while IFS= read -r pattern; do
+            [ -n "${pattern//[[:space:]]/}" ] || continue
+            while IFS= read -r file; do
+              [ -n "$file" ] || continue
+              python3 - <<'PY' "$pattern" "$file" >> /tmp/violations.txt
+import fnmatch, sys
+pattern = sys.argv[1].strip()
+fname = sys.argv[2].strip()
+if fnmatch.fnmatch(fname, pattern):
+    print(fname)
+PY
+            done < /tmp/changed.txt
+          done < /tmp/protected.clean
+
+          sort -u /tmp/violations.txt -o /tmp/violations.txt
+
+          if grep -q '.' /tmp/violations.txt; then
+            echo "❌ Protected files modified:" >&2
+            cat /tmp/violations.txt >&2
+            exit 1
+          fi
+
+          echo "✅ Protected files untouched."
