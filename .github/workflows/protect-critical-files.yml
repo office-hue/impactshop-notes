@@ -9,11 +9,14 @@ permissions:
   pull-requests: read
 
 jobs:
-  protect-critical-files:
-    name: protect-critical-files
+  Guard:
+    name: Guard
     runs-on: ubuntu-latest
+    concurrency:
+      group: protect-critical-files-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     steps:
-      - name: Checkout PR code
+      - name: Checkout PR head
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -24,41 +27,41 @@ jobs:
           set -euo pipefail
 
           LIST_FILE=".github/protected-files.txt"
-          BASE_REF="${{ github.base_ref || github.event.pull_request.base.ref }}"
+          BASE_REF="${{ github.base_ref }}"
+          if [ -z "$BASE_REF" ]; then
+            BASE_REF="${{ github.event.pull_request.base.ref }}"
+          fi
 
           if [ ! -f "$LIST_FILE" ]; then
-            echo "❌ $LIST_FILE hiányzik." >&2
+            echo "❌ $LIST_FILE missing." >&2
             exit 2
           fi
 
           grep -v -E '^\s*#' "$LIST_FILE" | sed '/^\s*$/d' > /tmp/protected.clean
           if [ ! -s /tmp/protected.clean ]; then
-            echo "❌ $LIST_FILE üres." >&2
+            echo "❌ $LIST_FILE is empty." >&2
             exit 2
           fi
 
           git fetch origin "$BASE_REF" --quiet || true
           git diff --name-only "origin/$BASE_REF...HEAD" > /tmp/changed.txt || true
-
           echo "ℹ️ Changed files:"
           cat /tmp/changed.txt || true
 
-          touch /tmp/violations.txt
+          : > /tmp/violations.txt
           while IFS= read -r pattern; do
             [ -n "${pattern//[[:space:]]/}" ] || continue
             while IFS= read -r file; do
               [ -n "$file" ] || continue
-              python3 - <<'PY' "$pattern" "$file" >> /tmp/violations.txt
-import fnmatch, sys
-pattern = sys.argv[1].strip()
-fname = sys.argv[2].strip()
-if fnmatch.fnmatch(fname, pattern):
-    print(fname)
-PY
+              python3 -c "import fnmatch, sys; pat=sys.argv[1].strip(); fn=sys.argv[2].strip(); if fnmatch.fnmatch(fn, pat): print(fn)" "$pattern" "$file" >> /tmp/violations.txt
             done < /tmp/changed.txt
           done < /tmp/protected.clean
 
           sort -u /tmp/violations.txt -o /tmp/violations.txt
+
+          if grep -Fxq ".github/protected-files.txt" /tmp/changed.txt; then
+            echo ".github/protected-files.txt" >> /tmp/violations.txt
+          fi
 
           if grep -q '.' /tmp/violations.txt; then
             echo "❌ Protected files modified:" >&2
