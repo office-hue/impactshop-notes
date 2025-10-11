@@ -1,0 +1,8 @@
+# Protected files require maintainer approval
+/bin/impactctl                        @office-hue
+/impact-tools/**                      @office-hue
+/wp-content/mu-plugins/**             @office-hue
+/.deploy.production.env               @office-hue
+/.deploy.staging.env                  @office-hue
+.github/protected-files.txt           @office-hue
+.github/workflows/protect-critical-files.yml @office-hue
