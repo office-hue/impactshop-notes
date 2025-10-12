@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive   # fontos a nested repo-k miatt
+
+      # (Opciós) SSH kulcs beállítás, ha a runnernek kell közvetlenül SSH-zni
+      # - name: Setup SSH key (optional)
+      #   if: ${{ secrets.STAGING_SSH_KEY != '' }}
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519
+      #     chmod 600 ~/.ssh/id_ed25519
+      #     ssh-keyscan "${{ secrets.STAGING_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Validation Gate (read-only)
+        run: |
+          bash scripts/validate-deploy-profile.sh \
+            --profile=staging \
+            --timeout-ssh=10 \
+            --timeout-wpcli=30
+        env:
+          SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+          SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+          WP_PATH:  ${{ secrets.STAGING_WP_PATH }}
