@@ -2397,3 +2397,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Új, sanitizált branch: `core/ai-agent-drop-2026-01-07-clean2` pushed az `impact_hub` repóba.
 - Secret eltávolítás: `ai-agent/config/drive-service-account.json` kikerült, helyette `drive-service-account.example.json`.
 - Ignore szigorítva: ai-agent nagy/érzékeny könyvtárak (Impi Tudásbázis, Feladatok, Google Ads, neo4j data/logs, tools/out, client_secret*, durable-verve*, dwd_clients.csv, ngo_codes.csv).
+
+### 2026-01-07 – Impact Hub PR update (clean3)
+- Végső branch: `core/ai-agent-drop-2026-01-07-clean3` (clean2 helyett).
+- PR link: https://github.com/office-hue/impact_hub/pull/new/core/ai-agent-drop-2026-01-07-clean3
+- Megjegyzés: az ai-agent drop eltávolítja a korábbi `ai-agent/libs/*` és `apps/api-gateway/src/app.ts + routes/*` fájlokat (új kódstruktúra).
