@@ -286,13 +286,6 @@ components:
         meta:
           type: object
           additionalProperties: true
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
-  schemas:
     TickerResponse:
       type: object
       required:
@@ -317,7 +310,7 @@ components:
       properties:
         impact_id:
           type: string
-          pattern: '^IMP-\d{8}-\d{3}$'
+          pattern: '^IMP-\\d{8}-\\d{3}$'
         ngo_code:
           type: string
         donation_eur:
@@ -329,7 +322,6 @@ components:
             - dognet
             - cj
             - meta
-
     TokenIssueRequest:
       type: object
       required:
@@ -444,6 +436,12 @@ components:
           properties:
             status:
               type: integer
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   responses:
     RateLimitError:
