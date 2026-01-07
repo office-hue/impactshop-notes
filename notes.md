@@ -2388,3 +2388,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Javítás: `docs/api/openapi.yaml` alatt a `components` duplikált `schemas` kulcs feloldva, `TickerItem` mezők visszarendezve, `securitySchemes` blokk a komponensek végére helyezve.
 - Guard: `source .codex/.env.local && ~/bin/impactall` → 14/14 PASS, WARN/FAIL nincs; staging 200 / 1083 ms (redirected), production 200 / 1046 ms.
 - Pre-flight (S1) zöld, OpenAPI validate PASS.
+
+### 2026-01-07 – Prod smoke /core/merge-download
+- Smoke: `ssh s59 'AI_AGENT_API_KEY=*** bash /tmp/merge-smoke-remote.sh'` (lokális secretből, nem mentve szerverre).
+- Eredmény: download_status=200, download_size=6691, xlsx_ready + merge_done.
