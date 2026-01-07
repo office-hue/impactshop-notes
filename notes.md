@@ -2370,3 +2370,16 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Deploy/smoke korábban lefutott: prod build+deploy, /core/merge-download smoke success (s59, ~6.7KB).
 
 - Következő lépés: a repo-irány döntése után commit+PR (impactshop-notes és impact_hub), majd új prod smoke /core/merge-download.
+
+## 2026-01-07 – Repo szétválasztás + PR előkészítés
+
+- impactshop-notes: új, önálló git repo inicializálva, origin: https://github.com/office-hue/impactshop-notes.
+- Commit készült: `docs: update notes and api docs` (branch: `docs/notes-update-2026-01-07`).
+- Push blokkolt: nincs GitHub auth (`could not read Username for 'https://github.com'`).
+
+- impact_hub: ai-agent kód átmásolva `ai-agent/` alá (node_modules/dist/secrets stb. kizárva).
+- Commitok: `core: add ai-agent code drop`, majd `core: ignore graph-memory logs`.
+- Branch: `core/ai-agent-drop-2026-01-07`.
+- Push blokkolt: nincs GitHub auth (`could not read Username for 'https://github.com'`).
+
+- Prod smoke: `/tmp/merge-smoke-remote.sh` futtatás közben leállt, mert az `AI_AGENT_API_KEY` hiányzik a `~/ai-agent/.env`-ből.
