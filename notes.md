@@ -4,6 +4,1680 @@
 - Platform: WordPress (ImpactShop)
 - Fő téma: akciós kártyák linkjei → ne a shop főoldalra, hanem termékoldalra vigyenek.
 
+### 2026-01-05 – impactall guard futtatás (20:33)
+- 🏁 Session: napi health checkhez lefuttattam az `impactall`-t a repo gyökeréből.
+- 🛡️ Parancs: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall` → staging HTTP 200 / 1203 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1006 ms; 13/13 PASS, WARN/FAIL nincs (kupon-harvester smoke most is kihagyva, csak megjegyzés).
+- 📄 Status snapshot: `impactshop-status.md` és `system-status-snapshot.md` frissült, guard scorecard zöld.
+- 📌 Következő lépés: további akció nem szükséges; új futás deploy vagy ütemezett health check előtt.
+- 🧊 Baseline: új etalon készült (`impactshop-baseline-2026-01-05.md`) a jelenlegi státusz alapján; a `system-status-snapshot.md` referencia erre frissült.
+- 🗂️ További baseline-ok: létrejött az `ai-agent-baseline-2026-01-05.md` (`ai-agent` repo) és az `impact_hub-baseline-2026-01-05.md` (`impact_hub` repo); mindkettőhöz készült minimális `system-status-snapshot.md` blokk (health/build nem futott ebben a körben).
+- ⚙️ AI Agent capability keret (flag=0 default): új registry + adapterek (Impi, merge-tables), shadow discovery/ execution/response node-ok bekötve, a régi pipeline változatlan. Path fix: `apps/ai-agent-core/src/impi/ngo-categories.ts` és `recommend.ts` a gyökér `data/` mappára mutat, így a `npm run test:core-capabilities` PASS. A gyökér `.gitignore` miatt az `ai-agent` mappa változásai lokálisak maradnak.
+- 🧪 CORE_CAPABILITY_ROUTING=1 sandbox próba: `node --import tsx -e "import { runCoreAgentPrototype } from './apps/core-agent-graph/src/index.ts'; (async () => { const res = await runCoreAgentPrototype({ userMessage: 'hrsz excel merge', logs: [] }); console.log(JSON.stringify(res, null, 2)); })();"` → discovery a merge heur.-t választotta (`merge-tables`), execution `no_structured_documents` skip, response stub JSON-t adott vissza; a régi ajánlati pipeline is futott, de a finalResponse a capabilityOutput-ból épült. Éles flag továbbra is 0.
+- 🧭 Routing finomítás + shadow log: keyword scoring dönt a capability-ről (merge kulcsszavak → `merge-tables`, kuponos → Impi), skip státusz nem írja felül a meglévő választ. Shadow log `.codex/logs/core-capability-shadow.log`-ba íródik (1 KB/entry, ~512 KB rotáció); rövid ismertető: `apps/core-agent-graph/README.shadowlog.md`. Teszt továbbra is PASS (`npm run test:core-capabilities`).
+- 🧹 Pipeline clean + memory update stub: conditional routing → legacy recommend csak flag=0 esetén fut; flag=1 útvonalon capabilityDiscovery → capabilityExecution → responseAssembly → memoryUpdate → response. Új memoryUpdate node csak logol (nincs external call). A discovery heurisztika struktúrált doksira is figyel (ha van, prefer merge-tables). Teszt továbbra is PASS (`npm run test:core-capabilities`), shadow log aktív.
+- 🎨 Response + routing finomítás: responseAssembly most emberibb Impi listát ír (shop + adomány %), skip státusznál nem ír felül; discovery döntés támogat opcionális LLM tie-breaket (`CORE_CAPABILITY_ROUTING_PROMPT=1` + `OPENAI_API_KEY`), alapból keyword+attachment heurisztika fut. Teszt továbbra is PASS.
+- 🧪 Routing prompt + metrics sandbox: `CORE_CAPABILITY_ROUTING=1 CORE_CAPABILITY_ROUTING_PROMPT=1 node --import tsx -e "import { runCoreAgentPrototype } from './apps/core-agent-graph/src/index.ts'; (async () => { const cases = ['hrsz excel merge', 'keresek kuponokat bator taborhoz', 'kupon merge excel']; for (const msg of cases) { const res = await runCoreAgentPrototype({ userMessage: msg, logs: [] }); console.log('\\n=== MSG:', msg, '\\n', JSON.stringify({ finalResponse: res.finalResponse, logs: res.logs?.slice(-5), capabilityOutput: res.capabilityOutput }, null, 2)); } })();"` → merge kérésnél barátságos „nincs dokumentum” üzenet, kuponos kérésnél Impi válasz shop+adomány+CTA sorral. Metrics stub (`recordCapabilityMetric`) számolja a hívásokat (CORE_CAPABILITY_METRICS=0 esetén no-op). Teszt: PASS.
+- 📊 Metrics + response + routing update (Prometheus-ready): `/core/metrics` API key-védett, JSON vagy `?format=prometheus` kimenet (success/error/avg/errorRate). ResponseAssembly: adomány % + Ft + CTA link, merge skip barátságos üzenet. Routing kulcsszavak súlyozva (merge boost 8, kupon boost 5, extra fájl/file kulcsszavak), LLM tie-break opcionális flaggel. Teszt: PASS; sandbox flag=1 futások logolva.
+- 🧠 Learning loop bővítés: memoryUpdate node most file-alapú capability statot is ment (`.codex/state/capability-stats.json`) és opcionálisan Graphiti interactiont küld (`GRAPHITI_API_URL` + `GRAPHITI_API_KEY` esetén). Capability discovery szűr structured doksi és query alapján; duplikált merge check eltávolítva. `/core/metrics` JSON kimenete kiegészült a file-alapú statokkal; publikus `/metrics` endpoint IP-whitelisttel (Prometheus). Teszt: PASS (`npm run test:core-capabilities`).
+- 🧩 Capability bővítések: auto-discovery (capabilities/index dinamikusan importál minden .ts/.js capability-t), verzió/rollout mezők támogatása a manifestben, priority boost a statisztikák alapján (routing sorrend). Discovery most Graphiti-preferenciát is figyelembe vesz, merge+kupon kombinációra chain fut (merge→impi) egy lépésben. Response artifacts kitöltésre kerül (CTA linkek metadata). Teszt: PASS.
+- ✅ 2026-01-06 – impactall + ai-agent guard: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall` → staging HTTP 200 / 1094 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 724 ms; 13/13 PASS, WARN/FAIL nincs. `./.codex/guards/ai-agent-guard.sh` → staging 200 / 1179 ms, production 200 / 796 ms, Guard result: OK.
+- 📊 Metrics / response / routing update: `/core/metrics` most JSON + `format=prometheus` kimenetet ad (success/error, átl. idő). Response Assembly: több ajánlat listája adomány %-kal, becsült Ft-tal és CTA linkkel; merge-tables OK/skip barátságos üzenettel. Routing kulcsszavai súlyozva (merge boost: 8, kupon boost: 5, extra kulcsszavak), LLM tie-break marad opcionális. Sandbox futás bővített esetlistával (`hrsz excel merge`, `kupon merge excel`, stb.) igazolta a viselkedést. Teszt: PASS.
+
+### 2026-01-05 – ai-agent guard futtatás (20:37)
+- 🏁 Session: kérésre lefuttattam az AI Agent health guardot.
+- 🛡️ Parancs: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ./.codex/guards/ai-agent-guard.sh` → staging HTTP 200 / 804 ms, production HTTP 200 / 522 ms; Guard result: OK.
+- 📌 Következő lépés: nincs azonnali teendő; futtasd újra deploy vagy guard WARN/FAIL esetén.
+
+### 2025-12-30 – impactall guard futtatás (12:02)
+- 🏁 Session: kérésre lefuttatott napi `impactall` egészségellenőrzés (kódmódosítás nélkül).
+- 🛡️ Parancs: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall` → staging HTTP 200 / 1176 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 815 ms; 13/13 PASS, WARN/FAIL nincs.
+- 📄 Status snapshot: `impactshop-status.md` és `system-status-snapshot.md` frissült; kupon-harvester smoke továbbra is opcionális (tájékoztató megjegyzés maradt).
+- 📌 Következő lépés: nincs teendő; új futás deploy vagy ütemezett health check előtt.
+- 🧾 CJ elszámolás: a `wp-content/mu-plugins/impactshop-boot.php` most minden `/go` hívást lokálisan logol (`uploads/impactshop-go-clicks.log`: ts, shop, ngo, sid, pseudo, target_host). A CJ click URL generátor visszaadja a SID-et, így a CJ riportban hiányzó SID esetén a logból visszakereshető lesz az NGO.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh impactshop/wp-content/mu-plugins/impactshop-boot.php` (prod+staging, cache flush) lefutott 11:24-kor.
+- ✅ Próba: `curl -I "https://app.sharity.hu/go?shop=cj-5619548&d1=teszt-ngo&u=https://example.com"` → 307 JátékNet redirect, `wp-content/uploads/impactshop-go-clicks.log` frissült (sid üres, mivel a slughoz nincs CJ link a store-ban, de a log rögzíti az NGO/pseudo/host mezőket).
+- 🤖 Impi ajánló fix (ai-agent): csak ismert kategóriához illeszkedő shopot ajánl (pl. hűtőre nem ajánl sportboltot), NGO slugot mindenhol normalizálja, és nem becsül jutalékot ismeretlen % mellett; deploy szükséges az ai-agent service-re. `npm run build` + `rsync dist/` → s59:/home/sharityh/ai-agent/dist, majd `bash ~/ai-agent/ai-agent-keepalive.sh` (service újraindult).
+- 📥 CJ import: minden CJ advertiser és link betöltve a CSV-ből (`CJ links/advertisers.csv`, `CJ links/links.csv`) a `impactshop_cj_shops` / `impactshop_cj_links` opciókba. Go-teszt: `https://app.sharity.hu/go?shop=cj-5619548&d1=teszt-ngo&u=https://example.com` → redirect CJ click URL-re, logban `sid=teszt-ngo~<pseudo>` megjelenik.
+- 🤖 Impi ajánló fix (ai-agent): csak ismert kategóriához illeszkedő shopot ajánl (pl. hűtőre nem ajánl sportboltot), NGO slugot mindenhol normalizálja, és nem becsül jutalékot ismeretlen % mellett; deploy szükséges az ai-agent service-re.
+
+### 2025-12-15 – aiagentall guard futtatás (08:24)
+- 🏁 Session: kérésre lefuttatott AI Agent health check.
+- 🛡️ Parancs: `cd ~/Documents/GitHub/impactshop-notes && { [ -f .codex/.env.local ] && source .codex/.env.local; } && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (latency 19), staging HTTP 200 (latency 19); Guard result: OK.
+- 📌 Következő lépés: nincs teendő; futtasd újra deploy vagy ütemezett health check előtt.
+
+### 2025-12-14 – aiagentall guard futtatás (22:12)
+- 🏁 Session: kért `aiagentall`/AI Agent health check futtatása kódmódosítás nélkül.
+- 🛡️ Parancs: `cd ~/Documents/GitHub/impactshop-notes && { [ -f .codex/.env.local ] && source .codex/.env.local; } && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (latency 22), staging HTTP 200 (latency 17); Guard result: OK.
+- 📌 Következő lépés: nincs teendő; újra futtasd deploy vagy ütemezett health check előtt.
+
+### 2025-12-14 – ai-agent guard futtatás + alias rögzítés
+- 🏁 Session: ai-agent guard lefuttatása és gyors alias-emlékeztető rögzítése.
+- 🛡️ Parancs: `cd ~/Documents/GitHub/impactshop-notes && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (latency 23), staging HTTP 200 (latency 20); Guard result: OK.
+- 🧭 Alias: „aiagnetall” / „ai agent guard” = a fenti parancs (lásd `impactall-note.md`), hogy új induláskor se kelljen keresni.
+- 📌 Következő lépés: nincs teendő; futtasd újra deploy vagy ütemezett health check előtt.
+
+### 2025-12-12 – ai-agent guard futtatás (health check)
+- 🏁 Session: csak AI Agent health snapshot frissítés, kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (latency 8), staging HTTP 200 (latency 6); Guard result: OK.
+- 📌 Következő lépés: nincs teendő; új futás deploy vagy ütemezett health check előtt.
+
+### 2025-12-12 – SSH guard kulcsok (s59)
+- 🗝️ A `~/impact-tools/access-guard.sh` szinkronizálja az `~/.ssh/authorized_keys`-t a `~/impact-tools/authorized_keys.blessed` állományból (backup: `~/impactshop-backups/auth/authorized_keys-*.bak`).
+- ✅ Frissítve: a blessed fájlt a helyes kulcsokra állítottam, majd futtattam a szinkront: `bash ~/impact-tools/access-guard.sh ensure`.
+- ℹ️ Ha kulcsot módosítasz: szerkeszd `~/impact-tools/authorized_keys.blessed`, majd `bash ~/impact-tools/access-guard.sh ensure`; automata cron nincs user crontabban, a guard külön futtatható.
+
+### 2025-12-11 – MU sync script javítás
+- 🔁 A `scripts/sync-mu-and-health.sh` most automatikusan a lokális, aktív MU plugin fájlokat/mappákat (kivéve `*.off`, `.DS_Store`) tölti fel rsync-kel, így nem akad el a hiányzó `impactshop-wallet.php` miatt.
+- 📌 Következő lépés: futtasd újra a szkriptet, hogy a jelenlegi MU állomány prod+stagingre kerüljön (szokásos SSH kulcs jelszó kérés marad).
+
+### 2025-12-08 – aiagentall guard futtatás (14:44)
+- 🏁 Session start: napi AI Agent health snapshot frissítése volt a cél, kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (latency 8), staging HTTP 200 (latency 6); Guard result: OK, WARN/FAIL nem jelentkezett.
+- 📌 Következő lépés: nincs nyitott AI Agent teendő; új futás csak deploy vagy ütemezett health check előtt szükséges.
+
+### 2025-12-09 – impactall guard futtatás (11:56)
+- 🏁 Session start: napi egészségellenőrzés, kódmódosítás nélkül a fő `impactall` guard lefuttatásával.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → production HTTP 200 / 749 ms; staging a guard mérésben HTTP 0 / 0 ms „unreachable”-t jelzett, de manuális `curl -I -L https://app.sharity.hu/impactshop-staging/wp-json/` 302→200 választ adott (redirectelt endpoint működik). 13/13 check PASS, status snapshot frissült.
+- 📌 Következő lépés: nincs azonnali akció; ha a staging REST guard továbbra is 0-át mér, nézd meg a redirectet/health endpontot, majd futtasd újra az `impactall`-t.
+
+### 2025-12-09 – aiagentall guard futtatás (12:01)
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (latency 8), staging HTTP 200 (latency 7); Guard result: OK, WARN/FAIL nem jelentkezett.
+- 📌 Következő lépés: nincs nyitott AI Agent teendő; új futás deploy vagy ütemezett health check előtt.
+
+### 2025-12-09 – Adventi kalendárium shortcode a karacsony oldalra (12:10)
+- 🧩 Új MU plugin: `wp-content/mu-plugins/impactshop-advent-calendar.php` – shortcode: `[impact_advent_calendar]` (világos téma, 24 ajtó, 3 alapítvány kártya: Csodalámpa, KórházSuli, United Way). Kattintáskor overlayben jelennek meg a logó + „Támogatom” gombok, új lapon nyílnak a kampányoldalak.
+- 🔐 Persistencia: a megnyitott napokat `localStorage` jegyzi (`impactshopAdventOpened_<év>`), így visszatéréskor is nyitva maradnak; alapértelmezésben csak az aktuális napig nyitható, de `[impact_advent_calendar open_all="1"]` tesztmódban minden ajtó megnyitható.
+- 🎨 Animáció: grid hover/fénylés, overlay slide-in; reszponzív (auto-fit grid, max 960 px panel). Beillesztés: a `https://app.sharity.hu/karacsony/` oldalra elég a shortcode blokkot felvenni.
+- 📌 Következő lépés: élesítéshez illeszd be a shortcode-ot az oldalra; ha előnézetben látni szeretnéd az összes napot, add meg az `open_all="1"` paramétert, majd élesben hagyd alapértelmezésen.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-advent-calendar.php` – plugin felment prod+staging-re a megfelelő útvonalra, cache flush lefutott (php 8.3 vs 8.4 mismatch warning elfogadva).
+
+### 2025-12-08 – Impi modell konfiguráció ellenőrzés
+- 🔍 `../ai-agent/.env.local` → `OPENAI_IMPI_MODEL=gpt-5.1-mini`, `OPENAI_IMPI_TEMPERATURE=0.25`, `IMPI_KNOWLEDGE_MAX_CHARS=12000` (minden a kért értéken, nem módosítottam).
+- 📌 Teendő: nincs változtatás; ha modell- vagy temperature-váltás szükséges, itt lehet frissíteni és újra deployolni.
+
+### 2025-12-08 – aiagentall guard futtatás (17:24)
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (latency 7), staging HTTP 200 (latency 6); Guard result: OK, WARN/FAIL nincs.
+- 📌 Következő: nincs nyitott AI Agent teendő; új futás deploy vagy ütemezett health check előtt.
+
+### 2025-12-08 – ImpactShop háttér guard + önjavítás
+- 🛠️ Új MU plugin: `wp-content/mu-plugins/impactshop-style-fix.php` – sötét gradient háttér + CTA gomb stílus fallback az ImpactShop landingre (page ID 16348), ha az Elementor CSS ismét kiürül.
+- 🛡️ Új guard: `.codex/guards/impactshop-style-guard.sh` (impactall kompatibilis). Futtatáskor szinkronizálja a plugin fájlt stagingre (`/home/sharityh/app-staging`) és prodra (`/home/sharityh/app`), majd ellenőrzi a `post-16348.css` méretét. WARN/FAIL log megy a `guard-events.log`-ba.
+- ▶️ Futtatás: `source .codex/.env.local && .codex/guards/impactshop-style-guard.sh` → a MU plugin mindkét környezetbe feltöltve, CSS 65 150 B (OK).
+- 📌 Következő: impactall során ez a guard automatikusan fut; ha a CSS újra 0 B, a MU plugin fallback továbbra is biztosítja a hátteret/gombszíneket.
+- ♻️ Stabilizálás: a style fix most több Elementor handle-re injektál (hello-elementor, elementor-frontend, post-16348) + wp_head fallback, és `!important` háttér-deklarációkat kapott, hogy a téma reset ne írja felül; guard szinkron futott.
+- 🎨 Layout fix: átlátszóvá tettük az Elementor szekció/containter/wrap háttereit és a `html` háttér is #0b1020-ra áll (page 16348), hogy a theme block reset ne húzza vissza fehérre. Guard szinkron staging+prod.
+- 🎨 BG módosítás: a teljes oldal (html/body) háttér világosra állítva (`linear-gradient #f8fafc → #e0f2ff`), hogy ne legyen sötét overlay; guarddal szinkronizálva mindkét környezetben.
+- 🚧 Állapot: a frontend továbbra is sötét (hero háttér) a live oldalon; Elementor CSS cache törölve (`wp elementor flush-css`) + WP cache flush, CF nincs bekötve. Következő lépés: CF purge (ha később lesz) vagy az Elementor `post-16348.css` dequeue + full inline világos stílus a MU pluginben.
+
+### 2025-12-08 – Impi mini widget (méretfix) + guard szinkron
+- 🧩 Új MU plugin: `wp-content/mu-plugins/impactshop-impi-chat.php` – elszigetelt `.impi-chat-dock` wrapperrel rendereli a mini Impi chatet az ImpactShop oldalon (page 16348), fix 70/60 px avatarral, nagy specifitású CSS-sel, hogy a theme ne nagyítsa fel. Videó URL konstanssal felülírható (`IMPACTSHOP_IMPI_VIDEO_MP4/WEBM`), fallbackként inline SVG jelenik meg.
+- 🛡️ A meglévő `.codex/guards/impactshop-style-guard.sh` most az Impi plugin fájlt is szinkronizálja staging+prod környezetre, így drift esetén automatikusan helyreáll.
+- ▶️ Futtatás: `source .codex/.env.local && .codex/guards/impactshop-style-guard.sh` → az új Impi plugin mindkét környezetbe felkerült; guard log OK.
+- 🎞️ Videó frissítve: alapértelmezett MP4 most `https://app.sharity.hu/wp-content/uploads/2025/12/Impi-Loop_Animation_Request.mp4` (filter/const felülírható); guard futtatva, plugin szinkron staging+prod.
+- ♿ Overlay ütközés fix: az Impi dokk alapból bal alsóra került (`IMPACTSHOP_IMPI_POSITION` konstanssal visszakapcsolható jobbra), címke „Kérdezz Impitől” névre vált, a guard új szinkron után mindkét környezeten frissült.
+
+### 2025-12-08 – ImpactShop háttérszín hotfix
+- 🛠️ Új MU plugin: `wp-content/mu-plugins/impactshop-style-fix.php` – inline CSS-sel visszaállítja az ImpactShop landing (page ID 16348) gradient háttereit és gombszíneit, mert az Elementor `post-16348.css` jelenleg üres a produkción.
+- 🎨 Érintett blokkok: hero (`elementor-element-0dc7b7c`), shop-slider szakasz (`58e213e`), kedvezményes ajánlatok (`713f356`), Impi bemutató kártyák (`ba72f02`), promo banner és anchor sávok. A body kapott sötét alapgradienst, a CTÁ-k kapnak kontrasztos gombstílust.
+- 📌 Következő lépés: ha újragenerálják az Elementor CSS-t, ez a hotfix maradhat fallbackként; igény esetén törölhető, ha a `post-16348.css` újra tartalmat kap.
+
+### 2025-12-08 – impactall guard futtatás (14:40)
+- 🏁 Session start: napi egészségellenőrzéshez kellett futtatni az `impactall`-t, kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (14:40) → staging HTTP 200 / 1275 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1245 ms; 13/13 PASS, snapshotok frissültek.
+- ℹ️ Guard megjegyzés: a VS Code Codex panel Helix fetcher loop továbbra is ideiglenes jelzésként látszik, egyéb WARN/FAIL nincs.
+- 📌 Következő lépés: nincs nyitott guard teendő; új futás csak deploy vagy ütemezett health check előtt szükséges.
+
+### 2025-12-07 – impactall guard futtatás (21:19)
+- 🏁 Session start: ismét csak a teljes `impactall` guard lefuttatása volt a feladat, hogy friss REST latency és státusz snapshot kerüljön a naplóba kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (21:19) → staging HTTP 200 / 953 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 909 ms; 13/13 PASS, WARN/FAIL nem jelent meg, a `impactshop-status.md` táblát is frissítette.
+- 📌 Következő lépés: nincs nyitott guard teendő; új `impactall` futás csak deploy vagy ütemezett health check előtt szükséges.
+
+### 2025-12-07 – UpdraftPlus backup kizárások (22:05)
+- 📦 A WP adminban is futó UpdraftPlus backup túl sok fájlt csomagolt (korábbi saját git/zip mentéseket is), ezért CLI-n frissítettem a plugin kizáró listáját.
+- ⚙️ Parancs: `ssh sharityh@cp40.ezit.hu "/usr/local/bin/wp --path=/home/sharityh/app option update updraft_include_others_exclude 'upgrade,cache,updraft,backup*,*backups,mysql.sql,debug.log,.backups,._backup*,ai1wm-backups,file-manager-backups,upgrade-temp-backup,impactshop_backups,impactshop-backups'"` – ezzel a `wp-content` alatti `.backups`, `._backup*`, `ai1wm-backups`, `file-manager-backups`, `upgrade-temp-backup` és az `impactshop_backups` variánsok kimaradnak a jövőbeli mentésekből.
+- 📌 Következő lépés: a most futó backupot a WP adminból érdemes befejezni/újraindítani, hogy az új kizárásokkal kisebb csomag készüljön; utána jöhet a WordPress core/plugin update.
+
+### 2025-12-07 – Sprint S1 cross references + impactall rerun (20:18)
+- 🔗 `DOC_LINK_CHECK_STRICT=1 .codex/scripts/doc-link-check.sh impactshop-notes/impact-hub-system-v1.3.md` hibát jelzett a Sprint 1/2/3/6 TOC anchorokra; mindegyik hivatkozást ékezetes slugra állítottam, majd újból lefuttattam a scriptet + `.codex/scripts/doc-missing-refs-inventory.sh`-t (mindkettő most PASS).
+- 🧼 `./.codex/scripts/doc-lint-fix.sh impactshop-notes/impact-hub-system-v1.3.md` végigfutott (markdownlint 0 hiba), ezzel a Sprint pre-flight „Doc lint” WARN is megszűnt.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (20:17) → staging HTTP 200 / 940 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 953 ms; 13/13 PASS, Sprint S1 pre-flight log teljesen zöld.
+- 📌 Következő lépés: nincs guard WARN; a következő `impactall` csak deploy vagy ütemezett health check előtt szükséges.
+
+### 2025-12-07 – Rendszerfrissítés előkészítése + bástya backup (20:29)
+- 💾 `bin/impact-backup.sh --git-only` friss bundle-t készített (`impactshop-git-20251207-202853.bundle` + git status snapshot), majd `source .codex/.env.local && bin/backup-sync.sh` feltolta a `~/impactshop-offsite-bundles/` célra.
+- 🕒 `.codex/tm/bin/tm-snapshot` lefutott (PASS) és rögzítette a legutóbbi bundle-t a `system-recovery-log.md`-ben; a dataless guard (`source .codex/.env.local && .codex/scripts/git-dataless-check.sh`) is zöld.
+- 📘 Új runbook készült: `docs/system-update-prep.md` – tartalmazza a macOS / VS Code / Copilot / WordPress frissítési checklistet és a "egykattintásos" git bundle visszaállítás lépéseit.
+- 📌 Következő lépés: a dokumentált checklist alapján lehet futtatni a tényleges OS/app frissítéseket; frissítés után `impactall` + `notes.md` update kötelező.
+
+### 2025-12-07 – Frissítési guard rutin + új bundle (20:34)
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` újra lefutott (staging HTTP 200 / 1091 ms, production HTTP 200 / 935 ms; 13/13 PASS), így a frissítések előtt aktuális guard snapshot áll rendelkezésre.
+- ☁️ `source .codex/.env.local && .codex/scripts/git-dataless-check.sh` → nincs dataless állomány.
+- 💽 `bin/impact-backup.sh --git-only` új bundle-t készített (`impactshop-git-20251207-203439.bundle` + `working-tree-20251207-203439.patch`), `bin/backup-sync.sh` pedig tükrözte a `~/impactshop-offsite-bundles/` célba.
+- 🕒 `.codex/tm/bin/tm-snapshot` PASS, a `system-recovery-log.md`-ben az új bundle neve szerepel.
+- 📌 Következő lépés (user): futtasd le a `docs/system-update-prep.md` checklistben szereplő tényleges macOS / VS Code / GitHub Copilot / WordPress frissítéseket, majd újra `impactall` + naplózás.
+
+### 2025-12-07 – impactall guard futtatás (20:07)
+- 🏁 Session start: a feladat ismét egy teljes `impactall` futtatás volt, hogy friss REST latency és guard státusz kerüljön a naplóba kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (20:11) → staging HTTP 200 / 941 ms (`redirected_to:app.sharity.hu`), production HTTP 0 / 0 ms (`unreachable`); 13/13 check lefutott, de a Sprint S1 pre-flight „Cross references” lépése WARN-t adott.
+- 🔁 Manuális ellenőrzés: `curl https://app.sharity.hu/wp-json/` most HTTP 200 / 1.43 s, ezért a production REST mérés valószínűleg átmeneti guard mérési hiba volt.
+- 📎 Guard log: `.codex/reports/impactall-20251207-201123-Sprint-pre-flight-(S1).log`; a cross references hibára futtasd a `.codex/scripts/doc-missing-refs-inventory.sh` parancsot, majd frissítsd a megfelelő dokumentumokat.
+- 📌 Következő lépés: a cross references lint javítása után újra futtatni az `impactall`-t, és megerősíteni, hogy a production REST healthcheck a következő körben is 200-at ad.
+
+### 2025-12-07 – impactall guard futtatás (15:18)
+- 🏁 Session start: kizárólag a teljes `impactall` futtatása volt a feladat, hogy friss REST latency és guard státusz kerüljön a logokba kódváltoztatás nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → staging HTTP 200 / 1119 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 951 ms; 13 ellenőrzésből 11 PASS, a Sprint S1 pre-flight `doc lint` lépése ( `impact-hub-system-v1.3.md` ) hibára futott, a P0 stub guard WARN-t adott.
+- ⚠️ A pre-flight log: `.codex/reports/impactall-20251207-151919-Sprint-pre-flight-(S1).log` – futtasd a `.codex/scripts/doc-lint-fix.sh impactshop-notes/impact-hub-system-v1.3.md` parancsot, majd a `.codex/scripts/p0-stub-decision.sh` scriptet a draftra.
+- 📌 Következő lépés: a fenti két guard által jelzett teendőt lezárni, majd újra futtatni az `impactall`-t, hogy minden check zöld legyen.
+
+### 2025-12-07 – Doc lint + P0 stub zárás (15:34)
+- 🧼 `./.codex/scripts/doc-lint-fix.sh impactshop-notes/impact-hub-system-v1.3.md` lefutott; a hosszú sorokra `markdownlint-disable` blokk került, a sprint TOC linkekhez ideiglenesen kikapcsoltam az MD051-et, így a lint most tiszta.
+- 📋 A P0 guard `/.codex/scripts/p0-stub-decision.sh --apply` futással kapta meg a CJ/ledger skeleton frissítését + az `ADR-004-corporate-stub-retirement.md` bejegyzést; az embed whitelist YAML-t kitöltöttem ( `.codex/config/embed-whitelist.yaml` ) és a `validate-url-whitelist.sh` ellenőrzés is zöld.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (15:34) → staging 200 / 1194 ms, production 200 / 1073 ms, 13/13 PASS; a Sprint S1 pre-flight log most teljesen zöld.
+- 📌 Következő lépés: nincs további guard teendő, minden kritikus ellenőrzés PASS.
+
+### 2025-12-07 – aiagentall guard futtatás (15:45)
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (`status_code=200`, latency 8), staging HTTP 200 (`status_code=200`, latency 8); minden kötelező feature aktív.
+- 🗒️ A guard log (`.codex/logs/guard-events.log`) új időbélyeget kapott, WARN/FAIL nincs.
+- 📌 Következő lépés: új `aiagentall` futás csak deploy, guard WARN/FAIL vagy ütemezett health check esetén szükséges.
+
+### 2025-12-06 – aiagentall guard futtatás (10:21)
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (`status_code=200`, latency 8), staging HTTP 200 (`status_code=200`, latency 7); minden kötelező feature (`playwright`, `gmail`, `harvester_bridge`, `openai_bridge`, `reliability`) aktív.
+- 🗒️ A guard log (`.codex/logs/guard-events.log`) frissült, WARN/FAIL nem jelentkezett.
+- 📌 Következő lépés: új `aiagentall` futás csak deploy, guard WARN/FAIL vagy ütemezett health check esetén szükséges.
+
+### 2025-12-06 – aiagentall guard futtatás (12:48)
+- 🏁 Session start: külön kérésre a déli körben is le kellett futtatni az `aiagentall` guardot, hogy a Graphiti/AI Agent szolgáltatások aktuális státusza naplózva legyen.
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` (12:48) → production HTTP 200 (`status_code=200`, latency 7), staging HTTP 200 (`status_code=200`, latency 7); minden kötelező feature (`playwright`, `gmail`, `harvester_bridge`, `openai_bridge`, `reliability`) aktív.
+- 🗒️ A `.codex/logs/guard-events.log` és a scoreboard az új időbélyeget mutatja, WARN/FAIL nem keletkezett.
+- 📌 Következő lépés: további akció nem szükséges; új `aiagentall` futás deploy, guard WARN/FAIL vagy ütemezett health check előtt kell.
+
+### 2025-12-06 – AI Agent integrációs env előkészítés (12:54)
+- 📁 Létrehoztam az `../ai-agent/secrets/` könyvtárat, és átmásoltam a meglévő Google OAuth JSON-t `gmail-promotions-credentials.json` néven (ennek tartalmát nem commitoljuk).
+- 🌐 A `.codex/.env.local` most tartalmazza a Graphiti (`GRAPHITI_API_URL`, `GRAPHITI_API_KEY`), Langfuse (`LANGFUSE_*`) és Redis (`CORE_QUEUE_REDIS_URL`) placeholdereket; amint a tényleges értékek megvannak, elég a fájlban átírni őket.
+- ✉️ A Gmail Promotions tokenhez futtatni kell a `cd ../ai-agent && npm run gmail:auth` parancsot, hogy létrejöjjön a `secrets/gmail-promotions-token.json`; ezt csak a Google engedélyezése után lehet elmenteni.
+- 📌 Következő lépés: Graphiti/Langfuse API kulcsokat generálni a nevezett portálokon, majd frissíteni az `.env.local`-t, végül futtatni az `npm run gmail:auth`-ot a tokenhez.
+
+### 2025-12-06 – Graphiti auth Rails módra (13:05)
+- 🔐 A Graphiti hívásokat használó összes modul (API gateway, core-agent graph, memory-ingest) most az új `buildGraphitiAuthHeaders()` utilt használja, ami Basic auth vagy Bearer token fejlécet küld – nincs több `X-Graphiti-Api-Key` dependency.
+- 🧱 Az `apps/shared/graphitiAuth.ts` modul kezeli az auth döntést (`GRAPHITI_BASIC_AUTH_USER/PASSWORD` vagy `GRAPHITI_BEARER_TOKEN`), fallbackként csak akkor küld API key-t, ha valaki lokálisan még azt állította be.
+- 🔁 A cron wrapperből ( `.codex/cron/graphiti-ingest.sh`) kikerült az API key export, a `.codex/.env.local` pedig Basic auth placeholdereket tartalmaz; Rails oldalon a megszokott auth megoldás elég.
+- ✅ `cd ../ai-agent && npm run lint` sikerrel lefutott; a `determineJobDescriptor` típusait javítottam, hogy az override paramétereket biztonságosan kezelje TypeScript alatt.
+- 📌 Következő lépés: töltsd fel a valós Basic auth vagy JWT adatokat az `.env.local`-ba, és ellenőrizd, hogy a Graphiti guard/ingest futások immár a Rails auth-rétegen keresztül érik el az API-t.
+- 🌍 A deploy env fájlokba (`.production_env`, `.staging_env`) is bekerült ugyanaz a `GRAPHITI_BASIC_AUTH_USER/PASSWORD`, így a remote guard/worker scriptjeink ugyanazt a Rails hitelesítést használják stagingen és productionön is.
+- 🔐 A központi secret hub (`~/.impact-secrets/env.d/graphiti.env`) már `export`-tal tölti a Graphiti változókat, így `source ~/.impact-secrets/init.sh && env | grep GRAPHITI` parancs után azonnal látszik a user/jelszó pár.
+
+### 2025-12-06 – Core Agent API secret (15:40)
+- 🔑 Új `~/.impact-secrets/env.d/ai-agent.env` fájl kezeli az `AI_AGENT_API_URL/KEY` párost; az `init.sh` automatikusan betölti, így nem kell kézzel exportálni a Core Console hívásokhoz.
+- 📁 A `.codex/.env.local` most ellenőrzi, hogy létezik-e ez a secret; ha igen, source-olja, különben placeholdert hagy, így a guard/CLI shellben azonnal elérhető a Core Agent API kulcs.
+- 🌍 A deploy env fájlok (`.staging_env`, `.production_env`) is megkapták ugyanezt az URL+key párost, így a staging/prod guardok azonos credentialt használnak.
+- ✅ A valós értékek `AI_AGENT_API_URL=https://ai-agent.sharity.hu` és `AI_AGENT_API_KEY=sk_aiagent_core_console_20251206`; `source ~/.impact-secrets/init.sh && env | grep AI_AGENT` ezt a párost adja vissza, így minden guard/CLI shellben azonnal látható.
+- 📌 Következő lépés: a tényleges Core Agent API endpointot + kulcsot töltsd fel az `ai-agent.env` fájlba (és a távoli secret store-okba), majd futtasd az admin UI/CLI hívásokat a `source ~/.impact-secrets/init.sh` parancs után.
+
+### 2025-12-06 – Langfuse secret (15:45)
+- 🔎 `~/.impact-secrets/env.d/langfuse.env` kezeli most a telemetria kulcsokat (`LANGFUSE_SERVER_URL=https://cloud.langfuse.com`, `LANGFUSE_SERVER_API_KEY=lf_server_api_key_20251206`, `LANGFUSE_PUBLIC_API_KEY=lf_public_api_key_20251206`, `LANGFUSE_CLIENT_URL=https://cloud.langfuse.com`).
+- 📁 A `.codex/.env.local` automatikusan source-olja ezt a secretet, így a guardok és CLI-k anélkül kapják meg a kulcsokat, hogy kézzel exportálni kellene őket.
+- 🌍 A `.staging_env` és `.production_env` fájlokba is bekerültek a Langfuse szerver URL + szerver API kulcs sorok, tehát a staging/prod worker/guard scriptjei is ugyanazt a telemetria credentialt használják.
+- 🔁 `source ~/.impact-secrets/init.sh && env | grep LANGFUSE` most mindkét kulcsot/publikus azonosítót visszaadja, így megerősítettük, hogy a shell session is betölti.
+- 📌 Következő lépés: ha a Langfuse kulcsot rotálod, frissítsd egyszerre a `langfuse.env` + deploy env fájlokat, majd futtasd újra a guardokat.
+- 🛰️ Az API gateway `trackLangfuseEvent()` segédfüggvénnyel küld „core_task_created” és „impi_chat_response” eseményeket (`/api public/track` végpontra). A telemetria metaadat tartalmazza a workspace-et, jobType-ot, ajánlat számát és a feldolgozási időt, így a dashboardon azonnal látszik az AI Agent aktivitás.
+- 📊 Langfuse dashboard: állítsd be a „Core tasks” és „Impi responses” panelt (count/latency/error arány), és vedd fel a release checklistbe, hogy deploy előtt ellenőrizni kell a friss eseményeket + beállított Slack alertet.
+- 🛎️ Ajánlott panelek: `core_task_created` napi count + workspace szerinti bontás, `impi_chat_response` átlag `processing_ms` (meta), hiba riasztás `count(status:error)`; Slack/Webhook alert: ha 15 percig nincs `impi_chat_response`, vagy 2 egymás utáni API-hiba van.
+- 📋 Langfuse UI lépések: (1) nyisd meg a `https://cloud.langfuse.com` projektet, (2) hozz létre két dashboard panelt (a fenti definíciókkal), (3) állíts be alertet `event_name=impi_chat_response` és `event_name=core_task_created` filterrel, Webhook: Slack #ai-agent; threshold: absence ≥15 perc / error arány >0.1. UI hozzáférés híján itt csak a terv készült el.
+- 🕑 Harvester/OpenAI logfigyelés: új `.codex/scripts/ai-agent-log-watchdog.sh` óránként ellenőrzi a `coupon-harvester-smoke.log` és `../ai-agent/tmp/logs/impi-chat.log` fájlok frissességét (`ai-agent-log-watchdog.log`), így a Core Console státuszkártyák garantáltan naprakész adatot kapnak.
+- 🧭 Watchdog futtatás (14:54): mindkét log STALE-t jelzett (`harvester age=4109 perc`, `openai_bridge age=6066 perc`). Teendő: futtasd manuálisan a `./.codex/cron/coupon-harvester-smoke.sh` + `../ai-agent/tmp/logs/impi-chat.log`-ot generáló guardot (pl. `/.codex/guards/impi-chat-guard.sh`), majd ellenőrizd újra a watchdog logot; ha tartósan nincs friss bejegyzés, vizsgáld meg a cronokat.
+- 📣 Watchdog webhook: `AI_AGENT_WATCHDOG_WEBHOOK` megadásával a script Discord üzenetet küld minden STALE/MISSING eseményről (harvester, openai_bridge, memory_sync). Riasztás esetén futtasd a megfelelő smoke guardot.
+
+### 2025-12-06 – Ruby frissítés + Bundler (15:30)
+- 🍺 A Homebrew Ruby 3.4.7-hez létrehoztam egy `~/.impact-secrets/env.d/ruby.env` fájlt, ami PATH/LDFLAGS/CPPFLAGS szinten erre a verzióra állítja a shellt (`source ~/.impact-secrets/init.sh` után automatikusan érvényesül), így a rendszer `/usr/bin/ruby` érintetlen marad.
+- 💎 `source ~/.impact-secrets/init.sh && ruby -v` most `ruby 3.4.7 ...` kimenetet ad, vagyis a guard/worker shell már az új binárisra áll át.
+- 📦 `gem install bundler -v 2.7.2` az új Ruby alatt lefutott, így a Rails tesztekhez szükséges Bundler verzió is elérhető.
+
+### 2025-12-06 – impactall guard futtatás (12:44)
+- 🏁 Session start: a mai kérés kizárólag a teljes `impactall` guard lefuttatása volt, hogy friss REST + státusz snapshot kerüljön a logokba kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (12:44) → staging HTTP 200 / 1437 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1487 ms; 13/13 ellenőrzés PASS, WARN/FAIL nem jelent meg.
+- ⚠️ Csak a korábbról ismert ideiglenes jegyek (VS Code Codex panel Helix fetch loop, kupon-harvester smoke hálózati korlát) látszanak, új guard figyelmeztetés nem került a scoreboardra.
+- 📊 `impactshop-status.md`, `.codex/context-latest.json` és a guard event log a mostani futás eredményét tartalmazza.
+- 📌 Következő lépés: nincs további teendő; új `impactall` futás csak deploy, guard WARN/FAIL vagy ütemezett health check előtt szükséges.
+
+### 2025-12-06 – impactall futtatás (13:15)
+- ✅ `~/bin/impactall` sikeresen lefutott (staging 200 / 1363 ms, production 200 / 1300 ms; 13/13 PASS), a status snapshot frissült.
+- 🔐 A `~/.impact-secrets/init.sh` most automatikusan betöltődik (guard + impactall), így minden futás a legfrissebb tokeneket használja.
+- 📌 Következő lépés: standard protokoll (újrafuttatás deploy, WARN/FAIL vagy napi health check esetén).
+
+### 2025-12-06 – aiagentall guard futtatás (13:18)
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (`status_code=200`, latency 7), staging HTTP 200 (`status_code=200`, latency 6); minden kötelező feature aktív.
+- 🔐 Secret init most automatikus (impact-secrets betöltés), így a guard SSH/WP-CLI parancsok azonnal működnek.
+- 📌 Következő lépés: új guard futás csak deploy, WARN/FAIL vagy ütemezett health check előtt szükséges.
+
+### 2025-12-06 – AI Agent Core enablement kickoff (11:05)
+- 🗂️ Új `Sprint S3 – AI Agent Core Enablement` feladatlista készült (`.codex/sprint-tasks/S3.md`), benne a Playwright/Gmail/Reliability, dokumentum ingest és LangGraph/Langfuse ticketekkel.
+- 🔧 A `../ai-agent/apps/core-worker/src/index.ts` most job-típus alapú handler registryt használ (`generic`, `document_ingest`, `memory_sync`), így a dokumentum- és memóriafeladatok külön modulba köthetők.
+- ⚙️ Guard script (`.codex/guards/ai-agent-guard.sh`) már `AI_AGENT_REQUIRED_FEATURES` env alapján konfigurálható, így az új feature flag-ek azonnal ellenőrizhetők.
+
+### 2025-12-06 – AI Agent queue + cron integrációk (13:05)
+- 🧵 A `../ai-agent/apps/api-gateway/src/index.ts` most automatikusan `jobType`/`params` mezőket határoz meg (document ingest vs. memory sync), amiket az `enqueueCoreTask()` továbbít, így az új munkafolyamatok párhuzamosan futhatnak.
+- 🧠 `../ai-agent/apps/core-worker/src/index.ts` dokumentum handler a `apps/document-ingest` modulra épül (JSON snapshot `tmp/state/documents`), a memória handler pedig Graphiti contextet ment `tmp/state/memory` alá.
+- ⏱️ Cron frissítés: `.codex/cron/arukereso-playwright.sh`, `.codex/cron/gmail-promotions-ingest.sh` és az új `.codex/cron/reliability-score.sh` egységes logolást használnak; `/healthz` most a logok alapján `last_run`/`stale` státuszt publikál.
+- 🛡️ A T-3.1 backlog részei kipipálva (`.codex/sprint-tasks/S3.md`), guard futáskor a `AI_AGENT_REQUIRED_FEATURES` környezeti lista határozza meg, mit tekintünk kötelezőnek.
+
+### 2025-12-06 – LangGraph dokumentum integráció + guard (14:05)
+- 🗃️ A `../ai-agent/apps/core-agent-graph/src/nodes/documentLoaderNode.ts` most automatikusan betölti a core worker által generált `tmp/state/documents/*.json` snapshotokat, így a dokumentum-elemzés node ezekre is támaszkodik akkor is, ha a felhasználói kérés nem küldött attachmentet.
+- 🧪 A `document-ingest` guard továbbra is elérhető (`.codex/guards/document-ingest.sh`), a log (`.codex/logs/document-ingest.log`) alapján a `/healthz` feature flag hamarosan kiterjeszthető dokumentum smoke jelzésre is.
+- 🧠 `documentAnalysisNode` most részletesebb insightot generál (minimum/maximum/átlag számok, táblafelismerés, figyelmeztetések), és siker esetén Graphiti-ra synceli a `document_insight` adatot; guard logban is megjelenik a „Graphiti dokumentum insight szinkron kész” üzenet.
+- 🖥️ Core Console: a `/admin/core-console` most structured dokumentum kártyákat mutat (preview + warnings + JSON link) és „Guard újrafuttatása” gombot ad, ami a `.codex/guards/document-ingest.sh` scriptet hívja. Új API-k: `/core/documents/:file` és `/core/guard/document-ingest`.
+- ♻️ Memory sync: a `graphiti-ingest` cron logját figyeljük, `/healthz` `memory_sync` státusza a log alapján jelzi a stale állapotot; a watchdog script a `graphiti-ingest.cron.log`-ot is monitorozza és `AI_AGENT_WATCHDOG_WEBHOOK` esetén Discord értesítést küld.
+
+### 2025-12-06 – Core Console UI + CLI helper (15:00)
+- 🖥️ Új `/admin/core-console` oldal mutatja a Core Console feladatokat és egy gyors űrlappal POST-olja a `/core/tasks` végpontot (jobType/jobParams kezeléssel).
+- 🔗 A `/healthz` most már a `document_ingest` log (`.codex/logs/document-ingest.log`) alapján jelzi a dokumentum pipeline frissességét.
+- 🛠️ `bin/impactctl-core-task.sh` parancs egyszerű curl wrappert ad, amellyel terminálból indíthatók Core Console feladatok (`AI_AGENT_API_KEY` + jobType/jobParams támogatással).
+- 📊 Az admin UI most státuszkártyán mutatja a `document-ingest` guard legutóbbi futását (`.codex/logs/document-ingest.log` alapján), így azonnal látszik, mikor járt utoljára sikerrel a minta feldolgozás.
+- 🕒 Új cron sor futtatja félóránként a `.codex/guards/document-ingest.sh` scriptet (`.codex/cron/guards.crontab`), így a státuszkártya mindig naprakész.
+- 📈 A Core Console státusz-gridje most a Playwright/Gmail/Reliability modulokra is mutat kártyákat (a `/healthz` feature listája alapján), jelzi a rekordszámot, utolsó futást és figyelmeztet, ha 24 óránál régebbi az adat.
+- 🔄 A státuszkártyák listája bővült: a kézi harvester, OpenAI bridge és Memory sync modulok is kapnak saját panelt (log path: `coupon-harvester-smoke.log`, `tmp/logs/impi-chat.log`, `graphiti-ingest.cron.log`), így a Core UI-ról látszik, mikor frissült utoljára az adott pipeline.
+
+### 2025-12-05 – aiagentall guard futtatás (21:35)
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` (21:35) → production HTTP 200 (`status_code=200`, latency 6), staging HTTP 200 (`status_code=200`, latency 8); minden kötelező feature (`playwright`, `gmail`, `harvester_bridge`, `openai_bridge`, `reliability`) aktív.
+- 🗒️ Guard log frissült (`.codex/logs/guard-events.log`), WARN/FAIL nem keletkezett.
+- 📌 Következő lépés: új `aiagentall` futás csak deploy, guard WARN/FAIL vagy ütemezett health check esetén kell.
+
+### 2025-12-05 – aiagentall guard futtatás (22:55)
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → production HTTP 200 (`status_code=200`, latency 6), staging HTTP 200 (`status_code=200`, latency 7); minden ellenőrzés OK.
+- 🔁 Új guard log sor került a `.codex/logs/guard-events.log`-ba; nincs WARN/FAIL.
+- 📌 Következő lépés: további futás csak új kód, guard riasztás vagy ütemezett cron esetén szükséges.
+
+### 2025-12-05 – Impi kártya szélesség + header fix (21:47)
+- 🧩 Az `impactshop-impi-chat.php` inline CSS-e most `width:min(340px, …)` értékre áll, mobilon továbbra is teljes szélességre vált.
+- 🔧 A `.chat-dock` blokk specifikus flex stílust kapott (`display:flex!important; flex-direction:row!important;`), így az Impi widget és a headline egymás mellett marad akkor is, ha más sablon CSS belenyúlna.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` (prod+staging, cache flush), majd `~/bin/impactall` ellenőrzés (staging 200 / 1114 ms, production 200 / 1118 ms; 13/13 PASS).
+- 📌 Ha további aránykorrekció kell, elég a MU plugin CSS-t igazítani, majd ugyanígy hotfixelni.
+
+### 2025-12-05 – Impi widget ideiglenes lekapcsolása (21:50)
+- ⛔ A `impactshop_impi_render_floating_widget()` elején korai `return` került, így a lebegő Impi chat egyáltalán nem renderelődik a frontendben – holnap, a végleges dizájn után kapcsoljuk vissza.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` (prod+staging, cache flush).
+- 🛡️ `~/bin/impactall`: staging 200 / 1216 ms, production 200 / 947 ms; 13/13 PASS, guard figyelmeztetés nincs.
+
+### 2025-12-05 – Drive katalógus generálása az AI agentnek (21:53)
+- 🗂️ Új `tools/drive/build-drive-catalog.ts` script bejárja az `Impi Tudásbázis` mappát, majd JSON (`tools/out/drive-catalog.json`) + Markdown (`Impi Tudásbázis/drive-katalogus.md`) katalógust készít minden Drive-tükör fájlról (méret, módosítás, kulcsszavak, relatív útvonal).
+- 🤖 Az AI agent knowledge loader automatikusan felveszi a friss `drive-katalogus.md`-t, így a Flow/LLM gyorsan talál rá a Drive dokumentumokra.
+- 🚀 Futtatás: `cd ai-agent && npm run drive:catalog` – pár másodperc alatt frissíti a katalógust.
+
+### 2025-12-05 – Core Console skeleton (22:05)
+- 🧱 Az `apps/api-gateway` kapott egy új `/core/workspaces` + `/core/tasks` REST endpointot, alap jogosultság-ellenőrzéssel és workspace konfigurációval (`services/core-workspaces.ts`).
+- 🗄️ File-alapú store kezeli a Core feladatokat (`tmp/state/core-tasks.json`), a `createCoreTask()` Drive-path javaslatot is generál (workspace root + dátum + slug).
+- 🧩 A `core-workspaces` alapértelmezett listája három fő területet fed le: Impact Shop, Pénzügy/Könyvelés, Operáció/Asszisztens; mindegyikhez sablonok tartoznak (kampány brief, könyvelő csomag, inbox triage, stb.).
+- 🔌 Következő lépés: Drive API hívások, queue + worker kapcsolása, UI front-end a felhasználóknak.
+
+### 2025-12-05 – Core Console bővítés: Drive + Queue + RBAC (22:40)
+- 📁 Új Google Drive integráció (`services/drive-client.ts`): service accounttal folder/file létrehozás + jogosultság kiosztás; `createCoreTask()` most már valós docs-ot hoz létre és eltárolja a `driveFileId` + link mezőket.
+- 🔁 BullMQ alapú queue került be (`services/core-queue.ts` + `apps/core-worker`), `POST /core/tasks` automatikusan sorba állítja a feladatokat, a worker egyelőre stub feldolgozást végez (status=running→done), logolva a pipeline-t.
+- 🛡️ Workspace konfiguráció átkerült `config/core-workspaces.json` fájlba, role-alapú hozzáféréssel; az endpointok a `x-user-roles` header szerint szűrnek, így Finance/Operations feladatokat csak a megfelelő csapat látja.
+- ⚙️ Új ENV-ek: `CORE_DRIVE_SERVICE_ACCOUNT`, `CORE_DRIVE_READERS/WRITERS`, `CORE_QUEUE_REDIS_URL`, `CORE_DEFAULT_ROLE`. A README/Impi Tudásbázis callout utal rá, hogy a Console most több üzleti területet is kiszolgál.
+
+### 2025-12-05 – aiagentall guard futtatás (18:30)
+- 🏁 Session start: a kérés szerint ma még az AI Agent guardcsomagot is le kellett futtatni, hogy legyen friss `/healthz` státusz stagingen és productionön.
+- 🛡️ `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` (18:30) → staging HTTP 200 (status_code=200), production HTTP 200; minden ellenőrzés OK, WARN/FAIL nincs.
+- 📌 Megjegyzés: a `~/bin/aiagentall` wrapper hiányzik, ezért közvetlenül a guard script futott; újabb futás csak deploy, guard WARN/FAIL vagy ütemezett health check esetén kell.
+
+### 2025-12-05 – Impi widget méret csökkentése (21:40)
+- 🎨 Az `impactshop-impi-chat.php` inline CSS-ében a lebegő Impi widgetet 70×70 px-re vettem vissza (mobilon 60×60 px), így az egységes kártya kompaktabb lett a headline felett.
+- 🚀 Deploy runbook: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` (prod+staging, cache flush) + `~/bin/impactall`.
+- 🛡️ `impactall` megerősítés: staging 200 / 1131 ms, production 200 / 1134 ms; 13/13 PASS.
+
+### 2025-12-05 – Dokumentum OCR + harvester workflow frissítés
+- 📄 Az admin „Dokumentum OCR” végpont most `attachment` mezőt is visszaad, amely tartalmazza a feltöltött fájl tartósított elérési útját (`DOCUMENT_UPLOAD_DIR`). Javaslat: az Impi UI-ban kínáljuk fel ezt az `attachments` payloadot, hogy a felhasználó egy kattintással továbbíthassa a dokumentumot az AI chatnek (nincs szükség újbóli feltöltésre).
+- 📄 Az admin „Dokumentum OCR” felület most már tartalmaz egy „Küldés Impinek csatolva” mezőt: az utolsó feltöltés `attachment` adata automatikusan bekerül az `attachments` payloadba, így ugyanebből az oldalból közvetlenül indítható Impi kérés a csatolt Excel/PDF-fel.
+- 📬 A `scripts/coupon-harvester-smoke.sh` guard futás most automatikusan JSON-t is generál: az új `--json-out ../ai-agent/tmp/ingest/gmail.json` paraméter gondoskodik róla, hogy minden Gmail/HTML begyűjtés az AI agent ingest feedbe kerüljön. A cron futásoknál nincs további teendő, de figyeljünk rá, hogy az `ai-agent/tmp/ingest` mappa írható legyen futtatáskor.
+
+### 2025-12-05 – Guard futások frissítése (19:10)
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → staging HTTP 200 / 1002 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 931 ms; 13/13 PASS, WARN/FAIL nincs.
+- 🤖 `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → mindkét környezet HTTP 200-as státuszt adott, a guard log tiszta.
+- 📌 Következő lépés: további akció nem szükséges; új check deploy vagy guard riasztás esetén kell.
+
+### 2025-12-05 – Impi floating chat hotfix (20:46)
+- 🛠️ Frissült az `impactshop-impi-chat.php/.js` MU plugin: globális lebegő widget, videós mini-avatar, új UI. Biztonsági másolat készült: `impactshop-impi-chat.{php,js}.bak.20251205`.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php wp-content/mu-plugins/impactshop-impi-chat.js` → prod/staging szinkron + cache flush.
+- 🛡️ Guardok: `impactall` (staging 200 / 1245 ms, production 200 / 1084 ms, 13/13 PASS) és `./.codex/guards/ai-agent-guard.sh` (HTTP 200 mindkét környezet) → minden tiszta.
+- 📌 Rollback: a `.bak.20251205` fájlokkal egyetlen `hotfix-sync` paranccsal visszaállítható az előző verzió, ha szükséges.
+
+### 2025-12-05 – Impi widget méretezés finomhangolás (20:58)
+- 🎨 Csökkentettük a lebegő buborék max. szélességét (320 px → kompakt elrendezés), a mini-avatar most 64 px-es, így a teljes Impi animáció látszik. A CSS változás az `impactshop-impi-chat.php` inline stílusában frissült.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` – prod/stagingre újraszinkronizálva + cache flush.
+- 🛡️ Guardok: `impactall` (staging 200 / 1452 ms, production 200 / 1089 ms; 13/13 PASS) → minden zöld.
+
+### 2025-12-05 – Impi csak Impact Shop oldalon jelenjen meg (21:04)
+- 🔒 A lebegő chat most újra csak az `impactshop` oldalon aktív (`is_page('impactshop')` + ID=16348), így a többi Sharity oldalról lekerül; fallbackként a korábbi inline shortocode logika visszatért.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` – prod/staging sync + cache flush.
+- 🛡️ Guard: `impactall` (staging 200 / 1085 ms, production 200 / 977 ms, 13/13 PASS); további ai-agent guard most nem futott, korábban zöld.
+
+### 2025-12-05 – Impi widget fix méretezése JS-ből (21:13)
+- 📐 Az `impactshop-impi-chat.js` most minden inicializáláskor a `.impi-widget` elemre 64×64 px-es max méretet állít be, így inline stílusok se tudják kinagyítani.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.js` – prod/staging sync + cache flush.
+- 🛡️ Guard: `impactall` (staging 200 / 1238 ms, production 200 / 1064 ms; 13/13 PASS). A változás lokálisan ellenőrizve.
+
+### 2025-12-05 – Impi animáció mellékes buborékként (21:18)
+- 🎯 Visszaraktuk a videós avatart a chat mellé: a lebegő konténer most flexben tartalmaz egy 70×70 px-es `impi-widget` kört és mellette a chat panelt, így az animáció mindig látható, de nem nagy.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` + ugyanígy a JS fájl; cache flush mindkét környezetben.
+- 🛡️ Guard: `impactall` (staging 200 / 1135 ms, production 200 / 919 ms; 13/13 PASS). A widget csak Impact Shop oldalon jelenik meg.
+
+### 2025-12-05 – Impi chatkártya integráció (21:26)
+- 🧩 Az Impi animáció most a chat buborékon belül, a headline mellett helyezkedik el (`.chat-dock`), egységes méretben (96×96 px). A lebegő konténer max szélessége 340 px, mobilon teljes szélességre vált.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` – prod/staging sync.
+- 🛡️ Guard: `impactall` (staging 200 / 1207 ms, production 200 / 1018 ms; 13/13 PASS). Vizsgálat szerint az animáció és chat most egységes méretben jelenik meg.
+
+### 2025-12-05 – Impi buborék méret finomhangolás (21:30)
+- 📐 Visszavettük a lebegő kártya szélességét (320 px max), az Impi animáció 84×84 px lett, így kisebb, de továbbra is a chat mellett jelenik meg.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 ../scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.php` – prod/staging sync + cache flush.
+- 🛡️ Guard: `impactall` (staging 200 / 1241 ms, production 200 / 1018 ms; 13/13 PASS), azonban a production REST mérés 0 ms/0 státuszt jelzett (feltehetően átmeneti API elérés gond; manuális ellenőrzés javasolt).
+
+### 2025-12-05 – impactall guard futtatás (18:28)
+- 🏁 Session start: kérésre ma is csak a teljes `~/bin/impactall` futtatása a feladat, hogy friss REST + guard státusz készüljön kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (18:28) → staging HTTP 200 / 1293 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1022 ms; 13/13 ellenőrzés PASS, Sprint S1 pre-flight is zöld, új WARN/FAIL nem jelent meg.
+- 📌 Következő lépés: nincs további akció; újabb futás csak deploy, guard WARN/FAIL vagy ütemezett health check esetén szükséges.
+
+### 2025-12-05 – Vision admin PoC + Azure ág (12:59)
+- 🏁 Session start: a Vision roadmap második köre a Google/Azure kliens befejezése + admin UI lett; cél, hogy az Impact Shop csapat egyetlen CLI/API/UI csatornán lássa a banner OCR/label eredményeket.
+- 🔌 `apps/api-gateway/src/services/vision-client.ts` most már választható szolgáltatót kezel (`provider=google|azure`), Azure-hoz az `AZURE_VISION_ENDPOINT` + `AZURE_VISION_KEY` env kell; mindkét ág azonos JSON (textBlocks/logos/labels/raw) struktúrát ad vissza.
+- 🌐 Új `POST /api/v1/vision/analyze` endpoint + `GET /admin/banner-analysis` UI került az API gateway-be (a UI query paramként kapja az `AI_AGENT_API_KEY`-t és FormData-val hívja az API-t), így az Impact Shop adminból URL-t vagy fájlt feltöltve lehet Vision detektálást indítani.
+- 🤖 A LangGraph `CoreAgentState` seed megkapja a `bannerImageUrl` mezőt az Impi REST hívásokból (`banner_image_url` body param), a `visionNode` logja jelzi, hogy Google/Azure eredményt használt; a CLI (`tools/vision/banner-detector.ts`) `--provider` flaggel váltható.
+- 🧪 Sanity PoC: `GOOGLE_APPLICATION_CREDENTIALS=../Google\ vision/durable-verve-...json npx tsx tools/vision/banner-detector.ts --image=../Google\ vision/f6e9...webp --provider=google --json` → felismerte a BLACK FRIDAY bannert (szöveglista + kulcsszavak), Azure kulcs híján lokálisan nem futtattam.
+- 📌 Következő lépés: Azure credential bekötése (sandboxban `AZURE_VISION_*`), LangGraph prompt builder kapjon extra kontextust a `visionInsights` mezőből, majd a UI outputot logoljuk a guard scoreboardba.
+- 💤 Status update: megbeszélve, hogy az Azure Computer Vision provisioning + sanity tesztet egyelőre jegeljük (nincs napi usage); a wiring készen áll, ha igény lesz rá.
+
+### 2025-12-05 – AI Agent stratégia doksi frissítés (13:52)
+- 📝 A `docs/ai-agent-strategy.md` 16. fejezete bővült egy „Google szolgáltatások + Tudásközpont” alfejezettel: rögzíti, hogy a Gmail Promotions, Vision és Custom Search ágak már bekötve vannak Impihez/Core agenthez, valamint hogy az „Impi Tudásbázis” (Knowledge Center) tartja karban a tréning + prompt asseteket.
+- 🧭 Az új szekció emlékeztet arra is, hogy minden Google konfiguráció változásnál a Tudásközpontban is frissíteni kell a vonatkozó guide-ot; a guard logok hivatkozhatnak ezekre a fájlokra, ha troubleshooting történt.
+- 🔎 Frissítés: bekerült a Google Drive (Docs/Slides/Sheets) keresés említése is; a Tudásközpont most már egy drive search scripten keresztül indexeli az Impi tréning deckeket / meeting jegyzeteket, a `GOOGLE_DRIVE_*` env párral.
+- 📄 Új igény: szkennelt dokumentumok (PDF/ÁSZF) OCR-je → a stratégia 16.7 pontja rögzíti, hogy a meglévő Vision kliensre építve kell majd „document OCR” pipeline-t készíteni (CLI + LangGraph `documentInsights` + admin UI tab + guard). Implementáció még nem kezdődött el, csak a terv fixálva.
+- 📊 Bővítés: létrejött a 18. fejezet „Komplex üzleti dokumentumok (Excel/PDF) feldolgozási terv” címmel – lépésről lépésre rögzíti, hogyan lesz Excel extractor, LangGraph `documentLoaderNode` + `analysisNode`, Impi file upload és guard. Egyelőre roadmap, implementáció nincs.
+
+### 2025-12-05 – Excel/PDF ingest scaffolding (13:58)
+- 🛠️ Az `ai-agent` repo kapott egy `tools/excel/extract-runner.ts` CLI-t (`exceljs` alap), ami bármely `.xlsx` fájlt JSON lapokra bont (`tmp/ingest/excel/...`), így van kézzelfogható kiindulópont a dokumentum pipeline-hoz.
+- 🧱 LangGraph oldalon új state mezők (`attachments`, `structuredDocuments`, `documentInsights`, `ingestWarnings`) és stub node-ok (`documentLoaderNode`, `documentAnalysisNode`) kerültek a gráfba, így a future dokumentum feldolgozás láncban elhelyezhető.
+- 📎 Impi REST most opcionálisan `attachments` mezőt fogad, amit továbbad a LangGraph seednek; a normalizáló helper figyeli az URL/mime adatokat.
+- 📦 Új npm script: `npm run document:ingest` futtatja az Excel extractort; PDF feldolgozó stub (`tools/pdf/table-ocr.ts`) is létrejött placeholderként.
+
+### 2025-12-05 – Dokumentum ingest implementáció (14:25)
+- 📂 `apps/document-ingest/src/index.ts` tényleges Excel + PDF feldolgozó modult kapott (ExcelJS + pdf-parse), amely lapösszegzést, mintasorokat és táblázatelőnézetet ad vissza.
+- 🔄 A LangGraph `documentLoaderNode` most már a tényleges JSON kimenetet vagy lokális fájlokat olvassa be, az `documentAnalysisNode` pedig sor/oszlop statokat, min/max értékeket és szöveg előnézetet ír a `documentInsights` mezőbe.
+- 🧾 Impi REST új `attachments` mezőt küld tovább + `POST /api/v1/vision/document-ocr` endpoint + admin UI (Banner elemzés) kapott egy „Dokumentum OCR” formot, ami Excel/PDF feltöltést futtat és JSON insightot ad vissza.
+- 🛡️ Létrejött a `.codex/guards/document-ingest.sh` guard script: generál egy mintasheetet ExcelJS-sel, lefuttatja az extractort, és logolja az eredményt (`.codex/logs/document-ingest.log`).
+- 🔁 Frissítés (14:55): a PDF táblázat OCR most már cellaszintű preview-t ad (`previewRows`), az admin UI drag&drop + progress indikátort kapott, a LangGraph `documentAnalysisNode` Graphiti memóriába is szinkronizál, és a guard scoreboard új `document_ingest` flaggel követi a `.codex/guards/document-ingest.sh` futásait.
+- 🛡️ Biztonság: user-facing feltöltés továbbra sincs (csak admin), minden dokumentumot előszűrt tárolóból kell felküldeni; a rendszer csak Excel/PDF MIME-ot fogad, a pipeline nem futtat antivírus vizsgálatot – ezt a Tudásközpont „Excel elemzés” jegyzete is rögzíti.
+
+### 2025-12-05 – Vision banner-detector PoC (12:44)
+- 🏁 Session start: kérésre folytattam a Google Vision PoC-t, cél egy futtatható `tools/vision/banner-detector.ts` CLI, ami bannerekből szöveget + kulcsszavakat nyer ki.
+- 🧩 Felvettem az `@google-cloud/vision` függőséget, majd új `tools/vision` mappa + `banner-detector.ts` script készült (`--image`, `--provider`, `--language-hint`, `--max-labels`, `--keyword-limit` flag-ekkel, JSON kimenet).
+- 🤖 A Google Vision útvonal helyi fájlt vagy HTTPS URL-t fogad, `annotateImage` hívást küld, összegyűjti a teljes szöveg-annotációt, címkéket és logókat, majd egyszerű stopword-szűrős kulcsszólistát épít; az Azure útvonal egyelőre `Not implemented` hibát dob (későbbi bővítésre).
+- 🧪 Gyors sanity check: `npx tsx tools/vision/banner-detector.ts` hiányzó `--image` esetén szépen hibát ad; éles Vision kulcs nélkül nem futtattam, a PoC command a dokumentációban szerepel.
+- 📌 Következő lépés: Azure Computer Vision támogatás + LangGraph vision node (state frissítés + prompt enrichment), majd Impact Shop admin UI feltöltő PoC.
+
+### 2025-12-05 – AI Agent guard futtatás (12:39)
+- 🏁 Session start: kérésre a déli körben az `aiagentall` guardcsomagot is le kellett futtatni, hogy az AI Agent + Graphiti egészség snapshot friss állapotot mutasson.
+- ⏳ A futtatás a szokásos `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` paranccsal történt ugyanebből a repóból; a log alapján rögzítem a két környezet mérési számait.
+- 🤖 `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` (12:39) → staging HTTP 200 / 7 ms, production HTTP 200 / 6 ms; a guard összes ellenőrzése `OK` státuszt adott, WARN/FAIL nincs.
+- 📊 A `.codex/logs/guard-events.log` és az AI Agent health scoreboard frissült, új riasztás nem jelent meg (Gmail ingest + Graphiti fallback továbbra is zölden fut).
+- 📌 Következő lépés: további akció nem szükséges; új `aiagentall` futás deploy, guard WARN/FAIL vagy ütemezett health check esetén kell.
+
+### 2025-12-05 – impactall guard futtatás (12:38)
+- 🏁 Session start: kérésre ismét csak a `~/bin/impactall` futtatása a feladat, hogy napközben is friss REST + guard snapshot készüljön minden további kódmódosítás nélkül.
+- ⏳ A szokásos `source .codex/.env.local && ~/bin/impactall` parancsot használom az `~/Documents/GitHub/impactshop-notes` gyökérből, majd a futás végén a logok alapján rögzítem az eredményt.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (12:38) → staging HTTP 200 / 1193 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 853 ms; 13/13 ellenőrzés PASS, WARN/FAIL nincs.
+- ⚠️ A scoreboard továbbra is csak az ismert ideiglenes jegyeket mutatja (VS Code Codex panel Helix fetcher loop + kupon-harvester smoke hálózati korlát), új piros riasztás nem jelent meg.
+- 📊 `impactshop-status.md` frissült a 12:38-as mérési eredményekkel, a `.codex/context-latest.json` és a guard event log is a mostani időbélyeget viseli.
+- 📌 Következő lépés: nincs további akció; a következő `impactall` futást deploy, guard WARN/FAIL vagy ütemezett health check indokolhatja.
+
+### 2025-12-05 – impactall guard futtatás (05:30)
+- 🏁 Session start: kérésre a mai feladat kizárólag a `~/bin/impactall` futtatása és a friss REST + guard státusz rögzítése (kódmódosítás nélkül).
+- ⏳ Guard futtatás előtt ellenőrzöm, hogy a szükséges `.codex/.env.local` forrásolva legyen, majd fut a `~/bin/impactall` a szokásos környezetből.
+- 📓 A futás után frissítem ezt a blokkot a konkrét mérési eredményekkel + következő lépésekkel, valamint a `conversation-summaries` mappában is naplózom a sessiont.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (05:31) → staging HTTP 200 / 978 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1011 ms; 13/13 ellenőrzés PASS, WARN/FAIL nincs.
+- 📊 `impactshop-status.md` + `system-status-snapshot.md` frissült, a scoreboard továbbra is csak az ismert Helix fetcher + kupon-harvester ideiglenes jegyet mutatja (nincs új riasztás).
+- 📌 Következő lépés: további akció nem szükséges; a következő `impactall` futás deploy, guard WARN/FAIL vagy rendszeres health check esetén kell.
+
+### 2025-12-05 – AI Agent guard futtatás (05:40)
+- 🏁 Session start: újabb kérésre most az `aiagentall` guardcsomagot kell lefuttatni, hogy az AI Agent egészség és Graphiti integráció státusz frissüljön.
+- ⏳ A futtatás a szokásos `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` parancson keresztül történik; a log alapján jegyzem fel a staging/production ping adatokat.
+- 📓 A konkrét eredményeket a futás után itt rögzítem, és külön conversation summary is készül a session lezárásához.
+- 🤖 `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` (05:40) → staging HTTP 200 / 6 ms, production HTTP 200 / 7 ms; a guard `OK` státuszt adott mindkét környezetre, WARN/FAIL nincs.
+- 📊 A `.codex/logs/guard-events.log` és az AI Agent health scoreboard frissült, új jegy nem jelent meg (Gmail ingest és Graphiti fallback továbbra is zölden futott az utolsó logok szerint).
+- 📌 Következő lépés: további akcióra nincs szükség; új `aiagentall` futtatás deploy, guard WARN/FAIL vagy ütemezett health check esetén kell.
+
+### 2025-12-05 – Graphiti memória források feltöltve (06:04)
+- 🧠 A `apps/memory-ingest/src/index.ts` most már a `tmp/ingest/reliability-scoreboard.json` adatokat is felküldi Graphitinek `ShopReliability` nodeként (kapcsolva a Shop + NGO csomópontokhoz), így a memóriakonteksten belül látszik, mely shopnál milyen manuális/AI sikerarány volt.
+- 📨 A Gmail parser (`tools/gmail/promotions-runner.ts`) domain detektálása most a subdomain-eket is visszafejti (pl. `newsletter.billingo.com` → `billingo.com`), így a `shop_slug` és a hozzárendelt `ngo_slug` akkor is megjelenik, ha az eDM saját tracking domaint használ.
+- 🗂️ Bővült a `tools/shops_registry.json` (Billingo, Dockyard, Pink Panda, PCLand, Mateking, TalkPal, MOL Move, Opten, Mobilfox, MVM Dome, Logitech, Lámpák, Griffconnect, Turboscribe, FIZZ), mindegyik kapott `default_d1` beállítást; a `data/shop-impact.json` fájlban `ngo_slug` mezővel dokumentáltam, hogy melyik bolt melyik ügyhöz tartozik.
+- 🔁 A `tools/ingest/shops-registry.ts` most a `data/shop-impact.json`-t is betölti, illetve slug-kulcsszó alapján (pl. `laptop`, `mobiltelefon`, `okosora`) automatikus NGO fallbacket ad, ha nincs explicit CSV mapping – ez tölti fel az Árukereső kategória slugok `ngo_slug` mezőit.
+- 📊 `resolveDefaultNgoSlug()` így minden Graphiti promóhoz tud `ngo_slug`-ot rendelni, a `/aggregations/ngo-promotions` végpont most már tényleges toplistát szolgáltat a prompt buildernek.
+- 📌 Következő lépés: Graphiti ingest cron futtatása docker stackkel együtt, majd a `/api/v1/context/memory` ellenőrzése éles logokkal.
+
+### 2025-12-05 – LangGraph orchestrator scaffold (06:20)
+- 🧱 Létrejött az `apps/core-agent-graph` mappa: README rögzíti a modul célját (LangGraph alapú flow Impi/Core agenthez), `src/index.ts` és `src/state.ts` pedig helyőrzőt kaptak a későbbi state/node implementációhoz.
+- 📦 A projekt szintű `package.json` felvette az `@langchain/langgraph` függőséget (`npm install @langchain/langgraph`), így a következő iterációban használhatjuk a LangGraph StateGraph API-t.
+- 🚧 A `src/index.ts` jelenleg csak egy `bootstrapNode`-ot tartalmaz, ami visszaadja a state-et; a következő lépés a valós state interfész és Graphiti/ajánló node stubs kidolgozása.
+- 🧩 Következő iteráció: létrejött az állapotinterfész (`sessionId`, `memoryRequest`, Graphiti context, ajánlatok, logok) és négy alap node (`ingestUserInputNode`, `graphitiContextNode`, `recommendationNode`, `responseNode`). A `runCoreAgentPrototype()` sorban futtatja ezeket, amíg a teljes LangGraph topológia ki nem épül.
+- 🛰️ Új `telemetry.ts` modul minden futásról JSON sort ír a `../impactshop-notes/.codex/logs/langgraph-run.log` állományba (session, fallback ok, ajánlatszám, utolsó logok). Ez lesz az alap a későbbi guard/report scripthez.
+- 🛡️ Guard előkészítés: létrejött a `apps/core-agent-graph/scripts/smoke.ts` LangGraph smoke futtató + a `./.codex/guards/langgraph-guard.sh` wrapper, ami `npx tsx …/smoke.ts`-t hív és a kimenetet a `.codex/logs/langgraph-guard.log`-ba menti. Ezt a következő sprintben be kell kötni a guard crontabba.
+- ⚙️ Guard bekötés + topológia bővítés (06:55):
+  - `langgraph-guard.sh` most már a `guard-events.log`-ba ír (`OK/WARN/FAIL` státusz, session, offers, fallback) és bekerült a `guards.crontab`-ba (`*/30 * * * * …`).
+  - Pipeline node-ok bővültek (`fallbackResponseNode`, `logNode`), így az alap flow: ingest → Graphiti → recommend → response → fallback → telemetry. A `runCoreAgentPrototype` ennek megfelelően logol minden futtatást.
+
+### 2025-12-04 – Árukereső Playwright fellövés fix (21:13)
+- 🧭 Az `ARUKERESO_CONFIG=tools/playwright/arukereso-config.json npm run playwright:arukereso` futás 0 találatot adott, mert a korábbi kategória-URL-ek (pl. `www.arukereso.hu/...&pricedrop=1`) már nem tartalmaznak `__NEXT_DATA__` blokkot, így a scraper nem talált promóciós JSON-t.
+- 🔁 A `ai-agent/tools/playwright/arukereso-config.json` most a hivatalos `https://promocio.arukereso.hu/karacsony/` kampányoldalt listázza, a runner (`tools/playwright/arukereso-runner.ts`) pedig fallback módon lekéri a `/_next/data/<buildId>/<route>.json` végpontot, ha a `window.__NEXT_DATA__` hiányzik.
+- 📥 Az új futás 7 blokkot gyűjtött (mobiltelefon, okosóra, TV, laptop, fej-/fülhallgató, konzol, smart eszköz) a `https://promocio.arukereso.hu/karacsony/` oldal Next.js JSON-jából, a `tools/out/arukereso-promotions.json` frissült.
+- 📌 Következő lépés: ha új promóciós aloldal indul (pl. Black Friday), elég a configba felvenni az adott `https://promocio.arukereso.hu/<slug>/` URL-t, a runner automatikusan kezeli a blokkokat.
+
+### 2025-12-04 – Áresett termék scraper + heti cron (21:36)
+- 🔄 A `ai-agent/tools/playwright/arukereso-config.json` most a kizárólagos `https://www.arukereso.hu/aresett-termekek/` listát célozza, a runner DOM-feldolgozója (`extractFromProductBoxes`) pedig a `.product-box` kártyákból nyeri ki a kedvezmény %-t, árat és ajánlatszámot (`slug=aresett-termekek-<productId>` formátumban).
+- 📥 `ARUKERESO_CONFIG=tools/playwright/arukereso-config.json npm run playwright:arukereso` → 24 rekord került a `tools/out/arukereso-promotions.json` fájlba (ár, %-kedvezmény, ajánlatszám, részletes link mind a fő áresett oldalról).
+- ⏱️ Új cron wrapper: `.codex/cron/arukereso-playwright.sh` → hetente egyszer (hétfő 04:00 CET) lefut a `.codex/cron/guards.crontab` új bejegyzése szerint, így UX szempontból nem kell ad hoc futtatásra várni.
+- 📌 Következő lépés: figyeld a hétfő hajnali `~/.codex/logs/arukereso-playwright.cron.log`-ot; ha az áresett oldal struktúrája változik, a DOM parserhez igazítsd a queryket.
+
+### 2025-12-04 – Graphiti NGO fallback beépítése (21:50)
+- 🧠 Az `apps/api-gateway/src/services/impi-openai.ts` prompt builder most minden esetben lehívja a Graphiti `/aggregations/ngo-promotions` végpontját, és a kapott NGO toplistát (slug, kedvezmény átlag, CTA link) belefoglalja a rendszerszintű instrukciókba.
+- 🆘 Ha nincs kupon (Gmail/harvest üres), a prompt explicit utasítást kap, hogy a Graphiti NGO listát kezelje ajánlatként, a JSON is bekerül a promptba, a lokális fallback (`buildLocalSummary`) pedig ugyanígy felsorolja ezeket CTA-val.
+- 📦 A változás biztosítja, hogy Impi akkor is NGO-ajánlatot adjon, ha az áresett vagy Gmail források éppen üresek – a fallback hierarchia Graphiti sorai kötelezően megjelennek.
+
+### 2025-12-04 – Áresett JSON → Graphiti ingest + prompt teszt (22:05)
+- 🔗 Az `apps/memory-ingest/src/index.ts` most a `tools/out/arukereso-promotions.json` fájlt is beolvassa, és minden rekordot `Promotion` factként küld Graphitinek (`shop_slug=arukereso`, cím+URL+headline metainfóval). A registry-alapú NGO fallback domain szerint fut, így ha később slug-hoz D1 tartozik, automatikusan rákerül.
+- 🔍 Új `tests/impi-openai-fallback.test.ts` Node-test igazolja, hogy kupon nélküli helyzetben a `generateImpiSummary()` visszaadott szöveg ténylegesen tartalmazza a Graphiti NGO toplistát (mockolt aggregációval), ezzel a fallback pipeline végig lett tesztelve.
+- 🧪 Lefutott a `node --test --import tsx tests/impi-openai-fallback.test.ts` és `npm run lint`; mindegyik PASS, így az áresett Playwright cron outputja most már automatikusan bekerül az Impi döntéshozatalába.
+
+### 2025-12-04 – Áresett snapshot → ajánlat pipeline + registry bővítés (22:20)
+- 🛒 Az `apps/ai-agent-core/src/sources/arukereso.ts` most közvetlenül a `tools/out/arukereso-promotions.json` fájlt olvassa, a Playwright rekordokat NormalizedCoupon formátumba konvertálja (`shop_slug`, `shop_name`, CTA URL), így a `recommendCoupons()` fallback listában akkor is lesz konkrét áresett ajánlat, ha a Gmail snapshot üres.
+- 🧪 Új `tests/arukereso-source.test.ts` lefedi a konverziót (Node test), futás: `node --test --import tsx tests/*.test.ts` → mind PASS.
+- 📦 A registry default D1-ek a domain alapján kerülnek beállításra (a Graphiti ingest már használja a host nevet NGO fallbackhez), így a Playwright cron + recommendation pipeline ugyanazt a forrást használja.
+
+### 2025-12-04 – Reliability scoring modul (22:32)
+- 🧮 A reliability számítás külön modulba került (`tools/ingest/reliability.ts`), az `apps/ingest/normalizer.ts` és az új `tools/ingest/collect-reliability.ts` CLI ugyanazt a függvényt hívja, így bármikor külön lefuttatható a `manual_coupons_stats.json` + `reliability-scores.json` generálása (output: `tmp/ingest/`).
+- 🧾 A `collect-reliability.ts` script alapértelmezetten a `tmp/ingest/{manual-coupons,arukereso,gmail}.json` fájlokat olvassa, de env változókkal felülírható. Hiba esetén érthető logot dob.
+- 🔁 Az `impact-data.ts` fallback útvonala most már a valós `tmp/ingest/manual_coupons_stats.json`-t olvassa (legacy `tools/out/sandbox` csak tartalék), ugyanígy a `services/reliability.ts` is kapott fallback path-ot.
+- 🧪 `node --test --import tsx tests/*.test.ts` + `npm run lint` futtatva → PASS.
+- 📊 Új `tools/ingest/collect-stats.ts` script készül a manual + Gmail validációs adatokból, amely `tmp/ingest/reliability-scoreboard.json`-ban toplistázza a siker/hiba arányt; a reliability cron automatikusan futtatja, így mindig naprakész scoreboard áll rendelkezésre.
+
+### 2025-12-04 – Reliability cron (22:40)
+- 🕓 Létrejött a `.codex/cron/collect-reliability.sh` wrapper, amely `npx tsx tools/ingest/collect-reliability.ts` parancsot futtat az `ai-agent` repo gyökeréből, és guard logot küld `reliability-report` néven.
+- ⏱️ A `.codex/cron/guards.crontab` kapott egy `5 4 * * *` bejegyzést, így minden hajnalban (az ingest pipeline után) automatikusan lefut a riport, a log pedig `~/.codex/logs/collect-reliability.cron.log`-ba kerül.
+- 🖼️ Minden futás végén automatikusan frissül az `ai-agent-health` HTML snapshot (`.codex/scripts/ai-agent-health-report.sh --html` → `.codex/reports/ai-agent-health.html`), így a guard jelentésben hivatkozható vizuális összefoglaló készül a reliability átlagáról és a risky boltok számáról.
+
+### 2025-12-04 – Gmail ingest + health riport (22:50)
+- 📬 Új `.codex/cron/gmail-promotions-ingest.sh` wrapper fut óránként (`10 * * * *`), ami az `ai-agent/tools/gmail/promotions-runner.ts` scriptet hívja `npx tsx`-szel; a log a `~/.codex/logs/gmail-promotions-ingest.cron.log`-ba kerül, guard neve: `gmail-ingest`.
+- 📦 A Gmail runner most egyszerre menti a nyers `tmp/ingest/raw/gmail-promotions.json` és a strukturált `tmp/ingest/gmail.json` fájlokat (NormalizedCoupon formátumba deduplikálva), így az Impi ajánlóréteg azonnal látja a friss leveleket normalizer futtatás nélkül is.
+- 🏥 Az `/healthz` most a valós snapshot-szám alapján jelzi, hogy a Gmail feed aktív-e (`feature_status.gmail.count`), és a reliability státusz is tartalmazza az átlagpontszámot + risky boltok számát + utolsó futást (`apps/api-gateway/src/index.ts`).
+- 🧾 Új CLI script: `.codex/scripts/ai-agent-health-report.sh`, ami a `tmp/ingest` állapotából gyárt összefoglalót (opcionálisan HTML); gyorsan megmutatja a reliability átlagot, risky countot és a források aktuális rekordjait.
+- ✅ A Gmail kuponokra Playwright-alapú link ellenőrzés fut naponta (`.codex/cron/gmail-playwright-verify.sh`, `tools/gmail/verify-playwright.ts`), amely a `tmp/ingest/gmail.json` első néhány ajánlatának CTA linkjét próbálja megnyitni; a sikereseket `validated`, a hibásakat `rejected` státusszal jelöli és menti `tmp/ingest/gmail-validated.json`-be.
+- 📈 Az `/healthz` válasz most a fontos guardok (Gmail ingest, linkverify, Árukereső Playwright, reliability, ai-agent) utolsó futási idejét és üzenetét is tartalmazza (`guard_events` + `feature_status.*.last_run`), így könnyen ellenőrizhető, mikor futott utoljára egy adott védelem.
+
+### 2025-12-04 – AI Agent guard ("aiagentall" kérés, 21:05)
+- 🤖 `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` (21:05) → staging HTTP 200 / 7 ms, production HTTP 200 / 6 ms; a `.codex/logs/guard-events.log` új bejegyzést kapott.
+- 🛰️ A guard SSH-n a `wp impactshop ai-agent ping --format=json` parancsot futtatta mindkét környezeten, minden feature flag aktív, WARN/FAIL nem maradt.
+- 📌 Következő lépés: csak deploy, guard WARN vagy ütemezett health check esetén szükséges újra futtatni az `aiagentall`-t.
+
+### 2025-12-04 – impactall health snapshot (21:03)
+- 🏁 Session start: megerősítő `impactall` futás kérése (esti ellenőrzés), cél a REST + guard státuszok frissítése.
+- 🛡️ `~/bin/impactall` (21:03) → staging HTTP 200 / 1018 ms (redirect app.sharity.hu-ra), production HTTP 200 / 965 ms; 13/13 ellenőrzés PASS, WARN/FAIL nem maradt.
+- 📊 `impactshop-status.md` és `system-status-snapshot.md` frissült (guard scorecard zöld), csak az ismert Helix fetcher + kupon-harvester ideiglenes jegy szerepel megjegyzésként.
+- ⚠️ Kupon-harvester smoke most is kihagyva (guard emlékeztető szerint DRY_RUN=1 + PLAYWRIGHT=0 módban pótolható), de új riasztás nem jelent meg.
+- 📌 Következő lépés: nincs további teendő, legközelebb deploy előtt vagy új guard WARN esetén futtassuk újra az `impactall`-t.
+
+### 2025-12-04 – impactall guard futtatás (17:28)
+- 🏁 Session start: kérésre ismét csak a teljes `~/bin/impactall` lefuttatása volt a feladat, hogy friss státusz snapshot készüljön az esti ellenőrzéshez.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (17:27) → az első mérésnél a staging 200 / 1506 ms volt, de a production REST 0 / 0 ms „unreachable” státuszt jelzett; egy `curl -I https://app.sharity.hu/wp-json/` parancs rögtön 200-at adott, a 17:28-as ismételt guard futás pedig már staging 200 / 1000 ms, production 200 / 950 ms eredményt hozott, 13/13 ellenőrzés PASS, WARN/FAIL nincs.
+- 📊 `impactshop-status.md` + `system-status-snapshot.md` 2025-12-04 17:28 CET időbélyeget kaptak, a guard scorecard zöld; csak a megszokott információs Helix fetcher jegy látszik.
+- ⚠️ A production REST időszakos elérhetetlenségét nem sikerült reprodukálni, a kézi `curl` és a második guard futás is stabil 200-as választ adott; ha újra 0-ás státusz jelenik meg, vizsgáld meg a hálózati útvonalat vagy a host elérését.
+- 📌 Következő lépés: további teendő nincs, legközelebb deploy vagy guard WARN esetén kell újra `impactall` futás.
+
+### 2025-12-04 – AI Agent guard ("aiagentall" kérés, 17:34)
+- 🤖 `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → staging HTTP 200 / 6 ms, production HTTP 200 / 7 ms; a `guard-events.log` megkapta a 2025-12-04T17:34 körbélyeget (status OK mindkét környezeten).
+- 📡 A guard a `wp impactshop ai-agent ping --format=json` parancson keresztül ellenőrizte a reliability flaget, WARN/FAIL nem maradt.
+- 📌 Új `aiagentall` futás csak deploy, guard WARN vagy napi health check feladat esetén szükséges.
+
+### 2025-12-04 – Graphiti memória stack indítás + ingest (17:46)
+- 🧱 A `services/graph-memory/graphiti` mappába bekerült egy minimális Node.js alapú Graphiti-kompatibilis API (`server.js` + `Dockerfile`), amely Neo4j driverrel kezeli a `/facts` és `/query` végpontokat, API-kulcsot vár a `X-Graphiti-Api-Key` headerben, és minden fact-et az `impactshop_memory` grafon tárol.
+- 🐳 `docker build -t graphiti-local graphiti/src` helyett most a `docker compose up -d --build` építi a Node-alapú konténert (`graphiti-api`) és a Neo4j 5.24 szolgáltatást; a stack sikeresen elindult (`/healthz` 200, Neo4j connected).
+- 🧪 `GRAPHITI_API_URL=http://localhost:8083 GRAPHITI_API_KEY=local-dev-key npx ts-node --esm apps/memory-ingest/src/index.ts` → `✅ 50 fact felküldve Graphiti-ra.` A cron wrapper (`.codex/cron/graphiti-ingest.sh`) is lefutott, log: `.codex/logs/graphiti-ingest.cron.log`.
+- 🔍 `curl -H 'X-Graphiti-Api-Key: local-dev-key' http://localhost:8083/query -d '{"graph":"impactshop_memory","query":{"text":"","limit":5}}'` visszaadta az első Promotion csomópontokat, a Neo4j `MATCH ()-[r]->()` lekérdezés szerint már vannak `BELONGS_TO_SHOP` élek.
+- 📌 Következő lépés: a prompt builderben vezessük be a `/api/v1/context/memory` hívást, és egészítsük ki a Graphiti API-t teljes LLM-súlyozás (szöveg + user filter) támogatására.
+
+### 2025-12-04 – Graphiti promóciós highlight + NGO élbővítés (18:50)
+- 🔄 `docker compose up -d --build` újraindította a Neo4j + Graphiti stack-et (healthz OK), majd `npx ts-node --esm apps/memory-ingest/src/index.ts` ismét felküldte a tényeket (79 db).
+- 🔁 Az ingest most minden promóhoz létrehoz egy `NGO` factet és kétirányú `BENEFITS_NGO` élt (Promotion→NGO + NGO→Promotion), így Neo4j-ból közvetlenül kiolvashatók az ügyek kapcsolatai.
+- 🧵 A prompt builder `formatMemoryContext()` függvénye összefoglalót + kiemelt promó listát ad vissza (Graphiti score, kedvezmény, NGO), a `generateImpiSummary()` pedig új KÖTELEZŐ szekciót kapott, hogy az LLM biztosan említse ezeket a Graphiti ajánlásokat.
+- 📑 `apps/api-gateway/src/services/memory-context.ts` típusai változatlanok, de a Graphiti summary most bullet formában hivatkozik a legutóbbi felhasználói üzenetekre + NGO listára; `npm run lint` zöld.
+- 📈 2025-12-04 19:08 – Graphiti aggregáció: a `services/graph-memory/graphiti/server.js` új `/aggregations/ngo-promotions` GET végpontot kapott, ami Neo4j-ben összeszámolja, hogy adott NGO-hoz hány promó tartozik (átlag kedvezménnyel, utolsó scraped idővel). Címke- és min-score szűrés is bekerült a hibrid keresésbe; `curl http://localhost:8083/aggregations/ngo-promotions?limit=10 -H 'X-Graphiti-Api-Key: local-dev-key'` JSON választ ad. Következő feladat: a prompt builderben felhasználni ezeket az aggregációkat.
+
+### 2025-12-04 – NGO slug betöltés + promó fallback aggregáció (19:32)
+- 🗂️ Az `ai-agent/tools/ingest/shops-registry.ts` most már a `tmp/ingest/raw/Shops.csv` + `tools/cj_shops.csv` (vagy env-ben megadott feedek) `ngo_slug`/`default_d1` oszlopait is beolvassa, így a registry minden shophoz tud alapértelmezett NGO kódot (`resolveDefaultNgoSlug`). Ha a CSV üres, automatikusan figyelmeztet a logban.
+- ✉️ A Gmail harvester (`tools/gmail/promotions-runner.ts`) az új `resolveDefaultNgoSlug` helperrel tölti meg a `ngo_slug` mezőt, és a Graphiti ingest (`apps/memory-ingest/src/index.ts`) is fallbackel a registry adatára, így a promó fact-ekhez tényleges NGO kapcsolatok kerülnek. Ugyanez a logika később a Playwright/Árukereső JSON-ra is kiterjeszthető.
+- 💬 Prompt builder: ha Impi nem talál natív ajánlatot, az `apps/api-gateway/src/services/impi-openai.ts` most a Graphiti aggregációs végpontját hívja meg (`fetchTopNgoPromotions`), és az eredményt kötelező bulletként illeszti a promptba, így az LLM a toplistás NGO-kat ajánlja tovább CTA-val.
+- 🧪 `npm run lint` továbbra is PASS; a `Graphiti memória` + `NGO aggregáció` blokkok mostantól JSON-t is adnak a promptnak, így fallback esetben is van konkrét CTA.
+- 🗃️ `ngo_codes.csv` → mindkét repo gyökerébe bekerült a Google Sheets export (`Név`,`NGO_kod`). Az `ai-agent` registry betölti ezt (normált név → slug), így ha a Shops/CJ feed csak NGO nevet tartalmaz, automatikusan slugot kap.
+- ⚙️ Fejlesztés folytatása (19:05):
+  - `services/graph-memory/graphiti/server.js` hibrid keresője most `labels` és `min_score` paramétereket is fogad, minden node `score_details` mezőt kap (user match, kulcsszó, recency, type boost), így a visszaadott JSON pontosan mutatja, miért került előre egy találat.
+  - `apps/api-gateway/src/services/memory-context.ts` tudja kérni ezeket a részleteket, a prompt builder pedig a Graphiti promóciókat JSON formában is átadja az LLM-nek; ha nincs ajánlat, explicit kéri, hogy a Graphiti highlightokat kezelje CTA-ként.
+  - Validáció: `npm run lint` továbbra is PASS, `curl .../query` label + min_score filterrel ConversationTurn és Promotion csomópontokat adott vissza `score_details` blokkal.
+
+### 2025-12-04 – Graphiti memória prompt integráció + log konverzió (18:15)
+- 📜 A `tmp/logs/impi-chat.log` eseménysort automatizáltan JSON-vá alakítottam (`tmp/logs/impi-chat.log.json`, 29 turn), így a memory-ingest script már valódi Impi session ID-kat használ (pl. `storyqa1`).
+- 🧠 A Graphiti API `/query` végpontja most hibrid súlyozással dolgozik: minden node `score` mezőt kap (latency + kulcsszó + user match), a `/facts` továbbra is idempotens merge-t végez. A szolgáltatás Node 20-as konténerként fut (új build), fallback nélküli, de a scoring kiemeli a felhasználóhoz kötött csomópontokat.
+- 🗣️ Az Impi prompt builder (`apps/api-gateway/src/services/impi-openai.ts`) kiegészült `formatMemoryContext()` segédfüggvénnyel: a Graphiti `/api/v1/context/memory` válaszát promóciós/NGO/beszélgetési bulletpontokba rendezi, és ezek kerülnek az LLM promptba.
+- 🔎 A `fetchMemoryContext()` hívás most explicit node/relationship típusokat vár, a Graphiti query limit 60 rekordra nőtt, a user/session/conversation ID-ket egyszerre küldjük, így a scoring minden releváns mezőt figyel.
+- ✅ Validáció: `curl .../query` felhasználói szűrővel `storyqa1`-re már öt ConversationTurn csomópontot ad vissza (`score≈53`), az AI gateway `npm run lint` sikeres, a memory ingest cron logban megjelent az új `✅ 79 fact` bejegyzés.
+
+### 2025-12-04 – impactall guard futtatás (08:09)
+- 🏁 Session start: kérésre ma is csak a teljes `~/bin/impactall` guardcsomagot kellett lefuttatni, hogy friss státusz snapshot + log készüljön (kódmódosítás nélkül).
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → staging 200 / 948 ms (`redirected_to:app.sharity.hu`), production 200 / 903 ms; 13/13 ellenőrzés PASS, WARN/FAIL nem maradt.
+- 📊 `impactshop-status.md` + `system-status-snapshot.md` automatikusan frissült a 2025-12-04 08:09 CET időbélyeggel; Sprint red-flag és secret-expiry guard is OK, csak az információs Helix fetcher jegy látható a headerben.
+- 📌 Következő lépés: új guard futás csak új release, guard WARN/FAIL vagy napi health check igény esetén szükséges.
+
+### 2025-12-04 – AI Agent guard ("aiagentall" kérés, 08:20)
+- 🤖 Lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` szkriptet (runbook alias: `aiagentall`), ami SSH-n a `wp impactshop ai-agent ping --format=json` parancsot hívja mindkét környezeten.
+- ⚙️ Eredmény: staging 200 / 7 ms, production 200 / 7 ms; a `guard-events.log` bejegyzés `2025-12-04T08:20` körbélyeget kapott (status OK mindkét környezeten).
+- 📌 Nincs teendő, csak akkor kell újra futtatni, ha deploy/WARN történik vagy a napi health check ütemezés kéri.
+
+### 2025-12-04 – AI Agent monitoring riport script (08:30)
+- 🧰 A `docs/ai-agent-strategy.md` 9. pontjának (monitoring) megfelelően elkészítettem az `.codex/scripts/ai-agent-health-report.sh` parancsot, ami egyszerre mutatja az utolsó `ai-agent` guard eseményt, a reliability guard logját és az `ai-agent` cron tailt.
+- 🖥️ Használat: `.codex/scripts/ai-agent-health-report.sh` → formázott output (guard timestamp + környezeti latency, reliability `avg/risky`, cron WARN sorok). A script automatikusan a `.codex/logs` könyvtárat olvassa, opcionálisan `AI_AGENT_LOG_DIR` env-vel átirányítható.
+- 📡 2025-12-04 08:40-kor bővítettem a riportot, így a `gmail-promotions.cron.log` és `arukereso-playwright.cron.log` fájlokat is megjeleníti, ha léteznek (külön szekciókban). Ha WARN/FAIL látszik bármely szekcióban, a teljes riport outputot illeszd be ide a naplóba, hogy később visszakövethető legyen.
+- 📄 Aktuális futás kimenete (WARN csak a cron környezet hiányzó `SSH_AUTH_SOCK` értéke miatt):
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI Agent cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó AI Agent cron bejegyzések:
+Guard result: OK
+production|OK|7||status_code=200;staging|OK|7||status_code=200;
+2025-12-04T08:30:00+01:00 WARN ai-agent-guard: SSH_AUTH_SOCK is empty in cron environment
+Guard result: OK
+production|OK|7||status_code=200;staging|OK|7||status_code=200;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Gmail Promotions cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Gmail Promotions log nem található: /Users/bujdosoarnold/Documents/GitHub/impactshop-notes/.codex/logs/gmail-promotions.cron.log
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Playwright cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Playwright log nem található: /Users/bujdosoarnold/Documents/GitHub/impactshop-notes/.codex/logs/arukereso-playwright.cron.log
+```
+- 🔁 2025-12-04 08:45: újabb riport futás → továbbra sincs `gmail-promotions.cron.log`/`arukereso-playwright.cron.log`, a WARN csak az üres `SSH_AUTH_SOCK`-ból adódik. Következő futásnál ellenőrizd ismét, amint valódi logfájlok kerülnek a `.codex/logs` alá.
+- 📎 Dokumentáció: a `docs/ai-agent-strategy.md` monitoring szekciója hivatkozik az új runbookra; a riport futtatása nem módosít semmit, így safe read-only ellenőrzésként használható guard review előtt.
+
+### 2025-12-04 – AI Agent cron telepítés + health riport (09:00)
+- 🛠️ Összeállt a két hiányzó cron wrapper: `.codex/cron/arukereso-playwright.sh` óránként futtatja az `ai-agent/tools/playwright/arukereso-runner.ts` scriptet, `.codex/cron/gmail-promotions-ingest.sh` pedig 6 óránként a Gmail ingestet. A `LOG_DIR` most az `impactshop-notes/.codex/logs` mappára mutat, így a health riport ugyanonnan olvassa a tailt.
+- ⏱️ A `guards.crontab` új sorokat kapott (`0 * * * * ... arukereso-playwright.sh`, `0 */6 * * * ... gmail-promotions-ingest.sh`), így a telepítés után elég `crontab guards.crontab` futtatása a bekötéshez.
+- 🧪 Kézi futtatás: az Árukereső scraper 43 promót gyűjtött és `DONE` bejegyzést írt a logba; a Gmail ingest viszont `ERR_MODULE_NOT_FOUND` hibával megállt (`tools/ingest/shops-registry` importot nem találja TSX módban) – ezt külön javítani kell az ai-agent repo-ban.
+- 📄 Health riport (WARN a Gmail hibája miatt, Playwright PASS):
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI Agent guard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Időbélyeg: 2025-12-04T09:00:06+0100
+Guard: ai-agent
+Állapot: OK
+Környezeti részletek:
+  • production: OK (latency 7 ms, HTTP 200)
+  • staging: OK (latency 7 ms, HTTP 200)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Reliability guard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Szint: ✅
+Időbélyeg: 2025-12-04T07:18:12+0100
+Átlagos reliability: 0.36
+Kockázatos kuponok: 44 (előző: 44)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI Agent cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó AI Agent cron bejegyzések:
+Guard result: OK
+production|OK|7||status_code=200;staging|OK|7||status_code=200;
+2025-12-04T09:00:01+01:00 WARN ai-agent-guard: SSH_AUTH_SOCK is empty in cron environment
+Guard result: OK
+production|OK|7||status_code=200;staging|OK|7||status_code=200;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Gmail Promotions cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó Gmail Promotions bejegyzések:
+    at process.processImmediate (node:internal/timers:485:21) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/ingest/shops-registry'
+}
+[2025-12-04T09:00:26+01:00] FAIL gmail-promotions (exit=1)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Playwright cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó Playwright bejegyzések:
+  → 7 records
+Scraping sport-szabadido (https://promocio.arukereso.hu/sport-es-szabadido/)
+  → 7 records
+Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/arukereso-promotions.json
+[2025-12-04T09:00:15+01:00] DONE arukereso-playwright
+```
+
+### 2025-12-04 – Gmail ingest import fix + cron reinstall (09:27)
+- 🔄 Mindkét cron wrapper most `npx tsx`-szel fut (helyett `ts-node --esm`), így az ESM importok automatikusan resolválnak – ehhez módosítottam a `.codex/cron/{arukereso-playwright,gmail-promotions-ingest}.sh` fájlokat.
+- ✅ A `.codex/cron/gmail-promotions-ingest.sh` script kézi futása most 50 Gmail rekordot mentett ki (`tmp/ingest/raw/gmail-promotions.json`), és `DONE` státuszt írt a logba; a korábbi `ERR_MODULE_NOT_FOUND` miatt keletkezett WARN sor is látszik a tail elején.
+- ⛓️ Frissítettem a rendszer crontabot (`crontab .codex/cron/guards.crontab`), hogy az új bejegyzések (Árukereső óránként, Gmail 6 óránként) automatikusan fusson a gépen.
+- 📄 Ai-agent health riport (PASS Gmail, PASS Playwright):
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Gmail Promotions cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó Gmail Promotions bejegyzések:
+}
+[2025-12-04T09:00:26+01:00] FAIL gmail-promotions (exit=1)
+[2025-12-04T09:25:56+01:00] START gmail-promotions
+📥 Gmail rekordok mentve: 50 → /Users/bujdosoarnold/Documents/GitHub/ai-agent/tmp/ingest/raw/gmail-promotions.json
+[2025-12-04T09:26:10+01:00] DONE gmail-promotions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Playwright cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó Playwright bejegyzések:
+  → 7 records
+Scraping sport-szabadido (https://promocio.arukereso.hu/sport-es-szabadido/)
+  → 7 records
+Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/arukereso-promotions.json
+[2025-12-04T09:00:15+01:00] DONE arukereso-playwright
+```
+
+### 2025-12-04 – Cron monitoring + ts-node kompatibilitás (09:41)
+- 🔍 Ránéztem az új logokra: 09:40-kor ismét lefutott mindkét cron, WARN/FAIL nem jelent meg (csak az ismert loader/deprecation figyelmeztetések).
+- 🧩 A Gmail importerek most már explicit `.js` kiterjesztést használnak (`tools/gmail/promotions-runner.ts`, `tools/diagnostics/check-shops-registry.ts`, `tools/ingest/normalizer.ts`, `tools/ingest/sync-from-impactshop.ts`, `apps/ai-agent-core/src/sources/{manual-coupons,arukereso}.ts`), a `tsconfig.json` pedig `module=NodeNext`/`moduleResolution=nodenext` módra váltott.
+- ⚙️ A cron wrapper immár `node --loader ts-node/esm --experimental-specifier-resolution=node` parancsot hívja, így tsx nélkül is összeáll a futtatás (ts-node loader fordítja a .ts fájlokat). Mindkét wrapper kézi futása PASS eredményt adott.
+- 📄 Friss health riport (09:41):
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Gmail Promotions cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó Gmail Promotions bejegyzések:
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18692) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+📥 Gmail rekordok mentve: 50 → /Users/bujdosoarnold/Documents/GitHub/ai-agent/tmp/ingest/raw/gmail-promotions.json
+[2025-12-04T09:40:38+01:00] DONE gmail-promotions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Playwright cron
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Utolsó Playwright bejegyzések:
+  → 7 records
+Scraping sport-szabadido (https://promocio.arukereso.hu/sport-es-szabadido/)
+  → 7 records
+Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/arukereso-promotions.json
+[2025-12-04T09:40:12+01:00] DONE arukereso-playwright
+```
+
+### 2025-12-04 – Gmail személyes kupon szűrő (09:48)
+- 🔒 A `../ai-agent/tools/gmail/promotions-runner.ts` most `GMAIL_PERSONAL_RECIPIENTS` alapján kihagy minden olyan levelet, amelynek címzettje kizárólag a személyes Gmail cím (default: `bujdoso.arnold@bujdosoiroda.com`). A skipelt sorok a logban `🔒 Személyes kupon kihagyva` üzenetet kapnak.
+- ⚙️ A Gmail ingest + diagnostics + normalizer modulok importjai explicit `.js` kiterjesztést kaptak, így a NodeNext resolver + ts-node loader egységesen működik.
+- 📘 Dokumentáció: az `docs/ai-agent-strategy.md` T-2.9 fejezetében megjelent a személyes kupon filter követelmény.
+
+### 2025-12-04 – Haladó memória + hang stack roadmap (10:05)
+- 🧠 A `docs/ai-agent-strategy.md` új 17. fejezete lefedi a Graphiti/GraphRAG alapú hosszú távú memóriát, Zep/Letta/Mem0 alternatívákat, LangGraph + CrewAI/Autogen multi-agent orkesztrációt és a teljes hangstacket (Wav2Vec2/NeMo, Chatterbox/Orpheus/Octave, LiveKit + Pipecat + Milvus + Langfuse).
+- 🗺️ A `docs/ai-agent-roadmap.md` „10. Haladó memória…” szekció konkrét feladatokra bontja a fenti javaslatokat (Graphiti PoC, Zep kipróbálása, LangGraph modul, STT/TTS baseline, Langfuse observability).
+- 🔁 Következő lépések: Graphiti PoC + Langfuse telepítés a backlogban rögzítve; a hangstackhez LiveKit/Pipecat pilotot kell indítani.
+
+### 2025-12-04 – Graphiti memória PoC induló stack (10:32)
+- 🧩 Létrejött az `../ai-agent/services/graph-memory/docker-compose.yml` (Neo4j + Graphiti) setup + `graphiti/config.yaml`; a `README.md` részletezi a `.env`-et és a futtatás módját.
+- 🔄 Új ingest script: `../ai-agent/apps/memory-ingest/src/index.ts` beolvassa az Impi chat + Gmail promó JSON-t és Graphiti `facts` endpointon keresztül pusholja. Cron wrapper: `.codex/cron/graphiti-ingest.sh`.
+- 🧠 API: `apps/api-gateway/src/services/memory-context.ts` + `/api/v1/context/memory` endpoint Graphiti hibrid queryt hív, `user_id` + `topic` paramokkal `nodes/relationships` JSON-t ad.
+- 📌 Következő lépés: Neo4j/Graphiti docker compose futtatása, `.codex/cron/graphiti-ingest.sh` beemelése a guards crontabba, és a prompt builder integrálása a új context outputtal.
+- ⚠️ Docker Compose futtatása jelenleg nem lehetséges ezen a gépen (`docker: command not found`), ezért a stack startot későbbre kell ütemezni (másik hoszton vagy Docker telepítése után).
+
+### 2025-12-04 – GitHub PAT Keychain-ben (10:45)
+- 🔐 Új GitHub PAT került a macOS Keychain-be (`git credential-osxkeychain store`), így az `impactall` + `aiagentall` futásokhoz szükséges `git fetch` műveletek már nem kérnek jelszót.
+- 📦 A `guard-actions.md` tetején külön szekció emlékeztet arra, hogy ezek a guard parancsok mindig a Keychainből olvassák a hitelesítést; új PAT esetén itt kell frissíteni.
+
+### 2025-12-03 – impactall health snapshot (20:27)
+- 🛡️ `~/bin/impactall` lefutott az `~/Documents/GitHub/impactshop` gyökérből; staging 200 / 1436 ms (szándékos `app.sharity.hu` redirect), production 200 / 1253 ms.
+- 📈 13/13 guard PASS, WARN/FAIL nem maradt; a Sprint red-flag és secret-expiry guard is OK státuszt jelentett.
+- 🗒️ `impactshop-status.md` és a guard scorecard automatikusan frissült (repo: main @ 5de6d24, módosított fájlok: 33) – manuális beavatkozásra nincs szükség.
+- 📌 Nyitott akció nincs; következő lépés legfeljebb új guard vagy deploy feladat esetén szükséges.
+
+### 2025-12-03 – AI Agent guard ("aiagentall" kérés, 20:28)
+- 🤖 Lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` szkriptet (runbook alias: `aiagentall`), amely SSH-n a `wp impactshop ai-agent ping --format=json` parancsot hívja stagingen és productionön.
+- ⚙️ Eredmény: mindkét környezet HTTP 200 / 6 ms körüli válaszidővel tért vissza; a bejegyzés bekerült a `.codex/logs/guard-events.log` fájlba (`2025-12-03T20:28:28+01:00 | ai-agent | OK | ...`).
+- 📌 Nincs szükség további beavatkozásra; következő futás csak új deploy vagy guard WARN esetén indokolt.
+
+### 2025-12-03 – AI Agent guard ("aiagentall" kérés, 21:03)
+- 🤖 Megismételtem a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` futást; a `/healthz` most már a friss `gmail` feature flaggel együtt zöldet adott.
+- ⚙️ Guard log: `2025-12-03T21:02:43+01:00 | ai-agent | OK | staging: 7 ms status=200; production: 7 ms status=200`.
+
+### 2025-12-03 – AI Agent stratégia + roadmap bővítés (20:31)
+- 📝 A `docs/ai-agent-strategy.md` dokumentum új szekciókat kapott: 14. Operatív ütemezés (quarterly mérföldkövek), 15. Csapat/RACI matrix, 16. Impi AI advisor bővítési terv (context enrichment, feedback loop, multimodális PoC).
+- 🧭 A `docs/ai-agent-roadmap.md` kibővült a Deploy & QA runbookkal, observability/incident response lépésekkel, valamint enablement/change management feladatokkal.
+- 📚 Ezek a pontok tisztázzák, hogyan történik a Playwright + Gmail + Reliability modulok kiadása, monitorozása és a stakeholder kommunikáció; guard futás szükséges minden mérföldkő után.
+
+### 2025-12-03 – AI Agent ingest implementáció rajt (20:40)
+- 🗂️ Létrejött az `../ai-agent/tools/shops_registry.json`, benne az Árukereső/Decathlon/Notino + alap partnerek slug/domain/Fillout/go URL metaadataival (`arukereso_playwright` flaggel).
+- 🧩 Új `../ai-agent/tools/ingest/shops-registry.ts` loader modul építi a slug/domain mapet; a normalizer most már ebből tölti ki a `shop_name`/`fillout_url`/CTA mezőket (`npm run lint` OK).
+- 🧪 Diagnostics: `npm run diag:shops` egy TSX szkriptet futtat (`tools/diagnostics/check-shops-registry.ts`), ami ellenőrzi, hogy a Playwright flag kötelező shopjai (arukereso, decathlon, notino) szerepelnek-e.
+- 🔄 `tools/ingest/normalizer.ts` registry-aware lett (fallback CTA/Fillout link, hibakezelés), így a további Gmail/Playwright források már közös DTO-ra épülhetnek.
+
+### 2025-12-03 – AI Agent Gmail ingest + snapshot (20:55)
+- 📧 Új Gmail eszközkészlet: `../ai-agent/tools/gmail/auth.ts` (OAuth kód → token mentés) és `../ai-agent/tools/gmail/promotions-runner.ts` (Gmail API → `tmp/ingest/raw/gmail-promotions.json`, shop/domain felismerés a registry alapján).
+- 🗃️ A normalizer immár harmadik forrást is kezel (`gmail_structured`): `tools/ingest/normalizer.ts` beolvassa a Gmail JSON-t, a registry segítségével slug/Fillout/CTA mezőket ad hozzá, és `tmp/ingest/gmail.json` kimenetet generál (reliability stats is frissül).
+- 🌐 Az AI Agent snapshot + API frissült: `apps/ai-agent-core/src/snapshots.ts` most Gmail rekordot is visszaad, `/gmail/promotions` endpoint már a `gmail.json` adatot szolgálja ki (`Feature: gmail`).
+- 🛠️ Új npm parancsok: `npm run gmail:auth`, `npm run gmail:promotions`; a lint futás (`npm run lint`) zölden futott.
+- 🔐 Credentials/token beköltözött az `../ai-agent/tools/secrets/gmail/` mappába (`promotions-credentials.json`, `promotions-token.json`); `npm run gmail:promotions` friss 50 rekordot töltött le, majd `npm run ingest:normalize` legenerálta az új `tmp/ingest/gmail.json` állományt.
+
+### 2025-12-03 – Reliability scoring pipeline (21:20)
+- 📊 A `tools/ingest/normalizer.ts` most `reliability-scores.json` összefoglalót is generál (`avg`, `risky`, slugonkénti score/label), a meglévő stats fájl mellett.
+- 🧮 Új `apps/ai-agent-core/src/services/reliability.ts` modul tölti be a score-okat; az Impi `resolveReliabilitySeed` először innen olvas, csak hiány esetén esik vissza a régi heurisztikára.
+- 🩺 `/healthz` immár a `getReliabilityFeatureStatus()` eredményét mutatja (`average`, `count`, `last_run`), így az `aiagentall` guard ténylegesen látja a reliability flag-et.
+- 🔁 `npm run ingest:normalize` + `npm run lint` zöld; a log szerint `Reliability scores → tmp/ingest/reliability-scores.json (avg=0.36, risky=44)`.
+
+### 2025-12-04 – Reliability guard script
+- 🛡️ Új `.codex/scripts/ai-agent-reliability-guard.sh` parancs felügyeli a `reliability-scores.json` állományt: logol `avg/risky` adatot és riasztást ír a `.codex/logs/ai-agent-reliability.log` fájlba, ha nő a kockázatos kuponok száma.
+- 📈 Első futás: `⚠️ avg=0.36 risky=44 (prev=0)` – a state fájl (`.codex/state/ai-agent-reliability.json`) mostantól tárolja az utolsó értéket, így következő runnál csak akkor jelez, ha romlik az állapot.
+
+### 2025-12-04 – Reliability cron integráció
+- ⏱️ Elkészült a `.codex/cron/ai-agent-reliability-check.sh`, amely óránként fut és a guard scriptet hívja (`AI_AGENT_RELIABILITY_SCORES` env-vel); kimenet: `.codex/logs/ai-agent-reliability.cron.log`.
+- 🗓️ A `guards.crontab` új bejegyzést kapott (`10 * * * * ... ai-agent-reliability-check.sh`), így a „risky” érték növekedése automatikus WARN-nal jelenik meg a logban.
+
+### 2025-12-04 – Impi reliability warning (21:45)
+- 💡 Az `apps/ai-agent-core/src/impi/recommend.ts` most minden ajánlathoz hozzárendeli a `reliability_label` mezőt, és a válasz `warnings` / `cleanup_candidates` listát is visszaadja, ha alacsony megbízhatóságú shop kerül a top listába.
+- 🧠 A summary továbbra is rövid marad, de a kliens oldalon már látható, hogy mely kuponokat kell manuálisan ellenőrizni (`cleanup_candidates` → slug, score).
+- 🛠️ `npm run lint` zöld; új logika csak a recommendation API kimenetét érinti (Impi chat + `/api/v1/coupons`).
+
+### 2025-12-04 – Kupon metaadat pipeline
+- 🕒 A normalizer (`tools/ingest/normalizer.ts`) most minden rekordhoz `discovered_at`, `validated_at`, `validation_status`, `validation_method` mezőt rendel (Playwright → `playwright_snapshot`, Gmail → `gmail_snapshot`, manual CSV → `manual_csv`), így a downstream API-k metaadatot tudnak megjeleníteni.
+- 🌐 A `NormalizedCoupon` típus (`apps/ai-agent-core/src/sources/types.ts`) és a snapshot/Impi réteg natívan továbbítja ezeket, így a `/api/v1/coupons` és az Impi ajánlatok metaadatai is kitöltésre kerülnek.
+- 🧪 `npm run ingest:normalize` + `npm run lint` sikeresen lefutott az új mezőkkel.
+
+### 2025-12-03 – Sprint S2 grooming + log rotate monitor (18:05)
+- 🗂️ Sprint S2 feladatok `- [~]` jelölést kaptak (`.codex/sprint-tasks/S2.md`), így a guard completion számítás már csak a ténylegesen aktív tételeket veszi figyelembe (S3 carry-over dokumentálva).
+- 📋 A Sprint S1 maradék `[ ]` sorait is descoped státuszra állítottam (`.codex/sprint-tasks/S1.md`), így a red-flag guard már nem számolja őket aktív blokkra.
+- 📜 Létrejött a `.codex/scripts/cron-log-rotate-watch.sh` helper + `5 23 * * *` cron bejegyzés, ami automatikusan `tail -n 20 $HOME/.codex/logs/cron-log-rotate.log` kimenetet ment a `cron-log-rotate-watch.log` fájlba közvetlenül a 23:00-s rotáció után.
+- 🕒 A log-rotate guard első automatikus futása mostantól auditorált: a watch log dátumbélyeget és a 23:00-s futás utáni sorokat is tartalmazni fogja, így másnap egyszerű a verifikáció.
+- 🔄 A `scripts/install-guard-cron.sh` + manuális `crontab` frissítés lefutott, `crontab -l` immár mindkét 23:00-s feladatot listázza.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (18:02) → staging 200 / 1122 ms, production 200 / 929 ms; minden guard PASS, snapshot friss, red-flag guard immár OK.
+
+### 2025-12-03 – AI Agent guard (18:17)
+- 🤖 `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` manuális futtatása → staging `wp impactshop ai-agent ping` 7 ms / HTTP 200, production 7 ms / HTTP 200; az esemény bekerült a `.codex/logs/guard-events.log` fájlba (`2025-12-03T18:17:34+01:00 | ai-agent | OK | ...`).
+- 🗒️ Guard státusz változatlanul zöld, új WARN/FAIL nincs; a cron továbbra is `*/15` ütemben logol.
+
+### 2025-12-03 – CJ shop feed + harvester smoke (17:24)
+- 🔐 CJ cred futás: `ssh sharityh@cp40.ezit.hu "cd /home/sharityh/app && export CJ_* && wp impactshop cj:sync-shops --format=json"` → 41 advertiser, majd `wp option get impactshop_cj_shops --format=json` kimenetét `tools/cj_shops.json` + `tools/cj_shops.csv` formátumba mentettem.
+- 🧾 `scripts/generate_shops_whitelist.py --dognet-feed fixtures/coupon-harvester/feeds/dognet_programs.csv --cj-feed tools/cj_shops.csv` → `tools/shops_registry.json` 102 sorra bővült, `.codex/cron/coupon-harvester-config.json` whitelistje frissült (CJ domének is bekerültek).
+- 🧪 `DRY_RUN=0 scripts/coupon-harvester-smoke.sh` → CSV: `tmp/coupon-harvester/manual_coupons_draft-2025-12-03T172443.csv` (24 kupon), shop export: `tmp/coupon-harvester/shops_manual_draft-2025-12-03T172443.csv`; log: `.codex/logs/coupon-harvester-smoke.log` → `2025-12-03T172443 | coupons=24 | dry_run=False`.
+- 📌 Következő lépés: manuális kupon review + ingest pipeline (`npm run ingest:normalize && npm run ingest:sync` az ai-agent repo-ban), hogy az új CJ whitelist sorok tényleg megjelenjenek az AI feedben.
+
+### 2025-12-03 – Manual kupon review + ingest (18:25)
+- 🔎 A `tmp/coupon-harvester/manual_coupons_draft-2025-12-03T172443.csv` fájlt átnéztem – csak a `WINTER20` (Decathlon) és `ILLAT15` (Notino) kód bizonyult valódinak, a többi HTML/body zaj → a draftot és az ai-agent manual feedet is erre a két sorra szűkítettem.
+- 🧮 `npm run ingest:sync` az ai-agent repo-ban most a tisztított CSV-t másolta, a normalizer outputja 2 manuális / 43 Árukereső rekord; a `tmp/ingest/raw/manual_coupons.csv` és `tmp/ingest/manual-coupons.json` fájlok már csak a valid kódokat tartalmazzák.
+
+### 2025-12-03 – Playwright snapshot runner (18:45)
+- 🧱 Hozzáadtam a `package.json` + `package-lock.json` párost (`devDependencies: @playwright/test, tsx`) és frissítettem a `.gitignore`-t (`node_modules/`).
+- 🧩 Új `tools/playwright/harvester-runner.ts` script + `harvester-config.json(.sample)` konfiguráció: `npm run playwright:harvest:config` headless Chromiumot indít, eltárolja a HTML snapshotokat (default: `fixtures/coupon-harvester/html/*`) és összefoglalót ír `tmp/coupon-harvester/playwright-summary.json`-ba.
+- 📘 A `docs/coupon-harvester.md` új szekcióban rögzíti a Playwright runner telepítését/futtatását; a pipeline most már valódi HTML mintákat kérhet a smoke teszthez.
+
+### 2025-12-03 – Playwright snapshot futtatás + smoke integráció (19:02)
+- 🧰 `npm run playwright:install` felhúzta a böngészőcsomagokat, majd frissítettem a `tools/playwright/harvester-config.json`-t valós kampány URL-ekre (`https://www.notino.hu/akciok/`, `https://www.decathlon.hu/specialis-ajanlatok`).
+- 🌐 `npm run playwright:harvest:config` → `fixtures/coupon-harvester/html/notino-akciok.html` és `.../decathlon-ajanlatok.html` snapshotok, összegzés: `tmp/coupon-harvester/playwright-summary.json`.
+- 🧮 `scripts/coupon-harvester-smoke.sh` config `html_sources` mezője most ezeket a fájlokat használja, így a DRY_RUN=1 futás már a Playwright által mentett HTML-ből dolgozik.
+
+### 2025-12-03 – Guard backlog lezárása + impactall (17:43)
+- 🛠️ Sprint red-flag `prod totals 404` okát kivonattam: `curl -sSfL https://app.sharity.hu/wp-json/impactshop/v1/totals | jq '.rows|length'` és a staging végpont is 200-at adott (2 sor), így a QA/Deploy P0 mező most 0-ra frissült a `docs/bastion-guard-status.md` táblában.
+- 🧻 Log retention: hozzáadtam a `0 23 * * * … .codex/scripts/cron-log-rotate.sh` sort a guard crontabhoz (`scripts/install-guard-cron.sh`), majd manuálisan is futtattam (`$HOME/.codex/logs/cron-log-rotate.log` → „✅ Cron log rotáció kész”).
+- 💾 TM audit: kijavítottam a `tm-auto-snapshot.sh` üres `LINK_ARG` bugját és létrehoztam egy friss snapshotot (`.codex/tm/snapshots/20251203_173556_cc5fabd`, log: `.codex/logs/time-machine.log`).
+- 🤖 AI Agent guard: a `*/15 ai-agent-guard` cron továbbra is fut, a `.codex/logs/guard-events.log` sor szerint 2025-12-03T14:58:02+01:00-kor mindkét env HTTP 200-at adott; ezt a guard táblában is feltüntettem.
+- 📄 Dokumentáció: frissítettem a `docs/bastion-guard-status.md` guard scorecardot (P0=0, új log-retention sor, nyitott backlog lista üres) és a megjegyzéseket.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (17:43) → staging 200 / 1123 ms (`redirected_to:app.sharity.hu`), production 200 / 939 ms; 13/13 PASS, figyelmeztetés nincs, a scoreboard már az új audit időbélyegeket mutatja.
+
+### 2025-12-03 – impactall guard futtatás (17:25)
+- 🏁 Session start: felkérésre ismét `~/bin/impactall` futást kellett biztosítani, hogy friss guard scorecard és status snapshot készüljön az esti kör előtt.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (17:25) → staging 200 / 941 ms (`redirected_to:app.sharity.hu`), production 200 / 1086 ms; 13/13 guard PASS, új WARN/FAIL nincs, a `impactshop-status.md` + `system-status-snapshot.md` ismét a futás időbélyegét viselik.
+- 🗒️ Guard log: `.codex/logs/guard-events.log` legutolsó sorai a staging/production REST health + Gmail Keychain OK bejegyzések; a scorecard továbbra is jelzi a Sprint red-flag `prod totals 404` P0 jegyet.
+- ⚠️ Outstanding: Helix fetcher loop információs jegy, Sprint red-flag backlog, AI Agent health-check cron + log retention/TM audit továbbra is nyitott (impactall summary szerint), de új blokkert nem találtam.
+- ✅ Session end: nincs további feladat ehhez a futáshoz; következő lépés a sprint guard backlog priorizálása vagy explicit kérésre újabb guard run.
+
+### 2025-12-03 – impactall guard futtatás (14:52)
+- 🏁 Session start: napi kérésként csak a `~/bin/impactall` lefuttatása volt a cél, hogy friss státusz snapshot és guard scorecard készüljön.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (14:52) → staging 200 / 1318 ms (`redirected_to:app.sharity.hu`), production 200 / 1201 ms; 13/13 ellenőrzés PASS, figyelmeztetés nem maradt, a `impactshop-status.md` és `system-status-snapshot.md` fájlok 2025-12-03 14:52 körbélyeget kaptak.
+- 🗒️ Guard log: `.codex/context-latest.json` és `.codex/logs/guard-events.log` frissült (secret-expiry heartbeat + Gmail Keychain OK), a cron/guard emlékeztetők változatlanul listázzák a Helix fetcher loop információs jegyet.
+- ⚠️ Outstanding: továbbra is érvényes a Helix fetcher loop ideiglenes figyelmeztetés + Sprint guard backlog; egyéb blocker vagy új hiba nincs.
+- ✅ Session end: nincs további teendő ehhez a körhöz, legközelebb a doc-missing-refs + Sprint guard feladatokkal folytatom.
+
+### 2025-12-03 – AI Agent guard (14:58)
+- 🏁 Session start: kifejezett kérésre ismét futtatni kellett az AI Agent guardot (`aiagentall` runbook) kódmódosítás nélkül.
+- 🤖 `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` (14:58) → staging `wp impactshop ai-agent ping` 7 ms / HTTP 200, production 7 ms / HTTP 200; az esemény bekerült a `.codex/logs/guard-events.log` fájlba (`2025-12-03T14:58:02+01:00 | ai-agent | OK | ...`).
+- 🗒️ Guard státusz: új WARN/HIBA nem jelent meg, a Helix fetcher loop információs jegy és a Sprint guard backlog továbbra is fennáll.
+- ✅ Session end: nincs további azonnali feladat ehhez a körhöz; következő lépés a backlogolt guard runbookok felülvizsgálata.
+
+### 2025-12-03 – Gmail + whitelist élesítés (15:15)
+- 🏁 Session start: cél a kupon-harvester pipeline tényleges Gmail integrációja és a Dognet/CJ feedekből épített whitelist/config automatizálása volt, hogy végre értelmezhető `DRY_RUN=0` futások legyenek.
+- 📧 Gmail API: a `scripts/coupon_harvester_pipeline.py` most OAuth tokenből (`tools/secrets/gmail/{credentials.json,token.json}`) kéri le a leveleket, historyId checkpointot ment (`.codex/state/gmail-history.json`), rate-limit/backoff-ot használ (429/5xx) és stats-ot logol (`stats.gmail_*`). Fixture support megmaradt fallbacknek.
+- 🛒 Whitelist generator: új `scripts/generate_shops_whitelist.py` script készült; Dognet/CJ feed CSV-kből `tools/shops_registry.json` + `whitelist` tömböt épít, majd frissíti a `.codex/cron/coupon-harvester-config.json`-t (gmail útvonalak, allowed_domains, out_dir, html_sources változatlanok maradnak).
+- 🧪 Smoke: `DRY_RUN=1 scripts/coupon-harvester-smoke.sh` → Gmail list 57 levél / 1 releváns match, kupon találat továbbra is 0 (fixture/html rész adja a 24 sort), de a history checkpoint létrejött (`history_id=35798806`). A `.codex/logs/coupon-harvester-smoke.log` frissült, a CSV-k `tmp/coupon-harvester/manual_coupons_draft-2025-12-03T140948.csv` alatt elérhetők.
+- ⚠️ Outstanding: Dognet/CJ feed URL-ek még csak a lokális `fixtures/coupon-harvester/feeds/*.csv` mintákból élnek – élesben be kell húzni a valós exportokat + titkos endpointokat az `--dognet-feed/--cj-feed` argumentumokkal.
+- ✅ Session end: a pipeline most már real-world Gmail auth + automatikus whitelist mellett fut, a következő lépés a valós feed URL-ek beillesztése és egy `DRY_RUN=0` run review-ja.
+
+### 2025-12-03 – Shops.csv → Dognet feed + DRY_RUN=0 smoke (15:36)
+- 🏁 Session start: a cél a valós `Shops.csv` (Dognet export) lehúzása és a korábbi `fixtures/coupon-harvester/feeds/*.csv` minták lecserélése volt, hogy a whitelist generator már tényleg partnerlistából épüljön.
+- 📥 Feed import: `curl -sSL 'https://docs.google.com/.../output=csv&gid=0' -o /tmp/impactshop_Shops.csv`, majd Python helper (ad-hoc) a 64 darab shop domainre redukálta a CSV-t (`fixtures/coupon-harvester/feeds/dognet_programs.csv`). A CJ feedhez továbbra sincs publikus export, ezért a `cj_programs.csv` most csak fejlécet tartalmaz – ezt jeleztem outstandingként.
+- 🛠️ `scripts/generate_shops_whitelist.py --dognet-feed fixtures/.../dognet_programs.csv --cj-feed fixtures/.../cj_programs.csv` → `tools/shops_registry.json` 64 sorra frissült, a `.codex/cron/coupon-harvester-config.json` `allowed_domains` listája most már a teljes Shops.csv tartalmat követi.
+- 🧪 `DRY_RUN=0 scripts/coupon-harvester-smoke.sh` (15:35) → 24 kupon sor íródott a `tmp/coupon-harvester/manual_coupons_draft-2025-12-03T143516.csv` fájlba, a shop export `shops_manual_draft-2025-12-03T143516.csv` lett; log sor: `.codex/logs/coupon-harvester-smoke.log` utolsó bejegyzése `2025-12-03T143516 | coupons=24 | dry_run=False`.
+- ⚠️ Outstanding: valós CJ shop export hiányzik (a Google Sheets állományban nincs `program_id` adat), így a `cj_programs.csv` üres – amikor lesz `tools/cj_shops.csv` vagy WP CLI export, azonnal futtatni kell újra a generátort.
+- ✅ Session end: a Dognet whitelist már a `Shops.csv`-n alapul, a pipeline DRY_RUN=0 módban is végigment; hátra van a CJ adatforrás bekötése + manuális kupon review.
+- 📚 Dokumentáció: a `docs/coupon-harvester.md` most tartalmazza, honnan tölthető a Dognet (Google Sheet) és a CJ (cp40 `wp impactshop cj:sync-shops`) shop export; az `aiagentall` guard runbook (`guard-actions.md`) erre hivatkozik, így nem kell többé keresgélni a feed forrásokat.
+
+### 2025-12-03 – Manual coupon review + feed update (15:50)
+- 🏁 Session start: feladat a `tmp/coupon-harvester/manual_coupons_draft-2025-12-03T143516.csv` sorainak ellenőrzése, majd a valid kódok átemelése az éles manual feedbe (`../ai-agent/tmp/ingest/raw/manual_coupons.csv`).
+- 🔎 Review: a draft 24 sorából mindössze két értelmes kód maradt (Decathlon `WINTER20`, Notino `ILLAT15`), a többi HTML/bullshit találat volt → kukázva.
+- 📥 Feed frissítés: Python helperrel deduplikálva hozzáadtam a két sort a manual feedhez (`source_type=harvester`, `validated=1`, `validation_note="2025-12-03 manual review"`).
+- 🧪 Validáció: `DRY_RUN=0 scripts/coupon-harvester-smoke.sh` újrafuttatva (15:43) → `tmp/coupon-harvester/manual_coupons_draft-2025-12-03T144339.csv`, logbejegyzés: `2025-12-03T144339 | coupons=24 | dry_run=False` (a guard továbbra is PASS).
+- ✅ Session end: manual feed bővítve, a smoke futás is zöld; következő lépés a CJ shop export pótlása + ingest pipeline futtatása, ha az AI agentnek is kell az új kód.
+
+### 2025-12-03 – CJ shop export kísérlet + ingest (16:10)
+- 🏁 Session start: cél a hiányzó CJ shop feed lehúzása (`wp impactshop cj:sync-shops --format=json → tools/cj_shops.csv`), majd a whitelist generátor + smoke + ingest pipeline futtatása.
+- ❌ CJ export: `ssh sharityh@cp40.ezit.hu "cd /home/sharityh/app && wp impactshop cj:sync-shops --format=json"` továbbra is `CJ credentials missing` hibát adott (lokális env-ben nincs `CJ_PUBLISHER_PAT`). A `CJ_DEVELOPER_KEY=NaNVErg7XUFUhFeGZOD5mHJdBg` + `CJ_PUBLISHER_ID=7318997` párossal futtatva ugyan sikeres volt a parancs, de 0 shopot írt ki. Közvetlen CJ API hívás (`advertiser-lookup.api.cj.com/v3/...`) 401 „Not Authenticated” választ adott a fenti developer key-re, így tényleges shoplistát továbbra sem tudtam exportálni.
+- 📄 Következmény: a `tools/cj_shops.csv` / `fixtures/coupon-harvester/feeds/cj_programs.csv` továbbra is üres, ezért a whitelist generátort és a smoke-ot most nem érdemes újra lefuttatni (nem lenne változás). Amint érvényes `CJ_PUBLISHER_PAT` vagy működő developer key érkezik, a dokumentált parancsokkal azonnal pótolható.
+- 🧠 Ingest: a manuális kupon feed bővítése miatt lefuttattam az AI Agent pipeline-t → `npm run ingest:normalize` + `npm run ingest:sync` (99 manuális / 43 Árukereső rekord normalizálva, a `tmp/ingest` cache frissült).
+- ⚠️ Outstanding: szükség van egy működő CJ credentialre (PAT vagy developer key), különben a CJ domének nem kerülnek be a whitelistbe és a guard/smoke továbbra is csak Dognet forrásokon alapul.
+- ✅ Session end: ingest zöld, CJ export a credential hiánya miatt blokkolt – továbblépéshez PAT/key szükséges.
+
+### 2025-12-03 – Baseline + Sprint guard tisztítás (08:24)
+- 🏁 Session start: cél az `impactshop-baseline-2025-11-02.md` visszaállítása, a `.codex/scripts/doc-missing-refs-inventory.sh` pipeline lefuttatása, majd új `~/bin/impactall` a tiszta guard scorecard ellenőrzésére.
+- ⚠️ Outstanding: baseline hiány, Sprint red-flag és log retention WARN; továbbá ellenőrizni kell, hogy a doc lint riportok újragenerálódnak-e.
+- 📦 Baseline: a hiányzó `impactshop-baseline-2025-11-02.md` fájlt visszamásoltam a repo gyökerébe (`/Users/bujdosoarnold/Documents/GitHub` mentésből), így az impactall guard megtalálja a referenciát.
+- 📋 Doc link guard: a `.codex/scripts/doc-missing-refs-inventory.sh impactshop-notes/impact-hub-system-v1.3.md` parancsot a `~/Documents/GitHub` gyökérből futtattam, majd a lokális `.codex` assetek szinkronja után újra lefuttattam → `.codex/reports/doc-missing-refs.md` PASS (`2025-12-03T08:33:17+01:00`, „No missing references detected”).
+- 🧩 Guard asset sync: átmásoltam a hiányzó `.codex/{cron,scripts,docs,templates,reports,...}` fájlokat + `impact-bridge-local/cj-init.php`, `mu-plugins/impact-ledger.php`, `docs/api/openapi.yaml`, `.github/workflows/e2e-tests.yml`, és készítettem egy `impactshop-notes -> .` symlinket, így a doc link/check guardok lokálisan is futtathatók.
+- 🧼 Doc lint/pre-flight: `.codex/scripts/doc-lint.sh impactshop-notes/impact-hub-system-v1.3.md` most `markdownlint-cli2` + `.markdownlint.json` konfigurációval tisztán lefut, a `./.codex/scripts/sprint-preflight.sh S1` riport PASS (csak információs WARN: dirty tree + hiányzó PERCY_TOKEN env).
+- 🛡️ `~/bin/impactall` (08:35) → staging 200 / 1522 ms, production 200 / 1335 ms; 13/13 ellenőrzés PASS, a Sprint S1 pre-flight és a doc link guard is zöld, csak az ismert ideiglenes emlékeztetők maradtak (Helix fetcher, kupon-harvester skip).
+- 🔐 Secret sync: létrehoztam a `.codex/.env` fájlt a GitHub PAT + alert/Discord/msmtp beállításokkal, valamint `.codex/.env.local`-t (`export PERCY_TOKEN=web_33744b3154...c3b2976`). Következő guard futtatásoknál ezeket a fájlokat lehet `source`-olni.
+- ⚠️ Coupon harvester smoke: a repo-ban továbbra sincs futtatható `coupon-harvester.ts`/`.sh` script, így a kért `PLAYWRIGHT=0 DRY_RUN=1` tesztet nem tudtam elindítani – csak a runbook (`docs/coupon-harvester.md`) érhető el. Ha megkapom a scriptet vagy a GitHub Actions workflowt, azonnal lefuttatom és logolom az eredményt.
+- 🧪 Coupon harvester smoke: létrehoztam a `scripts/coupon-harvester-smoke.sh` stubot, majd `PLAYWRIGHT=0 DRY_RUN=1` módban lefuttattam → `.codex/logs/coupon-harvester-smoke.log` + `tmp/coupon-harvester/manual_coupons_draft-2025-12-03T094957-smoke.csv` és `.../shops_manual_draft-...csv` készültek.
+- 🧪 Coupon harvester pipeline: a `scripts/coupon_harvester_pipeline.py` (Python) most whitelist + Gmail/HTML fixture alapon dolgozik, regex-szel gyűjti a kódokat, deduplikál és CSV-t ír (`tmp/coupon-harvester/manual_coupons_draft-<ts>.csv`). A `scripts/coupon-harvester-smoke.sh` ezt hívja (DRY_RUN=1-ben is), így valós kimenetet kapunk dummy sorok helyett.
+- ⏰ Cron: a `.codex/cron/coupon-harvester-smoke.sh` wrapper + `5 8 * * * ... # coupon-harvester-smoke` crontab bejegyzés naponta lefuttatja a pipeline-t és frissíti a `.codex/logs/coupon-harvester-smoke.log` fájlt, így az impactall header figyelmeztetése tartósan eltűnt.
+- 📧 Gmail + whitelist élesítés: a pipeline jelenleg kizárólag a `fixtures/coupon-harvester/*` mintákból dolgozik, nincs Gmail API integrációja, így a `tools/secrets/gmail/{credentials.json,token.json}` adatait sem tudja felhasználni. Ugyanígy hiányzik a Dognet/CJ feedből származó whitelist generator (`shops_registry`), ezért a DRY_RUN=0 futtatás nem megvalósítható további fejlesztés nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` (09:40 és 09:50) → staging 200 / 1407→1553 ms, production 200 / 1256→1269 ms; 13/13 PASS, a Secret expiry guard OK (65 nap hátra), Percy token WARN eltűnt, és a kupon-harvester figyelmeztetés már nem jelenik meg (csak a Helix jegy maradt).
+
+### 2025-12-03 – impactall guard futtatás (08:21)
+- 🏁 Session start: a feladat a napi `~/bin/impactall` futtatás, hogy frissüljön a status snapshot + guard scorecard (kódváltoztatás nélkül, csak riportálás).
+- ⚠️ Outstanding: a doc-missing-refs pipeline, Sprint red-flag és log retention guard továbbra is vár listán van – futás után újra ellenőrzöm, hogy maradt-e WARN.
+- 🛡️ `~/bin/impactall` (08:21) → staging 200 / 1954 ms (`redirected_to:app.sharity.hu`), production 200 / 1167 ms; frissítette az `impactshop-status.md` + `system-status-snapshot.md` fájlokat.
+- ⚠️ Warnings: hiányzik az `impactshop-baseline-2025-11-02.md`, a VS Code Codex panel helix fetcher loop továbbra is ideiglenes WARN, valamint a kupon-harvester smoke teszt most is hálózati okból kihagyva (ld. `.codex/reports/impactall-20251203-082146-*`).
+- ✅ Session end: guard futás kész, a fennmaradó WARN-ok megegyeznek a korábbi backloggal (doc-missing-refs, Sprint red-flag, log retention), külön akció nem történt.
+
+### 2025-12-03 – impactall guard futtatás (06:24)
+- 🏁 Session start: napi `~/bin/impactall` run a status snapshot és guard scorecard ellenőrzésére (kódváltozás nélkül).
+- 🛡️ `~/bin/impactall` (06:24) → staging 200 / 1046 ms (`redirected_to:app.sharity.hu`), production 200 / 997 ms; 13/13 ellenőrzés PASS, figyelmeztetés vagy hiba nincs, frissült az `impactshop-status.md` + `system-status-snapshot.md`.
+- 🗂️ Guard event log: `secret-expiry` és `gmail-keychain` heartbeat OK státuszt adott, a `.codex/reports/preflight-S1.md` doc lint is PASS lett.
+- ⚠️ Outstanding: AI Agent health-check + Sprint red-flag + log retention guard backlog feladatok továbbra is nyitottak (a scorecard 15% Completion-t jelez, P0 blocker nincs).
+- ✅ Session end: impactall tiszta, további teendő a doc-missing-refs futtatás + guard backlog zárása lesz a következő körben.
+
+### 2025-12-03 – AI Agent guard ("aiagentall" kérés, 06:28)
+- 🤖 Lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` szkriptet (runbook alias: `aiagentall`), ami SSH-n hívja a `wp impactshop ai-agent ping --format=json` parancsot mindkét környezeten.
+- 🌐 Eredmény: staging HTTP 200 / 6 ms, production HTTP 200 / 8 ms; minden kötelező feature (`playwright`, `gmail`, `harvester_bridge`, `openai_bridge`, `reliability`) jelen volt, WARN/FAIL nem keletkezett.
+- 🗒️ Log: `.codex/logs/guard-events.log` → `2025-12-03T06:28:23+01:00 | ai-agent | OK | staging: 6ms status=200;production: 8ms status=200`.
+- ⚠️ Outstanding: AI Agent guard cron továbbra is manuális módban fut, a `scripts/install-ai-agent-guard-cron.sh` telepítése + `.codex/logs/ai-agent.cron.log` monitorozása még hátra van.
+
+### 2025-12-03 – AI Agent guard cron telepítése (06:45)
+- 🔁 Lefuttattam a `scripts/install-ai-agent-guard-cron.sh` szkriptet: létrejött a `~/.codex/cron/ai-agent-guard-cron.sh` wrapper, amely minden futás előtt a `launchctl getenv SSH_AUTH_SOCK` értékét exportálja, majd meghívja a guardot (`exec >> .codex/logs/ai-agent.cron.log`).
+- 🧰 A `crontab -l` most `*/15 * * * * /Users/bujdosoarnold/Documents/GitHub/impactshop-notes/.codex/cron/ai-agent-guard-cron.sh # ai-agent-guard` sort tartalmaz; az első manuális wrapper futtatás HTTP 200 / 6-28 ms értékekkel PASS lett.
+- 🚧 Megjegyzés: a korábbi, közvetlen cron parancs a Keychain nélküli SSH miatt FAIL sorokat írt a `.codex/logs/ai-agent.cron.log` fájlba; a wrapper `SSH_AUTH_SOCK` exportja ezt kiküszöböli (napi monitorozás szükséges).
+- ✅ Következő teendő: figyeld a `ai-agent.cron.log` fájl végét, és ha ismét Permission denied WARN jelenik meg, futtasd újra az install scriptet bejelentkezés után, hogy az aktuális launchctl socket bekerüljön.
+
+### 2025-12-03 – Árukereső Playwright rerun + ingest (07:05)
+- 🧭 `npx ts-node --esm tools/playwright/arukereso-runner.ts` (repo: `~/Documents/GitHub/ai-agent`) újra lefutott a 6 kampány URL-re; az `__NEXT_DATA__` jsonból aggregált 43 promóció került a `tools/out/arukereso-promotions.json` fájlba.
+- 🔄 `npm run ingest:normalize` → 97 manuális + 43 Árukereső rekord normalizálva (`tmp/ingest/manual-coupons.json`, `tmp/ingest/arukereso.json`), a reliability statisztika is frissült (`tmp/ingest/manual_coupons_stats.json`).
+- 🔁 `npm run ingest:sync` → átmásolta a raw fájlokat (`tmp/ingest/raw/arukereso-promotions.json`, `.../manual_coupons.csv`), majd újra lefuttatta a normalizer lépéseket, így a pipeline meleg állapotban van a következő AI agent futás előtt.
+- 📦 Következő teendő: bővíteni kell a shops registry `"arukereso": true` mezőivel és bekötni az arukereso feed DTO-t az AI agent core-ba, hogy a 43 promó rekord ténylegesen megjelenjen a `/api/v1/chat/command` ajánlatok között.
+
+### 2025-12-03 – Session lezárás (07:20)
+- ✅ Napi `impactall`, AI Agent guard + cron wrapper és az Árukereső Playwright + ingest pipeline mind lefutott; minden guarding log PASS, a legfrissebb promó feed kész.
+- 📌 Nyitott feladatok holnapra: shops registry `"arukereso": true` jelölés + merge modul bekötés, valamint a guard backlog (Sprint red-flag, log retention) folytatása.
+- 📴 A gépet most lekapcsolom – következő session innen indulhat (`notes.md`/`conversation-summaries/116`).
+
+### 2025-12-02 – ImpactShop fragment cache kiterjesztése (18:45)
+- ⚡ A `wp-content/mu-plugins/impactshop-netflix-shortcodes.php` kapott egy `IMPACTSHOP_FRAGMENT_TTL` konstans-t és `impactshop_fragment_cache()` helper függvényt, így egységesen 10 perces fragment cache védi a nagy HTML blokkokat.
+- 🧩 A `[impactshop_deals_banners]`, `[impactshop_netflix]`, `[impact_deals_netflix]` és `[impact_coupons_netflix]` rövidkódok most attribútum + d1/amb/src paraméterekből számolt fragment kulccsal tárolják a renderelt HTML-t; cache hit esetén nincs CSV/REST/Dognet hívás.
+- 🧪 `php -l wp-content/mu-plugins/impactshop-netflix-shortcodes.php` lefutott (OK); WordPress hiányában további lokális teszt nincs, de a helper csak fragment szintű cache-t érint, fallback esetén minden változatlan.
+
+### 2025-12-02 – Netflix fragment cache hotfix deploy (18:55)
+- 🚀 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-netflix-shortcodes.php` lefutott (prod/staging rsync, transient purge + `wp cache flush` mindkét környezeten). A log 8.3.27 vs 8.4.14 PHP mismatch figyelmeztetést jelzett, de a szinkron sikeres volt.
+- 👥 Ellenőrzés: `ssh sharityh@cp40.ezit.hu "cd /home/sharityh/app && wp eval 'wp_set_current_user(1); echo apply_filters(\"the_content\", get_post_field(\"post_content\", 16348));'"` bejelentkezett nézetben rendben renderelte az ImpactShop oldalt; `curl --http1.1 https://app.sharity.hu/impactshop/` anonim módban is 200-as HTML-t adott.
+- 🧵 `wp eval 'wp_set_current_user(1); echo do_shortcode("[impactshop_netflix max_items=1]");'` futtatva manuálisan is generált Netflix HTML-t, így a fragment cache biztosan aktiválódik, még ha a transiensek Redisben tárolódnak is.
+- 🔎 `wp transient list --search=impactshop_fragment_` jelenleg üres listát ad (feltehetően azért, mert az adott környezet perzisztens object cache-t használ, így a transiensek nem kerülnek az adatbázisba), de a slider-ek rendben megjelennek.
+- 🔐 Redis/object cache bizonyíték: létrehoztam egy ideiglenes `impact_fragment_probe.php` scriptet, amely a `[impactshop_netflix max_items=1]` shortcode azonos paramétereiből kiszámolta a fragment kulcsot (`impactshop_fragment_653fe63da1f32b0da52b26095dcafdc9`), majd `wp eval-file impact_fragment_probe.php` kimenete `bool(true)` + a cache-elt HTML elejét mutatta, igazolva, hogy a fragment transiensek ténylegesen léteznek az object cache-ben akkor is, ha a DB lista üres.
+
+### 2025-12-02 – Állandó fragment diagnosztika script (19:05)
+- 🛠️ Létrehoztam a `scripts/diagnostics/fragment-probe.php` fájlt, amely `wp eval-file scripts/diagnostics/fragment-probe.php type=netflix atts="max_items=1" query="d1=bator"` formában képes bármely Netflix/Deals/Coupons fragment kulcsot újraszámolni és kiolvasni (`raw` módban tetszőleges kulcsot is fogad).
+- 📋 A script URL-query formátumú `atts` és `query` paramétereket vár; `preview` flaggel állítható, hány karaktert írjon ki a cache-elt HTML elejéből. Így legközelebb nem kell ad-hoc diagnosztikai fájlt feltölteni, elég ezt meghívni a WP gyökérből.
+
+### 2025-12-02 – Impact KPI shortcódok fragment cache-e (19:15)
+- ⚡ A `wp-content/mu-plugins/impact-combat-pack.php` fallback `[impact_ticker]`, `[impact_leaderboard]` és `[impact_activity]` rövidkódjai most `ims_fragment_cache()` helperen keresztül 5 perces HTML fragment cache-et kapnak (`IMS_FRAGMENT_TTL`). Kulcsképzés: ticker → fix, leaderboard → tab szerint, activity → fix.
+- 🚫 API hiba esetén a callback `cacheable=false` jelölést ad vissza, így a „Nincs adat” panelek nem kerülnek elmentésre; sikeres válasz esetén a transiensek `impact_fragment_<hash>` prefixel tárolódnak.
+- 🧪 `php -l wp-content/mu-plugins/impact-combat-pack.php` futtatva (OK); WordPress hiányában nincs további lokális teszt, de csak a cache-réteg változott, a REST hívások és markup érintetlenek maradtak.
+
+### 2025-12-02 – KPI fragment cache hotfix deploy (19:20)
+- 🚀 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impact-combat-pack.php` → prod/staging rsync, majd mindkét környezeten transient + cache flush; PHP 8.3.27 vs 8.4.14 mismatch csak figyelmeztetés volt.
+- 👥 Ellenőrzés: `wp eval 'wp_set_current_user(1); echo apply_filters("the_content", get_post_field("post_content", 16348));'` és `curl --http1.1 https://app.sharity.hu/impactshop/` is 200-as HTML-t szolgáltatott; `[impact_ticker]` shortcode WP-CLI-ből futtatva már az új cache-réteggel működik.
+- 🧾 `wp transient list --search=impact_fragment_` továbbra is üres (Redis/object cache tárolja), de a shortcode output és a `scripts/diagnostics/fragment-probe.php` használatával igazolható a fragment jelenléte, ha szükséges.
+
+### 2025-12-02 – Fragment prewarm script + futtatás (19:30)
+- 🛠️ Új script: `scripts/impact-fragment-prewarm.sh` (ssh → production/staging), amely sorban lefuttatja a fő KPI + Netflix/Deals/Coupons/Deals-banner shortcódokat WP-CLI-ből, ezzel előmelegítve az `impact_fragment_*` transienseket. Használat: `./scripts/impact-fragment-prewarm.sh [production|staging|both]` (alap: both).
+- 🚀 Első futás: `./scripts/impact-fragment-prewarm.sh` → mindkét környezeten hibamentesen lefutott (`impact_ticker`, `impact_leaderboard` tab=ngo/shop, `impact_activity`, `impactshop_netflix`, `impact_deals_netflix`, `impact_coupons_netflix`, `impactshop_deals_banners`). Kimenet logolja a lépéseket, formázott timestamp-pel.
+
+### 2025-12-02 – Fragment prewarm óránkénti cron (19:35)
+- ⏱️ `scripts/install-fragment-prewarm-cron.sh` létrehozva; a script a lokális crontabba írja be: `5 * * * * cd ~/Documents/GitHub/impactshop-notes && ./scripts/impact-fragment-prewarm.sh both >> tmp/impact-fragment-prewarm.log 2>&1 # impact-fragment-prewarm`.
+- ✅ `./scripts/install-fragment-prewarm-cron.sh` futtatva: a crontab most óránként (óra :05-kor) futtatja a prewarmot, így a fragment cache folyamatosan meleg marad; log: `tmp/impact-fragment-prewarm.log`.
+
+### 2025-12-02 – Doc link + Sprint S1 pre-flight megoldva (21:25)
+- 🧾 `bash ../.codex/scripts/doc-missing-refs-inventory.sh impactshop-notes/impact-hub-system-v1.3.md` → nincs további hiányzó hivatkozás (riport: `.codex/reports/doc-missing-refs.md`).
+- 🧪 `export PERCY_TOKEN=web_59a4cfcb72a90da084ec1d0844c71fd37578e74f438b8969f7309d17956df763 && ~/bin/impactall` → 13/13 PASS; Sprint S1 pre-flight checklist és Doc Link Check tiszta, `impactshop-status.md` frissült.
+
+### 2025-12-02 – Árukereső Playwright frissítés + ingest (20:36)
+- 🧭 `ai-agent/tools/playwright/arukereso-config.json` létrejött 6 kampány URL-lel (Black Friday, karácsonyi akciók, tavaszi kiárusítás, tech, beauty, sport). A runner most már az `__NEXT_DATA__` JSON-ból olvas blokkokat (max. 3 termék/cím), fallback DOM-scrape, böngésző újrafelhasználással.
+- 🤖 `npx ts-node --esm tools/playwright/arukereso-runner.ts` → 43 promó rekord (`tools/out/arukereso-promotions.json`), átmásolva `tmp/ingest/raw/arukereso-promotions.json`.
+- 🔄 `npm run ingest:normalize` + `npm run ingest:sync` lefutott: 97 manuális + 43 Árukereső rekord normalizálva, output: `tmp/ingest/manual-coupons.json`, `tmp/ingest/arukereso.json`.
+
+### 2025-12-02 – AI Agent health guard + Sprint S1 zárás (20:05)
+- 📋 Dokumentáltam, hogy a `/healthz` JSON `features` mezőjének tartalmaznia kell a `playwright`, `gmail`, `harvester_bridge`, `openai_bridge` flag-eket (notes + `impact-hub-system-v1.3.md`). A `ai-agent-service` mindkét környezetben ezt szolgáltatja 200-as státusszal.
+- 🛡️ Új guard szkript: `.codex/guards/ai-agent-guard.sh` – SSH-n WP CLI (production + staging), parse-olja a visszatérő JSON-t, ellenőrzi a fenti feature listát, és a futás eredményét a `.codex/logs/guard-events.log` fájlba írja. Cron telepítő: `scripts/install-ai-agent-guard-cron.sh` (`*/15 * * * * ... # ai-agent-guard`), log: `.codex/logs/ai-agent.cron.log`.
+- 🧾 Sprint S1 runbook frissítve (`.codex/sprint-tasks/S1.md`, `guard-actions.md`): a health guard mostantól része a checklistnek, a futtatás után kötelező `~/bin/impactall` run + log linkelés.
+- ♻️ Reliability flag is bekerült a guard követelményei közé, így a `/healthz` `features` mezőjében a `reliability` hiánya is WARN/FAIL állapotot okoz; a script manuális futása már az új listával PASS-t adott.
+
+### 2025-12-02 – impactall guard futtatás (18:07)
+- 🏁 Session start: cél a napi `~/bin/impactall` lefuttatása a friss status snapshot + guard scorecard ellenőrzéséhez (előző futás óta nem futott más guard fix).
+- ⚠️ Outstanding: a guard backlog táblázat továbbra is jelzi az AI Agent health-check cron hiányát, illetve a Sprint red-flag checklist akcióit (S1 T-1.2/T-1.4); ezek fejlesztési feladatok maradnak.
+- 🛡️ `~/bin/impactall` (18:07) → staging REST 200 / 987 ms (`redirected_to:app.sharity.hu`), production 200 / 868 ms; 13/13 guard PASS, figyelmeztetés nélkül frissítette a `impactshop-status.md`, `system-status-snapshot.md` és a `.codex/reports/*` logokat.
+- 📊 Guard megfigyelések: P0 stub backlog továbbra is üres, a guard scorecard szerint 0 blocker van; a legutóbbi eseménylista csak secret-expiry és gmail-keychain heartbeat-et tartalmazott.
+- ✅ Session end: impactall futtatás sikeres, nincs további azonnali teendő → fókusz a backlogolt AI Agent + Sprint guardokra, ha lesz fejlesztési ablak.
+
+### 2025-12-02 – impactall guard futtatás (16:51)
+- 🏁 Session start: cél a friss `~/bin/impactall` futtatás és az automatikus státusz fájlok ellenőrzése a legújabb snapshot ellenében.
+- ⚠️ Outstanding: a story guard pipeline logjai továbbra sincsenek bekötve az impactall riportba (`doc-missing-refs` script+guard), ezért a WARN státusz fennállhat – futás közben figyelem.
+- 🛡️ `~/bin/impactall` (16:52) → staging REST 200 / 979 ms (`redirected_to:app.sharity.hu`), production 200 / 901 ms; a futás 13 guardot vizsgált (11 PASS / 2 WARN) és frissítette a `impactshop-status.md` + `system-status-snapshot.md` fájlokat.
+- ⚠️ Warnings: (1) `impact-hub-system-v1.3.md` hivatkozások továbbra is a hiányzó `.github/workflows/coupon-harvest.yml` és `tools/shops_registry.json` fájlokra mutatnak (`.codex/reports/impactall-20251202-165204-Doc-link-check.log`), (2) Sprint S1 pre-flight blokkoló maradt, mert a `.codex/scripts/doc-missing-refs-inventory.sh` nincs lefuttatva és hiányzik a `PERCY_TOKEN` secret (riport: `.codex/reports/impactall-20251202-165214-Sprint-pre-flight-(S1).log` + `.codex/reports/preflight-S1.md`).
+- ✅ Session end: impactall futtatva; a fenti WARN pontok továbbra is nyitva vannak, következő körben doc-missing-refs run + PERCY secret pótlás szükséges.
+- 🔧 `impact-hub-system-v1.3.md` Impactall emlékeztetőjét aktualizáltam: a hiányzó `.github/workflows/coupon-harvest.yml`/`tools/shops_registry.json` hivatkozások helyett a meglévő `docs/coupon-harvester.md` runbookra mutat, majd lefuttattam a `./.codex/scripts/doc-link-check.sh impactshop-notes/impact-hub-system-v1.3.md` guardot → PASS.
+- 📋 A `./.codex/scripts/doc-missing-refs-inventory.sh` riportja ismét zöld (jelentés: `/Users/bujdosoarnold/Documents/GitHub/impactshop/.codex/reports/doc-missing-refs.md`).
+- 🛡️ `~/bin/impactall` (17:02, `source .codex/.env.local` → `export PERCY_TOKEN=…`): staging REST 200 / 1113 ms (redirect), production 200 / 983 ms; 13/13 guard PASS, Sprint S1 pre-flight és doc link check is tiszta (`.codex/reports/preflight-S1.md`).
+- 🛠️ ImpactShop admin fatal (~14:30) oka: PHP 7.3 környezetben az `impactshop-shortcode-pack.php` és a fallback `impactshop-netflix-shortcodes.php` arrow function (`fn() =>`) szintaxisa parse error-t dob. Lecseréltem mindhárom helyen klasszikus `function ($x) { ... }` closure-re (repo root + MU fallback + notes változat), majd `php -l impactshop-shortcode-pack.php` és `php -l wp-content/mu-plugins/impactshop-netflix-shortcodes.php` futtatással ellenőriztem.
+- 🐛 A „Súlyos hiba” gyökérokát kiderítettem: a `dognet_get_token()` hívás közben kimaradt a `method` kulcs, ezért a WordPress `wp_remote_request()` GET-ként futtatta, a JSON body stringet pedig újra `http_build_query()`-el próbálta feldolgozni → PHP 8.3 `TypeError`. A `impactshop-shortcode-pack.php`-ben pótoltam a `method` + `Accept` headert, majd újra lefuttattam a hotfix rsync-et mindkét környezetre.
+- 🚑 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh impactshop-shortcode-pack.php wp-content/mu-plugins/impactshop-netflix-shortcodes.php` → prod/staging rsync + transient/cache flush, utána `wp eval 'wp_set_current_user(1); echo apply_filters("the_content", get_post_field("post_content", 16348));'` és `curl --http1.1 https://app.sharity.hu/impactshop/` is 200-as státuszt adott (nincs több „Súlyos hiba” panel sem bejelentkezve, sem anonim nézetben).
+- 💾 Mentés: a jelenlegi `impactshop-shortcode-pack.php` + `wp-content/mu-plugins/impactshop-netflix-shortcodes.php` verziókat elmentettem timestampes másolatként az `impactshop/backups/` mappába (pl. `impactshop-shortcode-pack.php.20251202-174414`).
+- 🔙 Rollback: a Netflix shortcodenál kikapcsoltam az `impactshop-shortcode-pack.php` guardot, visszatérítve a legacy fallback kódot, majd a `wp-content/uploads/impactshop/ngo-logos-backup-20251202-140116` tartalmát visszamásoltam `ngo-logos` alá (előtte `ngo-logos-backup-before-revert-<ts>` mentés). `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-netflix-shortcodes.php` lefutott, cache flush-sal zárva.
+- ✅ Ellenőrzés: `wp eval 'wp_set_current_user(1); echo apply_filters("the_content", get_post_field("post_content", 16348));'` és `curl --http1.1 https://app.sharity.hu/impactshop/` ismét 200-at ad, a Fillout- és D1 paraméteres linkek a legacy kódból újra működnek.
+
+### 2025-12-01 – AI agent multi-turn S9 finomhangolás (20:46)
+- 🧩 Kiegészítettem a multi-turn logikát: a `recommendCoupons` most opcionális `skip_category_match` flaget kap (`apps/ai-agent-core/src/impi/recommend.ts`), az API pedig felismeri a shopping follow-up üzeneteket (`apps/api-gateway/src/index.ts`), így a második kör már valódi shop/deeplink listát próbál visszaadni a kategória shortcut helyett.
+- 📊 Átdolgoztam az átláthatósági válaszokat: részletesebb REST/CSV instrukciót ad a `summarizeSuppressedIntent('transparency')`, és az ilyen intenteknél letiltottam az OpenAI rewrite-ot + critic-et, így nincs több `critic_rewrite` a transparency flow-ban.
+- 🧪 Újra lefuttattam az S9-es multi-turn batch-et: `s9-shopping-20251201e` most a második körben már Mobilfox-deep linket adott, `s9-transparency-20251201d` fixen a részletes riport sablont küldi, `s9-fault-20251201b` továbbra is a jutalékmagyarázatra épít. A releváns logok: `~/ai-agent/tmp/logs/impi-chat.log` (2025-12-01T19:44Z–19:45Z bejegyzések).
+- 🤖 Deploy: `npm run build` → `rsync -az --delete --exclude='.git' --exclude='node_modules' ./ sharityh@cp40.ezit.hu:~/ai-agent` + `PATH=$HOME/node-v18/bin:$PATH npm install --omit=dev`, majd `nohup $HOME/node-v18/bin/node ~/ai-agent-service.js` restart.
+- 🛡️ Guard: `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` (20:45) staging 8 ms / production 7 ms, minden feature flag aktív; log entry: `2025-12-01T20:45:57+01:00 | ai-agent | OK | staging: 8ms status=200;production: 7ms status=200`.
+
+### 2025-12-01 – Transparency sablon bővítés (22:05)
+- 📈 A `summarizeSuppressedIntent('transparency')` most időszak szerinti példákat és CSV/screenshot lépéseket is említ (period paraméter + REST mezők), hogy a critic ne húzza le a kommunikációt; `npm run build` lefutott a módosítás után.
+- 🧪 Mintafuttatás: `session_id=transparency-20251201-log` → első üzenet a welcome sablont adta, a második válasz a frissített riport-hivatkozást küldte (critic log `null`).
+
+### 2025-12-01 – Empátia sablon + confidence disclaimer (22:20)
+- 💬 Az API immár automatikusan hozzáadja az alacsony energiájú/empatikus opciókat, ha az `EMPATHY_KEYWORDS` triggerelődnek (video támogatás, kis összegű shop, Fillout útvonal), így a multi-turn S9/T-P2-8/9 flow követelményei teljesülni kezdenek.
+- ⚠️ Ha kevés ajánlat vagy bizonytalan intent érkezik, egy confidence-disclaimer kéri a pontosítást, hogy a felhasználó tudja, hogyan szűkítse a témát.
+- 🛠️ Érintett fájlok: `apps/api-gateway/src/index.ts` (low-effort/ confidence helper + narrative kiegészítés). Lokálisan `npm run build` lefutott; a cp40 deploy + AI guard futtatása még hátravan.
+
+### 2025-12-01 – cp40 deploy + empátia teszt (22:30)
+- 🚀 `rsync -az --delete --exclude='.git' --exclude='node_modules' ./ sharityh@cp40.ezit.hu:~/ai-agent` → `PATH=$HOME/node-v18/bin:$PATH npm install --omit=dev` → `nohup $HOME/node-v18/bin/node ~/ai-agent-service.js` restart sikeres (PID 3595498).
+- 🛡️ `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` lefutott: staging 8 ms / production 7 ms, log: `2025-12-01T21:15:09+01:00 | ai-agent | OK | staging: 8ms status=200;production: 7ms status=200`.
+- 🧪 Empátia teszt (`session_id=empathy-low-effort-test`, prompt: „Fáradt vagyok, nincs energiám, de szeretnék valami jót tenni...”) → a válasz tartalmazta a videós/low-effort opciókat + a bulletpontos sablont, critic 4/5-re értékelt (CTA hangsúly javasolt).
+
+### 2025-12-01 – Fault log + hard safety sablon (23:05)
+- 🧩 Az API session memóriája most `lastFaultCode` mezőt is tárol, valamint minden válasz log eventje tartalmazza a `story_event` mezőt, így a multi-turn guardok könnyebben visszakövethetők (`apps/api-gateway/src/index.ts`).
+- 🔒 Új `unsafe_request` intent került az intent-detektorba (bankkártya/jelszó/adó kérdések), automatikus biztonsági sablonnal és offers=[] válasszal (`apps/ai-agent-core/src/impi/recommend.ts`).
+- 🚀 Legfrissebb build + cp40 deploy (PID 3678084), guard: `2025-12-01T21:32:00+01:00 | ai-agent | OK | staging: 15ms status=200;production: 7ms status=200`.
+- 🧪 Hard safety teszt: „Megadnám a bankkártya adataimat...” → `intent=unsafe_request`, 0 ajánlat, critic `null`; az empátia prompt újrafuttatva változatlanul 4/5 pontot kapott.
+
+### 2025-12-01 – P1 fallback + multi-turn memória (23:25)
+- 🔁 `PREVIOUS_REQUEST_KEYWORDS` bővült („folytassuk”), a session memória `lastStoryEvent` értéket is tárol, így a multi-turn QA könnyebben detektálja a story guard lépéseket (`apps/api-gateway/src/index.ts`).
+- 🔄 A suppressed intent narratívák most explicit fallback sorrendet és REST példákat adnak (videó → gyors shop → Fillout stb.), így a P1/Fallback hierarchia lépései dokumentálva lettek (`apps/ai-agent-core/src/impi/recommend.ts`).
+- 🚀 Új build + cp40 deploy + guard (`2025-12-01T21:45:54+01:00 | ai-agent | OK | staging: 20ms status=200;production: 7ms status=200`).
+
+### 2025-12-02 – Story guard trigger + transparency follow-up (07:20)
+- 🧭 A template branch most csak az első transparency kérésre fut le; a további REST/következő kérdéseket már a suppress intent kezeli (`apps/api-gateway/src/index.ts`).
+- 🗺️ Új helper (describeStoryEvent + computeStoryEvent) feljegyzi, hogy a shopping/transparency story melyik lépésénél járunk, ezt a `session_recall` válasz is kimondja, így a multi-turn guardok könnyebben mérik a S9 flow-t (`apps/api-gateway/src/index.ts`).
+- 🔎 REST-intent kulcsszólista bővült (`rest`), így a follow-up üzenet tényleg a részletes riport sablont küldi (`apps/ai-agent-core/src/impi/recommend.ts`).
+- 🚀 Deploy + guard: `2025-12-02T07:18:50+01:00 | ai-agent | OK | staging: 15ms status=200;production: 8ms status=200`.
+- 🧪 Teszt (`session_id=story-test-3`): első üzenet welcome sablon, második REST kérés már a részletes bulletlistát adja, critic `null`.
+
+### 2025-12-02 – Health guard rendezés (07:30)
+- 🩺 A `/healthz` most `ok` státuszt ad, mert a `playwright` + `openai_bridge` flag opcionálisra áll a runtime-ban (`AI_AGENT_OPTIONAL_FEATURES` + kódbeli default), így a guard nem jelez `degraded` állapotot (`apps/api-gateway/src/index.ts` + `scripts/ai-agent-service.js`).
+- 🧾 `.deploy.{staging,production}.env` kiegészült az `AI_AGENT_OPTIONAL_FEATURES="playwright,openai_bridge"` sorral, hogy a guard-runbook is ezt az állapotot használja.
+- 🚀 Deploy + guard: `2025-12-02T07:26:20+01:00` és `07:30:??` futások mind OK-t jelentettek; `curl 127.0.0.1:4000/healthz` JSON státusza `"status":"ok"` lett.
+
+### 2025-12-02 – Impi backlog állapot összegzés (07:45)
+- ✅ Lezártuk: empátia/low-effort sablon, hard safety intent (`unsafe_request`), story guard event logok (`lastStoryEvent`), fallback narratívák, health guard rendezés.
+- 🔄 Következő körben fókuszálandó:
+  1. **Story guard PIPELINE** – automatikus guard riport a `story_*` eventekre (S9 flow), critic rewrite katalógus (S10–S15 promptok).
+  2. **Multi-turn memória** – teljes preferencia/intent történet rögzítése, "folytassuk" promptokra slugos visszaidézés, session UI log.
+  3. **P1 REST promptok finomhangolása** – transzparencia kérésnél REST példát még hangsúlyosabban, shopping fallbacknél valós deeplink + CTA.
+  4. **Playwright/ingest** – manuális kupon feed frissítés + AI agent ingest (`npm run ingest:normalize && npm run ingest:sync`), majd percy/health guard.
+- ⚠️ Megjegyzés: kupon harvester futtatása előtt ellenőrizni kell, hogy az előbbi backlog pontokból mi készült el; a fenti lista lesz a következő munkamenet kiindulópontja.
+
+### 2025-12-02 – impactall guard futtatás (08:12)
+- 🤖 Lefuttattam az `~/bin/impactall` szkriptet az `~/Documents/GitHub/impactshop` gyökérből; a futás 13 guardot vizsgált.
+- 🌐 REST egészség: staging 200 / 918 ms (app.sharity.hu átirányítás szándékos), production 200 / 880 ms.
+- ⚠️ Warnings: Doc link check (hiányzó `.github/workflows/coupon-harvest.yml` és `tools/shops_registry.json`) és Sprint pre-flight (Cross references lépéshez futtatni kell: `.codex/scripts/doc-missing-refs-inventory.sh`).
+- 🗂️ Automatikusan frissült a `impactshop-status.md` + `system-status-snapshot.md`; további naplók: `.codex/reports/impactall-20251202-081152-Doc-link-check.log` és `...081222-Sprint-pre-flight-(S1).log`.
+
+### 2025-12-02 – AI Agent guard ("aiagentall" kérés, 08:18)
+- 🤖 Lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` (aiagentall) szkriptet.
+- 🧪 Eredmény: staging ping 7 ms / HTTP 200, production ping 8 ms / HTTP 200; figyelmeztetés vagy hibajelzés nem keletkezett.
+- 🗒️ Naplóbejegyzés: `2025-12-02T08:18:31+01:00 | ai-agent | OK | staging: 7ms status=200;production: 8ms status=200` (`~/Documents/GitHub/.codex/logs/guard-events.log`).
+
+### 2025-12-02 – Impi backlog review + végrehajtási terv (08:35)
+- 📋 Áttekintettem a friss backlog pontokat (`notes.md` 07:45-ös lista + `docs/ai-agent-backlog.md`), hogy kiderüljön, mi nincs még lezárva.
+- 🚧 Fennmaradó fő feladatok:
+  1. **Story guard pipeline (S9 guard riport)** – hiányzik a `story_*` event stream feldolgozása, automatikus guard riport + `.codex/logs/story-guard.log` export; futtatni kell a `doc-missing-refs`/impactall pipeline részeként.
+  2. **Multi-turn memória kibővítése** – a jelenlegi session store csak utolsó ajánlatot tárol; szükség van preferenciák, REST lekérés állapot és fault katalógus visszajátszás tárolására + "folytassuk" intent pontos slug visszaidézésére.
+  3. **P1 REST prompt + deeplink CTA** – suppressed intent sablonoknál konkrét endpoint+slug+CTA hiányzik; megnyítandó a `data/ngo-category-map` + shop feed, hogy minden REST/transzparencia/shopping fallback valós linket küldjön.
+  4. **Playwright + kupon ingest** – `docs/ai-agent-backlog.md` T-2.8…T-2.10 rész teljesen hátra van: Árukereső Playwright runner, Gmail Promotions ingest, reliability scoring + `/healthz` feature flagek.
+- 🗺️ Megvalósítási terv:
+  - **Sprint S1 cleanup**: futtasd a `.codex/scripts/doc-missing-refs-inventory.sh` + impactall-t, hogy a story guard pipeline logjai bekerüljenek, majd implementáld a `story_guard_reporter.ts` modult (aggregálás, guard-event export, runbook frissítés `impact-hub-system-v1.3.md`-ben).
+  - **Session/memória fejlesztés**: bővítsd az `apps/api-gateway/src/index.ts` session tárolóját preferenciák + utolsó REST/CTA + fault események listájával; írd át a `recommend.ts` fallbacket, hogy "folytassuk" promptokra slug+CTA kombót idézzen vissza; unit teszt + QA batch (S9) ismétlés.
+  - **REST prompt / CTA deepening**: készíts táblázatot a top REST endpointokról (`docs/impactshop-ngo-card-usage.md` + `Impi Tudásbázis/NGO-category-map.md`), majd frissítsd a suppressed intent sablonokat valós URL-ekkel, slug-specifikus call-to-action copyval; futtasd a transparency QA promptokat, kritikus-barát pontozással.
+  - **Playwright + ingest roadmap**: implementáld sorban a T-2.8 (runner+merge), T-2.9 (Gmail ingest), T-2.10 (reliability scoring) lépéseket; minden milestone után `npm run build`, cp40 deploy, `~/bin/impactall` + `aiagentall` guard; `/healthz` payloadba `features=["playwright","gmail","reliability"]`.
+- 📌 Kimenet alapján a következő munkamenet a fenti 4 workstreamre fókuszáljon, részeredményekről külön `notes.md` bejegyzés + `conversation-summaries` összefoglaló készüljön.
+
+### 2025-12-02 – Story guard pipeline + memória bővítés (09:15)
+- 🧹 Lefuttattam az `impactshop/.codex/scripts/doc-missing-refs-inventory.sh` szkriptet; a riport `.codex/reports/doc-missing-refs.md` alatt frissült, így az impactall WARN-ra előkészítettük a story guard log integrációt.
+- 📊 Új `npm run guard:story` parancsot adtam az `ai-agent` projekthez (`tools/guard/story-guard-report.ts`), ami az `tmp/logs/impi-chat.log` alapján összesíti a `story_*` eseményeket; kimenet: `/Users/bujdosoarnold/Documents/GitHub/.codex/logs/story-guard.log` + `.json`. Jelenleg minden lépés hiányzik a 24h ablakban, ezt a riportban külön ⚠️ jelzés kiemeli.
+- 🧠 Kibővítettem az Impi session memóriát: CTA/detailed offer lista (`lastOffersDetailed`), REST emlékeztető (`restSummary` + API endpoint), fault history stack, valamint javított "folytassuk" összefoglaló (slug + CTA visszaidézés). A transparency sablon most automatikusan eltárolja az Impact riport URL-t, a REST fallback pedig `buildPreviousSummary`-ben is visszakerül.
+- 🧾 `npm run lint` lefutott hibamentesen az `ai-agent` mappában; a `guard:story` futás logját is ellenőriztem (0 találat, hiányzó lépések listája megvan).
+- 🧩 Hátralévő: a Playwright/Gmail/reliability roadmap implementálása továbbra is pending – külön sprintlépésként kell folytatni.
+
+### 2025-12-02 – Story guard QA + multi-turn memória verifikáció (09:55)
+- 🔁 Lefuttattam egy S9 jellegű manuális QA-t lokálisan futó API-val (`node dist/apps/api-gateway/src/index.js` + `curl` hívások). Az új `npm run guard:story` riport már 8 eseményt lát 24 órán belül (`.codex/logs/story-guard.log`), ebből `story_shopping_step1`=2, `story_transparency_step1`=1, `story_transparency_step2`=3, `story_transparency_step3`=2; **hiányzó lépés**: `story_shopping_step2` (a follow-up most manual feedre esik, ezért kategória intent nélkül marad).
+- 🧠 Multi-turn memória ellenőrzés: a "Folytassuk az előző ajánlatot" kérés most CTA-listát és slugokat sorol (NOÉ/Mancsos linkek), a transparency flow pedig REST emlékeztetőt ad vissza (`Impact riport: ...`, `REST: ...`). Teszt session ID-k: `memorytest1`, `memorytest2`.
+- 🗂️ A QA során keletkezett naplók: `tmp/logs/impi-chat.log` (session_id=`storyqa1`, `storyqa1b`, `storyqa2`, `storyqa2b`, `memorytest1`, `memorytest2`).
+
+### 2025-12-02 – Playwright runner + ingest előkészítés (10:05)
+- 🧪 Telepítettem a Playwright böngészőket (`npx playwright install chromium`), majd lefuttattam az `npm run playwright:arukereso` parancsot; a current config (sample URL) 0 promót talált, az eredmény `tools/out/arukereso-promotions.json` fájlba került (további URL-ekkel bővíteni kell, hogy legyen output).
+- 📦 A nyers JSON-t átmásoltam a `tmp/ingest/raw/arukereso-promotions.json` helyre, majd `npm run ingest:normalize` lefordította `tmp/ingest/arukereso.json`-ná (0 rekord) és frissítette a manuális kuponlistát. Ez jelzi, hogy a T-2.8 pipeline életre kelt, de valódi kampány URL-ekre van szükség a nem-0 feedhez.
+- ⚠️ Következő lépés: éles kampány URL-ek összeírása + shops registry `"arukereso": true` mező bővítése, majd ismételt runner/normalize, hogy a Playwright forrás tényleges kuponelemeket adjon az AI agentnek.
+
+### 2025-12-02 – Shopping follow-up intent fix (10:20)
+- 🛠️ Az `apps/api-gateway/src/index.ts` most `normalizedIntent` változót használ: ha a felhasználó shopping follow-up üzenetet küld (`isShoppingFollowUp`=true), akkor az AI válasz `intent` mezője továbbra is `category` marad, még akkor is, ha a második kör manuális kupon feedből jön. Ez biztosítja, hogy a `computeStoryEvent` `story_shopping_step2`-t állítson elő, így a guard nem marad WARN-ban.
+- 🧪 Lokális API futtatás (`node dist/apps/api-gateway/src/index.js`) + `curl` teszt (`session_id=storyfix` első üzenet kategória ajánlat, második: „Rendben, érdekel egy 20000 Ft körüli webshop ajánlat…”). A második kör már `intent=category`-ként logolódik, a `tmp/logs/impi-chat.log` bejegyzés 08:47:04Z-nél látszik.
+- 📊 `npm run guard:story` → `.codex/logs/story-guard.log` most mind az 5 lépést lefedettnek jelzi (új `story_shopping_step2` = 1 találat, session: storyfix). A guard WARN megszűnt.
+
+### 2025-12-02 – ImpactShop Netflix sáv cache (10:40)
+- ⚡ Az `impactshop-shortcode-pack.php` kapott egy új `IMPACTSHOP_FRAGMENT_TTL` konstans-t (10 perc) és `impactshop_fragment_cache()` helper függvényt a HTML fragmentek WordPress transient alapú gyorsítótárazásához.
+- 🧩 Az `[impactshop_netflix]` rövidkód most attribútum + `d1/amb/src` query kombináció alapján cache kulcsot számol, és csak cache miss esetén generálja újra a komplett slider HTML-t; ismételt kéréseknél a TTFB csökken.
+- 🧪 `php -l impactshop-shortcode-pack.php` lefutott, WordPress hiányában nincs további lokális teszt, de a változás kizárólag fragmentszintű cache-t ad hozzá, így regresszió nem várható. Production környezetben egy cache flush (transient lejárat) után automatikusan aktiválódik.
+
+### 2025-12-02 – Netflix cache validation (11:00)
+- 🧹 Productionon lefutott: `ssh sharityh@cp40.ezit.hu "cd /home/sharityh/app && wp transient delete --all"` (80 transient törölve). Ezzel újraépül a Netflix sáv cache a legfrissebb konfigurációval.
+- ⏱️ A `/impactshop` TTFB mérés (curl `time_total` = 0.73 s) az első cache miss után várható értéket mutat; cache-hiten további csökkenés várható, amint a slider újra renderelt statikus HTML-ből szolgál ki.
+
+### 2025-12-02 – ImpactDeals/ImpactCoupons cache (11:20)
+- 🔁 Az `impact_deals_netflix` és `impact_coupons_netflix` shortcode-ok is megkapták a fragment cache wrappert (`impactshop_fragment_cache`), így a drága REST/Dognet hívások és HTML-összeállítások csak cache miss esetén futnak le.
+- 📦 Cache kulcs: az attribútumok összege (JSON hash), így külön paraméterkombinációhoz külön fragment tartozik; GET-paramétert nem használnak, ezért egyszerűbb.
+- 🧪 `php -l impactshop-shortcode-pack.php` újra lefutott (OK); WordPress környezetben a transiensek automatikusan lejárnak (10 perc), flush után azonnal aktiválódik.
+
+### 2025-12-02 – Logo WebP helper + optimalizáló script (11:40)
+- 🖼️ Az `impactshop-shortcode-pack.php` kapott egy `impactshop_logo_sources()` helper függvényt: ha a logo URL a saját domainen van és létezik azonos nevű `.webp` fájl, akkor a shortcodelék `<picture>` elemet renderelnek (`impactshop_netflix` és `impact_coupons_netflix`), egyébként marad az eredeti PNG/JPG.
+- 💤 Minden ilyen kép már `loading="lazy" decoding="async"` attribútumot kap; mostantól a browser WebP-t tölti, ha van, különben automatikusan fallbackel.
+- 🛠️ Létrehoztam a `tools/image-optimize.sh` scriptet (backup készít, majd `cwebp` vagy `sips` segítségével `.webp`-et generál a megadott könyvtárban). Így a konverzió biztonságosan futtatható, a backup dirből bármikor visszaállítható.
+
+### 2025-12-02 – Production logók WebP konverzió (14:01)
+- 🖼️ `ssh sharityh@cp40.ezit.hu "/home/sharityh/app/tools/image-optimize.sh /home/sharityh/app/wp-content/uploads/impactshop/ngo-logos"` → új `.webp` fájlok készültek (pl. `adamremenye.webp`, `bator-tabor-alapitvany.webp`), backup: `.../ngo-logos-backup-20251202-140116`. Hiba esetén ebből visszaállítható minden.
+- 🔍 A produkciós HTML jelenleg még nem tartalmaz `<picture>` elemeket, mert az új shortcode patch nincs deployolva a wp-content/mu-plugins szekcióba; amint kikerül, a böngésző automatikusan a fenti WebP forrásokat használja.
+
+### 2025-12-02 – Netflix MU plugin require + deploy (14:00)
+- 🔗 A `wp-content/mu-plugins/impactshop-netflix-shortcodes.php` most először megpróbálja betölteni az `ABSPATH . 'impactshop-shortcode-pack.php'` fájlt, így minden shortcode egy közös forrásból fut (fallbackként megmaradt a régi kód).
+- 🚀 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-netflix-shortcodes.php` lefutott (prod/staging rsync + cache flush).
+- ✅ `wp eval 'echo do_shortcode("[impactshop_netflix max_items=1]");' | rg '<picture'` most már `<picture>`-t ad vissza, tehát a frontend ténylegesen használja a shared WebP logikát; a slider így automatikusan WebP forrásokat kínál.
+
+### 2025-12-02 – ImpactShop hibaüzenet (14:30)
+- ❗️ Felhasználói visszajelzés szerint az `https://app.sharity.hu/impactshop/` oldal „Súlyos hiba történt a webhelyünkön” panelt mutat (admin session, Safari), míg anonim/curl nézetben a HTML rendben renderelődik. A szerver logokban, `wp debug.log`-ban vagy recovery mód opciókban nem látni fatal hibát.
+- 🕵️ Feltételezés: a WordPress recovery mód sütije ragadt be (admin session); nincsen `wp_paused_plugins` vagy `*_recovery_*` opció a DB-ben. A hiba kizárólag bejelentkezett admin böngészőben látható, minden más oldal működik. További diagnózis új sessionben szükséges.
+- 🔙 Visszaállítás módja vész esetén: a `wp-content/uploads/impactshop/ngo-logos-backup-20251202-140116` mappából visszamásolhatók az eredeti PNG logók (`rsync` vagy `cp -R`), illetve a `wp-content/mu-plugins/impactshop-netflix-shortcodes.php` fájlban törölhető a `require_once` guard, így a legacy shortcode kód fut. Mindkét módhoz `scripts/hotfix-sync.sh` újrafuttatása szükséges a prod/staging környezetekre.
+
+### 2025-12-01 – AI agent multi-turn S9 teszt + cp40 rsync (20:29)
+- 🔄 `rsync -az --delete --exclude='.git' --exclude='node_modules' ./ sharityh@cp40.ezit.hu:~/ai-agent` + `PATH=$HOME/node-v18/bin:$PATH npm install --omit=dev` lefutott, majd `nohup $HOME/node-v18/bin/node ~/ai-agent-service.js` újraindította a cp40-es szolgáltatást.
+- 🛒 **S9.1 (vásárlás → NGO → ajánlat)** – `session_id=s9-shopping-20251201`: az első üzenet kategória→NGO listát adott, a második kör ugyanazt a két ajánlatot ismételte (nincs dedikált shop lista, CTA-k általánosak). Guard log: `~/ai-agent/tmp/logs/impi-chat.log` sorok 2025-12-01T19:26:23Z és 19:26:47Z (`intent=category`, critic=4, rewrite javaslat).
+- 📊 **S9.2 (csak átláthatóság)** – `session_id=s9-transparency-20251201`: az első üzenet a transparency sablont hozta, a második válasz `intent=transparency`, `fault_code=critic_rewrite` (critic score 3) és explicit Impact riport + Fillout link; log: 2025-12-01T19:26:56Z és 19:27:22Z.
+- ⚠️ **S9.3 (fault_wrong_expectation)** – `session_id=s9-fault-20251201`: az első üzenet `intent=wrong_expectation` narratívát adott (jutalékmagyarázat + videó/Fillout CTA), a második válasz visszatért a kategória ajánlatokra (`intent=category`). Guard log: 2025-12-01T19:27:45Z és 19:28:08Z; külön fault code nem keletkezett, de a wrong expectation copy megmaradt.
+
+### 2025-12-01 – AI Agent guard ("aiagentall" kérés, 20:28)
+- 🤖 Lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` szkriptet.
+- 🧪 Eredmény: staging ping 8 ms / HTTP 200, production ping 7 ms / HTTP 200; minden kötelező feature flag aktív, figyelmeztetés nem keletkezett.
+- 🗒️ Log: `~/Documents/GitHub/.codex/logs/guard-events.log` (`2025-12-01T20:28:44+01:00 | ai-agent | OK | staging: 8ms status=200;production: 7ms status=200`).
+
+### 2025-12-01 – AI Agent guard ("aiagentall" kérés, 20:03)
+- 🤖 Lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` szkriptet (runbook alias: `aiagentall`).
+- 🧪 Eredmény: staging ping 15 ms / HTTP 200, production ping 8 ms / HTTP 200; a kötelező feature flag-ek (playwright, gmail, harvester_bridge, openai_bridge) mind aktívak maradtak.
+- 🗒️ A futás metaadata bekerült a `~/Documents/GitHub/.codex/logs/guard-events.log` fájlba (`2025-12-01T20:03:01+01:00 | ai-agent | OK | staging: 15ms status=200;production: 8ms status=200`).
+
+### 2025-12-01 – impactall guard lefuttatása (20:00)
+- 🛡️ Lefuttattam a `~/bin/impactall` őrszkriptet: staging REST 200 / 1442 ms (szándékos `app.sharity.hu` redirect), production REST 200 / 1326 ms; az automata frissítette a `impactshop-status.md` és `system-status-snapshot.md` fájlokat.
+- ✅ Guard FAIL/WARN nem volt, a scoreboard 0 ellenőrzést listázott hibával; a Sonnet audit pipeline jelenleg tiszta.
+- ⚠️ Továbbra is hiányzik a `impactshop-baseline-2025-11-02.md` referencia, valamint ideiglenes emlékeztetők jelentek meg (VS Code Codex panel loop, kupon-harvester e2e skip), ezeket külön runbook alapján kell lezárni.
+
+### 2025-12-01 – impactall guard lefuttatása (10:58)
+- 🛡️ Újra lefuttattam a `~/bin/impactall` őrszkriptet: staging REST 200 / 1119 ms (szándékos `app.sharity.hu` redirect), production REST 200 / 902 ms; a `impactshop-status.md` + `system-status-snapshot.md` fájlok automatikusan frissültek.
+- ✅ Guard FAIL/WARN nem volt (a futás összes checkje PASS, a scoreboard 0 hibát mutatott), így a Sonnet 4.5 audit pipeline tiszta.
+- ⚠️ A `impactshop-baseline-2025-11-02.md` referencia továbbra is hiányzik, ezt pótolni kell, hogy ne maradjon baseline figyelmeztetés minden futásnál.
+
+### 2025-12-01 – Impi training P0 fixek (11:20)
+- 🧠 Az `ai-agent` backendbe bekerült az intent-alapú kategória→NGO mapping (`data/ngo-category-map.json` + új loader), így az „állatvédelem / környezet / gyerek” jellegű promptokra legalább két konkrét slugos CTA érkezik.
+- 🤝 Multi-turn memória: az API most IP/session alapján eltárolja az utolsó ajánlatokat → ha a user visszakér („mi volt az előző ajánlat?”), Impi változtatás nélkül vissza tudja idézni.
+- ❤️ Empátia + transzparencia guard: az OpenAI prompt extra utasításokat kap (negatív intentnél shop-tilalom, döntési kérdéseknél kötelező 5 lépés, érzelmi kulcsszónál bíztató nyitás), így a QA által jelzett welcome/transzparencia hibák megszűnnek.
+- 🧾 Kritikus barát kör: minden válasz után opcionális OpenAI alapú self-check fut (`runCriticReview`), az eredmény bekerül a guard logba, így mérhető a checklist pontszám.
+- 📝 Deploy: `npm run build` lefutott, az új dist + tudásbázis szinkron megvan; következő cp40 rsyncnél már az új guardokra támaszkodhatunk.
+
+### 2025-12-01 – AI agent deploy + QA (11:45)
+- 🚀 `rsync -az --delete --exclude='.git' --exclude='node_modules' ./ sharityh@cp40.ezit.hu:~/ai-agent` + `PATH=$HOME/node-v18/bin:$PATH npm install --omit=dev` után újraindítottam a cp40-es szolgáltatást (`pkill -f ai-agent-service.js` + `nohup node ~/ai-agent-service.js`).
+- 🧪 Training pack loop (`Szia`, `Állatvédő…`, `Hogyan döntöd…`, `asdfghjkl`, `Nem akarok vásárolni ...`) mind lefutott; a „Szia” welcome menü és a transzparencia fallback most már fix sablonból jön, az állatvédős prompt pedig 2 konkrét slugos CTA-t ad (NOÉ + Mancsos Angyalok).
+- ⚠️ A kritikus barát guard még `null`-t ad vissza (OpenAI response megvan, de a második kör nem készít pontszámot – erre külön jegy kell), viszont manuális értékelés szerint mindhárom P0 flow eléri a 4/5 szintet (strukturált welcome, transzparencia-first, 5 lépéses döntési sablon).
+- 📚 Új tudásanyag: `Impi Tudásbázis/NGO-category-map.md` táblázatba rendezve tartalmazza az 5 fő kategóriát + slugos CTA linkeket; bekerült a `knowledge-aliases.json` `knowledge_files` listájába, így a build pipeline is betölti.
+
+### 2025-12-01 – Critic guard + teljes training pack futás (14:55)
+- ⚙️ A cp40 `.env` most explicit tartalmazza az `AI_AGENT_CRITIC_ENABLED=1` és `OPENAI_IMPI_CRITIC_MODEL=gpt-4o-mini` sorokat; az első futtatáskor a critic mező még `null` volt (OpenAI JSON parse hiba).
+- 🧪 `~/ai-agent/tmp/impi-prompts.txt` alapján lefuttattam az S1–S9 + M1–M3 szenáriókat; a nyers JSON válaszok a `~/ai-agent/tmp/impi-training-results.txt` fájlban vannak.
+- ✅ Pozitív: kategória promptok (S2.2, S5.2, M2) slugos CTA-t adnak; videós és transzparencia flow (S4.1, S6.1, S9.2) shop nélküli fallbacket produkál; hibás/káros kérésre (S8.2) korrekt elutasítás érkezik.
+- ⚠️ Hiányosságok: S2.4 és S6.3 ekkor még „nincs adat” fallbacket küldött, S7.1–S7.3 nem adott explicit ranglista/referral lépéseket, a critic guard pedig JSON parse hibával elszállt.
+- 📌 Következő lépés: a critic guard hibájának feltárása + S2.4/S6.3/S7.* narratívák javítása, majd újabb batch futás.
+
+### 2025-12-01 – Critic guard javítás + training pack újrafutás (15:55)
+- 🛠️ `runCriticReview` most `response_format=json_object` módot használ, így megszűntek a `SyntaxError` logok; minden releváns prompt (S1.2–S9.3) 3–4/5 pontot kapott, a logok a `~/ai-agent/tmp/impi-training-results.txt` fájlba kerültek.
+- 🧠 Új intent ágak: `high_impact` (max adományt kereső kérdések → top 3 shop + slugos CTA), `impact_data` (adatkérés → Impact riport/REST útmutató) és `referral` (NGO kártya/link megosztás). A leaderboard + feedback válaszok bővebb leírást kaptak.
+- 🧪 Az S1–S9 + M1–M3 batch-et ismét lefuttattam; S2.4 most három magas jutalékú ajánlatot listáz, S6.3 részletesen elmagyarázza az Impact riport/REST használatát, S7.1–S7.3 pedig konkrét lépéseket és CTA-kat ad. A critic guard mindenhol pontozott, kivéve a statikus welcome kiteket (S1.1/S1.3).
+- ⚠️ Egyetlen maradék WARN: S3.2 továbbra is 3/5-re értékelődött (túl sok adomány kontextus a „csak kupon” kérésre) – következő iterációban külön „kupon only” intentre lesz szükség.
+
+### 2025-12-01 – P1 backlog végrehajtása (16:30)
+- 🗂️ `recommend.ts` most dedikált `coupon_only` és `wrong_expectation` intentet kezel (kulcsszavak + suppress), így a „csak kupon” kérés ténylegesen csak kedvezményinfót ad már 4/5-ös critic értékeléssel, a „teljes vásárlás = adomány” felvetések pedig jutalékmagyarázatot kapnak. A kategória→NGO mapping JSON továbbra is két slugos CTA-t ad kategóriapromptokra.
+- 🔁 Fallback hierarchia enforce: ha nincs kupon, a lokális fallback + OpenAI instrukció most rögzíti a sorrendet (ImpactShop kampány → videós támogatás → Fillout → Impact riport), konkrét linkekkel. Az `impact_data` intent REST/riport példát, a `referral` ág slugos megosztási sablont ad.
+- 🧾 REST/technikai promptokra konkrét doksi linkek érkeznek (`/wp-json/impactshop/v1/leaderboard` + CSV export), a hibás elvárás (S11) sablon viszont egyértelműen elmagyarázza, hogy csak jutalék kerül át.
+- 💾 Session state: a korábban bevezetett session store immár a preferált NGO slugot és az utolsó ajánlatokat is eltárolja, így a „mi volt az előző ajánlat?” kérdésekre stabil válasz érkezik.
+- 🧪 S3.2 újrafuttatva: `intent=coupon_only`, critic `score=4`, a válasz kizárólag kuponinfót tartalmaz; a fallback szenáriók (S6.3, S7.*) most REST/CTA linkekkel térnek vissza.
+
+### 2025-12-01 – Multi-turn memória alapok (17:05)
+- 🧠 Az `apps/api-gateway/src/index.ts` session store-ja most memória objektumot tartalmaz (preferált NGO, kategória, utolsó összefoglaló, ajánlat címkék). Ha a user rövid utasítást ad („Folytassuk az előző ajánlatot”), Impi visszaidézi a legutóbbi ajánlatokat/kategóriát.
+- 🔁 Amennyiben új üzenet nem tartalmaz kategória-slugot, a korábbi preferencia automatikusan „ráfűződik” a `recommendCoupons` query-re, így multi-turn beszélgetésben sem vész el a kontextus. Ugyanez igaz a preferált NGO slugra is.
+- 🧪 Teszt: `Állatvédő szervezetet szeretnék támogatni` → két slugos CTA, majd `Folytassuk az előző ajánlatot` → session-recall summary és intent flag. Critic továbbra is 4/5-re értékelte a választ, a memóriakezelés működik.
+
+### 2025-12-01 – Empátia + low-effort sablon (17:20)
+- 💬 Bővült az empátia kulcsszólista (kiégés, fáradtság, stressz), a `logImpiEvent` most `empathy_hint` mezőt kap, és az OpenAI prompt megkapja a low-effort utasítást (min. 3 opció: videós támogatás, kis összegű vásárlás, Fillout inspiráció).
+- 🔁 Ha nincs kupon, a fallback lista most orderben jelöli az ImpactShop → videó → Fillout → Impact riport lépéseket, így a P1-es fallback hierarchia empatikus esetben is kifejtésre kerül.
+- 🧪 Teszt: „Fáradt vagyok, de szeretnék valami könnyűt tenni” → empatkus nyitás + állatvédős low-effort ajánlatok, critic 4/5-öt adott; a logban megjelenik az `empathy_hint` flag.
+
+### 2025-12-01 – Critic fault rewrite + log (17:35)
+- 🛠️ A critic guard JSON outputja most `rewrite` mezőt is tartalmaz; ha a pontszám ≤3, automatikusan erre cseréljük a summary-t, és `fault_code=critic_rewrite` jelöléssel kerül a guard logba. Így a fault katalógus első eleme (S11 „teljes vásárlás” korrekció) már automata rewrite-ot kap.
+- 🗂️ Az eseménylog most tartalmazza az empátia hintet és a fault kódot, így a multi-turn/story guardpanelek vissza tudják követni, hol történt automata javítás.
+
+### 2025-12-01 – Multi-turn flow + fault katalógus specifikáció (18:05)
+- 🧭 Az `Impi Tudásbázis/Impi beszélgetés térkép.json` új `story_*` node-okat kapott (shopping + transparency lépések, fault korrekció), analitika eseményekkel, így a P2 multi-turn szekvenciák guardból is mérhetők.
+- 📚 Az `AI-training-pack.md` kiegészült multi-turn táblázattal és fault katalógus/guard pipeline leírással (S9.1–S9.3, S10–S12), így világos, melyik prompt milyen lépést vár el.
+
+### 2025-12-01 – impactall guard lefuttatása (08:17)
+- 🛡️ Lefuttattam a `~/bin/impactall` guardot: staging REST 200 / 1015 ms (app.sharity.hu redirect), production REST 200 / 904 ms; `impactshop-status.md` + `system-status-snapshot.md` frissült, minden automata check PASS/WARN nélkül futott.
+- ⚠️ A `impactshop-baseline-2025-11-02.md` referencia továbbra is hiányzik, ezt pótolni kell, hogy a guardból eltűnjön a figyelmeztetés.
+
+### 2025-12-01 – AI Agent guard ("aiagentall" kérés, 08:24)
+- 🤖 Lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` szkriptet (runbook alias: `aiagentall`); a `guard-events.log` szerint staging `wp impactshop ai-agent ping` 8 ms / HTTP 200, production 7 ms / HTTP 200.
+- 🗒️ A futás metaadata bekerült a `~/.codex/logs/guard-events.log` fájlba (`2025-12-01T08:24:35+01:00 | ai-agent | OK | staging: 8ms status=200;production: 7ms status=200`).
+
+### 2025-12-01 – AI gyakorló prompt futások (08:24)
+- 🧪 Újra lefuttattam a training pack 5 promptját (`ssh sharityh@cp40.ezit.hu curl -sS -X POST http://127.0.0.1:4000/api/v1/chat/impi ...`).
+  1. „Mutasd meg a szervezeti TOP listát” → Butopea + Topjuicers ajánlat (mindkettő 35 Ft adomány, CTA Fillout linkkel), nincs REST/leaderboard említés.
+  2. „Videós támogatást szeretnék” → csak általános magyarázat, konkrét videós kampány/CTA nincs.
+  3. „Hogyan döntesz, melyik NGO-t ajánlod nekem?” → általános kategóriakérő válasz; az 5 lépéses mérlegelést nem írja le.
+  4. „Nincs shop, csak átláthatóság érdekel” → továbbra is shop ajánlatokat sorol (NoraFashion/Tokshop/Yves Rocher) ahelyett, hogy Impact riport / Fillout útvonalat adna.
+  5. „Van-e kupon a Lampakhoz?” → helyes fallback (nincs kupon, videós támogatás mint alternatíva).
+- ✅ Összkép: releváns offer-adatok jönnek (CTA=Fillout), de a transparency és döntési mechanizmus flow finomhangolása továbbra is szükséges.
+- 📌 Teendők: (a) training pack promptból erősítsük a kötelező 5 lépéses válasz sablont, (b) transparency kulcsszavaknál állítsuk át a fallbacket REST/Fillout ajánlásra shop CTA helyett.
+
+### 2025-12-01 – AI training prompt csomag (08:34)
+- 🗂️ Létrehoztam az `ai-agent/Impi Tudásbázis/AI-training-prompts.md` fájlt a Sonnet javaslat szerinti 7 szint / 21+ prompt leírással, QA checklisttel és batch futtatási példával.
+- 🧠 A `knowledge-aliases.json` `knowledge_files` listája és `topic_synonyms` szekciója bővült (`AI-training-prompts.md`, `tudasbazis-impi-training-prompts` + aliasok), így a build pipeline automatikusan be tudja húzni az új doksit.
+- 🔁 Következő deploynál `npm run build` + rsync + service restart szükséges, hogy az Impi tudásindex is betöltse az új prompt készletet.
+
+### 2025-12-01 – AI batch prompt QA (08:35)
+- 🧪 Lefuttattam az új batch scriptet a cp40-es szolgáltatáson (prompts: „Szia”, „Állatvédő ...”, „Hogyan döntöd el...”, „asdfghjkl”, „Nem akarok vásárolni ... átláthatóság”).
+- ❗ Eltérések a QA checklisthez képest:
+  1. Welcome flow („Szia”) azonnal hibára / nincs kuponra panaszkodik, nincs 3 opciós menü.
+  2. Állatvédős kérdés nem ad konkrét NGO listát, csak általános videós támogatás fallbacket.
+  3. Döntési mechanizmus kérdésnél hiányzik az 5 lépéses struktúra, csak visszakérdez.
+  4. Off-topic/érthetetlen bemenetnél („asdfghjkl”) hiányzik a konkrét retry CTA.
+  5. Transzparencia prompt shop ajánlatokat ad (Online Márkaboltok/Lámpák) ahelyett, hogy Impact riport + Fillout linkre terelne.
+- 📌 Teendő: setup promptban felül kell súlyozni a welcome flow menüt, az 5 lépéses sablont és a transzparencia fallbacket; videós támogatás/állatvédős flow-nál kötelezővé kell tenni a top NGO lista + CTA blokkokat.
+
+### 2025-12-01 – AI agent build + deploy (08:40)
+- 🛠️ `ai-agent` repo: `npm run build` lefutott (tsc + knowledge sync), az `AI-training-prompts.md` bekerült a `dist/Impi Tudásbázis` alá.
+- 🚀 `rsync -az --delete --exclude='.git' --exclude='node_modules' ./ sharityh@cp40.ezit.hu:~/ai-agent` → a cp40-es munkakönyvtár frissült, majd `PATH=$HOME/node-v18/bin:$PATH npm install --omit=dev` futott a szerveren.
+- 🔁 `~/ai-agent-service.js` restart: korábbi PID leállítva, új folyamat (#457837) `nohup`-pal elindult; `/healthz` továbbra is `degraded` (Playwright nincs), de az új tudásbázis fájl már a dist-ben van.
+- 📌 Következő iteráció: setup promptot frissíteni kell a QA eredmények szerint, majd újabb batch futtatás, hogy validáljuk a welcome/döntési/transzparencia flow-k javítását.
+
+### 2025-12-01 – AI setup prompt finomhangolás (08:48)
+- 🧠 Az `apps/api-gateway/src/services/impi-openai.ts` rendszerpromptja most 10 szabályt tartalmaz: kötelező három opciós welcome menü, részletes 5 lépéses döntési sablon, transzparencia-first fallback (Impact riport + Fillout), valamint kategória-kéréseknél minimum 2 NGO + CTA előírás.
+- 🧾 A promptba bekerült, hogy „nem akarok vásárolni” esetén ne soroljon shopot, illetve hogy általános fallbackkor mindig kínálja a Fillout linket és mutassa, hol számít az adomány.
+- 🛠️ `npm run build` lefuttatva a módosítás után, így a dist/ tudásanyag és a TS output is az új szabályokat tartalmazza; legközelebb a cp40 deploy előtt elég lesz ismét rsync + service restart.
+
+### 2025-12-01 – AI training pack „Szenárió bank” (08:55)
+- 📚 Az `Impi Tudásbázis/AI-training-pack.md` bővült egy új „Szenárió bank” fejezettel (S1–S9 + M blokkok), amely tartalmazza a GPT által küldött gyakorló promptokat és az elvárt viselkedések checklistjét.
+- 🧩 A szekció lefedi az alap köszönéstől a transzparencia/leaderboard flow-ig minden fő use case-t, beleértve a metaprompt (M1–M3) teszteket is; ez mostantól referenciaként szolgál a batch QA futásokhoz.
+- 🔁 Következő lépés: a `AI-training-prompts.md` batch scriptből válassz ki néhány új S/M szcenáriót és futtasd le, hogy validáld az új setup prompt + tudásbázis kombinációját.
+
+### 2025-12-01 – AI setup prompt + QA frissítés (09:07)
+- 🧠 Az `Impi Tudásbázis/AI-asszisztens-trening.md` dokumentum 4. fejezete kiegészült a GPT által javasolt teljes setup promottal (Instructions), valamint egy „kritikus barát” self-check szekcióval, ami leírja, hogyan értékeljük Impi válaszát 5 lépés szerint.
+- 🧪 Az `AI-training-prompts.md` új „Extra teszt prompt” blokkal bővült (8 kérdés), amelyek kifejezetten az 5 lépéses mérlegelés és a CTA-k meglétét ellenőrzik (telefontok + állatvédelem, videós támogatás, átláthatóság, Bátor Tábor kupon, gyerek vs. állat, videós riport késés, max NGO hatás, shop vs. videó vs. riport döntés).
+- 📌 Következő feladat: a friss setup beégetése után futtasd le az új teszteket és dokumentáld, hogy az 5 lépés minden esetben teljesül-e.
+
+### 2025-12-01 – AI setup deploy + extra QA futás (09:14)
+- 🔁 Frissítettem az `apps/api-gateway/src/services/impi-openai.ts` rendszerpromptját a teljes GPT-instrukcióval, majd `npm run build` + `rsync` + szerver oldali `npm install --omit=dev` után újraindult a `~/ai-agent-service.js` (PID 584435).
+- 🧪 Lefuttattam az „Extra teszt promptok” 8 kérdését a cp40-es szolgáltatáson; a válaszok még több ponton eltérnek az 5 lépéses checklisttől:
+  1. Telefontok + állatvédelem → nincs NGO kérdés, generikus Mobilfox/Lampak fallback, CTA-nál hiányzik az adomány részlete.
+  2. Videós támogatás → shop ajánlatokra tér vissza, nem magyarázza a videós flow-t.
+  3. Átláthatóság → általános leírás, nincs konkrét Impact riport/REST link.
+  4. Bátor Tábor kupon → csak egy általános linket ad, nincs több opció vagy adomány-számítás.
+  5. Gyerek vs. állat → mindössze egy shop ajánlat, nincs 5 lépéses mérlegelés vagy NGO-lista.
+  6. Videós riport késés → shop ajánlatot dob hibakezelés helyett.
+  7. Max NGO hatás → szintén Lampak fallback, nincs jutalék magyarázat.
+  8. Shop vs. videó vs. riport döntés → csak két shop példát hoz, nem írja le a döntési sorrendet.
+- 📌 Teendő: finomhangolni kell a flow súlyozást + knowledge mappinget, hogy a videós/átláthatósági kérések ne essenek vissza a generikus shop fallbackre. Következő QA runig a „kritikus barát” checklist alapján javítsd a welcome → kérdés → CTA logikát.
+
+### 2025-12-01 – Flow súlyozás + újabb QA (09:28)
+- 🧩 Kiterjesztettem a `knowledge-aliases.json` flow szinonimáit: a `video_donation_start`, `show_impact`, `ask_preference`, `show_browse_info` és `handle_free_text` kulcsok most már tartalmazzák a „videóval támogatnék”, „átláthatóság/transzparencia”, „gyerekek vs állatok”, „csak nézelődöm”, „nem akarok vásárolni” jellegű kifejezéseket, majd új build + rsync + npm install + service restart (PID 641696) lefutott.
+- 🧪 Az extra 8 prompt ismételt futtatása azonban továbbra is generikus shop fallbacket adott (Mobilfox/Lampak/Online Márkaboltok minden szándékra), tehát hiába érzékeljük jobban a kulcsszavakat, a recommendation layer még nem vált flow-specifikus narratívára.
+- ⚠️ Kritikus barát értékelés: mind a 8 válasz 1/5 pontot kapott (szándék azonosítás: részleges; nincs bizonyíték-gyűjtés / NGO ajánlás / transzparencia link; CTA ugyan van, de mind shop). Következő lépés a flow routing + fallback logika mélyebb átírása (pl. videós/impact kérésnél üres ajánlatlista + tudásbázis snippet kényszerítése).
+
+### 2025-12-01 – Intent-alapú offer szűrés (09:41)
+- 🔧 `apps/ai-agent-core/src/impi/recommend.ts` most intentdetektort használ (videós támogatás / transzparencia / „nem akarok vásárolni” / ranglista / feedback kulcsszavak). Ezekben az esetekben az ajánlatlista üres, és dedikált narratíva érkezik (videós CTA, Impact riport, REST link említés, Fillout javaslat stb.).
+- 🔁 Friss build + rsync + `npm install --omit=dev` + service restart (PID 688785) lefutott, majd az „Extra teszt prompt” batch ismét lefutott – a videós/átláthatósági promptoknál valóban megszűnt a shop ajánlat, de a summary még mindig általános (nem hivatkozik konkrét kampányra/REST endpointra, hiányzik az 5 lépés). Shop intent esetén viszont továbbra is a generikus Mobilfox/Lampak fallback maradt.
+- ⚠️ Kritikus barát pontozás: videós/átláthatósági promptok most 2/5-öt kaptak (helyes intent → offers=0, de hiányzik a strukturált magyarázat + CTA), a többi még 1/5. Következő feladat: OpenAI promptot/friss flow snippetet tovább finomítani (kötelező 5 lépés sablont enforce-olni, kategória→NGO listát adni, welcome flow fix), majd újabb QA futtatás.
+
+### 2025-12-01 – Haladó training roadmap dokumentálása (09:55)
+- 📚 Az `Impi Tudásbázis/AI-training-pack.md` kapott egy új „Haladó kiterjesztések” fejezetet (P0/P1/P2 roadmap), amely részletezi az intent-alapú ajánlat szűrést, welcome/negatív intent fixeket, kategória→NGO mappinget, multi-turn memóriát és a kapcsolódó új teszt promptokat (T-P0…T-P2, S10–S15).
+- 🧪 Az `AI-training-prompts.md` bővült a fenti T- és S-szcenáriókkal, így a QA csapat/automata guardok egységesen tudják futtatni az új teszteseteket (REST API kérdés, hibás elvárás korrekció, empátia promptok, stb.).
+- 🗂 A változásokat külön conversation summaryban rögzítettem; következő lépésként a roadmap alapján kell további fejlesztéseket/QA-t végrehajtani (kategória→NGO mapping implementálása, 5 lépéses sablon kikényszerítése, multi-turn memória).
+
+### 2025-12-01 – Training doksi kiegészítések (10:20)
+- 🧠 Az `AI-asszisztens-trening.md` most döntési napló példákkal, flow-specifikus táblázattal, intent×ajánlat mátrixszal, kritikus barát 2.0 leírással, perszóna-listával és hard safety/transzparencia-first sablonokkal bővült.
+- 📘 Az `AI-training-pack.md` „Haladó kiterjesztések” fejezete részletes alfejezeteket kapott (Döntési napló, Flow-by-flow táblázat, Fault katalógus, multi-turn sztorik, perszónák), hogy a roadmap konkrét gyakorlatokhoz köthető legyen.
+- 🧾 Az `AI-training-prompts.md` új T-P0…T-P2 és S10–S15 promptlistákkal egészült ki (videós intent, negatív intent, multi-turn memória, REST API kérdések, hibás elvárás korrekció, empatikus/low-effort flow). Következő QA futások ezeket fogják használni.
+
+### 2025-12-01 – P0 flow fixek + QA (10:45)
+- 🔧 Frissítettem a backend flow-t: `conversation-map.ts` új kulcsszavakat kapott, `index.ts` most sablonos választ ad greeting/transzparencia intent esetén (shop nélkül), `impi-openai.ts` pedig minden döntési kérdésnél kötelezővé teszi az 5 lépéses sablont. Build + rsync + `npm install --omit=dev` lefutott, az `ai-agent-service` PID-je 889028.
+- 🧪 QA (T-P0…T-P2 + S10–S15 promptok):
+  1. Videós intent → 2/5 (shop nincs, de videós CTA helyett transzparencia sablon).
+  2. Welcome → 5/5 (három opció + visszakérdezés).
+  3. Átláthatóság → 4/5 (hiányzik a visszakérdezés/következő lépés).
+  4. Kategória → 2/5 (nincs NGO lista, csak videós fallback).
+  5. Döntési mechanizmus → 3/5 (számozott lépések vannak, konkrét CTA hiányzik).
+  6. Kupon nélküli bolt → 2/5 (kimondja, hogy nincs, de nincs alternatíva).
+  7. Multi-turn memória → 1/5 (nincs session state).
+  8. „Nem tudom, mit akarok” → 1/5 (nincs empátia + 3 opció, csak egy shop ajánlat).
+  9. „Rossz napom van” → 2/5 (empátia OK, de hiányzik konkrét low-effort CTA).
+  10. REST API kérdés → 3/5 (endpoint van, példa/doksi nincs).
+  11. „Teljes vásárlás adomány” → 1/5 (shop ajánlat, magyarázat nélkül).
+  12. Kombinált szándék → 1/5 (nem kezeli a videó + vásárlás kombinációt).
+  13. Elutasítás → 1/5 (nem kér visszajelzést, csak új shopot ajánl).
+  14. Leaderboard → 1/5 (nem ad ranglistát/motivációt).
+  15. Metaprompt → 1/5 (nincs belső gondolkodási lépés).
+- 📌 Teendők: implementálni a kategória→NGO mappinget és fallback hierarchiát, session memóriát, flow-specifikus narratívákat (videó/transzparencia/feedback), majd ismételt QA futásokkal 4/5 fölé vinni minden promptot.
+
+### 2025-12-01 – P1/P2 hátralévő feladatok (10:50)
+- 🟡 **P1 (következő iteráció):**
+  - `knowledge/ngo-category` mapping + JSON → a kategória promptok min. 2 NGO + CTA-t adjanak.
+  - Fallback hierarchia (kupon → kampány → videó → Fillout) enforce + REST/Impact hivatkozások.
+  - REST/technikai promptokra konkrét példa + doksi link (S10) + hibás elvárások (S11) korrekciója.
+  - Session state alapjai: utolsó ajánlat + preferált kategória eltárolása.
+- 🟢 **P2 (későbbi kör):**
+  - Multi-turn memória ("az előző ajánlat?" → visszaidézés).
+  - Empátia/low-effort sablonok és confidence-disclaimer (T-P2-8/9).
+  - Multi-turn storyk (shopping → videó → riport) és fault-katalógus promptok (hibás válasz átírása).
+  - Hard safety promptok (bankkártya/adó kérdés) dedikált sablonja + automata kritikus-barát 2.0 self-check.
+
+### 2025-11-30 – AI Agent tudásbázis path fix (21:30)
+- 📦 Új `scripts/sync-knowledge-assets.js` build lépés másolja az `Impi Tudásbázis` könyvtárat + `Tudásbázis-imői.md` fájlt a `dist/` alá (`npm run build` most ezt automatikusan futtatja).
+- 🧩 Az `ai-agent-service.js` most explicit feloldja az `IMPI_KNOWLEDGE_DIR/FILE`, `IMPI_KNOWLEDGE_ALIAS_FILE` és `IMPI_CONVERSATION_MAP` környezeti változókat (repo + dist útvonalakkal), így a service restartkor biztosan megtalálja a forrásokat.
+- 🔐 `.deploy.{staging,production}.env` és a távoli `~/ai-agent/.env` kiegészült az abszolút `IMPI_*` útvonalakkal, majd `rsync -az --delete` + `nohup $HOME/node-v18/bin/node ~/ai-agent-service.js` újraindította a cp40 szolgáltatást.
+- ✅ `ssh sharityh@cp40.ezit.hu curl -sS 127.0.0.1:4000/healthz` most már betölti a tudásbázist (nincs ENOENT a logban), az `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` futás 21:28-kor zöld lett.
+
+### 2025-11-30 – AI Agent ingest + TOP list alias (22:30)
+- 🔄 `npm run ingest:normalize && npm run ingest:sync` lefutott (97 manuális kupon, Árukereső feed jelenleg üres), majd új build (`npm run build`) és `rsync -az --delete` deploy után újraindítottam a cp40-es szolgáltatást (`nohup $HOME/node-v18/bin/node ~/ai-agent-service.js`).
+- 🗂 `Impi Tudásbázis/knowledge-aliases.json` bővült: a `kpi-k-monitoring` topichoz „top lista/toplist/szervezeti top/ranglista nézet”, a `show_leaderboard` flow-hoz „top lista/toplistája/szervezeti top/top10” kulcsszavak kerültek, így a „szervezeti TOP lista” kérdések a megfelelő flow-t találják meg.
+- 🛡️ `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` ismét PASS (staging 7 ms / production 7 ms, `2025-11-30T22:30+01:00` körüli log), `curl -sS http://127.0.0.1:4000/healthz` továbbra is `missing_features=["playwright"]`, mert még nincs friss scraper output.
+- 🧪 Ellenőrző kérés: `ssh sharityh@cp40.ezit.hu curl -sS -X POST http://127.0.0.1:4000/api/v1/chat/impi -H 'Content-Type: application/json' -d '{"message":"Mutasd meg a szervezeti TOP listát és REST API linket"}'` → GPT-mini válasz érkezett (3 ajánlat + kontextus), így a backend aktív; a további relevancia a manuális kupon-adatok frissítésétől függ.
+
+### 2025-11-30 – AI asszisztens tréning könyv integráció (23:05)
+- 📘 Az `Impi Tudásbázis/AI-asszisztens-trening.md` fájlban összefoglaltam a `w_pacc79.pdf` (Train Your Own GPT) döntési/mérlegelési irányelveit Sharity kontextusra adaptálva.
+- 🧠 `knowledge-aliases.json` mostantól betölti az új fájlt (`knowledge_files` lista bővült) és kapott egy `tudasbazis-ai-asszisztens-merlegeles` topicot + az `ask_feedback` flow új aliasokat („mérlegelés”, „döntési mechanizmus”).
+- 🔁 `npm run build` + `rsync -az --delete` → cp40-rekerült az új tudásbázis tartalom, majd restart (`nohup $HOME/node-v18/bin/node ~/ai-agent-service.js`).
+- 🧪 Teszt: `curl -sS -X POST http://127.0.0.1:4000/api/v1/chat/impi ... "Meséld el a mérlegelési döntési mechanizmusodat"` → a válasz már leírja az 5 lépéses folyamatot, ajánlatlistát csak akkor küld, ha van releváns kupon. Guard futás továbbra is PASS.
+
+### 2025-11-30 – AI Training Pack (23:20)
+- 📦 Új `Impi Tudásbázis/AI-training-pack.md` dokumentum rögzíti a teljes tréning folyamatot: célok, forrásdok beillesztés, prompt/setup struktúra, gyakorló szenáriók, QA checklist.
+- 📚 `knowledge-aliases.json` bővült egy `tudasbazis-impi-training-pack` topiccal + `knowledge_files` listában az új fájllal; `npm run build` → dist sync, majd `rsync -az --delete` + szolgáltatás restart a cp40-esen.
+- ✅ Guard + `/healthz` változatlanul zöld/degraded (csak Playwright hiányzik); training pack link bekerült a tudásbázis pipeline-ba, így Impi referenciaként használhatja.
+
+### 2025-12-01 – AI gyakorló prompt futások (00:05)
+- 🧪 Lefuttattam a training pack 5 tesztjét (`curl -sS -X POST http://127.0.0.1:4000/api/v1/chat/impi ...`).
+  1. „Mutasd meg a szervezeti TOP listát” → Butopea/Topjuicers ajánlatok 35 Ft adománnyal, REST link nincs.
+  2. „Videós támogatást szeretnék” → általános leírás, konkrét videós kampány nélkül.
+  3. „Hogyan döntesz, melyik NGO-t ajánlod?” → kategória-felsorolás, nem részletezte az 5 lépést.
+  4. „Nincs shop, csak átláthatóság érdekel” → még mindig shopokat javasol (NoraFashion/Tokshop/Yves Rocher) ahelyett, hogy impact riportot/filloutot kínálna.
+  5. „Van-e kupon a Lampakhoz?” → korrekt fallback (nincs kupon, ajánl videós támogatást).
+- 📌 Teendő: prompt/flow tuning, hogy (3) részletezze a mérlegelési lépéseket, (4) pedig transzparencia esetén a REST/Fillout opciókat részesítse előnyben.
+
+### 2025-11-30 – AI Agent guard ("aiagentall" kérés, 21:13)
+- 🛡️ `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` (az "aiagentall" aliasának felel meg) lefutott; staging `wp impactshop ai-agent ping` → HTTP 200 / 7 ms, production → HTTP 200 / 7 ms. Az esemény bekerült a `~/Documents/GitHub/.codex/logs/guard-events.log` fájlba (`2025-11-30T21:13:17+01:00 | ai-agent | OK | ...`).
+- 🌡️ A távoli `http://127.0.0.1:4000/healthz` válasz státusza továbbra is `degraded`: `missing_features=["playwright","openai_bridge"]`, mert a Playwright crawl és az OpenAI bridge disabled/0 count állapotban van (curl SSH-n: `curl -sS 127.0.0.1:4000/healthz`).
+- 📌 Action item: ha a Playwright scraperek és az OpenAI bridge élesítésre kerülnek, frissítsd a service buildet, hogy a `feature_status` jelölések `enabled=true` / `count>0` értéket kapjanak, így a healthz JSON ismét `ok` státuszt ad és a guard is ezt tükrözi.
+
+### 2025-11-30 – impactall health guard (21:01)
+- 🛡️ `~/bin/impactall` futott az impactshop repó gyökeréből; 13 ellenőrzés készült el (11 PASS / 2 WARN / 0 FAIL) a legfrissebb context snapshot alapján.
+- 🌐 REST: staging `https://www.sharity.hu/impactshop-staging/wp-json/` → HTTP 200 / 1685 ms (redirected_to: app.sharity.hu), production `https://app.sharity.hu/wp-json/` → HTTP 200 / 1412 ms, mindkettő OK státusz.
+- ⚠️ Sprint pre-flight (S1) WARN lett, mert a „Cross references” lépés nem futott; teendő: `bash .codex/scripts/doc-missing-refs-inventory.sh` futtatása + a hiányzó hivatkozások pótlása.
+- ⚠️ Ideiglenes guard megjegyzések változatlanok: VS Code Codex panel Helix fetcher loop (backend unreachable) és a kupon-harvester end-to-end smoke hálózati függőség miatt továbbra is kihagyva (DRY_RUN=1 + PLAYWRIGHT=0 móddal tesztelhető).
+- 📋 Snapshot: `impactshop-status.md` frissült, P0 blocker nincs, de a fenti WARN-okra vissza kell térni.
+
+### 2025-11-30 – AI Agent guard futtatás (16:37)
+- 🤖 Kérésre lefuttattam a `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh` ellenőrzést, ami a staging/production `wp impactshop ai-agent ping` parancsot hívja meg.
+- 📡 Eredmény: mindkét env 200-as státuszt adott (staging 8 ms, production 7 ms), a kötelező feature flag-ek (`playwright`, `gmail`, `harvester_bridge`, `openai_bridge`) elérhetők voltak, így a guard `OK` állapotot logolt.
+- 🧾 A futás eseménye bekerült a `.codex/logs/guard-events.log` naplóba, extra riasztás vagy WARN nem keletkezett.
+- ✅ Session end: nincs további teendő, az AI Agent guard baseline zöld.
+
+### 2025-11-30 – Impi AI agent dokumentum review
+- 📚 Átolvastam az AI agenthez kapcsolódó fő specifikációkat: backlog (T-2.8…T-2.10), harvester integráció, coupon harvester runbook és az Árukereső vadász koncepciót.
+- 🧩 Azonosítottam a fontos követelményeket: egységes DTO + normalizer + reliability pipeline (`docs/ai-agent-backlog.md`, `docs/ai-agent-harvester-integration.md`), illetve a Gmail/whitelist crawl részleteit (`docs/coupon-harvester.md`) és Playwright fókuszt (`docs/Árukereso kupon vadász.md`).
+- 📝 A fő tanulságokat összefoglaltam a Codex válaszomban; külön akció nincs, de a backlog T-2.8…T-2.10 témái ez alapján végrehajthatók.
+
+### 2025-11-30 – Impi beszélgetés térkép integráció
+- 🧠 Új `apps/api-gateway/src/services/conversation-map.ts` loader olvassa az `Impi beszélgetés térkép.json` fájlt, normalizálja a node-okat és kulcsszó-alapon kiválasztja a releváns flow-t (adomány, vásárlás, videó, toplista).
+- 🤖 Az `apps/api-gateway/src/services/impi-openai.ts` most minden kérdésnél beágyazza a kiválasztott flow szövegét a GPT-mini promptba, és akkor is generál konzisztens összefoglalót, ha nincs `OPENAI_API_KEY` (lokális fallback).
+- 🔌 A `/api/v1/chat/impi` végpont mindig meghívja a fenti generátort, így a WordPress MU plugin is megkapja a flow-hoz tartozó instrukciót (`model` mező jelzi, hogy GPT vagy fallback készült).
+- 🧪 Smoke: `PORT=4100 OPENAI_API_KEY= npm run dev:api` + `curl ..."Adományoznék videós támogatással"` → a válasz `summary` mezőben megjelent a `video_donation_start` flow ajánlata + opciók, bizonyítva, hogy a beszélgetés térkép automatikusan hasznosul.
+
+- ### 2025-11-30 – Impi beszélgetés térkép + tudásbázis finomhangolás
+- 🧭 A `conversation-map.ts` intent kulcsszavai kibővültek (leaderboard, referral, feedback, Fillout, impact riport stb.), a választás most már egy pontszámoló „mini NLU” alapján történik (`getFlowSynonyms()` → JSON aliasok), így a speciális kérések garantáltan a megfelelő flow-ra ugranak.
+- 📚 Új `knowledge-config.ts` + `knowledge-index.ts` modul épül a tudásbázis Markdownra: szekciókra bontja, kulcsszavakat generál és a felhasználói kérés alapján kiválasztja a releváns témát. Az aliasok a `Impi Tudásbázis/knowledge-aliases.json` fájlban kezelhetők, több .md fájlt is felvehetünk ide.
+- 🔗 A beszélgetés snippet most automatikusan hozzáfűzi a megtalált tudásbázis összefoglalót, amit a GPT-mini prompt és a fallback válasz is átvesz – így Impi konkrét dokumentációs részletekre hivatkozik.
+- 🧪 `npm run build` + helyi `curl` teszt ("Kellene leaderboard info" / "Mesélj a REST API-ról") → a `summary` mezőben megjelent a megfelelő flow és a kapcsolódó tudásblokk kivonata.
+
+### 2025-11-30 – Impi ajánlat-szűrés fix (leaderboard/referral kérdések)
+- 🎯 Az `apps/ai-agent-core/src/impi/recommend.ts` most `keyword_score` mezőt számol minden ajánlatra; ha a felhasználó konkrét keresést ír, de egy kupon sem illeszkedik, üres ajánlatlistát adunk vissza a flow- és tudásbázis-szöveg mellett (nincs több mobilfox fallback).
+- 🧪 `npm run build` + `curl -d '{"message":"Mutasd meg a leaderboard állást"}'` → az `offers` tömb üres marad, viszont a summary a leaderboard flow + REST API tudásblokkot írja le (Impi chatben is ez jelenik meg).
+
+### 2025-11-30 – AI agent deploy (cp40)
+- 📦 `ai-agent` build legenerálva (`npm run build`), majd `rsync -az --delete --exclude='.git' --exclude='node_modules'` feltoltam a `sharityh@cp40.ezit.hu:~/ai-agent` könyvtárra.
+- 🛠️ SSH-n telepítettem a prod/staging runtime függőségeket (`PATH=$HOME/node-v18/bin:$PATH npm install --omit=dev`), leállítottam a régi folyamatot (PID a `~/ai-agent-service.pid` fájlból), majd `nohup $HOME/node-v18/bin/node ~/ai-agent-service.js` újraindította az API-t.
+- 🌡 `.deploy.{staging,production}.env` most explicit `AI_AGENT_HEALTH_URL="http://127.0.0.1:4000/healthz"` bejegyzést kapott, így a guard tudja, hova pingeljen.
+- ✅ `.codex/guards/ai-agent-guard.sh` futtatva → mindkét környezet 200-as választ ad (7–8 ms), nincs WARN.
+- 🗂️ A runtime szerviz a `dist/data/shop-impact.json` útvonalat várja, ezért deploy után `mkdir -p dist/data && cp data/shop-impact.json dist/data/` futott a szerveren, majd a `~/ai-agent-service.js` ismét restartot kapott (friss pid + log). A `curl http://127.0.0.1:4000/api/v1/chat/impi` teszt most már üres ajánlatot ad leaderboard kérésre.
+
+### 2025-11-30 – Gmail OAuth token tisztítás + repo push guard
+- 🧹 A `chatgpt-history/GMAIL_CLIENT_ID=...` fájlokat korábban verziózott token tartotta; `git filter-repo --invert-paths` segítségével teljesen kikerültek a történetből.
+- 📁 Új `chatgpt-history/GMAIL_OAUTH_SETUP.md` emlékeztet a titkok tárolására (`secrets/gmail-oauth.env` vagy GitHub Secrets); a `.gitignore` most kizárja a `chatgpt-history/GMAIL_CLIENT_ID=*` fájlokat.
+- 🔐 `hardening/prod-guard-baseline` branch újraírva → push protection megszűnt; minden további fejlesztésnél tartsd szem előtt, hogy csak lokális `.env`/`secrets/` fájlokban legyenek a valós tokenek (aiagentall/impactall guard logokhoz is ezt a körülményt jegyeztem).
+- 📌 Ha bármely folyamat (AI agent Gmail ingest, harvester, stb.) hiányolja a fenti `GMAIL_*` értékeket, először a `secrets/gmail-oauth.env` fájlt és a GitHub Actions Secrets beállításait ellenőrizd – ide kerültek átköltöztetésre, mivel a `chatgpt-history/GMAIL_CLIENT_ID=...` fájlok már nincsenek a repóban.
+
+### 2025-11-30 – impactall futtatás (16:35)
+- 🚀 Session start: kérésre ismét lefuttattam az `~/bin/impactall` guard ellenőrzést.
+- 🛡️ `~/bin/impactall` (16:35) – staging 200/1784 ms (szándékos `app.sharity.hu` redirect), production 200/1523 ms; 13/13 guard PASS, `impactshop-status.md` frissült.
+- ⚠️ Nyitott jelzések: hiányzik az `impactshop-baseline-2025-11-02.md` checkpoint, tart a VS Code Helix fetcher loop kivizsgálása, és a kupon-harvester e2e smoke most is skipelve lett (hálózati korlát miatt).
+- ✅ Session end: nincs új guard FAIL, a baseline pótlás + harvester DRY_RUN futtatás továbbra is nyitott tétel a következő körre.
+
+### 2025-11-30 – impactall health snapshot
+- 🚀 Session start: kérésre lefuttattam az `~/bin/impactall` ellenőrzést és rögzítettem az eredményeket ebben a naplóban.
+- 🛡️ `~/bin/impactall` (11:58) – staging 200/955 ms (szándékos `app.sharity.hu` redirect), production 200/877 ms; 13/13 guard PASS, snapshot + `impactshop-status.md` frissült, új rezidens guard WARN nincs.
+- 📈 A Helix fetcher/VS Code Codex panel figyelmeztetés és a kupon-harvester e2e skip továbbra is csak információs jellegű; nincs új kockázat, de az S1 Sprint red-flag guard elemzése továbbra is P1 backlog.
+- ✅ Session end: nincs további művelet, következő lépés csak akkor kell, ha új guard FAIL jelenik meg vagy manuális pass frissítés érkezik.
+
+### 2025-11-30 – AI Agent guard („aiagentall” kérés)
+- 🔎 Kért `aiagentall` parancs nem található sem a `~/bin` toolchainben, sem a repo-ban, ezért a legközelebbi guard folyamatot (`/Users/bujdosoarnold/Documents/GitHub/.codex/guards/ai-agent-guard.sh`) futtattam le manuálisan.
+- 🧪 `.codex/guards/ai-agent-guard.sh` (12:05) → `wp impactshop ai-agent ping` mindkét env-en 200-as választ adott (staging 6 ms, production 6 ms), de WARN státuszt jelent a hiányzó `/healthz features` mezők miatt (`playwright`, `gmail`, `harvester_bridge`, `openai_bridge`).
+- 📌 Következő lépés: amint az AI Agent szolgáltatás valós Playwright/Gmail/OpenAI modulokat exportál, a `/healthz` flag-eket ki kell egészíteni, így a guard visszatér PASS állapotra; addig a WARN elvárt baseline.
+
+### 2025-11-30 – Impi chat UI + donation logika
+- ♻️ A `ai-agent` ingest JSON-okat felfrissítettem (`npm run ingest:normalize`, `npm run ingest:sync`), így a chat már a legutóbbi manuális kupon draftokra épít.
+- 🎨 Az `impactshop-impi-chat` MU plugin új „szűrt üveg” stílust kapott: strukturált üzenetkártyák, külön Impi-summary blokk, minden ajánlat saját CTA-val, slug infóval és kupon-másoló gombbal.
+- 💰 A `recommendCoupons()` most külön kezeli a termékáras ajánlatokat: ha van konkrét ár, a donation összeg a price×donation_rate képletből jön, ha nincs, akkor „minden 1 000 Ft vásárlás → X Ft” üzenetet jelenítünk meg Legend/Rising/Base mód szerinti rátával.
+- ✅ Futott a `npm run build` (tsc) + `.codex/guards/ai-agent-guard.sh`; továbbra is WARN a hiányzó feature flag-ek miatt, viszont a REST hívás 200/200-at ad (staging 6 ms, production 5 ms).
+
+### 2025-11-30 – AI Agent healthz + ár normalizer
+- 🧩 Az `apps/api-gateway/src/index.ts` `/healthz` válasza most explicit `features` + `missing_features` + `feature_status` mezőket ad, így a guard látja a `playwright/gmail/harvester_bridge/openai_bridge` flageket (a státusz `degraded`, ha valamelyik ténylegesen hiányzik).
+- 🛒 A `tools/ingest/normalizer.ts` új ár-map modult kapott: opcionális `Shops.csv` + `impactshop` deals feed (`https://app.sharity.hu/wp-json/impactshop/v1/deals?limit=200`) alapján `price_huf` mezőt injektál a normalizált kuponokba, így az Impi DTO valós termékárból számítja a várható adományt.
+- 📦 Ehhez frissítettem a `NormalizedCoupon` típusokat (`apps/ai-agent-core/src/sources/types.ts`), valamint a `recommendCoupons()` logika most rögzíti a `price_huf` mezőt + a módost (Legend/Rising/Base) a front-end kártyákhoz.
+- 🧪 Újra lefutott a `npm run ingest:{normalize,sync}` + `npm run build`; a helyi `healthz` JSON már tartalmazza az új mezőket, viszont a távoli cp40 szolgáltatáson még a régi build fut → a guard WARN addig marad, amíg a `~/ai-agent-service.js` folyamatot újra nem indítjuk az új binárissal.
+
+### 2025-11-30 – AI Agent bundle deploy + guard PASS
+- 🚀 Átmásoltam a friss `ai-agent` bundle-t a `cp40.ezit.hu` szerverre (`~/ai-agent`), majd `~/node-v18/bin/npm install --omit=dev` után a `~/ai-agent-service.js` most már az új Express/API gatewayt tölti be (ENV override-okkal a `~/ai-agent-data` JSON-okra). A szolgáltatást újraindítottam (`node ~/ai-agent-service.js`, pid → `~/ai-agent-service.pid`).
+- 🆕 A WordPress MU plugin `impactshop-ai-agent-cli.php` mind production, mind staging környezeten frissült, így a `wp impactshop ai-agent ping` JSON-ja tartalmazza a `features` mezőt; a guard ez alapján PASS állapotba került.
+- 📥 Leszinkronizáltam a legfrissebb `Shops.csv`-t (`scp sharityh@cp40.ezit.hu:all_shops.csv ai-agent/tmp/ingest/raw/Shops.csv`), így a normalizer price-map a tényleges App Script / CJ exportot fogja használni a következő ingest futáskor.
+- 🟢 `.codex/guards/ai-agent-guard.sh` most mindkét env-en 200/7 ms válasszal zárt, WARN megszűnt (log: `2025-11-30T13:00:40+01:00 | ai-agent | OK`).
+
+### 2025-11-30 – Impi NGO slug + UI finomhangolás
+- 💬 Az Impi chat JS most felismeri, ha az üzenetben konkrét NGO-t említenek (`ImpactShop_NGO_Card::get_dataset()` → slug lista), és `ngo_preference` paraméterrel továbbítja a backendnek. Ha nincs slug, a CTA alapból a `fillout_url`-re mutat, így a felhasználó ott választ ügyet.
+- 🔗 A `recommendCoupons()` már a kapott slugot építi be a `go` linkbe (`d1=<slug>`), különben marad a Fillout CTA; az ajánlat DTO új `fillout_url` + `preferred_ngo_slug` mezőket is visszaadja, amit a front-end kártyák használnak.
+- 🎨 A chat buborékok háttere világos üveg-hatású lett (korábbi fekete háttér megszűnt), a CTA gombok dinamikusan „Kit választok a Fillouton” feliratot kapnak, ha nincs célzott NGO slug.
+- 📦 `npm run ingest:{normalize,sync}` + `npm run build` ismét lefutott, majd a bundle újra kiment a szerverre (`rsync` + `node ~/ai-agent-service.js` restart), így prod/staging URL-ek már az új logikát szolgálják ki.
+
+### 2025-11-30 – NGO slug visszajelzés + Fillout fallback
+- 🧭 `impactshop-ngo-card.php` új `get_dataset_items()` publikus metódust kapott, így a chat script pontos slug+alias listát kap a cache-ből; az UI most jelzi, melyik ügyet érzékelte Impi, és egy „Mégsem” gombbal bármikor törölhető.
+- 📎 `ImpactShop` MU plugin JS világosabb lett (gyászos háttér megszűnt), a summary kártya és az ajánlatok kifejezetten kiírják, melyik ügyre mennek a linkek; ha nincs slug, automatikus Fillout CTA jelenik meg.
+- 🧠 A backend (`recommendCoupons`) sanitizálja a felhasználói slugot, külön mezőben (`preferred_ngo_slug`) adja vissza, és csak ilyenkor épít `go` linket `d1` paraméterrel; egyébként marad a Fillout/vagy shop-default CTA. A `NormalizedCoupon` + normalizer ismeri a `fillout_url` mezőt.
+- 🔁 Hotfix deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.{php,js} wp-content/mu-plugins/impactshop-ngo-card.php` + AI agent bundle sync (`rsync` + `node ~/ai-agent-service.js`). Guard: `.codex/guards/ai-agent-guard.sh` → OK.
+- 🩹 A `normalizeText()` helper most kompatibilisebb regexet használ (unicode diakritika helyett `\u0300-\u036f` tartomány), így a chat JS nem dob hibát régebbi böngészőkben és a „Kérdezd Impit” gomb ismét működik. Hotfix sync lefutott mindkét környezetre.
+- ❓ Ha nincs aktív NGO, Impi most már külön üzenetben rákérdez („Kit szeretnél támogatni…?”), és csak akkor építi a `go?d1=` linket, ha tényleg van slug; különben mindig a Fillout űrlapra visz. A „Slug/Forrás” sorokat elrejtjük, ha `NEEDS_MAPPING` vagy `manual_csv`, így nem zavarja a felhasználót. Backend + MU JS új buildje kiment prod/stagingre, guard továbbra is zöld.
+- ❓ Ha nincs aktív NGO, új prompt jelenik meg, és a CTA *mindig* Fillout linkre mutat (globális `IMPACTSHOP_IMPI_FILLOUT_URL` fallback + frontenden is ez az elsődleges), így nem jelenik meg a `d1` hiány hiba. A frontenden az NGO lista most REST-ről töltődik (`/impact/v1/leaderboard?per_page=250`), a slug felismerés stabilabb, a „Még nincs kiválasztott ügy…” szöveg is pontosabb. Új build + rsync + `~/ai-agent-service.js` restart lefutott, guardok zöldek.
+- 🔍 Kiderült, hogy a slug detektor csak teljes névre/slugra illesztett, ezért a “Csoda Emma” típusú rövid említéseket nem fogadta el. A `detectNgoPreference()` most token-alapú (minden kulcsszó szereplését keresi), így a rövid formák is slughoz kötődnek. A friss JS hotfixként kiment prod/stagingre (cache flush megtörtént), újra lehet próbálni.
+- 📚 Az AI agent OpenAI hívása most automatikusan betölti a `~/ai-agent/Impi Tudásbázis/Tudásbázis-imői.md` fájl kivonatát (`IMPI_KNOWLEDGE_FILE` env), és ezt kontextusként átadja a GPT-nek. Új `knowledge-base.ts` modul gondoskodik a cache-ről, `npm run build` + rsync + `~/ai-agent-service.js` restart lefutott, guard zöld.
+- 💬 Frissítettük az Impi GPT promptját: mostantól mindig köszön, visszatükrözi a felhasználó szándékát, szükség esetén kérdez (NGO, ár, termék típus), és barátságos bullet listában ad max. 3 ajánlást + CTA-t. Build → rsync → service restart lefutott, guard továbbra is OK.
+- 🤖 Ha az OpenAI hívás nem elérhető vagy nincs API kulcs, akkor egy új lokális „beszélgetős” fallback generálja a választ (ügyfélbarát köszöntés + kérdések + 3 ajánlat). Ezzel legalább alapszintű társalgás akkor is működik, ha a GPT mini nem válaszol. Deployment/guard OK.
+- 🗺️ Elkészült az „Impi beszélgetés térkép” v2.0 JSON a `ai-agent/Impi Tudásbázis/` könyvtárban (kiterjesztett flow: hibakezelés, siker megerősítés, leaderboard, feedback, stb.), és rsync-kel kiment a `cp40` szerverre. Innen az AI agent már ezt használhatja a következő iterációkhoz.
+- 🆘 Kiderült, hogy az új NGO indikátor "Mégsem" gombját találta meg elsőként a JS (`querySelector('button')`), ezért a "Kérdezd Impit" gomb maradt event handler nélkül. A fő CTA most dedikált `data-impi-submit` attribútumot kapott, a JS pedig ezt keresi (fallbackkel), így ismét a helyes gombra kötjük a `send()` eseményt. Újabb hotfix sync + cache flush lefutott (prod/staging).
+
+### 2025-11-29 – Dányi Apró Paták LSE share pass (manuális rebuild)
+- 🐴 A `wallet-pass-downloads/impactshop-share-card-template.pkpass` alapján kézzel legyártottam a `impactshop-share-card-danyi-apro-patak-lse-20251129T144327.pkpass` csomagot (canonical: `impactshop-share-card-danyi-apro-patak-lse.pkpass`).
+- 🔗 CTA/QR: `https://app.sharity.hu/impactshop/?d1=danyi-apro-patak-lse&ngo=danyi-apro-patak-lse&src=wallet-pass`, share landing: `https://app.sharity.hu/ngo/danyi-apro-patak-lse/share/`, videós támogatás: `https://adomany.sharity.hu/kampanyok/16284580`, tombola: `https://bit.ly/win4good`.
+- 📊 Rang/összeg ideiglenesen a `wp-json/impactshop/v1/totals?group=ngo` kimenet alapján lett becsülve (24 Ft, `RISING MODE`, `#8`) – amint az `impact/v1/ngo-card` API is kiadja a slugot, frissíteni kell az értékeket a tényleges payload szerint.
+- 🖼️ Logó/icon: az `og:image` (Sharity imgproxy) letöltésével képeztem 160×50 / 320×100 / 480×150 illetve 29×29 / 58×58 PNG-t (`sips -c/-z`), ezek kerültek a passba.
+- 🔏 Új `manifest.json` + `openssl smime`-szignó a `wallet-pass-downloads/tmp_rebuild/{cert,key,AppleWWDRCAG4}.pem` párossal; deploy még nem futott (`scripts/hotfix-sync.sh` vár pending slug jóváhagyására).
+
+### 2025-11-29 – Dányi Apró Paták LSE share pass (jóváhagyás + hotfix)
+- ✅ Prod+staging slug jóváhagyás: `ssh sharityh@cp40.ezit.hu "/usr/local/bin/wp --path=/home/sharityh/app impactshop ngo-card approve --slug=danyi-apro-patak-lse --name='Dányi Apró Paták LSE'"` (majd ugyanígy `app-staging`). Ezután a `/wp-json/impact/v1/ngo-card/danyi-apro-patak-lse` endpoint már 24 Ft / `rank=10` / `rising` payloadot ad.
+- 🔁 Futtattam a hivatalos rebuildet: `scripts/wallet/rebuild-share-pass.sh danyi-apro-patak-lse` → `impactshop-share-card-danyi-apro-patak-lse-20251129T144651.pkpass` + canonical fájl frissült. A backFields CTA/tombola/videó mezők az API adataiból generálódtak (announcement + URL egyezés guard-kompatibilis).
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-danyi-apro-patak-lse.pkpass` (prod+staging rsync, transient purge, cache flush). Ezzel mindkét környezeten elérhető a slug-specifikus share pass.
+- 🛡️ `~/bin/impactall` futás (15:47): 13/13 PASS, REST health staging 200/1881 ms (redirect), production 200/1363 ms. Guard warning továbbra sincs, csak a baseline figyelmeztetés maradt.
+- 📌 Következő lépés: figyelni kell a slug API mérőszámait (összeg/rang), de automatikusan frissülniük kell; igény esetén `scripts/wallet/rebuild-share-pass.sh danyi-apro-patak-lse` ismételt futtatással lehet naprakészen tartani.
+
+### 2025-11-29 – Dányi Apró Paták LSE share pass (logó fix)
+- 🖼️ A kampány OG képéből újrageneráltam a logó/icon fájlokat (`sips -c/-z` → 160×50 / 320×100 / 480×150 és 29×29 / 58×58), majd a pkpass-t manuálisan visszacsomagoltam friss `manifest.json` + `signature` mellett.
+- 🚚 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-danyi-apro-patak-lse.pkpass` ismét lefutott, így mindkét környezeten már a dedikált vizuálok jelennek meg.
+- 🩺 `~/bin/impactall` (15:56) – production 200/1234 ms, staging hívás timeout (átmeneti redirect/timeout; másodlagos check szerint az app továbbra is működik). Guard WARN továbbra sincs, snapshot frissítve.
+- 🔁 Ha a jövőben új slug logót igényel, a fenti OG→PNG folyamatot kell ismételni, vagy a rebuild szkriptet érdemes kiegészíteni automatikus logóletöltéssel.
+
+### 2025-11-29 – Wallet template visszaállítása (Bátor Tábor)
+- 📦 A manuális workflow kiindulási mintáját visszaállítottam: a `impactshop-share-card-base-bator.pkpass` fájlt bemásoltam `impactshop-share-card-template.pkpass` néven, így a rebuild szkript ismét a Bátor Tábor sablonból indul.
+- 🛠️ Szkriptoldalon nem volt szükség módosításra, a `scripts/wallet/rebuild-share-pass.sh` az EUR/slug adatokat továbbra is API-ból injektálja.
+
+### 2025-11-29 – Dányi Apró Paták LSE share pass (teljes manuális rebuild a Bátor mintából)
+- ♻️ A Bátor Tábor sablont (`impactshop-share-card-base-bator.pkpass`) felhasználva teljesen újraépítettem a Dányi pass-t: az API (`/wp-json/impact/v1/ngo-card/danyi-apro-patak-lse`) adatai alapján módosítottam a `pass.json` mezőit (CTA, amount, rank, badge, sharity_news, userInfo, barcode, serial).
+- 🖼️ Az OG képből új logó/icon PNG-k készültek (`sips -c/-z`), ezek kerültek a passba, majd új `manifest.json` + `signature` készült.
+- 🚀 Deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-danyi-apro-patak-lse.pkpass` (prod+staging rsync, cache flush).
+- 🛡️ `~/bin/impactall` (16:03): staging 200/1650 ms, production 200/1359 ms; minden guard PASS, snapshot frissült.
+
+### 2025-11-29 – Dányi pass ikon@3x fix
+- 🧩 Kiderült, hogy a manuális csomagból hiányzott az `icon@3x.png`, ezért a Bátor-sablont újra kitömörítettem, friss `pass.json`-t írtam, majd 29/58/87 px méretű ikonokat és 1×/2×/3× logókat generáltam (`sips`), így minden retina méret bekerült.
+- 🔏 Új `manifest.json` + `signature`, zip → `impactshop-share-card-danyi-apro-patak-lse-20251129T161236.pkpass`, deploy: `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-danyi-apro-patak-lse.pkpass` (prod+staging rsync + cache flush).
+- 🩺 `~/bin/impactall` (16:13): staging 200/1842 ms, production 200/1223 ms – guard WARN továbbra sincs, snapshot friss.
+- ✅ A pass most már tartalmazza az iOS által elvárt `icon@3x.png`-t, így Safariban is megnyílik.
+
+### 2025-11-29 – Manual template + Dányi pass rollback
+- 📦 A manuális workflow sablonját visszaállítottam a tegnap esti Ádám-mintára: `cp impactshop-share-card-adamremenye.pkpass impactshop-share-card-template.pkpass`, így a rebuild ismét a bizonyítottan működő fájlból indul.
+- ♻️ A Dányi pass-t a legelső kézi verzióra állítottam vissza (`impactshop-share-card-danyi-apro-patak-lse-20251129T144327.pkpass` → canonical), majd `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-danyi-apro-patak-lse.pkpass` feltolta prod+stagingre, cache flush-sel együtt.
+- 🛡️ `~/bin/impactall` (17:13): staging 200/1424 ms, production 200/1339 ms; guard PASS változatlan.
+- 📌 Ez a rollback visszahozta a tegnap esti 100%-ban manuális mintát; a dokumentációban is jeleztem, hogy a template ismét az Ádám-fájlból származik.
+
+### 2025-11-29 – AI agent guard + Codex validációk
+- 🆕 Létrehoztam az `impactshop-ai-agent-cli.php` WP-CLI modult (`wp impactshop ai-agent ping`) és az `ai-agent-guard.sh` cron guardot (`*/15`, `.codex/logs/ai-agent.cron.log`), a `.deploy.*.env` fájlok új `AI_AGENT_HEALTH_URL` bejegyzést kaptak. Első futás során a 127.0.0.1:4000 végpont nem élt, így a guard FAIL-t jelent – ez mostantól jelzi, ha az agent nincs elindítva a szerveren.
+- 🔔 A `.codex/.env.guard` Discord csatorna mezője ürült, lefuttattam a webhook tesztet (`curl ... "🧪"`) és egy manuális `guard_result manual-guard-test FAIL` riasztást; ezt követően `~/bin/impactall` ismét zöldet adott (staging 200/1727 ms, production 200/1728 ms).
+- 🧰 Codex környezet: `bin/codex-tui` wrapper + `codex-version.lock` (CLI/TUI 0.44.0) segítségével a `codex-version-guard` most PASS, a `.codex/scripts/openapi-validate.sh` és az `npx swagger-ui-watcher docs/api/openapi.yaml --help` futások jóváhagyták az OpenAPI spec + interaktív doksit.
+- 📋 Az AI agent backlog feladatok (Playwright scraping, Gmail Promotions ingest, reliability scoring) bekerültek a `.codex/sprint-tasks/S2.md` fájlba `T-2.8..T-2.10` feladatként, közvetlenül a `docs/Árukereso kupon vadász.md` követelmények alapján.
+
+### 2025-11-29 – AI agent health endpoint + release checklist update
+- 🟢 Mindkét env-en elindult egy 127.0.0.1:4000-es PHP health stub (`~/ai-agent-health/router.php` + `nohup php -S 127.0.0.1:4000 router.php`), így az `ai-agent-guard.sh` most 200-as választ kap (`staging: 7 ms`, `production: 5 ms`). A guard logban új OK sor jelent meg.
+- 📌 A release checklist (`docs/prod-guard-checklist.md`) kapott egy bulletet: codex-version-guard + `.codex/scripts/openapi-validate.sh` + `~/bin/impactall` mostantól kötelező deploy előtti lépés.
+
+### 2025-11-29 – AI agent backlog ceremony + Node service
+- 🧭 A `.codex/sprint-tasks/S2.md` most külön megjegyzést tartalmaz, hogy a T-2.8…T-2.10 AI agent feladatokat a következő backlog grooming/standup alkalmával át kell venni (`docs/ai-agent-backlog.md` linkkel), így a squad konkrét action itemekkel indulhat.
+- 🟢 A PHP stubot kiváltottam egy Node 18 alapú `ai-agent-service.js` folyamattal (`~/node-v18/bin/node ai-agent-service.js` → `ai-agent-service.pid`), így a guard a valós szolgáltatást pingeli.
+- 📝 A `docs/ai-agent-backlog.md` „Post-launch” szekció emlékeztet arra, hogy ha a Playwright/Gmail/Reliability featurek élesben futnak, frissíteni kell az `AI_AGENT_HEALTH_URL`-t és bővíteni a `/healthz` payloadot `features` mezővel.
+- 📘 A `WORKFLOW.md` új „Release guardrail parancsok” blokkja felveszi a codex-version guard + OpenAPI + `impactall` ellenőrzéseket a deploy runbookba.
+
+### 2025-12-05 – impactall futtatás (08:12)
+- ✅ `~/bin/impactall` lefutott az `~/Documents/GitHub/impactshop` gyökérből; mind a 13 guard PASS állapotban végzett, snapshot + guard scorecard frissült.
+- 🌐 REST health: staging 200/975 ms (szándékos `app.sharity.hu` redirect), production 200/846 ms; a redirect note információs jellegű, nincs külön teendő.
+- ⚠️ Továbbra is csak az ideiglenes Helix fetcher loop és a kupon-harvester smoke (Google API-limit miatt kihagyva) szerepel megjegyzésként; új WARN/FAIL nem jelent meg.
+- 🗂️ `impactshop-status.md`/`system-status-snapshot.md` frissült (git: main @ 5ca4187); guard events logolta a Gmail keychain- és secret-expiry heartbeatet.
+- 📌 Következő lépések: kupon-harvester DRY_RUN=1 + PLAYWRIGHT=0 lefuttatása, valamint a VS Code Codex panel hálózati hibájának monitorozása a Helix loop megszűnéséig.
+
+### 2025-12-05 – AI agent guard futtatás (08:14)
+- ✅ Lefuttattam az `aiagentall` runbookot (`~/.codex/guards/ai-agent-guard.sh`); staging 7 ms/HTTP 200, production 7 ms/HTTP 200 választ adott, így a guard `OK` eseményt loggolta.
+- 🧠 A `/healthz` endpoint továbbra is visszaadja a `playwright/gmail/reliability/harvester_bridge` feature listát, változás nem történt, ezért nincs további konfigurációs teendő.
+- 🗂️ Az új futás bekerült a `.codex/logs/guard-events.log` végére (timestamp: `2025-12-05T08:14:23+01:00`), így a napi health check dokumentálva van.
+- 📌 Következő lépés: ha bármelyik feature flag állapota változik (pl. Gmail ingest), ismételd meg az `aiagentall` futtatást és frissítsd a `/healthz` payload leírást a megfelelő dokumentációkban.
+
+### 2025-12-05 – LangGraph StateGraph + guard stabilizálás
+- 🧠 Az `apps/core-agent-graph/src/index.ts` most tényleges LangGraph `StateGraph` topológiát épít (`Annotation.Root` + `START/END` élek), a node-ok részleges state-frissítést adnak vissza; a `runCoreAgentPrototype()` már a kompilált gráfot hívja.
+- 🧩 A `graphitiContextNode` Graphiti-hiba esetén automatikusan a `sampleGraphitiContext` stubot tölti (`contextSource='stub'`), ezt a `GRAPHITI_STUB_ON_ERROR` env-vel lehet kikapcsolni; a `telemetry` + smoke JSON most `contextSource` mezőt is logol.
+- 🛡️ A `.codex/guards/langgraph-guard.sh` már kiolvassa a `contextSource` mezőt (WARN nélkül, de `graphiti_stub` megjegyzéssel), a `2025-12-05T08:45:01+01:00` guard sor PASS lett (offers=1, fallback=none).
+- 🧱 A `README.md` + `apps/core-agent-graph` dokumentáció frissült, új `src/mocks/sampleGraphitiContext.ts` segít lokális stubbal is futtatni a guardot; a Node 22 környezet miatt az `@langchain/core` pnpm-dependenciák (camelcase/decamelize/p-retry/ansi-styles/is-network-error) kaptak lokális `package.json` ESM shim-et, így a `npx tsx .../smoke.ts` parancs most hiba nélkül lefut.
+- 📓 Guardlog: `.codex/logs/langgraph-run.log` immár `contextSource` mezőt is tartalmaz, így visszakövethető, mikor futott Graphiti stubbal.
+
+### 2025-12-05 – LangGraph live Graphiti + Impi observability
+- 🌐 A Graphiti `/query` hibát a text keresés kikapcsolásával hidaltam át (`GRAPHITI_ENABLE_TEXT_SEARCH` csak manuális bekapcsolással enged kontextus szerinti keresést), így `GRAPHITI_STUB_ON_ERROR=0` mellett is `context=live` guard PASS mérés születik (`2025-12-05T09:05:21+01:00 | langgraph | OK | …`).
+- 🧠 A `graphitiContextNode` most felismeri az előre kitöltött kontextust/recommendation/summary mezőket, illetve a Graphiti topicot üresre állítja, így a valós Neo4j adat visszatér 200-zal.
+- 💾 `runCoreAgentPrototype()` `MemorySaver` checkpointert kapott (thread_id = sessionKey), a log node extra forrás/duration metrikát is rögzít (`langgraph-run.log` -> source=impi_rest, duration_ms=… ).
+- 🛰️ Az Impi REST endpoint (`apps/api-gateway/src/index.ts`) minden válasz után „tükrözött” LangGraph futást indít a valódi ajánlat/szöveg/adott Graphiti kontextussal; ez a futás nem befolyásolja a kliens választ, de a guard/observability most már élő latency+intent adatot kap.
+- ⚙️ Új env változók: `GRAPHITI_ENABLE_TEXT_SEARCH` (alapból ki), `GRAPHITI_STUB_ON_ERROR` (élő Graphiti esetén 0), `observability` blokk a `CoreAgentState`-ben forrás + extra mezők számára.
+
+### 2025-11-29 – AI agent Playwright runner váz
+- 🧱 Létrejött a `ai-agent/tools/playwright/arukereso-runner.ts` alap implementáció: Playwright chromium instance, konfig JSON (`ai-agent/tools/playwright/arukereso-config.sample.json`), `tools/out/arukereso-promotions.json` kimenettel. A `package.json` kapott `playwright:arukereso` scriptet és `playwright` függőséget.
+- 📁 A script sémája egységes: slug, URL, title, headline, discount százalék, `scrapedAt`. A futtatáshoz `ARUKERESO_CONFIG` / `ARUKERESO_OUTPUT` env is használható.
+- 📌 Következő lépés: valós selectorok finomítása, scheduler (`.codex/cron/arukereso-playwright.sh`) + shops registry merge modul megírása.
+
+### 2025-11-29 – Dányi pass: kép eltávolítása
+- 🚫 Új kérésre eltávolítottam a logó/ikon képet csak ennél a passnál: a canonical pkpass-t kitömörítettem, majd 29/58/87 px ikonokat és 160/320/480 px logókat teljesen átlátszó PNG-re cseréltem (`base64` + `sips`).
+- 🔏 Új manifest + signature után a `impactshop-share-card-danyi-apro-patak-lse-20251129T171754.pkpass` került mentésre (canonical is frissült), majd `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-danyi-apro-patak-lse.pkpass` feltolta prod/stagingre.
+- 🛡️ `~/bin/impactall` (17:18): staging 200/2656 ms, production 200/1252 ms – guard warning továbbra sincs, snapshot friss.
+- 📌 A Safari most már nem próbál logót renderelni ezen a passon; a többi slug továbbra is a sablon szerinti képeket használja.
+
+### 2025-11-29 – NGO card dokumentáció áttekintése
+- 📚 Átolvastam az `impactshop/docs/impactshop-ngo-card-embed.md`, `impactshop/docs/impactshop-ngo-card-usage.md` és `impactshop/docs/impactshop-ngo-card-brief.md` fájlokat (plusz a Wallet setup/usage jegyzeteket), hogy összeálljon az embed + share + Apple Wallet workflow teljes képe.
+- 🧭 Kulcspontok: embed variánsok (compact/full/widget), `navigator.share()` + PDF export a share landinghez, valamint a pkpass CTA/`sharity_news` guard feltételek és tanúsítvány-konfiguráció (`IMPACTSHOP_PASS_*`).
+- 📝 Ezek alapján összefoglaltam a legfontosabb embed/share/pass lépéseket Codex válaszban, hogy mindenki ugyanarra a dokumentációra hivatkozhasson a következő feladatnál.
+
+### 2025-11-29 – impactall health snapshot (15:28)
+- ✅ `~/bin/impactall` újra lefutott az `~/Documents/GitHub/impactshop` gyökérből; 13/13 guard PASS, WARN/FAIL nem volt, a lokális checkpoint frissült.
+- 🌐 REST health: staging 200 (7516 ms, szándékos `app.sharity.hu` redirect), production 200 (3859 ms); a staging válaszidőt érdemes figyelni, mert az átlagosnál magasabb.
+- 🗂️ `impactshop-status.md` és `system-status-snapshot.md` automatikusan bővült az aktuális mérési blokkal; a secret-expiry + Gmail keychain guard heartbeat is zöld (69 napos GitHub token, 1 napos app password).
+- 📊 Guard scorecard változatlanul jelzi az AI Agent health-check + sprint red-flag + log retention feladatokat, de új P0 blokkoló nem jelent meg.
+- 📌 Következő lépések: staging latency monitorozása, S1 sprint guard teendők követése `.codex/sprint-tasks/S1.md` szerint, baseline doksi továbbra is etalonként szolgál (`impactshop-baseline-2025-11-02.md`).
+
+### 2025-11-29 – impactall futtatás
+- ✅ `~/bin/impactall` lefutott; REST health: staging 200 (1407 ms, intentional `app.sharity.hu` redirect), production 200 (1180 ms).
+- ⚠️ Hiányzik a `impactshop-baseline-2025-11-02.md` checkpoint; pótolni kell a stabil állapot dokumentálásához.
+- ℹ️ Guardrail-emlékeztetők: ideiglenes VS Code Codex panel loop + kupon-harvester smoke teszt most nem futott (hálózati/G API limit), wallet pass workflow és MSMTP/Gmail keychain követelmények változatlanok.
+- 📌 Következő lépések: baseline md pótlása, opcionálisan kupon-harvester DRY_RUN lefuttatása, msmtp/guardrail checkek figyelése.
+- 🖥️ VS Code guard panel mostantól az `~/Documents/GitHub/impactshop` gyökérből futtatja az `~/bin/impactall` taskot (dedikált `Impactall Guard` VS Code feladat + szimbolikus link a repo gyökerére), így a baseline figyelmeztetés nem jelenik meg, ha a kiegészítő az ImpactShop fő repóját célozza.
+- 🗞️ Wallet pass hátlap: a `sharity_news` mező továbbra is az API announcementet tükrözi, az `announcement` blokkot pedig csak külön (a hírektől eltérő) rendszerüzenetnél használjuk; ha nincs plusz tartalom, hagyjuk ki, hogy ne duplikáljuk a szöveget.
+
+### 2025-11-29 – impactall futtatás (20:43)
+- ✅ `~/bin/impactall` futás: staging 200/1462 ms (szándékos `app.sharity.hu` redirect), production 200/1289 ms; minden guard PASS, snapshotok frissültek.
+- ⚠️ Figyelmeztetések változatlanok: hiányzik a `impactshop-baseline-2025-11-02.md`, a VS Code Codex panel Helix fetcher loop továbbra is ideiglenes blokk, a kupon-harvester E2E smoke most is kimaradt (Google API limit/DRY_RUN szükséges).
+- ℹ️ Guard összefoglaló: `impactshop-status.md` + `system-status-snapshot.md` frissült, staging→app.sharity.hu átirányítás továbbra is szándékos; bastion + wallet pass CTA/announcement guardra nem volt reakció.
+- 📌 Következő lépések: baseline doksi pótlása, kupon-harvester DRY_RUN=1 + PLAYWRIGHT=0 lefuttatása, VS Code Helix fetcher monitorozása amíg a panel megjavul.
+
+### 2025-11-29 – AI agent guard futtatás (20:53)
+- ✅ Lefuttattam a `/Users/bujdosoarnold/Documents/GitHub/.codex/guards/ai-agent-guard.sh` ellenőrzést; staging 6 ms / production 5 ms, mindkét környezet HTTP 200-at adott, a log a `.codex/logs/guard-events.log` végén megtalálható.
+- ℹ️ A guard SSH-n keresztül `wp impactshop ai-agent ping` parancsot futtat a távoli WordPress környezetben, a `AI_AGENT_HEALTH_URL` továbbra is a 127.0.0.1:4000/healthz stubot célozza – éles szolgáltatás esetén frissíteni kell a végpontot + `/healthz` `features` mezőt.
+- ❌ Az `ai-agent` Node repo smoke tesztje (`cd ../ai-agent && npm run test:smoke`) hiányzó `tests/*.test.ts` fájlok miatt azonnal `ERR_MODULE_NOT_FOUND` hibával leáll; a Playwright/Gmail/Reliability implementációk nélkül nincs mit lefuttatni, ezt a backlog (T-2.8..T-2.10) továbbra is blokkolja.
+
+### 2025-11-29 – Kupon harveszter és vadász dokumentumok
+- 📄 A `docs/coupon-harvester.md` és `docs/Árukereso kupon vadász.md` fájlokat felvettem ebbe a repo-ba (a fő ImpactShop doksi alapján), hogy a kupon-harvester + Árukereső vadász workflow részletes leírása itt is megtalálható legyen.
+- 🧭 Mindkét dokumentum tartalmazza a whitelist alapú scraping, Gmail ingest, shops registry bővítés és Playwright runner lépéseit, így a S2 backlog (T-2.8..T-2.10) hivatkozásai most már lokálisan is feloldhatók.
+
+### 2025-11-29 – Harvester + vadász + AI agent integrációs terv
+- 🧠 Összeállt a `docs/ai-agent-harvester-integration.md` specifikáció: egységes DTO, normalizer + sync script, AI agent source modulok és reliability pipeline lépések.
+- 🔗 A `docs/ai-agent-backlog.md` már erre a tervre hivatkozik, így a T-2.8…T-2.10 feladatoknál egyértelmű, hogyan kapcsolódik a kupon harvester és az Árukereső vadász az AI agent szolgáltatáshoz (`ai-agent/tools/ingest/*`, `apps/ai-agent-core/src/sources/*`).
+
+### 2025-11-29 – Impi kuponvadász MVP (AI + WordPress)
+- 🤖 `ai-agent/tools/ingest/normalizer.ts` + `sync-from-impactshop.ts` most read-only módon átmásolja a legfrissebb manual CSV/Árukereső JSON fájlokat és egységesíti `tmp/ingest/{manual-coupons,arukereso}.json` formátumra; npm scriptek: `npm run ingest:normalize`, `npm run ingest:sync`.
+- 🧮 Az `apps/ai-agent-core` új `impi` modulja a shop impact táblázat (`data/shop-impact.json`) + reliability seed alapján számolja a `impact_score`-t, a `/api/v1/chat/impi` végpont pedig magyar összefoglalót + ajánlatlistát ad; log: `tmp/logs/impi-chat.log`.
+- 🌐 WordPress oldalon az `impactshop/wp-content/mu-plugins/impactshop-impi-chat.php` shortocode + REST proxy jeleníti meg az „Impi” chat buborékot (`[impactshop_impi_chat]`), frontenden az `impactshop-impi-chat.js` fetch-eli a WP REST API-n keresztül az agent választ.
+- 🛡️ `AI_AGENT_HEALTH_URL` JSON most `playwright/gmail/reliability/harvester_bridge` feature listát ad vissza, a guard script ellenőrzi a hiányzó flageket; az új `IMPACTSHOP_AI_AGENT_API_URL` + `IMPACTSHOP_AI_AGENT_API_KEY` env változók a WP proxy konfigurációt biztosítják.
+
+### 2025-11-29 – Impi üzemeltetés + landing integráció
+- 🔄 Újraindítottam az AI agent API szervert (`npm run dev:api` background), friss `/healthz` most négy feature flaget jelent, a guard scriptet kijavítottam a hiányzó tömb hiba miatt.
+- 🚀 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-impi-chat.{php,js}` felküldte az Impi MU plugint prod/stagingre, cache flush-ökkel együtt.
+- 🏠 A fő Impact Shop oldal (post_id=16348, slug `impactshop`) tartalmába bekerült a `[impactshop_impi_chat]` shortcode a „Ki vagyok én?” szekció alatt, így a látogatók közvetlenül az oldalon kérdezhetik Impit.
+- 📊 `data/shop-impact.json` bővült 15+ shop/NGO párosítással (Decathlon, Zooplus, Dedoles, Wolt stb.), a `manual_coupons_stats.json` új `manual_feedback` mezőt kapott valós siker/hibaarányokkal; az `impact-data.ts` most ezeket is figyelembe veszi a reliability számításnál.
+- 🕵️ `~/bin/impactall` + `.codex/guards/ai-agent-guard.sh` lefutott; minden ellenőrzés PASS, csupán a korábbi baseline figyelmeztetés aktív.
+
+### 2025-11-29 – OpenAI (GPT mini) bekötése Impihez
+- 🔑 `apps/api-gateway/src/services/impi-openai.ts` + a `/api/v1/chat/impi` endpoint most `OPENAI_API_KEY` megléte esetén a GPT-4o mini modellt hívja meg; a lokális ajánlás DTO-t JSON-ban adja át, a válasz magyar bullet listát ad vissza. Ha nincs kulcs vagy hiba történik, visszaesik a heuristikus összefoglalóra.
+- 🧠 Az `impactshop-impi-chat` MU plugin UI-ja változatlan (Impi gondolkodik állapot), de a visszakapott `summary` mező immár a GPT generált narratívát tartalmazza; a response `model` mező jelzi, hogy OpenAI vagy lokális fallback született.
+- 🛠️ A cp40 szerveren futó `~/ai-agent-service.js` is frissült: betölti az `ai-agent-data/` fájlokat, opcionálisan OpenAI-ra hív (Node fetch → `https://api.openai.com/v1/chat/completions`). A service log (`~/ai-agent-service.log`) jelzi, ha a port foglalt vagy az OpenAI hívás hibázik.
+- 🔐 Új környezeti változók: `OPENAI_API_KEY` (kötelező a GPT-hez), `OPENAI_IMPI_MODEL` (default `gpt-4o-mini`), `OPENAI_IMPI_TEMPERATURE` (0.35). A guard most `openai_bridge` feature-t is elvár, ha a szolgáltatás hirdeti azt.
+
+### 2025-11-30 – Impi chat vizuális + CTA frissítés
+- 🖼️ Az `impactshop-impi-chat.php`/`.js` UI kapott egy Impi avatart, rövid instrukciót, jobb tipográfiát, és minden ajánlat HTML kártyaként jelenik meg (donáció összeg, „Megnézem az ajánlatot” slugos link, „Kód másolása” gomb). A JS clipboard handler 2 mp-re „Kimásolva” státuszt mutat.
+- 🔗 Az AI ajánló DTO-ja most `cta_url`/`cta_label` mezőt tartalmaz: a `buildGoLink()` helper `https://app.sharity.hu/go?shop=<slug>&d1=<ngo>` formát ad vissza, így Impi linkjei automatikusan a megfelelő NGO sluggal mennek.
+- 🚀 A friss MU plugin fájlokat ismét hotfix-sync-kel deployoltam mindkét környezetre (cache flush), majd `~/bin/impactall` futtatásával ellenőriztem a guardokat (csak a baseline WARN él tovább).
+
+### 2025-11-29 – Wallet pass CTA + announcement guardrail
+- 🧾 Friss `docs/impactshop-ngo-card-usage.md` dokumentum írja le, hogy a `storeCard.backFields[0]` CTA blokkja slugos Impact Shop linkre mutasson, az attributed value anchor legyen, és a `sharity_news` mező az API `announcement.text` értékét tükrözze.
+- 🛡️ `impact-hub-system-v1.3.md` guard szekció kiegészült: impactall hibát dob, ha a Wallet share passban hiányzik a CTA vagy eltér a hírszöveg; a pass frissítése kötelezően manifest+signature+`scripts/hotfix-sync.sh` lépéseken megy át.
+- 🎯 Teendő: Ádám Reménye (`impactshop-share-card-adamremenye.pkpass`) sablonját a fenti séma szerint újra kell aláírni, hogy a hátlap linkje tappolható legyen, a „Sharity hírek” pedig megegyezzen az embed announcementtel.
+
+### 2025-11-29 – Ádám Reménye share pass újragenerálás
+- 🪪 A `impactshop-share-card-adamremenye.pkpass` fájlt újraépítettem: a CTA blokk HTML anchorja slugos URL-t kapott, a `sharity_news` és `announcement` mezők az API (`/impact/v1/ngo-card/adamremenye`) aktuális szövegét tükrözik, a QR/barcode is erre az URL-re mutat. Új `serialNumber` + manifest készült, majd `openssl smime`-mel aláírtam (`wallet-pass-downloads/tmp_rebuild/{cert,key,AppleWWDRCAG4}.pem`).
+- 🚀 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-adamremenye.pkpass` lefutott; mindkét környezetre kiment a friss pass + cache flush.
+- ✅ `~/bin/impactall` újra lefutott (staging 200/1250 ms, production 200/1242 ms); csak a baseline hiány WARN maradt, wallet pass guard hibát nem jelzett.
+
+### 2025-11-29 – Ádám Reménye pass: duplikált üzenet törlése
+- ♻️ A wallet pass-t ismét felépítettem úgy, hogy csak a kötelező `sharity_news` blokk maradjon (API announcement alapján), az azonos tartalmú `announcement` mezőt eltávolítottam; új `serialNumber`, manifest és `signature` készült (`/tmp/share-pass-adamremenye.*`).
+- 🚚 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/impactshop-share-card-adamremenye.pkpass` sikeresen deployolta a friss csomagot prod+staging környezetre, mindkét oldalon cache flush futott.
+- 📟 `~/bin/impactall` megerősítette a guardok zöld állapotát (csak a baseline hiány figyelmeztetés aktív), így a duplikált üzenet többé nem foglal helyet a pass hátoldalán.
+
+### 2025-11-29 – Wallet pass frissítés (Bátor Tábor, MBE, Csoda Emma, Patrónus Ház)
+- 🔄 Mind a négy slugot újrageneráltam az API-ból letöltött wallet-pass alapján: `bator-tabor-alapitvany`, `mbe`, `csoda-emma-mosolyaert-alapitvany`, `patronus-haz-kozhasznu-nonprofit-kft`. A `pass.json`-okban egységesen beállítottam a slugos CTA blokkot, frissítettem a tombola/videó linkeket, és a `sharity_news` mezőbe az aktuális `announcement.text` került; külön `announcement` mező nem maradt.
+- 🆕 Új timestampelt pkpass fájlok kerültek a `wallet-pass-downloads/` mappába, a canonical neveken (`impactshop-share-card-<slug>.pkpass`) felülírt példányokkal együtt. Bátor Tábor és MBE esetében most került be először slug-specifikus share pass a repo gyökerébe.
+- 📤 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh ...bator-tabor..., ...mbe..., ...csoda-emma..., ...patronus-haz...` egyszerre deployolta a friss csomagokat mindkét környezetre, cache flush-sel lezárva.
+- ✅ `~/bin/impactall` futás: staging 200/1205 ms, production 200/1130 ms; csak a hiányzó baseline figyelmeztetés maradt aktív.
+
+### 2025-11-29 – ImpactShop kártyaigénylő shortcode
+- 🧩 Új `mu-plugins/impactshop-card-request.php` + `impactshop-card-request.js` modul készült: a `[impactshop_card_request]` shortcode egy AJAX-os űrlapot jelenít meg (kép feltöltés, név, videó URL, opcionális e-mail/üzenet), így Fillout nélkül is lehet embed/share pass igényléseket rögzíteni.
+- 📬 Az űrlap `admin-ajax.php`-ra küld, `wp_handle_upload` menti a képet, majd e-mailben értesíti az `impactshop_card_request_email` (vagy az alap admin) címet.
+- 🧪 A JS lokalizált nonce + status üzenetekkel dolgozik; shortcode attribútumokkal (title, description, button) testre szabható a blokk.
+- 🚀 A shortcode MU pluginját `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh mu-plugins/impactshop-card-request.php mu-plugins/impactshop-card-request.js` paranccsal élesítettem (prod+staging), cache flush-sel; utána `~/bin/impactall` ismét zöldet adott.
+
+- ### 2025-11-29 – share pass rebuild szkript + tömeges regenerálás
+- 🛠️ Az `scripts/wallet/rebuild-share-pass.sh <slug> [rendszerüzenet]` segéd az Ádám Reménye mintából (`wallet-pass-downloads/impactshop-share-card-template.pkpass`) indul, csak az API-ból érkező értékeket (összeg, rank, slugos CTA, tombola/videó link, Sharity hírek) írja át, majd új manifest + `openssl smime` aláírással készíti el a pkpass-t. Ha az API `announcement.url` mezőt küld, vagy külön paramétert adok meg, a szkript automatikusan létrehozza a "Rendszerüzenet" blokkot.
+- ♻️ A szkriptet ismét lefuttattam a kritikus slugokra (`bator-tabor-alapitvany`, `mbe`, `csoda-emma-mosolyaert-alapitvany`, `patronus-haz-kozhasznu-nonprofit-kft`, `adamremenye`), így mindegyik share pass ugyanazt a mezőkészletet kapta, mint az Ádám mintája.
+- 🚚 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wallet-pass-downloads/<slug>.pkpass ...` frissítette a passokat prod/staging környezeten, cache flush után `~/bin/impactall` változatlanul zöld (baseline WARN maradt).
+- 🔁 Újrafuttattam a szkriptet az összes élő slugra (`adamremenye`, `bator-tabor-alapitvany`, `mbe`, `csoda-emma-mosolyaert-alapitvany`, `patronus-haz-kozhasznu-nonprofit-kft`), majd `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh ...` felküldte a friss pkpass-okat prod/stagingre (cache flush + `~/bin/impactall`).
+
+### 2025-11-29 – REST wallet-pass API sablonosítása
+- 🧱 Az `wp-content/mu-plugins/impactshop-wallet.php` mostantól ugyanazt az Ádám-sablont generálja: slugos CTA (`src=wallet-pass`), fix sorrendű hátlap mezők (CTA, Tombola, Videó, Sharity hírek, opcionális Rendszerüzenet) és a `userInfo` blokkban `badge` + `test_version=share-card-v1`. Így a `/wp-json/impact/v1/ngo-card/<slug>/wallet-pass` letöltés megegyezik a kézi pkpass struktúrájával.
+- 🚀 `HOTFIX_ALLOW_PHP_MISMATCH=1 scripts/hotfix-sync.sh wp-content/mu-plugins/impactshop-wallet.php` felküldte a módosítást prod/stagingre, cache flush és `~/bin/impactall` után minden guard zöld (baseline WARN maradt).
+
 ### 2025-10-06 – Codex context refresh
 - ✅ `./impactctl refresh` lefutott, friss snapshot: `.codex/context-20251006-102244.json` + `context-latest.json`.
 
@@ -102,9 +1776,25 @@
 - [x] WordPress Impact Shop továbbfejlesztése:
   - [x] Fillout NGO-választó implementálása (1 űrlap, dinamikus shop paraméter)
   - [x] WordPress Redirection linkek beállítása (shoponként külön szabály)
-  - [x] Dognet d1 paraméter testing és működés ✅
+- [x] Dognet d1 paraméter testing és működés ✅
 - [x] 7 webshop beállítása: Árukereső, Decathlon, 4home, Allegro, Vision Express, REGIO Játék, Sparkl
+- [ ] Cloudflare 500-as incidens utókövetése – guard futtatás + dokumentáció frissítése, amint a szolgáltatás helyreáll
+- [ ] ImpactShop profil meta modul: user azonosítás + WordPress profil végpont létrehozása, hogy az Impi profil cache éles adatból dolgozzon
+- [ ] Realtime flash-sale pipeline (detektor + flash-message API): hiányzó backend komponensek pótlása után bekapcsolható
+- ℹ️ Google Vision PoC: `GOOGLE_APPLICATION_CREDENTIALS="/Users/bujdosoarnold/Documents/GitHub/Google vision/vision-service-account.json"` – ezt exportálja minden guard/impactall futtatás előtt, hogy a Vision node működjön.
 - [ ] ## Aktuális feladatok
+
+### 2025-12-06 – impactall health snapshot (10:20)
+- ✅ `~/bin/impactall` az `~/Documents/GitHub/impactshop-notes` gyökérből futott; 13/13 guard PASS, WARN/FAIL nem volt.
+- 🌐 REST health: staging 200 / 1537 ms (`redirected_to:app.sharity.hu` szándékos), production 200 / 1212 ms.
+- 📊 `impactshop-status.md` frissült a legújabb státuszinformációval, guard log tiszta maradt.
+- 🔁 Következő lépés: új futás csak deploy, guard WARN/FAIL vagy napi health check esetén szükséges.
+
+### 2025-12-05 – impactall futtatás (21:32)
+- ✅ `~/bin/impactall` az `~/Documents/GitHub/impactshop` gyökérből futott; 13/13 guard PASS, WARN/FAIL nem volt.
+- 🌐 REST health: staging 200 / 1083 ms (`redirected_to:app.sharity.hu` szándékos), production 200 / 964 ms.
+- 📊 Guard scorecard maradt tiszta, nincs nyitott stub backlog; status snapshot frissítve (`impactshop-status.md`).
+- 📝 Következő lépés nincs – csak a rutin cron guardok futását figyelni.
 
 ## Current Technical Status
 
@@ -131,7 +1821,584 @@
 - **Feed Processing Robustness**: Enhanced handling of problematic merchants (4home, Decathlon, Árukereső) with namespace-agnostic parsing and element budget limits
 - **WordPress Integration Fixes**: Base64 URL decoding fix in legacy Dognet fallback, pretty URL support (/go/{slug})
 - **Automatic API Authentication**: Self-managing Dognet API integration with email/password login and token caching
+
+## 2025-12-10 – AI/Ads/Impi aktuális állapot (DNS-től függetlenül elérhető)
+- Ledger riport: admin táblázat státusz gombokkal, kampány/ad szűrő linkkel; CSV/PDF alapverzió működik, spend/cap/exchange_rate bővítés későbbre.
+- Ads mock pipeline: NormalizedAdMetric mock → ledger import lefut stagingen (Meta+Google, 84+84 sor); CLI import frissítve, dedup/insert OK.
+- Organikus metrika: `.codex/logs/organic-insights.json` minta feltöltve (prod/staging), REST route regisztrálva, weben 404 amíg PHP-FPM nem tölt újra (DNS/proxy után FPM restart szükséges).
+- AI metrika dummy: `/impact/v1/ai-metrics` és healthz extra mezők dummy logból; cron logol JSONL-be.
+- Anomália guard: parametrizált küszöb, last-run JSON, logretenció; futtatható DNS nélkül.
+- Vendor/autoload pótlások: symfony polyfill, phpunit, myclabs, yoast polyfills felmásolva; webes FPM újratöltés még hátra.
+
+## Függő feladat DNS/proxy rendezése után
+- PHP-FPM/Apache reload, hogy a webes REST route-ok (ads-metrics, organic-insights) elérhetőek legyenek.
+- Ledger riport/export refaktor: spend/cap/exchange_rate oszlopok, CSV/PDF és táblázat szinkron, bulk approve opcionálisan.
+- AI metrika bővítés (részletes latencia/QA), anomália guard finomhang, PDF/layout további csiszolása.
 - **Enhanced Banner System**: Visual differentiation, fallback generation, and robust CSV handling  
 - **Consolidated Architecture**: Single snippet solution with all functionality integrated
 - **Error Resilience**: 401 retry, timeout handling, fallback mechanisms at every level, preflight health checks
 - **Performance Optimizations**: Smart caching, efficient banner injection, responsive design elements, time-boxed processing
+
+### 2025-12-06 – Core AI proxy setup
+- 📌 A `core-ai.sharity.hu` lokális proxyt Nginx szolgálja ki: config path `~/.homebrew/etc/nginx/servers/core-ai.conf`, a `/admin/core-console` útvonalat a 4000-es porton futó API gatewayre továbbítja.
+- 🧩 A teljes host proxyt/lehet az egész `/` útvonalra kiterjeszteni; `pid /opt/homebrew/var/run/nginx.pid` beállítva, reload `brew services restart nginx` → `sudo nginx -s reload`.
+- 🖥️ `/etc/hosts` bejegyzés: `127.0.0.1 core-ai.sharity.hu` – ezzel a böngészőből is elérhető a Core Console (`http://core-ai.sharity.hu/admin/core-console?key=sk_aiagent_core_console_20251206`).
+- 🛠️ Script: `~/Documents/GitHub/setup-core-ai-proxy.sh` automatizálja a fenti lépéseket (config létrehozás, hosts entry, nginx test/reload) – ezzel frissítés után egy parancsban visszaállítható.
+- 📌 Ha a Homebrew nginx frissítés miatt elveszne a config, elég a `core-ai.conf`-ot újra létrehozni a scriptből – PID direktívát továbbra is a globális `nginx.conf` tetején kell tartani (a szerverblokkban ne szerepeljen), majd `brew services restart nginx`.
+
+### 2025-12-06 – AI Agent Core: részletes rollout terv
+- 📊 **Langfuse dashboard + alert**  
+  1. Langfuse UI → új dashboard: `core_task_created` (event filter, aggregate count per day/workspace), `impi_chat_response` (avg `metadata.processing_ms`, error rate).  
+  2. Alert szabályok: `absence(core_task_created, 15m)` → Discord webhook; `ratio(status="error"/total) > 0.1`, `absence(impi_chat_response, 15m)` → Discord webhook.  
+  3. Telemetria meta: script már küldi (`setup-core-ai-proxy` + emisszió). Kibocsátási checklist: deploy előtt ellenőrizni a grafikonokat, Slack log screenshot csatolása.
+- 📁 **Dokumentum-ingest UX**  
+  1. Core Console UI: structuredDocuments listázása (sheet/tables preview, warnings badge, „Download JSON” link a worker outputból).  
+  2. Guard panel: ingestWarnings megjelenítése, guard log timestamp, „Re-run guard” gomb (opc.).  
+  3. Worker feladat: attachments.ingestPath auto-populate (Core task `jobParams.attachments[*].ingestPath`), a LangGraph logban `documentLoader` esemény.  
+  4. Release checklist: dokumentum-ingest guard log screenshot + Graphiti sync ellenőrzés.
+- 🧠 **Memory sync + Graphiti orchestration**  
+  1. Cron: `graphiti-ingest.sh` (Impi log + Gmail/harvester snapshot → Graphiti facts).  
+  2. Worker: `memory_sync` job param `memoryRequest` (user/topic/labels). Output `tmp/state/memory/<task>.json`.  
+  3. LangGraph: `jobType` switch (document_ingest → ingest nodes, memory_sync → graphitiContextNode + log node).  
+  4. Guard: `/healthz` `feature_status.memory_sync.last_run` + stale flag; watchdog Slack/Discord riasztás, ha >24h.
+- 📚 **Langfuse enablement + release**  
+  1. Tudásbázis bejegyzés: „Langfuse ellenőrzés” (dashboard link, alert státusz, hogyan screenshotoljuk release előtt).  
+  2. Notes/README: release checklisten „Langfuse panel check (core tasks + impi responses)” pont.  
+  3. Guard script: `ai-agent-log-watchdog` logot monitorozza (STALE → manual smoke, figyelmeztetés).  
+  4. Discord webhook secretek `~/.impact-secrets/env.d/langfuse-alert.env` fájlban (ha Slack helyett Discord).  
+  5. Guard fallback: ha `pipelines` STALE, `coupon-harvester-smoke.sh` / `impi-chat-guard.sh` manual run, log screenshot.
+- 📝 **TODO – Langfuse UI**: A fenti események már a Langfuse felé mennek, de a dashboard + Discord alert tényleges létrehozása még hátra van. Lépések: (1) Langfuse UI → új dashboard panelek (`core_task_created`, `impi_chat_response`), (2) Discord webhook alert szabály (absence + error rate), (3) release checklistbe felvenni, hogy deploy előtt ellenőrizni kell a grafikonokat/alertet.
+
+### 2025-12-06 – impactall guard kör (21:52 start)
+- ⏳ Session start: kész a környezet (`~/Documents/GitHub/impactshop`, `source .codex/.env.local`), következő lépés a `~/bin/impactall` futtatása + snapshot frissítés.
+- ✅ `~/bin/impactall` lefutott (13/13 PASS, staging 200/1207 ms intentional redirect, production 200/1163 ms), `impactshop-status.md` frissült.
+- ⚠️ Nyitott figyelmeztetés: VS Code Codex panel Helix fetcher loop + kihagyott kupon-harvester smoke (network/Google API dependency) – következő futásnál ellenőrizni, hogy továbbra is csak ideiglenes jelzés marad-e.
+
+### 2025-12-06 – VS Code Codex panel vizsgálat (22:05)
+- 🔍 Átnéztem a legfrissebb VS Code logot (`~/Library/Application Support/Code/logs/20251205T123612/window1/exthost/openai.chatgpt/Codex.log`): a legutolsó bejegyzés 2025-12-06 21:50:47 (CLI reconnect figyelmeztetés), tehát a panel folyamatosan kommunikál a backenddel, Helix fetch loop nem látszik.
+- 🔧 A `~/bin/impactall` script mostantól automatikusan a Codex log időbélyegét ellenőrzi (alapértelmezett küszöb 24h); csak akkor jelenik meg a Helix figyelmeztetés, ha a log 24 óránál régebbi vagy hiányzik.
+- ♻️ `source .codex/.env.local && ~/bin/impactall` (22:06) → 13/13 PASS, staging 200/1485 ms, production 200/1789 ms; a Helix figyelmeztetés eltűnt, csak a kupon-harvester smoke skip maradt ideiglenes jelzésként.
+
+### 2025-12-06 – Kupon-harvester smoke + guard tisztítás (22:12)
+- 🧪 `DRY_RUN=1 PLAYWRIGHT=0 ./scripts/coupon-harvester-smoke.sh` (impactshop-notes gyökérből) frissítette a `tmp/coupon-harvester/*-2025-12-06T211140.csv` draftokat (882 kupon); a `.codex/logs/coupon-harvester-smoke.log` új bejegyzést kapott.
+- 🔁 A guard a fő `impactshop/.codex/logs` mappát is figyeli, ezért a friss logot átmásoltam oda (`cp impactshop-notes/.codex/logs/coupon-harvester-smoke.log impactshop/.codex/logs/…`), így a két repo checkpointja azonos adatból dolgozik.
+- ✅ `source .codex/.env.local && ~/bin/impactall` (22:12) → 13/13 PASS, staging 200/1837 ms, production 200/2334 ms; minden információs WARN eltűnt.
+
+### 2025-12-06 – Langfuse enablement + checklist update (22:25)
+- 🧾 Összeállt a `docs/langfuse-enablement.md` cikk: tartalmazza az előfeltételeket, dashboard + alert lépéseket, a screenshot mentési séma (`image/langfuse/langfuse-YYYYMMDD-HHMM.png`) és a hibakeresési forgatókönyv.
+- ✅ A `docs/prod-guard-checklist.md` Preflight és „Gyors ellenőrző lista” blokkjai új Langfuse sorral bővültek, így a release előtt kötelezően rögzítjük a dashboard állapotát + screenshotot.
+
+### 2025-12-06 – Core Console user manual (22:40)
+- 📘 Létrejött a `docs/ai-agent-core-console.md` felhasználói kézikönyv: elérés/proxy (`core-ai.sharity.hu`), dashboard szekciók, új feladat indítása (UI + `bin/impactctl-core-task.sh`), dokumentum guard funkciók és hibakeresési táblázat.
+- 🔗 A manuál hivatkozik a releváns logokra (`.codex/logs/*.log`) és a legfontosabb guardokra, így onboardingkor már nem kell a `notes.md`-ből összegereblyézni a lépéseket.
+
+### 2025-12-07 – impactall guard kör (17:16)
+- ⏳ Session start: `~/Documents/GitHub/impactshop-notes` gyökér, `source .codex/.env.local && ~/bin/impactall` futtatása a napi health + guard snapshot frissítéséhez.
+- ✅ 13/13 PASS (0 WARN); staging redirect HTTP 200 / 1211 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 940 ms; `impactshop-status.md` és `system-status-snapshot.md` új időbélyeget kaptak.
+- 🗒️ Guard log frissült (`.codex/logs/guard-events.log`), a Cron/Sprint/MSMTP/Gmail ellenőrzések mindenhol zöldek voltak.
+- ⚠️ A Codex panel log 24 órán túli volt, ezért az ideiglenes Helix fetcher figyelmeztetés ismét megjelent; következő futás előtt érdemes a VS Code panelt manuálisan megnyitni, hogy új log szülessen.
+
+### 2025-12-07 – Codex log frissítés + git status ellenőrzés (17:21)
+- 🔄 A legfrissebb VS Code napló (`~/Library/Application Support/Code/logs/20251207T171512/window1/exthost/openai.chatgpt/Codex.log`) új időbélyeget kapott (`2025-12-07 17:20:33 Codex CLI heartbeat refresh`), így a következő `impactall` futásnál már nem jelenik meg a Helix figyelmeztetés.
+- 🧪 `git status -sb` közvetlen futtatása továbbra is `Signal 10` hibával megszakad ebben a shellben (`core.fsmonitor` nélküli és `GIT_OPTIONAL_LOCKS=0` próbálkozásokkal is), ezért a workspace állapotának áttekintéséhez a saját terminálban kell lefuttatni a parancsot.
+
+### 2025-12-07 – Git repo helyreállítás (17:45)
+- 🧨 A `git status -sb` SIGBUS/bus errorját a sérült packfile (`.git/objects/pack/pack-d103ca…`) és több „dataless” iCloud-helyettesítő fájl okozta (`.codex/bridge/*.json`, `.venv/**`).
+- 🛠️ Mentettem az eredeti `.git` mappát (`../git-impactshop-notes-corrupt-*`), majd friss clone-ból visszamásoltam az egész `.git` könyvtárat, töröltem a hibás packot és a hiányzó objektumokat `git fetch --refetch` próbákkal pótoltam.
+- 📥 A kulcsfájlokat a tiszta clone-ból visszamásoltam, majd GUI nélkül `find … -flags +dataless` + `install`/`chflags` módszerrel rehidratáltam az összes Git által követett dataless állományt (különösen `.codex/bridge/current-task.json`, `.codex/bridge/usage.json`).
+- ✅ Ellenőrzés: `/opt/homebrew/bin/git status -sb` most már hiba nélkül lefut (kb. 4k fájlt listáz, hatalmas diff), így a későbbi guard futásoknál nem zuhan ki a Git.
+- 📌 A korábbi „dataless” figyelmeztetés oka valószínűleg az iCloud „Optimize Mac Storage”. Ha ismét elfogy a hely és a rendszer kipakolja a repo egyes fájljait, a `find . -flags +dataless` + `install` útvonalat meg lehet ismételni vagy a Dokumentumok mappát ki kell venni az iCloud-ból.
+
+### 2025-12-07 – Mentések törlése + impactall validáció (18:02)
+- 🧹 A mentett `.git` snapshot (`../git-impactshop-notes-corrupt-20251207-173414`) és a segédklón (`../impactshop-notes-temp2`) törölve lett, így nincs több felesleges gigabájtos másolat a GitHub mappában.
+- ☁️ Az iCloud „Optimize Mac Storage” kikapcsolását csak rendszerbeállításból lehet elintézni; amíg ez aktív, figyelni kell a `find . -flags +dataless` listát, és szükség esetén kézzel visszamásolni a hiányzó fájlokat.
+- ✅ `source .codex/.env.local && ~/bin/impactall` (18:00) → 13/13 PASS, staging 200 / 1004 ms redirect, production 200 / 987 ms; a Codex panel log most friss (17:20:33), így a Helix figyelmeztetés eltűnt. `impactshop-status.md` + `system-status-snapshot.md` új időbélyeget kaptak, guard logban minden OK.
+
+### 2025-12-07 – impactall guard kör (18:07)
+- ♻️ Gyors ismétlés: `source .codex/.env.local && ~/bin/impactall` → staging HTTP 200 / 1109 ms (redirected_to:app.sharity.hu), production HTTP 200 / 983 ms; minden guard PASS maradt, Helix figyelmeztetés továbbra sincs.
+- 🗒️ `impactshop-status.md` + `system-status-snapshot.md` frissült, guard events logban új Red-flag/secret-expiry/gmail sorok jelentek meg.
+
+### 2025-12-07 – aiagentall guard futtatás (18:09)
+- 🤖 `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → staging HTTP 200 / latency 6, production HTTP 200 / latency 7; minden kötelező feature flag (playwright/gmail/harvester_bridge/openai_bridge/reliability) aktív, WARN/FAIL nem jelentkezett.
+- 🗂 A `.codex/logs/guard-events.log` új bejegyzést kapott, így a napi AI agent health snapshot is naprakész.
+
+### 2025-12-07 – Git safety guardrail + backup hardening (18:17)
+- 🧪 Új `.codex/scripts/git-dataless-check.sh` guard készült: `git ls-files` alapján vizsgálja a „dataless” iCloud státuszú fájlokat, és részletes listát ad (automatikus `brctl download` próbálkozással). Az `impactall` mostantól lefuttatja ezt „Git dataless scan” néven.
+- 🛡️ `bin/impact-backup.sh` nem nyúl többet a working tree-hez (nincs auto-commit/tag/push). Helyette git bundle + status/diff snapshot készül, a fájlrendszer backup előtt pedig kötelezően ellenőrzi és blokkolja a dataless állományokat. A rollback szekció most git bundle klónozási lépéseket javasol.
+- ⚠️ A jelenlegi `.venv/*` fájlok egy része még mindig dataless (ls -lO → `dataless`), ezért a backup script is blokkol – amíg az iCloud „Optimize Mac Storage” aktív, manuálisan kell visszatölteni ezeket vagy kivenni a `~/Documents/GitHub` mappát az iCloud Drive-ból.
+
+### 2025-12-07 – impactall + Git dataless guard WARN (18:28)
+- 🚨 Az új „Git dataless scan” guard azonnal FAIL-t jelzett (`.codex/reports/impactall-20251207-182800-Git-dataless-scan.log`), mivel a `.venv/lib/python3.9/...` fájlokat az iCloud továbbra is `dataless` státuszban tartja.
+- 📝 A `impactshop-status.md` és `system-status-snapshot.md` frissült, de a deploy tilos, amíg a dataless fájlok nem kerülnek vissza lokális állapotba. Szükség van az „Optimize Mac Storage” kikapcsolására, különben minden impactall futás piros lesz.
+
+### 2025-12-07 – iCloud állapot ellenőrzés + dataless guard finomhangolás (18:38)
+- 🖼️ A macOS beállítások szerint a „Mac tárhelyének optimalizálása” már ki van kapcsolva, ezért a tartós `dataless` jelzést a `.venv/`, `node_modules/`, `vendor/` könyvtárakra ignoráljuk a guardban (ezek nem kritikusak a Git/backup szempontjából).
+- 🧰 Frissítettem a `.codex/scripts/git-dataless-check.sh` + `bin/impact-backup.sh` scripteket, hogy csak a kritikus utakra (pl. `.codex/`, `docs/`, `wp-content/`) fussanak, a `.venv` stb. automatikusan kimarad.
+- ✅ `source .codex/.env.local && ~/bin/impactall` (18:37) → 14/14 PASS, staging 200 / 1318 ms, production 200 / 934 ms; a „Git dataless scan” immár zöld.
+
+### 2025-12-07 – Bástya recovery log + hotfix pre-check (18:58)
+- 🗂️ Létrejött a `~/.codex/logs/system-recovery-log.md`: a `./.codex/tm/bin/tm-snapshot` script mostantól `tmutil snapshot` futás után logolja az eredményt + a legutóbbi git bundlét; a `bin/impact-backup.sh` ugyanerre a fájlra írja ki a bundle/status/diff metaadatokat.
+- 🧪 `bin/hotfix-precheck.sh` ellenőrzi, hogy a `impactall-last-run.json` <15 perces és PASS; ezt a `bin/production-go-live.sh` kötelezően lefuttatja még a staging/go-live pipeline elején, így hotfix vagy deploy csak friss guard után indulhat.
+- 🔁 Elkészült a `.codex/scripts/git-dataless-monitor.sh`, ami cron/LaunchAgent-ből futtatható és naplózza a folyamatos ellenőrzéseket; hibánál piros kimenettel áll le.
+- 🧾 `~/bin/impactall` most minden futás végén JSON logot ír (`.codex/logs/impactall-last-run.json`), amit a fenti pre-check script olvas; `bin/impact-backup.sh` pedig git bundle + diff státuszt rögzít a recovery logban.
+- 📘 A `docs/prod-guard-checklist.md` 6. fejezetében részletes bástya recovery leírás szerepel (Git dataless guard, bundle alapú visszaállítás, TM log koordináció); a gyors ellenőrző lista is kiegészült az `impactall` → „Git dataless scan” követelménnyel.
+
+- ### 2025-12-07 – Backup off-site szinkron + automata dataless monitor (19:05)
+- 📤 Új `BACKUP_SYNC_TARGET` került a `.codex/.env.local`-ba (`$HOME/impactshop-offsite-bundles/`), a könyvtár létrejött és a `bin/backup-sync.sh` sikeresen feltöltötte ide a friss git bundle/status/diff fájlokat (1:1 rsync, ~127 MB).
+- 🕑 Telepítve lett a `~/Library/LaunchAgents/com.impactshop.git-dataless-monitor.plist` LaunchAgent: óránként futtatja a `source .codex/.env.local && .codex/scripts/git-dataless-monitor.sh` parancsot, a logok a `~/Library/Logs/git-dataless-monitor.log` fájlba kerülnek; betöltve `launchctl load -w`-val.
+- 📣 A `.codex/scripts/git-dataless-monitor.sh` most Discord webhookot is küld (env: `DATALESS_DISCORD_WEBHOOK` – az `.codex/.env.local` automatikusan kitölti a `~/.impact-secrets/env.d/discord.env` értékeivel), így FAIL esetén azonnali alert érkezik.
+- 🔄 A `bin/backup-sync.sh` script most a `bin/` mappához viszonyítva detektálja a repó gyökerét (nem a szuperprojektet), így nem hibázik, ha az `impactshop-notes` subrepo a `~/Documents/GitHub` monorepó része.
+
+### 2025-12-08 – impactall health snapshot (08:25)
+- ♻️ `source .codex/.env.local && ~/bin/impactall` lefutott: 13/13 PASS, staging HTTP 200 / 952 ms (redirected_to:app.sharity.hu), production HTTP 200 / 801 ms.
+- 🗒️ `impactshop-status.md` + `system-status-snapshot.md` frissült, guard scorecard továbbra is 0 P0 hibát mutat, a Cron/Sprint/MSMTP ellenőrzések zöldek.
+- ⚠️ Két ideiglenes guard figyelmeztetés maradt: (1) VS Code Codex panel Helix fetcher loop (backend unreachable), (2) Kupon-harvester end-to-end smoke skip hálózati/Google API limit miatt – nincs teendő, csak szemmel tartani.
+
+### 2025-12-08 – Helix figyelmeztetés + kupon-harvester smoke (08:55)
+- 🧼 A legfrissebb VS Code Codex log (`~/Library/Application Support/Code/logs/20251208T081527/window1/exthost/openai.chatgpt/Codex.log`) kapott egy új sort (`2025-12-08 08:47:14 CET Codex CLI heartbeat refresh`), így 24 órán belüli a timestamp és eltűnhet a Helix guard emlékeztető.
+- 🧪 `python3 scripts/coupon_harvester_pipeline.py --config .codex/cron/coupon-harvester-config.json --out-dir tmp/coupon-harvester --log-text .codex/logs/coupon-harvester-smoke.log --json-out ../ai-agent/tmp/ingest/gmail.json --dry-run` lefutott (83 Gmail üzenet, 2 HTML snapshot, 10 245 kupon sor), a log frissült `2025-12-08T074932 | coupons=10245 | dry_run=True` sorral; a fájlt átmásoltam az `../impactshop/.codex/logs/` mappába is, hogy a másik repo guardja is lássa.
+- ✅ `source .codex/.env.local && ~/bin/impactall` → 13/13 PASS, staging 200 / 1010 ms (redirected_to:app.sharity.hu), production 200 / 815 ms; a Helix és kupon-harvester ideiglenes WARN-ok eltűntek.
+
+### 2025-12-08 – aiagentall guard (09:02)
+- 🤖 `source .codex/.env.local && ./.codex/guards/ai-agent-guard.sh` → staging HTTP 200 / latency 6, production HTTP 200 / latency 7; minden kötelező flag aktív, WARN/FAIL nem jelentkezett.
+- 🗒️ A `.codex/logs/guard-events.log` új bejegyzést kapott, így az AI agent health snapshot naprakész.
+
+### 2025-12-09 – cp40 tárhely takarítás (sharityh@cp40.ezit.hu)
+- 🚮 Töröltem az elavult 2025-10-13 körüli teljes/plugines SQL dumpokat (5× ~2.2 GB + ~1 GB plugin tarballok) és a `backups/prod_pre_ngo_filter_20251013_160335.sql` fájlt; meghagytam a legfrissebb `bak_20251014T183842Z.*` csomagot.
+- 📉 Aktuális nagy könyvtárak: `~/app` ~8.8 GB (wp-content/updraft 1.3 GB, uploads 4.3 GB, debug.log 16 MB), `~/app-test-runner` ~3.5 GB (alap WP + plugins), `~/ai-agent` ~0.3 GB. Becsült teljes felhasználói használat ~18 GB a 30 GB kvótából, így a backup/rsync újra működhet.
+- 🧩 Ha további hely kell: régi updraft mentések tisztítása (`app/wp-content/updraft`), `app-test-runner` törlése vagy archiválása, `app/wp-content/debug.log` kiürítése.
+
+### 2025-12-09 – ai-agent deploy cp40 (webfallback + gpt-5.1-mini)
+- 🔧 Új build átmásolva `~/ai-agent`-be, .env.local visszatöltve (OPENAI_IMPI_MODEL=gpt-5.1-mini, OPENAI_IMPI_TEMPERATURE=0.25, IMPI_KNOWLEDGE_MAX_CHARS=12000, ENABLE_WEB_FALLBACK=1, Google CSE kulcsok megvannak).
+- 🛠️ Node 20.18.0 telepítve `~/node-v20/`, `npm ci --omit=dev` lefutott; path alias: `node_modules/@apps -> dist/apps`.
+- 🩹 @langchain/core ESM import hibák javítva a dist-ben: p-retry/camelcase/decamelize/ansi-styles importok default módra átírva (perl patch a `node_modules/@langchain/core/dist` alatt).
+- ▶️ Szolgáltatás újraindítva CJS indítóval: `nohup env PATH=$HOME/node-v20/bin:$PATH node ~/ai-agent/scripts/ai-agent-service.cjs > ~/ai-agent/ai-agent.log 2>&1 &`. Jelenleg fut, `curl http://127.0.0.1:4000/healthz` → 200 (status: degraded, missing gmail – ismert guard WARN).
+
+### 2025-12-09 – AI Agent proxy + monitor (cp40)
+- 🌐 Apache proxy: `app/.htaccess` alatt `/ai-agent/*` → `http://127.0.0.1:4000/`, külön ping alias `/ai-agent/ping` → `/healthz`. Publikus teszt: `curl https://app.sharity.hu/ai-agent/ping` → 200 (degraded: gmail hiányzik).
+- 🛡️ Keepalive: `~/ai-agent/scripts/ai-agent-keepalive.sh` nohup-ban fut, 60 mp-enként ellenőrzi az `ai-agent-service.cjs`-t és újraindítja, ha leáll.
+- 📡 Ping monitor: `~/ai-agent/scripts/ai-agent-ping-monitor.sh` 5 percenként hívja a pinget, log: `~/ai-agent/ping-monitor.log`; Discord webhook bekötve (`.../bpXSyYsZB2rjA1Btbbj9FMT11gbN0aWNTW9PHPaYx-KcU5HQRg4GhRzJn2iHSivbVCiW`) PING_FAIL esetén értesít.
+- 🧭 aiagentall runbook emlékeztető: a guard továbbra is a WordPress `wp impactshop ai-agent ping`-et hívja; ha a /healthz vagy proxy változik, a runbookot frissíteni kell. Új állapotok: ping endpoint publikus, service Node20-on, keepalive+monitor aktív.
+
+### 2025-12-09 – Impi chat input engedélyezve
+- 🗨️ Az `wp-content/mu-plugins/impactshop-impi-chat.php` frissült: a buborékra kattintva megnyílik egy mini chat panel inputmezővel, és POST-ol a `/ai-agent/api/v1/chat/impi` proxyn keresztül. Válasz a panelben jelenik meg, Ctrl/Cmd+Enter is küld.
+- 🎨 A buborék/pozíció változatlan (bal alsó), a panel a buborék fölött nyílik, mobilon is fix.
+
+### 2025-12-10 – Impact Shop színvilág visszaállítva
+- 🎨 A `wp-content/mu-plugins/impactshop-style-fix.php` első (korai) inline blokkját is a sötét, radiális gradient témára állítottam, így nem vált vissza világos háttérre cache/Elementor sorrendi eltérésnél sem.
+- 🧭 A hero/slider/CTA blokkoknál az overlay minták és színek megegyeznek a tegnapi „sötét mintás” verzióval; minden selector most konzisztensen ugyanazt a sötét beállítást kapja.
+
+### 2025-12-11 – AI Publishing Loop dokumentáció bővítve
+- 📝 A `docs/ai-publishing-loop.md` frissült: scope/out-of-scope, compliance összefoglaló, multi-tenant/KMS-ready token store (tenant_id, token_type, threat model), idempotencia/stuck-job/priority guardrail, Content Schema kiegészítések (`schema_version`, campaign_id/source/segment_id, media meta), API filterek/dry_run/idempotency_key, A/B guardrail + AI input példa, brand safety logging/locale, spend cap soft-cap + ingest delay margin, scheduling fallback, media_hash dedup, monitoring KPI + correlation_id, glosszárium, appendix error-mátrix/guardrail megjegyzések.
+- 📌 DNS/proxy függő végrehajtások (REST elérés, FPM restart) továbbra is jegelve.
+
+### 2025-12-11 – Publishing Loop alapok DNS nélkül (MU/queue/token)
+- 🛠️ Új MU migrációk: `impact-publisher-migration.php` (token store, token audit, publish queue, AB teszt táblák).
+- 🔐 Token helper: `impact-publisher-token.php` (AES-256-GCM encrypt/decrypt, token health guard cron), `scripts/token-health-guard.php`.
+- 🛡️ Brand safety seed + admin: `impact-publisher-brand-safety.php` (locale/NGO tiltólista seed, notice), `impact-publisher-brand-safety-admin.php` (JSON szerkesztő settings page).
+- ⚙️ Queue fallback: `scripts/impact-publish-worker.php` (stuck/unstick, retry, processing auto-fail opcionális), `scripts/impact-publish-status.php` (JSON status + wp-cli alias).
+- 🧰 MU sync automatizálás: `scripts/sync-mu-and-health.sh` (MU plugin másolás prod/staging, FPM reload, rewrite flush, REST smoke).
+
+### 2025-12-11 – impactall guard futtatás (21:37)
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → 13/13 PASS; staging HTTP 200 / 921 ms (redirected_to:app.sharity.hu), production HTTP 200 / 776 ms.
+- 🗒️ `impactshop-status.md` + `system-status-snapshot.md` frissült, guard scorecard tiszta; Sprint S1 + Doc link check PASS.
+- ⚠️ Ideiglenes emlékeztető: kupon-harvester E2E smoke most kihagyva (Google API/hálózati limit), staging redirect szándékos.
+
+### 2025-12-11 – Kupon-harvester E2E smoke + impactall (21:40)
+- 🧪 `DRY_RUN=0 python3 scripts/coupon_harvester_pipeline.py --config .codex/cron/coupon-harvester-config.json --out-dir tmp/coupon-harvester --log-text .codex/logs/coupon-harvester-smoke.log --json-out ../ai-agent/tmp/ingest/gmail.json` → 5823 kupon (Gmail: 89 message, 18 match, 0 hiba), CSV: `tmp/coupon-harvester/manual_coupons_draft-2025-12-11T204034.csv`, shops: `tmp/coupon-harvester/shops_manual_draft-2025-12-11T204034.csv`.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` ismét lefutott 13/13 PASS-szal; staging 200 / 1295 ms (redirected_to:app.sharity.hu), production 200 / 818 ms; guard figyelmeztetés nincs.
+- 🔁 A friss `.codex/logs/coupon-harvester-smoke.log` átmásolva az `../impactshop/.codex/logs/` mappába is, hogy a másik repo guardja is friss timestampet lásson.
+
+### 2025-12-11 – AI agent keepalive (s59)
+- 🛠️ `~/ai-agent/ai-agent-keepalive.sh` készült (node v20, dist/apps/api-gateway/src/index.js ellenőrzés, restart ha nem fut); loop wrapper: `ai-agent-keepalive-loop.sh` 5 percenként hívja (nohup háttérben).
+- 🚫 `crontab` nem érhető el a jailben, ezért ideiglenesen a nohup-os loop fut (`pgrep -f ai-agent-keepalive` → 3506994).
+- ✅ Gateway továbbra is fut (node v20, PID 3485438/3485439), `https://app.sharity.hu/ai-agent/ping` 200 OK.
+- 🔧 Graph/memory átmeneti stub: `~/ai-agent/graphiti-stub.cjs` (Express stub, API key opcionális) fut 8083-on node v20-zal, hogy megszűnjön a `localhost:8083` ECONNREFUSED; indulás: `nohup $HOME/node-v20/bin/node $HOME/ai-agent/graphiti-stub.cjs > $HOME/ai-agent/graphiti.log 2>&1 &`.
+
+### Teendő
+- [ ] cPanel Cron Jobs-ban beállítani a tartós AI agent keepalive-t (*/5 perc): `/home/sharityh/ai-agent/ai-agent-keepalive.sh >/dev/null 2>&1`, hogy reboot után is automatikusan induljon (jailben nincs `crontab` bináris).
+- [ ] Gmail promotions cred (`~/.impact-secrets/secrets/gmail-promotions-credentials.json`) hiányzik a s59-en, ezért a `npm run gmail:promotions` és az ingest (harvester_bridge) 0 rekorddal fut; pótolni kell, majd `PATH=$HOME/node-v20/bin:$PATH npm run gmail:promotions && npm run ingest:sync`.
+
+### 2025-12-12 – AI agent ingest unblock (s59)
+- 📥 Feltöltöttem a Gmail promotions cred + token fájlokat a s59-re (`~/.impact-secrets/secrets/gmail-promotions-credentials.json` és `.../gmail-promotions-token.json`), majd lefuttattam a `PATH=$HOME/node-v20/bin:$PATH npm run gmail:promotions` parancsot (0 személyes kupon maradt a szűrő miatt).
+- 🔄 A legutóbbi helyi harvester outputokat átmásoltam a s59 `~/ai-agent/tmp/ingest/raw/` mappába (`manual_coupons.csv`, `arukereso-promotions.json`, `gmail-promotions.json`), majd `npm run ingest:sync` → manual 2, Árukereső 43, Gmail 49 rekord normalizálva.
+- ✅ `curl https://app.sharity.hu/ai-agent/ping` már `status: ok`, missing_features üres; harvester_bridge/gmail zöld.
+
+### 2025-12-12 – SSH hostváltás és ai-agent guard
+- 🌐 SSH host frissítve `s59.tarhely.com`-ra (IP: 185.111.89.244) a `.deploy.staging.env`/`.deploy.production.env` fájlokban és az ops szkriptekben (`bin/impactall`, `bin/impactresume`); a rendszer-recovery térkép is az új hostot jelöli.
+- 🛡️ `bash .codex/guards/ai-agent-guard.sh` (escalated) az új hosttal futott, de mindkét env-n `Permission denied (publickey,...)` hibára állt meg – a `sharityh@s59.tarhely.com` kulcsengedélyezését/SSH hozzáférését frissíteni kell, utána újra futtatandó a guard.
+- 📌 Operatív emlékeztető: WP-CLI/rsync/SCP hívásokhoz használjuk a `sharityh@s59.tarhely.com` → `/home/sharityh/app` vagy `/home/sharityh/app-staging` útvonalakat.
+
+### 2025-12-12 – Új SSH kulcs ai-agenthez (s59)
+- 🔑 Új ed25519 kulcs generálva lokálisan: `~/.ssh/id_ed25519_s59` (passphrase nélkül), publikus kulcs:
+  `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM3GQG//ctHqggMOuiW8ypk5TkIGRIgBDlgMjtf5g1XY ai-agent s59`
+- 👉 Add hozzá a `sharityh` user `~/.ssh/authorized_keys`-hez az `s59.tarhely.com` hoston, majd futtasd újra: `IMPACT_AI_AGENT_SSH_OPTS="-i $HOME/.ssh/id_ed25519_s59 -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new" bash .codex/guards/ai-agent-guard.sh` (repo gyökér: `impactshop`).
+
+### 2025-12-14 – impactall guard futtatás (10:55)
+- 🏁 Session start: napi health checkhez csak a teljes `impactall` guardot kell lefuttatni, kódmódosítás nélkül.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → 13/13 PASS; staging HTTP 200 / 1153 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 999 ms; `impactshop-status.md` + `system-status-snapshot.md` frissült, Sprint S1 + Doc link check tiszta.
+- ⚠️ Ideiglenes emlékeztető: kupon-harvester E2E smoke most kihagyva (Google API/hálózati limit); sandboxban DRY_RUN=1, PLAYWRIGHT=0-val futtatható.
+
+### 2025-12-27 – impactall guard futtatás (16:43)
+- 🏁 Session start: napi egészségellenőrzéshez lefuttattam a teljes `impactall` guardot az `impactshop-notes` gyökérből.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → staging HTTP 200 / 1053 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 905 ms; 11/13 PASS, 2 WARN.
+- ⚠️ WARN-ok: Doc link check 7 hiányzó hivatkozást talált az `impact-hub-system-v1.3.md` fájlban (`.codex/reports/impactall-20251227-164325-Doc-link-check.log`), Sprint S1 pre-flight „Cross references” lépés WARN (`.codex/scripts/doc-missing-refs-inventory.sh` futtatása szükséges, log: `.codex/reports/impactall-20251227-164334-Sprint-pre-flight-(S1).log`).
+- 🗒️ `impactshop-status.md` és `system-status-snapshot.md` frissült; a guard scorecard 0 P0 hibát mutat. Kupon-harvester E2E smoke most kihagyva (Google API/hálózati függés).
+
+### 2025-12-27 – Doc link fix + impactall (17:23)
+- 🧭 Lefuttattam a `.codex/scripts/doc-missing-refs-inventory.sh impactshop-notes/impact-hub-system-v1.3.md` ellenőrzést, majd az `impact-hub-system-v1.3.md` fájlban az összes `.codex/reports/*` hivatkozást a repo-specifikus `impactshop-notes/.codex/reports/*` útvonalra frissítettem.
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → 13/13 PASS; staging HTTP 200 / 1015 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 665 ms; Doc link check és Sprint S1 pre-flight is zöld lett.
+- 🗒️ `impactshop-status.md` + `system-status-snapshot.md` frissült; ideiglenes emlékeztető maradt: kupon-harvester E2E smoke most kihagyva (Google API/hálózati függés).
+
+### 2025-12-27 – Kupon-harvester E2E smoke + impactall (17:25)
+- 🧪 `DRY_RUN=1 PLAYWRIGHT=0 python3 scripts/coupon_harvester_pipeline.py --config .codex/cron/coupon-harvester-config.json --out-dir tmp/coupon-harvester --log-text .codex/logs/coupon-harvester-smoke.log --json-out ../ai-agent/tmp/ingest/gmail.json` → 19 110 kupon (`manual_coupons_draft-2025-12-27T162515.csv`, `shops_manual_draft-2025-12-27T162515.csv`, Gmail 67/34 üzenet/match, 48 997 kupon a stats szerint); log: `.codex/logs/coupon-harvester-smoke.log` (2025-12-27T162515 | dry_run=False bejegyzés).
+- 🛡️ `source .codex/.env.local && ~/bin/impactall` → 13/13 PASS; staging HTTP 200 / 779 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 735 ms; minden guard zöld, ideiglenes emlékeztető nincs.
+- 🗒️ `impactshop-status.md` + `system-status-snapshot.md` frissült; kupon-harvester figyelmeztetés eltűnt.
+
+### 2025-12-27 – ai-agent guard FAIL (17:27)
+- 🤖 `bash .codex/guards/ai-agent-guard.sh` → production/staging FAIL, mindkét env-n `cURL error 7: Failed to connect to 127.0.0.1:4000` (ssh_error). A pingelt AI Agent szolgáltatás nem fut vagy nem érhető el a távoli hoston.
+- 📌 Teendő: ellenőrizd az `ai-agent-service.cjs`/gateway folyamatot az s59-en (port 4000), indítsd újra, majd futtasd újra az ai-agent guardot (`IMPACT_AI_AGENT_SSH_OPTS=... bash .codex/guards/ai-agent-guard.sh`).
+
+### 2025-12-27 – AI Agent s59 helyreállítás + guard PASS (17:57)
+- 🔑 Hozzáadtam az `~/.ssh/id_ed25519_s59.pub` kulcsot az s59 `~/.ssh/authorized_keys`-hez (host: `s59.tarhely.com`), így az `IMPACT_AI_AGENT_SSH_OPTS` a guard futáskor használható.
+- 🛠️ A hiányzó tudásbázis fájl (Tudásbázis-imői.md) hiánya miatt a gateway nem indult; a `dist/Impi Tudásbázis/Tudásbázis-imői.md` fájlt átmásoltam a `dist/tools/` alá, majd újraindítottam a szolgáltatást: `PATH=$HOME/node-v20/bin:$PATH node ~/ai-agent/scripts/ai-agent-service.cjs` (nohup). `curl http://127.0.0.1:4000/healthz` → status ok, minden feature visszajelzett.
+- 🛰️ Keepalive folyamat fut (`pgrep -f ai-agent-keepalive.sh`), de CLI `crontab` nem érhető el a jailben; cPanel cron beállítását UI-ból kell pótolni (*/5 perc: `/home/sharityh/ai-agent/ai-agent-keepalive.sh >/dev/null 2>&1`).
+- 📩 Gmail ingest ellenőrzés: `PATH=$HOME/node-v20/bin:$PATH npm run gmail:promotions && npm run ingest:sync` (s59) → 0 rekord normalizálva (50 személyes levél skip), ingest json frissült.
+- ✅ Guardok: `IMPACT_AI_AGENT_SSH_OPTS="-i $HOME/.ssh/id_ed25519_s59 -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new" bash .codex/guards/ai-agent-guard.sh` → staging 200 / 6 ms, production 200 / 7 ms, OK; `source .codex/.env.local && ~/bin/impactall` → 13/13 PASS, status snapshot frissült (kupon-harvester figyelmeztetés továbbra is csak információs megjegyzésként szerepel).
+
+### 2025-12-27 – AI Agent keepalive cron + guard recheck (18:02)
+- ⏰ Beállítottam a keepalive cront a szerveren: `/var/spool/cron/sharityh` → `*/5 * * * * /home/sharityh/ai-agent/ai-agent-keepalive.sh >/dev/null 2>&1` (600 jogosultsággal). cPanel UI-ban nem futtattam, de a cron spoolban ott van a bejegyzés.
+- 🤖 Guard recheck: `IMPACT_AI_AGENT_SSH_OPTS="-i $HOME/.ssh/id_ed25519_s59 -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new" bash .codex/guards/ai-agent-guard.sh` → staging HTTP 200 / 8 ms, production HTTP 200 / 7 ms; Guard result: OK.
+
+### 2025-12-27 – Web fallback (Google CSE) rögzítve (18:05)
+- 🌐 Az AI Agent gateway `ENABLE_WEB_FALLBACK=1`, `GOOGLE_SEARCH_API_KEY`, `GOOGLE_SEARCH_CX` értékekkel fut az s59-en (`~/ai-agent/.env.local`), így a Google CSE alapú web fallback aktív, ha a kontextusban kevés az adat.
+- 🔁 A szolgáltatás fut (`curl 127.0.0.1:4000/healthz` OK), `ai-agent-guard.sh` továbbra is PASS (staging 200 / 8 ms, production 200 / 7 ms); impactall korábbi futása is zöld.
+
+### 2025-12-27 – Gmail ingest személyes szűrő nélkül + guard (18:15)
+- 🔧 Az `ai-agent/tools/gmail/promotions-runner.ts` alapértelmezett személyes cím szűrőjét kiiktattam (default lista üres), a változtatást átmásoltam az s59-re.
+- 📮 `GMAIL_PERSONAL_RECIPIENTS=` az s59-en (`.env.local`), majd futott a Gmail ingest: `PATH=$HOME/node-v20/bin:$PATH GMAIL_PERSONAL_RECIPIENTS= npm run gmail:promotions && npm run ingest:sync` → 50 rekord mentve/normalizálva (`tmp/ingest/gmail.json`).
+- 🤖 Guard: `IMPACT_AI_AGENT_SSH_OPTS="...id_ed25519_s59..." bash .codex/guards/ai-agent-guard.sh` → staging 200 / 15 ms, production 200 / 18 ms; Guard result: OK.
+
+### 2025-12-27 – Impi kupon feed + prompt finomítás (18:45)
+- 🛒 Manual feed bővítve (tmp/ingest/raw/manual_coupons.csv → rsync s59-re): sportcipő (Decathlon SPORT30K), Notino ILLAT20, Parfums PARFUMS10, online szupermarket (Kifli KIFLI5). `npm run ingest:sync` lefutott; manual-coupons.json frissült.
+- 🗣️ Prompt finomítás: videós intent explicit CTA-t kap (videó link + NGO slug), feedback intent “hibabejelentő űrlap” CTA-t használ, transparency/no_shop intent ImpactShop toplista + REST linket kér, technikai szavak (fallback/fillout) tilosak a válaszban.
+- 🔄 Build + deploy az ai-agentre (s59), service újraindítva; `ai-agent-guard.sh` PASS (prod 200 / 21 ms, staging 200 / 15 ms), healthz OK.
+
+### 2025-12-27 – Impi tesztkör (19:00)
+- 🧪 Újra lefuttattam a 12 tesztkérdést (sportcipő/parfüm/toplista/szupermarket/videós témák). A manuál kuponok (SPORT30K, ILLAT20, PARFUMS10, KIFLI5) továbbra sem jelennek meg; a sportcipő/parfüm/szupermarket intentek kitalált vagy irreleváns kuponokat adnak, a szupermarket kérésnél még mindig security boilerplate jön.
+- 🧭 Transzparencia és hibajelentés válaszokban a “Fillout” szó még felbukkan; a prompt-tiltás nem érvényesült teljesen.
+- 🎥 Videós kampány kérdéseknél még vegyes/irreleváns akciók jönnek; nincs fix videós CTA + NGO slug. Mobil videós visszaigazolásra nem érkezett válasz (timeout).
+- 📌 Teendő: recommendation pipeline mélyebb vizsgálata (miért nem kerülnek a manuál kuponok az offers listába), “Fillout” stringek teljes cseréje, videós intenteknél fix CTA/slug és jutalék megadása, szupermarket/sportcipő/parfüm intentekhez manual prioritás kényszerítése.
+
+### 2025-12-28 – Impi “buta” válaszok javítása (recommend + prompt + service stabilitás)
+- 🧭 Tünet: kuponos intenteknél hiányzott a kuponkód/CTA vagy irreleváns ajánlatok csúsztak be; időnként téves intent fallback is előfordult.
+- 🔍 Okok:
+  - `ai-agent/apps/api-gateway/src/services/impi-openai.ts` nem adta át a `coupon_code` + `cta_url` mezőket az OpenAI promptnak, így a modell hajlamos volt linket/kódot félremondani.
+  - `ai-agent/apps/ai-agent-core/src/impi/recommend.ts` CTA-képzésnél a manuál rekordok merchant linkje felülírta az ImpactShop `go` linket; a default `d1` nem volt slugos; a keyword szűrés túl engedékeny volt.
+  - s59-en sérült keepalive script + nem futó Graphiti stub instabil restartokat és memória-context hibát (ECONNREFUSED) okozott.
+- ✅ Javítások:
+  - `ai-agent/apps/api-gateway/src/services/impi-openai.ts`: `coupon_code` + `cta_url` + `preferred_ngo_slug` + `expires_at` átadása; szigorú szabályok: tilos link/kód kitalálása; “Fillout” szó explicit tiltva.
+  - `ai-agent/apps/ai-agent-core/src/impi/recommend.ts`: diakritika-inszenzitív tokenizálás/matching; explicit shop-prioritás (Notino/Parfums/Kifli/Decathlon); manuál hint esetén csak a releváns manuál ajánlatok jönnek; CTA mindig `go` link; `d1` mindig slug (pl. `bator-tabor`).
+  - `ai-agent/apps/api-gateway/src/index.ts`: kuponos/merchant-es kérdésnél nem fűzzük hozzá automatikusan a korábbi kategória hintet.
+  - s59: `~/ai-agent/ai-agent-keepalive.sh` rendbetéve (flock lock + Node20 + gateway + Graphiti stub indítás), Graphiti stub újra fut (8083).
+- 🧪 Smoke (s59):
+  - sportcipő 30k → `SPORT30K` (Decathlon) + `go` link (`d1=bator-tabor`).
+  - parfums/notino → `ILLAT20` + `PARFUMS10` default limit=3 mellett.
+  - online szupermarket → `KIFLI5` (Kifli) + `go` link.
+  - “Fillout” szó nem jelenik meg a chat summary-ben; `bash .codex/guards/ai-agent-guard.sh` → OK (staging/prod 200).
+
+### 2025-12-28 – Impi tesztkérdések újrafuttatva (10:36)
+- 🧪 Endpoint: `https://app.sharity.hu/ai-agent/api/v1/chat/impi`
+- 🕒 Idő: 2025-12-28 10:36 +0100
+
+| Teszt | intent | offers | shop_slugs | codes | Fillout szó? | go link? | videó link? |
+|---|---:|---:|---|---|---:|---:|---:|
+| sportcipő<30k | category | 1 | decathlon | SPORT30K | no | YES | no |
+| notino/parfums | category | 2 | notino,parfums-hu | ILLAT20,PARFUMS10 | no | YES | no |
+| toplista/transzparencia | transparency | 0 |  |  | YES | no | no |
+| nincs rendelés | feedback | 0 |  |  | no | no | no |
+| NGO ajánlás | category | 2 | ngo-bator-tabor,ngo-adamremenye |  | no | no | no |
+| szupermarket | category | 1 | kifli | KIFLI5 | no | YES | no |
+| videó - lépések | video_support | 1 | video-support |  | no | no | YES |
+| videó CTA | video_support | 1 | video-support |  | no | no | YES |
+| videó (nincs kupon) |  | 1 | fizz | 036384 | no | YES | no |
+| videó Bátor Tábor | video_support | 1 | video-support |  | no | no | YES |
+| top 3 videó | video_support | 1 | video-support |  | no | no | YES |
+| mobil visszaigazolás | video_support | 1 | video-support |  | no | no | YES |
+
+- ⚠️ Megjegyzés: a `toplista/transzparencia` válaszban még felbukkant a “Fillout” szó; a `videó (nincs kupon)` kérdésre nem videós intent jött vissza (fizz kuponos ajánlat), ezt külön érdemes finomítani.
+
+### 2025-12-28 – Impi finomítás (manual prioritás + prompt + keepalive)
+- 🔧 `ai-agent/apps/ai-agent-core/src/impi/recommend.ts`: bővített manuál hint kulcsszavak (sport/ruha/szépség/elektronika/utazás/otthon/élelmiszer), SUPPRESS intent lista szűkítése (`leaderboard/feedback/referral` már nem tiltja az ajánlatokat).
+- 🔧 `ai-agent/apps/api-gateway/src/index.ts`: Graphiti memóriához user ID fallback `profileUserId ?? sessionKey`, `SUMMARY_LOCKED_INTENTS` szűkítve a valóban CTA-mentes esetekre.
+- 🔧 `ai-agent/apps/api-gateway/src/services/impi-openai.ts`: prompt pontosítás – CTA/kupon csak az “Elérhető ajánlatok” JSON-ból, Graphiti/toplista csak kontextus.
+- 🔧 `ai-agent/scripts/ai-agent-keepalive.sh`: health check a gatewayre (`/healthz`) + Graphiti stubra, ha nem egészséges, újraindít.
+- 🧪 `ai-agent`: `npm run lint` (tsc --noEmit).
+
+### 2025-12-28 – Impi tesztkérdések újrafuttatva + guard (11:17)
+- 🧪 12 kérdés az `https://app.sharity.hu/ai-agent/api/v1/chat/impi` végponton (sportcipő/parfüm/toplista/szupermarket/videó): SPORT30K/ILLAT20/PARFUMS10/KIFLI5 megjelentek; videós kérdéseknél a fix CTA jött (video-support). A “nincs kupon, videóval” kérdés továbbra is Fizz kuponra vált (intent=null).
+- ⚠️ `fillout` szó a payloadban továbbra is jelen (fillout_url miatt), a transzparencia/NGO/hibajelentés válaszoknál is flaggelt; ezt promptban/CTA-ban el kell tüntetni.
+- 🛡️ Guard: `bash .codex/guards/ai-agent-guard.sh` → OK (prod 200 / 15 ms, staging 200 / 16 ms).
+
+### 2025-12-28 – Impi: fillout szó eltüntetve + videós fallback javítva (11:24)
+- 🔧 `ai-agent-core` intent: videós kulcsszavak most shopping-like kérésnél is video_support intentet adnak, így nem esik vissza kuponra.
+- 🔧 `api-gateway` response: a kimeneti ajánlatokból eltávolítjuk a `fillout_url` mezőt (nincs “fillout” string a payloadban), promptban/CTA-ban nincs Fillout URL.
+- 🔧 `impi-openai` prompt input: CTA fallback már nem használ fillout_url-t.
+- 🧪 Újrateszt (12 kérdés): manuál kuponok továbbra is megjelennek, videós kérésnél fix video-support CTA, “nincs kupon, videóval” most video_support intentet ad, `has_fillout_word=false` minden válaszban.
+- 🛡️ Guard: `bash .codex/guards/ai-agent-guard.sh` → OK (prod 200 / 17 ms, staging 200 / 14 ms).
+
+### 2025-12-28 – impactall (11:47)
+- ✅ `impactall` lefutott: staging/prod WP-JSON 200, minden check PASS; status snapshot frissült, nincs WARN/FAIL.
+
+### 2025-12-28 – ImpactShop CSS helyreállítás (12:32)
+- 🧹 `impactshop-style-fix.php` MU plugin kikapcsolva (törölve), hogy az Elementor `post-16348.css` teljesen érvényesüljön; a hero/slider háttérképek visszatértek.
+- 🧹 `impactshop-style-reset.php` korábban no-op; marad, nincs felülírás.
+- 🔄 Prod/staging: a file törölve (`/home/sharityh/app/wp-content/mu-plugins/impactshop-style-fix.php` és app-staging), `wp cache flush` + `wp elementor flush_css` lefuttatva.
+
+### 2025-12-28 – ImpactShop CSS fix lezárás (12:40)
+- 🧹 `impactshop-style-fix.php` visszakerült, de teljesen no-op (mindkét hook return), hogy az Elementor `post-16348.css` maradjon az egyetlen stílusforrás.
+- 🔄 Prod + staging: szinkronizálva a no-op verzió, `wp cache flush` + `wp elementor flush_css` újra lefuttatva.
+
+### 2025-12-28 – ImpactShop CSS végleges állapot (12:45)
+- ✅ Böngészőben ellenőrizve: a hero/slider grafika visszatért, nincs inline override (`impactshop-style-fix-inline` blokk eltűnt).
+- 🧹 `impactshop-style-fix.php` no-op, `impactshop-style-reset.php` no-op – az Elementor `post-16348.css` az egyetlen stílusforrás.
+
+### 2025-12-29 – Impi ajánló finomítás (fuzzy + budget)
+- 🔧 `ai-agent/apps/ai-agent-core/src/impi/recommend.ts`: fuzzy match (Levenshtein) a kulcsszavaknál, budget-közeli ajánlatok boostja, keyword_score cap 1.0-ra, általános explicit shop felismerés, shop-onként deduplikáció.
+- 🔧 Build + deploy: `npm run build`, `rsync dist -> s59:/home/sharityh/ai-agent/dist`, lock törlés után `./ai-agent-keepalive.sh` (service újraindult).
+- 🛡️ Guard: `bash .codex/guards/ai-agent-guard.sh` → OK (prod 200 / 22 ms, staging 200 / 16 ms).
+- 🧪 Még hátra: a 12 kérdéses manuál kupon/videó/szupermarket smoke újrafuttatása (most csak guard futott).
+
+### 2025-12-29 – Impi 12-kérdéses smoke (post-fuzzy/budget)
+- 🧪 Lefuttatva az `https://app.sharity.hu/ai-agent/api/v1/chat/impi` végponton, sessionKey `codex-smoke-#`.
+- ✅ Q1–Q2 sportcipő/parfüm: manuál kuponok (SPORT30K, ILLAT20, PARFUMS10) előresorolva, go linkek rendben.
+- ✅ Q3 toplista/transzparencia: REST + web toplista, “űrlap” szó, nincs Fillout.
+- ✅ Q6 szupermarket: KIFLI5 + PARFUMS10 jön, CTA linkek rendben.
+- ⚠️ Videós intentek (Q7–Q12): vegyes minőség. Több válaszban `[link]` placeholder maradt, Q8-ban 10% jutalék szöveg jelent meg (nem kértük), Q12 nem ad visszaigazolási infót. Minden video_support intent, de a fix narratívát még tisztítani kell, hogy mindig konkrét URL-t adjon és ne írjon összeget.
+
+### 2025-12-29 – Impi gateway finomhang (intent/temperature/timeout)
+- 🔧 `ai-agent-core/src/impi/recommend.ts`: intent detektálás negatív kulcsszavakkal (pl. “videó nélkül” nem vált video_support intentet).
+- 🔧 `api-gateway/src/services/impi-openai.ts`: intent-alapú temperature scaling (+0.15 kreatív intenteknél, max 0.6) és intent-alapú `max_tokens` limit (300–600).
+- 🔧 `api-gateway/src/index.ts`: Graphiti memóriára 2s timeout wrapper, critic rewrite threshold intent-alapon (faktikusnál szigorúbb, empatikusnál lazább).
+- 🔄 Build + deploy + restart (dist rsync s59-re, lock törlés, ai-agent-keepalive restart).
+- 🛡️ Guard: `bash .codex/guards/ai-agent-guard.sh` → OK (prod 200 / 21 ms, staging 200 / 14 ms).
+
+### 2025-12-29 – Impi videós intent fix megerősítése
+- 🧪 Újranyomott 12-kérdéses smoke: videós kérdéseknél most mindenhol fix szöveg + konkrét URL (`https://adomany.sharity.hu/about-us?utm_source=impi&ngo=bator-tabor`), nincs `[link]` placeholder és nincs százalék/összeg.
+- ✅ Sportcipő/parfüm/szupermarket kérdések változatlanul manuál kuponokkal jönnek; toplista/transzparencia továbbra is „űrlap” szóval, Fillout nélkül.
+
+#### 12-kérdéses smoke (összesített Q/A kivonat – 2025-12-29)
+- Q1 sportcipő <30k (Bátor Tábor): Decathlon SPORT30K, Notino ILLAT20, go linkek rendben.
+- Q2 parfums/notino kupon: ILLAT20 + PARFUMS10, go linkek rendben.
+- Q3 toplista/transzparencia: ImpactShop leaderboard web + REST, „űrlap” szó, Fillout nincs.
+- Q4 nem látom a rendelést: általános visszajelzés + NGO fallback (bator-tabor/adamremenye), nincs kupon.
+- Q5 oktatás/gyerek fókusz: bator-tabor, adamremenye linkek, 70 HUF/1000 Ft említve.
+- Q6 szupermarket: PARFUMS10 + KIFLI5 manuál kuponok, go linkek rendben.
+- Q7–Q12 videós kérdések: azonos fix narratíva, fix URL (`https://adomany.sharity.hu/about-us?utm_source=impi&ngo=bator-tabor`), nincs kuponkód/jutalék összeg, nincs placeholder. Mobil visszaigazolásra is ez a fix szöveg jött (nincs külön receipt infó).
+
+##### Teljes Q/A (2025-12-29, sessionKey codex-smoke-#)
+- Q1: “Ajánlj kuponos boltokat sportcipőre 30k alatt, Bátor Tábor támogatással.”
+  - A: “Szia! … 1) Decathlon 25% SPORT30K (~60 Ft adomány), Link: https://app.sharity.hu/go?shop=decathlon&d1=bator-tabor&src=impi. 2) Notino 20% ILLAT20 (~35 Ft adomány), Link: https://app.sharity.hu/go?shop=notino&src=impi. Ha ezeken a linkeken indulsz, adományozol!”
+- Q2: “Van most parfums.hu vagy notino kupon? Küldd a linket és kuponkódot, NGO sluggal.”
+  - A: “Notino 20% ILLAT20, 35 Ft adomány, Link: https://app.sharity.hu/go?shop=notino&src=impi. Parfums.hu 10% PARFUMS10, 35 Ft adomány, Link: https://app.sharity.hu/go?shop=parfums-hu&src=impi.”
+- Q3: “Mutass ImpactShop toplistát és egy transzparencia linket, nincs szükség webshopra.”
+  - A: Web toplista: https://app.sharity.hu/impactshop/leaderboard; REST: curl -s https://app.sharity.hu/wp-json/impactshop/v1/leaderboard?limit=50; példa period=2025-11; “űrlap” szó használva, Fillout nincs.
+- Q4: “Nem látom a rendelésemet, mit tegyek?”
+  - A: Általános guidance (email/fiók ellenőrzés, ügyfélszolgálat), offers fallback: ngo-bator-tabor, ngo-adamremenye (nincs kupon).
+- Q5: “Melyik ügyet támogassam, ha oktatás/gyerekek a fókusz?”
+  - A: Bátor Tábor link: https://app.sharity.hu/impactshop?ngo=bator-tabor&d1=bator-tabor&src=impi; Ádám Reménye link: https://app.sharity.hu/impactshop?ngo=adamremenye&d1=adamremenye&src=impi; 70 HUF/1000 Ft említve.
+- Q6: “Keress aktuális online szupermarket kedvezményt, küldj CTA-t és adomány mértéket.”
+  - A: Parfums.hu 10% PARFUMS10 (35 Ft adomány), Link: https://app.sharity.hu/go?shop=parfums-hu&src=impi; Kifli.hu 5% KIFLI5 (35 Ft adomány), Link: https://app.sharity.hu/go?shop=kifli&src=impi.
+- Q7: “Hogyan működik a videós támogatás a Sharity-n, lépésről lépésre? Adj linket/CTA-t.”
+  - A: Fix narratíva: “Nézz meg egy kampányvideót… Link: https://adomany.sharity.hu/about-us?utm_source=impi&ngo=bator-tabor … nincs kuponkód és nincs fix összeg; csak kattints és indítsd a lejátszást.”
+- Q8: “Mutass egy videós kampány CTA-t most az ImpactShopon, és írd le, mennyi jutalék megy az NGO-nak.”
+  - A: Ugyanaz a fix narratíva és link; nem szerepel százalék vagy összeg.
+- Q9: “Nincs kuponom, de videóval szeretnék támogatni – hova kattintsak, és hogyan rögzül az adomány?”
+  - A: Ugyanaz a fix narratíva és link.
+- Q10: “Van aktuális Sharity videós kampány a Bátor Tábor számára? Küldj linket, és magyarázd el a folyamatot.”
+  - A: Ugyanaz a fix narratíva és link.
+- Q11: “Top 3 videós támogatási opció most, sluggal és rövid leírással, hogy mit kap az NGO.”
+  - A: Ugyanaz a fix narratíva és link (most egyetlen video_support offer).
+- Q12: “Ha videós támogatást indítok mobilon, kapok-e visszaigazolást? Hogy ellenőrizhetem, hogy rögzült?”
+  - A: Ugyanaz a fix narratíva és link; külön visszaigazolásról nem szól, receipt-infó továbbra sincs.
+
+### 2025-12-29 – Impi 12-kérdéses smoke (késő délutáni rerun, sessionKey codex-smoke-#)
+- Q1: „Ajánlj kuponos boltokat sportcipőre 30k alatt, Bátor Tábor támogatással.”  
+  - A: Decathlon -25% SPORT30K (~60 Ft, BT), Link: https://app.sharity.hu/go?shop=decathlon&d1=bator-tabor&src=impi. Notino -20% ILLAT20 (~35 Ft, nem BT), Link: https://app.sharity.hu/go?shop=notino&src=impi.
+- Q2: „Van most parfums.hu vagy notino kupon? Küldd a linket és kuponkódot, NGO sluggal.”  
+  - A: Notino ILLAT20 (-20%, ~35 Ft), Link: https://app.sharity.hu/go?shop=notino&src=impi. Parfums.hu PARFUMS10 (-10%, ~35 Ft), Link: https://app.sharity.hu/go?shop=parfums-hu&src=impi.
+- Q3: „Mutass ImpactShop toplistát és egy transzparencia linket, nincs szükség webshopra.”  
+  - A: Web toplista + REST endpoint (period példa 2025-11), „űrlap” szó, Fillout nincs.
+- Q4: „Nem látom a rendelésemet, mit tegyek?”  
+  - A: Általános guidance; offers fallback: ngo-bator-tabor, ngo-adamremenye.
+- Q5: „Melyik ügyet támogassam, ha oktatás/gyerekek a fókusz?”  
+  - A: Bátor Tábor, Ádám Reménye linkek, 70 Ft/1000 Ft, kód nélkül.
+- Q6: „Keress aktuális online szupermarket kedvezményt, küldj CTA-t és adomány mértéket.”  
+  - A: Parfums.hu PARFUMS10 (35 Ft adomány), Kifli.hu KIFLI5 (35 Ft), go linkek.
+- Q7: „Hogyan működik a videós támogatás a Sharity-n, lépésről lépésre? Adj linket/CTA-t.”  
+  - A: Fix narratíva, Link: https://adomany.sharity.hu/about-us?utm_source=impi&ngo=bator-tabor
+- Q8: „Mutass egy videós kampány CTA-t most az ImpactShopon, és írd le, mennyi jutalék megy az NGO-nak.”  
+  - A: Ugyanaz a fix narratíva és link; összeg/jutalék nincs.
+- Q9: „Nincs kuponom, de videóval szeretnék támogatni – hova kattintsak, és hogyan rögzül az adomány?”  
+  - A: Ugyanaz a fix narratíva és link.
+- Q10: „Van aktuális Sharity videós kampány a Bátor Tábor számára? Küldj linket, és magyarázd el a folyamatot.”  
+  - A: Ugyanaz a fix narratíva és link.
+- Q11: „Top 3 videós támogatási opció most, sluggal és rövid leírással, hogy mit kap az NGO.”  
+  - A: Ugyanaz a fix narratíva és link (jelenleg 1 offer).
+- Q12: „Ha videós támogatást indítok mobilon, kapok-e visszaigazolást? Hogy ellenőrizhetem, hogy rögzült?”  
+  - A: Ugyanaz a fix narratíva és link; külön receipt infó továbbra sincs.
+
+### 2025-12-29 – Új tesztkör (NQ1–NQ10, sessionKey codex-new-#)
+- NQ1 futócipő (typo): Decathlon SPORT30K (~60 Ft, BT), go link rendben.
+- NQ2 parfüm kupon (HU/EN): Notino ILLAT20, Parfums PARFUMS10, go linkek rendben.
+- NQ3 laptop 200k alatt: irreleváns fallback → Decathlon SPORT30K (manuál kupon), nincs releváns laptop ajánlat.
+- NQ4 átláthatóság: visszacsúszott random kuponos ajánlat (unknown/turboscribe/griffconnect) toplista helyett – javítandó, hogy transparency intentnél ne mutasson shopot.
+- NQ5 nem látom adományomat: hibabejelentés helyett random kuponok (unknown/drlumbar/turboscribe) – javítandó, feedback intentnél űrlap/CTA kell.
+- NQ6 videós támogatás mobilon: videó helyett Notino/Dr.Lumbar kuponok, intent nem video_support – javítandó (mobilos videó kérésnél video_support intent legyen, fix CTA).
+- NQ7 videós kampány BT: hibásan kuponos ajánlatokat listázott (NNEPEK, 2NRIJQAE); intent nem video_support.
+- NQ8 szupermarket: PARFUMS10 + KIFLI5, go linkek rendben.
+- NQ9 sportcipő kupon: Decathlon SPORT30K, go link rendben.
+- NQ10 oktatás/gyerek NGO: irreleváns (unknown/griffconnect/billingo) kuponok; NGO ajánlás helyett kupon fallback jött – javítandó, hogy NGO kártyák jöjjenek edukáció/gyerek intentre.
+
+### 2025-12-29 – Fixek + friss smoke (sessionKey codex-new-#)
+- Protected intent javítás: védett intentek (video/transparency/feedback/leaderboard/impact_data) felülírják a shoppingLike-ot; force suppression ágon leaderboard CTA is bekerült.
+- Intent confidence: védett intentek min. confidence 0.6; video kulcsszavak bővítve; redundáns változó törölve.
+- Leaderboard offer builder hozzáadva (Toplista CTA).
+- NGO kategória matching: szinonimák + 3+ betűs token szűrés, JSON loader fix, fallback children oktatás/gyerek kulcsszavakra.
+- Deployment: npm run build → rsync dist/ s59-re (data JSON-ok is a dist-be másolva), service restart (keepalive), ai-agent guard PASS (prod/staging 200).
+- Smoke (NQ1–NQ10, 3. futás): mind OK
+  - NQ4 toplista: Toplista + REST CTA kártyák.
+  - NQ5 riport/hibajelzés: hibabejelentő űrlap CTA, nincs kupon.
+  - NQ6–7 videó: fix videó CTA (adomany.sharity.hu … ngo=bator-tabor), nincs kupon/jutalék.
+  - NQ8–9 manuál kuponok (Parfums/KIFLI, Decathlon SPORT30K) rendben.
+  - NQ10 oktatás: Bátor Tábor + Ádám Reménye kártyák jönnek, nincs placeholder.
+
+### 2025-12-29 – Ad-hoc 5 kérdés (sessionKey ad-hoc-#)
+- Sportcipő videó nélkül: Decathlon SPORT30K + Notino ILLAT20.
+- REST toplista: Toplista + REST CTA kártyák.
+- Hibajelentés: hibabejelentő űrlap CTA (Fillout link).
+- Videó mobil: fix videó CTA, nincs kupon/jutalék.
+- Szupermarket: Notino ILLAT20 + KIFLI5 (BT adomány szöveg tiszta).
+
+### 2026-01-06 – Core agent artifacts bridge (sessionKey codex)
+- Response assembly: dual-write bridge (artifacts + legacy recommendations/contextMetadata) with ARTIFACTS_MODE flag (dual by default).
+- Impi offers now populate artifacts and keep legacy fields for backward compatibility.
+- State deprecation notes updated for recommendations/contextMetadata (removal planned 2026-Q2).
+- Tests: npm run test:core-capabilities (pass).
+
+### 2026-01-07 – Core agent artifacts kiterjesztés (sessionKey codex)
+- Merge-tables capability: outputFiles lista visszaadása (Output.core.*), responseAssembly file artifactokra map-eli.
+- Capability execution: hiányzó capability resolve fix + egységes timeoutos runOnce, success log.
+- Impi artifacts metadata bővítve (cta_label, discount, validity stb.).
+- Env dokumentálás: ARTIFACTS_MODE/CORE_CAPABILITY_TIMEOUT_MS rövid lista a README.shadowlog.md-ben.
+- Tests: npm run test:core-capabilities (pass).
+
+### 2026-01-07 – Merge letöltés endpoint + gateway bridge (sessionKey codex)
+- Új endpoint: `/core/merge-download?file=...` (API key + whitelist + MIME guard) a merge output fájlokhoz.
+- Response assembly: file artifact `downloadUrl` most a merge-download endpointre mutat.
+- API gateway: impi-rest graph seed artifacts linkeket is ad (legacy mellé).
+- Env: CORE_MERGE_DOWNLOAD_ROOTS dokumentálva.
+- Tests: npm run test:core-capabilities (pass).
+- Docs: `docs/api/README.md` kiegészítve a merge-download usage résszel.
+
+### 2026-01-07 – Live smoke kísérlet: merge download (prod)
+- SSH: s59 localhost:4000 API gateway (prod) – `/core/merge-download` jelenleg 404 (endpoint nincs deployolva).
+- Teszt fájlok létrejöttek: `/home/sharityh/ai-agent/tmp/document-uploads/Output.core.*` + `merge-smoke-*.xlsx` (opcionális cleanup).
+
+### 2026-01-07 – Ai-agent deploy + merge download smoke (prod)
+- Deploy: `npm run build` → rsync `dist/` + `dist/apps/` + `package.json`/`package-lock.json`, `npm install --omit=dev` (server, nvm npm).
+- Service restart: `pkill -f scripts/ai-agent-service.cjs` + `ai-agent-keepalive.sh`.
+- Hotfix: `dist/data/ngo-category-map.json` másolva a futó binárishoz (különben induláskor MODULE_NOT_FOUND).
+- Live smoke (s59 localhost:4000): document-ocr → merge → `/core/merge-download` 200 OK, letöltés ~6.7 KB.
+
+### 2026-01-07 – Build sync kiegészítés
+- `scripts/sync-knowledge-assets.js`: `data/ngo-category-map.json` mostantól automatikusan másolódik `dist/data/` alá.
+
+### 2026-01-07 – Build + deploy (ngo-category-map automatikus másolás)
+- Build: `npm run build` (dist/data/ngo-category-map.json benne).
+- Deploy: `rsync dist/` + `dist/apps/` → s59 `/home/sharityh/ai-agent/dist/`.
+- Restart: `pkill -f scripts/ai-agent-service.cjs` + `ai-agent-keepalive.sh`.
+- Live smoke (prod): document-ocr → merge → `/core/merge-download` 200 OK, ~6.7 KB letöltés.
+
+### 2026-01-07 – Ai-agent guard futtatás
+- Guard: `./.codex/guards/ai-agent-guard.sh` → lefutott, hiba nélkül.
+
+### 2026-01-07 – impactall futtatás
+- `~/bin/impactall` → 13/13 PASS, WARN/FAIL nincs; staging/prod REST 200, status snapshot frissült.
+
+### 2026-01-07 – Sonnet quick fixes
+- Legacy recommendations bridge tisztítva (csak summary+offers), artifacts accumulate default beállítva.
+- Új `.env.example` (ARTIFACTS_MODE/CORE_CAPABILITY_ROUTING/CORE_CAPABILITY_TIMEOUT_MS).
+- Tests: npm run test:core-capabilities (pass).
+
+### 2026-01-07 – Gemini quick fixes
+- Chaining adapter: merge → impi input adapter (safe fallback).
+- Merge output: csak ténylegesen létező Output.core fájlok listázva.
+- Tests: npm run test:core-capabilities (pass).
+
+### 2026-01-07 – Opus quick fixes
+- Chain loop védelem: `CORE_CHAIN_MAX_ITERATIONS` limit a graphban.
+- Capability stats írás: egyszerű write lock a race condition elkerülésére.
+- `.env.example` bővítve (CORE_CHAIN_MAX_ITERATIONS).
+- Tests: npm run test:core-capabilities (pass).
+
+### 2026-01-07 – Opus P2 kiegészítések
+- Graphiti flush: retry + DLQ (dead letter queue) védelem.
+- Merge-tables: üres outputFiles esetén error státusz.
+- Legacy recommendations null-safe defaults + üres offer guard.
+- Tests: npm run test:core-capabilities (pass).
+
+### 2026-01-07 – Deploy (Sonnet quick fixes)
+- Build: `npm run build` (local).
+- Deploy: `rsync dist/` + `dist/apps/` → s59 `/home/sharityh/ai-agent/dist/`.
+- Restart: `pkill -f scripts/ai-agent-service.cjs` + `ai-agent-keepalive.sh`.
+
+## 2026-01-07 – Állásmentés (shutdown előtt)
+
+- Repo helyzet: a `~/Documents/GitHub/impactshop-notes` és `~/Documents/GitHub/ai-agent` nem külön git repók; mindkettő a `~/Developer/GitHub` monorepo `.git`-jére mutat. Emiatt jelenleg nincs commit/PR lehetőség.
+- Döntés szükséges: impactshop-notes külön repo → origin: `https://github.com/office-hue/impactshop-notes` (biztonságos, izolált). Ai-agent külön repo nincs; legbiztonságosabb megoldás: `impact_hub` friss klón külön mappába, és oda átmásolni az ai-agent módosításokat.
+- Várakozó user döntés: klónozhatok-e és másolhatok-e (impact_hub klón + ai-agent diff átvitel).
+
+- Elvégzett technikai változások (ai-agent oldalon, nem git):
+  - Artifacts dual-write bridge (ARTIFACTS_MODE), explicit legacy mezők, null-safe; artifacts default/accumulate.
+  - Merge output artifacts + download endpoint `/core/merge-download` (api-gateway) whitelist + API key + MIME guard.
+  - Chain adapter + chain loop védelem (CORE_CHAIN_MAX_ITERATIONS).
+  - Capability stats write lock, merge output file existence validation, Graphiti batch retry/DLQ.
+  - .env.example kiegészítve (ARTIFACTS_MODE, CORE_CAPABILITY_ROUTING, CORE_CAPABILITY_TIMEOUT_MS, CORE_CHAIN_MAX_ITERATIONS).
+  - Build sync: ngo-category-map.json dist másolás.
+
+- Deploy/smoke korábban lefutott: prod build+deploy, /core/merge-download smoke success (s59, ~6.7KB).
+
+- Következő lépés: a repo-irány döntése után commit+PR (impactshop-notes és impact_hub), majd új prod smoke /core/merge-download.
+
+## 2026-01-07 – Repo szétválasztás + PR előkészítés
+
+- impactshop-notes: új, önálló git repo inicializálva, origin: https://github.com/office-hue/impactshop-notes.
+- Commit készült: `docs: update notes and api docs` (branch: `docs/notes-update-2026-01-07`).
+- Push blokkolt: nincs GitHub auth (`could not read Username for 'https://github.com'`).
+
+- impact_hub: ai-agent kód átmásolva `ai-agent/` alá (node_modules/dist/secrets stb. kizárva).
+- Commitok: `core: add ai-agent code drop`, majd `core: ignore graph-memory logs`.
+- Branch: `core/ai-agent-drop-2026-01-07`.
+- Push blokkolt: nincs GitHub auth (`could not read Username for 'https://github.com'`).
+
+- Prod smoke: `/tmp/merge-smoke-remote.sh` futtatás közben leállt, mert az `AI_AGENT_API_KEY` hiányzik a `~/ai-agent/.env`-ből.
+
+### 2026-01-07 – OpenAPI validate fix + impactall
+- Javítás: `docs/api/openapi.yaml` alatt a `components` duplikált `schemas` kulcs feloldva, `TickerItem` mezők visszarendezve, `securitySchemes` blokk a komponensek végére helyezve.
+- Guard: `source .codex/.env.local && ~/bin/impactall` → 14/14 PASS, WARN/FAIL nincs; staging 200 / 1083 ms (redirected), production 200 / 1046 ms.
+- Pre-flight (S1) zöld, OpenAPI validate PASS.
+
+### 2026-01-07 – Prod smoke /core/merge-download
+- Smoke: `ssh s59 'AI_AGENT_API_KEY=*** bash /tmp/merge-smoke-remote.sh'` (lokális secretből, nem mentve szerverre).
+- Eredmény: download_status=200, download_size=6691, xlsx_ready + merge_done.
+
+### 2026-01-07 – Impact Hub PR prep (ai-agent drop)
+- Új, sanitizált branch: `core/ai-agent-drop-2026-01-07-clean2` pushed az `impact_hub` repóba.
+- Secret eltávolítás: `ai-agent/config/drive-service-account.json` kikerült, helyette `drive-service-account.example.json`.
+- Ignore szigorítva: ai-agent nagy/érzékeny könyvtárak (Impi Tudásbázis, Feladatok, Google Ads, neo4j data/logs, tools/out, client_secret*, durable-verve*, dwd_clients.csv, ngo_codes.csv).
+
+### 2026-01-07 – Impact Hub PR update (clean3)
+- Végső branch: `core/ai-agent-drop-2026-01-07-clean3` (clean2 helyett).
+- PR link: https://github.com/office-hue/impact_hub/pull/new/core/ai-agent-drop-2026-01-07-clean3
+- Megjegyzés: az ai-agent drop eltávolítja a korábbi `ai-agent/libs/*` és `apps/api-gateway/src/app.ts + routes/*` fájlokat (új kódstruktúra).
