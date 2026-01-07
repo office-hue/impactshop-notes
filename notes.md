@@ -2392,3 +2392,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ### 2026-01-07 – Prod smoke /core/merge-download
 - Smoke: `ssh s59 'AI_AGENT_API_KEY=*** bash /tmp/merge-smoke-remote.sh'` (lokális secretből, nem mentve szerverre).
 - Eredmény: download_status=200, download_size=6691, xlsx_ready + merge_done.
+
+### 2026-01-07 – Impact Hub PR prep (ai-agent drop)
+- Új, sanitizált branch: `core/ai-agent-drop-2026-01-07-clean2` pushed az `impact_hub` repóba.
+- Secret eltávolítás: `ai-agent/config/drive-service-account.json` kikerült, helyette `drive-service-account.example.json`.
+- Ignore szigorítva: ai-agent nagy/érzékeny könyvtárak (Impi Tudásbázis, Feladatok, Google Ads, neo4j data/logs, tools/out, client_secret*, durable-verve*, dwd_clients.csv, ngo_codes.csv).
