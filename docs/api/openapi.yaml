@@ -1,0 +1,459 @@
+openapi: 3.1.0
+info:
+  title: ImpactHub REST API
+  version: v1.3.0
+  description: |
+    **Base URL (staging):** `https://sharity.hu/impactshop-staging/wp-json/impact/v1`
+
+    **Idempotency:** Használj `Idempotency-Key: <UUIDv4>` fejlécet minden módosító (POST/PUT/DELETE) híváshoz.
+
+    **Rate limitek:**
+    - `/ticker`: 50 req/s
+    - `/ledger`: 5 req/s
+    - `/token/*`: 10 req/s
+
+servers:
+  - url: https://sharity.hu/impactshop-staging/wp-json/impact/v1
+    description: Staging
+  - url: https://sharity.hu/wp-json/impact/v1
+    description: Production (előrelátott)
+
+paths:
+  /ads-metrics:
+    get:
+      summary: NormalizedAdMetric lista (ads fetch stub)
+      description: |
+        NormalizedAdMetric tömb visszaadása (mock/stub). Ha az IMPACT_ADS_SAMPLE=1 env be van állítva, egy mintametrikát is ad a `metrics` tömbben.
+      parameters:
+        - name: platform
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [meta, google, youtube, tiktok, dognet, manual]
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: until
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: NormalizedAdMetric lista
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  platform:
+                    type: string
+                  since:
+                    type: string
+                    format: date
+                    nullable: true
+                  until:
+                    type: string
+                    format: date
+                    nullable: true
+                  metrics:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NormalizedAdMetric'
+    post:
+      summary: NormalizedAdMetric tömb ledger-be írása (ads import)
+      description: |
+        NormalizedAdMetric tömb fogadása és ledger-be írása (dedup hash alapján). Írás titkos headerrel védve: `X-Impact-Ads-Secret`.
+      parameters:
+        - name: X-Impact-Ads-Secret
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [metrics]
+              properties:
+                metrics:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/NormalizedAdMetric'
+      responses:
+        '200':
+          description: Import eredménye
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inserted:
+                    type: integer
+                  skipped:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        error:
+                          type: string
+                        metric:
+                          type: object
+                          additionalProperties: true
+  /ticker:
+    get:
+      summary: Aggregált impact ticker
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        '200':
+          description: Sikeres válasz
+          headers:
+            X-Cache-Status:
+              schema:
+                type: string
+                enum:
+                  - HIT
+                  - MISS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /token/new:
+    post:
+      summary: Token issue (STAGING ONLY)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: X-Environment
+          in: header
+          required: true
+          schema:
+            type: string
+            enum:
+              - STAGING
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenIssueRequest'
+      responses:
+        '201':
+          description: Token issued
+        '403':
+          description: Feature flag off / NGO-lock mismatch
+        '410':
+          description: Token expired (24h TTL)
+        '422':
+          description: Invalid payload
+
+  /ngo-card/{slug}:
+    get:
+      summary: NGO card dataset (Phase 1)
+      description: |
+        Publikus, cache-elt endpoint, amit az NGO webes kártyák és wallet integrációk fogyasztanak.
+        A `variant` paraméter határozza meg, mely mezők kerülnek visszaadásra; a `fields` paraméter további szűrésre használható (union a variant mezőivel).
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-z0-9\-]+$'
+          example: bator-tabor-alapitvany
+        - name: variant
+          in: query
+          schema:
+            type: string
+            enum:
+              - full
+              - compact
+              - widget
+              - wallet
+            default: full
+        - name: fields
+          in: query
+          schema:
+            type: string
+            description: Vesszővel elválasztott mezőlista (pl. `name,amount`).
+      responses:
+        '200':
+          description: Sikeres válasz
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: 'public, max-age=900, stale-while-revalidate=3600'
+            ETag:
+              schema:
+                type: string
+            Last-Modified:
+              schema:
+                type: string
+                format: date-time
+            X-Cache-Status:
+              schema:
+                type: string
+                enum: [HIT, MISS, STALE]
+            X-Rate-Limited:
+              schema:
+                type: string
+                enum: ['true']
+              description: Csak akkor jelenik meg, ha a per-IP limitet túlléptük és stale adatot szolgálunk ki.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NgoCardResponse'
+        '404':
+          description: NGO nem található
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Dataset jelenleg nem érhető el
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    NormalizedAdMetric:
+      type: object
+      required: [schema_version, platform, date, ledger_source, est_donation]
+      properties:
+        schema_version:
+          type: string
+          enum: ['v1']
+        platform:
+          type: string
+          enum: [meta, google, youtube, tiktok, dognet, manual]
+        account_id:
+          type: string
+          nullable: true
+        campaign_id:
+          type: string
+          nullable: true
+        ad_id:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date
+        views:
+          type: integer
+          nullable: true
+        clicks:
+          type: integer
+          nullable: true
+        spend:
+          type: number
+          format: float
+          nullable: true
+        est_donation:
+          type: number
+          format: float
+        ledger_source:
+          type: string
+          enum: [view, click]
+        ngo_code:
+          type: string
+          nullable: true
+        advertiser_code:
+          type: string
+          nullable: true
+        cap:
+          type: number
+          format: float
+          nullable: true
+        meta:
+          type: object
+          additionalProperties: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TickerResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TickerItem'
+
+    TickerItem:
+      type: object
+      required:
+        - impact_id
+        - ngo_code
+        - donation_eur
+      properties:
+        impact_id:
+          type: string
+          pattern: '^IMP-\d{8}-\d{3}$'
+        ngo_code:
+          type: string
+        donation_eur:
+          type: number
+          format: float
+        source:
+          type: string
+          enum:
+            - dognet
+            - cj
+            - meta
+
+    TokenIssueRequest:
+      type: object
+      required:
+        - pseudo_id
+        - ngo
+        - amount
+      properties:
+        pseudo_id:
+          type: string
+          pattern: '^[a-z0-9]{6,8}$'
+        ngo:
+          type: string
+        amount:
+          type: integer
+          minimum: 1000
+          maximum: 500000
+        currency:
+          type: string
+          enum:
+            - HUF
+            - EUR
+          default: HUF
+
+    NgoCardAmount:
+      type: object
+      properties:
+        huf:
+          type: integer
+        eur:
+          type: number
+          format: float
+        formatted:
+          type: string
+        eur_formatted:
+          type: string
+
+    NgoCardMilestone:
+      type: object
+      properties:
+        value:
+          type: integer
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        remaining:
+          type: integer
+
+    NgoCardCacheMeta:
+      type: object
+      properties:
+        generated_at:
+          type: integer
+          description: Unix timestamp
+        age:
+          type: integer
+        stale:
+          type: boolean
+        expires:
+          type: string
+          format: date-time
+        stale_expires:
+          type: string
+          format: date-time
+
+    NgoCardResponse:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        amount:
+          $ref: '#/components/schemas/NgoCardAmount'
+        rank:
+          type: integer
+        badge_status:
+          type: object
+          additionalProperties: true
+          description: Spark/Momentum/Legend címke – null, ha nincs aktív badge
+        next_milestone:
+          $ref: '#/components/schemas/NgoCardMilestone'
+        last_updated:
+          type: string
+          format: date-time
+        share_url:
+          type: string
+          format: uri
+        cta_url:
+          type: string
+          format: uri
+        go_url:
+          type: string
+          format: uri
+        fillout_url:
+          type: string
+          nullable: true
+        requires_fillout:
+          type: boolean
+        _cache:
+          $ref: '#/components/schemas/NgoCardCacheMeta'
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            status:
+              type: integer
+
+  responses:
+    RateLimitError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              retry_after:
+                type: integer
