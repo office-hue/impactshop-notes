@@ -1,14 +1,14 @@
 # ImpactShop – Projekt státusz
 
-*Generálva:* 2025-11-14 07:18:03 +0100 (Bujdoso-Mac-mini)
+*Generálva:* 2026-01-15 17:30:38 +0100 (Bujdoso-Mac-mini)
 
 ## Meta
-- Gyökér: /Users/bujdosoarnold/Documents/GitHub
+- Gyökér: /Users/bujdosoarnold/Developer/GitHub/impactshop-notes
 - Környezet: local
-- SSH_HOST: nincs megadva
-- Git ág: main
-- Git hash: f8bc77d
-- Módosított fájlok száma: 45
+- SSH_HOST: sharityh@s59.tarhely.com
+- Git ág: docs/notes-update-2026-01-07
+- Git hash: 7ea859d
+- Módosított fájlok száma: 74
 
 ## REST healthcheck
 - Staging: HTTP 200 (1250 ms, ok) – https://sharity.hu/impactshop-staging/wp-json/ (redirected_to:app.sharity.hu)
@@ -1184,6 +1184,28 @@ _Auto update: 2026-01-15 10:14:24_
 
 ---
 _Auto update: 2026-01-15 10:25:54_
+
+### Health check summary
+
+```
+
+```
+
+**Baseline referencia:** impactshop-baseline-2025-11-02.md
+
+---
+_Auto update: 2026-01-15 17:27:36_
+
+### Health check summary
+
+```
+
+```
+
+**Baseline referencia:** impactshop-baseline-2025-11-02.md
+
+---
+_Auto update: 2026-01-15 17:34:43_
 
 ### Health check summary
 
