@@ -67,6 +67,11 @@
 ### 2026-01-18 – .env.local gitignore
 - 🧩 `.gitignore`: `.env.local` és `.codex/.env.local` felvéve, hogy a lokális env ne kerüljön gitbe.
 
+### 2026-01-18 – Identity panel shortcode + nickname profil
+- 🧩 Új MU plugin: `wp-content/mu-plugins/impactshop-identity-panel.php`.
+- 🔧 Shortcode: `[impactshop_identity_panel]` (pseudo ID megjelenítés, PIN kérés, profil helyreállítás, becenév mentés).
+- 🧾 REST: `GET/POST /impact/v1/identity/profile` becenév tárolás pseudo ID alapján (PII-mentes).
+
 ### 2026-01-18 – Pseudo-ID részletek kidolgozása (Impact Shop + NGO card + social ticker)
 - 🧭 Célok rögzítve: email nélküli azonosítás, token csak attribúcióhoz, PIN‑nel visszaállítható.
 - 🧾 Részletek: 10–12 karakteres base36 pseudo‑ID, kliens cookie (`impactshop_pseudo_id`), `/go` automatikus generálás + affiliate átadás (Dognet `d2`, CJ `sid`).
