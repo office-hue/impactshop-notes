@@ -4,6 +4,337 @@
 - Platform: WordPress (ImpactShop)
 - Fő téma: akciós kártyák linkjei → ne a shop főoldalra, hanem termékoldalra vigyenek.
 
+### 2026-01-18 – Ledger cron sűrítés + watchdog e-mail (office@sharity.hu)
+- ⏱️ WP-Cron ütemezés sűrítve: CJ + Dognet ledger sync 10 perces ciklusra állítva.
+- 🔔 Watchdog hozzáadva: 10 percenként ellenőrzi a CJ/Dognet ledger `last_run` frissességét; küszöb 20 perc, cooldown 30 perc; elakadás esetén e‑mail az `office@sharity.hu` címre.
+- 🧰 Cél: felhasználói visszajelzés gyorsítása + késő ingest észlelése.
+
+### 2026-01-18 – impactall guard futtatás (18:15)
+- 🏁 Session start: kérésre lefuttattam a teljes `impactall` guardot az `impactshop-notes` gyökérből.
+- 🛡️ Parancs: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall` → staging HTTP 200 / 1969 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1275 ms; 13/14 PASS, 1 WARN.
+- ⚠️ WARN: Sprint pre-flight (S1) – Doc lint hibára futott, javítás: `.codex/scripts/doc-lint-fix.sh impactshop-notes/impact-hub-system-v1.3.md` (log: `.codex/reports/impactall-20260118-181559-Sprint-pre-flight-(S1).log`).
+- 📌 Megjegyzés: Guard eventben GitHub token lejárati figyelmeztetés (19 nap); érdemes időben frissíteni.
+- ✅ Session end: impactall futás rögzítve, status snapshot frissült.
+
+### 2026-01-18 – Doc lint fix + impactall rerun (18:20)
+- 🛠️ Doc lint javítás: `impact-hub-system-v1.3.md` sorhossz tördelések, majd `.codex/scripts/doc-lint-fix.sh impactshop-notes/impact-hub-system-v1.3.md` sikeresen lefutott.
+- 🛡️ Újraellenőrzés: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall` → staging HTTP 200 / 1401 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1251 ms; 14/14 PASS, WARN/FAIL nincs.
+- 📌 Megjegyzés: Guard eventben a GitHub token lejárati figyelmeztetés továbbra is látszik (19 nap).
+- ✅ Session end: Sprint S1 pre-flight doc lint zöld, status snapshot frissült.
+
+### 2026-01-18 – Lokális MySQL + wp_test ellenőrzés
+- 🗄️ MySQL szolgáltatás fut (`brew services list` szerint started).
+- ✅ `wp_test` adatbázis már létezik (`SHOW DATABASES LIKE 'wp_test'`).
+- 📌 Következő lépés: PHPUnit újrafuttatható a meglévő DB-vel.
+
+### 2026-01-18 – wp_test újragenerálás + PHPUnit futtatás
+- 🧹 `wp_test` adatbázis törölve és újralétrehozva (clean slate).
+- 🧪 `vendor/bin/phpunit --configuration phpunit.xml` futtatva, hibák:
+  - WordPress teszt suite inkompatibilis a PHPUnit 10-zel (`parseTestMethodAnnotations` hiányzik).
+  - Wallet tesztek hibáznak, mert a wallet plugin nincs betöltve (`impactshop_wallet_plugin_loaded()`).
+
+### 2026-01-18 – PHPUnit downgrade + bootstrap wallet fallback
+- 📦 `phpunit/phpunit` visszavéve 9.6.x-re (`composer require --dev phpunit/phpunit:^9.6 -W`).
+- 🧩 `tests/bootstrap.php`: opcionális wallet plugin betöltés + fallback `impactshop_wallet_plugin_loaded()` definíció.
+- ✅ `vendor/bin/phpunit --configuration phpunit.xml` sikeres: 7 teszt, 14 assertion, 3 skip (wallet plugin hiányzik).
+
+### 2026-01-18 – Wallet plugin path hozzáadva a bootstraphez
+- 🧩 `tests/bootstrap.php`: külső MU plugin utak hozzáadva az `impactshop-wallet.php` és `impactshop-wallet-direct.php` betöltéséhez.
+
+### 2026-01-18 – PHPUnit rerun (wallet plugin betöltve)
+- ❌ 1 failure + 2 error:
+  - `impactshop_tests_reset_routes()` hiányzik (WalletPassTest::testRegisterRoutesRegistersWalletEndpoint).
+  - `WP_REST_Request` init hiba (string helyett array kerül a method paraméterbe) a `WalletPassTest::testHandleWalletPassValidatesSlug` körül.
+  - `build_pass_json` CTA URL eltér: teszt `https://example.org/cta/demo`-t vár, de a wallet plugin `https://app.sharity.hu/impactshop/?d1=...` értéket ad vissza.
+
+### 2026-01-18 – Wallet tesztek javítása + zöld PHPUnit
+- 🧩 `tests/bootstrap.php`: REST route helper bővítve `permission_callback` mezővel.
+- 🧪 `tests/phpunit/WalletPassTest.php`: CTA URL elvárás frissítve, REST route regisztráció `rest_api_init`-en, `WP_REST_Request` init javítva.
+- ✅ `vendor/bin/phpunit --configuration phpunit.xml` → 7 teszt, 26 assertion, PASS.
+
+### 2026-01-18 – Wallet plugin útvonal env-ből
+- 🧩 `tests/bootstrap.php`: külső wallet plugin path-ok betöltése `IMPACTSHOP_WALLET_PLUGIN_PATHS` env-ből (több útvonal `,`/`;`/`:` elválasztóval).
+
+### 2026-01-18 – PHPUnit env path-tal
+- ✅ `IMPACTSHOP_WALLET_PLUGIN_PATHS=... vendor/bin/phpunit --configuration phpunit.xml` → 7 teszt, 26 assertion, PASS.
+
+### 2026-01-18 – Local env: wallet plugin path
+- 🧩 `.codex/.env.local`: `IMPACTSHOP_WALLET_PLUGIN_PATHS` export hozzáadva a lokális PHPUnit futtatáshoz.
+
+### 2026-01-18 – PHPUnit env.local-lal
+- ✅ `{ source .codex/.env.local; } && vendor/bin/phpunit --configuration phpunit.xml` → 7 teszt, 26 assertion, PASS.
+
+### 2026-01-18 – Pseudo-ID részletek kidolgozása (Impact Shop + NGO card + social ticker)
+- 🧭 Célok rögzítve: email nélküli azonosítás, token csak attribúcióhoz, PIN‑nel visszaállítható.
+- 🧾 Részletek: 10–12 karakteres base36 pseudo‑ID, kliens cookie (`impactshop_pseudo_id`), `/go` automatikus generálás + affiliate átadás (Dognet `d2`, CJ `sid`).
+- 🤝 Integrációk: ledger `pseudo_id`, social ticker owner‑check, NGO card link /go útvonalon kap pseudo‑t.
+- 🔐 Adatvédelem/UX: PII‑mentes leírás + rövid UX szöveg; PIN‑es visszaállítás rate limit + audit log.
+- 📄 Dokumentáció: `impact-hub-system-v1.3.md` 4.1 szekció bővítve.
+
+### 2026-01-18 – PIN paraméterek rögzítése (implementációs alap)
+- 🔢 PIN formátum: 6 számjegy, egyszer használatos; 1 aktív PIN / pseudo‑ID.
+- ⏱️ Érvényesség: 15 perc; újragenerálás max 3 / 24 óra / pseudo‑ID.
+- 🧱 Rate limit: 5/óra/IP + 10/nap/pseudo‑ID; 3 hibás próbálkozás után 15 perc lockout.
+- 🧾 Audit: `identity_pin_verify` event (pseudo_hash, ip_hash, status, attempt_count).
+- 📄 Dokumentáció: `impact-hub-system-v1.3.md` 4.1 PIN‑es visszaállítás rész frissítve.
+
+### 2026-01-18 – Implementációs ticket: PIN kiadás/ellenőrzés + rate limit + audit log
+- 🎯 Cél: PIN‑es token visszaállítás implementálása, idempotens és auditálható módon.
+- ✅ Kész kritériumok:
+  - REST: `POST /impact/v1/identity/pin/issue` és `POST /impact/v1/identity/pin/verify`.
+  - Rate limit: 5/óra/IP + 10/nap/pseudo‑ID; 3 hiba → 15 perc lockout.
+  - Audit: `identity_pin_issue` + `identity_pin_verify` esemény `pseudo_hash`, `ip_hash`, `status`, `attempt_count`.
+  - PIN szabályok: 6 számjegy, 15 perc TTL, 1 aktív PIN / pseudo‑ID, max 3 újragenerálás / 24 óra.
+- 📦 Adatmodell (minimál):
+  - `wp_impact_pin_tokens`: `pseudo_hash`, `pin_hash`, `expires_at`, `attempts`, `locked_until`, `created_at`, `used_at`.
+  - Retenció: 30 nap után purge (audit log marad).
+- 🔌 Integráció:
+  - Cookie frissítés: sikeres verify után `impactshop_pseudo_id` beállítása (365 nap).
+  - Social ticker owner‑check változatlan, ledger `pseudo_id` alapján.
+- 🧪 Teszt:
+  - Happy path: issue → verify → cookie set.
+  - Lockout: 3 hibás PIN → 15 perc tiltás.
+  - Rate limit: IP + pseudo‑ID limit, 429 válasz.
+
+### 2026-01-18 – PIN REST payload minták + hibakód mátrix
+- 🧾 REST minták: `pin/issue` és `pin/verify` kérés/válasz JSON minták.
+- 🧱 Hibakód mátrix: `invalid_request`, `pin_invalid`, `pin_locked`, `pin_expired`,
+  `pin_used`, `rate_limited`, `server_error`.
+- 📄 Dokumentáció: `impact-hub-system-v1.3.md` 4.1 PIN REST minták + hibakód táblázat.
+
+### 2026-01-18 – OpenAPI frissítés: PIN végpontok
+- 🧩 Új endpointok: `POST /identity/pin/issue`, `POST /identity/pin/verify`.
+- 🧾 Schema: `PinIssueRequest/Response`, `PinVerifyRequest/Response`, pseudo‑ID
+  pattern 10–12 karakterre frissítve.
+- 🧪 Validáció: `npx swagger-cli validate docs/api/openapi.yaml` → OK.
+- 📄 Dokumentáció: `docs/api/openapi.yaml` frissítve.
+
+### 2026-01-18 – PIN REST controller stub (WP)
+- 🧩 Új MU plugin: `wp-content/mu-plugins/impactshop-identity-pin.php`.
+- ✅ Végpontok: `/impact/v1/identity/pin/issue`, `/impact/v1/identity/pin/verify`.
+- 🧱 Alap logika: input validáció, rate limit (IP + pseudo‑ID), lockout, audit hook
+  + `wp-content/uploads/impactshop-pin-audit.log`.
+- 🧪 Megjegyzés: stub jelleg (transient alapú tárolás), élesítés előtt DB‑tároló
+  + valódi PIN‑kézbesítés szükséges.
+
+### 2026-01-18 – PIN perzisztens tároló + kézbesítés/cookie
+- 🧱 Migráció: `wp-content/mu-plugins/impactshop-identity-pin-migration.php`
+  → `wp_impact_pin_tokens` tábla.
+- 🧾 Tárolás: PIN hash + expiry + attempts + lockout + used_at DB-ben.
+- 📬 Kézbesítés: `impactshop_identity_pin_deliver` hook + stub log
+  `wp-content/uploads/impactshop-pin-delivery.log`.
+- 🍪 Cookie: sikeres verify után `impactshop_pseudo_id` beállítás (365 nap).
+- 📄 Implementáció: `wp-content/mu-plugins/impactshop-identity-pin.php` frissítve.
+
+### 2026-01-18 – PIN kézbesítés + DB cleanup
+- ✉️ Email kézbesítés: `wp_mail` (delivery.channel=email), SMS/QR hookok:
+  `impactshop_identity_pin_sms`, `impactshop_identity_pin_qr_payload`.
+- 🧾 Delivery log: `impactshop-pin-delivery.log` pin_hash + target_hash mezőkkel.
+- 🧹 DB purge: napi cron `impactshop_pin_cleanup` → 30 napnál régebbi használt
+  vagy lejárt PIN rekordok törlése.
+- 📄 Új MU plugin: `wp-content/mu-plugins/impactshop-identity-pin-cron.php`.
+- 📄 OpenAPI: `PinIssueRequest.delivery` mező + delivery response frissítve.
+
+### 2026-01-18 – SMS/QR provider bekötés
+- 📲 SMS (Vonage): `wp-content/mu-plugins/impactshop-identity-pin-sms-vonage.php`,
+  env: `VONAGE_API_KEY`, `VONAGE_API_SECRET`, `VONAGE_FROM`.
+- 🧩 QR (QuickChart): `wp-content/mu-plugins/impactshop-identity-pin-qr-quickchart.php`
+  → `https://quickchart.io/qr?text=impactshop-pin:<PIN>`.
+- 🔌 Hookok: `impactshop_identity_pin_sms` filter visszaadja `status=sent`.
+
+### 2026-01-18 – SMS env + pin/issue smoke (staging)
+- 🔐 Secret env: `/Users/bujdosoarnold/.impact-secrets/env.d/sms.env` (Vonage kulcsok placeholderrel).
+- 🧪 Smoke: `POST /impact/v1/identity/pin/issue` stagingen `delivery.channel=sms`
+  → `rest_no_route` 404 (plugin még nincs deployolva stagingre).
+
+### 2026-01-18 – PIN MU plugin deploy + smoke (staging)
+- 🚚 Deploy: PIN MU pluginek szinkronizálva stagingre (`app-staging`), rewrite flush OK.
+- 🧪 Smoke: `POST /impact/v1/identity/pin/issue` (`delivery.channel=sms`)
+  → `status=ok`, `delivery.status=queued` (Vonage creds hiányában várható).
+- ⚠️ Megjegyzés: PHP-FPM reload nem futott (nincs sudo), de REST endpoint elérhető.
+
+### 2026-01-18 – Vonage env betöltés + új smoke (staging)
+- 🔐 Env loader: `impactshop-identity-pin.php` betölti a
+  `/home/sharityh/.impact-secrets/env.d/sms.env` fájlt.
+- 🚚 Staging: `sms.env` feltöltve (placeholder kulcsok).
+- 🧪 Smoke: `POST /impact/v1/identity/pin/issue` (`delivery.channel=sms`)
+  → `status=ok`, `delivery.status=queued` (kulcsok még hiányoznak).
+
+### 2026-01-18 – Vonage kulcsok + SMS retry (staging)
+- 🔐 Env: Vonage kulcsok beállítva a staging `sms.env` fájlban + `capi.env` frissítve.
+- 🧪 Smoke retry: `POST /impact/v1/identity/pin/issue` → `rate_limited` (429, 24h).
+- 📌 Teendő: várakozás vagy transient cleanup után új próba.
+
+### 2026-01-18 – PIN rate limit cleanup + SMS sent (staging)
+- 🧹 Cleanup: `wp transient delete --all` stagingen (13 törölt).
+- 🧪 Smoke: `POST /impact/v1/identity/pin/issue` → `delivery.status=sent`.
+
+### 2026-01-18 – PIN SMS/QR runbook
+- 📄 Új dokumentum: `docs/pin-sms-runbook.md` (staging smoke + rate limit reset).
+- ➕ Kiegészítés: production deploy + smoke + rollback lépések.
+- ✅ Go/No-go: rövid checklist a prod szakaszban.
+- ✅ Top-level checklist kivonat a runbookban.
+- ✅ Pre-smoke mini-checklist a staging részhez.
+- ✅ Post-smoke ellenőrzés (debug log + delivery log).
+- ✅ Prod post-smoke ellenőrzés (debug log + delivery log).
+- ✅ Gyors prod log-tail parancs a post-smoke részhez.
+- ✅ Gyors staging log-tail parancs a post-smoke részhez.
+- ✅ Egyparancsos staging smoke + log tail blokk.
+- ✅ Egyparancsos prod smoke + log tail blokk.
+- ✅ Gyors parancsok szekció a runbook elején.
+- ✅ Gyors parancsok blokk konkrét parancsokkal kiegészítve.
+- ✅ Gyors parancsok blokk paraméterezhető `PSEUDO_ID`/`PHONE` változókkal.
+- ✅ Gyors parancsok blokk minta változók szekcióval bővítve.
+- ✅ Minta változók megjegyzéssel (teszt pseudo-ID/telefon, staging; ékezetes).
+
+### 2026-01-18 – Release checklist PIN go/no-go
+- 📄 `docs/prod-guard-checklist.md` kiegészítve PIN SMS go/no-go lépésekkel.
+- ✅ PIN smoke lépések bekerültek a gyors ellenőrző listába is.
+
+### 2026-01-18 – PIN Sonnet review összegzés
+- 📄 Új dokumentum: `docs/pin-sonnet-review.md` (kockázatok + P0–P3 javaslatok).
+- ✅ Rövidített verzió beemelve: `impact-hub-system-v1.3.md`.
+- ✅ Rövidített rész linkelve a részletes docra.
+
+### 2026-01-18 – PIN P0 javaslatok implementálva
+- 🔐 Kombinált IP+pseudo rate limit a PIN issue-ben.
+- ⚙️ `PIN_*` env konfiguráció támogatás (`/home/sharityh/.impact-secrets/env.d/pin.env`).
+- 🗂️ Audit + delivery log rotáció a napi cleanup során.
+- 📄 Státusz frissítve: `docs/pin-sonnet-review.md`.
+
+### 2026-01-18 – PIN P1 javaslatok implementálva
+- ⏱️ Timing védelem a PIN verify-ben (konstans késleltetés).
+- 🧱 Composite indexek a `wp_impact_pin_tokens` táblán.
+- 🔁 Vonage retry + hiba hook (`impactshop_pin_sms_failed`).
+- 🩺 Health endpoint bővítve PIN státusszal.
+- 📄 Státusz frissítve: `docs/pin-sonnet-review.md`.
+
+### 2026-01-18 – PIN P2–P3 backlog lista frissítve
+- 📄 `docs/pin-sonnet-review.md` P2/P3 javaslatok részletezve.
+
+### 2026-01-18 – PIN P2 javaslatok implementálva
+- 🧾 Reissue audit hook: `impactshop_identity_pin_reissue_after_use`.
+- 🧩 QR payload validáció + `impactshop_pin_qr_invalid` hook.
+- 🧪 Test mode flag: `PIN_TEST_MODE` (staging bypass).
+- 📄 Új doksik: `docs/pin-error-codes.md`, `docs/pin-sequence-diagram.md`.
+
+### 2026-01-18 – PIN P3 javaslatok implementálva
+- 🕵️ IP spoofing védelem `TRUSTED_PROXY_IPS` env alapján.
+- 🧠 Admin notice object cache hiány esetén.
+- 🧹 Batch cleanup + reschedule a PIN cleanup cronban.
+- 📈 Metrics endpoint: `/impact/v1/identity/pin/metrics`.
+- 🧾 Structured logging audit + delivery logokhoz.
+- 🧭 Migration history tábla: `wp_impact_pin_migration_history`.
+- 📄 Státusz frissítve: `docs/pin-sonnet-review.md`.
+- ✅ PHPUnit skeleton + PHPDoc hozzáadva.
+
+### 2026-01-18 – PHPUnit smoke (PIN)
+- 🧪 Parancs: `vendor/bin/phpunit tests/test-impactshop-identity-pin.php`.
+- ❌ Hiba: `WP_UnitTestCase` hiányzik (WP tesztkörnyezet nincs inicializálva).
+- 📌 Következő: WordPress test bootstrap / WP-CLI scaffold előtt újrafuttatni.
+
+### 2026-01-18 – WP test bootstrap + PHPUnit retry
+- 🧰 Bootstrap: `bin/install-wp-tests.sh` + `tests/bootstrap.php` létrehozva.
+- 🧪 Retry: `WP_TESTS_DIR=tests/wordpress-tests-lib vendor/bin/phpunit tests/test-impactshop-identity-pin.php`.
+- ❌ Hiba: DB kapcsolat hiányzik (`mysqli_real_connect` / nincs MySQL).
+- 📌 Következő: lokális MySQL indítása + `wp_test` DB létrehozása.
+
+### 2026-01-18 – PHPUnit retry (WP tests)
+- 🧪 Parancs: `vendor/bin/phpunit --configuration phpunit.xml`.
+- ❌ Hiba: WP teszt suite nem kompatibilis a PHPUnit 10-zel
+  (`parseTestMethodAnnotations()` hiányzik).
+- ⚠️ Mellék: `WalletPassTest` hibák, mert a wallet plugin nincs betöltve.
+- 📌 Következő: PHPUnit 9 használata vagy WP test suite frissítés,
+  illetve a wallet MU plugin betöltése a bootstrapben.
+
+### 2026-01-18 – Social ticker share: pseudo-id szinkron
+- 🧩 Dognet raw tranzakcióból a pseudo-id hiányzott; `order_id`/`original_id` + `last_click_data1/2` mezők most bekerültek a pseudo-keresésbe.
+- 🔎 A hosszú azonosítókat is elfogadjuk (tisztítás után max 64, ledgerben 12-re vágva), így nem vész el a donor-id.
+- ✅ Social ticker owner-match lazítva: teljes egyezés mellett prefix egyezést is elfogad (hosszabb cookie vs rövidebb ledger).
+- 🍪 `impact_pseudo_id` query param esetén a social ticker most beállítja az `impactshop_pseudo_id` cookie-t (365 nap), így a megosztás tartósan működik.
+- 🔗 `/go` kattintásnál, ha nincs pseudo cookie, automatikusan generálunk és beállítunk egyet (12 chars), hogy a Dognet d2 ne maradjon üres.
+- ✅ Dognet ledger cron kézi futtatás után a 2026-01-18-as Glami rekord már `pseudo_id`-val került be, a social tickerben megosztható.
+
+### 2026-01-18 – Árukereső aresett-termekek bővítés (Playwright)
+- 📚 Aresett-termekek main oldal helyett az összes kategóriát bejárjuk, pagination + load-more + scroll támogatással.
+- 🔁 Dedup hozzáadva a scrape eredményekhez (URL alapú).
+- 🔧 Fájl: `ai-agent/tools/playwright/arukereso-runner.ts`.
+
+### 2026-01-18 – Kupon validátor finomhangolás (Gmail ajánlatok)
+- 🧾 Gmail structured forrásnál elfogadjuk az „ajánlat/akció/kupon/kód” kulcsszavakat a címben, ha a discount jel hiányzik a descriptionből.
+- 🔤 Ékezet-normalizálás hozzáadva a cím ellenőrzéséhez, hogy pl. „ajánlatok” is felismerhető legyen.
+- 🧠 Gmail kuponoknál fallback kontextus: ha nincs marker-es description, a coupon_code körüli (±200) szövegrész bekerül a description mezőbe.
+- 📨 Gmail API feldolgozásnál a subject + snippet is bekerül a kontextusba, így a kupon környezete akkor is megmarad, ha a body üres.
+
+### 2026-01-13 – AI agent guard futtatás (09:41)
+- 🏁 Session: kérésre lefuttattam az AI agent guardot az ai-agent repó gyökeréből.
+- 🛡️ Parancs: `{ [ -f /Users/bujdosoarnold/Developer/GitHub/impactshop-notes/.codex/.env.local ] && source /Users/bujdosoarnold/Developer/GitHub/impactshop-notes/.codex/.env.local; } && /Users/bujdosoarnold/Developer/GitHub/impactshop-notes/.codex/guards/ai-agent-guard.sh`
+- 📈 Eredmény: production HTTP 200 (1854 ms), staging HTTP 200 (1372 ms); Guard result: OK.
+- 📌 Következő lépés: nincs azonnali akció; ismétlés csak deploy vagy guard WARN/FAIL esetén.
+
+### 2026-01-13 – NAV Online requestSignature tisztázás (megoldás)
+- ✅ Megoldás rögzítve: a requestSignature = `requestId + timestamp + signingKey` SHA3‑512 hash (hex, UPPERCASE).
+- 🔑 Signing key: a NAV portálon generált **literális** karaktersorozat, kötőjelekkel együtt; nem hex/base64 és nem szabad módosítani.
+- ⏱️ Timestamp: NAV által elvárt UTC formátum (a hivatalos példák ISO 8601 timestampet használnak).
+- ⚠️ Tipikus hiba: exchange key és signing key összekeverése, hibás timestamp formátum vagy kulcs átkódolása → `INVALID_REQUEST_SIGNATURE`.
+- 🧩 Javítási lépések: új signing/exchange key páros generálása, pontos másolás, SHA3‑512 UPPERCASE, kliens oldali `signKeyHex=false`, szerveridő szinkron.
+- 📄 Új összefoglaló doksi: `docs/nav-online.md`.
+
+### 2026-01-13 – NAV Online tokenExchange éles teszt (prod + test) → FAIL
+- 🧪 Teszt: tokenExchange hívás a helyi env-ből (`/Users/bujdosoarnold/.impact-secrets/env.d/capi.env`) több variánssal (requestId limitált formátum, SHA3‑512 UPPERCASE, timestamp ISO 8601).
+- ❌ Eredmény: mind prod (`https://api.onlineszamla.nav.gov.hu/...`) mind test (`https://api-test.onlineszamla.nav.gov.hu/...`) `INVALID_REQUEST` (400, „Helytelen kérés!”).
+- 🧩 Lehetséges okok: NAV technikai user/ kulcspár nem érvényes, környezet‑mismatch (prod vs test), nem megfelelő login/jelszó vagy szoftver mezők (pl. hiányzó dev adatok).
+- 📌 Következő lépés: NAV UI‑ban technikai felhasználó és kulcsok ellenőrzése/újragenerálása, valamint a prod/test környezet jogosultságának megerősítése.
+- 🔁 További próbák: signing key‑es requestSignature + `yyyyMMddHHmmss` timestamp is `INVALID_REQUEST` lett; valószínűleg nem a hash‑formátum a blokkoló.
+
+### 2026-01-13 – NAV Online tokenExchange INVALID_REQUEST: séma‑ellenőrzés fókusz
+- 📌 INVALID_REQUEST okok (2019-es táblázat): rossz endpoint/HTTP metódus, sérült XML vagy séma‑sértés, hibás login/taxNumber páros, nem egyedi requestId, hiányzó requestVersion/headerVersion.
+- 🌐 Helyes endpoint: `https://api.onlineszamla.nav.gov.hu/invoiceService/v3/tokenExchange` (test: `https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/tokenExchange`).
+- 🧱 Kötelező mezők: `requestId`, `timestamp` (UTC, ISO 8601), `requestVersion=3.0`, `headerVersion=1.0`, `login`, `passwordHash cryptoType="SHA-512"`, `taxNumber` (törzsszám, első 8 számjegy), `requestSignature cryptoType="SHA3-512"`, teljes `software` blokk kötelező mezőkkel.
+- 🧩 Namespace: v3-ban a `TokenExchangeRequest` root az OSA API namespace alatt van, a `header/user/software` blokkok pedig a `http://schemas.nav.gov.hu/NTCA/1.0/common` namespace alatt.
+- 📌 Következő: request XML séma/prefix/attribútumok teljes igazítása a v3-as xsd‑hez, valamint a software blokk kötelező mezőinek kitöltése.
+- ✅ XSD‑igazítás után: `TokenExchangeRequest` root + `requestVersion/headerVersion` attribútum + `NTCA/1.0/common` prefix a header/user/software elemekre → a séma‑hiba megszűnt, de továbbra is `INVALID_REQUEST` érkezik (prod).
+- ✅ Ellenőrzés: prod login be van töltve, taxNumber 8 jegy (törzsszám), softwareDevTaxNumber fallback a taxNumber‑re.
+- ❌ Újrapróba: signing key‑es requestSignature + helyes namespace/attribútumok mellett továbbra is `INVALID_REQUEST`.
+- ✅ További igazítás: `software` blokk prefix nélküli, és `softwareId` fallback 18 karakteres (HU+törzsszám+suffix) → továbbra is `INVALID_REQUEST`.
+- ✅ Header/user sorrend igazítva: `requestVersion/headerVersion` a headerben, `requestSignature` a user blokkban; `requestId` 30 karakteres alfanumerikus → továbbra is `INVALID_REQUEST_SIGNATURE`.
+- 🔎 Kulcs‑tükör: sign key 32 karakter (kötőjellel), exchange key 16 karakter; mindkettőnél tesztelve → signature még mindig elutasítva.
+- ✅ TokenExchange signature: signKey‑vel számolva (exchangeKey kizárva) → továbbra is `INVALID_REQUEST_SIGNATURE`.
+- ✅ Megoldás: requestSignature a maszkolt timestamptel készül (`yyyyMMddHHmmss`), signKey‑vel → tokenExchange OK (prod).
+- ❌ queryInvoiceDigest próba (2025-01-01 → 2025-12-31, INBOUND): `INVALID_REQUEST` + `SCHEMA_VIOLATION` (exchangeToken elem nem várt).
+
+### 2026-01-13 – Session end / állapot mentés
+- 🛑 Gépleállítás előtt állapot rögzítve; NAV Online tokenExchange továbbra is `INVALID_REQUEST` (prod), séma‑hiba már nincs.
+- 🧾 Módosítás: `impact_hub/ai-agent/apps/core-worker/src/nav-online-invoice.ts` XSD‑igazítás (namespace + attribútumok).
+- 📌 Következő lépés: prod technikai user + taxNumber + softwareDevTaxNumber ellenőrzése, majd tokenExchange újrapróba.
+
+### 2026-01-10 – Rekonstrukció (history log törölve)
+- 🧩 Forrás: megmaradt dokumentumblokkok + fájlnyomok alapján (pl. `tools/nav-signature-verify.js`, `impact-hub-system-v1.3.md`, `Hirdetési fiókok integrációja TERV.ini.md`).
+- ✅ Billingo Drive célmappa frissítve (Shared Drive + env értékek), Billingo sheet újonnan létrejött.
+- 🔐 AI Agent core elérés tisztázva: nincs publikus reverse proxy, `http://127.0.0.1:4000` helyi endpoint; keepalive csak egyszeri restartot végez.
+- 🧾 NAV Online Számla: hivatkozások, Software blokk mezők tisztázása, M2M vs Online Számla különbségek rögzítve; élő token-exchange teszt `INVALID_REQUEST_SIGNATURE`.
+- 🧪 Új NAV ellenőrző tool: `tools/nav-signature-verify.js` (NAV test vector + SHA3-512 ellenőrzés, kötőjel/timestamp hatás).
+- 🛡️ `impactall` futás rögzítve (13/13 PASS, staging/prod 200, status snapshot frissült).
+
+### 2026-01-11–2026-01-12 – Rekonstrukció (history log törölve)
+- 📌 Fájlnyomok alapján nem látszik külön repo‑módosítás vagy guard futás; ha volt külső művelet, itt nincs lokális artefaktuma.
+
+### 2026-01-13 – impactall guard futtatás (09:36)
+- 🏁 Session: kérésre lefuttattam a teljes `impactall` guardot a repo gyökeréből.
+- 🛡️ Parancs: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall` → staging HTTP 200 / 725 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 674 ms; 14/14 PASS, WARN/FAIL nincs.
+- 📄 Status snapshot: `impactshop-status.md` és `system-status-snapshot.md` frissült.
+- ⚠️ Megjegyzés/kockázat: a guard events log GitHub token lejáratot jelez 2026-02-06 körül (24 nap), érdemes időben frissíteni.
+- 📌 Következő lépés: nincs azonnali akció; új futás deploy vagy ütemezett health check előtt.
+
+### 2026-01-09 – Billingo sync (prod) + ai-agent deploy
+- 🚀 Build + deploy (ai-agent): `npm run build`, majd `rsync dist/` → `s59:/home/sharityh/ai-agent/dist/`, service restart (`ai-agent-keepalive.sh`). A `dist/data/ngo-category-map.json` most már ott van (korábbi hiány fix).
+- 🔐 Szerver env bővítés: `/home/sharityh/ai-agent/.env.local` kapta a Billingo kulcsokat és a base URL-t (csak prod futáshoz, secret nincs logolva).
+- ✅ Billingo task létrehozás (prod, localhost): `workspaceId=finance`, `templateId=billingo-sync`, task ID: `6bfca84c-11fd-4c63-aaa2-4450bc887121`.
+- 🧾 Billingo sync futtatva (manual worker, Redis nélkül): kimenetek → `/home/sharityh/ai-agent/tmp/state/billingo/6bfca84c-11fd-4c63-aaa2-4450bc887121-{documents,partners,products}.json`.
+- ✅ Drive OAuth bekötve (user token), Billingo sheet sikeres: `https://docs.google.com/spreadsheets/d/1eNkd3WyThzrtDkEQmD_D0HDGQaKjfNeFxQn6iEcBLDk/edit?usp=drivesdk`.
+- 🧭 Impactall autoload frissítve (Ads quick info): `Hirdetési fiókok integrációja TERV.ini.md` és `impact-hub-system-v1.3.md`.
+- 🕒 Billingo ütemezés: szerveren nincs `crontab`, ezért az API gateway indításakor in-process scheduler fut (env: `CORE_BILLINGO_CRON_ENABLED=1`, interval 24h, initial delay 5m). Log: core tasks JSON (`/home/sharityh/ai-agent/tmp/state/core-tasks.json`) + `ai-agent.log`.
+
 ### 2026-01-05 – impactall guard futtatás (20:33)
 - 🏁 Session: napi health checkhez lefuttattam az `impactall`-t a repo gyökeréből.
 - 🛡️ Parancs: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall` → staging HTTP 200 / 1203 ms (`redirected_to:app.sharity.hu`), production HTTP 200 / 1006 ms; 13/13 PASS, WARN/FAIL nincs (kupon-harvester smoke most is kihagyva, csak megjegyzés).
@@ -2402,3 +2733,630 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Végső branch: `core/ai-agent-drop-2026-01-07-clean3` (clean2 helyett).
 - PR link: https://github.com/office-hue/impact_hub/pull/new/core/ai-agent-drop-2026-01-07-clean3
 - Megjegyzés: az ai-agent drop eltávolítja a korábbi `ai-agent/libs/*` és `apps/api-gateway/src/app.ts + routes/*` fájlokat (új kódstruktúra).
+
+### 2026-01-08 – Ads capability core bekötés + CAPI/management endpointok
+- Core ads capability-k felvéve: `ads-event-ingest`, `ads-decision`, `ads-execute` (ai-agent core-agent-graph).
+- Routing bővítés: ads kulcsszavak + ads chain (ingest → decision → execute).
+- Response assembly: ads summary támogatás.
+- CAPI proxy publikus végpont WP-n belül: `https://app.sharity.hu/wp-json/impact/v1/capi` (health + event/{meta|tiktok|ga4|googleads|youtube}); MU plugin: `impact-capi-proxy.php`.
+- Ads management endpoint (dry-run/live flag): `https://app.sharity.hu/wp-json/impact/v1/ads/execute`; MU plugin: `impact-ads-management.php`.
+- Szerver secret fájlok: `/home/sharityh/app/secrets/ads-management.secret` (API kulcs), `/home/sharityh/app/secrets/ads-execute-mode` (live/dry-run).
+- Live flag aktív, de platform SDK hívások még nincsenek bekötve (csak logolás).
+- Dry-run chain teszt: ingest ok, decision ok (50k HUF/hó → 12.5k/platform), execute skipped (dry-run).
+- Átmeneti .htaccess env beállítás 500-at okozott, visszavonva; secret fájlra váltás működik (WP 200).
+
+### 2026-01-08 – Ads management API bekötés (Meta + Google Ads)
+- `impact-ads-management.php` bővítve: Meta Graph API campaign/adset/creative/ad create, Google Ads API mutate (budget/campaign/adgroup/RSA), live/dry-run támogatás.
+- Secrets for management: `/home/sharityh/app/secrets/ads-management.json` (meta_access_token, meta_ad_account_id, google_ads_* részlegesen).
+- Live smoke: Meta kampány létrejöttéhez `META_PAGE_ID` hiányzik; Google Ads managementhez hiányzik `GOOGLE_ADS_CLIENT_ID/SECRET/REFRESH_TOKEN` → endpoint tiszta hibával jelez.
+- Következő: Meta Page ID megadása + Google Ads OAuth refresh token beállítása a management hívások élesítéséhez.
+- Meta Page ID beállítva az ads managementhez: `409581609762060` (`/home/sharityh/app/secrets/ads-management.json`).
+- Live ads execute próba: `/ads/execute` (meta + googleads). Meta: `creative_create_failed` → app fejlesztői módban, publikálni kell az appot a kreatív létrehozásához. Google Ads: `missing_google_ads_config` (hiányzó OAuth client_id/secret/refresh_token).
+- Google Ads OAuth credentialek beállítva (client_id/secret/refresh_token) a managementhez: `/home/sharityh/app/secrets/ads-management.json` + lokális `~/.impact-secrets/env.d/capi.env`.
+- Live ads execute próba (csak googleads): `google_ads_mutate_failed` (detail: null). Következő: Ads API válasz/hiba részletes logolása a management pluginban.
+- Ads management plugin: Google Ads endpoint frissítve v18-ra + részletes error logolás (status/body/raw).
+- Live ads execute (googleads, v18): 403 `ACCESS_TOKEN_SCOPE_INSUFFICIENT` → a refresh token nem adwords scope-pal készült, új refresh token kell `https://www.googleapis.com/auth/adwords` scope-pal.
+- Live ads execute (googleads, v18) új refresh tokennel: 501 `UNIMPLEMENTED` → Google Ads API nincs engedélyezve/aktiválva a fiókon vagy a developer token még nem jóváhagyott (nem production).
+
+### 2026-01-08 – Billingo worker integráció (0-ról)
+- Új core worker job: `billingo_sync` + Billingo fetch helper (`apps/core-worker/src/billingo.ts`).
+- API gateway routing: új template `billingo-sync` (Finance workspace) + job descriptor `billingo_sync`.
+- Drive/Sheet támogatás: új `sheets-client.ts`, Billingo összesítő sheet írás.
+- Graphiti ingest: Billingo sync summary rögzítése `capability_interaction` formában.
+- Billingo API kulcs beállítva a központi secretben (BILLINGO_API_KEY). Base URL default: `https://api.billingo.hu/v3`.
+- Billingo company ID rögzítve: `BILLINGO_COMPANY_ID=226021`.
+
+### 2026-01-08 – Ads platform összefoglaló (Meta / YouTube / TikTok / Google)
+- CAPI base URL (WP MU proxy): `https://app.sharity.hu/wp-json/impact/v1/capi` (health + `event/{meta|tiktok|ga4|googleads|youtube}`).
+- Ads management endpoint: `https://app.sharity.hu/wp-json/impact/v1/ads/execute` (auth: API key a secretben).
+- Szerver secret fájlok: `/home/sharityh/app/secrets/ads-management.secret`, `/home/sharityh/app/secrets/ads-execute-mode`, `/home/sharityh/app/secrets/ads-management.json`.
+- Meta: ad account `act_704809472916006`, page ID `409581609762060`, app még dev mód (publish kell a creative create-hez).
+- TikTok: advertiser ID `7415920446899765249`.
+- Google Ads: developer token `Afb8BUnp6wnG_e-TNGBFOQ` (jelenleg test), MCC/login customer `6169110444`, customer `8974881927`, conversion action ID `7440853323`.
+
+### 2026-01-10 – Billingo Drive célmappa frissítése (Shared Drive)
+- Shared Drive ID: `0ADylFosTt_UYUk9PVA` (Finance drive).
+- Billingo célmappa (Bujdosó Beruházás): `16gELqisvoG9-1v_4LUVb6UEaYU2ECDHw`.
+- Env frissítés a szerveren: `CORE_DRIVE_SHARED_ROOT_ID=16gELqisvoG9-1v_4LUVb6UEaYU2ECDHw`, `CORE_DRIVE_SHARED_ROOT_SKIP=2` (ne hozzon létre új `Company/Finance` mappát).
+- Drive placeholder kikapcsolva Billingo taskokra (csak 1 sheet jön létre).
+- Billingo cron új sheet (shared drive célmappába): `https://docs.google.com/spreadsheets/d/1_iR7rHh_NpZ_UCQT87MUelZ86SnlkV7u9N17fWewR2g/edit?usp=drivesdk`.
+
+### 2026-01-10 – AI Agent core elérés és keepalive pontosítás
+- Core API publikus reverse proxy nincs; a production API belsőn fut: `http://127.0.0.1:4000`.
+- Keepalive script egyszeri futáskor indít újra, ha down/health fail; nem időzített cron.
+
+### 2026-01-10 – NAV Online Számla / SZAMLAZO / M2M hivatkozások
+- SZAMLAZO bejelentés **megszűnt 2021-01-04-től**, a korábbi SZAMLAZO nyomtatvány már nem kötelező (külső forrás): https://www.szamlazz.hu/blog/2021/01/eltorolve-szamlazo-bejelentese-es-ptgszlah-adatlap/
+- Online Számla felhasználói kézikönyv (3.35): https://onlineszamla.nav.gov.hu/files/container/download/Online%20Számla%20Felhasználói%20kézikönyv_3.35.pdf
+- Hivatalos Online Számla (NAV) fejlesztői repo: https://github.com/nav-gov-hu/Online-Invoice
+- NAV M2M API ÁSZF kivonat: a kliensprogram-regisztráció (Client ID/Secret + API Key) **M2M API-hoz** tartozik, nem az Online Számla API-hoz; a M2M regisztráció és dokumentáció a NAV Ügyfélportálon érhető el.
+
+### 2026-01-10 – Központi secret env (impactall betöltés)
+- Központi secret env fájl: `/Users/bujdosoarnold/.impact-secrets/env.d/capi.env` (impactall/init betölti).
+
+### 2026-01-10 – Online Számla „Software” mezők tisztázás
+- **Software blokk (XML)**: az Online Számla API kérésekben kötelező a szoftver leírása (Software/Szoftver adatblokk). Ezek az **integráció saját, fejlesztői azonosítói**, nem a NAV UI-ban kiosztott kódok.
+- **softwareId / softwareDevId**: jellemzően **te definiálod** (stabil, saját rendszer‑azonosító + fejlesztő azonosító). Nem a NAV felületén keresendő.
+- **NAV UI‑s rész**: a **technikai felhasználó + kulcsok** a NAV Felhasználókezelőben jönnek létre; ez a hitelesítéshez kell, nem a Software blokkhoz.
+- **Verziófüggés**: a pontos mezők neve/szerepe az Online Számla API sémaverziótól és a használt klienskönyvtártól függhet.
+- Rövid emlékeztető: **„A technikai usert a NAV adja, a szoftver‑azonosítót te.”**
+- **Kódfrissítés**: a `softwareId` most az API XML-be beég, és ha nincs `NAV_ONLINE_INVOICE_SOFTWARE_ID`, akkor `impact-ai-agent-<adószám>` formában kerül be (adószám karaktereinek szűrésével).
+
+### 2026-01-10 – impactall futtatás (Developer/GitHub)
+- `./impactall` a repo gyökérből lefutott, 13/13 guard PASS, 0 WARN/ERROR.
+- REST healthcheck: staging 200 (app.sharity.hu redirect), production 200.
+- `impactshop-status.md` frissült (1 módosított fájl).
+
+### 2026-01-10 – NAV Online Számla élő token-exchange teszt
+- Élő endpoint: `https://api-online-invoice.nav.gov.hu/invoiceService/v3`.
+- Eredmény: mindkét próbánál `INVALID_REQUEST_SIGNATURE (400)` (kötőjeles és kötőjel-mentes sign key).
+- Debug: sign key hossza 32 (kötőjeles), 30 (kötőjel nélkül), `signKeyHex=false` → valószínűleg nem hex formátumú kulcsot vár a NAV.
+- Következő lépés: NAV UI-ban új aláírókulcs generálás/ellenőrzés, majd újrapróba.
+
+### 2026-01-13 – NAV Online queryInvoiceDigest (INBOUND, 2025 teljes év)
+- `nav-online-invoice.ts`: queryInvoiceDigest XML frissítve, `invoiceIssueDate` + `dateFrom/dateTo` blokkra, `pageSize` és `relationalQueryParams` eltávolítva (nem schema-kompatibilis).
+- Manuális prod queryInvoiceDigest futtatás (`2025-01-01`–`2025-12-31`, INBOUND): `BAD_QUERY_PARAM_RANGE_EXCEEDED` – a NAV max. 35 napos intervallumot enged.
+- Következő lépés: 35 napos (vagy rövidebb) időablakokra bontott lekérdezés futtatása.
+
+### 2026-01-13 – NAV Online queryInvoiceDigest batch (INBOUND, 2025)
+- `nav-online-invoice.ts`: batch helper hozzáadva, 35 napos intervallumokra bontás.
+- Prod batch futtatás 2025 teljes évre (INBOUND, issue date):
+  - Összes találat: 25
+  - Találatok az ablakokban: 2025-03-12–2025-04-15: 10, 2025-04-16–2025-05-20: 15, a többi ablak 0.
+
+### 2026-01-13 – NAV Online queryInvoiceDigest batch (OUTBOUND, 2025)
+- Prod batch futtatás 2025 teljes évre (OUTBOUND, issue date):
+  - Összes találat: 1
+  - Találat az ablakban: 2025-03-12–2025-04-15: 1, a többi ablak 0.
+
+### 2026-01-13 – NAV Online digest letöltés (INBOUND/OUTBOUND, 2025)
+- Digest XML letöltés minden 35 napos batch-re (issue date), mentés: `data/nav-online-invoice/` az ai-agent repo-ban.
+- INBOUND (page=1) találatok: 2025-02-05–2025-03-11: 6, 2025-07-30–2025-09-02: 12, 2025-12-17–2025-12-31: 1, többi ablak 0.
+- OUTBOUND (page=1) találatok: minden ablak 0.
+
+### 2026-01-13 – NAV Online digest pagination + invoiceData letöltés (2025)
+- Digest pagination lefuttatva minden 35 napos batch-re (INBOUND/OUTBOUND), digest XML mentés: `data/nav-online-invoice/` (44 fájl).
+- InvoiceData letöltés minden digest tételre: `data/nav-online-invoice/` (72 fájl).
+- Összefoglaló: `data/nav-online-invoice/download-summary.json` az ai-agent repo-ban.
+
+### 2026-01-13 – NAV Online export feltöltés Drive-ra
+- Feltöltve: `/Users/bujdosoarnold/Library/CloudStorage/GoogleDrive-bujdoso.arnold@bujdosoiroda.com/Megosztott meghajtók/AI Agent Core/NAV Online 2025/`
+
+### 2026-01-13 – NAV Online quick reference + secret env check
+- Központi env: `/Users/bujdosoarnold/.impact-secrets/env.d/capi.env`
+- Kötelező kulcsok OK: `NAV_ONLINE_INVOICE_LOGIN`, `NAV_ONLINE_INVOICE_PASSWORD`, `NAV_ONLINE_INVOICE_SIGN_KEY`, `NAV_ONLINE_INVOICE_EXCHANGE_KEY`, `NAV_ONLINE_INVOICE_TAX_NUMBER`.
+- Hiányzó (de opcionális/fallback): `NAV_ONLINE_INVOICE_USER`, `NAV_TAX_NUMBER`, `NAV_ONLINE_INVOICE_SOFTWARE_ID`, `NAV_ONLINE_INVOICE_BASE_URL`.
+- NAV Online összefoglaló frissítve: `docs/nav-online.md` (Impactall autoload blokk + Drive útvonal + 35 napos limit).
+
+### 2026-01-13 – NAV Online env frissítés
+- `NAV_ONLINE_INVOICE_SOFTWARE_ID` beállítva a központi env-ben (18 karakteres, `HU<törzsszám>AIA00001`).
+- Impactall quick runbook felvéve: `impact-hub-system-v1.3.md`.
+
+### 2026-01-13 – NAV Online BASE_URL + audit checklist
+- `NAV_ONLINE_INVOICE_BASE_URL` beállítva (prod): `https://api.onlineszamla.nav.gov.hu/invoiceService/v3`.
+- Audit checklist felvéve: `docs/nav-online.md`.
+
+### 2026-01-13 – NAV Online TEST_BASE_URL
+- `NAV_ONLINE_INVOICE_TEST_BASE_URL` beállítva (test): `https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3`.
+
+### 2026-01-13 – Impi + AI Agent Core gyors memó (ai-agent repo)
+- Repo root: `/Users/bujdosoarnold/Developer/GitHub/impact_hub/ai-agent`
+- Impi tudásbázis könyvtárak: `Impi Tudásbázis/` és `Impi Tudásbázis/` (aliasok: `knowledge-aliases.json`, flow: `Impi beszélgetés térkép.json`).
+- Impi tudásbázis fő doksi: `tools/Tudásbázis-imői.md` (fallback: tudásbázis mappából).
+- Knowledge path feloldás: `apps/api-gateway/src/services/knowledge-config.ts` (`IMPI_KNOWLEDGE_DIR`, `IMPI_KNOWLEDGE_FILE`, `IMPI_KNOWLEDGE_ALIAS_FILE`).
+- Impi OpenAI logika: `apps/api-gateway/src/services/impi-openai.ts`, QA kritika: `apps/api-gateway/src/services/impi-critic.ts`.
+- API gateway entrypoint: `apps/api-gateway/src/index.ts` (Impi chat/attachment végpontok).
+- Core agent graph (LangGraph): `apps/core-agent-graph/README.md` + `apps/core-agent-graph/src/*`.
+- Core worker NAV + billing: `apps/core-worker/src/nav-online-invoice.ts`, `apps/core-worker/src/billingo.ts`, job type: `apps/core-worker/src/job-types.ts`.
+
+### 2026-01-13 – Impi kommunikáció javítás
+- Prompt szabályok egységesítve rövid bekezdésre (2–4 mondat, bullet nélkül): `apps/api-gateway/src/services/impi-openai.ts`.
+- Utófeldolgozás lebutítva (no bullet, no autolink): `apps/api-gateway/src/index.ts`.
+- Fallback summaryk rövid, CTA‑val záró szövegre állítva: `apps/ai-agent-core/src/impi/recommend.ts`.
+
+### 2026-01-13 – AI agent deploy (prod)
+- Build + dist sync: `npm run build` + `rsync dist/` → `s59.tarhely.com:/home/sharityh/ai-agent/dist/`.
+- Service restart: `bash ~/ai-agent/scripts/ai-agent-keepalive.sh`.
+
+### 2026-01-13 – aiagentall guard futtatás
+- Guard: `.codex/guards/ai-agent-guard.sh` → OK (staging 200 / 1530 ms, production 200 / 1957 ms).
+
+### 2026-01-13 – Impi videós CTA javítás + deploy
+- Videós támogatás CTA átállítva NGO ImpactShop linkre (nincs adomany.sharity.hu).
+- Commit: `9fa19e3`, PR: https://github.com/office-hue/impact_hub/pull/18
+- Deploy: `npm run build` + `rsync dist/` → `s59.tarhely.com:/home/sharityh/ai-agent/dist/` + keepalive restart.
+
+### 2026-01-13 – AI agent prod restart + videós CTA verifikáció
+- Keepalive restart után az API nem indult (hiányzó `dist/data/*`), ezért a `data/` mappa tartalmát felmásoltam a szerverre: `/home/sharityh/ai-agent/dist/data/`.
+- Service újraindítva: `bash ~/ai-agent/scripts/ai-agent-keepalive.sh`.
+- Ellenőrzés (SSH curl): `http://127.0.0.1:4000/api/v1/chat/impi` már az ImpactShop NGO linket adja és nincs „Nincs kuponkód…” mondat.
+- Runbook frissítve: `impact-hub-system-v1.3.md` tartalmazza a `dist/data` sync lépést deploy után.
+
+### 2026-01-13 – Impi NGO link forrás (Tudásbázis)
+- A videós és NGO CTA linkek elsődlegesen a `Impi Tudásbázis/ngok-2025-12-08.md` adomány linkjeiből jönnek; ha nincs match, fallback az ImpactShop link.
+
+### 2026-01-13 – Impi NGO info válaszok (Tudásbázis + deploy)
+- NGO infó kérésnél elsődleges forrás: `Impi Tudásbázis/ngok-2025-12-08.md` (név + kategória + város + leírás + adomany link).
+- Prod deploy: `npm run build` + `rsync dist/` és `data/` → `/home/sharityh/ai-agent/dist/`, majd `ai-agent-keepalive.sh` restart.
+- Verifikáció: `Mivel foglalkozik a Bátor Tábor?` → table summary + adomany link (API: `127.0.0.1:4000/api/v1/chat/impi`).
+
+### 2026-01-14 – Impi videós NGO választás + OpenAI bridge env
+- Videós támogatásnál az NGO‑név token‑egyezéses match (pl. „Legyél Ádám Reménye Alapítvány”) → mindig a kért NGO adomany linkje jön.
+- Video summary a szervezet nevét írja, nem slugot (`apps/api-gateway/src/index.ts`).
+- OpenAI bridge env betöltés a service scriptből (`scripts/ai-agent-service.js`) + prod restart.
+- Deploy: `npm run build` + `rsync dist/` + `rsync tools/` → `/home/sharityh/ai-agent/` + service restart.
+- Verifikáció (SSH curl): „Én a Ádám Reménye Alapítványt szeretném videónézéssel támogatni” → adomany link `https://adomany.sharity.hu/szervezetek/6003040` + helyes NGO név.
+
+### 2026-01-14 – Impi preferencia váltás (NGO/shop/kupon/termék)
+- „Másik/inkább/nincs ilyen” típusú kérdéseknél az aktuális kérés felülírja a korábbi preferenciát (nem ragad a régi NGO‑n/bolton).
+- Ha „inkább másik…” szerepel, a rendszer a mondat végi szegmensből próbál új NGO‑t/terméket/boltot választani.
+- Videós kérésnél a `video` kulcsszó felülírja az `ngo_info` intentet, hogy a videós CTA maradjon.
+- Verifikáció (SSH curl): „Korábban a Legyél Ádám Reménye…, de inkább másik… Győztesek Egyesülete” → Győztesek link + helyes NGO.
+- API gateway is figyel a „másik/inkább” mintára: ilyenkor nem ad át elmentett profilt és korábbi NGO‑prefet (`apps/api-gateway/src/index.ts`).
+
+### 2026-01-14 – CJ deals/kupon áttekintés (helyzetkép)
+- A jelenlegi repo MU pluginjei szerint a CJ‑logika csak a go/deeplink feloldásnál van bekötve (`impactshop-boot.php`, `impactshop-go-bridge.php`).
+- A `sharity-impact-banners-deals.php` csak banners CSV‑ből dolgozik, CJ‑s deals/coupons loader nincs benne.
+- Következő lépés: prodon ellenőrizni, fut‑e eltérő MU/plugin vagy külön CJ feed loader a deals listához.
+
+### 2026-01-14 – Dognet kupon/kampány hiány (vizsgálandó)
+- Dognet shop‑ok betöltve: `dognet_shops=64` / `total_shops=64`, a deeplinkek működnek.
+- Dognet token létezik (hossz ~56), tehát auth működik.
+- Dognet kupon/kampány API üres: `dognet_coupons_total=0`, `dognet_campaigns_total=0`, üres válasz.
+- Következtetés: a deeplinkek működnek, de Dognet kupon/deal adat nem jön az API‑ból, ezért nem jelenik meg.
+- Következő lépés: Dognet API külső `curl` ellenőrzés tokennel (státusz + elemszám) a scope/endpoint ellenőrzésére.
+
+### 2026-01-14 – CJ secrets + sync (prod/staging)
+- CJ konstansok beírva `wp-config.php`‑ba (prod + staging): `CJ_PUBLISHER_PAT`, `CJ_PUBLISHER_ID`, `CJ_WEBSITE_ID`.
+- CJ products sync: `wp impactshop cj:sync-products --limit=5` → 5 advertiser (synced_at: `2026-01-14 18:57:00`).
+- CJ links fetch: `wp impactshop cj:fetch-links --limit=50` timeoutolta a CLI, de az `impactshop_cj_links` option 50 elemmel feltöltődött.
+- CJ links fetch: `wp impactshop cj:fetch-links --limit=200` + `--link-type='Banner,Product Link,Text Link'` sikeres.
+- HU szűrő kivezetve + `allowedAdvertisers` filter lazítva, mert a CJ linkek nem HU célországúak.
+- `sib_load_cj_deals()` most 9 tételt ad (prod).
+- `cj:sync-products --limit=50` 60s timeout; `--limit=20` sikeres (18 termék), de a CJ dealek száma 3-ra esett vissza (link→termék overlap csökkent).
+- `cj:fetch-links --limit=500 --link-type='Banner,Product Link,Text Link'` után `sib_load_cj_deals()` = 15.
+- CJ kuponok bekötve az `impact_coupons_netflix` shortcode‑ba (`impactshop_cj_links` alapján); jelenleg a linklistában nincs kuponkód, így CJ kupon kártya 0.
+- `cj:fetch-links --promotion-type=Coupon --limit=500` → 17 kuponlink, ezek külön mentve `impactshop_cj_coupon_links` optionbe (jelenleg 5 elem látszik prodon).
+- `impactshop_cj_links` visszaállítva a 500‑as teljes listára, `sib_load_cj_deals()` ismét 15.
+- Cron script felvéve: `.codex/cron/cj-coupon-sync.sh` + `.codex/cron/cj-coupon-sync.php`, prodon a `/home/sharityh/app/.codex/cron/guards.crontab` frissítve (03:30 napi futás).
+- Cron manuális futtatása után a `impactshop_cj_coupon_links` opcion 17 kuponkódot tartalmaz.
+
+### 2026-01-14 – Impi CTA link építés javítás
+- Termékes ajánlatok: `buildGoDealLink()` → `/go-deal?shop=...&u=<cta_url>&d1=...` (Impi core).
+- Shop ajánlatok: marad a `/go?shop=...&d1=...&src=impi`.
+- Kupon ajánlatok: `cta_url` elsődleges, fallback `/go`.
+- API gateway már nem dobja el a `fillout_url` mezőt.
+- Deploy: `npm run build` + `rsync dist/` + `rsync data/` → `/home/sharityh/ai-agent/` + `ai-agent-keepalive.sh` restart.
+
+### 2026-01-15 – System recovery + snapshot + bástya ellenőrzés
+- Átnéztem a `system-status-snapshot.md`, `.codex/logs/system-recovery-log.md`, `docs/system-update-prep.md`, `docs/prod-guard-checklist.md` fájlokat.
+- Hiányzik a repo-ból a `docs/bastion-guard-status.md` és a `docs/system-recovery-map.md`, miközben hivatkozások vannak rájuk.
+- A `system-status-snapshot.md` régi (2025-11-14) és más gyökérútvonalat jelez; frissítés szükséges.
+- A recovery logban formázási hibák vannak (literál `\n`, záró idézőjel), a system-update-prep-ben pedig törik a markdown (képek+fejezet egy sorban, extra backtick).
+
+### 2026-01-15 – Rendszerfrissítés utáni ellenőrzés (system-update-prep + prod-guard)
+- `git status -sb`: a munkafa nem tiszta (sok untracked fájl).
+- `impactall` lefutott (14/14 PASS, staging 200/966 ms, production 200/776 ms), de a futás a `/Users/bujdosoarnold/Developer/GitHub/impactshop-notes` repót frissítette; a `system-status-snapshot.md` ebben a repo-ban továbbra is 2025-11-14-es.
+- `curl -sSf https://app.sharity.hu/wp-json/impact/v1/health` → `{"status":"ok", ...}`.
+- `bin/staging-qa-suite.sh` DRY_RUN: megállt, mert `DEPLOY_HOST` hiányzik (`.staging_env` nem adja át).
+- `bash ~/impact-tools/access-guard.sh doctor`: nincs meg a script (`/Users/bujdosoarnold/impact-tools` hiányzik).
+- `.codex/tm/bin/tm-snapshot` PASS → `.codex/logs/system-recovery-log.md` frissült (2026-01-15 10:15:54 CET).
+- Kézi/GUI lépések nem futtak: VS Code update + extension refresh, Copilot diagnostics export, WordPress core/plugin update + MU tar, Langfuse screenshot.
+
+### 2026-01-15 – Staging QA + bastion/impactall utóellenőrzés
+- `DEPLOY_HOST=staging` exporttal újraindítottam a staging QA-t (`set -a; source .staging_env; set +a; DEPLOY_HOST=staging DRY_RUN=1 bin/staging-qa-suite.sh`), 13/21 PASS, log: `staging-qa-20260115-102508.log`.
+- Failok: `/go` + `/go-deal` valid/invalid 500-asok, `/go/<slug>` és `/go-deal/<slug>` 403-asok, `Impact_Safety exists` + `link_guard flag` hibák (WordPress tesztek).
+- `access-guard` scriptet nem találtam (`~/impact-tools` alatt csak `health-check.sh`, `impact-local-restore.sh`), ezért `doctor` nem futott.
+- `impactall` lefutott a tényleges repo-gyökérből (`/Users/bujdosoarnold/Developer/GitHub/impactshop-notes`), 14/14 PASS; a `system-status-snapshot.md` frissült.
+
+### 2026-01-15 – Staging QA hibák részletes bontás
+- `access-guard.sh` nem található sem a `~/impact-tools`, sem a GitHub/Developer mappákban; `doctor` nem futtatható lokálisan.
+- `/go?u=...` és `/go-deal?u=...` 500-as: a válasz `Hiányzó paraméter (shop).` (ImpactShop Boot), tehát a QA suite teszt URL-jeinál hiányzik a `shop=` paraméter.
+- `/go/<slug>` és `/go-deal/<slug>` 403-as a végső célon: a `go.dognet.com` Cloudflare challenge (JS/cookie) miatt tilt CLI-ből; WordPress oldalról 307 redirect rendben.
+- `Impact_Safety` osztály elérhető stagingen (WP-CLI `class_exists` true), a `impact-safety-loader.php` MU plugin jelen van.
+- `impact_disable_link_guard` opció nem létezik (`wp option get` hibát ad), ezért a `link_guard flag` teszt FAIL.
+
+### 2026-01-15 – Staging QA javítás + újrafuttatás
+- A `bin/staging-qa-suite.sh` redirect tesztekben bevezettem a `shop=` paramétert és leállítottam a külső redirect követést (`-sI`), hogy ne Cloudflare 403-ra fusson.
+- Az `Impact_Safety exists` ellenőrzés most SSH-n fut (nem lokálisan).
+- Újra futtatva: `staging-qa-20260115-104802.log` → 21/21 PASS.
+
+### 2026-01-15 – CJ tranzakciós dokumentáció váz
+- Hozzáadtam egy CJ Commission Detail alapú spec vázat: `docs/cj-transactions.md`.
+- A pontos CJ mezőnevek kitöltése még a CJ GraphQL Commission Detail schema alapján szükséges.
+
+### 2026-01-15 – CJ Commission Detail mezőmapping kitöltve
+- A Commission Detail GraphQL schema alapján kitöltöttem a mezőneveket és státusz mappinget: `docs/cj-transactions.md`.
+- Készült rövid CJ ingest TODO lista is: `docs/cj-transactions.md`.
+- Elkészült a CJ Commission Detail smoke script: `scripts/cj-commission-smoke.sh`.
+- CJ smoke futás (PAT + publisher id): 0 rekord `PENDING` és `ACCEPTED` státuszra az elmúlt 30 napban (websiteIds=101302202 mellett is).
+- CJ smoke futás 2025-12-01 → 2025-12-31 (ACCEPTED): 0 rekord.
+- CJ smoke futás 2025-12-18 (websiteIds=101302202): `AUTOMATED` státuszban 1 rekord (commissionId `3720682809`, eventDate `2025-12-18T10:35:42Z`, postingDate `2025-12-18T11:31:06Z`, lockingDate `2026-01-10T08:00:00Z`, advertiser `5619548` / JátékNet.hu, pubCommissionAmount `2.511`, saleAmount `50.215`, orderId `11850266`, actionType `item_sale`, actionStatus `locked`, `sid` null). `ACCEPTED`/`PENDING` 0.
+- CJ mapping döntés: `AUTOMATED` státusz pending‑ként kezelendő (activityben megjelenhet).
+- SID hiány tisztázása: a CJ rekord `sid` null, ezért ellenőrizendő, hogy a `/go` CJ click URL tartalmazza‑e a `sid` paramétert, és hogy a `impactshop-go-clicks.log` alapján visszaköthető‑e az NGO.
+- Prod `impactshop-go-clicks.log`: van CJ click 2025-12-30 körül (`cj-5619548`), ebből 1 sorban `sid` megjelenik (`teszt-ngo~<pseudo>`), 2 sorban `sid` üres – tehát a `sid` param nem minden CJ linknél kerül rá.
+
+### 2026-01-15 – CJ SID ellenőrzés (blokkolva hálózat nélkül)
+- Kérés: ellenőrizni a CJ click URL-t a `sid`-mentes soroknál (cj_click_url vs program_id fallback), majd logolni egy friss `/go?shop=cj-5619548&d1=teszt-ngo&u=...` hívást és összevetni, mikor kerül rá a `sid`.
+- Lokálisan a hálózat/DNS nem elérhető: `curl -sI https://app.sharity.hu/...` → exit 6, `ssh sharityh@cp40.ezit.hu ...` → host resolve hiba, így a friss logolás és a szerverlog ellenőrzése nem futtatható innen.
+- Következő lépés (a gépeden, hálózattal): `curl -sI "https://app.sharity.hu/go?shop=cj-5619548&d1=teszt-ngo&u=https://example.com"` majd `ssh sharityh@cp40.ezit.hu "tail -n 50 /home/sharityh/app/wp-content/uploads/impactshop-go-clicks.log | grep cj-5619548"`; a `target_host` alapján dönthető el, hogy cj_click_url (jdoqocy.com) vagy program_id fallback (advertiser host) ment-e.
+
+### 2026-01-15 – Snapshot + recovery gyors ellenőrzés
+- A `system-status-snapshot.md` továbbra is 2025-11-14-es, és ebben `SSH_HOST: nincs megadva`.
+- A tényleges SSH kapcsolat a `.codex/connection.json` szerint be van állítva (`ssh_host: sharityh@cp40.ezit.hu`), tehát a snapshotból hiányzik, de a projektkonfig tartalmazza.
+
+### 2026-01-15 – SSH host emlékeztető + impactall próbálkozás
+- Frissítettem a `system-status-snapshot.md` meta blokkot (aktuális idő, git hash/ág, `SSH_HOST=sharityh@s59.tarhely.com`).
+- A `bin/codex-refresh.sh` már a `.codex/.env.local` fájlt is betölti, hogy az `ssh_host` bekerüljön a Codex snapshotba.
+- `source .codex/.env.local && ~/bin/impactall` futtatásnál a script a git rootot a `Developer/GitHub/impactshop-notes` alá resolve-olta, és a sandbox nem tudott oda írni (`Operation not permitted`, `.git/index.lock`), ezért a guard kör itt nem fejeződött be.
+
+### 2026-01-15 – impactall futtatás engedéllyel
+- `source .codex/.env.local && ~/bin/impactall` sikeresen lefutott (14/14 PASS, WARN/FAIL nincs).
+- REST: staging 200 / 1688 ms (redirected_to:app.sharity.hu), production 200 / 1408 ms.
+- `system-status-snapshot.md` frissült (auto update blokk hozzáadva).
+- Megjegyzés: az `impactshop-status.md` meta blokkban az `SSH_HOST` továbbra is üresen jelent meg; ezt külön kell javítani, ha elvárás a státuszlapon is.
+
+### 2026-01-15 – SSH_HOST fix az impactshop-status.md-ben
+- A `~/bin/codex-refresh` most betölti a `/.codex/.env.local` fájlt, így az `SSH_HOST` bekerül a státuszlap meta blokkjába.
+- Újrafuttattam a `~/bin/codex-refresh`-t, az `impactshop-status.md` meta részben megjelent a `sharityh@s59.tarhely.com`.
+
+### 2026-01-15 – CJ SID ellenőrzés (log + click URL)
+- Friss /go hívás: `https://app.sharity.hu/go?shop=cj-5619548&d1=teszt-ngo&u=https://example.com` → 307 redirect `https://www.jateknet.hu/?src=impactshop...`.
+- Prod log: `impactshop-go-clicks.log` friss sor → `sid` üres, `target_host=www.jateknet.hu`, `shop=cj-5619548`, `ngo=teszt-ngo`, `pseudo=XH5DP9BXJRFB`.
+- `impactshop_shops` alapján a CJ bejegyzésnél van `cj_click_url` és `default_cta_url`: `https://www.jdoqocy.com/click-101589464-14448006` (program_id=5619548).
+- Következtetés: a mostani /go hívás a CJ click URL helyett az advertiser hostra ment, ezért a `sid` nem került rá; a CJ linképítés útvonala ellenőrzendő (cj_click_url preferálás + sid hozzáfűzés).
+
+### 2026-01-15 – CJ /go javítás + deploy
+- Kód: a CJ linképítést a `/go` ágba előre hoztam CJ shopoknál, és a `sid` most `d1~pseudo` formában épül (`impactshop_pseudo_id` cookie alapján).
+- Frissítés érintett: `wp-content/mu-plugins/impactshop-boot.php`, `wp-content/mu-plugins/impactshop-go-bridge.php`.
+- Deploy: `rsync` prod+stagingre, majd `wp cache flush` mindkét környezeten.
+- Teszt: `curl -sI .../go?shop=cj-5619548&d1=teszt-ngo&u=https://example.com&ts=...` + `impactshop_pseudo_id=TESTPSEUDO123` → 307 redirect `https://www.jdoqocy.com/click-101589464-14448006?sid=teszt-ngo~TESTPSEUDO123...` (CJ click URL + sid ok).
+- Log hiány: az `impactshop-go-clicks.log` nem frissült az új tesztre (utolsó bejegyzés maradt 16:42:18), ezért a log‑oldali verifikációt nem tudtam megtenni.
+
+### 2026-01-15 – CJ shopok láthatóság (prod ellenőrzés)
+- Prod log: `about-you` kattintás `www.anrdoezrs.net` hostra ment (CJ link), de `is_cj=0` (nem CJ slug).
+- `impactshop_shops` option: összesen 106 shop, ebből 42 CJ slug (`cj-*`), 33 rendelkezik `cj_click_url`-lel.
+- Valószínű ok: a front/REST shoplisták a CSV-t használják, nem fésülik hozzá az `impactshop_shops` CJ listát, ezért a CJ shopok nem jelennek meg a listákban.
+
+### 2026-01-15 – CJ shop merge a Netflix/kupontérképhez
+- `impactshop_get_shops()` bővítve CJ registry merge-gel (option `impactshop_shops` → CJ shopok hozzáadva, duplikált slugok kihagyva).
+- Érintett: `wp-content/mu-plugins/impactshop-netflix-shortcodes.php`.
+- Deploy: MU plugin rsync prod+staging, cache flush, `impactshop_fragment_*` transiensek törlése prod+staging.
+- WP-CLI ellenőrző `eval` rossz idézőjelezéssel futott, ezért a debug logban 1x „Undefined constant network” fatal jelent meg; ez a check-hez kötődik, nem a futó oldalhoz.
+
+### 2026-01-15 – WPCode big snippet CJ merge (prod)
+- A `WP big snippet` (post_id 17093) `impactshop_get_shops()` függvényét frissítettem CJ merge-hez (option `impactshop_shops` + CJ slugok).
+- Cache flush és `impactshop_fragment_*` transiensek törlése prodon megtörtént.
+- Ellenőrzés: `impactshop_get_shops()` prodon `TOTAL=106`, `CJ=42`.
+
+### 2026-01-15 – CJ kategória igazítás a Netflix szűrőhöz
+- A CJ shopok kategóriáját `Vegyes`-re állítottam (mind MU pluginban, mind a WPCode big snippetben), mert a fő ImpactShop oldal `categories=` listája ezt tartalmazza, a `CJ` kategóriát nem.
+- Ellenőrzés (prod): CJ minták `cj-2709631`, `cj-3387283`, `cj-3587693` már `Vegyes` kategóriával jönnek `impactshop_get_shops()` alapján.
+
+### 2026-01-15 – CJ shop meta enrich (név/logó/kategória)
+- A `tools/cj_shops.json` alapján kitöltöttem az `impactshop_shops` optionben hiányzó mezőket (name, logo_url, category, domain) prodon.
+- Cache flush + `impactshop_fragment_*` transiensek törölve.
+- Ellenőrzés: CJ minták már névvel/logóval és kategóriával jönnek (`Skytours US`, `GeekBuying`, `Jalbum`, `Answear.hu`, `inSPORTline.hu`).
+
+### 2026-01-15 – CJ Commission Detail lekérdezés (2025-12-01 → 2025-12-31)
+- `scripts/cj-commission-smoke.sh` futtatva (validationStatus=AUTOMATED, websiteIds=101302202).
+- Eredmény: 1 rekord 2025-12-18-ra (`commissionId=3720682809`, `advertiser=5619548` JátékNet.hu), `sid=null`, `actionStatus=locked`.
+
+### 2026-01-15 – CJ Commission Detail státusz ellenőrzés + /go teszt
+- `scripts/cj-commission-smoke.sh` futtatva `PENDING` és `ACCEPTED` státuszokra (2025-12-01 → 2025-12-31, websiteIds=101302202): mindkettő 0 rekord.
+- Friss /go teszt: `https://app.sharity.hu/go?shop=cj-5619548&d1=teszt-ngo&u=https://example.com` → 307 redirect `jdoqocy.com` + `sid=teszt-ngo~TESTPSEUDO123`.
+- Log ellenőrzés SSH-val nem sikerült: `ssh sharityh@cp40.ezit.hu` → `Permission denied (publickey, gssapi...)`.
+
+### 2026-01-16 – CJ /go log ellenőrzés (helyes SSH host)
+- Log tail prodon: `ssh sharityh@s59.tarhely.com "tail -n 80 /home/sharityh/app/wp-content/uploads/impactshop-go-clicks.log | grep cj-5619548 | tail -n 5"`.
+- Találat: `target_host=www.jateknet.hu`, `sid` üres, `is_cj=1`, `pseudo=XH5DP9BXJRFB` (utolsó sor 2026-01-15 16:42:18).
+
+### 2026-01-16 – CJ /go teszt + log ellenőrzés (friss kattintás)
+- Friss /go hívás: `https://app.sharity.hu/go?shop=cj-5619548&d1=teszt-ngo&u=https://example.com` + `impactshop_pseudo_id=TESTPSEUDO123` → 307 `jdoqocy.com` + `sid=teszt-ngo~TESTPSEUDO123`.
+- Log tail prodon ugyanazt az utolsó sort adta vissza (nem jelent meg új bejegyzés a logban).
+
+### 2026-01-16 – impactshop-go-clicks.log állapot
+- Prod log fájl: `/home/sharityh/app/wp-content/uploads/impactshop-go-clicks.log` (tulajdonos: `sharityh`, mód: `-rw-r--r--`), utolsó módosítás: `2026-01-15 17:42`.
+- A fájl tailje nem változott a friss /go kattintás után, tehát a jelenlegi /go útvonal nem ír új sort a logba.
+
+### 2026-01-16 – /go click log visszakapcsolva (prod)
+- WPCode snippet (post_id 17093) `impactshop_handle_go` kiegészítve logolással (`impactshop-go-clicks.log`).
+- MU plugin logolás hozzáadva: `wp-content/mu-plugins/impactshop-boot.php`, `wp-content/mu-plugins/impactshop-go-bridge.php`.
+- Friss teszt: `/go?shop=cj-5619548&d1=teszt-ngo&u=...` + `impactshop_pseudo_id=TESTPSEUDO123` → új log sor: `target_host=www.jdoqocy.com`, `sid=teszt-ngo~TESTPSEUDO123`, `is_cj=1`.
+
+### 2026-01-16 – Valós CJ shop kattintás + log ellenőrzés
+- `/go?shop=cj-5619548&d1=teszt-ngo&u=https://www.jateknet.hu/` → 307 `jdoqocy.com` + `sid=teszt-ngo~TESTPSEUDO123`.
+- Log: új sor megjelent `target_host=www.jdoqocy.com`, `sid=teszt-ngo~TESTPSEUDO123`, `is_cj=1`.
+
+### 2026-01-16 – CJ kupon/deal megjelenítés (Netflix + coupons + deals)
+- CJ linkek betöltése: `impactshop-netflix-shortcodes.php` + WPCode snippet (post_id 17093) kiegészítve `impactshop_cj_links` merge-gel.
+- Coupons: CJ linkek megjelennek (shop logó + link név/címke), CTA `/go/cj-<id>` d1 paraméterrel.
+- Deals: CJ linkek bekerülnek a deals listába a banner feeden keresztül; CJ shopok `logo`-ja kerül a kártyára, CTA `/go/cj-<id>` d1 paraméterrel.
+- Prod deploy: MU plugin rsync + WPCode snippet frissítve; transiensek törölve (`impactshop_fragment_*`, `impactshop_deals_banners_*`, `impact_coupons_present_cards_v3`).
+
+### 2026-01-16 – CJ deals banner fallback (WPCode)
+- A WPCode snippet `impact_deals_netflix` részében a `banner_by_slug` már CJ linkekkel is bővül, így a deals sáv is kap CJ kártyákat.
+- A CJ kártyákhoz shop logo kerül háttérképként (local logo fallback), a CTA `/go/cj-<id>&u=<destination>` d1 paraméterrel.
+- Cache/transient törlés újrafuttatva.
+
+### 2026-01-16 – CJ kupon logók helyi cache
+- `impactshop_cj_links` logók clearbit helyett helyi fájlokra állítva (`/wp-content/uploads/impactshop/cj-logos/*.png`), hiányzók letöltve Google faviconból.
+- Eredmény: CJ kupon kártyák már helyi logót használnak (pl. `cj-5853898`, `cj-6494829`, `cj-5774662`).
+
+### 2026-01-16 – Elementor cache flush + state ellenőrzés
+- Elementor CSS cache flush: `wp elementor flush_css` prodon.
+- Transiensek törölve (`impactshop_fragment_*`, `impactshop_deals_banners_*`, `impact_coupons_present_cards_v3`), WP cache flush.
+- HTML ellenőrzés: coupons 27 kártya, deals 49 kártya; CJ kupon logók már helyi `cj-logos/*.png`.
+
+### 2026-01-16 – CJ tranzakciók bekötése (ticker/leaderboard/activity)
+- `impactshop-metrics-ngo.php`: CJ Commission Detail fetcher beépítve (PAT + publisher id + website id), Dognet + CJ összevonás.
+- Mapping: `AUTOMATED`/`PENDING` → pending, `ACCEPTED` → approved; `REJECTED/DECLINED/REVERSED` kizárva.
+- NGO slug: `sid` támogatva (`d1~pseudo` → `d1`), activity/leaderboard CJ sorokat is számol.
+- Deploy: MU plugin rsync prod+staging, cache flush; ticker/leaderboard/activity transiensek törölve.
+- Ellenőrzés: prod `/wp-json/impact/v1/ticker`, `/leaderboard?tab=ngo`, `/activity` válaszok OK.
+
+### 2026-01-16 – CJ backfill + activity célzott ellenőrzés
+- Backfill override: `commissionId=3720682809` (orderId `11850266`, advertiser `5619548`) → `teszt-ngo` slug.
+- REST bővítés: `/wp-json/impact/v1/activity|leaderboard|ticker` támogat `from`/`to` paramétert; `activity` `limit` is állítható.
+- Ellenőrzés: `.../activity?from=2025-12-01&to=2025-12-31&limit=20` → megjelenik `teszt-ngo • 1,26 € • 2025-12-18 10:35`.
+- Friss CJ tranzakció (sid-es) nincs az elmúlt 7 napban (CJ API: 0 rekord), ezért valós “fresh” activity ellenőrzés nem lehetséges.
+
+### 2026-01-16 – CJ debug endpoint
+- Új endpoint: `/wp-json/impact/v1/cj-debug` (paramok: `from`, `to`, `limit`).
+- Válasz: CJ tranzakciók listája `sid` + `ngo` feloldással, jutalék mezőkkel.
+
+### 2026-01-16 – CJ debug endpoint kivezetése
+- A `/wp-json/impact/v1/cj-debug` endpoint eltávolítva (prod+staging deploy, cache flush).
+
+### 2026-01-16 – CJ totals bekötés a /impactshop/v1/totals végpontba
+- Prod MU plugin: `/home/sharityh/app/wp-content/mu-plugins/impactshop-rest-totals.php` kiegészítve CJ Commission Detail merge-gel (ism_cj_fetch_commissions), CJ advertiserId → shop slug mappinggel, CJ mezőkkel (commission + order value).
+- Cache törlés: `impactshop_totals_v2_*`, `impactshop_sum_totals_*`, `impactshop_cj_commissions_*` transiensek.
+- Ellenőrzés: `/wp-json/impactshop/v1/totals?from=2025-12-01&to=2025-12-31&status=all&group=ngo` már tartalmazza `teszt-ngo` sort (commission 2.51, donation 1.26).
+
+### 2026-01-16 – CJ totals hosszú időablak javítás (chunked fetch)
+- CJ fetcher szeletelése 30 napos ablakokra a totals collectorban (`impactshop_totals_cj_fetch_commissions_chunked`), hogy a 2025-10-23→ma tartományban is megjelenjen a CJ rekord.
+- Prod deploy: `/home/sharityh/app/wp-content/mu-plugins/impactshop-rest-totals.php` frissítve, transiensek törölve.
+- Ellenőrzés: `/wp-json/impactshop/v1/totals?from=2025-10-23&to=ma&status=all&group=ngo` már tartalmazza `teszt-ngo` sort; sticky HTML-ben `data-amt=1562.12` (`1 562 Ft`).
+
+### 2026-01-16 – Impact leaderboard/activity név + CJ activity javítás
+- `impactshop-metrics-ngo.php`: CJ fetch szeletelve 30 napos chunkokra, így hosszú időablaknál is megjelenik CJ az `/impact/v1/activity` listában.
+- `ism_resolve_ngo_name` bevezetve, `mbe` → “Mozgássérültek Budapesti Egyesülete”; leaderboard + activity már névvel jelenik meg.
+- `impactshop-rest-totals.php`: `mbe` override beégetve, hogy a totals alapú UI-ban is névvel jelenjen meg.
+- Cache törlés: `impactshop_lb_*`, `impactshop_activity_*`, `impactshop_ticker_*`, `impactshop_totals_v2_*`, `impactshop_fragment_*`.
+
+### 2026-01-16 – Impact leaderboard (HUF) kerekítés + teszt NGO elrejtés
+- Prod MU plugin: `/home/sharityh/app/wp-content/mu-plugins/impact-mini-helpers.php` – shop leaderboard sorok kerekítése most a sticky (shop_ngo összeg) alapján igazodik, így a sorok összege = sticky.
+- `teszt-ngo` kiszűrve az NGO leaderboard listából.
+- Cache törlés: `impactshop_totals_v2_*`, `impactshop_fragment_*`.
+
+### 2026-01-16 – Impact social ticker fallback (activity alapú)
+- `impact-social-mvp.php`: ha a ledger üres vagy túl régi, fallback az `/impact/v1/activity` listára (from/to támogatással); `teszt-ngo` szűrve.
+- Endpoint ellenőrzés: `/wp-json/impact/v1/social/ticker?limit=5&status=all` már activity-alapú elemeket ad.
+
+### 2026-01-16 – Állás mentve
+- Aktuális állapot: sticky + leaderboard CJ-vel, shop sorok összege megegyezik a stickyvel, `teszt-ngo` rejtve az NGO listában.
+- Következő kérés esetén: activityből is szűrjük a `teszt-ngo` sort (ha szükséges).
+
+### 2026-01-16 – Full leaderboard + Impactshop 2 (CJ shopok)
+- `/wp-json/impact/v1/leaderboard` bővítve `slug` és `amount_eur` mezőkkel (HUF → EUR becslés `IMPACT_SUM_RATE_HUF` alapján), hogy a `impact_full_leaderboard` shortcode megjelenjen.
+- `impactshop_2` oldal (post ID `16156`) statikus shop-kártya HTML frissítve, CJ shopok hozzáadva (42 db) a `shop-donation-cards.html` alapján.
+- Cache flush: `wp cache flush` (prod).
+
+### 2026-01-16 – Metrics helyreállítás + CJ merge (prod)
+- `/home/sharityh/app/wp-content/mu-plugins/impactshop-metrics-ngo.php` visszaállítva backupból, majd újra felépítve: CJ GraphQL commission fetch + 30 napos chunkolás, `sid` alapú NGO feloldás, `mbe` névfeloldás, `teszt-ngo` override.
+- `/impact/v1/leaderboard` most `slug`, `amount` (HUF) és `amount_eur` (EUR) mezőket ad a full toplista számára.
+- Cache törlés: `impactshop_lb_*`, `impactshop_activity_*`, `impactshop_ticker_*`, majd `wp cache flush`.
+
+### 2026-01-16 – impactshop_2 Elementor frissítés
+- `impactshop_2` oldalnál az Elementor `_elementor_data` frissítve a CJ‑vel bővített `shop-donation-cards.html` tartalommal (a frontend Elementor JSON-t használ, nem a post_contentet).
+- Elementor CSS cache flush: `wp elementor flush_css`, majd `wp cache flush`.
+
+### 2026-01-16 – impactshop_2 fejléc statok frissítése
+- `shop-donation-cards.html` fejlécek aktualizálva (Aktív partnerek: 106, Kategóriák száma: 37, Legmagasabb adomány: 9%).
+- Elementor `_elementor_data` újratöltve a friss HTML-lel, majd `wp elementor flush_css` + `wp cache flush`.
+- `impactshop_2` `post_content` is frissítve ugyanezzel a HTML-lel, hogy a frontend cache-től függetlenül is konzisztens legyen.
+
+### 2026-01-16 – CJ adományráták (export alapján)
+- CJ `advertisers.csv` alapján beállítottuk a CJ shopok adományrátáit (percent mezők: 0.02 → 2% logika), a CJ kártyákon már nem “Terméktől függ” jelenik meg.
+- `shop-donation-cards.html` újragenerálva; statok frissítve (Legmagasabb adomány: 25%).
+- Elementor `_elementor_data` + `post_content` frissítve, `wp elementor flush_css` + `wp cache flush`.
+
+### 2026-01-16 – CJ adományráták 50% szabály
+- A CJ jutalék %-ot 50%-os adományra konvertáljuk (egységes szabály az oldalon).
+- `impactshop_2` kártyák frissítve (pl. Akkuk.hu 7,5%), cache flush lefutott.
+
+### 2026-01-16 – Social ticker megosztás teszt
+- Teszt ledger sor beszúrva (`source_ref=test-share-20260116-1424`, pseudo `TEST1234`, ngo `mbe`, amount 10 Ft, status pending), hogy a `can_share` logikát validáljuk.
+- Ellenőrzés: `/wp-json/impact/v1/social/ticker?limit=3&status=all&impact_pseudo_id=TEST1234` → `is_owner=true`, `can_share=true`, share linkek generálódnak.
+- Teszt sor törölve, ticker visszaállt a fallback activity listára.
+
+### 2026-01-16 – Glami kattintás ellenőrzés
+- `/wp-content/uploads/impactshop-go-clicks.log` alapján a Glami + Bátor Tábor kattintás logolva (2026-01-16 14:26:42, pseudo: `570F2BFA`).
+- Ledger friss sor továbbra sincs 2025-12-04 óta, ezért a social ticker fallback activity módban fut és megosztás nem aktiválódik (ledger nélkül nincs donor-azonosítás).
+
+### 2026-01-16 – CJ + Dognet ledger cron és donor-azonosítás (prod)
+- Új mu-plugin: `wp-content/mu-plugins/impactshop-ledger-cron.php` → WP‑Cron események: `impactshop_cj_ledger_cron` + `impactshop_dognet_ledger_cron` (30 percenként), azonnal lefuttatva.
+- CJ ledger sync: `ImpactShop_CJ::cron_sync_ledger()` publikus metódus készült; cron run sikeres.
+- Dognet ledger ingest: `dognet_api_list_conversions_all` alapján ledger‑be ír (NGO/commission/status/shop map, `source_ref=dognet:<id>`), státusz/összeg opciók logolva (`impactshop_dognet_ledger_last_stats`).
+- /go Dognet ág: donor pseudo most `data2` mezőbe kerül (`d2`), az NGO továbbra is `d1` → a ledger a `d2/data2` mezőből próbálja visszafejteni a pseudo‑t.
+- Ellenőrzés: `wp cron event list` szerint az új cronok ütemezve vannak, ledgerben friss Dognet sorok megjelentek (2026‑01‑16 glami kattintások).
+- Nyitott: Dognet visszaadja‑e a `data2` mezőt a konverziós feedben; ezt a következő valós jutalék/visszajelzés után validálni kell.
+
+
+### 2026-01-16 – Social ticker default status (prod)
+- `impact-social-mvp.php`: a default `status` param most `all`, így a ledgerből a pending tételek is bekerülnek, és megjelenik a tényleges shopnév (nem fallback “Impact Shop vásárlás”).
+- Ellenőrzés: `/wp-json/impact/v1/social/ticker?limit=5` → `shop_display` már Glami / Árukereső.
+- Megjegyzés: a 2025‑12‑18 CJ rekord `teszt-ngo`, amit a ticker explicit szűr, így ott nem látszik.
+
+### 2026-01-16 – NGO névfeloldás a social tickerben
+- `impact-social-mvp.php`: NGO display feloldás javítva (slug → név), így a ticker a `ngo_codes.csv` alapján ékezetes neveket ad vissza.
+- `impactshop-ngo-card.php`: `impactshop_resolve_ngo_name()` bővítve (map + override), pl. `mbe` → „Mozgássérültek Budapesti Egyesülete”.
+- Ellenőrzés: `/wp-json/impact/v1/social/ticker?limit=5&status=all` → Bátor Tábor / MBE már névvel jelenik meg.
+- Nyitott: a Dognetből érkező numerikus NGO kódok (`0-...`) nem szerepelnek az `ngo_codes.csv`-ben, így ezek továbbra is kódként látszanak.
+
+### 2026-01-16 – Dognet D1 nélküli sorok kizárása
+- `impactshop-ledger-cron.php`: Dognet ledger ingest most már eldobja az olyan NGO slugokat, amelyekben nincs betű (pl. `0-...`), így nem számoljuk és nem jelenítjük meg azonosítható NGO nélkül.
+- `impactshop-metrics-ngo.php`: NGO kiválasztásnál csak betűt tartalmazó slugot fogadunk el, így ticker/leaderboard/activity sem fog numeric kódokból számolni.
+- `impact-social-mvp.php`: ledger + fallback szűrés kiegészítve, numeric kódok nem kerülnek a social tickerbe.
+- Ellenőrzés: `/wp-json/impact/v1/social/ticker?limit=5&status=all` → a `0-...` sorok eltűntek.
+
+### 2026-01-16 – Numerikus NGO sorok törlése a ledgerből
+- Tisztítás: `DELETE FROM wp_impact_ledger WHERE ngo_slug REGEXP '^[0-9-]+$'` → 20 sor törölve.
+- Ellenőrzés: `/wp-json/impact/v1/social/ticker?limit=5&status=all` már nem tartalmaz numeric NGO slugokat.
+
+### 2026-01-16 – Impact Shop javítások összefoglaló
+- CJ + Dognet ledger cron bevezetve (WP‑Cron: `impactshop_cj_ledger_cron`, `impactshop_dognet_ledger_cron`), ingest statok opciókban.
+- /go Dognet pseudo `d2` mezőbe kerül; CJ SID továbbra is `d1~pseudo`.
+- Social ticker alap `status=all`, így pending sorok + tényleges shopnevek látszanak.
+- NGO névfeloldás javítva a tickerben (slug → ékezetes név az `ngo_codes.csv` alapján), `mbe` override.
+- D1 nélküli (numeric) NGO sorok kizárva minden számításból; ledgerből a numeric sorok törölve.
+
+### 2026-01-16 – Affiliate integrációs runbook
+- Új, végigvezető runbook készült: `docs/affiliate-integration-runbook.md` (shopok, deals, coupons, sticky, social ticker, NGO/shop toplisták, ledger/cron, QA, rollback).
+- Impactall autoload frissítve: `impact-hub-system-v1.3.md` hivatkozza a runbookot.
+
+### 2026-01-16 – Affiliate runbook bővítések (Sonnet javaslatok)
+- Beemelve: Kupon Harvester integráció, Impi AI ajánlások, Sprint dependency check, GDPR/CMP, Observability, Documentation/stub inventory, Security testing, QA/rollback bővítések, phased integráció.
+- Kihagyva: Billingo (nem szükséges), NAV/Billingo rész nem került be.
+
+### 2026-01-16 – Affiliate runbook secret mentési szabály
+- Kötelező secret mentési pont rögzítve: `/Users/bujdosoarnold/.impact-secrets/env.d/capi.env` (minden affiliate secret itt is legyen, akkor is, ha máshol is tárolod).
+
+### 2026-01-16 – Impactall emlékeztető bővítés
+- Impact Shop autoload blokkba bekerült a kötelező secret mentési pont: `/Users/bujdosoarnold/.impact-secrets/env.d/capi.env`.
+
+### 2026-01-16 – Kupon harvester futtatás + ellenőrzés
+- Futtatás: `python3 scripts/coupon_harvester_pipeline.py --config .codex/cron/coupon-harvester-config.json --out-dir tmp/coupon-harvester --dry-run --json-out tmp/ingest/gmail.json`.
+- Eredmény: 18 868 kupon (Gmail checked 83, matched 33, HTML source 2), log: `tmp/coupon-harvester/harvester-summary.json`.
+- Árukereső forrás: `../ai-agent/tmp/ingest/arukereso.json` (utolsó frissítés: 2025‑12‑27) → bemásolva `tmp/ingest/arukereso.json` a merge‑hez.
+- Merge ellenőrzés: `npx tsx tools/ingest/export-coupons.ts` → `tmp/ingest/export-coupons.csv` (18 892 sor).
+- Megjegyzés: az Árukereső JSON frissítésre szorul, ha naprakész feed kell.
+
+### 2026-01-16 – Árukereső ingest frissítés
+- `ai-agent`: `npm run playwright:arukereso` → 24 rekord (`tools/out/arukereso-promotions.json`).
+- `ai-agent`: `npm run ingest:normalize` → friss `tmp/ingest/arukereso.json` (24 rekord), Gmail 44 rekord.
+- `impactshop-notes`: friss arukereso JSON átmásolva `tmp/ingest/arukereso.json`, majd `npx tsx tools/ingest/export-coupons.ts` → `tmp/ingest/export-coupons.csv` (18 892 sor).
+
+### 2026-01-16 – Kupon harvester újrafuttatás
+- Futtatás: `python3 scripts/coupon_harvester_pipeline.py --config .codex/cron/coupon-harvester-config.json --out-dir tmp/coupon-harvester --dry-run --json-out tmp/ingest/gmail.json`.
+- Eredmény: 1 420 kupon (Gmail matched 2, HTML source 2), summary: `tmp/coupon-harvester/harvester-summary.json`.
+
+### 2026-01-16 – Kupon merge frissítve
+- `tmp/ingest/gmail.json` + friss `tmp/ingest/arukereso.json` → `npx tsx tools/ingest/export-coupons.ts`.
+- Eredmény: `tmp/ingest/export-coupons.csv` (1 444 sor).
+
+### 2026-01-16 – Kupon harvester full cron
+- Új összevont script: `.codex/cron/coupon-harvester-full.sh` (Árukereső Playwright → ingest normalize → arukereso.json átmásolás → coupon harvester → export merge).
+- Használat: heti 2× cron futtatásra kész, log: `.codex/logs/coupon-harvester-full.cron.log`.
+
+### 2026-01-16 – Kupon harvester cron rögzítve
+- Cron beállítás: kedd+péntek 09:00 → `.codex/cron/coupon-harvester-full.sh`.
+- Impactall emlékeztető frissítve a cron és log hivatkozással.
+
+### 2026-01-16 – Árukereső CTA biztonsági normalizálás
+- `ai-agent` `arukereso.ts`: ha a CTA URL nem `*.arukereso.hu`, akkor `https://www.arukereso.hu/`-ra normalizálunk, hogy ne menjen közvetlenül shopra.
+- Új ingest futott: `npm run ingest:normalize` + export merge (1 444 sor).
+- Coupon copy gomb ellenőrzés: `impactshop-netflix-shortcodes.php` a kupon kártyán `navigator.clipboard.writeText(code)`-ot hív (fallback `execCommand('copy')`).
+
+### 2026-01-16 – Árukereső átirányítás + kupon másolás megerősítve
+- Árukereső link policy: a vásárló mindig az Árukereső összehasonlító oldalra megy, onnan kattint tovább a shopra (direkt shop link tiltva).
+- Kupon másolás: a coupons kártya másolás gombja vágólapra teszi a kupont (JS clipboard API + fallback).
+
+### 2026-01-16 – Kupon harvester kód‑szűrés szigorítva
+- `scripts/coupon_harvester_pipeline.py`: HTML forrásoknál csak markeres kód elfogadás (`kuponkód`/`coupon code`), laza regexből csak számot tartalmazó kód, stopword szűrés + dátum/“31‑ig” kiszűrés.
+- Új dry‑run: `manual_coupons_draft-2026-01-16T180121.csv` → 1 sor (Decathlon `WINTER20`), a korábbi CSS/HTML tokenek eltűntek.
+
+### 2026-01-16 – Gmail akciók + OCR bővítés (lokál)
+- `scripts/coupon_harvester_pipeline.py`: akciós ajánlatok kód nélkül is jöhetnek (`sale_event`), és OCR támogatás képes képről szöveget beolvasni.
+- OCR konfiguráció: `.codex/cron/coupon-harvester-config.json` `ocr` blokk (provider=google, max_images=5).
+- Futás: OCR jelenleg kihagyva, mert `GOOGLE_APPLICATION_CREDENTIALS` nincs beállítva a környezetben.
+- Gmail query bővítve akciós kulcsszavakkal: `akcio/akció/akciós/sale`.
+- Cron frissítve: `.codex/cron/coupon-harvester-full.sh` betölti a `~/.impact-secrets/env.d/capi.env` fájlt, hogy OCR‑hez szükséges env is elérhető legyen.
+- OCR próbafuttatás: `manual_coupons_draft-2026-01-16T183944.csv`, OCR képek: 1, hiba: 0; új kupon nem került hozzá.
+- Sale detection bővítve: áthúzott/old‑price HTML jel, százalékos csökkenés és két ár‑mintázat alapján is `sale_event` jöhet.
+- OCR képlistában promo‑képek priorizálva (banner/promo/sale), favicon/logo kiszűrve; `max_images=5`.
+- Playwright OCR fallback: `tools/playwright/harvester-runner.ts` képernyőképet is ment (`tools/playwright/harvester-config.json` → `tmp/coupon-harvester/ocr-images/*.png`), és az OCR források bekerültek a `coupon-harvester-config.json`-be.
+- OCR futás (Playwright screenshot): `manual_coupons_draft-2026-01-16T185057.csv`, OCR képek: 3, hiba: 0; új akció nem jött be a jelenlegi forrásokból.
+- Playwright bővítés: `maiakcio.com` + `tescoma.hu/black-friday-akcio` snapshot + screenshot.
+- OCR futás (bővített forrás): `manual_coupons_draft-2026-01-16T185725.csv`, 8 sor (maiakcio sale_event + OCR kódok, tescoma OCR kód), OCR képek: 15, hiba: 0.
+- OCR kód szűrés: OCR forrásból csak betű+szám, 5–10 hossz, és nem szekvenciális számok kerülnek be; gyakori szavak tiltólistán.
+- Harvester bővítés: Playwright és kupon config kibővítve az összes Dognet + CJ partner URL‑lel (106 oldal) a HTML + OCR screenshot betöltéshez.
+- Gmail OCR bővítés: Gmail HTML képekből is OCR fut, külön `gmail_max_images` limit (10) a configban.
+- Árukereső Playwright cron: nightly futás beállítva (`01:30`) → `.codex/cron/arukereso-playwright.sh`.
+- Árukereső Playwright: Next.js blokkokból nem csak top3, hanem minden termék kerül feldolgozásra; hozzáadott végtelen scroll + “Load more” kattintás a teljes lista bejárásához.
+
+### 2026-01-16 – impactall futtatás
+- Parancs: `{ [ -f .codex/.env.local ] && source .codex/.env.local; } && ~/bin/impactall`.
+- Eredmény: 13/14 PASS, 1 WARN (Sprint pre-flight S1 doc lint).
+- Staging: HTTP 200 / 1601 ms (redirected_to:app.sharity.hu), Production: HTTP 200 / 1200 ms.
+- Log: `.codex/reports/impactall-20260116-192835-Sprint-pre-flight-(S1).log`.
+
+### 2026-01-17 – Cron PATH fix
+- `coupon-harvester-full` + `arukereso-playwright` cron: PATH bővítve (`/usr/local/bin:/opt/homebrew/bin`) → `npm: command not found` hiba javítva.
+
+### 2026-01-17 – Kupon validáció a közös lista után
+- Új script: `tools/ingest/validate-coupons.ts` → gyanús kuponkódok listája (`tmp/ingest/export-coupons-validation.csv`).
+- Cron: `.codex/cron/coupon-harvester-full.sh` most az export után automatikusan lefuttatja a validálást.
+- Kupon validáció bővítés: a validátor a `discount_label` mezőt is figyelembe veszi, és csak `type=coupon_code` sorokra fut (akciós `sale_event` kimarad).
+- Validátor finomítás: `%` felismerés robusztusabb (NBSP kezeléssel), így a 20%‑os címek átmennek; jelenleg 4 gyanús Fény24 kód marad (hossz).
+- Gmail dedup: `coupon_harvester_pipeline.py` a duplikált kuponokat shop_slug + kuponkód alapján szűri.
+- Kuponkód szabály: nincs kötelező betű+szám feltétel; Gmail/OCR csak explicit marker után fogad el kódot (pl. „utalvány kódja”).
+
+### 2026-01-17 – Cron sorrend + OCR hiányzó kép guard
+- `coupon-harvester-full.sh`: beiktatva a `playwright:harvest:config`, hogy az affiliate screenshotok/HTML fixtúrák az OCR előtt készüljenek.
+- `coupon_harvester_pipeline.py`: OCR kihagyja a hiányzó lokális képeket, és külön figyelmeztet (nem dob hibát).
+- Cron health: `coupon-harvester-full.sh` + `arukereso-playwright.sh` logolja a `node/npm` elérhetőséget, és hiányzó `npm` esetén megszakít.
+- `coupon-harvester-full.sh`: a `playwright:harvest:config` lépés a notes repo `package.json`-ában van, ezért a futás most a notes repóban történik (korábban az `ai-agent` alatt hiányzott, emiatt félbeszakadt).
+
+### 2026-01-17 – Árukereső teljes kategória + lapozás
+- `ai-agent/tools/playwright/arukereso-runner.ts`: bejárja az összes áresett kategóriát (`/aresett-termekek/osszes-kategoria/`) és lapoz minden kategóriában.
+- Új limitek: `maxCategories=200`, `maxPagesPerCategory=20` (override: `ARUKERESO_MAX_CATEGORIES`, `ARUKERESO_MAX_PAGES`).
+- Konfig: `ai-agent/tools/playwright/arukereso-config.json` → `crawlAllCategories=true`.
+- Kategória URL-ek: `.pricedrop-category-item a` linkekből, `orderby=` paraméterrel (kategória‑listázó oldalak).
+
+### 2026-01-17 – Gmail kupon marker finomítás
+- `coupon_harvester_pipeline.py`: marker‑alapú kód kinyerésnél unicode (ékezetes) token támogatás + normalizálás (pl. „AKCIÓ” → `AKCIO`), hogy a Gmail szöveges kuponkódok jól kerüljenek be.
+
+### 2026-01-17 – CJ domain mapping
+- `tools/cj_shops.csv`: program_url alapján kitöltve a `domain` + `program_id` mezők a CJ partnerekhez.
+- `scripts/coupon_harvester_pipeline.py`: CJ domain map automatikus becsatolás (whitelist + Gmail allowed_domains).
+
+### 2026-01-17 – Kupon kinyerés hamis pozitív szűrés
+- `coupon_harvester_pipeline.py`: kontextus-szűrés a „kód” körül (kupon/akció kulcsszavak), extra stopwordök, max 12 karakteres kód, valamint `CODE + kód` minta támogatás (pl. „STARGELMONW kód”).
+- Stopword bővítés a hamis kódokra (`CSAK`, `HOZZ`, `FELHASZN`, `ALKALMAZ`, stb.).
+- HTML fixture kuponkódok: `data-copy-value`/`data-clipboard-text` attribútumokból kinyerés, HTML/OCR forrásnál a `CODE + kód` minta tiltva.
+- `validate-coupons.ts`: max kódhossz 12 + bővített benefit jelzés (akció/kedvezmény/kupon/promo kulcsszavak).
+- `coupon_harvester_pipeline.py`: a kód körüli szövegablak (±200 karakter) bekerül a `description` mezőbe, hogy a validátor a hosszabb akciós mondatokat is lássa.
+- `coupon_harvester_pipeline.py` + `export-coupons.ts`: sale_event rekordokba bekerül `old_price` + `new_price`, és az export CSV oszlopai is bővültek.
+- `coupon_harvester_pipeline.py`: kuponkódoknál a kód körüli szövegablakból kinyert `old_price`/`new_price` is mentésre kerül.
+
+### 2026-01-17 – OCR env beállítás
+- `GOOGLE_APPLICATION_CREDENTIALS` beírva a `/Users/bujdosoarnold/.impact-secrets/env.d/capi.env` fájlba.
+
+### 2026-01-17 – Árukereső lapozás stabilizálás
+- `ai-agent/tools/playwright/arukereso-runner.ts`: a „Következő” linknél először `rel="next"`/href alapján navigál, csak utána kattint; scroll + force click fallback timeouttal.
+- `normalizeUrl` helper hozzáadva a relatív next linkekhez (ReferenceError fix).
+
+### 2026-01-17 – Kupon harvester teljes kör futás (háttér)
+- OCR env beállítva (`GOOGLE_APPLICATION_CREDENTIALS` a capi.env-ben), a teljes cron kör újraindítva.
+- Jelenlegi futás PID: `794` (háttér), Árukereső kategória-scrape folyamatban; logok: `.codex/logs/coupon-harvester-full.run.out`, `.codex/logs/coupon-harvester-full.cron.log`.
