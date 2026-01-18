@@ -64,6 +64,9 @@
 ### 2026-01-18 – PHPUnit env.local-lal
 - ✅ `{ source .codex/.env.local; } && vendor/bin/phpunit --configuration phpunit.xml` → 7 teszt, 26 assertion, PASS.
 
+### 2026-01-18 – .env.local gitignore
+- 🧩 `.gitignore`: `.env.local` és `.codex/.env.local` felvéve, hogy a lokális env ne kerüljön gitbe.
+
 ### 2026-01-18 – Pseudo-ID részletek kidolgozása (Impact Shop + NGO card + social ticker)
 - 🧭 Célok rögzítve: email nélküli azonosítás, token csak attribúcióhoz, PIN‑nel visszaállítható.
 - 🧾 Részletek: 10–12 karakteres base36 pseudo‑ID, kliens cookie (`impactshop_pseudo_id`), `/go` automatikus generálás + affiliate átadás (Dognet `d2`, CJ `sid`).
