@@ -17,9 +17,15 @@ wp-content/plugins/**/.DS_Store
 # Lokális segédszkriptek/artefaktok
 bin/*.log
 tmp/
+.npm/
+node_modules/
 .idea/
 .vscode/
 .env
+.env.local
+.codex/.env.local
+secrets/
+chatgpt-history/GMAIL_CLIENT_ID=*
 .deploy.local.*
 wp-content/plugins/complianz-gdpr/
 wp-content/plugins/complianz-terms-conditions/
