@@ -72,6 +72,71 @@
 - 🔧 Shortcode: `[impactshop_identity_panel]` (pseudo ID megjelenítés, PIN kérés, profil helyreállítás, becenév mentés).
 - 🧾 REST: `GET/POST /impact/v1/identity/profile` becenév tárolás pseudo ID alapján (PII-mentes).
 
+### 2026-01-18 – Donor becenév + toplista
+- 🧩 `wp-content/mu-plugins/impact-social-mvp.php`: becenév megjelenítés a tickerben (`display_name`), ha van mentve.
+- 🏆 Új endpoint: `GET /impact/v1/leaderboard/donors` (Top donors).
+- 🔧 Új shortcode: `[impact_top_donors]` (limit/status/theme).
+
+### 2026-01-18 – PR/merge + guard
+- ✅ PR #23 (phpunit 9 + wallet tesztek + env template) merge.
+- ✅ PR #24 (identity panel + donor becenevek) merge.
+- 🛡️ `impactall` prod/staging guard lefutott: 14/14 PASS (GitHub token 19 napon belül lejár).
+- ⚠️ Stash megmaradt (`stash@{0}`), nagy worktree zaj/unknown fájlok vannak – későbbi takarításra vár.
+
+### 2026-01-19 – Prod identity panel + PIN smoke
+- 🚀 MU pluginok felmásolva prodra: `impactshop-identity-pin*`, `impactshop-identity-panel.php`, `impact-social-mvp.php`.
+- ✅ `impact_social_mvp_enabled` bekapcsolva.
+- ✅ Impact Shop oldal (`/impactshop/`) aljára shortcode-ok: `[impactshop_identity_panel]`, `[impact_top_donors]`, `[impact_social_ticker]` (már jelen volt).
+- ✅ PIN issue prodon: SMS `+36304007470` és email `office@sharity.hu` → `delivery.status=sent`.
+- ✅ Új endpointok elérhetők prodon:
+  - `/impact/v1/leaderboard/donors` (Top donors)
+  - `/impact/v1/social/ticker` (display_name mezővel)
+- ⏱️ Prod oldal első mérés: `https://app.sharity.hu/impactshop/` ~1.67s (curl).
+
+### 2026-01-19 – Prod PIN verify + rejtett shortcode
+- ✅ PIN verify prod: `pseudo_id=ab12cd34ef56`, PIN `762197` → `status=ok`, cookie set.
+- 🕶️ Shortcode blokk rejtve: `<div style="display:none">` wrapper az oldalon (nem látszik).
+- ⚡ Top donors endpoint cache: 5 perces transient a gyorsabb válaszhoz.
+
+### 2026-01-19 – Identity panel render fix + prod redeploy
+- 🧩 `impactshop-identity-panel.php`: CSS/JS kikerült a shortcode HTML-ből, `wp_enqueue_scripts` + inline assets (Elementor kompatibilis).
+- 🚀 MU plugin frissítve prodon.
+
+### 2026-01-19 – Identity panel látható helyre
+- ✅ `https://app.sharity.hu/impactshop/` tartalom elejére került: „Azonosítód és helyreállítás” blokk.
+- ✅ Shortcode sorok: `[impactshop_identity_panel]`, `[impact_top_donors]`, `[impact_social_ticker]` láthatóan renderelnek.
+
+### 2026-01-19 – Identity panel UI frissítés + ID shortcode
+- 🎨 Identity panel UI frissítve (spacing, gombok, mobil layout).
+- 🔧 Új shortcode: `[impactshop_identity_id]` (csak azonosító + másolás).
+- ✅ Prodra feltöltve az új `impactshop-identity-panel.php`.
+
+### 2026-01-19 – Recovery code + auto ID
+- 🔐 Recovery code generálás + megjelenítés az identity panelben és ID shortcode-ban.
+- 🧩 Új gombok: “Másolás (ID + kód)”, “Megosztás”, “Mentés jelszókezelőbe”.
+- ✅ Profil endpoint automatikusan pseudo‑ID cookie-t ad, ha nincs (`/impact/v1/identity/profile`).
+- ✅ PIN issue recovery kódot kér (`recovery_required` / `recovery_invalid` hibák).
+
+### 2026-01-19 – Identity panel dizájn frissítés
+- 🎨 Üveglap hatás, árnyékok, finom gradient háttér, jobb spacing + mobil tördelés.
+- ✅ Prodra feltöltve az új stílusok.
+
+### 2026-01-19 – Identity profile no-cache
+- 🧩 `/impact/v1/identity/profile` no-cache header + cache-buster query (REST cache elkerülés).
+- ✅ Prodra feltöltve a frissített `impactshop-identity-panel.php`.
+
+### 2026-01-19 – Identity panel fetch fix
+- 🧩 REST fetch `credentials: include` + API válaszból frissítjük az ID/kód mezőket.
+- ✅ Prodra feltöltve a frissítés.
+
+### 2026-01-19 – Identity panel refresh gomb
+- 🔧 Frissítés gomb + automata retry, látható státusz visszajelzéssel.
+- ✅ Prodra feltöltve a frissítés.
+
+### 2026-01-19 – Server-side ID/kód render
+- 🧩 Shortcode server‑side is kiírja az ID + recovery kódot (JS nélkül is látszik).
+- ✅ Prodra feltöltve a frissített `impactshop-identity-panel.php`.
+
 ### 2026-01-18 – Pseudo-ID részletek kidolgozása (Impact Shop + NGO card + social ticker)
 - 🧭 Célok rögzítve: email nélküli azonosítás, token csak attribúcióhoz, PIN‑nel visszaállítható.
 - 🧾 Részletek: 10–12 karakteres base36 pseudo‑ID, kliens cookie (`impactshop_pseudo_id`), `/go` automatikus generálás + affiliate átadás (Dognet `d2`, CJ `sid`).
@@ -3368,3 +3433,95 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ### 2026-01-17 – Kupon harvester teljes kör futás (háttér)
 - OCR env beállítva (`GOOGLE_APPLICATION_CREDENTIALS` a capi.env-ben), a teljes cron kör újraindítva.
 - Jelenlegi futás PID: `794` (háttér), Árukereső kategória-scrape folyamatban; logok: `.codex/logs/coupon-harvester-full.run.out`, `.codex/logs/coupon-harvester-full.cron.log`.
+
+### 2026-01-19 – Identity panel állapotmentés (Impact Shop)
+- Prod oldalon az identity panel megjelenik, de a gombok nem működnek stabilan és túl sok ismétlődő elem van.
+- Kérés: egyszerűsített UI (csak: azonosító másolás, recovery kód másolás, megosztás, jelszókezelő mentés, opcionális becenév; PIN kérés/restore szekciók elhagyása).
+- Teendő: `wp-content/mu-plugins/impactshop-identity-panel.php` HTML+JS tisztítás (refresh/request/restore logika kivétele, duplikált mezők és gombok eltávolítása), majd prod deploy.
+- Áramkimaradás miatt a munka megszakadt, folytatni innen.
+
+### 2026-01-19 – Identity panel UI egyszerűsítés (helyi)
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: PIN kérés/restore/refresh JS eltávolítva, recovery kód külön másolás gombbal, compact shortcode csak ID-t mutat.
+- Következő: prod deploy + cache purge, majd ellenőrizni a gombok működését az Impact Shop oldalon.
+
+### 2026-01-19 – Prod deploy kísérlet (identity panel)
+- `rsync` próbálkozás prodra (`sharityh@cp40.ezit.hu:/home/sharityh/app/...`) sikertelen: `Permission denied (publickey)`.
+- Teendő: SSH hozzáférés / helyes host vagy kulcs, majd deploy + `wp elementor flush_css` + `wp cache flush`.
+
+### 2026-01-19 – Identity panel helyreállítási űrlap + gombok tisztítása
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: duplikált megosztás eltávolítva, Frissítés gomb hozzáadva; új helyreállítási űrlap (azonosító + recovery kód) és REST endpoint (`/impact/v1/identity/restore`) a cookie visszaállításhoz.
+
+### 2026-01-19 – Identity panel deploy + cache purge
+- `rsync`: `wp-content/mu-plugins/impactshop-identity-panel.php` kiment `/home/sharityh/app` és `/home/sharityh/app-staging` alá.
+- `wp cache flush` + `wp elementor flush_css` mindkét környezeten lefutott.
+
+### 2026-01-19 – Identity panel share gomb + becenév mentés fix
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: visszakerült a megosztás gomb (ID + recovery kód share/copy fallback), azonosító validáció kis/nagybetű kezeléssel, restore/nickname mentés normalizálás (lowercase).
+
+### 2026-01-19 – Identity panel visszajelzés + autofill
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: megosztás fallback prompt, sikeres státusz szín javítás, restore mezők autocomplete attribútumai (username/current-password) a jelszókezelő autofillhez.
+
+### 2026-01-19 – Identity panel UX visszajelzés + restore autofill form
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: becenév mentés gombstátusz + inline visszajelzés, megosztás indítás státusz + mailto fallback, restore mezők formba rendezése + autofill attribútumok.
+
+### 2026-01-19 – Identity panel restore javítás (iOS/Safari)
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: restore mezők `username`/`password` nevek + `type=password`, recovery kód normalizálás (case/ kötőjel nélkül), JS cookie fallback helyreállítás után.
+
+### 2026-01-19 – Identity panel restore megerősítés (mobil)
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: restore inline státusz, gomb disable + label, siker után azonnali mező frissítés + automatikus reload.
+
+### 2026-01-19 – Identity panel jelszókezelő + restore rate limit
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: jelszókezelő mentés form wrapper (username/password mezők, readonly nélkül), submit handler + PasswordCredential fallback; restore rate limit (5/óra/IP) + timing-safe compare.
+
+### 2026-01-19 – Identity panel nonce + JS kiszervezés
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: REST nonce ellenőrzés (profile/restore), nonce injektálás, recovery regex validáció.
+- `wp-content/mu-plugins/impactshop-identity-panel.js`: inline JS kiszervezve, nonce header támogatással.
+
+### 2026-01-19 – Identity panel jelszókezelő autofill finomhangolás
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: jelszó mező autocomplete `current-password` azonosító együtt mentéséhez.
+
+### 2026-01-19 – Impact Shop aktivitás napló + ticker név megjelenítés
+- `wp-content/mu-plugins/impactshop-activity-log.php`: új aktivitás log tábla + `/wp-json/impact/v1/event` REST endpoint (go kattintás, social megosztás, Impi kérdés).
+- `wp-content/mu-plugins/impactshop-boot.php` + `wp-content/mu-plugins/impactshop-go-bridge.php`: /go és /go-deal kattintások logolása.
+- `wp-content/mu-plugins/impact-social-mvp.php`: social tickerben teljes azonosító/becenév megjelenítése, share logolás.
+- `wp-content/mu-plugins/impactshop-impi-chat.php`: Impi kérdések logolása.
+
+### 2026-01-19 – Social ticker név + donor leaderboard
+- `wp-content/mu-plugins/impact-social-mvp.php`: becenév lookup case-insensitive, display label "Becenév (ID)", donor toplistában ID + becenév megjelenítés.
+
+### 2026-01-19 – Identity panel mentés visszajelzés finomhangolás
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: jelszó mező autocomplete `new-password` a mentéshez.
+- `wp-content/mu-plugins/impactshop-identity-panel.js`: mentés státusz üzenet pontosítása (ha nem kérdez rá, valószínűleg már mentve).
+
+### 2026-01-19 – Identity panel fejlécrész finomítás
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: köszönés + „Fiókom” fejlécrész és fiók kezelése gomb.
+- `wp-content/mu-plugins/impactshop-identity-panel.js`: becenév alapján személyre szabott köszönés + smooth scroll a fiók szekcióhoz.
+
+### 2026-01-19 – Identity panel compact shortcode egységesítés
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: az `impactshop_identity_id` rövidkód is a „Fiókom” fejlécrészt mutatja (nincs azonosító + másolás gomb).
+
+### 2026-01-19 – Identity panel scroll gomb javítás
+- `wp-content/mu-plugins/impactshop-identity-panel.js`: a „Fiókom kezelése” gomb már a teljes oldalon keresi a cél szekciót.
+
+### 2026-01-19 – Identity panel támogatás összeg
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: új REST endpoint (`/impact/v1/identity/total`) a pseudo ID összesített adományához.
+- `wp-content/mu-plugins/impactshop-identity-panel.js`: „Támogatásaim összege” sor frissítése.
+
+### 2026-01-19 – Identity panel total megjelenítés kompakt
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: a compact blokkban is megjelenik a „Támogatásaim összege”.
+
+### 2026-01-19 – Identity panel recovery vissza + nonce lazítás
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: recovery kód + megosztás vissza a compact blokkon, profil/restore nonce ellenőrzés kikapcsolva.
+
+### 2026-01-19 – Identity panel compact visszaállítás
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: a felső (compact) blokkból kivettem a recovery kód/másolás/megoshatás részt, lent maradt a fiók kezelésénél.
+
+### 2026-01-19 – Állapotmentés (leállítás előtt)
+- Identity panel, social ticker és aktivitás log módosítások deployolva; cache ürítve.
+- Megfigyelés: a top donor lista csak a legnagyobb összegeket mutatja, az alacsony összegű ID-k nem látszanak.
+
+### 2026-01-19 – Identity panel ID visszaállítás
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: a fiók kezelésénél visszatettem az azonosító sort (másolás gombbal), hogy működjön a becenév mentés és a megosztás.
+
+### 2026-01-19 – Compact blokk ID eltávolítás
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: a felső (compact) blokkból kiszedtem az azonosító + recovery sorokat, lent marad minden.
