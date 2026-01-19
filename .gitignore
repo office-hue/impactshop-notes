@@ -27,6 +27,14 @@ fixtures/
 .env
 .env.local
 .codex/.env.local
+.deploy.production.env
+.deploy.staging.env
+.staging_env
+.venv/
+.codex/connection.json
+wp-content/wp-config.php
+User token/
+NGO data/
 secrets/
 chatgpt-history/GMAIL_CLIENT_ID=*
 chatgpt-history/image/

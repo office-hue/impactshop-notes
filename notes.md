@@ -3540,3 +3540,6 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 
 ### 2026-01-19 – Repo takarítás (3/3)
 - `User token/` és `NGO data/` bekerült a repóba (feloldott ignore).
+
+### 2026-01-19 – Secrets konszolidáció
+- `~/bin/impactall`: betölti a `~/.impact-secrets/env.d/capi.env` fájlt, ha elérhető.
