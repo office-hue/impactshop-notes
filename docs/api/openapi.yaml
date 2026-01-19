@@ -11,6 +11,7 @@ info:
     - `/ticker`: 50 req/s
     - `/ledger`: 5 req/s
     - `/token/*`: 10 req/s
+    - `/identity/pin/*`: 5 req/s
 
 servers:
   - url: https://sharity.hu/impactshop-staging/wp-json/impact/v1
@@ -162,6 +163,109 @@ paths:
           description: Token expired (24h TTL)
         '422':
           description: Invalid payload
+
+  /identity/pin/issue:
+    post:
+      summary: PIN kiadas (identity recovery)
+      description: |
+        PIN kiadas a pseudo-ID visszaallitasahoz. Egy pseudo-ID-hoz egyszerre
+        egy aktiv PIN tartozik. Rate limit es lockout ervenyes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinIssueRequest'
+      responses:
+        '200':
+          description: PIN kiadva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinIssueResponse'
+        '400':
+          description: Hibas kerelem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pseudo-ID nem talalhato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Lejart PIN vagy mar hasznalt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+        '500':
+          description: Varatlan hiba
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /identity/pin/verify:
+    post:
+      summary: PIN ellenorzes (identity recovery)
+      description: |
+        PIN ellenorzese es pseudo-ID visszatoltese a kliens cookie-ba.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinVerifyRequest'
+      responses:
+        '200':
+          description: Sikeres PIN ellenorzes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PinVerifyResponse'
+        '400':
+          description: Hibas kerelem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Hibas PIN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Lockout aktiv
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pseudo-ID nem talalhato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Lejart PIN vagy mar hasznalt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+        '500':
+          description: Varatlan hiba
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /ngo-card/{slug}:
     get:
@@ -331,7 +435,7 @@ components:
       properties:
         pseudo_id:
           type: string
-          pattern: '^[a-z0-9]{6,8}$'
+          pattern: '^[a-z0-9]{10,12}$'
         ngo:
           type: string
         amount:
@@ -344,6 +448,92 @@ components:
             - HUF
             - EUR
           default: HUF
+
+    PinIssueRequest:
+      type: object
+      required:
+        - pseudo_id
+      properties:
+        pseudo_id:
+          type: string
+          pattern: '^[a-z0-9]{10,12}$'
+        context:
+          type: string
+          enum: [impactshop, ngo-card, social-ticker]
+        client_ts:
+          type: string
+          format: date-time
+          nullable: true
+        delivery:
+          type: object
+          properties:
+            channel:
+              type: string
+              enum: [email, sms, qr]
+            target:
+              type: string
+              description: Email cim, telefonszam vagy QR csatorna target.
+
+    PinIssueResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        pin_ttl_sec:
+          type: integer
+        rate_limit:
+          type: object
+          properties:
+            ip_hour:
+              type: integer
+            pseudo_day:
+              type: integer
+            regenerate_day:
+              type: integer
+        delivery:
+          type: object
+          properties:
+            channel:
+              type: string
+            status:
+              type: string
+            qr_payload:
+              type: string
+              nullable: true
+
+    PinVerifyRequest:
+      type: object
+      required:
+        - pseudo_id
+        - pin
+      properties:
+        pseudo_id:
+          type: string
+          pattern: '^[a-z0-9]{10,12}$'
+        pin:
+          type: string
+          pattern: '^[0-9]{6}$'
+        client_ts:
+          type: string
+          format: date-time
+          nullable: true
+
+    PinVerifyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        token_set:
+          type: boolean
+        cookie:
+          type: object
+          properties:
+            name:
+              type: string
+            ttl_days:
+              type: integer
 
     NgoCardAmount:
       type: object

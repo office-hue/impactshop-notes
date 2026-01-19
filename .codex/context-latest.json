@@ -1,14 +1,14 @@
 {
   "meta": {
-    "generated_at": "2025-10-06 19:22:49 +0200",
+    "generated_at": "2026-01-19 14:33:08 +0100",
     "host": "Bujdoso-Mac-mini",
     "impact_env": "local",
-    "ssh_host": ""
+    "ssh_host": "sharityh@s59.tarhely.com"
   },
   "git": {
-    "branch": "main",
-    "hash": "b0ab8bc",
-    "dirty_files": 33
+    "branch": "docs/notes-update-2026-01-07",
+    "hash": "c3a9c91e",
+    "dirty_files": 533
   },
   "project": {
     "name": "Sharity ImpactShop",
@@ -31,17 +31,20 @@
   "health": {
     "staging": {
       "label": "staging",
-      "url": "https://app.sharity.hu/impactshop-staging/wp-json/impact/v1/total",
-      "code": 0,
-      "latency_ms": 0,
-      "status": "unreachable"
+      "url": "https://www.sharity.hu/impactshop-staging/wp-json/",
+      "code": 200,
+      "latency_ms": 900,
+      "status": "ok",
+      "effective_url": "https://app.sharity.hu/impactshop-staging/wp-json/",
+      "note": "redirected_to:app.sharity.hu"
     },
     "production": {
       "label": "production",
-      "url": "https://app.sharity.hu/?rest_route=/impact/v1/total",
-      "code": 0,
-      "latency_ms": 0,
-      "status": "unreachable"
+      "url": "https://app.sharity.hu/wp-json/",
+      "code": 200,
+      "latency_ms": 832,
+      "status": "ok",
+      "effective_url": "https://app.sharity.hu/wp-json/"
     }
   }
 }

@@ -55,6 +55,12 @@ Az ImpactShop jelenleg három párhuzamos csatornát használ a kuponok és prom
 2. `npm run ingest:sync` – átmásolja a `tmp/ingest/raw/` állományokat, újraszámolja a JSON feedeket (`tmp/ingest/manual-coupons.json`, `arukereso.json`).
 3. A kimenetekből épül fel az AI agent feed; a manuális + Árukereső ágak külön metaadatokat kapnak (forrás, confidence).
 
+## 4. Heti 2× full futás (összevont cron)
+Az end-to-end folyamat egyben futtatható heti 2× alkalommal:
+- Script: `.codex/cron/coupon-harvester-full.sh`
+- Lépések: Árukereső Playwright → ingest normalize → arukereso.json átmásolás → coupon harvester → export merge.
+- Kimenet: `tmp/ingest/export-coupons.csv` (egységes lista).
+
 ## Javasolt továbblépések GPT-5 Pro kutatáshoz
 1. **Gmail feldolgozás gyorsítása:** új NLP/LLM alapú relevancia-szűrés a bejövő levelekben (pl. kulturális/nyelvi variációk felismerése, automatikus expiry-parzolás).
 2. **Playwright kiterjesztése:** több oldal-specifikus scraper modul (React/Next oldalak, infinite scroll kezelése, anti-bot megkerülése), screenshot diff a promóciók változására.

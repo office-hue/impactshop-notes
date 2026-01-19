@@ -72,8 +72,15 @@ curl -s https://app.sharity.hu/wp-json/impact/v1/health | jq .
 - [ ] Health endpoint 200-at ad  
 - [ ] Langfuse dashboard + alert ellenőrizve, screenshot elmentve (`docs/langfuse-enablement.md`)  
 - [ ] `source .codex/.env.local && ~/bin/impactall` → „Git dataless scan” zöld (nincs iCloud által offloadolt tracked fájl)  
+- [ ] PIN rollout esetén: staging PIN smoke `delivery.status=sent`  
+- [ ] PIN rollout esetén: prod PIN smoke `delivery.status=sent`  
 - [ ] Hotfix script csak megerősítés után fut  
 - [ ] Deploy után `QA suite` + `doctor`
+
+### 5.1 PIN SMS go/no-go (ha PIN rollout is része)
+
+- [ ] Vonage kulcsok prodon beállítva (`/home/sharityh/.impact-secrets/env.d/sms.env`)  
+- [ ] No-go ha PIN endpoint 404/500 vagy `delivery.status=error`
 
 ## 6. Git / iCloud dataless védelem + recovery
 
