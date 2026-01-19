@@ -1,0 +1,998 @@
+[
+  {
+    "slug": "4home",
+    "domain": "4home.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.4home.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "about-you",
+    "domain": "aboutyou.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.aboutyou.hu/c/noi-20201?hasCampaignReduction=true",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "alensa",
+    "domain": "alensa.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.alensa.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "aliexpress",
+    "domain": "aliexpress.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.aliexpress.com",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "alinda",
+    "domain": "alinda.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://alinda.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "allegro",
+    "domain": "allegro.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://allegro.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "alza",
+    "domain": "alza.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.alza.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "arukereso",
+    "domain": "arukereso.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.arukereso.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "astoreo",
+    "domain": "astoreo.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.astoreo.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "bestyle",
+    "domain": "bestyle.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://bestyle.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "bontis",
+    "domain": "bontis.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.bontis.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "butopea",
+    "domain": "butopea.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://butopea.com",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "butor-market",
+    "domain": "butor-market.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://butor-market.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "bytoman",
+    "domain": "bytoman.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://bytoman.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "cricksy-dog",
+    "domain": "cricksydog.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://cricksydog.hu/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "cropp",
+    "domain": "cropp.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.cropp.com/hu/hu/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "decathlon",
+    "domain": "decathlon.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.decathlon.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "deco24",
+    "domain": "deco24.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.deco24.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "dodo",
+    "domain": "dodo.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://dodo.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "dyson",
+    "domain": "dyson.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.dyson.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "ebolt",
+    "domain": "ebolt.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.ebolt.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "ekszer-eshop",
+    "domain": "ekszer-eshop.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://ekszer-eshop.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "elektronik-star",
+    "domain": "electronic-star.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.electronic-star.hu/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "eredeti-ajandekok",
+    "domain": "eredetiajandekok.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.eredetiajandekok.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "eyerim",
+    "domain": "eyerim.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://eyerim.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "feny24",
+    "domain": "feny24.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.feny24.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "glami",
+    "domain": "glami.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.glami.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "gumik",
+    "domain": "gumik.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.gumik.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "gymbeam",
+    "domain": "gymbeam.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://gymbeam.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "herbatica",
+    "domain": "herbatica.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.herbatica.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "hszien",
+    "domain": "hszien.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.hszien.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "i-kertibutor",
+    "domain": "i-kertibutor.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.i-kertibutor.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "jatekszallito",
+    "domain": "jatekszallito.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://jatekszallito.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "jateksziget",
+    "domain": "jateksziget.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.jateksziget.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "klarstein",
+    "domain": "klarstein.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.klarstein.hu/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "konyhaluxnet",
+    "domain": "konyhaluxnet.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://konyhaluxnet.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "lampak",
+    "domain": "lampak.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.lampak.hu/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "maiakcio",
+    "domain": "maiakcio.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://maiakcio.com",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "mannavita",
+    "domain": "mannavita.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.mannavita.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "mercury-market",
+    "domain": "merkurymarket.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.merkurymarket.hu/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "milenial-cafe",
+    "domain": "milenialcafe.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.milenialcafe.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "mobilasz",
+    "domain": "mobilasz.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.mobilasz.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "mobilfox",
+    "domain": "hu.mobilfox.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://hu.mobilfox.com/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "nike",
+    "domain": "nike.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.nike.com/hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "norafashion",
+    "domain": "norafashion.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://norafashion.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "onlinemarkaboltok",
+    "domain": "onlinemarkaboltok.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.onlinemarkaboltok.hu/",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "parfumeshop",
+    "domain": "parfumeshop.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.parfumeshop.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "pepita",
+    "domain": "pepita.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://pepita.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "profiszakacs",
+    "domain": "profiszakacs.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://profiszakacs.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "regiojatek",
+    "domain": "regiojatek.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.regiojatek.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "skechers",
+    "domain": "skechers.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.skechers.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "speedshop",
+    "domain": "speedshop.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.speedshop.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "sportplaza",
+    "domain": "sportplaza.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://sportplaza.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "szalaykonyvek",
+    "domain": "szalaykonyvek.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://szalaykonyvek.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "tescoma",
+    "domain": "tescoma.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.tescoma.hu/black-friday-akcio",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "tokshop",
+    "domain": "tok-shop.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://tok-shop.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "toman-diet",
+    "domain": "tomandiet.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://tomandiet.com",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "topjuicers",
+    "domain": "topjuicers.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.topjuicers.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "travelking",
+    "domain": "travelking.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://travelking.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "visionexpress",
+    "domain": "visionexpress.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.visionexpress.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "wolt",
+    "domain": "wolt.com",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://wolt.com/hu/hun",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "xupe",
+    "domain": "xupe.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.xupe.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "yves-rocher",
+    "domain": "yves-rocher.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.yves-rocher.hu/black-friday-2025?addpcode=BF25",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "zooplus",
+    "domain": "zooplus.hu",
+    "program_id": null,
+    "network": "dognet",
+    "default_d1": null,
+    "default_cta_url": "https://www.zooplus.hu",
+    "source": "fixtures/coupon-harvester/feeds/dognet_programs.csv"
+  },
+  {
+    "slug": "cj-2709631",
+    "domain": null,
+    "program_id": "2709631",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-3387283",
+    "domain": null,
+    "program_id": "3387283",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-3587693",
+    "domain": null,
+    "program_id": "3587693",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-4877395",
+    "domain": "answear.hu",
+    "program_id": "4877395",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-4894447",
+    "domain": "insportline.hu",
+    "program_id": "4894447",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.tkqlhce.com/click-101589464-12872543",
+    "cj_click_url": "https://www.tkqlhce.com/click-101589464-12872543",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-4967945",
+    "domain": "cdrmarket.huro",
+    "program_id": "4967945",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-13038583",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-13038583",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-4989665",
+    "domain": null,
+    "program_id": "4989665",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5764183",
+    "domain": "akkuk.hu",
+    "program_id": "5764183",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-15024060",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-15024060",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5765330",
+    "domain": "reflexshop.hu",
+    "program_id": "5765330",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.kqzyfj.com/click-101589464-15565787",
+    "cj_click_url": "https://www.kqzyfj.com/click-101589464-15565787",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5801719",
+    "domain": null,
+    "program_id": "5801719",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.tkqlhce.com/click-101589464-14550274",
+    "cj_click_url": "https://www.tkqlhce.com/click-101589464-14550274",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5807789",
+    "domain": "butlers.hu",
+    "program_id": "5807789",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-15165351",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-15165351",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5824323",
+    "domain": null,
+    "program_id": "5824323",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5884820",
+    "domain": null,
+    "program_id": "5884820",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.kqzyfj.com/click-101589464-15058943",
+    "cj_click_url": "https://www.kqzyfj.com/click-101589464-15058943",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5986419",
+    "domain": "jatekshop.eu",
+    "program_id": "5986419",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-15160758",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-15160758",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6100840",
+    "domain": null,
+    "program_id": "6100840",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-15371410",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-15371410",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6169916",
+    "domain": "tescoma.hu",
+    "program_id": "6169916",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.kqzyfj.com/click-101589464-15321498",
+    "cj_click_url": "https://www.kqzyfj.com/click-101589464-15321498",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6253448",
+    "domain": "monkeymum.com",
+    "program_id": "6253448",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.tkqlhce.com/click-101589464-15686382",
+    "cj_click_url": "https://www.tkqlhce.com/click-101589464-15686382",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6306264",
+    "domain": "yogabazaar.hu",
+    "program_id": "6306264",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-15476077",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-15476077",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6322281",
+    "domain": null,
+    "program_id": "6322281",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.kqzyfj.com/click-101589464-15907055",
+    "cj_click_url": "https://www.kqzyfj.com/click-101589464-15907055",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6505895",
+    "domain": null,
+    "program_id": "6505895",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6562598",
+    "domain": null,
+    "program_id": "6562598",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-17031343",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-17031343",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6575774",
+    "domain": null,
+    "program_id": "6575774",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-15823299",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-15823299",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6575811",
+    "domain": "brendon.hu",
+    "program_id": "6575811",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-15855182",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-15855182",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6595791",
+    "domain": null,
+    "program_id": "6595791",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-15583034",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-15583034",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6754592",
+    "domain": "dermo.hu",
+    "program_id": "6754592",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.tkqlhce.com/click-101589464-15699493",
+    "cj_click_url": "https://www.tkqlhce.com/click-101589464-15699493",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6762329",
+    "domain": "namaximum.hu",
+    "program_id": "6762329",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-15763572",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-15763572",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5230042",
+    "domain": null,
+    "program_id": "5230042",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.anrdoezrs.net/click-101589464-13707915",
+    "cj_click_url": "https://www.anrdoezrs.net/click-101589464-13707915",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5243646",
+    "domain": "aboutyou.hu",
+    "program_id": "5243646",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.tkqlhce.com/click-101589464-13694936",
+    "cj_click_url": "https://www.tkqlhce.com/click-101589464-13694936",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5306925",
+    "domain": null,
+    "program_id": "5306925",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-14394873",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-14394873",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5357176",
+    "domain": null,
+    "program_id": "5357176",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-14005660",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-14005660",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5393824",
+    "domain": "yves-rocher.hu",
+    "program_id": "5393824",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.anrdoezrs.net/click-101589464-13991103",
+    "cj_click_url": "https://www.anrdoezrs.net/click-101589464-13991103",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5411803",
+    "domain": null,
+    "program_id": "5411803",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.anrdoezrs.net/click-101589464-14045417",
+    "cj_click_url": "https://www.anrdoezrs.net/click-101589464-14045417",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5457740",
+    "domain": "mixit.hu",
+    "program_id": "5457740",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.kqzyfj.com/click-101589464-14059357",
+    "cj_click_url": "https://www.kqzyfj.com/click-101589464-14059357",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5578976",
+    "domain": null,
+    "program_id": "5578976",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5619548",
+    "domain": "jtknet.hu",
+    "program_id": "5619548",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-14448006",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-14448006",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-5620281",
+    "domain": "krcher.hu",
+    "program_id": "5620281",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.jdoqocy.com/click-101589464-14373369",
+    "cj_click_url": "https://www.jdoqocy.com/click-101589464-14373369",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6796197",
+    "domain": "warsawsneakerstore.com",
+    "program_id": "6796197",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.anrdoezrs.net/click-101589464-15731094",
+    "cj_click_url": "https://www.anrdoezrs.net/click-101589464-15731094",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-6808248",
+    "domain": "karpexczhualbumshop.sk",
+    "program_id": "6808248",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-15680819",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-15680819",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-7133039",
+    "domain": null,
+    "program_id": "7133039",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.tkqlhce.com/click-101589464-15885614",
+    "cj_click_url": "https://www.tkqlhce.com/click-101589464-15885614",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-7138001",
+    "domain": null,
+    "program_id": "7138001",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.dpbolvw.net/click-101589464-15905954",
+    "cj_click_url": "https://www.dpbolvw.net/click-101589464-15905954",
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-7218186",
+    "domain": null,
+    "program_id": "7218186",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": null,
+    "cj_click_url": null,
+    "source": "tools/cj_shops.json"
+  },
+  {
+    "slug": "cj-7249555",
+    "domain": null,
+    "program_id": "7249555",
+    "network": "cj",
+    "default_d1": null,
+    "default_cta_url": "https://www.kqzyfj.com/click-101589464-15919518",
+    "cj_click_url": "https://www.kqzyfj.com/click-101589464-15919518",
+    "source": "tools/cj_shops.json"
+  }
+]

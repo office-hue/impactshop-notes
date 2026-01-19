@@ -1,0 +1,20 @@
+{
+  "outDir": "fixtures/coupon-harvester/html",
+  "summaryPath": "tmp/coupon-harvester/playwright-summary.json",
+  "timeoutMs": 30000,
+  "waitAfterLoadMs": 1000,
+  "pages": [
+    {
+      "slug": "notino",
+      "url": "https://www.notino.hu/",
+      "waitForSelector": "body",
+      "saveAs": "sample-notino.html"
+    },
+    {
+      "slug": "decathlon",
+      "url": "https://www.decathlon.hu/",
+      "waitForSelector": "body",
+      "saveAs": "sample-decathlon.html"
+    }
+  ]
+}

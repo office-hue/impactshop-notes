@@ -1,0 +1,858 @@
+{
+  "outDir": "fixtures/coupon-harvester/html",
+  "summaryPath": "tmp/coupon-harvester/playwright-summary.json",
+  "timeoutMs": 30000,
+  "waitAfterLoadMs": 1000,
+  "screenshotDir": "tmp/coupon-harvester/ocr-images",
+  "screenshotFullPage": true,
+  "pages": [
+    {
+      "slug": "4home",
+      "url": "https://www.4home.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "4home.html",
+      "screenshotName": "4home.png"
+    },
+    {
+      "slug": "about-you",
+      "url": "https://www.aboutyou.hu/c/noi-20201?hasCampaignReduction=true",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "about-you.html",
+      "screenshotName": "about-you.png"
+    },
+    {
+      "slug": "alensa",
+      "url": "https://www.alensa.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "alensa.html",
+      "screenshotName": "alensa.png"
+    },
+    {
+      "slug": "aliexpress",
+      "url": "https://www.aliexpress.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "aliexpress.html",
+      "screenshotName": "aliexpress.png"
+    },
+    {
+      "slug": "alinda",
+      "url": "https://alinda.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "alinda.html",
+      "screenshotName": "alinda.png"
+    },
+    {
+      "slug": "allegro",
+      "url": "https://allegro.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "allegro.html",
+      "screenshotName": "allegro.png"
+    },
+    {
+      "slug": "alza",
+      "url": "https://www.alza.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "alza.html",
+      "screenshotName": "alza.png"
+    },
+    {
+      "slug": "arukereso",
+      "url": "https://www.arukereso.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "arukereso.html",
+      "screenshotName": "arukereso.png"
+    },
+    {
+      "slug": "astoreo",
+      "url": "https://www.astoreo.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "astoreo.html",
+      "screenshotName": "astoreo.png"
+    },
+    {
+      "slug": "bestyle",
+      "url": "https://bestyle.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "bestyle.html",
+      "screenshotName": "bestyle.png"
+    },
+    {
+      "slug": "bontis",
+      "url": "https://www.bontis.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "bontis.html",
+      "screenshotName": "bontis.png"
+    },
+    {
+      "slug": "butopea",
+      "url": "https://butopea.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "butopea.html",
+      "screenshotName": "butopea.png"
+    },
+    {
+      "slug": "butor-market",
+      "url": "https://butor-market.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "butor-market.html",
+      "screenshotName": "butor-market.png"
+    },
+    {
+      "slug": "bytoman",
+      "url": "https://bytoman.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "bytoman.html",
+      "screenshotName": "bytoman.png"
+    },
+    {
+      "slug": "cj-2709631",
+      "url": "http://www.sky-tours.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-2709631.html",
+      "screenshotName": "cj-2709631.png"
+    },
+    {
+      "slug": "cj-3387283",
+      "url": "https://www.geekbuying.com/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-3387283.html",
+      "screenshotName": "cj-3387283.png"
+    },
+    {
+      "slug": "cj-3587693",
+      "url": "http://www.jalbum.net",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-3587693.html",
+      "screenshotName": "cj-3587693.png"
+    },
+    {
+      "slug": "cj-4877395",
+      "url": "http://www.answear.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-4877395.html",
+      "screenshotName": "cj-4877395.png"
+    },
+    {
+      "slug": "cj-4894447",
+      "url": "http://www.insportline.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-4894447.html",
+      "screenshotName": "cj-4894447.png"
+    },
+    {
+      "slug": "cj-4967945",
+      "url": "https://www.cdrmarket.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-4967945.html",
+      "screenshotName": "cj-4967945.png"
+    },
+    {
+      "slug": "cj-4989665",
+      "url": "https://www.nanushka.com/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-4989665.html",
+      "screenshotName": "cj-4989665.png"
+    },
+    {
+      "slug": "cj-5230042",
+      "url": "https://www.axa-assistance.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5230042.html",
+      "screenshotName": "cj-5230042.png"
+    },
+    {
+      "slug": "cj-5243646",
+      "url": "https://www.aboutyou.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5243646.html",
+      "screenshotName": "cj-5243646.png"
+    },
+    {
+      "slug": "cj-5306925",
+      "url": "https://www.reedog.cz",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5306925.html",
+      "screenshotName": "cj-5306925.png"
+    },
+    {
+      "slug": "cj-5357176",
+      "url": "https://eoptika.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5357176.html",
+      "screenshotName": "cj-5357176.png"
+    },
+    {
+      "slug": "cj-5393824",
+      "url": "https://www.yves-rocher.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5393824.html",
+      "screenshotName": "cj-5393824.png"
+    },
+    {
+      "slug": "cj-5411803",
+      "url": "https://www.lkbaits.cz/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5411803.html",
+      "screenshotName": "cj-5411803.png"
+    },
+    {
+      "slug": "cj-5457740",
+      "url": "https://www.mixit.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5457740.html",
+      "screenshotName": "cj-5457740.png"
+    },
+    {
+      "slug": "cj-5578976",
+      "url": "http://www.novakidschool.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5578976.html",
+      "screenshotName": "cj-5578976.png"
+    },
+    {
+      "slug": "cj-5619548",
+      "url": "https://www.jateknet.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5619548.html",
+      "screenshotName": "cj-5619548.png"
+    },
+    {
+      "slug": "cj-5620281",
+      "url": "https://www.kaercher.com/hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5620281.html",
+      "screenshotName": "cj-5620281.png"
+    },
+    {
+      "slug": "cj-5764183",
+      "url": "https://www.akkuk.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5764183.html",
+      "screenshotName": "cj-5764183.png"
+    },
+    {
+      "slug": "cj-5765330",
+      "url": "https://reflexshop.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5765330.html",
+      "screenshotName": "cj-5765330.png"
+    },
+    {
+      "slug": "cj-5801719",
+      "url": "https://www.nutraceutics.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5801719.html",
+      "screenshotName": "cj-5801719.png"
+    },
+    {
+      "slug": "cj-5807789",
+      "url": "https://www.butlers.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5807789.html",
+      "screenshotName": "cj-5807789.png"
+    },
+    {
+      "slug": "cj-5824323",
+      "url": "https://www.unice.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5824323.html",
+      "screenshotName": "cj-5824323.png"
+    },
+    {
+      "slug": "cj-5884820",
+      "url": "https://www.scandishop.cz/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5884820.html",
+      "screenshotName": "cj-5884820.png"
+    },
+    {
+      "slug": "cj-5986419",
+      "url": "https://www.jatekshop.eu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-5986419.html",
+      "screenshotName": "cj-5986419.png"
+    },
+    {
+      "slug": "cj-6100840",
+      "url": "https://www.esky.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6100840.html",
+      "screenshotName": "cj-6100840.png"
+    },
+    {
+      "slug": "cj-6169916",
+      "url": "https://tescoma.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6169916.html",
+      "screenshotName": "cj-6169916.png"
+    },
+    {
+      "slug": "cj-6253448",
+      "url": "https://www.monkeymum.com/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6253448.html",
+      "screenshotName": "cj-6253448.png"
+    },
+    {
+      "slug": "cj-6306264",
+      "url": "https://yogabazaar.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6306264.html",
+      "screenshotName": "cj-6306264.png"
+    },
+    {
+      "slug": "cj-6322281",
+      "url": "https://www.skechers.co.uk",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6322281.html",
+      "screenshotName": "cj-6322281.png"
+    },
+    {
+      "slug": "cj-6505895",
+      "url": "https://www.hotelcollection.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6505895.html",
+      "screenshotName": "cj-6505895.png"
+    },
+    {
+      "slug": "cj-6562598",
+      "url": "https://www.licila.si",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6562598.html",
+      "screenshotName": "cj-6562598.png"
+    },
+    {
+      "slug": "cj-6575774",
+      "url": "https://somnart.ro/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6575774.html",
+      "screenshotName": "cj-6575774.png"
+    },
+    {
+      "slug": "cj-6575811",
+      "url": "https://www.brendon.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6575811.html",
+      "screenshotName": "cj-6575811.png"
+    },
+    {
+      "slug": "cj-6595791",
+      "url": "https://www.marionnaud.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6595791.html",
+      "screenshotName": "cj-6595791.png"
+    },
+    {
+      "slug": "cj-6754592",
+      "url": "https://www.dermo.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6754592.html",
+      "screenshotName": "cj-6754592.png"
+    },
+    {
+      "slug": "cj-6762329",
+      "url": "https://www.namaximum.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6762329.html",
+      "screenshotName": "cj-6762329.png"
+    },
+    {
+      "slug": "cj-6796197",
+      "url": "https://warsawsneakerstore.com/en",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6796197.html",
+      "screenshotName": "cj-6796197.png"
+    },
+    {
+      "slug": "cj-6808248",
+      "url": "https://karpex.cz/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-6808248.html",
+      "screenshotName": "cj-6808248.png"
+    },
+    {
+      "slug": "cj-7133039",
+      "url": "https://www.byrokko.com/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-7133039.html",
+      "screenshotName": "cj-7133039.png"
+    },
+    {
+      "slug": "cj-7138001",
+      "url": "https://www.heliumking.sk/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-7138001.html",
+      "screenshotName": "cj-7138001.png"
+    },
+    {
+      "slug": "cj-7218186",
+      "url": "https://www.lumarysmart.com/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-7218186.html",
+      "screenshotName": "cj-7218186.png"
+    },
+    {
+      "slug": "cj-7249555",
+      "url": "https://www.earplugs.cz/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cj-7249555.html",
+      "screenshotName": "cj-7249555.png"
+    },
+    {
+      "slug": "cricksy-dog",
+      "url": "https://cricksydog.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cricksy-dog.html",
+      "screenshotName": "cricksy-dog.png"
+    },
+    {
+      "slug": "cropp",
+      "url": "https://www.cropp.com/hu/hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "cropp.html",
+      "screenshotName": "cropp.png"
+    },
+    {
+      "slug": "decathlon",
+      "url": "https://www.decathlon.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "decathlon.html",
+      "screenshotName": "decathlon.png"
+    },
+    {
+      "slug": "deco24",
+      "url": "https://www.deco24.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "deco24.html",
+      "screenshotName": "deco24.png"
+    },
+    {
+      "slug": "dodo",
+      "url": "https://dodo.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "dodo.html",
+      "screenshotName": "dodo.png"
+    },
+    {
+      "slug": "dyson",
+      "url": "https://www.dyson.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "dyson.html",
+      "screenshotName": "dyson.png"
+    },
+    {
+      "slug": "ebolt",
+      "url": "https://www.ebolt.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "ebolt.html",
+      "screenshotName": "ebolt.png"
+    },
+    {
+      "slug": "ekszer-eshop",
+      "url": "https://ekszer-eshop.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "ekszer-eshop.html",
+      "screenshotName": "ekszer-eshop.png"
+    },
+    {
+      "slug": "elektronik-star",
+      "url": "https://www.electronic-star.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "elektronik-star.html",
+      "screenshotName": "elektronik-star.png"
+    },
+    {
+      "slug": "eredeti-ajandekok",
+      "url": "https://www.eredetiajandekok.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "eredeti-ajandekok.html",
+      "screenshotName": "eredeti-ajandekok.png"
+    },
+    {
+      "slug": "eyerim",
+      "url": "https://eyerim.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "eyerim.html",
+      "screenshotName": "eyerim.png"
+    },
+    {
+      "slug": "feny24",
+      "url": "https://www.feny24.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "feny24.html",
+      "screenshotName": "feny24.png"
+    },
+    {
+      "slug": "glami",
+      "url": "https://www.glami.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "glami.html",
+      "screenshotName": "glami.png"
+    },
+    {
+      "slug": "gumik",
+      "url": "https://www.gumik.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "gumik.html",
+      "screenshotName": "gumik.png"
+    },
+    {
+      "slug": "gymbeam",
+      "url": "https://gymbeam.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "gymbeam.html",
+      "screenshotName": "gymbeam.png"
+    },
+    {
+      "slug": "herbatica",
+      "url": "https://www.herbatica.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "herbatica.html",
+      "screenshotName": "herbatica.png"
+    },
+    {
+      "slug": "hszien",
+      "url": "https://www.hszien.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "hszien.html",
+      "screenshotName": "hszien.png"
+    },
+    {
+      "slug": "i-kertibutor",
+      "url": "https://www.i-kertibutor.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "i-kertibutor.html",
+      "screenshotName": "i-kertibutor.png"
+    },
+    {
+      "slug": "jatekszallito",
+      "url": "https://jatekszallito.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "jatekszallito.html",
+      "screenshotName": "jatekszallito.png"
+    },
+    {
+      "slug": "jateksziget",
+      "url": "https://www.jateksziget.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "jateksziget.html",
+      "screenshotName": "jateksziget.png"
+    },
+    {
+      "slug": "klarstein",
+      "url": "https://www.klarstein.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "klarstein.html",
+      "screenshotName": "klarstein.png"
+    },
+    {
+      "slug": "konyhaluxnet",
+      "url": "https://konyhaluxnet.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "konyhaluxnet.html",
+      "screenshotName": "konyhaluxnet.png"
+    },
+    {
+      "slug": "lampak",
+      "url": "https://www.lampak.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "lampak.html",
+      "screenshotName": "lampak.png"
+    },
+    {
+      "slug": "maiakcio",
+      "url": "https://maiakcio.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "maiakcio.html",
+      "screenshotName": "maiakcio.png"
+    },
+    {
+      "slug": "mannavita",
+      "url": "https://www.mannavita.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "mannavita.html",
+      "screenshotName": "mannavita.png"
+    },
+    {
+      "slug": "mercury_market",
+      "url": "https://www.merkurymarket.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "mercury_market.html",
+      "screenshotName": "mercury_market.png"
+    },
+    {
+      "slug": "milenial-cafe",
+      "url": "https://www.milenialcafe.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "milenial-cafe.html",
+      "screenshotName": "milenial-cafe.png"
+    },
+    {
+      "slug": "mobilasz",
+      "url": "https://www.mobilasz.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "mobilasz.html",
+      "screenshotName": "mobilasz.png"
+    },
+    {
+      "slug": "mobilfox",
+      "url": "https://hu.mobilfox.com/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "mobilfox.html",
+      "screenshotName": "mobilfox.png"
+    },
+    {
+      "slug": "nike",
+      "url": "https://www.nike.com/hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "nike.html",
+      "screenshotName": "nike.png"
+    },
+    {
+      "slug": "norafashion",
+      "url": "https://norafashion.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "norafashion.html",
+      "screenshotName": "norafashion.png"
+    },
+    {
+      "slug": "onlinemarkaboltok",
+      "url": "https://www.onlinemarkaboltok.hu/",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "onlinemarkaboltok.html",
+      "screenshotName": "onlinemarkaboltok.png"
+    },
+    {
+      "slug": "parfumeshop",
+      "url": "https://www.parfumeshop.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "parfumeshop.html",
+      "screenshotName": "parfumeshop.png"
+    },
+    {
+      "slug": "pepita",
+      "url": "https://pepita.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "pepita.html",
+      "screenshotName": "pepita.png"
+    },
+    {
+      "slug": "profiszakacs",
+      "url": "https://profiszakacs.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "profiszakacs.html",
+      "screenshotName": "profiszakacs.png"
+    },
+    {
+      "slug": "regiojatek",
+      "url": "https://www.regiojatek.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "regiojatek.html",
+      "screenshotName": "regiojatek.png"
+    },
+    {
+      "slug": "skechers",
+      "url": "https://www.skechers.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "skechers.html",
+      "screenshotName": "skechers.png"
+    },
+    {
+      "slug": "speedshop",
+      "url": "https://www.speedshop.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "speedshop.html",
+      "screenshotName": "speedshop.png"
+    },
+    {
+      "slug": "sportplaza",
+      "url": "https://sportplaza.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "sportplaza.html",
+      "screenshotName": "sportplaza.png"
+    },
+    {
+      "slug": "szalaykonyvek",
+      "url": "https://szalaykonyvek.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "szalaykonyvek.html",
+      "screenshotName": "szalaykonyvek.png"
+    },
+    {
+      "slug": "tescoma",
+      "url": "https://www.tescoma.hu/black-friday-akcio",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "tescoma.html",
+      "screenshotName": "tescoma.png"
+    },
+    {
+      "slug": "tokshop",
+      "url": "https://tok-shop.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "tokshop.html",
+      "screenshotName": "tokshop.png"
+    },
+    {
+      "slug": "toman-diet",
+      "url": "https://tomandiet.com",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "toman-diet.html",
+      "screenshotName": "toman-diet.png"
+    },
+    {
+      "slug": "topjuicers",
+      "url": "https://www.topjuicers.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "topjuicers.html",
+      "screenshotName": "topjuicers.png"
+    },
+    {
+      "slug": "travelking",
+      "url": "https://travelking.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "travelking.html",
+      "screenshotName": "travelking.png"
+    },
+    {
+      "slug": "visionexpress",
+      "url": "https://www.visionexpress.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "visionexpress.html",
+      "screenshotName": "visionexpress.png"
+    },
+    {
+      "slug": "wolt",
+      "url": "https://wolt.com/hu/hun",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "wolt.html",
+      "screenshotName": "wolt.png"
+    },
+    {
+      "slug": "xupe",
+      "url": "https://www.xupe.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "xupe.html",
+      "screenshotName": "xupe.png"
+    },
+    {
+      "slug": "yves_rocher",
+      "url": "https://www.yves-rocher.hu/black-friday-2025?addpcode=BF25",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "yves_rocher.html",
+      "screenshotName": "yves_rocher.png"
+    },
+    {
+      "slug": "zooplus",
+      "url": "https://www.zooplus.hu",
+      "waitForSelector": "body",
+      "waitAfterLoadMs": 2000,
+      "saveAs": "zooplus.html",
+      "screenshotName": "zooplus.png"
+    }
+  ]
+}

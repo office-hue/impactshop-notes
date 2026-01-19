@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php" colors="true">
+    <testsuites>
+        <testsuite name="ImpactShop Wallet">
+            <directory suffix="Test.php">tests/phpunit</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="IMPACT_WP_PLUGIN_FILE" value="../wp-content/mu-plugins/impactshop-wallet.php"/>
+        <env name="RUN_HTTP_TESTS" value="0"/>
+        <env name="IMPACT_BASE_URL" value="https://app.sharity.hu/impactshop"/>
+        <env name="IMPACT_PASS_TYPE_ID" value="pass.com.sharity.impactshop"/>
+        <env name="IMPACT_NGO_SLUG" value="bator-tabor-alapitvany"/>
+    </php>
+</phpunit>
