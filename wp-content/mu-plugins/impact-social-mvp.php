@@ -75,6 +75,30 @@ CSS;
 
             $js = <<<JS
 (function(){
+  function logShare(btn){
+    try {
+      var payload = {
+        event_type: 'social_share',
+        event_source: 'social_ticker',
+        ngo_slug: btn.getAttribute('data-ngo') || '',
+        shop_slug: btn.getAttribute('data-shop') || '',
+        amount_huf: parseInt(btn.getAttribute('data-amount') || '0', 10) || 0,
+        meta: {
+          platform: btn.getAttribute('data-share-platform') || '',
+          share_type: btn.getAttribute('data-share-type') || ''
+        }
+      };
+      fetch('/wp-json/impact/v1/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      }).catch(function(){});
+    } catch (e) {
+      // ignore logging errors
+    }
+  }
+
   function copyToClipboard(btn,message){
     if (navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(message).then(function(){
@@ -93,6 +117,8 @@ CSS;
     if (!btn) {
       return;
     }
+
+    logShare(btn);
 
     var type = btn.getAttribute('data-share-type') || 'url';
     if (type === 'copy') {
@@ -228,7 +254,12 @@ JS;
             $statusParam = (string) ($request->get_param('status') ?: 'approved');
             $statuses = self::resolve_statuses($statusParam);
 
-            $rows = self::query_top_donors($limit, $statuses);
+            $cacheKey = 'impact_social_donors_' . md5($statusParam . '|' . $limit);
+            $rows = get_transient($cacheKey);
+            if ($rows === false) {
+                $rows = self::query_top_donors($limit, $statuses);
+                set_transient($cacheKey, $rows, 300);
+            }
 
             return new \WP_REST_Response(
                 [
@@ -305,8 +336,10 @@ JS;
             return array_map(
                 static function (array $row) use ($domain, $currentPseudo): array {
                     $rawPseudo = (string) ($row['pseudo_id'] ?? '');
-                    $initials = self::mask_pseudo($rawPseudo);
-                    $displayName = self::resolve_display_name($rawPseudo, $initials);
+                    $pseudoClean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $rawPseudo));
+                    $initials = self::mask_pseudo($pseudoClean);
+                    $nickname = self::resolve_display_name($pseudoClean, '');
+                    $displayLabel = self::format_display_label($pseudoClean, $nickname);
                     $normalizedPseudo = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $rawPseudo));
                     $ngoSlug = sanitize_title($row['ngo_slug'] ?? '');
                     $ngoName = sanitize_text_field($row['ngo_display'] ?? $ngoSlug);
@@ -339,7 +372,9 @@ JS;
 
                     return [
                         'pseudo_initials' => $initials,
-                        'display_name'    => $displayName,
+                        'display_name'    => $displayLabel,
+                        'pseudo_full'     => $pseudoClean,
+                        'nickname'        => $nickname,
                         'ngo_slug'        => $ngoSlug,
                         'ngo_display'     => $ngoName,
                         'shop_slug'       => $shopSlug,
@@ -392,13 +427,17 @@ JS;
             return array_map(
                 static function (array $row): array {
                     $rawPseudo = (string) ($row['pseudo_id'] ?? '');
-                    $initials = self::mask_pseudo($rawPseudo);
-                    $displayName = self::resolve_display_name($rawPseudo, $initials);
+                    $pseudoClean = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $rawPseudo));
+                    $initials = self::mask_pseudo($pseudoClean);
+                    $nickname = self::resolve_display_name($pseudoClean, '');
+                    $displayLabel = self::format_display_label($pseudoClean, $nickname);
                     $total = (int) ($row['total_huf'] ?? 0);
 
                     return [
-                        'display_name'    => $displayName,
+                        'display_name'    => $displayLabel,
                         'pseudo_initials' => $initials,
+                        'pseudo_full'     => $pseudoClean,
+                        'nickname'        => $nickname,
                         'amount_huf'      => $total,
                     ];
                 },
@@ -409,12 +448,20 @@ JS;
         private static function resolve_display_name(string $pseudoId, string $fallback): string
         {
             if ($pseudoId !== '' && function_exists('impactshop_identity_profile_load')) {
-                $nickname = impactshop_identity_profile_load($pseudoId);
+                $nickname = impactshop_identity_profile_load(strtolower($pseudoId));
                 if (is_string($nickname) && $nickname !== '') {
                     return $nickname;
                 }
             }
-            return $fallback;
+            return $pseudoId !== '' ? $pseudoId : $fallback;
+        }
+
+        private static function format_display_label(string $pseudoId, string $nickname): string
+        {
+            if ($nickname !== '') {
+                return sprintf('%s (%s)', $nickname, $pseudoId);
+            }
+            return $pseudoId !== '' ? $pseudoId : '??*';
         }
 
         private static function filter_records(array $records): array
@@ -534,7 +581,7 @@ JS;
                 return '??*';
             }
 
-            return strtoupper(substr($clean, 0, 2)) . '*';
+            return $clean;
         }
 
         private static function get_current_pseudo(): ?string
@@ -708,24 +755,30 @@ JS;
 
                             if ($type === 'copy') {
                                 $message = isset($link['message']) ? esc_attr($link['message']) : esc_attr($shareMessage);
-                                $buttons[] = sprintf(
-                                    '<button type="button" class="impact-social-ticker__share-btn impact-social-ticker__share-btn--%1$s" data-share-type="copy" data-share-platform="%1$s" data-share-message="%2$s">%3$s</button>',
-                                    $platform,
-                                    $message,
-                                    $label
-                                );
-                                continue;
-                            }
-
-                            $url = esc_url($link['url'] ?? '#');
-                            $fallback = ! empty($link['fallback']) ? ' data-share-fallback="' . esc_url($link['fallback']) . '"' : '';
                             $buttons[] = sprintf(
-                                '<a href="%2$s" class="impact-social-ticker__share-btn impact-social-ticker__share-btn--%1$s" target="_blank" rel="noopener" data-share-type="url" data-share-platform="%1$s"%3$s>%4$s</a>',
+                                '<button type="button" class="impact-social-ticker__share-btn impact-social-ticker__share-btn--%1$s" data-share-type="copy" data-share-platform="%1$s" data-share-message="%2$s" data-ngo="%4$s" data-shop="%5$s" data-amount="%6$s">%3$s</button>',
                                 $platform,
-                                $url,
-                                $fallback,
-                                $label
+                                $message,
+                                $label,
+                                esc_attr($item['ngo_slug'] ?? ''),
+                                esc_attr($item['shop_slug'] ?? ''),
+                                esc_attr((string) ($item['amount_huf'] ?? 0))
                             );
+                            continue;
+                        }
+
+                        $url = esc_url($link['url'] ?? '#');
+                        $fallback = ! empty($link['fallback']) ? ' data-share-fallback="' . esc_url($link['fallback']) . '"' : '';
+                        $buttons[] = sprintf(
+                            '<a href="%2$s" class="impact-social-ticker__share-btn impact-social-ticker__share-btn--%1$s" target="_blank" rel="noopener" data-share-type="url" data-share-platform="%1$s" data-ngo="%5$s" data-shop="%6$s" data-amount="%7$s"%3$s>%4$s</a>',
+                            $platform,
+                            $url,
+                            $fallback,
+                            $label,
+                            esc_attr($item['ngo_slug'] ?? ''),
+                            esc_attr($item['shop_slug'] ?? ''),
+                            esc_attr((string) ($item['amount_huf'] ?? 0))
+                        );
                         }
 
                         $buttonsHtml = implode('', $buttons);
@@ -809,8 +862,10 @@ JS;
                 static function (array $item): string {
                     $amount = number_format_i18n((int) ($item['amount_huf'] ?? 0));
                     $displayName = esc_html($item['display_name'] ?? $item['pseudo_initials'] ?? '??*');
+                    $badge = esc_html($item['pseudo_full'] ?? $item['pseudo_initials'] ?? '??*');
                     return sprintf(
-                        '<li class="impact-social-ticker__item"><span class="impact-social-ticker__initials">%1$s</span> <strong>%2$s Ft</strong></li>',
+                        '<li class="impact-social-ticker__item"><span class="impact-social-ticker__initials">%1$s</span> <strong>%2$s</strong> <span>%3$s Ft</span></li>',
+                        $badge,
                         $displayName,
                         $amount
                     );

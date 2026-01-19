@@ -188,6 +188,23 @@ function isb_handle_go($is_deal){
     }
   }
   if(!$final) isb_error('Nem sikerült a partner linket előállítani.');
+  if (function_exists('impactshop_log_event')) {
+    $parts = parse_url($final);
+    $targetHost = $parts['host'] ?? '';
+    $pseudo = isset($_COOKIE['impactshop_pseudo_id']) ? sanitize_text_field(wp_unslash($_COOKIE['impactshop_pseudo_id'])) : '';
+    impactshop_log_event('go_click', [
+      'event_source' => $is_deal ? 'go_deal' : 'go',
+      'ngo_slug' => $ngo,
+      'shop_slug' => $shop,
+      'network' => 'dognet',
+      'meta' => [
+        'target_host' => $targetHost,
+        'final_url' => $final,
+        'src' => $src,
+      ],
+      'pseudo_id' => $pseudo,
+    ]);
+  }
   isb_redirect_with_propagation($final,$amb,$src);
 }
 
