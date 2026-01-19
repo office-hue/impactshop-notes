@@ -19,6 +19,9 @@ bin/*.log
 tmp/
 .npm/
 node_modules/
+vendor/
+tests/
+fixtures/
 .idea/
 .vscode/
 .env
@@ -26,6 +29,7 @@ node_modules/
 .codex/.env.local
 secrets/
 chatgpt-history/GMAIL_CLIENT_ID=*
+chatgpt-history/image/
 .deploy.local.*
 wp-content/plugins/complianz-gdpr/
 wp-content/plugins/complianz-terms-conditions/
@@ -38,6 +42,13 @@ wp-content/uploads/**/*.log
 .backups/
 .codex/_preflight_*
 wp-content/index.php
+.wp-test-site/
+impactshop-notes
+wp-content/mu-plugins/image/
+/mu-plugins/
+impact-bridge-local/
+/User token/
+/NGO data/
 .phpunit.result.cache
 .production_env
 .wp-test-site/
