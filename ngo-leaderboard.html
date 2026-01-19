@@ -1,0 +1,342 @@
+<!-- Generated on 2025-12-11 03:30 UTC by scripts/generate_ngo_leaderboard.py -->
+<section class="impact-ngo-leaderboard" aria-labelledby="impact-ngo-title">
+  <style>
+    .impact-ngo-leaderboard {
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 55%, #e0f2fe 100%);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 28px;
+      padding: clamp(1.75rem, 2vw + 1.25rem, 3.5rem);
+      box-shadow: 0 44px 90px rgba(15, 23, 42, 0.12);
+    }
+    .impact-ngo-header {
+      text-align: center;
+      max-width: 60rem;
+      margin: 0 auto clamp(1.8rem, 3vw, 2.75rem);
+    }
+    .impact-ngo-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(2, 132, 199, 0.12);
+      color: #0369a1;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .impact-ngo-header h2 {
+      margin: 0.65rem 0 0.45rem;
+      font-size: clamp(1.7rem, 2.5vw + 1.2rem, 2.7rem);
+      line-height: 1.25;
+      color: #0f172a;
+    }
+    .impact-ngo-header p {
+      margin: 0;
+      color: #475569;
+      font-size: 1.02rem;
+      line-height: 1.65;
+    }
+    .impact-ngo-metrics {
+      margin-top: clamp(1.5rem, 2.5vw, 2.8rem);
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .impact-ngo-metric {
+      padding: 1rem 1.25rem;
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.05);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    .impact-ngo-metric span {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #475569;
+    }
+    .impact-ngo-metric strong {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 1.35rem;
+      color: #0f172a;
+    }
+    .impact-ngo-grid {
+      margin-top: clamp(2rem, 3vw, 3rem);
+      display: grid;
+      gap: 1rem;
+    }
+    .impact-ngo-card {
+      display: grid;
+      grid-template-columns: minmax(48px, 68px) 1fr auto;
+      align-items: center;
+      gap: 1.25rem;
+      padding: clamp(0.85rem, 2vw, 1.15rem) clamp(1rem, 3vw, 1.5rem);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+    .impact-ngo-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.12);
+    }
+    .impact-ngo-rank {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #0f172a;
+      background: linear-gradient(135deg, rgba(14, 116, 144, 0.16), rgba(14, 165, 233, 0.08));
+    }
+    .impact-ngo-info h3 {
+      margin: 0;
+      font-size: 1.08rem;
+      color: #0f172a;
+    }
+    .impact-ngo-amount {
+      display: grid;
+      justify-items: end;
+      gap: 0.25rem;
+    }
+    .impact-ngo-amount strong {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0284c7;
+    }
+    .impact-ngo-amount span {
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+    @media (max-width: 720px) {
+      .impact-ngo-card {
+        grid-template-columns: minmax(44px, 54px) 1fr;
+        grid-template-rows: auto auto;
+        gap: 0.75rem;
+      }
+      .impact-ngo-amount {
+        grid-column: 2 / -1;
+        justify-self: start;
+      }
+    }
+  </style>
+  <div class="impact-ngo-header">
+    <span class="impact-ngo-eyebrow">NGO leaderboard</span>
+    <h2 id="impact-ngo-title">Támogatott szervezetek teljes toplistája</h2>
+    <p>Az Impact Shop vásárlásokból beérkező támogatások összesített rangsora (2025-10-23 dátumtól). Az értékek az elfogadott és függőben lévő jóváírásokat egyaránt tartalmazzák.</p>
+  </div>
+  <div class="impact-ngo-metrics">
+    <div class="impact-ngo-metric"><span>Szervezetek száma</span><strong>20</strong></div>
+    <div class="impact-ngo-metric"><span>Összes összeg</span><strong>1 271 Ft</strong><span>≈ €3,23</span></div>
+    <div class="impact-ngo-metric"><span>Legnagyobb támogatás</span><strong>414 Ft</strong><span>≈ €1,06</span></div>
+  </div>
+  <div class="impact-ngo-grid">
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">1</div>
+      <div class="impact-ngo-info">
+        <h3>Közös ügyünk az állatvédelem Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>414 Ft</strong>
+        <span>≈ €1,06</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">2</div>
+      <div class="impact-ngo-info">
+        <h3>Mozgássérültek Budapesti Egyesülete</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>171 Ft</strong>
+        <span>≈ €0,44</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">3</div>
+      <div class="impact-ngo-info">
+        <h3>Bátor Tábor Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>141 Ft</strong>
+        <span>≈ €0,36</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">4</div>
+      <div class="impact-ngo-info">
+        <h3>Répcelaki Szent István Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>141 Ft</strong>
+        <span>≈ €0,36</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">5</div>
+      <div class="impact-ngo-info">
+        <h3>SAVARIA Díszmadártenyésztő és Állatbarát Egyesület</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>131 Ft</strong>
+        <span>≈ €0,33</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">6</div>
+      <div class="impact-ngo-info">
+        <h3>Egyutt Nadasdert Faluszepito Es Fejleszto Kulturalis Egyesulet</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>46 Ft</strong>
+        <span>≈ €0,12</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">7</div>
+      <div class="impact-ngo-info">
+        <h3>NM Izmok Gyógyulásáért Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>37 Ft</strong>
+        <span>≈ €0,09</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">8</div>
+      <div class="impact-ngo-info">
+        <h3>ESŐEMBERKE Alapítvány a Vas vármegyei autistákért</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>28 Ft</strong>
+        <span>≈ €0,07</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">9</div>
+      <div class="impact-ngo-info">
+        <h3>Patrónus Ház Közhasznú Nonprofit Kft</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>28 Ft</strong>
+        <span>≈ €0,07</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">10</div>
+      <div class="impact-ngo-info">
+        <h3>Csoda Emma Mosolyaert Alapitvany</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>22 Ft</strong>
+        <span>≈ €0,06</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">11</div>
+      <div class="impact-ngo-info">
+        <h3>Danyi Apro Patak Lse</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>22 Ft</strong>
+        <span>≈ €0,06</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">12</div>
+      <div class="impact-ngo-info">
+        <h3>Avalon Színház Művelődési Egyesület</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>16 Ft</strong>
+        <span>≈ €0,04</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">13</div>
+      <div class="impact-ngo-info">
+        <h3>Csermely Környezetvédelmi Egyesület</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>16 Ft</strong>
+        <span>≈ €0,04</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">14</div>
+      <div class="impact-ngo-info">
+        <h3>Együtt Pénzes Márk Gyógyulásáért Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>15 Ft</strong>
+        <span>≈ €0,04</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">15</div>
+      <div class="impact-ngo-info">
+        <h3>Szívvel - Lélekkel a Gyermekekért és Fiatalokért Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>13 Ft</strong>
+        <span>≈ €0,03</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">16</div>
+      <div class="impact-ngo-info">
+        <h3>Levente Izomremény Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>9 Ft</strong>
+        <span>≈ €0,02</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">17</div>
+      <div class="impact-ngo-info">
+        <h3>Legyél Ádám Reménye Alapítvány</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>5 Ft</strong>
+        <span>≈ €0,01</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">18</div>
+      <div class="impact-ngo-info">
+        <h3>Mozdulj Velunk Egyesulet</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>5 Ft</strong>
+        <span>≈ €0,01</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">19</div>
+      <div class="impact-ngo-info">
+        <h3>Mécses Szeretetszolgálat Magyar Börtönpasztorációs Társaság</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>5 Ft</strong>
+        <span>≈ €0,01</span>
+      </div>
+    </article>
+    <article class="impact-ngo-card">
+      <div class="impact-ngo-rank">20</div>
+      <div class="impact-ngo-info">
+        <h3>Tamaszpont Mentalhigienes Oktatasi Es Prevencios Kozhasznu Alapitvany</h3>
+      </div>
+      <div class="impact-ngo-amount">
+        <strong>6 Ft</strong>
+        <span>≈ €0,01</span>
+      </div>
+    </article>
+  </div>
+</section>

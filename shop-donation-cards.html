@@ -1,0 +1,1489 @@
+<!-- Generated on 2025-12-11 03:30 UTC by scripts/generate_shop_donation_cards.py -->
+<section class="impactshop-donations" aria-labelledby="impactshop-donations-title">
+  <style>
+  .impactshop-donations {
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: radial-gradient(1200px 680px at 8% -20%, rgba(124, 58, 237, 0.12), transparent),
+                linear-gradient(180deg, #f8fafc, #ffffff);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 28px;
+    padding: clamp(1.5rem, 2vw + 1rem, 3.5rem);
+    box-shadow: 0 40px 90px rgba(15, 23, 42, 0.08);
+  }
+  .impactshop-donations__intro {
+    display: grid;
+    gap: 0.75rem;
+    justify-items: center;
+    text-align: center;
+    margin: 0 auto;
+    max-width: 56rem;
+  }
+  .impactshop-donations__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(79, 70, 229, 0.08);
+    color: #4338ca;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .impactshop-donations__intro h2 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(1.6rem, 2vw + 1.2rem, 2.4rem);
+    line-height: 1.25;
+    background: linear-gradient(135deg, #4338ca 0%, #2563eb 45%, #0ea5e9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: #0f172a;
+    color: transparent;
+  }
+  .impactshop-donations__intro p {
+    margin: 0;
+    color: #475569;
+    max-width: 60ch;
+    line-height: 1.6;
+    font-size: 1.02rem;
+  }
+        .impactshop-donations__stats {
+          margin-top: 1.5rem;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+        .impactshop-donations__stat {
+          flex: 1 1 160px;
+          padding: 0.85rem 1rem;
+          border-radius: 16px;
+          background: rgba(15, 23, 42, 0.04);
+          border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+        .impactshop-donations__stat strong {
+          display: block;
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #1d2353;
+        }
+        .impactshop-donations__featured {
+          margin-top: clamp(1.5rem, 3vw, 2.5rem);
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: clamp(1rem, 2vw, 1.5rem);
+        }
+        .impactshop-donations__grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: clamp(1rem, 2vw, 1.75rem);
+          margin-top: clamp(1.5rem, 2vw + 1rem, 2.5rem);
+        }
+        .impactshop-donation-card {
+          position: relative;
+          background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.82));
+          border-radius: 22px;
+          padding: 1.35rem;
+          color: #f8fafc;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          min-height: 260px;
+          overflow: hidden;
+          box-shadow: 0 28px 42px rgba(15, 23, 42, 0.28);
+        }
+        .impactshop-donation-card--featured {
+          min-height: 300px;
+          border: 1px solid rgba(236, 72, 153, 0.3);
+          box-shadow: 0 28px 60px rgba(236, 72, 153, 0.2);
+          background: linear-gradient(150deg, rgba(236, 72, 153, 0.82), rgba(79, 70, 229, 0.82));
+        }
+        .impactshop-donation-card::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          border: 1px solid rgba(148, 163, 184, 0.32);
+          pointer-events: none;
+        }
+        .impactshop-donation-card__logo {
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          opacity: 0.95;
+        }
+        .impactshop-donation-card__logo img {
+          max-height: 56px;
+          max-width: 160px;
+          width: auto;
+        }
+        .impactshop-donation-card__body h3 {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+        }
+        .impactshop-donation-card__category {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          margin-top: 0.35rem;
+          padding: 0.2rem 0.65rem;
+          border-radius: 999px;
+          background: rgba(148, 163, 184, 0.18);
+          color: rgba(226, 232, 240, 0.92);
+          font-size: 0.78rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .impactshop-donation-card__donation {
+          margin: 0.75rem 0 0;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+        .impactshop-donation-card__donation span {
+          font-size: 0.78rem;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          opacity: 0.7;
+        }
+        .impactshop-donation-card__donation strong {
+          font-size: clamp(1.6rem, 3vw, 2.2rem);
+          font-weight: 800;
+          text-shadow: 0 18px 30px rgba(124, 58, 237, 0.45);
+        }
+        .impactshop-donation-card__note {
+          margin: 0;
+          color: rgba(226, 232, 240, 0.85);
+          font-size: 0.95rem;
+          line-height: 1.5;
+        }
+        .impactshop-donation-card__link {
+          margin-top: auto;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.65rem 1.05rem;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #7c3aed, #2563eb);
+          color: #fff;
+          font-weight: 600;
+          font-size: 0.95rem;
+          text-decoration: none;
+          box-shadow: 0 20px 30px rgba(124, 58, 237, 0.32);
+          transition: transform 160ms ease, box-shadow 160ms ease;
+        }
+        .impactshop-donation-card__link:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 26px 42px rgba(124, 58, 237, 0.45);
+        }
+        .impactshop-donation-card__link:focus-visible {
+          outline: 2px solid rgba(248, 250, 252, 0.9);
+          outline-offset: 3px;
+        }
+        @media (max-width: 600px) {
+          .impactshop-donations {
+            border-radius: 20px;
+            padding: 1.5rem;
+          }
+          .impactshop-donation-card {
+            min-height: 220px;
+          }
+          .impactshop-donations__featured {
+            grid-template-columns: 1fr;
+          }
+        }
+      </style>
+  <div class="impactshop-donations__intro">
+    <span class="impactshop-donations__eyebrow">Adományozási térkép</span>
+    <h2 id="impactshop-donations-title">Fedezd fel partnervállalataink adományozási rátáit</h2>
+    <p>
+      A vásárlásaidból érkező adomány webshoponként.
+    </p>
+  </div>
+  <div class="impactshop-donations__stats">
+    <div class="impactshop-donations__stat"><span>Aktív partnerek</span><strong>106</strong></div>
+    <div class="impactshop-donations__stat"><span>Kategóriák száma</span><strong>37</strong></div>
+    <div class="impactshop-donations__stat"><span>Legmagasabb adomány</span><strong>25%</strong></div>
+  </div>
+  <div class="impactshop-donations__featured">
+      <article class="impactshop-donation-card impactshop-donation-card--featured" data-role="featured-card" data-title="herbatica" data-category="egeszseg" data-donation="9" data-donation-type="numeric" data-search="herbatica-egeszseg-9-https-www-herbatica-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/475486516eb144c49428b50c2209a3eac17e07de.png" alt="Herbatica logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Herbatica</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>9%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=herbatica&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWhlcmJhdGljYSZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuaGVyYmF0aWNhLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=herbatica&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--featured" data-role="featured-card" data-title="toman diet" data-category="egeszseg" data-donation="9" data-donation-type="numeric" data-search="toman-diet-egeszseg-7-5-9-https-tomandiet-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/f906700ef71eafd5f5fbc839f6d4f1a7a9d1d540.webp" alt="TOMAN diet logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>TOMAN diet</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>7,5% – 9%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=toman-diet&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXRvbWFuLWRpZXQmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly90b21hbmRpZXQuY29t" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=toman-diet&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--featured" data-role="featured-card" data-title="maiakció" data-category="vegyes" data-donation="7.5" data-donation-type="numeric" data-search="maiakcio-vegyes-7-5-https-maiakcio-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/maiakcio_logo_180x50-1.png" alt="Maiakció logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Maiakció</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>7,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=maiakcio&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW1haWFrY2lvJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly9tYWlha2Npby5jb20%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=maiakcio&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--featured" data-role="featured-card" data-title="mannavita" data-category="egeszseg" data-donation="7.5" data-donation-type="numeric" data-search="mannavita-egeszseg-7-5-https-www-mannavita-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/5bc3e82e73704179722d102808a9d39fd0efbd4e.png" alt="MannaVita logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>MannaVita</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>7,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=mannavita&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW1hbm5hdml0YSZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cubWFubmF2aXRhLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=mannavita&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+  </div>
+  <div class="impactshop-donations__grid">
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="4home" data-category="otthon" data-donation="3" data-donation-type="numeric" data-search="4home-otthon-3-https-www-4home-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/log.jpeg" alt="4home logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>4home</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=4home&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPTRob21lJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuNGhvbWUuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=4home&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="vision express" data-category="egeszseg" data-donation="3" data-donation-type="numeric" data-search="vision-express-egeszseg-3-https-www-visionexpress-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/Nevtelen-200-x-200-keppont.png" alt="Vision Express logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Vision Express</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=visionexpress&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXZpc2lvbmV4cHJlc3Mmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudmlzaW9uZXhwcmVzcy5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=visionexpress&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="regio játék" data-category="jatek" data-donation="4" data-donation-type="numeric" data-search="regio-jatek-jatek-2-5-4-https-www-regiojatek-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/logo.jpeg" alt="REGIO Játék logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>REGIO Játék</h3>
+          <span class="impactshop-donation-card__category">Játék</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5% – 4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=regiojatek&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXJlZ2lvamF0ZWsmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cucmVnaW9qYXRlay5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=regiojatek&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="árukereső" data-category="vegyes" data-donation="" data-donation-type="text" data-search="arukereso-vegyes-termektol-fugg-https-www-arukereso-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/hg-logo-arukereso-color-20231018-1200-0-90-cr.webp" alt="Árukereső logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Árukereső</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>Terméktől függ</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=arukereso&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFydWtlcmVzbyZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuYXJ1a2VyZXNvLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=arukereso&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="decathlon" data-category="sport" data-donation="3" data-donation-type="numeric" data-search="decathlon-sport-3-https-www-decathlon-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/DECATHLON_logo_lockup_stacked_blue_rgb_-_Expires_on_31-12-2100.jpg.webp" alt="Decathlon logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Decathlon</h3>
+          <span class="impactshop-donation-card__category">Sport</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=decathlon&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWRlY2F0aGxvbiZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuZGVjYXRobG9uLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=decathlon&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="alinda" data-category="vegyes" data-donation="6" data-donation-type="numeric" data-search="alinda-vegyes-6-https-alinda-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/e69b1936a26965f23c410654a9456e86ab0ad6d4.png" alt="Alinda logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Alinda</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>6%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=alinda&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFsaW5kYSZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly9hbGluZGEuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=alinda&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="alza" data-category="vegyes" data-donation="0.75" data-donation-type="numeric" data-search="alza-vegyes-0-75-https-www-alza-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/alza-hu-logo.png" alt="Alza logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Alza</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>0,75%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=alza&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFsemEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYWx6YS5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=alza&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="glami" data-category="divat" data-donation="" data-donation-type="text" data-search="glami-divat-termektol-fugg-https-www-glami-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/GLAMI-1.png" alt="Glami logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Glami</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>Terméktől függ</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=glami&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWdsYW1pJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuZ2xhbWkuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=glami&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="játék sziget" data-category="jatek" data-donation="4.5" data-donation-type="numeric" data-search="jatek-sziget-jatek-2-5-4-5-https-www-jateksziget-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/Nevtelen-200-x-200-keppont-2.png" alt="Játék Sziget logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Játék Sziget</h3>
+          <span class="impactshop-donation-card__category">Játék</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5% – 4,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=jateksziget&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWphdGVrc3ppZ2V0JnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuamF0ZWtzemlnZXQuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=jateksziget&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="xupe" data-category="elektronika" data-donation="1.55" data-donation-type="numeric" data-search="xupe-elektronika-1-55-https-www-xupe-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/images.png" alt="Xupe logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Xupe</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1,55%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=xupe&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXh1cGUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cueHVwZS5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=xupe&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="hszien" data-category="vegyes" data-donation="4.5" data-donation-type="numeric" data-search="hszien-vegyes-4-5-https-www-hszien-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/Hszien.hu_logo.png" alt="Hszien logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Hszien</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=hszien&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWhzemllbiZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuaHN6aWVuLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=hszien&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="elektronik star" data-category="elektronika" data-donation="2.5" data-donation-type="numeric" data-search="elektronik-star-elektronika-2-5-https-www-electronic-star-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/electronicstar.png" alt="Elektronik Star logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Elektronik Star</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=elektronik-star&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWVsZWt0cm9uaWstc3RhciZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuZWxlY3Ryb25pYy1zdGFyLmh1Lw%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=elektronik-star&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="bestyle" data-category="elektronika" data-donation="4" data-donation-type="numeric" data-search="bestyle-elektronika-4-https-bestyle-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/25bdfeb05a5e4a3cda1c1afbdf5b9fcb897b4685.png" alt="Bestyle logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Bestyle</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=bestyle&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWJlc3R5bGUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9iZXN0eWxlLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=bestyle&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="zooplus" data-category="allat" data-donation="5" data-donation-type="numeric" data-search="zooplus-allat-1-5-https-www-zooplus-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/a7e718addec0da579c7cff3e9e6b47092ac7705c.png" alt="Zooplus logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Zooplus</h3>
+          <span class="impactshop-donation-card__category">Állat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1% – 5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=zooplus&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXpvb3BsdXMmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuem9vcGx1cy5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=zooplus&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="ebolt" data-category="elektronika" data-donation="1" data-donation-type="numeric" data-search="ebolt-elektronika-1-https-www-ebolt-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/5a845126a9883be229870467fd790c6d66f5bcc7.png" alt="Ebolt logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Ebolt</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=ebolt&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWVib2x0JnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuZWJvbHQuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=ebolt&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="szalay könyvek" data-category="kultura" data-donation="2.5" data-donation-type="numeric" data-search="szalay-konyvek-kultura-2-5-https-szalaykonyvek-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/7843f8ce809240bdab7271eba676fc023af309b2.png" alt="Szalay Könyvek logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Szalay Könyvek</h3>
+          <span class="impactshop-donation-card__category">Kultúra</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=szalaykonyvek&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXN6YWxheWtvbnl2ZWsmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9zemFsYXlrb255dmVrLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=szalaykonyvek&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="deco24" data-category="otthon" data-donation="5" data-donation-type="numeric" data-search="deco24-otthon-5-https-www-deco24-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/09/2b7cfd9b39e13439d7551f613d74c06264c36470.png" alt="Deco24 logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Deco24</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=deco24&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWRlY28yNCZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuZGVjbzI0Lmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=deco24&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="klarstein" data-category="elektronika" data-donation="2.5" data-donation-type="numeric" data-search="klarstein-elektronika-2-5-https-www-klarstein-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/96aaccd015dd2cc541008a74ae052167d0acfe51.png" alt="Klarstein logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Klarstein</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=klarstein&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWtsYXJzdGVpbiZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cua2xhcnN0ZWluLmh1Lw%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=klarstein&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="lampak.hu" data-category="otthon" data-donation="3" data-donation-type="numeric" data-search="lampak-hu-otthon-3-https-www-lampak-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/1d32317536eb63e466f652cd98c6749ad7552c8b.png" alt="Lampak.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Lampak.hu</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=lampak&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWxhbXBhayZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cubGFtcGFrLmh1Lw%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=lampak&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="dodo.hu" data-category="butor" data-donation="2.5" data-donation-type="numeric" data-search="dodo-hu-butor-2-5-https-dodo-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/11f887b67965982b1ca3a2eb71fe307d6b1c937a.png" alt="Dodo.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Dodo.hu</h3>
+          <span class="impactshop-donation-card__category">Bútor</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=dodo&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWRvZG8mc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9kb2RvLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=dodo&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="pepita.hu" data-category="vegyes" data-donation="5" data-donation-type="numeric" data-search="pepita-hu-vegyes-2-5-5-https-pepita-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/c9123fcb6ecbfdcc21751f255dc2b367c81fcfb3.png" alt="Pepita.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Pepita.hu</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5% – 5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=pepita&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXBlcGl0YSZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly9wZXBpdGEuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=pepita&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="dyson" data-category="elektronika" data-donation="2" data-donation-type="numeric" data-search="dyson-elektronika-2-https-www-dyson-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/8307e23d06338709c5efb76e94fb408fa8d008cb.png" alt="Dyson logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Dyson</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=dyson&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWR5c29uJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuZHlzb24uaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=dyson&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="onlinemarkaboltok.hu" data-category="otthon" data-donation="1.75" data-donation-type="numeric" data-search="onlinemarkaboltok-hu-otthon-1-1-75-https-www-onlinemarkaboltok-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/ffb344b70d574db8af423daf0acaed389f5eb0c8.png" alt="Onlinemarkaboltok.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Onlinemarkaboltok.hu</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1% – 1,75%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=onlinemarkaboltok&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW9ubGluZW1hcmthYm9sdG9rJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cub25saW5lbWFya2Fib2x0b2suaHUv" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=onlinemarkaboltok&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="nike" data-category="divat" data-donation="1.75" data-donation-type="numeric" data-search="nike-divat-1-75-https-www-nike-com-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/4ed9d3587484d8b82cb14806cbf5e62474f578a8.png" alt="Nike logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Nike</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1,75%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=nike&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW5pa2Umc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cubmlrZS5jb20vaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=nike&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="gumik.hu" data-category="muszaki" data-donation="1.5" data-donation-type="numeric" data-search="gumik-hu-muszaki-1-5-https-www-gumik-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/eecd6ef96c15c3588d657b6f7aba5a8ffce21c84.png" alt="Gumik.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Gumik.hu</h3>
+          <span class="impactshop-donation-card__category">Műszaki</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=gumik&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWd1bWlrJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuZ3VtaWsuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=gumik&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="merkury market" data-category="otthon" data-donation="2.5" data-donation-type="numeric" data-search="merkury-market-otthon-2-5-https-www-merkurymarket-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/50414d426be6a44120409c8e35894bb0baeb67ce.png" alt="Merkury Market logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Merkury Market</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=mercury-market&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW1lcmN1cnktbWFya2V0JnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cubWVya3VyeW1hcmtldC5odS8%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=mercury-market&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="aliexpress" data-category="vegyes" data-donation="2.5" data-donation-type="numeric" data-search="aliexpress-vegyes-2-5-https-www-aliexpress-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/d5ac3fe959e106b1cdfa89890e458577a10212cd-1.png" alt="Aliexpress logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Aliexpress</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=aliexpress&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFsaWV4cHJlc3Mmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYWxpZXhwcmVzcy5jb20%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=aliexpress&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="mobilfox" data-category="elektronika" data-donation="2.5" data-donation-type="numeric" data-search="mobilfox-elektronika-2-5-https-hu-mobilfox-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/0375439cb66a4389461624d0aebdfb3d83e0e97d.png" alt="MOBILFOX logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>MOBILFOX</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=mobilfox&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW1vYmlsZm94JnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly9odS5tb2JpbGZveC5jb20v" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=mobilfox&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="butopea" data-category="otthon" data-donation="4" data-donation-type="numeric" data-search="butopea-otthon-4-https-butopea-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/bc9c13bc85ece53680c70d58f22111504c0949fd.png" alt="Butopea logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Butopea</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=butopea&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWJ1dG9wZWEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9idXRvcGVhLmNvbQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=butopea&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="fény24" data-category="otthon" data-donation="4" data-donation-type="numeric" data-search="feny24-otthon-2-5-4-https-www-feny24-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/b429a0dff3f3e62d92e28d5b10be173927cc82fe.png" alt="Fény24 logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Fény24</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5% – 4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=feny24&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWZlbnkyNCZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuZmVueTI0Lmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=feny24&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="topjiucers" data-category="egeszseg" data-donation="3.85" data-donation-type="numeric" data-search="topjiucers-egeszseg-3-85-https-www-topjuicers-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/0b927e4ac2d2167de030c7025fbdb4a376e45f38.png" alt="TopJiucers logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>TopJiucers</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,85%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=topjuicers&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXRvcGp1aWNlcnMmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudG9wanVpY2Vycy5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=topjuicers&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="wolt" data-category="elelmiszer" data-donation="" data-donation-type="text" data-search="wolt-elelmiszer-2700-ft-uj-regisztracio-elso-rendeles-https-wolt-com-hu-hun">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/81396c66a21a852376ed420f5f800b4dfe0e06bc.jpg" alt="Wolt logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Wolt</h3>
+          <span class="impactshop-donation-card__category">Élelmiszer</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2700 Ft / új regisztráció + első rendelés</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=wolt&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXdvbHQmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93b2x0LmNvbS9odS9odW4%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=wolt&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="sportplaza" data-category="sport" data-donation="3" data-donation-type="numeric" data-search="sportplaza-sport-3-https-sportplaza-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/cbc5e2332882b58078a4a5616f8aa60c02abd9bd.png" alt="SportPlaza logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>SportPlaza</h3>
+          <span class="impactshop-donation-card__category">Sport</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=sportplaza&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXNwb3J0cGxhemEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9zcG9ydHBsYXphLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=sportplaza&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="tok shop" data-category="elektronika" data-donation="5" data-donation-type="numeric" data-search="tok-shop-elektronika-5-https-tok-shop-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/eb6d949182ce8b1a70842c8df0f8f7e03fadfa6d.png" alt="Tok Shop logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Tok Shop</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=tokshop&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXRva3Nob3Amc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly90b2stc2hvcC5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=tokshop&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="gymbeam" data-category="egeszseg" data-donation="4" data-donation-type="numeric" data-search="gymbeam-egeszseg-1-4-https-gymbeam-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/9daa3335b25c0f601064d7d34da870f94aaa6412.png" alt="GymBeam logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>GymBeam</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1% – 4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=gymbeam&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWd5bWJlYW0mc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9neW1iZWFtLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=gymbeam&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="allegro" data-category="vegyes" data-donation="" data-donation-type="text" data-search="allegro-vegyes-termektol-fugg-https-allegro-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/3e3d705d175110f5a40c9a3e08c81ee1fcc494a7.png" alt="Allegro logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Allegro</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>Terméktől függ</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=allegro&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFsbGVncm8mc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9hbGxlZ3JvLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=allegro&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="ékszer-eshop" data-category="ekszer" data-donation="6" data-donation-type="numeric" data-search="ekszer-eshop-ekszer-4-6-https-ekszer-eshop-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/480ad795accb3a29a5a5c27087bef0f9488e3eba.png" alt="Ékszer-eshop logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Ékszer-eshop</h3>
+          <span class="impactshop-donation-card__category">Ékszer</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4% – 6%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=ekszer-eshop&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWVrc3plci1lc2hvcCZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly9la3N6ZXItZXNob3AuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=ekszer-eshop&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="alensa" data-category="egeszseg" data-donation="3.25" data-donation-type="numeric" data-search="alensa-egeszseg-3-25-https-www-alensa-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/730f341ad141643862d46b4c7b3a0de827563389.png" alt="Alensa logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Alensa</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,25%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=alensa&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFsZW5zYSZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuYWxlbnNhLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=alensa&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="eredeti ajándékok" data-category="ajandek" data-donation="5" data-donation-type="numeric" data-search="eredeti-ajandekok-ajandek-5-https-www-eredetiajandekok-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/f0f6c16777b6bf8f8050fa3e484112f7f060e95c.png" alt="Eredeti Ajándékok logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Eredeti Ajándékok</h3>
+          <span class="impactshop-donation-card__category">Ajándék</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=eredeti-ajandekok&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWVyZWRldGktYWphbmRla29rJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuZXJlZGV0aWFqYW5kZWtvay5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=eredeti-ajandekok&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="astoreo" data-category="otthon" data-donation="5" data-donation-type="numeric" data-search="astoreo-otthon-5-https-www-astoreo-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/65584706ff9b4dad2a49a15798924a9ec6a60f28.png" alt="Astoreo logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Astoreo</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=astoreo&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFzdG9yZW8mc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYXN0b3Jlby5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=astoreo&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="mobilasz" data-category="elektronika" data-donation="5" data-donation-type="numeric" data-search="mobilasz-elektronika-5-https-www-mobilasz-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/614a6abc9dc9f51c723749e806ce34c516894f90.png" alt="Mobilasz logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Mobilasz</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=mobilasz&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW1vYmlsYXN6JnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cubW9iaWxhc3ouaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=mobilasz&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="bontis" data-category="divat" data-donation="5" data-donation-type="numeric" data-search="bontis-divat-5-https-www-bontis-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/081715f897224c05be0e8e95a3bfc2bdc7526d20.png" alt="Bontis logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Bontis</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=bontis&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWJvbnRpcyZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuYm9udGlzLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=bontis&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="eyerim" data-category="egeszseg" data-donation="2.75" data-donation-type="numeric" data-search="eyerim-egeszseg-2-75-https-eyerim-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/cf1944f5d69410324f287c9fcacf99cee9341a28.png" alt="Eyerim logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Eyerim</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,75%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=eyerim&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWV5ZXJpbSZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly9leWVyaW0uaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=eyerim&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="i-kertibutor" data-category="otthon" data-donation="2" data-donation-type="numeric" data-search="i-kertibutor-otthon-2-https-www-i-kertibutor-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/84b4031b5ed79b83f495849cbd24e0120f62395e.png" alt="i-kertibutor logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>i-kertibutor</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=i-kertibutor&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWkta2VydGlidXRvciZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuaS1rZXJ0aWJ1dG9yLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=i-kertibutor&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="cropp" data-category="divat" data-donation="3.5" data-donation-type="numeric" data-search="cropp-divat-3-5-https-www-cropp-com-hu-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/eb66ff9ca13789355627841a6365c00cc7c3c2bb.png" alt="Cropp logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Cropp</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cropp&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNyb3BwJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuY3JvcHAuY29tL2h1L2h1Lw%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cropp&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="parfume shop" data-category="divat" data-donation="2.5" data-donation-type="numeric" data-search="parfume-shop-divat-2-5-https-www-parfumeshop-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/58b2dd0585b7da751b5c9795a66bbe221cecae3a.jpg" alt="Parfume Shop logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Parfume Shop</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=parfumeshop&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXBhcmZ1bWVzaG9wJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cucGFyZnVtZXNob3AuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=parfumeshop&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="profiszakacs.hu" data-category="ajandek" data-donation="3.5" data-donation-type="numeric" data-search="profiszakacs-hu-ajandek-3-5-https-profiszakacs-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/45c4222bb2e25c49ca9b19e96f9a031cf0f200e6.png" alt="Profiszakacs.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Profiszakacs.hu</h3>
+          <span class="impactshop-donation-card__category">Ajándék</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=profiszakacs&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXByb2Zpc3pha2FjcyZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly9wcm9maXN6YWthY3MuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=profiszakacs&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="travelkingtravelking" data-category="szabadido" data-donation="3" data-donation-type="numeric" data-search="travelkingtravelking-szabadido-3-https-travelking-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/32174069f4027e136a7872591a75d07b8cc7ae97.png" alt="Travelkingtravelking logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Travelkingtravelking</h3>
+          <span class="impactshop-donation-card__category">Szabadidő</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=travelking&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXRyYXZlbGtpbmcmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly90cmF2ZWxraW5nLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=travelking&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="játékszállító.hu" data-category="jatek" data-donation="7.5" data-donation-type="numeric" data-search="jatekszallito-hu-jatek-7-5-https-jatekszallito-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/654eea3c844fa12df5717271e56088ea44f99a14.png" alt="Játékszállító.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Játékszállító.hu</h3>
+          <span class="impactshop-donation-card__category">Játék</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>7,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=jatekszallito&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWphdGVrc3phbGxpdG8mc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9qYXRla3N6YWxsaXRvLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=jatekszallito&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="konyhaluxnet" data-category="otthon" data-donation="1.15" data-donation-type="numeric" data-search="konyhaluxnet-otthon-1-15-https-konyhaluxnet-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/fef259f11f80ee156289b26193fdc954b096b5d1.png" alt="Konyhaluxnet logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Konyhaluxnet</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1,15%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=konyhaluxnet&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWtvbnloYWx1eG5ldCZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly9rb255aGFsdXhuZXQuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=konyhaluxnet&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="norafashion" data-category="divat" data-donation="2.5" data-donation-type="numeric" data-search="norafashion-divat-2-5-https-norafashion-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/e40c6302679edeed2c4fdb9905d9ba7ffd0d50f0-1.png" alt="Norafashion logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Norafashion</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=norafashion&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW5vcmFmYXNoaW9uJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly9ub3JhZmFzaGlvbi5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=norafashion&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="speedshop" data-category="elektronika" data-donation="5" data-donation-type="numeric" data-search="speedshop-elektronika-5-https-www-speedshop-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/33f2f9226667f585791caac8823172d045ead335.png" alt="Speedshop logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Speedshop</h3>
+          <span class="impactshop-donation-card__category">Elektronika</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=speedshop&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXNwZWVkc2hvcCZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuc3BlZWRzaG9wLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=speedshop&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="by toman" data-category="divat" data-donation="5" data-donation-type="numeric" data-search="by-toman-divat-5-https-bytoman-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/24de0aa8a43d9395604cc223e472069a569c182c.webp" alt="By TOMAN logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>By TOMAN</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=bytoman&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWJ5dG9tYW4mc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly9ieXRvbWFuLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=bytoman&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="milenial café" data-category="elelmiszer" data-donation="6" data-donation-type="numeric" data-search="milenial-cafe-elelmiszer-6-https-www-milenialcafe-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/32a45ea6298c9215d34dabcd0ec516460a1cf3c4.png" alt="Milenial Café logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Milenial Café</h3>
+          <span class="impactshop-donation-card__category">Élelmiszer</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>6%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=milenial-cafe&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPW1pbGVuaWFsLWNhZmUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cubWlsZW5pYWxjYWZlLmh1" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=milenial-cafe&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="bútor market" data-category="butor" data-donation="2.5" data-donation-type="numeric" data-search="butor-market-butor-2-5-https-butor-market-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/15c9a66de88a7624a5236ae88b2d50b250262eeb.png" alt="Bútor Market logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Bútor Market</h3>
+          <span class="impactshop-donation-card__category">Bútor</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=butor-market&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWJ1dG9yLW1hcmtldCZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly9idXRvci1tYXJrZXQuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=butor-market&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="cricksy dog" data-category="allat" data-donation="5" data-donation-type="numeric" data-search="cricksy-dog-allat-5-https-cricksydog-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/10/2db7e17b72ff833ae9508b9acb835b92506b9401.png" alt="Cricksy Dog logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Cricksy Dog</h3>
+          <span class="impactshop-donation-card__category">Állat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cricksy-dog&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNyaWNrc3ktZG9nJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly9jcmlja3N5ZG9nLmh1Lw%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cricksy-dog&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="yves rocher" data-category="egeszseg" data-donation="2.5" data-donation-type="numeric" data-search="yves-rocher-egeszseg-2-5-https-www-yves-rocher-hu-black-friday-2025-addpcode-bf25">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/11/YR2511_AK_07_FLASH_BLACK_FRIDAY_HU_1080x1080_1.png" alt="Yves Rocher logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Yves Rocher</h3>
+          <span class="impactshop-donation-card__category">Egészség</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=yves-rocher&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXl2ZXMtcm9jaGVyJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cueXZlcy1yb2NoZXIuaHUvYmxhY2stZnJpZGF5LTIwMjU_YWRkcGNvZGU9QkYyNQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=yves-rocher&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="skechers" data-category="divat" data-donation="3" data-donation-type="numeric" data-search="skechers-divat-3-https-www-skechers-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/11/17051463.json_.jpeg" alt="Skechers logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Skechers</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=skechers&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXNrZWNoZXJzJnNyYz1pbXBhY3RzaG9wLWRvbmF0aW9uLWNhcmRz&amp;u=aHR0cHM6Ly93d3cuc2tlY2hlcnMuaHU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=skechers&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="about you" data-category="divat" data-donation="1" data-donation-type="numeric" data-search="about-you-divat-1-https-www-aboutyou-hu-c-noi-20201-hascampaignreduction-true">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/11/16757468.gif.png" alt="About You logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>About You</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=about-you&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWFib3V0LXlvdSZzcmM9aW1wYWN0c2hvcC1kb25hdGlvbi1jYXJkcw%3D%3D&amp;u=aHR0cHM6Ly93d3cuYWJvdXR5b3UuaHUvYy9ub2ktMjAyMDE_aGFzQ2FtcGFpZ25SZWR1Y3Rpb249dHJ1ZQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=about-you&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="tescoma" data-category="otthon" data-donation="3.5" data-donation-type="numeric" data-search="tescoma-otthon-3-5-https-www-tescoma-hu-black-friday-akcio">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/2025/11/tescoma-white-logo.png" alt="Tescoma logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Tescoma</h3>
+          <span class="impactshop-donation-card__category">Otthon</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=tescoma&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPXRlc2NvbWEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudGVzY29tYS5odS9ibGFjay1mcmlkYXktYWtjaW8%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=tescoma&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="axa-assistance-sk-hu-ro" data-category="personal-insurance" data-donation="" data-donation-type="text" data-search="axa-assistance-sk-hu-ro-personal-insurance-termektol-fugg-www-axa-assistance-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5230042.png" alt=" AXA-ASSISTANCE SK/HU/RO logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3> AXA-ASSISTANCE SK/HU/RO</h3>
+          <span class="impactshop-donation-card__category">Personal Insurance</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>9% – 10%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5230042&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTUyMzAwNDImc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYW5yZG9lenJzLm5ldC9jbGljay0xMDE1ODk0NjQtMTM3MDc5MTU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5230042&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="aboutyou-hu" data-category="vegyes" data-donation="" data-donation-type="text" data-search="aboutyou-hu-vegyes-termektol-fugg-www-aboutyou-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5243646.png" alt="Aboutyou.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Aboutyou.hu</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5243646&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTUyNDM2NDYmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudGtxbGhjZS5jb20vY2xpY2stMTAxNTg5NDY0LTEzNjk0OTM2" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5243646&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="akkuk-hu" data-category="computer-hw" data-donation="" data-donation-type="text" data-search="akkuk-hu-computer-hw-termektol-fugg-www-akkuk-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5764183.png" alt="Akkuk.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Akkuk.hu</h3>
+          <span class="impactshop-donation-card__category">Computer HW</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>7,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5764183&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU3NjQxODMmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTE1MDI0MDYw" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5764183&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="answear-hu" data-category="vegyes" data-donation="" data-donation-type="text" data-search="answear-hu-vegyes-termektol-fugg-www-answear-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-4877395.png" alt="Answear.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Answear.hu</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-4877395&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTQ4NzczOTUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYW5zd2Vhci5odQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-4877395&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="brendon-hu" data-category="babies" data-donation="" data-donation-type="text" data-search="brendon-hu-babies-termektol-fugg-www-brendon-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6575811.png" alt="Brendon.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Brendon.hu</h3>
+          <span class="impactshop-donation-card__category">Babies</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6575811&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY1NzU4MTEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTE1ODU1MTgy" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6575811&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="butlers-hu" data-category="home-appliances" data-donation="" data-donation-type="text" data-search="butlers-hu-home-appliances-termektol-fugg-www-butlers-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5807789.png" alt="Butlers.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Butlers.hu</h3>
+          <span class="impactshop-donation-card__category">Home Appliances</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5807789&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU4MDc3ODkmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTE1MTY1MzUx" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5807789&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="byrokko-world" data-category="bath-body" data-donation="" data-donation-type="text" data-search="byrokko-world-bath-body-termektol-fugg-www-byrokko-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-7133039.png" alt="Byrokko World logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Byrokko World</h3>
+          <span class="impactshop-donation-card__category">Bath &amp; Body</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-7133039&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTcxMzMwMzkmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudGtxbGhjZS5jb20vY2xpY2stMTAxNTg5NDY0LTE1ODg1NjE0" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-7133039&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="cdrmarket-hu-ro" data-category="peripherals" data-donation="" data-donation-type="text" data-search="cdrmarket-hu-ro-peripherals-termektol-fugg-www-cdrmarket-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-4967945.png" alt="CDRmarket.hu/ro logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>CDRmarket.hu/ro</h3>
+          <span class="impactshop-donation-card__category">Peripherals</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1,5% – 6%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-4967945&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTQ5Njc5NDUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTEzMDM4NTgz" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-4967945&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="dermo-hu" data-category="cosmetics" data-donation="" data-donation-type="text" data-search="dermo-hu-cosmetics-termektol-fugg-www-dermo-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6754592.png" alt="Dermo.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Dermo.hu</h3>
+          <span class="impactshop-donation-card__category">Cosmetics</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6754592&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY3NTQ1OTImc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudGtxbGhjZS5jb20vY2xpY2stMTAxNTg5NDY0LTE1Njk5NDkz" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6754592&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="earplugs-cz-sk-hu-de" data-category="equipment" data-donation="" data-donation-type="text" data-search="earplugs-cz-sk-hu-de-equipment-termektol-fugg-www-earplugs-cz">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-7249555.png" alt="Earplugs CZ/SK/HU/DE logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Earplugs CZ/SK/HU/DE</h3>
+          <span class="impactshop-donation-card__category">Equipment</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,85%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-7249555&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTcyNDk1NTUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cua3F6eWZqLmNvbS9jbGljay0xMDE1ODk0NjQtMTU5MTk1MTg%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-7249555&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="geekbuying" data-category="m-szaki" data-donation="" data-donation-type="text" data-search="geekbuying-m-szaki-termektol-fugg-www-geekbuying-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-3387283.png" alt="GeekBuying logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>GeekBuying</h3>
+          <span class="impactshop-donation-card__category">Műszaki</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-3387283&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTMzODcyODMmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZ2Vla2J1eWluZy5jb20%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-3387283&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="heliumking-europe" data-category="szabadid" data-donation="" data-donation-type="text" data-search="heliumking-europe-szabadid-termektol-fugg-www-heliumking-sk">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-7138001.png" alt="Heliumking Europe logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Heliumking Europe</h3>
+          <span class="impactshop-donation-card__category">Szabadidő</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-7138001&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTcxMzgwMDEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE1OTA1OTU0" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-7138001&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="hotel-collection" data-category="b-tor" data-donation="" data-donation-type="text" data-search="hotel-collection-b-tor-termektol-fugg-www-hotelcollection-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6505895.png" alt="Hotel Collection logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Hotel Collection</h3>
+          <span class="impactshop-donation-card__category">Bútor</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>7,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6505895&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY1MDU4OTUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuaG90ZWxjb2xsZWN0aW9uLmNvbQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6505895&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="jalbum" data-category="photo" data-donation="" data-donation-type="text" data-search="jalbum-photo-termektol-fugg-www-jalbum-net">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-3587693.png" alt="Jalbum logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Jalbum</h3>
+          <span class="impactshop-donation-card__category">Photo</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-3587693&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTM1ODc2OTMmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamFsYnVtLm5ldA%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-3587693&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="jatekshop-eu" data-category="j-t-k" data-donation="" data-donation-type="text" data-search="jatekshop-eu-j-t-k-termektol-fugg-www-jatekshop-eu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5986419.png" alt="Jatekshop.eu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Jatekshop.eu</h3>
+          <span class="impactshop-donation-card__category">Játék</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5986419&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU5ODY0MTkmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE1MTYwNzU4" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5986419&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="j-t-knet-hu" data-category="children" data-donation="" data-donation-type="text" data-search="j-t-knet-hu-children-termektol-fugg-www-jateknet-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5619548.png" alt="JátékNet.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>JátékNet.hu</h3>
+          <span class="impactshop-donation-card__category">Children</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5619548&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU2MTk1NDgmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTE0NDQ4MDA2" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5619548&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="karpex-cz-hu-albumshop-sk" data-category="photo" data-donation="" data-donation-type="text" data-search="karpex-cz-hu-albumshop-sk-photo-termektol-fugg-karpex-cz">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6808248.png" alt="Karpex CZ/HU/Albumshop.sk logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Karpex CZ/HU/Albumshop.sk</h3>
+          <span class="impactshop-donation-card__category">Photo</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>7,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6808248&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY4MDgyNDgmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE1NjgwODE5" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6808248&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="k-rcher-hu" data-category="home-appliances" data-donation="" data-donation-type="text" data-search="k-rcher-hu-home-appliances-termektol-fugg-www-kaercher-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5620281.png" alt="KÄRCHER.HU logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>KÄRCHER.HU</h3>
+          <span class="impactshop-donation-card__category">Home Appliances</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5620281&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU2MjAyODEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTE0MzczMzY5" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5620281&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="lk-baits-eu" data-category="outdoors" data-donation="" data-donation-type="text" data-search="lk-baits-eu-outdoors-termektol-fugg-www-lkbaits-cz">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5411803.png" alt="LK Baits EU logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>LK Baits EU</h3>
+          <span class="impactshop-donation-card__category">Outdoors</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4,61% – 5,76%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5411803&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU0MTE4MDMmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYW5yZG9lenJzLm5ldC9jbGljay0xMDE1ODk0NjQtMTQwNDU0MTc%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5411803&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="lumary" data-category="home-appliances" data-donation="" data-donation-type="text" data-search="lumary-home-appliances-termektol-fugg-www-lumarysmart-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-7218186.png" alt="Lumary logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Lumary</h3>
+          <span class="impactshop-donation-card__category">Home Appliances</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>6%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-7218186&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTcyMTgxODYmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cubHVtYXJ5c21hcnQuY29t" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-7218186&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="mixit-hu" data-category="groceries" data-donation="" data-donation-type="text" data-search="mixit-hu-groceries-termektol-fugg-www-mixit-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5457740.png" alt="MIXIT.HU logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>MIXIT.HU</h3>
+          <span class="impactshop-donation-card__category">Groceries</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5457740&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU0NTc3NDAmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cua3F6eWZqLmNvbS9jbGljay0xMDE1ODk0NjQtMTQwNTkzNTc%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5457740&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="marionnaud-hu" data-category="fragrance" data-donation="" data-donation-type="text" data-search="marionnaud-hu-fragrance-termektol-fugg-www-marionnaud-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6595791.png" alt="Marionnaud HU logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Marionnaud HU</h3>
+          <span class="impactshop-donation-card__category">Fragrance</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6595791&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY1OTU3OTEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE1NTgzMDM0" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6595791&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="monkeymum-com" data-category="green" data-donation="" data-donation-type="text" data-search="monkeymum-com-green-termektol-fugg-www-monkeymum-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6253448.png" alt="Monkeymum.com logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Monkeymum.com</h3>
+          <span class="impactshop-donation-card__category">Green</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6253448&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTYyNTM0NDgmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudGtxbGhjZS5jb20vY2xpY2stMTAxNTg5NDY0LTE1Njg2Mzgy" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6253448&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="nutraceutics-ro-hu" data-category="nutritional-supplements" data-donation="" data-donation-type="text" data-search="nutraceutics-ro-hu-nutritional-supplements-termektol-fugg-www-nutraceutics-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5801719.png" alt="NUTRACEUTICS RO/HU logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>NUTRACEUTICS RO/HU</h3>
+          <span class="impactshop-donation-card__category">Nutritional Supplements</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>12,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5801719&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU4MDE3MTkmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudGtxbGhjZS5jb20vY2xpY2stMTAxNTg5NDY0LTE0NTUwMjc0" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5801719&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="namaximum-hu" data-category="nutritional-supplements" data-donation="" data-donation-type="text" data-search="namaximum-hu-nutritional-supplements-termektol-fugg-www-namaximum-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6762329.png" alt="Namaximum.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Namaximum.hu</h3>
+          <span class="impactshop-donation-card__category">Nutritional Supplements</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6762329&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY3NjIzMjkmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE1NzYzNTcy" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6762329&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="nanushka" data-category="women-s" data-donation="" data-donation-type="text" data-search="nanushka-women-s-termektol-fugg-www-nanushka-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-4989665.png" alt="Nanushka logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Nanushka</h3>
+          <span class="impactshop-donation-card__category">Women&#x27;s</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-4989665&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTQ5ODk2NjUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cubmFudXNoa2EuY29t" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-4989665&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="novakid-int" data-category="children" data-donation="" data-donation-type="text" data-search="novakid-int-children-termektol-fugg-www-novakidschool-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5578976.png" alt="Novakid INT logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Novakid INT</h3>
+          <span class="impactshop-donation-card__category">Children</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>Terméktől függ</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5578976&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU1Nzg5NzYmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cubm92YWtpZHNjaG9vbC5jb20%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5578976&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="pinkpanda-europe" data-category="cosmetics" data-donation="" data-donation-type="text" data-search="pinkpanda-europe-cosmetics-termektol-fugg-www-licila-si">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6562598.png" alt="PinkPanda Europe logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>PinkPanda Europe</h3>
+          <span class="impactshop-donation-card__category">Cosmetics</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6562598&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY1NjI1OTgmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE3MDMxMzQz" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6562598&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="reedog-europe" data-category="llat" data-donation="" data-donation-type="text" data-search="reedog-europe-llat-termektol-fugg-www-reedog-cz">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5306925.png" alt="Reedog Europe logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Reedog Europe</h3>
+          <span class="impactshop-donation-card__category">Állat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>4%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5306925&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTUzMDY5MjUmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE0Mzk0ODcz" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5306925&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="reflexshop-hu" data-category="games" data-donation="" data-donation-type="text" data-search="reflexshop-hu-games-termektol-fugg-reflexshop-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5765330.png" alt="Reflexshop.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Reflexshop.hu</h3>
+          <span class="impactshop-donation-card__category">Games</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5765330&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU3NjUzMzAmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cua3F6eWZqLmNvbS9jbGljay0xMDE1ODk0NjQtMTU1NjU3ODc%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5765330&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="scandishop-cz-sk-hu-ro" data-category="b-tor" data-donation="" data-donation-type="text" data-search="scandishop-cz-sk-hu-ro-b-tor-termektol-fugg-www-scandishop-cz">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5884820.png" alt="Scandishop cz/sk/hu/ro logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Scandishop cz/sk/hu/ro</h3>
+          <span class="impactshop-donation-card__category">Bútor</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5884820&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU4ODQ4MjAmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cua3F6eWZqLmNvbS9jbGljay0xMDE1ODk0NjQtMTUwNTg5NDM%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5884820&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="skechers" data-category="divat" data-donation="" data-donation-type="text" data-search="skechers-divat-termektol-fugg-www-skechers-co-uk">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6322281.png" alt="Skechers logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Skechers</h3>
+          <span class="impactshop-donation-card__category">Divat</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6322281&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTYzMjIyODEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cua3F6eWZqLmNvbS9jbGljay0xMDE1ODk0NjQtMTU5MDcwNTU%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6322281&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="skytours-us" data-category="szabadid" data-donation="" data-donation-type="text" data-search="skytours-us-szabadid-termektol-fugg-www-sky-tours-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-2709631.png" alt="Skytours US logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Skytours US</h3>
+          <span class="impactshop-donation-card__category">Szabadidő</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>Terméktől függ</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-2709631&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTI3MDk2MzEmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuc2t5LXRvdXJzLmNvbQ%3D%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-2709631&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="somnart-ro-hu-bg" data-category="bed-bath" data-donation="" data-donation-type="text" data-search="somnart-ro-hu-bg-bed-bath-termektol-fugg-somnart-ro">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6575774.png" alt="Somnart RO/HU/BG logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Somnart RO/HU/BG</h3>
+          <span class="impactshop-donation-card__category">Bed &amp; Bath</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>6%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6575774&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY1NzU3NzQmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTE1ODIzMjk5" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6575774&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="tescoma-hu" data-category="kitchen" data-donation="" data-donation-type="text" data-search="tescoma-hu-kitchen-termektol-fugg-tescoma-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6169916.png" alt="Tescoma.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Tescoma.hu</h3>
+          <span class="impactshop-donation-card__category">Kitchen</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6169916&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTYxNjk5MTYmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cua3F6eWZqLmNvbS9jbGljay0xMDE1ODk0NjQtMTUzMjE0OTg%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6169916&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="unice" data-category="bath-body" data-donation="" data-donation-type="text" data-search="unice-bath-body-termektol-fugg-www-unice-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5824323.png" alt="UNice logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>UNice</h3>
+          <span class="impactshop-donation-card__category">Bath &amp; Body</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5824323&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTU4MjQzMjMmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudW5pY2UuY29t" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5824323&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="warsawsneakerstore-com" data-category="vegyes" data-donation="" data-donation-type="text" data-search="warsawsneakerstore-com-vegyes-termektol-fugg-warsawsneakerstore-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6796197.png" alt="Warsawsneakerstore.com logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Warsawsneakerstore.com</h3>
+          <span class="impactshop-donation-card__category">Vegyes</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6796197&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTY3OTYxOTcmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYW5yZG9lenJzLm5ldC9jbGljay0xMDE1ODk0NjQtMTU3MzEwOTQ%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6796197&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="yogabazaar-hu" data-category="equipment" data-donation="" data-donation-type="text" data-search="yogabazaar-hu-equipment-termektol-fugg-yogabazaar-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6306264.png" alt="Yogabazaar.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Yogabazaar.hu</h3>
+          <span class="impactshop-donation-card__category">Equipment</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6306264&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTYzMDYyNjQmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE1NDc2MDc3" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6306264&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="yves-rocher-hu" data-category="cosmetics" data-donation="" data-donation-type="text" data-search="yves-rocher-hu-cosmetics-termektol-fugg-www-yves-rocher-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5393824.png" alt="Yves-rocher.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>Yves-rocher.hu</h3>
+          <span class="impactshop-donation-card__category">Cosmetics</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5393824&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTUzOTM4MjQmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuYW5yZG9lenJzLm5ldC9jbGljay0xMDE1ODk0NjQtMTM5OTExMDM%3D" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5393824&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="eoptika-hu" data-category="vision-care" data-donation="" data-donation-type="text" data-search="eoptika-hu-vision-care-termektol-fugg-eoptika-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-5357176.png" alt="eOptika HU logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>eOptika HU</h3>
+          <span class="impactshop-donation-card__category">Vision Care</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>3,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-5357176&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTUzNTcxNzYmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuamRvcW9jeS5jb20vY2xpY2stMTAxNTg5NDY0LTE0MDA1NjYw" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-5357176&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="esky-int" data-category="air" data-donation="" data-donation-type="text" data-search="esky-int-air-termektol-fugg-www-esky-com">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-6100840.png" alt="eSky INT logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>eSky INT</h3>
+          <span class="impactshop-donation-card__category">Air</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>1,75%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-6100840&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTYxMDA4NDAmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cuZHBib2x2dy5uZXQvY2xpY2stMTAxNTg5NDY0LTE1MzcxNDEw" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-6100840&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+      <article class="impactshop-donation-card impactshop-donation-card--grid" data-role="grid-card" data-title="insportline-hu" data-category="exercise-health" data-donation="" data-donation-type="text" data-search="insportline-hu-exercise-health-termektol-fugg-www-insportline-hu">
+        <div class="impactshop-donation-card__logo"><img src="https://app.sharity.hu/wp-content/uploads/impactshop/cj-logos/cj-4894447.png" alt="inSPORTline.hu logója" loading="lazy" /></div>
+        <div class="impactshop-donation-card__body">
+          <h3>inSPORTline.hu</h3>
+          <span class="impactshop-donation-card__category">Exercise &amp; Health</span>
+          <p class="impactshop-donation-card__donation">
+            <span>Adomány mértéke</span>
+            <strong>2,5%</strong>
+          </p>
+          <a class="impactshop-donation-card__link" href="https://form.fillout.com/t/eM61RLkz6jus?shop=cj-4894447&amp;src=impactshop-donation-cards&amp;go=aHR0cHM6Ly9hcHAuc2hhcml0eS5odS9nbz9zaG9wPWNqLTQ4OTQ0NDcmc3JjPWltcGFjdHNob3AtZG9uYXRpb24tY2FyZHM%3D&amp;u=aHR0cHM6Ly93d3cudGtxbGhjZS5jb20vY2xpY2stMTAxNTg5NDY0LTEyODcyNTQz" target="_blank" rel="noopener" data-go-url="https://app.sharity.hu/go?shop=cj-4894447&amp;src=impactshop-donation-cards">Megnézem a webshopot</a>
+        </div>
+      </article>
+  </div>
+</section>
