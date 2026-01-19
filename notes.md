@@ -3525,3 +3525,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 
 ### 2026-01-19 – Compact blokk ID eltávolítás
 - `wp-content/mu-plugins/impactshop-identity-panel.php`: a felső (compact) blokkból kiszedtem az azonosító + recovery sorokat, lent marad minden.
+
+### 2026-01-19 – Repo rendbetétel
+- ` .gitignore`: helyi artefaktok kizárása bővítve (phpunit cache, tm/logs, codex segédfájlok).
+- Commit + push: social ticker share log + go click log, valamint státusz/docs snapshot frissítés.
+- Megjegyzés: a helyi törlések (`rm`) policy‑blokkon megakadtak, az untracked fájlok lokálisan maradtak.
