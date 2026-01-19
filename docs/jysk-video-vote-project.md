@@ -127,6 +127,39 @@ Reszek:
 - impact_vote_log: idx_pseudo_day (pseudo_id, day_key, campaign_id), idx_campaign_ngo (campaign_id, ngo_id)
 - impact_vote_daily: UNIQUE (day_key, campaign_id, ngo_id)
 - impact_vote_ngos: idx_campaign_active (campaign_id, is_active)
+- impact_vote_log: idx_campaign_day (campaign_id, day_key)
+- impact_vote_daily: idx_campaign_votes (campaign_id, votes)
+
+## Kiegeszito epizodok (opcionalis, gyors fejlesztesek)
+1) View hitelesites heartbeat
+   - Video lejatszas kozben 10-20 masodpercenkent heartbeat esemeny.
+   - A /vote/view csak akkor ad view_token-t, ha a heartbeat folytonos volt.
+
+2) Eredmeny endpoint
+   - GET /impact/v1/vote/results: osszesitett toplista kampanyon belul.
+   - Cache + ETag (304 Not Modified).
+
+3) Frontend progress visszajelzes
+   - “Eddig hitelesen: 85%” jelzes a vegignezesehez.
+   - Gomb allapot: disabled -> enabled -> success.
+
+4) Offline/ujraprobalas UX
+   - Vote/cast hibanal auto retry 5s backoff-fal.
+   - Latvanyos hibauzenet + “Ujraprobalas”.
+
+5) Kampany status cron fallback
+   - WP cron 5 percenkent, plusz WP-CLI scheduled fallback.
+   - Indulas/zaras/gyoztes automatikus update.
+
+6) Admin monitoring mini panel
+   - Aktiv kampany statusz, napi szavazatok, top 3 NGO.
+   - Rate limit esemenyek szama (IP/UA hash).
+
+7) E2E teszt csomag
+   - Playwright/Cypress: video completion, napi limit, idozona atlepes.
+
+8) Kozossegi cel progress bar (gamification)
+   - “Kozos cel 50%” jelzo sav a reszvetel novelesehez.
 
 ## Teszt / QA
 - Kampany start/end elott/utan nem lehet szavazni.
