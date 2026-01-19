@@ -1,0 +1,1 @@
+<?php if (!defined('IMPACT_SOCIAL_MVP_ENABLED')) { define('IMPACT_SOCIAL_MVP_ENABLED', true); }
