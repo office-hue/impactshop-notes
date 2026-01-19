@@ -47,8 +47,6 @@ impactshop-notes
 wp-content/mu-plugins/image/
 /mu-plugins/
 impact-bridge-local/
-/User token/
-/NGO data/
 .phpunit.result.cache
 .production_env
 .wp-test-site/
