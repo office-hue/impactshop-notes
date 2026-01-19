@@ -3537,3 +3537,6 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `chatgpt-history/` + `conversation-summaries/` teljes készlet felvéve.
 - Tooling és config fájlok felvéve (`scripts/`, `tools/`, `apps/`, `types/`, `bin/`, `package*.json`, `phpunit.xml`, `.github/`).
 - Hiányzó MU plugin fájlok felvéve a repóba (`wp-content/mu-plugins/*.php`, `wp-content/mu-plugins/impactshop-identity-panel.js`).
+
+### 2026-01-19 – Repo takarítás (3/3)
+- `User token/` és `NGO data/` bekerült a repóba (feloldott ignore).
