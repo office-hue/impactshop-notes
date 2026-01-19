@@ -77,7 +77,7 @@
 
 ### POST /impact/v1/vote/view
 - Video view event. 100% befejezes utan kuldjuk.
-- Payload: { campaign_id, ngo_id, completed: true }
+- Payload: { campaign_id, completed: true }
 - A szerver visszaad egy rovid elettu view_token-t (5-10 perc), amit a vote/cast-nek kuldeni kell.
 
 ### POST /impact/v1/vote/cast
@@ -111,7 +111,7 @@ Reszek:
 
 ## Anti-abuse
 - Napi limit pseudo_id alapon (HU idozona).
-- IP hash + user agent hash log (anomalia detektalas).
+- IP hash + user agent hash log (anomalia detektalas, hash_hmac + salt).
 - Rate limit a vote/cast endpointon (pseudo_id: 10/ora, IP: 50/ora, 429 + Retry-After).
 - Video vegignezest csak ended event utan fogadjuk el.
 
@@ -129,6 +129,7 @@ Reszek:
 - impact_vote_ngos: idx_campaign_active (campaign_id, is_active)
 - impact_vote_log: idx_campaign_day (campaign_id, day_key)
 - impact_vote_daily: idx_campaign_votes (campaign_id, votes)
+- impact_vote_log: UNIQUE (campaign_id, pseudo_id, day_key)
 
 ## Kiegeszito epizodok (opcionalis, gyors fejlesztesek)
 1) View hitelesites heartbeat
@@ -144,8 +145,8 @@ Reszek:
    - Gomb allapot: disabled -> enabled -> success.
 
 4) Offline/ujraprobalas UX
-   - Vote/cast hibanal auto retry 5s backoff-fal.
-   - Latvanyos hibauzenet + “Ujraprobalas”.
+- Vote/cast hibanal auto retry 5s backoff-fal.
+- Latvanyos hibauzenet + “Ujraprobalas”.
 
 5) Kampany status cron fallback
    - WP cron 5 percenkent, plusz WP-CLI scheduled fallback.
@@ -159,7 +160,19 @@ Reszek:
    - Playwright/Cypress: video completion, napi limit, idozona atlepes.
 
 8) Kozossegi cel progress bar (gamification)
-   - “Kozos cel 50%” jelzo sav a reszvetel novelesehez.
+- “Kozos cel 50%” jelzo sav a reszvetel novelesehez.
+
+9) View token NGO-tol fuggetlen
+   - A view_token csak a kampanyhoz kotott, nem NGO-hoz.
+   - Megtekintes utan barmelyik NGO-ra leadhato a szavazat.
+
+10) View es vote retry logika
+   - Ha a view/cast request elhasal, frontend retry backoff-fal.
+   - “Megtekintes rogzitese folyamatban…” allapot jelzese.
+
+11) Cache kulcs kampany azonositohoz
+   - Tally cache kulcs tartalmazza a campaign_id-t.
+   - Kampany valtaskor nem ragad be regi adat.
 
 ## Teszt / QA
 - Kampany start/end elott/utan nem lehet szavazni.
