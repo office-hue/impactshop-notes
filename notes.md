@@ -3530,3 +3530,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - ` .gitignore`: helyi artefaktok kizárása bővítve (phpunit cache, tm/logs, codex segédfájlok).
 - Commit + push: social ticker share log + go click log, valamint státusz/docs snapshot frissítés.
 - Megjegyzés: a helyi törlések (`rm`) policy‑blokkon megakadtak, az untracked fájlok lokálisan maradtak.
+
+### 2026-01-19 – Repo takarítás (2/3)
+- ` .gitignore`: bővítve a nagy/ideiglenes könyvtárakra (vendor, tests, fixtures, lokális mappák).
+- Dokumentációk és tudásbázis fájlok felvéve (root md/csv/html, `docs/`, `CJ links/`, `Google Ads/`, `Impi Tudásbázis/`, `image/`).
+- `chatgpt-history/` + `conversation-summaries/` teljes készlet felvéve.
+- Tooling és config fájlok felvéve (`scripts/`, `tools/`, `apps/`, `types/`, `bin/`, `package*.json`, `phpunit.xml`, `.github/`).
+- Hiányzó MU plugin fájlok felvéve a repóba (`wp-content/mu-plugins/*.php`, `wp-content/mu-plugins/impactshop-identity-panel.js`).
