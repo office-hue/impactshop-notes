@@ -124,6 +124,7 @@ add_action('wp_footer', function(){
       try{
         var href=a.getAttribute('href'); if(!href) return;
         var url=new URL(href, document.baseURI);
+        if (url.host && /(^|\.)fillout\.com$/i.test(url.host)) return;
 
         // 1) ?shop=… → /go/{shop}?… (mindig építsük újra a PATH-ot)
         var shop = slug(url.searchParams.get('shop')||'');
