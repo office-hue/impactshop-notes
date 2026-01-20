@@ -185,6 +185,23 @@ Reszek:
    - /vote/results endpoint + gyoztesi rekord.
    - Dontetlen kezelese: beturend vagy admin override.
 
+## Fiók uzenetek (kozponti + celzott)
+- Uzenetek csak az [impactshop_identity_id] blokkban jelennek meg.
+- Minden oldalon megjelennek, ahol a shortcode kint van.
+- Tipusok: globalis (minden fioknak), celzott (pseudo_id lista).
+- UI: kiemelt info blokk az identity id panelen.
+- Admin: uzenet CRUD (globalis/celzott, ervenyesseg datummal).
+
+## Sorsolas (3 x 10 000 Ft JYSK utalvany)
+- Idopont: szavazas utolso napjan 12:00 (HU idozona).
+- 3 kulonbozo nyertes, minden szavazat egy sorsjegy.
+- Sorsolas a vote_log tabla alapjan (sulyozott valasztas).
+- A 3 nyertesnek celzott uzenet jelenik meg az identity id blokkban.
+- Uzenet szoveg:
+  - “Gratulalunk, nyertel 10 000 Ft-os JYSK utalvanyt!”
+  - “A nyeremenyt postan tudjuk megkuldeni. Irj az office@sharity.hu cimre, es add meg a postazasi adataidat.”
+  - “Ha 10 napon belul nem jelentkezel, a nyeremenyt elveszited.”
+
 ## Utemezett, reszletes megvalositasi feladatok
 
 ### F0 – Elokeszites (0.5 nap)
@@ -217,11 +234,14 @@ Reszek:
 2) WP cron kampany statusz ellenorzes (5 perc).
 3) Zaraskori winner szamitas + rekord.
 4) CSV export (admin-ajax).
+5) Sorsolas cron a zaro napon 12:00-kor (HU idozona).
+6) Fiók uzenetek admin felulet (global + celzott).
 
 ### F5 – Biztonsag, logolas, adatmegorzes (0.5 nap)
 1) IP/UA hash (hash_hmac + salt).
 2) Rate limit (pseudo_id + IP).
 3) Log retention cleanup (30 napos torles cron).
+4) Sorsolas audit log (nyertesek, sorsolas idopont).
 
 ### F6 – QA + rollout (0.5-1 nap)
 1) Manual QA checklist: start/end, daily limit, 100% view, mobil.
