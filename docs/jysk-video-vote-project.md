@@ -134,6 +134,47 @@ Reszek:
 - impact_vote_daily: idx_campaign_votes (campaign_id, votes)
 - impact_vote_log: UNIQUE (campaign_id, pseudo_id, day_key)
 
+## Uzenetkezeltes tablak (SQL)
+```
+CREATE TABLE impact_vote_messages (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  type ENUM('global', 'targeted') NOT NULL,
+  content TEXT NOT NULL,
+  start_at DATETIME NOT NULL,
+  end_at DATETIME NOT NULL,
+  priority INT DEFAULT 0,
+  created_at DATETIME NOT NULL,
+  INDEX idx_active_messages (type, start_at, end_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE impact_vote_message_targets (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  message_id BIGINT UNSIGNED NOT NULL,
+  pseudo_id VARCHAR(32) NOT NULL,
+  is_read TINYINT(1) DEFAULT 0,
+  read_at DATETIME NULL,
+  FOREIGN KEY (message_id) REFERENCES impact_vote_messages(id) ON DELETE CASCADE,
+  INDEX idx_pseudo_unread (pseudo_id, is_read)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## Sorsolas audit tabla (SQL)
+```
+CREATE TABLE impact_vote_lottery (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  campaign_id BIGINT UNSIGNED NOT NULL,
+  pseudo_id VARCHAR(32) NOT NULL,
+  rank INT NOT NULL COMMENT '1-3 primary, 4-6 backup',
+  drawn_at DATETIME NOT NULL,
+  notified_at DATETIME NULL,
+  claimed_at DATETIME NULL,
+  status ENUM('pending', 'notified', 'claimed', 'expired') DEFAULT 'pending',
+  FOREIGN KEY (campaign_id) REFERENCES impact_vote_campaigns(id),
+  UNIQUE KEY uk_campaign_rank (campaign_id, rank),
+  INDEX idx_campaign_status (campaign_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
 ## Kiegeszito epizodok (opcionalis, gyors fejlesztesek)
 1) View hitelesites heartbeat
    - Video lejatszas kozben 10-20 masodpercenkent heartbeat esemeny.
@@ -211,6 +252,26 @@ Reszek:
 20) QA time travel
    - Admin-only time travel flag a kampany start/end teszteleshez.
 
+21) Origin/CORS ellenorzes
+   - REST POST vegpontoknal origin whitelist + nonce check.
+   - Csak sajat domainrol fogadunk.
+
+22) Rate limit sliding window
+   - Pseudo_id alapjan csuszo idosablak (1 ora).
+
+23) Video seek/rate lock konkret implementacio
+   - MaxWatchedTime alapu seek tiltasa.
+   - playbackRate fix 1.0 (iOS QA).
+
+24) CSV export adatvedelem
+   - Pseudo_id maszk/hashing opcio (campaign salt).
+
+25) Analitika funnel (opcionalis)
+   - page_view, video_start, 25/50/75, complete, vote_success/fail.
+
+26) Kampany idopont validacio
+   - start_at < end_at, nincs atfedes (1 aktiv kampany).
+
 ## Fiók uzenetek (kozponti + celzott)
 - Uzenetek csak az [impactshop_identity_id] blokkban jelennek meg.
 - Minden oldalon megjelennek, ahol a shortcode kint van.
@@ -229,6 +290,11 @@ Reszek:
   - “Gratulalunk, nyertel 10 000 Ft-os JYSK utalvanyt!”
   - “A nyeremenyt postan tudjuk megkuldeni. Irj az office@sharity.hu cimre, es add meg a postazasi adataidat.”
   - “Ha 10 napon belul nem jelentkezel, a nyeremenyt elveszited.”
+
+## Sorsolas algoritmus (sulyozott)
+- Minden szavazat 1 jegy (pseudo_id szavazatszam = suly).
+- 1-3 nyertes + 4-6 tartalek, poolbol kivesszuk a nyertest.
+- Ha kevesebb mint 6 egyedi szavazo, a pool kifogyasakor megall.
 
 ## Utemezett, reszletes megvalositasi feladatok
 
