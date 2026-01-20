@@ -98,7 +98,7 @@ function impactshop_identity_panel_shortcode(): string
     $html = '<div class="impactshop-identity-panel" id="' . esc_attr($panel_id) . '" ';
     $html .= 'data-rest-base="' . esc_attr($rest_base) . '">';
     $html .= '<div class="impactshop-identity-card">';
-    $html .= '<p class="impactshop-identity-greeting" data-role="greeting">Szia, üdvözöllek az Impact Shop oldalán.</p>';
+    $html .= '<p class="impactshop-identity-greeting" data-role="greeting">Szia, üdvözöllek a Sharity oldalán.</p>';
     $html .= '<h3>Fiókom</h3>';
     $html .= '<div class="impactshop-identity-row">';
     $html .= '<button type="button" data-role="scroll-account">Fiókom kezelése</button>';
@@ -170,7 +170,7 @@ function impactshop_identity_id_shortcode(): string
     $html = '<div class="impactshop-identity-panel impactshop-identity-panel--compact" id="' . esc_attr($panel_id) . '" ';
     $html .= 'data-rest-base="' . esc_attr($rest_base) . '">';
     $html .= '<div class="impactshop-identity-card">';
-    $html .= '<p class="impactshop-identity-greeting" data-role="greeting">Szia, üdvözöllek az Impact Shop oldalán.</p>';
+    $html .= '<p class="impactshop-identity-greeting" data-role="greeting">Szia, üdvözöllek a Sharity oldalán.</p>';
     $html .= '<h3>Fiókom</h3>';
     $html .= '<div class="impactshop-identity-row">';
     $html .= '<button type="button" data-role="scroll-account">Fiókom kezelése</button>';

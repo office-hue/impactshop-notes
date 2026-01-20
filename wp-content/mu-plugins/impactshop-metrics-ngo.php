@@ -84,6 +84,45 @@ function ism_shop_name_from_cid($cid){
   return $map[$cid] ?? ('cid '.$cid);
 }
 
+/** NGO név map (slug -> label) */
+function ism_get_ngo_name_map(){
+  static $map = null;
+  if ($map !== null) return $map;
+  $map = [];
+  $path = trailingslashit(ABSPATH) . 'ngo_codes.csv';
+  if (!file_exists($path)) return $map;
+  $handle = fopen($path, 'r');
+  if ($handle === false) return $map;
+  $row = 0;
+  while (($data = fgetcsv($handle)) !== false) {
+    $row++;
+    if ($row === 1) {
+      continue;
+    }
+    $label = isset($data[0]) ? trim((string)$data[0]) : '';
+    $slug = isset($data[1]) ? sanitize_title($data[1]) : '';
+    if ($label !== '' && $slug !== '') {
+      $map[$slug] = $label;
+    }
+  }
+  fclose($handle);
+  return $map;
+}
+
+/** NGO slug -> ékezetes név */
+function ism_normalize_ngo_name($name){
+  $name = trim((string)$name);
+  if ($name === '' || $name === '—') return $name;
+  $map = ism_get_ngo_name_map();
+  $slug = sanitize_title($name);
+  if ($slug && isset($map[$slug])) return $map[$slug];
+  $fallback = str_replace(['-', '_'], ' ', $name);
+  if (function_exists('mb_convert_case')) {
+    return mb_convert_case($fallback, MB_CASE_TITLE, 'UTF-8');
+  }
+  return ucwords($fallback);
+}
+
 /** RAW tranzakciók */
 function ism_fetch_tx($from,$to,$status='all'){
   if (!function_exists('dognet_api_list_conversions_all')) return [];
@@ -108,7 +147,8 @@ function ism_pick_ts($row){
 /* ======================= TICKER ======================= */
 function ism_build_ticker(){
   $cache='impactshop_ticker_v1'; $c=get_transient($cache); if($c!==false) return $c;
-  $from=date('Y-m-01'); $to=date('Y-m-d'); $today=date('Y-m-d');
+  $from=defined('IMPACTSHOP_METRICS_FROM') ? IMPACTSHOP_METRICS_FROM : '2025-10-23';
+  $to=date('Y-m-d'); $today=date('Y-m-d');
   $rows=ism_fetch_tx($from,$to,'all');
 
   $sum=0.0; $todaySum=0.0;
@@ -131,9 +171,11 @@ add_action('rest_api_init',function(){
 });
 
 /* ======================= LEADERBOARD ======================= */
-function ism_build_leaderboard($tab='ngo'){
+function ism_build_leaderboard($tab='ngo',$from='',$to='',$status='all'){
   $cache='impactshop_lb_v1_'.sanitize_key($tab); $c=get_transient($cache); if($c!==false) return $c;
-  $from=date('Y-m-01'); $to=date('Y-m-d'); $rows=ism_fetch_tx($from,$to,'all');
+  $from=$from ?: (defined('IMPACTSHOP_METRICS_FROM') ? IMPACTSHOP_METRICS_FROM : '2025-10-23');
+  $to=$to ?: date('Y-m-d');
+  $rows=ism_fetch_tx($from,$to,$status);
 
   $map=[];
   foreach($rows as $r){
@@ -152,6 +194,12 @@ function ism_build_leaderboard($tab='ngo'){
     }
   }
   $out=[]; foreach($map as $name=>$amt){ $out[]=['name'=>$name,'amount'=>$amt]; }
+  if ($tab === 'ngo') {
+    $out = array_map(function($row){
+      $row['name'] = ism_normalize_ngo_name($row['name'] ?? '');
+      return $row;
+    }, $out);
+  }
   usort($out, fn($a,$b)=>($b['amount']<=>$a['amount'])?:strcasecmp($a['name'],$b['name']));
   set_transient($cache,$out,300);
   return $out;
@@ -161,7 +209,10 @@ add_action('rest_api_init',function(){
     'methods'=>'GET','permission_callback'=>'__return_true',
     'callback'=>function(WP_REST_Request $req){
       $tab = sanitize_text_field($req->get_param('tab') ?: 'ngo');
-      return rest_ensure_response(ism_build_leaderboard($tab));
+      $from = sanitize_text_field($req->get_param('from') ?: '');
+      $to = sanitize_text_field($req->get_param('to') ?: '');
+      $status = sanitize_text_field($req->get_param('status') ?: 'all');
+      return rest_ensure_response(ism_build_leaderboard($tab,$from,$to,$status));
     }
   ]);
 });

@@ -131,14 +131,38 @@ add_action('init', function(){
 
   if (!shortcode_exists('impact_leaderboard')) {
     add_shortcode('impact_leaderboard', function($atts){
-      $a = shortcode_atts(['tab'=>'ngo'], $atts);
+      $a = shortcode_atts([
+        'tab'      => 'ngo',
+        'limit'    => '5',
+        'from'     => '',
+        'to'       => '',
+        'status'   => 'all',
+        'currency' => 'EUR',
+        'rate_huf' => '392',
+      ], $atts);
       $tab = ($a['tab']==='shop') ? 'shop' : 'ngo';
-      $j = ims_fetch_json('/wp-json/impact/v1/leaderboard?tab='.$tab);
+      $limit = max(0, intval($a['limit']));
+      $from = sanitize_text_field($a['from']);
+      $to = sanitize_text_field($a['to']);
+      $status = sanitize_text_field($a['status']);
+      $currency = strtoupper(trim($a['currency'] ?: 'EUR'));
+      $rate = max(1, (float)$a['rate_huf']);
+      $qs = ['tab' => $tab];
+      if ($from !== '') $qs['from'] = $from;
+      if ($to !== '') $qs['to'] = $to;
+      if ($status !== '') $qs['status'] = $status;
+      $j = ims_fetch_json('/wp-json/impact/v1/leaderboard?'.http_build_query($qs));
       if (!$j || !is_array($j) || !count($j)) return '<div class="card" style="padding:12px">Nincs adat.</div>';
+      if ($limit > 0) $j = array_slice($j, 0, $limit);
       $out = '<div class="card" style="padding:12px"><ul class="impact-list" style="list-style:none;padding:0;margin:0">';
       foreach ($j as $i=>$row) {
         $name = esc_html($row['name'] ?? '—');
-        $amt  = number_format((float)($row['amount'] ?? 0), 2, ',', ' ') . ' €';
+        $value = (float)($row['amount'] ?? 0);
+        if ($currency === 'HUF') {
+          $amt = number_format($value * $rate, 0, ',', ' ') . ' Ft';
+        } else {
+          $amt = number_format($value, 2, ',', ' ') . ' €';
+        }
         $out .= '<li style="display:flex;gap:8px;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)">'.
                 '<span style="opacity:.7">'.($i+1).'.</span><span style="flex:1">'.$name.'</span><strong>'.$amt.'</strong></li>';
       }

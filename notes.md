@@ -23,6 +23,12 @@
 ### 2026-01-20 – Leaderboard Ft + shop név feloldás
 - 💱 `sharity-impact-mini`: EUR → HUF megjelenítés (`Ft`), központi árfolyam (impactshop_get_huf_rate/IMPACTSHOP_FX_HUF).
 - 🏬 `impactshop-metrics-ngo`: shop leaderboard név feloldás Dognet cid → shop név (ékezetekkel) a shop registryből.
+- 🧾 Új MU plugin: `wp-content/mu-plugins/impactshop-rest-totals.php` – visszahozza a `/wp-json/impactshop/v1/totals` végpontot (sticky + report), minimál Dognet összesítés + cache.
+- 📊 `impactshop-rest-totals.php`: Dognet conversions endpoint fallback + bővített `rows` mezők (shop/ngo) + grand meta, hogy a sticky és a toplista szűrés működjön.
+- 🧮 `impactshop-metrics-ngo.php`: a `/impact/v1/leaderboard` most `from/to/status` paramétert is elfogad; alapértelmezett kezdő dátum `2025-10-23`.
+- 🛡️ Új guard: `.codex/guards/impactshop-totals-guard.sh` – totals + leaderboard endpoint ellenőrzés a 2025-10-23→ma tartományra.
+- 🧾 `sharity-impact-compat.php` + `impact-combat-pack.php`: `impact_leaderboard` most limit/from/to/status/currency paramétereket kezel (fix 5-ös limit tartása).
+- 🧾 Új MU plugin: `wp-content/mu-plugins/impactshop-full-leaderboard.php` – [impact_full_leaderboard] shortcode a teljes toplista oldalhoz.
 - 🧹 Cache flush prod+staging.
 
 ### 2026-01-18 – Ledger cron sűrítés + watchdog e-mail (office@sharity.hu)
@@ -3613,3 +3619,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `bin/post-deploy-checklist.sh` futott (printf fix után). Eredmény: 2/5 PASS, production URL 500 (homepage, /go, /go-deal, /wp-admin).
 - `impactall` lefutott (14/14 PASS), de a REST healthcheck 500-at mutatott staging/prod wp-jsonon (status snapshot frissült).
 - 2026-01-20: Added MU helper `wp-content/mu-plugins/impactshop-dognet-conversions.php` to restore `dognet_api_list_conversions_all` via raw-transactions list functions (relies on existing Dognet auth helper). Leaderboard/ticker empty on staging because function missing; needs deploy + transient flush. Risk: Dognet auth config must be present (DOGNET_LOGIN_EMAIL/PASSWORD).
+
+### 2026-01-20 – Leaderboard vizuális + név javítások (pending deploy)
+- `wp-content/plugins/sharity-impact-mini/sharity-impact-mini.php`: leaderboard attribútumok (limit/from/to/status/currency/rate_huf) támogatása + paraméteres cache kulcs + színek korrigálása (white-on-white fix).
+- `wp-content/mu-plugins/impactshop-metrics-ngo.php`: NGO slug → ékezetes név normalizálás a leaderboard API válaszban (`ngo_codes.csv`).
+- `wp-content/mu-plugins/impactshop-full-leaderboard.php`: rich HTML layout visszaállítása a teljes NGO toplistához (korábbi `ngo-leaderboard.html` stílus).

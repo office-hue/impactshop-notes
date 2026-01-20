@@ -105,10 +105,10 @@ class Sharity_Impact_Mini {
 .kpi .value{font-size:28px;font-weight:700;line-height:1.1;margin-top:6px}
 .kpi .sub{font-size:12px;color:var(--impact-muted);margin-top:4px}
 .impact-list{list-style:none;margin:0;padding:0}
-.impact-list li{padding:10px 12px;border-bottom:1px dashed rgba(255,255,255,.08)}
+.impact-list li{padding:10px 12px;border-bottom:1px dashed rgba(15,23,42,.12);color:var(--impact-fg)}
 .impact-tabs{display:flex;gap:8px;margin-bottom:10px}
-.impact-tab{cursor:pointer;border:1px solid rgba(255,255,255,.12);padding:8px 10px;border-radius:12px;font-size:13px}
-.impact-tab.active{background:rgba(124,58,237,.25);border-color:rgba(124,58,237,.55)}
+.impact-tab{cursor:pointer;border:1px solid rgba(15,23,42,.16);padding:8px 10px;border-radius:12px;font-size:13px;color:var(--impact-fg)}
+.impact-tab.active{background:rgba(124,58,237,.18);border-color:rgba(124,58,237,.55)}
 .impact-error{background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.4);color:#FFD7BA;padding:12px;border-radius:12px}
 .impact-muted{color:var(--impact-muted)}
 @media (max-width:720px){.impact-kpi{grid-template-columns:1fr}}
@@ -181,14 +181,49 @@ document.addEventListener('impact:updated', function(){
 
     /** [impact_leaderboard tab="ngo|shop"] */
     public function sc_leaderboard($atts) {
-        $atts = shortcode_atts(['tab' => 'ngo'], $atts, 'impact_leaderboard');
+        $atts = shortcode_atts([
+            'tab'      => 'ngo',
+            'limit'    => '0',
+            'from'     => '',
+            'to'       => '',
+            'status'   => 'all',
+            'currency' => 'HUF',
+            'rate_huf' => '',
+        ], $atts, 'impact_leaderboard');
         $tab  = in_array($atts['tab'], ['ngo','shop'], true) ? $atts['tab'] : 'ngo';
+        $limit = max(0, (int) $atts['limit']);
+        $from = trim((string) $atts['from']);
+        $to = trim((string) $atts['to']);
+        $status = trim((string) $atts['status']) ?: 'all';
+        $currency = strtoupper(trim((string) $atts['currency'] ?: 'HUF'));
+        $rate_override = (float) $atts['rate_huf'];
+        if ($rate_override <= 0) {
+            $rate_override = 0.0;
+        }
 
-        $data_ngo  = $this->get_json($this->endpoint('leaderboard?tab=ngo'), 300, 'lb_ngo');
-        $data_shop = $this->get_json($this->endpoint('leaderboard?tab=shop'), 300, 'lb_shop');
+        $ngo_args = ['tab' => 'ngo', 'status' => $status];
+        $shop_args = ['tab' => 'shop', 'status' => $status];
+        if ($from !== '') {
+            $ngo_args['from'] = $from;
+            $shop_args['from'] = $from;
+        }
+        if ($to !== '') {
+            $ngo_args['to'] = $to;
+            $shop_args['to'] = $to;
+        }
+
+        $data_ngo  = $this->get_json($this->endpoint('leaderboard?' . http_build_query($ngo_args)), 300, 'lb_ngo_' . md5(json_encode($ngo_args)));
+        $data_shop = $this->get_json($this->endpoint('leaderboard?' . http_build_query($shop_args)), 300, 'lb_shop_' . md5(json_encode($shop_args)));
 
         $err = (isset($data_ngo['_error']) ? $data_ngo : (isset($data_shop['_error']) ? $data_shop : null));
         if ($err) return $this->render_error_box($err['title'], $err['msg']);
+
+        if (is_array($data_ngo) && $limit > 0) {
+            $data_ngo = array_slice($data_ngo, 0, $limit);
+        }
+        if (is_array($data_shop) && $limit > 0) {
+            $data_shop = array_slice($data_shop, 0, $limit);
+        }
 
         $html  = '<div class="impact-wrap" data-impact-lb>';
         $html .=   '<div class="impact-tabs">';
@@ -196,14 +231,14 @@ document.addEventListener('impact:updated', function(){
         $html .=     '<button class="impact-tab'.($tab==='shop'?' active':'').'" data-impact-tab="shop">Webshopok</button>';
         $html .=   '</div>';
 
-        $html .=   $this->render_lb_panel('ngo',  $data_ngo,  $tab==='ngo');
-        $html .=   $this->render_lb_panel('shop', $data_shop, $tab==='shop');
+        $html .=   $this->render_lb_panel('ngo',  $data_ngo,  $tab==='ngo', $currency, $rate_override);
+        $html .=   $this->render_lb_panel('shop', $data_shop, $tab==='shop', $currency, $rate_override);
 
         $html .= '</div>';
         return $html;
     }
 
-    private function render_lb_panel($key, $list, $visible) {
+    private function render_lb_panel($key, $list, $visible, $currency, $rate_override) {
         $style = $visible ? 'block' : 'none';
         $out  = '<div class="impact-card" data-impact-panel="'.$key.'" style="display:'.$style.'">';
         $out .= '<ol class="impact-list">';
@@ -214,7 +249,7 @@ document.addEventListener('impact:updated', function(){
                     $name = $this->normalize_ngo_name($name);
                 }
                 $amt  = isset($row['amount']) ? (float)$row['amount'] : 0.0;
-                $out .= '<li><strong>'.esc_html($name).'</strong> — '.esc_html($this->format_amount_huf($amt)).'</li>';
+                $out .= '<li><strong>'.esc_html($name).'</strong> — '.esc_html($this->format_amount($amt, $currency, $rate_override)).'</li>';
             }
         } else {
             $out .= '<li class="impact-muted">Nincs adat.</li>';
@@ -269,8 +304,18 @@ document.addEventListener('impact:updated', function(){
         return $map;
     }
 
-    private function format_amount_huf(float $amount_eur): string {
+    private function format_amount(float $amount_eur, string $currency, float $rate_override): string {
+        if ($currency !== 'HUF') {
+            return number_format($amount_eur, 2, ',', ' ') . ' €';
+        }
+        return $this->format_amount_huf($amount_eur, $rate_override);
+    }
+
+    private function format_amount_huf(float $amount_eur, float $rate_override = 0.0): string {
         $rate = 392.0;
+        if ($rate_override > 0) {
+            $rate = $rate_override;
+        }
         if (function_exists('impactshop_get_huf_rate')) {
             $maybe = (float) impactshop_get_huf_rate();
             if ($maybe > 0) {

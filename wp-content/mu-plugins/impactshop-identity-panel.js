@@ -59,7 +59,7 @@
           if (data.nickname) {
             greetingEl.textContent = "Szia " + data.nickname + "! Üdvözöllek a Sharity oldalán.";
           } else {
-            greetingEl.textContent = "Szia, üdvözöllek az Impact Shop oldalán.";
+            greetingEl.textContent = "Szia, üdvözöllek a Sharity oldalán.";
           }
         }
         if (recoveryDisplay) {
