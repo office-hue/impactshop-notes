@@ -324,6 +324,47 @@ CREATE TABLE impact_vote_lottery (
 - Identity ready event: impactshop_identity_ready esemeny, a vote script erre var.
 - Elementor edit mode: placeholder render, JS nem fut.
 
+## Implementacios dontesek es edge case-ek (P0–P2)
+- Error response standard (P0): egységes JSON (success=false, error_code, message, data).
+- NGO sorrend (P1): admin sort_order, default ABC ha ures.
+- Valos ideju allas (P1): tally renderelheto vagy csak osszesito szoveg.
+- CSV schema (P2): pseudo_id hash, oszlop lista.
+- Browser support (P2): min verzio lista + fallback banner.
+- Video hosting (P0): MP4/CDN vs YouTube/Vimeo/HLS.
+- Analytics (P2): server-side log a kritikus esemenyekhez.
+- Load test baseline (P1): 500-1000 concurrent, 100 vote/perc.
+
+## REST error format (standard)
+```
+{
+  "success": false,
+  "error_code": "DAILY_LIMIT_EXCEEDED",
+  "message": "Ma mar szavaztal. Holnap ujra probalkozhatsz.",
+  "data": {
+    "next_vote_available_at": "2026-01-21T00:00:00+01:00"
+  }
+}
+```
+Error kodok: CAMPAIGN_NOT_ACTIVE, INVALID_VIEW_TOKEN, DAILY_LIMIT_EXCEEDED,
+NGO_NOT_FOUND, RATE_LIMIT_EXCEEDED, KILL_SWITCH_ACTIVE.
+
+## NGO megjelenites logika
+- Sorrend: sort_order > ABC.
+- Opcionis: valos ideju tally az NGO kartyakon.
+
+## CSV export (schema)
+impact_vote_log.csv: campaign_id,campaign_name,ngo_id,ngo_name,pseudo_id_hash,voted_at,day_key,ip_hash_prefix
+impact_vote_daily.csv: campaign_id,day_key,ngo_id,ngo_name,votes
+
+## Video event timing edge case
+- view_token csak 1 percen belul erkezett completed eseten kerheto.
+- Ha a completed tul regi, ujranezest ker.
+
+## Load teszt (iranyelv)
+- 500-1000 concurrent GET/POST.
+- 100 szavazat/perc peak.
+
+
 ## Utemezett, reszletes megvalositasi feladatok
 
 ### F0 – Elokeszites (0.5 nap)
