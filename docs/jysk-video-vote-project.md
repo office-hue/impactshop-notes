@@ -148,8 +148,8 @@ Reszek:
    - Gomb allapot: disabled -> enabled -> success.
 
 4) Offline/ujraprobalas UX
-- Vote/cast hibanal auto retry 5s backoff-fal.
-- Latvanyos hibauzenet + “Ujraprobalas”.
+   - Vote/cast hibanal auto retry 5s backoff-fal.
+   - Latvanyos hibauzenet + “Ujraprobalas”.
 
 5) Kampany status cron fallback
    - WP cron 5 percenkent, plusz WP-CLI scheduled fallback.
@@ -163,7 +163,7 @@ Reszek:
    - Playwright/Cypress: video completion, napi limit, idozona atlepes.
 
 8) Kozossegi cel progress bar (gamification)
-- “Kozos cel 50%” jelzo sav a reszvetel novelesehez.
+   - “Kozos cel 50%” jelzo sav a reszvetel novelesehez.
 
 9) View token NGO-tol fuggetlen
    - A view_token csak a kampanyhoz kotott, nem NGO-hoz.
@@ -185,6 +185,32 @@ Reszek:
    - /vote/results endpoint + gyoztesi rekord.
    - Dontetlen kezelese: beturend vagy admin override.
 
+14) Uzenetkezeles adatmodell
+   - impact_vote_messages: type (global|targeted), content, start_at, end_at, priority.
+   - impact_vote_message_targets: message_id, pseudo_id, is_read, read_at.
+   - Dismiss vagy read logika a frontendben.
+
+15) Video progress megorzes
+   - 5 masodpercenkent localStorage mentese (jysk_video_progress).
+   - Oldal ujratoltes utan “Folytatas innen?” prompt.
+
+16) Atomic increment a daily tablaban
+   - UPDATE impact_vote_daily SET votes = votes + 1 WHERE ...
+
+17) Nonce vedelem
+   - wp_create_nonce('impact_vote_action') a shortcode-ban.
+   - X-WP-Nonce ellenorzes a /view es /cast vegpontoknal.
+
+18) Admin manual trigger
+   - “Sorsolas futtatasa most” gomb, idempotens logika.
+
+19) Video hosting specifikacio
+   - MP4/CDN eseten Range request tamogatas.
+   - YouTube/Vimeo embed eseten Player API esemenyek.
+
+20) QA time travel
+   - Admin-only time travel flag a kampany start/end teszteleshez.
+
 ## Fiók uzenetek (kozponti + celzott)
 - Uzenetek csak az [impactshop_identity_id] blokkban jelennek meg.
 - Minden oldalon megjelennek, ahol a shortcode kint van.
@@ -196,6 +222,8 @@ Reszek:
 - Idopont: szavazas utolso napjan 12:00 (HU idozona).
 - 3 kulonbozo nyertes, minden szavazat egy sorsjegy.
 - Sorsolas a vote_log tabla alapjan (sulyozott valasztas).
+- A nyertes kihuzasa utan a pseudo_id osszes jegye kikerul a poolbol.
+- +3 tartalek nyertes (ha nem jelentkeznek).
 - A 3 nyertesnek celzott uzenet jelenik meg az identity id blokkban.
 - Uzenet szoveg:
   - “Gratulalunk, nyertel 10 000 Ft-os JYSK utalvanyt!”
