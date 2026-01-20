@@ -354,3 +354,42 @@ CREATE TABLE impact_vote_lottery (
 - MU plugin a DB, REST, cron, shortcode logikaval.
 - Frontend JS a video es szavazas flow-hoz.
 - Identity panel mar letezik, csak beagyazni kell.
+
+## UX/UI specifikacio (Elementor-kompatibilis)
+
+### Hero szekcio (above the fold)
+- H1: “Nezd vegig a videót es tamogasd a kedvenc civil szervezeted!”
+- Video blokk kozepen, max-width 800px, azonnali poster kep.
+- Szoveg: “A szavazashoz vegig kell nezned a reklamot.”
+- Progress bar: “Eddig hitelesen: 0–100%”.
+- CTA gomb kezdetben disabled.
+
+### Video UX
+- Minimal controls (play/pause), seek tiltva, playback 1x.
+- Progress milestone jelzesek: 25/50/75/100%.
+- Offline es retry uzenetek: “Nincs kapcsolat, ujraprobaljuk 5 mp mulva”.
+
+### NGO valasztas szekcio
+- Kartyas grid: mobil 1 oszlop, tablet 2, desktop 3-4.
+- Kartyak: logo (alt), nev, rovid leiras, “Szavazok erre”.
+- Globalis CTA: “Szavazok most!” (aktiv csak 100% video utan).
+
+### Szavazat feedback
+- Siker: inline uzenet + pipa animacio.
+- Hiba: konkret ok + ujraprobalas.
+- Napi limit uzenet: “Ma mar szavaztal, holnap ujra probalkozhatsz.”
+
+### Mobil UX
+- Sticky CTA alul (ha a video nincs lathato).
+- Touch-friendly gombok, nagy kontraszt.
+
+### State machine (UI)
+NOT_STARTED -> PLAYING -> PROGRESSING -> COMPLETED -> VOTING -> VOTED
+- Minden allapothoz vizualis visszajelzes (gomb, status szoveg, progress).
+
+### Micro-interakciok
+- Play gomb highlight, progress animacio, gomb aktivadaskor finom atmenet.
+- “Almost there!” szoveg 75% felett.
+
+### Analitika (UX fokusz)
+- Eventek: page_view, video_start, 25/50/75/100, ngo_select, vote_attempt, vote_success, vote_fail.
