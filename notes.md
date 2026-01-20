@@ -14,6 +14,12 @@
 - 🏷️ NGO slug → név feloldás `ngo_codes.csv` alapján; fallback title-case, ha nincs találat.
 - 🧹 Cache flush prod+staging.
 
+### 2026-01-20 – Dognet ledger sync cron fix
+- 🧭 Ok: `DISABLE_WP_CRON=1` miatt a WP‑Cron nem futott, a ledger sync csak manuálisan ment.
+- ✅ Bekapcsolva: `DISABLE_WP_CRON=false` prod+staging.
+- ⏱️ Új MU cron wrapper: `wp-content/mu-plugins/impactshop-social-ledger-cron.php` (10 perc).
+- ▶️ Kézi futtatás: `impact-social-ledger-sync.php` prod+staging, ticker transients törölve.
+
 ### 2026-01-18 – Ledger cron sűrítés + watchdog e-mail (office@sharity.hu)
 - ⏱️ WP-Cron ütemezés sűrítve: CJ + Dognet ledger sync 10 perces ciklusra állítva.
 - 🔔 Watchdog hozzáadva: 10 percenként ellenőrzi a CJ/Dognet ledger `last_run` frissességét; küszöb 20 perc, cooldown 30 perc; elakadás esetén e‑mail az `office@sharity.hu` címre.
