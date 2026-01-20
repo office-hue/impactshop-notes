@@ -65,6 +65,25 @@ function ism_num($row){
   return 0.0;
 }
 
+/** Shop name by Dognet campaign id */
+function ism_shop_name_from_cid($cid){
+  static $map = null;
+  $cid = intval($cid);
+  if ($map === null) {
+    $map = [];
+    if (function_exists('impactshop_get_shops') && function_exists('dognet_extract_campaign_id_from_base')) {
+      foreach ((array)impactshop_get_shops() as $shop) {
+        $base = $shop['dognet_base'] ?? '';
+        $scid = $base ? dognet_extract_campaign_id_from_base($base) : 0;
+        if ($scid) {
+          $map[$scid] = $shop['name'] ?? ('cid '.$scid);
+        }
+      }
+    }
+  }
+  return $map[$cid] ?? ('cid '.$cid);
+}
+
 /** RAW tranzakciók */
 function ism_fetch_tx($from,$to,$status='all'){
   if (!function_exists('dognet_api_list_conversions_all')) return [];
@@ -128,7 +147,7 @@ function ism_build_leaderboard($tab='ngo'){
       $cid=0; foreach(['campaign_id','campaignId','cid','campaign'] as $k){
         if(isset($r[$k])){ $cid=is_array($r[$k])?intval($r[$k]['id']??0):intval($r[$k]); break; }
       }
-      $name=$cid?('cid '.$cid):'(ismeretlen shop)';
+      $name=$cid?ism_shop_name_from_cid($cid):'(ismeretlen shop)';
       $map[$name]=($map[$name]??0)+$don;
     }
   }

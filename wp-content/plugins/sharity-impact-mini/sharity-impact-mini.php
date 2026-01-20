@@ -80,7 +80,7 @@ class Sharity_Impact_Mini {
     }
 
     public function enqueue_assets() {
-        // Alap stílus – dark theme + színtokenek + kártyák + mini animációk
+        // Alap stílus – light theme + színtokenek + kártyák + mini animációk
         $css = "
 .impact-wrap{
   --impact-bg:#F8FAFC; --impact-fg:#0F172A;
@@ -164,12 +164,12 @@ document.addEventListener('impact:updated', function(){
         $html  = '<div class="impact-wrap impact-kpi">';
         $html .=   '<div class="kpi impact-card">';
         $html .=     '<div class="label">Összegyűjtve</div>';
-        $html .=     '<div class="value">€ ' . esc_html(number_format((float)$total, 2, ',', ' ')) . '</div>';
+        $html .=     '<div class="value">' . esc_html($this->format_amount_huf((float)$total)) . '</div>';
         $html .=     '<div class="sub impact-muted">A jóváhagyott jutalékok 50%-a (adomány)</div>';
         $html .=   '</div>';
         $html .=   '<div class="kpi impact-card">';
         $html .=     '<div class="label">Ma</div>';
-        $html .=     '<div class="value">€ ' . esc_html(number_format((float)$today, 2, ',', ' ')) . '</div>';
+        $html .=     '<div class="value">' . esc_html($this->format_amount_huf((float)$today)) . '</div>';
         $html .=     '<div class="sub impact-muted">Frissítve: ' . esc_html($gen) . '</div>';
         $html .=   '</div>';
         $html .= '</div>';
@@ -214,7 +214,7 @@ document.addEventListener('impact:updated', function(){
                     $name = $this->normalize_ngo_name($name);
                 }
                 $amt  = isset($row['amount']) ? (float)$row['amount'] : 0.0;
-                $out .= '<li><strong>'.esc_html($name).'</strong> — € '.esc_html(number_format($amt, 2, ',', ' ')).'</li>';
+                $out .= '<li><strong>'.esc_html($name).'</strong> — '.esc_html($this->format_amount_huf($amt)).'</li>';
             }
         } else {
             $out .= '<li class="impact-muted">Nincs adat.</li>';
@@ -267,6 +267,20 @@ document.addEventListener('impact:updated', function(){
         }
         fclose($handle);
         return $map;
+    }
+
+    private function format_amount_huf(float $amount_eur): string {
+        $rate = 392.0;
+        if (function_exists('impactshop_get_huf_rate')) {
+            $maybe = (float) impactshop_get_huf_rate();
+            if ($maybe > 0) {
+                $rate = $maybe;
+            }
+        } elseif (defined('IMPACTSHOP_FX_HUF')) {
+            $rate = max(1.0, (float) IMPACTSHOP_FX_HUF);
+        }
+        $huf = (int) round($amount_eur * $rate);
+        return number_format($huf, 0, ',', ' ') . ' Ft';
     }
 
     /** [impact_activity] */
