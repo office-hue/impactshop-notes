@@ -20,6 +20,11 @@
 - ⏱️ Új MU cron wrapper: `wp-content/mu-plugins/impactshop-social-ledger-cron.php` (10 perc).
 - ▶️ Kézi futtatás: `impact-social-ledger-sync.php` prod+staging, ticker transients törölve.
 
+### 2026-01-20 – Leaderboard Ft + shop név feloldás
+- 💱 `sharity-impact-mini`: EUR → HUF megjelenítés (`Ft`), központi árfolyam (impactshop_get_huf_rate/IMPACTSHOP_FX_HUF).
+- 🏬 `impactshop-metrics-ngo`: shop leaderboard név feloldás Dognet cid → shop név (ékezetekkel) a shop registryből.
+- 🧹 Cache flush prod+staging.
+
 ### 2026-01-18 – Ledger cron sűrítés + watchdog e-mail (office@sharity.hu)
 - ⏱️ WP-Cron ütemezés sűrítve: CJ + Dognet ledger sync 10 perces ciklusra állítva.
 - 🔔 Watchdog hozzáadva: 10 percenként ellenőrzi a CJ/Dognet ledger `last_run` frissességét; küszöb 20 perc, cooldown 30 perc; elakadás esetén e‑mail az `office@sharity.hu` címre.
