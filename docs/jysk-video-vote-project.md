@@ -108,16 +108,19 @@ Reszek:
 - Export CSV a szavazatokrol es daily osszesitesrol.
 - Kampany statusz kezeles: scheduled -> active -> closed (5 percenkenti cron).
 - Gyoztes edge case: dontetlen es 0 szavazat kezelese.
+- Opcionis audit fazis: active -> audit -> closed (manual finalize).
 
 ## Anti-abuse
 - Napi limit pseudo_id alapon (HU idozona).
 - IP hash + user agent hash log (anomalia detektalas, hash_hmac + salt).
 - Rate limit a vote/cast endpointon (pseudo_id: 10/ora, IP: 50/ora, 429 + Retry-After).
 - Video vegignezest csak ended event utan fogadjuk el.
+- Adatmegorzes: logok torlese a kampany zarasa utan 30 nappal.
 
 ## Video player kovetelmenyek
 - HTML5 video: ended event + currentTime >= duration * 0.98.
 - Seek elore tiltasa, playback speed 1x.
+- Egyszeru, kontrollalt UI (custom controlok vagy konyvtar).
 
 ## Idokezeles
 - Minden datetime UTC-ben tarolva (gmdate), day_key HU idozonaban szamolva.
@@ -173,6 +176,58 @@ Reszek:
 11) Cache kulcs kampany azonositohoz
    - Tally cache kulcs tartalmazza a campaign_id-t.
    - Kampany valtaskor nem ragad be regi adat.
+
+12) Frontend state kezeles
+   - Atlathato UI state-ek (NOT_STARTED/PLAYING/COMPLETED/VOTED).
+   - Minimal JS komponens (pl. Alpine.js) build step nelkul.
+
+13) Eredmenyek es gyoztes kimenet
+   - /vote/results endpoint + gyoztesi rekord.
+   - Dontetlen kezelese: beturend vagy admin override.
+
+## Utemezett, reszletes megvalositasi feladatok
+
+### F0 – Elokeszites (0.5 nap)
+1) Kampany parameterek: start/end idopont, NGO lista (5-10), JYSK video URL.
+2) UX copy es legal szovegek (adatkezeles, jatekszabaly).
+3) Technical spec veglegesites (player, cache, rate limit).
+
+### F1 – Backend alapok (1-1.5 nap)
+1) MU plugin skeleton: aktivacio, dbDelta, tablaletrehozas.
+2) Model/DAO: kampany, ngo, log, daily, winner.
+3) HU idozona segedfuggvenyek + UTC tarolas.
+4) Indexek + UNIQUE constraint (campaign_id, pseudo_id, day_key).
+
+### F2 – REST API (1 nap)
+1) GET /vote/campaign + /vote/status.
+2) POST /vote/view (view_token generalas, transient tarolas).
+3) POST /vote/cast (view_token ellenorzes, rate limit, daily update).
+4) GET /vote/tally (ETag + 15s cache).
+5) GET /vote/results (opcionalis).
+
+### F3 – Frontend oldal (1-1.5 nap)
+1) [impactshop_vote_page] shortcode + markup.
+2) Video lejarzas + 100% validalas (ended + currentTime).
+3) View_token kezeles + retry/backoff.
+4) NGO valasztas UI + szavazat gomb allapotok.
+5) Live tally polling (10-20s) + ETag.
+
+### F4 – Admin es cron (1 nap)
+1) Admin kampany/NGO CRUD (Settings API).
+2) WP cron kampany statusz ellenorzes (5 perc).
+3) Zaraskori winner szamitas + rekord.
+4) CSV export (admin-ajax).
+
+### F5 – Biztonsag, logolas, adatmegorzes (0.5 nap)
+1) IP/UA hash (hash_hmac + salt).
+2) Rate limit (pseudo_id + IP).
+3) Log retention cleanup (30 napos torles cron).
+
+### F6 – QA + rollout (0.5-1 nap)
+1) Manual QA checklist: start/end, daily limit, 100% view, mobil.
+2) Staging deploy + smoke.
+3) Prod deploy + cache flush.
+4) Impactall futtatas + notes.md bejegyzes.
 
 ## Teszt / QA
 - Kampany start/end elott/utan nem lehet szavazni.
