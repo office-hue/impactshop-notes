@@ -5,6 +5,7 @@
     const statusEl = root.querySelector("[data-role=status]");
     const greetingEl = root.querySelector("[data-role=greeting]");
     const totalEl = root.querySelector("[data-role=total-display]");
+    const messageEl = root.querySelector("[data-role=account-message]");
     const pseudoDisplay = root.querySelector("[data-role=pseudo-display]");
     const recoveryDisplay = root.querySelector("[data-role=recovery-display]");
     const nicknameInput = root.querySelector("[data-role=nickname-input]");
@@ -17,6 +18,12 @@
       if (!statusEl) return;
       statusEl.textContent = msg;
       statusEl.style.color = isError ? "#b91c1c" : "#0f766e";
+    }
+
+    function emitIdentityReady(pseudo) {
+      if (!pseudo) return;
+      const event = new CustomEvent("impactshop_identity_ready", { detail: { pseudo_id: pseudo } });
+      window.dispatchEvent(event);
     }
 
     function getCookie(name) {
@@ -32,6 +39,7 @@
       if (saveUsername) {
         saveUsername.value = pseudo || "";
       }
+      emitIdentityReady(pseudo || "");
     }
 
     async function fetchProfile() {
@@ -49,7 +57,7 @@
         }
         if (greetingEl) {
           if (data.nickname) {
-            greetingEl.textContent = "Szia " + data.nickname + "! Üdvözöllek az Impact Shop oldalán.";
+            greetingEl.textContent = "Szia " + data.nickname + "! Üdvözöllek a Sharity oldalán.";
           } else {
             greetingEl.textContent = "Szia, üdvözöllek az Impact Shop oldalán.";
           }
@@ -69,6 +77,7 @@
         if (saveUsername && data && data.pseudo_id) {
           saveUsername.value = data.pseudo_id;
         }
+        emitIdentityReady(data && data.pseudo_id ? data.pseudo_id : "");
         setStatus("Azonosító betöltve.");
       } catch (e) {
         setStatus("Nem sikerült azonosítót kérni. Próbáld újra.", true);
@@ -91,6 +100,54 @@
         totalEl.textContent = "Támogatásaim összege: " + total.toLocaleString("hu-HU") + " Ft";
       } catch (e) {
         // silent fail
+      }
+    }
+
+    async function fetchMessages() {
+      if (!messageEl) return;
+      try {
+        const res = await fetch(restBase + "/identity/messages?ts=" + Date.now(), {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const messages = data && Array.isArray(data.messages) ? data.messages : [];
+        if (!messages.length) {
+          messageEl.hidden = true;
+          return;
+        }
+        const msg = messages[0];
+        messageEl.hidden = false;
+        messageEl.innerHTML = "";
+        const text = document.createElement("span");
+        text.textContent = msg.content || "";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "Rendben";
+        btn.addEventListener("click", async function(){
+          messageEl.hidden = true;
+          if (msg.type === "targeted" && msg.id) {
+            try {
+              await fetch(restBase + "/identity/message-read", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-WP-Nonce": restNonce
+                },
+                credentials: "include",
+                body: JSON.stringify({ message_id: msg.id })
+              });
+            } catch (e) {
+              // ignore
+            }
+          }
+        });
+        messageEl.appendChild(text);
+        messageEl.appendChild(btn);
+      } catch (e) {
+        // ignore
       }
     }
 
@@ -276,6 +333,7 @@
           }
           setStatus("Azonosító helyreállítva.");
           if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva.";
+          emitIdentityReady(pseudo);
           fetchProfile();
           setTimeout(function(){
             window.location.reload();
@@ -343,6 +401,7 @@
     refreshPseudo();
     fetchProfile();
     fetchTotal();
+    fetchMessages();
     setTimeout(fetchProfile, 800);
   }
 

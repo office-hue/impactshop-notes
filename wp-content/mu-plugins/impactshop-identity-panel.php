@@ -104,6 +104,7 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '<button type="button" data-role="scroll-account">Fiókom kezelése</button>';
     $html .= '</div>';
     $html .= '<p class="impactshop-identity-total" data-role="total-display">Támogatásaim összege: —</p>';
+    $html .= '<div class="impactshop-identity-message" data-role="account-message" hidden></div>';
     $html .= '<p class="impactshop-identity-hint">Fontos: csak a fiókodban tudod megőrizni az eredményeidet és a jutalmaidat.</p>';
     $html .= '<div class="impactshop-identity-row">';
     $html .= '<code class="impactshop-identity-value" data-role="pseudo-display">' . $pseudo_id . '</code>';
@@ -203,6 +204,8 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-card h3, .impactshop-identity-card h4 { margin: 0 0 10px; font-weight: 700; }
 .impactshop-identity-greeting { margin: 0 0 12px; font-size: 1rem; font-weight: 600; color: #0f172a; }
 .impactshop-identity-total { margin: 6px 0 0; font-weight: 700; color: #0f172a; }
+.impactshop-identity-message { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(14, 116, 144, 0.08); border: 1px solid rgba(14, 116, 144, 0.25); color: #0f172a; font-weight: 600; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.impactshop-identity-message button { background: #0f172a; color: #fff; border: 0; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
 .impactshop-identity-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .impactshop-identity-row input { flex: 1; }
 .impactshop-identity-card label { display: block; margin-top: 14px; font-weight: 600; }

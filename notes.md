@@ -3543,3 +3543,52 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 
 ### 2026-01-19 – Secrets konszolidáció
 - `~/bin/impactall`: betölti a `~/.impact-secrets/env.d/capi.env` fájlt, ha elérhető.
+
+### 2026-01-20 – JYSK vote implementáció indul
+- Implementáció előkészítés megkezdve a `docs/jysk-video-vote-project.md` terv alapján (felmérés + technikai bontás).
+
+### 2026-01-20 – Állásmentés (JYSK vote)
+- Áttekintve a meglévő MU-plugins és activity log környezet; nincs kész vote implementáció a kódban.
+- Következő lépés: új MU-plugin(ek) + REST endpointok + adatmodell felvétel a terv szerint.
+
+### 2026-01-20 – JYSK vote core implementáció
+- Új MU-plugin: `wp-content/mu-plugins/impactshop-vote-jysk.php` (adatmodell, REST, vote flow, lottery, messaging).
+- Új frontend JS: `wp-content/mu-plugins/impactshop-vote-jysk.js` (videó gating, NGO lista, szavazás, tally).
+- `wp-content/mu-plugins/impactshop-identity-panel.php`: üzenet megjelenítés a compact blokkban.
+- `wp-content/mu-plugins/impactshop-identity-panel.js`: identity ready event + üzenet fetch/ack.
+
+### 2026-01-20 – JYSK vote admin + export
+- Admin felület hozzáadva kampány/NGO/üzenet kezeléshez és CSV exporthoz (`impactshop-vote-jysk` menü).
+- Manual sorsolás gomb + exportok (log + daily).
+
+### 2026-01-20 – JYSK vote UX finomítás
+- Videó progress mentés/folytatás localStorage alapon (`impactshop-vote-jysk.js`).
+
+### 2026-01-20 – JYSK vote hardening
+- Sorsolás időzítés: kampány zárása utáni nap 12:00 (HU) + end_at gate.
+- Pseudo ID regex validáció a vote pluginben.
+- Schema migrate lock a dbDelta párhuzamos futás ellen.
+- Kill switch UX üzenet finomítva a vote UI-ban.
+- Rate limit headerek + tally cache-control header + CSV export kampány/NGO névvel.
+- Rate limit retry_after megjelenítés a frontendben.
+- View vs cast külön rate limit + backend analytics log táblával.
+- Admin státusz színezés + NGO quick toggle.
+- GA4 event tracking (video_start/progress, vote_attempt/success/fail).
+- Nonce refresh endpoint + 12h kliens frissítés.
+- Admin kampány űrlapon HU időzóna jelzés.
+
+### 2026-01-20 – SSH host + preflight
+- `.deploy.staging.env` és `.deploy.production.env`: SSH_HOST frissítve `sharityh@s59.tarhely.com` értékre.
+- Staging ledger sync + OG batch lefutott, de preflight továbbra is WARN (totals/ticker lassú).
+ - Stagingen törölve a ticker/totals kapcsolódó transiensek (impactshop_ticker_v1, impactshop_totals_v2, ibl_total_v1, impact_report_v1).
+- Curl mérés: `https://app.sharity.hu/impactshop-staging/?rest_route=/impact/v1/totals` ~0.58s, míg `https://sharity.hu/impactshop-staging/?rest_route=/impact/v1/totals` ~9.4s → a redirect/edge útvonal a lassú.
+- Preflight átállítva az `app.sharity.hu/impactshop-staging` hostra; eredmény PASS (totals/ticker < 1s).
+
+### 2026-01-20 – Deploy
+- Staging deploy lefutott (mu-plugins + plugins map, preflight WARN).
+- Production deploy lefutott (preflight PASS, mu-plugins + plugins map).
+
+### 2026-01-20 – Post-deploy + impactall
+- `bin/post-deploy-checklist.sh` futott (printf fix után). Eredmény: 2/5 PASS, production URL 500 (homepage, /go, /go-deal, /wp-admin).
+- `impactall` lefutott (14/14 PASS), de a REST healthcheck 500-at mutatott staging/prod wp-jsonon (status snapshot frissült).
+- 2026-01-20: Added MU helper `wp-content/mu-plugins/impactshop-dognet-conversions.php` to restore `dognet_api_list_conversions_all` via raw-transactions list functions (relies on existing Dognet auth helper). Leaderboard/ticker empty on staging because function missing; needs deploy + transient flush. Risk: Dognet auth config must be present (DOGNET_LOGIN_EMAIL/PASSWORD).

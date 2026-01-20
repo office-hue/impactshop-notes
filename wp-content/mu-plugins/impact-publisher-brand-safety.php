@@ -5,7 +5,7 @@
  * HOW: Opcionális seed wp_options-ben, helper függvény a szabályok lekérésére.
  */
 
-![1765456962440](image/impact-publisher-brand-safety/1765456962440.png)if (!defined('ABSPATH')) {
+if (!defined('ABSPATH')) {
     exit;
 }
 
