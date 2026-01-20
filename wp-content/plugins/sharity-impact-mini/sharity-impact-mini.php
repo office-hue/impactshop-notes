@@ -82,17 +82,23 @@ class Sharity_Impact_Mini {
     public function enqueue_assets() {
         // Alap stílus – dark theme + színtokenek + kártyák + mini animációk
         $css = "
-:root{
-  --impact-bg:#0A0A0B; --impact-fg:#F8FAFC;
+.impact-wrap{
+  --impact-bg:#F8FAFC; --impact-fg:#0F172A;
   --impact-purple:#7C3AED; --impact-cyan:#06B6D4; --impact-orange:#F97316; --impact-lime:#22C55E;
-  --impact-muted:#94A3B8;
+  --impact-muted:#64748B; --impact-card-bg:rgba(255,255,255,.92);
+  --impact-border:rgba(15,23,42,.08); --impact-shadow:0 10px 24px rgba(15,23,42,.08);
+  color:var(--impact-fg);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif
 }
-.impact-wrap{color:var(--impact-fg);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.impact-wrap.impact-dark{
+  --impact-bg:#0A0A0B; --impact-fg:#F8FAFC;
+  --impact-muted:#94A3B8; --impact-card-bg:rgba(255,255,255,.06);
+  --impact-border:rgba(255,255,255,.08); --impact-shadow:0 8px 24px rgba(0,0,0,.35);
+}
 .impact-grid{display:grid;gap:12px}
 .impact-row{display:flex;gap:12px;flex-wrap:wrap}
-.impact-card{background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08);
-  border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);transition:transform .2s ease, box-shadow .2s ease}
-.impact-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.45)}
+.impact-card{background:var(--impact-card-bg);backdrop-filter:blur(10px);border:1px solid var(--impact-border);
+  border-radius:14px;padding:14px;box-shadow:var(--impact-shadow);transition:transform .2s ease, box-shadow .2s ease}
+.impact-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(15,23,42,.12)}
 .impact-kpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .impact-kpi .kpi{padding:18px;border-radius:14px;background:linear-gradient(135deg, rgba(124,58,237,.18), rgba(6,182,212,.18))}
 .kpi .label{font-size:12px;color:var(--impact-muted);letter-spacing:.08em;text-transform:uppercase}
@@ -204,6 +210,9 @@ document.addEventListener('impact:updated', function(){
         if (is_array($list)) {
             foreach ($list as $row) {
                 $name = isset($row['name']) ? $row['name'] : '—';
+                if ($key === 'ngo') {
+                    $name = $this->normalize_ngo_name($name);
+                }
                 $amt  = isset($row['amount']) ? (float)$row['amount'] : 0.0;
                 $out .= '<li><strong>'.esc_html($name).'</strong> — € '.esc_html(number_format($amt, 2, ',', ' ')).'</li>';
             }
@@ -212,6 +221,52 @@ document.addEventListener('impact:updated', function(){
         }
         $out .= '</ol></div>';
         return $out;
+    }
+
+    private function normalize_ngo_name($name) {
+        $name = trim((string)$name);
+        if ($name === '' || $name === '—') {
+            return $name;
+        }
+        $map = $this->get_ngo_name_map();
+        $slug = sanitize_title($name);
+        if ($slug && isset($map[$slug])) {
+            return $map[$slug];
+        }
+        $fallback = str_replace(['-', '_'], ' ', $name);
+        if (function_exists('mb_convert_case')) {
+            return mb_convert_case($fallback, MB_CASE_TITLE, 'UTF-8');
+        }
+        return ucwords($fallback);
+    }
+
+    private function get_ngo_name_map() {
+        static $map = null;
+        if ($map !== null) {
+            return $map;
+        }
+        $map = [];
+        $path = trailingslashit(ABSPATH) . 'ngo_codes.csv';
+        if (!file_exists($path)) {
+            return $map;
+        }
+        if (($handle = fopen($path, 'r')) === false) {
+            return $map;
+        }
+        $row = 0;
+        while (($data = fgetcsv($handle)) !== false) {
+            $row++;
+            if ($row === 1) {
+                continue;
+            }
+            $label = isset($data[0]) ? trim((string)$data[0]) : '';
+            $slug = isset($data[1]) ? sanitize_title($data[1]) : '';
+            if ($label !== '' && $slug !== '') {
+                $map[$slug] = $label;
+            }
+        }
+        fclose($handle);
+        return $map;
     }
 
     /** [impact_activity] */

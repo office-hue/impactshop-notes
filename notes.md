@@ -9,6 +9,11 @@
 - 🧹 Cache purge: `wp transient delete --all` + `wp cache flush` mindkét környezeten.
 - ⚠️ WP-CLI notice: `complianz-terms-conditions` túl korai textdomain betöltés (csak figyelmeztetés).
 
+### 2026-01-20 – Leaderboard UI + NGO név mapping (prod+staging)
+- 🎨 `sharity-impact-mini` stílusok világos háttérre igazítva (szöveg/kontraszt fix).
+- 🏷️ NGO slug → név feloldás `ngo_codes.csv` alapján; fallback title-case, ha nincs találat.
+- 🧹 Cache flush prod+staging.
+
 ### 2026-01-18 – Ledger cron sűrítés + watchdog e-mail (office@sharity.hu)
 - ⏱️ WP-Cron ütemezés sűrítve: CJ + Dognet ledger sync 10 perces ciklusra állítva.
 - 🔔 Watchdog hozzáadva: 10 percenként ellenőrzi a CJ/Dognet ledger `last_run` frissességét; küszöb 20 perc, cooldown 30 perc; elakadás esetén e‑mail az `office@sharity.hu` címre.
