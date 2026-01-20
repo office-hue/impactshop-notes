@@ -3628,3 +3628,6 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ### 2026-01-20 – Impact Shop deal link logika + NGO banner (pending deploy)
 - `wp-content/mu-plugins/impactshop-netflix-shortcodes.php`: egységes CTA logika (d1 → /go-deal + u, d1 nélkül → Fillout), Fillout fallback termék URL paraméterrel.
 - Ugyanitt: d1 esetén megjelenik a támogatott NGO banner (`ngo_codes.csv` alapján).
+
+### 2026-01-20 – Deals desktop click fix (deployed)
+- `wp-content/mu-plugins/impactshop-netflix-shortcodes.php`: desktopon a deals kártyák kattinthatósága javítva (pointer-events + z-index hardening, drag logic desktopon tiltva).
