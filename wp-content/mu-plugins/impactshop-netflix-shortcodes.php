@@ -1497,6 +1497,9 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       // SWIPE/DRAG + inercia
       let isDown=false, sx=0, sl=0, moved=0, vx=0, raf=null, lastX=0, lastT=0, dragged=false;
       rail.addEventListener('pointerdown', (e)=>{
+        if (e.pointerType && e.pointerType !== 'touch') {
+          return;
+        }
         isDown=true; moved=0; dragged=false; vx=0; sx=e.clientX; sl=rail.scrollLeft; lastX=e.clientX; lastT=performance.now();
         rail.setPointerCapture(e.pointerId); rail.style.cursor='grabbing'; if (raf) cancelAnimationFrame(raf), raf=null;
       });
