@@ -327,11 +327,11 @@ CREATE TABLE impact_vote_lottery (
 ## Implementacios dontesek es edge case-ek (P0–P2)
 - Error response standard (P0): egységes JSON (success=false, error_code, message, data).
 - NGO sorrend (P1): admin sort_order, default ABC ha ures.
-- Valos ideju allas (P1): tally renderelheto vagy csak osszesito szoveg.
+- Valos ideju allas (P1): NGO kartyakon 15s cache-elt tally (ETag).
 - CSV schema (P2): pseudo_id hash, oszlop lista.
 - Browser support (P2): min verzio lista + fallback banner.
-- Video hosting (P0): MP4/CDN vs YouTube/Vimeo/HLS.
-- Analytics (P2): server-side log a kritikus esemenyekhez.
+- Video hosting (P0): self-hosted MP4 + CDN + Range; fallback YouTube/Vimeo.
+- Analytics (P2): server-side log a kritikus esemenyekhez, UX eventek GA4.
 - Load test baseline (P1): 500-1000 concurrent, 100 vote/perc.
 
 ## REST error format (standard)
@@ -350,7 +350,7 @@ NGO_NOT_FOUND, RATE_LIMIT_EXCEEDED, KILL_SWITCH_ACTIVE.
 
 ## NGO megjelenites logika
 - Sorrend: sort_order > ABC.
-- Opcionis: valos ideju tally az NGO kartyakon.
+- Real-time tally az NGO kartyakon (15s cache, ETag).
 
 ## CSV export (schema)
 impact_vote_log.csv: campaign_id,campaign_name,ngo_id,ngo_name,pseudo_id_hash,voted_at,day_key,ip_hash_prefix
@@ -363,6 +363,16 @@ impact_vote_daily.csv: campaign_id,day_key,ngo_id,ngo_name,votes
 ## Load teszt (iranyelv)
 - 500-1000 concurrent GET/POST.
 - 100 szavazat/perc peak.
+
+## Vegleges dontesek (hatékonysag + biztonsag)
+- View token: stateless alairt token (HMAC + exp), JTI transient 10 percig a replay ellen.
+- Tally cache: write-through a POST /cast-ben + 15s cron frissites.
+- Kampany atfedes: egyszerre 1 aktiv kampany, admin validacio blokkolja a tobbit.
+- Nonce: X-WP-Nonce kotelezo POST-oknal.
+- Origin: csak sajat domain whitelist.
+- Video: MP4/CDN + Range, fallback YouTube/Vimeo.
+- Browser support: Chrome/Edge 90+, Firefox 88+, Safari 14+ (macOS/iOS), Samsung Internet 14+.
+- CSV: pseudo_id hash, nincs cleartext export.
 
 
 ## Utemezett, reszletes megvalositasi feladatok
