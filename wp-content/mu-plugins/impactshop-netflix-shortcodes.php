@@ -1384,12 +1384,19 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       .<?php echo $uid; ?> .rail{
         display:flex; gap:var(--gap); overflow:hidden; scroll-behavior:smooth; padding:4px 48px;
         cursor:grab; user-select:none; -webkit-user-drag:none; touch-action:pan-x pan-y pinch-zoom;
+        position:relative; z-index:5; pointer-events:auto;
       }
       .<?php echo $uid; ?> .card{
         position:relative; flex:0 0 var(--cardW); height:var(--cardH); border-radius:var(--radius);
         border:1px solid rgba(0,0,0,.08); background:#0b1220; box-shadow:var(--shadow); overflow:hidden
       }
-      .<?php echo $uid; ?> .card{ cursor:pointer; pointer-events:auto; }
+      .<?php echo $uid; ?> .card{ cursor:pointer; pointer-events:auto; z-index:6; }
+      .<?php echo $uid; ?> .media,
+      .<?php echo $uid; ?> .media *{ pointer-events:none; }
+      .<?php echo $uid; ?> .badge,
+      .<?php echo $uid; ?> .shop,
+      .<?php echo $uid; ?> .label,
+      .<?php echo $uid; ?> .price{ pointer-events:none; }
       .<?php echo $uid; ?> .media{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; background:#0b1220 }
       .<?php echo $uid; ?> .media::before{
         content:""; position:absolute; inset:0;
