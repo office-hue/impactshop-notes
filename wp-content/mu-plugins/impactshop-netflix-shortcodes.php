@@ -1389,6 +1389,7 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
         position:relative; flex:0 0 var(--cardW); height:var(--cardH); border-radius:var(--radius);
         border:1px solid rgba(0,0,0,.08); background:#0b1220; box-shadow:var(--shadow); overflow:hidden
       }
+      .<?php echo $uid; ?> .card{ cursor:pointer; pointer-events:auto; }
       .<?php echo $uid; ?> .media{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; background:#0b1220 }
       .<?php echo $uid; ?> .media::before{
         content:""; position:absolute; inset:0;
@@ -1509,6 +1510,14 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
         if(!isDown) return; isDown=false; rail.style.cursor='grab';
         try{ rail.releasePointerCapture(e.pointerId); }catch(_){}
         dragged = moved > 24;
+        if (!dragged) {
+          const link = e.target && e.target.closest ? e.target.closest('a.card') : null;
+          if (link && link.href) {
+            try {
+              window.open(link.href, link.getAttribute('target') || '_blank', 'noopener');
+            } catch(_) {}
+          }
+        }
         let v = Math.max(-1.5, Math.min(1.5, vx)) * 24;
         function tick(){ if (Math.abs(v) < 0.1) return; rail.scrollLeft -= v; v *= 0.92; raf = requestAnimationFrame(tick); }
         raf = requestAnimationFrame(tick);
