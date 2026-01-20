@@ -1494,9 +1494,9 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       requestAnimationFrame(()=>{ if (dirSign < 0) rail.scrollLeft = Math.max(rail.scrollWidth - rail.clientWidth, 0); });
 
       // SWIPE/DRAG + inercia
-      let isDown=false, sx=0, sl=0, moved=0, vx=0, raf=null, lastX=0, lastT=0;
+      let isDown=false, sx=0, sl=0, moved=0, vx=0, raf=null, lastX=0, lastT=0, dragged=false;
       rail.addEventListener('pointerdown', (e)=>{
-        isDown=true; moved=0; vx=0; sx=e.clientX; sl=rail.scrollLeft; lastX=e.clientX; lastT=performance.now();
+        isDown=true; moved=0; dragged=false; vx=0; sx=e.clientX; sl=rail.scrollLeft; lastX=e.clientX; lastT=performance.now();
         rail.setPointerCapture(e.pointerId); rail.style.cursor='grabbing'; if (raf) cancelAnimationFrame(raf), raf=null;
       });
       rail.addEventListener('pointermove', (e)=>{
@@ -1508,6 +1508,7 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       function pointerEnd(e){
         if(!isDown) return; isDown=false; rail.style.cursor='grab';
         try{ rail.releasePointerCapture(e.pointerId); }catch(_){}
+        dragged = moved > 24;
         let v = Math.max(-1.5, Math.min(1.5, vx)) * 24;
         function tick(){ if (Math.abs(v) < 0.1) return; rail.scrollLeft -= v; v *= 0.92; raf = requestAnimationFrame(tick); }
         raf = requestAnimationFrame(tick);
@@ -1516,7 +1517,13 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       rail.addEventListener('pointercancel', pointerEnd);
 
       // Kattintás csak ha nem húzott (küszöb 14px)
-      rail.addEventListener('click', (e)=>{ if(moved > 14){ e.preventDefault(); e.stopPropagation(); } }, true);
+      rail.addEventListener('click', (e)=>{
+        if(dragged){
+          e.preventDefault();
+          e.stopPropagation();
+          dragged = false;
+        }
+      }, true);
 
       // Görgő/trackpad: Y→X kényelmi görgetés
       rail.addEventListener('wheel', (e)=>{
