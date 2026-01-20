@@ -68,6 +68,10 @@
 - Ha nincs aktiv kampany, status: none.
 - Idopontok ISO8601 formatumban, timezone offsettel.
 
+### GET /impact/v1/vote/init
+- Egyben adja vissza a campaign + status adatokat.
+- Mobilon kevesebb round-trip, konzisztens allapot.
+
 ### GET /impact/v1/vote/tally?campaign_id=
 - Osszesitett szavazatok NGO-nkent (impact_vote_daily).
 - Cache 15s, ETag/If-None-Match tamogatas a 304 valaszhoz.
@@ -79,6 +83,7 @@
 - Video view event. 100% befejezes utan kuldjuk.
 - Payload: { campaign_id, completed: true }
 - A szerver visszaad egy rovid elettu view_token-t (5-10 perc), amit a vote/cast-nek kuldeni kell.
+- Opcionis: stateless, alairt view_token (HMAC + exp), transient nelkul.
 
 ### POST /impact/v1/vote/cast
 - Payload: { campaign_id, ngo_id, view_token }
@@ -87,6 +92,7 @@
   - video 100% teljesites (view_token ellenorzes, HMAC + transient/Redis)
   - napi limit (pseudo_id + day_key)
   - NGO aktiv
+  - kill switch opcio (impact_vote_kill_switch -> 503)
 
 ## Frontend oldal (shortcode)
 
@@ -133,6 +139,7 @@ Reszek:
 - impact_vote_log: idx_campaign_day (campaign_id, day_key)
 - impact_vote_daily: idx_campaign_votes (campaign_id, votes)
 - impact_vote_log: UNIQUE (campaign_id, pseudo_id, day_key)
+- impact_vote_log: ip_hash/ua_hash fix hosszu mezok (BINARY(32) vagy CHAR(64)).
 
 ## Uzenetkezeltes tablak (SQL)
 ```
@@ -272,6 +279,23 @@ CREATE TABLE impact_vote_lottery (
 26) Kampany idopont validacio
    - start_at < end_at, nincs atfedes (1 aktiv kampany).
 
+27) Stateless view_token + JTI (opcionalis)
+   - Alairt token (exp + campaign + pseudo).
+   - Opcionis egyszeri felhasznalas (JTI transient).
+
+28) Tally cache frissites (thundering herd ellen)
+   - GET csak cache-t olvas.
+   - Cache update: POST /cast write-through vagy cron 10-15s.
+
+29) DB tranzakcio a cast muveletre
+   - impact_vote_log insert + impact_vote_daily update egy tranzakcioban.
+
+30) Kill switch / panic button
+   - impact_vote_kill_switch opcio (frontend + REST 503).
+
+31) Soft delete NGO
+   - is_active = 0, logok nem tornek.
+
 ## Fiók uzenetek (kozponti + celzott)
 - Uzenetek csak az [impactshop_identity_id] blokkban jelennek meg.
 - Minden oldalon megjelennek, ahol a shortcode kint van.
@@ -295,6 +319,10 @@ CREATE TABLE impact_vote_lottery (
 - Minden szavazat 1 jegy (pseudo_id szavazatszam = suly).
 - 1-3 nyertes + 4-6 tartalek, poolbol kivesszuk a nyertest.
 - Ha kevesebb mint 6 egyedi szavazo, a pool kifogyasakor megall.
+
+## Frontend architektura (JS)
+- Identity ready event: impactshop_identity_ready esemeny, a vote script erre var.
+- Elementor edit mode: placeholder render, JS nem fut.
 
 ## Utemezett, reszletes megvalositasi feladatok
 
