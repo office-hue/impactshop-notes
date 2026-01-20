@@ -3624,3 +3624,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `wp-content/plugins/sharity-impact-mini/sharity-impact-mini.php`: leaderboard attribútumok (limit/from/to/status/currency/rate_huf) támogatása + paraméteres cache kulcs + színek korrigálása (white-on-white fix).
 - `wp-content/mu-plugins/impactshop-metrics-ngo.php`: NGO slug → ékezetes név normalizálás a leaderboard API válaszban (`ngo_codes.csv`).
 - `wp-content/mu-plugins/impactshop-full-leaderboard.php`: rich HTML layout visszaállítása a teljes NGO toplistához (korábbi `ngo-leaderboard.html` stílus).
+
+### 2026-01-20 – Impact Shop deal link logika + NGO banner (pending deploy)
+- `wp-content/mu-plugins/impactshop-netflix-shortcodes.php`: egységes CTA logika (d1 → /go-deal + u, d1 nélkül → Fillout), Fillout fallback termék URL paraméterrel.
+- Ugyanitt: d1 esetén megjelenik a támogatott NGO banner (`ngo_codes.csv` alapján).
