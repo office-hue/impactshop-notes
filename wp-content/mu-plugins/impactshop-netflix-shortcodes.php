@@ -1509,13 +1509,12 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       function pointerEnd(e){
         if(!isDown) return; isDown=false; rail.style.cursor='grab';
         try{ rail.releasePointerCapture(e.pointerId); }catch(_){}
-        dragged = moved > 24;
+        const scrollMoved = Math.abs(rail.scrollLeft - sl);
+        dragged = moved > 32 || scrollMoved > 32;
         if (!dragged) {
           const link = e.target && e.target.closest ? e.target.closest('a.card') : null;
           if (link && link.href) {
-            try {
-              window.open(link.href, link.getAttribute('target') || '_blank', 'noopener');
-            } catch(_) {}
+            window.open(link.href, link.getAttribute('target') || '_blank', 'noopener');
           }
         }
         let v = Math.max(-1.5, Math.min(1.5, vx)) * 24;
