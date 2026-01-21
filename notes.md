@@ -3672,3 +3672,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 
 ### 2026-01-20 – Deals desktop click fix (deployed)
 - `wp-content/mu-plugins/impactshop-netflix-shortcodes.php`: desktopon a deals kártyák kattinthatósága javítva (pointer-events + z-index hardening, drag logic desktopon tiltva).
+
+### 2026-01-21 – NGO card embed/share/pass
+- Audit: nincs aktív WPCode, `/impact/v1/ngo-card` endpoint hiányzott a MU-pluginsból.
+- `wp-content/mu-plugins/impactshop-ngo-card.php`: új NGO card endpoint + `[impact_ngo_card]` shortcode, totals alapú összeg/rank, announcement/wallet mezők.
