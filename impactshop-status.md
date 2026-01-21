@@ -1,23 +1,32 @@
 # ImpactShop – Projekt státusz
 
-*Generálva:* 2026-01-20 19:27:30 +0100 (Bujdoso-Mac-mini)
+*Generálva:* 2026-01-21 08:42:12 +0100 (Bujdoso-Mac-mini)
 
 ## Meta
 - Gyökér: /Users/bujdosoarnold/Developer/GitHub/impactshop-notes
 - Környezet: local
 - SSH_HOST: sharityh@s59.tarhely.com
 - Git ág: docs/notes-update-2026-01-07
-- Git hash: ef8eda4f
-- Módosított fájlok száma: 2
+- Git hash: d0a3f93f
+- Módosított fájlok száma: 12
 
 ## REST healthcheck
-- Staging: HTTP 200 (1514 ms, ok) – https://www.sharity.hu/impactshop-staging/wp-json/ (redirected_to:app.sharity.hu)
-- Production: HTTP 200 (967 ms, ok) – https://app.sharity.hu/wp-json/
+- Staging: HTTP 200 (830 ms, ok) – https://www.sharity.hu/impactshop-staging/wp-json/ (redirected_to:app.sharity.hu)
+- Production: HTTP 200 (671 ms, ok) – https://app.sharity.hu/wp-json/
 
 ## Git státusz
   -  M .codex/context-latest.json
+  -  M docs/impactshop-system-map.md
+  -  M impactshop-status.md
+  -  M notes.md
   - ?? JYSK_WhoisJYSK_Cutdown_20sec_JHU.mp4
   - ?? bin/image/
+  - ?? bin/impactshop-guard-deploy.sh
+  - ?? bin/impactshop-guard-init.sh
+  - ?? bin/impactshop-guard-rollback.sh
+  - ?? docs/impactshop-guard-config.json
+  - ?? docs/impactshop-guard-hashes.json
+  - ?? docs/impactshop-guard-hashes.sha256
 
 ## Fájlstruktúra (max depth 2, top 200 elem)
 ~~~
