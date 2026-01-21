@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "generated_at": "2026-01-21T07:39:37.690488+00:00",
+  "root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+  "hashes": {
+    "docs/impactshop-guard-config.json": "582fb89ce1455b7587b7368c833d27829b992664917be677ef373f4eea2b3827",
+    "wp-content/mu-plugins/impactshop-netflix-shortcodes.php": "6e174bb8867e5817629879cc337cdae9ce159442f51705c1c3dc1e6279364b64",
+    "wp-content/mu-plugins/impactshop-boot.php": "03739a4abba5f9bbfbe13a3691ecd8665a369e4877868fbc625e3355b61b30c4",
+    "wp-content/mu-plugins/impactshop-metrics-ngo.php": "49b429aa732a7c9ac13ba1c4afc56c26702615245c05e9bd9a9ee067274870be",
+    "wp-content/mu-plugins/impactshop-rest-totals.php": "92f4deac328fe080bf2f4c8d7e1cfbd4d28e1fde5c9a271914cde120ad30b2c9",
+    "wp-content/mu-plugins/impactshop-rest-coupons.php": "d7a8ae294c9f6530fa7fae77c4ae1ce6c22154b582a1cb64d23a12181170b63f",
+    "wp-content/mu-plugins/impactshop-full-leaderboard.php": "39d0d405772963a3eb35aab315fac27e39ba5ce2919d3cb6724563e0f8e26003",
+    "wp-content/mu-plugins/sharity-default-d1-helper.php": "add734858cce7514b390343b902c075844119b66c160a9db48e4fdde93424918",
+    "wp-content/mu-plugins/impact-banners-fillout-rewriter.php": "0232ef794c79565a6d801f746f4cdd268d944c40b4ef32604f6269d382101d96",
+    "wp-content/mu-plugins/impactshop-go-bridge.php": "ddf71e2c05fddbbc14b5ed6dfbfb91d0c9882fa9e675079a0e3599bee4c923ff",
+    "wp-content/mu-plugins/impact-arukereso-hardguard.php": "1508b857e4104d5bd3d2f9b1dbc68cc858b966c6b113c2fe56556d6e8e0be4dd",
+    "wp-content/mu-plugins/impact-cid-arukereso-fix.php": "59f6acf6da6e87700e229aeb47a53b513674167a8e32bfe54fb23b3e05f1b9e4",
+    "wp-content/mu-plugins/impactshop-sum-pack.php": "6361a433bd74fe14ae8f67d2e49dea65ba9ebe529ae808fc31f7866d239a8085"
+  },
+  "missing_files": []
+}

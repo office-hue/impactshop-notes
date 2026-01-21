@@ -28,6 +28,47 @@
 - 🧮 `impactshop-metrics-ngo.php`: a `/impact/v1/leaderboard` most `from/to/status` paramétert is elfogad; alapértelmezett kezdő dátum `2025-10-23`.
 - 🛡️ Új guard: `.codex/guards/impactshop-totals-guard.sh` – totals + leaderboard endpoint ellenőrzés a 2025-10-23→ma tartományra.
 - 🧾 `sharity-impact-compat.php` + `impact-combat-pack.php`: `impact_leaderboard` most limit/from/to/status/currency paramétereket kezel (fix 5-ös limit tartása).
+
+### 2026-01-20 – Impact Shop system map bővítés (bastyavédelem előkészítés)
+- 🧭 `docs/impactshop-system-map.md` kibővítve: identity, ticker/leaderboard rövid leírás, cache kulcsok, totals adatfolyam, külső források (CSV/HTML), operációs beállítások és guard terv.
+- 🔒 Őrzési terv rögzítve: hash manifest + impactall guard + OS immutability (külön jóváhagyással).
+- 📌 Függő: WPCode snippet export + cPanel cron lista + Elementor template lista felvétele a térképbe.
+- ✅ Session end: térkép frissítve, védelmi lépések előkészítve (aktiválás jóváhagyásra vár).
+
+### 2026-01-21 – Bástyavédelem (solo-safe guard v1)
+- 🛡️ Új guard konfiguráció: `docs/impactshop-guard-config.json`.
+- 🔐 Hash manifest generátor: `bin/impactshop-guard-init.sh` → `docs/impactshop-guard-hashes.json`.
+- 🚦 Guard ellenőrzés: `.codex/guards/impactshop-bastya-guard.sh` (impactall kompatibilis).
+- 🚀 Guardolt deploy wrapper: `bin/impactshop-guard-deploy.sh` (self-approval + emergency override + snapshot).
+
+### 2026-01-21 – System map: snippets + Elementor + WP‑Cron
+- 🔎 WPCode snippet CPT: nincs találat sem stagingen, sem productionön (`wpcode_snippet` üres).
+- 🧩 Elementor templates listázva (prod + staging) – rögzítve a system mapben.
+- ⏱️ WP‑Cron események listázva (impact_totals_cache_prewarm, impactshop_social_ledger_sync, impactshop_vote_cron, impact_publisher_token_health_cron, impactshop_pin_cleanup).
+- ✅ cPanel cron lista manual exporttal rögzítve a system mapben (4 bejegyzés).
+
+### 2026-01-21 – Bástya guard + cPanel cron fix
+- 🛡️ `impactall` kiegészítve: bastya guard (`.codex/guards/impactshop-bastya-guard.sh`).
+- ⏱️ Cron URL javítva a tényleges crontabban (`/var/spool/cron/sharityh`): `app.sharity.hu` host + `/home/sharityh/impact-tools/access-guard.sh` útvonal.
+
+### 2026-01-21 – impactall megerősítés (bástya guard fix)
+- 🛠️ Javítva: `.codex/guards/impactshop-bastya-guard.sh` syntax hiba (guard output parse).
+- 🛡️ `~/bin/impactall` újrafuttatva: 16/16 PASS, WARN/FAIL nincs.
+
+### 2026-01-21 – Bástya guard kiegészítések
+- 🧰 Új rollback script: `bin/impactshop-guard-rollback.sh` (snapshot visszaállítás + hash).
+- 🔓 Soft emergency override: `docs/impactshop-guard-config.json` → `action: warn_confirm`.
+- 🔒 Opcionális lock: `IMPACTSHOP_GUARD_LOCK_MODE=chmod` (pre/post chmod a védett fájlokon).
+- 🧠 Safe-mode: `IMPACTSHOP_GUARD_SAFE_MODE=1` esetén az emergency override tiltott.
+- 🧾 Hash integritás: `impactshop-guard-hashes.sha256` ellenőrzés a bástya guardban.
+- 🧱 Guard config védetté téve (benne a protected listában + frissített hash).
+- 🤖 Non-interactive mód: `--non-interactive --auto-approve` + `IMPACTSHOP_GUARD_APPROVE_REASON`.
+
+### 2026-01-21 – impactall megerősítés (guard v2)
+- 🛡️ `~/bin/impactall` lefutott: 16/16 PASS, WARN/FAIL nincs (bástya guard rendben).
+
+### 2026-01-21 – Session end
+- 💤 Állapot mentve, gép leállítás előtt.
 - 🧾 Új MU plugin: `wp-content/mu-plugins/impactshop-full-leaderboard.php` – [impact_full_leaderboard] shortcode a teljes toplista oldalhoz.
 - 🧹 Cache flush prod+staging.
 
