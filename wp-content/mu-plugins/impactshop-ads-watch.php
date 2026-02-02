@@ -3542,9 +3542,10 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                 <div class="spinner"></div>
                 <span>Reklám betöltése...</span>
             </div>
-            <div class="ads-watch-cta" id="ads-watch-cta" style="display: none;">
+            <div class="ads-watch-cta sponsor-cta-overlay" id="ads-watch-cta" style="display: none;">
                 <a href="#" target="_blank" rel="noopener" id="ads-watch-cta-link" title="Kattints a bónusz pontokért">
-                    <span class="cta-icon">👆</span>
+                    <span class="ima-cta-icon">👆</span>
+                    <span class="ima-cta-text">Click here!</span>
                 </a>
             </div>
             <div class="ad-progress-bar" id="ad-progress-bar" style="display: none;">
