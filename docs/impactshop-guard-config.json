@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "protected_files": [
+    "docs/impactshop-guard-config.json",
+    "impact-hub-system-v1.3.md",
+    "Hirdetési fiókok integrációja TERV.ini.md",
+    "wp-content/mu-plugins/impactshop-netflix-shortcodes.php",
+    "wp-content/mu-plugins/impactshop-boot.php",
+    "wp-content/mu-plugins/impactshop-metrics-ngo.php",
+    "wp-content/mu-plugins/impactshop-rest-totals.php",
+    "wp-content/mu-plugins/impactshop-rest-coupons.php",
+    "wp-content/mu-plugins/impactshop-full-leaderboard.php",
+    "wp-content/mu-plugins/impactshop-ngo-card.php",
+    "wp-content/mu-plugins/impactshop-ngo-card.js",
+    "wp-content/mu-plugins/impactshop-ads-watch.php",
+    "wp-content/mu-plugins/impactshop-ads-watch.js",
+    "wp-content/mu-plugins/impactshop-ads-watch.css",
+    "wp-content/mu-plugins/impactshop-offerwall.php",
+    "wp-content/mu-plugins/impactshop-offerwall.js",
+    "wp-content/mu-plugins/impactshop-click-tracking.php",
+    "wp-content/mu-plugins/impactshop-auto-banner.php",
+    "wp-content/mu-plugins/impactshop-auto-banner-sync.php",
+    "wp-content/mu-plugins/impactshop-adsense-head.php",
+    "wp-content/mu-plugins/impactshop-identity-panel.php",
+    "wp-content/mu-plugins/impactshop-identity-panel.js",
+    "wp-content/mu-plugins/impactshop-vote-jysk.php",
+    "wp-content/mu-plugins/impactshop-vote-jysk.js",
+    "wp-content/mu-plugins/impact-social-mvp.php",
+    "wp-content/mu-plugins/impact-gamification.php",
+    "wp-content/mu-plugins/sharity-level-manager.php",
+    "wp-content/mu-plugins/sharity-points.php",
+    "wp-content/mu-plugins/sharity-points-api.php",
+    "wp-content/mu-plugins/sharity-points-cron.php",
+    "wp-content/mu-plugins/sharity-points-discount.php",
+    "wp-content/mu-plugins/sharity-points-events.php",
+    "wp-content/mu-plugins/sharity-points-helpers.php",
+    "wp-content/mu-plugins/sharity-points-ledger-sync.php",
+    "wp-content/mu-plugins/sharity-points-manager.php",
+    "wp-content/mu-plugins/sharity-points-webhooks.php",
+    "wp-content/mu-plugins/sharity-decay-manager.php",
+    "wp-content/mu-plugins/sharity-default-d1-helper.php",
+    "wp-content/mu-plugins/impact-banners-fillout-rewriter.php",
+    "wp-content/mu-plugins/impactshop-go-bridge.php",
+    "wp-content/mu-plugins/impact-arukereso-hardguard.php",
+    "wp-content/mu-plugins/impact-cid-arukereso-fix.php",
+    "wp-content/mu-plugins/impactshop-sum-pack.php"
+  ],
+  "emergency_override": {
+    "enabled": true,
+    "rate_limit_days": 7,
+    "max_count": 1,
+    "action": "warn_confirm"
+  },
+  "snapshot": {
+    "enabled": true,
+    "retention_days": 30,
+    "max_snapshots": 50,
+    "storage_path": ".codex/guard-snapshots"
+  },
+  "approval": {
+    "require_reason": true,
+    "auto_commit_hash": false,
+    "diff_tool": "git diff --no-index"
+  },
+  "deploy_targets": {
+    "staging": {
+      "env_file": ".deploy.staging.env",
+      "label": "app.sharity.hu staging"
+    },
+    "production": {
+      "env_file": ".deploy.production.env",
+      "label": "app.sharity.hu production"
+    }
+  }
+}

@@ -11,6 +11,15 @@
 - `./bin/preflight-run.sh` – dry-run staging readiness checks; review output for blocking regressions.
 - `./bin/staging-qa-suite.sh` – end-to-end staging smoke tests; use before handing off or requesting deploy.
 
+## Bastion Guardrail (Always On)
+- **Bastion protection is mandatory** for any deploy/guardrail decision.
+- If bastion access or rules are unclear, **stop and request approval** before proceeding.
+
+## Deploy Decision (Quick)
+- **Use:** `bin/impactshop-guard-deploy.sh` (staging + production), not `deploy.sh`.
+- **Uncommitted policy:** targeted commits are a **priority** (e.g., `ads.txt`, `robots.txt`); avoid blanket stashing.
+- **Bastion guardrail:** mandatory check before deploy; if unclear, stop and ask for approval.
+
 ## Coding Style & Naming Conventions
 - PHP adheres to PSR-12: 4-space indentation, explicit namespaces where applicable, and descriptive function names (e.g., `impactshop_*`).
 - Toggle hotfixes by suffixing `.off` rather than deleting files; document the switch in `notes.md`.
@@ -20,6 +29,19 @@
 - Automated coverage is limited; rely on the QA shell scripts plus targeted PHP unit checks where available inside plugin directories.
 - Mirror production scenarios in staging: validate affiliate redirects, banner rendering, and Dognet API responses.
 - Log findings (pass/fail, URLs, timestamps) in `notes.md` to preserve traceability.
+
+## Backup Retention (Protected Files)
+- Protected-file backups are **not full backups**; they only safeguard the current implementation.
+- **Retention:** keep for **max 2 days**.
+- **Delete when:** implementation is OK and **UI review is completed**.
+- Full system backups are maintained separately and **must not** be removed as part of this rule.
+- Exceptions must be explicitly noted (e.g., “keep 7 days”).
+
+### Cleanup Command (manual)
+
+```bash
+find .codex/backups -mindepth 1 -maxdepth 1 -type d -mtime +2 -print -exec rm -rf {} +
+```
 
 ## Commit & Pull Request Guidelines
 - Follow the existing `scope: summary` pattern (`ops: raise production preflight latency fail to 10s`); keep subjects ≤72 chars.

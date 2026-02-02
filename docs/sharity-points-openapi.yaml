@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: Sharity Points API
+  version: "1.0"
+  description: |
+    Sharity pontozási rendszer REST API. A legtöbb endpoint WordPress RESTen fut,
+    a végpontok a Sharity ID / pseudo ID pontozást és státusz kezelést szolgálják.
+servers:
+  - url: https://app.sharity.hu/wp-json
+paths:
+  /sharity/v1/user/points:
+    get:
+      summary: Felhasználói pont összesítő
+      responses:
+        "200":
+          description: Pont snapshot
+  /sharity/v1/user/points/history:
+    get:
+      summary: Felhasználói pont tranzakciók
+      responses:
+        "200":
+          description: Pont history
+  /sharity/v1/points/earn:
+    post:
+      summary: Pont jóváírás (admin/bridge)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pseudo_id:
+                  type: string
+                user_id:
+                  type: integer
+                points:
+                  type: integer
+                type:
+                  type: string
+                source_id:
+                  type: string
+                dedupe_key:
+                  type: string
+              required:
+                - points
+                - type
+                - dedupe_key
+      responses:
+        "200":
+          description: Pont jóváírás eredmény
+        "400":
+          description: Hibás kérés
+  /sharity/v1/admin/adjust:
+    post:
+      summary: Admin pont korrekció
+      responses:
+        "200":
+          description: Korrekció eredmény
+  /sharity/v1/webhook/purchase:
+    post:
+      summary: Purchase webhook (külső bridge)
+      responses:
+        "200":
+          description: Feldolgozva
+        "401":
+          description: Aláírás hiba
+  /sharity/v1/user/vacation:
+    get:
+      summary: Vakáció státusz (user)
+      responses:
+        "200":
+          description: Vakáció státusz
+    post:
+      summary: Vakáció indítás (user)
+      responses:
+        "200":
+          description: Vakáció indítva
+  /sharity/v1/user/vacation/end:
+    post:
+      summary: Vakáció lezárás (user)
+      responses:
+        "200":
+          description: Vakáció lezárva
+  /sharity/v1/user/last-ngo:
+    get:
+      summary: Utolsó támogatott NGO (user)
+      responses:
+        "200":
+          description: Utolsó NGO
+    post:
+      summary: Utolsó NGO mentés (user)
+      responses:
+        "200":
+          description: Mentve
+  /sharity/v1/user/referral:
+    get:
+      summary: Referral információ (user)
+      responses:
+        "200":
+          description: Referral adat
+  /sharity/v1/user/feedback:
+    post:
+      summary: Feedback pont esemény (user)
+      responses:
+        "200":
+          description: Feldolgozva
+  /sharity/v1/pseudo/points:
+    get:
+      summary: Pseudo pont összesítő
+      responses:
+        "200":
+          description: Pont snapshot
+  /sharity/v1/pseudo/points/history:
+    get:
+      summary: Pseudo pont tranzakciók
+      responses:
+        "200":
+          description: Pont history
+  /sharity/v1/pseudo/points/earn:
+    post:
+      summary: Pseudo pont jóváírás
+      responses:
+        "200":
+          description: Pont jóváírás eredmény
+  /sharity/v1/pseudo/vacation:
+    get:
+      summary: Vakáció státusz (pseudo)
+      responses:
+        "200":
+          description: Vakáció státusz
+    post:
+      summary: Vakáció indítás (pseudo)
+      responses:
+        "200":
+          description: Vakáció indítva
+  /sharity/v1/pseudo/vacation/end:
+    post:
+      summary: Vakáció lezárás (pseudo)
+      responses:
+        "200":
+          description: Vakáció lezárva
+  /sharity/v1/pseudo/last-ngo:
+    get:
+      summary: Utolsó támogatott NGO (pseudo)
+      responses:
+        "200":
+          description: Utolsó NGO
+    post:
+      summary: Utolsó NGO mentés (pseudo)
+      responses:
+        "200":
+          description: Mentve
+  /sharity/v1/pseudo/referral:
+    get:
+      summary: Referral információ (pseudo)
+      responses:
+        "200":
+          description: Referral adat
+  /sharity/v1/pseudo/feedback:
+    post:
+      summary: Feedback pont esemény (pseudo)
+      responses:
+        "200":
+          description: Feldolgozva

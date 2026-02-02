@@ -243,12 +243,13 @@ function ibl_build_activity(){
 
 /** Összadomány (all-time vagy időszakra) — csak data1, D kizárva, adomány=0.5×commission */
 function ibl_build_total($from=null,$to=null){
-  $from = $from ?: '2018-01-01';            // elég tág kezdő dátum
+  $default_from = defined('IMPACTSHOP_METRICS_FROM') ? IMPACTSHOP_METRICS_FROM : '2025-10-23';
+  $from = $from ?: $default_from;
   $to   = $to   ?: date('Y-m-d');
   $ckey = 'ibl_total_v1_'.md5($from.'_'.$to);
   $c=get_transient($ckey); if($c!==false) return $c;
 
-  $rows = ibl_fetch_transactions($from,$to,'all', 120, 250);
+  $rows = ibl_fetch_transactions($from,$to,'all', 40, 200);
   if (is_wp_error($rows)) return ['error'=>$rows->get_error_message()];
 
   $sum=0.0;
@@ -258,7 +259,7 @@ function ibl_build_total($from=null,$to=null){
     $sum += $comm * 0.5;
   }
   $out = ['from'=>$from,'to'=>$to,'total'=>$sum,'generated_at'=>current_time('mysql')];
-  set_transient($ckey,$out, 300); return $out;
+  set_transient($ckey,$out, 600); return $out;
 }
 
 /* ===== REST: /wp-json/impact/v1/{ticker|leaderboard|activity|total} ===== */

@@ -3,6 +3,8 @@
 ## Bevezetés
 Sharity jelenlegi kupon- és akció-aggregátor technológiája sok manuális lépést igényel, így lassan reagál az új promóciókra. A cél egy teljesen automatizált (de emberi jóváhagyással kiegészített) pipeline, amely minden releváns forrásból begyűjti a deal-eket, majd gyors manuális review után publikálja őket a Impact Shop platformon és az Impi AI tanácsadó számára. Az alábbi terv egyesíti a meglévő technológiai roadmapet és a GPT‑5 Pro kutatási eredményeit.
 
+**Koherencia megjegyzés (2026-02-01):** Ez stratégiai terv. A VS Code/IDE + MCP/Copilot SDK irány az `docs/impi-copilot-sdk-migration-plan.md` dokumentumban van részletezve; az itt szereplő implementációs lépések részben előzetesek, és a Copilot SDK migrációval összehangolva végrehajtandók.
+
 ## 1. Jelenlegi módszerek (baseline)
 | Csatorna | Leírás | Fő eszközök | KPI-k / teljesítmény |
 | --- | --- | --- | --- |
@@ -61,7 +63,7 @@ Ezek a rétegek a roadmap T-2.11–T-2.14 feladatait adják (multimodális extra
 ## 3. AI-alapú adatfeldolgozás
 **3.1 Többnyelvű NLP/LLM extraction**
 - Input: Playwright snapshot HTML, Gmail levelek, social posztok, merchant API free-text mezők.
-- Modell stack: jelenleg OpenAI GPT-4 Turbo / GPT-4o mini (HU/EN/DE/RO); Claude Sonnet és Llama-3 fallback csak roadmapen szerepel, amíg nincs validált implementáció.
+- Modell stack: jelenleg OpenAI GPT-4o / GPT-4o mini (HU/EN/DE/RO); Claude fallback a Copilot SDK migráció után tervezett.
 - Prompt példa: „Extract coupon codes, discount value, eligibility, expiry from the following HTML. Answer JSON.”
 - Fine-tuning dataset: moderátor által jóváhagyott promók + cégspecifikus kifejezések.
 - Generatív összefoglalók: LLM rövid, marketingbarát leírást készít, amely Impi és felhasználók számára érthető.
@@ -110,6 +112,8 @@ Ezek a rétegek a roadmap T-2.11–T-2.14 feladatait adják (multimodális extra
 6. **Data quality ellenőrzés**
    - Expiry check: cron, ami lejárt deal-eket archivál.
    - Currency/format normalizálás, headless checkout teszt (korlátozott set).
+7. **Retention & log policy (koherencia):**
+   - PII és query logolás/retenció összhangban a Copilot SDK migrációs tervvel (redakció + limitált retention).
 
 ## 5. Ember a loop-ban
 1. **Moderációs dashboard**
@@ -141,7 +145,7 @@ Ezek a rétegek a roadmap T-2.11–T-2.14 feladatait adják (multimodális extra
 ## 8. Implementációs roadmap (részletes feladatlista)
 ### 8.1 Infrastruktúra
 1. `tools/shops_registry.json` → `"arukereso": true` flag + diag script.
-2. `ai-agent/package.json` Playwright dependency audit + `npx playwright install`.
+2. `ai-agent/package.json` Playwright dependency audit + `npx playwright install` (ai-agent repo).
 3. Gmail OAuth CLI (`tools/gmail/auth.ts`), token storage.
 
 ### 8.2 Playwright scraper (T-2.8)

@@ -162,6 +162,8 @@ function isb_redirect_with_propagation($url,$amb,$src){
 
 function isb_handle_go($is_deal){
   $shop = isb_q('shop'); if(!$shop){ $shop=get_query_var('impactshop_slug'); }
+  // Strip sync: prefix from harvester-synced banners
+  if (strpos($shop, 'sync:') === 0) { $shop = substr($shop, 5); }
   $ngo  = isb_q('d1'); $u=isb_q('u');
   $amb  = isb_q('amb'); $src=isb_q('src')?:'impactshop';
   if(!$shop||!$ngo) isb_error('Hiányzó paraméter (shop/d1).');

@@ -1,0 +1,92 @@
+{
+  "info": {
+    "name": "ImpactShop Partner Webhook Smoke (Staging)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const crypto = require('crypto-js');",
+          "const rawBody = pm.request.body && pm.request.body.raw ? pm.request.body.raw : '';",
+          "const secret = pm.collectionVariables.get('hmac_secret') || pm.environment.get('hmac_secret');",
+          "if (secret && rawBody) {",
+          "  const signature = crypto.HmacSHA256(rawBody, secret).toString(crypto.enc.Hex);",
+          "  pm.collectionVariables.set('signature', signature);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Transaction - valid HMAC",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{partner_api_key}}"},
+          {"key": "X-Impact-Signature", "value": "sha256={{signature}}"},
+          {"key": "Idempotency-Key", "value": "{{idempotency_key}}"}
+        ],
+        "url": {
+          "raw": "{{base_url}}/impact/v1/partner/transaction",
+          "host": ["{{base_url}}"],
+          "path": ["impact", "v1", "partner", "transaction"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"partner_code\": \"partner_demo\",\n  \"event_id\": \"order_1001\",\n  \"event_type\": \"purchase\",\n  \"pseudo_id\": \"test_pseudo_01\",\n  \"amount_gross\": 19990,\n  \"currency\": \"HUF\",\n  \"ngo_code\": \"bator-tabor\",\n  \"timestamp\": \"2026-01-23T10:30:00Z\",\n  \"payment_status\": \"paid\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Transaction - duplicate (idempotency)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{partner_api_key}}"},
+          {"key": "X-Impact-Signature", "value": "sha256={{signature}}"},
+          {"key": "Idempotency-Key", "value": "{{idempotency_key}}"}
+        ],
+        "url": {
+          "raw": "{{base_url}}/impact/v1/partner/transaction",
+          "host": ["{{base_url}}"],
+          "path": ["impact", "v1", "partner", "transaction"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"partner_code\": \"partner_demo\",\n  \"event_id\": \"order_1001\",\n  \"event_type\": \"purchase\",\n  \"pseudo_id\": \"test_pseudo_01\",\n  \"amount_gross\": 19990,\n  \"currency\": \"HUF\",\n  \"ngo_code\": \"bator-tabor\",\n  \"timestamp\": \"2026-01-23T10:30:00Z\",\n  \"payment_status\": \"paid\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Transaction - invalid signature",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{partner_api_key}}"},
+          {"key": "X-Impact-Signature", "value": "sha256=invalid"},
+          {"key": "Idempotency-Key", "value": "{{idempotency_key_invalid}}"}
+        ],
+        "url": {
+          "raw": "{{base_url}}/impact/v1/partner/transaction",
+          "host": ["{{base_url}}"],
+          "path": ["impact", "v1", "partner", "transaction"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"partner_code\": \"partner_demo\",\n  \"event_id\": \"order_1002\",\n  \"event_type\": \"purchase\",\n  \"pseudo_id\": \"test_pseudo_01\",\n  \"amount_gross\": 19990,\n  \"currency\": \"HUF\",\n  \"ngo_code\": \"bator-tabor\",\n  \"timestamp\": \"2026-01-23T10:30:00Z\",\n  \"payment_status\": \"paid\"\n}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {"key": "base_url", "value": "https://staging.app.sharity.hu"},
+    {"key": "partner_api_key", "value": "test_xxx"},
+    {"key": "signature", "value": "REPLACE_WITH_HMAC"},
+    {"key": "idempotency_key", "value": "demo-1001"},
+    {"key": "idempotency_key_invalid", "value": "demo-1002"}
+  ]
+}

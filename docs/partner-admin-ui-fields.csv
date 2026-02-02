@@ -1,0 +1,14 @@
+section,field,type,notes
+basic,partner_code,readonly,slug
+basic,status,select,active|paused|disabled
+basic,webhook_mode,select,test|live
+discount,partner_max_discount,percent,max 50%
+discount,discount_cap_amount,int,HUF
+
+discount,discount_min_cart,int,HUF
+discount,discount_stackable,bool,true/false
+webhook,webhook_url,url,https only
+webhook,allowed_event_types,multi,purchase|booking
+webhook,idempotency_ttl_sec,int,seconds
+security,key_id,readonly,rotation id
+security,last_rotation_at,readonly,datetime
