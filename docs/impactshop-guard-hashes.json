@@ -68,7 +68,7 @@
     "wp-content/mu-plugins/impactshop-ads-watch.css": "52c04c8dd848d235101288720e567ce8023379c19db00e0e30944ddebe81641b",
     "wp-content/mu-plugins/impactshop-offerwall.php": "d5618108114f40af94c5451d2896e1e3bc8e2bddaf1ff67519fb83e365121af6",
     "wp-content/mu-plugins/impactshop-offerwall.js": "cda34ea234cba282c6c471df94c51afc699010bfb210b4d7deea8132372a23c2",
-    "wp-content/mu-plugins/impactshop-offerwall-survey.php": "94de6029143eb14981f8154e27111b69b2ed25fd430fb87b84f103e40ef0f2c1",
+    "wp-content/mu-plugins/impactshop-offerwall-survey.php": "8f101e312a6cb3afa1ffede357baff0732e917681a8243592c95dff1fd8cb477",
     "wp-content/mu-plugins/impactshop-offerwall-survey-data/question_mapping.csv": "5f3dbf86f6d0e4bca0c1501a21c1129d2562afd40382bfe4ec4bd1779a0ebdf7",
     "wp-content/mu-plugins/impactshop-offerwall-survey-data/segment_taxonomy.csv": "e820a53daaf98e63cdbd3b49d2013b980c498dd7a58459b37fb1f133f4d590f6",
     "wp-content/mu-plugins/impactshop-click-tracking.php": "c58840af7c2bb7fb39dd9518712b9df4c362a6797fe795776fcd487720617fb0",
@@ -108,5 +108,6 @@
     "bin/impactshop-guard-preflight.sh": "16086de57edd4b7abc5dd6395d45b34630d1dc1e7be3fa6c64495b5a5f5af17d",
     "docs/bastion-protection-extension-plan.md": "5f5bd12595cdd116b739e04e56d5b05a71684c42b070b4eadaefe39de0c724f1",
     "docs/impactshop-guard-config.sha256": "41e450869cbdab4bdd34c9c57f510b77ea96aa84e9f5aba2bd4b07aa11392359"
-  }
+  },
+  "generated_at": "2026-02-04T22:46:20.223366+00:00"
 }
