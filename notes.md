@@ -5082,3 +5082,4 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Hardened CSV parsing (skip blank lines/BOM), added axis-code validation, and relaxed mapping validation for direct assignment/top rules.
 - Added fraud log table + admin listing + dashboard widget counters for survey completions.
 - Guard config/hashes updated to include new offerwall survey files.
+- Commit: feat: add offerwall survey provider (96569888) pushed to ops/adswatch-clean.
