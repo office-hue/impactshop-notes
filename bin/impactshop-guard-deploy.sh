@@ -4,9 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_PATH="${ROOT_DIR}/docs/impactshop-guard-config.json"
 HASH_PATH="${ROOT_DIR}/docs/impactshop-guard-hashes.json"
+CONFIG_CHECKSUM_PATH="${ROOT_DIR}/docs/impactshop-guard-config.sha256"
 SNAPSHOT_DIR_DEFAULT="${ROOT_DIR}/.codex/guard-snapshots"
 AUDIT_DIR="${ROOT_DIR}/.codex/guard-events"
 EMERGENCY_LOG="${AUDIT_DIR}/emergency-override.jsonl"
+LOCK_PATH="${AUDIT_DIR}/.guard.lock"
 
 mkdir -p "$AUDIT_DIR"
 
@@ -41,7 +43,7 @@ for arg in "$@"; do
 done
 
 if [[ -z "${IMPACT_ENV:-}" ]]; then
-  for arg in "${ARGS[@]}"; do
+  for arg in "${ARGS[@]:-}"; do
     case "$arg" in
       --staging|-s)
         export IMPACT_ENV="staging"
@@ -55,6 +57,59 @@ if [[ -z "${IMPACT_ENV:-}" ]]; then
   done
 fi
 
+acquire_guard_lock() {
+  local now_ts lock_age pid_file pid
+  if mkdir "$LOCK_PATH" 2>/dev/null; then
+    printf '%s\n' "$$" >"${LOCK_PATH}/pid"
+    date -u +"%Y-%m-%dT%H:%M:%SZ" >"${LOCK_PATH}/started_at"
+    return 0
+  fi
+
+  pid_file="${LOCK_PATH}/pid"
+  if [[ -f "$pid_file" ]]; then
+    pid="$(cat "$pid_file" 2>/dev/null || true)"
+    if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
+      if kill -0 "$pid" 2>/dev/null; then
+        echo "❌ Guard lock aktív (PID: $pid). Várj, vagy töröld a lockot, ha biztosan stale." >&2
+        exit 1
+      fi
+    fi
+  fi
+
+  lock_age="$(LOCK_PATH="$LOCK_PATH" python3 - <<'PY'
+import os
+import sys
+from datetime import datetime, timezone
+lock_path = os.environ["LOCK_PATH"]
+try:
+    mtime = os.path.getmtime(lock_path)
+except FileNotFoundError:
+    print("0")
+    sys.exit(0)
+age = int(datetime.now(timezone.utc).timestamp() - mtime)
+print(str(age))
+PY
+)"
+
+  if [[ "$lock_age" -gt 120 ]]; then
+    rm -rf "$LOCK_PATH"
+    mkdir "$LOCK_PATH"
+    printf '%s\n' "$$" >"${LOCK_PATH}/pid"
+    date -u +"%Y-%m-%dT%H:%M:%SZ" >"${LOCK_PATH}/started_at"
+    echo "⚠️  Stale guard lock törölve (age=${lock_age}s, pid inaktív)."
+    return 0
+  fi
+
+  echo "❌ Guard lock aktív (stale gyanú: age=${lock_age}s). Próbáld újra ~2 perc múlva." >&2
+  exit 1
+}
+
+release_guard_lock() {
+  rm -rf "$LOCK_PATH" >/dev/null 2>&1 || true
+}
+
+acquire_guard_lock
+
 if [[ ! -f "$CONFIG_PATH" ]]; then
   echo "❌ Guard konfiguráció hiányzik: $CONFIG_PATH" >&2
   exit 1
@@ -66,14 +121,66 @@ if [[ ! -f "$HASH_PATH" ]]; then
   exit 1
 fi
 
-python3 - "$CONFIG_PATH" <<'PY' >/tmp/impactshop_guard_cfg.json
+if [[ ! -f "$CONFIG_CHECKSUM_PATH" ]]; then
+  echo "❌ Guard config checksum hiányzik: $CONFIG_CHECKSUM_PATH" >&2
+  exit 1
+fi
+
+python3 - "$CONFIG_PATH" "$CONFIG_CHECKSUM_PATH" <<'PY' >/tmp/impactshop_guard_cfg.json
 import json
+import hashlib
 import sys
-with open(sys.argv[1], "r", encoding="utf-8") as fh:
-    print(json.dumps(json.load(fh)))
+cfg_path, checksum_path = sys.argv[1], sys.argv[2]
+raw = open(cfg_path, "rb").read()
+cfg = json.loads(raw.decode("utf-8"))
+
+checksum_line = open(checksum_path, "r", encoding="utf-8").read().strip()
+expected = checksum_line.split()[0] if checksum_line else ""
+actual = hashlib.sha256(raw).hexdigest()
+if not expected or expected != actual:
+    print("CONFIG_CHECKSUM_MISMATCH")
+    sys.exit(2)
+
+repo = cfg.get("repo", {})
+missing = []
+for key in ("root", "remote", "branch"):
+    if not repo.get(key):
+        missing.append(f"repo.{key}")
+if missing:
+    print("CONFIG_SCHEMA_ERROR|" + ",".join(missing))
+    sys.exit(3)
+
+protected = cfg.get("protected_files", [])
+if not isinstance(protected, list) or not protected:
+    print("CONFIG_SCHEMA_ERROR|protected_files")
+    sys.exit(3)
+for item in protected:
+    if isinstance(item, dict):
+        if not item.get("path"):
+            print("CONFIG_SCHEMA_ERROR|protected_files.path")
+            sys.exit(3)
+    elif isinstance(item, str):
+        if not item.strip():
+            print("CONFIG_SCHEMA_ERROR|protected_files.path")
+            sys.exit(3)
+    else:
+        print("CONFIG_SCHEMA_ERROR|protected_files.type")
+        sys.exit(3)
+
+print(json.dumps(cfg))
 PY
 
-CONFIG_JSON="$(cat /tmp/impactshop_guard_cfg.json)"
+cfg_status="$(cat /tmp/impactshop_guard_cfg.json)"
+if [[ "$cfg_status" == "CONFIG_CHECKSUM_MISMATCH" ]]; then
+  echo "❌ Guard config checksum mismatch. Ellenőrizd: $CONFIG_PATH vs $CONFIG_CHECKSUM_PATH" >&2
+  exit 1
+fi
+if [[ "$cfg_status" == CONFIG_SCHEMA_ERROR* ]]; then
+  echo "❌ Guard config séma hiba: ${cfg_status#CONFIG_SCHEMA_ERROR|}" >&2
+  exit 1
+fi
+
+CONFIG_JSON="$cfg_status"
 SNAPSHOT_DIR="$(python3 - <<'PY'
 import json
 import os
@@ -81,6 +188,8 @@ cfg = json.loads(open("/tmp/impactshop_guard_cfg.json","r").read())
 print(cfg.get("snapshot", {}).get("storage_path", ""))
 PY
 )"
+
+"${ROOT_DIR}/bin/impactshop-guard-preflight.sh"
 
 AUTO_COMMIT="$(python3 - <<'PY'
 import json
@@ -126,10 +235,13 @@ root = os.path.abspath(os.path.join(os.path.dirname(cfg_path), ".."))
 with open(cfg_path, "r", encoding="utf-8") as fh:
     cfg = json.load(fh)
 
-files = [p.strip() for p in cfg.get("protected_files", []) if p.strip()]
+files = [p for p in cfg.get("protected_files", []) if p]
 changed = False
 if mode == "chmod_unlock":
-    for rel in files:
+    for entry in files:
+        rel = entry.get("path") if isinstance(entry, dict) else entry
+        if not rel:
+            continue
         path = os.path.join(root, rel)
         if os.path.isfile(path):
             st = os.stat(path)
@@ -137,7 +249,10 @@ if mode == "chmod_unlock":
                 os.chmod(path, 0o640)
                 changed = True
 elif mode == "chmod_lock":
-    for rel in files:
+    for entry in files:
+        rel = entry.get("path") if isinstance(entry, dict) else entry
+        if not rel:
+            continue
         path = os.path.join(root, rel)
         if os.path.isfile(path):
             st = os.stat(path)
@@ -161,6 +276,7 @@ cleanup_lock() {
   if [[ "$LOCK_MODE" == "chmod" ]]; then
     with_lock_mode "chmod_lock" >/dev/null
   fi
+  release_guard_lock
 }
 trap cleanup_lock EXIT
 
@@ -179,6 +295,8 @@ import json
 import os
 import shutil
 import sys
+import hashlib
+from datetime import datetime, timezone
 
 cfg_path = sys.argv[1]
 hash_path = sys.argv[2]
@@ -187,8 +305,11 @@ root = os.path.abspath(os.path.join(os.path.dirname(cfg_path), ".."))
 with open(cfg_path, "r", encoding="utf-8") as fh:
     cfg = json.load(fh)
 
-for rel in cfg.get("protected_files", []):
-    rel = rel.strip()
+protected = cfg.get("protected_files", [])
+hashes = {}
+for entry in protected:
+    rel = entry.get("path") if isinstance(entry, dict) else entry
+    rel = (rel or "").strip()
     if not rel:
         continue
     src = os.path.join(root, rel)
@@ -196,6 +317,17 @@ for rel in cfg.get("protected_files", []):
         dst = os.path.join(snap_dir, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy2(src, dst)
+        with open(src, "rb") as fh:
+            hashes[rel] = hashlib.sha256(fh.read()).hexdigest()
+
+meta = {
+    "timestamp": datetime.now(timezone.utc).isoformat(),
+    "repo": cfg.get("repo", {}),
+    "protected_files": [entry.get("path") if isinstance(entry, dict) else entry for entry in protected],
+    "hashes": hashes,
+}
+with open(os.path.join(snap_dir, "snapshot.meta.json"), "w", encoding="utf-8") as fh:
+    json.dump(meta, fh, indent=2, ensure_ascii=False)
 
 if os.path.isfile(hash_path):
     dst = os.path.join(snap_dir, os.path.basename(hash_path))
@@ -203,6 +335,9 @@ if os.path.isfile(hash_path):
     checksum_path = os.path.join(os.path.dirname(hash_path), "impactshop-guard-hashes.sha256")
     if os.path.isfile(checksum_path):
         shutil.copy2(checksum_path, os.path.join(snap_dir, os.path.basename(checksum_path)))
+    config_checksum = os.path.join(os.path.dirname(hash_path), "impactshop-guard-config.sha256")
+    if os.path.isfile(config_checksum):
+        shutil.copy2(config_checksum, os.path.join(snap_dir, os.path.basename(config_checksum)))
 PY
 
 echo "📦 Guard snapshot: $snapshot_path"
@@ -304,18 +439,48 @@ with open(cfg_path, "r", encoding="utf-8") as fh:
 with open(hash_path, "r", encoding="utf-8") as fh:
     manifest = json.load(fh)
 
+repo = cfg.get("repo", {})
+repo_root = os.path.realpath(repo.get("root", root))
+repo_remote = repo.get("remote", "")
+repo_branch = repo.get("branch", "")
+
 protected = cfg.get("protected_files", [])
 hashes = manifest.get("hashes", {})
 
 missing = []
+missing_wrong_repo = []
+invalid_paths = []
 changed = []
-for rel in protected:
-    rel = rel.strip()
+for entry in protected:
+    rel = entry.get("path") if isinstance(entry, dict) else entry
+    rel = (rel or "").strip()
     if not rel:
         continue
-    abs_path = os.path.join(root, rel)
+    abs_path = os.path.realpath(os.path.join(root, rel))
+    if not abs_path.startswith(os.path.realpath(root) + os.sep):
+        invalid_paths.append(rel)
+        continue
+    owner_repo = entry.get("owner_repo") if isinstance(entry, dict) else ""
+    owner_root = entry.get("owner_root") if isinstance(entry, dict) else ""
+    owner_branch = entry.get("owner_branch") if isinstance(entry, dict) else ""
+    owner_root = os.path.realpath(owner_root) if owner_root else ""
+    owner_mismatch = False
+    if owner_repo and owner_repo != repo_remote:
+        owner_mismatch = True
+    if owner_root and owner_root != repo_root:
+        owner_mismatch = True
+    if owner_branch and owner_branch != repo_branch:
+        owner_mismatch = True
     if not os.path.isfile(abs_path):
-        missing.append(rel)
+        if owner_mismatch:
+            missing_wrong_repo.append({
+                "path": rel,
+                "owner_repo": owner_repo,
+                "owner_root": owner_root,
+                "owner_branch": owner_branch,
+            })
+        else:
+            missing.append(rel)
         continue
     with open(abs_path, "rb") as fh:
         digest = hashlib.sha256(fh.read()).hexdigest()
@@ -323,7 +488,12 @@ for rel in protected:
     if not known or digest != known:
         changed.append(rel)
 
-out = {"missing": missing, "changed": changed}
+out = {
+    "missing": missing,
+    "missing_wrong_repo": missing_wrong_repo,
+    "invalid_paths": invalid_paths,
+    "changed": changed,
+}
 print(json.dumps(out, ensure_ascii=False))
 PY
 
@@ -336,6 +506,22 @@ data = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
 print(len(data.get("missing", [])))
 PY
 )
+wrong_repo_count=$(
+GUARD_STATE="$guard_state" python3 - <<'PY'
+import json
+import os
+data = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
+print(len(data.get("missing_wrong_repo", [])))
+PY
+)
+invalid_count=$(
+GUARD_STATE="$guard_state" python3 - <<'PY'
+import json
+import os
+data = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
+print(len(data.get("invalid_paths", [])))
+PY
+)
 changed_count=$(
 GUARD_STATE="$guard_state" python3 - <<'PY'
 import json
@@ -344,6 +530,34 @@ data = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
 print(len(data.get("changed", [])))
 PY
 )
+
+if [[ "$invalid_count" -gt 0 ]]; then
+  echo "❌ Guard: védett fájl a repo-n kívülre mutat." >&2
+  GUARD_STATE="$guard_state" python3 - <<'PY'
+import json
+import os
+data = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
+for rel in data.get("invalid_paths", []):
+    print(f"  - {rel}")
+PY
+  exit 1
+fi
+
+if [[ "$wrong_repo_count" -gt 0 ]]; then
+  echo "❌ Guard: védett fájl másik repo tulajdonban van. Deploy megszakítva." >&2
+  GUARD_STATE="$guard_state" python3 - <<'PY'
+import json
+import os
+data = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
+for item in data.get("missing_wrong_repo", []):
+    path = item.get("path")
+    owner_repo = item.get("owner_repo")
+    owner_root = item.get("owner_root")
+    owner_branch = item.get("owner_branch")
+    print(f"  - {path} (owner_repo={owner_repo} owner_root={owner_root} owner_branch={owner_branch})")
+PY
+  exit 1
+fi
 
 if [[ "$missing_count" -gt 0 ]]; then
   echo "❌ Guard: hiányzó védett fájl(ok). Deploy megszakítva." >&2

@@ -11,7 +11,7 @@ incidens tanulságai alapján készült.
    mkdir -p ~/.secrets
    chmod 700 ~/.secrets
    cat > ~/.secrets/cpanel.token <<EOF
-   CPANEL_HOST=cp40.ezit.hu
+   CPANEL_HOST=s59.tarhely.com
    CPANEL_USER=sharityh
    CPANEL_TOKEN=...
    EOF
