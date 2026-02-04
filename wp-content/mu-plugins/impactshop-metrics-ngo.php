@@ -89,8 +89,21 @@ function ism_get_ngo_name_map(){
   static $map = null;
   if ($map !== null) return $map;
   $map = [];
-  $path = trailingslashit(ABSPATH) . 'ngo_codes.csv';
-  if (!file_exists($path)) return $map;
+  $paths = [trailingslashit(ABSPATH) . 'ngo_codes.csv'];
+  $upload = function_exists('wp_upload_dir') ? wp_upload_dir() : null;
+  if (is_array($upload) && !empty($upload['basedir'])) {
+    $base = rtrim($upload['basedir'], '/');
+    $paths[] = $base . '/ngo_codes.csv';
+    $paths[] = $base . '/2025/09/ngo_codes.csv';
+  }
+  $path = '';
+  foreach ($paths as $candidate) {
+    if ($candidate && file_exists($candidate)) {
+      $path = $candidate;
+      break;
+    }
+  }
+  if ($path === '') return $map;
   $handle = fopen($path, 'r');
   if ($handle === false) return $map;
   $row = 0;
@@ -123,16 +136,28 @@ function ism_normalize_ngo_name($name){
   return ucwords($fallback);
 }
 
+function ism_is_unknown_ngo_name($name){
+  $n = trim((string)$name);
+  if ($n === '') return true;
+  $n = function_exists('mb_strtolower') ? mb_strtolower($n, 'UTF-8') : strtolower($n);
+  return (
+    strpos($n, 'ismeretlen') !== false ||
+    strpos($n, 'unknown') !== false ||
+    strpos($n, '(nincs d1)') !== false ||
+    $n === '(ismeretlen)'
+  );
+}
+
 function ism_metrics_cache_key($from, $to, $status): string {
   return 'impactshop_metrics_raw_' . md5($from . '|' . $to . '|' . $status);
 }
 
 function ism_leaderboard_cache_key($tab, $from, $to, $status): string {
-  return 'impactshop_lb_v1_' . md5($tab . '|' . $from . '|' . $to . '|' . $status);
+  return 'impactshop_lb_v2_' . md5($tab . '|' . $from . '|' . $to . '|' . $status);
 }
 
 function ism_leaderboard_persist_key($tab, $from, $to, $status): string {
-  return 'impactshop_lb_persist_' . md5($tab . '|' . $from . '|' . $to . '|' . $status);
+  return 'impactshop_lb_persist_v2_' . md5($tab . '|' . $from . '|' . $to . '|' . $status);
 }
 
 function ism_refresh_tx_cache($from, $to, $status): array {
@@ -297,7 +322,7 @@ add_action('rest_api_init',function(){
 function ism_build_leaderboard($tab='ngo',$from='',$to='',$status='all'){
   $from = $from ?: (defined('IMPACTSHOP_METRICS_FROM') ? IMPACTSHOP_METRICS_FROM : '2025-10-23');
   $to = $to ?: date('Y-m-d');
-  $status = $status ?: 'approved';
+  $status = $status ?: 'all';
   $cache = ism_leaderboard_cache_key($tab, $from, $to, $status);
   $c = get_transient($cache);
   if ($c !== false) return $c;
@@ -315,7 +340,14 @@ function ism_build_leaderboard($tab='ngo',$from='',$to='',$status='all'){
 
   $map=[];
   foreach($rows as $r){
-    $ngo=ism_pick_ngo_from_row($r); if($ngo==='') continue;
+    $ngo = ism_pick_ngo_from_row($r);
+    if ($tab !== 'ngo') {
+      if ($ngo === '' || ism_is_unknown_ngo_name($ngo)) {
+        continue;
+      }
+    } elseif ($ngo === '') {
+      $ngo = '(ismeretlen NGO)';
+    }
     if (ism_is_rejected($r)) continue;
     $don=ism_num($r)*0.5;
 
@@ -335,6 +367,9 @@ function ism_build_leaderboard($tab='ngo',$from='',$to='',$status='all'){
       $row['name'] = ism_normalize_ngo_name($row['name'] ?? '');
       return $row;
     }, $out);
+    $out = array_values(array_filter($out, function($row){
+      return !ism_is_unknown_ngo_name($row['name'] ?? '');
+    }));
   }
   usort($out, fn($a,$b)=>($b['amount']<=>$a['amount'])?:strcasecmp($a['name'],$b['name']));
   set_transient($cache, $out, IMPACTSHOP_LEADERBOARD_TTL);
@@ -348,8 +383,15 @@ add_action('rest_api_init',function(){
       $tab = sanitize_text_field($req->get_param('tab') ?: 'ngo');
       $from = sanitize_text_field($req->get_param('from') ?: '');
       $to = sanitize_text_field($req->get_param('to') ?: '');
-      $status = sanitize_text_field($req->get_param('status') ?: 'approved');
-      return rest_ensure_response(ism_build_leaderboard($tab,$from,$to,$status));
+      $status = sanitize_text_field($req->get_param('status') ?: 'all');
+      $out = ism_build_leaderboard($tab,$from,$to,$status);
+      if (empty($out) && function_exists('ibl_build_leaderboard')) {
+        $fallback = ibl_build_leaderboard($tab, $from, $to);
+        if (!empty($fallback)) {
+          $out = $fallback;
+        }
+      }
+      return rest_ensure_response($out);
     }
   ]);
 });

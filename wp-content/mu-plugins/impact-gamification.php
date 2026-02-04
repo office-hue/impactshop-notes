@@ -740,11 +740,15 @@ function impactshop_herowall_shortcode(): string
 {
     $pseudo_id = impactshop_badge_get_pseudo();
     $html = '<div class="impactshop-herowall" data-role="herowall" data-pseudo="' . esc_attr($pseudo_id) . '">';
-    $html .= '<div class="herowall-header">Legacy Pool</div>';
-    $html .= '<div class="herowall-list" data-role="herowall-list">Betöltés...</div>';
+    $html .= '<div class="herowall-header" data-role="herowall-toggle" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">';
+    $html .= '<span>Legacy Pool</span>';
+    $html .= '<span class="herowall-collapse-icon" data-role="herowall-icon" style="font-size:18px;transition:transform .2s">▼</span>';
+    $html .= '</div>';
+    $html .= '<div class="herowall-list" data-role="herowall-list" style="display:none">Betöltés...</div>';
     $html .= '</div>';
     $html .= '<style>' . impactshop_herowall_css() . '</style>';
     $html .= '<script>' . impactshop_herowall_js() . '</script>';
+    $html .= '<script>(function(){var t=document.querySelector("[data-role=herowall-toggle]");if(!t)return;var c=document.querySelector("[data-role=herowall-list]");var i=t.querySelector("[data-role=herowall-icon]");t.addEventListener("click",function(){var open=c.style.display!=="none";c.style.display=open?"none":"grid";i.style.transform=open?"rotate(0deg)":"rotate(180deg)";});})();</script>';
     return $html;
 }
 
@@ -851,9 +855,12 @@ function impactshop_challenges_shortcode(): string
     }
 
     $html = '<div class="impactshop-challenges">';
-    $html .= '<h3>Kihívások</h3>';
+    $html .= '<div class="impactshop-challenges-header" data-role="challenges-toggle" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">';
+    $html .= '<span style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:.02em">Kihívások</span>';
+    $html .= '<span class="impactshop-collapse-icon" data-role="collapse-icon" style="font-size:18px;transition:transform .2s">▼</span>';
+    $html .= '</div>';
     $html .= '<p class="impactshop-challenges-hint">Teljesíts mérföldköveket, szerezz jelvényeket és extra pontot.</p>';
-    $html .= '<div class="impactshop-challenges-grid">';
+    $html .= '<div class="impactshop-challenges-grid" data-role="challenges-content" style="display:none">';
 
     foreach ($next_rows as $entry) {
         $row = $entry['row'];
@@ -894,7 +901,9 @@ function impactshop_challenges_shortcode(): string
         .impactshop-challenge-meta{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:#0f172a}
         .impactshop-challenge-tier{padding:2px 8px;border-radius:999px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);font-weight:700;letter-spacing:.02em}
         .impactshop-challenge-points{padding:2px 8px;border-radius:999px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);font-weight:700}
+        .impactshop-challenges-header:hover{opacity:.8}
     </style>';
+    $html .= '<script>(function(){var t=document.querySelector("[data-role=challenges-toggle]");if(!t)return;var c=document.querySelector("[data-role=challenges-content]");var i=t.querySelector("[data-role=collapse-icon]");t.addEventListener("click",function(){var open=c.style.display!=="none";c.style.display=open?"none":"grid";i.style.transform=open?"rotate(0deg)":"rotate(180deg)";});})();</script>';
 
     return $html;
 }

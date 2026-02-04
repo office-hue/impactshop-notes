@@ -182,20 +182,21 @@
       if (pointsCompactLevel) pointsCompactLevel.textContent = resolved.current.label;
       if (pointsCompactTotal) pointsCompactTotal.textContent = formatPoints(pointsValue);
 
-      if (pointsProgressBar && pointsProgressText) {
+      if (pointsProgressBar || pointsProgressText || pointsCompactBar || pointsCompactText) {
         if (!resolved.next) {
-          pointsProgressBar.style.width = "100%";
-          pointsProgressText.textContent = "Legmagasabb szint elérve.";
+          if (pointsProgressBar) pointsProgressBar.style.width = "100%";
+          if (pointsProgressText) pointsProgressText.textContent = "Legmagasabb szint elérve.";
           if (pointsCompactBar) pointsCompactBar.style.width = "100%";
           if (pointsCompactText) pointsCompactText.textContent = "Legmagasabb szint elérve.";
         } else {
           const span = resolved.next.min - resolved.current.min;
           const progress = span > 0 ? Math.min(100, Math.max(0, ((resolved.points - resolved.current.min) / span) * 100)) : 0;
-          pointsProgressBar.style.width = progress.toFixed(0) + "%";
           const remaining = Math.max(0, resolved.next.min - resolved.points);
-          pointsProgressText.textContent = remaining.toLocaleString("hu-HU") + " pont a " + resolved.next.label + " szinthez";
+          const progressText = remaining.toLocaleString("hu-HU") + " pont a " + resolved.next.label + " szinthez";
+          if (pointsProgressBar) pointsProgressBar.style.width = progress.toFixed(0) + "%";
+          if (pointsProgressText) pointsProgressText.textContent = progressText;
           if (pointsCompactBar) pointsCompactBar.style.width = progress.toFixed(0) + "%";
-          if (pointsCompactText) pointsCompactText.textContent = remaining.toLocaleString("hu-HU") + " pont a " + resolved.next.label + " szinthez";
+          if (pointsCompactText) pointsCompactText.textContent = progressText;
         }
       }
 
@@ -920,39 +921,44 @@
 
     const saveForm = root.querySelector("[data-role=save-form]");
     const savePasswordBtn = root.querySelector("[data-role=save-password-manager]");
-    if (saveForm && savePasswordBtn) {
-      saveForm.addEventListener("submit", async function(e){
-        const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim() : "";
-        const recovery = recoveryDisplay ? recoveryDisplay.textContent.trim() : "";
-        if (!pseudo || pseudo === "—" || !recovery || recovery === "—") {
-          e.preventDefault();
-          setStatus("Nincs aktív azonosító vagy kód.", true);
+    async function handleSavePassword(e) {
+      const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim() : "";
+      const recovery = recoveryDisplay ? recoveryDisplay.textContent.trim() : "";
+      if (!pseudo || pseudo === "—" || !recovery || recovery === "—") {
+        if (e) e.preventDefault();
+        setStatus("Nincs aktív azonosító vagy kód.", true);
+        return;
+      }
+      if (saveUsername) {
+        saveUsername.value = pseudo;
+      }
+      if (savePassword) {
+        savePassword.value = recovery;
+      }
+
+      if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
+        if (e) e.preventDefault();
+        try {
+          const cred = new PasswordCredential({ id: pseudo, password: recovery, name: "Impact Shop ID" });
+          await navigator.credentials.store(cred);
+          setStatus("Mentve a jelszókezelőbe.");
+          awardCredentialsSave(pseudo);
+          return;
+        } catch (err) {
+          setStatus("A jelszómentés nem sikerült, próbáld újra.", true);
           return;
         }
-        if (saveUsername) {
-          saveUsername.value = pseudo;
-        }
-        if (savePassword) {
-          savePassword.value = recovery;
-        }
+      }
 
-        if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
-          e.preventDefault();
-          try {
-            const cred = new PasswordCredential({ id: pseudo, password: recovery, name: "Impact Shop ID" });
-            await navigator.credentials.store(cred);
-            setStatus("Mentve a jelszókezelőbe.");
-            awardCredentialsSave(pseudo);
-            return;
-          } catch (err) {
-            setStatus("A jelszómentés nem sikerült, próbáld újra.", true);
-            return;
-          }
-        }
-
-        setStatus("A böngésző felajánlja a mentést a beküldés után. Ha nem kérdez rá, valószínűleg már mentve van.");
-        awardCredentialsSave(pseudo);
-      });
+      if (e) e.preventDefault();
+      setStatus("A böngésző felajánlhatja a mentést. Ha nem kérdez rá, valószínűleg már mentve van.");
+      awardCredentialsSave(pseudo);
+    }
+    if (saveForm) {
+      saveForm.addEventListener("submit", handleSavePassword);
+    }
+    if (savePasswordBtn) {
+      savePasswordBtn.addEventListener("click", handleSavePassword);
     }
 
     const restorePseudo = root.querySelector("[data-role=restore-pseudo]");
@@ -1070,21 +1076,35 @@
         vacationToggle.disabled = true;
         try {
           if (mode === "end") {
-            await fetch(pointsBase + "/pseudo/vacation/end", {
-              method: "POST",
-              credentials: "include"
-            });
-          } else {
-            await fetch(pointsBase + "/pseudo/vacation", {
+            const res = await fetch(pointsBase + "/pseudo/vacation/end", {
               method: "POST",
               credentials: "include",
-              headers: { "Content-Type": "application/json" },
+              headers: { "X-WP-Nonce": restNonce }
+            });
+            if (!res.ok) {
+              const data = await res.json().catch(function(){ return {}; });
+              setStatus((data && data.message) ? data.message : "Vakáció kikapcsolása sikertelen.", true);
+              return;
+            }
+          } else {
+            const res = await fetch(pointsBase + "/pseudo/vacation", {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+                "X-WP-Nonce": restNonce
+              },
               body: JSON.stringify({ days: 14 })
             });
+            if (!res.ok) {
+              const data = await res.json().catch(function(){ return {}; });
+              setStatus((data && data.message) ? data.message : "Vakáció indítása sikertelen.", true);
+              return;
+            }
           }
           fetchVacationStatus();
         } catch (e) {
-          // ignore
+          setStatus("Vakáció mód hiba. Próbáld újra.", true);
         } finally {
           vacationToggle.disabled = false;
         }

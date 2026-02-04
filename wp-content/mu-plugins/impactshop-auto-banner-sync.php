@@ -171,8 +171,12 @@ function impactshop_auto_banner_sync_run(): array
             continue;
         }
 
-        // Block DTD/W3C/system URLs
-        if (function_exists('impactshop_is_valid_product_url')) {
+        if (function_exists('impactshop_auto_banner_is_valid_banner_url')) {
+            if (!impactshop_auto_banner_is_valid_banner_url($href, $slug)) {
+                $result['skipped']++;
+                continue;
+            }
+        } elseif (function_exists('impactshop_is_valid_product_url')) {
             if (!impactshop_is_valid_product_url($href)) {
                 $result['skipped']++;
                 continue;

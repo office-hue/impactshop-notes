@@ -188,6 +188,76 @@ function impactshop_is_valid_product_url(string $url): bool
     return true;
 }
 
+function impactshop_auto_banner_host_matches(string $host, string $allowed): bool
+{
+    $host = strtolower($host);
+    $allowed = strtolower($allowed);
+    if ($host === $allowed) {
+        return true;
+    }
+    return substr($host, -strlen('.' . $allowed)) === '.' . $allowed;
+}
+
+function impactshop_auto_banner_get_allowed_hosts(string $shop_slug): array
+{
+    $hosts = [];
+    if (function_exists('impactshop_find_shop')) {
+        $row = impactshop_find_shop($shop_slug);
+        $product_url = $row['product_url'] ?? ($row['homepage'] ?? '');
+        $product_host = $product_url ? parse_url($product_url, PHP_URL_HOST) : '';
+        if ($product_host) {
+            $hosts[] = $product_host;
+        }
+    }
+
+    $filtered = (array) apply_filters('impactshop_auto_banner_allowed_hosts', [], $shop_slug);
+    foreach ($filtered as $host) {
+        if ($host) {
+            $hosts[] = $host;
+        }
+    }
+
+    $hosts = array_filter(array_unique($hosts));
+    return array_values($hosts);
+}
+
+function impactshop_auto_banner_is_valid_banner_url(string $banner_url, string $shop_slug): bool
+{
+    if (!impactshop_is_valid_product_url($banner_url)) {
+        return false;
+    }
+
+    $host = parse_url($banner_url, PHP_URL_HOST);
+    if (!$host) {
+        return false;
+    }
+
+    if (stripos($host, 'go.dognet.com') !== false) {
+        $query = parse_url($banner_url, PHP_URL_QUERY) ?: '';
+        parse_str($query, $qs);
+        $deeplink = (string) ($qs['url'] ?? '');
+        if ($deeplink === '') {
+            return false;
+        }
+        $deeplink_host = parse_url($deeplink, PHP_URL_HOST);
+        if ($deeplink_host === '') {
+            return false;
+        }
+        $allowed_hosts = impactshop_auto_banner_get_allowed_hosts($shop_slug);
+        if (empty($allowed_hosts)) {
+            return false;
+        }
+        foreach ($allowed_hosts as $allowed) {
+            if (impactshop_auto_banner_host_matches($deeplink_host, $allowed)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * Get an active banner with rotation support.
  * Tracks seen banners via cookie to avoid repetition.
@@ -220,6 +290,12 @@ function impactshop_auto_banner_get_active(): array
     // Get seen banner IDs from cookie (comma-separated)
     $seen_cookie = isset($_COOKIE['impactshop_seen_banners']) ? sanitize_text_field($_COOKIE['impactshop_seen_banners']) : '';
     $seen_ids = $seen_cookie !== '' ? array_map('intval', explode(',', $seen_cookie)) : [];
+
+    $rows = array_filter($rows, function ($row) {
+        $shop_slug = (string) ($row['shop_slug'] ?? '');
+        $banner_url = (string) ($row['banner_url'] ?? '');
+        return impactshop_auto_banner_is_valid_banner_url($banner_url, $shop_slug);
+    });
 
     // Filter out seen banners
     $unseen = array_filter($rows, function ($row) use ($seen_ids) {
@@ -313,8 +389,7 @@ function impactshop_auto_banner_from_offer(array $offer, array $context = []): v
         return;
     }
     $banner_url = esc_url_raw((string) ($offer['url'] ?? ''));
-    // Block DTD/W3C/system URLs
-    if (!impactshop_is_valid_product_url($banner_url)) {
+    if (!impactshop_auto_banner_is_valid_banner_url($banner_url, $shop_slug)) {
         return;
     }
     $image_url = esc_url_raw((string) ($offer['image_url'] ?? ''));

@@ -178,6 +178,9 @@ add_action('init', function(){
   if (empty($shortcode_tags['impactshop_deals'])) {
     add_shortcode('impactshop_deals','sib_sc_deals');
   }
+  if (empty($shortcode_tags['impactshop_netflix'])) {
+    add_shortcode('impactshop_netflix','sib_sc_deals');
+  }
 }, 1);
 
 /* ==== Diagnosztika: ?impact_mini_probe=1 → JSON ==== */

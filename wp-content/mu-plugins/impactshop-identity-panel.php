@@ -95,6 +95,57 @@ add_shortcode('impactshop_identity_panel', 'impactshop_identity_panel_shortcode'
 add_shortcode('impactshop_identity_id', 'impactshop_identity_id_shortcode');
 
 add_action('wp_enqueue_scripts', 'impactshop_identity_panel_register_assets');
+add_action('admin_init', 'impactshop_identity_register_broadcast_setting');
+
+function impactshop_identity_register_broadcast_setting(): void
+{
+    register_setting('reading', 'impactshop_identity_broadcast_message', [
+        'type' => 'string',
+        'sanitize_callback' => 'impactshop_identity_sanitize_broadcast_message',
+        'default' => '',
+    ]);
+
+    add_settings_field(
+        'impactshop_identity_broadcast_message',
+        'ImpactShop – Üzenet (Identity ID)',
+        'impactshop_identity_render_broadcast_field',
+        'reading'
+    );
+}
+
+function impactshop_identity_allowed_message_tags(): array
+{
+    return [
+        'a' => [
+            'href' => true,
+            'target' => true,
+            'rel' => true,
+        ],
+        'br' => true,
+        'strong' => true,
+        'em' => true,
+    ];
+}
+
+function impactshop_identity_sanitize_broadcast_message($value): string
+{
+    $value = is_string($value) ? $value : '';
+    $sanitized = wp_kses($value, impactshop_identity_allowed_message_tags());
+    $plain = wp_strip_all_tags($sanitized);
+    if (mb_strlen($plain) > 300) {
+        $plain = mb_substr($plain, 0, 300);
+        return esc_html($plain);
+    }
+    return $sanitized;
+}
+
+function impactshop_identity_render_broadcast_field(): void
+{
+    $value = (string) get_option('impactshop_identity_broadcast_message', '');
+    $value = wp_kses($value, impactshop_identity_allowed_message_tags());
+    echo '<textarea name="impactshop_identity_broadcast_message" rows="4" cols="60" maxlength="300" style="width:100%;max-width:640px;">' . esc_textarea($value) . '</textarea>';
+    echo '<p class="description">Max 300 karakter. Engedélyezett: <code>&lt;a&gt;</code>, <code>&lt;br&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>.</p>';
+}
 
 /**
  * Resolve pseudo ID + recovery code for rendering.
@@ -136,144 +187,112 @@ function impactshop_identity_panel_shortcode(): string
     $pseudo_id = esc_html($profile['pseudo_id']);
     $recovery_code = esc_html($profile['recovery_code']);
 
-    $html = '<div class="impactshop-identity-panel" id="' . esc_attr($panel_id) . '" ';
-    $html .= 'data-rest-base="' . esc_attr($rest_base) . '">';
+    $html = '<div class="impactshop-identity-panel" id="' . esc_attr($panel_id) . '" data-rest-base="' . esc_attr($rest_base) . '">';
+    $html .= '<div id="impactshop-account-top"></div>';
     $html .= '<div class="impactshop-identity-card">';
-    $html .= '<p class="impactshop-identity-greeting" data-role="greeting">Szia, üdvözöllek a Sharity oldalán.</p>';
-    $html .= '<h3>Fiókom</h3>';
-    $html .= '<p class="impactshop-identity-total" data-role="total-display">Támogatásaim összege: —</p>';
-    $html .= '<div class="impactshop-identity-points-compact" data-role="points-compact" hidden>';
-    $html .= '<h4>Pontjaid</h4>';
-    $html .= '<div class="impactshop-identity-points-summary">';
-    $html .= '<span class="impactshop-identity-badge" data-role="points-compact-badge">🌱</span>';
-    $html .= '<div class="impactshop-identity-points-meta">';
-    $html .= '<div class="impactshop-identity-level" data-role="points-compact-level">Basic</div>';
-    $html .= '<div class="impactshop-identity-points-total" data-role="points-compact-total">0 pont</div>';
+    $html .= '<div class="impactshop-identity-header">';
+    $html .= '<h3>Profilod</h3>';
+    $html .= '<p class="impactshop-identity-hint" data-role="greeting"></p>';
+    $html .= '<p class="impactshop-identity-hint" data-role="account-message"></p>';
     $html .= '</div>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-progress">';
-    $html .= '<div class="impactshop-identity-progress-bar"><span data-role="points-compact-bar"></span></div>';
-    $html .= '<p data-role="points-compact-text"></p>';
-    $html .= '</div>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-message" data-role="account-message" hidden></div>';
-    $html .= '<p class="impactshop-identity-hint">Fontos: csak a fiókodban tudod megőrizni az eredményeidet és a jutalmaidat.</p>';
-    $html .= '<div class="impactshop-identity-points" data-role="points-section" hidden>';
-    $html .= '<div class="impactshop-identity-section-title">';
-    $html .= '<h4>Pontjaid</h4>';
-    $html .= '<button type="button" class="impactshop-identity-info" data-role="points-info-trigger" aria-label="Pontok információ">i</button>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-popover" data-role="points-info" hidden>';
-    $html .= '<strong>Pontszerzési lehetőségek</strong>';
-    $html .= '<ul>';
-    $html .= '<li>Impact Shop vásárlás</li>';
-    $html .= '<li>Videó megtekintés / szponzorált aktivitás</li>';
-    $html .= '<li>Megosztás és ajánlás</li>';
-    $html .= '<li>Visszajelzés / aktivitás</li>';
-    $html .= '</ul>';
-    $html .= '<strong>Előnyök, amik a szintedhez tartoznak</strong>';
-    $html .= '<ul>';
-    $html .= '<li>Szavazati súly: több pont = nagyobb súly</li>';
-    $html .= '<li>Adomány szorzó: magasabb szint = több támogatás</li>';
-    $html .= '<li>Kedvezmény kategória: partnertől függő, Basic–Legend</li>';
-    $html .= '</ul>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-points-summary">';
-    $html .= '<span class="impactshop-identity-badge" data-role="points-badge">🌱</span>';
-    $html .= '<div class="impactshop-identity-points-meta">';
-    $html .= '<div class="impactshop-identity-level" data-role="points-level">Basic</div>';
-    $html .= '<div class="impactshop-identity-points-total" data-role="points-total">0 pont</div>';
-    $html .= '</div>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-progress">';
-    $html .= '<div class="impactshop-identity-progress-bar"><span data-role="points-progress-bar"></span></div>';
-    $html .= '<p data-role="points-progress-text"></p>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-benefits" data-role="points-benefits"></div>';
-    $html .= '<div class="impactshop-identity-last-ngo" data-role="last-ngo"></div>';
-    $html .= '<div class="impactshop-identity-history">';
-    $html .= '<h4>Legutóbbi pontmozgások</h4>';
-    $html .= '<ul data-role="points-history"></ul>';
-    $html .= '<p class="impactshop-identity-hint" data-role="points-history-empty" hidden>Nincs még pontmozgás.</p>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-vacation" data-role="vacation-section">';
-    $html .= '<h4>Vakáció mód</h4>';
-    $html .= '<p class="impactshop-identity-hint" data-role="vacation-status">Betöltés…</p>';
-    $html .= '<div class="impactshop-identity-row">';
-    $html .= '<button type="button" data-role="vacation-toggle">Bekapcsolás</button>';
-    $html .= '</div>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-referral" data-role="referral-section">';
-    $html .= '<div class="impactshop-identity-section-title">';
-    $html .= '<h4>Ajánlói kód</h4>';
-    $html .= '<button type="button" class="impactshop-identity-info" data-role="referral-info-trigger" aria-label="Ajánlói kód információ">i</button>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-popover" data-role="referral-info" hidden>';
-    $html .= '<p>Oszd meg a linket ismerőseiddel. Ha regisztrálnak és vásárolnak, mindketten pontokat kaptok.</p>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-row">';
-    $html .= '<code class="impactshop-identity-value" data-role="referral-code">—</code>';
-    $html .= '<button type="button" data-role="referral-copy">Másolás</button>';
-    $html .= '</div>';
-    $html .= '<p class="impactshop-identity-hint" data-role="referral-link"></p>';
-    $html .= '</div>';
-    $html .= '<div class="impactshop-identity-badges" data-role="badges-section" hidden>';
-    $html .= '<h4>Legacy Wall</h4>';
-    $html .= '<p class="impactshop-identity-hint impactshop-identity-hero-note">A Legacy Wall a megszerzett jelvényeidet gyűjti egy vitrinszerű falon.</p>';
-    $html .= '<div class="impactshop-identity-legacy-badges" data-role="legacy-badges"></div>';
-    $html .= '<p class="impactshop-identity-hint" data-role="badges-empty" hidden>Még nincs jelvényed.</p>';
-    $html .= '<div class="impactshop-identity-herowall" data-role="herowall-summary" hidden>';
-    $html .= '<h4>Legacy Pool</h4>';
-    $html .= '<p class="impactshop-identity-hint" data-role="herowall-tier"></p>';
-    $html .= '<p class="impactshop-identity-hint" data-role="herowall-points"></p>';
-    $html .= '</div>';
-    $html .= '</div>';
-    $html .= '</div>';
-    $html .= '<h4>Fiókom adatai</h4>';
-    $html .= '<div id="impactshop-account-top" class="impactshop-identity-anchor"></div>';
+    $html .= '<div class="impactshop-identity-block">';
+    $html .= '<h4>Azonosítód</h4>';
     $html .= '<div class="impactshop-identity-row">';
     $html .= '<code class="impactshop-identity-value" data-role="pseudo-display">' . $pseudo_id . '</code>';
-    $html .= '<button type="button" data-role="copy-pseudo">Másolás (ID)</button>';
+    $html .= '<button type="button" data-role="copy-pseudo">Másolás</button>';
+    $html .= '<button type="button" data-role="refresh-profile">Frissítés</button>';
     $html .= '</div>';
+    $html .= '<p class="impactshop-identity-hint">Ezzel kapcsoljuk össze az adományt és a jutalmakat.</p>';
     $html .= '<div class="impactshop-identity-row">';
     $html .= '<code class="impactshop-identity-value impactshop-identity-value--recovery" data-role="recovery-display">' . $recovery_code . '</code>';
     $html .= '<button type="button" data-role="copy-recovery">Másolás (kód)</button>';
-    $html .= '<button type="button" data-role="share-both">Megosztás</button>';
     $html .= '</div>';
-    $html .= '<p class="impactshop-identity-hint">Fontos: őrizd meg az azonosító ID-t és a helyreállító kódot! Ne add át másnak! Ezekkel az adatokkal bármikor, bármilyen eszközön eléred a fiókodat.</p>';
-    $html .= '<div class="impactshop-identity-save" id="impactshop-account">';
+    $html .= '<p class="impactshop-identity-hint">Őrizd meg az azonosítót és a helyreállító kódot.</p>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-save">';
     $html .= '<label class="impactshop-identity-save__label">Mentés jelszókezelőbe (opcionális)</label>';
-    $html .= '<form class="impactshop-identity-save-form" data-role="save-form" autocomplete="on" method="post" action="">';
     $html .= '<div class="impactshop-identity-row">';
-    $html .= '<input type="text" name="username" data-role="save-username" autocomplete="username" placeholder="Azonosító" value="' . $pseudo_id . '" />';
-    $html .= '<input type="password" name="password" data-role="save-password" autocomplete="new-password" placeholder="Helyreállító kód" value="' . $recovery_code . '" />';
-    $html .= '<button type="submit" data-role="save-password-manager">Mentés</button>';
+    $html .= '<input type="text" name="impactshop_pseudo" data-role="save-username" autocomplete="username" placeholder="Azonosító" readonly value="' . $pseudo_id . '" />';
+    $html .= '<input type="password" name="impactshop_recovery" data-role="save-password" autocomplete="current-password" placeholder="Helyreállító kód" readonly value="' . $recovery_code . '" />';
+    $html .= '<button type="button" data-role="save-password-manager">Mentés</button>';
     $html .= '</div>';
-    $html .= '</form>';
-    $html .= '<p class="impactshop-identity-hint">A böngésző felajánlja a mentést, ha támogatja.</p>';
+    $html .= '<p class="impactshop-identity-hint">A böngésző felajánlhatja a mentést.</p>';
     $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block">';
     $html .= '<label>Becenév (opcionális)</label>';
     $html .= '<div class="impactshop-identity-row">';
     $html .= '<input type="text" data-role="nickname-input" maxlength="32" placeholder="pl. Anna" />';
     $html .= '<button type="button" data-role="save-nickname">Mentés</button>';
     $html .= '</div>';
-    $html .= '<p class="impactshop-identity-inline-status" data-role="nickname-status"></p>';
+    $html .= '<p class="impactshop-identity-hint" data-role="nickname-status"></p>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-points" data-role="points-section" hidden>';
+    $html .= '<h4>Szinted és pontjaid</h4>';
+    $html .= '<div class="impactshop-identity-row impactshop-identity-points-row">';
+    $html .= '<span class="impactshop-identity-badge" data-role="points-badge">🌱</span>';
+    $html .= '<div class="impactshop-identity-points-meta">';
+    $html .= '<div class="impactshop-identity-level" data-role="points-level">Basic</div>';
+    $html .= '<div class="impactshop-identity-total" data-role="points-total">0 pont</div>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-progress">';
+    $html .= '<div class="impactshop-identity-progress-bar" data-role="points-progress-bar"></div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-progress-text" data-role="points-progress-text"></div>';
+    $html .= '<button type="button" class="impactshop-identity-info-trigger" data-role="points-info-trigger">Miért éri meg?</button>';
+    $html .= '<div class="impactshop-identity-info" data-role="points-info" hidden>';
+    $html .= '<p>A magasabb szint nagyobb adományszorzót és előnyöket ad.</p>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-benefits" data-role="points-benefits"></div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-history">';
+    $html .= '<h4>Legutóbbi aktivitás</h4>';
+    $html .= '<ul class="impactshop-identity-list" data-role="points-history"></ul>';
+    $html .= '<p class="impactshop-identity-hint" data-role="points-history-empty">Még nincs aktivitás.</p>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-lastngo" data-role="last-ngo"></div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-vacation">';
+    $html .= '<div class="impactshop-identity-row">';
+    $html .= '<span data-role="vacation-status">Szabadság státusz betöltése…</span>';
+    $html .= '<button type="button" data-role="vacation-toggle">Szabadság mód</button>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-referral">';
+    $html .= '<h4>Ajánlás</h4>';
+    $html .= '<div class="impactshop-identity-row">';
+    $html .= '<code data-role="referral-code">—</code>';
+    $html .= '<button type="button" data-role="referral-copy">Másolás</button>';
+    $html .= '<button type="button" data-role="referral-info-trigger">Infó</button>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-hint" data-role="referral-link"></div>';
+    $html .= '<div class="impactshop-identity-info" data-role="referral-info" hidden>';
+    $html .= '<p>Oszd meg a kódot, hogy jutalmat kapjatok.</p>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-badges" data-role="badges-section">';
+    $html .= '<h4>Legacy Wall</h4>';
+    $html .= '<div class="impactshop-identity-badge-list" data-role="legacy-badges"></div>';
+    $html .= '<p class="impactshop-identity-hint" data-role="badges-empty">Még nincs jelvényed.</p>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-herowall" data-role="herowall-summary">';
+    $html .= '<h4>Legacy Pool</h4>';
+    $html .= '<div class="impactshop-identity-row">';
+    $html .= '<span data-role="herowall-tier">—</span>';
+    $html .= '<span data-role="herowall-points">—</span>';
+    $html .= '</div>';
+    $html .= '</div>';
     $html .= '<div class="impactshop-identity-restore">';
     $html .= '<h4 id="impactshop-restore-title">Azonosító helyreállítás</h4>';
     $html .= '<p class="impactshop-identity-hint">Új eszközön add meg az azonosítót és a helyreállító kódot.</p>';
-    $html .= '<form class="impactshop-identity-restore__form" autocomplete="on">';
-    $html .= '<label class="impactshop-identity-restore__label" for="impactshop-restore-id">Azonosító</label>';
-    $html .= '<input type="text" id="impactshop-restore-id" data-role="restore-pseudo" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Azonosító" />';
-    $html .= '<label class="impactshop-identity-restore__label" for="impactshop-restore-recovery">Helyreállító kód</label>';
-    $html .= '<input type="password" id="impactshop-restore-recovery" data-role="restore-recovery" name="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Helyreállító kód" />';
+    $html .= '<label class="impactshop-identity-restore__label">Azonosító</label>';
+    $html .= '<input type="text" name="impactshop_restore_pseudo" data-role="restore-pseudo" autocomplete="username" placeholder="Azonosító" />';
+    $html .= '<label class="impactshop-identity-restore__label">Helyreállító kód</label>';
+    $html .= '<input type="password" name="impactshop_restore_recovery" data-role="restore-recovery" autocomplete="current-password" placeholder="Helyreállító kód" />';
     $html .= '<button type="button" data-role="restore-submit">Helyreállítás</button>';
-    $html .= '</form>';
-    $html .= '<p class="impactshop-identity-inline-status" data-role="restore-status"></p>';
+    $html .= '<p class="impactshop-identity-hint" data-role="restore-status"></p>';
     $html .= '</div>';
-
     $html .= '<p class="impactshop-identity-status" data-role="status"></p>';
-    $html .= '</div>';
-    $html .= '</div>';
+    $html .= '</div></div>';
 
     return $html;
 }
@@ -292,35 +311,44 @@ function impactshop_identity_id_shortcode(): string
     $profile = impactshop_identity_profile_resolve();
     $pseudo_id = esc_html($profile['pseudo_id']);
     $recovery_code = esc_html($profile['recovery_code']);
-    $html = '<div class="impactshop-identity-panel impactshop-identity-panel--compact" id="' . esc_attr($panel_id) . '" ';
-    $html .= 'data-rest-base="' . esc_attr($rest_base) . '">';
+        $broadcast = (string) get_option('impactshop_identity_broadcast_message', '');
+    $broadcast = wp_kses($broadcast, impactshop_identity_allowed_message_tags());
+    $panel_url = apply_filters('impactshop_identity_panel_url', site_url('/impactad-2/'));
+    $restore_url = apply_filters('impactshop_identity_restore_url', site_url('/impactad-2/') . '#impactshop-restore-title');
+    $html = '<div class="impactshop-identity-panel impactshop-identity-panel--compact" id="' . esc_attr($panel_id) . '" data-rest-base="' . esc_attr($rest_base) . '">';
     $html .= '<div class="impactshop-identity-card">';
-    $html .= '<p class="impactshop-identity-greeting" data-role="greeting">Szia, üdvözöllek a Sharity oldalán.</p>';
     $html .= '<h3>Fiókom</h3>';
+    $html .= '<p class="impactshop-identity-hint" data-role="greeting"></p>';
     $html .= '<div class="impactshop-identity-row">';
-    $html .= '<button type="button" data-role="scroll-account">Fiókom kezelése</button>';
+    $html .= '<code class="impactshop-identity-value" data-role="pseudo-display">' . $pseudo_id . '</code>';
+    $html .= '<button type="button" data-role="copy-pseudo">Másolás</button>';
+    $html .= '<button type="button" data-role="save-password-manager">Mentés</button>';
     $html .= '</div>';
+    $html .= '<span class="impactshop-identity-hidden" data-role="recovery-display">' . $recovery_code . '</span>';
+    $html .= '<input type="hidden" name="impactshop_pseudo" data-role="save-username" autocomplete="username" value="' . $pseudo_id . '" />';
+    $html .= '<input type="hidden" name="impactshop_recovery" data-role="save-password" autocomplete="current-password" value="' . $recovery_code . '" />';
+    $html .= '<div class="impactshop-identity-actions">';
+    $html .= '<a class="impactshop-identity-link" href="' . esc_url($panel_url . '#impactshop-account-top') . '">A fiókom kezelése</a>';
+    $html .= '<a class="impactshop-identity-link impactshop-identity-link--muted" href="' . esc_url($restore_url) . '">Ez nem az én fiókom</a>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-compact" data-role="points-compact" hidden>';
     $html .= '<div class="impactshop-identity-row">';
-    $html .= '<button type="button" data-role="scroll-restore">Ez nem az én fiókom</button>';
-    $html .= '</div>';
-    $html .= '<p class="impactshop-identity-total" data-role="total-display">Támogatásaim összege: —</p>';
-    $html .= '<div class="impactshop-identity-points-compact" data-role="points-compact" hidden>';
-    $html .= '<h4>Pontjaid</h4>';
-    $html .= '<div class="impactshop-identity-points-summary">';
-    $html .= '<span class="impactshop-identity-badge" data-role="points-compact-badge">🌱</span>';
-    $html .= '<div class="impactshop-identity-points-meta">';
-    $html .= '<div class="impactshop-identity-level" data-role="points-compact-level">Basic</div>';
-    $html .= '<div class="impactshop-identity-points-total" data-role="points-compact-total">0 pont</div>';
-    $html .= '</div>';
+    $html .= '<span data-role="points-compact-badge">🌱</span>';
+    $html .= '<strong data-role="points-compact-level">Basic</strong>';
+    $html .= '<span data-role="points-compact-total">0 pont</span>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-progress">';
-    $html .= '<div class="impactshop-identity-progress-bar"><span data-role="points-compact-bar"></span></div>';
-    $html .= '<p data-role="points-compact-text"></p>';
+    $html .= '<div class="impactshop-identity-progress-bar" data-role="points-compact-bar"></div>';
     $html .= '</div>';
+    $html .= '<div class="impactshop-identity-progress-text" data-role="points-compact-text"></div>';
     $html .= '</div>';
-    $html .= '<p class="impactshop-identity-hint">Fontos: csak a fiókodban tudod megőrizni az eredményeidet és a jutalmaidat.</p>';
-    $html .= '</div>';
-    $html .= '</div>';
+    if ($broadcast !== '') {
+        $html .= '<div class="impactshop-identity-block impactshop-identity-message" data-role="broadcast-message">';
+        $html .= '<strong>Üzenet</strong>';
+        $html .= '<div class="impactshop-identity-message-body">' . $broadcast . '</div>';
+        $html .= '</div>';
+    }
+    $html .= '</div></div>';
 
     return $html;
 }
@@ -333,28 +361,20 @@ function impactshop_identity_id_shortcode(): string
 function impactshop_identity_panel_register_assets(): void
 {
     wp_register_style('impactshop-identity-panel', false);
-    $script_path = __DIR__ . '/impactshop-identity-panel.js';
-    $script_url = plugins_url('impactshop-identity-panel.js', __FILE__);
-    $script_version = file_exists($script_path) ? (string)filemtime($script_path) : null;
-    wp_register_script('impactshop-identity-panel', $script_url, [], $script_version, true);
+    wp_register_script(
+        'impactshop-identity-panel',
+        plugins_url('impactshop-identity-panel.js', __FILE__),
+        [],
+        '1.0.0',
+        true
+    );
 
     $css = <<<CSS
-.impactshop-identity-panel { max-width: 640px; margin: 24px auto; font-family: inherit; color: #0f172a; }
+.impactshop-identity-panel { max-width: 720px; margin: 24px auto; font-family: inherit; color: #0f172a; }
 .impactshop-identity-panel--compact { max-width: 460px; }
 .impactshop-identity-card { border-radius: 18px; padding: 22px; background: rgba(255,255,255,0.7); border: 1px solid rgba(148,163,184,0.35); box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12); backdrop-filter: blur(16px); position: relative; overflow: hidden; }
 .impactshop-identity-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 55%), radial-gradient(circle at bottom right, rgba(14,165,233,0.14), transparent 55%); pointer-events: none; }
 .impactshop-identity-card h3, .impactshop-identity-card h4 { margin: 0 0 10px; font-weight: 700; }
-.impactshop-identity-section-title { display: flex; align-items: center; gap: 10px; }
-.impactshop-identity-section-title h4 { margin: 0; }
-.impactshop-identity-card .impactshop-identity-info { width: 28px; height: 28px; padding: 0; border-radius: 999px; border: 1px solid rgba(15,23,42,0.2); background: #fff; color: #0f172a; font-weight: 800; font-size: 14px; display: grid; place-items: center; box-shadow: none; }
-.impactshop-identity-card .impactshop-identity-info:hover { background: #f1f5f9; }
-.impactshop-identity-popover { padding: 12px 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.94); color: #f8fafc; font-size: 13px; line-height: 1.4; display: grid; gap: 8px; max-width: 420px; box-shadow: 0 18px 36px rgba(15, 23, 42, 0.35); }
-.impactshop-identity-popover ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
-.impactshop-identity-popover strong { font-weight: 700; }
-.impactshop-identity-greeting { margin: 0 0 12px; font-size: 1rem; font-weight: 600; color: #0f172a; }
-.impactshop-identity-total { margin: 6px 0 0; font-weight: 700; color: #0f172a; }
-.impactshop-identity-message { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(14, 116, 144, 0.08); border: 1px solid rgba(14, 116, 144, 0.25); color: #0f172a; font-weight: 600; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-.impactshop-identity-message button { background: #0f172a; color: #fff; border: 0; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
 .impactshop-identity-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .impactshop-identity-row input { flex: 1; }
 .impactshop-identity-card label { display: block; margin-top: 14px; font-weight: 600; }
@@ -362,44 +382,36 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-card button { padding: 11px 16px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.2); background: #0f172a; color: #fff; cursor: pointer; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18); }
 .impactshop-identity-card button:hover { background: #1e293b; }
 .impactshop-identity-card code { background: rgba(15,23,42,0.06); padding: 10px 12px; border-radius: 10px; font-weight: 700; letter-spacing: 0.02em; }
+.impactshop-identity-actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+.impactshop-identity-link { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.2); background: #0f172a; color: #fff; text-decoration: none; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18); }
+.impactshop-identity-link:hover { background: #1e293b; }
+.impactshop-identity-link--muted { background: rgba(15,23,42,0.08); color: #0f172a; box-shadow: none; }
+.impactshop-identity-link--muted:hover { background: rgba(15,23,42,0.14); }
+.impactshop-identity-hidden { display: none; }
 .impactshop-identity-value--recovery { background: rgba(14,165,233,0.15); color: #0e7490; }
 .impactshop-identity-card hr { margin: 18px 0; border: none; border-top: 1px solid rgba(148,163,184,0.4); }
 .impactshop-identity-status { margin-top: 12px; color: #0f172a; min-height: 20px; }
 .impactshop-identity-hint { color: #475569; margin-top: 8px; line-height: 1.5; }
 .impactshop-identity-save { margin-top: 14px; padding: 12px; border: 1px dashed rgba(148,163,184,0.5); border-radius: 14px; background: rgba(248,250,252,0.75); }
 .impactshop-identity-save__label { display: block; font-weight: 600; margin-bottom: 6px; }
-.impactshop-identity-inline-status { margin-top: 6px; color: #0f766e; font-weight: 600; min-height: 18px; }
 .impactshop-identity-restore { margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(148,163,184,0.35); display: grid; gap: 10px; }
 .impactshop-identity-restore h4 { margin: 0; font-size: 16px; font-weight: 700; }
 .impactshop-identity-restore__label { display: block; font-weight: 600; }
-.impactshop-identity-restore__form { display: grid; gap: 10px; }
-.impactshop-identity-anchor { scroll-margin-top: 120px; }
-.impactshop-identity-restore { scroll-margin-top: 120px; }
-.impactshop-identity-points-compact { margin-top: 12px; padding: 14px 14px 10px; border-radius: 16px; border: 1px solid rgba(148,163,184,0.35); background: rgba(248,250,252,0.75); display: grid; gap: 10px; }
-.impactshop-identity-points-compact h4 { margin: 0; font-size: 18px; }
-.impactshop-identity-points { margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(148,163,184,0.35); display: grid; gap: 12px; }
-.impactshop-identity-points-summary { display: flex; align-items: center; gap: 14px; }
-.impactshop-identity-badge { font-size: 28px; width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.85); display: grid; place-items: center; border: 1px solid rgba(148,163,184,0.4); }
-.impactshop-identity-points-meta { display: grid; gap: 4px; }
-.impactshop-identity-level { font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; font-size: 13px; color: #0f172a; }
-.impactshop-identity-points-total { font-size: 22px; font-weight: 800; color: #0f172a; }
-.impactshop-identity-progress { display: grid; gap: 6px; }
-.impactshop-identity-progress-bar { height: 8px; background: rgba(148,163,184,0.35); border-radius: 999px; overflow: hidden; }
-.impactshop-identity-progress-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #38bdf8, #2563eb); border-radius: 999px; transition: width 0.4s ease; }
-.impactshop-identity-benefits { display: grid; gap: 6px; font-size: 13px; color: #1e293b; }
-.impactshop-identity-benefits span { display: inline-flex; gap: 8px; align-items: center; }
-.impactshop-identity-last-ngo { padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(148,163,184,0.5); background: rgba(248,250,252,0.8); display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
-.impactshop-identity-history ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-.impactshop-identity-history li { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: #0f172a; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.65); border: 1px solid rgba(148,163,184,0.25); }
-.impactshop-identity-history li span { font-weight: 600; }
-.impactshop-identity-vacation, .impactshop-identity-referral { display: grid; gap: 8px; }
-.impactshop-identity-referral code { font-size: 14px; }
-.impactshop-identity-referral p { word-break: break-word; }
-.impactshop-identity-badges { margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(148,163,184,0.35); display: grid; gap: 10px; }
-.impactshop-identity-legacy-badges { display: flex; flex-wrap: wrap; gap: 8px; }
-.impactshop-legacy-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.85); border: 1px solid rgba(148,163,184,0.35); font-size: 12px; font-weight: 600; color: #0f172a; }
-.impactshop-legacy-badge-icon { font-size: 14px; }
-.impactshop-identity-herowall { padding: 12px; border-radius: 14px; border: 1px dashed rgba(148,163,184,0.45); background: rgba(248,250,252,0.9); display: grid; gap: 6px; }
+.impactshop-identity-block { margin-top: 18px; }
+.impactshop-identity-header { margin-bottom: 12px; }
+.impactshop-identity-progress { width: 100%; height: 8px; background: rgba(148,163,184,0.3); border-radius: 999px; overflow: hidden; margin: 10px 0; }
+.impactshop-identity-progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, #0ea5e9, #22c55e); }
+.impactshop-identity-benefits span { display: block; margin-top: 6px; font-size: 13px; color: #334155; }
+.impactshop-identity-list { list-style: none; padding: 0; margin: 0; }
+.impactshop-identity-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(148,163,184,0.2); font-size: 13px; }
+.impactshop-identity-badge-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.impactshop-identity-badge-list span { background: transparent; padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+.impactshop-identity-info { margin-top: 8px; padding: 10px; border-radius: 12px; background: rgba(15,23,42,0.06); font-size: 12px; }
+.impactshop-identity-info-trigger { margin-top: 6px; background: #111827; }
+.impactshop-identity-compact { margin-top: 12px; }
+.impactshop-identity-message { padding: 12px; border-radius: 14px; background: rgba(15,23,42,0.06); }
+.impactshop-identity-message strong { display: block; margin-bottom: 6px; font-size: 13px; }
+.impactshop-identity-message-body { font-size: 13px; color: #334155; line-height: 1.5; }
 @media (max-width: 640px) {
   .impactshop-identity-row { flex-direction: column; align-items: stretch; }
   .impactshop-identity-card button { width: 100%; }
@@ -407,13 +419,10 @@ function impactshop_identity_panel_register_assets(): void
 CSS;
     wp_add_inline_style('impactshop-identity-panel', $css);
 
-    $nonce = wp_create_nonce('wp_rest');
-    wp_add_inline_script(
-        'impactshop-identity-panel',
-        'window.impactshopIdentityPanel = window.impactshopIdentityPanel || {};'
-        . 'window.impactshopIdentityPanel.restNonce = ' . wp_json_encode($nonce) . ';',
-        'before'
-    );
+    wp_localize_script('impactshop-identity-panel', 'impactshopIdentityPanel', [
+        'restBase'  => esc_url_raw(rest_url('impact/v1')),
+        'restNonce' => wp_create_nonce('wp_rest'),
+    ]);
 }
 
 /**
@@ -431,18 +440,6 @@ function impactshop_identity_panel_enqueue_assets(): void
     wp_enqueue_style('impactshop-identity-panel');
     wp_enqueue_script('impactshop-identity-panel');
     $enqueued = true;
-}
-
-/**
- * Require REST nonce for mutating endpoints.
- *
- * @param WP_REST_Request $request REST request.
- * @return bool
- */
-function impactshop_identity_require_nonce(WP_REST_Request $request): bool
-{
-    $nonce = $request->get_header('X-WP-Nonce');
-    return (bool)$nonce && wp_verify_nonce($nonce, 'wp_rest');
 }
 
 /**
@@ -469,7 +466,6 @@ function impactshop_identity_profile_get(): WP_REST_Response
             'pseudo_id'     => $pseudo_id,
             'nickname'      => $nickname,
             'recovery_code' => $recovery,
-            'last_ngo'      => impactshop_identity_profile_last_ngo($pseudo_id),
         ],
         200
     );
@@ -490,14 +486,13 @@ function impactshop_identity_profile_update(WP_REST_Request $request): WP_REST_R
     $params = (array)$request->get_json_params();
     $pseudo_id = isset($params['pseudo_id']) ? (string)$params['pseudo_id'] : '';
     $nickname = isset($params['nickname']) ? (string)$params['nickname'] : '';
-    $pseudo_id = strtolower($pseudo_id);
 
     if (!impactshop_identity_profile_valid_pseudo($pseudo_id)) {
         return new WP_REST_Response(['message' => 'Érvénytelen azonosító.'], 400);
     }
 
     $cookie_pseudo = impactshop_identity_profile_cookie();
-    if ($cookie_pseudo === '' || strtolower($cookie_pseudo) !== $pseudo_id) {
+    if ($cookie_pseudo === '' || $cookie_pseudo !== $pseudo_id) {
         return new WP_REST_Response(['message' => 'Azonosító nem egyezik a böngésző cookie-val.'], 403);
     }
 
@@ -554,41 +549,20 @@ function impactshop_identity_profile_restore(WP_REST_Request $request): WP_REST_
     $params = (array)$request->get_json_params();
     $pseudo_id = isset($params['pseudo_id']) ? (string)$params['pseudo_id'] : '';
     $recovery_code = isset($params['recovery_code']) ? (string)$params['recovery_code'] : '';
-    $pseudo_id = strtolower($pseudo_id);
-    $recovery_code = impactshop_identity_profile_normalize_recovery($recovery_code);
 
     if (!impactshop_identity_profile_valid_pseudo($pseudo_id)) {
         return new WP_REST_Response(['message' => 'Érvénytelen azonosító.'], 400);
     }
 
-    $ip = isset($_SERVER['REMOTE_ADDR']) ? (string)$_SERVER['REMOTE_ADDR'] : 'unknown';
-    $rate_key = 'impactshop_restore_rate_' . hash_hmac('sha256', $ip, wp_salt('impactshop_restore_rate'));
-    $attempts = (int)get_transient($rate_key);
-    if ($attempts >= 5) {
-        return new WP_REST_Response([
-            'message'     => 'Túl sok helyreállítási kísérlet. Próbáld újra később.',
-            'retry_after' => HOUR_IN_SECONDS,
-        ], 429);
-    }
-
-    if (!preg_match('/^[A-Z0-9]{12}$/', $recovery_code)) {
-        set_transient($rate_key, $attempts + 1, HOUR_IN_SECONDS);
-        return new WP_REST_Response(['message' => 'Érvénytelen helyreállító kód formátum.'], 400);
-    }
-
     $stored = impactshop_identity_profile_get_recovery_code($pseudo_id);
     if ($stored === null) {
-        set_transient($rate_key, $attempts + 1, HOUR_IN_SECONDS);
         return new WP_REST_Response(['message' => 'Nincs tárolt helyreállító kód.'], 404);
     }
-    $stored_normalized = impactshop_identity_profile_normalize_recovery($stored);
-    if ($recovery_code === '' || !hash_equals($stored_normalized, $recovery_code)) {
-        set_transient($rate_key, $attempts + 1, HOUR_IN_SECONDS);
+    if ($recovery_code === '' || $recovery_code !== $stored) {
         return new WP_REST_Response(['message' => 'Helyreállító kód nem egyezik.'], 403);
     }
 
     impactshop_identity_profile_set_cookie($pseudo_id);
-    delete_transient($rate_key);
     return new WP_REST_Response(['status' => 'ok', 'pseudo_id' => $pseudo_id], 200);
 }
 
@@ -602,7 +576,7 @@ function impactshop_identity_profile_cookie(): string
     if (empty($_COOKIE['impactshop_pseudo_id']) || !is_string($_COOKIE['impactshop_pseudo_id'])) {
         return '';
     }
-    return strtolower(sanitize_text_field(wp_unslash($_COOKIE['impactshop_pseudo_id'])));
+    return sanitize_text_field(wp_unslash($_COOKIE['impactshop_pseudo_id']));
 }
 
 /**
@@ -662,14 +636,12 @@ function impactshop_identity_profile_store(string $pseudo_id, string $nickname):
     $key = impactshop_identity_profile_option_key($pseudo_id);
     $existing = get_option($key, null);
     $recovery = is_array($existing) && isset($existing['recovery_code']) ? (string)$existing['recovery_code'] : null;
-    $last_ngo = is_array($existing) && isset($existing['last_ngo']) ? (string)$existing['last_ngo'] : '';
     if ($recovery === null) {
         $recovery = impactshop_identity_profile_generate_recovery_code();
     }
     $payload = [
         'nickname'   => $nickname,
         'recovery_code' => $recovery,
-        'last_ngo'   => $last_ngo,
         'updated_at' => current_time('mysql', 1),
     ];
 
@@ -711,7 +683,6 @@ function impactshop_identity_profile_store_recovery(string $pseudo_id, string $r
     $payload = [
         'nickname'      => is_array($existing) && isset($existing['nickname']) ? (string)$existing['nickname'] : '',
         'recovery_code' => $recovery_code,
-        'last_ngo'      => is_array($existing) && isset($existing['last_ngo']) ? (string)$existing['last_ngo'] : '',
         'updated_at'    => current_time('mysql', 1),
     ];
 
@@ -737,60 +708,6 @@ function impactshop_identity_profile_generate_recovery_code(): string
         $raw .= $alphabet[random_int(0, strlen($alphabet) - 1)];
     }
     return substr($raw, 0, 4) . '-' . substr($raw, 4, 4) . '-' . substr($raw, 8, 4);
-}
-
-/**
- * Get last supported NGO slug for pseudo ID.
- *
- * @param string $pseudo_id Pseudo ID.
- * @return string
- */
-function impactshop_identity_profile_last_ngo(string $pseudo_id): string
-{
-    $key = impactshop_identity_profile_option_key($pseudo_id);
-    $value = get_option($key, null);
-    if (!is_array($value)) {
-        return '';
-    }
-    return isset($value['last_ngo']) && is_string($value['last_ngo']) ? $value['last_ngo'] : '';
-}
-
-/**
- * Store last supported NGO slug for pseudo ID.
- *
- * @param string $pseudo_id Pseudo ID.
- * @param string $slug NGO slug (empty to clear).
- * @return void
- */
-function impactshop_identity_profile_store_last_ngo(string $pseudo_id, string $slug): void
-{
-    $key = impactshop_identity_profile_option_key($pseudo_id);
-    $existing = get_option($key, null);
-    $payload = [
-        'nickname'      => is_array($existing) && isset($existing['nickname']) ? (string)$existing['nickname'] : '',
-        'recovery_code' => is_array($existing) && isset($existing['recovery_code']) ? (string)$existing['recovery_code'] : impactshop_identity_profile_generate_recovery_code(),
-        'last_ngo'      => sanitize_title($slug),
-        'updated_at'    => current_time('mysql', 1),
-    ];
-
-    if ($existing === null) {
-        add_option($key, $payload, '', 'no');
-        return;
-    }
-
-    update_option($key, $payload, false);
-}
-
-/**
- * Normalize recovery code for comparison (uppercase, strip non-alnum).
- *
- * @param string $recovery_code Raw recovery code.
- * @return string
- */
-function impactshop_identity_profile_normalize_recovery(string $recovery_code): string
-{
-    $recovery_code = strtoupper(trim($recovery_code));
-    return preg_replace('/[^A-Z0-9]/', '', $recovery_code) ?? '';
 }
 
 /**

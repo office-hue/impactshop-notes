@@ -12,12 +12,10 @@
 
     const config = window.impactshopAdsWatch || {};
     const restUrl = config.restUrl || '/wp-json/impact/v1/ads-watch';
+    const impactShopBaseUrl = config.impactShopBaseUrl || 'https://app.sharity.hu/impactshop/';
     const restNonce = config.restNonce || '';
-    // Base VAST tag URL without correlator - correlator added dynamically per request
-    const fallbackAdTagBase = 'https://pubads.g.doubleclick.net/gampad/ads?' +
-        'iu=/21775744923/external/single_preroll_skippable&sz=640x480&' +
-        'ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&' +
-        'unviewed_position_start=1&env=vp&impl=s';
+    // No fallback test/sample ad tags - production tags come from config
+    const fallbackAdTagBase = '';
     const i18n = config.i18n || {};
     const ngoCacheKey = 'impactshop_ads_watch_ngos_v1';
     const ngoCacheTtl = 24 * 60 * 60 * 1000;
@@ -89,12 +87,16 @@
         ctaMeta: null,
         ctaClicked: false,
         ctaClickedKeys: {},
+        ctaBonusPoints: 0,
+        ctaBonusVotes: 0,
         imaProgressFrameId: null,
         imaAdDuration: 0,
         imaClickThroughUrl: '',
         adLoadTimeout: null,
         adRequestPending: false,
-        adRequestStartTime: 0
+        adRequestStartTime: 0,
+        lastNgoSlugForBanner: '',
+        currentAutoBanner: null
     };
 
     $(document).ready(function () {
@@ -128,6 +130,7 @@
         $('#presence-confirm').on('click', confirmPresenceCheck);
         $('#btn-skip-education').on('click', skipEducationVideo);
         $('#btn-skip-video').on('click', skipCurrentVideo);
+        $('#btn-resume-ad').on('click', resumeImaAd);
         // Note: IMA CTA overlay has pointer-events: none in CSS
         // Clicks pass through to ad-container, IMA SDK opens URL
         // Points are awarded via onAdClick callback (CLICK event listener)
@@ -160,6 +163,12 @@
         $('#ngo-search-input').on('input', debounce(searchNgos, 300));
 
         $('#btn-show-all-ngos').on('click', openFullTallyModal);
+        $('#btn-show-more-ngos').on('click', function () {
+            const $list = $('#tally-list');
+            $list.attr('data-collapsed', 'false');
+            $list.find('.tally-item-hidden').removeClass('tally-item-hidden').slideDown(200);
+            $(this).slideUp(200);
+        });
         $('#full-tally-close').on('click', closeFullTallyModal);
         $('#full-tally-modal').on('click', function (e) {
             if (e.target === this) closeFullTallyModal();
@@ -225,6 +234,17 @@
 
         $('#ads-watch-cta-link').on('click', function () {
             if (!state.ctaMeta) return;
+            // Only award bonus once per video
+            if (state.ctaClicked) {
+                console.log('[Sponsor CTA] Already clicked - skipping bonus');
+                return;
+            }
+            state.ctaClicked = true;
+            // CTA bonus values
+            const ctaBonusPoints = state.ctaMeta.points || 5;
+            const ctaBonusVotes = 5;
+            state.ctaBonusPoints = ctaBonusPoints;
+            state.ctaBonusVotes = ctaBonusVotes;
             // Track CTA click
             sendCtaTracking({
                 content_type: state.ctaMeta.content_type,
@@ -239,20 +259,23 @@
             // Update available votes locally (CTA gives +5 votes)
             state.availableVotes = (state.availableVotes || 0) + 5;
             updateStatusDisplay();
-            // Show feedback for CTA click
-            showNotification('+5 pont és +5 szavazat a kattintásért!', 'success');
-            state.ctaClicked = true;
+            showCtaStickyNotice(`+${ctaBonusPoints} pont és +${ctaBonusVotes} szavazat a kattintásért!`);
         });
 
         $(document).on('click', '[data-role=auto-banner-link]', function () {
             const payload = $(this).closest('[data-role=auto-banner]').data('cta-payload');
             if (payload) {
+                // Only award bonus once per banner rotation
+                if (state.ctaClicked) {
+                    console.log('[Auto-banner CTA] Already clicked - skipping bonus');
+                    return;
+                }
+                state.ctaClicked = true;
                 sendCtaTracking(payload);
                 // Update available votes locally (CTA gives +5 votes)
                 state.availableVotes = (state.availableVotes || 0) + 5;
                 updateStatusDisplay();
-                showNotification('+5 pont és +5 szavazat a kattintásért!', 'success');
-                state.ctaClicked = true;
+                showCtaStickyNotice('+5 pont és +5 szavazat a kattintásért!');
             }
         });
     }
@@ -262,6 +285,8 @@
         const $tabButtons = $('[data-role=ads-watch-tab]');
         const $main = $('[data-role=ads-watch-main]');
         const $offerwall = $('#impactshop-offerwall');
+        const $subtitle = $('#ads-watch-subtitle-text');
+        const $infoPrimary = $('#ads-watch-info-primary');
 
         if (!$tabs.length || !$tabButtons.length || !$main.length) {
             return;
@@ -283,10 +308,32 @@
             }
         };
 
+        const headerCopy = {
+            video: {
+                subtitle: '🎬 Nézz videókat, gyűjts pontokat és szavazz!',
+                info: '🎬 <strong>Nézz videókat</strong> – minden megtekintés után pontot kapsz'
+            },
+            offerwall: {
+                subtitle: '🧩 Végezz feladatokat, gyűjts pontokat és szavazz!',
+                info: '🧩 <strong>Végezz feladatokat</strong> – minden teljesítés után pontot kapsz'
+            }
+        };
+
+        const applyHeaderCopy = function (mode) {
+            const copy = headerCopy[mode] || headerCopy.video;
+            if ($subtitle.length) {
+                $subtitle.text(copy.subtitle);
+            }
+            if ($infoPrimary.length) {
+                $infoPrimary.html(copy.info);
+            }
+        };
+
         const showVideo = function () {
             $main.prop('hidden', false);
             $offerwall.prop('hidden', true);
             $offerwall.css('display', 'none');
+            applyHeaderCopy('video');
             scrollToTarget('#ads-watch-video');
         };
 
@@ -294,6 +341,7 @@
             $main.prop('hidden', true);
             $offerwall.prop('hidden', false);
             $offerwall.css('display', '');
+            applyHeaderCopy('offerwall');
             scrollToTarget('#impactshop-offerwall');
         };
 
@@ -323,6 +371,7 @@
                 dataType: 'json',
                 timeout: 12000,
                 headers: {},
+                xhrFields: { withCredentials: true },
             };
 
             if (data && method !== 'GET') {
@@ -379,9 +428,12 @@
     }
 
     function loadUserStatus() {
+        console.log('[AdsWatch] loadUserStatus called, pseudoId:', state.pseudoId);
         apiRequest('status?ts=' + Date.now())
             .done(function (response) {
+                console.log('[AdsWatch] status response:', response);
                 if (!response || response.has_identity === false) {
+                    console.log('[AdsWatch] No identity found');
                     state.pseudoId = '';
                     state.points = 0;
                     state.level = 'basic';
@@ -504,9 +556,11 @@
 
     function updateNgoDisplay() {
         const $display = $('#selected-ngo-display');
+        // Adományozok button always points to fixed URL - no dynamic changes
 
         if (!state.pseudoId) {
             $display.removeClass('has-ngo').html(`<span class="no-ngo-text">${escapeHtml(i18n.noIdentity || 'Azonosító szükséges a pontgyűjtéshez.')}</span>`);
+            updateImpactShopLink();
             return;
         }
 
@@ -517,6 +571,26 @@
             `);
         } else {
             $display.removeClass('has-ngo').html('<span class="no-ngo-text">Még nem választottál NGO-t</span>');
+        }
+        const slug = state.selectedNgo && state.selectedNgo.slug ? String(state.selectedNgo.slug || '') : '';
+        if (slug !== state.lastNgoSlugForBanner) {
+            state.lastNgoSlugForBanner = slug;
+            updateAutoBannerLink();
+        }
+        updateImpactShopLink();
+    }
+
+    function updateImpactShopLink() {
+        const $btn = $('#ads-watch-impactshop-btn');
+        if (!$btn.length) {
+            return;
+        }
+        const base = String(impactShopBaseUrl || '').trim() || 'https://app.sharity.hu/impactshop/';
+        if (state.selectedNgo && state.selectedNgo.slug) {
+            const slug = encodeURIComponent(String(state.selectedNgo.slug));
+            $btn.attr('href', `${base}?d1=${slug}&ngo=${slug}&src=ngo-card`);
+        } else {
+            $btn.attr('href', base);
         }
     }
 
@@ -604,21 +678,36 @@
 
     function renderTally(data) {
         const $list = $('#tally-list');
+        const $showMoreBtn = $('#btn-show-more-ngos');
         const tally = data.tally || [];
+        const isCollapsed = $list.attr('data-collapsed') === 'true';
+        const VISIBLE_COUNT = 3;
 
-        $('#total-votes-display').text(formatNumber(data.total_votes || 0));
-        $('#live-activity-value').text(`${formatNumber(data.total_votes || 0)} szavazat`);
-        $('#chance-value').text(`${formatNumber(state.availableVotes)} / 10`);
+        const totalVotes = data.total_votes || 0;
+        
+        $('#total-votes-display').text(formatNumber(totalVotes));
+        
+        // Élő aktivitás: max total_votes * 3%, random variáció ±20%
+        const maxLiveActivity = Math.max(0, Math.floor(totalVotes * 0.03));
+        const liveActivityBase = maxLiveActivity > 0
+            ? Math.min(maxLiveActivity, Math.floor(Math.random() * maxLiveActivity * 0.4) + Math.floor(maxLiveActivity * 0.6))
+            : 0;
+        $('#live-activity-value').text(`${formatNumber(liveActivityBase)} szavazat`);
+        
+        // Nyeremény esély: egyelőre statikus üzenet
+        $('#chance-value').text('hamarosan');
 
         if (tally.length === 0) {
             $list.html('<div class="tally-empty">Még nincs szavazat.</div>');
+            $showMoreBtn.hide();
             return;
         }
 
         let html = '';
-        tally.forEach(function (item) {
+        tally.forEach(function (item, index) {
+            const hiddenClass = isCollapsed && index >= VISIBLE_COUNT ? 'tally-item-hidden' : '';
             html += `
-                <div class="tally-item rank-${item.rank}">
+                <div class="tally-item rank-${item.rank} ${hiddenClass}" style="${hiddenClass ? 'display:none' : ''}">
                     <div class="tally-rank">#${item.rank}</div>
                     <img src="${item.ngo_logo || '/wp-content/uploads/impactshop/ngo-card-default.jpg'}" alt="" class="tally-logo">
                     <div class="tally-name">${escapeHtml(item.ngo_name)}</div>
@@ -629,6 +718,13 @@
         });
 
         $list.html(html);
+
+        // Show/hide "Show more" button
+        if (tally.length > VISIBLE_COUNT && isCollapsed) {
+            $showMoreBtn.text(`Mutass még ${tally.length - VISIBLE_COUNT} NGO-t ▼`).show();
+        } else {
+            $showMoreBtn.hide();
+        }
     }
 
     function renderNgoList(ngos) {
@@ -914,7 +1010,18 @@
                         return;
                     }
 
-                    state.pendingAdTagUrl = response.sponsor.vast_tag || state.defaultAdTagUrl;
+                    // VAST/IMA sponsor - only if we have a valid tag URL
+                    const vastUrl = response.sponsor.vast_tag || state.defaultAdTagUrl;
+                    if (!vastUrl || vastUrl === '') {
+                        console.error('[Sponsor] No valid media source - skipping', response.sponsor);
+                        showLoading(false);
+                        state.isPlaying = false;
+                        updateWatchButton();
+                        showNotification('Nincs több videó a rendszerben, térj vissza később.', 'warning');
+                        return;
+                    }
+                    
+                    state.pendingAdTagUrl = vastUrl;
                     if (state.adDisplayContainer) {
                         state.adDisplayContainer.initialize();
                     }
@@ -1772,7 +1879,7 @@
             return;
         }
 
-        showNotification('Nincs elérhető edukációs videó.', 'warning');
+        showNotification('Nincs több videó a rendszerben, térj vissza később.', 'warning');
         resetPlayer();
     }
 
@@ -1947,7 +2054,10 @@
 
         if (!adTagUrl) {
             console.error('[IMA] requestAds failed - no VAST tag URL', diagnostics);
-            onAdError({ getError: () => ({ getMessage: () => 'No VAST tag URL configured' }) });
+            showLoading(false);
+            state.isPlaying = false;
+            updateWatchButton();
+            showNotification('Nincs több videó a rendszerben, térj vissza később.', 'warning');
             return;
         }
 
@@ -2082,8 +2192,8 @@
             return;
         }
 
-        // Compact CTA - just icon, tooltip shows reward info
-        $link.html('<span class="cta-icon">👆</span>');
+        // Sponsor CTA with icon and "Kattints ide!" text (same style as IMA CTA)
+        $link.html('<span class="ima-cta-icon">👆</span><span class="ima-cta-text">Kattints ide!</span>');
         $link.attr('href', url);
         $link.attr('title', 'Kattints a bónusz pontokért!');
         $cta.show();
@@ -2188,6 +2298,7 @@
 
         const bannerId = contentId || banner.id || '';
         const ctaPoints = Number((cta && cta.points) || 1);
+        state.currentAutoBanner = banner || null;
         const finalUrl = transformBannerUrl(
             banner.banner_url || '',
             banner.shop_slug || '',
@@ -2212,6 +2323,11 @@
         });
 
         showLoading(false);
+        showVideoInfoPanel('auto_banner', {
+            title: banner.title || 'Akciós ajánlat',
+            watchReward: '+1 pont, +1 szavazat',
+            clickReward: '+5 pont, +5 szavazat'
+        });
         startBannerProgress($banner, {
             duration: Math.max(5, Number(ttlSeconds || 5)) * 1000,
             onComplete: function () {
@@ -2243,6 +2359,7 @@
                 return;
             }
 
+            state.currentAutoBanner = banner;
             const finalUrl = transformBannerUrl(
                 banner.banner_url || '',
                 banner.shop_slug || '',
@@ -2264,6 +2381,11 @@
                 dedupe_key: buildCtaDedupe('auto_banner', banner.id || '', finalUrl || '')
             });
 
+            showVideoInfoPanel('auto_banner', {
+                title: banner.title || 'Akciós ajánlat',
+                watchReward: '+1 pont, +1 szavazat',
+                clickReward: '+5 pont, +5 szavazat'
+            });
             startBannerProgress($banner, { duration: 5000, onComplete: loadAutoBanner });
         }).fail(function () {
             $banner.prop('hidden', true);
@@ -2293,11 +2415,49 @@
         requestAnimationFrame(step);
     }
 
+    function updateAutoBannerLink() {
+        const $banner = $('[data-role=auto-banner]');
+        if (!$banner.length || !$banner.is(':visible')) {
+            return;
+        }
+        if (!state.currentAutoBanner) {
+            return;
+        }
+        const finalUrl = transformBannerUrl(
+            state.currentAutoBanner.banner_url || '',
+            state.currentAutoBanner.shop_slug || '',
+            state.selectedNgo ? state.selectedNgo.slug : ''
+        );
+        if (!finalUrl) {
+            return;
+        }
+        const bannerId = state.currentAutoBanner.id || '';
+        $banner.find('[data-role=auto-banner-link]').attr('href', finalUrl);
+        $banner.data('cta-payload', {
+            content_type: 'auto_banner',
+            content_id: bannerId,
+            cta_url: finalUrl,
+            shop_slug: state.currentAutoBanner.shop_slug || '',
+            category: state.currentAutoBanner.category || '',
+            price_range: state.currentAutoBanner.price_range || '',
+            points: 1,
+            dedupe_key: buildCtaDedupe('auto_banner', bannerId, finalUrl || '')
+        });
+    }
+
     function formatPriceLabel(banner) {
         const priceNew = Number(banner.price_new || 0);
-        const priceOld = Number(banner.price_old || 0);
+        let priceOld = Number(banner.price_old || 0);
         const discount = Number(banner.discount_percent || 0);
-        if (priceNew > 0 && priceOld > 0) {
+        
+        // If we have discount but no old price, calculate it
+        if (priceOld === 0 && priceNew > 0 && discount > 0) {
+            // new_price = old_price * (1 - discount/100)
+            // old_price = new_price / (1 - discount/100)
+            priceOld = Math.round(priceNew / (1 - discount / 100));
+        }
+        
+        if (priceNew > 0 && priceOld > 0 && priceOld !== priceNew) {
             return `${priceOld.toLocaleString('hu-HU')} Ft → ${priceNew.toLocaleString('hu-HU')} Ft`;
         }
         if (priceNew > 0) {
@@ -2372,6 +2532,8 @@
         state.adsManager.addEventListener(google.ima.AdEvent.Type.COMPLETE, onAdComplete);
         state.adsManager.addEventListener(google.ima.AdEvent.Type.SKIPPED, onAdSkipped);
         state.adsManager.addEventListener(google.ima.AdEvent.Type.CLICK, onAdClick);
+        state.adsManager.addEventListener(google.ima.AdEvent.Type.PAUSED, onAdPaused);
+        state.adsManager.addEventListener(google.ima.AdEvent.Type.RESUMED, onAdResumed);
         state.adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR, onAdError);
 
         try {
@@ -2467,6 +2629,7 @@
     function onAdComplete() {
         stopImaProgressLoop();
         hideImaCtaOverlay();
+        hideResumeButton();
         state.adProgress = 1;
         updateAdProgressBar();
         handleAdCompletion(true, state.adProgress);
@@ -2475,7 +2638,38 @@
     function onAdSkipped() {
         stopImaProgressLoop();
         hideImaCtaOverlay();
+        hideResumeButton();
         showNotification('A reklámot át kell nézni a pontokért!', 'warning');
+    }
+
+    function onAdPaused() {
+        console.log('[IMA] Ad paused - showing resume button');
+        showResumeButton();
+    }
+
+    function onAdResumed() {
+        console.log('[IMA] Ad resumed - hiding resume button');
+        hideResumeButton();
+    }
+
+    function showResumeButton() {
+        $('#btn-resume-ad').show();
+    }
+
+    function hideResumeButton() {
+        $('#btn-resume-ad').hide();
+    }
+
+    function resumeImaAd() {
+        if (state.adsManager) {
+            try {
+                state.adsManager.resume();
+                console.log('[IMA] Manually resumed ad');
+                hideResumeButton();
+            } catch (e) {
+                console.log('[IMA] Could not resume ad:', e);
+            }
+        }
     }
 
     function onAdClick() {
@@ -2519,6 +2713,7 @@
     function onAllAdsCompleted() {
         stopImaProgressLoop();
         hideImaCtaOverlay();
+        hideResumeButton();
         resetPlayer(true); // Keep progress bar visible after successful completion
     }
 
@@ -2531,6 +2726,7 @@
         state.adRequestPending = false;
         stopImaProgressLoop();
         hideImaCtaOverlay();
+        hideResumeButton();
 
         // Extract detailed error info from IMA SDK
         let errorMessage = 'Unknown error';
@@ -2588,8 +2784,15 @@
         recordAdView(adType, sponsorId, completionRatio)
             .done(function (viewResponse) {
                 const prevAvailable = Number(state.availableVotes || 0);
-                const points = viewResponse.points || 0;
-                const votes = viewResponse.votes || 0;
+                let points = viewResponse.points || 0;
+                let votes = viewResponse.votes || 0;
+                
+                // Add CTA bonus if clicked during this video
+                const ctaBonusPoints = state.ctaBonusPoints || 0;
+                const ctaBonusVotes = state.ctaBonusVotes || 0;
+                const totalPoints = points + ctaBonusPoints;
+                const totalVotes = votes + ctaBonusVotes;
+                
                 if (typeof viewResponse.new_total === 'number') {
                     state.points = viewResponse.new_total;
                 } else {
@@ -2603,16 +2806,26 @@
 
                 updateStatusDisplay();
                 updateVoteControls();
+                
+                // Store base video reward for combined display at CTA click
+                state.lastVideoRewardPoints = points;
+                state.lastVideoRewardVotes = votes;
+                
+                // Show video reward only (CTA bonus will show when clicked)
                 if (points > 0 || votes > 0) {
                     showRewardAnimation(points, votes);
                 } else {
                     showNotification('A megtekintést már rögzítettük.', 'warning');
                 }
+                
+                hideCtaStickyNotice();
                 trackEvent('ads_watch_view_complete', {
                     ad_type: adType,
                     sponsor_id: sponsorId,
                     points: points,
-                    votes: votes
+                    votes: votes,
+                    cta_bonus_points: ctaBonusPoints,
+                    cta_bonus_votes: ctaBonusVotes
                 });
                 notifyPointsUpdated();
 
@@ -2645,6 +2858,8 @@
         state.pendingAdTagUrl = '';
         state.currentMode = 'regular';
         state.imaAdDuration = 0;
+        state.ctaBonusPoints = 0;
+        state.ctaBonusVotes = 0;
         updateWatchButton();
         $('#player-overlay').fadeIn(200);
         showLoading(false);
@@ -2655,6 +2870,7 @@
         resetEducationState();
         hideVideoInfoPanel();
         hideImaCtaOverlay();
+        hideCtaStickyNotice();
 
         const adContainer = document.getElementById('ad-container');
         if (adContainer) {
@@ -2803,6 +3019,36 @@
                 $(this).remove();
             });
         }, 3000);
+    }
+
+    function showCtaStickyNotice(message) {
+        let $notif = $('#impactshop-cta-sticky');
+        if (!$notif.length) {
+            $notif = $(
+                `<div id="impactshop-cta-sticky" style="
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 25px;
+                    background: #4caf50;
+                    color: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    z-index: 100000;
+                "></div>`
+            );
+            $('body').append($notif);
+        }
+        $notif.text(message).show();
+    }
+
+    function hideCtaStickyNotice() {
+        const $notif = $('#impactshop-cta-sticky');
+        if ($notif.length) {
+            $notif.fadeOut(200, function () {
+                $(this).remove();
+            });
+        }
     }
 
     function formatNumber(num) {

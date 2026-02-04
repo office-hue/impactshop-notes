@@ -94,7 +94,14 @@ add_action('template_redirect', function(){
   $amb = isset($_GET['amb']) ? sanitize_text_field($_GET['amb']) : '';
   $src = isset($_GET['src']) ? sanitize_text_field($_GET['src']) : 'impactshop';
 
-  // 100%-ban deeplink NÉLKÜLI Dognet-link generálás
+  // Deeplink csak akkor, ha a host Árukereső (különben whitelistes hiba lehet)
+  $deeplink = '';
+  if (!empty($_GET['u'])) {
+    $u_host = parse_url($_GET['u'], PHP_URL_HOST);
+    if (iahg_is_arukereso_host($u_host)) $deeplink = $_GET['u'];
+  }
+
+  // Dognet-link generálás, deeplink csak Árukereső hostra
   $final = '';
   $cid = 0;
 
@@ -102,13 +109,15 @@ add_action('template_redirect', function(){
     $cid = dognet_extract_campaign_id_from_base($row['dognet_base']);
   }
   if ($cid && function_exists('dognet_api_generate_link')) {
-    $api = dognet_api_generate_link($cid, /* deeplink: */ '', $ngo, '');
+    $api = dognet_api_generate_link($cid, $deeplink, $ngo, '');
     if (!is_wp_error($api) && $api) $final = $api;
   }
   if (!$final) {
     $base = $row['dognet_base'] ?? '';
     if (!$base) return; // nincs mit tenni, hagyjuk a fő snippetet
-    $final = $base . ((strpos($base,'?')===false)?'?':'&') . http_build_query(['d1'=>$ngo]);
+    $qs = ['d1' => $ngo];
+    if ($deeplink !== '') $qs['url'] = $deeplink;
+    $final = $base . ((strpos($base,'?')===false)?'?':'&') . http_build_query($qs);
   }
 
   // UTM/amb/src propagáció és kilépés – így a fő snippet már nem fut le duplán

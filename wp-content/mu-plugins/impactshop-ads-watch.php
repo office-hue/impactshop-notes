@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.0');
+define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.2');
 define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '6');
 define('IMPACTSHOP_ADS_DONATION_POOL', 500000); // Ft
 
@@ -786,16 +786,10 @@ function impactshop_ads_watch_sponsor_meta_box_render(WP_Post $post): void
             </td>
         </tr>
         <tr>
-            <th scope="row"><label for="impactshop_sponsor_cta_label">CTA gomb felirat</label></th>
-            <td>
-                <input type="text" name="impactshop_sponsor_cta_label" id="impactshop_sponsor_cta_label" class="regular-text" value="<?php echo esc_attr($settings['cta_label']); ?>">
-                <p class="description">Például: Tudj meg többet.</p>
-            </td>
-        </tr>
-        <tr>
             <th scope="row"><label for="impactshop_sponsor_cta_url">CTA gomb link</label></th>
             <td>
                 <input type="url" name="impactshop_sponsor_cta_url" id="impactshop_sponsor_cta_url" class="regular-text" value="<?php echo esc_attr($settings['cta_url']); ?>">
+                <p class="description">A CTA gomb felirata fix: "Kattints ide!"</p>
             </td>
         </tr>
         <tr>
@@ -1138,15 +1132,10 @@ function impactshop_ads_watch_education_meta_box_render(WP_Post $post): void
             </td>
         </tr>
         <tr>
-            <th scope="row"><label for="impactshop_edu_cta_label">CTA gomb felirat</label></th>
-            <td>
-                <input type="text" name="impactshop_edu_cta_label" id="impactshop_edu_cta_label" class="regular-text" value="<?php echo esc_attr($settings['cta_label']); ?>">
-            </td>
-        </tr>
-        <tr>
             <th scope="row"><label for="impactshop_edu_cta_url">CTA gomb link</label></th>
             <td>
                 <input type="url" name="impactshop_edu_cta_url" id="impactshop_edu_cta_url" class="regular-text" value="<?php echo esc_attr($settings['cta_url']); ?>">
+                <p class="description">A CTA gomb felirata fix: "Kattints ide!"</p>
             </td>
         </tr>
     </table>
@@ -1520,6 +1509,25 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
     $auto_banner = function_exists('impactshop_auto_banner_get_active') ? impactshop_auto_banner_get_active() : [];
     $has_banner = !empty($auto_banner);
     $has_sponsor = !empty($sponsor);
+    $force_banner = ($ad_tag_url === '' && $has_banner);
+
+    if ($has_sponsor) {
+        $media_type = (string) ($sponsor['media_type'] ?? '');
+        $has_valid_media = false;
+
+        if ($media_type === 'youtube') {
+            $has_valid_media = !empty($sponsor['youtube_id']) || !empty($sponsor['youtube_url']);
+        } elseif ($media_type === 'mp4') {
+            $has_valid_media = !empty($sponsor['media_url']);
+        } else {
+            $has_valid_media = !empty($sponsor['vast_tag']) || $ad_tag_url !== '';
+        }
+
+        if (!$has_valid_media) {
+            $has_sponsor = false;
+            $sponsor = [];
+        }
+    }
     $rotation = impactshop_ads_watch_get_rotation_state($pseudo_id);
 
     $weights = [
@@ -1530,6 +1538,9 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
     ];
 
     if ((int) ($rotation['ad_streak'] ?? 0) >= IMPACTSHOP_ADS_ROTATE_MAX_AD_STREAK) {
+        $weights['regular'] = 0;
+    }
+    if ($force_banner) {
         $weights['regular'] = 0;
     }
 
@@ -1710,6 +1721,31 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
 
         $weights['regular'] = max(0, (int) $weights['regular']);
         break;
+    }
+
+    if ($force_banner && $has_banner) {
+        $content_id = $auto_banner['id'] > 0
+            ? 'banner:' . $auto_banner['id']
+            : 'banner:' . md5(wp_json_encode($auto_banner));
+        $cta = impactshop_ads_watch_build_cta(
+            $cta_label,
+            $auto_banner['banner_url'] !== '' ? $auto_banner['banner_url'] : $cta_url,
+            $cta_points_banner
+        );
+        $cta['dedupe_key'] = impactshop_ads_watch_build_cta_dedupe($pseudo_id, $content_id);
+        return new WP_REST_Response([
+            'mode' => 'auto_banner',
+            'content_type' => 'auto_banner',
+            'content_id' => $content_id,
+            'auto_banner' => $auto_banner,
+            'reward_rules' => [
+                'points' => IMPACTSHOP_ADS_POINTS_BANNER,
+                'votes' => IMPACTSHOP_ADS_VOTES_BANNER,
+                'cta_points' => $cta_points_banner,
+            ],
+            'cta' => $cta,
+            'ttl_seconds' => 5,
+        ], 200);
     }
 
     $cta = impactshop_ads_watch_build_cta($cta_label, $cta_url, $cta_points_regular);
@@ -2969,11 +3005,18 @@ function impactshop_ads_watch_get_ngo_logo_from_dataset(string $slug): string
 
 function impactshop_ads_watch_get_ad_tag_url(): string
 {
-    $default = 'https://pubads.g.doubleclick.net/gampad/ads?'
-        . 'iu=/21775744923/external/single_preroll_skippable&sz=640x480&'
-        . 'ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&'
-        . 'unviewed_position_start=1&env=vp&impl=s&correlator=' . time();
+    // Default: empty string - no test/sample ads
+    // Production ad tags should be provided via filter: 'impactshop_ads_watch_ad_tag_urls' or 'impactshop_ads_watch_ad_tag_url'
+    $default = '';
     $urls = apply_filters('impactshop_ads_watch_ad_tag_urls', []);
+    if (!is_array($urls) || empty($urls)) {
+        $option_urls = get_option('impactshop_ads_watch_ad_tag_urls', []);
+        if (is_array($option_urls)) {
+            $urls = $option_urls;
+        } elseif (is_string($option_urls) && $option_urls !== '') {
+            $urls = preg_split('/\r\n|\r|\n/', $option_urls);
+        }
+    }
     if (is_array($urls) && !empty($urls)) {
         $urls = array_values(array_filter($urls, 'is_string'));
         if (!empty($urls)) {
@@ -2983,6 +3026,12 @@ function impactshop_ads_watch_get_ad_tag_url(): string
     }
 
     $url = (string) apply_filters('impactshop_ads_watch_ad_tag_url', $default);
+    if ($url === '') {
+        $option_url = get_option('impactshop_ads_watch_ad_tag_url', '');
+        if (is_string($option_url)) {
+            $url = $option_url;
+        }
+    }
     return esc_url_raw($url);
 }
 
@@ -3388,6 +3437,7 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         'donationPool'   => IMPACTSHOP_ADS_DONATION_POOL,
         'filloutFormId'  => $atts['fillout_form_id'],
         'adTagUrl'       => impactshop_ads_watch_get_ad_tag_url(),
+        'impactShopBaseUrl' => site_url('/impactshop/'),
         'unifiedDisplay' => (bool) apply_filters('impactshop_ads_watch_unified_display', true),
         'i18n'           => [
             'selectNgo'     => 'Válassz NGO-t',
@@ -3408,15 +3458,16 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
     ?>
     <div class="impactshop-ads-watch-container" id="impactshop-ads-watch">
         <div class="ads-watch-header">
-            <h2><?php echo esc_html($atts['title']); ?></h2>
+            <h2>Aktivitás = Adomány</h2>
             <div class="ads-watch-subtitle">
-                <span class="subtitle-text">🎬 Nézz videókat, gyűjts pontokat és szavazz!</span>
+                <span class="subtitle-text" id="ads-watch-subtitle-text">🎬 Nézz videókat, gyűjts pontokat és szavazz!</span>
                 <button type="button" class="info-trigger" aria-label="Információ" data-info-trigger>i</button>
                 <div class="info-popover" data-info-popover hidden>
-                    Minden megtekintett videó után pontot kapsz, ami növeli a szintedet és a szavazati erődet.
-                    Minden megtekintett videó után a szintednek megfelelő szavazatszámot is kapsz, amit leadhatsz
-                    egy általad választott szervezetre. A szervezetek a szavazatszámok arányában részesülnek az
-                    adományalapból.
+                    <strong>Hogyan működik?</strong><br><br>
+                    <span id="ads-watch-info-primary">🎬 <strong>Nézz videókat</strong> – minden megtekintés után pontot kapsz</span><br><br>
+                    📈 <strong>Emelkedj szintet</strong> – a pontjaid növelik a szinted és a szavazati erőd<br><br>
+                    🗳️ <strong>Szavazz</strong> – add le szavazataidat egy általad választott szervezetre<br><br>
+                    💰 <strong>Támogass</strong> – a szervezetek a szavazatok arányában részesülnek az adományalapból
                 </div>
             </div>
             <div class="donation-pool-display">
@@ -3425,9 +3476,11 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
             </div>
         </div>
 
-        <div class="ads-watch-tabs" data-role="ads-watch-tabs" hidden>
+        <div class="ads-watch-floating-tabs" data-role="ads-watch-tabs">
             <button type="button" class="ads-watch-tab is-active" data-role="ads-watch-tab" data-target="video">🎬 Videó</button>
             <button type="button" class="ads-watch-tab" data-role="ads-watch-tab" data-target="offerwall">🎁 Feladatok</button>
+            <a href="<?php echo esc_url(site_url('/impactshop/')); ?>" class="ads-watch-tab ads-watch-impactshop-btn" data-role="impactshop-btn" id="ads-watch-impactshop-btn" target="_blank" rel="noopener">🛍️ Impact Shop</a>
+            <a href="https://adomany.sharity.hu/kampanyok" class="ads-watch-tab ads-watch-donate-btn" data-role="donate-btn" id="ads-watch-donate-btn" target="_blank" rel="noopener">❤️ Adományozok</a>
         </div>
 
         <div class="ads-watch-main" data-role="ads-watch-main">
@@ -3520,8 +3573,14 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                 <div id="ad-container"></div>
                 <button type="button" class="ima-cta-overlay" id="ima-cta-overlay" style="display: none;" title="Kattints a bónusz pontokért!">
                     <span class="ima-cta-icon">👆</span>
-                    <span class="ima-cta-text">+5 pont</span>
+                    <span class="ima-cta-text">Kattints a videóra!</span>
                 </button>
+                <div class="ads-watch-cta sponsor-cta-overlay" id="ads-watch-cta" style="display: none;">
+                    <a href="#" target="_blank" rel="noopener" id="ads-watch-cta-link" title="Kattints a bónusz pontokért">
+                        <span class="ima-cta-icon">👆</span>
+                        <span class="ima-cta-text">Kattints ide!</span>
+                    </a>
+                </div>
                 <div class="education-iframe" id="education-iframe" style="display: none;"></div>
                 <div class="presence-check-overlay" id="presence-check-overlay" style="display: none;" aria-live="polite">
                     <div class="presence-check-title">Még itt vagy?</div>
@@ -3542,12 +3601,6 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                 <div class="spinner"></div>
                 <span>Reklám betöltése...</span>
             </div>
-            <div class="ads-watch-cta sponsor-cta-overlay" id="ads-watch-cta" style="display: none;">
-                <a href="#" target="_blank" rel="noopener" id="ads-watch-cta-link" title="Kattints a bónusz pontokért">
-                    <span class="ima-cta-icon">👆</span>
-                    <span class="ima-cta-text">Click here!</span>
-                </a>
-            </div>
             <div class="ad-progress-bar" id="ad-progress-bar" style="display: none;">
                 <div class="ad-progress-fill" id="ad-progress-fill"></div>
             </div>
@@ -3560,6 +3613,9 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
             </div>
             <button type="button" class="btn-skip-video" id="btn-skip-video" style="display: none;">
                 Videó kihagyása
+            </button>
+            <button type="button" class="btn-resume-ad" id="btn-resume-ad" style="display: none;">
+                ▶ Folytatás
             </button>
             <div class="video-info-panel" id="video-info-panel" style="display: none;">
                 <div class="video-info-title">
@@ -3626,13 +3682,19 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         </div>
 
         <div class="ads-watch-tally" id="ads-watch-vote">
-            <h3>Top 10 NGO</h3>
+            <div class="tally-header" data-role="tally-toggle" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <h3 style="margin:0">Top 10 NGO</h3>
+                <span class="tally-collapse-icon" data-role="tally-icon" style="font-size:18px;transition:transform .2s">▼</span>
+            </div>
             <div class="tally-info">
                 <span>Összes szavazat: <strong id="total-votes-display">-</strong></span>
             </div>
-            <div class="tally-list" id="tally-list">
+            <div class="tally-list" id="tally-list" data-collapsed="true">
                 <div class="tally-loading">Betöltés...</div>
             </div>
+            <button type="button" class="btn-show-more-ngos" id="btn-show-more-ngos" style="display:none">
+                Mutass többet ▼
+            </button>
             <button type="button" class="btn-show-all-ngos" id="btn-show-all-ngos">
                 Teljes lista megtekintése
             </button>
