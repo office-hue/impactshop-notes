@@ -62,6 +62,24 @@
       "owner_branch": "ops/adswatch-clean"
     },
     {
+      "path": "wp-content/mu-plugins/impactshop-offerwall-survey.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-offerwall-survey-data/question_mapping.csv",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-offerwall-survey-data/segment_taxonomy.csv",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
       "path": "wp-content/mu-plugins/impactshop-click-tracking.php",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",

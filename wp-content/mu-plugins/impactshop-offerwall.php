@@ -208,6 +208,15 @@ function impactshop_offerwall_signature_valid(array $params, array $provider): b
         return false;
     }
 
+    if (($provider['signature_mode'] ?? '') === 'canonical_v1') {
+        $user_id = (string) ($params['user_id'] ?? $params['pseudo_id'] ?? $params['ext_user_id'] ?? '');
+        $payout = (string) ($params['payout'] ?? $params['amount'] ?? $params['amount_usd'] ?? 0);
+        $timestamp = (string) ($params['timestamp'] ?? '');
+        $canonical = $transaction_id . '|' . $user_id . '|' . $payout . '|' . $timestamp;
+        $expected = hash_hmac('sha256', $canonical, $secret);
+        return hash_equals($expected, $signature);
+    }
+
     $candidates = [
         hash_hmac('sha256', $transaction_id, $secret),
         md5($transaction_id . $secret),
@@ -256,7 +265,7 @@ function impactshop_offerwall_build_iframe_url(array $provider, string $pseudo_i
         $url = add_query_arg($hash_param, $hash, $url);
     }
 
-    return $url;
+    return apply_filters('impactshop_offerwall_iframe_url', $url, $provider, $pseudo_id);
 }
 
 function impactshop_offerwall_get_iframe_url(WP_REST_Request $request): WP_REST_Response

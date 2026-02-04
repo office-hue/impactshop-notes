@@ -4,6 +4,13 @@
 - Platform: WordPress (ImpactShop)
 - Fő téma: akciós kártyák linkjei → ne a shop főoldalra, hanem termékoldalra vigyenek.
 
+### 2026-02-03 – Bastion kiegészítő terv: Codex javaslatok
+
+- **Cél:** Koherencia és biztonsági vizsgálat eredményeinek rögzítése a kiegészítő tervben.
+- **Változás:** Új „Codex Biztonsági és Koherencia Javaslatok” szekció hozzáadva.
+- **Új pontok:** symlink/path canonicalization, config provenance pinning, log redaction, TOCTOU mitigáció, ownership map koherencia ellenőrzés.
+- **Érintett fájl:** `docs/bastion-protection-extension-plan.md`
+
 ### 2026-02-01 – Unified Video Info Panel + CTA egyszerűsítés
 
 - **Kérés:** Minden videó (education, sponsor, auto_banner, regular) alá kerüljön tájékoztató panel + skip gomb, mint az edukációnál.
@@ -4669,3 +4676,409 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - **Staging deploy:** `bin/impactshop-guard-deploy.sh --staging` -> snapshot `.codex/guard-snapshots/deploy-20260201-173006`.
 - **Prod deploy:** `bin/impactshop-guard-deploy.sh --production` -> snapshot `.codex/guard-snapshots/deploy-20260201-173053`.
 - **Backup/rollback (aktualis):**  (mu-plugin visszaallitas).
+### 2026-02-02 – Dognet old_price AppScript javitas (backup)
+- **AppScript:** `wp-content/google-sheets-scripts/Code.gs`, `wp-content/google-sheets-scripts/ArukeresoRunners.gs` -> ARU old_price tag lista bovitve.
+- **Doksi:** `wp-content/google-sheets-scripts/README.md` szinkronizalva.
+- **Backup/rollback:** `.codex/backups/20260202-114954-dognet-oldprice/` (Code.gs + ArukeresoRunners.gs + README.md masolat).
+### 2026-02-02 – Dognet sale_price preferencia fix
+- **Bug ok:** ARU parser a `price` mezot preferalta, igy ha `sale_price` alacsonyabb, a publikus ar maradt a regi ar.
+- **Fix:** ha `sale_price` < `price`, akkor `price = sale_price`, `old_price = price`.
+### 2026-02-02 – Feladatok (kérdőív) interim terv
+- **Terv:** `docs/offerwall-survey-plan.md` – belső provider + HMAC postback, IP allowlist, idempotencia.
+### 2026-02-02 – Feladatok (kérdőív) részletes terv + review
+- **Terv frissítve:** `docs/offerwall-survey-plan.md` (impactad target, single choice, 10+10 jutalom, biztonsági/koherencia review).
+### 2026-02-02 – Identity panel output fix
+- **Bug ok:** `wp-content/mu-plugins/impactshop-identity-panel.php` elején markdown kép szöveg volt a `<?php` előtt.
+- **Hatás:** header/cookie + REST válaszok sérültek, identity panel adatok nem töltődtek.
+- **Fix:** a nyers markdown sor eltávolítva.
+### 2026-02-02 – Guard config tisztitas (hiányzó fájlok)
+- **Ok:** a guard listában szereplő fájlok nem léteznek ebben a repo-ban.
+- **Valtozas:** eltavolitva a nem letezo elemek a `docs/impactshop-guard-config.json`-bol.
+### 2026-02-02 – Deploy attempt (staging) – sikertelen
+- **Guard approve:** lefutott, hash + audit frissult.
+- **Preflight:** totals endpoint lassu figyelmeztetes (2021ms > 2000ms), többi OK.
+- **Deploy hiba:** SSH permission denied `sharityh@cp40.ezit.hu` – rsync nem futott, production nem indult.
+- **Folyamat status:** staging+prod deploy scan függő (SSH kulcs/host ellenorzes kell).
+### 2026-02-02 – SSH host frissites (tarhelyköltözés)
+- **Irányadó:** `impactall` szerint a host `sharityh@s59.tarhely.com`.
+- **Fajlok frissitve:** `.deploy.staging.env`, `.deploy.production.env`, kapcsolodo docs (ai-agent-roadmap, system-update-prep, coupon-harvester, prod-guard-checklist).
+### 2026-02-02 – Deploy (staging + production) – sikeres
+- **Staging:** preflight OK, rsync OK, cache/cron/rewrite flush OK. Snapshot: `deploy-20260202-162243`.
+- **Production:** preflight OK, rsync OK, cache/cron/rewrite flush OK. Snapshot: `deploy-20260202-162331`.
+- **Megjegyzes:** `impactshop-dognet-report` plugin sync kihagyva (nincs helyi mappa).
+### 2026-02-02 – Identity panel teljes UI visszaallas (helyi)
+- **Ok:** a rövidített shortcode UI nem tartalmazta a pont/szint/előny/szabadság blokkokat.
+- **Fix:** teljes markup + külső JS (impactshop-identity-panel.js) visszakötve; restore mezők autocomplete javítva.
+### 2026-02-02 – Identity panel deploy (staging + production)
+- **Staging:** snapshot `deploy-20260202-163809`, preflight OK, rsync OK.
+- **Production:** snapshot `deploy-20260202-163906`, preflight OK, rsync OK.
+- **Megjegyzes:** `impactshop-dognet-report` plugin sync kihagyva (nincs helyi mappa).
+
+### 2026-02-02 – Identity ID compact progress fix (helyi)
+- **Ok:** compact shortcode nem frissitette a progress bar/text mezoket, mert a JS csak full panel elemre gate-elt.
+- **Fix:** progress frissites bekapcsolva compact-only esetben is (impactshop-identity-panel.js).
+
+### 2026-02-02 – Deploy (staging + production) + smoke
+- **Staging:** deploy OK, snapshot `deploy-20260202-170028`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-170320`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott; full scan tiltott (IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+- **Smoke:** `bin/staging-qa-suite.sh` nem futott le (SSH connection failed – cPanel SSH enable).
+
+### 2026-02-02 – Ads watch no-video message
+- **Valtozas:** ha nincs elerheto video, nem hibazik, hanem "Nincs tobb video a rendszerben, terj vissza kesobb." uzenet jelenik meg (sponsor + edukacios).
+
+### 2026-02-02 – Identity panel labels
+- **Valtozas:** "Jelvényeid" -> "Legacy Wall", "HeroWall" -> "Legacy Pool".
+
+### 2026-02-02 – Badge chip background
+- **Valtozas:** badge chipek szurke hattere eltavolitva (impactshop-identity-panel.php CSS).
+
+### 2026-02-02 – Vacation toggle nonce fix
+- **Valtozas:** vacation toggle POST-hoz X-WP-Nonce header, hibauzenet megjelenitese sikertelen POST eseten (impactshop-identity-panel.js).
+
+### 2026-02-02 – Bastion protection plan update
+- **Valtozas:** terv koherencia+biztonsagi javitasok: guard-deploy mint egyetlen deploy ut, protected files forrasa egysitese, retention 2 naphoz igazitas, safe-deploy reszlet eltavolitva.
+
+### 2026-02-02 – Deploy (staging + production) – all fixes
+- **Staging:** deploy OK, snapshot `deploy-20260202-172643`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-172728`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – Bastion protection plan (lock)
+- **Valtozas:** szerver oldali irasi lock beemelve (immutable/chmod/ACL), prioritasok es fazisok frissitve.
+
+### 2026-02-02 – Mini ID restore enhancements
+- **Valtozas:** mini ID: koszonto, mentés gomb, panel/restore linkek, recovery adat es hidden mezok; panelben anchor id-k. JS: save-password-manager click handler + mentés logika refaktor.
+
+### 2026-02-02 – Deploy (staging + production) – mini ID enhancements
+- **Staging:** deploy OK, snapshot `deploy-20260202-174550`, preflight totals warn 2688ms, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-174652`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – Shortcode restore
+- **Valtozas:** impactshop_netflix shortcode alias hozzadva a banners deals MU pluginhez (sharity-impact-banners-deals.php).
+
+### 2026-02-02 – Shortcode restore deploy
+- **Staging:** deploy OK, snapshot `deploy-20260202-175627`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-175734`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – Guard restore + missing files
+- **Valtozas:** hianyzo guard-fajlok visszahozva staging release-bol (impactshop-netflix-shortcodes, impactshop-rest-totals, impactshop-rest-coupons, impactshop-full-leaderboard, impactshop-ngo-card, impactshop-go-bridge, impactshop-sum-pack, Hirdetesi fio… terv).
+- **Valtozas:** guard configba visszakerultek a védett elemek + NGO card JS placeholder.
+- **Valtozas:** bastion tervbe bekerult a helyreallitasi forras (staging releases / prod backup).
+
+### 2026-02-02 – Guard restore deploy
+- **Staging:** deploy OK, snapshot `deploy-20260202-180723`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-180808`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – Leaderboard limit + styles
+- **Valtozas:** impact_leaderboard limit parameter kezelt, API rows/data normalizalas; uj CSS a legacy leaderboard olvashatosaghoz.
+
+### 2026-02-02 – Leaderboard fix deploy
+- **Staging:** deploy OK, snapshot `deploy-20260202-181721`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-181812`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – Bastion plan konszolidalas + mini ID anchor
+- **Valtozas:** bastion vedelmi terv osszefesulve es koherencia/biztonsagi javitasok atvezetve.
+- **Valtozas:** mini ID “A fiokom kezelese” link `#impactshop-account-top` anchorra mutat.
+
+### 2026-02-02 – Deploy (staging + production) – bastion plan + mini ID anchor
+- **Staging:** deploy OK, snapshot `deploy-20260202-182312`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-182415`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – Leaderboard limit + olvashatosag + NGO card fallback
+- **Valtozas:** sharity-impact-mini leaderboard limit param es adat normalizalas; light theme CSS olvashatosaghoz.
+- **Valtozas:** NGO card map fallback (uploads), leaderboard REST fallback totals hiba eseten.
+
+### 2026-02-02 – Deploy (staging + production) – leaderboard + NGO card fix
+- **Staging:** deploy OK, snapshot `deploy-20260202-202355`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-202443`, preflight 1 warning (leaderboard(ngo) slow 4952ms), rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – NGO card CSV encoding fix
+- **Valtozas:** NGO CSV label normalizalas (Windows-1250/ISO-8859-2 → UTF-8) a hibas karakterek javitasahoz.
+
+### 2026-02-02 – Deploy (staging + production) – NGO card encoding fix
+- **Staging:** deploy OK, snapshot `deploy-20260202-203222`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-203326`, preflight 2 warnings (ticker/activity lassu), rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – NGO card CSV sync + prewarm kiserlet
+- **CSV:** friss ngo_codes.csv feltoltve `app/wp-content/uploads/ngo_codes.csv`.
+- **Prewarm:** /wp-json/impact/v1/ngo-card/<slug> hivasok timeouttal elhaltak (12s, HTTP 000). 
+
+### 2026-02-02 – NGO card encoding fix (CP1250)
+- **Valtozas:** mb_detect_encoding invalid "Windows-1250" csere CP1250-ra + elerheto encodings szuro.
+
+### 2026-02-02 – NGO card deploy (CP1250 fix)
+- **Staging:** deploy OK, snapshot `deploy-20260202-205403`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-205453`, preflight OK, rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – NGO card prewarm (targeted)
+- **Prewarm:** teljes tombos prewarm parhuzamosan timeoutolt; celzott 20 slug szekvencialisan sikeres.
+
+### 2026-02-02 – NGO card WP-CLI prewarm parancs
+- **Valtozas:** wp-cli parancs: `wp impactshop ngo-card prewarm --file=<slugs.txt> --batch=20 --sleep=1`.
+
+### 2026-02-02 – Deploy (staging + production) – NGO card WP-CLI
+- **Staging:** deploy OK, snapshot `deploy-20260202-210841`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260202-210939`, preflight 1 warning (totals lassu), rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-02 – NGO card prewarm (batched, prod)
+- **Prewarm:** nohup job inditva (prod), log: `/tmp/ngo_prewarm.log` (utolso: batch 20/222).
+
+### 2026-02-02 – NGO card frontend runtime
+- **Valtozas:** impactshop-ngo-card.js most REST alapu renderelo (data-ngo-card hostokra).
+
+### 2026-02-03 – Deploy (staging + production) – NGO card runtime
+- **Staging:** deploy OK, snapshot `deploy-20260203-060149`, preflight 1 warning (totals lassu), rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260203-060247`, preflight 1 warning (totals lassu), rsync OK.
+- **Scan:** impactall lefutott (full scan tiltva: IMPACTSHOP_ALLOW_FULL_SCAN=1 nincs).
+
+### 2026-02-03 – NGO card legacy UI visszaallitas (frontend)
+- **Valtozas:** impactshop-ngo-card.js visszaallitva a korabbi uveglap-stilusra (logo + uzenetek + 3 gomb).
+
+### 2026-02-03 – Deploy (staging + production) – NGO card legacy UI
+- **Staging:** deploy OK, snapshot `deploy-20260203-070330`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260203-070438`, preflight OK, rsync OK.
+- **Smoke:** UI smoke (impactshop_teszt) nem futtathato innen – nincs bongeszo hozzaferes.
+
+### 2026-02-03 – NGO card JS visszaallitas backupbol
+- **Valtozas:** impactshop-ngo-card.js visszaallitva a /Users/bujdosoarnold/Developer/GitHub/impactshop-notes/NGO card backup/impactshop-ngo-card.js verziora.
+
+### 2026-02-03 – Deploy (staging + production) – NGO card JS backup verzio
+- **Staging:** deploy OK, snapshot `deploy-20260203-074750`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260203-074857`, preflight OK, rsync OK.
+
+### 2026-02-03 – NGO share oldal javitas (backup PHP visszaallitas + CSV nev)
+- **Valtozas:** impactshop-ngo-card.php visszaallitva a backup verziora (share handler + rewrite), CSV nevfeloldas + WP-CLI prewarm visszaadva.
+
+### 2026-02-03 – Deploy (staging + production) – NGO share javitas
+- **Staging:** deploy OK, snapshot `deploy-20260203-081820`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260203-081933`, preflight OK, rsync OK.
+
+### 2026-02-03 – Identity panel gombok javitas (Opus ellenorzes)
+- **Valtozas:** visszaallitva az /identity/total + /identity/refresh-nonce endpointok es a nonce auth bypass; JS ujra kap friss nonce-t.
+
+### 2026-02-03 – Deploy (staging + production) – Identity panel gombok
+- **Staging:** deploy OK, snapshot `deploy-20260203-083813`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260203-083926`, preflight OK, rsync OK.
+
+### 2026-02-03 – NGO card fatal fix (rank mode fallback)
+- **Valtozas:** impactshop_rank_mode_for_position + impactshop_mode_donation_rate fallbackok visszaadva a NGO card backendbe.
+
+### 2026-02-03 – Deploy (staging + production) – NGO card fatal fix
+- **Staging:** deploy OK, snapshot `deploy-20260203-090533`, preflight OK, rsync OK.
+- **Production:** deploy OK, snapshot `deploy-20260203-090641`, preflight OK, rsync OK.
+
+## 2026-02-03
+- Ads Watch: ad tag URL fallback now reads WP option(s) (impactshop_ads_watch_ad_tag_url(s)); missing VAST tag now shows 'Nincs több videó...' instead of hard error.
+- Pending: deploy + impactall + UI smoke (impactad-2) to confirm video CTA/data load with configured ad tag option.
+
+- Deploy staging snapshot: deploy-20260203-094324 (ads-watch option fallback + no-video warning).
+- Deploy production snapshot: deploy-20260203-094439 (ads-watch option fallback + no-video warning).
+- impactall futtatva (full scan tiltva IMPACTSHOP_ALLOW_FULL_SCAN=1 miatt).
+- Guard deploy: bin/impactshop-guard-deploy.sh empty-ARGS fix (set -u safe).
+- Mini ID panel címke: Azonosítód -> Fiókom (impactshop_identity_id shortcode).
+- Deploy staging snapshot: deploy-20260203-095601 (mini ID title -> Fiókom).
+- Deploy production snapshot: deploy-20260203-095707 (mini ID title -> Fiókom).
+- Identity ID: broadcast message field (WP Admin Reading) + display under compact panel; 300 char limit with link support.
+- Deploy staging snapshot: deploy-20260203-101441 (identity broadcast message field).
+- Deploy production snapshot: deploy-20260203-101558 (identity broadcast message field).
+- Leaderboard fix: added Dognet raw conversions helpers (dognet_api_list_conversions_all/batch + status map) to impactshop-netflix-shortcodes.php to restore /impact/v1/leaderboard data.
+- Impact Ad floating bar: added Impact Shop button with NGO-aware URL (d1/ngo/src=ngo-card) in ads-watch.
+- Leaderboard: fallback NGO label added when data1 missing, so shop/ngo lists don't come back empty.
+- Deploy staging snapshot: deploy-20260203-105041 (leaderboard unknown NGO fallback).
+- Deploy production snapshot: deploy-20260203-105233 (leaderboard unknown NGO fallback).
+- Impact bridge local: NGO picker fallback to '(ismeretlen NGO)' so leaderboard/ticker/totals no longer empty when data1 missing.
+- Deploy staging snapshot: deploy-20260203-105842 (impact-bridge-local unknown NGO fallback).
+- Deploy production snapshot: deploy-20260203-105955 (impact-bridge-local unknown NGO fallback).
+- Impact bridge local: leaderboard/ticker now use IMPACTSHOP_METRICS_FROM (with optional from/to params) to avoid empty month-only lists.
+- Deploy staging snapshot: deploy-20260203-110610 (impact-bridge-local leaderboard/ticker date range fix).
+- Deploy production snapshot: deploy-20260203-110732 (impact-bridge-local leaderboard/ticker date range fix).
+- Leaderboard default status switched to all in impactshop-metrics-ngo to avoid empty lists when approved data missing.
+- Deploy staging snapshot: deploy-20260203-111205 (leaderboard status default -> all).
+- Deploy production snapshot: deploy-20260203-111315 (leaderboard status default -> all).
+- Impact bridge local: default metrics start date fallback set to 2025-10-23 (when IMPACTSHOP_METRICS_FROM undefined).
+- Deploy staging snapshot: deploy-20260203-111725 (impact-bridge-local default from fallback).
+- Deploy production snapshot: deploy-20260203-111835 (impact-bridge-local default from fallback).
+- Metrics defaults: fallback start date set to last 90 days (when IMPACTSHOP_METRICS_FROM undefined) in impactshop-metrics-ngo and impact-bridge-local.
+- Deploy staging snapshot: deploy-20260203-112929 (metrics default from last 90 days).
+- Deploy production snapshot: deploy-20260203-113053 (metrics default from last 90 days).
+- Deploy staging snapshot: deploy-20260203-113906 (Impact Shop button added to Impact Ad floating bar).
+- Deploy production snapshot: deploy-20260203-114028 (Impact Shop button added to Impact Ad floating bar).
+- Leaderboard: sharity-impact-mini switched to HUF display, filters unknown NGO entries, limit works after filter; uses impactshop_huf_rate option.
+- Full leaderboard: filters unknown NGO, totals metric now sourced from /impact/v1/totals to match sticky total.
+- Deploy staging snapshot: deploy-20260203-115233 (leaderboard HUF + unknown NGO filter + totals sync).
+- Deploy production snapshot: deploy-20260203-115356 (leaderboard HUF + unknown NGO filter + totals sync).
+- Impact Shop floating tab: brighter gradient + opens in new tab.
+- Full leaderboard shortcode defaults: use last 90 days for from; rate_huf uses impactshop_huf_rate option fallback (392).
+- Impact Shop: NGO banner now includes 'Másik szervezetet támogatok' link (clears d1/ngo); Fillout URL fallback normalized via impactshop_get_fillout_url in netflix/coupons/deals CTA builders to avoid default NGO when no d1.
+- Deploy staging snapshot: deploy-20260203-145129 (Impact Shop NGO banner change + Fillout fallback + full leaderboard defaults).
+- Deploy production snapshot: deploy-20260203-145247 (Impact Shop NGO banner change + Fillout fallback + full leaderboard defaults).
+- Impact Shop metrics defaults: leaderboard/ticker/sticky now use fixed from=2025-10-23 in impactshop-metrics-ngo, impact-bridge-local, impactshop-full-leaderboard.
+- Default d1 helper: skip rewriting Fillout links so no default NGO is injected when d1 missing (Impact Shop flow stays on Fillout).
+- Deploy staging snapshot: deploy-20260203-151202 (metrics from fixed 2025-10-23; Fillout links skip default d1 rewrite).
+- Deploy production snapshot: deploy-20260203-151319 (metrics from fixed 2025-10-23; Fillout links skip default d1 rewrite).
+- Leaderboard REST fallback: impactshop-metrics-ngo now falls back to ibl_build_leaderboard when its own list is empty (ensures /impact/v1/leaderboard not empty).
+- Deploy staging snapshot: deploy-20260203-161731 (leaderboard REST fallback to ibl_build_leaderboard when empty).
+- Deploy production snapshot: deploy-20260203-161836 (leaderboard REST fallback to ibl_build_leaderboard when empty).
+- impact-bridge-local: d1 picker now checks last_click fields and returns '' when missing (no '(ismeretlen NGO)' rows); shop leaderboard maps campaign IDs to shop names.
+- Deploy staging snapshot: deploy-20260203-163303 (bridge local d1 pick + shop name map).
+- Deploy production snapshot: deploy-20260203-163414 (bridge local d1 pick + shop name map).
+- Leaderboard: filter out unknown NGO entries in impactshop-metrics-ngo (prevents '(ismeretlen NGO)' rows).
+- Deploy staging snapshot: deploy-20260203-163944 (filter unknown NGO entries in impactshop-metrics-ngo leaderboard).
+- Deploy production snapshot: deploy-20260203-164055 (filter unknown NGO entries in impactshop-metrics-ngo leaderboard).
+- impact-bridge-local: NGO names normalized via ngo_codes.csv; shop leaderboard now resolves CID->name; full leaderboard totals now use /impact/v1/ticker to match sticky.
+- Deploy staging snapshot: deploy-20260203-164802 (NGO name normalization in impact-bridge-local; full leaderboard totals use ticker).
+- Deploy production snapshot: deploy-20260203-164908 (NGO name normalization in impact-bridge-local; full leaderboard totals use ticker).
+- NGO name map now checks uploads/ngo_codes.csv paths in impactshop-metrics-ngo and impact-bridge-local.
+- Deploy staging snapshot: deploy-20260203-165638 (NGO name map uses uploads/ngo_codes.csv paths).
+- Deploy production snapshot: deploy-20260203-165736 (NGO name map uses uploads/ngo_codes.csv paths).
+- NGO card fix in progress: auto-seed approved slugs when list empty, add approved slugs with zero amounts to dataset, and add remote ngo_codes.csv fallback for display names.
+- Deploy staging snapshot: deploy-20260203-174657 (NGO card auto-seed + zero-amount approved slugs + remote ngo_codes.csv fallback).
+- Deploy production snapshot: deploy-20260203-174802 (NGO card auto-seed + zero-amount approved slugs + remote ngo_codes.csv fallback).
+- Preflight warning (production): /impact/v1/ticker slow response 3501ms (>2000ms threshold).
+- Deploy staging snapshot: deploy-20260203-175151 (resolve_display_name now maps slug->label when name looks like slug).
+- Deploy production snapshot: deploy-20260203-175301 (resolve_display_name slug->label).
+- Deploy staging snapshot: deploy-20260203-180118 (encoding list adjusted to Windows-1250).
+- Deploy production snapshot: deploy-20260203-180217 (encoding list adjusted to Windows-1250; preflight warnings: leaderboard(ngo) 3351ms, activity 4699ms).
+- Deploy staging snapshot: deploy-20260203-180543 (mb_detect_encoding now filters to supported encodings).
+- Deploy production snapshot: deploy-20260203-180652 (mb_detect_encoding now filters to supported encodings).
+- NGO card totals fallback: when donation_converted missing, compute amount from commission * donation_rate * HUF rate (prevents 0 Ft + missing rank).
+- NGO card totals: accept slug from totals row `ngo` when `ngo_slug` missing (fixes empty ranks).
+- Deploy staging snapshot: deploy-20260203-181923 (NGO card totals slug fallback).
+- Deploy production snapshot: deploy-20260203-182043 (NGO card totals slug fallback).
+- Drafted bastion protection extension plan (repo lock, ownership meta, guard sanity checks) in docs/bastion-protection-extension-plan.md.
+
+### 2026-02-03 – Bástya guard hardening v2
+- Véglegesített bástya terv: `docs/bastion-protection-extension-plan.md`.
+- Guard config v2: repo meta (root/remote/branch) + owner meta minden protected file‑hoz; új védett elemek: `bin/impactshop-guard-deploy.sh`, `bin/impactshop-guard-preflight.sh`, `docs/bastion-protection-extension-plan.md`, `docs/impactshop-guard-config.sha256`.
+- Új preflight: `bin/impactshop-guard-preflight.sh` (repo root/remote/branch + missing/owner mismatch + path canonicalization).
+- Guard deploy frissítés: lockfile, config checksum validáció, schema check, owner mismatch kezelés, snapshot meta + hash, symlink/canonical ellenőrzések.
+- Guard hash/sha256 manifest frissítve (`docs/impactshop-guard-hashes.json`, `docs/impactshop-guard-hashes.sha256`, `docs/impactshop-guard-config.sha256`).
+- Deploy nem futott ebben a körben.
+
+### 2026-02-04 – Guardos deploy (bástya hardening v2)
+- Guard deploy staging: deploy-20260204-071115 (preflight OK, rsync OK, cache flush + rewrite flush).
+- Guard deploy production: deploy-20260204-071242 (preflight OK, rsync OK, cache flush + rewrite flush, cron futott).
+- Guard lock: stale lock auto-törölve (pid inaktív, 237s).
+
+### 2026-02-04 – impactall preflight bekötés
+- `~/bin/impactall` mostantól futtatja a repo guard preflightot (`bin/impactshop-guard-preflight.sh`) a guardok előtt.
+
+### 2026-02-04 – impactall futtatás
+- `~/bin/impactall` lefutott (preflight OK, staging/prod REST 200, snapshot frissült).
+
+### 2026-02-04 – Shop leaderboard unknown NGO szűrés
+- Fix: shop leaderboardból kizárjuk a hiányzó/unknown NGO slug tranzakciókat (`impactshop-metrics-ngo.php`).
+- Deploy staging snapshot: deploy-20260204-073832.
+- Deploy production snapshot: deploy-20260204-074000.
+
+### 2026-02-04 – Leaderboard cache v2
+- Cache key bump: leaderboard cache/persist v2 (cache invalidation after unknown NGO filter).
+- Deploy staging snapshot: deploy-20260204-080536.
+- Deploy production snapshot: deploy-20260204-080708.
+
+### 2026-02-04 – Bástya védelem rögzítés
+- A végleges Impact Shop védett fájllista kanonikus forrása: `docs/impactshop-guard-config.json` (bástya védelem ehhez kötve).
+
+### 2026-02-04 – Bástya terv deploy
+- Deploy staging snapshot: deploy-20260204-082410 (bástya terv kiegészítés).
+- Deploy production snapshot: deploy-20260204-082546 (bástya terv kiegészítés).
+
+### 2026-02-04 – Impact Ad copy + activity tweaks
+- Feladatok tab: subtitle + info popover első sor külön szöveg (🧩 Végezz feladatokat...).
+- Élő aktivitás max 3% (korábbi ~10% helyett).
+- Nyeremény esély mező: statikus „hamarosan”.
+- Deploy staging snapshot: deploy-20260204-091944.
+- Deploy production snapshot: deploy-20260204-092128.
+
+### 2026-02-04 – Impact Ad cache bust
+- ADS watch asset version bump: 2.5.1 (force JS/CSS refresh).
+- Deploy staging snapshot: deploy-20260204-095142.
+- Deploy production snapshot: deploy-20260204-095322.
+
+### 2026-02-04 – Impact Ad /next fallback fix
+- `/ads-watch/next`: ha nincs ad tag URL, auto-banner fallback (ha elérhető), különben nem adunk üres ad taggal regular választ.
+- Sponsor rotáció: invalid/hiányzó media esetén sponsor kikapcsolva a választásból.
+- Deploy staging snapshot: deploy-20260204-104414.
+- Deploy production snapshot: deploy-20260204-104729.
+- Staging redeploy snapshot: deploy-20260204-105913 (preflight: totals slow 2693ms).
+
+### 2026-02-04 – Árukereső deeplink guard finomítás
+- Árukereső deeplink csak akkor engedélyezett, ha a deeplink hostja is arukereso.* (különben marad a base link).
+- Érintett: `wp-content/mu-plugins/impact-banners-fillout-rewriter.php`, `wp-content/mu-plugins/impact-arukereso-hardguard.php`.
+
+### 2026-02-04 – Auto banner deeplink host guard
+- Go.dognet deeplink csak shop host‑hoz engedélyezett; nem whitelistes/idegen host esetén banner kihagyás.
+- Érintett: `wp-content/mu-plugins/impactshop-auto-banner.php`, `wp-content/mu-plugins/impactshop-auto-banner-sync.php`.
+- Deploy staging snapshot: deploy-20260204-112533.
+- Deploy production snapshot: deploy-20260204-112712.
+
+### 2026-02-04 – Auto banner NGO refresh
+- NGO választás változásakor auto banner link újratöltés (d1 paraméter biztosítása).
+- Érintett: `wp-content/mu-plugins/impactshop-ads-watch.js`.
+- Deploy staging snapshot: deploy-20260204-113943.
+- Deploy production snapshot: deploy-20260204-114128.
+
+### 2026-02-04 – Auto banner link update (no reload)
+- NGO váltáskor csak a banner link frissül (nem indít új rotációt).
+- Érintett: `wp-content/mu-plugins/impactshop-ads-watch.js`.
+- Deploy staging snapshot: deploy-20260204-121604.
+- Deploy production snapshot: deploy-20260204-121751.
+
+### 2026-02-04 – Reward popup summary
+- Videó végi reward popup összegzi a megtekintés + kattintás jutalmat (számítás változatlan).
+- Érintett: `wp-content/mu-plugins/impactshop-ads-watch.js`.
+- Deploy staging snapshot: deploy-20260204-131802.
+- Deploy production snapshot: deploy-20260204-131941.
+
+### 2026-02-04 – Auto banner reward panel + CTA bonus summary
+- Auto banner megjelenéskor a jutalom panel látszik, CTA kattintás bónusz bekerül a videó végi összegzésbe.
+- Érintett: `wp-content/mu-plugins/impactshop-ads-watch.js`.
+- Deploy staging snapshot: deploy-20260204-140453.
+- Deploy production snapshot: deploy-20260204-140641.
+
+### 2026-02-04 – Reward feedback revert + sticky CTA notice
+- Reward popup visszaállítva az eredeti formára (csak megtekintés jutalom).
+- CTA kattintásnál zöld értesítés a videó végéig látszik.
+- Auto banner alatt a jutalom panel nem takaródik (z-index).
+- Érintett: `wp-content/mu-plugins/impactshop-ads-watch.js`, `wp-content/mu-plugins/impactshop-ads-watch.css`.
+
+### 2026-02-04 – Impact Ad cache bust (2.5.2)
+- JS/CSS verzió bump a cache frissítéshez.
+- Deploy staging snapshot: deploy-20260204-141558.
+- Deploy production snapshot: deploy-20260204-141754.
+
+## 2026-02-04 (session save)
+- Ads-watch reward feedback: reverted popup to pre-change behavior, CTA click shows sticky green notice until video end; banner CTA uses same sticky; sticky removed on video end/reset. Pending deploy.
+- Video info panel: added higher z-index so auto banner video no longer covers info panel. Pending deploy.
+- No NGO card changes in this round.
+
+### 2026-02-04 Deploy – ads-watch feedback revert
+- Staging guard deploy: deploy-20260204-180720
+- Production guard deploy: deploy-20260204-180900
+- Changes: restore reward popup behavior; sticky CTA bonus notice persists until video end; info panel z-index to avoid banner overlay.
+
+### 2026-02-04 Plan finalize
+- Finalized offerwall survey merged plan with AI feedback integrated and final coherence/security pass.
+- Added detailed testing, staging/prod checklists, and operational safeguards.
+
+### 2026-02-04 Deploy – PR batch
+- Staging guard deploy: deploy-20260204-210810
+- Production guard deploy: deploy-20260204-210952 (preflight warning: ticker 3390ms)
+- Included guard/adswatch/ngo-card/scripts batch.
+
+### 2026-02-04 Offerwall survey implementation (start)
+- Added new mu-plugin for internal survey provider/scoring (in progress).
+- Copied mapping/taxonomy CSV into repo for runtime loading.
+- Hardened CSV parsing (skip blank lines/BOM), added axis-code validation, and relaxed mapping validation for direct assignment/top rules.
+- Added fraud log table + admin listing + dashboard widget counters for survey completions.
+- Guard config/hashes updated to include new offerwall survey files.
