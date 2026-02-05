@@ -783,13 +783,106 @@ function impactshop_offerwall_survey_admin_page(): void
         return;
     }
 
+    $providers = function_exists('impactshop_offerwall_get_providers') ? impactshop_offerwall_get_providers() : [];
+    $provider = $providers['internal_survey'] ?? [];
+    $notice = '';
+    $error = '';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && check_admin_referer('impactshop_offerwall_survey_save')) {
+        if (isset($_POST['survey_provider_save'])) {
+            $provider['enabled'] = !empty($_POST['provider_enabled']);
+            $provider['name'] = sanitize_text_field($_POST['provider_name'] ?? 'Saját kérdőívek');
+            $provider['iframe_url'] = esc_url_raw($_POST['provider_iframe_url'] ?? '');
+            $provider['postback_secret'] = sanitize_text_field($_POST['provider_postback_secret'] ?? '');
+            $provider['survey_token_secret'] = sanitize_text_field($_POST['provider_survey_token_secret'] ?? '');
+            $allowlist_raw = sanitize_text_field($_POST['provider_allow_ips'] ?? '');
+            $provider['allow_ips'] = array_values(array_filter(array_map('trim', explode(',', $allowlist_raw))));
+            $providers['internal_survey'] = $provider;
+            if (function_exists('impactshop_offerwall_save_providers')) {
+                impactshop_offerwall_save_providers($providers);
+                $notice = 'Provider beállítások mentve.';
+            } else {
+                $error = 'Offerwall provider mentés nem elérhető.';
+            }
+        }
+
+        if (!empty($_FILES['mapping_csv']['name']) || !empty($_FILES['taxonomy_csv']['name'])) {
+            $upload_dir = IMPACTSHOP_SURVEY_DATA_DIR;
+            if (!is_dir($upload_dir)) {
+                wp_mkdir_p($upload_dir);
+            }
+            if (!is_dir($upload_dir) || !is_writable($upload_dir)) {
+                $error = 'A survey data könyvtár nem írható.';
+            } else {
+                $mapping_ok = impactshop_offerwall_survey_handle_csv_upload('mapping_csv', IMPACTSHOP_SURVEY_MAPPING_FILE, 'question_category');
+                $taxonomy_ok = impactshop_offerwall_survey_handle_csv_upload('taxonomy_csv', IMPACTSHOP_SURVEY_TAXONOMY_FILE, 'segment_code');
+                if ($mapping_ok || $taxonomy_ok) {
+                    $notice = 'CSV fájlok frissítve.';
+                } elseif ($error === '') {
+                    $error = 'CSV frissítés sikertelen.';
+                }
+            }
+        }
+    }
+
     global $wpdb;
     $answers_table = $wpdb->prefix . 'impactshop_survey_answers';
     $fraud_table = $wpdb->prefix . 'impactshop_offerwall_fraud_log';
     $rows = $wpdb->get_results("SELECT pseudo_id, survey_id, question_count, created_at FROM {$answers_table} ORDER BY created_at DESC LIMIT 20", ARRAY_A);
     $fraud_rows = $wpdb->get_results("SELECT reason, provider, pseudo_id, ip, created_at FROM {$fraud_table} ORDER BY created_at DESC LIMIT 20", ARRAY_A);
+    $stats = $wpdb->get_row("SELECT COUNT(*) AS total, COUNT(DISTINCT pseudo_id) AS users FROM {$answers_table}", ARRAY_A);
+    $by_survey = $wpdb->get_results("SELECT survey_id, COUNT(*) AS total FROM {$answers_table} GROUP BY survey_id ORDER BY total DESC LIMIT 10", ARRAY_A);
+    $consent_users = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(DISTINCT pseudo_id) FROM {$wpdb->prefix}impactshop_segment_scores WHERE segment_code = %s",
+        'CONS-PERS-1'
+    ));
 
     echo '<div class="wrap"><h1>Offerwall Survey</h1>';
+    if ($notice !== '') {
+        echo '<div class="updated"><p>' . esc_html($notice) . '</p></div>';
+    }
+    if ($error !== '') {
+        echo '<div class="error"><p>' . esc_html($error) . '</p></div>';
+    }
+
+    echo '<h2>Provider beállítások</h2>';
+    echo '<form method="post">';
+    wp_nonce_field('impactshop_offerwall_survey_save');
+    echo '<table class="form-table"><tbody>';
+    echo '<tr><th><label>Aktív</label></th><td><input type="checkbox" name="provider_enabled" ' . checked(!empty($provider['enabled']), true, false) . ' /></td></tr>';
+    echo '<tr><th><label>Név</label></th><td><input class="regular-text" type="text" name="provider_name" value="' . esc_attr((string) ($provider['name'] ?? 'Saját kérdőívek')) . '" /></td></tr>';
+    echo '<tr><th><label>Iframe URL</label></th><td><input class="regular-text" type="url" name="provider_iframe_url" value="' . esc_url((string) ($provider['iframe_url'] ?? '')) . '" /></td></tr>';
+    echo '<tr><th><label>Postback secret</label></th><td><input class="regular-text" type="text" name="provider_postback_secret" value="' . esc_attr((string) ($provider['postback_secret'] ?? '')) . '" /></td></tr>';
+    echo '<tr><th><label>Survey token secret</label></th><td><input class="regular-text" type="text" name="provider_survey_token_secret" value="' . esc_attr((string) ($provider['survey_token_secret'] ?? '')) . '" /></td></tr>';
+    echo '<tr><th><label>Allowlist IP-k</label></th><td><input class="regular-text" type="text" name="provider_allow_ips" value="' . esc_attr(implode(', ', (array) ($provider['allow_ips'] ?? []))) . '" placeholder="1.2.3.4, 5.6.7.8" /></td></tr>';
+    echo '</tbody></table>';
+    echo '<input type="hidden" name="survey_provider_save" value="1" />';
+    submit_button('Provider mentése');
+    echo '</form>';
+
+    echo '<h2>CSV frissítés</h2>';
+    echo '<form method="post" enctype="multipart/form-data">';
+    wp_nonce_field('impactshop_offerwall_survey_save');
+    echo '<table class="form-table"><tbody>';
+    echo '<tr><th><label>question_mapping.csv</label></th><td><input type="file" name="mapping_csv" accept=".csv" /></td></tr>';
+    echo '<tr><th><label>segment_taxonomy.csv</label></th><td><input type="file" name="taxonomy_csv" accept=".csv" /></td></tr>';
+    echo '</tbody></table>';
+    submit_button('CSV frissítése');
+    echo '</form>';
+
+    echo '<h2>Statisztikák</h2>';
+    echo '<div class="notice notice-info"><p>';
+    echo 'Összes completion: <strong>' . esc_html((string) ($stats['total'] ?? 0)) . '</strong> · ';
+    echo 'Egyedi userek: <strong>' . esc_html((string) ($stats['users'] ?? 0)) . '</strong> · ';
+    echo 'Consentált userek: <strong>' . esc_html((string) $consent_users) . '</strong>';
+    echo '</p></div>';
+    if (!empty($by_survey)) {
+        echo '<table class="widefat striped"><thead><tr><th>Survey</th><th>Completion</th></tr></thead><tbody>';
+        foreach ($by_survey as $row) {
+            echo '<tr><td>' . esc_html((string) $row['survey_id']) . '</td><td>' . esc_html((string) $row['total']) . '</td></tr>';
+        }
+        echo '</tbody></table><br />';
+    }
     echo '<table class="widefat striped"><thead><tr><th>Pseudo</th><th>Survey</th><th>Kérdések</th><th>Dátum</th></tr></thead><tbody>';
     foreach ($rows as $row) {
         echo '<tr>';
@@ -819,6 +912,26 @@ function impactshop_offerwall_survey_admin_page(): void
         echo '<tr><td colspan="5">Nincs adat.</td></tr>';
     }
     echo '</tbody></table></div>';
+}
+
+function impactshop_offerwall_survey_handle_csv_upload(string $field, string $target_path, string $required_header): bool
+{
+    if (empty($_FILES[$field]['name'])) {
+        return false;
+    }
+    if (!is_uploaded_file($_FILES[$field]['tmp_name'])) {
+        return false;
+    }
+    $ext = strtolower(pathinfo($_FILES[$field]['name'], PATHINFO_EXTENSION));
+    if ($ext !== 'csv') {
+        return false;
+    }
+    $tmp = $_FILES[$field]['tmp_name'];
+    $csv = impactshop_offerwall_survey_read_csv($tmp, $required_header);
+    if (!$csv['rows']) {
+        return false;
+    }
+    return (bool) move_uploaded_file($tmp, $target_path);
 }
 
 function impactshop_offerwall_survey_dashboard_widget(): void

@@ -5094,3 +5094,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Staging guard deploy: deploy-20260205-055456 (preflight warning: totals 2672ms)
 - Production guard deploy: deploy-20260205-055616
 - Changes: survey token secret field + iframe token uses dedicated secret.
+
+### 2026-02-05 Offerwall survey admin
+- Survey admin bővítve provider beállítással, CSV uploaddal és statisztikákkal (készen áll deployra).
+- internal_survey provider aktiválva staging/prod környezetben (iframe URL beállítva).
