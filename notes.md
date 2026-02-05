@@ -5089,3 +5089,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Staging guard deploy: deploy-20260204-224619
 - Production guard deploy: deploy-20260204-224729
 - Changes: new internal survey provider, CSV mapping/taxonomy loader, fraud log table + dashboard widget, guard updates.
+
+### 2026-02-05 Deploy – survey token secret
+- Staging guard deploy: deploy-20260205-055456 (preflight warning: totals 2672ms)
+- Production guard deploy: deploy-20260205-055616
+- Changes: survey token secret field + iframe token uses dedicated secret.
