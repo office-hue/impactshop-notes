@@ -88,6 +88,7 @@ function impactshop_offerwall_default_providers(): array
             'iframe_hash_format' => '{user}-{secret}',
             'points_multiplier' => 1.0,
             'votes_multiplier' => 1.0,
+            'survey_token_secret' => '',
             'allow_ips' => [],
         ],
         'cpx' => [
@@ -104,6 +105,7 @@ function impactshop_offerwall_default_providers(): array
             'iframe_hash_format' => '{user}-{secret}',
             'points_multiplier' => 1.0,
             'votes_multiplier' => 1.0,
+            'survey_token_secret' => '',
             'allow_ips' => [],
         ],
     ];
@@ -605,6 +607,7 @@ function impactshop_offerwall_admin_page(): void
             $providers[$key]['iframe_hash_format'] = sanitize_text_field($_POST['provider'][$key]['iframe_hash_format'] ?? ($provider['iframe_hash_format'] ?? '{user}-{secret}'));
             $providers[$key]['api_key'] = sanitize_text_field($_POST['provider'][$key]['api_key'] ?? '');
             $providers[$key]['postback_secret'] = sanitize_text_field($_POST['provider'][$key]['postback_secret'] ?? '');
+            $providers[$key]['survey_token_secret'] = sanitize_text_field($_POST['provider'][$key]['survey_token_secret'] ?? ($provider['survey_token_secret'] ?? ''));
             $providers[$key]['points_multiplier'] = (float) ($_POST['provider'][$key]['points_multiplier'] ?? 1.0);
             $providers[$key]['votes_multiplier'] = (float) ($_POST['provider'][$key]['votes_multiplier'] ?? 1.0);
             $allowlist_raw = sanitize_text_field($_POST['provider'][$key]['allow_ips'] ?? '');
@@ -635,7 +638,7 @@ function impactshop_offerwall_admin_page(): void
     }
     echo '<form method="post">';
     wp_nonce_field('impactshop_offerwall_save');
-    echo '<table class="widefat striped"><thead><tr><th>Provider</th><th>Aktív</th><th>IFrame URL</th><th>User param</th><th>IFrame hash secret</th><th>Hash param</th><th>Hash format</th><th>API kulcs</th><th>Postback URL</th><th>Secret</th><th>IP allowlist</th><th>Pont szorzó</th><th>Szavazat szorzó</th></tr></thead><tbody>';
+    echo '<table class="widefat striped"><thead><tr><th>Provider</th><th>Aktív</th><th>IFrame URL</th><th>User param</th><th>IFrame hash secret</th><th>Hash param</th><th>Hash format</th><th>API kulcs</th><th>Survey token secret</th><th>Postback URL</th><th>Secret</th><th>IP allowlist</th><th>Pont szorzó</th><th>Szavazat szorzó</th></tr></thead><tbody>';
     foreach ($providers as $key => $provider) {
         $postback_url = rest_url('impact/v1/offerwall/callback/' . $key);
         echo '<tr>';
@@ -647,6 +650,7 @@ function impactshop_offerwall_admin_page(): void
         echo '<td><input class="regular-text" type="text" name="provider[' . esc_attr($key) . '][iframe_hash_param]" value="' . esc_attr((string) ($provider['iframe_hash_param'] ?? 'secure_hash')) . '" placeholder="secure_hash" /></td>';
         echo '<td><input class="regular-text" type="text" name="provider[' . esc_attr($key) . '][iframe_hash_format]" value="' . esc_attr((string) ($provider['iframe_hash_format'] ?? '{user}-{secret}')) . '" placeholder="{user}-{secret}" /></td>';
         echo '<td><input class="regular-text" type="text" name="provider[' . esc_attr($key) . '][api_key]" value="' . esc_attr((string) ($provider['api_key'] ?? '')) . '" /></td>';
+        echo '<td><input class="regular-text" type="text" name="provider[' . esc_attr($key) . '][survey_token_secret]" value="' . esc_attr((string) ($provider['survey_token_secret'] ?? '')) . '" /></td>';
         echo '<td><input class="regular-text offerwall-postback-url" type="text" readonly value="' . esc_url($postback_url) . '" /> ';
         echo '<button type="button" class="button offerwall-copy-btn" data-copy="' . esc_url($postback_url) . '">Másolás</button></td>';
         echo '<td><input class="regular-text" type="text" name="provider[' . esc_attr($key) . '][postback_secret]" value="' . esc_attr($provider['postback_secret']) . '" /></td>';

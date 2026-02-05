@@ -5083,6 +5083,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Added fraud log table + admin listing + dashboard widget counters for survey completions.
 - Guard config/hashes updated to include new offerwall survey files.
 - Commit: feat: add offerwall survey provider (96569888) pushed to ops/adswatch-clean.
+- Added dedicated survey token secret field (fallback to api_key) for iframe access.
 
 ### 2026-02-04 Deploy – offerwall survey
 - Staging guard deploy: deploy-20260204-224619

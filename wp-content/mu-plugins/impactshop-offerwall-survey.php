@@ -123,6 +123,7 @@ function impactshop_offerwall_survey_ensure_provider(): void
             'iframe_hash_secret' => '',
             'iframe_hash_param' => 'secure_hash',
             'iframe_hash_format' => '{user}-{secret}',
+            'survey_token_secret' => '',
             'points_multiplier' => 1.0,
             'votes_multiplier' => 1.0,
             'allow_ips' => [],
@@ -139,7 +140,11 @@ function impactshop_offerwall_survey_iframe_url(string $url, array $provider, st
     if ($url === '' || $pseudo_id === '') {
         return $url;
     }
-    $token = impactshop_offerwall_survey_build_token($pseudo_id, (string) ($provider['api_key'] ?? ''));
+    $secret = (string) ($provider['survey_token_secret'] ?? '');
+    if ($secret === '') {
+        $secret = (string) ($provider['api_key'] ?? '');
+    }
+    $token = impactshop_offerwall_survey_build_token($pseudo_id, $secret);
     if ($token === '') {
         return $url;
     }
