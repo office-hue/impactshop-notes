@@ -5098,3 +5098,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ### 2026-02-05 Offerwall survey admin
 - Survey admin bővítve provider beállítással, CSV uploaddal és statisztikákkal (készen áll deployra).
 - internal_survey provider aktiválva staging/prod környezetben (iframe URL beállítva).
+
+### 2026-02-05 Deploy – survey admin
+- Staging guard deploy: deploy-20260205-062207
+- Production guard deploy: deploy-20260205-062320
+- Changes: survey admin beállítások + CSV upload + statisztikák.
