@@ -6,13 +6,14 @@ Linked docs:
 - ai-memory-phase0-checklist-2026-03-04.md
 - ai-memory-canonical-approvals-checklist-2026-03-04.md
 
-## 1) Embedding modell + költség (javaslat)
+## 1) Embedding modell + költség (végleges)
 
 Cél: magas minőség, kontrollált költséggel.
 
-Javasolt megközelítés:
-- Phase 0-1: közepes méretű embedding modell (jó minőség/költség arány)
-- Phase 2+: ha retrieval quality nem elég, váltás nagyobb modellre csak a "high-value" rekordokra
+Végleges döntés:
+- Modell: `text-embedding-3-large`
+- Dimenzió: `3072`
+- Indok: minőség-prioritás, jobb szemantikus lefedettség jogi és technikai tartalmaknál.
 
 Költség kalkuláció (modellfüggetlen):
 - Havi embedding token = `új/updated memory tokenek száma`
@@ -26,6 +27,7 @@ Becsült példa (nem vendor-fix):
 Megjegyzés:
 - A fő költség jellemzően nem az embedding, hanem a generatív hívások és az operatív idő.
 - Embedding oldalon a költség jól fogható ingest throttlinggal és csak változott rekordok újra-embedelésével.
+- Opcionális költségfék: heti batch re-embed csak a megváltozott rekordokra.
 
 ## 2) Retention idők (végleges javaslat)
 
@@ -92,7 +94,6 @@ Rövid összefoglaló:
 Teljes technikai részletesség:
 - bujdoso.arnold@bujdosoiroda.com
 
-## 7) Nyitott pont (csak 1 maradt)
+## 7) Nyitott pont
 
-- A konkrét embedding modell név és dim véglegesítése a kiválasztott provider aktuális árazása alapján.
-
+- Nincs nyitott pont: modell és dim véglegesítve (`text-embedding-3-large`, `3072`).

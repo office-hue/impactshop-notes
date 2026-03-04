@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS memory_embeddings (
   memory_id UUID PRIMARY KEY REFERENCES memory_items(id) ON DELETE CASCADE,
   model TEXT NOT NULL,
   dim INT NOT NULL,
-  embedding vector(1536),
+  embedding vector(3072),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

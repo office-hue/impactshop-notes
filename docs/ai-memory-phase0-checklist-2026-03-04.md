@@ -35,7 +35,7 @@ Out of scope:
 ### 4.1 Governance
 
 1. Kanonikus jóváhagyás:
-- embedding modell és dim
+- embedding modell és dim (végleges: `text-embedding-3-large`, `3072`)
 - retention baseline
 - PII policy
 - pilot owner + backup owner
