@@ -20,8 +20,8 @@ if (!defined('ABSPATH')) {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.2');
-define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '6');
+define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.23');
+define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '8');
 define('IMPACTSHOP_ADS_DONATION_POOL', 500000); // Ft
 
 define('IMPACTSHOP_ADS_POINTS_REGULAR', 1);
@@ -177,6 +177,17 @@ function impactshop_ads_watch_track_ga4(string $event_name, array $params = []):
 function impactshop_ads_watch_mark_tally_dirty(): void
 {
     set_transient('impactshop_ads_tally_dirty', time(), IMPACTSHOP_ADS_TALLY_DIRTY_TTL);
+}
+
+function impactshop_ads_watch_clear_tally_cache(): void
+{
+    delete_transient('impactshop_ads_tally_cache');
+    $quarter_key = impactshop_ads_get_active_quarter();
+    if ($quarter_key !== '') {
+        delete_transient('impactshop_ads_tally_cache_' . $quarter_key);
+    }
+    delete_transient('impactshop_ads_tally_dirty');
+    delete_transient('impactshop_ads_tally_lock');
 }
 
 function impactshop_ads_watch_build_cta(string $label, string $url, int $points): array
@@ -478,6 +489,8 @@ function impactshop_ads_watch_can_view_education(string $pseudo_id, array $conte
 
     global $wpdb;
     $table_education = $wpdb->prefix . 'impactshop_education_views';
+    $table_quarters = $wpdb->prefix . 'impactshop_ads_quarters';
+    $table_quarter_results = $wpdb->prefix . 'impactshop_ads_quarter_results';
     $content_id = (string) ($content['id'] ?? '');
     if ($content_id === '') {
         return false;
@@ -647,13 +660,17 @@ function impactshop_ads_watch_ensure_schema(): void
         pseudo_id VARCHAR(32) NOT NULL,
         ngo_slug VARCHAR(190) NOT NULL,
         vote_weight INT UNSIGNED NOT NULL DEFAULT 0,
+        base_weight INT UNSIGNED NOT NULL DEFAULT 0,
+        donation_multiplier DECIMAL(4,2) NOT NULL DEFAULT 1.00,
         ad_type ENUM('regular','sponsor') NOT NULL DEFAULT 'regular',
+        quarter_key VARCHAR(10) DEFAULT NULL,
         day_key CHAR(10) NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         KEY idx_pseudo (pseudo_id),
         KEY idx_pseudo_day (pseudo_id, day_key),
         KEY idx_ngo (ngo_slug),
         KEY idx_ngo_votes (ngo_slug, vote_weight),
+        KEY idx_quarter_ngo (quarter_key, ngo_slug, vote_weight),
         KEY idx_day (day_key),
         KEY idx_created (created_at)
     ) {$charset};";
@@ -700,6 +717,34 @@ function impactshop_ads_watch_ensure_schema(): void
         KEY idx_created (created_at)
     ) {$charset};";
 
+    $sql_quarters = "CREATE TABLE IF NOT EXISTS {$table_quarters} (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        quarter_key VARCHAR(10) NOT NULL,
+        start_at DATETIME NOT NULL,
+        end_at DATETIME NOT NULL,
+        pool_amount INT NOT NULL DEFAULT 0,
+        total_votes INT NOT NULL DEFAULT 0,
+        status ENUM('active','closing','closed','paid') NOT NULL DEFAULT 'active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        closed_at DATETIME DEFAULT NULL,
+        paid_at DATETIME DEFAULT NULL,
+        UNIQUE KEY uniq_quarter (quarter_key)
+    ) {$charset};";
+
+    $sql_quarter_results = "CREATE TABLE IF NOT EXISTS {$table_quarter_results} (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        quarter_key VARCHAR(10) NOT NULL,
+        ngo_slug VARCHAR(190) NOT NULL,
+        ngo_name VARCHAR(255) DEFAULT NULL,
+        votes INT UNSIGNED NOT NULL DEFAULT 0,
+        percentage DECIMAL(5,2) NOT NULL DEFAULT 0,
+        amount INT UNSIGNED NOT NULL DEFAULT 0,
+        rank SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_quarter_ngo (quarter_key, ngo_slug),
+        KEY idx_quarter (quarter_key)
+    ) {$charset};";
+
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql_views);
     dbDelta($sql_votes);
@@ -707,6 +752,8 @@ function impactshop_ads_watch_ensure_schema(): void
     dbDelta($sql_user_votes);
     dbDelta($sql_stats);
     dbDelta($sql_education);
+    dbDelta($sql_quarters);
+    dbDelta($sql_quarter_results);
 
     update_option('impactshop_ads_watch_schema_version', IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION, false);
 }
@@ -1445,7 +1492,7 @@ function impactshop_ads_watch_debug_rotation(WP_REST_Request $request): WP_REST_
 function impactshop_ads_watch_config(WP_REST_Request $request): WP_REST_Response
 {
     return new WP_REST_Response([
-        'donation_pool'     => IMPACTSHOP_ADS_DONATION_POOL,
+        'donation_pool'     => impactshop_ads_get_active_pool(),
         'points_regular'    => IMPACTSHOP_ADS_POINTS_REGULAR,
         'points_sponsor'    => IMPACTSHOP_ADS_POINTS_SPONSOR,
         'votes_regular'     => IMPACTSHOP_ADS_VOTES_REGULAR,
@@ -1779,6 +1826,7 @@ function impactshop_ads_watch_status(WP_REST_Request $request): WP_REST_Response
     $level = 'basic';
     $vote_weight_regular = IMPACTSHOP_ADS_VOTES_REGULAR;
     $vote_weight_sponsor = IMPACTSHOP_ADS_VOTES_SPONSOR;
+    $donation_multiplier = 1.0;
 
     if (class_exists('Sharity_Points_Manager')) {
         $points_manager = new Sharity_Points_Manager();
@@ -1792,6 +1840,7 @@ function impactshop_ads_watch_status(WP_REST_Request $request): WP_REST_Response
         $config = $level_manager->get_level_config($level);
         $vote_weight_regular = (int) ($config['vote_ad'] ?? IMPACTSHOP_ADS_VOTES_REGULAR);
         $vote_weight_sponsor = (int) ($config['vote_sponsor'] ?? IMPACTSHOP_ADS_VOTES_SPONSOR);
+        $donation_multiplier = isset($config['multiplier']) ? (float) $config['multiplier'] : $donation_multiplier;
     }
 
     $selected_slug = impactshop_ads_watch_get_user_ngo_slug($pseudo_id);
@@ -1813,6 +1862,7 @@ function impactshop_ads_watch_status(WP_REST_Request $request): WP_REST_Response
         'level'              => $level,
         'vote_weight_regular'=> $vote_weight_regular,
         'vote_weight_sponsor'=> $vote_weight_sponsor,
+        'donation_multiplier'=> $donation_multiplier,
         'selected_ngo'       => $selected_ngo,
         'today_views'        => $today_views,
         'available_votes'    => $available_votes,
@@ -1921,6 +1971,9 @@ function impactshop_ads_watch_view(WP_REST_Request $request): WP_REST_Response
         $streak_multiplier = impactshop_ads_watch_get_streak_multiplier((int) ($stats['streak_days'] ?? 0));
         $points = max(1, (int) floor($points * $streak_multiplier));
         $votes_added = max(1, (int) floor($votes_added * $streak_multiplier));
+    }
+    if (!impactshop_ads_is_quarter_active_now()) {
+        $votes_added = 0;
     }
 
     $day_key = current_time('Y-m-d');
@@ -2117,6 +2170,11 @@ function impactshop_ads_watch_education(WP_REST_Request $request): WP_REST_Respo
 
     if ($max_intervals > 0) {
         $intervals = min($intervals, max(0, $max_intervals - $awarded));
+    }
+
+    if (!impactshop_ads_is_quarter_active_now()) {
+        $votes_per_interval = 0;
+        $bonus_votes = 0;
     }
 
     if ($intervals <= 0) {
@@ -2339,6 +2397,25 @@ function impactshop_ads_watch_allocate_votes(WP_REST_Request $request): WP_REST_
         60
     );
 
+    if (!impactshop_ads_is_quarter_active_now()) {
+        return new WP_REST_Response([
+            'success' => false,
+            'error' => 'quarter_not_started',
+            'message' => 'A szavazás még nem indult el.',
+        ], 409);
+    }
+
+    if (impactshop_ads_is_quarter_locked()) {
+        $retry_after = impactshop_ads_get_quarter_lock_retry_after();
+        return new WP_REST_Response([
+            'success' => false,
+            'error' => 'quarter_lock',
+            'message' => 'Negyedéves zárás folyamatban, kérjük próbáld meg később.',
+        ], 503, [
+            'Retry-After' => (string) $retry_after,
+        ]);
+    }
+
     $ngo_slug = sanitize_title((string) $request->get_param('ngo_slug'));
     $votes = absint($request->get_param('votes'));
     if ($ngo_slug === '') {
@@ -2375,19 +2452,26 @@ function impactshop_ads_watch_allocate_votes(WP_REST_Request $request): WP_REST_
         ], 409);
     }
 
-    $vote_weight = impactshop_ads_watch_get_vote_weight($pseudo_id, 'regular');
-    $weighted_votes = $votes * $vote_weight;
+    $weight_info = impactshop_ads_watch_get_vote_weight_info($pseudo_id, 'regular');
+    $base_weight = (int) $weight_info['base_weight'];
+    $donation_multiplier = (float) $weight_info['multiplier'];
+    $weighted_votes = (int) round($votes * $base_weight * $donation_multiplier);
+    $weighted_votes = max(1, $weighted_votes);
 
     global $wpdb;
     $table_votes = $wpdb->prefix . 'impactshop_ads_votes';
+    $quarter_key = impactshop_ads_get_active_quarter();
     $wpdb->insert($table_votes, [
         'pseudo_id' => $pseudo_id,
         'ngo_slug' => $ngo_slug,
         'vote_weight' => $weighted_votes,
+        'base_weight' => $base_weight,
+        'donation_multiplier' => $donation_multiplier,
         'ad_type' => 'allocation',
+        'quarter_key' => $quarter_key,
         'day_key' => current_time('Y-m-d'),
         'created_at' => current_time('mysql'),
-    ], ['%s', '%s', '%d', '%s', '%s', '%s']);
+    ], ['%s', '%s', '%d', '%d', '%f', '%s', '%s', '%s', '%s']);
 
     if ($wpdb->last_error) {
         impactshop_ads_watch_log('error', 'ads_watch_vote_insert_failed', [
@@ -2422,8 +2506,13 @@ function impactshop_ads_watch_tally(WP_REST_Request $request): WP_REST_Response
 {
     $limit = absint($request->get_param('limit') ?? 10);
     $limit = min($limit, 100);
+    $quarter_key = sanitize_text_field($request->get_param('quarter') ?? '');
+    $lifetime = (bool) $request->get_param('lifetime');
+    if ($quarter_key === '' && !$lifetime) {
+        $quarter_key = impactshop_ads_get_active_quarter();
+    }
 
-    $cache_key = 'impactshop_ads_tally_cache';
+    $cache_key = 'impactshop_ads_tally_cache' . ($quarter_key ? ('_' . $quarter_key) : '');
     $dirty_key = 'impactshop_ads_tally_dirty';
     $lock_key = 'impactshop_ads_tally_lock';
     $dirty_at = (int) get_transient($dirty_key);
@@ -2444,14 +2533,14 @@ function impactshop_ads_watch_tally(WP_REST_Request $request): WP_REST_Response
             $tally = $cached !== false ? $cached : [];
         } else {
             set_transient($lock_key, 1, 10);
-            $tally = impactshop_ads_calculate_tally_with_info();
+            $tally = impactshop_ads_calculate_tally_with_info($quarter_key ?: null);
             set_transient($cache_key, $tally, IMPACTSHOP_ADS_TALLY_CACHE_TTL);
             delete_transient($lock_key);
         }
     }
 
     $total_votes = array_sum(array_column($tally, 'votes'));
-    $donation_pool = IMPACTSHOP_ADS_DONATION_POOL;
+    $donation_pool = $quarter_key !== '' ? impactshop_ads_get_pool_for_quarter($quarter_key) : IMPACTSHOP_ADS_DONATION_POOL;
 
     $result = [];
     foreach (array_slice($tally, 0, $limit) as $rank => $row) {
@@ -2476,6 +2565,7 @@ function impactshop_ads_watch_tally(WP_REST_Request $request): WP_REST_Response
     return new WP_REST_Response([
         'donation_pool' => $donation_pool,
         'total_votes'   => $total_votes,
+        'quarter_key'   => $quarter_key ?: null,
         'tally'         => $result,
         'cached_at'     => $cached !== false ? 'cached' : 'fresh',
     ], 200);
@@ -2486,18 +2576,45 @@ function impactshop_ads_watch_leaderboard(WP_REST_Request $request): WP_REST_Res
     global $wpdb;
     $limit = absint($request->get_param('limit') ?? 10);
     $limit = min(max(1, $limit), 50);
+    $quarter_key = sanitize_text_field($request->get_param('quarter') ?? '');
+    $lifetime = (bool) $request->get_param('lifetime');
+    if ($quarter_key === '' && !$lifetime) {
+        $quarter_key = impactshop_ads_get_active_quarter();
+    }
 
     $table_stats = $wpdb->prefix . 'impactshop_ads_user_stats';
-    $rows = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT pseudo_id, total_views, total_votes, streak_days
-             FROM {$table_stats}
-             ORDER BY total_votes DESC
-             LIMIT %d",
-            $limit
-        ),
-        ARRAY_A
-    );
+    if ($lifetime || $quarter_key === '') {
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT pseudo_id, total_views, total_votes, streak_days
+                 FROM {$table_stats}
+                 ORDER BY total_votes DESC
+                 LIMIT %d",
+                $limit
+            ),
+            ARRAY_A
+        );
+    } else {
+        $table_votes = $wpdb->prefix . 'impactshop_ads_votes';
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT v.pseudo_id,
+                        SUM(v.vote_weight) AS quarter_votes,
+                        COALESCE(s.total_views, 0) AS total_views,
+                        COALESCE(s.total_votes, 0) AS lifetime_votes,
+                        COALESCE(s.streak_days, 0) AS streak_days
+                 FROM {$table_votes} v
+                 LEFT JOIN {$table_stats} s ON s.pseudo_id = v.pseudo_id
+                 WHERE v.quarter_key = %s
+                 GROUP BY v.pseudo_id
+                 ORDER BY quarter_votes DESC
+                 LIMIT %d",
+                $quarter_key,
+                $limit
+            ),
+            ARRAY_A
+        );
+    }
 
     $leaderboard = [];
     foreach ($rows as $row) {
@@ -2505,12 +2622,14 @@ function impactshop_ads_watch_leaderboard(WP_REST_Request $request): WP_REST_Res
         $leaderboard[] = [
             'display_id' => $pseudo ? substr($pseudo, 0, 4) . '***' : 'anon',
             'total_views' => (int) ($row['total_views'] ?? 0),
-            'total_votes' => (int) ($row['total_votes'] ?? 0),
+            'total_votes' => (int) ($row['quarter_votes'] ?? $row['total_votes'] ?? 0),
+            'lifetime_votes' => (int) ($row['lifetime_votes'] ?? $row['total_votes'] ?? 0),
             'streak_days' => (int) ($row['streak_days'] ?? 0),
         ];
     }
 
     return new WP_REST_Response([
+        'quarter_key' => $lifetime ? null : $quarter_key,
         'leaderboard' => $leaderboard,
     ], 200);
 }
@@ -2564,6 +2683,186 @@ function impactshop_ads_watch_normalize_pseudo_id(string $pseudo_id): string
     return preg_match('/^[a-z0-9]{10,12}$/', $pseudo_id) ? $pseudo_id : '';
 }
 
+function impactshop_ads_get_custom_quarter_key_for_timestamp(int $timestamp): string
+{
+    $custom_start = gmmktime(0, 0, 0, 3, 1, 2026);
+    $custom_end = gmmktime(23, 59, 59, 6, 30, 2026);
+    if ($timestamp >= $custom_start && $timestamp <= $custom_end) {
+        return '2026Q1';
+    }
+    return '';
+}
+
+function impactshop_ads_get_current_quarter_key(?int $timestamp = null): string
+{
+    $timestamp = $timestamp ?? time();
+    $custom = impactshop_ads_get_custom_quarter_key_for_timestamp($timestamp);
+    if ($custom !== '') {
+        return $custom;
+    }
+    $year = (int) gmdate('Y', $timestamp);
+    $month = (int) gmdate('n', $timestamp);
+    $quarter = (int) ceil($month / 3);
+    return sprintf('%dQ%d', $year, $quarter);
+}
+
+function impactshop_ads_get_quarter_bounds(string $quarter_key): array
+{
+    if ($quarter_key === '2026Q1') {
+        return [
+            'start_at' => '2026-03-01 00:00:00',
+            'end_at' => '2026-06-30 23:59:59',
+        ];
+    }
+    if (!preg_match('/^(\\d{4})Q([1-4])$/', $quarter_key, $matches)) {
+        $quarter_key = impactshop_ads_get_current_quarter_key();
+        preg_match('/^(\\d{4})Q([1-4])$/', $quarter_key, $matches);
+    }
+    $year = (int) $matches[1];
+    $quarter = (int) $matches[2];
+    $start_month = ($quarter - 1) * 3 + 1;
+    $end_month = $quarter * 3 + 1;
+    $start_at = gmdate('Y-m-d 00:00:00', gmmktime(0, 0, 0, $start_month, 1, $year));
+    $end_at = gmdate('Y-m-d 23:59:59', gmmktime(0, 0, 0, $end_month, 0, $year));
+
+    return [
+        'start_at' => $start_at,
+        'end_at' => $end_at,
+    ];
+}
+
+function impactshop_ads_get_active_quarter_window(): array
+{
+    $quarter_key = impactshop_ads_get_active_quarter();
+    $bounds = impactshop_ads_get_quarter_bounds($quarter_key);
+    global $wpdb;
+    $table_quarters = $wpdb->prefix . 'impactshop_ads_quarters';
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT start_at, end_at FROM {$table_quarters} WHERE quarter_key = %s LIMIT 1",
+        $quarter_key
+    ), ARRAY_A);
+    if (!empty($row['start_at'])) {
+        $bounds['start_at'] = (string) $row['start_at'];
+    }
+    if (!empty($row['end_at'])) {
+        $bounds['end_at'] = (string) $row['end_at'];
+    }
+    $start_ts = $bounds['start_at'] !== '' ? strtotime($bounds['start_at']) : 0;
+    $end_ts = $bounds['end_at'] !== '' ? strtotime($bounds['end_at']) : 0;
+
+    return [
+        'quarter_key' => $quarter_key,
+        'start_at' => $bounds['start_at'] ?? '',
+        'end_at' => $bounds['end_at'] ?? '',
+        'start_ts' => $start_ts ?: 0,
+        'end_ts' => $end_ts ?: 0,
+    ];
+}
+
+function impactshop_ads_is_quarter_active_now(): bool
+{
+    $window = impactshop_ads_get_active_quarter_window();
+    $now = time();
+    if (!empty($window['start_ts']) && $now < (int) $window['start_ts']) {
+        return false;
+    }
+    if (!empty($window['end_ts']) && $now > (int) $window['end_ts']) {
+        return false;
+    }
+    return true;
+}
+
+function impactshop_ads_get_active_quarter(): string
+{
+    $quarter_key = (string) get_option('impactshop_ads_current_quarter', '');
+    if ($quarter_key === '') {
+        $quarter_key = impactshop_ads_get_current_quarter_key();
+        update_option('impactshop_ads_current_quarter', $quarter_key, false);
+    }
+
+    global $wpdb;
+    $table_quarters = $wpdb->prefix . 'impactshop_ads_quarters';
+    $exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT quarter_key FROM {$table_quarters} WHERE quarter_key = %s LIMIT 1",
+        $quarter_key
+    ));
+    if (!$exists) {
+        $bounds = impactshop_ads_get_quarter_bounds($quarter_key);
+        $wpdb->insert($table_quarters, [
+            'quarter_key' => $quarter_key,
+            'start_at' => $bounds['start_at'],
+            'end_at' => $bounds['end_at'],
+            'pool_amount' => IMPACTSHOP_ADS_DONATION_POOL,
+            'status' => 'active',
+        ], ['%s', '%s', '%s', '%d', '%s']);
+    }
+
+    return $quarter_key;
+}
+
+function impactshop_ads_get_pool_for_quarter(string $quarter_key): int
+{
+    if ($quarter_key === '') {
+        return IMPACTSHOP_ADS_DONATION_POOL;
+    }
+    global $wpdb;
+    $table_quarters = $wpdb->prefix . 'impactshop_ads_quarters';
+    $pool = $wpdb->get_var($wpdb->prepare(
+        "SELECT pool_amount FROM {$table_quarters} WHERE quarter_key = %s LIMIT 1",
+        $quarter_key
+    ));
+    if ($pool === null) {
+        return IMPACTSHOP_ADS_DONATION_POOL;
+    }
+    return (int) $pool;
+}
+
+function impactshop_ads_get_active_pool(): int
+{
+    $quarter_key = impactshop_ads_get_active_quarter();
+    return impactshop_ads_get_pool_for_quarter($quarter_key);
+}
+
+function impactshop_ads_is_quarter_locked(): bool
+{
+    $lock = get_option('impactshop_ads_quarter_lock');
+    if (!is_array($lock)) {
+        return false;
+    }
+    $expires_at = (int) ($lock['expires_at'] ?? 0);
+    if ($expires_at > 0 && $expires_at < time()) {
+        delete_option('impactshop_ads_quarter_lock');
+        return false;
+    }
+    return true;
+}
+
+function impactshop_ads_set_quarter_lock(int $ttl = 60): void
+{
+    update_option('impactshop_ads_quarter_lock', [
+        'locked_at' => time(),
+        'expires_at' => time() + max(30, $ttl),
+    ], false);
+}
+
+function impactshop_ads_clear_quarter_lock(): void
+{
+    delete_option('impactshop_ads_quarter_lock');
+}
+
+function impactshop_ads_get_quarter_lock_retry_after(): int
+{
+    $lock = get_option('impactshop_ads_quarter_lock');
+    if (!is_array($lock)) {
+        return 60;
+    }
+    $expires_at = (int) ($lock['expires_at'] ?? 0);
+    if ($expires_at <= 0) {
+        return 60;
+    }
+    return max(1, $expires_at - time());
+}
+
 function impactshop_ads_watch_get_user_ngo_slug(string $pseudo_id): string
 {
     if ($pseudo_id === '') {
@@ -2608,6 +2907,9 @@ function impactshop_ads_watch_add_votes(string $pseudo_id, int $votes): int
 {
     $votes = max(0, $votes);
     if ($votes === 0) {
+        return impactshop_ads_watch_get_user_votes($pseudo_id);
+    }
+    if (!impactshop_ads_is_quarter_active_now()) {
         return impactshop_ads_watch_get_user_votes($pseudo_id);
     }
 
@@ -2733,10 +3035,10 @@ function impactshop_ads_watch_get_streak_multiplier(int $streak_days): float
 {
     $multiplier = 1.0;
     if ($streak_days >= 30) {
-        $multiplier = 1.5;
+        $multiplier = 1.30;
+    } elseif ($streak_days >= 14) {
+        $multiplier = 1.20;
     } elseif ($streak_days >= 7) {
-        $multiplier = 1.25;
-    } elseif ($streak_days >= 3) {
         $multiplier = 1.10;
     }
 
@@ -2802,39 +3104,69 @@ function impactshop_ads_watch_get_daily_views(string $pseudo_id): int
     ));
 }
 
-function impactshop_ads_watch_get_vote_weight(string $pseudo_id, string $ad_type): int
+function impactshop_ads_watch_get_vote_weight_info(string $pseudo_id, string $ad_type): array
 {
-    $weight = $ad_type === 'sponsor' ? IMPACTSHOP_ADS_VOTES_SPONSOR : IMPACTSHOP_ADS_VOTES_REGULAR;
+    $base_weight = $ad_type === 'sponsor' ? IMPACTSHOP_ADS_VOTES_SPONSOR : IMPACTSHOP_ADS_VOTES_REGULAR;
+    $multiplier = 1.0;
 
     if (class_exists('Sharity_Level_Manager')) {
         $level_manager = new Sharity_Level_Manager();
         $level = $level_manager->calculate_level_for_pseudo($pseudo_id);
         $config = $level_manager->get_level_config($level);
-        $weight = (int) ($ad_type === 'sponsor' ? ($config['vote_sponsor'] ?? $weight) : ($config['vote_ad'] ?? $weight));
+        $base_weight = (int) ($ad_type === 'sponsor' ? ($config['vote_sponsor'] ?? $base_weight) : ($config['vote_ad'] ?? $base_weight));
+        $multiplier = isset($config['multiplier']) ? (float) $config['multiplier'] : $multiplier;
     }
 
-    return max(1, $weight);
+    $base_weight = max(1, $base_weight);
+    $multiplier = max(1.0, $multiplier);
+    $weighted = (int) round($base_weight * $multiplier);
+
+    return [
+        'base_weight' => $base_weight,
+        'multiplier' => $multiplier,
+        'weighted_weight' => max(1, $weighted),
+    ];
 }
 
-function impactshop_ads_calculate_tally(): array
+function impactshop_ads_watch_get_vote_weight(string $pseudo_id, string $ad_type): int
+{
+    $info = impactshop_ads_watch_get_vote_weight_info($pseudo_id, $ad_type);
+    return (int) $info['base_weight'];
+}
+
+function impactshop_ads_calculate_tally(?string $quarter_key = null): array
 {
     global $wpdb;
     $table_votes = $wpdb->prefix . 'impactshop_ads_votes';
 
-    $results = $wpdb->get_results(
-        "SELECT ngo_slug, SUM(vote_weight) as votes
-         FROM {$table_votes}
-         GROUP BY ngo_slug
-         ORDER BY votes DESC",
-        ARRAY_A
-    );
+    if ($quarter_key === null || $quarter_key === '') {
+        $results = $wpdb->get_results(
+            "SELECT ngo_slug, SUM(vote_weight) as votes
+             FROM {$table_votes}
+             GROUP BY ngo_slug
+             ORDER BY votes DESC",
+            ARRAY_A
+        );
+    } else {
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT ngo_slug, SUM(vote_weight) as votes
+                 FROM {$table_votes}
+                 WHERE quarter_key = %s
+                 GROUP BY ngo_slug
+                 ORDER BY votes DESC",
+                $quarter_key
+            ),
+            ARRAY_A
+        );
+    }
 
     return $results ?: [];
 }
 
-function impactshop_ads_calculate_tally_with_info(): array
+function impactshop_ads_calculate_tally_with_info(?string $quarter_key = null): array
 {
-    $tally = impactshop_ads_calculate_tally();
+    $tally = impactshop_ads_calculate_tally($quarter_key);
     if (!$tally) {
         return [];
     }
@@ -2868,7 +3200,7 @@ function impactshop_ads_watch_get_ngo_by_slug(string $slug): ?array
         ];
     }
 
-    if (class_exists('ImpactShop_NGO_Card_API')) {
+    if (class_exists('ImpactShop_NGO_Card_API') && method_exists('ImpactShop_NGO_Card_API', 'get_dataset_items')) {
         $items = ImpactShop_NGO_Card_API::get_dataset_items(true);
         if (isset($items[$slug]) && is_array($items[$slug])) {
             $item = $items[$slug];
@@ -2994,7 +3326,7 @@ function impactshop_ads_watch_load_ngo_codes(): array
 
 function impactshop_ads_watch_get_ngo_logo_from_dataset(string $slug): string
 {
-    if (class_exists('ImpactShop_NGO_Card_API')) {
+    if (class_exists('ImpactShop_NGO_Card_API') && method_exists('ImpactShop_NGO_Card_API', 'get_dataset_items')) {
         $dataset = ImpactShop_NGO_Card_API::get_dataset_items(true);
         if (isset($dataset[$slug]['logo_url'])) {
             return (string) $dataset[$slug]['logo_url'];
@@ -3033,6 +3365,20 @@ function impactshop_ads_watch_get_ad_tag_url(): string
         }
     }
     return esc_url_raw($url);
+}
+
+function impactshop_ads_watch_get_arukereso_base(): string
+{
+    if (!function_exists('impactshop_get_shops')) {
+        return '';
+    }
+    foreach (impactshop_get_shops() as $shop) {
+        $slug = strtolower((string) ($shop['shop_slug'] ?? ''));
+        if ($slug === 'arukereso') {
+            return (string) ($shop['dognet_base'] ?? '');
+        }
+    }
+    return '';
 }
 
 function impactshop_ads_watch_get_sponsor_settings(int $post_id): array
@@ -3416,6 +3762,16 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         'fillout_form_id' => '',
     ], $atts, 'impactshop_ads_watch');
 
+    $fillout_form_id = trim((string) $atts['fillout_form_id']);
+    if ($fillout_form_id === '') {
+        if (function_exists('impactshop_get_fillout_url')) {
+            $fillout_form_id = impactshop_get_fillout_url();
+        }
+        if ($fillout_form_id === '') {
+            $fillout_form_id = 'https://form.fillout.com/t/eM61RLkz6jus';
+        }
+    }
+
     wp_enqueue_script(
         'impactshop-ads-watch',
         plugins_url('impactshop-ads-watch.js', __FILE__),
@@ -3431,14 +3787,40 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         IMPACTSHOP_ADS_WATCH_VERSION
     );
 
+    wp_enqueue_script(
+        'impactshop-vote-purchase',
+        plugins_url('impactshop-vote-purchase.js', __FILE__),
+        ['impactshop-ads-watch'],
+        defined('IMPACTSHOP_VOTE_PURCHASE_VERSION') ? IMPACTSHOP_VOTE_PURCHASE_VERSION : IMPACTSHOP_ADS_WATCH_VERSION,
+        true
+    );
+
+    wp_enqueue_style(
+        'impactshop-vote-purchase',
+        plugins_url('impactshop-vote-purchase.css', __FILE__),
+        [],
+        defined('IMPACTSHOP_VOTE_PURCHASE_VERSION') ? IMPACTSHOP_VOTE_PURCHASE_VERSION : IMPACTSHOP_ADS_WATCH_VERSION
+    );
+
+    $quarter_window = impactshop_ads_get_active_quarter_window();
+
     wp_localize_script('impactshop-ads-watch', 'impactshopAdsWatch', [
         'restUrl'        => rest_url('impact/v1/ads-watch'),
         'restNonce'      => wp_create_nonce('wp_rest'),
-        'donationPool'   => IMPACTSHOP_ADS_DONATION_POOL,
-        'filloutFormId'  => $atts['fillout_form_id'],
+        'donationPool'   => impactshop_ads_get_active_pool(),
+        'filloutFormId'  => $fillout_form_id,
         'adTagUrl'       => impactshop_ads_watch_get_ad_tag_url(),
         'impactShopBaseUrl' => site_url('/impactshop/'),
+        'arukeresoDognetBase' => impactshop_ads_watch_get_arukereso_base(),
         'unifiedDisplay' => (bool) apply_filters('impactshop_ads_watch_unified_display', true),
+        'quarter' => [
+            'key' => $quarter_window['quarter_key'] ?? '',
+            'startAt' => $quarter_window['start_at'] ?? '',
+            'endAt' => $quarter_window['end_at'] ?? '',
+            'startTs' => $quarter_window['start_ts'] ?? 0,
+            'endTs' => $quarter_window['end_ts'] ?? 0,
+            'nowTs' => time(),
+        ],
         'i18n'           => [
             'selectNgo'     => 'Válassz NGO-t',
             'watching'      => 'Reklám lejátszása...',
@@ -3454,17 +3836,31 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         ],
     ]);
 
+    $vote_purchase_config = function_exists('impactshop_vote_purchase_get_public_config')
+        ? impactshop_vote_purchase_get_public_config()
+        : ['enabled' => false];
+
+    wp_localize_script('impactshop-vote-purchase', 'impactshopVotePurchase', [
+        'enabled' => (bool) ($vote_purchase_config['enabled'] ?? false),
+        'currency' => $vote_purchase_config['currency'] ?? 'huf',
+        'packages' => $vote_purchase_config['packages'] ?? [],
+        'publicKey' => $vote_purchase_config['publicKey'] ?? '',
+        'restBase' => rest_url('impact/v1'),
+        'restNonce' => wp_create_nonce('wp_rest'),
+        'pseudoId' => isset($_COOKIE['impactshop_pseudo_id']) ? sanitize_text_field((string) $_COOKIE['impactshop_pseudo_id']) : '',
+    ]);
+
     ob_start();
     ?>
     <div class="impactshop-ads-watch-container" id="impactshop-ads-watch">
         <div class="ads-watch-header">
             <h2>Aktivitás = Adomány</h2>
             <div class="ads-watch-subtitle">
-                <span class="subtitle-text" id="ads-watch-subtitle-text">🎬 Nézz videókat, gyűjts pontokat és szavazz!</span>
+                <span class="subtitle-text" id="ads-watch-subtitle-text">🎬 Nézz videókat – minden megtekintés után pontot és szavazatot kapsz.</span>
                 <button type="button" class="info-trigger" aria-label="Információ" data-info-trigger>i</button>
                 <div class="info-popover" data-info-popover hidden>
                     <strong>Hogyan működik?</strong><br><br>
-                    <span id="ads-watch-info-primary">🎬 <strong>Nézz videókat</strong> – minden megtekintés után pontot kapsz</span><br><br>
+                    <span id="ads-watch-info-primary">🎬 <strong>Nézz videókat</strong> – minden megtekintés után pontot és szavazatot kapsz</span><br><br>
                     📈 <strong>Emelkedj szintet</strong> – a pontjaid növelik a szinted és a szavazati erőd<br><br>
                     🗳️ <strong>Szavazz</strong> – add le szavazataidat egy általad választott szervezetre<br><br>
                     💰 <strong>Támogass</strong> – a szervezetek a szavazatok arányában részesülnek az adományalapból
@@ -3472,7 +3868,7 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
             </div>
             <div class="donation-pool-display">
                 <span class="pool-label">Adományalap:</span>
-                <span class="pool-amount"><?php echo number_format(IMPACTSHOP_ADS_DONATION_POOL, 0, ',', ' '); ?> Ft</span>
+                <span class="pool-amount"><?php echo number_format(impactshop_ads_get_active_pool(), 0, ',', ' '); ?> Ft</span>
             </div>
         </div>
 
@@ -3484,7 +3880,7 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         </div>
 
         <div class="ads-watch-main" data-role="ads-watch-main">
-        <div class="ads-watch-status-bar">
+        <div class="ads-watch-status-bar" id="ads-watch-status-bar">
             <div class="status-item user-points">
                 <span class="label">Pontjaid:</span>
                 <span class="value" id="user-points-display">-</span>
@@ -3497,6 +3893,10 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                 <span class="label">Szavazat súly:</span>
                 <span class="value" id="vote-weight-display">-</span>
             </div>
+            <div class="status-item donation-multiplier">
+                <span class="label">Adomány bónusz:</span>
+                <span class="value" id="donation-multiplier-display">-</span>
+            </div>
             <div class="status-item vote-balance">
                 <span class="label">Szavazataid:</span>
                 <span class="value" id="available-votes-display">-</span>
@@ -3504,6 +3904,76 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
             <div class="status-item streak">
                 <span class="label">🔥 Streak:</span>
                 <span class="value" id="streak-display">-</span>
+            </div>
+            <div class="status-item countdown">
+                <span class="label">⏳ Visszaszámláló:</span>
+                <span class="value" id="impact-challenge-countdown-display">-</span>
+            </div>
+        </div>
+
+        <div class="ads-watch-purchase" data-role="vote-purchase" id="ads-watch-purchase">
+            <div class="purchase-header">
+                <button type="button" class="purchase-toggle" data-role="purchase-toggle" aria-expanded="false">
+                    🎁 Adományozz és szavazz
+                </button>
+                <button type="button" class="purchase-info" data-role="purchase-info" aria-expanded="false" title="Információ">
+                    i
+                </button>
+            </div>
+            <div class="purchase-info-panel" data-role="purchase-info-panel" hidden>
+                Szavazatokat kapsz, pontot nem — a szintlépéshez aktivitás kell.
+                <br>
+                Az adomány 50%-a a közös adományalapba kerül, 50%-a a Sharity üzemeltetését támogatja.
+                <br>⚡ Impact Amplifier: a szavazatok nem csak a saját 50%-os pool‑részből adnak, hanem a teljes közös alap arányát növelik. Példa: 10 000 Ft Legend csomag után a kedvenc NGO részesedése ~10%‑ról ~21,7%‑ra nőhet, így a kapott összeg akár ~12× is lehet a sima befizetéshez képest.
+            </div>
+            <div class="purchase-body" data-role="purchase-body" hidden>
+                <div class="purchase-packages" data-role="purchase-packages"></div>
+                <div class="purchase-row">
+                    <label for="purchase-currency">Pénznem</label>
+                    <select id="purchase-currency" data-role="purchase-currency"></select>
+                </div>
+                <div class="purchase-row">
+                    <label>
+                        <input type="checkbox" data-role="purchase-company"> Cégként adományozol
+                    </label>
+                </div>
+                <div data-role="purchase-company-fields" hidden>
+                    <div class="purchase-row">
+                        <label for="purchase-company-name">Cég neve</label>
+                        <input id="purchase-company-name" type="text" data-role="company-name" placeholder="Példa Kft.">
+                    </div>
+                    <div class="purchase-row">
+                        <label for="purchase-company-tax">Adószám</label>
+                        <input id="purchase-company-tax" type="text" data-role="company-tax" placeholder="12345678-2-42">
+                    </div>
+                    <div class="purchase-row">
+                        <label for="purchase-company-address">Székhely</label>
+                        <input id="purchase-company-address" type="text" data-role="company-address" placeholder="1234 Budapest, Példa u. 1.">
+                    </div>
+                    <div class="purchase-row">
+                        <label for="purchase-company-email">Email</label>
+                        <input id="purchase-company-email" type="email" data-role="company-email" placeholder="cfo@pelda.hu">
+                    </div>
+                    <div class="purchase-row">
+                        <label>
+                            <input type="checkbox" data-role="company-save"> Adatok mentése
+                        </label>
+                    </div>
+                    <div class="purchase-row">
+                        <label>
+                            <input type="checkbox" data-role="company-gdpr"> Hozzájárulok az email kezeléséhez (GDPR)
+                        </label>
+                    </div>
+                </div>
+                <div class="purchase-row">
+                    <label>
+                        <input type="checkbox" data-role="purchase-consent"> Elfogadom az ÁSZF-et és az adatvédelmi tájékoztatót
+                    </label>
+                </div>
+                <div class="purchase-actions">
+                    <button type="button" data-role="purchase-submit">Adományozom</button>
+                </div>
+                <div class="purchase-status" data-role="purchase-status"></div>
             </div>
         </div>
 
@@ -3520,9 +3990,9 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                 <div class="insight-value"><strong id="live-activity-value">-</strong></div>
                 <div class="insight-hint">Utóbbi 5 perc szavazatai.</div>
             </div>
-            <div class="insight-card" id="ads-watch-message">
+            <div class="insight-card" id="ads-watch-message" data-role="ads-watch-message">
                 <div class="insight-title">💬 Kampány üzenet</div>
-                <div class="insight-value">Üzenet hamarosan...</div>
+                <div class="insight-value" data-role="ads-watch-message-text">Üzenet hamarosan...</div>
                 <div class="insight-hint">Itt jelennek meg a friss hírek.</div>
             </div>
             <div class="insight-card" id="ads-watch-chance">

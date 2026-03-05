@@ -282,3 +282,8 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / Engagement Challenge PR)
+- Modulcsomag: ads-watch, jysk vote, ngo-card, level/decay policy tuning.
+- Continuity evidence: docs/pr-engagement-challenge-pack-2026-03-05.md + conversation-summaries/436_conversation_summary.md.
+- Guard override policy synced a protected module review gate-hez.

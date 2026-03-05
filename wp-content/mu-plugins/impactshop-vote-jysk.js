@@ -33,8 +33,8 @@
     const restBase = config.restBase || "";
     let restNonce = config.restNonce || "";
     const nonceIssuedAt = config.nonceIssuedAt || 0;
+    const campaignSlug = root.getAttribute("data-campaign-slug") || "";
     const videoWrap = root.querySelector("[data-role=video-wrap]");
-    const ngoList = root.querySelector("[data-role=ngo-list]");
     const voteBtn = root.querySelector("[data-role=vote-submit]");
     const statusEl = root.querySelector("[data-role=vote-status]");
     const progressText = root.querySelector("[data-role=progress-text]");
@@ -51,16 +51,31 @@
     const stepsEl = root.querySelector("[data-role=steps]");
     const selectedBarEl = root.querySelector("[data-role=selected-bar]");
     const countdownEl = root.querySelector("[data-role=countdown]");
+    const selectorWrap = root.querySelector("[data-role=ngo-selector]");
+    const ngoSelect = root.querySelector("[data-role=ngo-select]");
+    const ngoFilter = root.querySelector("[data-role=ngo-filter]");
+    const ngoListEl = root.querySelector("[data-role=ngo-list]");
+    const ngoToggle = root.querySelector("[data-role=ngo-toggle]");
+    const ngoPanel = root.querySelector("[data-role=ngo-panel]");
+    const ngoCard = root.querySelector("[data-role=ngo-card]");
 
     let campaign = null;
     let statusState = { voted_today: false, next_vote_available_at: "" };
     let selectedNgo = null;
     let viewToken = "";
+    let pendingSelectorSlug = null;
+    const selectionStorageKey = "impactshop_vote_selected_ngo";
+
+    function setSelectValue(value){
+      if (!ngoSelect) return;
+      ngoSelect.value = value || "";
+    }
     let videoCompletedAt = 0;
     let tallyEtag = "";
     let tallyTimer = null;
     const tallyState = { totalVotes: 0, shownNames: 0 };
     const milestones = {25: false, 50: false, 75: false};
+    let ngoList = [];
 
     function setStatus(msg, isError){
       if (!statusEl) return;
@@ -77,6 +92,35 @@
       toastEl._timer = setTimeout(function(){
         toastEl.classList.remove("is-visible");
       }, 3200);
+    }
+
+    function setMicroMessage(text) {
+      if (!microMessageEl) return;
+      microMessageEl.textContent = text || "💬 Üzenet hamarosan…";
+    }
+
+    async function fetchCampaignMessage() {
+      if (!microMessageEl) return;
+      try {
+        const res = await fetch(restBase + "/identity/messages?ts=" + Date.now(), {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" }
+        });
+        if (!res.ok) {
+          setMicroMessage("💬 Üzenet hamarosan…");
+          return;
+        }
+        const data = await res.json();
+        const messages = data && Array.isArray(data.messages) ? data.messages : [];
+        if (!messages.length || !messages[0] || !messages[0].content) {
+          setMicroMessage("💬 Üzenet hamarosan…");
+          return;
+        }
+        setMicroMessage(messages[0].content);
+      } catch (e) {
+        setMicroMessage("💬 Üzenet hamarosan…");
+      }
     }
 
     function setStepState(step, state){
@@ -101,7 +145,7 @@
         if (stepId === 1) {
           scrollToSection(videoWrap);
         } else if (stepId === 2) {
-          scrollToSection(ngoList);
+          scrollToSection(selectorWrap);
         } else if (stepId === 3) {
           scrollToSection(voteBtn);
         }
@@ -113,10 +157,72 @@
       if (!selectedNgo) {
         selectedBarEl.style.display = "none";
         selectedBarEl.textContent = "";
+        root.classList.remove("has-selected-bar");
         return;
       }
       selectedBarEl.style.display = "";
       selectedBarEl.textContent = "Választott: " + selectedNgo.ngo_name + " (Változtatás ↑)";
+      root.classList.add("has-selected-bar");
+    }
+
+    function collapseNgoSelector(){
+      if (!selectorWrap) return;
+      selectorWrap.classList.add("is-collapsed");
+      if (ngoToggle) {
+        ngoToggle.hidden = false;
+      }
+    }
+
+    function expandNgoSelector(){
+      if (!selectorWrap) return;
+      selectorWrap.classList.remove("is-collapsed");
+      if (ngoToggle) {
+        ngoToggle.hidden = true;
+      }
+      if (ngoPanel) {
+        ngoPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      if (ngoFilter) {
+        ngoFilter.focus();
+      }
+    }
+
+    function setSelectedNgo(ngo){
+      selectedNgo = ngo;
+      if (viewToken && voteBtn && selectedNgo) {
+        voteBtn.disabled = false;
+      }
+      updateSelectedBar();
+      renderNgoCard();
+      if (selectedNgo) {
+        collapseNgoSelector();
+      } else {
+        expandNgoSelector();
+      }
+      if (ngo && campaign && campaign.id) {
+        const payload = { campaign_id: campaign.id, ngo_id: ngo.id, ngo_slug: ngo.ngo_slug };
+        try {
+          localStorage.setItem(selectionStorageKey, JSON.stringify(payload));
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+
+    function setSelectedNgoBySlug(slug){
+      if (!slug) return;
+      if (!campaign || !Array.isArray(campaign.ngos)) {
+        pendingSelectorSlug = slug;
+        return;
+      }
+      const match = campaign.ngos.find(function(item){
+        return String(item.ngo_slug || "").toLowerCase() === String(slug).toLowerCase();
+      });
+      if (match) {
+        setSelectedNgo(match);
+        setStepState(2, "done");
+        setStepState(3, "active");
+      }
     }
 
     function ngoCategory(ngo){
@@ -144,13 +250,9 @@
       if (videoWrap) {
         videoWrap.innerHTML = "<div class=\"impactshop-vote__skeleton impactshop-vote__skeleton--video\"></div>";
       }
-      if (ngoList) {
-        ngoList.innerHTML = "";
-        for (let i = 0; i < 5; i++) {
-          const card = document.createElement("div");
-          card.className = "impactshop-vote__skeleton impactshop-vote__skeleton--card";
-          ngoList.appendChild(card);
-        }
+      if (ngoCard) {
+        ngoCard.classList.add("is-empty");
+        ngoCard.textContent = "Válassz szervezetet a listából.";
       }
     }
 
@@ -324,60 +426,103 @@
       });
     }
 
-    function renderNgos(){
-      if (!ngoList || !campaign) return;
-      ngoList.innerHTML = "";
-      (campaign.ngos || []).forEach(function(ngo){
-        const card = document.createElement("div");
-        card.className = "impactshop-vote__ngo";
-        card.dataset.id = ngo.id;
-
-        const title = document.createElement("h4");
-        title.textContent = ngo.ngo_name;
-        const desc = document.createElement("p");
-        desc.textContent = ngo.description || "";
-
-      if (ngo.logo_url) {
-        const img = document.createElement("img");
-        img.src = ngo.logo_url;
-        img.alt = ngo.ngo_name;
-        card.appendChild(img);
+    function renderNgoOptions(list){
+      if (!ngoListEl || !campaign) return;
+      ngoListEl.innerHTML = "";
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "impactshop-vote__ngo-empty";
+        empty.textContent = "Nincs találat";
+        ngoListEl.appendChild(empty);
+        return;
       }
-
-      card.appendChild(title);
-      card.appendChild(desc);
-      const more = document.createElement("button");
-      more.type = "button";
-      more.className = "impactshop-vote__ngo-more";
-      more.textContent = "Részletek";
-      more.addEventListener("click", function(e){
-        e.stopPropagation();
-        showSheet(ngo);
-      });
-      card.appendChild(more);
-
-      const category = ngoCategory(ngo);
-      card.classList.add("impactshop-vote__ngo--" + category);
-        card.addEventListener("click", function(){
-          selectedNgo = ngo;
-          document.querySelectorAll(".impactshop-vote__ngo").forEach(function(el){
-            el.classList.remove("impactshop-vote__ngo--active");
-          });
-          card.classList.add("impactshop-vote__ngo--active");
-          if (viewToken) {
-            voteBtn.disabled = false;
-          }
-          setStepState(2, "done");
-          setStepState(3, "active");
-          updateSelectedBar();
+      list.forEach(function(ngo){
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "impactshop-vote__ngo-item";
+        if (selectedNgo && selectedNgo.id === ngo.id) {
+          item.classList.add("is-active");
+        }
+        item.dataset.slug = ngo.ngo_slug;
+        item.textContent = ngo.ngo_name;
+        item.addEventListener("click", function(){
+          setSelectedNgoBySlug(ngo.ngo_slug);
         });
-        ngoList.appendChild(card);
+        ngoListEl.appendChild(item);
       });
+    }
+
+    function renderNgoSelector(){
+      if (!ngoListEl || !campaign) return;
+      ngoList = Array.isArray(campaign.ngos) ? campaign.ngos.slice() : [];
+      renderNgoOptions(ngoList);
+      const stored = readStoredSelection();
+      if (stored && stored.campaign_id === campaign.id) {
+        setSelectValue(stored.ngo_slug);
+        setSelectedNgoBySlug(stored.ngo_slug);
+      }
+    }
+
+    function applyNgoFilter(value){
+      if (!ngoListEl) return;
+      const query = String(value || "").trim().toLowerCase();
+      if (!query) {
+        renderNgoOptions(ngoList);
+        return;
+      }
+      const filtered = ngoList.filter(function(ngo){
+        const name = String(ngo.ngo_name || "").toLowerCase();
+        const slug = String(ngo.ngo_slug || "").toLowerCase();
+        return name.includes(query) || slug.includes(query);
+      });
+      if (selectedNgo && !filtered.some(function(ngo){ return ngo.id === selectedNgo.id; })) {
+        filtered.unshift(selectedNgo);
+      }
+      renderNgoOptions(filtered);
+    }
+
+    function renderNgoCard(){
+      if (!ngoCard) return;
+      if (!selectedNgo) {
+        ngoCard.classList.add("is-empty");
+        ngoCard.textContent = "Válassz szervezetet a listából.";
+        return;
+      }
+      ngoCard.classList.remove("is-empty");
+      ngoCard.innerHTML = "";
+      const title = document.createElement("h4");
+      title.textContent = selectedNgo.ngo_name || "Kiválasztott szervezet";
+      const meta = document.createElement("div");
+      meta.className = "impactshop-vote__ngo-meta";
+      const tax = extractTaxNumber(selectedNgo.ngo_slug || "");
+      meta.textContent = tax ? ("Adószám: " + tax) : (selectedNgo.ngo_slug ? ("Azonosító: " + selectedNgo.ngo_slug) : "");
+      const desc = document.createElement("p");
+      desc.textContent = selectedNgo.description || "";
+      ngoCard.appendChild(title);
+      ngoCard.appendChild(meta);
+      ngoCard.appendChild(desc);
+    }
+
+    function extractTaxNumber(slug){
+      if (!slug) return "";
+      const match = slug.match(/(\\d{8}-\\d-\\d{2})/);
+      return match ? match[1] : "";
+    }
+
+    function readStoredSelection(){
+      try {
+        const raw = localStorage.getItem(selectionStorageKey);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (e) {
+        return null;
+      }
     }
 
     async function fetchInit(){
       renderSkeleton();
-      const res = await fetch(restBase + "/vote/init?ts=" + Date.now(), { credentials: "include" });
+      const slugParam = campaignSlug ? "&campaign_slug=" + encodeURIComponent(campaignSlug) : "";
+      const res = await fetch(restBase + "/vote/init?ts=" + Date.now() + slugParam, { credentials: "include" });
       if (!res.ok) {
         setStatus("Nem elérhető a kampány.", true);
         return;
@@ -393,7 +538,11 @@
 
       renderCountdown(campaign.end_at);
       renderVideo();
-      renderNgos();
+      renderNgoSelector();
+      if (pendingSelectorSlug) {
+        setSelectedNgoBySlug(pendingSelectorSlug);
+        pendingSelectorSlug = null;
+      }
       if (statusState.voted_today) {
         voteBtn.disabled = true;
         const nextText = formatNextVote(statusState.next_vote_available_at);
@@ -454,9 +603,13 @@
           return;
         }
         viewToken = data.view_token || "";
-        if (selectedNgo) {
-          voteBtn.disabled = false;
+        if (!selectedNgo) {
+          const stored = readStoredSelection();
+          if (stored && stored.campaign_id === campaign.id) {
+            setSelectedNgoBySlug(stored.ngo_slug);
+          }
         }
+        voteBtn.disabled = !(viewToken && selectedNgo);
         setStatus("Videó hitelesítve, most szavazhatsz.");
       } catch (e) {
         setStatus("Nem sikerült hitelesíteni a videót.", true);
@@ -513,7 +666,8 @@
     }
 
     async function refreshStatus(){
-      const res = await fetch(restBase + "/vote/status?ts=" + Date.now(), { credentials: "include" });
+      const slugParam = campaignSlug ? "&campaign_slug=" + encodeURIComponent(campaignSlug) : "";
+      const res = await fetch(restBase + "/vote/status?ts=" + Date.now() + slugParam, { credentials: "include" });
       if (!res.ok) return;
       const data = await res.json();
       statusState = data || statusState;
@@ -531,8 +685,11 @@
         tallyEl.textContent = "Még nincs összesített adat.";
         return;
       }
-      const topIds = items.slice(0, 3).map(function(item){ return Number(item.ngo_id); });
-      const totalVotes = items.reduce(function(sum, item){ return sum + (Number(item.votes) || 0); }, 0);
+      const sortedItems = items.slice().sort(function(a, b){
+        return (Number(b.votes) || 0) - (Number(a.votes) || 0);
+      });
+      const topIds = sortedItems.slice(0, 3).map(function(item){ return Number(item.ngo_id); });
+      const totalVotes = sortedItems.reduce(function(sum, item){ return sum + (Number(item.votes) || 0); }, 0);
       tallyState.totalVotes = totalVotes;
       if (tallyState.shownNames > totalVotes) {
         tallyState.shownNames = totalVotes;
@@ -541,11 +698,12 @@
         tallyState.shownNames = 0;
       }
       const list = document.createElement("ul");
-      items.forEach(function(item){
+      sortedItems.forEach(function(item, index){
         const ngoId = Number(item.ngo_id);
         const ngo = (campaign.ngos || []).find(function(n){ return Number(n.id) === ngoId; });
+        const name = item.ngo_name || (ngo ? ngo.ngo_name : ("NGO #" + item.ngo_id));
         const li = document.createElement("li");
-        li.textContent = (ngo ? ngo.ngo_name : ("NGO #" + item.ngo_id)) + " ";
+        li.textContent = name + " ";
         const span = document.createElement("span");
         span.className = "impactshop-vote__count";
         span.textContent = "0 szavazat";
@@ -561,23 +719,15 @@
         requestAnimationFrame(tick);
         if (topIds.includes(ngoId)) {
           const badge = document.createElement("span");
-          badge.className = "impactshop-vote__ngo-badge";
+          const rank = index + 1;
+          const rankClass = rank === 1 ? "impactshop-vote__ngo-badge--gold" : (rank === 2 ? "impactshop-vote__ngo-badge--silver" : "impactshop-vote__ngo-badge--bronze");
+          badge.className = "impactshop-vote__ngo-badge " + rankClass;
           badge.textContent = "Top 3";
           li.appendChild(badge);
         }
         li.appendChild(span);
         list.appendChild(li);
 
-        const card = ngoList ? ngoList.querySelector('[data-id="' + ngoId + '"]') : null;
-        if (card) {
-          const existing = card.querySelector(".impactshop-vote__ngo-progress");
-          if (existing) existing.remove();
-          const percent = totalVotes > 0 ? (Number(item.votes) / totalVotes) * 100 : 0;
-          const progressWrap = document.createElement("div");
-          progressWrap.className = "impactshop-vote__ngo-progress";
-          progressWrap.innerHTML = "<div class=\"impactshop-vote__ngo-progress-bar\"><span style=\"width: " + percent.toFixed(1) + "%\"></span></div><small>" + percent.toFixed(1) + "% • " + Number(item.votes).toLocaleString("hu-HU") + " szavazat</small>";
-          card.appendChild(progressWrap);
-        }
       });
       tallyEl.innerHTML = "<strong>Aktuális állás</strong>";
       tallyEl.appendChild(list);
@@ -587,8 +737,21 @@
         socialCountEl.textContent = "Az elmúlt 5 percben: " + estimate.toLocaleString("hu-HU") + " szavazat (becslés)";
       }
       if (oddsEl) {
-        const odds = totalVotes > 1 ? totalVotes - 1 : 1;
-        oddsEl.textContent = "🎁 Nyeremény esélyed: 1 / " + (totalVotes ? odds.toLocaleString("hu-HU") : "—");
+        const userVotes = Number(statusState.user_votes_total || 0);
+        const prizes = 3;
+        const total = Math.max(0, Number(totalVotes) || 0);
+        const user = Math.min(Math.max(0, userVotes), total);
+        const drawCount = Math.min(prizes, total);
+        let winProb = 0;
+        if (total > 0 && user > 0 && drawCount > 0) {
+          let loseProb = 1;
+          for (let i = 0; i < drawCount; i += 1) {
+            loseProb *= (total - user - i) / (total - i);
+          }
+          winProb = Math.max(0, Math.min(1, 1 - loseProb));
+        }
+        const percent = (winProb * 100);
+        oddsEl.textContent = "🎁 Nyeremény esélyed: " + (total ? percent.toLocaleString("hu-HU", { maximumFractionDigits: 1 }) + "%" : "—");
       }
     }
 
@@ -614,7 +777,32 @@
       voteBtn.addEventListener("click", submitVote);
     }
 
-    waitForIdentity().then(fetchInit);
+    if (ngoListEl) {
+      ngoListEl.addEventListener("keydown", function(ev){
+        if (ev.key !== "Enter") return;
+        const target = ev.target;
+        if (target && target.dataset && target.dataset.slug) {
+          setSelectedNgoBySlug(target.dataset.slug);
+        }
+      });
+    }
+
+    if (ngoFilter) {
+      ngoFilter.addEventListener("input", function(){
+        applyNgoFilter(ngoFilter.value);
+      });
+    }
+
+    if (ngoToggle) {
+      ngoToggle.addEventListener("click", function(){
+        expandNgoSelector();
+      });
+    }
+
+    waitForIdentity().then(function(){
+      fetchInit();
+      fetchCampaignMessage();
+    });
   }
 
   document.addEventListener("DOMContentLoaded", function(){

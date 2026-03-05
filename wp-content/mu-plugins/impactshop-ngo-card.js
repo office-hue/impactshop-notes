@@ -186,6 +186,9 @@
       gap: 1.75rem;
       flex-wrap: wrap;
     }
+    .impact-ngo-card__stats--challenge {
+      gap: 1.25rem;
+    }
     .impact-ngo-card__stats-block {
       min-width: 140px;
       padding-right: 1rem;
@@ -207,11 +210,71 @@
       font-weight: 700;
       color: var(--impact-card-text);
     }
+    .impact-ngo-card__stats-meta {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--impact-card-muted);
+    }
+    .impact-ngo-card__stats-meta strong {
+      font-size: 1.05rem;
+      color: var(--impact-card-text);
+    }
+    .impact-ngo-card__challenge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: rgba(15, 23, 42, 0.45);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+    .impact-ngo-card__challenge-btn {
+      flex: 1 1 140px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+    }
+    .impact-ngo-card__challenge-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(56, 189, 248, 0.5);
+    }
     .impact-ngo-card__actions {
       display: flex;
       gap: 0.9rem;
       flex-wrap: wrap;
       margin-top: 0.4rem;
+    }
+    .impact-ngo-card__action-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+    .impact-ngo-card__action-icon svg {
+      width: 1rem;
+      height: 1rem;
+      display: block;
+      fill: currentColor;
     }
     .impact-ngo-card__cta,
     .impact-ngo-card__secondary,
@@ -252,6 +315,16 @@
       border-color: rgba(16, 185, 129, 0.55);
       background: rgba(16, 185, 129, 0.12);
       color: #d1fae5;
+    }
+    .impact-ngo-card__secondary--offerwall {
+      border-color: rgba(251, 191, 36, 0.55);
+      background: rgba(251, 191, 36, 0.12);
+      color: #fef3c7;
+    }
+    .impact-ngo-card__secondary--donate {
+      border-color: rgba(244, 114, 182, 0.55);
+      background: rgba(244, 114, 182, 0.12);
+      color: #fce7f3;
     }
     .impact-ngo-card__download {
       border: 1px solid rgba(125, 211, 252, 0.35);
@@ -378,6 +451,12 @@
       .impact-ngo-card__stats-block {
         border-right: none;
         min-width: calc(50% - 1rem);
+      }
+      .impact-ngo-card__stats--challenge .impact-ngo-card__stats-block {
+        min-width: calc(50% - 0.75rem);
+      }
+      .impact-ngo-card__challenge-btn {
+        flex: 1 1 calc(50% - 0.5rem);
       }
       .impact-ngo-card__actions {
         width: 100%;
@@ -623,13 +702,71 @@
     const name = data.name || slug || "";
     const rank = data.rank || 0;
     const formattedAmount = amount.formatted || "";
+    const challengeAmount = data.challenge_amount || {};
+    const totalDonation = data.total_donation || {};
+    const challengeUrls = data.challenge_urls || {};
+    const challengeFormatted =
+      challengeAmount && typeof challengeAmount.formatted !== "undefined"
+        ? String(challengeAmount.formatted)
+        : "";
+    const totalFormatted =
+      totalDonation && typeof totalDonation.formatted !== "undefined"
+        ? String(totalDonation.formatted)
+        : formattedAmount;
+    const hasChallengeLayout = variant === "full";
     const ctaUrl = resolveCtaUrl(data, slug, variant);
+    const appendFragment = (url, fragment) => {
+      if (!url) {
+        return "";
+      }
+      if (url.indexOf("#") !== -1) {
+        return url;
+      }
+      return url + fragment;
+    };
+    const videoSupportUrl = String(data.video_support_url || "").trim();
+    const baseShopUrl = String(challengeUrls.shop || ctaUrl || "").trim();
+    const deriveChallengeUrl = (url) => {
+      if (!url) {
+        return "";
+      }
+      try {
+        const parsed = new URL(url, window.location.origin);
+        if (parsed.pathname.includes("/impact-challenge/")) {
+          return parsed.toString();
+        }
+        if (parsed.pathname.includes("/impactshop/")) {
+          parsed.pathname = parsed.pathname.replace("/impactshop/", "/impact-challenge/");
+          return parsed.toString();
+        }
+        return parsed.toString();
+      } catch (err) {
+        return url;
+      }
+    };
+    const challengeFallbackBase = deriveChallengeUrl(baseShopUrl || ctaUrl || "");
+    const videoUrl = appendFragment(
+      String(
+        challengeUrls.video || challengeFallbackBase || videoSupportUrl || baseShopUrl || ""
+      ).trim(),
+      "#ads-watch-video"
+    );
+    const offerwallUrl = appendFragment(
+      String(challengeUrls.offerwall || challengeFallbackBase || baseShopUrl || "").trim(),
+      "#impactshop-offerwall"
+    );
+    const donateUrl = appendFragment(
+      String(challengeUrls.donate || challengeFallbackBase || baseShopUrl || "").trim(),
+      "#ads-watch-purchase"
+    );
     const badge = data.badge_status || {};
     const badgeLabel = badge.label || "";
     const safeBadgeLabel = escapeHtml(badgeLabel);
     const badgeKey = (badge.key || "").replace(/[^a-z0-9_-]/gi, "");
     const safeName = escapeHtml(name);
     const safeFormattedAmount = escapeHtml(formattedAmount);
+    const safeChallengeFormatted = escapeHtml(challengeFormatted || "0 Ft");
+    const safeTotalFormatted = escapeHtml(totalFormatted || formattedAmount);
     const tagline = escapeHtml(resolveTagline(name, data));
     const logoUrl = resolveLogoUrl(slug, data);
     const supporters = data.supporters || null;
@@ -651,13 +788,6 @@
       (showAppDownloadAttr !== "false" && CONFIG.enableAppDownload);
     const showAppDownload = !!(allowAppDownload && appDownloadUrl && !hideAppDownload);
     const safeAppDownloadUrl = showAppDownload ? escapeHtml(appDownloadUrl) : "";
-    const tombolaUrl = data.tombola_url ? String(data.tombola_url).trim() : "";
-    const videoSupportUrl = data.video_support_url ? String(data.video_support_url).trim() : "";
-    const showTombola = !!tombolaUrl;
-    const showVideoSupport = !!videoSupportUrl;
-    const safeTombolaUrl = showTombola ? escapeHtml(tombolaUrl) : "";
-    const safeVideoSupportUrl = showVideoSupport ? escapeHtml(videoSupportUrl) : "";
-    const safeCtaUrl = escapeHtml(ctaUrl);
     const shareLinkTarget = shareUrl || ctaUrl;
     const safeShareLink = escapeHtml(shareLinkTarget);
     const previewOnly = el.dataset.previewOnly === "true";
@@ -665,11 +795,26 @@
     if (previewOnly) {
       cardClasses.push("impact-ngo-card--preview");
     }
-    const buildAction = (className, label, url) => {
+    const buildAction = (className, label, url, dataAction) => {
       if (previewOnly || !url) {
         return `<span class="${className} impact-ngo-card__action--disabled" role="button" aria-disabled="true" tabindex="-1">${label}</span>`;
       }
-      return `<a class="${className}" href="${url}" target="_blank" rel="noopener">${label}</a>`;
+      const actionAttr = dataAction ? ` data-action="${dataAction}"` : "";
+      return `<a class="${className}" href="${url}" target="_blank" rel="noopener"${actionAttr}>${label}</a>`;
+    };
+    const ICONS = {
+      shop: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v2a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V6a2 2 0 0 0-2-2h-1V3a1 1 0 1 0-2 0v1H7V3a1 1 0 0 0-1-1Z"/><path d="M3 10a1 1 0 0 0-1 1v8a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-8a1 1 0 0 0-1-1H3Z"/></svg>',
+      video: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1.586l3.293-3.293A1 1 0 0 1 21 6.707v10.586a1 1 0 0 1-1.707.707L15 14.414V16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>',
+      offerwall: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 2a1 1 0 0 0-1 1v1H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V3a1 1 0 0 0-1-1H9Zm6.707 7.293a1 1 0 0 0-1.414-1.414L10 12.172 8.707 10.879a1 1 0 0 0-1.414 1.414l2 2a1 1 0 0 0 1.414 0l5-5Z"/></svg>',
+      donate: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21s-6.24-4.08-8.4-8.4C1.92 9.84 2.04 6.48 4.4 4.6c2.06-1.64 4.98-1.12 6.9.76 1.92-1.88 4.84-2.4 6.9-.76 2.36 1.88 2.48 5.24.8 8C18.24 16.92 12 21 12 21Z"/></svg>',
+      share: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7h-2V6.414l-9.293 9.293-1.414-1.414L17.586 5H14V3Z"/><path d="M5 5h5V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5h-2v5H5V5Z"/></svg>',
+    };
+    const iconLabel = (key, label) => {
+      const icon = ICONS[key] || "";
+      if (!icon) {
+        return label;
+      }
+      return `<span class="impact-ngo-card__action-icon">${icon}</span>${label}`;
     };
     let secondaryStatLabel = "Rangsor";
     let secondaryStatValue = `#${escapeHtml(String(rank || "-"))}`;
@@ -677,6 +822,39 @@
       secondaryStatLabel = "Támogatók";
       secondaryStatValue = escapeHtml(Number(supporters).toLocaleString(locale));
     }
+    const statsHtml = hasChallengeLayout
+      ? `
+        <div class="impact-ngo-card__stats impact-ngo-card__stats--challenge">
+          <div class="impact-ngo-card__stats-block">
+            <span class="impact-ngo-card__stat-label">Impact Shop</span>
+            <strong>${safeFormattedAmount}</strong>
+          </div>
+          <div class="impact-ngo-card__stats-block">
+            <span class="impact-ngo-card__stat-label">Impact Challenge</span>
+            <strong>${safeChallengeFormatted}</strong>
+          </div>
+          <div class="impact-ngo-card__stats-block">
+            <span class="impact-ngo-card__stat-label">Összesen</span>
+            <strong>${safeTotalFormatted}</strong>
+          </div>
+        </div>
+        <div class="impact-ngo-card__stats-meta">
+          <span class="impact-ngo-card__stat-label">${secondaryStatLabel}</span>
+          <strong>${secondaryStatValue}</strong>
+        </div>
+      `
+      : `
+        <div class="impact-ngo-card__stats">
+          <div class="impact-ngo-card__stats-block">
+            <span class="impact-ngo-card__stat-label">Összeg</span>
+            <strong>${safeFormattedAmount}</strong>
+          </div>
+          <div class="impact-ngo-card__stats-block">
+            <span class="impact-ngo-card__stat-label">${secondaryStatLabel}</span>
+            <strong>${secondaryStatValue}</strong>
+          </div>
+        </div>
+      `;
 
     if (variant === "widget") {
       renderWidgetCard(el, {
@@ -738,39 +916,30 @@
           </div>`
               : ""
           }
-          <div class="impact-ngo-card__stats">
-            <div class="impact-ngo-card__stats-block">
-              <span class="impact-ngo-card__stat-label">Összeg</span>
-              <strong>${safeFormattedAmount}</strong>
-            </div>
-            <div class="impact-ngo-card__stats-block">
-              <span class="impact-ngo-card__stat-label">${secondaryStatLabel}</span>
-              <strong>${secondaryStatValue}</strong>
-            </div>
-          </div>
+          ${statsHtml}
           <div class="impact-ngo-card__actions">
-            ${buildAction("impact-ngo-card__cta", "Tovább az Impact Shopba", safeCtaUrl)}
-            ${
-              showTombola
-                ? buildAction(
-                    "impact-ngo-card__secondary impact-ngo-card__secondary--tombola",
-                    "WIN4Good tombola",
-                    safeTombolaUrl
-                  )
-                : ""
-            }
-            ${
-              showVideoSupport
-                ? buildAction(
-                    "impact-ngo-card__secondary impact-ngo-card__secondary--video",
-                    "Támogatom videónézéssel",
-                    safeVideoSupportUrl
-                  )
-                : ""
-            }
+            ${buildAction("impact-ngo-card__cta", iconLabel("shop", "Shop"), escapeHtml(baseShopUrl))}
+            ${buildAction(
+              "impact-ngo-card__secondary impact-ngo-card__secondary--video",
+              iconLabel("video", "Videók"),
+              escapeHtml(videoUrl),
+              "video"
+            )}
+            ${buildAction(
+              "impact-ngo-card__secondary impact-ngo-card__secondary--offerwall",
+              iconLabel("offerwall", "Feladatok"),
+              escapeHtml(offerwallUrl),
+              "offerwall"
+            )}
+            ${buildAction(
+              "impact-ngo-card__secondary impact-ngo-card__secondary--donate",
+              iconLabel("donate", "Adományozok"),
+              escapeHtml(donateUrl),
+              "donate"
+            )}
             ${buildAction(
               "impact-ngo-card__secondary impact-ngo-card__secondary--share",
-              "Megosztási oldal",
+              iconLabel("share", "Megosztási oldal"),
               safeShareLink
             )}
             ${
@@ -789,9 +958,8 @@
 
     const ctaButton = el.querySelector(".impact-ngo-card__cta");
     const shareLink = el.querySelector(".impact-ngo-card__secondary--share");
-    const tombolaLink = el.querySelector(".impact-ngo-card__secondary--tombola");
-    const videoLink = el.querySelector(".impact-ngo-card__secondary--video");
     const downloadLink = el.querySelector(".impact-ngo-card__download");
+    const challengeButtons = el.querySelectorAll(".impact-ngo-card__actions [data-action]");
 
     // Card view tracking
     trackEvent('card_view', {
@@ -822,32 +990,36 @@
       });
     }
 
-    if (!previewOnly && tombolaLink && tombolaLink.tagName === "A") {
-      tombolaLink.addEventListener("click", function () {
-        trackEvent("tombola_click", {
-          ngo: slug,
-          variant: variant,
-          destination: this.href,
-        });
-      });
-    }
-
-    if (!previewOnly && videoLink && videoLink.tagName === "A") {
-      videoLink.addEventListener("click", function () {
-        trackEvent("video_support_click", {
-          ngo: slug,
-          variant: variant,
-          destination: this.href,
-        });
-      });
-    }
-
     if (!previewOnly && downloadLink && downloadLink.tagName === "A") {
       downloadLink.addEventListener('click', function() {
         trackEvent('app_download_click', {
           ngo: slug,
           variant: variant,
           destination: this.href
+        });
+      });
+    }
+
+    if (!previewOnly && challengeButtons.length) {
+      const eventMap = {
+        video: "challenge_bar_video_click",
+        offerwall: "challenge_bar_offerwall_click",
+        shop: "challenge_bar_shop_click",
+        donate: "challenge_bar_donate_click",
+      };
+      challengeButtons.forEach((button) => {
+        const action = button.getAttribute("data-action") || "";
+        const eventName = eventMap[action];
+        if (!eventName) {
+          return;
+        }
+        button.addEventListener("click", function () {
+          trackEvent(eventName, {
+            ngo: slug,
+            variant: variant,
+            destination: this.href,
+            source: "ngo-card",
+          });
         });
       });
     }
