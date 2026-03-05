@@ -6230,3 +6230,21 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-03-04 07:48:23 CET - impactall auto log
 - **Result:** pass (warnings=0, errors=0, duration=1s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-05 08:22:53 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-05 08:40:39 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-05 10:05:00 CET - doc continuity guard baseline
+- Bevezetve a kötelező pre-push dokumentációs folytonosság gate (`scripts/safe-repo-audit.sh`) mindkét repo-ra (`impactshop-notes`, `ai-agent`).
+- Új szabály: modulmódosításnál kötelező `system-status-snapshot.md` + legalább egy `docs/*.md`; notes repo-ban kötelező `notes.md` vagy `conversation-summaries/*` is.
+- Új szabály: új modul fájlnál kötelező Bastion/guard kiterjesztési evidenciát frissíteni (`docs/bastion-guard-status.md`).
+- Hook telepítők frissítve/felvéve: `ai-agent/scripts/install-hooks.sh`, `impactshop-notes/scripts/install-hooks.sh`.
+
+## 2026-03-05 09:29:01 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json

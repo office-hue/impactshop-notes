@@ -52,3 +52,8 @@ find .codex/backups -mindepth 1 -maxdepth 1 -type d -mtime +2 -print -exec rm -r
 - Start and end sessions by updating `notes.md` with what changed and outstanding risks.
 - Store distilled ChatGPT takeaways in `conversation-summaries/` to help future agents ramp quickly.
 - Use the Hungarian localisation already present when communicating with stakeholders in shared docs.
+- Pre-push strict audit blocks module-level changes unless these are updated in the same change set:
+  - `system-status-snapshot.md`
+  - `notes.md` or `conversation-summaries/*`
+  - at least one `docs/*.md`
+- New module files must include bastion/guard extension evidence in `docs/bastion-guard-status.md`.
