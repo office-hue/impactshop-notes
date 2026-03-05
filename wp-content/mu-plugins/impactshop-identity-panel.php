@@ -431,7 +431,7 @@ function impactshop_identity_panel_register_assets(): void
         'impactshop-identity-panel',
         plugins_url('impactshop-identity-panel.js', __FILE__),
         [],
-        '1.0.4',
+        '1.0.5',
         true
     );
 

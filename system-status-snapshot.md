@@ -296,4 +296,8 @@ PHP lint ok for identity/gamification modules
 ## Snapshot Addendum (2026-03-05 / Offerwall Core PR)
 - Modulcsomag: offerwall engine + internal survey submit + question mapping bővítés.
 - Continuity evidence: docs/pr-offerwall-core-pack-2026-03-05.md + conversation-summaries/435_conversation_summary.md.
+
+## Snapshot Addendum (2026-03-05 / Engagement Challenge PR)
+- Modulcsomag: ads-watch, jysk vote, ngo-card, level/decay policy tuning.
+- Continuity evidence: docs/pr-engagement-challenge-pack-2026-03-05.md + conversation-summaries/436_conversation_summary.md.
 - Guard override policy synced a protected module review gate-hez.
