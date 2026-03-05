@@ -169,7 +169,7 @@ final class ImpactShop_NGO_Card_Admin
 
 final class ImpactShop_NGO_Card_API
 {
-    private const TRANSIENT_KEY = 'impactshop_ngo_card_dataset_v2';
+    private const TRANSIENT_KEY = 'impactshop_ngo_card_dataset_v4';
     private const ANNOUNCEMENT_OPTION = 'impactshop_ngo_card_global_announcement';
     private const TOMBOLA_LINK_OPTION = 'impactshop_ngo_card_tombola_links';
     private const VIDEO_LINK_OPTION = 'impactshop_ngo_card_video_links';
@@ -193,13 +193,17 @@ final class ImpactShop_NGO_Card_API
     private const OG_LOGO = 'sharity-logo.png';
     private const BADGE_WINDOW_DAYS = 30;
     private const FRONTEND_SCRIPT_HANDLE = 'impactshop-ngo-card-runtime';
-    private const FRONTEND_SCRIPT_VERSION = '20251113g';
+    private const FRONTEND_SCRIPT_VERSION = '20260224b';
+    private const CHALLENGE_CACHE_PREFIX = 'impactshop_ngo_card_challenge_v1_';
+    private const CHALLENGE_CACHE_TTL = 300;
+    private const CHALLENGE_STALE_TTL = 900;
+    private const CHALLENGE_LOCK_TTL = 30;
 
     private const VARIANT_FIELDS = [
-        'compact' => ['slug', 'name', 'announcement', 'amount.formatted', 'rank', 'badge_status', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
-        'full'    => ['slug', 'name', 'announcement', 'amount.formatted', 'amount.huf', 'amount.eur', 'amount.eur_formatted', 'rank', 'badge_status', 'next_milestone', 'last_updated', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
+        'compact' => ['slug', 'name', 'announcement', 'amount.formatted', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
+        'full'    => ['slug', 'name', 'announcement', 'amount.formatted', 'amount.huf', 'amount.eur', 'amount.eur_formatted', 'challenge_amount.formatted', 'challenge_amount.huf', 'challenge_amount.eur', 'challenge_amount.eur_formatted', 'challenge_amount.percentage', 'challenge_amount.donation_pool', 'total_donation.formatted', 'total_donation.huf', 'total_donation.eur', 'total_donation.eur_formatted', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'next_milestone', 'last_updated', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
         'wallet'  => ['slug', 'name', 'announcement', 'amount.huf', 'amount.formatted', 'rank', 'badge_status', 'last_updated', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'share_url', 'logo_url', 'tombola_url', 'video_support_url'],
-        'widget'  => ['slug', 'name', 'announcement', 'amount.formatted', 'rank', 'badge_status', 'last_updated', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
+        'widget'  => ['slug', 'name', 'announcement', 'amount.formatted', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'last_updated', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
     ];
 
     private static $lastCacheStatus = 'MISS';
@@ -223,6 +227,8 @@ final class ImpactShop_NGO_Card_API
         add_action('init', [__CLASS__, 'maybe_create_request_table'], 5);
         add_action('impactshop_ngo_card_rate_limit_hit', [__CLASS__, 'log_rate_limit_hit'], 10, 2);
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_frontend_assets']);
+        add_filter('the_content', [__CLASS__, 'strip_legacy_embed_scripts'], 5);
+        add_filter('elementor/frontend/the_content', [__CLASS__, 'strip_legacy_embed_scripts'], 5);
     }
 
     public static function register_routes(): void
@@ -312,6 +318,18 @@ final class ImpactShop_NGO_Card_API
         }
 
         return add_query_arg('v', rawurlencode(self::FRONTEND_SCRIPT_VERSION), $src);
+    }
+
+    public static function strip_legacy_embed_scripts(string $content): string
+    {
+        if (stripos($content, 'impactshop-ngo-card.js') === false) {
+            return $content;
+        }
+
+        $pattern = '#<script[^>]+impactshop-ngo-card\\.js[^>]*></script>#i';
+        $content = preg_replace($pattern, '', $content);
+
+        return $content ?? '';
     }
 
     public static function handle_request(WP_REST_Request $request)
@@ -507,9 +525,18 @@ final class ImpactShop_NGO_Card_API
             self::maybe_seed_approved_slugs($rows);
         }
 
+        $challengeRanks = self::collect_challenge_rank_map();
+        $challengeRankMap = $challengeRanks['map'] ?? [];
+        $challengeActiveTotal = (int) ($challengeRanks['active_total'] ?? 0);
+        $useChallengeRank = $challengeActiveTotal > 0;
+        $rankActiveTotal = $useChallengeRank ? $challengeActiveTotal : null;
+
         foreach ($rows as $row) {
             $slug = sanitize_title($row['ngo_slug'] ?? ($row['ngo'] ?? ''));
             if ($slug === '') {
+                continue;
+            }
+            if (!apply_filters('impactshop_ngo_card_allow_slug', true, $slug)) {
                 continue;
             }
 
@@ -534,6 +561,11 @@ final class ImpactShop_NGO_Card_API
                 $mode = impactshop_rank_mode_for_position($rankValue);
                 $itemDonationRate = impactshop_mode_donation_rate($mode);
                 $amount    = (int) round($rawAmount * $itemDonationRate);
+            }
+            if ($useChallengeRank) {
+                $rankValue = $challengeRankMap[$slug] ?? 0;
+                $mode = impactshop_rank_mode_for_position($rankValue, $rankActiveTotal);
+                $itemDonationRate = impactshop_mode_donation_rate($mode);
             }
 
             if ($amount < 0) {
@@ -581,7 +613,7 @@ final class ImpactShop_NGO_Card_API
                 'rank'             => $rankValue,
                 'mode'             => $mode,
                 'donation_rate'    => $itemDonationRate,
-                'badge_status'     => self::badge_status_for($slug, $rankValue, $amount),
+                'badge_status'     => self::badge_status_for($slug, $rankValue, $amount, false, $rankActiveTotal),
                 'next_milestone'   => $nextMilestone,
                 'last_updated'     => gmdate('c', $latestTs),
                 'share_url'        => self::share_url($slug),
@@ -603,8 +635,11 @@ final class ImpactShop_NGO_Card_API
                 if ($approvedSlug === '' || isset($items[$approvedSlug])) {
                     continue;
                 }
+                if (!apply_filters('impactshop_ngo_card_allow_slug', true, $approvedSlug)) {
+                    continue;
+                }
 
-                $mode = impactshop_rank_mode_for_position(0);
+                $mode = impactshop_rank_mode_for_position(0, $rankActiveTotal);
                 $amount = 0;
                 $amountData = [
                     'huf'           => 0,
@@ -629,7 +664,7 @@ final class ImpactShop_NGO_Card_API
                     'rank'             => 0,
                     'mode'             => $mode,
                     'donation_rate'    => impactshop_mode_donation_rate($mode),
-                    'badge_status'     => self::badge_status_for($approvedSlug, 0, $amount),
+                    'badge_status'     => self::badge_status_for($approvedSlug, 0, $amount, false, $rankActiveTotal),
                     'next_milestone'   => self::calculate_milestone($amount, $milestones),
                     'last_updated'     => gmdate('c', $latestTs),
                     'share_url'        => self::share_url($approvedSlug),
@@ -659,9 +694,187 @@ final class ImpactShop_NGO_Card_API
         return $dataset;
     }
 
-    private static function badge_status_for(string $slug, int $rank, int $amount, bool $skipFilters = false): array
+    private static function challenge_cache_key(string $quarterKey, int $pool): string
     {
-        $mode = impactshop_rank_mode_for_position($rank);
+        $suffix = $quarterKey !== '' ? $quarterKey : 'current';
+        return self::CHALLENGE_CACHE_PREFIX . $suffix . '_' . $pool;
+    }
+
+    private static function get_challenge_amounts(): array
+    {
+        if (!function_exists('impactshop_ads_calculate_tally_with_info')) {
+            return [
+                'available' => false,
+                'pool' => 0,
+                'total_votes' => 0,
+                'items' => [],
+            ];
+        }
+
+        $quarterKey = function_exists('impactshop_ads_get_active_quarter') ? impactshop_ads_get_active_quarter() : '';
+        $pool = 0;
+        if (function_exists('impactshop_ads_get_pool_for_quarter')) {
+            $pool = impactshop_ads_get_pool_for_quarter($quarterKey);
+        } elseif (defined('IMPACTSHOP_ADS_DONATION_POOL')) {
+            $pool = IMPACTSHOP_ADS_DONATION_POOL;
+        }
+
+        $pool = (int) $pool;
+        if ($pool <= 0) {
+            return [
+                'available' => false,
+                'pool' => 0,
+                'total_votes' => 0,
+                'items' => [],
+            ];
+        }
+
+        $cacheKey = self::challenge_cache_key($quarterKey, $pool);
+        $lockKey = $cacheKey . '_lock';
+        $cached = get_transient($cacheKey);
+        $now = time();
+
+        if (is_array($cached) && isset($cached['items'], $cached['stale_at'], $cached['expires_at'])) {
+            if ($now <= (int) $cached['stale_at']) {
+                return $cached;
+            }
+            if ($now <= (int) $cached['expires_at'] && get_transient($lockKey)) {
+                return $cached;
+            }
+        }
+
+        if (get_transient($lockKey)) {
+            return is_array($cached) ? $cached : [
+                'available' => false,
+                'pool' => 0,
+                'total_votes' => 0,
+                'items' => [],
+            ];
+        }
+
+        set_transient($lockKey, 1, self::CHALLENGE_LOCK_TTL);
+
+        $tally = impactshop_ads_calculate_tally_with_info($quarterKey !== '' ? $quarterKey : null);
+        $items = [];
+        $totalVotes = 0;
+
+        if (is_array($tally)) {
+            foreach ($tally as $row) {
+                $totalVotes += (int) ($row['votes'] ?? 0);
+            }
+        }
+
+        if ($totalVotes > 0 && is_array($tally)) {
+            foreach ($tally as $row) {
+                $slug = sanitize_title($row['ngo_slug'] ?? '');
+                if ($slug === '') {
+                    continue;
+                }
+                $votes = (int) ($row['votes'] ?? 0);
+                if ($votes <= 0) {
+                    continue;
+                }
+                $ratio = $votes / $totalVotes;
+                $items[$slug] = [
+                    'amount_huf' => (int) round($ratio * $pool),
+                    'percentage' => round($ratio * 100, 2),
+                    'donation_pool' => $pool,
+                ];
+            }
+        }
+
+        $payload = [
+            'available' => true,
+            'pool' => $pool,
+            'total_votes' => $totalVotes,
+            'items' => $items,
+            'generated_at' => $now,
+            'stale_at' => $now + self::CHALLENGE_CACHE_TTL,
+            'expires_at' => $now + self::CHALLENGE_CACHE_TTL + self::CHALLENGE_STALE_TTL,
+        ];
+
+        set_transient($cacheKey, $payload, self::CHALLENGE_CACHE_TTL + self::CHALLENGE_STALE_TTL);
+        delete_transient($lockKey);
+
+        return $payload;
+    }
+
+    private static function apply_challenge_data(array $item): array
+    {
+        $slug = sanitize_title($item['slug'] ?? '');
+        if ($slug === '') {
+            return $item;
+        }
+
+        $challenge = self::get_challenge_amounts();
+        $amountData = $item['amount'] ?? [];
+        $amountHuf = (int) ($amountData['huf'] ?? 0);
+        $amountEur = (float) ($amountData['eur'] ?? 0);
+        $amountFormatted = (string) ($amountData['formatted'] ?? '');
+        $amountEurFormatted = (string) ($amountData['eur_formatted'] ?? '');
+
+        $challengeUrls = [
+            'video' => self::challenge_section_url($slug, 'video'),
+            'offerwall' => self::challenge_section_url($slug, 'offerwall'),
+            'shop' => self::shop_landing_url($slug, 'ngo-card-challenge'),
+            'donate' => self::challenge_section_url($slug, 'donate'),
+        ];
+
+        if (empty($challenge['available'])) {
+            $item['challenge_amount'] = null;
+            $item['total_donation'] = [
+                'huf' => $amountHuf,
+                'eur' => $amountEur,
+                'formatted' => $amountFormatted,
+                'eur_formatted' => $amountEurFormatted,
+            ];
+            $item['challenge_urls'] = $challengeUrls;
+            return $item;
+        }
+
+        $rate = impactshop_get_huf_rate();
+        if ($rate <= 0) {
+            $rate = 392.0;
+        }
+
+        $pool = (int) ($challenge['pool'] ?? 0);
+        $entries = is_array($challenge['items'] ?? null) ? $challenge['items'] : [];
+        $entry = $entries[$slug] ?? null;
+
+        $challengeHuf = 0;
+        $challengePct = 0.0;
+        if (is_array($entry)) {
+            $challengeHuf = (int) ($entry['amount_huf'] ?? 0);
+            $challengePct = (float) ($entry['percentage'] ?? 0);
+            $pool = (int) ($entry['donation_pool'] ?? $pool);
+        }
+
+        $challengeEur = round($challengeHuf / $rate, 2);
+        $totalHuf = $amountHuf + $challengeHuf;
+        $totalEur = round($totalHuf / $rate, 2);
+
+        $item['challenge_amount'] = [
+            'huf' => $challengeHuf,
+            'eur' => $challengeEur,
+            'formatted' => impactshop_format_huf($challengeHuf),
+            'eur_formatted' => self::format_eur($challengeEur),
+            'percentage' => round($challengePct, 2),
+            'donation_pool' => $pool,
+        ];
+        $item['total_donation'] = [
+            'huf' => $totalHuf,
+            'eur' => $totalEur,
+            'formatted' => impactshop_format_huf($totalHuf),
+            'eur_formatted' => self::format_eur($totalEur),
+        ];
+        $item['challenge_urls'] = $challengeUrls;
+
+        return $item;
+    }
+
+    private static function badge_status_for(string $slug, int $rank, int $amount, bool $skipFilters = false, ?int $activeTotal = null): array
+    {
+        $mode = impactshop_rank_mode_for_position($rank, $activeTotal);
         $status = [
             'key'         => 'base',
             'label'       => __('Base Mode', 'impactshop'),
@@ -716,6 +929,10 @@ final class ImpactShop_NGO_Card_API
         $looksLikeSlug = ($name !== '' && sanitize_title($name) === $slug);
         if (($name === '' || $looksLikeSlug) && function_exists('impactshop_resolve_ngo_name')) {
             $name = impactshop_resolve_ngo_name($slug);
+        }
+        $filtered = apply_filters('impactshop_ngo_card_display_name', $name, $slug, $rawName);
+        if (is_string($filtered) && $filtered !== '') {
+            $name = $filtered;
         }
         if ($name === '') {
             $name = ucwords(str_replace('-', ' ', $slug));
@@ -815,6 +1032,74 @@ final class ImpactShop_NGO_Card_API
         }
 
         return $rows;
+    }
+
+    private static function collect_challenge_rank_map(): array
+    {
+        $quarterKey = function_exists('impactshop_ads_get_active_quarter') ? impactshop_ads_get_active_quarter() : '';
+        $tally = [];
+
+        if (function_exists('impactshop_ads_calculate_tally_with_info')) {
+            $tally = impactshop_ads_calculate_tally_with_info($quarterKey !== '' ? $quarterKey : null);
+        } else {
+            global $wpdb;
+            $table = $wpdb->prefix . 'impactshop_ads_votes';
+            $tableExists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+            if (!$tableExists) {
+                return ['map' => [], 'active_total' => 0];
+            }
+
+            if ($quarterKey !== '') {
+                $tally = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT ngo_slug, SUM(vote_weight) as votes
+                         FROM {$table}
+                         WHERE quarter_key = %s
+                         GROUP BY ngo_slug
+                         ORDER BY votes DESC",
+                        $quarterKey
+                    ),
+                    ARRAY_A
+                );
+            } else {
+                $tally = $wpdb->get_results(
+                    "SELECT ngo_slug, SUM(vote_weight) as votes
+                     FROM {$table}
+                     GROUP BY ngo_slug
+                     ORDER BY votes DESC",
+                    ARRAY_A
+                );
+            }
+        }
+
+        if (!is_array($tally) || !$tally) {
+            return ['map' => [], 'active_total' => 0];
+        }
+
+        $rankMap = [];
+        $rank = 1;
+        foreach ($tally as $row) {
+            $votes = (int) ($row['votes'] ?? 0);
+            if ($votes <= 0) {
+                continue;
+            }
+            $slug = sanitize_title($row['ngo_slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+            if (function_exists('impactshop_canonical_ngo_slug')) {
+                $slug = impactshop_canonical_ngo_slug($slug);
+            }
+            if ($slug === '') {
+                continue;
+            }
+            if (!isset($rankMap[$slug])) {
+                $rankMap[$slug] = $rank;
+                $rank++;
+            }
+        }
+
+        return ['map' => $rankMap, 'active_total' => count($rankMap)];
     }
 
     private static function logo_url(string $slug): string
@@ -945,7 +1230,7 @@ final class ImpactShop_NGO_Card_API
             return new WP_Error('impact_ngo_badge_not_found', __('A kért NGO nem található a jelenlegi listában.', 'impactshop'), ['status' => 404]);
         }
 
-        $item = $dataset['items'][$slug];
+        $item = self::apply_challenge_data($dataset['items'][$slug]);
         $rank = (int) ($item['rank'] ?? 0);
         $amount = (int) ($item['amount']['huf'] ?? 0);
 
@@ -997,7 +1282,7 @@ final class ImpactShop_NGO_Card_API
             );
         }
 
-        $item = $dataset['items'][$slug];
+        $item = self::apply_challenge_data($dataset['items'][$slug]);
         $variantFields = self::variant_fields($variant);
         if ($fields) {
             $fields = array_values(array_unique(array_filter(array_map('trim', $fields))));
@@ -1019,6 +1304,14 @@ final class ImpactShop_NGO_Card_API
         ];
 
         $etagSource = $dataset['hash'] . '|' . $slug . '|' . $variant . '|' . ($fields ? implode(',', $fields) : '');
+        if (self::should_include_challenge_etag($allowed)) {
+            $challengeHash = sha1(wp_json_encode([
+                $data['challenge_amount'] ?? null,
+                $data['total_donation'] ?? null,
+                $data['challenge_urls'] ?? null,
+            ]));
+            $etagSource .= '|challenge:' . $challengeHash;
+        }
         $etag = sha1($etagSource);
 
         $data['_cache'] = $cacheMeta;
@@ -1028,6 +1321,22 @@ final class ImpactShop_NGO_Card_API
             '_etag' => $etag,
             '_cache'=> $cacheMeta,
         ];
+    }
+
+    private static function should_include_challenge_etag(array $allowed): bool
+    {
+        foreach ($allowed as $field) {
+            if (strpos($field, 'challenge_amount') === 0) {
+                return true;
+            }
+            if (strpos($field, 'total_donation') === 0) {
+                return true;
+            }
+            if (strpos($field, 'challenge_urls') === 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static function handle_card_request(WP_REST_Request $request)
@@ -1330,6 +1639,19 @@ final class ImpactShop_NGO_Card_API
     public static function purge_cache(): void
     {
         delete_transient(self::TRANSIENT_KEY);
+        $quarterKey = function_exists('impactshop_ads_get_active_quarter') ? impactshop_ads_get_active_quarter() : '';
+        $pool = 0;
+        if (function_exists('impactshop_ads_get_pool_for_quarter')) {
+            $pool = impactshop_ads_get_pool_for_quarter($quarterKey);
+        } elseif (defined('IMPACTSHOP_ADS_DONATION_POOL')) {
+            $pool = IMPACTSHOP_ADS_DONATION_POOL;
+        }
+        $pool = (int) $pool;
+        if ($pool > 0) {
+            $cacheKey = self::challenge_cache_key($quarterKey, $pool);
+            delete_transient($cacheKey);
+            delete_transient($cacheKey . '_lock');
+        }
     }
 
     public static function sanitize_fields($value)
@@ -1647,6 +1969,60 @@ final class ImpactShop_NGO_Card_API
     {
         $slug = sanitize_title($slug);
         $base = home_url('/impactshop/');
+        $campaign = sprintf('%s-%s', $slug, gmdate('Ym'));
+        $medium   = self::medium_from_context($context);
+
+        $params = array_merge(
+            [
+                'd1'           => $slug,
+                'ngo'          => $slug,
+                'src'          => $context,
+                'utm_source'   => 'ngo-card',
+                'utm_medium'   => $medium,
+                'utm_campaign' => $campaign,
+                'utm_content'  => $context,
+            ],
+            array_filter(
+                $extra,
+                static function ($value) {
+                    return $value !== null && $value !== '';
+                }
+            )
+        );
+
+        return add_query_arg($params, $base);
+    }
+
+    private static function challenge_section_url(string $slug, string $section): string
+    {
+        $slug = sanitize_title($slug);
+        if ($slug === '') {
+            return '';
+        }
+
+        $section = strtolower(trim($section));
+        $fragment = '';
+        $fragmentMap = [
+            'video' => 'ads-watch-video',
+            'offerwall' => 'impactshop-offerwall',
+            'donate' => 'ads-watch-purchase',
+        ];
+        if (isset($fragmentMap[$section])) {
+            $fragment = '#' . $fragmentMap[$section];
+        }
+
+        $base = self::challenge_landing_url($slug, 'ngo-card-challenge');
+        if ($base === '') {
+            return '';
+        }
+
+        return $fragment !== '' ? $base . $fragment : $base;
+    }
+
+    private static function challenge_landing_url(string $slug, string $context, array $extra = []): string
+    {
+        $slug = sanitize_title($slug);
+        $base = home_url('/impact-challenge/');
         $campaign = sprintf('%s-%s', $slug, gmdate('Ym'));
         $medium   = self::medium_from_context($context);
 

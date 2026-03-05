@@ -1,0 +1,1028 @@
+[
+  {
+    "id": "A01",
+    "title": "Vissza kell vadítani városainkat (Qubit)",
+    "link": "https://magyarnarancs.hu/belpol/klimavaltozas-varosok-megoldas-2023",
+    "summary": "A Qubit cikk szerint a klímaváltozás miatt egyre gyakoribbak a hőhullámok és felhőszakadások. A szerzők szerint a fenntarthatóság már kevés: a városokat vissza kell vadítani, például vadvédelmi zöldfolyosókkal, vadvirágos rétekkel és rovarhotelekkel, mint a Pünkösdfürdő Parkban",
+    "questions": [
+      {
+        "label": "Miért tartják fontosnak a városok 'visszavadítását' a cikk szerint?",
+        "options": {
+          "A": "Mert csökkenteni akarják a forgalmat",
+          "B": "Mert a fenntarthatóság már nem elég a klímaváltozás hatásai ellen",
+          "C": "Mert így több parkoló építhető",
+          "D": "Mert városi lakótelepeket építenének"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Milyen elemekkel példálózik a cikk a Pünkösdfürdő Parkban?",
+        "options": {
+          "A": "Ugródeszkák és medencék",
+          "B": "Vadvirágos rétek, rovarhotelek és esővízkezelés",
+          "C": "Magas toronyházak",
+          "D": "Autópálya"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi a fő célja az új városi regenerációs szemléletnek?",
+        "options": {
+          "A": "Minél több bevásárlóközpont építése",
+          "B": "Hosszú távon biztosítani az élelmiszerellátást és a biodiverzitást",
+          "C": "Több autó parkolási lehetőség",
+          "D": "Több irodaház építése"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A02",
+    "title": "Műanyag‑szennyezés a Dunán (Greenpeace)",
+    "link": "https://magyarnarancs.hu/tudomany/elelmiszerhullad-problem-2024",
+    "summary": "A Greenpeace önkéntesei a Duna óbudai szigeténél gyűjtötték össze a parton felhalmozódott műanyag hulladékot. A hulladék zömét Coca‑Cola palackok, kupakok és csomagolások tették ki, ami rámutat a betétdíjas rendszerek szükségességére és a globális egyszer használatos műanyag csomagolások kivezetésének fontosságára",
+    "questions": [
+      {
+        "label": "Hol végezték a Greenpeace aktivistái a takarítást?",
+        "options": {
+          "A": "A Duna óbudai szigeténél",
+          "B": "A Balaton partján",
+          "C": "A Tisza forrásánál",
+          "D": "A Kárpátokban"
+        },
+        "correct": "A"
+      },
+      {
+        "label": "Melyik márka műanyag csomagolása dominált a hulladékban?",
+        "options": {
+          "A": "Pepsi",
+          "B": "Coca‑Cola",
+          "C": "Sprite",
+          "D": "Fanta"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mit javasol a cikk a műanyagszennyezés megoldására?",
+        "options": {
+          "A": "Több műanyag használatát",
+          "B": "Az egyszer használatos csomagolások kivezetését és betétdíjas rendszerek bevezetését",
+          "C": "Műanyag égetését",
+          "D": "Csomagolások árának emelését"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A03",
+    "title": "2023 irtó meleg volt, 2024 még forróbb lehet (Qubit)",
+    "link": "https://qubit.hu/2024/03/27/bartha-horvath-balint-a-korforgasos-gazdasagra-valo-atallas-nem-joemberkedes-hanem-kenyszerpalya",
+    "summary": "A NASA kutatói szerint a 2023‑as év a valaha mért egyik legmelegebb volt, és az El Niño miatt 2024 még ennél is forróbb lehet. A tanulmány arra figyelmeztet, hogy az emberi üvegházhatású gázok kibocsátása a fő ok, és a Párizsi Egyezmény céljainak eléréséhez radikálisan csökkenteni kell a kibocsátást, ami a gazdaság átalakítását is igényli",
+    "questions": [
+      {
+        "label": "Miért várják a kutatók, hogy 2024 még melegebb lesz, mint 2023?",
+        "options": {
+          "A": "A Nap aktivitása miatt",
+          "B": "A vulkáni tevékenység fokozódása miatt",
+          "C": "Az El Niño jelenség miatt",
+          "D": "Mert több felhő lesz"
+        },
+        "correct": "C"
+      },
+      {
+        "label": "Mi a globális felmelegedés fő oka a cikk szerint?",
+        "options": {
+          "A": "Az emberi üvegházhatású gázok kibocsátása",
+          "B": "A Föld pályája",
+          "C": "A meteoritok becsapódása",
+          "D": "A Nap kisebb aktivitása"
+        },
+        "correct": "A"
+      },
+      {
+        "label": "Mit javasolnak a szakértők a klímacélok eléréséhez?",
+        "options": {
+          "A": "Nincs szükség beavatkozásra",
+          "B": "A gazdaság átalakítását és a kibocsátás drasztikus csökkentését",
+          "C": "Több fosszilis energia termelését",
+          "D": "Az autóhasználat növelését"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A04",
+    "title": "Évente 60 millió tonna élelmiszer megy a kukába (Qubit)",
+    "link": "https://magyarnarancs.hu/tudomany/elelmiszerhullad-problem-2024",
+    "summary": "Az Európai Unióban 2023-ban 58,2 millió tonna élelmiszerhulladék keletkezett, ami 0,7 százalékos növekedést jelent az előző évhez képest. A hulladék 53 százaléka a háztartásokból származik, fejenként 69 kilogramm, és a Fenntartható Fejlődési Célok szerint 2030-ra felére kell csökkenteni az egy főre jutó élelmiszerhulladékot",
+    "questions": [
+      {
+        "label": "Hány tonna élelmiszerhulladék keletkezett 2023-ban az EU-ban?",
+        "options": {
+          "A": "25 millió tonna",
+          "B": "40 millió tonna",
+          "C": "58,2 millió tonna",
+          "D": "100 millió tonna"
+        },
+        "correct": "C"
+      },
+      {
+        "label": "A hulladék hány százaléka származik a háztartásokból?",
+        "options": {
+          "A": "20%",
+          "B": "53%",
+          "C": "80%",
+          "D": "100%"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi a célkitűzés 2030-ra az élelmiszerhulladék tekintetében?",
+        "options": {
+          "A": "Az egy főre jutó hulladék nullára csökkentése",
+          "B": "Az élelmiszerhulladék megduplázása",
+          "C": "Az egy főre jutó hulladék felére csökkentése",
+          "D": "Semmilyen változás"
+        },
+        "correct": "C"
+      }
+    ]
+  },
+  {
+    "id": "A05",
+    "title": "Körforgásos gazdaság és megújuló energia (Qubit)",
+    "link": "https://qubit.hu/2024/03/27/bartha-horvath-balint-a-korforgasos-gazdasagra-valo-atallas-nem-joemberkedes-hanem-kenyszerpalya",
+    "summary": "A Qubit cikk szerint a klímaválság megoldása a körforgásos gazdaságra való átállást és a megújuló energia fejlesztését is megköveteli. A cikk rámutat, hogy a háztartási hulladék az EU teljes hulladékának kevesebb mint 10 százalékát teszi ki, ezért társadalmi szemléletváltásra van szükség a hulladékcsökkentés érdekében Több magyar városban a biohulladékot biogáz és komposzt előállítására gyűjtik ugyanakkor a megújuló energia elterjedését az energiahálózat és a tárolás korlátai nehezítik",
+    "questions": [
+      {
+        "label": "A cikk szerint az EU teljes hulladékának mekkora hányada származik a háztartásokból?",
+        "options": {
+          "A": "Kevesebb mint 10%",
+          "B": "Körülbelül 50%",
+          "C": "80%",
+          "D": "100%"
+        },
+        "correct": "A"
+      },
+      {
+        "label": "Mi történik több magyar városban a biohulladékkal?",
+        "options": {
+          "A": "Elégetik",
+          "B": "Komposztot és biogázt készítenek belőle",
+          "C": "A folyókba öntik",
+          "D": "Nem gyűjtik külön"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi korlátozza a megújuló energia elterjedését a cikk szerint?",
+        "options": {
+          "A": "A tárolás és az energiaelosztó hálózat korlátai",
+          "B": "Az emberek érdektelensége",
+          "C": "Az eszközök ára",
+          "D": "A napsütés hiánya"
+        },
+        "correct": "A"
+      }
+    ]
+  },
+  {
+    "id": "A06",
+    "title": "Megállíthatatlanul nő a globális légkondihasználat (Qubit)",
+    "link": "https://qubit.hu/2024/09/24/itt-az-ideje-ujradefinialni-a-fenntarthatosagot",
+    "summary": "A cikk leírja a 'légkondi-paradoxont': ahogy melegszik az éghajlat, egyre több légkondicionálót használunk, ami tovább növeli az energiafogyasztást és a szén-dioxid-kibocsátást. 1990 és 2024 között a légkondicionáló készülékek száma 576 millióról 2,31 milliárdra nőtt, és az előrejelzések szerint 2050-re tovább emelkedik, főként Indiában A légkondik és a ventilátorok a világ épületeinek villamosenergia-fogyasztásának mintegy 20 százalékát adják, miközben az energia-előállítás és a fűtés a globális CO₂-kibocsátás 40 százalékáért felel",
+    "questions": [
+      {
+        "label": "Mennyi volt a légkondicionálók száma 1990-ben és 2024-ben?",
+        "options": {
+          "A": "100 millió és 500 millió",
+          "B": "576 millió és 2,31 milliárd",
+          "C": "1 milliárd és 3 milliárd",
+          "D": "10 millió és 100 millió"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mekkora arányt képviselnek a légkondicionálók és ventilátorok az épületek villamosenergia-fogyasztásában?",
+        "options": {
+          "A": "20%",
+          "B": "5%",
+          "C": "50%",
+          "D": "80%"
+        },
+        "correct": "A"
+      },
+      {
+        "label": "Melyik országban várható a légkondik számának legnagyobb növekedése 2050-re?",
+        "options": {
+          "A": "Magyarország",
+          "B": "India",
+          "C": "Egyesült Államok",
+          "D": "Németország"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A07",
+    "title": "Az állatvédelmi alapítvány 2024-es eredményei (Hunpets)",
+    "link": "https://hunpets.hu/",
+    "summary": "A Közös ügyünk az állatvédelem Alapítvány 2024-ben több mint 900 millió forint támogatást osztott ki állatvédő szervezeteknek, ebből 72 millió forintot ivartalanítási programokra és 83 millió forint értékben állateledel-adományokra Oktatási programjaikban 315 ezer gyerek vett részt, ami rámutat az alapítvány társadalmi szerepére.",
+    "questions": [
+      {
+        "label": "Mennyi támogatást osztott szét az alapítvány állatvédő szervezeteknek 2024-ben?",
+        "options": {
+          "A": "100 millió forintot",
+          "B": "300 millió forintot",
+          "C": "900 millió forintot",
+          "D": "1 milliárd forintot"
+        },
+        "correct": "C"
+      },
+      {
+        "label": "Milyen programokra fordítottak 72 millió forintot?",
+        "options": {
+          "A": "Kampányokra",
+          "B": "Ivartalanítási programokra",
+          "C": "Utazásokra",
+          "D": "Szórakoztató rendezvényekre"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hány gyermek vett részt az alapítvány oktatási programjaiban?",
+        "options": {
+          "A": "31 500",
+          "B": "100 000",
+          "C": "315 000",
+          "D": "1 millió"
+        },
+        "correct": "C"
+      }
+    ]
+  },
+  {
+    "id": "A08",
+    "title": "A fenntartható halászat újragondolása (Qubit)",
+    "link": "https://qubit.hu/2024/09/24/itt-az-ideje-ujradefinialni-a-fenntarthatosagot",
+    "summary": "Óceánkutatók az Ocean Sustainability folyóiratban közzétett javaslatukban sürgetik a fenntartható halászat újradefiniálását. A mostani koncepció túl egyszerű, produktivitás-központú, ezért nem állítja meg az óceánok pusztulását. Két alapelvet említenek: a halászati gyakorlatnak minimális hatással kell lennie az élővilágra, és támogatnia kell a legkiszolgáltatottabb közösségeket, még ha ez többletköltséggel jár",
+    "questions": [
+      {
+        "label": "Hol tették közzé a fenntartható halászat újragondolását sürgető javaslatot?",
+        "options": {
+          "A": "A Nature Food folyóiratban",
+          "B": "Az Ocean Sustainability folyóiratban",
+          "C": "Az Európai Bizottság oldalán",
+          "D": "A Green Policy Center honlapján"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi a két fő vezérelv az új javaslat szerint?",
+        "options": {
+          "A": "Korlátlan halászat és profitnövelés",
+          "B": "Minimális ökológiai hatás és a sérülékeny közösségek támogatása",
+          "C": "Több halászati eszköz használata",
+          "D": "Csak nagy halak kifogása"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miért tartják elavultnak a jelenlegi fenntartható halászat fogalmát?",
+        "options": {
+          "A": "Mert túl sok szabályt tartalmaz",
+          "B": "Mert kizárja a kisebb halászhajókat",
+          "C": "Mert leegyszerűsítő, a produktivitásra fókuszál, és nem állítja meg az óceánok pusztulását",
+          "D": "Mert túl költséges"
+        },
+        "correct": "C"
+      }
+    ]
+  },
+  {
+    "id": "A09",
+    "title": "Heti két csirkemellnyi hús a maximum (Qubit)",
+    "link": "https://qubit.hu/2025/04/24/heti-ket-csirkemellnyi-hus-a-maximum-ha-fenntarthatoan-akarunk-etkezni",
+    "summary": "A Dán Műszaki Egyetem kutatóinak vizsgálata szerint ahhoz, hogy az emberi táplálkozási igények mellett a Föld eltartó képességét se feszítsük túl, heti 255 gramm csirke- és sertéshúst ehetünk. A 2500 élelmiszer környezeti lábnyomát vizsgáló tanulmány megállapította, hogy a marhahús még kis mennyiségben is összeegyeztethetetlen a bolygó regenerációs képességével, ugyanakkor a teljes emberiség tápanyagigénye kielégíthető lenne egy részben növényi alapú étrenddel",
+    "questions": [
+      {
+        "label": "Mennyi húst javasol a tanulmány heti szinten elfogyasztani?",
+        "options": {
+          "A": "100 grammot",
+          "B": "255 grammot",
+          "C": "500 grammot",
+          "D": "1 kilogrammot"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miért nem fér bele a marhahús a bolygókímélő étrendbe a kutatás szerint?",
+        "options": {
+          "A": "Mert túl drága",
+          "B": "Mert a fogyasztása inkompatibilis a bolygó erőforrásaival",
+          "C": "Mert rossz az íze",
+          "D": "Mert nem egészséges"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mit állítanak a kutatók az emberiség tápanyagigényéről?",
+        "options": {
+          "A": "Nem fedezhető növényi étrenddel",
+          "B": "Csak hússal fedezhető",
+          "C": "Fedezhető részben növényi alapú étrenddel, miközben a Földet kíméljük",
+          "D": "Csak marhahússal fedezhető"
+        },
+        "correct": "C"
+      }
+    ]
+  },
+  {
+    "id": "A10",
+    "title": "Az aszály súlyosbodása Magyarországon (Qubit)",
+    "link": "https://qubit.hu/2025/11/27/2021-es-2024-kozott-haromszor-sujtotta-az-orszag-teruletenek-legalabb-70-szazalekat-aszaly",
+    "summary": "A klímapolitikai szakértők szerint 2021 és 2024 között háromszor fordult elő, hogy Magyarország területének legalább 70 százalékát aszály sújtotta, ami az előző húsz évben csak hétszer történt meg. A felmelegedés miatt a folyók vízhozama 15 százalékkal csökkent, a talajvíz több Balatonnal egyenértékű mennyiséggel apadt, és a talajvíz gyökerek által elérhetetlen szinten van A szakértők szerint a megoldás a vízvisszatartó infrastruktúra fejlesztése, a talajtakarásos és forgatás nélküli művelés, valamint a mezőgazdasági szerkezet átalakítása",
+    "questions": [
+      {
+        "label": "A 2021–2024 közötti négy évből hányszor érintette aszály Magyarország területének legalább 70 százalékát?",
+        "options": {
+          "A": "Egyszer",
+          "B": "Háromszor",
+          "C": "Tízszer",
+          "D": "Soha"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mivel magyarázzák a szakértők a talajvíz drámai apadását?",
+        "options": {
+          "A": "A csapadék növekedésével",
+          "B": "A kipárolgás megduplázódásával és a csapadék csökkenésével",
+          "C": "A folyók elterelésével",
+          "D": "A dombok eltűnésével"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Milyen intézkedéseket javasolnak a szakértők a helyzet javítására?",
+        "options": {
+          "A": "Árvízvédelmi gátak építését",
+          "B": "Vízvisszatartó infrastruktúra fejlesztését, talajtakarásos művelést és a mezőgazdaság átalakítását",
+          "C": "Több aszály",
+          "D": "Nincs szükség semmilyen beavatkozásra"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A12",
+    "title": "A körforgásos gazdaság nem jótékonyság, hanem kényszer (Qubit)",
+    "link": "https://qubit.hu/2024/03/27/bartha-horvath-balint-a-korforgasos-gazdasagra-valo-atallas-nem-joemberkedes-hanem-kenyszerpalya",
+    "summary": "Bartha-Horváth Bálint környezetgazdász szerint a fosszilis energiahordozók és más nyersanyagok készletei az évszázad végéig kimerülhetnek, miközben életmódunk súlyosan pusztítja a bolygót. A lineáris gazdasági modell helyett a körforgásos gazdaságot sürgeti, amely a fogyasztás csökkentésére, javításra és újrafelhasználásra épül Az EU 2020-as cselekvési terve szerint a körforgásos gazdaság a nettó zéró kibocsátás és a biodiverzitás megóvásának előfeltétele Európa erőforrás-szegény kontinens, így a körforgásra való átállás gazdasági kényszer is",
+    "questions": [
+      {
+        "label": "Miért van szükség a körforgásos gazdaságra a cikk szerint?",
+        "options": {
+          "A": "Mert túl sok nyersanyag áll rendelkezésre",
+          "B": "Mert a fosszilis és más erőforrások kimerülnek és a lineáris gazdaság fenntarthatatlan",
+          "C": "Mert olcsóbb, mint a lineáris gazdaság",
+          "D": "Mert kevesebb munkát igényel"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mit mond az EU 2020-as cselekvési terve a körforgásos gazdaságról?",
+        "options": {
+          "A": "Nem foglalkozik vele",
+          "B": "Elengedhetetlen a nettó zéró kibocsátás és a biodiverzitás megőrzéséhez",
+          "C": "A körforgás csak a hulladékgyűjtésről szól",
+          "D": "A körforgást 2100-ra halasztják"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miért mondja a cikk, hogy a körforgásra való átállás gazdasági kényszer Európában?",
+        "options": {
+          "A": "Mert Európa bővelkedik nyersanyagokban",
+          "B": "Mert az erőforrások szűkösek, ezért stratégiai érdek a nyersanyagokhoz való hozzáférés",
+          "C": "Mert nem szükséges új munkahelyeket teremteni",
+          "D": "Mert a körforgás ingyenes energiát biztosít"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A13",
+    "title": "A FAO 80 éve az élelmezésbiztonságért (Qubit)",
+    "link": "https://qubit.hu/2025/10/16/nyolcvan-eves-az-ehezes-felszamolasara-alapitott-fao-nyolc-abran-mutatjuk-be-mit-sikerult-elernie",
+    "summary": "Az Élelmezésügyi és Mezőgazdasági Világszervezetet (FAO) 1945. október 16-án alapították a kanadai Québecben. Jelmondata 'Fiat panis' (Legyen kenyér), célja az éhezés felszámolása és az egészséges táplálkozás biztosítása a világ legkiszolgáltatottabb csoportjainak A FAO jelentős eredményei közé tartozik az első globális mezőgazdasági felmérés, a Világélelmezési Program létrehozása 1961-ben a Zöld Forradalom támogatása a GIEWS korai előrejelző rendszer felállítása 1975-ben valamint a globális szarvasmarhapestis felszámolása. Az elmúlt években a FAO a fenntartható agrár- és élelmiszer-rendszereket és a Four Betters stratégiát helyezi előtérbe",
+    "questions": [
+      {
+        "label": "Mikor és hol alapították a FAO-t?",
+        "options": {
+          "A": "1945-ben, Québecben",
+          "B": "1950-ben, Rómában",
+          "C": "1961-ben, New Yorkban",
+          "D": "1994-ben, Genfben"
+        },
+        "correct": "A"
+      },
+      {
+        "label": "Mi volt a FAO egyik első nagy programja 1961-ben?",
+        "options": {
+          "A": "A Globális Élelmiszerpiaci Rendszer",
+          "B": "A Világélelmezési Program",
+          "C": "A Szarvasmarhapestis Program",
+          "D": "Az Éghajlatváltozási Alap"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi a GIEWS rendszer célja?",
+        "options": {
+          "A": "Játékok készítése",
+          "B": "Az élelmiszerhiány és más válságok korai előrejelzése és gyors segélyezés lehetővé tétele",
+          "C": "Árvízvédelmi tervek készítése",
+          "D": "Autók gyártása"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A14",
+    "title": "A bioszféra integritásának határai (Qubit)",
+    "link": "https://qubit.hu/2025/08/18/a-fold-szarazfoldi-teruleteinek-60-szazalekan-mar-veszelyben-van-a-bioszfera-egeszsege",
+    "summary": "Egy új tanulmány a bioszféra funkcionális integritását vizsgálva megállapította, hogy a Föld szárazföldi területeinek 60 százaléka már a helyi biztonságos zóna határain kívül esik, 38 százaléka pedig magas kockázatú övezetben van. A kutatók két mutató alapján értékelték az ökoszisztémák terhelését: a biomassza emberi felhasználását és az ökoszisztémák destabilizációjának kockázatát A vizsgálat kimutatta, hogy Európa, Ázsia és Észak-Amerika a leginkább érintett, és sürgős bioszféra-védelmet szorgalmaz, például esőerdők védelmét és fenntartható mezőgazdaságot",
+    "questions": [
+      {
+        "label": "A tanulmány szerint a Föld szárazföldi területeinek mekkora része esik a helyi biztonságos zóna határain kívülre?",
+        "options": {
+          "A": "10%",
+          "B": "38%",
+          "C": "60%",
+          "D": "90%"
+        },
+        "correct": "C"
+      },
+      {
+        "label": "Melyik két fő mutatót vették figyelembe a bioszféra terhelésének méréséhez?",
+        "options": {
+          "A": "A levegő hőmérsékletét és az ózonlyuk méretét",
+          "B": "A biomassza emberi felhasználását és az ökoszisztéma destabilizációjának kockázatát",
+          "C": "Az autók számát és a városok területét",
+          "D": "A tengerszint emelkedését és a jégolvadást"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mit javasolnak a kutatók a bioszféra integritásának megőrzése érdekében?",
+        "options": {
+          "A": "Több műanyag használatát",
+          "B": "Esőerdők védelmét, fenntartható mezőgazdaságot és városi zöld infrastruktúra fejlesztését",
+          "C": "A növényzet kivágását",
+          "D": "Nincs javaslatuk"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A15",
+    "title": "Szalmapaplan: fenntartható szigetelőanyag (Qubit)",
+    "link": "https://qubit.hu/2025/12/03/mar-magyarok-is-felismertek-hogy-a-szalma-lehet-a-21-szazad-szigeteloanyaga",
+    "summary": "A magyar vállalkozók által kifejlesztett szalmapaplan évente 2 millió tonna felhasználatlan szalmát hasznosíthatna, ami 20 ezer családi ház hőszigetelésére lenne elegendő A cikk szerint az építőipar felelős a globális energiaágazathoz köthető CO₂-kibocsátás 34 százalékáért, ezért az energiahatékonyság növelése és a meglévő épületek szigetelése kulcsfontosságú Európában reneszánszát éli a szalmaépítészet: Malmöben egy 12 emeletes szalmaház épül, a holland Lelystadban pedig egy 155 000 m²-es logisztikai központot építenek fából és szalmából",
+    "questions": [
+      {
+        "label": "Hány családi házat lehetne leszigetelni a Magyarországon felhasználatlan szalmából?",
+        "options": {
+          "A": "Kétezret",
+          "B": "Tízezret",
+          "C": "Húszezret",
+          "D": "Százezret"
+        },
+        "correct": "C"
+      },
+      {
+        "label": "Mekkora részt tesz ki az építőipar a globális energiaágazathoz köthető CO₂-kibocsátásból a cikk szerint?",
+        "options": {
+          "A": "10%",
+          "B": "34%",
+          "C": "50%",
+          "D": "80%"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Melyik városban épül a világ egyik legmagasabb szalmaháza?",
+        "options": {
+          "A": "Budapest",
+          "B": "Lelystad",
+          "C": "Malmö",
+          "D": "Bécs"
+        },
+        "correct": "C"
+      }
+    ]
+  },
+  {
+    "id": "A16",
+    "title": "Fenntartható városok és zöld infrastruktúra (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/tudomany/fenntarthato-varosok-zold-infrastruktura-2024",
+    "summary": "A zöld infrastruktúra kulcsszerepet játszik a fenntartható városfejlesztésben. A zöldtetők, esővízgyűjtő rendszerek és városi erdők nemcsak csökkentik a CO₂-kibocsátást, hanem javítják a levegő minőségét és mérsékelik a városi hősziget-hatást. A cikk bemutatja, hogy a zöld infrastruktúra beruházások hosszú távon megtérülnek az energiaköltség-csökkentés és az egészségügyi előnyök révén.",
+    "questions": [
+      {
+        "label": "Mit jelent a városi hősziget-hatás mérséklése?",
+        "options": {
+          "A": "A város melegebb lesz, mint a környéke",
+          "B": "A város hűvösebb lesz a zöld területek miatt",
+          "C": "Több autópálya építése",
+          "D": "Magasabb épületek építése"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Milyen előnyöket említi a cikk a zöld infrastruktúra kapcsán?",
+        "options": {
+          "A": "Csak esztétikai javulást",
+          "B": "CO₂-csökkentést, levegőminőség-javítást és hősziget-hatás mérséklését",
+          "C": "Csak a turizmus növekedését",
+          "D": "Több parkolóhely létrehozását"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miért térülnek meg hosszú távon a zöld infrastruktúra beruházások?",
+        "options": {
+          "A": "Mert drágábbá teszik az ingatlanokat",
+          "B": "Energiaköltség-csökkentés és egészségügyi előnyök miatt",
+          "C": "Mert több munkahely jön létre",
+          "D": "Mert csökkentik a közlekedési költségeket"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A17",
+    "title": "Bioszféraparkok Magyarországon (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/belpol/bioszferapark-magyarorszag-termeszetvedelmi-terulet",
+    "summary": "Magyarország bioszféraparkjai egyedülálló természetvédelmi területek, ahol a természet megőrzése, a kutatás és a fenntartható fejlődés együtt valósul meg. A Hortobágyi és az Aggteleki Nemzeti Park bioszféra-rezervátumként is működik, ahol a helyi közösségek hagyományos gazdálkodási módjai összhangban vannak a természetvédelemmel. Ezek a területek modellként szolgálnak a fenntartható területhasználatra.",
+    "questions": [
+      {
+        "label": "Mi a bioszférapark fő célja?",
+        "options": {
+          "A": "Csak a turizmus fejlesztése",
+          "B": "Természet megőrzése, kutatás és fenntartható fejlődés együttes megvalósítása",
+          "C": "Ipari termelés növelése",
+          "D": "Városi területek bővítése"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Melyik két magyar nemzeti park működik bioszféra-rezervátumként is?",
+        "options": {
+          "A": "Bükki és Duna-Ipoly",
+          "B": "Hortobágyi és Aggteleki",
+          "C": "Kiskunsági és Fertő-Hanság",
+          "D": "Bükki és Körös-Maros"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hogyan kapcsolódnak össze a helyi közösségek a természetvédelemmel?",
+        "options": {
+          "A": "Elköltöznek a területről",
+          "B": "Hagyományos gazdálkodási módjaik összhangban vannak a természetvédelemmel",
+          "C": "Ipari tevékenységet folytatnak",
+          "D": "Csak vendéglátással foglalkoznak"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A18",
+    "title": "Közösségi kertek és városi mezőgazdaság (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/tudomany/kozossegi-kertek-varosi-mezoggazdasag-fenntarthato",
+    "summary": "A városi közösségi kertek reneszánszukat élik Magyarországon. Budapesten és több vidéki városban is létrejöttek olyan kezdeményezések, ahol a lakók közösen művelnek zöldségeket és gyümölcsöket. Ezek a kertek nemcsak friss, helyi élelmiszert biztosítanak, hanem közösségépítő szerepet is betöltenek, miközben csökkentik a szállítási költségeket és a környezeti lábnyomot.",
+    "questions": [
+      {
+        "label": "Mi a városi közösségi kertek fő előnye?",
+        "options": {
+          "A": "Csak szórakozást nyújtanak",
+          "B": "Friss, helyi élelmiszer, közösségépítés és környezeti lábnyom csökkentése",
+          "C": "Magasabb ingatlanárakat eredményeznek",
+          "D": "Több parkolóhelyet teremtenek"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hogyan csökkentik a közösségi kertek a környezeti terhelést?",
+        "options": {
+          "A": "Több vegyszer használatával",
+          "B": "A szállítási költségek és a környezeti lábnyom csökkentésével",
+          "C": "Nagyobb gépek használatával",
+          "D": "Több csomagolóanyag felhasználásával"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi a közösségi kertek társadalmi szerepe?",
+        "options": {
+          "A": "Elszigetelést okoznak",
+          "B": "Konfliktusokat gerjesztenek",
+          "C": "Közösségépítő szerepet töltenek be",
+          "D": "Csak az idősek számára hasznosak"
+        },
+        "correct": "C"
+      }
+    ]
+  },
+  {
+    "id": "A19",
+    "title": "Elektromos autók és fenntartható közlekedés (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/belpol/elektromos-autok-fenntarthato-kozlekedes",
+    "summary": "Az elektromos autók elterjedése jelentős mérföldkő a fenntartható közlekedés felé vezető úton. Bár a gyártásuk még környezeti terheléssel jár, működtetésük során jelentősen kevesebb károsanyag-kibocsátást okoznak. A töltőinfrastruktúra fejlesztése és a megújuló energiaforrások használata tovább javítja környezeti mérlegüket. Magyarországon is egyre több támogatási program segíti az elektromos járművek elterjedését.",
+    "questions": [
+      {
+        "label": "Mi az elektromos autók fő környezeti előnye?",
+        "options": {
+          "A": "Gyártásuk teljesen károsanyag-mentes",
+          "B": "Működtetésük során jelentősen kevesebb károsanyag-kibocsátás",
+          "C": "Gyorsabbak, mint a hagyományos autók",
+          "D": "Olcsóbbak a benzines autóknál"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi javítja tovább az elektromos autók környezeti mérlegét?",
+        "options": {
+          "A": "Nagyobb akkumulátorok",
+          "B": "A töltőinfrastruktúra fejlesztése és megújuló energiaforrások használata",
+          "C": "Több töltőállomás építése benzinkutaknál",
+          "D": "Gyorsabb töltési technológiák"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hogyan segíti Magyarország az elektromos járművek elterjedését?",
+        "options": {
+          "A": "Bünteti a benzines autókat",
+          "B": "Támogatási programokkal",
+          "C": "Megtiltja a benzines autók használatát",
+          "D": "Importvámot vet ki a hagyományos autókra"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A20",
+    "title": "ESG jelentések és vállalati fenntarthatóság (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/tudomany/esg-jelentesek-vallalati-fenntarthatosag-2024",
+    "summary": "Az ESG (Environmental, Social, Governance) jelentések szerepe a vállalati fenntarthatóság mérésében és a transzparens beszámolás fontossága a befektetők és érintettek felé.",
+    "questions": [
+      {
+        "label": "Mit jelent az ESG rövidítés a vállalati beszámolásban?",
+        "options": {
+          "A": "Economic, Social, Global",
+          "B": "Environmental, Social, Governance",
+          "C": "Energy, Sustainability, Growth",
+          "D": "Ethical, Strategic, Green"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miért fontos a vállalatok számára az ESG jelentések elkészítése?",
+        "options": {
+          "A": "Csak a jogszabályi megfelelés miatt",
+          "B": "A befektetői bizalom növelése és a hosszú távú értékteremtés",
+          "C": "Az adóelőnyök kihasználása",
+          "D": "A versenytársak utánzása"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mely terület NEM tartozik az ESG keretrendszerbe?",
+        "options": {
+          "A": "Szén-dioxid-kibocsátás mérése",
+          "B": "Munkavállalói elégedettség",
+          "C": "Igazgatósági összetétel",
+          "D": "Rövid távú profitmaximalizálás"
+        },
+        "correct": "D"
+      }
+    ]
+  },
+  {
+    "id": "A21",
+    "title": "Greenwashing a vállalati gyakorlatban (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/tudomany/greenwashing-gyakorlat-vallalatok-kornyezetvedelem",
+    "summary": "A greenwashing jelensége: hogyan használják fel a vállalatok a környezetvédelmi üzeneteket marketing célokra anélkül, hogy valódi változtatásokat hajtanának végre.",
+    "questions": [
+      {
+        "label": "Mit nevezünk greenwashing-nak?",
+        "options": {
+          "A": "Környezetbarát termékek valódi fejlesztését",
+          "B": "Álzöld marketing gyakorlatot, ahol a vállalat környezetbarátabb képet mutat, mint amilyen valójában",
+          "C": "A zöld színű csomagolás használatát",
+          "D": "A természetes alapanyagok alkalmazását"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Melyik a leggyakoribb greenwashing technika?",
+        "options": {
+          "A": "Konkrét számadatok közlése",
+          "B": "Bizonytalan vagy félrevezető állítások használata ('eco-friendly', 'natural')",
+          "C": "Független tanúsítványok bemutatása",
+          "D": "Átlátható beszámolók készítése"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hogyan kerülhetik el a fogyasztók a greenwashing csapdáját?",
+        "options": {
+          "A": "Csak a csomagolás alapján döntsenek",
+          "B": "Kritikusan vizsgálják a vállalat összes tevékenységét és keressenek független forrásokat",
+          "C": "Mindig a legdrágább terméket válasszák",
+          "D": "Csak márkanév alapján vásároljanak"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A22",
+    "title": "Társadalmi felelősségvállalás és CSR (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/belpol/tarsadalmi-felelossegvallalas-vallalati-csr-2024",
+    "summary": "A vállalati társadalmi felelősségvállalás (CSR) fejlődése Magyarországon, és annak szerepe a fenntartható üzleti működés kialakításában.",
+    "questions": [
+      {
+        "label": "Mit jelent a CSR rövidítés?",
+        "options": {
+          "A": "Corporate Social Responsibility",
+          "B": "Community Service Requirements",
+          "C": "Consumer Safety Regulations",
+          "D": "Corporate Strategic Resources"
+        },
+        "correct": "A"
+      },
+      {
+        "label": "Mely területek tartoznak tipikusan a CSR tevékenységek körébe?",
+        "options": {
+          "A": "Csak környezetvédelem",
+          "B": "Környezetvédelem, közösségi programok, etikus üzleti gyakorlatok",
+          "C": "Csak adományozás",
+          "D": "Csak munkavállalói juttatások"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi a legfontosabb szempont egy sikeres CSR stratégia kialakításánál?",
+        "options": {
+          "A": "A költségek minimalizálása",
+          "B": "A médiafigyelem maximalizálása",
+          "C": "A vállalat alapvető értékeivel és üzleti céljaival való összhang",
+          "D": "A versenytársak másolása"
+        },
+        "correct": "C"
+      }
+    ]
+  },
+  {
+    "id": "A23",
+    "title": "Ökolábnyom kalkulátorok megbízhatósága (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/tudomany/okolabnyom-kalkulatorok-megbizhato-kornyezeti-meresek",
+    "summary": "Az ökolábnyom számító eszközök pontossága és korlátai: hogyan mérjük valójában a környezeti hatásainkat, és mennyire megbízhatók ezek az online kalkulátorok.",
+    "questions": [
+      {
+        "label": "Mi az ökolábnyom fő mérőegysége?",
+        "options": {
+          "A": "Kilowattóra",
+          "B": "Globális hektár vagy CO2-egyenérték",
+          "C": "Liter vízfogyasztás",
+          "D": "Kilogramm hulladék"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mely tényező befolyásolja leginkább egy online ökolábnyom kalkulátor pontosságát?",
+        "options": {
+          "A": "A felhasználó becsületessége",
+          "B": "A mögöttes adatbázis minősége és frissessége",
+          "C": "A kalkulátor színes megjelenése",
+          "D": "A számítási sebesség"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miért fontos kritikusan kezelni az ökolábnyom kalkulátorok eredményeit?",
+        "options": {
+          "A": "Túl bonyolultak a használathoz",
+          "B": "Gyakran leegyszerűsítik a komplex környezeti hatásokat",
+          "C": "Mindig túl magas értékeket mutatnak",
+          "D": "Csak szakemberek használhatják őket"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A24",
+    "title": "Impact befektetések és fenntartható pénzügyek (Magyar Narancs)",
+    "link": "https://magyarnarancs.hu/belpol/impact-befektetes-fenntarthato-penzugyek-magyarorszag",
+    "summary": "Az impact befektetések szerepe a fenntartható fejlődésben: hogyan lehet mérni és maximalizálni a befektetések pozitív társadalmi és környezeti hatásait.",
+    "questions": [
+      {
+        "label": "Mit jelent az 'impact befektetés' fogalma?",
+        "options": {
+          "A": "Csak a profitot maximalizáló befektetést",
+          "B": "Olyan befektetést, amely pénzügyi hozam mellett pozitív társadalmi vagy környezeti hatást is céloz",
+          "C": "Kizárólag állampapírba történő befektetést",
+          "D": "Rövid távú spekulatív befektetést"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hogyan mérhető egy impact befektetés társadalmi hatása?",
+        "options": {
+          "A": "Csak a pénzügyi hozam alapján",
+          "B": "Konkrét mutatókon keresztül (pl. munkahelyek száma, CO2-csökkentés)",
+          "C": "A befektető szubjektív érzése alapján",
+          "D": "A média által kapott figyelem mértéke szerint"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Melyik szektor a legjellemzőbb célpontja az impact befektetéseknek?",
+        "options": {
+          "A": "Luxuscikkek",
+          "B": "Megújuló energia, oktatás, egészségügy",
+          "C": "Nehézipar",
+          "D": "Szórakoztatóipar"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A25",
+    "title": "VSME: fenntarthatóság a növekedés motorja (HelloNonProfit)",
+    "link": "https://hellononprofit.hu/vsme-fenntarthatosag-novekedes-motorja/",
+    "summary": "A kis- és középvállalkozások számára a fenntarthatóság már nem opcionális kiegészítő, hanem a növekedés és versenyképesség alapvető motorja lett. A cikk bemutatja, hogyan integrálhatják a VSME-k a fenntarthatósági szempontokat üzleti stratégiájukba.",
+    "questions": [
+      {
+        "label": "Mi a fő üzenete a cikknek a VSME-k fenntarthatósági megközelítéséről?",
+        "options": {
+          "A": "A fenntarthatóság csak nagyvállalatoknak fontos",
+          "B": "A fenntarthatóság a növekedés és versenyképesség alapvető motorja lett",
+          "C": "A kis vállalkozásoknak nem kell foglalkozniuk fenntarthatósággal",
+          "D": "A fenntarthatóság túl drága a VSME-k számára"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hogyan befolyásolja a fenntarthatóság a kis- és középvállalkozások működését?",
+        "options": {
+          "A": "Csak a költségeket növeli",
+          "B": "Új üzleti lehetőségeket teremt és javítja a versenyképességet",
+          "C": "Csökkenti a termelékenységet",
+          "D": "Csak környezetvédelmi előnyöket hoz"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Mi a kulcs a VSME-k fenntarthatósági stratégiájának sikeréhez?",
+        "options": {
+          "A": "A fenntarthatóság integrálása az alapvető üzleti stratégiába",
+          "B": "Csak külső tanácsadók alkalmazása",
+          "C": "A fenntarthatósági célok mellőzése a profit érdekében",
+          "D": "Kizárólag költségcsökkentésre fókuszálás"
+        },
+        "correct": "A"
+      }
+    ]
+  },
+  {
+    "id": "A26",
+    "title": "Hatásvadász: nem támogatásról, hanem partnerségről beszélünk (HelloNonProfit)",
+    "link": "https://hellononprofit.hu/hatasvadasz-nem-tamogatasrol-hanem-partnersegrol-beszelunk/",
+    "summary": "A modern nonprofit megközelítés túllép a hagyományos támogatási modelleken, és valódi partnerségekre épít. A hatásvadász szemlélet szerint a nonprofit szervezetek és a vállalatok közös értékteremtésben dolgoznak együtt.",
+    "questions": [
+      {
+        "label": "Mit jelent a 'hatásvadász' szemlélet a nonprofit szektorban?",
+        "options": {
+          "A": "Kizárólag pénzügyi támogatások keresését",
+          "B": "Valódi partnerségek építését a közös értékteremtés érdekében",
+          "C": "Versenytársak legyőzését",
+          "D": "Médiafigyelemre való törekvést"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miben különbözik a partnerségi modell a hagyományos támogatási rendszertől?",
+        "options": {
+          "A": "Csak pénzügyi támogatást nyújt",
+          "B": "Egyirányú kapcsolatot teremt",
+          "C": "Közös értékteremtésre és kölcsönös előnyökre épül",
+          "D": "Rövidebb távú elköteleződést jelent"
+        },
+        "correct": "C"
+      },
+      {
+        "label": "Mi a partnerségi megközelítés előnye a nonprofit szervezetek számára?",
+        "options": {
+          "A": "Kevesebb munkát igényel",
+          "B": "Fenntarthatóbb működést és nagyobb társadalmi hatást tesz lehetővé",
+          "C": "Egyszerűbb adminisztrációt jelent",
+          "D": "Garantálja a folyamatos finanszírozást"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A27",
+    "title": "Amikor az üzleti érték és a társadalmi hatás találkozik (HelloNonProfit)",
+    "link": "https://hellononprofit.hu/amikor-az-uzleti-ertek-es-a-tarsadalmi-hatas-talalkozik/",
+    "summary": "A sikeres vállalatok egyre inkább felismerik, hogy az üzleti siker és a társadalmi hatás nem kizárják egymást, hanem erősíthetik egymást. A cikk példákon keresztül mutatja be, hogyan alakítható ki win-win helyzet.",
+    "questions": [
+      {
+        "label": "Mi a cikk fő állítása az üzleti érték és társadalmi hatás kapcsolatáról?",
+        "options": {
+          "A": "Ezek mindig ellentmondanak egymásnak",
+          "B": "A társadalmi hatás mindig csökkenti az üzleti értéket",
+          "C": "Kölcsönösen erősíthetik egymást és win-win helyzetet teremthetnek",
+          "D": "Csak nagyvállalatoknál működhet együtt a kettő"
+        },
+        "correct": "C"
+      },
+      {
+        "label": "Hogyan járulhat hozzá a társadalmi hatás az üzleti sikerhez?",
+        "options": {
+          "A": "Márkaimázs javítása, vevőhűség növelése és új piacok megnyitása révén",
+          "B": "Csak költségcsökkentéssel",
+          "C": "Kizárólag adóelőnyök megszerzésével",
+          "D": "A versenytársak kizárásával"
+        },
+        "correct": "A"
+      },
+      {
+        "label": "Mi szükséges a sikeres üzleti érték-társadalmi hatás integráció eléréséhez?",
+        "options": {
+          "A": "Nagy marketing költségvetés",
+          "B": "Stratégiai megközelítés és hosszú távú elköteleződés",
+          "C": "Csak külső PR ügynökség",
+          "D": "Gyors profit realizálás"
+        },
+        "correct": "B"
+      }
+    ]
+  },
+  {
+    "id": "A28",
+    "title": "SDG hatástérkép és hatásjelentés a nonprofit szektorban (HelloNonProfit)",
+    "link": "https://hellononprofit.hu/sdg-hatasterkep-es-hatasjelentes-a-nonprofit-szektorban/",
+    "summary": "A Fenntartható Fejlesztési Célok (SDG) hatástérképezése és hatásjelentés kulcsszerepet játszik a nonprofit szervezetek munkájának értékelésében és kommunikációjában. A strukturált megközelítés segít a szervezeteknek demonstrálni társadalmi hatásukat.",
+    "questions": [
+      {
+        "label": "Mi az SDG hatástérkép célja a nonprofit szektorban?",
+        "options": {
+          "A": "Csak adminisztratív kötelezettségek teljesítése",
+          "B": "A szervezet társadalmi hatásának strukturált értékelése és kommunikációja",
+          "C": "Pénzügyi beszámolók helyettesítése",
+          "D": "Versenytársak tevékenységének elemzése"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Miért fontos a hatásjelentés a nonprofit szervezetek számára?",
+        "options": {
+          "A": "Csak a jogszabályi megfelelés miatt",
+          "B": "Transzparencia, elszámoltathatóság és finanszírozási lehetőségek javítása érdekében",
+          "C": "A konkurencia kiszorítása céljából",
+          "D": "Marketing célokra"
+        },
+        "correct": "B"
+      },
+      {
+        "label": "Hogyan segíti az SDG keretrendszer a nonprofit szervezetek munkáját?",
+        "options": {
+          "A": "Közös nyelvet és mérési standardokat biztosít a társadalmi hatás értékeléséhez",
+          "B": "Garantálja az automatikus finanszírozást",
+          "C": "Csökkenti a beszámolási kötelezettségeket",
+          "D": "Helyettesíti a stratégiai tervezést"
+        },
+        "correct": "A"
+      }
+    ]
+  }
+]
