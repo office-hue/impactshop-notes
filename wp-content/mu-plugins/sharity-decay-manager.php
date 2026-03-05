@@ -8,11 +8,12 @@ if (!defined('ABSPATH')) {
 
 class Sharity_Decay_Manager
 {
-    public const GRACE_PERIOD_DAYS = 7;
+    public const GRACE_PERIOD_DAYS = 5;
     public const DECAY_RATES = [
-        14 => 0.05,
-        30 => 0.10,
-        60 => 0.15,
+        6 => 0.005,
+        15 => 0.010,
+        31 => 0.015,
+        61 => 0.020,
     ];
 
     public function calculate_and_apply_decay(int $user_id): int
@@ -37,9 +38,17 @@ class Sharity_Decay_Manager
             return 0;
         }
 
-        $days_inactive = (int) floor((time() - strtotime($row->last_activity_at)) / 86400);
+        $now = (int) current_time('timestamp');
+        $days_inactive = (int) floor(($now - strtotime($row->last_activity_at)) / 86400);
         if ($days_inactive <= self::GRACE_PERIOD_DAYS) {
             return 0;
+        }
+
+        if (!empty($row->last_decay_check_at)) {
+            $last_decay_day = date('Y-m-d', strtotime((string) $row->last_decay_check_at));
+            if ($last_decay_day === current_time('Y-m-d')) {
+                return 0;
+            }
         }
 
         $rates = $this->get_decay_rates();
@@ -69,7 +78,16 @@ class Sharity_Decay_Manager
             return 0;
         }
 
-        $points_after = max(0, $points_before - $decay_amount);
+        $floor_points = (int) apply_filters('sharity_decay_floor_points', 100);
+        if ($floor_points > 0 && $points_before > $floor_points) {
+            $points_after = max($floor_points, $points_before - $decay_amount);
+        } else {
+            $points_after = max(0, $points_before - $decay_amount);
+        }
+        $decay_amount = max(0, $points_before - $points_after);
+        if ($decay_amount <= 0) {
+            return 0;
+        }
 
         $wpdb->query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
         $wpdb->query('START TRANSACTION');
@@ -85,6 +103,14 @@ class Sharity_Decay_Manager
             current_time('mysql'),
             $user_id
         ));
+        if ($wpdb->last_error) {
+            $wpdb->query('ROLLBACK');
+            do_action('sharity_points_error', 'decay_failed', [
+                'user_id' => $user_id,
+                'error' => $wpdb->last_error,
+            ]);
+            return 0;
+        }
 
         $wpdb->insert("{$wpdb->prefix}decay_logs", [
             'user_id' => $user_id,
@@ -97,6 +123,14 @@ class Sharity_Decay_Manager
             'applied' => 1,
             'created_at' => current_time('mysql'),
         ]);
+        if ($wpdb->last_error) {
+            $wpdb->query('ROLLBACK');
+            do_action('sharity_points_error', 'decay_failed', [
+                'user_id' => $user_id,
+                'error' => $wpdb->last_error,
+            ]);
+            return 0;
+        }
 
         $wpdb->insert("{$wpdb->prefix}point_transactions", [
             'user_id' => $user_id,
@@ -109,17 +143,18 @@ class Sharity_Decay_Manager
             ]),
             'created_at' => current_time('mysql'),
         ]);
-
-        $wpdb->query('COMMIT');
-
-        do_action('sharity_points_decayed', $user_id, $decay_amount, $days_inactive);
         if ($wpdb->last_error) {
+            $wpdb->query('ROLLBACK');
             do_action('sharity_points_error', 'decay_failed', [
                 'user_id' => $user_id,
                 'error' => $wpdb->last_error,
             ]);
+            return 0;
         }
 
+        $wpdb->query('COMMIT');
+
+        do_action('sharity_points_decayed', $user_id, $decay_amount, $days_inactive);
         return $decay_amount;
     }
 
@@ -145,9 +180,17 @@ class Sharity_Decay_Manager
             return 0;
         }
 
-        $days_inactive = (int) floor((time() - strtotime($row->last_activity_at)) / 86400);
+        $now = (int) current_time('timestamp');
+        $days_inactive = (int) floor(($now - strtotime($row->last_activity_at)) / 86400);
         if ($days_inactive <= self::GRACE_PERIOD_DAYS) {
             return 0;
+        }
+
+        if (!empty($row->last_decay_check_at)) {
+            $last_decay_day = date('Y-m-d', strtotime((string) $row->last_decay_check_at));
+            if ($last_decay_day === current_time('Y-m-d')) {
+                return 0;
+            }
         }
 
         $rates = $this->get_decay_rates();
@@ -177,7 +220,16 @@ class Sharity_Decay_Manager
             return 0;
         }
 
-        $points_after = max(0, $points_before - $decay_amount);
+        $floor_points = (int) apply_filters('sharity_decay_floor_points', 100);
+        if ($floor_points > 0 && $points_before > $floor_points) {
+            $points_after = max($floor_points, $points_before - $decay_amount);
+        } else {
+            $points_after = max(0, $points_before - $decay_amount);
+        }
+        $decay_amount = max(0, $points_before - $points_after);
+        if ($decay_amount <= 0) {
+            return 0;
+        }
 
         $wpdb->query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
         $wpdb->query('START TRANSACTION');
@@ -193,6 +245,14 @@ class Sharity_Decay_Manager
             current_time('mysql'),
             $pseudo_id
         ));
+        if ($wpdb->last_error) {
+            $wpdb->query('ROLLBACK');
+            do_action('sharity_points_error', 'decay_failed', [
+                'pseudo_id' => $pseudo_id,
+                'error' => $wpdb->last_error,
+            ]);
+            return 0;
+        }
 
         $wpdb->insert("{$wpdb->prefix}decay_logs", [
             'user_id' => null,
@@ -206,6 +266,14 @@ class Sharity_Decay_Manager
             'applied' => 1,
             'created_at' => current_time('mysql'),
         ]);
+        if ($wpdb->last_error) {
+            $wpdb->query('ROLLBACK');
+            do_action('sharity_points_error', 'decay_failed', [
+                'pseudo_id' => $pseudo_id,
+                'error' => $wpdb->last_error,
+            ]);
+            return 0;
+        }
 
         $wpdb->insert("{$wpdb->prefix}point_transactions", [
             'user_id' => null,
@@ -219,17 +287,18 @@ class Sharity_Decay_Manager
             ]),
             'created_at' => current_time('mysql'),
         ]);
-
-        $wpdb->query('COMMIT');
-
-        do_action('sharity_points_decayed', $pseudo_id, $decay_amount, $days_inactive);
         if ($wpdb->last_error) {
+            $wpdb->query('ROLLBACK');
             do_action('sharity_points_error', 'decay_failed', [
                 'pseudo_id' => $pseudo_id,
                 'error' => $wpdb->last_error,
             ]);
+            return 0;
         }
 
+        $wpdb->query('COMMIT');
+
+        do_action('sharity_points_decayed', $pseudo_id, $decay_amount, $days_inactive);
         return $decay_amount;
     }
 
