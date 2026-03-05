@@ -21,7 +21,7 @@ if [[ ! -x "${SAFE_AUDIT_SCRIPT}" ]]; then
 fi
 
 if [[ -x "${SAFE_AUDIT_SCRIPT}" ]]; then
-  "${SAFE_AUDIT_SCRIPT}" --repo "${REPO_ROOT}" --strict
+  "${SAFE_AUDIT_SCRIPT}" --repo "${REPO_ROOT}" --strict --mode push
 else
   echo "[repo-guard] missing safe audit script (local/fallback)" >&2
   echo "[repo-guard] checked: ${REPO_ROOT}/scripts/safe-repo-audit.sh and ${REPO_ROOT}/../scripts/safe-repo-audit.sh" >&2

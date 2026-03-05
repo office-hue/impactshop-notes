@@ -6248,3 +6248,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-03-05 09:29:01 CET - impactall auto log
 - **Result:** pass (warnings=0, errors=0, duration=0s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-05 10:47:00 CET - doc debt sync (push-range mode)
+- A pre-push gate mostantól `--mode push` módban a ténylegesen pusholt commit tartományt auditálja.
+- A dokumentációs continuity szabályok változatlanul kötelezők a commit tartományra (`system-status-snapshot.md`, `docs/*.md`, `notes.md`/`conversation-summaries`).

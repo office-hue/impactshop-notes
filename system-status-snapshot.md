@@ -258,3 +258,15 @@ blog/app
 - A fájl automatikusan generálva (scripts/status-snapshot.sh).
 - 2025-10-14: Netflix/Deals shortcode REST go-deal linkpreferencia él; deploy után Elementor cache flush + REST warmup kötelező.
 - GPT/Sonnet promptokat mindig szakmai review előz meg – automatikus végrehajtás tiltott, eltéréseket jelezd.
+
+---
+_Auto update: 2026-03-05 10:47:00 CET_
+
+### Health check summary
+
+```
+Pre-push safe audit now evaluates pushed commit range (--mode push)
+Doc continuity checks remain strict for committed changes
+```
+
+**Baseline referencia:** impactshop-baseline-2026-03-03.md

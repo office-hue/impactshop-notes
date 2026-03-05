@@ -6,15 +6,19 @@ set -euo pipefail
 
 STRICT=0
 TARGET_PATH="."
+MODE="local"
+PUSH_BASE=""
+PUSH_RANGE=""
 
 usage() {
   cat <<'EOF'
 Usage:
-  safe-repo-audit.sh [--repo <path>] [--strict]
+  safe-repo-audit.sh [--repo <path>] [--strict] [--mode local|push]
 
 Options:
   --repo <path>   Target git repository path (default: current directory)
   --strict        Exit non-zero when warnings are found
+  --mode <mode>   Scan mode: local (working tree) or push (committed range to upstream)
   -h, --help      Show this help
 
 Examples:
@@ -33,6 +37,10 @@ while [[ $# -gt 0 ]]; do
       STRICT=1
       shift
       ;;
+    --mode)
+      MODE="${2:-}"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -47,6 +55,11 @@ done
 
 if ! REPO_ROOT="$(git -C "$TARGET_PATH" rev-parse --show-toplevel 2>/dev/null)"; then
   echo "ERROR: not a git repository: $TARGET_PATH" >&2
+  exit 1
+fi
+
+if [[ "$MODE" != "local" && "$MODE" != "push" ]]; then
+  echo "ERROR: --mode must be 'local' or 'push' (got: $MODE)" >&2
   exit 1
 fi
 
@@ -74,10 +87,24 @@ NOTES_OR_CONV_HITS="$TMP_DIR/notes-or-conv-hits.txt"
 NEW_MODULE_FILES="$TMP_DIR/new-module-files.txt"
 BASTION_GUARD_HITS="$TMP_DIR/bastion-guard-hits.txt"
 
+if [[ "$MODE" == "push" ]]; then
+  upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
+  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
+    PUSH_BASE="$(git merge-base HEAD "$upstream_ref")"
+  else
+    PUSH_BASE="$(git hash-object -t tree /dev/null)"
+  fi
+  PUSH_RANGE="${PUSH_BASE}..HEAD"
+fi
+
 {
-  git diff --name-only
-  git diff --cached --name-only
-  git ls-files --others --exclude-standard
+  if [[ "$MODE" == "push" ]]; then
+    git diff --name-only "$PUSH_RANGE"
+  else
+    git diff --name-only
+    git diff --cached --name-only
+    git ls-files --others --exclude-standard
+  fi
 } | sed '/^$/d' | sort -u > "$CHANGED_LIST"
 
 # Filter out noisy dependency/artifact paths for path-based checks.
@@ -86,14 +113,22 @@ grep -Eiv \
   "$CHANGED_LIST" > "$FILTERED_CHANGED_LIST" || true
 
 {
-  git diff -U0 --no-color
-  git diff --cached -U0 --no-color
+  if [[ "$MODE" == "push" ]]; then
+    git diff -U0 --no-color "$PUSH_RANGE"
+  else
+    git diff -U0 --no-color
+    git diff --cached -U0 --no-color
+  fi
 } | awk '/^\+[^+]/ {print substr($0,2)}' > "$ADDED_LINES"
 
 echo "== Safe Repo Audit =="
 echo "Repo:    $REPO_ROOT"
 echo "Branch:  $BRANCH"
 echo "HEAD:    $HEAD_SHA"
+echo "Mode:    $MODE"
+if [[ "$MODE" == "push" ]]; then
+  echo "Range:   ${PUSH_RANGE}"
+fi
 echo "Changed: $(wc -l < "$CHANGED_LIST" | tr -d ' ') files"
 echo "Scan set (noise-filtered): $(wc -l < "$FILTERED_CHANGED_LIST" | tr -d ' ') files"
 echo
@@ -237,9 +272,13 @@ fi
 
 # 5) New module files must extend bastion/guard documentation.
 {
-  git diff --name-only --diff-filter=A
-  git diff --cached --name-only --diff-filter=A
-  git ls-files --others --exclude-standard
+  if [[ "$MODE" == "push" ]]; then
+    git diff --name-only --diff-filter=A "$PUSH_RANGE"
+  else
+    git diff --name-only --diff-filter=A
+    git diff --cached --name-only --diff-filter=A
+    git ls-files --others --exclude-standard
+  fi
 } | sed '/^$/d' | sort -u > "$NEW_MODULE_FILES"
 
 grep -E -- \
