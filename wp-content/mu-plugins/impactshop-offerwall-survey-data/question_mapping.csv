@@ -12,14 +12,17 @@ KN_WASTE,"KN, KN-WAST","+1 for correct answer, 0 otherwise",safe,low,
 KN_WATER,"KN, KN-WATR","+1 for correct answer, 0 otherwise",safe,low,
 KN_BIODIVERSITY,"KN, KN-BIOD","+1 for correct answer, 0 otherwise",safe,low,
 KN_CIRCULAR,"KN, KN-CIRC","+1 for correct answer, 0 otherwise",safe,low,
+KN_GENERAL,KN,"+1 for correct answer, 0 otherwise",safe,low,General knowledge pool (docx + batch5)
 ATT_CARE,ATT-CARE,Scaled -2 to +2 for answer (A-D),safe,low,Measures caring about sustainability
 ATT_EFFICACY,ATT-EFFI,Scaled -2 to +2 for answer (A-D),safe,low,Measures perceived self-efficacy
 ATT_URGENCY,ATT-URGE,Scaled -2 to +2 for answer (A-D),safe,low,Measures sense of urgency
+ATT_GENERAL,ATT-CARE,Scaled -2 to +2 for answer (A-D),safe,low,General attitude pool (docx)
 BEH_WASTE,"BEH, BEH-WAST",Frequency mapping (A-D) to 0–3 points,safe,low,Waste reduction behaviors
 BEH_ENERGY,"BEH, BEH-ENER",Frequency mapping (A-D) to 0–3 points,safe,low,Energy saving behaviors
 BEH_TRANSPORT,"BEH, BEH-TRAN",Frequency mapping (A-D) to 0–3 points,safe,low,Sustainable transport behaviors
 BEH_FOOD,"BEH, BEH-FOOD",Frequency mapping (A-D) to 0–3 points,safe,low,Sustainable food behaviors
 BEH_SHOP,"BEH, BEH-SHOP",Frequency mapping (A-D) to 0–3 points,safe,low,Responsible shopping behaviors
+BEH_GENERAL,BEH,Frequency mapping (A-D) to 0–3 points,safe,low,General behavior pool (docx)
 MOT_SELECT,MOT,Top choices get +3/+2/+1 points on corresponding MOT codes,safe,low,User selects up to three motivations
 STAGE_SUSTAINABILITY,STG-SUS,Direct stage assignment (S0–S4),safe,low,Based on readiness to act
 STAGE_DONATION,STG-DON,Direct stage assignment (S0–S4),safe,low,Based on giving intention

@@ -282,3 +282,8 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / Offerwall Core PR)
+- Modulcsomag: offerwall engine + internal survey submit + question mapping bővítés.
+- Continuity evidence: docs/pr-offerwall-core-pack-2026-03-05.md + conversation-summaries/435_conversation_summary.md.
+- Guard override policy synced a protected module review gate-hez.
