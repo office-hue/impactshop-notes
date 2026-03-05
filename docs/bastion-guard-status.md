@@ -29,3 +29,5 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 | 2026-03-05 | Ledger + card request modulok | Új `mu-plugins/` modulok külön continuity gate-tel integrálva | `mu-plugins/impact-ledger.php`, `mu-plugins/impactshop-card-request.php`, `docs/pr-ledger-card-request-pack-2026-03-05.md` |
 
 | 2026-03-05 | Asset + placeholder modulcsomag | MU image és fallback placeholder állományok is continuity gate alá vonva | `wp-content/mu-plugins/image/*`, `wp-content/mu-plugins/impact-arukereso-deeplink-fix.php.off`, `docs/pr-module-assets-pack-2026-03-05.md` |
+
+| 2026-03-05 | MU vendor dependency bundle | Nagy third-party csomag külön PR-ban, continuity guard evidence kötelezően csatolva | `wp-content/mu-plugins/vendor/**`, `docs/pr-mu-vendor-bundle-pack-2026-03-05.md` |
