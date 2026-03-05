@@ -27,3 +27,5 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 | 2026-03-05 | PWA + offerwall extension modulok | PWA shell/push + AyeT/article-quiz modulok bastion naplózással és continuity csomaggal | `wp-content/mu-plugins/impactshop-pwa.php`, `wp-content/mu-plugins/impactshop-pwa-push.php`, `wp-content/mu-plugins/impactshop-ayet-offerwall.php`, `wp-content/mu-plugins/impactshop-offerwall-article-quiz.php` |
 
 | 2026-03-05 | Ledger + card request modulok | Új `mu-plugins/` modulok külön continuity gate-tel integrálva | `mu-plugins/impact-ledger.php`, `mu-plugins/impactshop-card-request.php`, `docs/pr-ledger-card-request-pack-2026-03-05.md` |
+
+| 2026-03-05 | Asset + placeholder modulcsomag | MU image és fallback placeholder állományok is continuity gate alá vonva | `wp-content/mu-plugins/image/*`, `wp-content/mu-plugins/impact-arukereso-deeplink-fix.php.off`, `docs/pr-module-assets-pack-2026-03-05.md` |
