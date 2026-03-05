@@ -6257,3 +6257,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Javítva: becenév mentés után a profil köszöntés azonnal frissül (`Szia <név>...`), nem marad név nélküli.
 - Javítva: nickname mentés után azonnali Legacy Wall szinkron (`impact_update_herowall`), plusz fallback névfeloldás herowall API-ban.
 - Érintett fájlok: `wp-content/mu-plugins/impactshop-identity-panel.php`, `wp-content/mu-plugins/impactshop-identity-panel.js`, `wp-content/mu-plugins/impact-gamification.php`.
+
+## 2026-03-05 13:54:17 CET - post-merge operational snapshot log
+- Merged PR batch lezárva az `ops/adswatch-clean` ágon: `#44`, `#45`, `#46`, `#47`, `#48`, `#49`, `#50`, `#51`, `#52`, `#53`, `#54`, `#55`, `#56`.
+- `impactall` strict safe-audit futás a lokális dirty worktree miatt fail lett; `IMPACTALL_SKIP_SAFE_AUDIT=1` módban a futás pass eredménnyel zárult.
+- Külön clean-head validáció: `scripts/safe-repo-audit.sh --strict` pass egy tiszta worktree-n (`origin/ops/adswatch-clean`).
