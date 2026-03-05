@@ -3368,3 +3368,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ### 2026-01-17 – Kupon harvester teljes kör futás (háttér)
 - OCR env beállítva (`GOOGLE_APPLICATION_CREDENTIALS` a capi.env-ben), a teljes cron kör újraindítva.
 - Jelenlegi futás PID: `794` (háttér), Árukereső kategória-scrape folyamatban; logok: `.codex/logs/coupon-harvester-full.run.out`, `.codex/logs/coupon-harvester-full.cron.log`.
+
+### 2026-03-05 – Napi checkpoint rutin (clean worktree)
+- `impactall`: `IMPACTALL_SKIP_SAFE_AUDIT=1 IMPACTALL_AUTO_NOTES=0 ./impactall` (2026-03-05 15:40:35 CET).
+- Futási összegzés: staging `HTTP 403 / 287 ms`, production `HTTP 403 / 257 ms`, guard eredmény `1/1 PASS`.
+- Strict audit (clean worktree, impactshop-notes): `scripts/safe-repo-audit.sh --repo /Users/bujdosoarnold/Developer/GitHub/.worktrees/impactshop-notes-checkpoint-2026-03-05 --strict` -> PASS (`no local changes`).
+- Strict audit (clean worktree, impact_hub): `scripts/safe-repo-audit.sh --repo /private/tmp/impact_hub-checkpoint-20260305 --strict` -> PASS (`no local changes`).
+- Queue cleanup: `office-hue/ai-agent` PR #8 lezárva.
