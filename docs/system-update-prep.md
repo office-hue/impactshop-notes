@@ -53,10 +53,10 @@ Ez a jegyzet összegyűjti, milyen lépésekkel kell felkészíteni a helyi "bá
 - Ha a Copilot chat bejövő frissítéseket rejt, `github.copilot.editor.enableAutoCompletions` beállítást ellenőrizd.
 
 ### WordPress (core + plugin stack)
-- `ssh sharityh@cp40.ezit.hu` → `cd ~/app` és futtasd: `wp core update` + `wp plugin update --all`.  
+- `ssh sharityh@s59.tarhely.com` → `cd ~/app` és futtasd: `wp core update` + `wp plugin update --all`.  
 - MU pluginekhez csak a repo szinkronból deployolj (`scripts/hotfix-sync.sh`).  
 - Frissítés után: `~/bin/impactall` + `bin/staging-qa-suite.sh` (staging és, ha releváns, production flaggel).  
-- Cache flush: `ssh sharityh@cp40.ezit.hu "/usr/local/bin/wp --path=/home/sharityh/app cache flush"`.
+- Cache flush: `ssh sharityh@s59.tarhely.com "/usr/local/bin/wp --path=/home/sharityh/app cache flush"`.
 
 ## 4. Post-update verifikáció
 1. `git status -sb` – nincs váratlan módosítás.  

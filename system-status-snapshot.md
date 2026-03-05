@@ -2,6 +2,11 @@
 
 *Generálva:* 2026-02-26 07:48:32 +0100 (Bujdoso-Mac-mini)
 
+## Snapshot Addendum (2026-03-05)
+- Clean PR branch: `chore/guard-doc-continuity-2026-03-05`.
+- Guard folytonosság: `bin/impactshop-guard-preflight.sh` felvéve, protected list bővítve (`impact-arukereso-guard.php`, `impact-combat-pack.php`), hash/checksum újraszinkronizálva.
+- Dokumentációs folytonosság: `conversation-summaries/433_conversation_summary.md` + bastion extension terv és system map megjegyzés frissítve.
+
 ## Meta
 - Gyökér: /Users/bujdosoarnold/Developer/GitHub
 - Környezet: local
@@ -282,6 +287,11 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / Arukereso Affiliate PR)
+- Modulcsomag: Arukereso deeplink + CJ fallback + autobanner host policy + partner multiplier.
+- Continuity evidence: docs/pr-arukereso-affiliate-flow-2026-03-05.md + conversation-summaries/434_conversation_summary.md.
+- Guard override policy: protected module változás csak docs/snapshot/summary evidenciával engedett.
 
 ## Snapshot Addendum (2026-03-05 / Engagement Challenge PR)
 - Modulcsomag: ads-watch, jysk vote, ngo-card, level/decay policy tuning.
