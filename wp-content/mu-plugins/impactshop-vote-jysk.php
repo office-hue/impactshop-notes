@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const IMPACTSHOP_VOTE_JYSK_SCHEMA = 2;
+const IMPACTSHOP_VOTE_JYSK_SCHEMA = 3;
 const IMPACTSHOP_VOTE_JYSK_NONCE = 'impact_vote_action';
 const IMPACTSHOP_VOTE_JYSK_TOKEN_TTL = 600;
 const IMPACTSHOP_VOTE_JYSK_TALLY_TTL = 15;
@@ -78,16 +78,41 @@ function impactshop_vote_jysk_register_assets(): void
 .impactshop-vote__ngo--culture { background: linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%); }
 .impactshop-vote__ngo--other { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); }
 .impactshop-vote__ngo-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #0f172a; background: #e0e7ff; border-radius: 999px; padding: 2px 8px; margin-top: 8px; }
+.impactshop-vote__ngo-badge--gold { background: #fef3c7; color: #92400e; }
+.impactshop-vote__ngo-badge--silver { background: #e2e8f0; color: #475569; }
+.impactshop-vote__ngo-badge--bronze { background: #fcd9c2; color: #9a3412; }
 .impactshop-vote__ngo-more { margin-top: 8px; background: transparent; border: 0; color: #1d4ed8; font-weight: 600; font-size: 12px; cursor: pointer; padding: 0; }
 .impactshop-vote__ngo-progress { margin-top: 10px; }
 .impactshop-vote__ngo-progress-bar { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
 .impactshop-vote__ngo-progress-bar span { display: block; height: 100%; background: linear-gradient(90deg, #0ea5e9, #1d4ed8); border-radius: 999px; transition: width .4s ease; }
 .impactshop-vote__ngo-progress small { font-size: 11px; color: #64748b; }
-.impactshop-vote__cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.impactshop-vote__cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 16px; }
 .impactshop-vote__cta button { background: #0f172a; color: #fff; border: 0; border-radius: 14px; padding: 12px 20px; font-size: 15px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
 .impactshop-vote__cta button:not([disabled]):hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18); }
 .impactshop-vote__cta button:not([disabled]):active { transform: scale(0.97); }
 .impactshop-vote__cta button[disabled] { background: #94a3b8; cursor: not-allowed; }
+.impactshop-vote__selected-bar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.92); color: #fff; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-radius: 0; font-size: 12px; box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.28); z-index: 1200; text-align: center; }
+.impactshop-vote.has-selected-bar { padding-bottom: 120px; }
+.impactshop-vote__selector { margin-top: 16px; background: #f8fafc; border-radius: 16px; padding: 14px; border: 1px solid #e2e8f0; }
+.impactshop-vote__selector-row { display: flex; flex-direction: column; gap: 8px; }
+.impactshop-vote__selector-label { font-size: 14px; font-weight: 600; color: #0f172a; }
+.impactshop-vote__ngo-panel { display: flex; flex-direction: column; gap: 8px; }
+.impactshop-vote__ngo-toggle { align-self: flex-start; background: #fff; border: 1px solid #cbd5f5; border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #1e3a8a; cursor: pointer; }
+.impactshop-vote__selector.is-collapsed .impactshop-vote__ngo-panel { display: none; }
+.impactshop-vote__selector select { padding: 10px 12px; border-radius: 12px; border: 1px solid #cbd5f5; background: #fff; font-size: 14px; }
+.impactshop-vote__selector input[type="search"] { padding: 10px 12px; border-radius: 12px; border: 1px solid #cbd5f5; background: #fff; font-size: 14px; width: 100%; }
+.impactshop-vote__ngo-list { margin-top: 8px; border: 0; border-radius: 0; background: transparent; max-height: 240px; overflow: auto; }
+.impactshop-vote__ngo-item { display: block; width: 100%; text-align: left; background: transparent !important; border: 0; padding: 8px 0; font-size: 14px; cursor: pointer; color: #0f172a !important; border-radius: 0 !important; box-shadow: none !important; }
+.impactshop-vote__ngo-item:hover,
+.impactshop-vote__ngo-item:focus-visible,
+.impactshop-vote__ngo-item:active { background: transparent !important; }
+.impactshop-vote__ngo-item.is-active { font-weight: 600; }
+.impactshop-vote__ngo-empty { padding: 10px 12px; font-size: 13px; color: #64748b; }
+.impactshop-vote__ngo-card { margin-top: 12px; background: #fff; border-radius: 14px; padding: 12px; border: 1px solid #e2e8f0; }
+.impactshop-vote__ngo-card.is-empty { background: #f1f5f9; color: #64748b; }
+.impactshop-vote__ngo-card h4 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+.impactshop-vote__ngo-card .impactshop-vote__ngo-meta { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+.impactshop-vote__ngo-card p { margin: 0; font-size: 14px; color: #1f2937; line-height: 1.5; }
 .impactshop-vote__tally { margin-top: 16px; font-size: 14px; color: #475569; }
 .impactshop-vote__tally ul { list-style: none; padding: 0; margin: 8px 0 0; }
 .impactshop-vote__tally li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
@@ -123,7 +148,7 @@ function impactshop_vote_jysk_register_assets(): void
 @media (max-width: 720px) {
   .impactshop-vote__cta--sticky {
     position: fixed;
-    bottom: 0;
+    bottom: 72px;
     left: 0;
     right: 0;
     padding: 12px 16px;
@@ -131,21 +156,27 @@ function impactshop_vote_jysk_register_assets(): void
     backdrop-filter: blur(10px);
     border-radius: 14px 14px 0 0;
     box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.08);
-    z-index: 20;
+    z-index: 1200;
+  }
+  .impactshop-vote__cta--sticky {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .impactshop-vote__cta--sticky button {
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+  }
+  .impactshop-vote__status {
+    width: 100%;
+    text-align: center;
   }
   .impactshop-vote__selected-bar {
-    position: fixed;
-    bottom: 64px;
-    left: 0;
-    right: 0;
-    padding: 8px 16px;
-    background: rgba(15, 23, 42, 0.9);
-    color: #fff;
-    font-size: 12px;
-    text-align: center;
-    z-index: 21;
+    bottom: 0;
   }
-  .impactshop-vote { padding-bottom: 80px; }
+  .impactshop-vote.has-selected-bar { padding-bottom: 140px; }
 }
 @media (max-width: 720px) {
   .impactshop-vote__panel { padding: 16px; }
@@ -167,8 +198,14 @@ function impactshop_vote_jysk_enqueue_assets(): void
     ]);
 }
 
-function impactshop_vote_jysk_shortcode(): string
+function impactshop_vote_jysk_shortcode($atts = []): string
 {
+    $atts = shortcode_atts([
+        'campaign_slug' => '',
+    ], $atts, 'impactshop_vote_page');
+    $campaign_slug = sanitize_title((string) $atts['campaign_slug']);
+    $slug_attr = $campaign_slug !== '' ? ' data-campaign-slug="' . esc_attr($campaign_slug) . '"' : '';
+
     if (class_exists('Elementor\Plugin')) {
         $plugin = Elementor\Plugin::instance();
         if (!empty($plugin->editor) && $plugin->editor->is_edit_mode()) {
@@ -178,14 +215,14 @@ function impactshop_vote_jysk_shortcode(): string
 
     impactshop_vote_jysk_enqueue_assets();
 
-    $html  = '<div class="impactshop-vote" data-role="vote-root">';
+    $html  = '<div class="impactshop-vote" data-role="vote-root"' . $slug_attr . '>';
     $html .= '<div class="impactshop-vote__panel">';
     $html .= '<div class="impactshop-vote__intro">';
     $html .= '<h3>JYSK szavazás – segítsd a kedvencedet!</h3>';
     $html .= '<p>A szavazás a videó végignézése után aktiválódik.</p>';
     $html .= '<div class="impactshop-vote__steps" data-role="steps">';
     $html .= '<a class="impactshop-vote__step is-active" data-step="1" href="#impactshop-vote-video"><span class="impactshop-vote__step-dot"></span>Videó</a>';
-    $html .= '<a class="impactshop-vote__step" data-step="2" href="#impactshop-vote-ngos"><span class="impactshop-vote__step-dot"></span>Szervezet</a>';
+    $html .= '<a class="impactshop-vote__step" data-step="2" href="#impactshop-vote-selector"><span class="impactshop-vote__step-dot"></span>Szervezet</a>';
     $html .= '<a class="impactshop-vote__step" data-step="3" href="#impactshop-vote-submit"><span class="impactshop-vote__step-dot"></span>Szavazás</a>';
     $html .= '</div>';
     $html .= '<div class="impactshop-vote__countdown" data-role="countdown"></div>';
@@ -208,14 +245,24 @@ function impactshop_vote_jysk_shortcode(): string
     $html .= '</span>';
     $html .= '</div>';
     $html .= '</div>';
-    $html .= '<div class="impactshop-vote__ngos" data-role="ngo-list" id="impactshop-vote-ngos"></div>';
-    $html .= '<div class="impactshop-vote__selected-bar" data-role="selected-bar" style="display:none;"></div>';
-    $html .= '<div class="impactshop-vote__cta impactshop-vote__cta--sticky">';
+    $html .= '<div class="impactshop-vote__selector" data-role="ngo-selector" id="impactshop-vote-selector">';
+    $html .= '<div class="impactshop-vote__selector-row">';
+    $html .= '<label class="impactshop-vote__selector-label" for="impactshop-vote-select">Válaszd ki, melyik szervezetre szavazol</label>';
+    $html .= '<button type="button" class="impactshop-vote__ngo-toggle" data-role="ngo-toggle" hidden>Másik szervezet választása</button>';
+    $html .= '<div class="impactshop-vote__ngo-panel" data-role="ngo-panel">';
+    $html .= '<input type="search" id="impactshop-vote-search" data-role="ngo-filter" placeholder="Kezdj el gépelni az NGO nevére…">';
+    $html .= '<div class="impactshop-vote__ngo-list" data-role="ngo-list"></div>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-vote__ngo-card" data-role="ngo-card"></div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-vote__cta">';
     $html .= '<button type="button" data-role="vote-submit" id="impactshop-vote-submit" disabled>Szavazok most</button>';
     $html .= '<span data-role="vote-status" class="impactshop-vote__status"></span>';
     $html .= '</div>';
     $html .= '<div class="impactshop-vote__tally" data-role="tally"></div>';
     $html .= '</div>';
+    $html .= '<div class="impactshop-vote__selected-bar" data-role="selected-bar" style="display:none;"></div>';
     $html .= '<div class="impactshop-vote__sheet" data-role="ngo-sheet">';
     $html .= '<div class="impactshop-vote__sheet-backdrop" data-role="ngo-sheet-close"></div>';
     $html .= '<div class="impactshop-vote__sheet-panel">';
@@ -227,7 +274,6 @@ function impactshop_vote_jysk_shortcode(): string
     $html .= '</div>';
     $html .= '</div>';
     $html .= '<div class="impactshop-vote__toast" data-role="toast"></div>';
-    $html .= do_shortcode('[impactshop_identity_panel]');
     $html .= '</div>';
 
     return $html;
@@ -384,8 +430,9 @@ function impactshop_vote_jysk_kill_switch(): bool
 
 function impactshop_vote_jysk_init(WP_REST_Request $request): WP_REST_Response
 {
-    $campaign = impactshop_vote_jysk_get_campaign();
-    $status = impactshop_vote_jysk_status_data();
+    $campaign_slug = impactshop_vote_jysk_request_campaign_slug($request);
+    $campaign = impactshop_vote_jysk_get_campaign($campaign_slug);
+    $status = impactshop_vote_jysk_status_data($campaign_slug);
 
     return new WP_REST_Response([
         'campaign' => $campaign,
@@ -395,12 +442,14 @@ function impactshop_vote_jysk_init(WP_REST_Request $request): WP_REST_Response
 
 function impactshop_vote_jysk_campaign(WP_REST_Request $request): WP_REST_Response
 {
-    return new WP_REST_Response(impactshop_vote_jysk_get_campaign(), 200);
+    $campaign_slug = impactshop_vote_jysk_request_campaign_slug($request);
+    return new WP_REST_Response(impactshop_vote_jysk_get_campaign($campaign_slug), 200);
 }
 
 function impactshop_vote_jysk_status(WP_REST_Request $request): WP_REST_Response
 {
-    return new WP_REST_Response(impactshop_vote_jysk_status_data(), 200);
+    $campaign_slug = impactshop_vote_jysk_request_campaign_slug($request);
+    return new WP_REST_Response(impactshop_vote_jysk_status_data($campaign_slug), 200);
 }
 
 function impactshop_vote_jysk_tally(WP_REST_Request $request): WP_REST_Response
@@ -453,7 +502,7 @@ function impactshop_vote_jysk_view(WP_REST_Request $request): WP_REST_Response
         return new WP_REST_Response(['message' => 'Ervenytelen kereses.'], 400);
     }
 
-    $campaign = impactshop_vote_jysk_get_campaign();
+    $campaign = impactshop_vote_jysk_get_campaign_by_id($campaign_id);
     if (!$campaign || empty($campaign['id']) || (int) $campaign['id'] !== $campaign_id) {
         return new WP_REST_Response(['message' => 'Nincs aktiv kampany.'], 400);
     }
@@ -517,7 +566,7 @@ function impactshop_vote_jysk_cast(WP_REST_Request $request): WP_REST_Response
         return impactshop_vote_jysk_error('INVALID_REQUEST', 'Ervenytelen kereses.', 400);
     }
 
-    $campaign = impactshop_vote_jysk_get_campaign();
+    $campaign = impactshop_vote_jysk_get_campaign_by_id($campaign_id);
     if (!$campaign || (int) $campaign['id'] !== $campaign_id) {
         return impactshop_vote_jysk_error('CAMPAIGN_NOT_ACTIVE', 'Nincs aktiv kampany.', 400);
     }
@@ -552,7 +601,7 @@ function impactshop_vote_jysk_cast(WP_REST_Request $request): WP_REST_Response
         ]);
     }
 
-    $status = impactshop_vote_jysk_status_data();
+    $status = impactshop_vote_jysk_status_data_by_campaign_id($campaign_id);
     if (!empty($status['voted_today'])) {
         return impactshop_vote_jysk_error('DAILY_LIMIT_EXCEEDED', 'Ma már szavaztál.', 409, [
             'next_vote_available_at' => $status['next_vote_available_at'],
@@ -697,7 +746,7 @@ function impactshop_vote_jysk_identity_message_read(WP_REST_Request $request): W
     return new WP_REST_Response(['status' => 'ok'], 200);
 }
 
-function impactshop_vote_jysk_status_data(): array
+function impactshop_vote_jysk_status_data(string $campaign_slug = ''): array
 {
     $pseudo_id = impactshop_vote_jysk_get_pseudo_id();
     $day_key = impactshop_vote_jysk_day_key();
@@ -706,15 +755,17 @@ function impactshop_vote_jysk_status_data(): array
         return [
             'voted_today' => false,
             'next_vote_available_at' => impactshop_vote_jysk_next_vote_time(),
+            'user_votes_total' => 0,
         ];
     }
 
     global $wpdb;
     $log_table = impactshop_vote_jysk_table('impact_vote_log');
-    $campaign = impactshop_vote_jysk_get_campaign();
+    $campaign = impactshop_vote_jysk_get_campaign($campaign_slug);
     $campaign_id = $campaign ? (int) $campaign['id'] : 0;
 
     $already = false;
+    $user_votes_total = 0;
     if ($campaign_id > 0) {
         $count = (int) $wpdb->get_var(
             $wpdb->prepare(
@@ -725,11 +776,65 @@ function impactshop_vote_jysk_status_data(): array
             )
         );
         $already = $count > 0;
+        $user_votes_total = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(1) FROM {$log_table} WHERE campaign_id = %d AND pseudo_id = %s",
+                $campaign_id,
+                $pseudo_id
+            )
+        );
     }
 
     return [
         'voted_today' => $already,
         'next_vote_available_at' => impactshop_vote_jysk_next_vote_time(),
+        'user_votes_total' => $user_votes_total,
+    ];
+}
+
+function impactshop_vote_jysk_status_data_by_campaign_id(int $campaign_id): array
+{
+    if ($campaign_id <= 0) {
+        return [
+            'voted_today' => false,
+            'next_vote_available_at' => impactshop_vote_jysk_next_vote_time(),
+            'user_votes_total' => 0,
+        ];
+    }
+    $pseudo_id = impactshop_vote_jysk_get_pseudo_id();
+    $day_key = impactshop_vote_jysk_day_key();
+
+    if ($pseudo_id === '') {
+        return [
+            'voted_today' => false,
+            'next_vote_available_at' => impactshop_vote_jysk_next_vote_time(),
+            'user_votes_total' => 0,
+        ];
+    }
+
+    global $wpdb;
+    $log_table = impactshop_vote_jysk_table('impact_vote_log');
+    $count = (int) $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(1) FROM {$log_table} WHERE campaign_id = %d AND pseudo_id = %s AND day_key = %s",
+            $campaign_id,
+            $pseudo_id,
+            $day_key
+        )
+    );
+    $already = $count > 0;
+    $user_votes_total = (int) $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(1) FROM {$log_table} WHERE campaign_id = %d AND pseudo_id = %s",
+            $campaign_id,
+            $pseudo_id
+        )
+    );
+
+    return [
+        'voted_today' => $already,
+        'next_vote_available_at' => impactshop_vote_jysk_next_vote_time(),
+        'user_votes_total' => $user_votes_total,
     ];
 }
 
@@ -740,26 +845,44 @@ function impactshop_vote_jysk_next_vote_time(): string
     return $next->format('c');
 }
 
-function impactshop_vote_jysk_get_campaign(): array
+function impactshop_vote_jysk_get_campaign(string $campaign_slug = ''): array
 {
     global $wpdb;
     $campaigns_table = impactshop_vote_jysk_table('impact_vote_campaigns');
     $ngos_table = impactshop_vote_jysk_table('impact_vote_ngos');
 
     $now = impactshop_vote_jysk_now_utc();
-    $campaign = $wpdb->get_row(
-        $wpdb->prepare(
-            "SELECT * FROM {$campaigns_table} WHERE status = 'active' AND start_at <= %s AND end_at >= %s ORDER BY id ASC LIMIT 1",
-            $now,
-            $now
-        ),
-        ARRAY_A
-    );
+    if ($campaign_slug !== '') {
+        $campaign = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$campaigns_table}
+                 WHERE status = 'active' AND start_at <= %s AND end_at >= %s AND campaign_slug = %s
+                 ORDER BY id ASC LIMIT 1",
+                $now,
+                $now,
+                $campaign_slug
+            ),
+            ARRAY_A
+        );
+    } else {
+        $campaign = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$campaigns_table} WHERE status = 'active' AND start_at <= %s AND end_at >= %s ORDER BY id ASC LIMIT 1",
+                $now,
+                $now
+            ),
+            ARRAY_A
+        );
+    }
 
     if (!$campaign) {
         return ['status' => 'none'];
     }
 
+    $selector_list = impactshop_vote_jysk_selector_list_for_campaign((string) ($campaign['campaign_slug'] ?? ''));
+    if ($selector_list !== '') {
+        impactshop_vote_jysk_sync_ngos_from_selector((int) $campaign['id'], (string) ($campaign['campaign_slug'] ?? ''));
+    }
     $ngos = $wpdb->get_results(
         $wpdb->prepare(
             "SELECT id, ngo_slug, ngo_name, description, logo_url, sort_order
@@ -775,12 +898,194 @@ function impactshop_vote_jysk_get_campaign(): array
         'status' => 'active',
         'id' => (int) $campaign['id'],
         'name' => (string) $campaign['name'],
+        'campaign_slug' => (string) ($campaign['campaign_slug'] ?? ''),
         'start_at' => impactshop_vote_jysk_iso8601($campaign['start_at']),
         'end_at' => impactshop_vote_jysk_iso8601($campaign['end_at']),
         'video_url' => (string) ($campaign['video_url'] ?? ''),
         'poster_url' => (string) ($campaign['poster_url'] ?? ''),
         'ngos' => $ngos,
     ];
+}
+
+function impactshop_vote_jysk_get_campaign_by_id(int $campaign_id): array
+{
+    if ($campaign_id <= 0) {
+        return [];
+    }
+    global $wpdb;
+    $campaigns_table = impactshop_vote_jysk_table('impact_vote_campaigns');
+    $ngos_table = impactshop_vote_jysk_table('impact_vote_ngos');
+    $now = impactshop_vote_jysk_now_utc();
+
+    $campaign = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM {$campaigns_table}
+             WHERE id = %d AND status = 'active' AND start_at <= %s AND end_at >= %s
+             LIMIT 1",
+            $campaign_id,
+            $now,
+            $now
+        ),
+        ARRAY_A
+    );
+
+    if (!$campaign) {
+        return [];
+    }
+
+    $selector_list = impactshop_vote_jysk_selector_list_for_campaign((string) ($campaign['campaign_slug'] ?? ''));
+    if ($selector_list !== '') {
+        impactshop_vote_jysk_sync_ngos_from_selector((int) $campaign['id'], (string) ($campaign['campaign_slug'] ?? ''));
+    }
+    $ngos = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT id, ngo_slug, ngo_name, description, logo_url, sort_order
+            FROM {$ngos_table}
+            WHERE campaign_id = %d AND is_active = 1
+            ORDER BY sort_order ASC, ngo_name ASC",
+            (int) $campaign['id']
+        ),
+        ARRAY_A
+    );
+
+    return [
+        'status' => 'active',
+        'id' => (int) $campaign['id'],
+        'name' => (string) $campaign['name'],
+        'campaign_slug' => (string) ($campaign['campaign_slug'] ?? ''),
+        'start_at' => impactshop_vote_jysk_iso8601($campaign['start_at']),
+        'end_at' => impactshop_vote_jysk_iso8601($campaign['end_at']),
+        'video_url' => (string) ($campaign['video_url'] ?? ''),
+        'poster_url' => (string) ($campaign['poster_url'] ?? ''),
+        'ngos' => $ngos,
+    ];
+}
+
+function impactshop_vote_jysk_selector_list_for_campaign(string $campaign_slug): string
+{
+    $slug = sanitize_title($campaign_slug);
+    if ($slug === '') {
+        return '';
+    }
+    $map = [
+        'jysk-komarom-szavazas' => 'komarom-esztergom',
+        'jysk-komarom' => 'komarom-esztergom',
+        'jysk-2' => 'komarom-esztergom',
+        'jysk-mezokovesd-szavazas' => 'borsod-abauj-zemplen',
+        'jysk-mezokovesd' => 'borsod-abauj-zemplen',
+    ];
+    if (isset($map[$slug])) {
+        return $map[$slug];
+    }
+    if (strpos($slug, 'komarom') !== false) {
+        return 'komarom-esztergom';
+    }
+    if (strpos($slug, 'mezokovesd') !== false) {
+        return 'borsod-abauj-zemplen';
+    }
+    return '';
+}
+
+function impactshop_vote_jysk_sync_ngos_from_selector(int $campaign_id, string $campaign_slug): void
+{
+    if ($campaign_id <= 0) {
+        return;
+    }
+    $list = impactshop_vote_jysk_selector_list_for_campaign($campaign_slug);
+    if ($list === '') {
+        return;
+    }
+    $path = __DIR__ . '/impactshop-ngo-selector-data/' . $list . '.json';
+    if (!file_exists($path)) {
+        return;
+    }
+    $raw = file_get_contents($path);
+    if ($raw === false) {
+        return;
+    }
+    $payload = json_decode($raw, true);
+    if (!is_array($payload) || empty($payload['items']) || !is_array($payload['items'])) {
+        return;
+    }
+    global $wpdb;
+    $ngos_table = impactshop_vote_jysk_table('impact_vote_ngos');
+    $existing_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, ngo_slug FROM {$ngos_table} WHERE campaign_id = %d",
+        $campaign_id
+    ), ARRAY_A);
+    $existing_map = [];
+    foreach ($existing_rows as $row) {
+        $existing_map[(string) $row['ngo_slug']] = (int) $row['id'];
+    }
+
+    $list_slugs = [];
+    $order = 1;
+    foreach ($payload['items'] as $item) {
+        $slug = sanitize_title((string) ($item['slug'] ?? ''));
+        if ($slug === '') {
+            continue;
+        }
+        $list_slugs[] = $slug;
+        $name = sanitize_text_field((string) ($item['name'] ?? $item['short_name'] ?? $slug));
+        $summary = trim((string) ($item['summary'] ?? ''));
+        if ($summary === '') {
+            $activity = trim((string) ($item['activity'] ?? ''));
+            $address = trim((string) ($item['address'] ?? ''));
+            $summary = $name;
+            if ($activity !== '') {
+                $summary .= ' fő tevékenysége: ' . $activity . '.';
+            }
+            if ($address !== '') {
+                $summary .= ' Székhely: ' . $address . '.';
+            }
+        }
+
+        if (isset($existing_map[$slug])) {
+            $wpdb->update(
+                $ngos_table,
+                [
+                    'ngo_name' => $name,
+                    'description' => $summary,
+                    'sort_order' => $order,
+                    'is_active' => 1,
+                ],
+                ['id' => $existing_map[$slug]],
+                ['%s', '%s', '%d', '%d'],
+                ['%d']
+            );
+        } else {
+            $wpdb->insert(
+                $ngos_table,
+                [
+                    'campaign_id' => $campaign_id,
+                    'ngo_slug' => $slug,
+                    'ngo_name' => $name,
+                    'description' => $summary,
+                    'logo_url' => '',
+                    'sort_order' => $order,
+                    'is_active' => 1,
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%d', '%d']
+            );
+        }
+        $order += 1;
+    }
+
+    if ($list_slugs) {
+        $placeholders = implode(',', array_fill(0, count($list_slugs), '%s'));
+        $params = array_merge([$campaign_id], $list_slugs);
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$ngos_table} SET is_active = 0 WHERE campaign_id = %d AND ngo_slug NOT IN ({$placeholders})",
+            $params
+        ));
+    }
+}
+
+function impactshop_vote_jysk_request_campaign_slug(WP_REST_Request $request): string
+{
+    $slug = (string) $request->get_param('campaign_slug');
+    $slug = sanitize_title($slug);
+    return $slug;
 }
 
 function impactshop_vote_jysk_iso8601($datetime): string
@@ -933,9 +1238,17 @@ function impactshop_vote_jysk_build_tally(int $campaign_id): array
 {
     global $wpdb;
     $daily_table = impactshop_vote_jysk_table('impact_vote_daily');
+    $ngos_table = impactshop_vote_jysk_table('impact_vote_ngos');
     $rows = $wpdb->get_results(
         $wpdb->prepare(
-            "SELECT ngo_id, SUM(votes) as total_votes FROM {$daily_table} WHERE campaign_id = %d GROUP BY ngo_id",
+            "SELECT d.ngo_id,
+                    SUM(d.votes) as total_votes,
+                    n.ngo_name,
+                    n.ngo_slug
+             FROM {$daily_table} d
+             LEFT JOIN {$ngos_table} n ON n.id = d.ngo_id
+             WHERE d.campaign_id = %d
+             GROUP BY d.ngo_id, n.ngo_name, n.ngo_slug",
             $campaign_id
         ),
         ARRAY_A
@@ -946,6 +1259,8 @@ function impactshop_vote_jysk_build_tally(int $campaign_id): array
         $items[] = [
             'ngo_id' => (int) $row['ngo_id'],
             'votes' => (int) $row['total_votes'],
+            'ngo_name' => isset($row['ngo_name']) ? (string) $row['ngo_name'] : '',
+            'ngo_slug' => isset($row['ngo_slug']) ? (string) $row['ngo_slug'] : '',
         ];
     }
 
@@ -1045,6 +1360,7 @@ function impactshop_vote_jysk_maybe_migrate(): void
     $sql_campaigns = "CREATE TABLE {$campaigns} (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         name VARCHAR(190) NOT NULL,
+        campaign_slug VARCHAR(190) DEFAULT NULL,
         start_at DATETIME NOT NULL,
         end_at DATETIME NOT NULL,
         status VARCHAR(20) NOT NULL,
@@ -1052,6 +1368,7 @@ function impactshop_vote_jysk_maybe_migrate(): void
         poster_url TEXT,
         created_at DATETIME NOT NULL,
         PRIMARY KEY  (id),
+        UNIQUE KEY uk_campaign_slug (campaign_slug),
         KEY status (status),
         KEY start_at (start_at),
         KEY end_at (end_at)
@@ -1306,7 +1623,7 @@ function impactshop_vote_jysk_draw_lottery(int $campaign_id): void
 
     $winners = [];
     $rank = 1;
-    while ($rank <= 6 && $pool) {
+    while ($rank <= 3 && $pool) {
         $pick = random_int(1, $total);
         $acc = 0;
         foreach ($pool as $idx => $entry) {
@@ -1392,6 +1709,7 @@ add_action('admin_post_impactshop_vote_export_log', 'impactshop_vote_jysk_export
 add_action('admin_post_impactshop_vote_export_daily', 'impactshop_vote_jysk_export_daily');
 add_action('admin_post_impactshop_vote_draw_lottery', 'impactshop_vote_jysk_admin_draw_lottery');
 add_action('admin_post_impactshop_vote_toggle_ngo', 'impactshop_vote_jysk_admin_toggle_ngo');
+add_action('admin_post_impactshop_vote_import_ngos', 'impactshop_vote_jysk_admin_import_ngos');
 
 function impactshop_vote_jysk_admin_menu(): void
 {
@@ -1484,6 +1802,7 @@ function impactshop_vote_jysk_admin_tab_campaigns(): void
     echo '<input type="hidden" name="impactshop_vote_action" value="create_campaign" />';
     echo '<table class="form-table"><tbody>';
     echo '<tr><th>Nev</th><td><input type="text" name="name" class="regular-text" required></td></tr>';
+    echo '<tr><th>Slug</th><td><input type="text" name="campaign_slug" class="regular-text" required><p class="description">Példa: jysk-komarom-szavazas</p></td></tr>';
     echo '<tr><th>Start (HU idozona)</th><td><input type="datetime-local" name="start_at" required><p class="description">Idozona: Europe/Budapest</p></td></tr>';
     echo '<tr><th>Vege (HU idozona)</th><td><input type="datetime-local" name="end_at" required><p class="description">Idozona: Europe/Budapest</p></td></tr>';
     echo '<tr><th>Video URL</th><td><input type="url" name="video_url" class="regular-text"></td></tr>';
@@ -1498,7 +1817,7 @@ function impactshop_vote_jysk_admin_tab_campaigns(): void
         return;
     }
     echo '<table class="widefat striped"><thead><tr>';
-    echo '<th>ID</th><th>Nev</th><th>Status</th><th>Start</th><th>Vege</th><th>Akcio</th>';
+    echo '<th>ID</th><th>Nev</th><th>Slug</th><th>Status</th><th>Start</th><th>Vege</th><th>Akcio</th>';
     echo '</tr></thead><tbody>';
     foreach ($campaigns as $campaign) {
         $draw_url = wp_nonce_url(
@@ -1508,6 +1827,7 @@ function impactshop_vote_jysk_admin_tab_campaigns(): void
         echo '<tr>';
         echo '<td>' . esc_html($campaign['id']) . '</td>';
         echo '<td>' . esc_html($campaign['name']) . '</td>';
+        echo '<td>' . esc_html((string) ($campaign['campaign_slug'] ?? '')) . '</td>';
         $status = (string) $campaign['status'];
         $status_color = $status === 'active' ? '#16a34a' : ($status === 'closed' ? '#64748b' : '#f97316');
         echo '<td><span style="font-weight:700;color:' . esc_attr($status_color) . '">' . esc_html($status) . '</span></td>';
@@ -1545,6 +1865,23 @@ function impactshop_vote_jysk_admin_tab_ngos(): void
     echo '<tr><th>Sorrend</th><td><input type="number" name="sort_order" value="0"></td></tr>';
     echo '</tbody></table>';
     submit_button('Civil szervezet letrehozasa');
+    echo '</form>';
+
+    echo '<h2>Bulk import (CSV)</h2>';
+    echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" enctype="multipart/form-data">';
+    wp_nonce_field('impactshop_vote_admin');
+    echo '<input type="hidden" name="action" value="impactshop_vote_import_ngos" />';
+    echo '<table class="form-table"><tbody>';
+    echo '<tr><th>Kampany</th><td><select name="campaign_id" required>';
+    foreach ($campaigns as $campaign) {
+        echo '<option value="' . esc_attr($campaign['id']) . '">' . esc_html($campaign['name']) . '</option>';
+    }
+    echo '</select></td></tr>';
+    echo '<tr><th>CSV fajl</th><td><input type="file" name="ngo_csv" accept=".csv" required></td></tr>';
+    echo '<tr><th>Csere</th><td><label><input type="checkbox" name="replace_all" value="1"> Meglevo NGO-k inaktivalasa import elott</label></td></tr>';
+    echo '<tr><th>Formatum</th><td><code>ngo_name,ngo_slug,description,logo_url,sort_order,is_active</code> (fejlec opcionális)</td></tr>';
+    echo '</tbody></table>';
+    submit_button('CSV import');
     echo '</form>';
 
     echo '<h2>Meglevo civil szervezetek</h2>';
@@ -1627,6 +1964,7 @@ function impactshop_vote_jysk_admin_tab_exports(): void
 function impactshop_vote_jysk_admin_create_campaign(): void
 {
     $name = isset($_POST['name']) ? sanitize_text_field((string) $_POST['name']) : '';
+    $campaign_slug = isset($_POST['campaign_slug']) ? sanitize_title((string) $_POST['campaign_slug']) : '';
     $start = isset($_POST['start_at']) ? (string) $_POST['start_at'] : '';
     $end = isset($_POST['end_at']) ? (string) $_POST['end_at'] : '';
     $video_url = isset($_POST['video_url']) ? esc_url_raw((string) $_POST['video_url']) : '';
@@ -1634,7 +1972,10 @@ function impactshop_vote_jysk_admin_create_campaign(): void
 
     $start_utc = impactshop_vote_jysk_admin_to_utc($start);
     $end_utc = impactshop_vote_jysk_admin_to_utc($end);
-    if ($name === '' || $start_utc === '' || $end_utc === '') {
+    if ($campaign_slug === '') {
+        $campaign_slug = sanitize_title($name);
+    }
+    if ($name === '' || $start_utc === '' || $end_utc === '' || $campaign_slug === '') {
         return;
     }
 
@@ -1642,13 +1983,14 @@ function impactshop_vote_jysk_admin_create_campaign(): void
     $campaigns_table = impactshop_vote_jysk_table('impact_vote_campaigns');
     $wpdb->insert($campaigns_table, [
         'name' => $name,
+        'campaign_slug' => $campaign_slug,
         'start_at' => $start_utc,
         'end_at' => $end_utc,
         'status' => 'scheduled',
         'video_url' => $video_url,
         'poster_url' => $poster_url,
         'created_at' => impactshop_vote_jysk_now_utc(),
-    ], ['%s', '%s', '%s', '%s', '%s', '%s', '%s']);
+    ], ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']);
 }
 
 function impactshop_vote_jysk_admin_create_ngo(): void
@@ -1835,6 +2177,107 @@ function impactshop_vote_jysk_admin_toggle_ngo(): void
     $wpdb->update($ngos_table, ['is_active' => $next], ['id' => $ngo_id], ['%d'], ['%d']);
     wp_safe_redirect(admin_url('admin.php?page=impactshop-vote-jysk&tab=ngos'));
     exit;
+}
+
+function impactshop_vote_jysk_admin_import_ngos(): void
+{
+    if (!current_user_can('manage_options')) {
+        wp_safe_redirect(admin_url('admin.php?page=impactshop-vote-jysk&tab=ngos'));
+        return;
+    }
+    check_admin_referer('impactshop_vote_admin');
+
+    $campaign_id = isset($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : 0;
+    if ($campaign_id <= 0 || empty($_FILES['ngo_csv']['tmp_name'])) {
+        wp_safe_redirect(admin_url('admin.php?page=impactshop-vote-jysk&tab=ngos'));
+        return;
+    }
+
+    $replace_all = !empty($_POST['replace_all']);
+    $file = $_FILES['ngo_csv']['tmp_name'];
+    $handle = fopen($file, 'r');
+    if (!$handle) {
+        wp_safe_redirect(admin_url('admin.php?page=impactshop-vote-jysk&tab=ngos'));
+        return;
+    }
+
+    global $wpdb;
+    $ngos_table = impactshop_vote_jysk_table('impact_vote_ngos');
+    if ($replace_all) {
+        $wpdb->update($ngos_table, ['is_active' => 0], ['campaign_id' => $campaign_id], ['%d'], ['%d']);
+    }
+
+    $header = fgetcsv($handle);
+    $has_header = is_array($header) && in_array('ngo_name', $header, true);
+    if (!$has_header) {
+        rewind($handle);
+    }
+
+    $existing_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, ngo_slug FROM {$ngos_table} WHERE campaign_id = %d",
+        $campaign_id
+    ), ARRAY_A);
+    $existing_map = [];
+    foreach ($existing_rows as $row) {
+        $existing_map[(string) $row['ngo_slug']] = (int) $row['id'];
+    }
+
+    $order = 1;
+    while (($row = fgetcsv($handle)) !== false) {
+        if (!$row || !is_array($row)) {
+            continue;
+        }
+        $row = array_map('trim', $row);
+        $name = (string) ($row[0] ?? '');
+        if ($name === '' || strtolower($name) === 'ngo_name') {
+            continue;
+        }
+        $slug = (string) ($row[1] ?? '');
+        if ($slug === '') {
+            $slug = sanitize_title($name);
+        } else {
+            $slug = sanitize_title($slug);
+        }
+        $desc = (string) ($row[2] ?? '');
+        $logo = (string) ($row[3] ?? '');
+        $sort = isset($row[4]) && $row[4] !== '' ? (int) $row[4] : $order;
+        $active = isset($row[5]) && $row[5] !== '' ? (int) $row[5] : 1;
+
+        if (isset($existing_map[$slug])) {
+            $wpdb->update(
+                $ngos_table,
+                [
+                    'ngo_name' => $name,
+                    'description' => $desc,
+                    'logo_url' => $logo,
+                    'sort_order' => $sort,
+                    'is_active' => $active,
+                ],
+                ['id' => $existing_map[$slug]],
+                ['%s', '%s', '%s', '%d', '%d'],
+                ['%d']
+            );
+        } else {
+            $wpdb->insert(
+                $ngos_table,
+                [
+                    'campaign_id' => $campaign_id,
+                    'ngo_slug' => $slug,
+                    'ngo_name' => $name,
+                    'description' => $desc,
+                    'logo_url' => $logo,
+                    'sort_order' => $sort,
+                    'is_active' => $active,
+                ],
+                ['%d', '%s', '%s', '%s', '%s', '%d', '%d']
+            );
+        }
+        $order += 1;
+    }
+    fclose($handle);
+
+    wp_safe_redirect(admin_url('admin.php?page=impactshop-vote-jysk&tab=ngos'));
+    return;
 }
 
 function impactshop_vote_jysk_log_event(string $event_type, array $data = []): void

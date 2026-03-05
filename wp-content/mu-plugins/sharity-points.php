@@ -33,6 +33,8 @@ require_once __DIR__ . '/sharity-points-ledger-sync.php';
 require_once __DIR__ . '/sharity-points-events.php';
 require_once __DIR__ . '/sharity-points-webhooks.php';
 require_once __DIR__ . '/sharity-points-discount.php';
+require_once __DIR__ . '/sharity-points-admin.php';
+require_once __DIR__ . '/sharity-points-notifications.php';
 
 add_action('muplugins_loaded', 'sharity_points_maybe_migrate', 5);
 add_action('admin_init', 'sharity_points_register_caps');

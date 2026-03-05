@@ -195,6 +195,18 @@
             font-size: 15px;
         }
 
+        #ads-watch-message .insight-value {
+            line-height: 1.45;
+            max-height: calc(1.45em * 4);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            overflow-wrap: anywhere;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 4;
+            line-clamp: 4;
+        }
+
         .insight-hint {
             font-size: 12px;
             color: #64748b;
@@ -464,7 +476,9 @@
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            padding: 12px 16px;
+            padding: 18px 22px;
+            min-width: 136px;
+            min-height: 76px;
             background: #22c55e;
             color: #fff;
             border: none;
@@ -475,6 +489,8 @@
             box-shadow: 0 4px 16px rgba(34, 197, 94, 0.5);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             animation: ima-cta-pulse 2s infinite;
+            line-height: 1.2;
+            text-align: center;
         }
 
         .ads-watch-cta.sponsor-cta-overlay a:hover {
@@ -518,8 +534,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            padding: 12px 16px;
+            gap: 6px;
+            padding: 20px 26px;
+            min-width: 144px;
+            min-height: 80px;
             background: #22c55e;
             color: #fff;
             border: none;
@@ -533,6 +551,7 @@
             animation: ima-cta-pulse 2s infinite;
             /* Clickable - opens ad URL via JS */
             pointer-events: auto;
+            line-height: 1.2;
         }
 
         .ima-cta-overlay:hover {
@@ -546,8 +565,9 @@
         }
 
         .ima-cta-text {
-            font-size: 12px;
+            font-size: 13px;
             opacity: 0.95;
+            line-height: 1.15;
         }
 
         @keyframes ima-cta-pulse {
@@ -687,6 +707,42 @@
 
         .tally-amount {
             color: #4caf50;
+        }
+
+        @media (max-width: 640px) {
+            .tally-item {
+                grid-template-columns: 34px 44px 1fr 72px;
+                grid-template-rows: auto auto;
+                align-items: start;
+            }
+            .tally-rank {
+                font-size: 16px;
+                grid-row: 1 / span 2;
+            }
+            .tally-logo {
+                width: 36px;
+                height: 36px;
+                grid-row: 1 / span 2;
+            }
+            .tally-name {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: initial;
+                line-height: 1.2;
+                grid-column: 3 / 5;
+            }
+            .tally-votes {
+                grid-column: 3 / 4;
+                grid-row: 2;
+                text-align: left;
+                font-size: 12px;
+            }
+            .tally-amount {
+                grid-column: 4 / 5;
+                grid-row: 2;
+                text-align: right;
+                font-size: 12px;
+            }
         }
 
         .btn-show-more-ngos {
@@ -838,6 +894,11 @@
 
         .status-item.streak .value {
             color: #ef4444;
+        }
+
+        .status-item.countdown .value {
+            font-size: 16px;
+            line-height: 1.2;
         }
 
         .auto-vote-toggle {
@@ -1029,22 +1090,38 @@
             padding-bottom: 140px; /* Extra space for floating tabs + accessibility button */
         }
 
+        @media (min-width: 992px) {
+            .ads-watch-floating-tabs {
+                bottom: 20px;
+                padding-bottom: 12px;
+            }
+            .impactshop-ads-watch-container {
+                padding-bottom: 90px;
+            }
+        }
+
         @media (max-width: 480px) {
             .ads-watch-floating-tabs {
                 gap: 6px;
                 padding: 10px 10px;
                 padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-                bottom: 55px; /* Space for accessibility button on mobile */
+                bottom: 70px; /* Space for accessibility button on mobile */
+                flex-wrap: wrap;
+                justify-content: center;
             }
             .ads-watch-tab {
                 padding: 8px 10px;
                 font-size: 12px;
                 line-height: 1.2;
                 gap: 3px;
+                flex: 1 1 calc(50% - 6px);
             }
             /* Smaller icons on mobile */
             .ads-watch-tab .tab-icon {
                 font-size: 14px;
+            }
+            .impactshop-ads-watch-container {
+                padding-bottom: 190px;
             }
         }
 
@@ -1052,10 +1129,56 @@
             .ads-watch-floating-tabs {
                 gap: 4px;
                 padding: 8px 6px;
+                flex-wrap: wrap;
             }
             .ads-watch-tab {
                 padding: 6px 8px;
                 font-size: 11px;
+                flex: 1 1 calc(50% - 4px);
+            }
+            .impactshop-ads-watch-container {
+                padding-bottom: 200px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .ads-watch-subtitle {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .info-popover {
+                position: static;
+                margin-top: 8px;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .impactshop-ads-watch-wrapper .elementor-widget-image,
+            .impactshop-ads-watch-wrapper .elementor-image {
+                overflow: visible;
+            }
+
+            .impactshop-ads-watch-wrapper .elementor-widget-image img,
+            .impactshop-ads-watch-wrapper .elementor-image img {
+                height: auto;
+                max-width: 100%;
+            }
+
+            .donation-pool-display {
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 18px;
+                display: inline-flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                text-align: center;
+            }
+            .donation-pool-display .pool-amount {
+                font-size: 18px;
+                margin-left: 0;
             }
         }
 
@@ -1383,8 +1506,29 @@
             }
 
             .tally-item {
-                grid-template-columns: 28px 36px 1fr 70px 70px;
+                grid-template-columns: 28px 36px 1fr;
+                grid-template-rows: auto auto;
+                row-gap: 6px;
                 font-size: 13px;
+                align-items: center;
+            }
+
+            .tally-name {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: unset;
+                line-height: 1.2;
+            }
+
+            .tally-votes {
+                grid-column: 1 / 3;
+                font-size: 12px;
+            }
+
+            .tally-amount {
+                grid-column: 3 / 4;
+                font-size: 12px;
+                justify-self: end;
             }
 
             .modal-content {
@@ -1424,8 +1568,16 @@
             }
 
             .auto-banner-link {
-                font-size: 13px;
-                padding: 7px 12px;
+                font-size: 14px;
+                padding: 12px 16px;
+                width: 100%;
+                min-height: 40px;
+                justify-content: center;
+                align-items: center;
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
             }
 
             /* CTA button: compact circle on mobile */
@@ -1433,6 +1585,23 @@
                 width: 44px;
                 height: 44px;
                 font-size: 18px;
+            }
+
+            /* Sponsor CTA overlay: keep readable on mobile */
+            .ads-watch-cta.sponsor-cta-overlay {
+                bottom: 64px;
+                right: 12px;
+                z-index: 20;
+            }
+
+            .ads-watch-cta.sponsor-cta-overlay a {
+                width: auto;
+                height: auto;
+                min-width: 120px;
+                min-height: 68px;
+                padding: 14px 18px;
+                font-size: 13px;
+                line-height: 1.2;
             }
 
             /* Video info panel mobile */
@@ -1515,7 +1684,8 @@
 
             /* Info popover mobile */
             .info-popover {
-                width: min(340px, 90vw);
+                width: 100%;
+                max-width: 100%;
                 font-size: 12px;
             }
 
@@ -1523,11 +1693,16 @@
             .ima-cta-overlay {
                 bottom: 50px;
                 right: 10px;
-                padding: 10px 12px;
+                padding: 12px 14px;
+                min-width: 96px;
                 font-size: 12px;
             }
 
             .ima-cta-icon {
                 font-size: 20px;
+            }
+
+            .ima-cta-text {
+                font-size: 12px;
             }
         }

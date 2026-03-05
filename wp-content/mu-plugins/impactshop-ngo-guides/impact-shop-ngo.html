@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Impact Shop Útmutató Civil Szervezeteknek | Sharity</title>
+  <meta name="description" content="Tudj meg mindent az Impact Shop affiliate rendszerről! Hogyan kapsz adományt a vásárlások után, 500+ partner webshop, fizetési ütemezés.">
+  <meta property="og:title" content="Impact Shop Útmutató – Sharity">
+  <meta property="og:description" content="Civil szervezeteknek: így működik az Impact Shop affiliate adomány rendszer.">
+  <meta property="og:url" content="https://app.sharity.hu/ngo-guides/impact-shop">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(15, 138, 157, 0.3), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(245, 182, 66, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(15, 138, 157, 0.1);
+      text-decoration: none;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(15, 138, 157, 0.12);
+      color: var(--teal);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(15, 138, 157, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(15, 138, 157, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--teal);
+      font-weight: 600;
+      border: 2px solid var(--teal);
+      transition: background 0.2s;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(15, 138, 157, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--teal);
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(15, 138, 157, 0.12);
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .list-numbered {
+      counter-reset: step;
+    }
+    .list-numbered li {
+      counter-increment: step;
+    }
+    .list-numbered li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .flow {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .flow-step {
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(15, 138, 157, 0.1);
+      border: 1px dashed rgba(15, 138, 157, 0.4);
+      text-align: center;
+      font-weight: 500;
+    }
+    .flow-step strong {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 6px;
+    }
+
+    .split {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      align-items: start;
+      margin-top: 40px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(245, 182, 66, 0.2);
+      color: #7a4b00;
+      font-weight: 600;
+      margin: 4px 4px 0 0;
+    }
+    .badge.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+    .badge.teal {
+      background: rgba(15, 138, 157, 0.15);
+      color: #0f8a9d;
+    }
+
+    .callout {
+      padding: 20px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(245, 182, 66, 0.15) 0%, rgba(245, 182, 66, 0.05) 100%);
+      border-left: 4px solid var(--sun);
+      margin: 24px 0;
+    }
+    .callout.success {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+      border-left-color: var(--success);
+    }
+    .callout h3 {
+      margin-bottom: 8px;
+      color: #7a4b00;
+    }
+    .callout.success h3 {
+      color: #166534;
+    }
+    .callout p {
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(11, 31, 42, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    th {
+      background: rgba(15, 138, 157, 0.08);
+      font-weight: 600;
+      color: var(--ink);
+    }
+    tr:hover {
+      background: rgba(15, 138, 157, 0.04);
+    }
+
+    .code {
+      font-family: "IBM Plex Mono", "Courier New", monospace;
+      font-size: 0.85rem;
+      background: rgba(11, 31, 42, 0.08);
+      padding: 12px 14px;
+      border-radius: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    .status-pending {
+      color: var(--warning);
+      font-weight: 600;
+    }
+    .status-approved {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .footer {
+      margin-top: 64px;
+      padding: 32px 24px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.08) 0%, rgba(111, 227, 193, 0.08) 100%);
+      border-radius: 20px;
+      border: 1px solid rgba(15, 138, 157, 0.12);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+    .fade-in.delay-1 { animation-delay: 0.1s; }
+    .fade-in.delay-2 { animation-delay: 0.2s; }
+    .fade-in.delay-3 { animation-delay: 0.3s; }
+    .fade-in.delay-4 { animation-delay: 0.4s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+      .flow { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#mi-ez">Mi ez?</a>
+      <a href="#hogyan-mukodik">Hogyan működik?</a>
+      <a href="#koltseg">Honnan jön?</a>
+      <a href="#tippek">Több adomány</a>
+      <a href="#faq">GYIK</a>
+      <a href="/ngo-guides/impact-challenge">Impact Challenge →</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">🛒 Vásárlás = Adomány</span>
+        <h1>Impact Shop – Útmutató NGO-knak</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          <strong>Vásárlásból adomány:</strong> A támogatóid a megszokott webshopokban vásárolnak, 
+          de az affiliate jutalékból automatikusan adomány képződik neked.
+        </p>
+        <p>
+          A vásárlónak nem kerül többe – a kereskedő jutalékából jön a támogatás. Neked csak kommunikálnod kell!
+        </p>
+        <div style="margin-top: 20px;">
+          <a href="https://app.sharity.hu/impactshop/" class="cta" target="_blank">🛍️ Impact Shop</a>
+          <a href="#hogyan-mukodik" class="cta-secondary">Hogyan működik?</a>
+        </div>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h3>🎯 Dióhéjban</h3>
+          <ul class="list" style="margin-top: 16px;">
+            <li>Támogató vásárol → affiliate jutalék keletkezik</li>
+            <li>Jutalék 50%-a automatikusan hozzád kerül</li>
+            <li>100+ partnerwebshop (Alza, eMAG, stb.)</li>
+            <li>A vásárlónak 0 Ft plusz költség</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hogyan működik -->
+    <h2 class="section-title fade-in delay-1" id="hogyan-mukodik">🔄 Hogyan működik?</h2>
+    
+    <div class="card fade-in delay-2">
+      <h3>A folyamat 4 lépésben</h3>
+      <div class="flow" style="margin-top: 20px;">
+        <div class="flow-step">
+          <strong>🛒</strong>
+          Impact Shop megnyitás
+        </div>
+        <div class="flow-step">
+          <strong>❤️</strong>
+          NGO kiválasztás
+        </div>
+        <div class="flow-step">
+          <strong>🏪</strong>
+          Bolt kiválasztás
+        </div>
+        <div class="flow-step">
+          <strong>💰</strong>
+          Vásárlás = Adomány
+        </div>
+      </div>
+    </div>
+
+    <div class="split fade-in delay-3">
+      <div class="card">
+        <div class="card-icon">👤</div>
+        <h3>A felhasználó szemszögéből</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Impact Shop megnyitása – app.sharity.hu/impactshop/</li>
+          <li>NGO kiválasztása – „Kit szeretnék támogatni?"</li>
+          <li>Bolt kiválasztása – 100+ partnerwebshop</li>
+          <li>Vásárlás – Normál módon, megszokott árakon</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏢</div>
+        <h3>Az NGO szemszögéből</h3>
+        <ul class="list" style="margin-top: 16px;">
+          <li>A támogatóid innen indítják a vásárlást</li>
+          <li>Minden vásárlás után te kapod az adományt</li>
+          <li>Valós időben láthatod a beérkező összegeket</li>
+          <li>Havi összesítő és kifizetés</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Honnan jön a pénz -->
+    <h2 class="section-title fade-in" id="koltseg">💰 Honnan jön a pénz?</h2>
+    
+    <div class="card fade-in">
+      <h3>Az affiliate modell</h3>
+      <div class="flow" style="margin-top: 20px;">
+        <div class="flow-step">
+          <strong>🛒</strong>
+          Vásárlás
+        </div>
+        <div class="flow-step">
+          <strong>📊</strong>
+          Jutalék (pl. 5%)
+        </div>
+        <div class="flow-step">
+          <strong>🤝</strong>
+          50% Sharity
+        </div>
+        <div class="flow-step">
+          <strong>❤️</strong>
+          50% NGO-nak
+        </div>
+      </div>
+    </div>
+
+    <div class="callout success fade-in">
+      <h3>📝 Példa kalkuláció</h3>
+      <table style="margin: 12px 0 0 0;">
+        <tr>
+          <td>Vásárlás értéke</td>
+          <td style="text-align: right;"><strong>20.000 Ft</strong></td>
+        </tr>
+        <tr>
+          <td>Affiliate jutalék (5%)</td>
+          <td style="text-align: right;">1.000 Ft</td>
+        </tr>
+        <tr style="background: rgba(34, 197, 94, 0.1);">
+          <td><strong>Adomány az NGO-nak (50%)</strong></td>
+          <td style="text-align: right;"><strong style="color: var(--success);">500 Ft</strong></td>
+        </tr>
+      </table>
+      <p style="margin-top: 12px; font-style: italic;">
+        💡 A vásárlónak ez 0 Ft – ugyanannyiért vásárol, mint egyébként!
+      </p>
+    </div>
+
+    <!-- Partnerwebshopok -->
+    <h2 class="section-title fade-in">🏪 Partnerwebshopok</h2>
+    
+    <div class="grid fade-in">
+      <div class="card">
+        <div class="card-icon">💻</div>
+        <h3>Elektronika</h3>
+        <p style="margin-top: 8px;">Alza, eMAG, MediaMarkt, Euronics</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">👗</div>
+        <h3>Divat</h3>
+        <p style="margin-top: 8px;">About You, H&M, Reserved, Glami</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💊</div>
+        <h3>Egészség</h3>
+        <p style="margin-top: 8px;">Vision Express, dm, Rossmann</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏠</div>
+        <h3>Otthon</h3>
+        <p style="margin-top: 8px;">JYSK, IKEA, Mömax, Pepco</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚽</div>
+        <h3>Sport</h3>
+        <p style="margin-top: 8px;">Decathlon, Intersport, Sportisimo</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎮</div>
+        <h3>Játék</h3>
+        <p style="margin-top: 8px;">Játéksziget, Regio Játék, Xupe</p>
+      </div>
+    </div>
+
+    <div class="callout fade-in">
+      <h3>🎁 Kuponok és kedvezmények</h3>
+      <p>
+        Az Impact Shop-ban kuponok és akciós ajánlatok is elérhetők – 
+        így a támogatóid kedvezményesen vásárolhatnak, miközben téged támogatnak!
+      </p>
+    </div>
+
+    <!-- Dashboard -->
+    <h2 class="section-title fade-in">📊 Mit látsz a dashboardon?</h2>
+    
+    <div class="split fade-in">
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <h3>Valós idejű adatok</h3>
+        <ul class="list" style="margin-top: 12px;">
+          <li>„Kik támogattak mostanában?" – Legutóbbi tranzakciók</li>
+          <li>Összegyűjtött adomány – Aktuális hónap + összes</li>
+          <li>Webshop statisztikák – Melyik boltból jön a legtöbb</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏷️</div>
+        <h3>Státuszok</h3>
+        <table style="margin-top: 12px;">
+          <tr>
+            <td><span class="status-pending">PENDING</span></td>
+            <td>Várakozik jóváhagyásra (30-90 nap)</td>
+          </tr>
+          <tr>
+            <td><span class="status-approved">APPROVED</span></td>
+            <td>Jóváhagyva, kifizetésre vár</td>
+          </tr>
+          <tr>
+            <td style="color: var(--muted);">REJECTED</td>
+            <td>Visszáruzott/törölt rendelés</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Több adomány -->
+    <h2 class="section-title fade-in" id="tippek">🚀 Hogyan szerezz több adományt?</h2>
+    
+    <div class="grid fade-in">
+      <div class="card">
+        <div class="card-icon">🔗</div>
+        <h3>1. Személyre szabott link</h3>
+        <p style="margin-top: 12px;">Minden NGO-nak van egyedi linkje:</p>
+        <div class="code">
+          https://app.sharity.hu/impactshop/<br>?d1=YOURSLUG&ngo=YOURSLUG
+        </div>
+        <p style="margin-top: 8px; font-size: 0.9rem;">
+          Erről érkezve automatikusan te vagy kiválasztva!
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h3>2. Tedd ki az oldaladra</h3>
+        <div class="code" style="font-size: 0.8rem;">
+          &lt;a href="https://app.sharity.hu/impactshop/?d1=yourslug"&gt;<br>
+          &nbsp;&nbsp;💚 Vásárolj és támogass – 0 Ft-ból!<br>
+          &lt;/a&gt;
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📧</div>
+        <h3>3. Hírlevél kampány</h3>
+        <p style="margin-top: 12px;">Ötletek szezonális kampányokhoz:</p>
+        <ul class="list" style="margin-top: 8px;">
+          <li>„Karácsonyi ajándékod dupla öröm!"</li>
+          <li>„Black Friday: 0 Ft-ból támogatás"</li>
+          <li>„Iskolakezdés – vásárolj és segíts!"</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎴</div>
+        <h3>4. NGO Card beágyazás</h3>
+        <p style="margin-top: 12px;">
+          Dinamikus kártya, ami mutatja az aktuális adományodat élőben!
+        </p>
+        <a href="/ngo-guides/ngo-card" style="display: inline-block; margin-top: 12px;">NGO Card útmutató →</a>
+      </div>
+    </div>
+
+    <!-- Kifizetés -->
+    <h2 class="section-title fade-in">⏱️ Kifizetési folyamat</h2>
+    
+    <div class="card fade-in">
+      <h3>Miért van várakozási idő?</h3>
+      <p style="margin-top: 12px;">
+        Az affiliate jutalékok <strong>30-90 nap késéssel</strong> kerülnek jóváhagyásra:
+      </p>
+      <ul class="list" style="margin-top: 12px;">
+        <li>Visszáru esetén a jutalék törlődik</li>
+        <li>Meg kell várni a végső tranzakció megerősítését</li>
+        <li>Ez az iparági sztenderd – nem a Sharity döntése</li>
+      </ul>
+    </div>
+
+    <div class="card fade-in" style="margin-top: 20px;">
+      <h3>Kifizetési ciklus</h3>
+      <div class="flow" style="margin-top: 16px;">
+        <div class="flow-step">
+          <strong>📅</strong>
+          Havi összesítés
+        </div>
+        <div class="flow-step">
+          <strong>💳</strong>
+          Átutalás 15-ig
+        </div>
+        <div class="flow-step">
+          <strong>✅</strong>
+          Nincs minimum
+        </div>
+      </div>
+      <p style="margin-top: 16px; font-style: italic;">
+        💡 Már 1 Ft-tól kifizetjük az adományt!
+      </p>
+    </div>
+
+    <!-- Szintbónuszok -->
+    <h2 class="section-title fade-in">🎁 Szintbónuszok</h2>
+    
+    <div class="card fade-in">
+      <p>A támogatóid szintjüknek megfelelő extra kedvezményt kaphatnak:</p>
+      <table style="margin-top: 16px;">
+        <thead>
+          <tr>
+            <th>Szint</th>
+            <th>Max kedvezményből</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>🌱 Basic</td><td>50%</td></tr>
+          <tr><td>🥉 Bronze</td><td>60%</td></tr>
+          <tr><td>🥈 Silver</td><td>70%</td></tr>
+          <tr><td>🥇 Gold</td><td>80%</td></tr>
+          <tr><td>💎 Platinum</td><td>90%</td></tr>
+          <tr><td>👑 Legend</td><td>100%</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 16px;">
+        <strong>Win-win:</strong> A támogatód olcsóbban vásárol, te több adományt kapsz!
+      </p>
+    </div>
+
+    <!-- FAQ -->
+    <h2 class="section-title fade-in" id="faq">❓ Gyakori kérdések</h2>
+    
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>A támogatóimnak regisztrálniuk kell?</h3>
+      <p style="margin-top: 8px;">
+        Nem szükséges. De ha van Sharity azonosítójuk, pontokat gyűjtenek és magasabb szinteken több kedvezményt kapnak.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mi van, ha a vásárló visszaküldi a terméket?</h3>
+      <p style="margin-top: 8px;">
+        A visszáruzott rendelés jutaléka törlődik – ebből nem lesz adomány. Ezért is van várakozási idő.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Miért van, hogy néhány boltnál nincs adomány?</h3>
+      <p style="margin-top: 8px;">
+        Nem minden webshop affiliate partner. Csak a rendszerben szereplő boltokból van jutalék.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Van minimum vásárlási összeg?</h3>
+      <p style="margin-top: 8px;">
+        Nincs. Már 1 Ft értékű vásárlástól is képződik adomány (ha van affiliate jutalék).
+      </p>
+    </div>
+
+    <!-- Kapcsolat -->
+    <h2 class="section-title fade-in">📞 Kapcsolat és támogatás</h2>
+    
+    <div class="card fade-in">
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <h3>Ha kérdésed van:</h3>
+          <p style="margin-top: 12px;">
+            <strong>Email:</strong> <a href="mailto:office@sharity.hu">office@sharity.hu</a><br>
+            <strong>Válaszidő:</strong> 24 órán belül
+          </p>
+        </div>
+        <div>
+          <h3>Hasznos linkek:</h3>
+          <ul class="list" style="margin-top: 12px;">
+            <li><a href="https://app.sharity.hu/impactshop/" target="_blank">Impact Shop főoldal</a></li>
+            <li><a href="/ngo-guides/impact-challenge">Impact Challenge útmutató</a></li>
+            <li><a href="/ngo-guides/ngo-card">NGO Card beágyazás</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer fade-in">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity – Impact Shop</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          NGO útmutató a Sharity platformhoz<br>
+          Verzió: 1.0 | Utolsó frissítés: 2026. február
+        </p>
+        <div style="margin-top: 16px;">
+          <a href="/ngo-guides/impact-challenge" style="margin-right: 16px;">Impact Challenge →</a>
+          <a href="/ngo-guides/ngo-card">NGO Card →</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
