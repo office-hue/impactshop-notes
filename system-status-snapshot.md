@@ -282,3 +282,8 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / MU Vendor Bundle PR)
+- Modulcsomag: `wp-content/mu-plugins/vendor/**` dependency bundle.
+- Continuity evidence: docs/pr-mu-vendor-bundle-pack-2026-03-05.md + conversation-summaries/442_conversation_summary.md.
+- Bastion guard extension rögzítve: docs/bastion-guard-status.md.
