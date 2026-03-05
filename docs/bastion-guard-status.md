@@ -17,3 +17,6 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 | 2026-03-05 | Pre-push hook módosítás | Push-range audit (`--mode push`) bekapcsolva, dirty worktree miatti false block megszűnik | `scripts/install-hooks.sh`, `scripts/safe-repo-audit.sh` |
 
 | 2026-03-05 | Identity panel nickname flow | Mentés után azonnali greeting + herowall szinkron, plusz fallback névfeloldás a Legacy API-ban | `wp-content/mu-plugins/impactshop-identity-panel.php`, `impactshop-identity-panel.js`, `impact-gamification.php` |
+
+| 2026-03-05 | Sharity Points admin+notification modulok | Új MU modulokhoz kötelező continuity evidence + strict audit gate fenntartás | `wp-content/mu-plugins/sharity-points-admin.php`, `wp-content/mu-plugins/sharity-points-notifications.php`, `docs/pr-points-admin-pack-2026-03-05.md` |
+| 2026-03-05 | Content Consumption Guard dashboard | Új guard modul dokumentált bastion kiterjesztéssel, snapshot/summary kapcsolattal | `wp-content/mu-plugins/sharity-content-consumption-guard.php`, `conversation-summaries/437_conversation_summary.md`, `system-status-snapshot.md` |
