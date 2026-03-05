@@ -282,3 +282,8 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / Campaign Vote PR)
+- Modulcsomag: vote-purchase Stripe flow, quarter management, event donation widget, campaign utility modulok.
+- Continuity evidence: docs/pr-campaign-vote-pack-2026-03-05.md + conversation-summaries/438_conversation_summary.md.
+- Bastion guard extension rögzítve: docs/bastion-guard-status.md.
