@@ -4,6 +4,355 @@
 - Platform: WordPress (ImpactShop)
 - Fő téma: akciós kártyák linkjei → ne a shop főoldalra, hanem termékoldalra vigyenek.
 
+### 2026-03-05 — AI Agent Checkpoint: Lekapcsolás előtti gyorsmentés
+
+**Állapot összefoglaló — Legal AI Agent (Phase 28+ folytatás)**
+
+| Mutató | Érték |
+|--------|-------|
+| MCP tools | **60** (56 korábbi + 4 új: `kb_dashboard`, `kb_retry_failed`, `kb_ingest_doc`, `kb_enrich_pending`) |
+| TypeScript hibák | **0** |
+| Tesztek | **15/15 PASS** |
+| Pipeline v3 | **batch 55/70** fut háttérben, 100% success rate |
+| KB documents | **150** (Kúria); Drive corpus: **5,000** |
+| Enrichments | **~5,680+** kész (pipeline v3 batch 55/70-nél tart) |
+| impactall | ❓ (repók átrendezés miatt `ai-agent/.git` hiányzik, impactshop-notes git OK) |
+
+**Mai session összefoglaló:**
+1. ✅ **4 TS hiba javítva** — `rawQuery` param array, `ProvenanceRecord` mezők, `links: {}` mező
+2. ✅ **`liveIngestPipeline.ts`** — auto-enrich+chunk modul (enrichAndChunkOne, enrichAndChunkPending, retryFailedEnrichments, getKBDashboard)
+3. ✅ **Post-ingest hooks** — 5 pipeline metódusba fire-and-forget enrich+chunk
+4. ✅ **4 új MCP tool** — `kb_dashboard`, `kb_retry_failed`, `kb_ingest_doc`, `kb_enrich_pending`
+5. ✅ **`AGENTS.md`** — repo guidelines AI agenteknek
+6. 🔄 **Pipeline v3** — háttérben fut (`nohup`+`disown`), batch 55/70, log: `/tmp/pipeline-v3.log`
+
+**⚠️ Ismert issue: `ai-agent/.git` hiányzik** — repó átrendezés folyamatban, bekapcsolás után ellenőrizni kell.
+
+**Folytatáskor:**
+- Pipeline v3 log ellenőrzés: `tail -20 /tmp/pipeline-v3.log`
+- Ha kész → `SELECT COUNT(*) FROM chunks` ellenőrzés
+- ai-agent `.git` helyreállítás ha szükséges
+- impactall futtatás újra
+- Tesztek bővítése az új live ingest pipeline-hoz
+
+---
+
+### 2026-03-04 — AI Agent Checkpoint: Phase 23 álláselmentés
+
+**Állapot összefoglaló — Legal AI Agent**
+
+| Mutató | Érték |
+|--------|-------|
+| Legal modul fájlok | **24** (`apps/core-agent-graph/src/legal/`) |
+| MCP tools | **42** (`apps/mcp-wrapper/src/tools/legal-tools.ts`) |
+| OpenAI SDK | **`openai@^6.25.0`** (Responses API) |
+| API | **Responses API** (`client.responses.create()`) — 9 hívás / 8 fájl |
+| Chat Completions | **0** hívás (teljesen migrálva) |
+| Capability routing | **getModelForCapability()** — minden caller egységesítve |
+| Langfuse tracking | **9 × `trackGeneration()`** — minden LLM caller lefedve |
+| SQLite DB | 9 tábla + FTS5 + 18 index, WAL mód, 64 MB cache |
+| TypeScript hibák | **0** |
+| impactall | ✅ zöld |
+
+**Phase 23 (2026-03-04) — 6 feature:**
+1. `previous_response_id` chaining (Impi expand retry — szerver-oldali állapot)
+2. Context compaction (`truncation: 'auto'` — 4 fájl)
+3. Background batch ingest (`background: true` + `responses.retrieve()` poll) + MCP #40
+4. Capability routing egységesítés (5 caller → `getModelForCapability()`)
+5. Jogszabály diff (`legalDiff.ts` — §-szintű időállapot összehasonlítás) + MCP #41
+6. Langfuse analytics (`trackGeneration()` + `getAnalyticsSummary()`) + MCP #42
+
+### 2026-03-04 — AI Agent Checkpoint: Phase 20–22 álláselmentés (korábbi)
+
+**Állapot összefoglaló — Legal AI Agent**
+
+| Mutató | Érték |
+|--------|-------|
+| Legal modul fájlok | **22** (`apps/core-agent-graph/src/legal/`) |
+| MCP tools | **39** (`apps/mcp-wrapper/src/tools/legal-tools.ts`, 1415 sor) |
+| OpenAI SDK | **`openai@^6.25.0`** (v4→v6 major upgrade) |
+| API | **Responses API** (`client.responses.create()`) — 8 hívás / 7 fájl |
+| Chat Completions | **0** hívás maradt (teljesen migrálva) |
+| SQLite DB | 9 tábla + FTS5 + 18 index, WAL mód, 64 MB cache |
+| TypeScript hibák | **0** |
+| impactall | ✅ zöld |
+
+**Phase 20 (2026-03-03) — Playwright Scraper Expansion:**
+- 6 új Playwright scraper: `legalPlaywrightEngine.ts`, `abScraper.ts`, `mnbScraper.ts`, `navScraper.ts`, `betScraper.ts`, `sourceHealthMonitor.ts`
+- 2 API client: `mnbFxClient.ts` (MNB SOAP), `eurLexClient.ts` (EUR-Lex SPARQL/REST)
+- 12 új MCP tool (#23–#34)
+
+**Phase 21 (2026-03-04) — SQLite Database Layer:**
+- `legalDatabase.ts` (1083 sor) — 9 tábla, FTS5, BM25 fulltext search, rekurzív CTE gráfbejárás
+- `knowledgeBaseRegistry.ts` + `legalKnowledgeGraph.ts` — dual-write: SQLite primary + JSON/CSV fallback
+- 5 új MCP tool (#35–#39): `db_fulltext_search`, `db_citation_path`, `db_legal_context`, `db_related_documents`, `db_stats`
+
+**Phase 22 (2026-03-04) — OpenAI SDK v6 + Responses API migráció:**
+- SDK: `openai` `^4.76.3` → `^6.25.0`
+- 7 fájl migrálva `chat.completions.create()` → `responses.create()`:
+  1. `capabilities/legalLegislationLookup.ts` — instructions + input, Langfuse adaptáció
+  2. `capabilities/taxChecklist.ts` — azonos minta
+  3. `capabilities/decision.ts` — capability router, max_output_tokens: 50
+  4. `nodes/contentStrategyNode.ts` — JSON mode: `text: { format: { type: 'json_object' } }`
+  5. `api-gateway/services/impi-openai.ts` — 2 hívás (válasz + multi-turn retry)
+  6. `api-gateway/services/impi-critic.ts` — JSON mode + scrubPII
+  7. `api-gateway/services/executive-summary.ts` — instructions + input
+- API mapping: `messages` → `instructions`+`input`, `max_tokens` → `max_output_tokens`, `res.choices[0]?.message?.content` → `res.output_text`, usage: `prompt_tokens/completion_tokens` → `input_tokens/output_tokens`
+
+**Frissített dokumentumok:**
+- `impactshop-notes-clean-2/notes.md` — Phase 20–22 részletes napló
+- `system-status-snapshot.md` — delta log bejegyzések
+- `docs/system-recovery-map.md` — legal modul / MCP tool referencia
+
+**Model routing (változatlan):**
+- `getModelForCapability(capabilityId)` in `capabilities/types.ts`
+- Resolution: `OPENAI_MODEL_{CAPABILITY_ID}` env → manifest.modelId → `OPENAI_MODEL` env → `'gpt-4o'`
+- GPT-5.3-Codex azonnal tesztelhető env var-ral amikor elérhető
+
+**Következő lehetséges lépések:**
+- ~~GPT-5.3-Codex tesztelés legal analysis minőségre~~ ✅ (lásd Phase 22b alább)
+- ~~KB pipeline Responses API validálás~~ ✅ (rule-based, nincs LLM → kész)
+- ~~Hosted container + Skills értékelés~~ ✅ (értékelve, jelenleg nem alkalmazható)
+
+### 2026-03-04 — Phase 22b: GPT-5.3-Codex tesztelés + Model routing config
+
+**Elérhető modellek az API-n (ellenőrizve):**
+- `gpt-5.3-codex`, `gpt-5.3-chat-latest`
+- `gpt-5.2`, `gpt-5.2-codex`, `gpt-5.2-pro`
+- `gpt-5.1`, `gpt-5.1-codex`, `gpt-5.1-codex-max`, `gpt-5.1-codex-mini`
+- `gpt-5`, `gpt-5-codex`, `gpt-5-mini`, `gpt-5-nano`, `gpt-5-pro`
+- `o4-mini`, `o3`, `o3-mini`
+- `gpt-4o`, `gpt-4o-mini` (korábbi default)
+- ⚠️ `gpt-5.3-codex-spark` NEM létezik (hibaüzenet: 400)
+
+**Benchmark — Legal Analysis (Responses API, ÁFA alanyi vs tárgyi mentesség):**
+
+| Model | Idő (ms) | In tok | Out tok | Reasoning tok | Chars | § hivatkozások | Áfa tv. ref |
+|-------|----------|--------|---------|---------------|-------|----------------|-------------|
+| gpt-4o | 9252 | 92 | 369 | 0 | 1032 | ✅ | – |
+| gpt-4o-mini | 9122 | 92 | 314 | 0 | 871 | ✅ | ✅ |
+| **gpt-5.3-codex** | **10775** | **91** | **414** | **0** | **1058** | **✅** | **✅** |
+| gpt-5-mini | 39801 | 91 | 2098 | 1728 | 941 | ✅ | ✅ |
+| gpt-5-nano | 20136 | 91 | 2496 | 2496 | 0 | ❌ | – |
+| o4-mini | 13727 | 91 | 1700 | 1280 | 987 | ✅ | ✅ |
+
+**Minőségi értékelés (gpt-5.3-codex):**
+- ✅ Pontos § hivatkozások: Áfa tv. 187–196. § (alanyi), 85–87. § (tárgyi)
+- ✅ Strukturált válasz: „ki vagyok én" vs „mit csinálok" összefoglaló
+- ✅ 2007. évi CXXVII. törvény helyes azonosítás
+- ✅ Átlag 5.7 § hivatkozás/válasz (3 query benchmark)
+- 📊 Hasonló sebesség mint gpt-4o (~9-11s), de gazdagabb jogi tartalom
+
+**3-query Legal Benchmark (gpt-5.3-codex, Responses API):**
+
+| Téma | Idő (ms) | In tok | Out tok | Chars | § refs | Tv. refs |
+|------|----------|--------|---------|-------|--------|----------|
+| ÁFA | 8506 | 78 | 418 | 1086 | 5 | 1 |
+| TAO | 7192 | 90 | 374 | 895 | 3 | 0 |
+| KATA | 11732 | 80 | 514 | 1224 | 9 | 6 |
+
+**Beállított model routing (.env):**
+```
+OPENAI_MODEL_LEGAL_LEGISLATION_LOOKUP=gpt-5.3-codex
+OPENAI_MODEL_TAX_CHECKLIST_HU=gpt-5.3-codex
+OPENAI_MODEL=gpt-4o
+# OPENAI_IMPI_MODEL → gpt-4o-mini (hardcoded default in code)
+```
+
+**KB pipeline Responses API validálás:**
+- A KB pipeline (`classifyTopics`, `chunkLegalDocument`, `classifyPrecedentialWeight`, `classifyAnonymization`) mind **rule-based** (keyword matching, regex) — nincs LLM hívás
+- Minden LLM hívás a capabilities + api-gateway rétegben van → Phase 22-ben migrálva
+- ✅ Nincs további teendő
+
+**Hosted container + Skills értékelés:**
+- **Skills:** versioned SKILL.md + fájl bundle, hosted shell-ben futtatva (container_auto)
+- **Background mode:** async long-running response, poll-al ellenőrizhető, `background=true`
+- **Compaction:** `context_management` + `compact_threshold` server-side automatikus
+- **Conversations API:** `conversations.create()` + `conversation` param → durable multi-turn state
+- ⚠️ **Jelenlegi korlátok:** shared hosting (cp40.ezit.hu) → nincs Docker → hosted container nem futtatható szerveren
+- ⚠️ A KB pipeline rule-based → nem profitál a hosted container-ből
+- 📌 **Jövőbeni lehetőség:** ha a pipeline cloud-ba költözik, Skills + Background mode + Compaction ideális lenne a nagy jogi dokumentum-feldolgozáshoz
+
+### 2026-02-27 – Checkpoint #2: Két reziduális bug diagnosztizálva + új terv kész
+
+- **Checkpoint oka:** Gép leállítás előtti memória-mentés.
+- **Előzmény:** A `docs/cj-autobanner-image-debug-2026-02-26.md` terv IMPLEMENTÁLVA lett a szerveren (6 CJ shop reakiválva, XSS fix, boot.php fallback). Két maradék hiba maradt.
+- **BUG-A (kép `?` jel):** Csökkent a szám, de nem 0. Hipotézis: üres `image_url` + hiányzó fallback logo (`{slug}-logo.png` nem létezik) → dupla 404. Szerver-oldali diagnózis szükséges (D.1–D.5 lépések a tervben).
+- **BUG-B (NGO kiválasztva → mégis Fillout-ra visz) — GYÖKÉROK MEGERŐSÍTVE:**
+  - `resolveFilloutUrl()` (2535. sor) és `transformBannerUrl()` (2640. sor) MINDIG Fillout URL-t ad vissza
+  - `buildFilloutUrl()` sosem vizsgálja, hogy van-e `ngoSlug` → ha van, is Fillout-ra küld
+  - A `/go-deal/` builder a `transformBannerUrl()`-ben (2680. sor) **halott kód**: soha nem érhető el
+  - **Fix:** `if (ngoSlug && cleanSlug)` → direkt `/go-deal/{shop}?d1={ngoSlug}&u=...`
+  - Szerver-oldal (`boot.php`) MÁR HELYESEN kezeli a `d1` paramétert — fix CSAK kliens-oldali JS-ben kell
+- **Új dokumentum:** `docs/autobanner-routing-image-debug-2026-02-27.md` — teljes terv, fix kóddal
+- **Prioritás:** 🔴 BUG-B először (UX-kritikus), 🟠 BUG-A másodszor (vizuális)
+- **Státusz:** Terv kész, implementáció NEM történt. Következő lépés: D.1–D.5 szerveren → F.1–F.7 implementáció.
+
+### 2026-02-27 – Checkpoint: CJ autobanner diagnosztika terv véglegesítve
+
+- **Checkpoint oka:** A user bekapcsoláskor régi állapotot lát; rögzítjük a legutóbbi véglegesített tervet.
+- **Dokumentum:** `docs/cj-autobanner-image-debug-2026-02-26.md` – végleges, koherencia- és biztonsági audit beépítve.
+- **Lényeges döntések:** P0.0 XSS fix; P0.1 boot.php fallback; P0.2 registry sync; shared hosting miatt kép-proxy tiltva; cleanup cron reactivation logikával.
+- **Státusz:** IMPLEMENTÁLVA a szerveren (2026-02-26/27). Maradék bugok → Checkpoint #2 fent.
+
+### 2026-02-21 – Szintrendszer/decay/donation multiplier revamp (indítás)
+
+- **Feladat:** `docs/fejlesztesi-allapot-2026-02-20-terv.md` véglegesítése, koherencia + biztonsági audit, majd teljes implementáció (szintek, decay, offerwall cap, admin, értesítések, UI/Docs).
+- **Előkészítés:** guard/backup lépések indítása, érintett mu-plugin és docs fájlok listázása.
+
+### 2026-02-21 – Szintrendszer/decay/donation multiplier revamp (lezárás)
+
+- **Implementáció:** szint küszöbök + szorzók frissítve, decay 5 nap grace + új ráták + floor, offerwall napi cap; ads-watch súlyozás donation multiplierrel + státusz sávban adományszorzó.
+- **Admin/értesítések:** új admin dashboard (keresés + korrekció + eloszlás) és szintváltás/inaktivitás üzenetek.
+- **Dokumentáció/UI:** `docs/fejlesztesi-allapot-2026-02-20.md`, `impactshop-notes/IMPACT-CHALLENGE-UI-JAVASLATOK.md`, `impactshop-notes/docs/stripe-adomany-integration-plan.md` frissítve; NGO guide táblák egyeztetve.
+- **Backup:** új guard backup: `impactshop-notes/.codex/backups/20260221-103503-adswatch-ui`; 5 napnál régebbi backup törölve (felhasználói kérés).
+- **Teszt:** `IMPACTALL_TIMEOUT_SEC=600 ./impactall` ✅ (15/15); guard log: GitHub token 14 napon belül lejár.
+- **Deploy:** guard staging + production ✅ (snapshot: `deploy-20260221-093747`, `deploy-20260221-093829`; preflight OK; `impactshop-dognet-report` lokálisan hiányzott, skip).
+
+### 2026-02-09 – Unified Data Pipeline Plan (Offer Hub)
+
+- **Feladat:** Átfogó terv az adatfolyamatok egységesítésére – minden párhuzamos/duplikált folyamat megszüntetése.
+- **Terv dokumentum:** `docs/unified-data-pipeline-plan.md`
+- **Probléma:** 5+ adatforrás, 3 megjelenítő felszín, 2 repo, duplikált feldolgozás mindenhol (Google Sheets 2×, Dognet API 2×, CJ links 3×, 4 db copy-paste Python script).
+- **Megoldás: „Offer Hub"** – egyetlen `wp_impactshop_offers` tábla mint Single Source of Truth.
+  - Egységes Offer Ingest Pipeline (PHP mu-plugin, WP Cron)
+  - Source adapterek: sheets, dognet, cj, gmail, arukereso
+  - Minden shortcode + widget az Offer Hub-ból olvas (nincs runtime API hívás)
+  - AI Agent Memory Sync: WordPress → REST API → Graphiti/Neo4j (30 percenként)
+  - **Impi (AI Agent) minden ajánlatot ismer** – 100% adatlefedettség a memóriában
+- **5 fázis:** Előkészítés → Source Adapterek → Fogyasztók átállása → Cleanup → Monitoring
+- **Várható hatás:** page load 5-15× gyorsabb, AI lefedettség 30%→100%, kód -70%
+- **Kockázatkezelés:** A/B teszt, `.off` suffix (nem törlés), 30 napos párhuzamos futás
+- 📌 Következő lépés: Fázis 0 implementáció – tábla séma + skeleton `impactshop-offer-ingest.php`
+
+### 2026-01-28 – Cégjelző API Integrációs Terv
+
+- **Feladat:** Cégjelző API (v2) bekötés tervezése az NGO-k adatgazdagításához.
+- **Cél:** Civil szervezetek hivatalos jogi és szervezeti adatainak automatikus lekérdezése és beolvasztása az ImpactShop rendszerbe.
+- **API dokumentáció áttekintve:** https://docs.api.cegjelzo.com/
+- **Releváns végpontok:**
+  - `/autocomplete` – NGO keresés typeahead (type=civil_orgs)
+  - `/search` – Részletes jogi adatok (X-Fields szelektálás)
+  - ~~`/financials-data-table`~~ – ❌ Nem elérhető (nincs a JWT-ben)
+- **Autentikáció:** X-Api-Key + X-Client-Id header, 30 req/s rate limit, havi kvóta
+- **Civil szervezet mezők (19 db):** registration_number, long_name, short_name, address, nav_address, status, status_code, activity, level_of_charity, description, tax_number, representatives, leading_orgs, bank_accounts, proceedings, type, insertion, constituent_document_date, updated_at
+- **⚠️ NAV státusz mezők (nav_no_tax_debt stb.) NEM elérhetők a jelenlegi JWT-ben**
+- **Létrehozott terv:** `docs/cegjelzo-api-integration-plan.md` (teljes implementációs terv)
+- **Fő komponensek a tervben:**
+  1. `impactshop-cegjelzo.php` – Új WordPress mu-plugin (API client, enrichment service, cache, admin UI, WP-CLI, cron sync)
+  2. `wp_impactshop_ngo_registry` – Új DB tábla a gazdagított NGO adatoknak
+  3. Trust Score – Cégjelző adatokból számított megbízhatósági pontszám (0-100), NAV nélküli verzió
+  4. NGO Card API bővítés – `organization`, `trust` mezők
+  5. AI Agent Core – `cegjelzo-source.ts` modul + `impi_get_ngo_info` MCP tool bővítés
+- **Fázisterv:** 5 fázis, ~1-2 hét implementáció
+- **✅ API kulcs megvan** (2026-02-09 – JWT dekódolva, jogosultságok rögzítve)
+- **Becsült kvóta igény:** ~1340 hívás/hó
+
+#### 2026-02-09 – Terv véglegesítés (v1.1)
+- **JWT jogosultságok integrálva:** endpoints=search+autocomplete, civil org 19 mező, cég 10 mező
+- **NAV korrekció:** 5 NAV státusz mező kikommentezve (nem elérhető), nav_address elérhető
+- **Financials korrekció:** `get_financials()` metódus kikommentezve (végpont nem elérhető)
+- **Trust Score v2:** NAV nélküli verzió: max 100 pont (active=35, charity=30, established=15, description=10, representatives=10)
+- **Biztonsági audit (§15):** ✅ PASS – credential kezelés, rate limit, input sanitizálás, GDPR kontrollok
+- **Koherencia teszt (§16):** ✅ PASS – 19/19 JWT mező konzisztens, DB tábla illeszkedik, meglévő rendszer (ngo-card.php, metrics, MCP tool) koherens
+- **Státusz:** VÉGLEGES – implementáció indítható
+
+### 2026-02-18 – Offerwall Survey Plan Codex Review
+
+- **Feladat:** `docs/offerwall-survey-merged-plan.md` koherencia és biztonsági vizsgálata, Codex javaslatok hozzáadása.
+- **Elvégzett munka:**
+  - Teljes dokumentum átnézése (366 sor).
+  - Koherencia OK: survey scoring és reward flow összehangolt.
+  - Biztonság OK: HMAC + allowlist + timestamp + rate limit + idempotencia.
+  - 15 db Codex javaslat hozzáadva a dokumentum végén.
+- **Fontosabb javaslatok:**
+  - P0: Minor (AGE-A1) targeting tiltás GDPR/DSA miatt.
+  - P0: Secret storage – ne plaintext wp_options.
+  - P1: Health check endpoint a survey backendhez.
+  - P1: HMAC canonical form dokumentálás (NFC normalizálás).
+  - P1: DSA Art. 26–27 transparency endpoint.
+  - P2: Differential privacy aggregátumoknál.
+  - P2: Postback retry logika exponenciális backoff-fal.
+- **Érintett fájl:** `docs/offerwall-survey-merged-plan.md`
+- **Státusz:** Javaslatok hozzáadva, döntés/implementáció pending.
+
+### 2026-02-03 – Offerwall Survey UI modern dizájn
+
+- **Cel:** modern, fiatalos megjelenes a sajat survey oldalon.
+- **Valtozasok:** uj gradient hatter, friss kartya stilus, Space Grotesk font, melegebb akcent szinek, finom animaciok, mobilos layout igazitas.
+- **Erintett fajl:** `wp-content/mu-plugins/impactshop-offerwall-survey.php`
+- **Statusz:** KESZ (deploy szukseges).
+
+### 2026-02-03 – Offerwall Survey elagazas + tobb kor
+
+- **Cel:** delayed_pair_id + consistency_probe mezok hasznalata, 2-3 koros flow, stop-feltetel.
+- **Valtozasok:** delayed_pair parok kesleltetve jonnek kovetkezo korben, consistency_probe kerdesek bekerulnek a kesobbi korbe; stop kor 2 utan, ha inkonzisztencia van; progress dinamikusan frissul; 6-10 kerdeses flow.
+- **Erintett fajl:** `wp-content/mu-plugins/impactshop-offerwall-survey.php`
+- **Statusz:** KESZ (deploy szukseges).
+
+### 2026-02-05 – Offerwall Survey deploy (staging + prod)
+
+- **Deploy:** staging `deploy-20260205-104127`, prod `deploy-20260205-104219`.
+- **Preflight (staging):** minden endpoint OK.
+- **Preflight (prod):** minden endpoint OK.
+- **Erintett fajl:** `wp-content/mu-plugins/impactshop-offerwall-survey.php`
+
+### 2026-02-05 – Offerwall Survey smoke (limited)
+
+- **Ellenorzes:** HTML betoltve, survey UI markup megjelenik mindket oldalon (curl alapjan).
+- **Staging:** `https://sharity.hu/impactshop-staging/offerwall-survey`
+- **Prod:** `https://app.sharity.hu/offerwall-survey`
+- **Megjegyzes:** interaktiv 2-3 koros flow/stop/consent smoke nem futtathato CLI-bol; manualis UI kattintas szukseges.
+
+### 2026-02-05 – Offerwall Survey JS fix + ekezetek (deploy)
+
+- **Fix:** JS inline script valodi uj sorokkal (ne legyen \\n literal), igy a kerdes rendereles ujra mukodik.
+- **UI szoveg:** ekezetes magyar szovegek + "Offerwall kerdoiv" kicker a kartyan.
+- **Deploy:** staging `deploy-20260205-124142`, prod `deploy-20260205-124238`.
+
+### 2026-02-05 – Offerwall Survey header + sorrend frissites
+
+- **Oldal fejlec:** page cim + leiras ekezetesitve (Offerwall kerdoiv / Impact kerdoiv + jutalom leiras) mindket kornyezetben.
+- **Sorrend:** elso kerdes attitud/behavior iranybol indul, a KN kesobb jon (logikusabb flow).
+- **Deploy:** staging `deploy-20260205-125643`, prod `deploy-20260205-125735`.
+
+### 2026-02-05 – Offerwall Survey warm-up + progress tartomany
+
+- **Warm-up:** elso kerdes alacsony nehezsegu, nem-context ATT/DON/BEH poolbol (felvezetobb).
+- **Progress:** 1/6–10 jelzes a valtozo hossz miatt.
+- **Deploy:** staging `deploy-20260205-130959`, prod `deploy-20260205-131056`.
+
+### 2026-02-05 – Offerwall Survey guide szerinti mix
+
+- **Flow:** 5 kerdeses blokkok (1-2 blokk), kognitiv mix: knowledge/reasoning/tradeoff/intuition a guide szerint; consistency_probe csak 2. blokkban.
+- **Delayed pair:** masodik tag csak kovetkezo blokkban jon.
+- **Progress:** 1/5–10 jelzes.
+- **Deploy:** staging `deploy-20260205-133654`, prod `deploy-20260205-133751`.
+
+### 2026-02-05 – Offerwall Survey folyamatos blokkok + intro szuro
+
+- **UX:** 5 kerdes/ blokk, pontjovairas utan folytathato ugyanabban a sessionben (nem kell kilepni).
+- **Intro:** elso blokkban intro-szuro (nem SOC, TRUST/CSR tiltva, temakor sablonok ritkitva).
+- **Deploy:** staging `deploy-20260205-135946`, prod `deploy-20260205-140054`.
+
+### 2026-02-05 – Offerwall Survey batch-sorrend + felvezető nyelvezet
+
+- **Batch:** CSV batch 1–4 sorrend per blokk (blockIndex = batch), batch mező beégetve a kérdésbankba.
+- **Label:** témakódok magyarosítása (waste → hulladék, csr → társadalmi felelősségvállalás, stb.), “témakörben” → “témában”.
+- **Deploy:** staging `deploy-20260205-142553`, prod `deploy-20260205-142705`.
+
+### 2026-02-05 – Offerwall Survey master batch + batch5
+
+- **Master:** 1250 kérdéses MASTER CSV beolvasva, batch 1–5 mezők beégetve a JSON-ba.
+- **Batch limit:** blockIndex most batch5-ig lép, utána batch5 marad.
+- **Deploy:** staging `deploy-20260205-144428`, prod `deploy-20260205-144538`.
+
+### 2026-02-05 – Offerwall Survey header duplikacio eltavolitva
+
+- **Oldal tartalom:** a page content csak `[impactshop_internal_survey]`, a duplikalt cim/leiras kikerult.
+- **Staging oldal:** ID 16882 frissitve.
+- **Prod oldal:** ID 18973 frissitve.
+
 ### 2026-02-03 – Bastion kiegészítő terv: Codex javaslatok
 
 - **Cél:** Koherencia és biztonsági vizsgálat eredményeinek rögzítése a kiegészítő tervben.
@@ -88,20 +437,20 @@
 - **Erintett fajl:** `wp-content/mu-plugins/impactshop-ads-watch.php`
 - **Deploy:** staging `deploy-20260201-183104`, prod `deploy-20260201-183151`
 
-### 2026-02-01 – Impi Copilot SDK migracios terv koherencia/biztonsag frissites
+### 2026-02-01 – Impi MCP SDK thin wrapper migracios terv koherencia/biztonsag frissites
 
-- **Javitasok:** Copilot SDK csomagnev javitva, backup scriptben env/secrets kihagyas, PII retention/log policy szigoritas.
-- **Erintett fajl:** `docs/impi-copilot-sdk-migration-plan.md`
+- **Javitasok:** MCP SDK csomagnev javitva, backup scriptben env/secrets kihagyas, PII retention/log policy szigoritas.
+- **Erintett fajl:** `docs/impi-mcp-sdk-migration-plan.md`
 
 ### 2026-02-01 – AI Agent strategy koherencia frissites
 
-- **Javitasok:** Copilot SDK migracios tervre mutato koherencia megjegyzes, modell stack frissites, retention/log policy utalas, ai-agent repo megjeloles.
+- **Javitasok:** MCP SDK thin wrapper migracios tervre mutato koherencia megjegyzes, modell stack frissites, retention/log policy utalas, ai-agent repo megjeloles.
 - **Erintett fajl:** `docs/ai-agent-strategy.md`
 
-### 2026-02-01 – Copilot SDK migracios terv Go/No-Go + kockazati regiszter
+### 2026-02-01 – MCP SDK thin wrapper migracios terv Go/No-Go + kockazati regiszter
 
 - **Bovites:** release gate checklist + minimalis kockazati regiszter.
-- **Erintett fajl:** `docs/impi-copilot-sdk-migration-plan.md`
+- **Erintett fajl:** `docs/impi-mcp-sdk-migration-plan.md`
 
 ### 2026-02-01 – Extra bastya vedelem kiterjesztese (ads/offerwall/points/votes)
 
@@ -430,7 +779,7 @@
 
 - A `impact-social-mvp.php` shortcode default `status` értéke `approved` → `all`, hogy a `pending` tételek (pseudo_id-vel) is megjelenjenek.
 
-### 2026-01-27 – Copilot SDK Migráció Koherencia Vizsgálat
+### 2026-01-27 – MCP SDK Migracio Koherencia Vizsgalat (korabbi Copilot terv)
 
 **Eredmény: ✅ KOHERENS – A terv pontosan tükrözi a tényleges kódbázist**
 
@@ -448,7 +797,7 @@
 | **Capabilities** | `apps/core-agent-graph/src/capabilities/impi.ts` |
 | **Capability Registry** | `apps/core-agent-graph/src/capabilities/registry.ts` |
 | **NGO data** | `data/ngo-category-map.json` |
-| **Migrációs terv** | `docs/impi-copilot-sdk-migration-plan.md` |
+| **Migrációs terv** | `docs/impi-mcp-sdk-migration-plan.md` |
 
 #### Fő megállapítások:
 - Minden hivatkozott fájl létezik az ai-agent repo-ban
@@ -5103,3 +5452,781 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Staging guard deploy: deploy-20260205-062207
 - Production guard deploy: deploy-20260205-062320
 - Changes: survey admin beállítások + CSV upload + statisztikák.
+
+### 2026-02-05 – impactall guard futtatás
+- Parancs: `if [ -f .codex/.env.local ]; then source .codex/.env.local; fi; ~/bin/impactall`
+- Eredmény: impactall lefutott, status snapshot frissült; WARN/FAIL nincs.
+- REST health: staging HTTP 200 / 1251 ms (redirected_to: app.sharity.hu), production HTTP 200 / 1210 ms.
+- Megjegyzés: az IMPACTALL SUMMARY 0 check-et jelzett; ellenőrizendő, hogy a guard futtatások miért maradtak ki.
+
+### 2026-02-05 – impactall guard futtatás (guard repo)
+- Bástya kiterjesztett védelem ellenőrzés: `docs/bastion-protection-extension-plan.md`, `docs/impactshop-guard-config.json`, `docs/impactshop-guard-hashes.json` rendben.
+- Megállapítás: az `impactshop-notes` repo-ban nincs `.codex/scripts`, ezért ott 0 check futott; a guard szkriptek a `/Users/bujdosoarnold/Developer/GitHub` gyökérben vannak.
+- Parancs: `if [ -f .codex/.env.local ]; then source .codex/.env.local; fi; ~/bin/impactall` (repo: `/Users/bujdosoarnold/Developer/GitHub`)
+- Eredmény: 13 check futott, 3 WARN (Doc link check; TradeTracker scope sync: hiányzó `impactshop-notes/TradeTracker-integráció.md`; Sprint S1 pre-flight: cross references).
+- REST health: staging HTTP 200 / 1267 ms (redirected_to: app.sharity.hu), production HTTP 200 / 843 ms.
+
+### 2026-02-05 – Doc missing refs + cross references fix
+- Futtatva: `.codex/scripts/doc-missing-refs-inventory.sh` → `.codex/reports/doc-missing-refs.md`.
+- Hiányzó hivatkozásokhoz stub fájlok létrehozva (partner docs, TradeTracker, Percy, report JSON/YAML, coupon harvester script) a doc-link-check miatt.
+- Doc link ellenőrzés: `DOC_LINK_CHECK_STRICT=1 .codex/scripts/doc-link-check.sh impactshop-notes/impact-hub-system-v1.3.md` → OK.
+
+### 2026-02-05 – impactall rerun + stub finomitas
+- Parancs: `if [ -f .codex/.env.local ]; then source .codex/.env.local; fi; ~/bin/impactall` (repo: `/Users/bujdosoarnold/Developer/GitHub`)
+- Eredmeny: 13/13 PASS, WARN/FAIL nincs; Sprint S1 pre-flight zold.
+- REST health: staging HTTP 200 / 1185 ms (redirected_to: app.sharity.hu), production HTTP 200 / 876 ms.
+- Stub finomitas: az auto-generated stub docok egységes HU template-et kaptak (Állapot/Tulaj/Cél/Hatókör/Bemenet-Kimenet/Következő lépések).
+- Doc link check ujra: `DOC_LINK_CHECK_STRICT=1 .codex/scripts/doc-link-check.sh impactshop-notes/impact-hub-system-v1.3.md` → OK.
+
+### 2026-02-05 – impactall PAT ellenorzessel
+- Parancs: `if [ -f .codex/.env.local ]; then source .codex/.env.local; fi; ~/bin/impactall` (repo: `/Users/bujdosoarnold/Developer/GitHub`)
+- Eredmeny: 13 check, 1 WARN (Secret expiry guard).
+- Warn oka: GitHub token expiry lekérdezés sikertelen 3 próbálkozás után (hivatkozott file: `/Users/bujdosoarnold/Developer/GitHub/.codex/.env`).
+- REST health: staging HTTP 200 / 1116 ms (redirected_to: app.sharity.hu), production HTTP 200 / 866 ms.
+
+### 2026-02-05 – PAT hivatkozas frissitve + impactall ujrafutas
+- Frissitve: `/Users/bujdosoarnold/Developer/GitHub/.codex/.env` → GITHUB_PAT uj.
+- Parancs: `if [ -f .codex/.env.local ]; then source .codex/.env.local; fi; ~/bin/impactall` (repo: `/Users/bujdosoarnold/Developer/GitHub`)
+- Eredmeny: 13 check, 1 WARN (Secret expiry guard).
+- Warn oka: GitHub token expiry lekérdezés sikertelen 3 próbálkozás után (`.codex/reports/impactall-20260205-085530-Secret-expiry-guard.log`).
+- REST health: staging HTTP 200 / 1195 ms (redirected_to: app.sharity.hu), production HTTP 200 / 860 ms.
+
+### 2026-02-05 – Offerwall survey iframe URL letrehozasa
+- Letrehozott oldal (prod): `https://app.sharity.hu/offerwall-survey` (WP page: Offerwall Survey).
+- Letrehozott oldal (staging): `https://www.sharity.hu/impactshop-staging/offerwall-survey`.
+- internal_survey iframe URL frissitve mindket kornyezetben (`impactshop_offerwall_providers` opcio).
+- Megjegyzes: a tartalom most placeholder („A felmeres betoltese folyamatban.”).
+
+### 2026-02-05 – Offerwall survey UI aktiv
+- MU plugin: `wp-content/mu-plugins/impactshop-offerwall-survey.php` kibovitve survey UI shortcode-dal + REST submit endpointtal (`/wp-json/impact/v1/offerwall/survey/submit`).
+- Oldal tartalma frissitve (prod + staging): `[impactshop_internal_survey]` shortcode + CTA szoveg.
+- internal_survey pont/szavazat szamitas: points_multiplier=0.1, votes_multiplier=1.0 (payout=1 → 10 pont + 10 szavazat).
+- Cache flush lefutott mindket kornyezeten.
+
+### 2026-02-05 – Survey guide CSV alapra igazitas (prod + staging)
+- Survey kerdesbank: `wp-content/mu-plugins/impactshop-offerwall-survey-data/survey_questions.json` bevezetve (CSV mapping/taxonomy alap).
+- Mu-plugin frissites: survey UI a JSON kerdesbankbol tolt, fallback fix 5 kerdesre.
+- CSV frissites: `question_mapping.csv` + `segment_taxonomy.csv` frissitve a Survey repo verzioira.
+- Deploy: mu-plugin + survey data rsync prod/staging, cache flush OK.
+
+### 2026-02-05 – Survey kerdesbank (4x250) + adaptiv flow (prod + staging)
+- Kerdesbank: 4 CSV batch (1000 kerdes) importalva `survey_questions.json`-ba a Survey repo fajlbol.
+- UI: 5 kerdeses adaptiv flow (KN -> ATT/BEH -> BEH -> adaptiv KN -> CONSENT) + answers_correct kuldes.
+- Deploy: mu-plugin + survey data rsync prod/staging, cache flush OK.
+
+### 2026-02-05 – Survey kerdesbank ujraepites (docx + batch5) + elagazo flow
+- Uj generator: `scripts/build-internal-survey-bank.py` (docx + batch5) -> `wp-content/mu-plugins/impactshop-offerwall-survey-data/survey_questions.json` (370 kerdes).
+- Kerdesbank meta: segment=SUST/ENV/SOC/DON, cognitive_type=knowledge/behavior/attitude, difficulty heuristika (docx), batch5 megtartva.
+- MU plugin UI JS flow ujratervezve: intro -> knowledge -> knowledge -> apply -> reflect 5-os blokkokban, valasz-fuggo nehezseg/segment, delayed pair tamogatas.
+- Payload fix: `categories` fallback a pre-dispatch-ben + `answers_correct` index fallback; uj altalanos kategoriak a `question_mapping.csv`-ben (KN_GENERAL/ATT_GENERAL/BEH_GENERAL).
+- Kockazat: heuristikus kognitiv besorolas + subsegment kulcsszavas; erdemes samplinggel ellenorizni a sorrendet es nehezseg-skala megfeleleset.
+
+### 2026-02-05 – Guardos deploy (survey bank + flow)
+- Staging guard deploy: `deploy-20260205-170813` (preflight OK, rsync OK, cache flush OK).
+- Production guard deploy: `deploy-20260205-170859` (preflight OK, rsync OK, cache flush OK).
+- Guard approval: impactshop-offerwall-survey.php + question_mapping.csv (auto-approve reason: survey bank + flow).
+
+### 2026-02-05 – Survey methodology rovid + targeting privacy doc
+- Uj rovid brief: `docs/offerwall-survey-methodology-short.md`
+- Uj privacy/targeting osszefoglalo: `docs/offerwall-survey-targeting-privacy.md`
+
+### 2026-02-05 – Article quiz implementacios terv
+- Uj terv: `docs/offerwall-articles-quiz-implementation.md` (CSV parsing, JSON schema, UI/REST/reward flow, anti-fraud).
+
+### 2026-02-05 – Cikk kviz implementacio
+- Uj generator: `scripts/build-article-quiz-bank.py` -> `wp-content/mu-plugins/impactshop-offerwall-article-quiz-data/articles_quiz.json` (14 cikk).
+- Uj MU plugin: `wp-content/mu-plugins/impactshop-offerwall-article-quiz.php` (shortcode + REST submit + postback + answers tabla).
+- Shortcode: `[impactshop_article_quiz]` (3 kerdeses cikk kvíz, minimum olvasasi ido, pont jovairas bekuldeskor).
+
+### 2026-02-05 – Article quiz page + provider beallitas
+- Staging WP page: ID 16886, slug `offerwall-article-quiz`, content `[impactshop_article_quiz]`.
+- Production WP page: ID 18981, slug `offerwall-article-quiz`, content `[impactshop_article_quiz]`.
+- internal_article_quiz provider enabled, iframe URL set:
+  - staging: https://www.sharity.hu/impactshop-staging/offerwall-article-quiz
+  - production: https://app.sharity.hu/offerwall-article-quiz
+- Megjegyzes: WP-CLI futasnal complianz textdomain notice jelent meg (nem blokkolta a muveletet).
+
+### 2026-02-05 – Guardos deploy (article quiz)
+- Staging deploy: `deploy-20260205-185632` (preflight OK, rsync OK, cache flush OK).
+- Production deploy: `deploy-20260205-185720` (preflight WARN: ticker 4271ms > 2000ms, rsync OK, cache flush OK).
+
+### 2026-02-05 – Cikk kviz UI finomitasok
+- Kviz kerdesek csak inditas utan lathatok; kulon Start gomb, minimum olvasasi ido (20 mp).
+- Kviz idokorlat bevezetve (90 mp), lejartkor auto submit ures valaszokkal.
+- Summary URL-ek tisztitva a JSON generatorban.
+
+### 2026-02-05 – Guardos deploy (article quiz UI finomitasok)
+- Staging deploy: `deploy-20260205-190859` (preflight OK, rsync OK, cache flush OK).
+- Production deploy: `deploy-20260205-190958` (preflight WARN: totals 3842ms > 2000ms, rsync OK, cache flush OK).
+
+### 2026-02-05 – Cikk kviz UX finomitas
+- Idolimit roviditve: 45 mp / 3 kerdes.
+- Valaszok visszaallnak visszalepeskor (korrigalhato a bekuldesig).
+- Hianyzik token uzenet user-friendly: offerwallbol kell inditani.
+- Bekuldes utan helyes valaszok szama megjelenik.
+
+## 2026-02-05 - Offerwall Survey Plan Review (Gemini)
+- **Merged Plan Review**: Hozzáadva `docs/offerwall-survey-merged-plan.md`-hez a Gemini javaslatok (I, J, K szekciók).
+- **Security Check**:
+  - `I1`: CSP és `frame-ancestors` szigorítás javasolt az iframe védelemhez (Opus JWT javaslat mellé).
+  - `I2`: Raw answer retention szabály bevezetése (12 hónap után aggregálás) javasolt.
+- **Reliability Check**:
+  - `J1`: Dead Letter Queue (DLQ) javasolt a postback hibák kezelésére.
+  - `J2`: Session expiry (15 perc) UX kezelése (keepalive/localStorage).
+- **Consistency Check**:
+  - `K1`: Mapping version race condition kezelése timestamp-alapú kiválasztással.
+- **Jelenlegi státusz**: A terv tartalmazza Codex (jan 18), Opus (feb 05) és Gemini (feb 05) javaslatokat is. Nincs felülírt tartalom.
+
+## 2026-02-05 - Offerwall Survey Plan Review (Codex)
+- **Merged Plan Review**: Hozzáadva `docs/offerwall-survey-merged-plan.md`-hez a Codex javaslatok (L, M, N szekciók).
+- **Security Check**:
+  - `L1`: Replay detektálás TTL-lel a signature hash-re.
+  - `L2`: Survey schema whitelist validáció survey-verzió szerint.
+  - `L3`: Log redaction policy a raw `answers_json` kizárására.
+- **Coherence/Data Integrity**:
+  - `M1`: Survey definition hash mentése auditálhatósághoz.
+  - `M2`: Reward ledger dedupe kulcs bővítése.
+- **Operations**:
+  - `N1`: Rescore dry-run diff összegzéssel.
+  - `N2`: Completion spike alert + ideiglenes throttling.
+
+### 2026-02-05 – Cikk kviz token/feedback/retake fix
+- Token: survey_token is elfogadott; iframe url survey_token parammal.
+- Feedback: bekuldes elott hibas valaszok szama, sikeresen 0 hibas.
+- Idolejaratkor egyertelmu uzenet + nincs jutalom, kesobbi ujraproba.
+- Sikeres kvízek listaja pseudo_id alapon, a kliens nem dobja fel ujra.
+
+### 2026-02-05 – Article quiz token fallback fix
+- Token generalas/ellenorzes: survey_token_secret -> api_key -> postback_secret fallback.
+- Offerwallbol inditva is token jon (ha postback_secret be van allitva).
+
+### 2026-02-05 – Survey merged plan review
+- Plan koherencia es security review frissitve: payload mezok, token secret forras, retention policy.
+- Plan egységesítve a megvalositashoz (pseudo_id + categories, HMAC token, consent gate).
+
+### 2026-02-05 – Offerwall survey merged plan frissites
+- `docs/offerwall-survey-merged-plan.md` koherencia/security javitasokkal egységesitve, commit: docs: align offerwall survey merged plan.
+
+## 2026-02-05 - Survey Questions Generation (Batch 5)
+- **Forrás CSV:** `/Users/bujdosoarnold/Developer/GitHub/Survey/sharity_questions_batch5_250.csv` (250 kérdés)
+- **Generált kérdőív:** `survey-batch5-questions.md` - 5 kérdés a terv specifikáció szerint
+- **Kategóriák:** KN_WASTE, BEH_ENER, DON_TRUST, KN_BIOD, BEH_TRAN (mind safe/low targeting)
+- **Survey ID:** `impactad-v1-batch5-b1`
+- **Megfelelőség:** 
+  - ✅ Max 5 kérdés
+  - ✅ Single choice A-D formátum
+  - ✅ Targeting kategóriák (safe/low)
+  - ✅ Postback payload minta készítve
+  - ✅ HMAC signature specifikáció
+  - ✅ Consent gate és rate limiting dokumentálva
+
+## 2026-02-05 - Complete Survey Collection Generated
+- **Forrás:** `sharity_questions_batch5_250.csv` (250 kérdés)
+- **Létrehozott dokumentum:** `survey-batch5-complete-collection.md` (4893 sor)
+- **Kérdőívek száma:** 50 darab (mind 5 kérdéses)
+- **Struktúra:**
+  - Minden kérdőívnek egyedi Survey ID: `impactad-v1-batch5-b01` - `impactad-v1-batch5-b50`
+  - Kategória mapping a terv szerint (KN, BEH, DON, SOC szegmensek)
+  - Postback payload minden kérdőívhez generálva
+  - HMAC signature template és consent gate dokumentálva
+- **Codex integráció:** A dokumentum készen áll a Codex általi feldolgozásra
+- **Megfelelőség:** ✅ Teljes mértékben megfelel az offerwall survey plan specifikációinak
+
+### 2026-02-05 – Internal article quiz token fix (prod)
+- `internal_article_quiz` providerben beallitottam a `survey_token_secret` + `postback_secret` ertekeket az `internal_survey` alapjan; a `signature_mode` visszaallitva `canonical_v1`-re.
+
+### 2026-02-05 – Article quiz status pinned fix
+- A hibaszam uzeneteket pineltem, hogy ne tunjenek el a timer frissites miatt; valaszvaltasnal felold.
+
+### 2026-02-05 – Guard deploy (article quiz status fix)
+- Guard deploy lefutott productionre: snapshot `deploy-20260205-202947` (staging-only futas utan production sikeres).
+
+### 2026-02-05 – Survey batch6 integracio
+- `survey-batch6-new-questions.md` alapjan 70 uj kerdes kerult a `wp-content/mu-plugins/impactshop-offerwall-survey-data/survey_questions.json` fajlba (73 fejlecbol 3 mar meglevo ID).
+
+### 2026-02-05 – Survey jutalom popup
+- Felugro jutalom uzenet kerult a survey UI-ba sikeres bekuldes utan.
+- A popup szoveg most kiirja a jutalom merteket (10 pont + 10 szavazat).
+
+### 2026-02-05 – Guard deploy (survey reward popup)
+- Production guard deploy lefutott: snapshot `deploy-20260205-214735`.
+
+### 2026-02-05 – Guard deploy (survey reward text)
+- Production guard deploy lefutott: snapshot `deploy-20260205-215614`.
+
+### 2026-02-05 – Internal survey pont szorzo
+- Production `internal_survey` provider `points_multiplier` beallitva 1.0 ertekre.
+- Staging `internal_survey` provider `points_multiplier` beallitva 1.0 ertekre.
+
+### 2026-02-05 – Mobil UI fix (offerwall)
+- `impactshop-ads-watch.css`: mobilon a lebego tabok ket sorba tornek, az Adomanyalap kijelzes torodest javitottam.
+
+### 2026-02-05 – Edukacios CTA gomb UX
+- `impactshop-ads-watch.css`: a zold CTA gombokhoz nagyobb padding/min-width, kiegyensulyozottabb tipografia.
+
+### 2026-02-09 – Guard deploy (CTA gomb CSS)
+- Production guard deploy lefutott: snapshot `deploy-20260209-101809`.
+
+### 2026-02-09 – Offerwall mobil UX
+- Offerwall modal kapott bezaro gombot, ESC bezaras, mobilban lathato X.
+- Survey kerdeseknel valasz utan automatikus felgorgetes a kovetkezo kerdeshez.
+
+### 2026-02-09 – CPX kikapcsolva (teszt uzem)
+- CPX Research provider tiltva production es staging offerwall listaban (`enabled=false`).
+
+### 2026-02-09 – Guard deploy (offerwall modal + survey scroll)
+- Production guard deploy lefutott: snapshot `deploy-20260209-105641`.
+
+### 2026-02-09 – Offerwall bezáró gomb fix
+- Bezáró gomb z-index + click handler finomítás, hogy mobilon is működjön.
+
+### 2026-02-09 – Guard deploy (offerwall close fix)
+- Production guard deploy lefutott: snapshot `deploy-20260209-115259`.
+
+### 2026-02-09 – JYSK szavazás párhuzamos kampányok
+- `impactshop-vote-jysk` támogatja a campaign slug alapú kampányválasztást, több aktív kampánnyal.
+- Admin kampány létrehozás kiegészítve slug mezővel és listában megjelenik.
+- REST init/status slug paraméterezhető, frontend oldalon `data-campaign-slug` alapján dolgozik.
+
+### 2026-02-09 – JYSK új szavazások
+- Guardos production deploy lefutott: snapshot `deploy-20260209-123625`.
+- WP oldal létrehozva: `/jysk-komarom-szavazas` és `/jysk-mezkovesd-szavazas`.
+- Kampányok beszúrva: `jysk-komarom-szavazas`, `jysk-mezkovesd-szavazas` (2026-02-10 → 2026-03-01 12:00 HU).
+
+### 2026-02-09 – ID panel /profil
+- Guardos production deploy lefutott: snapshot `deploy-20260209-130840` (preflight: totals endpoint lassu volt).
+- /profil oldal létrehozva az ID panelnek (`[impactshop_identity_panel]`).
+- Kis ID widget linkjei most új tabban a /profil oldalra mutatnak.
+- Az `/impactad-2` oldalról eltávolítva a nagy ID panel (`[impactshop_identity_panel]`).
+
+### 2026-02-09 – Offerwall kvíz elnevezés
+- Guardos production deploy lefutott: snapshot `deploy-20260209-140452`.
+- Offerwall “Cikk kvíz” elnevezés javítva (rövid i → hosszú í).
+
+### 2026-02-09 – Árukereső ár­esés harvester
+- Új script: `scripts/arukereso-price-drop-harvest.py` (aresett-termekek → auto-banner JSON).
+- Új futtató: `bin/arukereso-price-drop-sync.sh` (opcionális `IMPORT=1` WP CLI import).
+- Dokumentáció: `docs/arukereso-price-drop-harvest.md` (heti 2x cron javaslat).
+- Prod szerver: `tools/shops_registry.json` már tartalmaz `arukereso` slugot.
+- Cron script felrakva: `/home/sharityh/app/.codex/cron/arukereso-price-drop-sync.sh`, ütemezés hozzáadva `guards.crontab`-hoz (kedd/péntek 06:15).
+- Első import: WP CLI `impactshop auto-banner import` fail (súlyos hiba), ezért `wp db query`-vel SQL insert készült és lefutott (24 ajánlat).
+- Harvester: lapozás (`start=`) és retry/timeout támogatás, most 40 ajánlatot gyűjt a szerveren.
+- Import mód: cron wrapper `IMPORT=sql`-ra váltva (SQL insert + `wp db query`), a WP CLI import hibája miatt.
+- Bővített lapozás: sequential `start=24*n` oldalak, limit 220, max-pages 12 → 220 ajánlat beszúrva.
+- Gmail promotions: ai-agent runner futtatva (`dist/tools/gmail/promotions-runner.js`), 50 rekord → 3 whitelistelt auto-banner insert (SQL).
+- Gmail cron: `/home/sharityh/app/.codex/cron/gmail-promotions-sync.sh`, ütemezés hozzáadva `guards.crontab`-hoz (07:20 és 19:20), log: `.codex/logs/gmail-promotions.cron.log`.
+- CJ/Dognet whitelist: a prod szerveren a `tools/shops_registry.json` újragenerálva kizárólag a Dognet (`dognet_programs.csv`) + CJ (`cj_shops.csv`) feedekből (101 domain).
+- Coupon-harvester config frissítve: `/home/sharityh/app/.codex/cron/coupon-harvester-config.json` `whitelist` és `gmail.allowed_domains` csak CJ/Dognet domain listára állítva.
+- Auto-banner host-bővítés: `impactshop-auto-banner.php` most a `tools/shops_registry.json` domainjeit is engedi (CJ slugek URL validációjához).
+- CJ auto-banner import: új `scripts/cj-links-to-autobanner.py`, server cron wrapper `/home/sharityh/app/.codex/cron/cj-autobanner-sync.sh` (03:45) → 12 insert a `cj-links.json`-ból.
+- Coupon-harvester auto-banner import: új `scripts/coupon-harvester-to-autobanner.py`, server cron wrapper `/home/sharityh/app/.codex/cron/coupon-harvester-autobanner-sync.sh` (08:10). Most 0 insert, mert a CSV-ben nincs CJ/Dognet whitelistelt slug.
+
+## 2026-02-05 - Master Batch Korrekció & Teljes Kérdésbank Leltár
+- **Fontos:** Az 1250-es master batch **ROSSZ VOLT** és nem játszik
+- **MEGOLDVA:** ✅ Megtalálva a teljes kérdésbank!
+
+### Kérdésbank Teljes Leltár (370 kérdés):
+- **DOCX forrás (Batch 0):** 120 kérdés (DOCX-0001 → DOCX-0120)
+- **CSV forrás (Batch 5):** 250 kérdés (KN-TRAN-1001 → BEH-WASTE-1250)
+- **Tárolás:** `wp-content/mu-plugins/impactshop-offerwall-survey-data/survey_questions.json`
+- **Státusz:** Teljes kérdésbank készen áll Codex integrációra (370 kérdés használható)
+
+## 2026-02-10 - CJ autobanner futás ellenőrzés
+- **CJ fetch:** `/home/sharityh/app/.codex/cron/cj-links-fetch.sh` 401 Unauthorized (CJ API auth hiba).
+- **CJ import (fallback):** `/home/sharityh/app/data/cj-links.json` → `scripts/cj-links-to-autobanner.py` (12 insert), `wp db query` lefutott.
+- **Coupon-harvester import:** `/home/sharityh/app/.codex/cron/coupon-harvester-autobanner-sync.sh` → 0 insert (nincs CJ/Dognet whitelistelt slug a CSV-ben).
+
+## 2026-02-10 - CJ + Árukereső autobanner bekötés
+- **CJ fetch:** `cj-links-fetch.sh` most a `wp-config.php` PAT‑ból épít `Authorization` headert, és registry‑alapú advertiser‑szűrést használ (link type: Banner).
+- **CJ import:** `/home/sharityh/app/data/cj-links.json` → `cj-links-to-autobanner.py` (program_id + domain mapping) → 400 insert.
+- **Árukereső import:** `/home/sharityh/app/.codex/cron/arukereso-price-drop-sync.sh` → 220 ajánlat betöltve (SQL import).
+
+## 2026-02-10 - Árukereső autobanner link + kép javítás
+- **Ads Watch:** Árukereső CTA már közvetlen termék‑URL‑t épít Dognet paramokkal (`impactshop-ads-watch.js` + `impactshop-ads-watch.php`, dognet_base átadva).
+- **Harvester:** Árukereső képekhez `data-src/srcset` fallback ( `scripts/arukereso-price-drop-harvest.py` ).
+- **Reimport:** `arukereso-price-drop-sync.sh` újra futtatva (220 ajánlat).
+- **Cache bust:** `IMPACTSHOP_ADS_WATCH_VERSION` → `2.5.4`.
+- **Frontend fallback:** auto-banner képhibánál shop logo / default image automatikus (ads-watch JS `onerror`).
+
+## 2026-02-10 - Cégjelző integráció (implementáció kész)
+- **Új MU plugin:** `wp-content/mu-plugins/impactshop-cegjelzo.php` – NGO registry tábla + Cégjelző API kliens + heti sync batch + REST export.
+- **NGO név override:** `impactshop_ngo_card_display_name` filterrel Cégjelző név preferált.
+- **NGO tiltás:** `impactshop_ngo_card_allow_slug` szűrés (status/proceedings alapú).
+- **AI Agent export:** REST `impact/v1/cegjelzo/ngo-registry` + JSON export `wp-content/uploads/impactshop/ngo-registry.json`.
+- **Prod beállítás:** API kulcs + Client ID opciók beállítva, `cegjelzo test-connection` OK; `cegjelzo sync --limit=20 --force` → 20/25 feldolgozva, 16 frissítve.
+
+## 2026-02-10 - AI Agent core: Cégjelző registry bekötés
+- **Új source:** `/home/sharityh/ai-agent/apps/ai-agent-core/src/sources/cegjelzo-registry.ts` (pull + 1h cache, REST: `/impact/v1/cegjelzo/ngo-registry`).
+- **Snapshots:** `ai-agent-core/src/snapshots.ts` bővítve `cegjelzo_registry` snapshotra.
+- **Runtime hotfix:** `dist/apps/ai-agent-core/src/sources/cegjelzo-registry.js` + `dist/.../snapshots.js` frissítve (nincs npm a shellben).
+- **Service restart:** `ai-agent-keepalive.sh` lefuttatva.
+
+## 2026-02-10 - Brevo hírlevél bekötés + NGO lista
+- **Brevo API:** kulcs rögzítve `~/.impact-secrets/env.d/capi.env` (`BREVO_API_KEY`), küldő adatok `~/.impact-secrets/env.d/ai-agent.env` (`BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`).
+- **Brevo ellenőrzés:** API elérhető, `office@sharity.hu` sender aktív; AI Agent újraindítva.
+- **NGO összevont lista:** `docs/ngo-merged-2026-02-10.csv` (frissített e‑mail prioritás a `szervezetek-2026-02-10.xlsx` alapján).
+
+## 2026-02-10 - Impactad-2 mobil UI finomítás
+- **Szövegfrissítés:** videó/feladat információban pont + szavazat kommunikáció (`wp-content/mu-plugins/impactshop-ads-watch.php`, `wp-content/mu-plugins/impactshop-ads-watch.js`).
+- **Mobil elrendezés:** alsó tabok nagyobb safe‑area és extra padding, Top 10 NGO kártyák mobilon nagyobb névmező (`wp-content/mu-plugins/impactshop-ads-watch.css`).
+
+## 2026-02-10 - Offerwall teljesítések UI frissítés
+- **Legutóbbi teljesítések:** pont+szavazat kiírás; modal bezárás után history újratöltés ().
+
+## 2026-02-10 - Offerwall teljesítések UI frissítés
+- **Legutóbbi teljesítések:** pont+szavazat kiírás; modal bezárás után history újratöltés (`wp-content/mu-plugins/impactshop-offerwall.js`).
+
+## 2026-02-10 - Guardos deploy (staging)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --staging` sikeres (snapshot: `deploy-20260210-172257`).
+- **Preflight:** 1 warning (totals endpoint lassú, 2701ms).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+
+## 2026-02-10 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260210-173824`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+
+## 2026-02-10 - Impactad-2 mobil finomítás (info popover + hero)
+- **Info panel:** mobilon statikus blokk, nem takarja a banner reklámot; subtitle wrap.
+- **Hero kép:** mobilon image overflow lágyítás (`.impactshop-ads-watch-wrapper .elementor-widget-image`).
+- **Cache bust:** `IMPACTSHOP_ADS_WATCH_VERSION` → `2.5.6`.
+
+## 2026-02-10 - Impactad-2 gyorsítás
+- **Tally lazy load:** Top 10 NGO betöltés `requestIdleCallback`-kal (vagy 800ms timeouttal) az első render után (`wp-content/mu-plugins/impactshop-ads-watch.js`).
+- **Cache bust:** `IMPACTSHOP_ADS_WATCH_VERSION` → `2.5.7`.
+
+## 2026-02-10 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260210-181640`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+
+## 2026-02-10 - IMA CTA gomb méret
+- **Zöld CTA:** nagyobb padding + min-width + icon/text méret, hogy ne lógjon ki a felirat.
+- **Mobil override:** nagyobb padding + min-width.
+- **Cache bust:** `IMPACTSHOP_ADS_WATCH_VERSION` → `2.5.8`.
+
+## 2026-02-10 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260210-183451`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+
+## 2026-02-10 - Autobanner kép fallback javítás
+- **Banner képek:** `loadAutoBanner()` is `applyAutoBannerImage()`-t használ, így `onerror` esetén shop logo fallback lép életbe.
+- **Cache bust:** `IMPACTSHOP_ADS_WATCH_VERSION` → `2.5.9`.
+
+## 2026-02-10 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260210-185403`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+
+## 2026-02-10 - JYSK Komárom szavazás hero kép
+- **Hero kép:** a `jysk-komarom-szavazas` oldal tetején új hero blokk a JYSK képpel.
+- **Fájl:** `wp-content/mu-plugins/impactshop-vote-jysk.php`.
+
+## 2026-02-10 - JYSK Komárom szavazás hero (Mezőkövesd felirat)
+- **Hero szöveg:** Mezőkövesd/JYSK felirat és "Közös erővel a jó ügyek mellett!" overlay hozzáadva.
+- **Fájl:** `wp-content/mu-plugins/impactshop-vote-jysk.php`.
+
+## 2026-02-10 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260210-195224`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** JYSK Komárom szavazás hero overlay Mezőkövesd felirattal.
+
+## 2026-02-10 - JYSK Mezőkövesd szavazás oldal
+- **Kampány:** `jysk-mezokovesd-szavazas` kampány felvéve (id új sor) start/end 2026-02-10 – 2026-03-01 12:00 helyi idő (UTC offset alapján).
+- **Oldal:** `https://app.sharity.hu/jysk-mezokovesd-szavazas/` létrehozva, shortkód: `[impactshop_vote_page campaign_slug="jysk-mezokovesd-szavazas"]`.
+
+## 2026-02-10 - JYSK szavazás oldalak szerkeszthetősége
+- **Post author:** beállítva `arnoldadmin` (id 5) a `jysk-mezokovesd-szavazas` (18997) és `jysk-komarom-szavazas` (18982) oldalakhoz.
+
+## 2026-02-10 - JYSK szavazás oldalak Elementor bekötés
+- **Elementor meta:** `_elementor_data`, `_elementor_edit_mode=builder`, `_elementor_template_type=wp-page`, `_elementor_version=3.32.3` beállítva.
+- **Oldalak:** 18997 (jysk-mezokovesd-szavazas), 18982 (jysk-komarom-szavazas).
+- **Shortcode widget:** `[impactshop_vote_page ...]` Elementoron belül.
+- **Elementor CSS flush:** lefuttatva.
+
+## 2026-02-10 - JYSK szavazás hero eltávolítás
+- **Hero widget:** a rövidkódból és inline CSS-ből eltávolítva, hogy az Elementor hero ne duplikálódjon.
+- **Fájl:** `wp-content/mu-plugins/impactshop-vote-jysk.php`.
+
+## 2026-02-10 - JYSK Komárom NGO választó (jysk-2)
+- **NGO lista:** `wp-content/mu-plugins/impactshop-ngo-selector-data/komarom-esztergom.json` (67 tétel) a `docs/komarom-esztergom-ngo-active-cegjelzo.csv` + `docs/ngo-merged-2026-02-10.csv` alapján.
+- **Új MU plugin:** `wp-content/mu-plugins/impactshop-ngo-selector.php` + `wp-content/mu-plugins/impactshop-ngo-selector.js`.
+- **Oldal tartalom:** `jysk-2` (ID 18794) rövidkódra állítva: `[impactshop_ngo_selector context="jysk-komarom" list="komarom-esztergom" ...]`.
+- **Mentés:** kiválasztás `pseudo_id` + `context` alapján a `wp_impactshop_ngo_selector` táblába.
+
+## 2026-02-11 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260211-062943`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** NGO selector + JYSK hero eltávolítás rövidkódból.
+
+## 2026-02-11 - JYSK NGO kiválasztó összekötés
+- **Szavazás:** a JYSK szavazó felületen NGO lista elrejtve, kiválasztás eventtel összekötve.
+- **Mentett NGO:** `impactshopNgoSelected` esemény alapján előtöltés; választás a szavazatokhoz kapcsolva.
+- **Fájl:** `wp-content/mu-plugins/impactshop-vote-jysk.js`.
+
+## 2026-02-11 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260211-071832`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** JYSK NGO selector és szavazó összekötés.
+
+## 2026-02-11 - JYSK szavazás gomb aktiválás (selector)
+- **Logika:** selectorból olvasott NGO slug alapján automatikus előtöltés + gomb engedélyezés.
+- **Fájl:** `wp-content/mu-plugins/impactshop-vote-jysk.js`.
+
+## 2026-02-11 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260211-073727`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** JYSK selector -> szavazás gomb aktiválás javítás.
+
+## 2026-02-11 - JYSK szavazás gomb engedélyezés fix
+- **Logika:** videó hitelesítés után `voteBtn.disabled = !(viewToken && selectedNgo)`.
+- **Fájl:** `wp-content/mu-plugins/impactshop-vote-jysk.js`.
+
+## 2026-02-11 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260211-075441`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** JYSK szavazó gomb engedélyezés javítva.
+
+## 2026-02-11 - JYSK NGO lista szinkron (selector -> vote)
+- **Cél:** a kiválasztott NGO mindig létezzen a kampányhoz rendelt `impact_vote_ngos` listában.
+- **Változás:** `wp-content/mu-plugins/impactshop-vote-jysk.php` automatikusan betölti és szinkronizálja a selector JSON listát (Komárom/Mezőkövesd), aktiválja a listában szereplő NGO-kat és inaktiválja a többit.
+
+## 2026-02-11 - JYSK szavazás: dropdown + bulk import
+- **UI:** a szavazó oldalon az NGO kártyák helyett legördülő választó + kártya jelenik meg a szavazás gomb alatt.
+- **Forrás:** csak a WP-ben rögzített kampány NGO-k (`impact_vote_ngos`).
+- **Admin:** CSV bulk import a JYSK Vote admin > Civil szervezetek fülön.
+- **Fájlok:** `wp-content/mu-plugins/impactshop-vote-jysk.php`, `wp-content/mu-plugins/impactshop-vote-jysk.js`.
+
+## 2026-02-11 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260211-145722`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** JYSK szavazás dropdown + CSV bulk import élesítve.
+
+## 2026-02-11 - JYSK-2 oldal NGO selector eltávolítás
+- **Oldal:** `jysk-2` (ID 18794) tartalom frissítve, külön NGO selector shortkód törölve.
+- **Tartalom:** csak `[impactshop_vote_page]` maradt.
+
+## 2026-02-11 - Dognet autobanner ingest
+- **Új MU plugin:** `wp-content/mu-plugins/impactshop-auto-banner-dognet.php`.
+- **Funkció:** Dognet `/coupons/filter` → `wp_impactshop_auto_banners` (status=active).
+- **Ütemezés:** 6 óránként (`impactshop_6h`).
+
+## 2026-02-11 - Gmail promotions autobanner bővítés előkészítés
+- **Script:** `scripts/gmail-promotions-to-autobanner.py`.
+- **Változás:** alap limit 500; opcionális affiliate-only szűrés (`--affiliate-only`, `--affiliate-allowlist`).
+- **Megjegyzés:** affiliate-only akkor enforced, ha van whitelist meta vagy allowlist fájl.
+
+## 2026-02-11 - Gmail promotions affiliate-only beállítás (prod)
+- **Allowlist:** `/home/sharityh/app/tools/affiliate_shops.json` a `shops_registry.json` slugjaiból.
+- **Cron:** `/home/sharityh/app/.codex/cron/gmail-promotions-sync.sh` → limit 500 + `--affiliate-only`.
+- **Ingest:** futtatva, 16 insert készült.
+
+## 2026-02-11 - Autobanner arukereso → fillout fallback
+- **JS:** `wp-content/mu-plugins/impactshop-ads-watch.js`.
+- **Változás:** ha nincs kiválasztott NGO, az autobanner CTA Fillout-ra megy (shop + u param), nem közvetlen termék-URL-re.
+- **Hatás:** NGO azonosítható, majd arukereso dognet link `data1`-gel készül, ha már van NGO.
+
+## 2026-02-11 - Autobanner rotáció bővítés (kevesebb ismétlés)
+- **PHP:** `wp-content/mu-plugins/impactshop-auto-banner.php`.
+- **Változás:** rotációs pool limit 300; seen cookie cap bővítve (max 500).
+- **Hatás:** nem ismétel, amíg a nagyobb pool végére nem ér.
+
+## 2026-02-11 - Arukereso ár-esés diverzitás + cleanup
+- **Script:** `scripts/arukereso-price-drop-harvest.py` (kategoriás limit + keverés).
+- **Sync:** `arukereso-price-drop-sync.sh` futtatva (90 ajánlat).
+- **Cleanup:** `wp impactshop auto-banner cleanup` → 262 törölve, 71 maradt.
+
+## 2026-02-11 - Arukereso ár-esés cron finomhangolás
+- **Cron:** `/home/sharityh/app/.codex/cron/arukereso-price-drop-sync.sh`
+- **Args:** `--max-per-category 8` (78 ajánlat most).
+
+## 2026-02-11 - Ads watch fillout always-on CTA
+- **JS:** `wp-content/mu-plugins/impactshop-ads-watch.js`
+- **Változás:** minden auto-banner CTA először Fillout-ra megy (shop + d1 + u), fallback csak ha nincs Fillout.
+- **CSS:** `wp-content/mu-plugins/impactshop-ads-watch.css` CTA nagyobb (min-width/height).
+
+## 2026-02-11 - CJ go-deal fallback + CTA target blank
+- **PHP:** `wp-content/mu-plugins/impactshop-go-bridge.php` (CJ slug fallback a `tools/cj_shops.json` alapján).
+- **JS:** `wp-content/mu-plugins/impactshop-ads-watch.js` (CTA linkek `target=_blank`, `rel=noopener`).
+
+## 2026-02-11 - Boot CJ fallback (ismeretlen CJ shop fix)
+- **PHP:** `wp-content/mu-plugins/impactshop-boot.php`
+- **Változás:** CJ shop feloldás `tools/cj_shops.json` alapján + CJ link generálás a boot handlerben.
+
+## 2026-02-11 - Ads watch cache bust
+- **PHP:** `wp-content/mu-plugins/impactshop-ads-watch.php`
+- **Változás:** `IMPACTSHOP_ADS_WATCH_VERSION` → 2.5.10 (cache frissítés).
+
+## 2026-02-11 - Ads watch CTA window.open fix
+- **JS:** `wp-content/mu-plugins/impactshop-ads-watch.js`
+- **Változás:** CTA kattintásnál `window.open` kényszerítés + auto-banner CTA Fillout fallback.
+- **PHP:** `wp-content/mu-plugins/impactshop-ads-watch.php` → verzió 2.5.11.
+
+## 2026-02-11 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260211-170624`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** Dognet autobanner ingest élesítve.
+
+## 2026-02-11 - Guardos deploy (production)
+- **Deploy:** `bin/impactshop-guard-deploy.sh --production` sikeres (snapshot: `deploy-20260211-092335`).
+- **Preflight:** OK (5 endpoints).
+- **Sync:** mu-plugins + 18 plugin map; 1 plugin hiányzott (`impactshop-dognet-report`).
+- **Változás:** JYSK NGO selector → vote lista szinkron élesítve.
+
+## 2026-02-11 - Ads watch Fillout + új tab stabilizálás
+- **JS:** `wp-content/mu-plugins/impactshop-ads-watch.js`
+- **Változás:** CTA-k minden esetben `window.open`-nel nyílnak (default blokkolás ellen), auto-banner CTA Fillout mindig a nyers URL-t kapja, pop-up blokkolás esetén figyelmeztetés.
+- **PHP:** `wp-content/mu-plugins/impactshop-ads-watch.php` → verzió 2.5.12.
+
+## 2026-02-11 - CJ fallback 404 javítás
+- **PHP:** `wp-content/mu-plugins/impactshop-boot.php`, `wp-content/mu-plugins/impactshop-go-bridge.php`
+- **Változás:** CJ fallback már nem használ `program_id`-t click URL-hez (ez 404-et okozott). Ha `cj_click_url` hiányzik, a link a cél URL-re esik vissza (tracking nélkül), így nincs `members.cj.com/404`.
+
+## 2026-02-11 - CJ link fetch param finomhangolás
+- **Script:** `scripts/cj-fetch-links.py`
+- **Változás:** alap `link-type` → `Text Link` (a korábbi kombináció 400-at adott a CJ Link Search API-n).
+
+## 2026-02-11 - CJ shops újragenerálás (joined list)
+- **Server:** `/home/sharityh/app/data/cj-links.json` frissítve 10 joined advertiser ID alapján (114 link, click_url kitöltve).
+- **Server:** `/home/sharityh/app/tools/cj_shops.json` újragenerálva (10 shop, mind click_url‑lal).
+- **WP:** `impactshop_cj_links` opció frissítve a 114 linkkel.
+
+## 2026-02-12 - CJ CSV-ből import (szerződött shopok)
+- **Forrás:** `CJ links/advertisers.csv`, `CJ links/links.csv`, `Feeds-Migration-Report.csv`
+- **Szűrés:** csak szerződött (advertisers.csv) + Active + HU célzás.
+- **Output:** `docs/cj_shops_from_csv.json` (32 shop), `docs/cj_links_from_csv.json` (766 link)
+- **Server frissítés:** `/home/sharityh/app/tools/cj_shops.json` + `/home/sharityh/app/data/cj-links-manual.json`
+- **WP:** `impactshop_cj_links` opció frissítve a 766 linkkel.
+
+- ✅ CJ Link Search fetch (Text Link + Banner, merged) lefutott: `docs/cj-links.json` (1000 elem) a `advertisers.csv` alapjan szurve.
+
+- ✅ CJ Link Search (Text Link + Banner, merged) → `docs/cj-links.json` (1000 elem) feltoltve szerverre `/home/sharityh/app/data/cj-links.json`; WP option `impactshop_cj_links` frissitve.
+- ✅ CJ shops JSON generalva a friss linkekbol (`/home/sharityh/app/tools/cj_shops.json`, 28 shop) + `impactshop_cj_shops` option frissitve.
+
+- ✅ CJ autobanner ingest: cj-links.json → 400 insert SQL → wp_impactshop_auto_banners (CJ=358, total=473).
+
+- ✅ Arukereso harvester: TOP kategoriak eloresorolasa a mixelesnel; cron HARVEST_ARGS frissitve: --max-pages 400, --max-per-category 20.
+
+- ✅ Arukereso harvest+SQL import: 122 uj offer, arukereso osszesen 141 (latest 2026-02-12 09:08:46).
+- ✅ shops_registry.json frissitve cj_click_url mezokkel (27 CJ shop), impactshop_shops option frissitve.
+
+- 🛠 CJ go-deal fix: isb_find_cj_shop / go-bridge now reads cj_click_url/program_id keys (cj_shops.json), removed program_id fallback to anrdoezrs in early handler.
+
+- ✅ Identity restore return: restore link gets return param (same-domain), successful restore redirects back to return URL (sharity.hu only). identity-panel.js bumped to 1.0.1.
+
+- ✅ Mobile CTA fix: sponsor CTA overlay kept visible on mobile (min size, z-index); ads-watch version bumped to 2.5.16.
+
+- 🛠 Auto-banner Fillout hardening: buildFilloutUrl now always returns a Fillout URL (fallback base), arukereso tracked URL is wrapped into Fillout; resolveFilloutUrl uses tracked target; auto-banner mobile CTA widened. ads-watch version bumped to 2.5.17.
+- 🛠 JYSK mobile vote CTA: sticky vote bar raised above bottom nav, z-index boosted, extra padding for visibility on mobile.
+- 🛠 Auto-banner mobile CTA: forced visible full-width button on mobile (min height, flex display, visibility/opacity overrides). ads-watch version bumped to 2.5.18.
+- 🛠 go-deal alias: "-hu" suffix now maps to base slug (pl. lampak-hu → lampak) to avoid "Ismeretlen shop" errors.
+
+- 2026-02-12 14:37 JYSK Mezőkövesd szavazás: betöltöttem a Borsod-Abaúj-Zemplén szűrt NGO listát a kampányhoz (campaign_id=4, 66 NGO) a `docs/borsod-abauj-zemplen-ngo-active-cegjelzo.csv` alapján; SQL import lefuttatva prodon.
+- 2026-02-12 16:50 Állásmentés: "Fiókom" kompakt widget címéhez infó gomb + tooltip szöveg/stílus hozzáadva az `impactshop-notes/wp-content/mu-plugins/impactshop-identity-panel.php` fájlban. Deploy nem futott.
+- 2026-02-12 17:20 Guardos deploy lefutott staging + production környezetre (snapshotok: deploy-20260212-161759, deploy-20260212-161916). Preflight: staging OK; prod figyelmeztetés: leaderboard(shop) slow (2937ms).
+- 2026-02-12 18:05 JYSK szavazás: mobil CTA bar layout javítva (gomb mindig látható), a tally most backendből kap `ngo_name` mezőt; JS ezt használja, így az "Aktuális állás" NGO nevei megjelennek. Fájlok: `wp-content/mu-plugins/impactshop-vote-jysk.php`, `wp-content/mu-plugins/impactshop-vote-jysk.js`.
+- 2026-02-12 21:15 Árukereső autobanner végleges flow rögzítve: Fillout → `/go-deal` → Dognet deeplink. Bástya védelem kiterjesztve az Árukereső guardokra (`impact-arukereso-guard.php`, `impact-cid-arukereso-fix.php`, `sharity-impact-compat.php`, `impact-combat-pack.php`), és a kliens‑oldali interceptor letiltva (`impact-arukereso-deeplink-fix.php.off`).
+- 2026-02-12 21:25 JYSK szavazás végleges flow rögzítve (mobil CTA + egymezős NGO kereső + ID panel nélkül, odds 3 nyereményre, sorsolás max 3 nyertes). Bástya védelem megerősítve a `impactshop-vote-jysk.php`/`.js` fájlokra.
+- 2026-02-12 21:35 Cégjelző API + hírlevél szolgáltatás (Brevo) bástyavédelem és impactall autoload rögzítve. `impactshop-cegjelzo.php` védett, Brevo kulcs/sender env csak secrets-ben.
+- 2026-02-12 21:45 ID widget + ID panel bástyavédelem rögzítve és impactall autoload frissítve (`impactshop-identity-panel.php/.js` védett; panel csak profil oldalon, widget marad).
+
+## 2026-02-23 - Impact Challenge negyedéves reset (Q1 2026H1)
+- **Terv:** `impact-challenge-quarterly-reset-plan.md` veglegesitve (2026Q1 = 2026-01-01 → 2026-06-30).
+- **MU plugin:** custom Q1 bounds + WP-Cron utemezes, lock TTL 60s + Retry-After, admin email záráskor, `mark-paid` CLI.
+- **DB (staging):** `stg_impactshop_ads_quarters` + `stg_impactshop_ads_quarter_results` tabla, votes bovitve (`base_weight`, `donation_multiplier`, `quarter_key`) + indexek, backfill Q1, lock/tally transients torolve.
+- **DB (prod):** `impactshop_ads_current_quarter=2026Q1`, `end_at` 2026-06-30, backfill Q1, lock/tally transients torolve.
+- **Quarter guard:** `scripts/guards/quarter-transition-guard.sh` → staging/prod OK.
+- **Cron:** `/home/sharityh/impact-tools/quarter-close.sh` letrehozva; cPanel cron beallitasa megerositve (megrendeloi visszajelzes).
+- **Guard deploy:** staging `deploy-20260223-094046`, prod `deploy-20260223-094119`.
+
+## 2026-02-23 - Streak szorzo UI
+- **JS:** `wp-content/mu-plugins/impactshop-ads-watch.js` – streak szorzo kijelzes a status sorban (x1.00–x1.30).
+- **Guard deploy:** staging `deploy-20260223-094419`, prod `deploy-20260223-094449`.
+
+## 2026-02-23 - Impact Challenge indulasi datum + visszaszamlalo
+- **Q1 kezdet:** 2026-03-01 00:00:00 UTC (vege: 2026-06-30 23:59:59 UTC).
+- **UI:** visszaszamlalo a status sorban (indulasig, majd lezarasig).
+- **DB:** `start_at` frissitve staging/prod (2026-03-01).
+- **Guard deploy:** staging `deploy-20260223-103630`, prod `deploy-20260223-103703`.
+
+## 2026-02-23 - Negyedev start/close idozites
+- **Start:** automatikus quarter start event 00:00-kor (WP-Cron backup).
+- **Close:** quarter close event 00:02-kor (csokkentett overlap).
+- **CLI:** `impactshop quarter start` idempotens (ha letezik, csak aktivra allit).
+- **Server:** `/home/sharityh/impact-tools/quarter-start.sh` letrehozva (WP_PATH/WP_URL env varral).
+- **Guard deploy:** staging `deploy-20260223-104719`, prod `deploy-20260223-104750`.
+
+## 2026-02-23 - Start-gat + szavazatok nullazasa
+- **Start-gat:** indulasi datum elott nincs szavazat-gyujtes (ads + edukacio).
+- **DB:** aktualis quarter szavazatok torolve, `available_votes` es `total_votes` nullazva, tally transients torolve (prod).
+- **Guard deploy:** staging `deploy-20260223-153701`, prod `deploy-20260223-153800`.
+
+## 2026-02-23 - Fix ponthatár only (percentilis off)
+- **User szintek:** kizárólag abszolút ponthatárok (2k/15k/50k/120k/250k), percentilis ág kikapcsolva.
+- **Guard deploy:** staging `deploy-20260223-153450`, prod `deploy-20260223-153549`.
+
+## 2026-02-23 - Fast data backup hot (mu-plugin + guard)
+- **Fix:** tabla-ellenorzes pontos egyezesre allitva (information_schema), hiheto `SHOW TABLES LIKE` wildcard hiba megszuntetve.
+- **Fix:** backup root path normalizalva (`/home/sharityh/impactshop-backups`), wp_mkdir_p nem bukik `..` miatt.
+- **Guard:** timestamp parser frissitve (ISO-8601 offset kezelese).
+- **Deploy:** staging `deploy-20260223-193146`, prod `deploy-20260223-193301` (preflight warning: ticker lassu).
+- **Manual hot backup:** prod futtatva (`2026-02-23_193410`), offsite rclone OK.
+
+## 2026-02-23 - NGO card challenge payload (redesign)
+- **Valtozas:** `impactshop-ngo-card.php` build_payload most mar `apply_challenge_data()`-t hiv, igy a REST payload tartalmazza: `challenge_amount`, `total_donation`, `challenge_urls`.
+- **Deploy:** staging `deploy-20260223-200625`, prod `deploy-20260223-200814`.
+
+## 2026-02-24 - Tarhely + backup rendezés (Corsair)
+- **Cleanup:** Corsair Trash urites, backup loopok megszuntetesenek elokeszitese.
+- **Particio:** `TimeMachine` 700 GB + `CorsairData` 300 GB.
+- **Sync:** napi rclone sync `CorsairData`-ra, kizart archiv/backup utak (pl. `archives/home-git`).
+- **Helyfelszabaditas:** veletlenul nagy `~/.git` (74 GB) Corsair-re mentve, majd lokal torles.
+- **Teendo:** mirror backup ne tartalmazzon backupokat (workspace-backups, .codex/backups) — kizarasi lista veglegesitese.
+
+## 2026-02-25 - Impact Challenge status incidencia (ads-watch)
+- **Tunet:** UI toast "A status frissitese sikertelen", a `/wp-json/impact/v1/ads-watch/status` 500-at adott.
+- **Hotfix (JS):** `impactshop-ads-watch.js` level normalizalas/sanitize, cache-busting verzio emelve (2.5.24) prod+staging.
+- **Root cause:** `impactshop-ads-watch.php` NGO logo helper `ImpactShop_NGO_Card_API::get_dataset_items()` hivasra fut, de a metodus nem letezik.
+- **Kovetkezo:** PHP fix `method_exists` fallback (`get_dataset`) + cache flush; status endpoint 200 igazolas.
+
+## 2026-02-25 14:18:19 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-25 14:28:31 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-26 06:03:37 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/.codex/logs/impactall-last-run.json
+
+## 2026-02-26 07:06:28 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/.codex/logs/impactall-last-run.json
+
+## 2026-02-26 14:05:37 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-26 14:53:46 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-26 23:45:18 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-27 00:42:23 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-27 08:16:47 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-27 12:04:06 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-27 13:13:43 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-27 22:07:21 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-28 19:12:34 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/.codex/logs/impactall-last-run.json
+
+## 2026-02-28 19:15:19 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-28 19:23:13 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/.codex/logs/impactall-last-run.json
+
+## 2026-02-28 19:49:53 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-02-28 21:46:26 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-01 23:32:06 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 05:43:15 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 05:50:16 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 05:58:21 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 06:09:50 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 06:12:37 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 08:08:19 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 09:24:34 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 16:22:48 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-02 17:41:46 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-03 08:54:29 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-03 22:52:39 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-03 23:07:03 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+- [2026-03-03 23:07:48 CET] Prod deploy: `wp-content/mu-plugins/sharity-content-consumption-guard.php` (targeted guard deploy, backup+rsync+php-l+cache flush, checksum verified).
+
+## 2026-03-03 23:15:57 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-04 07:09:44 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=0s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-04 07:48:23 CET - impactall auto log
+- **Result:** pass (warnings=0, errors=0, duration=1s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
