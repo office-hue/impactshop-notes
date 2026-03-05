@@ -66,6 +66,44 @@ function isb_get_shops(){
 function isb_find_shop($slug){
   $slug=trim(strtolower($slug));
   foreach(isb_get_shops() as $s){ if(strtolower($s['shop_slug'])===$slug) return $s; }
+  if (substr($slug, -3) === '-hu') {
+    $alias = substr($slug, 0, -3);
+    foreach (isb_get_shops() as $s) {
+      if (strtolower($s['shop_slug']) === $alias) {
+        return $s;
+      }
+    }
+  }
+  if (strpos($slug, 'cj-') === 0) {
+    $cj = isb_find_cj_shop($slug);
+    if ($cj) return $cj;
+  }
+  return null;
+}
+
+function isb_find_cj_shop($slug){
+  $slug=trim(strtolower($slug));
+  $path = dirname(WP_CONTENT_DIR) . '/tools/cj_shops.json';
+  if (!file_exists($path)) return null;
+  $raw = file_get_contents($path);
+  $list = json_decode((string)$raw, true);
+  if (!is_array($list)) return null;
+  foreach($list as $row){
+    if(!is_array($row) || empty($row['slug'])) continue;
+    if(strtolower((string)$row['slug'])!==$slug) continue;
+    $cjClick = $row['cj_click_url'] ?? ($row['tracking_template'] ?? ($row['click_url'] ?? ''));
+    $cjProgram = $row['program_id'] ?? ($row['advertiser_id'] ?? '');
+    $productUrl = $row['program_url'] ?? ($row['destination'] ?? ($row['product_url'] ?? ''));
+    return [
+      'shop_slug'      => $slug,
+      'product_url'    => $productUrl,
+      'dognet_base'    => '',
+      'deeplink_param' => $row['deeplink_param'] ?? 'url',
+      'cj_click_url'   => $cjClick,
+      'cj_program_id'  => $cjProgram,
+      'network'        => 'cj',
+    ];
+  }
   return null;
 }
 
@@ -173,10 +211,30 @@ function isb_handle_go($is_deal){
   $targetUrl = $is_deal ? ($u ?: ($row['product_url'] ?? '')) : '';
   if ($targetUrl) $targetUrl = isb_clean_deeplink($targetUrl);
 
-  $final = null; $cid = isb_dognet_extract_campaign_id_from_base($row['dognet_base'] ?? '');
-  if ($cid){
-    $api = isb_dognet_api_generate_link($cid, $targetUrl, $ngo, '');
-    if(!is_wp_error($api) && $api) $final = $api;
+  $final = null;
+  $cjEnv = getenv('IMPACTSHOP_ENABLE_CJ_GO');
+  $cjEnabled = $cjEnv === false ? true : (bool) $cjEnv;
+  if ($cjEnabled && !empty($row['cj_click_url'])) {
+    $cjBase = '';
+    $cjBase = esc_url_raw($row['cj_click_url']);
+    if ($cjBase) {
+      $dlParam = !empty($row['deeplink_param']) ? $row['deeplink_param'] : 'url';
+      $params = ['sid' => $ngo];
+      if ($targetUrl) $params[$dlParam] = $targetUrl;
+      $cjBase = apply_filters('impactshop_cj_click_base', $cjBase, $row, $shop, $ngo, $targetUrl);
+      $final = $cjBase . ((strpos($cjBase,'?')===false)?'?':'&') . http_build_query($params);
+    }
+  }
+  if (!$final && !empty($row['cj_program_id']) && empty($row['cj_click_url']) && $targetUrl) {
+    $final = $targetUrl;
+  }
+
+  if(!$final){
+    $cid = isb_dognet_extract_campaign_id_from_base($row['dognet_base'] ?? '');
+    if ($cid){
+      $api = isb_dognet_api_generate_link($cid, $targetUrl, $ngo, '');
+      if(!is_wp_error($api) && $api) $final = $api;
+    }
   }
   if(!$final){
     $base = $row['dognet_base'] ?? '';
