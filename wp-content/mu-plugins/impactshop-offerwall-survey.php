@@ -11,6 +11,7 @@ const IMPACTSHOP_SURVEY_OPTION_SCHEMA = 'impactshop_survey_schema_version';
 const IMPACTSHOP_SURVEY_OPTION_MAPPING_HASH = 'impactshop_survey_mapping_hash';
 const IMPACTSHOP_SURVEY_OPTION_TAXONOMY_HASH = 'impactshop_survey_taxonomy_hash';
 const IMPACTSHOP_SURVEY_DATA_DIR = __DIR__ . '/impactshop-offerwall-survey-data';
+const IMPACTSHOP_SURVEY_QUESTION_FILE = __DIR__ . '/impactshop-offerwall-survey-data/survey_questions.json';
 const IMPACTSHOP_SURVEY_MAPPING_FILE = IMPACTSHOP_SURVEY_DATA_DIR . '/question_mapping.csv';
 const IMPACTSHOP_SURVEY_TAXONOMY_FILE = IMPACTSHOP_SURVEY_DATA_DIR . '/segment_taxonomy.csv';
 const IMPACTSHOP_SURVEY_W_TARGET = 12;
@@ -24,6 +25,8 @@ function impactshop_offerwall_survey_bootstrap(): void
     impactshop_offerwall_survey_ensure_provider();
     add_filter('impactshop_offerwall_iframe_url', 'impactshop_offerwall_survey_iframe_url', 10, 3);
     add_filter('rest_pre_dispatch', 'impactshop_offerwall_survey_pre_dispatch', 10, 3);
+    add_action('rest_api_init', 'impactshop_offerwall_survey_register_routes');
+    add_shortcode('impactshop_internal_survey', 'impactshop_offerwall_survey_shortcode');
     add_action('impactshop_offerwall_rewards_awarded', 'impactshop_offerwall_survey_handle_rewards', 10, 2);
     add_action('impactshop_offerwall_fraud', 'impactshop_offerwall_survey_log_fraud', 10, 2);
     add_action('admin_menu', 'impactshop_offerwall_survey_admin_menu');
@@ -140,15 +143,24 @@ function impactshop_offerwall_survey_iframe_url(string $url, array $provider, st
     if ($url === '' || $pseudo_id === '') {
         return $url;
     }
-    $secret = (string) ($provider['survey_token_secret'] ?? '');
-    if ($secret === '') {
-        $secret = (string) ($provider['api_key'] ?? '');
-    }
+    $secret = impactshop_offerwall_survey_secret($provider);
     $token = impactshop_offerwall_survey_build_token($pseudo_id, $secret);
     if ($token === '') {
         return $url;
     }
     return add_query_arg('survey_token', $token, $url);
+}
+
+function impactshop_offerwall_survey_secret(array $provider): string
+{
+    $secret = (string) ($provider['survey_token_secret'] ?? '');
+    if ($secret === '') {
+        $secret = (string) ($provider['api_key'] ?? '');
+    }
+    if ($secret === '') {
+        $secret = (string) wp_salt('auth');
+    }
+    return $secret;
 }
 
 function impactshop_offerwall_survey_build_token(string $pseudo_id, string $secret): string
@@ -168,6 +180,667 @@ function impactshop_offerwall_survey_build_token(string $pseudo_id, string $secr
     return rtrim(strtr(base64_encode($json), '+/', '-_'), '=') . '.' . $sig;
 }
 
+function impactshop_offerwall_survey_register_routes(): void
+{
+    register_rest_route('impact/v1', '/offerwall/survey/submit', [
+        'methods' => 'POST',
+        'callback' => 'impactshop_offerwall_survey_submit',
+        'permission_callback' => '__return_true',
+    ]);
+}
+
+function impactshop_offerwall_survey_submit(WP_REST_Request $request): WP_REST_Response
+{
+    $providers = function_exists('impactshop_offerwall_get_providers') ? impactshop_offerwall_get_providers() : [];
+    $provider = $providers['internal_survey'] ?? [];
+    $secret = impactshop_offerwall_survey_secret($provider);
+
+    $params = array_merge(
+        $request->get_params(),
+        $request->get_query_params(),
+        $request->get_body_params(),
+        $request->get_json_params() ?: []
+    );
+    $token = sanitize_text_field((string) ($params['survey_token'] ?? ''));
+    if ($token === '' || $secret === '') {
+        if (function_exists('impactshop_offerwall_debug_log')) {
+            impactshop_offerwall_debug_log('survey_submit_missing_token', [
+                'survey_id' => (string) ($params['survey_id'] ?? ''),
+            ]);
+        }
+        return new WP_REST_Response(['status' => 'missing_token'], 403);
+    }
+
+    $payload = impactshop_offerwall_survey_decode_token($token, $secret);
+    if (!$payload) {
+        if (function_exists('impactshop_offerwall_debug_log')) {
+            impactshop_offerwall_debug_log('survey_submit_invalid_token', [
+                'survey_id' => (string) ($params['survey_id'] ?? ''),
+            ]);
+        }
+        return new WP_REST_Response(['status' => 'invalid_token'], 403);
+    }
+
+    $pseudo_id = sanitize_text_field((string) ($payload['pseudo_id'] ?? ''));
+    if ($pseudo_id === '') {
+        if (function_exists('impactshop_offerwall_debug_log')) {
+            impactshop_offerwall_debug_log('survey_submit_missing_pseudo', [
+                'survey_id' => (string) ($params['survey_id'] ?? ''),
+            ]);
+        }
+        return new WP_REST_Response(['status' => 'missing_pseudo'], 400);
+    }
+
+    $survey_id = sanitize_text_field((string) ($params['survey_id'] ?? ''));
+    $answers = (array) ($params['answers'] ?? []);
+    $categories = (array) ($params['categories'] ?? []);
+    $question_count = (int) ($params['question_count'] ?? count($categories));
+    $consent = (int) ($params['consent_pers'] ?? 0);
+    if ($survey_id === '' || $question_count <= 0 || empty($categories)) {
+        if (function_exists('impactshop_offerwall_debug_log')) {
+            impactshop_offerwall_debug_log('survey_submit_invalid_payload', [
+                'pseudo_id' => $pseudo_id,
+                'survey_id' => $survey_id,
+                'question_count' => $question_count,
+            ]);
+        }
+        return new WP_REST_Response(['status' => 'invalid_payload'], 400);
+    }
+
+    $transaction_id = 'survey-' . gmdate('Ymd') . '-' . substr(bin2hex(random_bytes(8)), 0, 12);
+    $timestamp = time();
+    $payout = (string) ($params['payout'] ?? '1');
+    $postback_secret = (string) ($provider['postback_secret'] ?? '');
+    if ($postback_secret === '') {
+        $postback_secret = $secret;
+    }
+
+    $canonical = $transaction_id . '|' . $pseudo_id . '|' . $payout . '|' . $timestamp;
+    $signature = hash_hmac('sha256', $canonical, $postback_secret);
+
+    $postback_payload = [
+        'transaction_id' => $transaction_id,
+        'timestamp' => $timestamp,
+        'pseudo_id' => $pseudo_id,
+        'payout' => $payout,
+        'signature' => $signature,
+        'survey_id' => $survey_id,
+        'question_count' => $question_count,
+        'categories' => $categories,
+        'answers' => $answers,
+        'consent_pers' => $consent,
+        'request_id' => sanitize_text_field((string) ($params['request_id'] ?? '')),
+    ];
+
+    $postback_request = new WP_REST_Request('POST', '/impact/v1/offerwall/callback/internal_survey');
+    foreach ($postback_payload as $key => $value) {
+        $postback_request->set_param($key, $value);
+    }
+
+    if (function_exists('impactshop_offerwall_debug_log')) {
+        impactshop_offerwall_debug_log('survey_submit_postback', [
+            'pseudo_id' => $pseudo_id,
+            'survey_id' => $survey_id,
+            'transaction_id' => $transaction_id,
+        ]);
+    }
+
+    $response = rest_do_request($postback_request);
+    if (function_exists('impactshop_offerwall_debug_log')) {
+        if (is_wp_error($response)) {
+            impactshop_offerwall_debug_log('survey_submit_postback_error', [
+                'pseudo_id' => $pseudo_id,
+                'survey_id' => $survey_id,
+                'transaction_id' => $transaction_id,
+                'error' => $response->get_error_message(),
+            ]);
+        } elseif ($response instanceof WP_REST_Response) {
+            impactshop_offerwall_debug_log('survey_submit_postback_result', [
+                'pseudo_id' => $pseudo_id,
+                'survey_id' => $survey_id,
+                'transaction_id' => $transaction_id,
+                'status' => $response->get_status(),
+            ]);
+        }
+    }
+    return $response instanceof WP_REST_Response ? $response : new WP_REST_Response(['status' => 'ok'], 200);
+}
+
+function impactshop_offerwall_survey_decode_token(string $token, string $secret): ?array
+{
+    $parts = explode('.', $token);
+    if (count($parts) !== 2) {
+        return null;
+    }
+    [$payload_b64, $sig] = $parts;
+    $json = base64_decode(strtr($payload_b64, '-_', '+/'), true);
+    if ($json === false || $json === '') {
+        return null;
+    }
+    $expected = hash_hmac('sha256', $json, $secret);
+    if (!hash_equals($expected, $sig)) {
+        return null;
+    }
+    $payload = json_decode($json, true);
+    if (!is_array($payload)) {
+        return null;
+    }
+    $exp = (int) ($payload['exp'] ?? 0);
+    if ($exp > 0 && $exp < time()) {
+        return null;
+    }
+    return $payload;
+}
+
+function impactshop_offerwall_survey_load_questions(): array
+{
+    if (is_readable(IMPACTSHOP_SURVEY_QUESTION_FILE)) {
+        $raw = file_get_contents(IMPACTSHOP_SURVEY_QUESTION_FILE);
+        if ($raw !== false) {
+            $data = json_decode($raw, true);
+            if (is_array($data) && !empty($data)) {
+                $validated = [];
+                foreach ($data as $row) {
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $id = sanitize_text_field((string) ($row['id'] ?? ''));
+                    $label = sanitize_text_field((string) ($row['label'] ?? $row['question'] ?? ''));
+                    $type = sanitize_text_field((string) ($row['type'] ?? 'direct'));
+                    $options = $row['options'] ?? [];
+                    if ($id === '' || $label === '' || !is_array($options) || !$options) {
+                        continue;
+                    }
+                    $category = sanitize_text_field((string) ($row['question_category'] ?? $row['category'] ?? ''));
+                    $validated[] = [
+                        'id' => $id,
+                        'question_category' => $category,
+                        'label' => $label,
+                        'type' => $type,
+                        'options' => $options,
+                        'correct' => sanitize_text_field((string) ($row['correct'] ?? '')),
+                        'segment' => sanitize_text_field((string) ($row['segment'] ?? '')),
+                        'subsegment' => sanitize_text_field((string) ($row['subsegment'] ?? '')),
+                        'difficulty' => (int) ($row['difficulty'] ?? 0),
+                    ];
+                }
+                if (!empty($validated)) {
+                    return $validated;
+                }
+            }
+        }
+    }
+
+    return [
+        [
+            'id' => 'ATT_CARE',
+            'label' => 'Mennyire tartod fontosnak a fenntarthatóságot?',
+            'type' => 'scale',
+            'options' => ['A' => 'Egyáltalán nem', 'B' => 'Kevésbé', 'C' => 'Fontos', 'D' => 'Nagyon fontos'],
+        ],
+        [
+            'id' => 'BEH_WASTE',
+            'label' => 'Milyen gyakran figyelsz a hulladék csökkentésére?',
+            'type' => 'frequency',
+            'options' => ['A' => 'Soha', 'B' => 'Ritkán', 'C' => 'Gyakran', 'D' => 'Szinte mindig'],
+        ],
+        [
+            'id' => 'PROFILE_GEO',
+            'label' => 'Melyik megyében élsz?',
+            'type' => 'direct',
+            'options' => [
+                'GEO-HU-BU' => 'Budapest',
+                'GEO-HU-PE' => 'Pest megye',
+                'GEO-HU-GS' => 'Győr-Moson-Sopron',
+                'GEO-UNK' => 'Nem szeretném megadni',
+            ],
+        ],
+        [
+            'id' => 'DONATION_FREQUENCY',
+            'label' => 'Milyen gyakran támogatnál ügyet?',
+            'type' => 'direct',
+            'options' => [
+                'DON-F0' => 'Soha',
+                'DON-F1' => 'Évente egyszer',
+                'DON-F2' => 'Évente többször',
+                'DON-F3' => 'Rendszeresen',
+            ],
+        ],
+        [
+            'id' => 'CONSENT_PERSONALIZATION',
+            'label' => 'Hozzájárulsz a belső személyre szabáshoz?',
+            'type' => 'direct',
+            'options' => [
+                'CONS-PERS-1' => 'Igen',
+                'CONS-PERS-0' => 'Nem',
+            ],
+        ],
+    ];
+}
+
+function impactshop_offerwall_survey_shortcode(): string
+{
+    $providers = function_exists('impactshop_offerwall_get_providers') ? impactshop_offerwall_get_providers() : [];
+    $provider = $providers['internal_survey'] ?? [];
+    $pseudo_id = function_exists('impactshop_offerwall_get_pseudo_id') ? impactshop_offerwall_get_pseudo_id() : '';
+    $secret = impactshop_offerwall_survey_secret($provider);
+    $token = $pseudo_id !== '' ? impactshop_offerwall_survey_build_token($pseudo_id, $secret) : '';
+    $questions = impactshop_offerwall_survey_load_questions();
+    $bank_json = wp_json_encode($questions, JSON_UNESCAPED_UNICODE);
+
+    $html = '<div class="impactshop-survey-shell">';
+    $html .= '<div class="impactshop-survey" data-role="impactshop-survey" data-survey-token="' . esc_attr($token) . '">';
+    $html .= '<div class="impactshop-survey-kicker">Offerwall kérdőív</div>';
+    $html .= '<h2>Impact kérdőív</h2>';
+    $html .= '<p class="impactshop-survey-lead">5 kérdéses blokkokban haladsz. A blokk végén jóváírjuk a pontokat, és folytathatod, ha szeretnéd.</p>';
+    $html .= '<div class="impactshop-survey-card">';
+    $html .= '<div class="impactshop-survey-progress"><span data-role="impactshop-survey-progress"></span></div>';
+    $html .= '<form class="impactshop-survey-form" data-role="impactshop-survey-form">';
+    $html .= '<div class="impactshop-survey-question" data-role="impactshop-survey-question"></div>';
+    $html .= '<div class="impactshop-survey-actions">';
+    $html .= '<button type="button" class="impactshop-survey-back" data-role="impactshop-survey-back">Vissza</button>';
+    $html .= '<button type="submit" class="impactshop-survey-submit" data-role="impactshop-survey-next">Tovább</button>';
+    $html .= '</div>';
+    $html .= '<p class="impactshop-survey-status" data-role="impactshop-survey-status" aria-live="polite"></p>';
+    $html .= '<div class="impactshop-survey-reward" data-role="impactshop-survey-reward" aria-hidden="true" role="dialog">';
+    $html .= '<div class="impactshop-survey-reward-card">';
+    $html .= '<div class="impactshop-survey-reward-title">Jutalom jóváírás</div>';
+    $html .= '<p class="impactshop-survey-reward-text" data-role="impactshop-survey-reward-text"></p>';
+    $html .= '<button type="button" class="impactshop-survey-reward-close" data-role="impactshop-survey-reward-close">Rendben</button>';
+    $html .= '</div></div>';
+    $html .= '</form></div></div></div>';
+
+    $html .= '<style>
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+.impactshop-survey-shell{padding:32px 16px;position:relative;overflow:hidden;background:linear-gradient(135deg,#fff2e3 0%,#e7f4ff 50%,#eafff6 100%)}
+.impactshop-survey-shell::before{content:"";position:absolute;top:-120px;right:-80px;width:280px;height:280px;background:radial-gradient(circle at 30% 30%,rgba(255,107,74,0.35),rgba(255,107,74,0));filter:blur(10px)}
+.impactshop-survey-shell::after{content:"";position:absolute;bottom:-140px;left:-60px;width:300px;height:300px;background:radial-gradient(circle at 60% 40%,rgba(34,193,195,0.35),rgba(34,193,195,0));filter:blur(12px)}
+.impactshop-survey{max-width:720px;margin:0 auto;padding:36px;border-radius:28px;background:rgba(255,255,255,0.95);backdrop-filter:blur(18px);color:#0f172a;box-shadow:0 24px 60px rgba(15,23,42,0.16),0 0 0 1px rgba(255,255,255,0.6) inset;position:relative;overflow:hidden;font-family:"Space Grotesk",system-ui,-apple-system,sans-serif;animation:surveyPop 0.5s ease-out}
+.impactshop-survey-kicker{font-size:12px;text-transform:uppercase;letter-spacing:0.3em;color:#f97316;font-weight:600;margin-bottom:12px}
+.impactshop-survey h2{margin:0 0 10px;font-size:34px;font-weight:700;letter-spacing:-0.6px;color:#0f172a}
+.impactshop-survey-lead{margin:0 0 28px;color:#475569;font-size:16px;line-height:1.6}
+.impactshop-survey-card{background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);border-radius:22px;padding:24px;border:1px solid rgba(148,163,184,0.2);box-shadow:0 10px 26px rgba(15,23,42,0.08)}
+.impactshop-survey-progress{font-size:12px;letter-spacing:0.6px;text-transform:uppercase;color:#64748b;margin-bottom:16px}
+.impactshop-survey-form{position:relative}
+.impactshop-survey-question{border:0;margin:0 0 12px;padding:0}
+.impactshop-survey-question legend{font-weight:600;margin-bottom:16px;font-size:18px;color:#0f172a;display:block}
+.impactshop-survey-option{display:flex;align-items:center;gap:14px;margin:0 0 12px;padding:16px 18px;border:2px solid rgba(148,163,184,0.25);border-radius:16px;cursor:pointer;transition:all 0.2s ease;background:#fff;position:relative;overflow:hidden}
+.impactshop-survey-option::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,107,74,0.1),rgba(34,193,195,0.12));opacity:0;transition:opacity 0.2s}
+.impactshop-survey-option:hover{border-color:#22c1c3;transform:translateY(-2px);box-shadow:0 8px 20px rgba(34,193,195,0.18)}
+.impactshop-survey-option:hover::before{opacity:1}
+.impactshop-survey-option input{margin:0;accent-color:#ff6b4a;width:20px;height:20px;cursor:pointer}
+.impactshop-survey-option input:checked + span{color:#ff6b4a;font-weight:600}
+.impactshop-survey-option:has(input:checked){border-color:#ff6b4a;background:linear-gradient(135deg,rgba(255,107,74,0.08),rgba(34,193,195,0.08));box-shadow:0 6px 16px rgba(255,107,74,0.2)}
+.impactshop-survey-option span{font-size:15px;color:#1f2937;transition:color 0.2s;position:relative;z-index:1}
+.impactshop-survey-actions{display:flex;gap:12px;margin-top:12px}
+.impactshop-survey-back{flex:1;background:#eef2f7;color:#0f172a;border:0;border-radius:16px;padding:14px 18px;font-weight:600;font-size:15px;cursor:pointer}
+.impactshop-survey-submit{flex:2;background:linear-gradient(135deg,#ff6b4a,#f49f5a);color:#fff;border:0;border-radius:16px;padding:14px 18px;font-weight:600;font-size:15px;cursor:pointer;transition:all 0.3s ease;box-shadow:0 10px 24px rgba(255,107,74,0.3);letter-spacing:0.3px}
+.impactshop-survey-submit:hover{transform:translateY(-3px);box-shadow:0 16px 32px rgba(255,107,74,0.35)}
+.impactshop-survey-submit:active{transform:translateY(-1px)}
+.impactshop-survey-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.impactshop-survey-status{margin-top:16px;font-size:14px;color:#0f172a;text-align:center;padding:12px;border-radius:12px;background:rgba(34,193,195,0.12);font-weight:500;animation:fadeIn 0.3s ease-in}
+.impactshop-survey-reward{position:fixed;inset:0;background:rgba(15,23,42,0.35);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+.impactshop-survey-reward.is-visible{display:flex}
+.impactshop-survey-reward-card{max-width:420px;width:100%;background:#fff;border-radius:20px;padding:24px;box-shadow:0 24px 60px rgba(15,23,42,0.2);text-align:center}
+.impactshop-survey-reward-title{font-size:18px;font-weight:700;margin-bottom:8px;color:#0f172a}
+.impactshop-survey-reward-text{margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5}
+.impactshop-survey-reward-close{background:linear-gradient(135deg,#ff6b4a,#f49f5a);color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:600;cursor:pointer}
+.impactshop-survey-complete{background:#fff;border:1px solid rgba(148,163,184,0.25);border-radius:16px;padding:20px;box-shadow:0 10px 24px rgba(15,23,42,0.08)}
+.impactshop-survey-complete h3{margin:0 0 8px;font-size:18px}
+.impactshop-survey-complete p{margin:0 0 12px;color:#475569}
+.impactshop-survey-consent{display:flex;align-items:center;gap:10px;font-size:14px;color:#0f172a}
+.impactshop-survey-consent input{width:18px;height:18px;accent-color:#ff6b4a}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes surveyPop{from{opacity:0;transform:translateY(14px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media (max-width:640px){.impactshop-survey{padding:24px}.impactshop-survey-actions{flex-direction:column}.impactshop-survey-back,.impactshop-survey-submit{flex:1}}
+</style>';
+
+    $script = <<<JS
+(function(){
+window.impactshopSurveyBank = {$bank_json};
+var root=document.querySelector("[data-role=impactshop-survey]");
+if(!root){return;}
+var form=root.querySelector("[data-role=impactshop-survey-form]");
+var questionWrap=root.querySelector("[data-role=impactshop-survey-question]");
+var progress=root.querySelector("[data-role=impactshop-survey-progress]");
+var backBtn=root.querySelector("[data-role=impactshop-survey-back]");
+var nextBtn=root.querySelector("[data-role=impactshop-survey-next]");
+var status=root.querySelector("[data-role=impactshop-survey-status]");
+var rewardPopup=root.querySelector("[data-role=impactshop-survey-reward]");
+var rewardText=root.querySelector("[data-role=impactshop-survey-reward-text]");
+var rewardClose=root.querySelector("[data-role=impactshop-survey-reward-close]");
+var rewardPoints=10;
+var rewardVotes=10;
+var params=new URLSearchParams(window.location.search);
+var token=params.get("survey_token") || root.getAttribute("data-survey-token") || "";
+var bank=window.impactshopSurveyBank||[];
+var askedIds=new Set();
+var flow=[];
+var currentIndex=0;
+var roundSize=5;
+var blockIndex=1;
+var blockState="question";
+var blockAnswers=[];
+var blockCategories=[];
+var blockAnswersCorrect=[];
+var sessionId=Math.random().toString(36).slice(2,10);
+var track={segment:null,level:1};
+var segmentScores={};
+var delayedQueue=[];
+var questionById={};
+var delayedGroups={};
+
+bank.forEach(function(q){
+  if(!q || !q.id){return;}
+  questionById[q.id]=q;
+  if(q.segment && !Object.prototype.hasOwnProperty.call(segmentScores,q.segment)){
+    segmentScores[q.segment]=0;
+  }
+  if(q.delayed_pair_id){
+    if(!delayedGroups[q.delayed_pair_id]){delayedGroups[q.delayed_pair_id]=[];}
+    delayedGroups[q.delayed_pair_id].push(q);
+  }
+});
+if(Object.keys(segmentScores).length===0){
+  segmentScores={SUST:0,ENV:0,SOC:0,DON:0};
+}
+
+function pickRandom(list){
+  return list[Math.floor(Math.random()*list.length)];
+}
+function normalizeCognitive(q){
+  var value=(q.cognitive_type||"").toLowerCase();
+  if(value==="knowledge" || value==="reasoning"){return "knowledge";}
+  if(value==="tradeoff" || value==="behavior" || value==="intuition"){return "behavior";}
+  if(value==="attitude"){return "attitude";}
+  return "knowledge";
+}
+function stageForIndex(index){
+  if(index===0){return "intro";}
+  if(index===1 || index===2){return "knowledge";}
+  if(index===3){return "apply";}
+  return "reflect";
+}
+function stageTypes(stage){
+  if(stage==="intro"){return ["behavior","attitude"];}
+  if(stage==="knowledge"){return ["knowledge"];}
+  if(stage==="apply"){return ["behavior"];}
+  return ["attitude","behavior"];
+}
+function targetDifficulty(stage){
+  var base=track.level || 1;
+  if(stage==="intro"){return 1;}
+  if(stage==="knowledge"){return Math.min(4, base+1);}
+  if(stage==="apply"){return Math.max(1, base);}
+  return 1;
+}
+function matchesSegment(q, segment){
+  if(!segment){return true;}
+  return String(q.segment||"")===String(segment);
+}
+function matchesType(q, types){
+  if(!types || !types.length){return true;}
+  var ct=normalizeCognitive(q);
+  return types.indexOf(ct)!==-1;
+}
+function matchesDifficulty(q, target){
+  if(!target){return true;}
+  var diff=Number(q.difficulty||1) || 1;
+  return Math.abs(diff-target)<=1;
+}
+function getDelayedPair(q){
+  var dp=q && q.delayed_pair_id;
+  if(!dp){return null;}
+  var group=delayedGroups[dp]||[];
+  for(var i=0;i<group.length;i++){
+    if(group[i].id!==q.id){return group[i];}
+  }
+  return null;
+}
+function scheduleDelayed(q){
+  var pair=getDelayedPair(q);
+  if(!pair || askedIds.has(pair.id)){
+    return;
+  }
+  delayedQueue.push({at:currentIndex+2,question:pair});
+}
+function takeDelayed(index){
+  for(var i=0;i<delayedQueue.length;i++){
+    if(delayedQueue[i].at<=index){
+      return delayedQueue.splice(i,1)[0].question;
+    }
+  }
+  return null;
+}
+function buildPool(filter){
+  return bank.filter(function(q){
+    if(!q || !q.question_category || askedIds.has(q.id)){return false;}
+    if(filter.segment && !matchesSegment(q, filter.segment)){return false;}
+    if(filter.types && !matchesType(q, filter.types)){return false;}
+    if(filter.target && !matchesDifficulty(q, filter.target)){return false;}
+    return true;
+  });
+}
+function selectQuestion(stage, index){
+  var delayed=takeDelayed(index);
+  if(delayed){return delayed;}
+  var types=stageTypes(stage);
+  var target=targetDifficulty(stage);
+  var segment=track.segment;
+  var attempts=[
+    {segment:segment,types:types,target:target},
+    {segment:segment,types:types,target:null},
+    {segment:null,types:types,target:target},
+    {segment:null,types:types,target:null},
+    {segment:null,types:null,target:null}
+  ];
+  for(var i=0;i<attempts.length;i++){
+    var pool=buildPool(attempts[i]);
+    if(pool.length){
+      return pickRandom(pool);
+    }
+  }
+  return null;
+}
+function remember(q){
+  if(!q){return;}
+  askedIds.add(q.id);
+  scheduleDelayed(q);
+}
+function ensureFlowQuestion(index){
+  if(flow[index]){return;}
+  var stage=stageForIndex(index);
+  var q=selectQuestion(stage, index);
+  if(q){
+    remember(q);
+    flow[index]=q;
+  }
+}
+function currentQuestion(){
+  ensureFlowQuestion(currentIndex);
+  return flow[currentIndex];
+}
+function renderQuestion(q){
+  if(!q){return;}
+  questionWrap.innerHTML="";
+  var fieldset=document.createElement("fieldset");
+  fieldset.className="impactshop-survey-question";
+  var legend=document.createElement("legend");
+  legend.textContent=q.label;
+  fieldset.appendChild(legend);
+  Object.keys(q.options||{}).forEach(function(key){
+    var id="q_"+q.id+"_"+key;
+    var label=document.createElement("label");
+    label.className="impactshop-survey-option";
+    label.setAttribute("for",id);
+    var input=document.createElement("input");
+    input.type="radio";
+    input.name="answer";
+    input.id=id;
+    input.value=key;
+    input.required=true;
+    var span=document.createElement("span");
+    span.textContent=q.options[key];
+    label.appendChild(input);
+    label.appendChild(span);
+    fieldset.appendChild(label);
+  });
+  questionWrap.appendChild(fieldset);
+  progress.textContent=(currentIndex+1)+"/"+roundSize+" kérdés";
+  backBtn.style.display=currentIndex>0?"inline-flex":"none";
+  nextBtn.textContent="Tovább";
+}
+function readAnswer(){
+  var input=form.querySelector("input[name=answer]:checked");
+  return input?input.value:null;
+}
+function updateTrack(q, correct){
+  var seg=q.segment || "SUST";
+  if(!track.segment){
+    track.segment=seg;
+  }
+  if(correct===true){
+    track.level=Math.min(track.level+1,4);
+    if(Object.prototype.hasOwnProperty.call(segmentScores,seg)){
+      segmentScores[seg]+=1;
+    }
+  } else if(correct===false){
+    track.level=Math.max(track.level-1,1);
+    if(Object.prototype.hasOwnProperty.call(segmentScores,seg)){
+      segmentScores[seg]-=1;
+    }
+  }
+  var best=track.segment;
+  Object.keys(segmentScores).forEach(function(key){
+    if(segmentScores[key]>segmentScores[best]){
+      best=key;
+    }
+  });
+  track.segment=best;
+}
+function storeAnswer(q, value){
+  if(!q){return;}
+  var answerIndex=currentIndex;
+  blockCategories[answerIndex]=q.question_category || "KN_GENERAL";
+  blockAnswers[answerIndex]=value;
+  if(q.correct){
+    var isCorrect=String(value)===String(q.correct);
+    blockAnswersCorrect[answerIndex]=isCorrect;
+    updateTrack(q, isCorrect);
+  } else {
+    blockAnswersCorrect[answerIndex]=null;
+    updateTrack(q, null);
+  }
+}
+function resetBlock(){
+  flow=[];
+  currentIndex=0;
+  blockAnswers=[];
+  blockCategories=[];
+  blockAnswersCorrect=[];
+}
+function showRewardPopup(message){
+  if(!rewardPopup || !rewardText){return;}
+  rewardText.textContent=message;
+  rewardPopup.classList.add("is-visible");
+  rewardPopup.setAttribute("aria-hidden","false");
+}
+function hideRewardPopup(){
+  if(!rewardPopup){return;}
+  rewardPopup.classList.remove("is-visible");
+  rewardPopup.setAttribute("aria-hidden","true");
+}
+function renderCompletion(){
+  questionWrap.innerHTML='';
+  var box=document.createElement('div');
+  box.className='impactshop-survey-complete';
+  box.innerHTML='<h3>Köszi! Blokk vége.</h3><p>Ha szeretnéd, jóváírjuk a pontokat, majd folytathatod a következő 5 kérdéssel.</p>' +
+    '<label class="impactshop-survey-consent"><input type="checkbox" data-role="impactshop-survey-consent" /> Hozzájárulok a belső személyre szabáshoz.</label>';
+  questionWrap.appendChild(box);
+  progress.textContent=roundSize+"/"+roundSize+" kérdés";
+  backBtn.style.display="none";
+  nextBtn.textContent=blockState==="submit" ? "Pontok jóváírása" : "Folytatás";
+  questionWrap.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function submitSurvey(){
+  status.textContent="Küldjük a válaszokat...";
+  var consentEl=root.querySelector("[data-role=impactshop-survey-consent]");
+  var consent=consentEl && consentEl.checked ? 1 : 0;
+  var surveyId="impactad-v1-"+sessionId+"-b"+blockIndex;
+  var data={
+    survey_token:token,
+    survey_id:surveyId,
+    categories:blockCategories,
+    answers:blockAnswers,
+    answers_correct:blockAnswersCorrect,
+    question_count:blockCategories.length,
+    consent_pers:consent
+  };
+  fetch("/wp-json/impact/v1/offerwall/survey/submit",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  })
+    .then(function(resp){return resp.json().catch(function(){return {};});})
+    .then(function(resp){
+      if(resp && resp.status && resp.status!=="ok" && resp.status!=="duplicate_survey"){throw new Error(resp.status);}
+      status.textContent="Köszönjük! A jutalom hamarosan megjelenik.";
+      showRewardPopup("A válaszaidat rögzítettük. Jutalom: "+rewardPoints+" pont és "+rewardVotes+" szavazat. A jóváírás azonnal megjelenik.");
+      blockState="continue";
+      renderCompletion();
+    })
+    .catch(function(){status.textContent="Nem sikerült elküldeni. Próbáld újra pár perc múlva.";});
+}
+resetBlock();
+renderQuestion(currentQuestion());
+backBtn.addEventListener("click",function(){
+  if(currentIndex>0){
+    currentIndex--;
+    renderQuestion(currentQuestion());
+  }
+});
+form.addEventListener("submit",function(e){
+  e.preventDefault();
+  if(blockState==="submit"){
+    submitSurvey();
+    return;
+  }
+  if(blockState==="continue"){
+    blockIndex++;
+    blockState="question";
+    status.textContent="";
+    resetBlock();
+    renderQuestion(currentQuestion());
+    questionWrap.scrollIntoView({behavior:"smooth",block:"start"});
+    return;
+  }
+  var q=currentQuestion();
+  var value=readAnswer();
+  if(!value){
+    status.textContent="Válassz egy opciót a továbblépéshez.";
+    return;
+  }
+  storeAnswer(q, value);
+  status.textContent="";
+  if(currentIndex+1>=roundSize){
+    blockState="submit";
+    renderCompletion();
+    return;
+  }
+  currentIndex++;
+  renderQuestion(currentQuestion());
+  questionWrap.scrollIntoView({behavior:"smooth",block:"start"});
+});
+if(rewardClose){
+  rewardClose.addEventListener("click", hideRewardPopup);
+}
+})();
+JS;
+    $html .= '<script>' . $script . '</script>';
+
+    return $html;
+}
+
 function impactshop_offerwall_survey_pre_dispatch($result, WP_REST_Server $server, WP_REST_Request $request)
 {
     if (strpos($request->get_route(), '/impact/v1/offerwall/callback/') !== 0) {
@@ -181,7 +854,7 @@ function impactshop_offerwall_survey_pre_dispatch($result, WP_REST_Server $serve
     $providers = function_exists('impactshop_offerwall_get_providers') ? impactshop_offerwall_get_providers() : [];
     $provider = $providers[$provider_key] ?? [];
 
-    $params = array_merge($request->get_query_params(), $request->get_json_params());
+    $params = array_merge($request->get_query_params(), $request->get_json_params() ?: []);
     $transaction_id = sanitize_text_field((string) ($params['transaction_id'] ?? $params['tx_id'] ?? ''));
     if ($transaction_id === '') {
         return new WP_REST_Response(['status' => 'missing_transaction'], 400);
@@ -206,6 +879,9 @@ function impactshop_offerwall_survey_pre_dispatch($result, WP_REST_Server $serve
     $payout = (string) ($params['payout'] ?? $params['amount'] ?? $params['amount_usd'] ?? 0);
     $signature = (string) ($params['signature'] ?? '');
     $secret = (string) ($provider['postback_secret'] ?? '');
+    if ($secret === '') {
+        $secret = impactshop_offerwall_survey_secret($provider);
+    }
     if ($secret === '' || $signature === '') {
         return new WP_REST_Response(['status' => 'missing_signature'], 403);
     }
@@ -249,7 +925,7 @@ function impactshop_offerwall_survey_pre_dispatch($result, WP_REST_Server $serve
     }
 
     $question_count = (int) ($params['question_count'] ?? count($answers));
-    if ($question_count <= 0 || $question_count > 5) {
+    if ($question_count <= 0 || $question_count > 10) {
         return new WP_REST_Response(['status' => 'invalid_question_count'], 400);
     }
     if (count($answers) !== $question_count) {
@@ -270,7 +946,7 @@ function impactshop_offerwall_survey_pre_dispatch($result, WP_REST_Server $serve
         }
     }
 
-    $categories = $params['question_category'] ?? [];
+    $categories = $params['categories'] ?? ($params['question_category'] ?? []);
     if (!is_array($categories) || empty($categories)) {
         return new WP_REST_Response(['status' => 'missing_category'], 400);
     }
@@ -368,7 +1044,7 @@ function impactshop_offerwall_survey_handle_rewards(string $pseudo_id, array $pa
         if (!$rule) {
             continue;
         }
-        $is_correct = $answers_correct[$category] ?? null;
+        $is_correct = $answers_correct[$category] ?? ($answers_correct[$idx] ?? null);
         impactshop_offerwall_survey_apply_rule($pseudo_id, $rule, $answer, $taxonomy, $is_correct);
     }
 }

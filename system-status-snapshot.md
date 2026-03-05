@@ -293,6 +293,11 @@ PHP lint ok for identity/gamification modules
 - Continuity evidence: docs/pr-arukereso-affiliate-flow-2026-03-05.md + conversation-summaries/434_conversation_summary.md.
 - Guard override policy: protected module változás csak docs/snapshot/summary evidenciával engedett.
 
+## Snapshot Addendum (2026-03-05 / Offerwall Core PR)
+- Modulcsomag: offerwall engine + internal survey submit + question mapping bővítés.
+- Continuity evidence: docs/pr-offerwall-core-pack-2026-03-05.md + conversation-summaries/435_conversation_summary.md.
+- Guard override policy synced a protected module review gate-hez.
+
 ## Snapshot Addendum (2026-03-05 / Points Admin PR)
 - Modulcsomag: sharity-points admin + notifications + content consumption guard.
 - Continuity evidence: docs/pr-points-admin-pack-2026-03-05.md + conversation-summaries/437_conversation_summary.md.
