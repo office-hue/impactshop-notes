@@ -2,6 +2,11 @@
 
 *Generálva:* 2026-02-26 07:48:32 +0100 (Bujdoso-Mac-mini)
 
+## Snapshot Addendum (2026-03-05)
+- Clean PR branch: `chore/guard-doc-continuity-2026-03-05`.
+- Guard folytonosság: `bin/impactshop-guard-preflight.sh` felvéve, protected list bővítve (`impact-arukereso-guard.php`, `impact-combat-pack.php`), hash/checksum újraszinkronizálva.
+- Dokumentációs folytonosság: `conversation-summaries/433_conversation_summary.md` + bastion extension terv és system map megjegyzés frissítve.
+
 ## Meta
 - Gyökér: /Users/bujdosoarnold/Developer/GitHub
 - Környezet: local
