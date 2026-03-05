@@ -305,4 +305,8 @@ PHP lint ok for identity/gamification modules
 ## Snapshot Addendum (2026-03-05 / Points Admin PR)
 - Modulcsomag: sharity-points admin + notifications + content consumption guard.
 - Continuity evidence: docs/pr-points-admin-pack-2026-03-05.md + conversation-summaries/437_conversation_summary.md.
+
+## Snapshot Addendum (2026-03-05 / Campaign Vote PR)
+- Modulcsomag: vote-purchase Stripe flow, quarter management, event donation widget, campaign utility modulok.
+- Continuity evidence: docs/pr-campaign-vote-pack-2026-03-05.md + conversation-summaries/438_conversation_summary.md.
 - Bastion guard extension rögzítve: docs/bastion-guard-status.md.
