@@ -326,3 +326,16 @@ PHP lint ok for identity/gamification modules
 - Modulcsomag: `wp-content/mu-plugins/vendor/**` dependency bundle.
 - Continuity evidence: docs/pr-mu-vendor-bundle-pack-2026-03-05.md + conversation-summaries/442_conversation_summary.md.
 - Bastion guard extension rögzítve: docs/bastion-guard-status.md.
+
+---
+_Auto update: 2026-03-05 13:54:17 CET_
+
+### Health check summary
+
+```
+Post-merge PR batch closed on ops/adswatch-clean (#44-#56, docs #45-#47)
+impactall strict run blocked by local dirty tree; bypass run PASS
+Clean-head strict safe audit PASS in dedicated clean worktree
+```
+
+**Baseline referencia:** impactshop-baseline-2026-03-03.md
