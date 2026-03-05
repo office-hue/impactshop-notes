@@ -49,7 +49,7 @@ if (!function_exists('ims_is_unknown_value')) {
 
 function ims_get_bad_deeplink_hosts(){
   $list = [
-    'arukereso.hu','arukereso.sk','arukereso.cz',
+    // Árukereső deeplink engedélyezve.
     'heureka.sk','heureka.cz',
     'pazaruvaj.com','ceneo.pl','prisjakt.nu','prisjakt.no','pricerunner.com'
   ];

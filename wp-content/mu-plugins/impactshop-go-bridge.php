@@ -119,6 +119,38 @@ add_filter('impactshop_go_resolve', function ($target, $slug, $isDeal, $query) {
             }
         }
         if (!$row) {
+            // CJ fallback: olvassuk a tools/cj_shops.json listát (slug + program_id).
+            if (strpos($slug, 'cj-') === 0) {
+                $cj_path = dirname(WP_CONTENT_DIR) . '/tools/cj_shops.json';
+                if (file_exists($cj_path)) {
+                    $cj_raw = file_get_contents($cj_path);
+                    $cj_list = json_decode((string) $cj_raw, true);
+                    if (is_array($cj_list)) {
+                        foreach ($cj_list as $candidate) {
+                            if (!is_array($candidate) || empty($candidate['slug'])) {
+                                continue;
+                            }
+                            if (sanitize_title($candidate['slug']) === $slug) {
+                                $cjClick = $candidate['cj_click_url'] ?? ($candidate['tracking_template'] ?? ($candidate['click_url'] ?? ''));
+                                $cjProgram = $candidate['program_id'] ?? ($candidate['advertiser_id'] ?? '');
+                                $productUrl = $candidate['program_url'] ?? ($candidate['destination'] ?? ($candidate['product_url'] ?? ''));
+                                $row = [
+                                    'shop_slug'      => $slug,
+                                    'product_url'    => $productUrl,
+                                    'dognet_base'    => '',
+                                    'deeplink_param' => $candidate['deeplink_param'] ?? 'url',
+                                    'cj_click_url'   => $cjClick,
+                                    'cj_program_id'  => $cjProgram,
+                                    'network'        => 'cj',
+                                ];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (!$row) {
             return $target;
         }
     }
@@ -146,14 +178,9 @@ add_filter('impactshop_go_resolve', function ($target, $slug, $isDeal, $query) {
      * de csak akkor aktiválódik, ha a shop sorban van CJ adat (cj_click_url vagy cj_program_id),
      * és az IMPACTSHOP_ENABLE_CJ_GO flag be van kapcsolva.
      */
-    if ($cjEnabled && !$link && (!empty($row['cj_click_url']) || !empty($row['cj_program_id']))) {
+    if ($cjEnabled && !$link && !empty($row['cj_click_url'])) {
         $cjBase = '';
-        if (!empty($row['cj_click_url'])) {
-            $cjBase = esc_url_raw($row['cj_click_url']);
-        } elseif (!empty($row['cj_program_id'])) {
-            // Ha csak program_id áll rendelkezésre, a standard CJ sablont használjuk.
-            $cjBase = sprintf('https://www.anrdoezrs.net/click-101589464-%s', rawurlencode($row['cj_program_id']));
-        }
+        $cjBase = esc_url_raw($row['cj_click_url']);
 
         if ($cjBase) {
             $deeplinkParam = !empty($row['deeplink_param']) ? $row['deeplink_param'] : 'url';
@@ -172,6 +199,9 @@ add_filter('impactshop_go_resolve', function ($target, $slug, $isDeal, $query) {
             $cjBase = apply_filters('impactshop_cj_click_base', $cjBase, $row, $slug, $ngo, $targetUrl);
             $link = $cjBase . (strpos($cjBase, '?') === false ? '?' : '&') . http_build_query($params);
         }
+    }
+    if (!$link && !empty($row['cj_program_id']) && empty($row['cj_click_url']) && $targetUrl) {
+        $link = $targetUrl;
     }
 
     if (function_exists('isb_dognet_extract_campaign_id_from_base') && function_exists('isb_dognet_api_generate_link')) {
@@ -278,8 +308,6 @@ add_action('template_redirect', function () {
     $cjBase = '';
     if (!empty($entry['cj_click_url'])) {
         $cjBase = esc_url_raw($entry['cj_click_url']);
-    } elseif (!empty($entry['program_id'])) {
-        $cjBase = sprintf('https://www.anrdoezrs.net/click-101589464-%s', rawurlencode($entry['program_id']));
     }
     if (!$cjBase) {
         return;
