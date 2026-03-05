@@ -282,3 +282,8 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / Points Admin PR)
+- Modulcsomag: sharity-points admin + notifications + content consumption guard.
+- Continuity evidence: docs/pr-points-admin-pack-2026-03-05.md + conversation-summaries/437_conversation_summary.md.
+- Bastion guard extension rögzítve: docs/bastion-guard-status.md.
