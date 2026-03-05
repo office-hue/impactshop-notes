@@ -58,9 +58,9 @@
     "docs/impactshop-guard-config.sha256"
   ],
   "hashes": {
-    "docs/impactshop-guard-config.json": "8c99e97b6385e1ccf3d79ae936bf3189497d6c1ca289cd2305d232b0b293b26d",
-    "Hirdetési fiókok integrációja TERV.ini.md": "c8897f82f9d305d65a7cbfbb6fb9100a621a406fd21eff987f78ffbcc8800c53",
-    "impact-hub-system-v1.3.md": "b5a54b104331ce58d6ae6b4a05ab605f4ba16edbaf9cef53f330bb444a81e386",
+    "docs/impactshop-guard-config.json": "fd221e878093ef6ad1357ec293a557e0bddb9523d3ce95313e647f843c1a35a1",
+    "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
+    "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "ba57c9c22a41ba236eb7b86cbb8d9b70e552914e2ab9233580444cee4ed20cd8",
     "wp-content/mu-plugins/impactshop-metrics-ngo.php": "a869a58e1fab412a21fab85544081561430da6fd96f1d8e57ed6189b0aa1aa90",
     "wp-content/mu-plugins/impactshop-ads-watch.php": "0e17d2b4da8e707b2d9840924e6dc479891c45432e63f8c36d27103c9aa12e65",
@@ -83,12 +83,12 @@
     "wp-content/mu-plugins/impactshop-ngo-card.js": "f1acf8f9e8641f554747b57c463e1920cf21b27b4e167fbe83c0374f7c2f8c0e",
     "wp-content/mu-plugins/impactshop-go-bridge.php": "ddf71e2c05fddbbc14b5ed6dfbfb91d0c9882fa9e675079a0e3599bee4c923ff",
     "wp-content/mu-plugins/impactshop-sum-pack.php": "6361a433bd74fe14ae8f67d2e49dea65ba9ebe529ae808fc31f7866d239a8085",
-    "wp-content/mu-plugins/impactshop-identity-panel.php": "fd2a03840088f2e461339b0ff57bcb7fa1342a2e2f56a373db139c0fa664e114",
-    "wp-content/mu-plugins/impactshop-identity-panel.js": "ef0f22c4375382b34a1c7bf90df2c9eeb15913d1aa72f0c056d1c418e35bb195",
+    "wp-content/mu-plugins/impactshop-identity-panel.php": "51b41310796148e6a0ca30c7a54dd896ee902243bf016c5aabcf1581099206a0",
+    "wp-content/mu-plugins/impactshop-identity-panel.js": "2995344e55c5713931e08c158fc2c1e22a64a7881bf8d0cc74a7598a619f0c12",
     "wp-content/mu-plugins/impactshop-vote-jysk.php": "403902568fcffadb551e679aa63fbfc6aa31388dc64da5c1777b8c0ad50f8651",
     "wp-content/mu-plugins/impactshop-vote-jysk.js": "097815eba4d283ac41c9298f95d42060a59c04e253b24849026908ec614eaf9e",
     "wp-content/mu-plugins/impact-social-mvp.php": "2647c064a2afbf93c4778b6e0ce7a9498ef65ccdbd29e8cecaf9043b67eeb326",
-    "wp-content/mu-plugins/impact-gamification.php": "316a8217534bb48c2c4e8829eb1e45123076328e0d3ed84782c6a76297624a38",
+    "wp-content/mu-plugins/impact-gamification.php": "87831fe01075ef43202d4acde71c07fa67008f52e39d902248b92577e753759a",
     "wp-content/mu-plugins/sharity-level-manager.php": "e2f7a6f8069c66ebe4d6f2083605abb9804a1b47b9f55046d550456237ee43c4",
     "wp-content/mu-plugins/sharity-points.php": "2c3e31ede16d6ef08dc29b9814c2c42ab5112fd7a72858bfba97cb1741640664",
     "wp-content/mu-plugins/sharity-points-api.php": "9bb76b83d6acc05a769a3182c48f73446d061eb51bd74fe4097920c7886a75a8",
@@ -106,8 +106,10 @@
     "wp-content/mu-plugins/impact-cid-arukereso-fix.php": "59f6acf6da6e87700e229aeb47a53b513674167a8e32bfe54fb23b3e05f1b9e4",
     "bin/impactshop-guard-deploy.sh": "80d6b206635eda52f18e4445dfb89bc75aeb9bc88dac536022f65e2557a581b1",
     "bin/impactshop-guard-preflight.sh": "16086de57edd4b7abc5dd6395d45b34630d1dc1e7be3fa6c64495b5a5f5af17d",
-    "docs/bastion-protection-extension-plan.md": "5f5bd12595cdd116b739e04e56d5b05a71684c42b070b4eadaefe39de0c724f1",
-    "docs/impactshop-guard-config.sha256": "41e450869cbdab4bdd34c9c57f510b77ea96aa84e9f5aba2bd4b07aa11392359"
+    "docs/bastion-protection-extension-plan.md": "9bb9a035d9fb8310ede05159918169610dbb1efbaf6e3e93f6a52362c973fe03",
+    "docs/impactshop-guard-config.sha256": "e23448a7cc98e033051d48d6fc3064ec9b545a53b5ec2dfb0a9e1f3d09e3c32d",
+    "wp-content/mu-plugins/impact-arukereso-guard.php": "e9e4310a1d95f6926fc48c38e42112f76061c6290357a1acd02d9d3805d97322",
+    "wp-content/mu-plugins/impact-combat-pack.php": "3bdd47f9fa95e7b6e55e2bf056807054bfc7dd3b62ad58803ef1595c2569a20a"
   },
-  "generated_at": "2026-02-05T06:22:08.001212+00:00"
+  "generated_at": "2026-03-05T09:46:56.901248+00:00"
 }
