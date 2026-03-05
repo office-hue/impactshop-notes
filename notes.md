@@ -6252,3 +6252,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-03-05 10:47:00 CET - doc debt sync (push-range mode)
 - A pre-push gate mostantól `--mode push` módban a ténylegesen pusholt commit tartományt auditálja.
 - A dokumentációs continuity szabályok változatlanul kötelezők a commit tartományra (`system-status-snapshot.md`, `docs/*.md`, `notes.md`/`conversation-summaries`).
+
+## 2026-03-05 10:12:00 CET - identity nickname sync fix
+- Javítva: becenév mentés után a profil köszöntés azonnal frissül (`Szia <név>...`), nem marad név nélküli.
+- Javítva: nickname mentés után azonnali Legacy Wall szinkron (`impact_update_herowall`), plusz fallback névfeloldás herowall API-ban.
+- Érintett fájlok: `wp-content/mu-plugins/impactshop-identity-panel.php`, `wp-content/mu-plugins/impactshop-identity-panel.js`, `wp-content/mu-plugins/impact-gamification.php`.

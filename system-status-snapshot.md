@@ -270,3 +270,15 @@ Doc continuity checks remain strict for committed changes
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+---
+_Auto update: 2026-03-05 10:12:00 CET_
+
+### Health check summary
+
+```
+Identity nickname save path fixed (profile greeting + Legacy Wall sync)
+PHP lint ok for identity/gamification modules
+```
+
+**Baseline referencia:** impactshop-baseline-2026-03-03.md
