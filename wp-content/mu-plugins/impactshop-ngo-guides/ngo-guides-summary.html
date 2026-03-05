@@ -1,0 +1,491 @@
+
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NGO Útmutatók – Sharity | Minden, ami a civil szervezeteknek fontos</title>
+  <meta name="description" content="Sharity útmutatók civil szervezeteknek: Impact Shop, Impact Challenge és NGO Card – így kaphatsz ingyenes adományokat.">
+  <meta property="og:title" content="NGO Útmutatók – Sharity">
+  <meta property="og:description" content="Három ingyenes eszköz civil szervezeteknek: vásárlásból adomány, videónézésből adomány, és beágyazható widget.">
+  <meta property="og:url" content="https://app.sharity.hu/ngo-guides/">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+      --pink: #ec4899;
+      --orange: #f97316;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(111, 227, 193, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .nav a {
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: var(--card);
+      color: var(--teal);
+      border: 1.5px solid rgba(15, 138, 157, 0.25);
+      transition: all 0.2s;
+    }
+    .nav a:hover, .nav a.active {
+      background: var(--teal);
+      color: #fff;
+      text-decoration: none;
+      border-color: var(--teal);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      margin-bottom: 64px;
+      animation: fadeUp 0.7s ease-out;
+    }
+    .hero .emoji { font-size: 3rem; margin-bottom: 12px; }
+    .hero .subtitle {
+      font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+      color: var(--teal);
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .hero h1 {
+      margin-bottom: 16px;
+    }
+    .hero p {
+      max-width: 640px;
+      margin: 0 auto 1.2rem;
+      font-size: 1.1rem;
+    }
+
+    /* ── Cards grid ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+      margin-bottom: 64px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, box-shadow 0.25s;
+      animation: fadeUp 0.7s ease-out both;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:nth-child(2) { animation-delay: 0.1s; }
+    .card:nth-child(3) { animation-delay: 0.2s; }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 24px 56px rgba(11, 31, 42, 0.16);
+    }
+
+    .card .icon {
+      font-size: 2.6rem;
+      margin-bottom: 12px;
+    }
+
+    .card h3 {
+      font-size: 1.35rem;
+      margin-bottom: 8px;
+    }
+
+    .card .tagline {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+    .card:nth-child(1) .tagline { color: var(--teal); }
+    .card:nth-child(2) .tagline { color: var(--purple); }
+    .card:nth-child(3) .tagline { color: var(--orange); }
+
+    .card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px 0;
+    }
+    .card ul li {
+      padding: 6px 0;
+      color: var(--muted);
+      font-size: 0.97rem;
+      line-height: 1.6;
+    }
+    .card ul li::before {
+      content: "✓ ";
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .card .cta {
+      margin-top: auto;
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 999px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      text-decoration: none;
+    }
+    .card:nth-child(1) .cta { background: var(--teal); }
+    .card:nth-child(2) .cta { background: var(--purple); }
+    .card:nth-child(3) .cta { background: var(--orange); }
+
+    /* ── How it works ── */
+    .how-section {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 48px 40px;
+      box-shadow: var(--shadow);
+      margin-bottom: 64px;
+      animation: fadeUp 0.7s ease-out 0.3s both;
+    }
+    .how-section h2 {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+    }
+    .step {
+      text-align: center;
+      padding: 16px;
+    }
+    .step .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: #fff;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .step h3 { font-size: 1.05rem; margin-bottom: 6px; }
+    .step p { font-size: 0.9rem; margin: 0; }
+
+    /* ── Callout ── */
+    .callout {
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.08), rgba(124, 58, 237, 0.08));
+      border-radius: 16px;
+      padding: 32px 36px;
+      text-align: center;
+      margin-bottom: 64px;
+      animation: fadeUp 0.7s ease-out 0.4s both;
+    }
+    .callout h2 {
+      margin-bottom: 12px;
+    }
+    .callout p {
+      max-width: 560px;
+      margin: 0 auto 8px;
+    }
+    .callout .highlight {
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      color: var(--teal);
+      font-size: 1.05rem;
+    }
+
+    /* ── FAQ ── */
+    .faq {
+      margin-bottom: 48px;
+      animation: fadeUp 0.7s ease-out 0.5s both;
+    }
+    .faq h2 { text-align: center; margin-bottom: 32px; }
+    .faq-item {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(11, 31, 42, 0.06);
+    }
+    .faq-item strong {
+      font-family: "Space Grotesk", sans-serif;
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+    .faq-item p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 32px 0;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      margin-top: 48px;
+    }
+    .footer p {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .footer a { color: var(--teal); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .wrap { padding: 32px 16px 64px; }
+      .cards { grid-template-columns: 1fr; gap: 24px; }
+      .card { padding: 28px 24px; }
+      .steps { grid-template-columns: 1fr 1fr; }
+      .how-section { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- Nav -->
+    <nav class="nav">
+      <a href="/ngo-guides/impact-shop/">🛒 Impact Shop</a>
+      <a href="/ngo-guides/impact-challenge/">🎬 Impact Challenge</a>
+      <a href="/ngo-guides/ngo-card/">🎴 NGO Card</a>
+      <a href="/rolunk/">ℹ️ Rólunk</a>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="emoji">🏢</div>
+      <div class="subtitle">Civil szervezeteknek</div>
+      <h1>Sharity – Útmutatók NGO-knak</h1>
+      <p>
+        A Sharity-n keresztül <strong>ingyen kaphatsz adományokat</strong> – 
+        a támogatóidnak nem kerül semmibe. Három egyszerű eszközt kínálunk: 
+        vásárlásból adomány, videónézésből adomány, és egy beágyazható widget a weboldaladra.
+      </p>
+      <p>
+        Alább megtalálod mindhárom szolgáltatás összefoglalóját. 
+        Kattints a részletekért az adott útmutatóra!
+      </p>
+    </section>
+
+    <!-- 3 Service Cards -->
+    <section class="cards">
+
+      <!-- Impact Shop -->
+      <div class="card">
+        <div class="icon">🛒</div>
+        <div class="tagline">Vásárlásból adomány</div>
+        <h3>Impact Shop</h3>
+        <p style="margin-bottom: 16px;">
+          A támogatóid a megszokott webshopokban vásárolnak (Alza, eMAG, stb.), 
+          és a vásárlás után <strong>automatikusan adomány képződik</strong> a szervezetednek.
+        </p>
+        <ul>
+          <li>100+ partnerwebshop</li>
+          <li>A vásárlónak 0 Ft plusz költség</li>
+          <li>Közvetlen adomány minden vásárlás után</li>
+          <li>Pontok és szavazatok is járnak hozzá</li>
+        </ul>
+        <a href="/ngo-guides/impact-shop/" class="cta">Részletes útmutató →</a>
+      </div>
+
+      <!-- Impact Challenge -->
+      <div class="card">
+        <div class="icon">🎬</div>
+        <div class="tagline">Videók + feladatok = adomány</div>
+        <h3>Impact Challenge</h3>
+        <p style="margin-bottom: 16px;">
+          A támogatóid <strong>rövid videókat néznek</strong> (max 30 mp) 
+          és <strong>offerwall feladatokat</strong> teljesítenek (kérdőívek, app-kipróbálás, regisztrációk). 
+          Ezért szavazatokat kapnak, amiket a te szervezetedre adhatnak le.
+        </p>
+        <ul>
+          <li>A hirdetők/szponzorok fizetnek – ti kapjátok az adományt</li>
+          <li>Videók + offerwall feladatok = több pont és szavazat</li>
+          <li>Szavazatok arányában osztjuk az adományalapot</li>
+          <li>Automatikus részvétel, nincs teendő</li>
+        </ul>
+        <a href="/ngo-guides/impact-challenge/" class="cta">Részletes útmutató →</a>
+      </div>
+
+      <!-- NGO Card -->
+      <div class="card">
+        <div class="icon">🎴</div>
+        <div class="tagline">Beágyazható widget</div>
+        <h3>NGO Card</h3>
+        <p style="margin-bottom: 16px;">
+          Egy <strong>beágyazható kártya</strong> a saját weboldaladra, 
+          ami élőben mutatja az eddig gyűjtött adományt és 
+          a Sharity-ra irányítja a látogatóidat.
+        </p>
+        <ul>
+          <li>Egyetlen kódrészlet beillesztése</li>
+          <li>Élőben frissülő adomány-számláló</li>
+          <li>Testreszabható színek és szövegek</li>
+          <li>Automatikusan megjelenik a logód</li>
+        </ul>
+        <a href="/ngo-guides/ngo-card/" class="cta">Részletes útmutató →</a>
+      </div>
+
+    </section>
+
+    <!-- How it works -->
+    <section class="how-section">
+      <h2>🚀 Hogyan kezdj hozzá?</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Regisztrálj</h3>
+          <p>A szervezeted automatikusan megjelenik a Sharity-n, nincs külön teendő.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Kommunikáld</h3>
+          <p>Oszd meg a támogatóiddal, hogy a Sharity-n ingyen támogathatnak.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>Gyűjts szavazatokat</h3>
+          <p>Minél többen szavaznak rád, annál több adományt kapsz.</p>
+        </div>
+        <div class="step">
+          <div class="num">4</div>
+          <h3>Kapd az adományt</h3>
+          <p>Az adományok automatikusan gyűlnek – te csak figyeld az eredményt!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Callout -->
+    <section class="callout">
+      <h2>💡 A lényeg</h2>
+      <p>
+        A Sharity segítségével a támogatóid a <strong>mindennapi tevékenységeikkel</strong> 
+        – vásárlás, videónézés – adományt generálnak a szervezetednek.
+      </p>
+      <p class="highlight">
+        Nekik nem kerül semmibe. Neked nincs vele teendőd. Az adomány automatikusan jön.
+      </p>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq">
+      <h2>❓ Gyakori kérdések</h2>
+
+      <div class="faq-item">
+        <strong>Mennyibe kerül a részvétel?</strong>
+        <p>Semmibe. A Sharity teljesen ingyenes a civil szervezetek számára.</p>
+      </div>
+
+      <div class="faq-item">
+        <strong>Kell valamit csinálnom, hogy adományt kapjak?</strong>
+        <p>Nem kell semmilyen technikai beállítás. Csak kommunikáld a támogatóidnak, 
+           hogy a Sharity-n keresztül ingyen támogathatnak téged vásárlással és videónézéssel.</p>
+      </div>
+
+      <div class="faq-item">
+        <strong>Mi a különbség az Impact Shop és az Impact Challenge között?</strong>
+        <p><strong>Impact Shop</strong> = vásárlás. A támogatóid a megszokott webshopokban vásárolnak, 
+           és az affiliate jutalékból közvetlen adomány megy a szervezetednek.<br>
+           <strong>Impact Challenge</strong> = videónézés + offerwall feladatok (kérdőívek, app-kipróbálás, regisztrációk). 
+           A hirdetők és szponzorok fizetnek, a szavazatok arányában osztjuk el az adományalapot.</p>
+      </div>
+
+      <div class="faq-item">
+        <strong>Mi az az NGO Card?</strong>
+        <p>Egy beágyazható kártya, amit a saját weboldaladra tehetsz. 
+           Élőben mutatja, mennyi adományt gyűjtöttél, és a látogatóidat 
+           a Sharity-ra irányítja, hogy ők is támogathassanak.</p>
+      </div>
+
+      <div class="faq-item">
+        <strong>Honnan jön az adomány?</strong>
+        <p>A webshopok affiliate jutalékából (Impact Shop), 
+           illetve a hirdetők és szponzorok által fizetett összegekből — videónézésért és offerwall feladatokért (Impact Challenge). 
+           A támogatóidnak ez semmibe sem kerül.</p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>
+        © 2025 <a href="https://app.sharity.hu">Sharity</a> · 
+        <a href="/ngo-guides/impact-shop/">Impact Shop</a> · 
+        <a href="/ngo-guides/impact-challenge/">Impact Challenge</a> · 
+        <a href="/ngo-guides/ngo-card/">NGO Card</a> · 
+        <a href="/rolunk/">Rólunk</a>
+      </p>
+    </footer>
+
+  </div>
+</body>
+</html>
