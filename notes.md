@@ -6262,3 +6262,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Merged PR batch lezárva az `ops/adswatch-clean` ágon: `#44`, `#45`, `#46`, `#47`, `#48`, `#49`, `#50`, `#51`, `#52`, `#53`, `#54`, `#55`, `#56`.
 - `impactall` strict safe-audit futás a lokális dirty worktree miatt fail lett; `IMPACTALL_SKIP_SAFE_AUDIT=1` módban a futás pass eredménnyel zárult.
 - Külön clean-head validáció: `scripts/safe-repo-audit.sh --strict` pass egy tiszta worktree-n (`origin/ops/adswatch-clean`).
+
+## 2026-03-05 14:16:37 CET - post-merge checkpoint (2 repo)
+- `impactshop-notes` clean worktree (`chore/checkpoint-2026-03-05-impactshop-notes`, `origin/ops/adswatch-clean@5d5d6f6e`): strict safe-audit PASS.
+- `ai-agent` clean worktree (`chore/checkpoint-2026-03-05-ai-agent`, `origin/main@4cdae42e`): strict safe-audit PASS (`safe-repo-audit.sh --repo ... --strict`).
+- `impactall` futás: normál módban strict safe-audit FAIL (lokális dirty `impactshop-notes`), `IMPACTALL_SKIP_SAFE_AUDIT=1` módban PASS.

@@ -339,3 +339,16 @@ Clean-head strict safe audit PASS in dedicated clean worktree
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+---
+_Auto update: 2026-03-05 14:16:37 CET_
+
+### Health check summary
+
+```
+Post-merge checkpoint completed for both repos (impactshop-notes + ai-agent)
+Strict safe-audit PASS in both clean worktrees
+impactall strict run blocked by local dirty notes tree; bypass run PASS
+```
+
+**Baseline referencia:** impactshop-baseline-2026-03-03.md
