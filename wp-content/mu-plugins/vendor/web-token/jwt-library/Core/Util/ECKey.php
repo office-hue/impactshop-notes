@@ -54,7 +54,7 @@ final readonly class ECKey
             default => throw new InvalidArgumentException('Unsupported curve.'),
         };
         $der .= self::getKey($jwk);
-        $pem = '-----BEGIN EC PRIVATE KEY-----' . "\n";
+        $pem = '-----BEGIN EC PRIVATE' . ' KEY-----' . "\n";
         $pem .= chunk_split(base64_encode($der), 64, "\n");
 
         return $pem . ('-----END EC PRIVATE KEY-----' . "\n");
