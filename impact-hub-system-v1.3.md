@@ -2628,6 +2628,9 @@ A dokumentum lesz a további egyeztetések, Codex feladatok és impactall riport
 - Fejlesztési alapelv (impactall nyomaték): **először mindig** védett fájlon
   kívüli megoldást keresünk. Védett fájlhoz csak külön engedéllyel, előzetes
   kockázatfelméréssel és garantált rollbackkel nyúlhatunk.
+- Dokumentációs folytonosság (2026-03-05): modulmódosítás után kötelező a
+  `conversation-summaries/` bővítése és a guard evidenciák (config/hash/checksum)
+  frissítése, külön clean commitban is merge-elhetően.
 - Tisztítás (numerikus NGO-k):
   `DELETE FROM wp_impact_ledger WHERE ngo_slug REGEXP '^[0-9-]+$'`.
 - Affiliate integrációs runbook: `docs/affiliate-integration-runbook.md`.
