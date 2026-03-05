@@ -293,6 +293,35 @@ PHP lint ok for identity/gamification modules
 - Continuity evidence: docs/pr-arukereso-affiliate-flow-2026-03-05.md + conversation-summaries/434_conversation_summary.md.
 - Guard override policy: protected module változás csak docs/snapshot/summary evidenciával engedett.
 
+## Snapshot Addendum (2026-03-05 / Offerwall Core PR)
+- Modulcsomag: offerwall engine + internal survey submit + question mapping bővítés.
+- Continuity evidence: docs/pr-offerwall-core-pack-2026-03-05.md + conversation-summaries/435_conversation_summary.md.
+
+## Snapshot Addendum (2026-03-05 / Engagement Challenge PR)
+- Modulcsomag: ads-watch, jysk vote, ngo-card, level/decay policy tuning.
+- Continuity evidence: docs/pr-engagement-challenge-pack-2026-03-05.md + conversation-summaries/436_conversation_summary.md.
+- Guard override policy synced a protected module review gate-hez.
+
+## Snapshot Addendum (2026-03-05 / Points Admin PR)
+- Modulcsomag: sharity-points admin + notifications + content consumption guard.
+- Continuity evidence: docs/pr-points-admin-pack-2026-03-05.md + conversation-summaries/437_conversation_summary.md.
+
+## Snapshot Addendum (2026-03-05 / Campaign Vote PR)
+- Modulcsomag: vote-purchase Stripe flow, quarter management, event donation widget, campaign utility modulok.
+- Continuity evidence: docs/pr-campaign-vote-pack-2026-03-05.md + conversation-summaries/438_conversation_summary.md.
+
+## Snapshot Addendum (2026-03-05 / Expansion NGO+PWA PR)
+- Modulcsomag: Cégjelző, NGO selector/guides, PWA+push, offerwall extension (AyeT + article quiz).
+- Continuity evidence: docs/pr-expansion-ngo-pwa-pack-2026-03-05.md + conversation-summaries/439_conversation_summary.md.
+
+## Snapshot Addendum (2026-03-05 / Ledger Card Request PR)
+- Modulcsomag: impact-ledger skeleton + card request shortcode/AJAX.
+- Continuity evidence: docs/pr-ledger-card-request-pack-2026-03-05.md + conversation-summaries/440_conversation_summary.md.
+
+## Snapshot Addendum (2026-03-05 / Module Assets PR)
+- Modulcsomag: image assetek, `.off` backup modul, offerwall placeholder JSON-ek.
+- Continuity evidence: docs/pr-module-assets-pack-2026-03-05.md + conversation-summaries/441_conversation_summary.md.
+
 ## Snapshot Addendum (2026-03-05 / MU Vendor Bundle PR)
 - Modulcsomag: `wp-content/mu-plugins/vendor/**` dependency bundle.
 - Continuity evidence: docs/pr-mu-vendor-bundle-pack-2026-03-05.md + conversation-summaries/442_conversation_summary.md.

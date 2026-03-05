@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Csatlakozz a Sharity-hez – Cégeknek | Sharity</title>
+  <meta name="description" content="Legyél Sharity partner! Affiliate, szponzori vagy közvetlen integráció – válaszd ki a hozzád illő csatlakozási módot és támogasd a civil szervezeteket vásárlóiddal együtt.">
+  <meta property="og:title" content="Sharity Partneri Csatlakozás – Cégeknek">
+  <meta property="og:description" content="Növeld a lojalitást, szerezz új vásárlókat és tégy jót – mindezt egyetlen integrációval.">
+  <meta property="og:url" content="https://app.sharity.hu/cegeknek">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+      --coral: #ff6b6b;
+      --blue: #3b82f6;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(59, 130, 246, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(245, 182, 66, 0.3), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(59, 130, 246, 0.1);
+      text-decoration: none;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--blue);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(59, 130, 246, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(59, 130, 246, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--blue);
+      font-weight: 600;
+      border: 2px solid var(--blue);
+      transition: background 0.2s;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(59, 130, 246, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--blue);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, #fff 100%);
+    }
+    .card.teal {
+      border: 2px solid var(--teal);
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.05) 0%, #fff 100%);
+    }
+    .card.purple {
+      border: 2px solid var(--purple);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, #fff 100%);
+    }
+    .card.sun {
+      border: 2px solid var(--sun);
+      background: linear-gradient(135deg, rgba(245, 182, 66, 0.1) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.12);
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+    .card-icon.teal { background: rgba(15, 138, 157, 0.12); }
+    .card-icon.purple { background: rgba(124, 58, 237, 0.12); }
+    .card-icon.sun { background: rgba(245, 182, 66, 0.2); }
+    .card-icon.mint { background: rgba(111, 227, 193, 0.2); }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .list-numbered {
+      counter-reset: step;
+    }
+    .list-numbered li {
+      counter-increment: step;
+    }
+    .list-numbered li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #1e40af;
+      font-weight: 600;
+      margin: 4px 4px 0 0;
+    }
+    .badge.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+    .badge.sun {
+      background: rgba(245, 182, 66, 0.2);
+      color: #7a4b00;
+    }
+    .badge.purple {
+      background: rgba(124, 58, 237, 0.15);
+      color: #5b21b6;
+    }
+    .badge.teal {
+      background: rgba(15, 138, 157, 0.15);
+      color: #0f766e;
+    }
+
+    .callout {
+      padding: 20px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(111, 227, 193, 0.2) 0%, rgba(111, 227, 193, 0.05) 100%);
+      border-left: 4px solid var(--mint);
+      margin: 24px 0;
+    }
+    .callout.warning {
+      background: linear-gradient(135deg, rgba(245, 182, 66, 0.15) 0%, rgba(245, 182, 66, 0.05) 100%);
+      border-left-color: var(--warning);
+    }
+    .callout.blue {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.03) 100%);
+      border-left-color: var(--blue);
+    }
+    .callout h3 {
+      margin-bottom: 8px;
+      color: #166534;
+    }
+    .callout.warning h3 { color: #7a4b00; }
+    .callout.blue h3 { color: #1e40af; }
+    .callout p {
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(11, 31, 42, 0.08);
+    }
+
+    .split {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      align-items: start;
+      margin-top: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    th {
+      background: rgba(59, 130, 246, 0.08);
+      font-weight: 600;
+      color: var(--ink);
+    }
+    tr:hover {
+      background: rgba(59, 130, 246, 0.04);
+    }
+
+    .pricing-card {
+      text-align: center;
+      padding: 32px 24px;
+    }
+    .pricing-card .price {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--ink);
+      margin: 16px 0 8px;
+    }
+    .pricing-card .price-note {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .pricing-card .cta {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 600;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .pricing-card .cta:hover {
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+    .pricing-card.recommended {
+      position: relative;
+    }
+    .pricing-card.recommended::before {
+      content: "⭐ Népszerű";
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--sun);
+      color: #7a4b00;
+      padding: 4px 16px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .stat-box {
+      text-align: center;
+      padding: 20px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .stat-box .number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--blue);
+      display: block;
+    }
+    .stat-box .label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .footer {
+      margin-top: 64px;
+      padding: 32px 24px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(245, 182, 66, 0.08) 100%);
+      border-radius: 20px;
+      border: 1px solid rgba(59, 130, 246, 0.12);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+    .fade-in.delay-1 { animation-delay: 0.1s; }
+    .fade-in.delay-2 { animation-delay: 0.2s; }
+    .fade-in.delay-3 { animation-delay: 0.3s; }
+    .fade-in.delay-4 { animation-delay: 0.4s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+      .pricing-card { padding: 24px 16px; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#elonyok">Előnyök</a>
+      <a href="#csatlakozas">Csatlakozási módok</a>
+      <a href="#araink">Áraink</a>
+      <a href="#hogyan">Hogyan működik?</a>
+      <a href="#faq">GYIK</a>
+      <a href="/partner-api">Partner API Docs →</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">🏢 Cégeknek & Márkáknak</span>
+        <h1>Növeld az eladásaidat<br>jótékonysággal</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          <strong>A Sharity összekötő kapocs</strong> a vásárlók, a webshopok és a civil szervezetek között. 
+          A vásárlóid kedvezményt kapnak – te új, lojális ügyfeleket nyersz – és közben adomány megy jó célra.
+        </p>
+        <p>
+          500+ partner webshop, 50.000+ aktív felhasználó, 100+ civil szervezet. Csatlakozz te is!
+        </p>
+        <div style="margin-top: 20px;">
+          <a href="#csatlakozas" class="cta">🚀 Csatlakozom</a>
+          <a href="#hogyan" class="cta-secondary">Hogyan működik?</a>
+        </div>
+      </div>
+      <div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="number">500+</span>
+            <span class="label">Partner webshop</span>
+          </div>
+          <div class="stat-box">
+            <span class="number">50K+</span>
+            <span class="label">Aktív felhasználó</span>
+          </div>
+          <div class="stat-box">
+            <span class="number">100+</span>
+            <span class="label">Civil szervezet</span>
+          </div>
+          <div class="stat-box">
+            <span class="number">25M+</span>
+            <span class="label">Ft adomány</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Miért éri meg -->
+    <h2 class="section-title fade-in" id="elonyok">💡 Miért éri meg csatlakozni?</h2>
+    
+    <div class="grid fade-in">
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>Célzott, elkötelezett közönség</h3>
+        <p style="margin-top: 12px;">
+          A Sharity felhasználói <strong>tudatosan vásárolnak</strong> – a civil szervezetek aktívan ajánlják partnereinket közösségeiknek.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon teal">💝</div>
+        <h3>CSR és márkaépítés</h3>
+        <p style="margin-top: 12px;">
+          Minden vásárlásból adomány lesz. <strong>Jótékonykodj úgy, hogy a vásárlódnak sem kerül többe</strong> – pozitív márkaimage garantálva.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon purple">🔁</div>
+        <h3>Magasabb visszatérési arány</h3>
+        <p style="margin-top: 12px;">
+          A Sharity ID tulajdonosok <strong>kedvezményt kapnak nálad</strong> – ez lojális, visszatérő vásárlókat jelent.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon sun">📺</div>
+        <h3>Ingyenes reklámfelület</h3>
+        <p style="margin-top: 12px;">
+          Partnerként a bannered/videód <strong>ingyen fut az Impact Challenge-ban</strong> – eléred a legaktívabb támogatókat.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon mint">🎰</div>
+        <h3>Nyereményjátékok</h3>
+        <p style="margin-top: 12px;">
+          Vásárlóid automatikusan részt vesznek a Sharity tomboláin. <strong>Felajánlhatsz nyereményt is</strong> – a nyertes akár új törzsvendéged lehet!
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Átlátható riportok</h3>
+        <p style="margin-top: 12px;">
+          Partner dashboardon látod a <strong>tranzakciókat, KPI-kat</strong>, és az általad generált társadalmi hatást.
+        </p>
+      </div>
+    </div>
+
+    <!-- Csatlakozási módok -->
+    <h2 class="section-title fade-in" id="csatlakozas">🔌 Csatlakozási módok</h2>
+    
+    <p class="fade-in" style="font-size: 1.05rem; max-width: 700px;">
+      Válaszd ki a hozzád illő csatlakozási módot! Bármelyiket választod, a végeredmény ugyanaz: 
+      vásárlóid kedvezményt kapnak, te új ügyfeleket szerzel, és közben adomány megy jó célra.
+    </p>
+
+    <div class="grid fade-in">
+      <!-- Affiliate Partner -->
+      <div class="card teal">
+        <div class="card-icon teal">🔗</div>
+        <h3>Affiliate Partner</h3>
+        <span class="badge teal">Leggyorsabb</span>
+        <span class="badge green">0 Ft indulás</span>
+        <p style="margin-top: 16px;">
+          Ha már affiliate hálózat tagja vagy (Dognet, Tradedoubler, CJ stb.), 
+          <strong>azonnal megjelenhetsz</strong> az Impact Shopban.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>Nincs technikai integráció</li>
+          <li>Meglévő affiliate jutalékból megy</li>
+          <li>Banner és deal feltöltése</li>
+          <li>Azonnal elérhető 50K+ felhasználónak</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="mailto:office@sharity.hu?subject=Affiliate%20partner%20csatlakozás" class="cta" style="background: var(--teal); width: 100%; text-align: center; display: block;">
+            Csatlakozom affiliate-ként
+          </a>
+        </div>
+      </div>
+
+      <!-- Szponzor / Reklámozó -->
+      <div class="card purple">
+        <div class="card-icon purple">📺</div>
+        <h3>Szponzor / Reklámozó</h3>
+        <span class="badge purple">Márkaépítés</span>
+        <span class="badge sun">Impact Challenge</span>
+        <p style="margin-top: 16px;">
+          Szeretnél <strong>videót vagy bannert futtatni</strong> a Sharity platformon? 
+          Eléred a legaktívabb, társadalmilag tudatos közönséget.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>15-30 másodperces videóreklám</li>
+          <li>Banner megjelenés az Impact Shopban</li>
+          <li>Célzott elérés NGO közönség felé</li>
+          <li>Transzparens hatásriport</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="mailto:office@sharity.hu?subject=Szponzori%20/%20reklám%20megjelenés" class="cta" style="background: var(--purple); width: 100%; text-align: center; display: block;">
+            Reklámozni szeretnék
+          </a>
+        </div>
+      </div>
+
+      <!-- Direct Partner (API) -->
+      <div class="card highlight">
+        <div class="card-icon">⚡</div>
+        <h3>Direct Partner (API)</h3>
+        <span class="badge">Saját integráció</span>
+        <span class="badge green">Kedvezmények</span>
+        <p style="margin-top: 16px;">
+          Nincs affiliate hálózatod? Semmi gond! A <strong>Partner API-val közvetlen integrációt</strong> 
+          építhetsz – és még kedvezményt is adhatsz Sharity ID-val.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>Webhook alapú tranzakció-rögzítés</li>
+          <li>Kedvezmény API (Sharity szint alapján)</li>
+          <li>HMAC aláírás, biztonságos kommunikáció</li>
+          <li>Partner dashboard és riportok</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="/partner-api" class="cta" style="width: 100%; text-align: center; display: block;">
+            Partner API dokumentáció
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Összehasonlító táblázat -->
+    <h2 class="section-title fade-in">📋 Összehasonlítás</h2>
+    
+    <div class="card fade-in" style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Funkció</th>
+            <th>Affiliate Partner</th>
+            <th>Szponzor</th>
+            <th>Direct Partner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Indulási költség</td>
+            <td><span class="badge green">0 Ft</span></td>
+            <td>Egyedi árazás</td>
+            <td><span class="badge green">0 Ft</span></td>
+          </tr>
+          <tr>
+            <td>Technikai integráció</td>
+            <td>Nem kell</td>
+            <td>Banner/videó feltöltés</td>
+            <td>API integráció</td>
+          </tr>
+          <tr>
+            <td>Impact Shop megjelenés</td>
+            <td>✅ Igen</td>
+            <td>✅ Banner</td>
+            <td>✅ Igen</td>
+          </tr>
+          <tr>
+            <td>Impact Challenge reklám</td>
+            <td>✅ Ingyenes</td>
+            <td>✅ Kiemelt</td>
+            <td>✅ Ingyenes</td>
+          </tr>
+          <tr>
+            <td>Kedvezmény Sharity ID-val</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>✅ Saját beállítás</td>
+          </tr>
+          <tr>
+            <td>Partner dashboard</td>
+            <td>Affiliate hálózaté</td>
+            <td>✅ Kampány riport</td>
+            <td>✅ Teljes analytics</td>
+          </tr>
+          <tr>
+            <td>Ideális</td>
+            <td>Webshopok affiliate-tel</td>
+            <td>Márkák, nagyvállalatok</td>
+            <td>Saját rendszerrel dolgozók</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Árazás -->
+    <h2 class="section-title fade-in" id="araink">💰 Áraink</h2>
+
+    <div class="callout blue fade-in">
+      <h3>🎁 Nincs csatlakozási díj!</h3>
+      <p>
+        Az affiliate és direct partner csatlakozás <strong>ingyenes</strong>. 
+        Csak a sikeres tranzakciók után fizetsz – és azt is te határozod meg, mennyi legyen.
+      </p>
+    </div>
+    
+    <div class="grid fade-in">
+      <!-- Affiliate -->
+      <div class="card pricing-card">
+        <div class="card-icon teal" style="margin: 0 auto 16px;">🔗</div>
+        <h3>Affiliate Partner</h3>
+        <div class="price">0 Ft</div>
+        <div class="price-note">csatlakozás + működés</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>Meglévő affiliate jutalékból</li>
+          <li>Automatikus adomány</li>
+          <li>Impact Shop megjelenés</li>
+          <li>Ingyenes reklámfelület</li>
+        </ul>
+        <a href="mailto:office@sharity.hu?subject=Affiliate%20csatlakozás" class="cta" style="background: var(--teal);">
+          Jelentkezem
+        </a>
+      </div>
+
+      <!-- Direct Partner -->
+      <div class="card pricing-card recommended highlight">
+        <div class="card-icon" style="margin: 0 auto 16px;">⚡</div>
+        <h3>Direct Partner</h3>
+        <div class="price">Te döntöd el</div>
+        <div class="price-note">tranzakciónkénti %</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>Nincs fix díj</li>
+          <li>Kedvezmény rendszer</li>
+          <li>Partner API hozzáférés</li>
+          <li>Teljes dashboard</li>
+        </ul>
+        <a href="/partner-api" class="cta">
+          Dokumentáció
+        </a>
+      </div>
+
+      <!-- Szponzor -->
+      <div class="card pricing-card purple">
+        <div class="card-icon purple" style="margin: 0 auto 16px;">📺</div>
+        <h3>Szponzor</h3>
+        <div class="price">Egyedi</div>
+        <div class="price-note">kampány alapján</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>Videó vagy banner</li>
+          <li>Célzott elérés</li>
+          <li>Kampány riport</li>
+          <li>Márkaépítés</li>
+        </ul>
+        <a href="mailto:office@sharity.hu?subject=Szponzori%20ajánlatkérés" class="cta" style="background: var(--purple);">
+          Ajánlatkérés
+        </a>
+      </div>
+    </div>
+
+    <!-- Direct Partner árazás részletesen -->
+    <div class="callout fade-in" style="margin-top: 32px;">
+      <h3>📊 Hogyan működik a Direct Partner elszámolás?</h3>
+      <p style="margin-bottom: 16px;">
+        Te határozod meg, hogy a tranzakciók hány %-át ajánlod fel a Sharity együttműködésre. 
+        Ez az összeg automatikusan szétosztásra kerül:
+      </p>
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <strong>Szétosztás:</strong>
+          <ul class="list" style="margin-top: 8px;">
+            <li><strong>60%</strong> – Sharity jutalék (platform)</li>
+            <li><strong>20%</strong> – Kedvezmény a vásárlónak</li>
+            <li><strong>20%</strong> – Adomány a civil szervezetnek</li>
+          </ul>
+        </div>
+        <div>
+          <strong>Példa (2% felajánlás, 10.000 Ft vásárlás):</strong>
+          <ul class="list" style="margin-top: 8px;">
+            <li>10.000 Ft × 2% = 200 Ft kerül szétosztásra</li>
+            <li>Ebből: 120 Ft Sharity · 40 Ft kedvezmény · 40 Ft adomány</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top: 16px; font-size: 0.9rem;">
+        ⭐ <strong>A szintbónuszokat</strong> (Gold, Platinum, Legend vásárlóknak több kedvezmény) 
+        <strong>a Sharity a saját részesedése terhére biztosítja</strong> – neked nem okoz többletköltséget!
+      </p>
+    </div>
+
+    <!-- Hogyan működik -->
+    <h2 class="section-title fade-in" id="hogyan">🔄 Hogyan működik?</h2>
+
+    <div class="split fade-in">
+      <div class="card">
+        <h3>🔗 Affiliate Partner folyamat</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Jelentkezel emailben a Sharity csapatnál</li>
+          <li>Egyeztetjük az affiliate hálózatot</li>
+          <li>Feltöltjük a bannereidet, akcióidat</li>
+          <li>Megjelensz az Impact Shopban</li>
+          <li>Affiliate jutalékból automatikusan megy az adomány</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>⚡ Direct Partner folyamat</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Kérsz API kulcsot a Sharity-től</li>
+          <li>Beállítod a webhook-ot a rendszeredben</li>
+          <li>Tesztelsz sandbox környezetben</li>
+          <li>Élesítés után minden vásárlás automatikusan rögzül</li>
+          <li>Vásárlóid kedvezményt kapnak, adomány megy jó célra</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="margin-top: 24px;">
+      <h3>📺 Szponzori megjelenés folyamat</h3>
+      <ul class="list list-numbered" style="margin-top: 16px;">
+        <li>Ajánlatkérés emailben – célok, büdzsé, időtartam</li>
+        <li>Egyedi ajánlat készítése a kampányodhoz</li>
+        <li>Kreatív anyagok (videó/banner) feltöltése</li>
+        <li>Kampány indítása az Impact Challenge-ban</li>
+        <li>Heti/havi riport az elérésről és hatásról</li>
+      </ul>
+    </div>
+
+    <!-- FAQ -->
+    <h2 class="section-title fade-in" id="faq">❓ Gyakori kérdések</h2>
+    
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Melyik csatlakozási módot válasszam?</h3>
+      <p style="margin-top: 8px;">
+        Ha már affiliate hálózat tagja vagy → <strong>Affiliate Partner</strong> (leggyorsabb)<br>
+        Ha márkát építenél, kampányt futatnál → <strong>Szponzor</strong><br>
+        Ha saját rendszered van és kedvezményt is adnál → <strong>Direct Partner</strong>
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mennyibe kerül a csatlakozás?</h3>
+      <p style="margin-top: 8px;">
+        Az affiliate és direct partner csatlakozás <strong>ingyenes</strong>. 
+        Nincs fix díj, csak a tranzakciók után fizetsz (amit te határozol meg).
+        A szponzori megjelenés egyedi árazású.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mit jelent az „ingyenes reklámfelület"?</h3>
+      <p style="margin-top: 8px;">
+        Partnerként a bannered vagy videód <strong>ingyen megjelenik az Impact Challenge-ban</strong>, 
+        ahol a felhasználók videókat néznek és szavaznak. Ez extra expozíció, amit nem kell külön fizetned.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mennyi adomány keletkezik a vásárlásokból?</h3>
+      <p style="margin-top: 8px;">
+        Affiliate esetén: a jutalék egy része automatikusan adomány lesz.<br>
+        Direct partner esetén: te döntöd el a %-ot, amiből 20% megy adományra.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Hogyan látom az eredményeket?</h3>
+      <p style="margin-top: 8px;">
+        <strong>Partner dashboardon</strong> követheted a tranzakciókat, konverziókat és a társadalmi hatást. 
+        Direct partnereknél teljes analytics, affiliate-eknél a hálózat saját dashboardja + Sharity riport.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Milyen webshopok csatlakozhatnak?</h3>
+      <p style="margin-top: 8px;">
+        Bármilyen magyar webshop, szolgáltató vagy márka – <strong>legyen szó ruházatról, elektronikáról, 
+        szépségápolásról, utazásról vagy bármi másról</strong>. Az egyetlen kritérium: legális, etikus működés.
+      </p>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="hero fade-in" style="margin-top: 48px; text-align: center;">
+      <div style="grid-column: 1 / -1;">
+        <h2>🚀 Készen állsz a csatlakozásra?</h2>
+        <p style="font-size: 1.1rem; max-width: 600px; margin: 16px auto;">
+          Írj nekünk, és 24 órán belül visszajelzünk! Segítünk kiválasztani a hozzád illő csatlakozási módot.
+        </p>
+        <div style="margin-top: 24px;">
+          <a href="mailto:office@sharity.hu?subject=Sharity%20partneri%20csatlakozás" class="cta">
+            ✉️ Jelentkezem partnernek
+          </a>
+          <a href="/partner-api" class="cta-secondary">
+            📄 Partner API dokumentáció
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kapcsolat -->
+    <h2 class="section-title fade-in">📞 Kapcsolat</h2>
+    
+    <div class="card fade-in">
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <h3>Partneri kapcsolattartó:</h3>
+          <p style="margin-top: 12px;">
+            <strong>Email:</strong> <a href="mailto:office@sharity.hu">office@sharity.hu</a><br>
+            <strong>Válaszidő:</strong> 24 órán belül<br>
+            <strong>Technikai konzultáció:</strong> Igény esetén videóhívás
+          </p>
+        </div>
+        <div>
+          <h3>Hasznos linkek:</h3>
+          <ul class="list" style="margin-top: 12px;">
+            <li><a href="/partner-api">Partner API dokumentáció</a></li>
+            <li><a href="/impactshop">Impact Shop</a></li>
+            <li><a href="/ngo-guides/impact-challenge">Impact Challenge</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer fade-in">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity – Partneri Csatlakozás</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          Útmutató cégeknek és márkáknak<br>
+          Verzió: 1.0 | Utolsó frissítés: 2026. február
+        </p>
+        <div style="margin-top: 16px;">
+          <a href="/partner-api" style="margin-right: 16px;">Partner API →</a>
+          <a href="/impactshop">Impact Shop →</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
