@@ -6,12 +6,17 @@
     const greetingEl = root.querySelector("[data-role=greeting]");
     const totalEl = root.querySelector("[data-role=total-display]");
     const messageEl = root.querySelector("[data-role=account-message]");
+    const broadcastBlock = root.querySelector("[data-role=broadcast-message]");
+    const pushSection = root.querySelector("[data-role=push-section]");
+    const pushToggle = root.querySelector("[data-role=push-toggle]");
+    const pushStatus = root.querySelector("[data-role=push-status]");
     const pseudoDisplay = root.querySelector("[data-role=pseudo-display]");
     const recoveryDisplay = root.querySelector("[data-role=recovery-display]");
     const nicknameInput = root.querySelector("[data-role=nickname-input]");
     const nicknameStatus = root.querySelector("[data-role=nickname-status]");
     const saveUsername = root.querySelector("[data-role=save-username]");
     const savePassword = root.querySelector("[data-role=save-password]");
+    const saveReturn = root.querySelector("[data-role=save-return]");
     const pointsSection = root.querySelector("[data-role=points-section]");
     const pointsBadge = root.querySelector("[data-role=points-badge]");
     const pointsLevel = root.querySelector("[data-role=points-level]");
@@ -52,13 +57,15 @@
       : "/wp-json/sharity/v1";
     const badgesBase = restBase || "/wp-json/impact/v1";
     const levelMap = [
-      { key: "basic", label: "Basic", badge: "🌱", min: 0, max: 500 },
-      { key: "bronze", label: "Bronze", badge: "🥉", min: 500, max: 1500 },
-      { key: "silver", label: "Silver", badge: "🥈", min: 1500, max: 4000 },
-      { key: "gold", label: "Gold", badge: "🥇", min: 4000, max: 8000 },
-      { key: "platinum", label: "Platinum", badge: "💎", min: 8000, max: 15000 },
-      { key: "legend", label: "Legend", badge: "👑", min: 15000, max: null }
+      { key: "basic", label: "Basic", badge: "🌱", min: 0, max: 2000 },
+      { key: "bronze", label: "Bronze", badge: "🥉", min: 2000, max: 15000 },
+      { key: "silver", label: "Silver", badge: "🥈", min: 15000, max: 50000 },
+      { key: "gold", label: "Gold", badge: "🥇", min: 50000, max: 120000 },
+      { key: "platinum", label: "Platinum", badge: "💎", min: 120000, max: 250000 },
+      { key: "legend", label: "Legend", badge: "👑", min: 250000, max: null }
     ];
+
+    attachReturnParamToRestoreLinks();
 
     function setStatus(msg, isError) {
       if (!statusEl) return;
@@ -75,6 +82,49 @@
     function getCookie(name) {
       const match = document.cookie.match(new RegExp("(^|; )" + name + "=([^;]*)"));
       return match ? decodeURIComponent(match[2]) : "";
+    }
+
+    function isAllowedReturnHost(hostname) {
+      const host = String(hostname || "").toLowerCase();
+      return host === "sharity.hu" || host.endsWith(".sharity.hu");
+    }
+
+    function getSafeReturnUrl() {
+      try {
+        const current = new URL(window.location.href);
+        const raw = current.searchParams.get("return");
+        if (!raw) return "";
+        const target = new URL(raw, window.location.origin);
+        if (!isAllowedReturnHost(target.hostname)) return "";
+        return target.toString();
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function attachReturnParamToRestoreLinks() {
+      const links = root.querySelectorAll("[data-role=identity-restore-link]");
+      if (!links.length) return;
+      let returnUrl = "";
+      try {
+        const current = new URL(window.location.href);
+        if (isAllowedReturnHost(current.hostname)) {
+          returnUrl = current.toString();
+        }
+      } catch (e) {
+        returnUrl = "";
+      }
+      if (!returnUrl) return;
+      links.forEach(function(link){
+        const href = link.getAttribute("href") || "";
+        try {
+          const url = new URL(href, window.location.origin);
+          url.searchParams.set("return", returnUrl);
+          link.setAttribute("href", url.toString());
+        } catch (e) {
+          // ignore
+        }
+      });
     }
 
     function refreshPseudo() {
@@ -202,14 +252,14 @@
 
       if (pointsBenefits) {
         const benefits = data && data.benefits ? data.benefits : {};
-        const multiplier = benefits.donation_multiplier ? benefits.donation_multiplier.toFixed(2) : "1.00";
+        const multiplier = Number(benefits.donation_multiplier || 1);
+        const bonusPct = Math.max(0, Math.round((multiplier - 1) * 100));
         const discount = benefits.discount_percent || 0;
         const voteAd = benefits.vote_weight_ad || 0;
-        const voteSponsor = benefits.vote_weight_sponsor || 0;
         pointsBenefits.innerHTML = [
-          "<span>🎯 Adomány szorzó: <strong>" + multiplier + "×</strong></span>",
-          "<span>🗳️ Szavazati súly: <strong>" + voteAd + " / " + voteSponsor + "</strong></span>",
-          "<span>🏷️ Kedvezmény: <strong>" + discount + "%</strong></span>"
+          "<span>🎯 Adomány bónusz: <strong>+" + bonusPct + "%</strong></span>",
+          "<span>🗳️ Szavazati súly: <strong>×" + voteAd + "</strong></span>",
+          "<span>🏷️ Max kedvezményből: <strong>" + discount + "%</strong></span>"
         ].join("");
       }
     }
@@ -665,6 +715,15 @@
       return sharedState.profileCache;
     }
 
+    function renderGreeting(nickname) {
+      if (!greetingEl) return;
+      if (nickname) {
+        greetingEl.textContent = "Szia " + nickname + "! Üdvözöllek a Sharity oldalán.";
+      } else {
+        greetingEl.textContent = "Szia, üdvözöllek a Sharity oldalán.";
+      }
+    }
+
     function applyProfileData(data) {
       if (!data || !data.pseudo_id || !data.recovery_code) {
         setStatus("Nem sikerült azonosítót kérni. Próbáld újra.", true);
@@ -682,13 +741,7 @@
       if (pseudo) {
         sharedState.lastPseudo = pseudo;
       }
-      if (greetingEl) {
-        if (data.nickname) {
-          greetingEl.textContent = "Szia " + data.nickname + "! Üdvözöllek a Sharity oldalán.";
-        } else {
-          greetingEl.textContent = "Szia, üdvözöllek a Sharity oldalán.";
-        }
-      }
+      renderGreeting(data.nickname || "");
       if (recoveryDisplay) {
         recoveryDisplay.textContent = data.recovery_code ? data.recovery_code : "—";
       }
@@ -765,7 +818,7 @@
     }
 
     async function fetchMessages() {
-      if (!messageEl) return;
+      if (!messageEl && !broadcastBlock) return;
       try {
         const res = await fetch(restBase + "/identity/messages?ts=" + Date.now(), {
           credentials: "include",
@@ -776,40 +829,186 @@
         const data = await res.json();
         const messages = data && Array.isArray(data.messages) ? data.messages : [];
         if (!messages.length) {
-          messageEl.hidden = true;
+          if (messageEl) {
+            messageEl.hidden = true;
+          }
+          if (broadcastBlock) {
+            const body = broadcastBlock.querySelector(".impactshop-identity-message-body");
+            const fallback = body ? (body.textContent || "").trim() : "";
+            if (fallback) {
+              broadcastBlock.hidden = false;
+            }
+          }
           return;
         }
         const msg = messages[0];
-        messageEl.hidden = false;
-        messageEl.innerHTML = "";
-        const text = document.createElement("span");
-        text.textContent = msg.content || "";
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = "Rendben";
-        btn.addEventListener("click", async function(){
-          messageEl.hidden = true;
-          if (msg.type === "targeted" && msg.id) {
-            try {
-              await fetch(restBase + "/identity/message-read", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-WP-Nonce": restNonce
-                },
-                credentials: "include",
-                body: JSON.stringify({ message_id: msg.id })
-              });
-            } catch (e) {
-              // ignore
+        if (messageEl) {
+          messageEl.hidden = false;
+          messageEl.innerHTML = "";
+          const text = document.createElement("span");
+          text.textContent = msg.content || "";
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = "Rendben";
+          btn.addEventListener("click", async function(){
+            messageEl.hidden = true;
+            if (msg.type === "targeted" && msg.id) {
+              try {
+                await fetch(restBase + "/identity/message-read", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "X-WP-Nonce": restNonce
+                  },
+                  credentials: "include",
+                  body: JSON.stringify({ message_id: msg.id })
+                });
+              } catch (e) {
+                // ignore
+              }
             }
+          });
+          messageEl.appendChild(text);
+          messageEl.appendChild(btn);
+        }
+        if (broadcastBlock) {
+          const body = broadcastBlock.querySelector(".impactshop-identity-message-body");
+          if (body) {
+            body.textContent = msg.content || "";
           }
-        });
-        messageEl.appendChild(text);
-        messageEl.appendChild(btn);
+          broadcastBlock.hidden = !!messageEl;
+        }
       } catch (e) {
         // ignore
       }
+    }
+
+    function setPushStatus(message, isError) {
+      if (!pushStatus) return;
+      pushStatus.textContent = message || "";
+      pushStatus.style.color = isError ? "#b91c1c" : "#0f766e";
+    }
+
+    function isIOS() {
+      return /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+    }
+
+    function isSafari() {
+      const ua = navigator.userAgent || "";
+      const isSafari = /safari/i.test(ua);
+      const isChrome = /crios|chrome|edg/i.test(ua);
+      return isSafari && !isChrome;
+    }
+
+    function isStandalone() {
+      return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+        window.navigator.standalone === true;
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; i++) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
+
+    async function initPush() {
+      if (!pushSection || !pushToggle) return;
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        pushSection.hidden = true;
+        return;
+      }
+
+      let config = null;
+      try {
+        const res = await fetch(restBase + "/push/public-key?ts=" + Date.now(), { cache: "no-store" });
+        if (res.ok) {
+          config = await res.json();
+        }
+      } catch (e) {
+        config = null;
+      }
+
+      if (!config || !config.enabled || !config.publicKey) {
+        pushSection.hidden = true;
+        return;
+      }
+
+      pushSection.hidden = false;
+      const publicKey = String(config.publicKey || "");
+      const registration = await navigator.serviceWorker.ready.catch(function(){ return null; });
+      if (!registration) {
+        setPushStatus("A push nem elérhető (SW).", true);
+        return;
+      }
+
+      let subscription = await registration.pushManager.getSubscription().catch(function(){ return null; });
+      function refreshButton() {
+        if (Notification.permission === "denied") {
+          pushToggle.textContent = "Értesítések tiltva";
+          pushToggle.disabled = true;
+          setPushStatus("A böngészőben le vannak tiltva az értesítések.", true);
+          return;
+        }
+        pushToggle.disabled = false;
+        pushToggle.textContent = subscription ? "Értesítések kikapcsolása" : "Értesítések bekapcsolása";
+        if (subscription) {
+          setPushStatus("Push értesítések aktívak.");
+        } else {
+          setPushStatus("");
+        }
+      }
+
+      refreshButton();
+      if (pushToggle.dataset.bound === "1") {
+        return;
+      }
+      pushToggle.dataset.bound = "1";
+
+      pushToggle.addEventListener("click", async function(){
+        pushToggle.disabled = true;
+        try {
+          if (subscription) {
+            await subscription.unsubscribe();
+            await postWithNonce(restBase + "/push/unsubscribe", { subscription: subscription.toJSON() }, "include");
+            subscription = null;
+            setPushStatus("Értesítések kikapcsolva.");
+            refreshButton();
+            return;
+          }
+
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            setPushStatus("Az értesítések engedélyezése szükséges.", true);
+            refreshButton();
+            return;
+          }
+
+          const appKey = urlBase64ToUint8Array(publicKey);
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: appKey
+          });
+          await postWithNonce(restBase + "/push/subscribe", {
+            subscription: subscription.toJSON(),
+            platform: navigator.platform || ""
+          }, "include");
+          if ((isIOS() || isSafari()) && !isStandalone()) {
+            setPushStatus("Értesítések bekapcsolva. Safari/iOS esetén a telepített Sharity appban jelennek meg.");
+          } else {
+            setPushStatus("Értesítések bekapcsolva.");
+          }
+          refreshButton();
+        } catch (e) {
+          subscription = await registration.pushManager.getSubscription().catch(function(){ return null; });
+          setPushStatus("Nem sikerült bekapcsolni.", true);
+          refreshButton();
+        }
+      });
     }
 
     function isPseudoValid(value) {
@@ -920,45 +1119,122 @@
     }
 
     const saveForm = root.querySelector("[data-role=save-form]");
-    const savePasswordBtn = root.querySelector("[data-role=save-password-manager]");
-    async function handleSavePassword(e) {
-      const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim() : "";
-      const recovery = recoveryDisplay ? recoveryDisplay.textContent.trim() : "";
-      if (!pseudo || pseudo === "—" || !recovery || recovery === "—") {
-        if (e) e.preventDefault();
-        setStatus("Nincs aktív azonosító vagy kód.", true);
-        return;
-      }
+
+    function syncSaveFields(pseudo, recovery) {
       if (saveUsername) {
         saveUsername.value = pseudo;
+        saveUsername.setAttribute("name", "username");
+        saveUsername.setAttribute("autocomplete", "username");
       }
       if (savePassword) {
         savePassword.value = recovery;
+        savePassword.setAttribute("name", "password");
+        savePassword.setAttribute("autocomplete", "current-password");
       }
+    }
 
-      if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
-        if (e) e.preventDefault();
-        try {
-          const cred = new PasswordCredential({ id: pseudo, password: recovery, name: "Impact Shop ID" });
-          await navigator.credentials.store(cred);
-          setStatus("Mentve a jelszókezelőbe.");
-          awardCredentialsSave(pseudo);
-          return;
-        } catch (err) {
-          setStatus("A jelszómentés nem sikerült, próbáld újra.", true);
-          return;
+    function tryCredentialStore(pseudo, recovery) {
+      if (!(window.PasswordCredential && navigator.credentials && navigator.credentials.store)) {
+        return;
+      }
+      try {
+        const cred = new PasswordCredential({ id: pseudo, password: recovery, name: "Impact Shop ID" });
+        const storePromise = navigator.credentials.store(cred);
+        if (storePromise && typeof storePromise.then === "function") {
+          storePromise.then(function(){
+            setStatus("Mentve a jelszókezelőbe.");
+          }).catch(function(){});
         }
+      } catch (err) {
+        // ignore; native form submit can still trigger save manager.
       }
+    }
 
-      if (e) e.preventDefault();
-      setStatus("A böngésző felajánlhatja a mentést. Ha nem kérdez rá, valószínűleg már mentve van.");
+    function triggerPasswordManagerSave(pseudo, recovery) {
+      const iframe = document.createElement("iframe");
+      iframe.name = "impactshop-save-target-" + Math.random().toString(36).slice(2);
+      iframe.className = "impactshop-identity-hidden";
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.tabIndex = -1;
+      document.body.appendChild(iframe);
+
+      const form = document.createElement("form");
+      form.method = "post";
+      form.action = window.location.href.split("#")[0];
+      form.target = iframe.name;
+      form.autocomplete = "on";
+      form.style.position = "fixed";
+      form.style.left = "-9999px";
+      form.style.top = "-9999px";
+      form.style.width = "1px";
+      form.style.height = "1px";
+      form.style.opacity = "0";
+
+      const user = document.createElement("input");
+      user.type = "text";
+      user.name = "impactshop_identity_username";
+      user.autocomplete = "username";
+      user.value = pseudo;
+      form.appendChild(user);
+
+      const pass = document.createElement("input");
+      pass.type = "password";
+      pass.name = "impactshop_identity_password";
+      pass.autocomplete = "new-password";
+      pass.value = recovery;
+      form.appendChild(pass);
+
+      const submit = document.createElement("button");
+      submit.type = "submit";
+      submit.textContent = "save";
+      form.appendChild(submit);
+
+      document.body.appendChild(form);
+      try {
+        if (typeof form.requestSubmit === "function") {
+          form.requestSubmit(submit);
+        } else {
+          submit.click();
+        }
+      } catch (err) {
+        try {
+          form.submit();
+        } catch (err2) {}
+      }
+      setTimeout(function() {
+        form.remove();
+        iframe.remove();
+      }, 1800);
+    }
+
+    function handleSavePassword(e) {
+      if (e && typeof e.preventDefault === "function") {
+        e.preventDefault();
+      }
+      const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim() : "";
+      const recovery = recoveryDisplay ? recoveryDisplay.textContent.trim() : "";
+      if (!pseudo || pseudo === "—" || !recovery || recovery === "—") {
+        if (e && typeof e.preventDefault === "function") {
+          e.preventDefault();
+        }
+        setStatus("Nincs aktív azonosító vagy kód.", true);
+        return;
+      }
+      syncSaveFields(pseudo, recovery);
+      if (saveReturn) {
+        saveReturn.value = window.location.href;
+      }
+      if (!saveForm) {
+        setStatus("A mentés ezen a nézeten nem érhető el.", true);
+        return;
+      }
+      tryCredentialStore(pseudo, recovery);
+      triggerPasswordManagerSave(pseudo, recovery);
+      setStatus("Jelszókezelő mentés indítva.");
       awardCredentialsSave(pseudo);
     }
     if (saveForm) {
       saveForm.addEventListener("submit", handleSavePassword);
-    }
-    if (savePasswordBtn) {
-      savePasswordBtn.addEventListener("click", handleSavePassword);
     }
 
     const restorePseudo = root.querySelector("[data-role=restore-pseudo]");
@@ -1010,9 +1286,18 @@
           if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva.";
           emitIdentityReady(pseudo);
           fetchProfile().then(refreshPointsSection);
-          setTimeout(function(){
-            window.location.reload();
-          }, 800);
+          const returnUrl = getSafeReturnUrl();
+          if (returnUrl) {
+            setStatus("Azonosító helyreállítva. Visszaléptetünk…");
+            if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva. Visszaléptetünk…";
+            setTimeout(function(){
+              window.location.href = returnUrl;
+            }, 900);
+          } else {
+            setTimeout(function(){
+              window.location.reload();
+            }, 800);
+          }
         } catch (e) {
           setStatus("Helyreállítás hiba.", true);
           if (restoreStatus) restoreStatus.textContent = "Helyreállítás hiba.";
@@ -1042,7 +1327,7 @@
           const res = await postWithNonce(
             restBase + "/identity/profile",
             { pseudo_id: pseudo, nickname: nickname },
-            "same-origin"
+            "include"
           );
           const data = (res._data !== undefined) ? res._data : await res.json();
           if (!res.ok) {
@@ -1051,6 +1336,22 @@
             if (nicknameStatus) nicknameStatus.textContent = "Sikertelen mentés.";
             return;
           }
+          const savedNickname = (data && typeof data.nickname === "string") ? data.nickname : nickname;
+          if (nicknameInput) {
+            nicknameInput.value = savedNickname;
+          }
+          renderGreeting(savedNickname);
+          const currentRecovery = recoveryDisplay ? (recoveryDisplay.textContent || "").trim() : "";
+          sharedState.profileCache = {
+            pseudo_id: pseudo,
+            nickname: savedNickname,
+            recovery_code: currentRecovery
+          };
+          sharedState.profileAt = Date.now();
+          await refreshPointsSection();
+          window.dispatchEvent(new CustomEvent("impactshop:identity-nickname-updated", {
+            detail: { pseudo_id: pseudo, nickname: savedNickname }
+          }));
           setStatus("Becenév mentve.");
           if (nicknameStatus) nicknameStatus.textContent = "Becenév mentve.";
           saveNicknameBtn.textContent = "Mentve";
@@ -1146,6 +1447,7 @@
     });
 
     refreshPseudo();
+    initPush();
     fetchProfile()
       .then(function(){
         return Promise.all([fetchTotal(), fetchMessages(), refreshPointsSection()]);

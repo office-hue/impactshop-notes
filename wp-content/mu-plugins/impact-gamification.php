@@ -678,6 +678,12 @@ function impactshop_herowall_api(WP_REST_Request $request): WP_REST_Response
     );
     $defs = impactshop_badge_definitions_map();
     foreach ($rows as &$row) {
+        if ((string) ($row['nickname'] ?? '') === '' && function_exists('impactshop_identity_profile_load')) {
+            $resolved_nickname = (string) impactshop_identity_profile_load((string) ($row['pseudo_id'] ?? ''));
+            if ($resolved_nickname !== '') {
+                $row['nickname'] = $resolved_nickname;
+            }
+        }
         $badges = impact_get_user_badges((string) ($row['pseudo_id'] ?? ''));
         $row['badges'] = impactshop_badge_compact_list($badges, $defs);
     }
