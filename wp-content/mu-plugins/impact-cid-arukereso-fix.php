@@ -41,7 +41,7 @@ if (!function_exists('icaf_clean_deeplink')) {
 
 /**
  * init – nagyon korán: a bejövő GET['u'] megtisztítása.
- * Ha Árukereső hostot találunk, a 'u'-t kiürítjük → a nagy snippet BASE linket használ.
+ * Árukereső deeplink engedélyezve, csak tisztítjuk az URL-t.
  */
 add_action('init', function(){
   if (is_admin()) return;
@@ -55,11 +55,7 @@ add_action('init', function(){
   $host  = parse_url($clean, PHP_URL_HOST);
   $is_arukereso = $host ? (bool)preg_match('~(^|\.)arukereso\.[a-z.]+$~i', $host) : false;
 
-  if ($is_deal && $is_arukereso) {
-    $_GET['u'] = '';        // teljes tiltás deeplinkre → nincs “Custom URL host” hiba
-  } else {
-    $_GET['u'] = $clean;    // egyébként csak tisztítunk
-  }
+  $_GET['u'] = $clean;
 }, 1);
 
 /* ======================= CID → SHOP NÉV: külön rövidkód ======================= */

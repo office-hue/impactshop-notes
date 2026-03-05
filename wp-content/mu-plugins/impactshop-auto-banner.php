@@ -154,6 +154,40 @@ function impactshop_is_whitelisted_partner(string $shop_slug): bool
     return $normalized !== '' && isset($whitelist[$normalized]);
 }
 
+function impactshop_auto_banner_registry_domains(): array
+{
+    static $map = null;
+    if ($map !== null) {
+        return $map;
+    }
+
+    $map = [];
+    $registry_path = dirname(WP_CONTENT_DIR) . '/tools/shops_registry.json';
+    if (!file_exists($registry_path)) {
+        return $map;
+    }
+    $raw = file_get_contents($registry_path);
+    if ($raw === false) {
+        return $map;
+    }
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        return $map;
+    }
+    foreach ($data as $shop) {
+        if (!is_array($shop)) {
+            continue;
+        }
+        $slug = strtolower(trim((string) ($shop['slug'] ?? '')));
+        $domain = strtolower(trim((string) ($shop['domain'] ?? '')));
+        if ($slug === '' || $domain === '') {
+            continue;
+        }
+        $map[$slug] = $domain;
+    }
+    return $map;
+}
+
 /**
  * Validate that URL is a plausible product URL, not a DTD/asset/system URL.
  * Blocks W3C DTDs, XML schemas, and other non-product links.
@@ -201,6 +235,9 @@ function impactshop_auto_banner_host_matches(string $host, string $allowed): boo
 function impactshop_auto_banner_get_allowed_hosts(string $shop_slug): array
 {
     $hosts = [];
+    if (strpos($shop_slug, 'sync:') === 0) {
+        $shop_slug = substr($shop_slug, 5);
+    }
     if (function_exists('impactshop_find_shop')) {
         $row = impactshop_find_shop($shop_slug);
         $product_url = $row['product_url'] ?? ($row['homepage'] ?? '');
@@ -208,6 +245,13 @@ function impactshop_auto_banner_get_allowed_hosts(string $shop_slug): array
         if ($product_host) {
             $hosts[] = $product_host;
         }
+    }
+
+    $registry = impactshop_auto_banner_registry_domains();
+    $registry_domain = $registry[strtolower(trim($shop_slug))] ?? '';
+    if ($registry_domain !== '') {
+        $hosts[] = $registry_domain;
+        $hosts[] = 'www.' . $registry_domain;
     }
 
     $filtered = (array) apply_filters('impactshop_auto_banner_allowed_hosts', [], $shop_slug);
@@ -269,6 +313,11 @@ function impactshop_auto_banner_get_active(): array
     $now = current_time('mysql');
 
     // Get all active banners
+    $pool_limit = (int) apply_filters('impactshop_auto_banner_pool_limit', 300);
+    if ($pool_limit <= 0) {
+        $pool_limit = 300;
+    }
+
     $rows = $wpdb->get_results(
         $wpdb->prepare(
             "SELECT * FROM {$table}
@@ -276,9 +325,10 @@ function impactshop_auto_banner_get_active(): array
                AND (starts_at IS NULL OR starts_at <= %s)
                AND (ends_at IS NULL OR ends_at >= %s)
              ORDER BY priority DESC, created_at DESC
-             LIMIT 50",
+             LIMIT %d",
             $now,
-            $now
+            $now,
+            $pool_limit
         ),
         ARRAY_A
     );
@@ -315,8 +365,13 @@ function impactshop_auto_banner_get_active(): array
     // Update seen cookie
     $seen_ids[] = (int) $chosen['id'];
     $seen_ids = array_unique($seen_ids);
-    // Keep only last 20 to prevent cookie bloat
-    $seen_ids = array_slice($seen_ids, -20);
+    // Keep a larger window so we don't repeat until most items are shown.
+    $seen_cap = (int) apply_filters('impactshop_auto_banner_seen_cap', max(100, count($rows)));
+    if ($seen_cap <= 0) {
+        $seen_cap = max(100, count($rows));
+    }
+    $seen_cap = min($seen_cap, 500);
+    $seen_ids = array_slice($seen_ids, -$seen_cap);
     $cookie_value = implode(',', $seen_ids);
     setcookie('impactshop_seen_banners', $cookie_value, time() + (4 * HOUR_IN_SECONDS), '/', '', true, false);
 
