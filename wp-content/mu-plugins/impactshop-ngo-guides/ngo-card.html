@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NGO Card Widget Beágyazás | Sharity</title>
+  <meta name="description" content="Beágyazható adomány-számláló kártya a weboldaladra. Mutasd meg látogatóidnak valós időben, mennyi támogatás gyűlt össze!">
+  <meta property="og:title" content="NGO Card Beágyazás – Sharity">
+  <meta property="og:description" content="Civil szervezeteknek: élő adomány-kijelző widget a saját weboldaladra.">
+  <meta property="og:url" content="https://app.sharity.hu/ngo-guides/ngo-card">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --coral: #ff6b6b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(255, 107, 107, 0.2), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(111, 227, 193, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(15, 138, 157, 0.1);
+      text-decoration: none;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 107, 107, 0.15);
+      color: #c53030;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--coral);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(255, 107, 107, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(255, 107, 107, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--coral);
+      font-weight: 600;
+      border: 2px solid var(--coral);
+      transition: background 0.2s;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(255, 107, 107, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--coral);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 107, 107, 0.12);
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .list-numbered {
+      counter-reset: step;
+    }
+    .list-numbered li {
+      counter-increment: step;
+    }
+    .list-numbered li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--coral);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .split {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      align-items: start;
+      margin-top: 40px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(245, 182, 66, 0.2);
+      color: #7a4b00;
+      font-weight: 600;
+      margin: 4px 4px 0 0;
+    }
+    .badge.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+    .badge.coral {
+      background: rgba(255, 107, 107, 0.15);
+      color: #c53030;
+    }
+
+    .callout {
+      padding: 20px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(111, 227, 193, 0.2) 0%, rgba(111, 227, 193, 0.05) 100%);
+      border-left: 4px solid var(--mint);
+      margin: 24px 0;
+    }
+    .callout.warning {
+      background: linear-gradient(135deg, rgba(245, 182, 66, 0.15) 0%, rgba(245, 182, 66, 0.05) 100%);
+      border-left-color: var(--warning);
+    }
+    .callout h3 {
+      margin-bottom: 8px;
+      color: #166534;
+    }
+    .callout.warning h3 {
+      color: #7a4b00;
+    }
+    .callout p {
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(11, 31, 42, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    th {
+      background: rgba(255, 107, 107, 0.08);
+      font-weight: 600;
+      color: var(--ink);
+    }
+    tr:hover {
+      background: rgba(255, 107, 107, 0.04);
+    }
+
+    .code {
+      font-family: "IBM Plex Mono", "Courier New", monospace;
+      font-size: 0.8rem;
+      background: rgba(11, 31, 42, 0.08);
+      padding: 16px;
+      border-radius: 12px;
+      overflow-x: auto;
+      margin: 12px 0;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .demo-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      padding: 24px;
+      color: #fff;
+      text-align: center;
+      max-width: 320px;
+      margin: 20px auto;
+    }
+    .demo-card img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    .demo-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 1.2rem;
+    }
+    .demo-card .amount {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin: 12px 0;
+    }
+    .demo-card .btn {
+      display: inline-block;
+      background: #fff;
+      color: #764ba2;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .footer {
+      margin-top: 64px;
+      padding: 32px 24px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.08) 0%, rgba(111, 227, 193, 0.08) 100%);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 107, 107, 0.12);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+    .fade-in.delay-1 { animation-delay: 0.1s; }
+    .fade-in.delay-2 { animation-delay: 0.2s; }
+    .fade-in.delay-3 { animation-delay: 0.3s; }
+    .fade-in.delay-4 { animation-delay: 0.4s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#mi-ez">Mi ez?</a>
+      <a href="#beagyazas">Beágyazás</a>
+      <a href="#parameterek">Paraméterek</a>
+      <a href="#faq">GYÁK</a>
+      <a href="/ngo-guides/impact-shop">Impact Shop →</a>
+      <a href="/ngo-guides/impact-challenge">Impact Challenge →</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">🎴 Beágyazható Widget</span>
+        <h1>NGO Card – Útmutató</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          <strong>Élő adomány kijelzés:</strong> Beágyazható kártya a saját weboldaladra, 
+          ami automatikusan mutatja az eddig gyűjtött támogatást.
+        </p>
+        <p>
+          Egyetlen kódrészlet – és máris látják a látogatóid, mennyi adományt gyűjtöttetek!
+        </p>
+        <div style="margin-top: 20px;">
+          <a href="#beagyazas" class="cta">📋 Kód másolása</a>
+          <a href="#demo" class="cta-secondary">Előnézet</a>
+        </div>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h3>🎯 Mit mutat a kártya?</h3>
+          <ul class="list" style="margin-top: 16px;">
+            <li>Szervezeted neve és logója</li>
+            <li>Impact Shop + Impact Challenge adomány, összesítve</li>
+            <li>Rangsor és szint jelzés</li>
+            <li>Gyorsgombok: videó, feladatok, shop, adományozás</li>
+            <li>CTA gomb az Impact Shop-ba + megosztási oldal</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Miért jó -->
+    <h2 class="section-title fade-in delay-1">✅ Miért jó ez neked?</h2>
+    
+    <div class="grid fade-in delay-2">
+      <div class="card">
+        <div class="card-icon">👀</div>
+        <h3>Láthatóság</h3>
+        <p style="margin-top: 12px;">
+          A látogatóid rögtön látják, hogy a Sharity-n keresztül támogathatnak.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Transzparencia</h3>
+        <p style="margin-top: 12px;">
+          Élő adat – a támogatóid látják, mennyi gyűlt össze eddig.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>Motiváció</h3>
+        <p style="margin-top: 12px;">
+          A növekvő szám további adományozásra ösztönöz.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Egyszerűség</h3>
+        <p style="margin-top: 12px;">
+          Egyetlen kódrészlet beillesztése – semmi több!
+        </p>
+      </div>
+    </div>
+
+    <!-- Demo -->
+    <h2 class="section-title fade-in" id="demo">👁️ Előnézet</h2>
+    
+    <div class="card fade-in" style="text-align: center;">
+      <p>Így fog kinézni a kártya a weboldaladon:</p>
+      <div class="demo-card">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: #fff; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+          🏢
+        </div>
+        <h4>Szervezeted Neve</h4>
+        <p style="margin: 0; opacity: 0.9; font-size: 0.9rem;">
+          Támogass vásárlással – neked nem kerül többe!
+        </p>
+        <div class="amount">💰 127.450 Ft</div>
+        <div class="btn">Vásárolok és támogatok</div>
+      </div>
+      <p style="font-style: italic; font-size: 0.9rem; margin-top: 20px;">
+        Az összeg rövid cache-sel frissül (kb. 5-15 perc).
+      </p>
+    </div>
+
+    <!-- Beágyazás -->
+    <h2 class="section-title fade-in" id="beagyazas">📋 Beágyazás – 3 lépésben</h2>
+    
+    <div class="card fade-in">
+      <h3>1. Kód másolása</h3>
+      <p style="margin-top: 12px;">Másold be ezt a kódot a weboldaladra:</p>
+      <div class="code">&lt;div class="sharity-ngo-card-embed"
+     data-ngo="YOURSLUG"
+     data-label="Szervezeted Neve"
+     data-img="https://yoursite.hu/logo.png"
+     data-text="Támogass vásárlással – neked nem kerül többe!"
+     data-href="https://app.sharity.hu/impactshop"
+     data-accent="#7c3aed"
+     data-currency="HUF"
+     data-rate-huf="392.5"
+     data-from="2025-01-01"
+     data-to=""
+     data-status="all"
+     data-cta="Vásárolok és támogatok"
+&gt;&lt;/div&gt;
+&lt;script src="https://app.sharity.hu/embed/ngo-card.js"&gt;&lt;/script&gt;</div>
+    </div>
+
+    <div class="card fade-in" style="margin-top: 20px;">
+      <h3>2. Paraméterek testreszabása</h3>
+      <p style="margin-top: 12px;">Cseréld ki a következő értékeket a sajátjaidra:</p>
+      <ul class="list" style="margin-top: 12px;">
+        <li><code>data-ngo</code> → A te egyedi slug-od (pl. „bator-tabor")</li>
+        <li><code>data-label</code> → A megjelenített név</li>
+        <li><code>data-img</code> → A logód URL-je</li>
+        <li><code>data-accent</code> → Színkód (pl. „#7c3aed")</li>
+      </ul>
+    </div>
+
+    <div class="card fade-in" style="margin-top: 20px;">
+      <h3>3. Beillesztés a weboldalba</h3>
+      <p style="margin-top: 12px;">A kódot a HTML-be kell beillesztened:</p>
+      <ul class="list" style="margin-top: 12px;">
+        <li><strong>WordPress:</strong> HTML blokk vagy Custom HTML widget</li>
+        <li><strong>Wix/Squarespace:</strong> Egyedi HTML elem</li>
+        <li><strong>Bármilyen oldal:</strong> &lt;body&gt; tag-en belül</li>
+      </ul>
+    </div>
+
+    <!-- Paraméterek -->
+    <h2 class="section-title fade-in" id="parameterek">⚙️ Paraméterek részletesen</h2>
+    
+    <div class="card fade-in">
+      <table>
+        <thead>
+          <tr>
+            <th>Paraméter</th>
+            <th>Leírás</th>
+            <th>Példa</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>data-ngo</code></td>
+            <td>Egyedi slug (kötelező)</td>
+            <td>bator-tabor</td>
+          </tr>
+          <tr>
+            <td><code>data-label</code></td>
+            <td>Megjelenített név</td>
+            <td>Bátor Tábor Alapítvány</td>
+          </tr>
+          <tr>
+            <td><code>data-img</code></td>
+            <td>Logo URL</td>
+            <td>https://example.hu/logo.png</td>
+          </tr>
+          <tr>
+            <td><code>data-text</code></td>
+            <td>Rövid leírás</td>
+            <td>Támogass vásárlással!</td>
+          </tr>
+          <tr>
+            <td><code>data-href</code></td>
+            <td>Céloldal (gomb linkje)</td>
+            <td>https://app.sharity.hu/impactshop</td>
+          </tr>
+          <tr>
+            <td><code>data-accent</code></td>
+            <td>Színkód (hex)</td>
+            <td>#7c3aed</td>
+          </tr>
+          <tr>
+            <td><code>data-cta</code></td>
+            <td>Gomb felirata</td>
+            <td>Támogatom</td>
+          </tr>
+          <tr>
+            <td><code>data-from</code></td>
+            <td>Kezdő dátum</td>
+            <td>2025-01-01</td>
+          </tr>
+          <tr>
+            <td><code>data-to</code></td>
+            <td>Záró dátum (üres = ma)</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>data-status</code></td>
+            <td>Státusz szűrő</td>
+            <td>all, approved, pending</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- WordPress shortcode -->
+    <h2 class="section-title fade-in">📝 WordPress Shortcode</h2>
+    
+    <div class="card fade-in">
+      <p>Ha WordPress oldalad van, használhatsz shortcode-ot is:</p>
+      <div class="code">[impact_ngo_card 
+  ngo="bator-tabor" 
+  label="Bátor Tábor Alapítvány"  
+  from="2025-01-01" 
+  to="" 
+  status="all" 
+  rate_huf="392.5" 
+  currency="HUF" 
+  accent="#7c3aed"
+]</div>
+    </div>
+
+    <!-- Személyre szabott linkek -->
+    <h2 class="section-title fade-in">🔗 Személyre szabott linkek</h2>
+    
+    <div class="grid fade-in">
+      <div class="card">
+        <h3>Alap Impact Shop link</h3>
+        <div class="code">https://app.sharity.hu/impactshop/?d1=YOURSLUG&ngo=YOURSLUG</div>
+      </div>
+      <div class="card">
+        <h3>UTM paraméterekkel</h3>
+        <div class="code" style="font-size: 0.75rem;">https://app.sharity.hu/impactshop/?d1=YOURSLUG&ngo=YOURSLUG&utm_source=website&utm_medium=ngo-card</div>
+      </div>
+    </div>
+
+    <!-- Best practices -->
+    <h2 class="section-title fade-in">💡 Best Practices</h2>
+    
+    <div class="split fade-in">
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <h3 style="color: var(--success);">✅ DO</h3>
+        <ul class="list" style="margin-top: 12px;">
+          <li>Tedd jól látható helyre (főoldal, adomány oldal)</li>
+          <li>Használj kontrasztos színeket</li>
+          <li>Adj hozzá rövid, CTA-jellegű szöveget</li>
+          <li>Oszd meg social mediában is</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--coral);">
+        <h3 style="color: var(--coral);">❌ DON'T</h3>
+        <ul class="list" style="margin-top: 12px;">
+          <li>Ne rejtsd el láblécbe – senki nem fogja látni</li>
+          <li>Ne használj túl világos színeket</li>
+          <li>Ne hagyj hibás/ékezettelen nevet</li>
+          <li>Ne feledkezz meg a logo URL-ről</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2 class="section-title fade-in" id="faq">❓ Gyakori kérdések</h2>
+    
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Honnan tudom a slug-omat?</h3>
+      <p style="margin-top: 8px;">
+        A Sharity regisztrációkor kapod meg, vagy kérdezd tőlünk: <a href="mailto:office@sharity.hu">office@sharity.hu</a>
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>A kártya lassítja az oldalamat?</h3>
+      <p style="margin-top: 8px;">
+        Minimálisan – a script aszinkron töltődik és optimalizált. Kb. 20KB.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mi van, ha nincs még adomány?</h3>
+      <p style="margin-top: 8px;">
+        A kártya „0 Ft" értéket mutat – de ez nem baj, a lényeg, hogy látható és motivál!
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Működik mobil nézetben?</h3>
+      <p style="margin-top: 8px;">
+        Igen, teljesen reszponzív – automatikusan alkalmazkodik a képernyőmérethez.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Milyen gyakran frissül az összeg?</h3>
+      <p style="margin-top: 8px;">
+        Általában 5-15 percenként frissül (cache), nagyobb aktivitásnál gyorsabban is látszik a változás.
+      </p>
+    </div>
+
+    <!-- Apple Wallet -->
+    <h2 class="section-title fade-in">🎫 Apple Wallet Pass</h2>
+    
+    <div class="card fade-in">
+      <p>Az NGO Card <strong>Apple Wallet kártyaként</strong> is elérhető!</p>
+      <div class="split" style="margin-top: 16px;">
+        <div>
+          <h3>Mit tartalmaz?</h3>
+          <ul class="list" style="margin-top: 12px;">
+            <li>Szervezeted logója és neve</li>
+            <li>QR kód az Impact Shop linkkel</li>
+            <li>Hátlap: összesített adomány, Sharity hírek</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Hogyan szerezd meg?</h3>
+          <ul class="list list-numbered" style="margin-top: 12px;">
+            <li>Kérd el tőlünk az egyedi Wallet pass-t</li>
+            <li>Küldd el a támogatóidnak</li>
+            <li>Ők hozzáadják a Wallet apphoz</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kapcsolat -->
+    <h2 class="section-title fade-in">📞 Kapcsolat és támogatás</h2>
+    
+    <div class="card fade-in">
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <h3>Segítség a beágyazáshoz:</h3>
+          <p style="margin-top: 12px;">
+            <strong>Email:</strong> <a href="mailto:office@sharity.hu">office@sharity.hu</a><br>
+            <strong>Válaszidő:</strong> 24 órán belül<br>
+            <strong>Technikai konzultáció:</strong> Igény esetén videóhívás
+          </p>
+        </div>
+        <div>
+          <h3>Kapcsolódó útmutatók:</h3>
+          <ul class="list" style="margin-top: 12px;">
+            <li><a href="/ngo-guides/impact-challenge">Impact Challenge útmutató</a></li>
+            <li><a href="/ngo-guides/impact-shop">Impact Shop útmutató</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer fade-in">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity – NGO Card</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          Beágyazási útmutató NGO-knak<br>
+          Verzió: 2.0 | Utolsó frissítés: 2026. február 23.
+        </p>
+        <div style="margin-top: 16px;">
+          <a href="/ngo-guides/impact-challenge" style="margin-right: 16px;">Impact Challenge →</a>
+          <a href="/ngo-guides/impact-shop">Impact Shop →</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
