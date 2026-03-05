@@ -9,12 +9,12 @@ if (!defined('ABSPATH')) {
 class Sharity_Level_Manager
 {
     public const LEVELS = [
-        'legend' => ['percentile_min' => 90, 'percentile_max' => 100, 'multiplier' => 1.25, 'vote_ad' => 6, 'vote_sponsor' => 12, 'discount' => 10],
-        'platinum' => ['percentile_min' => 80, 'percentile_max' => 90, 'multiplier' => 1.20, 'vote_ad' => 5, 'vote_sponsor' => 10, 'discount' => 8],
-        'gold' => ['percentile_min' => 60, 'percentile_max' => 80, 'multiplier' => 1.15, 'vote_ad' => 4, 'vote_sponsor' => 8, 'discount' => 6],
-        'silver' => ['percentile_min' => 30, 'percentile_max' => 60, 'multiplier' => 1.10, 'vote_ad' => 3, 'vote_sponsor' => 7, 'discount' => 4],
-        'bronze' => ['percentile_min' => 10, 'percentile_max' => 30, 'multiplier' => 1.05, 'vote_ad' => 2, 'vote_sponsor' => 6, 'discount' => 2],
-        'basic' => ['percentile_min' => 0, 'percentile_max' => 10, 'multiplier' => 1.00, 'vote_ad' => 1, 'vote_sponsor' => 5, 'discount' => 0],
+        'legend' => ['percentile_min' => 97, 'percentile_max' => 100, 'multiplier' => 1.25, 'vote_ad' => 6, 'vote_sponsor' => 6, 'discount' => 100],
+        'platinum' => ['percentile_min' => 90, 'percentile_max' => 97, 'multiplier' => 1.20, 'vote_ad' => 5, 'vote_sponsor' => 5, 'discount' => 90],
+        'gold' => ['percentile_min' => 75, 'percentile_max' => 90, 'multiplier' => 1.15, 'vote_ad' => 4, 'vote_sponsor' => 4, 'discount' => 80],
+        'silver' => ['percentile_min' => 45, 'percentile_max' => 75, 'multiplier' => 1.10, 'vote_ad' => 3, 'vote_sponsor' => 3, 'discount' => 70],
+        'bronze' => ['percentile_min' => 15, 'percentile_max' => 45, 'multiplier' => 1.05, 'vote_ad' => 2, 'vote_sponsor' => 2, 'discount' => 60],
+        'basic' => ['percentile_min' => 0, 'percentile_max' => 15, 'multiplier' => 1.00, 'vote_ad' => 1, 'vote_sponsor' => 1, 'discount' => 50],
     ];
     private const LEVEL_ORDER = ['basic', 'bronze', 'silver', 'gold', 'platinum', 'legend'];
 
@@ -163,47 +163,24 @@ class Sharity_Level_Manager
             return 'basic';
         }
 
-        global $wpdb;
-
-        $total_users = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}user_points WHERE points_total >= 100"
-        );
-
-        if ($total_users < 10) {
-            return $this->calculate_level_by_absolute_points($points);
-        }
-
-        $rank = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}user_points WHERE points_total > %d AND points_total >= 100",
-            $points
-        ));
-
-        $percentile = 100 - (($rank / max(1, $total_users)) * 100);
-
-        foreach (self::LEVELS as $level => $config) {
-            if ($percentile >= $config['percentile_min'] && $percentile < $config['percentile_max']) {
-                return $level;
-            }
-        }
-
-        return 'basic';
+        return $this->calculate_level_by_absolute_points($points);
     }
 
     private function calculate_level_by_absolute_points(int $points): string
     {
-        if ($points >= 15000) {
+        if ($points >= 250000) {
             return 'legend';
         }
-        if ($points >= 8000) {
+        if ($points >= 120000) {
             return 'platinum';
         }
-        if ($points >= 4000) {
+        if ($points >= 50000) {
             return 'gold';
         }
-        if ($points >= 1500) {
+        if ($points >= 15000) {
             return 'silver';
         }
-        if ($points >= 500) {
+        if ($points >= 2000) {
             return 'bronze';
         }
         return 'basic';
