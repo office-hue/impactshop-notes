@@ -53,7 +53,7 @@ jobs:
             [ -n "${pattern//[[:space:]]/}" ] || continue
             while IFS= read -r file; do
               [ -n "$file" ] || continue
-              python3 -c "import fnmatch, sys; pat=sys.argv[1].strip(); fn=sys.argv[2].strip(); if fnmatch.fnmatch(fn, pat): print(fn)" "$pattern" "$file" >> /tmp/violations.txt
+              python3 -c "import fnmatch, sys; pat=sys.argv[1].strip(); fn=sys.argv[2].strip(); print(fn) if fnmatch.fnmatch(fn, pat) else None" "$pattern" "$file" >> /tmp/violations.txt
             done < /tmp/changed.txt
           done < /tmp/protected.clean
 
