@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Impact Activity – NGO Útmutató | Sharity</title>
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(111, 227, 193, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(15, 138, 157, 0.1);
+      text-decoration: none;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--purple);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--purple);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(124, 58, 237, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(124, 58, 237, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--purple);
+      font-weight: 600;
+      border: 2px solid var(--purple);
+      transition: background 0.2s;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(124, 58, 237, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--purple);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(124, 58, 237, 0.12);
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .list-numbered {
+      counter-reset: step;
+    }
+    .list-numbered li {
+      counter-increment: step;
+    }
+    .list-numbered li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--purple);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .flow {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    .flow-step {
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px dashed rgba(124, 58, 237, 0.4);
+      text-align: center;
+      font-weight: 500;
+    }
+    .flow-step strong {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 6px;
+    }
+
+    .split {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      align-items: start;
+      margin-top: 40px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(245, 182, 66, 0.2);
+      color: #7a4b00;
+      font-weight: 600;
+      margin: 4px 4px 0 0;
+    }
+    .badge.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+    .badge.purple {
+      background: rgba(124, 58, 237, 0.15);
+      color: #5b21b6;
+    }
+
+    .callout {
+      padding: 20px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(111, 227, 193, 0.2) 0%, rgba(111, 227, 193, 0.05) 100%);
+      border-left: 4px solid var(--mint);
+      margin: 24px 0;
+    }
+    .callout.success {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+      border-left-color: var(--success);
+    }
+    .callout h3 {
+      margin-bottom: 8px;
+      color: #166534;
+    }
+    .callout p {
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(11, 31, 42, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    th {
+      background: rgba(124, 58, 237, 0.08);
+      font-weight: 600;
+      color: var(--ink);
+    }
+    tr:hover {
+      background: rgba(124, 58, 237, 0.04);
+    }
+
+    .footer {
+      margin-top: 64px;
+      padding: 32px 24px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(111, 227, 193, 0.08) 100%);
+      border-radius: 20px;
+      border: 1px solid rgba(124, 58, 237, 0.12);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+    .fade-in.delay-1 { animation-delay: 0.1s; }
+    .fade-in.delay-2 { animation-delay: 0.2s; }
+    .fade-in.delay-3 { animation-delay: 0.3s; }
+    .fade-in.delay-4 { animation-delay: 0.4s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+      .flow { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#mi-ez">Mi ez?</a>
+      <a href="#hogyan-mukodik">Hogyan működik?</a>
+      <a href="#szintek">Szintek</a>
+      <a href="#tippek">Több szavazat</a>
+      <a href="#faq">GYIK</a>
+      <a href="impact-shop-ngo.html">Impact Shop →</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">🎬 Videónézés = Adomány</span>
+        <h1>Impact Activity – Útmutató NGO-knak</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          <strong>Aktivitásból adomány:</strong> Felhasználók rövid videók megtekintésével szavazatokat gyűjtenek, 
+          majd a kedvenc civil szervezetükre adják le. A hirdetők fizetnek, ti kapjátok az adományt.
+        </p>
+        <p>
+          Automatikusan részt vesztek – csak kommunikáljátok a támogatóitoknak, és gyűjtsétek a szavazatokat!
+        </p>
+        <div style="margin-top: 20px;">
+          <a href="https://app.sharity.hu/impactad-2/" class="cta" target="_blank">🎬 Impact Activity</a>
+          <a href="#hogyan-mukodik" class="cta-secondary">Hogyan működik?</a>
+        </div>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h3>🎯 Dióhéjban</h3>
+          <ul class="list" style="margin-top: 16px;">
+            <li>Felhasználók videót néznek → szavazatot kapnak</li>
+            <li>A szavazatot rátok adják le</li>
+            <li>Havi adományalap elosztása szavazatok arányában</li>
+            <li>Automatikus, ingyenes részvétel</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hogyan működik -->
+    <h2 class="section-title fade-in delay-1" id="hogyan-mukodik">🔄 Hogyan működik?</h2>
+    
+    <div class="card fade-in delay-2">
+      <h3>A folyamat 4 lépésben</h3>
+      <div class="flow" style="margin-top: 20px;">
+        <div class="flow-step">
+          <strong>📺</strong>
+          Videó nézés
+        </div>
+        <div class="flow-step">
+          <strong>🗳️</strong>
+          Szavazat gyűjtés
+        </div>
+        <div class="flow-step">
+          <strong>❤️</strong>
+          NGO választás
+        </div>
+        <div class="flow-step">
+          <strong>💰</strong>
+          Adomány
+        </div>
+      </div>
+    </div>
+
+    <div class="split fade-in delay-3">
+      <div class="card">
+        <div class="card-icon">👤</div>
+        <h3>A felhasználó oldala</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Videó megtekintése – Max 30 mp, pontot és szavazatot kap</li>
+          <li>NGO kiválasztása – Eldönti, melyik szervezetet támogatja</li>
+          <li>Szavazat leadása – Bármikor leadhatja egy vagy több NGO-ra</li>
+          <li>Adomány generálása – Szavazatok arányában osztjuk</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏢</div>
+        <h3>Az NGO oldala</h3>
+        <ul class="list" style="margin-top: 16px;">
+          <li>Automatikusan kapsz adományt, ha valaki rád szavaz</li>
+          <li>Láthatod a helyezésedet a ranglistán</li>
+          <li>Követheted a beérkező szavazatokat valós időben</li>
+          <li>Havi összesítő és kifizetés</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Mennyibe kerül -->
+    <h2 class="section-title fade-in" id="koltseg">💰 Mennyibe kerül?</h2>
+    
+    <div class="grid fade-in">
+      <div class="card highlight">
+        <div class="card-icon">🎁</div>
+        <h3>Csatlakozás: INGYENES</h3>
+        <p style="margin-top: 12px;">
+          Az Impact Activity-ban való részvétel nem kerül pénzbe. Csak nyerhetsz – a támogatóid aktivitása alapján kapsz adományt.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Honnan jön az adomány?</h3>
+        <p style="margin-top: 12px;">
+          A hirdetők fizetnek a videómegtekintésekért. Ez az összeg kerül az adományalapba, 
+          amit a szavazatok arányában osztunk szét a szervezetek között.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout success fade-in">
+      <h3>📝 Példa kalkuláció</h3>
+      <p>
+        <strong>Havi adományalap:</strong> 500.000 Ft<br>
+        <strong>Összes szavazat:</strong> 10.000 db<br>
+        <strong>A te szavazataid:</strong> 1.000 db (10%)<br>
+        <strong>A te részed:</strong> <span style="color: var(--success); font-weight: bold;">50.000 Ft</span>
+      </p>
+    </div>
+
+    <!-- Szintek és súlyok -->
+    <h2 class="section-title fade-in" id="szintek">🏆 Szintek és szavazatsúlyok</h2>
+    
+    <div class="card fade-in">
+      <p>A felhasználók szintje befolyásolja, mennyit ér a szavazatuk. Egy Legend szintű támogató szavazata <strong>5× annyit ér</strong>!</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Szint</th>
+            <th>Minimum pont</th>
+            <th>Szavazat súly</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🌱 Basic</td>
+            <td>0</td>
+            <td>×1</td>
+          </tr>
+          <tr>
+            <td>🥉 Bronze</td>
+            <td>500</td>
+            <td>×2</td>
+          </tr>
+          <tr>
+            <td>🥈 Silver</td>
+            <td>2.000</td>
+            <td>×3</td>
+          </tr>
+          <tr>
+            <td>🥇 Gold</td>
+            <td>5.000</td>
+            <td>×4</td>
+          </tr>
+          <tr>
+            <td>💎 Platinum</td>
+            <td>15.000</td>
+            <td>×5</td>
+          </tr>
+          <tr>
+            <td>👑 Legend</td>
+            <td>50.000+</td>
+            <td>×5</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 16px; font-style: italic;">
+        💡 <strong>Tipp:</strong> Érdemes a lojális, aktív támogatókat megtartani – ők többet érnek!
+      </p>
+    </div>
+
+    <!-- Rangsor -->
+    <h2 class="section-title fade-in">📊 Rangsor és láthatóság</h2>
+    
+    <div class="split fade-in">
+      <div class="card">
+        <div class="card-icon">🏅</div>
+        <h3>Top 10 NGO lista</h3>
+        <p style="margin-top: 12px;">
+          Az oldalon mindenki látja a legtöbb szavazatot kapott szervezeteket. 
+          A top listán szereplő NGO-k több új támogatót vonzanak!
+        </p>
+        <div style="margin-top: 16px;">
+          <span class="badge green">Láthatóság</span>
+          <span class="badge green">Bizalom</span>
+          <span class="badge green">Motiváció</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <h3>Riportok</h3>
+        <ul class="list" style="margin-top: 12px;">
+          <li>Aktuális szavazatszám – élőben frissül</li>
+          <li>Ranglistás pozíció – hányadik helyen állsz</li>
+          <li>Becsült adomány – aktuális arányok alapján</li>
+          <li>Historikus adatok – korábbi hónapok</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Több szavazat -->
+    <h2 class="section-title fade-in" id="tippek">🚀 Hogyan szerezz több szavazatot?</h2>
+    
+    <div class="grid fade-in">
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h3>1. Kommunikáld az oldalon</h3>
+        <p style="margin-top: 12px;">
+          Tedd ki a Sharity logót és linket:
+        </p>
+        <div style="background: rgba(11, 31, 42, 0.06); padding: 12px; border-radius: 8px; margin-top: 8px; font-family: monospace; font-size: 0.85rem;">
+          „Támogass videónézéssel – 0 Ft-ba kerül!"<br>
+          app.sharity.hu/impactad-2/
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h3>2. Social media</h3>
+        <ul class="list" style="margin-top: 12px;">
+          <li>Oszd meg a ranglistás helyezésedet</li>
+          <li>Mutasd meg az eddig gyűjtött adományt</li>
+          <li>Kérd meg a követőidet, szavazzanak</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>3. NGO Card beágyazása</h3>
+        <p style="margin-top: 12px;">
+          Adj hozzá egy beágyazható kártyát a weboldaladhoz – automatikusan mutatja az aktuális szavazatszámot!
+        </p>
+        <a href="ngo-card.html" style="display: inline-block; margin-top: 12px;">NGO Card útmutató →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎉</div>
+        <h3>4. Közösségi kihívások</h3>
+        <p style="margin-top: 12px;">
+          Szervezz kampányokat:
+        </p>
+        <ul class="list" style="margin-top: 8px;">
+          <li>„Érjük el az 1000 szavazatot ezen a héten!"</li>
+          <li>„Top 3-ba kerülés = extra poszt"</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2 class="section-title fade-in" id="faq">❓ Gyakori kérdések</h2>
+    
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Regisztrálnom kell külön?</h3>
+      <p style="margin-top: 8px;">
+        Nem, ha már a Sharity rendszerben szerepeltek, automatikusan részt vesztek az Impact Activity-ban.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mi történik, ha senki nem szavaz rám?</h3>
+      <p style="margin-top: 8px;">
+        Sajnos akkor abban a hónapban nem kapsz adományt az Impact Activity-ból. De az Impact Shop vásárlásokból akkor is jöhet bevétel!
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Van minimum szavazatszám?</h3>
+      <p style="margin-top: 8px;">
+        Nincs. Már 1 szavazat után is jogosult vagy az arányos részre.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Hogyan tudják a támogatóim, hogy rám szavazzanak?</h3>
+      <p style="margin-top: 8px;">
+        A felhasználók NGO-listából választanak, vagy a te egyedi linkedről érkezve automatikusan téged látnak elsőként.
+      </p>
+    </div>
+
+    <!-- Kapcsolat -->
+    <h2 class="section-title fade-in">📞 Kapcsolat és támogatás</h2>
+    
+    <div class="card fade-in">
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <h3>Ha kérdésed van:</h3>
+          <p style="margin-top: 12px;">
+            <strong>Email:</strong> <a href="mailto:office@sharity.hu">office@sharity.hu</a><br>
+            <strong>Válaszidő:</strong> 24 órán belül
+          </p>
+        </div>
+        <div>
+          <h3>Hasznos linkek:</h3>
+          <ul class="list" style="margin-top: 12px;">
+            <li><a href="https://app.sharity.hu/impactad-2/" target="_blank">Impact Activity oldal</a></li>
+            <li><a href="ngo-card.html">NGO Card beágyazás</a></li>
+            <li><a href="impact-shop-ngo.html">Impact Shop útmutató</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer fade-in">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity – Impact Activity</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          NGO útmutató a Sharity platformhoz<br>
+          Verzió: 1.0 | Utolsó frissítés: 2026. február
+        </p>
+        <div style="margin-top: 16px;">
+          <a href="impact-shop-ngo.html" style="margin-right: 16px;">Impact Shop →</a>
+          <a href="ngo-card.html">NGO Card →</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
