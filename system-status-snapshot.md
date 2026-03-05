@@ -282,3 +282,8 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / Module Assets PR)
+- Modulcsomag: image assetek, `.off` backup modul, offerwall placeholder JSON-ek.
+- Continuity evidence: docs/pr-module-assets-pack-2026-03-05.md + conversation-summaries/441_conversation_summary.md.
+- Bastion guard extension rögzítve: docs/bastion-guard-status.md.
