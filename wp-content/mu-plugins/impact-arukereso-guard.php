@@ -55,6 +55,6 @@ add_action('init', function(){
   $host  = parse_url($clean, PHP_URL_HOST);
   $is_arukereso = $host ? (bool)preg_match('~(^|\.)arukereso\.[a-z.]+$~i', $host) : false;
 
-  // Árukereső deeplink tiltás: üresre állítjuk
-  $_GET['u'] = $is_arukereso ? '' : $clean;
+  // Árukereső deeplink engedélyezve: tisztított URL-t adjuk tovább.
+  $_GET['u'] = $clean;
 }, 1); // priority 1 → minden más (és a nagy snippet) előtt lefut

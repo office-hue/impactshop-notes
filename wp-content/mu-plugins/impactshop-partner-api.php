@@ -746,13 +746,18 @@ function impactshop_partner_insert_ledger(array $payload, string $partner_code, 
         return (int) $existing;
     }
 
-    $pseudo_id = strtolower((string) $payload['pseudo_id']);
+    $pseudo_raw = (string) $payload['pseudo_id'];
+    $pseudo_id = strtolower($pseudo_raw);
     $ngo_slug = sanitize_title((string) $payload['ngo_code']);
     $shop_slug = sanitize_title($partner_code);
     $happened_at = (string) $payload['timestamp'];
-    if (strtotime($happened_at) === false) {
+    $happened_ts = strtotime($happened_at);
+    if ($happened_ts === false) {
         $happened_at = current_time('mysql');
+        $happened_ts = strtotime($happened_at) ?: time();
     }
+    $donation_multiplier = impactshop_partner_donation_multiplier($pseudo_raw, $happened_ts);
+    $amount_huf = $amount_huf * $donation_multiplier;
 
     $row = [
         'pseudo_id' => $pseudo_id,
@@ -784,6 +789,7 @@ function impactshop_partner_insert_ledger(array $payload, string $partner_code, 
             'partner_max_discount' => $partner_max_discount,
             'discount_rate' => $discount_rate,
             'discount_amount' => $discount_amount,
+            'donation_multiplier' => $donation_multiplier,
         ]),
         'approved_at' => current_time('mysql'),
     ];
@@ -972,6 +978,74 @@ function impactshop_partner_level_for_pseudo(string $pseudo_id): string
     }
 
     return 'basic';
+}
+
+function impactshop_partner_normalize_pseudo($value): string
+{
+    if (function_exists('impactshop_identity_normalize_pseudo')) {
+        return impactshop_identity_normalize_pseudo($value);
+    }
+    if (!is_scalar($value)) {
+        return '';
+    }
+    $clean = strtoupper(preg_replace('~[^A-Za-z0-9]~', '', (string) $value));
+    if ($clean === '') {
+        return '';
+    }
+    return substr($clean, 0, 12);
+}
+
+function impactshop_partner_level_for_pseudo_at(string $pseudo_id, int $timestamp): string
+{
+    global $wpdb;
+    $table = $wpdb->prefix . 'level_history';
+    static $tableExists = null;
+    if ($tableExists === null) {
+        $tableExists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table);
+    }
+    if (!$tableExists) {
+        return '';
+    }
+
+    $level = (string) $wpdb->get_var($wpdb->prepare(
+        "SELECT new_level FROM {$table} WHERE LOWER(pseudo_id) = %s AND created_at <= %s ORDER BY created_at DESC LIMIT 1",
+        strtolower($pseudo_id),
+        date('Y-m-d H:i:s', $timestamp)
+    ));
+
+    return $level;
+}
+
+function impactshop_partner_multiplier_from_level(string $level): float
+{
+    $map = [
+        'legend'   => 1.25,
+        'platinum' => 1.20,
+        'gold'     => 1.15,
+        'silver'   => 1.10,
+        'bronze'   => 1.05,
+        'basic'    => 1.00,
+    ];
+    $key = strtolower(trim($level));
+    return $map[$key] ?? 1.00;
+}
+
+function impactshop_partner_donation_multiplier(string $pseudo_id, ?int $timestamp = null): float
+{
+    $pseudo = impactshop_partner_normalize_pseudo($pseudo_id);
+    if ($pseudo === '') {
+        return 1.0;
+    }
+    $level = '';
+    if ($timestamp !== null && $timestamp > 0) {
+        $level = impactshop_partner_level_for_pseudo_at($pseudo, $timestamp);
+    }
+    if ($level === '') {
+        $level = impactshop_partner_level_for_pseudo($pseudo);
+    }
+    $multiplier = impactshop_partner_multiplier_from_level($level);
+    $multiplier = max(1.0, min(1.25, (float) $multiplier));
+    return (float) apply_filters('impactshop_donation_multiplier', $multiplier, $pseudo, $timestamp);
 }
 
 function impactshop_partner_tier_multiplier(string $tier): float

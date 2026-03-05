@@ -282,3 +282,8 @@ PHP lint ok for identity/gamification modules
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+
+## Snapshot Addendum (2026-03-05 / Arukereso Affiliate PR)
+- Modulcsomag: Arukereso deeplink + CJ fallback + autobanner host policy + partner multiplier.
+- Continuity evidence: docs/pr-arukereso-affiliate-flow-2026-03-05.md + conversation-summaries/434_conversation_summary.md.
+- Guard override policy: protected module változás csak docs/snapshot/summary evidenciával engedett.
