@@ -1278,3 +1278,15 @@ _Manual update: 2026-03-05 15:41:50 CET_
 - `impactall` futás a monorepo gyökérből: `IMPACTALL_SKIP_SAFE_AUDIT=1 IMPACTALL_AUTO_NOTES=0 ./impactall`.
 - Health summary (futásból): staging `HTTP 403 / 287 ms`, production `HTTP 403 / 257 ms`; guard összegzés `1/1 PASS`, WARN/FAIL nélkül.
 - Clean strict audit PASS: `scripts/safe-repo-audit.sh --repo /Users/bujdosoarnold/Developer/GitHub/.worktrees/impactshop-notes-checkpoint-2026-03-05 --strict` -> `OK: no local changes detected.`
+
+---
+_Manual update: 2026-03-08 22:15:00 CET_
+
+### One-path enforcement applied
+
+- Enforced workflow gates updated: `pre-commit` blocks `main/master` commit, `pre-push` blocks direct `main/master` push.
+- Push audit standardized to `safe-repo-audit.sh --strict --mode push`.
+- Hook installer hardened for worktree compatibility (`git rev-parse --git-path hooks`).
+- `scripts/git-health-check.sh` validates required policy files + hook policy markers.
+
+**Baseline referencia:** impactshop-baseline-2025-11-02.md
