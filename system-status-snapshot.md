@@ -2,11 +2,6 @@
 
 *Generálva:* 2026-02-26 07:48:32 +0100 (Bujdoso-Mac-mini)
 
-## Snapshot Addendum (2026-03-05)
-- Clean PR branch: `chore/guard-doc-continuity-2026-03-05`.
-- Guard folytonosság: `bin/impactshop-guard-preflight.sh` felvéve, protected list bővítve (`impact-arukereso-guard.php`, `impact-combat-pack.php`), hash/checksum újraszinkronizálva.
-- Dokumentációs folytonosság: `conversation-summaries/433_conversation_summary.md` + bastion extension terv és system map megjegyzés frissítve.
-
 ## Meta
 - Gyökér: /Users/bujdosoarnold/Developer/GitHub
 - Környezet: local
@@ -288,67 +283,6 @@ PHP lint ok for identity/gamification modules
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
 
-## Snapshot Addendum (2026-03-05 / Arukereso Affiliate PR)
-- Modulcsomag: Arukereso deeplink + CJ fallback + autobanner host policy + partner multiplier.
-- Continuity evidence: docs/pr-arukereso-affiliate-flow-2026-03-05.md + conversation-summaries/434_conversation_summary.md.
-- Guard override policy: protected module változás csak docs/snapshot/summary evidenciával engedett.
-
-## Snapshot Addendum (2026-03-05 / Offerwall Core PR)
-- Modulcsomag: offerwall engine + internal survey submit + question mapping bővítés.
-- Continuity evidence: docs/pr-offerwall-core-pack-2026-03-05.md + conversation-summaries/435_conversation_summary.md.
-
-## Snapshot Addendum (2026-03-05 / Engagement Challenge PR)
-- Modulcsomag: ads-watch, jysk vote, ngo-card, level/decay policy tuning.
-- Continuity evidence: docs/pr-engagement-challenge-pack-2026-03-05.md + conversation-summaries/436_conversation_summary.md.
-- Guard override policy synced a protected module review gate-hez.
-
-## Snapshot Addendum (2026-03-05 / Points Admin PR)
-- Modulcsomag: sharity-points admin + notifications + content consumption guard.
-- Continuity evidence: docs/pr-points-admin-pack-2026-03-05.md + conversation-summaries/437_conversation_summary.md.
-
-## Snapshot Addendum (2026-03-05 / Campaign Vote PR)
-- Modulcsomag: vote-purchase Stripe flow, quarter management, event donation widget, campaign utility modulok.
-- Continuity evidence: docs/pr-campaign-vote-pack-2026-03-05.md + conversation-summaries/438_conversation_summary.md.
-
-## Snapshot Addendum (2026-03-05 / Expansion NGO+PWA PR)
-- Modulcsomag: Cégjelző, NGO selector/guides, PWA+push, offerwall extension (AyeT + article quiz).
-- Continuity evidence: docs/pr-expansion-ngo-pwa-pack-2026-03-05.md + conversation-summaries/439_conversation_summary.md.
-
-## Snapshot Addendum (2026-03-05 / Ledger Card Request PR)
-- Modulcsomag: impact-ledger skeleton + card request shortcode/AJAX.
-- Continuity evidence: docs/pr-ledger-card-request-pack-2026-03-05.md + conversation-summaries/440_conversation_summary.md.
-
-## Snapshot Addendum (2026-03-05 / Module Assets PR)
-- Modulcsomag: image assetek, `.off` backup modul, offerwall placeholder JSON-ek.
-- Continuity evidence: docs/pr-module-assets-pack-2026-03-05.md + conversation-summaries/441_conversation_summary.md.
-
-## Snapshot Addendum (2026-03-05 / MU Vendor Bundle PR)
-- Modulcsomag: `wp-content/mu-plugins/vendor/**` dependency bundle.
-- Continuity evidence: docs/pr-mu-vendor-bundle-pack-2026-03-05.md + conversation-summaries/442_conversation_summary.md.
-- Bastion guard extension rögzítve: docs/bastion-guard-status.md.
-
----
-_Auto update: 2026-03-05 13:54:17 CET_
-
-### Health check summary
-
-```
-Post-merge PR batch closed on ops/adswatch-clean (#44-#56, docs #45-#47)
-impactall strict run blocked by local dirty tree; bypass run PASS
-Clean-head strict safe audit PASS in dedicated clean worktree
-```
-
-**Baseline referencia:** impactshop-baseline-2026-03-03.md
-
----
-_Auto update: 2026-03-05 14:16:37 CET_
-
-### Health check summary
-
-```
-Post-merge checkpoint completed for both repos (impactshop-notes + ai-agent)
-Strict safe-audit PASS in both clean worktrees
-impactall strict run blocked by local dirty notes tree; bypass run PASS
-```
-
-**Baseline referencia:** impactshop-baseline-2026-03-03.md
+## 2026-03-09 Workflow Infra Update
+- Dev-memory workflow 1-8 aktiválva (pre-task, context-pack, memory gate, PR auto-memory, commit template/hook, incident, digest, Copilot MCP guard).
+- Hookok újratelepítve; napi digest cron aktív.
