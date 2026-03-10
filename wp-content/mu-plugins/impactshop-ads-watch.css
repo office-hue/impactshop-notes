@@ -1,10 +1,23 @@
 /* === Page Background for Ad Watch === */
         .impactshop-ads-watch-container {
-            max-width: 800px;
+            max-width: 960px;
             margin: 0 auto;
             padding: 20px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             position: relative;
+        }
+
+        .impact-account-card {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .impact-account-card .pseudo-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 14px;
+            word-break: break-all;
         }
 
         /* Background applied to parent container or page */
@@ -195,21 +208,44 @@
             font-size: 15px;
         }
 
-        #ads-watch-message .insight-value {
-            line-height: 1.45;
-            max-height: calc(1.45em * 4);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            overflow-wrap: anywhere;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 4;
-            line-clamp: 4;
-        }
-
         .insight-hint {
             font-size: 12px;
             color: #64748b;
+        }
+
+        #ads-watch-message.insight-card {
+            cursor: pointer;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+
+        #ads-watch-message.insight-card:hover {
+            border-color: #93c5fd;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+            transform: translateY(-1px);
+        }
+
+        #ads-watch-message.insight-card:focus-visible {
+            outline: 2px solid #60a5fa;
+            outline-offset: 2px;
+        }
+
+        #ads-watch-message [data-role="ads-watch-message-text"] {
+            display: block;
+            line-height: 1.45;
+            overflow: hidden;
+            max-height: calc(1.45em * 4);
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        @supports (-webkit-line-clamp: 1) {
+            #ads-watch-message [data-role="ads-watch-message-text"] {
+                display: -webkit-box;
+                -webkit-line-clamp: 4;
+                -webkit-box-orient: vertical;
+                max-height: none;
+            }
         }
 
         .ads-watch-ngo-selection {
@@ -232,6 +268,7 @@
             background: #f9f9f9;
             border-radius: 8px;
             margin-bottom: 15px;
+            overflow: hidden;
         }
 
         .selected-ngo.has-ngo {
@@ -240,6 +277,7 @@
             gap: 15px;
             background: #e8f5e9;
             border: 2px solid #4caf50;
+            min-width: 0;
         }
 
         .selected-ngo .ngo-logo {
@@ -253,6 +291,12 @@
             font-size: 18px;
             font-weight: bold;
             color: #2e7d32;
+            flex: 1 1 auto;
+            min-width: 0;
+            white-space: normal;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .no-ngo-text {
@@ -418,13 +462,17 @@
 
         .player-overlay {
             position: absolute;
-            inset: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            aspect-ratio: 16 / 9;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
+            border-radius: 16px;
+            z-index: 12;
         }
 
         .btn-watch-ad {
@@ -468,7 +516,7 @@
             right: 16px;
             left: auto;
             transform: none;
-            z-index: 18;
+            z-index: 1100;
         }
 
         .ads-watch-cta.sponsor-cta-overlay a {
@@ -672,6 +720,7 @@
             padding: 10px;
             background: #f9f9f9;
             border-radius: 8px;
+            min-width: 0;
         }
 
         .tally-item.rank-1 { background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%); }
@@ -697,6 +746,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            min-width: 0;
+            max-width: 100%;
+            overflow-wrap: anywhere;
         }
 
         .tally-votes,
@@ -726,10 +778,13 @@
             }
             .tally-name {
                 white-space: normal;
-                overflow: visible;
-                text-overflow: initial;
+                overflow: hidden;
+                text-overflow: ellipsis;
                 line-height: 1.2;
                 grid-column: 3 / 5;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
             }
             .tally-votes {
                 grid-column: 3 / 4;
@@ -854,6 +909,7 @@
             border: 1px solid #e2e8f0;
             cursor: pointer;
             background: #fff;
+            min-width: 0;
         }
 
         .ngo-list-item:hover {
@@ -876,6 +932,21 @@
         .ngo-list-item .ngo-name {
             font-weight: 600;
             color: #0f172a;
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 100%;
+            white-space: normal;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .reward-ngo,
+        #reward-ngo-name {
+            white-space: normal;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .ngo-list-loading,
@@ -1013,8 +1084,9 @@
             bottom: 60px; /* Space for accessibility button */
             left: 0;
             right: 0;
-            z-index: 9999;
-            display: flex;
+            z-index: 1000;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
             padding: 12px 16px;
             padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
@@ -1022,8 +1094,6 @@
             backdrop-filter: blur(12px);
             border-radius: 0;
             box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.3);
-            justify-content: center;
-            flex-wrap: nowrap;
         }
 
         .ads-watch-tab {
@@ -1039,7 +1109,7 @@
             line-height: 1.2;
             transition: all 0.2s ease;
             white-space: nowrap;
-            flex: 0 1 auto;
+            width: 100%;
             min-width: 0;
             text-align: center;
             display: inline-flex;
@@ -1090,38 +1160,48 @@
             padding-bottom: 140px; /* Extra space for floating tabs + accessibility button */
         }
 
-        @media (min-width: 992px) {
-            .ads-watch-floating-tabs {
-                bottom: 20px;
-                padding-bottom: 12px;
-            }
+@media (min-width: 992px) {
+        .ads-watch-floating-tabs {
+            bottom: 20px;
+            padding-bottom: 12px;
+        }
             .impactshop-ads-watch-container {
                 padding-bottom: 90px;
-            }
+}
+
         }
 
         @media (max-width: 480px) {
+            .impact-account-card {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .impact-account-card button {
+                width: 100%;
+                padding: 10px;
+                min-height: 44px;
+            }
+
             .ads-watch-floating-tabs {
                 gap: 6px;
                 padding: 10px 10px;
                 padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-                bottom: 70px; /* Space for accessibility button on mobile */
-                flex-wrap: wrap;
-                justify-content: center;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
             }
             .ads-watch-tab {
                 padding: 8px 10px;
                 font-size: 12px;
                 line-height: 1.2;
                 gap: 3px;
-                flex: 1 1 calc(50% - 6px);
             }
             /* Smaller icons on mobile */
             .ads-watch-tab .tab-icon {
                 font-size: 14px;
             }
             .impactshop-ads-watch-container {
-                padding-bottom: 190px;
+                padding-bottom: 220px;
             }
         }
 
@@ -1129,15 +1209,16 @@
             .ads-watch-floating-tabs {
                 gap: 4px;
                 padding: 8px 6px;
-                flex-wrap: wrap;
             }
             .ads-watch-tab {
                 padding: 6px 8px;
                 font-size: 11px;
-                flex: 1 1 calc(50% - 4px);
             }
             .impactshop-ads-watch-container {
-                padding-bottom: 200px;
+                padding-bottom: 240px;
+            }
+            .ads-watch-status-bar {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1152,6 +1233,23 @@
                 margin-top: 8px;
                 width: 100%;
                 max-width: 100%;
+            }
+
+            .ads-watch-status-bar {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+                font-size: 12px;
+            }
+
+            .ads-watch-status-bar .status-item {
+                padding: 6px 8px;
+            }
+
+            .btn-quick-vote {
+                min-height: 44px;
+                min-width: 44px;
+                font-size: 14px;
+                padding: 8px 12px;
             }
 
             .impactshop-ads-watch-wrapper .elementor-widget-image,
@@ -1182,6 +1280,28 @@
             }
         }
 
+        @media (min-width: 641px) {
+            .info-popover {
+                position: absolute;
+                z-index: 100;
+                width: 320px;
+                max-width: 90vw;
+            }
+        }
+
+        .impact-accordion-header {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .impact-accordion-header:hover {
+            background: #e2e8f0;
+        }
+
         .ads-watch-player-area {
             position: relative;
         }
@@ -1192,7 +1312,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            z-index: 15;
+            z-index: 1400;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1349,6 +1469,79 @@
             font-weight: 600;
         }
 
+        .ads-watch-live-balance {
+            margin: 14px 0 16px;
+            padding: 12px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0f172a 0%, #111f3f 100%);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+        }
+
+        .ads-watch-live-balance-title {
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .ads-watch-live-balance-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .live-balance-item {
+            position: relative;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .live-balance-item.is-updated {
+            border-color: rgba(34, 197, 94, 0.75);
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .live-balance-label {
+            display: block;
+            color: #9ca3af;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .live-balance-value {
+            display: block;
+            color: #22c55e;
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: 0.01em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .live-balance-delta {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            color: #86efac;
+            font-size: 12px;
+            font-weight: 700;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            pointer-events: none;
+        }
+
+        .live-balance-delta.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         /* === Skip Video Button (unified) === */
         .btn-skip-video {
             display: block;
@@ -1501,6 +1694,11 @@
         }
 
         @media (max-width: 640px) {
+            .ads-watch-banner {
+                align-items: flex-start;
+                padding: 16px 14px 180px;
+            }
+
             .ads-watch-status-bar {
                 grid-template-columns: repeat(2, minmax(120px, 1fr));
             }
@@ -1508,27 +1706,45 @@
             .tally-item {
                 grid-template-columns: 28px 36px 1fr;
                 grid-template-rows: auto auto;
+                grid-template-areas:
+                    "rank logo name"
+                    "votes votes amount";
                 row-gap: 6px;
                 font-size: 13px;
-                align-items: center;
+                align-items: start;
+                min-width: 0;
+            }
+
+            .tally-rank {
+                grid-area: rank;
+            }
+
+            .tally-logo {
+                grid-area: logo;
             }
 
             .tally-name {
+                grid-area: name;
                 white-space: normal;
-                overflow: visible;
-                text-overflow: unset;
+                overflow: hidden;
+                text-overflow: ellipsis;
                 line-height: 1.2;
+                min-width: 0;
+                overflow-wrap: anywhere;
+                word-break: break-word;
             }
 
             .tally-votes {
-                grid-column: 1 / 3;
+                grid-area: votes;
                 font-size: 12px;
+                text-align: left;
             }
 
             .tally-amount {
-                grid-column: 3 / 4;
+                grid-area: amount;
                 font-size: 12px;
                 justify-self: end;
+                text-align: right;
             }
 
             .modal-content {
@@ -1589,9 +1805,9 @@
 
             /* Sponsor CTA overlay: keep readable on mobile */
             .ads-watch-cta.sponsor-cta-overlay {
-                bottom: 64px;
+                bottom: 150px;
                 right: 12px;
-                z-index: 20;
+                z-index: 1100;
             }
 
             .ads-watch-cta.sponsor-cta-overlay a {
@@ -1621,6 +1837,23 @@
             .video-info-label {
                 min-width: 95px;
                 font-size: 12px;
+            }
+
+            .ads-watch-live-balance {
+                margin-top: 12px;
+                padding: 10px;
+            }
+
+            .ads-watch-live-balance-grid {
+                gap: 8px;
+            }
+
+            .live-balance-item {
+                padding: 8px 10px;
+            }
+
+            .live-balance-value {
+                font-size: 24px;
             }
 
             /* Skip video button mobile */
