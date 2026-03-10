@@ -83,9 +83,9 @@ function impactshop_click_tracking_handle(WP_REST_Request $request): WP_REST_Res
     $shop_slug = sanitize_text_field((string) ($params['shop_slug'] ?? ''));
     $category = sanitize_text_field((string) ($params['category'] ?? ''));
     $price_range = sanitize_text_field((string) ($params['price_range'] ?? ''));
-    $points = (int) ($params['points'] ?? 0);
-    if ($points < 0) {
-        $points = 0;
+    $points_hint = (int) ($params['points'] ?? 0);
+    if ($points_hint < 0) {
+        $points_hint = 0;
     }
     $dedupe_key = sanitize_text_field((string) ($params['dedupe_key'] ?? ''));
 
@@ -114,37 +114,68 @@ function impactshop_click_tracking_handle(WP_REST_Request $request): WP_REST_Res
         ['%s','%s','%s','%s','%s','%s','%s','%s']
     );
 
-    // CTA clicks always award 5 points and 5 votes
-    $cta_points = 5;
-    $cta_votes = 5;
+    $reward_enabled = $points_hint > 0;
+    $cta_points = $reward_enabled ? 5 : 0;
+    $cta_votes = $reward_enabled ? 5 : 0;
+    $awarded_points = 0;
+    $awarded_votes = 0;
+    $duplicate = false;
+    $new_total = null;
+    $available_votes = function_exists('impactshop_ads_watch_get_user_votes')
+        ? (int) impactshop_ads_watch_get_user_votes($pseudo_id)
+        : null;
 
-    if (class_exists('Sharity_Points_Manager')) {
-        $manager = new Sharity_Points_Manager();
-        $manager->award_points_for_pseudo(
-            $pseudo_id,
-            $cta_points,
-            'bonus',
-            'cta_click',
-            [
-                'source_type' => 'cta_click',
-                'content_type' => $content_type,
-                'content_id' => $content_id,
-                'cta_url' => $cta_url,
-                'shop_slug' => $shop_slug,
-                'category' => $category,
-                'price_range' => $price_range,
-            ],
-            $dedupe_key
-        );
+    if ($reward_enabled && $cta_points > 0) {
+        $points_result = ['success' => false, 'duplicate' => false, 'new_total' => null];
+
+        if (class_exists('Sharity_Points_Manager')) {
+            $manager = new Sharity_Points_Manager();
+            $points_result = $manager->award_points_for_pseudo(
+                $pseudo_id,
+                $cta_points,
+                'bonus',
+                'cta_click',
+                [
+                    'source_type' => 'cta_click',
+                    'content_type' => $content_type,
+                    'content_id' => $content_id,
+                    'cta_url' => $cta_url,
+                    'shop_slug' => $shop_slug,
+                    'category' => $category,
+                    'price_range' => $price_range,
+                ],
+                $dedupe_key
+            );
+            $duplicate = !empty($points_result['duplicate']);
+            if (!empty($points_result['success']) && !$duplicate) {
+                $awarded_points = $cta_points;
+            }
+            if (isset($points_result['new_total']) && is_numeric($points_result['new_total'])) {
+                $new_total = (int) $points_result['new_total'];
+            }
+        } else {
+            $fallback_dedupe_key = 'impactshop_cta_click:' . md5($pseudo_id . '|' . $dedupe_key);
+            if (get_transient($fallback_dedupe_key)) {
+                $duplicate = true;
+            } else {
+                set_transient($fallback_dedupe_key, 1, DAY_IN_SECONDS);
+                $awarded_points = $cta_points;
+            }
+        }
+
+        if (!$duplicate && $awarded_points > 0 && function_exists('impactshop_ads_watch_add_votes')) {
+            $available_votes = (int) impactshop_ads_watch_add_votes($pseudo_id, $cta_votes);
+            $awarded_votes = $cta_votes;
+        } elseif (function_exists('impactshop_ads_watch_get_user_votes')) {
+            $available_votes = (int) impactshop_ads_watch_get_user_votes($pseudo_id);
+        }
     }
 
-    // Award votes for CTA click
-    if (function_exists('impactshop_ads_watch_add_votes')) {
-        $votes_dedupe_key = 'cta_votes:' . $content_type . ':' . $content_id . ':' . $pseudo_id . ':' . gmdate('Y-m-d');
-        $already_voted = get_transient($votes_dedupe_key);
-        if (!$already_voted) {
-            impactshop_ads_watch_add_votes($pseudo_id, $cta_votes);
-            set_transient($votes_dedupe_key, 1, DAY_IN_SECONDS);
+    if ($new_total === null && class_exists('Sharity_Points_Manager')) {
+        $manager = new Sharity_Points_Manager();
+        $snapshot = $manager->get_points_snapshot_for_pseudo($pseudo_id);
+        if (isset($snapshot['points_total']) && is_numeric($snapshot['points_total'])) {
+            $new_total = (int) $snapshot['points_total'];
         }
     }
 
@@ -162,5 +193,13 @@ function impactshop_click_tracking_handle(WP_REST_Request $request): WP_REST_Res
         set_transient($prefs_key, $prefs, DAY_IN_SECONDS);
     }
 
-    return new WP_REST_Response(['status' => 'ok'], 200);
+    return new WP_REST_Response([
+        'status' => 'ok',
+        'reward_enabled' => $reward_enabled,
+        'duplicate' => $duplicate,
+        'awarded_points' => $awarded_points,
+        'awarded_votes' => $awarded_votes,
+        'new_total' => $new_total,
+        'available_votes' => $available_votes,
+    ], 200);
 }

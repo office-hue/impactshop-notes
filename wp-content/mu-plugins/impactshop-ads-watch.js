@@ -21,12 +21,16 @@
     const ngoCacheTtl = 24 * 60 * 60 * 1000;
     const autoBannerUrl = config.autoBannerUrl || restUrl.replace(/\/ads-watch\/?$/, '/auto-banner');
 
+    let $messageCard = $();
+    let $messageText = $();
+
     const state = {
         pseudoId: '',
         points: 0,
         level: 'basic',
         voteWeightRegular: 1,
         voteWeightSponsor: 5,
+        donationMultiplier: 1,
         selectedNgo: null,
         todayViews: 0,
         availableVotes: 0,
@@ -85,6 +89,7 @@
         ctaLabel: '',
         ctaUrl: '',
         ctaMeta: null,
+        currentCtaPoints: 0,
         ctaClicked: false,
         ctaClickedKeys: {},
         ctaBonusPoints: 0,
@@ -96,20 +101,33 @@
         adRequestPending: false,
         adRequestStartTime: 0,
         lastNgoSlugForBanner: '',
-        currentAutoBanner: null
+        currentAutoBanner: null,
+        videoBalanceReady: false,
+        videoBalancePointsDisplay: 0,
+        videoBalanceVotesDisplay: 0,
+        videoBalanceRafPoints: null,
+        videoBalanceRafVotes: null,
+        videoBalanceDeltaTimerPoints: null,
+        videoBalanceDeltaTimerVotes: null
     };
+
+    let countdownTimer = null;
 
     $(document).ready(function () {
         if ($('#impactshop-ads-watch').length === 0) {
             return;
         }
 
+        $messageCard = $('[data-role=ads-watch-message]');
+        $messageText = $('[data-role=ads-watch-message-text]');
         initEventListeners();
         initIdentityBridge();
         initTabs();
+        fetchCampaignMessage();
         loadConfig();
+        initChallengeCountdown();
         loadUserStatus();
-        loadTally();
+        scheduleTallyLoad();
         if (!state.unifiedDisplay) {
             loadAutoBanner();
         }
@@ -123,6 +141,45 @@
                 loadUserStatus();
             }
         });
+    }
+
+    function scheduleTallyLoad() {
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(function () {
+                loadTally();
+            }, { timeout: 1500 });
+            return;
+        }
+        setTimeout(function () {
+            loadTally();
+        }, 800);
+    }
+
+    function openCampaignMessagePanel() {
+        if (typeof window.sharityOpenMessagePopover === 'function') {
+            window.sharityOpenMessagePopover();
+            return;
+        }
+
+        const actionBarMessage = document.querySelector('.sharity-action-bar [data-bar="message"]');
+        if (actionBarMessage) {
+            actionBarMessage.dispatchEvent(new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+            }));
+            return;
+        }
+
+        if (window.location.hash !== '#ads-watch-message') {
+            history.replaceState(null, '', '#ads-watch-message');
+        }
+        window.dispatchEvent(new Event('hashchange'));
+
+        const messageSection = document.querySelector('#ads-watch-message, [data-role="ads-watch-message"]');
+        if (messageSection && messageSection.scrollIntoView) {
+            messageSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     function initEventListeners() {
@@ -159,6 +216,23 @@
             $('#vote-amount-input').val(nextValue > 0 ? nextValue : '');
             updateVoteControls();
         });
+
+        if ($messageCard.length) {
+            $messageCard
+                .attr('tabindex', '0')
+                .attr('role', 'button')
+                .attr('aria-label', 'Kampány üzenet megnyitása')
+                .on('click', function (e) {
+                    e.preventDefault();
+                    openCampaignMessagePanel();
+                })
+                .on('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openCampaignMessagePanel();
+                    }
+                });
+        }
 
         $('#ngo-search-input').on('input', debounce(searchNgos, 300));
 
@@ -232,19 +306,16 @@
             });
         }
 
-        $('#ads-watch-cta-link').on('click', function () {
+        $('#ads-watch-cta-link').on('click', function (event) {
             if (!state.ctaMeta) return;
+            event.preventDefault();
             // Only award bonus once per video
             if (state.ctaClicked) {
                 console.log('[Sponsor CTA] Already clicked - skipping bonus');
                 return;
             }
             state.ctaClicked = true;
-            // CTA bonus values
-            const ctaBonusPoints = state.ctaMeta.points || 5;
-            const ctaBonusVotes = 5;
-            state.ctaBonusPoints = ctaBonusPoints;
-            state.ctaBonusVotes = ctaBonusVotes;
+            const fallbackReward = getCtaFallbackReward(state.ctaMeta.points || 0);
             // Track CTA click
             sendCtaTracking({
                 content_type: state.ctaMeta.content_type,
@@ -255,33 +326,72 @@
                 price_range: '',
                 points: state.ctaMeta.points || 0,
                 dedupe_key: state.ctaMeta.dedupe_key || ''
+            }, {
+                fallbackReward: fallbackReward
             });
-            // Update available votes locally (CTA gives +5 votes)
-            state.availableVotes = (state.availableVotes || 0) + 5;
-            updateStatusDisplay();
-            showCtaStickyNotice(`+${ctaBonusPoints} pont és +${ctaBonusVotes} szavazat a kattintásért!`);
+
+            const href = String($(this).attr('href') || '').trim();
+            if (href && href !== '#') {
+                const opened = window.open(href, '_blank', 'noopener');
+                if (!opened) {
+                    showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
+                }
+            }
         });
 
-        $(document).on('click', '[data-role=auto-banner-link]', function () {
-            const payload = $(this).closest('[data-role=auto-banner]').data('cta-payload');
-            if (payload) {
-                // Only award bonus once per banner rotation
-                if (state.ctaClicked) {
-                    console.log('[Auto-banner CTA] Already clicked - skipping bonus');
-                    return;
-                }
+        $(document).on('click', '[data-role=auto-banner-link]', function (event) {
+            const $link = $(this);
+            const payload = $link.closest('[data-role=auto-banner]').data('cta-payload');
+            console.log('[AutoBanner][DEBUG] CLICK handler fired', {
+                href: $link.attr('href'),
+                target: $link.attr('target'),
+                tagName: this.tagName,
+                dataRole: $link.attr('data-role'),
+                hasPayload: !!payload,
+                payloadShopSlug: payload && payload.shop_slug,
+                payloadRawUrl: payload && payload.raw_url,
+                payloadCtaUrl: payload && payload.cta_url,
+                selectedNgo: state.selectedNgo,
+                ctaClicked: state.ctaClicked,
+                filloutFormId: config.filloutFormId
+            });
+            event.preventDefault();
+
+            // ── Open target URL FIRST while browser still trusts the user gesture ──
+            const rawUrl = String($link.attr('href') || (payload && payload.cta_url) || '').trim();
+            let opened = null;
+            if (rawUrl && rawUrl !== '#') {
+                const ngoSlug = state.selectedNgo ? state.selectedNgo.slug : '';
+                const shopSlug = (payload && payload.shop_slug) || '';
+                const rawTarget = (payload && payload.raw_url) || rawUrl;
+                const clickUrl = transformBannerUrl(rawTarget, shopSlug, ngoSlug);
+                console.log('[AutoBanner][DEBUG] CLICK resolved URLs', {
+                    rawUrl: rawUrl,
+                    rawTarget: rawTarget,
+                    shopSlug: shopSlug,
+                    ngoSlug: ngoSlug,
+                    clickUrl: clickUrl,
+                    isFillout: clickUrl && clickUrl.includes('fillout.com')
+                });
+                opened = window.open(clickUrl, '_blank', 'noopener');
+            }
+
+            // ── Award bonus (once per banner rotation) ──
+            if (payload && !state.ctaClicked) {
                 state.ctaClicked = true;
-                sendCtaTracking(payload);
-                // Update available votes locally (CTA gives +5 votes)
-                state.availableVotes = (state.availableVotes || 0) + 5;
-                updateStatusDisplay();
-                showCtaStickyNotice('+5 pont és +5 szavazat a kattintásért!');
+                sendCtaTracking(payload, {
+                    fallbackReward: getCtaFallbackReward(payload.points || 0)
+                });
+            }
+
+            if (rawUrl && rawUrl !== '#' && !opened) {
+                showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
             }
         });
     }
 
     function initTabs() {
-        const $tabs = $('[data-role=ads-watch-tabs]');
+    const $tabs = $('[data-role=ads-watch-tabs]');
         const $tabButtons = $('[data-role=ads-watch-tab]');
         const $main = $('[data-role=ads-watch-main]');
         const $offerwall = $('#impactshop-offerwall');
@@ -307,15 +417,22 @@
                 }, 60);
             }
         };
+        const setActiveTab = function (target) {
+            $tabButtons.removeClass('is-active');
+            const $targetBtn = $tabButtons.filter('[data-target="' + target + '"]');
+            if ($targetBtn.length) {
+                $targetBtn.addClass('is-active');
+            }
+        };
 
         const headerCopy = {
             video: {
-                subtitle: '🎬 Nézz videókat, gyűjts pontokat és szavazz!',
-                info: '🎬 <strong>Nézz videókat</strong> – minden megtekintés után pontot kapsz'
+                subtitle: '🎬 Nézz videókat – minden megtekintés után pontot és szavazatot kapsz.',
+                info: '🎬 <strong>Nézz videókat</strong> – minden megtekintés után pontot és szavazatot kapsz'
             },
             offerwall: {
-                subtitle: '🧩 Végezz feladatokat, gyűjts pontokat és szavazz!',
-                info: '🧩 <strong>Végezz feladatokat</strong> – minden teljesítés után pontot kapsz'
+                subtitle: '🧩 Végezz feladatokat – minden teljesítés után pontot és szavazatot kapsz.',
+                info: '🧩 <strong>Végezz feladatokat</strong> – minden teljesítés után pontot és szavazatot kapsz'
             }
         };
 
@@ -329,23 +446,48 @@
             }
         };
 
-        const showVideo = function () {
+        const showVideo = function (skipScroll) {
             $main.prop('hidden', false);
             $offerwall.prop('hidden', true);
             $offerwall.css('display', 'none');
             applyHeaderCopy('video');
-            scrollToTarget('#ads-watch-video');
+            setActiveTab('video');
+            if (!skipScroll) {
+                scrollToTarget('#ads-watch-video');
+            }
         };
 
-        const showOfferwall = function () {
+        const showOfferwall = function (skipScroll) {
             $main.prop('hidden', true);
             $offerwall.prop('hidden', false);
             $offerwall.css('display', '');
             applyHeaderCopy('offerwall');
-            scrollToTarget('#impactshop-offerwall');
+            setActiveTab('offerwall');
+            if (!skipScroll) {
+                scrollToTarget('#impactshop-offerwall');
+            }
         };
 
-        showVideo();
+        const handleHash = function () {
+            const hash = String(window.location.hash || '');
+            if (hash === '#impactshop-offerwall') {
+                showOfferwall(true);
+                scrollToTarget('#impactshop-offerwall');
+                return;
+            }
+            if (hash === '#ads-watch-purchase') {
+                showVideo(true);
+                scrollToTarget('#ads-watch-purchase');
+                return;
+            }
+            showVideo(true);
+            if (hash === '#ads-watch-video') {
+                scrollToTarget('#ads-watch-video');
+            }
+        };
+
+        handleHash();
+        window.addEventListener('hashchange', handleHash);
         $tabButtons.on('click', function () {
             const target = String($(this).data('target') || '');
             $tabButtons.removeClass('is-active');
@@ -448,9 +590,10 @@
 
                 state.pseudoId = response.pseudo_id || state.pseudoId;
                 state.points = response.points || 0;
-                state.level = response.level || 'basic';
+                state.level = normalizeLevelValue(response.level || response.sharity_level || response.user_level) || 'basic';
                 state.voteWeightRegular = response.vote_weight_regular || 1;
                 state.voteWeightSponsor = response.vote_weight_sponsor || 5;
+                state.donationMultiplier = Number(response.donation_multiplier || 1);
                 state.selectedNgo = response.selected_ngo || null;
                 state.todayViews = response.today_views || 0;
                 state.availableVotes = response.available_votes || 0;
@@ -461,10 +604,111 @@
                 updateNgoDisplay();
                 updateWatchButton();
                 updateVoteControls();
+                refreshAutoBannerLink('status-load');
             })
             .fail(function (xhr) {
                 console.error('Failed to load user status:', xhr);
+                loadUserStatusFallback(xhr);
             });
+    }
+
+    function loadUserStatusFallback(xhr) {
+        const fallbackUrl = getFallbackStatusUrl();
+        if (!fallbackUrl) {
+            return;
+        }
+
+        const queryParts = [`ts=${Date.now()}`];
+        if (state.pseudoId) {
+            queryParts.push(`pseudo_id=${encodeURIComponent(state.pseudoId)}`);
+        }
+
+        $.ajax({
+            url: `${fallbackUrl}?${queryParts.join('&')}`,
+            method: 'GET',
+            dataType: 'json',
+            timeout: 10000,
+            xhrFields: { withCredentials: true },
+        })
+            .done(function (response) {
+                const fallback = normalizeFallbackStatus(response);
+                if (!fallback) {
+                    return;
+                }
+                state.points = fallback.points;
+                state.level = fallback.level;
+                if (Number.isFinite(fallback.availableVotes)) {
+                    state.availableVotes = fallback.availableVotes;
+                }
+                if (fallback.streakDays !== null) {
+                    state.stats = Object.assign({}, state.stats, { streak_days: fallback.streakDays });
+                }
+                updateStatusDisplay();
+                updateWatchButton();
+                updateVoteControls();
+                showNotification('A státusz frissítése sikertelen, részleges adatok láthatók.', 'warning');
+            })
+            .fail(function (fallbackXhr) {
+                console.error('Failed to load fallback status:', fallbackXhr);
+                if (xhr && xhr.status === 0) {
+                    showNotification('Nem sikerült frissíteni az adatokat. Próbáld később.', 'error');
+                }
+            });
+    }
+
+    function normalizeFallbackStatus(response) {
+        if (!response || typeof response !== 'object') {
+            return null;
+        }
+        const points = Number(response.points || response.points_total || response.total_points || 0);
+        const level = normalizeLevelValue(response.level || response.sharity_level || response.user_level) || 'basic';
+        const availableVotes = response.available_votes !== undefined
+            ? Number(response.available_votes || 0)
+            : (response.votes !== undefined ? Number(response.votes || 0) : null);
+        const streakDays = response.streak_days !== undefined
+            ? Number(response.streak_days || 0)
+            : (response.stats && response.stats.streak_days !== undefined
+                ? Number(response.stats.streak_days || 0)
+                : null);
+
+        return {
+            points: Number.isFinite(points) ? points : 0,
+            level: level || 'basic',
+            availableVotes: Number.isFinite(availableVotes) ? availableVotes : null,
+            streakDays: Number.isFinite(streakDays) ? streakDays : null,
+        };
+    }
+
+    function normalizeLevelValue(value) {
+        if (!value) {
+            return '';
+        }
+        if (Array.isArray(value)) {
+            if (value.length === 0) {
+                return '';
+            }
+            return normalizeLevelValue(value[0]);
+        }
+        if (typeof value === 'object') {
+            const candidate = value.key || value.slug || value.code || value.name || value.label || value.level || value.value || '';
+            if (!candidate) {
+                return '';
+            }
+            return normalizeLevelValue(candidate);
+        }
+        const text = String(value);
+        if (text.toLowerCase() === '[object object]') {
+            return '';
+        }
+        return text.toLowerCase();
+    }
+
+    function getFallbackStatusUrl() {
+        const base = String(restUrl || '').replace(/\/impact\/v1\/ads-watch\/?$/, '');
+        if (base) {
+            return `${base}/impact/v1/ads-watch/status`;
+        }
+        return '/wp-json/impact/v1/ads-watch/status';
     }
 
     function loadTally(limit = 10) {
@@ -515,6 +759,7 @@
                     state.selectedNgo = response.ngo;
                     updateNgoDisplay();
                     updateWatchButton();
+                    refreshAutoBannerLink('ngo-set');
                     closeNgoModal();
                     showNotification('NGO sikeresen kiválasztva!', 'success');
                     trackEvent('ads_watch_ngo_select', {
@@ -532,13 +777,219 @@
     }
 
     function updateStatusDisplay() {
-        $('#user-points-display').text(formatNumber(state.points));
-        $('#user-level-display').text(capitalizeFirst(state.level));
+        const safePoints = Math.max(0, Math.round(Number(state.points || 0)));
+        const safeVotes = Math.max(0, Math.round(Number(state.availableVotes || 0)));
+
+        $('#user-points-display').text(formatNumber(safePoints));
+        const safeLevel = sanitizeLevelLabel(state.level);
+        $('#user-level-display').text(capitalizeFirst(safeLevel));
         $('#vote-weight-display').text(`×${state.voteWeightRegular}`);
-        $('#available-votes-display').text(formatNumber(state.availableVotes));
-        $('#available-votes-inline').text(formatNumber(state.availableVotes));
+        const multiplier = Number(state.donationMultiplier || 1);
+        const bonusPct = Math.max(0, Math.round((multiplier - 1) * 100));
+        $('#donation-multiplier-display').text(`+${bonusPct}%`);
+        $('#available-votes-display').text(formatNumber(safeVotes));
+        $('#available-votes-inline').text(formatNumber(safeVotes));
         const streakDays = Number(state.stats && state.stats.streak_days ? state.stats.streak_days : 0);
-        $('#streak-display').text(streakDays > 0 ? `${streakDays} nap` : '-');
+        let streakMultiplier = 1.0;
+        if (streakDays >= 30) {
+          streakMultiplier = 1.30;
+        } else if (streakDays >= 14) {
+          streakMultiplier = 1.20;
+        } else if (streakDays >= 7) {
+          streakMultiplier = 1.10;
+        }
+        const streakLabel = streakDays > 0 ? `${streakDays} nap` : '0 nap';
+        $('#streak-display').text(`${streakLabel} (x${streakMultiplier.toFixed(2)})`);
+        syncVideoBalanceCounters(safePoints, safeVotes);
+    }
+
+    function syncVideoBalanceCounters(points, votes) {
+        const $points = $('#video-balance-points');
+        const $votes = $('#video-balance-votes');
+        if (!$points.length || !$votes.length) {
+            return;
+        }
+
+        const nextPoints = Math.max(0, Math.round(Number(points || 0)));
+        const nextVotes = Math.max(0, Math.round(Number(votes || 0)));
+
+        if (!state.videoBalanceReady) {
+            state.videoBalanceReady = true;
+            state.videoBalancePointsDisplay = 0;
+            state.videoBalanceVotesDisplay = 0;
+            $points.text(formatNumber(0));
+            $votes.text(formatNumber(0));
+            animateVideoBalanceValue('points', 0, nextPoints, { silentDelta: true });
+            animateVideoBalanceValue('votes', 0, nextVotes, { silentDelta: true });
+            return;
+        }
+
+        animateVideoBalanceValue('points', state.videoBalancePointsDisplay, nextPoints);
+        animateVideoBalanceValue('votes', state.videoBalanceVotesDisplay, nextVotes);
+    }
+
+    function stopVideoBalanceAnimation(kind) {
+        const key = kind === 'points' ? 'videoBalanceRafPoints' : 'videoBalanceRafVotes';
+        if (state[key]) {
+            cancelAnimationFrame(state[key]);
+            state[key] = null;
+        }
+    }
+
+    function animateVideoBalanceValue(kind, fromValue, toValue, opts) {
+        const $target = kind === 'points' ? $('#video-balance-points') : $('#video-balance-votes');
+        const $item = kind === 'points'
+            ? $('.live-balance-item[data-type="points"]')
+            : $('.live-balance-item[data-type="votes"]');
+
+        if (!$target.length) {
+            return;
+        }
+
+        const start = Math.max(0, Math.round(Number(fromValue || 0)));
+        const end = Math.max(0, Math.round(Number(toValue || 0)));
+        const delta = end - start;
+        const silentDelta = !!(opts && opts.silentDelta);
+
+        if (kind === 'points') {
+            state.videoBalancePointsDisplay = end;
+        } else {
+            state.videoBalanceVotesDisplay = end;
+        }
+
+        if (delta > 0 && !silentDelta) {
+            showVideoBalanceDelta(kind, delta);
+            if ($item.length) {
+                $item.addClass('is-updated');
+                setTimeout(function () {
+                    $item.removeClass('is-updated');
+                }, 700);
+            }
+        }
+
+        if (start === end) {
+            $target.text(formatNumber(end));
+            return;
+        }
+
+        stopVideoBalanceAnimation(kind);
+
+        const duration = Math.min(1200, Math.max(340, Math.abs(delta) * 28));
+        const startTs = performance.now();
+        const easeOut = function (t) {
+            return 1 - Math.pow(1 - t, 3);
+        };
+
+        const step = function (now) {
+            const progress = Math.min(1, (now - startTs) / duration);
+            const eased = easeOut(progress);
+            const value = Math.round(start + (delta * eased));
+            $target.text(formatNumber(value));
+            if (progress < 1) {
+                const raf = requestAnimationFrame(step);
+                if (kind === 'points') {
+                    state.videoBalanceRafPoints = raf;
+                } else {
+                    state.videoBalanceRafVotes = raf;
+                }
+            } else {
+                if (kind === 'points') {
+                    state.videoBalanceRafPoints = null;
+                } else {
+                    state.videoBalanceRafVotes = null;
+                }
+                $target.text(formatNumber(end));
+            }
+        };
+
+        const raf = requestAnimationFrame(step);
+        if (kind === 'points') {
+            state.videoBalanceRafPoints = raf;
+        } else {
+            state.videoBalanceRafVotes = raf;
+        }
+    }
+
+    function showVideoBalanceDelta(kind, amount) {
+        const $delta = kind === 'points'
+            ? $('#video-balance-points-delta')
+            : $('#video-balance-votes-delta');
+
+        if (!$delta.length || amount <= 0) {
+            return;
+        }
+
+        const timerKey = kind === 'points'
+            ? 'videoBalanceDeltaTimerPoints'
+            : 'videoBalanceDeltaTimerVotes';
+
+        if (state[timerKey]) {
+            clearTimeout(state[timerKey]);
+            state[timerKey] = null;
+        }
+
+        $delta.text('+' + formatNumber(amount));
+        $delta.addClass('is-visible');
+
+        state[timerKey] = setTimeout(function () {
+            $delta.removeClass('is-visible');
+            state[timerKey] = null;
+        }, 950);
+    }
+
+    function sanitizeLevelLabel(value) {
+        const normalized = normalizeLevelValue(value);
+        if (!normalized) {
+            return 'basic';
+        }
+        if (normalized.toLowerCase() === '[object object]') {
+            return 'basic';
+        }
+        return normalized;
+    }
+
+    function initChallengeCountdown() {
+        const $display = $('#impact-challenge-countdown-display');
+        if (!$display.length) {
+            return;
+        }
+
+        const quarter = config.quarter || {};
+        const startTs = Number(quarter.startTs || 0);
+        const endTs = Number(quarter.endTs || 0);
+        const baseServerTs = Number(quarter.nowTs || 0);
+        const baseClientTs = Math.floor(Date.now() / 1000);
+
+        if (!startTs || !endTs) {
+            $display.text('-');
+            return;
+        }
+
+        function getNowTs() {
+            if (baseServerTs > 0) {
+                return baseServerTs + Math.floor(Date.now() / 1000 - baseClientTs);
+            }
+            return Math.floor(Date.now() / 1000);
+        }
+
+        function render() {
+            const nowTs = getNowTs();
+            if (nowTs < startTs) {
+                $display.text(`Indulásig: ${formatCountdown(startTs - nowTs)}`);
+                return;
+            }
+            if (nowTs <= endTs) {
+                $display.text(`Lezárásig: ${formatCountdown(endTs - nowTs)}`);
+                return;
+            }
+            $display.text('Lezárult');
+        }
+
+        render();
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+        countdownTimer = setInterval(render, 30000);
     }
 
     function notifyPointsUpdated() {
@@ -926,6 +1377,12 @@
                 const contentType = response && response.content_type ? String(response.content_type) : String(response && response.mode ? response.mode : 'regular');
                 const contentId = response && response.content_id ? String(response.content_id) : '';
                 const cta = response && response.cta ? response.cta : null;
+                const ctaPointsHintRaw = cta && cta.points !== undefined
+                    ? Number(cta.points)
+                    : Number(rewardRules.cta_points || 0);
+                state.currentCtaPoints = Number.isFinite(ctaPointsHintRaw)
+                    ? Math.max(0, Math.round(ctaPointsHintRaw))
+                    : 0;
 
                 if (contentType === 'education' && response.education) {
                     state.currentMode = 'education';
@@ -2195,14 +2652,17 @@
         // Sponsor CTA with icon and "Kattints ide!" text (same style as IMA CTA)
         $link.html('<span class="ima-cta-icon">👆</span><span class="ima-cta-text">Kattints ide!</span>');
         $link.attr('href', url);
+        $link.attr('target', '_blank');
+        $link.attr('rel', 'noopener');
         $link.attr('title', 'Kattints a bónusz pontokért!');
         $cta.show();
         if (meta && typeof meta === 'object') {
+            const ctaPoints = Number(meta.points);
             state.ctaMeta = {
                 content_type: String(meta.content_type || ''),
                 content_id: String(meta.content_id || ''),
                 sponsor_id: Number(meta.sponsor_id || 0),
-                points: 5, // Always 5 points for CTA clicks
+                points: Number.isFinite(ctaPoints) ? Math.max(0, Math.round(ctaPoints)) : 0,
                 dedupe_key: String(meta.dedupe_key || '')
             };
         }
@@ -2227,14 +2687,25 @@
         }
     }
 
+    function normalizeEncodedUrl(value) {
+        return String(value || '')
+            .replace(/#038;/g, '&')
+            .replace(/&#38;/g, '&')
+            .replace(/&amp;/g, '&');
+    }
+
     function extractFilloutTarget(bannerUrl) {
         if (!bannerUrl) {
             return bannerUrl;
         }
         try {
-            const url = new URL(bannerUrl);
+            const url = new URL(normalizeEncodedUrl(bannerUrl));
             if (url.hostname.includes('fillout.com')) {
-                const uParam = url.searchParams.get('u');
+                let uParam = url.searchParams.get('u');
+                if (!uParam && url.hash) {
+                    const hashParams = new URLSearchParams(normalizeEncodedUrl(url.hash.replace(/^#/, '')));
+                    uParam = hashParams.get('u');
+                }
                 if (uParam) {
                     return decodeURIComponent(escape(atob(uParam)));
                 }
@@ -2245,15 +2716,234 @@
         return bannerUrl;
     }
 
+    function isFilloutUrl(url) {
+        try {
+            const parsed = new URL(url);
+            return parsed.hostname.includes('fillout.com');
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function normalizeTargetUrl(rawUrl) {
+        if (!rawUrl) {
+            return rawUrl;
+        }
+        let candidate = normalizeEncodedUrl(rawUrl);
+        if (isFilloutUrl(candidate)) {
+            return extractFilloutTarget(candidate) || candidate;
+        }
+        try {
+            const parsed = new URL(candidate);
+            if (parsed.hostname.includes('dognet.com') && parsed.searchParams.has('url')) {
+                const inner = normalizeEncodedUrl(decodeURIComponent(parsed.searchParams.get('url') || ''));
+                if (inner) {
+                    candidate = inner;
+                }
+                if (isFilloutUrl(candidate)) {
+                    return extractFilloutTarget(candidate) || candidate;
+                }
+                return candidate;
+            }
+        } catch (e) {
+            return candidate;
+        }
+        return candidate;
+    }
+
+    function buildFilloutUrl(targetUrl, shopSlug, ngoSlug) {
+        const fallbackBase = 'https://form.fillout.com/t/eM61RLkz6jus';
+        let rawBase = String(config.filloutFormId || '').trim();
+        if (!rawBase) {
+            rawBase = fallbackBase;
+        }
+        let base = rawBase;
+        if (!/^https?:\/\//i.test(base)) {
+            base = `https://form.fillout.com/t/${base}`;
+        }
+        const params = new URLSearchParams();
+        if (shopSlug) {
+            params.set('shop', shopSlug);
+        }
+        if (ngoSlug) {
+            params.set('d1', ngoSlug);
+        }
+        if (targetUrl) {
+            params.set('u', safeBtoa(targetUrl));
+        }
+        const buildWithBase = (baseUrl) => {
+            if (!baseUrl) {
+                return '';
+            }
+            const query = params.toString();
+            if (!query) {
+                return baseUrl;
+            }
+            const joiner = baseUrl.includes('?') ? '&' : '?';
+            return `${baseUrl}${joiner}${query}`;
+        };
+        try {
+            const url = new URL(base);
+            params.forEach((value, key) => {
+                url.searchParams.set(key, value);
+            });
+            return url.toString();
+        } catch (e) {
+            if (base !== fallbackBase) {
+                try {
+                    const url = new URL(fallbackBase);
+                    params.forEach((value, key) => {
+                        url.searchParams.set(key, value);
+                    });
+                    return url.toString();
+                } catch (err) {
+                    return buildWithBase(base || fallbackBase);
+                }
+            }
+            return buildWithBase(base || fallbackBase);
+        }
+    }
+
+    function shouldUseFillout(ngoSlug) {
+        return !ngoSlug || String(ngoSlug).trim() === '';
+    }
+
+    function resolveFilloutUrl(targetUrl, shopSlug, ngoSlug) {
+        if (!targetUrl) {
+            return targetUrl;
+        }
+        let cleanSlug = String(shopSlug || '');
+        if (cleanSlug.startsWith('sync:')) {
+            cleanSlug = cleanSlug.substring(5);
+        }
+        const normalizedSlug = cleanSlug.toLowerCase();
+        const resolvedTarget = normalizeTargetUrl(targetUrl);
+        const trackedTarget = normalizedSlug.includes('arukereso')
+            ? buildArukeresoTrackedUrl(resolvedTarget, config.arukeresoDognetBase || '', ngoSlug)
+            : resolvedTarget;
+        if (!shouldUseFillout(ngoSlug)) {
+            return trackedTarget;
+        }
+        return buildFilloutUrl(trackedTarget, cleanSlug, ngoSlug) || trackedTarget;
+    }
+
+    function parseQueryFromUrl(url) {
+        try {
+            const parsed = new URL(url);
+            const params = {};
+            parsed.searchParams.forEach((value, key) => {
+                params[key] = value;
+            });
+            return params;
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function arukeresoIsHost(hostname) {
+        if (!hostname) {
+            return false;
+        }
+        return /(^|\.)arukereso\.[a-z.]+$/i.test(String(hostname).toLowerCase());
+    }
+
+    function buildArukeresoTrackedUrl(productUrl, dognetBase, ngoSlug) {
+        if (!productUrl) {
+            return productUrl;
+        }
+        let target;
+        try {
+            target = new URL(productUrl);
+        } catch (e) {
+            return productUrl;
+        }
+        if (!arukeresoIsHost(target.hostname)) {
+            return productUrl;
+        }
+
+        const baseParams = parseQueryFromUrl(dognetBase || '');
+        const affKeys = ['a_aid', 'a_cid', 'a_bid', 'chan', 'chid', 'refid'];
+        const merged = parseQueryFromUrl(productUrl);
+
+        if (!merged.utm_source) merged.utm_source = 'dognet';
+        if (!merged.utm_medium) merged.utm_medium = 'cpc';
+        if (!merged.utm_campaign) {
+            const tld = (target.hostname.split('.').pop() || '').toUpperCase();
+            merged.utm_campaign = tld || 'HU';
+        }
+
+        affKeys.forEach((key) => {
+            if (baseParams[key]) {
+                merged[key] = baseParams[key];
+                if (key === 'chid' && !merged.chan) {
+                    merged.chan = baseParams[key];
+                }
+            }
+        });
+
+        if (ngoSlug) {
+            merged.data1 = ngoSlug;
+        }
+
+        const query = new URLSearchParams(merged);
+        return `${target.origin}${target.pathname}?${query.toString()}${target.hash || ''}`;
+    }
+
+    function buildAutoBannerFallbackImage(shopSlug) {
+        const cleanSlug = String(shopSlug || '').replace(/^sync:/, '').toLowerCase();
+        if (cleanSlug) {
+            return `${window.location.origin}/wp-content/uploads/shops/${cleanSlug}-logo.png`;
+        }
+        return `${window.location.origin}/wp-content/uploads/impactshop/ngo-card-default.jpg`;
+    }
+
+    function applyAutoBannerImage($img, banner) {
+        const imgEl = $img && $img.get(0);
+        if (!imgEl) {
+            return;
+        }
+        const fallback = buildAutoBannerFallbackImage(banner.shop_slug || '');
+        let rawUrl = banner.image_url || '';
+        if (/^http:\/\//i.test(rawUrl)) {
+            rawUrl = rawUrl.replace(/^http:\/\//i, 'https://');
+        }
+        const safeUrl = /^https:\/\//i.test(rawUrl) ? rawUrl : fallback;
+        imgEl.onerror = function () {
+            if (imgEl.dataset.fallbackApplied === '1') {
+                return;
+            }
+            imgEl.dataset.fallbackApplied = '1';
+            imgEl.src = fallback;
+        };
+        imgEl.dataset.fallbackApplied = '0';
+        imgEl.src = safeUrl;
+    }
+
     function transformBannerUrl(bannerUrl, shopSlug, ngoSlug) {
+        console.log('[AutoBanner][DEBUG] transformBannerUrl called', {
+            bannerUrl: bannerUrl,
+            shopSlug: shopSlug,
+            ngoSlug: ngoSlug,
+            filloutFormId: config.filloutFormId
+        });
         if (!bannerUrl) {
+            console.log('[AutoBanner][DEBUG] transformBannerUrl: no bannerUrl, returning as-is');
             return bannerUrl;
         }
-        if (!ngoSlug) {
-            return bannerUrl;
-        }
-        const targetUrl = extractFilloutTarget(bannerUrl) || bannerUrl;
+        const targetUrl = normalizeTargetUrl(bannerUrl) || bannerUrl;
         if (!shopSlug) {
+            if (shouldUseFillout(ngoSlug)) {
+                const filloutFallback = buildFilloutUrl(targetUrl, '', ngoSlug);
+                if (filloutFallback) {
+                    console.log('[AutoBanner][DEBUG] transformBannerUrl: no shopSlug, using fillout fallback:', filloutFallback);
+                    return filloutFallback;
+                }
+            }
+            if (targetUrl && targetUrl !== bannerUrl) {
+                console.log('[AutoBanner][DEBUG] transformBannerUrl: no shopSlug, using normalized targetUrl:', targetUrl);
+                return targetUrl;
+            }
+            console.log('[AutoBanner][DEBUG] transformBannerUrl: no shopSlug, returning bannerUrl as-is:', bannerUrl);
             return bannerUrl;
         }
         // Strip sync: prefix from shop slug (harvester-synced banners)
@@ -2262,21 +2952,67 @@
             cleanSlug = cleanSlug.substring(5);
         }
         const normalizedSlug = String(cleanSlug || '').toLowerCase();
-        if (normalizedSlug.includes('arukereso')) {
-            const base = `${window.location.origin}/go`;
-            const params = new URLSearchParams({
-                shop: cleanSlug,
-                d1: ngoSlug,
-                src: 'ads-watch',
-            });
-            return `${base}?${params.toString()}`;
+        const isArukereso = normalizedSlug.includes('arukereso');
+        const trackedTarget = isArukereso
+            ? buildArukeresoTrackedUrl(targetUrl, config.arukeresoDognetBase || '', ngoSlug)
+            : targetUrl;
+        const filloutUrl = shouldUseFillout(ngoSlug)
+            ? buildFilloutUrl(trackedTarget, cleanSlug, ngoSlug)
+            : '';
+        console.log('[AutoBanner][DEBUG] transformBannerUrl fillout result', {
+            targetUrl: targetUrl,
+            trackedTarget: trackedTarget,
+            filloutUrl: filloutUrl,
+            isDifferent: filloutUrl !== trackedTarget,
+            willReturnFillout: filloutUrl && filloutUrl !== trackedTarget
+        });
+        if (filloutUrl && filloutUrl !== trackedTarget) {
+            return filloutUrl;
+        }
+        if (isArukereso) {
+            return trackedTarget;
         }
         const base = `${window.location.origin}/go-deal/${encodeURIComponent(cleanSlug)}`;
         const params = new URLSearchParams({
-            d1: ngoSlug,
+            d1: ngoSlug || '',
             u: safeBtoa(targetUrl),
         });
         return `${base}?${params.toString()}`;
+    }
+
+    function refreshAutoBannerLink(reason) {
+        const banner = state.currentAutoBanner;
+        if (!banner) {
+            return;
+        }
+        const $banner = $('[data-role=auto-banner]');
+        if (!$banner.length) {
+            return;
+        }
+        const ngoSlug = state.selectedNgo ? state.selectedNgo.slug : '';
+        const finalUrl = transformBannerUrl(
+            banner.banner_url || '',
+            banner.shop_slug || '',
+            ngoSlug
+        );
+        const $link = $banner.find('[data-role=auto-banner-link]');
+        $link.attr('href', finalUrl || '#').attr('target', '_blank').attr('rel', 'noopener');
+        const payload = $banner.data('cta-payload') || {};
+        if (finalUrl) {
+            payload.cta_url = finalUrl;
+            payload.dedupe_key = buildCtaDedupe(
+                payload.content_type || 'auto_banner',
+                payload.content_id || banner.id || '',
+                finalUrl
+            );
+        }
+        $banner.data('cta-payload', payload);
+        console.log('[AutoBanner][DEBUG] refreshAutoBannerLink', {
+            reason: reason || '',
+            ngoSlug: ngoSlug,
+            finalUrl: finalUrl,
+            isFillout: finalUrl && finalUrl.includes('fillout.com')
+        });
     }
 
     function showAutoBannerContent(banner, cta, contentId, ttlSeconds) {
@@ -2299,6 +3035,8 @@
         const bannerId = contentId || banner.id || '';
         const ctaPoints = Number((cta && cta.points) || 1);
         state.currentAutoBanner = banner || null;
+        // Reset CTA tracking for new banner so bonus can be earned again
+        state.ctaClicked = false;
         const finalUrl = transformBannerUrl(
             banner.banner_url || '',
             banner.shop_slug || '',
@@ -2308,13 +3046,28 @@
 
         $banner.prop('hidden', false);
         $banner.find('[data-role=auto-banner-title]').text(banner.title || '');
-        $banner.find('[data-role=auto-banner-image]').attr('src', banner.image_url || '').attr('alt', banner.title || '');
+        const $bannerImg = $banner.find('[data-role=auto-banner-image]');
+        $bannerImg.attr('alt', banner.title || '');
+        applyAutoBannerImage($bannerImg, banner);
         $banner.find('[data-role=auto-banner-prices]').text(formatPriceLabel(banner));
-        $banner.find('[data-role=auto-banner-link]').attr('href', finalUrl || '#');
+        $banner.find('[data-role=auto-banner-link]')
+            .attr('href', finalUrl || '#')
+            .attr('target', '_blank')
+            .attr('rel', 'noopener');
+        console.log('[AutoBanner][DEBUG] showAutoBannerContent set link', {
+            finalUrl: finalUrl,
+            isFillout: finalUrl && finalUrl.includes('fillout.com'),
+            shopSlug: banner.shop_slug,
+            bannerUrl: banner.banner_url,
+            ngoSlug: state.selectedNgo ? state.selectedNgo.slug : '(none)',
+            hrefAfterSet: $banner.find('[data-role=auto-banner-link]').attr('href'),
+            targetAfterSet: $banner.find('[data-role=auto-banner-link]').attr('target')
+        });
         $banner.data('cta-payload', {
             content_type: 'auto_banner',
             content_id: bannerId,
             cta_url: finalUrl || '',
+            raw_url: banner.banner_url || '',
             shop_slug: banner.shop_slug || '',
             category: banner.category || '',
             price_range: banner.price_range || '',
@@ -2367,13 +3120,19 @@
             );
             $banner.prop('hidden', false);
             $banner.find('[data-role=auto-banner-title]').text(banner.title || '');
-            $banner.find('[data-role=auto-banner-image]').attr('src', banner.image_url || '').attr('alt', banner.title || '');
+            const $bannerImg = $banner.find('[data-role=auto-banner-image]');
+            $bannerImg.attr('alt', banner.title || '');
+            applyAutoBannerImage($bannerImg, banner);
             $banner.find('[data-role=auto-banner-prices]').text(formatPriceLabel(banner));
-            $banner.find('[data-role=auto-banner-link]').attr('href', finalUrl || '#');
+            $banner.find('[data-role=auto-banner-link]')
+                .attr('href', finalUrl || '#')
+                .attr('target', '_blank')
+                .attr('rel', 'noopener');
             $banner.data('cta-payload', {
                 content_type: 'auto_banner',
                 content_id: banner.id || '',
                 cta_url: finalUrl || '',
+                raw_url: banner.banner_url || '',
                 shop_slug: banner.shop_slug || '',
                 category: '',
                 price_range: '',
@@ -2432,11 +3191,15 @@
             return;
         }
         const bannerId = state.currentAutoBanner.id || '';
-        $banner.find('[data-role=auto-banner-link]').attr('href', finalUrl);
+        $banner.find('[data-role=auto-banner-link]')
+            .attr('href', finalUrl)
+            .attr('target', '_blank')
+            .attr('rel', 'noopener');
         $banner.data('cta-payload', {
             content_type: 'auto_banner',
             content_id: bannerId,
             cta_url: finalUrl,
+            raw_url: state.currentAutoBanner.banner_url || '',
             shop_slug: state.currentAutoBanner.shop_slug || '',
             category: state.currentAutoBanner.category || '',
             price_range: state.currentAutoBanner.price_range || '',
@@ -2469,10 +3232,68 @@
         return 'Ajánlat';
     }
 
-    function sendCtaTracking(payload) {
-        if (!payload || !payload.content_type) {
-            return;
+    function getCtaFallbackReward(pointsHint) {
+        const enabled = Number(pointsHint || 0) > 0;
+        return {
+            points: enabled ? 5 : 0,
+            votes: enabled ? 5 : 0
+        };
+    }
+
+    function applyCtaTrackingReward(response, fallbackReward) {
+        const safeResponse = response && typeof response === 'object' ? response : null;
+        const hasAwardedPoints = !!(safeResponse && Object.prototype.hasOwnProperty.call(safeResponse, 'awarded_points'));
+        const hasAwardedVotes = !!(safeResponse && Object.prototype.hasOwnProperty.call(safeResponse, 'awarded_votes'));
+
+        let awardedPoints = hasAwardedPoints
+            ? Number(safeResponse.awarded_points)
+            : Number((fallbackReward && fallbackReward.points) || 0);
+        let awardedVotes = hasAwardedVotes
+            ? Number(safeResponse.awarded_votes)
+            : Number((fallbackReward && fallbackReward.votes) || 0);
+
+        if (!Number.isFinite(awardedPoints) || awardedPoints < 0) {
+            awardedPoints = 0;
         }
+        if (!Number.isFinite(awardedVotes) || awardedVotes < 0) {
+            awardedVotes = 0;
+        }
+        awardedPoints = Math.round(awardedPoints);
+        awardedVotes = Math.round(awardedVotes);
+
+        const hasServerPointsTotal = !!(safeResponse && typeof safeResponse.new_total === 'number' && Number.isFinite(safeResponse.new_total));
+        const hasServerVotes = !!(safeResponse && typeof safeResponse.available_votes === 'number' && Number.isFinite(safeResponse.available_votes));
+
+        if (hasServerPointsTotal) {
+            state.points = Math.max(0, Math.round(Number(safeResponse.new_total)));
+        } else if (awardedPoints > 0) {
+            state.points = Math.max(0, Math.round(Number(state.points || 0))) + awardedPoints;
+        }
+
+        if (hasServerVotes) {
+            state.availableVotes = Math.max(0, Math.round(Number(safeResponse.available_votes)));
+        } else if (awardedVotes > 0) {
+            state.availableVotes = Math.max(0, Math.round(Number(state.availableVotes || 0))) + awardedVotes;
+        }
+
+        if (awardedPoints > 0 || awardedVotes > 0) {
+            state.ctaBonusPoints = Number(state.ctaBonusPoints || 0) + awardedPoints;
+            state.ctaBonusVotes = Number(state.ctaBonusVotes || 0) + awardedVotes;
+        }
+
+        if (awardedPoints > 0 || awardedVotes > 0 || hasServerPointsTotal || hasServerVotes) {
+            updateStatusDisplay();
+            updateVoteControls();
+            notifyPointsUpdated();
+        }
+    }
+
+    function sendCtaTracking(payload, options) {
+        if (!payload || !payload.content_type) {
+            return $.Deferred().reject({ status: 'invalid_payload' }).promise();
+        }
+        const safeOptions = options && typeof options === 'object' ? options : {};
+        const fallbackReward = safeOptions.fallbackReward || { points: 0, votes: 0 };
         const body = {
             content_type: payload.content_type,
             content_id: payload.content_id || '',
@@ -2483,22 +3304,26 @@
             points: Number(payload.points || 0),
             dedupe_key: payload.dedupe_key || ''
         };
-        const url = '/wp-json/impact/v1/tracking/cta-click';
-        try {
-            if (navigator.sendBeacon) {
-                const blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
-                navigator.sendBeacon(url, blob);
-                return;
-            }
-        } catch (e) {
-            // ignore
+        const headers = {};
+        if (restNonce) {
+            headers['X-WP-Nonce'] = restNonce;
         }
-        fetch(url, {
+        return $.ajax({
+            url: '/wp-json/impact/v1/tracking/cta-click',
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(body)
-        }).catch(function () {});
+            data: JSON.stringify(body),
+            contentType: 'application/json',
+            dataType: 'json',
+            timeout: 8000,
+            headers: headers,
+            xhrFields: { withCredentials: true }
+        })
+            .done(function (response) {
+                applyCtaTrackingReward(response, fallbackReward);
+            })
+            .fail(function (xhr) {
+                console.error('[CTA] tracking failed', xhr);
+            });
     }
 
     function onAdsManagerLoaded(adsManagerLoadedEvent) {
@@ -2682,6 +3507,7 @@
         
         // User clicked on IMA ad - award bonus points (5 pts + 5 votes)
         console.log('[IMA] Ad clicked - awarding CTA bonus');
+        const ctaPointsHint = Math.max(0, Math.round(Number(state.currentCtaPoints || 0)));
         sendCtaTracking({
             content_type: state.currentMode || 'ad',
             content_id: '',
@@ -2689,13 +3515,11 @@
             shop_slug: '',
             category: '',
             price_range: '',
-            points: 5,
+            points: ctaPointsHint,
             dedupe_key: 'ima_click:' + state.pseudoId + ':' + Date.now()
+        }, {
+            fallbackReward: getCtaFallbackReward(ctaPointsHint)
         });
-        // Update available votes locally (CTA gives +5 votes)
-        state.availableVotes = (state.availableVotes || 0) + 5;
-        updateStatusDisplay();
-        showNotification('+5 pont és +5 szavazat a kattintásért!', 'success');
         
         // Resume ad playback after click (IMA pauses on click)
         setTimeout(function() {
@@ -2788,18 +3612,22 @@
                 let votes = viewResponse.votes || 0;
                 
                 // Add CTA bonus if clicked during this video
-                const ctaBonusPoints = state.ctaBonusPoints || 0;
-                const ctaBonusVotes = state.ctaBonusVotes || 0;
-                const totalPoints = points + ctaBonusPoints;
-                const totalVotes = votes + ctaBonusVotes;
+                const ctaBonusPoints = Math.max(0, Number(state.ctaBonusPoints || 0));
+                const ctaBonusVotes = Math.max(0, Number(state.ctaBonusVotes || 0));
                 
                 if (typeof viewResponse.new_total === 'number') {
-                    state.points = viewResponse.new_total;
+                    state.points = Math.max(
+                        Math.max(0, Math.round(Number(state.points || 0))),
+                        Math.max(0, Math.round(Number(viewResponse.new_total)))
+                    );
                 } else {
                     state.points = state.points + points;
                 }
                 if (typeof viewResponse.available_votes === 'number') {
-                    state.availableVotes = viewResponse.available_votes;
+                    state.availableVotes = Math.max(
+                        Math.max(0, Math.round(Number(state.availableVotes || 0))),
+                        Math.max(0, Math.round(Number(viewResponse.available_votes)))
+                    );
                 } else {
                     state.availableVotes = state.availableVotes + votes;
                 }
@@ -2857,6 +3685,7 @@
         state.currentSponsorId = 0;
         state.pendingAdTagUrl = '';
         state.currentMode = 'regular';
+        state.currentCtaPoints = 0;
         state.imaAdDuration = 0;
         state.ctaBonusPoints = 0;
         state.ctaBonusVotes = 0;
@@ -2970,21 +3799,9 @@
     }
 
     function showRewardAnimation(points, votes) {
-        const p = Number(points) || 0;
-        const v = Number(votes) || 0;
-        if (p <= 0 && v <= 0) {
-            return;
-        }
-        const $anim = $('#reward-animation');
-        $('#reward-points-value').text(p);
-        $('#reward-votes-value').text(v);
-        $('#reward-ngo-name').text('').hide();
-
-        $anim.css('display', 'block');
-
-        setTimeout(function () {
-            $anim.fadeOut(500);
-        }, 2500);
+        // Reward popups are intentionally disabled.
+        // Real-time feedback is shown by the animated in-player balance counters.
+        return;
     }
 
     function showNotification(message, type = 'info') {
@@ -3051,8 +3868,56 @@
         }
     }
 
+    function updateCampaignMessage(text) {
+        if (!$messageText.length) return;
+        const placeholder = 'Üzenet hamarosan...';
+        const safeText = (text && String(text).trim()) ? String(text) : placeholder;
+        $messageText.text(safeText);
+        if ($messageCard.length) {
+            if (!safeText || safeText === placeholder) {
+                $messageCard.hide();
+            } else {
+                $messageCard.show();
+            }
+        }
+    }
+
+    function fetchCampaignMessage() {
+        if (!$messageText.length) return;
+        $.ajax({
+            url: '/wp-json/impact/v1/identity/messages?ts=' + Date.now(),
+            method: 'GET',
+            cache: false
+        }).done(function (data) {
+            const messages = data && Array.isArray(data.messages) ? data.messages : [];
+            if (!messages.length || !messages[0] || !messages[0].content) {
+                updateCampaignMessage('');
+                return;
+            }
+            updateCampaignMessage(messages[0].content);
+        }).fail(function () {
+            updateCampaignMessage('');
+        });
+    }
+
     function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    function formatCountdown(seconds) {
+        const total = Math.max(0, Math.floor(seconds));
+        const days = Math.floor(total / 86400);
+        const hours = Math.floor((total % 86400) / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const parts = [];
+        if (days > 0) {
+            parts.push(`${days} nap`);
+        }
+        if (days > 0 || hours > 0) {
+            parts.push(`${hours} óra`);
+        }
+        parts.push(`${minutes} perc`);
+        return parts.join(' ');
     }
 
     function trackEvent(name, data) {
