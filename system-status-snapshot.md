@@ -286,3 +286,7 @@ PHP lint ok for identity/gamification modules
 ## 2026-03-09 Workflow Infra Update
 - Dev-memory workflow 1-8 aktiválva (pre-task, context-pack, memory gate, PR auto-memory, commit template/hook, incident, digest, Copilot MCP guard).
 - Hookok újratelepítve; napi digest cron aktív.
+
+## 2026-03-10 15:34:42 CET - ads-watch strict audit continuity fix
+- Added explicit docs continuity note for `wp-content/mu-plugins/impactshop-ads-watch.css` module update.
+- Added matching conversation summary evidence so `safe-repo-audit --mode push --strict` sees note continuity in range.
