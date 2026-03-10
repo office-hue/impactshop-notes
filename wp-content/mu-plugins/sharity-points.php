@@ -16,7 +16,7 @@ if (!defined('SHARITY_POINTS_VERSION')) {
 }
 
 if (!defined('SHARITY_POINTS_SCHEMA')) {
-    define('SHARITY_POINTS_SCHEMA', '2026-01-23-02');
+    define('SHARITY_POINTS_SCHEMA', '2026-03-10-01');
 }
 
 define('SHARITY_POINTS_PATH', __DIR__);
@@ -115,6 +115,9 @@ function sharity_points_maybe_migrate(): void
             'shop_discovery',
             'feedback',
             'bonus',
+            'offerwall',
+            'ayet_offerwall',
+            'ayet_reversal',
             'decay',
             'vacation_start',
             'vacation_end',
@@ -229,6 +232,7 @@ function sharity_points_maybe_migrate(): void
     }
 
     sharity_points_maybe_alter_nullable_columns();
+    sharity_points_maybe_alter_point_transaction_types();
 
     update_option('sharity_points_schema_version', SHARITY_POINTS_SCHEMA);
     delete_transient('sharity_points_schema_lock');
@@ -273,4 +277,59 @@ function sharity_points_maybe_alter_nullable_columns(): void
         $wpdb->query("ALTER TABLE {$referrals_table} ADD COLUMN referrer_pseudo_id VARCHAR(64) NULL");
         $wpdb->query("ALTER TABLE {$referrals_table} ADD KEY idx_referrer_pseudo (referrer_pseudo_id)");
     }
+}
+
+function sharity_points_maybe_alter_point_transaction_types(): void
+{
+    global $wpdb;
+
+    $table = "{$wpdb->prefix}point_transactions";
+    $column = $wpdb->get_row("SHOW COLUMNS FROM {$table} LIKE 'type'", ARRAY_A);
+    if (!$column) {
+        return;
+    }
+
+    $required = [
+        "'purchase'",
+        "'video_sponsor'",
+        "'video_ad'",
+        "'share'",
+        "'referral'",
+        "'referral_bonus'",
+        "'profile_complete'",
+        "'nickname'",
+        "'first_purchase'",
+        "'wallet_download'",
+        "'login_daily'",
+        "'streak_bonus'",
+        "'tombola'",
+        "'shop_discovery'",
+        "'feedback'",
+        "'bonus'",
+        "'offerwall'",
+        "'ayet_offerwall'",
+        "'ayet_reversal'",
+        "'decay'",
+        "'vacation_start'",
+        "'vacation_end'",
+        "'admin_adjustment'",
+    ];
+
+    $typeDef = (string) ($column['Type'] ?? '');
+    $missing = false;
+    foreach ($required as $token) {
+        if (strpos($typeDef, $token) === false) {
+            $missing = true;
+            break;
+        }
+    }
+
+    if (!$missing) {
+        return;
+    }
+
+    $enumSql = implode(',', $required);
+    $wpdb->query(
+        "ALTER TABLE {$table} MODIFY `type` ENUM({$enumSql}) NOT NULL"
+    );
 }
