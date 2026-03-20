@@ -1,5 +1,13 @@
 # Repository Guidelines
 
+## Canonical Policy Sources
+- Workspace global policy: `/Users/bujdosoarnold/AGENTS.md`
+- Shared assistant policy: `/Users/bujdosoarnold/Developer/GitHub/ai-agent/docs/ai-assistant-canonical-policy.md`
+- Local assistant policy: `docs/ai-assistant-canonical-policy.md`
+- PR / merge / deploy policy: `docs/pr-policy.md`
+
+If any local assistant configuration conflicts with these files, treat the above list as canonical in that order.
+
 ## Project Structure & Module Organization
 - Root scripts live under `bin/` (deploy, QA, rollback) and `impactctl` (local helper entrypoint).
 - WordPress custom code sits in `wp-content/`: `mu-plugins/` carries always-on guards, diagnostics, and feature toggles (disabled variants end in `.off`), while `plugins/` holds deployable feature bundles.

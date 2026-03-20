@@ -63,7 +63,7 @@ function impactshop_event_donation_campaigns(): array
             'disclaimer' => '',
             'currency' => 'huf',
             'minimum_amount' => 500,
-            'maximum_amount' => 2500000,
+            'maximum_amount' => 3500000,
             'preset_amounts' => [10000, 25000, 50000, 100000, 250000],
             'goal_amount' => 15000000,
             'share_url' => 'https://jovonkvize.hu',
