@@ -6267,3 +6267,15 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `impactshop-notes` clean worktree (`chore/checkpoint-2026-03-05-impactshop-notes`, `origin/ops/adswatch-clean@5d5d6f6e`): strict safe-audit PASS.
 - `ai-agent` clean worktree (`chore/checkpoint-2026-03-05-ai-agent`, `origin/main@4cdae42e`): strict safe-audit PASS (`safe-repo-audit.sh --repo ... --strict`).
 - `impactall` futás: normál módban strict safe-audit FAIL (lokális dirty `impactshop-notes`), `IMPACTALL_SKIP_SAFE_AUDIT=1` módban PASS.
+### 2026-03-05 – Napi checkpoint rutin (clean worktree)
+- `impactall`: `IMPACTALL_SKIP_SAFE_AUDIT=1 IMPACTALL_AUTO_NOTES=0 ./impactall` (2026-03-05 15:40:35 CET).
+- Futási összegzés: staging `HTTP 403 / 287 ms`, production `HTTP 403 / 257 ms`, guard eredmény `1/1 PASS`.
+- Strict audit (clean worktree, impactshop-notes): `scripts/safe-repo-audit.sh --repo /Users/bujdosoarnold/Developer/GitHub/.worktrees/impactshop-notes-checkpoint-2026-03-05 --strict` -> PASS (`no local changes`).
+- Strict audit (clean worktree, impact_hub): `scripts/safe-repo-audit.sh --repo /private/tmp/impact_hub-checkpoint-20260305 --strict` -> PASS (`no local changes`).
+- Queue cleanup: `office-hue/ai-agent` PR #8 lezárva.
+
+### 2026-03-08 – One-path policy enforce (ops)
+- Kötelező útvonal rögzítve: `install-hooks-all.sh` -> `start-feature-worktree.sh` -> `git-health-check.sh` -> PR checklist -> merge.
+- Hook policy egységes: `pre-commit` main/master tiltás + `pre-push` direct main push tiltás.
+- Pre-push audit standard: `safe-repo-audit.sh --strict --mode push`.
+- PR kötelező checklist blokk + CI guard aktív; hiány esetén merge tiltás.
