@@ -286,3 +286,13 @@ PHP lint ok for identity/gamification modules
 ## 2026-03-09 Workflow Infra Update
 - Dev-memory workflow 1-8 aktiválva (pre-task, context-pack, memory gate, PR auto-memory, commit template/hook, incident, digest, Copilot MCP guard).
 - Hookok újratelepítve; napi digest cron aktív.
+
+## 2026-03-10 15:34:42 CET - ads-watch strict audit continuity fix
+- Added explicit docs continuity note for `wp-content/mu-plugins/impactshop-ads-watch.css` module update.
+- Added matching conversation summary evidence so `safe-repo-audit --mode push --strict` sees note continuity in range.
+
+## 2026-03-20 - Miele Jövőnk Vize gála widget modulok
+- Új widget modulok hozzáadva: `wp-content/mu-plugins/impactshop-event-donation-widget-dev.js` (fejlesztési), `wp-content/mu-plugins/impactshop-event-donation-widget-jovonkvize.js` (éles Miele kampány).
+- Funkciók: Ezüst/Arany/Platina csomag választó (1M/2M/3M Ft), gálajegy szám selector (max 2/4/6 fő), ezres törés összegmezőben.
+- Stripe maximum_amount: 2 500 000 → 3 500 000 Ft (`impactshop-event-donation-widget.php`).
+- Deploy: `sharityh@s59.tarhely.com:/home/sharityh/app/wp-content/mu-plugins/`

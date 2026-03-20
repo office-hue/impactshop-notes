@@ -233,7 +233,12 @@ const ARU_URL_TAGS   = ['product_url','producturl','url','link','deeplink','Prod
 const ARU_IMG_TAGS   = ['image_url','imageurl','imgurl','image','picture','image_urle','ImageURL','ImageUrl','images','image_link'];
 const ARU_CAT_TAGS   = ['category','categorytext','category_name','cat','Category','CategoryText','Category_Name'];
 const ARU_PRICE_TAGS     = ['price','price_vat','gross_price','Price','Gross_Price'];
-const ARU_OLDPRICE_TAGS  = ['old_price','price_before','original_price','list_price','Old_Price','Original_Price','List_Price'];
+const ARU_OLDPRICE_TAGS  = [
+  'old_price','oldprice','price_old','price_before','price_before_discount','before_price',
+  'original_price','originalprice','list_price','regular_price','compare_at_price',
+  'msrp','rrp','retail_price','was_price',
+  'Old_Price','Original_Price','List_Price'
+];
 const ARU_SALEPRICE_TAGS = ['sale_price','special_price','promo_price','Sale_Price','Special_Price','Promo_Price'];
 const ARU_AVAIL_TAGS     = ['basket_disabled','availability','in_stock','Basket_Disabled','Availability','In_Stock'];
 
@@ -292,7 +297,11 @@ function _pickArukeresoOneDeep(prodEl, fallbackCat){
   let   op = _deepPickNumCI(prodEl, ARU_OLDPRICE_TAGS,  300);
   const sp = _deepPickNumCI(prodEl, ARU_SALEPRICE_TAGS, 300);
   if (!isFinite(op) && isFinite(sp) && isFinite(p) && sp<p) op = p;
-  const price = isFinite(p) ? p : (isFinite(sp) ? sp : (isFinite(op) ? op : NaN));
+  let price = NaN;
+  if (isFinite(sp) && isFinite(p) && sp<p) price = sp;
+  else if (isFinite(p)) price = p;
+  else if (isFinite(sp)) price = sp;
+  else if (isFinite(op)) price = op;
 
   const avail = (_deepPickCI(prodEl, ARU_AVAIL_TAGS, 200)||'').toLowerCase();
   const out = (avail.includes('out of stock') || avail==='1' || avail==='true');
@@ -478,7 +487,11 @@ function _pickGenericOne(el, fallbackCat){
   }
   const price = toNum(_childFirstAny(el, ['price','price_vat','gross_price','g:price','regular_price','compare_at_price']));
   let   sale  = toNum(_childFirstAny(el, ['sale_price','promo_price','special_price','g:sale_price']));
-  let   oldp  = toNum(_childFirstAny(el, ['old_price','list_price','price_before','regular_price','compare_at_price']));
+  let   oldp  = toNum(_childFirstAny(el, [
+    'old_price','oldprice','price_old','price_before','price_before_discount','before_price',
+    'original_price','originalprice','list_price','regular_price','compare_at_price',
+    'msrp','rrp','retail_price','was_price'
+  ]));
   if (!isFinite(oldp) && isFinite(sale) && isFinite(price) && sale<price) oldp = price;
 
   const avail = (_childFirstAny(el, ['availability','in_stock'])||'').toLowerCase();

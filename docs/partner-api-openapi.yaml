@@ -1,0 +1,401 @@
+openapi: 3.0.3
+info:
+  title: Impact Shop Partner API (Non-Affiliate)
+  version: 1.0.0
+  description: |
+    Partner webhook + discount quote + dispute API for non-affiliate integrations.
+    Auth notes:
+    - Authorization: Bearer <partner_api_key>
+    - X-Impact-Signature: sha256=<hex>
+servers:
+  - url: https://app.sharity.hu/wp-json
+    description: Production
+  - url: https://app.sharity.hu/impactshop-staging/wp-json
+    description: Staging
+paths:
+  /impact/v1/partner/transaction:
+    post:
+      summary: Partner transaction webhook
+      description: Ingests purchase/booking/retail events with HMAC signature and idempotency.
+      security:
+        - bearerAuth: []
+        - hmacSignature: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ImpactSignature'
+        - $ref: '#/components/parameters/ImpactTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerTransaction'
+      responses:
+        '200':
+          description: Accepted or duplicate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerTransactionResponse'
+              examples:
+                accepted:
+                  summary: Accepted transaction
+                  value:
+                    status: accepted
+                    ledger_id: '882001'
+                    event_id: order_1001
+                    partner_code: partner_demo
+                    message: Accepted
+                duplicate:
+                  summary: Duplicate transaction
+                  value:
+                    status: duplicate
+                    ledger_id: '882001'
+                    event_id: order_1001
+                    partner_code: partner_demo
+                    message: Duplicate event
+        '400':
+          $ref: '#/components/responses/InvalidPayload'
+        '401':
+          $ref: '#/components/responses/InvalidSignature'
+        '403':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /impact/v1/partner/discount/quote:
+    post:
+      summary: Discount quote for Sharity ID holders
+      description: Returns the applicable tier and discount for a given partner and pseudo ID.
+      security:
+        - bearerAuth: []
+        - hmacSignature: []
+      parameters:
+        - $ref: '#/components/parameters/ImpactSignature'
+        - $ref: '#/components/parameters/ImpactTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscountQuoteRequest'
+      responses:
+        '200':
+          description: Discount quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscountQuoteResponse'
+              examples:
+                quote:
+                  summary: Discount quote
+                  value:
+                    tier: gold
+                    partner_max_discount: 0.2
+                    discount_rate: 0.16
+                    discount_amount: 3198
+                    amount_net: 16792
+                    explain: Gold szint → 80% a max kedvezményből
+        '400':
+          $ref: '#/components/responses/InvalidPayload'
+        '401':
+          $ref: '#/components/responses/InvalidSignature'
+        '403':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /impact/v1/partner/dispute:
+    post:
+      summary: Open a dispute for a transaction
+      security:
+        - bearerAuth: []
+        - hmacSignature: []
+      parameters:
+        - $ref: '#/components/parameters/ImpactSignature'
+        - $ref: '#/components/parameters/ImpactTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeRequest'
+      responses:
+        '200':
+          description: Dispute opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisputeResponse'
+              examples:
+                opened:
+                  summary: Dispute opened
+                  value:
+                    status: opened
+                    dispute_id: disp_10001
+                    ledger_id: '882001'
+        '400':
+          $ref: '#/components/responses/InvalidPayload'
+        '401':
+          $ref: '#/components/responses/InvalidSignature'
+        '403':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API_KEY
+    hmacSignature:
+      type: apiKey
+      in: header
+      name: X-Impact-Signature
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_\-]{6,128}$'
+        minLength: 6
+        maxLength: 128
+    ImpactSignature:
+      name: X-Impact-Signature
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^sha256=[A-Fa-f0-9]{64}$'
+    ImpactTimestamp:
+      name: X-Impact-Timestamp
+      in: header
+      required: true
+      schema:
+        type: integer
+        description: Unix epoch milliseconds
+  schemas:
+    PartnerTransaction:
+      type: object
+      required:
+        - partner_code
+        - event_id
+        - event_type
+        - pseudo_id
+        - ngo_code
+        - amount_gross
+        - currency
+        - timestamp
+        - payment_status
+      properties:
+        partner_code:
+          type: string
+          pattern: '^[a-z0-9\-]{3,64}$'
+          minLength: 3
+          maxLength: 64
+        event_id:
+          type: string
+          pattern: '^[A-Za-z0-9_\-]{3,128}$'
+          minLength: 3
+          maxLength: 128
+        event_type:
+          type: string
+          enum: [purchase, booking, retail]
+        pseudo_id:
+          type: string
+          pattern: '^[a-z0-9]{10,12}$'
+          minLength: 10
+          maxLength: 12
+        ngo_code:
+          type: string
+          pattern: '^[a-z0-9\-]{2,64}$'
+          minLength: 2
+          maxLength: 64
+        amount_gross:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+        currency:
+          type: string
+          example: HUF
+          enum: [HUF, EUR, USD]
+        timestamp:
+          type: string
+          format: date-time
+        payment_status:
+          type: string
+          enum: [paid, unpaid, refunded]
+        discount_tier:
+          type: string
+          enum: [basic, bronze, silver, gold, platinum, legend]
+        discount_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 0.5
+        partner_max_discount:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 0.5
+        amount_net:
+          type: integer
+        meta:
+          type: object
+    PartnerTransactionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted, duplicate, rejected]
+        ledger_id:
+          type: string
+        event_id:
+          type: string
+        partner_code:
+          type: string
+        message:
+          type: string
+    DiscountQuoteRequest:
+      type: object
+      required:
+        - partner_code
+        - pseudo_id
+        - amount_gross
+        - currency
+      properties:
+        partner_code:
+          type: string
+          pattern: '^[a-z0-9\-]{3,64}$'
+        pseudo_id:
+          type: string
+          pattern: '^[a-z0-9]{10,12}$'
+        amount_gross:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+        currency:
+          type: string
+          enum: [HUF, EUR, USD]
+    DiscountQuoteResponse:
+      type: object
+      properties:
+        tier:
+          type: string
+          enum: [basic, bronze, silver, gold, platinum, legend]
+        partner_max_discount:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 0.5
+        discount_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 0.5
+        discount_amount:
+          type: integer
+        amount_net:
+          type: integer
+        explain:
+          type: string
+    DisputeRequest:
+      type: object
+      required:
+        - ledger_id
+        - event_id
+        - partner_code
+        - reason
+      properties:
+        ledger_id:
+          type: string
+        event_id:
+          type: string
+          pattern: '^[A-Za-z0-9_\-]{3,128}$'
+        partner_code:
+          type: string
+          pattern: '^[a-z0-9\-]{3,64}$'
+        reason:
+          type: string
+        details:
+          type: string
+    DisputeResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [opened]
+        dispute_id:
+          type: string
+        ledger_id:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+        request_id:
+          type: string
+      example:
+        code: partner_payload_invalid
+        message: Invalid payload
+        details:
+          field: pseudo_id
+        request_id: req_01HZX8PDN1
+  responses:
+    InvalidPayload:
+      description: Invalid payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InvalidSignature:
+      description: Invalid signature
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InvalidState:
+      description: Invalid state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

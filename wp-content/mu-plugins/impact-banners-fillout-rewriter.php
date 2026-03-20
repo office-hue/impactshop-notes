@@ -21,7 +21,7 @@ function ibfr_find_shop_row($slug){
   if (!function_exists('impactshop_find_shop')) return null;
   return impactshop_find_shop($slug);
 }
-function ibfr_build_arukereso_from_base($base, $ngo){
+function ibfr_build_arukereso_from_base($base, $ngo, $deeplink = ''){
   if (!$base) return '';
   $p = parse_url($base);
   if (empty($p['scheme']) || empty($p['host'])) return '';
@@ -29,6 +29,7 @@ function ibfr_build_arukereso_from_base($base, $ngo){
 
   // biztosítsuk a Dognet kötelezőket érintetlenül; "url" DEEPLINKET TILTSUK
   unset($qs['url']);
+  if ($deeplink !== '') $qs['url'] = $deeplink;
   if (!empty($ngo)) $qs['data1'] = $ngo;
   if (empty($qs['utm_source']))   $qs['utm_source']   = 'dognet';
   if (empty($qs['utm_medium']))   $qs['utm_medium']   = 'cpc';
@@ -36,6 +37,17 @@ function ibfr_build_arukereso_from_base($base, $ngo){
 
   $path = $p['path'] ?? '/';
   return $p['scheme'].'://'.$p['host'].$path.'?'.http_build_query($qs);
+}
+
+function ibfr_decode_fillout_url($value){
+  if (!$value) return '';
+  $raw = html_entity_decode((string)$value, ENT_QUOTES, 'UTF-8');
+  if (preg_match('~^https?://~i', $raw)) return $raw;
+  if (preg_match('~^[A-Za-z0-9+/]+={0,2}$~', $raw)) {
+    $decoded = base64_decode($raw, true);
+    if ($decoded !== false && preg_match('~^https?://~i', $decoded)) return $decoded;
+  }
+  return '';
 }
 
 /**
@@ -79,8 +91,14 @@ add_filter('the_content', function($content){
         $isAru = $isAruBySlug || ibfr_is_arukereso_host($baseHost);
 
         if ($isAru) {
+          $deeplink = '';
+          if ($u_b64 !== '') {
+            $decoded = ibfr_decode_fillout_url($u_b64);
+            $host = $decoded ? parse_url($decoded, PHP_URL_HOST) : '';
+            if (ibfr_is_arukereso_host($host)) $deeplink = $decoded;
+          }
           // ÁRUKERESŐ: közvetlen, deeplink NÉLKÜL, data1-el
-          $final = ibfr_build_arukereso_from_base($row['dognet_base'] ?? '', $ngo);
+          $final = ibfr_build_arukereso_from_base($row['dognet_base'] ?? '', $ngo, $deeplink);
         }
       }
 

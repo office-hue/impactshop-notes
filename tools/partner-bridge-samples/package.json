@@ -1,0 +1,11 @@
+{
+  "name": "partner-bridge-samples",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sample bridge scripts for Impact Shop partner API",
+  "type": "commonjs",
+  "scripts": {
+    "dry-run": "node runner.js --dry-run",
+    "send": "node runner.js --send"
+  }
+}

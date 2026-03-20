@@ -114,7 +114,11 @@
   const ARU_IMG   = ['image_url','imageurl','imgurl','image','picture','image_urle'];
   const ARU_CAT   = ['category','categorytext','category_name','cat'];
   const ARU_PRICE     = ['price','price_vat','gross_price'];
-  const ARU_OLDPRICE  = ['old_price','price_before','original_price','list_price'];
+  const ARU_OLDPRICE  = [
+    'old_price','oldprice','price_old','price_before','price_before_discount','before_price',
+    'original_price','originalprice','list_price','regular_price','compare_at_price',
+    'msrp','rrp','retail_price','was_price'
+  ];
   const ARU_SALEPRICE = ['sale_price','special_price','promo_price'];
   const ARU_AVAIL     = ['basket_disabled','availability','in_stock'];
 
@@ -138,7 +142,11 @@
     const sp = childNum(prodEl, ARU_SALEPRICE);
 
     if (!isFinite(op) && isFinite(sp) && isFinite(p) && sp<p) op = p;
-    let price = isFinite(p) ? p : (isFinite(sp) ? sp : (isFinite(op) ? op : NaN));
+    let price = NaN;
+    if (isFinite(sp) && isFinite(p) && sp<p) price = sp;
+    else if (isFinite(p)) price = p;
+    else if (isFinite(sp)) price = sp;
+    else if (isFinite(op)) price = op;
 
     const avail = (childFirst(prodEl, ARU_AVAIL)||'').toLowerCase();
     const out = (avail.includes('out of stock') || avail==='1' || avail==='true');

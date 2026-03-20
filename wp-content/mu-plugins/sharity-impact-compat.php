@@ -93,14 +93,8 @@ if (!function_exists('ims2_clean_deeplink')) {
 }
 
 /**
- * Árukereső védelem:
- * Ha az érkező deeplink hostja Árukereső (arukereso.hu / .sk / .cz, stb.), akkor TILTSUK le a deeplink továbbítását,
- * mert a Dognet sok kampánynál nem enged "custom URL host"-ot -> "Custom URL host does not match..." hiba.
- *
- * Megoldás: go-deal alatt a $_GET['u']-t kitisztítjuk, és ha Árukereső host, akkor teljesen KIÜRÍTJÜK,
- * így a snippet a kampány BASE linkjét használja d1-gyel (ez a biztos).
- *
- * Fontos: csak futásidőben módosítjuk a szuperglobálist; nem írunk át más plugint/kódot.
+ * Árukereső deeplink kezelése:
+ * go-deal alatt a $_GET['u']-t kitisztítjuk, és átengedjük (deeplink engedélyezve).
  */
 add_action('init', function(){
   // csak fronton érdekes
@@ -127,12 +121,7 @@ add_action('init', function(){
     $is_arukereso = (bool)preg_match('~(^|\.)arukereso\.[a-z.]+$~i', $h);
   }
 
-  if ($is_arukereso) {
-    // kulcs: blankoljuk – a snippet így nem küld deeplinket, csak BASE linket generál d1-gyel → nincs Dognet hiba
-    $_GET['u'] = '';
-  } else {
-    $_GET['u'] = $clean;
-  }
+  $_GET['u'] = $clean;
 }, 1); // nagyon korán fusson, mielőtt a snippet olvasná az inputot
 
 

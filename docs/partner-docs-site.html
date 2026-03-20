@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharity Partner Integráció - Útmutató</title>
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(111, 227, 193, 0.4), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(245, 182, 66, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(15, 138, 157, 0.1);
+      text-decoration: none;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(15, 138, 157, 0.12);
+      color: var(--teal);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(15, 138, 157, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(15, 138, 157, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--teal);
+      font-weight: 600;
+      border: 2px solid var(--teal);
+      transition: background 0.2s;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(15, 138, 157, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--teal);
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(15, 138, 157, 0.12);
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .list-numbered {
+      counter-reset: step;
+    }
+    .list-numbered li {
+      counter-increment: step;
+    }
+    .list-numbered li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .flow {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .flow-step {
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(111, 227, 193, 0.16);
+      border: 1px dashed rgba(15, 138, 157, 0.4);
+      text-align: center;
+      font-weight: 500;
+    }
+    .flow-step strong {
+      display: block;
+      font-size: 1.8rem;
+      color: var(--teal);
+      margin-bottom: 6px;
+    }
+
+    .code {
+      font-family: "IBM Plex Mono", "Courier New", monospace;
+      font-size: 0.88rem;
+      background: rgba(11, 31, 42, 0.08);
+      padding: 12px 14px;
+      border-radius: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    .split {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      align-items: start;
+      margin-top: 40px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(245, 182, 66, 0.2);
+      color: #7a4b00;
+      font-weight: 600;
+      margin: 4px 4px 0 0;
+    }
+    .badge.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+
+    .docs-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin-top: 12px;
+    }
+    .docs-grid a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(11, 31, 42, 0.08);
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(11, 31, 42, 0.06);
+      transition: box-shadow 0.2s, transform 0.2s;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .docs-grid a:hover {
+      box-shadow: 0 8px 20px rgba(11, 31, 42, 0.1);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+    .docs-grid a::before {
+      content: "📄";
+    }
+
+    .card.docs div {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .card.docs a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(11, 31, 42, 0.03);
+      border: 1px solid rgba(11, 31, 42, 0.06);
+      font-weight: 500;
+      font-size: 0.88rem;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .card.docs a:hover {
+      background: rgba(15, 138, 157, 0.08);
+      transform: translateX(4px);
+      text-decoration: none;
+    }
+
+    .callout {
+      padding: 20px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(245, 182, 66, 0.15) 0%, rgba(245, 182, 66, 0.05) 100%);
+      border-left: 4px solid var(--sun);
+      margin: 24px 0;
+    }
+    .callout h3 {
+      margin-bottom: 8px;
+      color: #7a4b00;
+    }
+    .callout p {
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(11, 31, 42, 0.08);
+    }
+
+    .footer {
+      margin-top: 64px;
+      padding: 32px 24px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.08) 0%, rgba(111, 227, 193, 0.08) 100%);
+      border-radius: 20px;
+      border: 1px solid rgba(15, 138, 157, 0.12);
+    }
+    footer.footer {
+      margin-top: 80px;
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+
+    .fade-in.delay-1 { animation-delay: 0.1s; }
+    .fade-in.delay-2 { animation-delay: 0.2s; }
+    .fade-in.delay-3 { animation-delay: 0.3s; }
+    .fade-in.delay-4 { animation-delay: 0.4s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#mi-ez">Mi ez?</a>
+      <a href="#elonyok">Árazás</a>
+      <a href="#hogyan-mukodik">Működés</a>
+      <a href="#kezdolista">Csatlakozás</a>
+      <a href="#dokumentacio">Dokumentáció</a>
+    </nav>
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">🤝 Partner Integráció</span>
+        <h1>Csatlakozz a Sharity partnereihez</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          <strong>Egyszerűen:</strong> A Sharity rendszere lehetővé teszi, hogy webshopod vagy szolgáltatásod 
+          automatikusan jótékonysági adományokat generáljon minden vásárlás után — anélkül, hogy a vásárlódnak 
+          többet kellene fizetnie.
+        </p>
+        <p>
+          A vásárlók Sharity ID-juk alapján kedvezményeket kapnak nálad, te pedig átlátható, 
+          auditálható módon rögzíted a tranzakciókat. Mindenki nyer: a vásárló, a partner és a civil szervezetek.
+        </p>
+        <div style="margin-top: 20px;">
+          <a class="cta" href="#" onclick="openContactModal(); return false;">🚀 Csatlakozom</a>
+          <a class="cta-secondary" href="#hogyan-mukodik">Hogyan működik?</a>
+        </div>
+      </div>
+      <div class="card highlight">
+        <h3>Mit kapsz partnerként?</h3>
+        <ul class="list">
+          <li>Automatikus adomány-generálás minden vásárlás után</li>
+          <li>Kedvezményrendszer a lojális vásárlóknak</li>
+          <li><strong>🎬 Ingyenes reklám</strong> az <a href="https://app.sharity.hu/impactad-2/" target="_blank" style="color: var(--teal); font-weight: 600;">Impact Activity</a>-ban</li>
+          <li>Partner dashboard és riportok</li>
+          <li>Biztonságos, aláírt API kommunikáció</li>
+          <li>Technikai támogatás az integrációhoz</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Laikusnak szóló összefoglaló -->
+    <div class="callout fade-in delay-1">
+      <h3>🎯 Dióhéjban — mit jelent ez?</h3>
+      <p>
+        <strong>Vásárlódnak:</strong> Sharity ID-val kedvezményt kap és automatikusan jótékonykodik. <br>
+        <strong>Neked:</strong> Beállítasz egy automatikus üzenetküldést (webhook), ami jelzi nekünk a vásárlást. <br>
+        <strong>Civil szervezeteknek:</strong> A vásárlás után adomány érkezik a választott szervezethez. <br>
+        <strong>Mindenki boldog</strong> — és te is látod a hatást a partner dashboardon.
+      </p>
+    </div>
+
+    <!-- Árazás szekció -->
+    <h2 class="section-title fade-in delay-1" id="elonyok">💰 Mennyibe kerül?</h2>
+    <section class="grid fade-in delay-1">
+      <div class="card highlight">
+        <div class="card-icon">🎁</div>
+        <h3>Csatlakozás: INGYENES</h3>
+        <p style="font-size: 1.1rem;">
+          A Sharity partnerséghez nincs csatlakozási díj, nincs havi fix költség.
+          Csak a sikeres tranzakciók után fizetsz.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎬</div>
+        <h3>Ingyenes reklámfelület</h3>
+        <p>
+          Partnerként a reklámod vagy bannered <strong>ingyen fut</strong> az 
+          <a href="https://app.sharity.hu/impactad-2/" target="_blank" style="color: var(--teal); font-weight: 600;">Impact Activity</a>-ban 
+          a szponzori videók között.
+        </p>
+        <p style="background: rgba(15, 138, 157, 0.1); padding: 12px; border-radius: 10px; margin-top: 12px;">
+          📺 Elérhető ezáltal több ezer elkötelezett felhasználó, akik aktívan támogatják a jótékonyságot.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Hogyan működik az elszámolás?</h3>
+        <p>
+          Te határozod meg, hogy a tranzakciók hány %-át ajánlod fel a Sharity együttműködésre.
+          Ez az összeg automatikusan szétosztásra kerül:
+        </p>
+        <ul class="list">
+          <li><strong>60%</strong> — Sharity jutalék (platform fenntartás)</li>
+          <li><strong>20%</strong> — Kedvezmény a vásárlónak</li>
+          <li><strong>20%</strong> — Adomány a civil szervezetnek</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">⭐</div>
+        <h3>Szintbónuszok — a mi terhünkre</h3>
+        <p>
+          A magasabb szintű (Gold, Platinum, Legend) vásárlók több kedvezményt és adományt generálnak.
+          <strong>Ez nem okoz neked többletköltséget!</strong>
+        </p>
+        <p style="background: rgba(34, 197, 94, 0.1); padding: 12px; border-radius: 10px; margin-top: 12px;">
+          ✅ A szintbónuszokat a Sharity a saját 60%-os részesedése terhére biztosítja.
+        </p>
+      </div>
+    </section>
+
+    <!-- Példa kalkuláció -->
+    <div class="callout fade-in delay-1" style="margin-top: 24px;">
+      <h3>📝 Példa kalkuláció</h3>
+      <p>
+        Tegyük fel, hogy <strong>2%-ot</strong> ajánlasz fel és egy <strong>10.000 Ft</strong>-os vásárlás történik:<br><br>
+        <code style="background: rgba(11,31,42,0.08); padding: 4px 8px; border-radius: 6px;">10.000 Ft × 2% = 200 Ft</code> kerül szétosztásra<br><br>
+        Ebből: <strong>120 Ft</strong> Sharity · <strong>40 Ft</strong> kedvezmény · <strong>40 Ft</strong> adomány<br>
+        Ha a vásárló Gold szintű → több kedvezményt kap, de ez a Sharity 120 Ft-jából megy, nem a te költségedből.
+      </p>
+    </div>
+
+    <!-- Előnyök -->
+    <h2 class="section-title fade-in delay-1" id="elonyok">Miért éri meg csatlakozni?</h2>
+    <section class="grid fade-in delay-1">
+      <div class="card">
+        <div class="card-icon">💝</div>
+        <h3>Társadalmi hatás</h3>
+        <p>Minden vásárlásból adomány lesz — a vásárlód választott civil szervezetéhez kerül a támogatás.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎁</div>
+        <h3>Kedvezmények</h3>
+        <p>A Sharity ID tulajdonosok szintjüknek megfelelő kedvezményt kapnak nálad — ez hűséget épít.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Átláthatóság</h3>
+        <p>Partner dashboardon látod a tranzakciókat, KPI-kat, és az általad generált társadalmi hatást.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <h3>Biztonság</h3>
+        <p>HMAC aláírás, idempotencia, timestamp ellenőrzés — minden tranzakció auditálható és védett.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🚀</div>
+        <h3>Célzott forgalom</h3>
+        <p>A civil szervezetek aktívan ajánlják partnereinket közösségeiknek — így új, elkötelezett vásárlók érkeznek hozzád.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎰</div>
+        <h3>Nyereményjátékok</h3>
+        <p>Vásárlóid automatikusan részt vesznek a Sharity tomboláin. Te is felajánlhatsz nyereményt — a nyertes akár új törzsvendéged lehet!</p>
+      </div>
+    </section>
+
+    <!-- Hogyan működik -->
+    <h2 class="section-title fade-in delay-2" id="hogyan-mukodik">Hogyan működik a rendszer?</h2>
+    <section class="grid fade-in delay-2">
+      <div class="card">
+        <h3>A folyamat 4 lépésben</h3>
+        <p>Egyszerű, automatizált kommunikáció a te rendszered és a Sharity között.</p>
+        <div class="flow">
+          <div class="flow-step"><strong>1</strong>Vásárlás történik nálad</div>
+          <div class="flow-step"><strong>2</strong>Webhook küldés nekünk</div>
+          <div class="flow-step"><strong>3</strong>Ellenőrzés + rögzítés</div>
+          <div class="flow-step"><strong>4</strong>Adomány + kedvezmény</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>API végpontok</h3>
+        <p>Három egyszerű endpoint — ennyi az egész:</p>
+        <p class="code">POST /impact/v1/partner/transaction</p>
+        <p style="font-size: 0.85rem; margin-top: -6px;">↳ Tranzakció beküldése (vásárlás, foglalás, refund)</p>
+        <p class="code">POST /impact/v1/partner/discount/quote</p>
+        <p style="font-size: 0.85rem; margin-top: -6px;">↳ Kedvezmény lekérdezése egy Sharity ID-hoz</p>
+        <p class="code">POST /impact/v1/partner/dispute</p>
+        <p style="font-size: 0.85rem; margin-top: -6px;">↳ Vita nyitása eltérés esetén</p>
+        <div style="margin-top: 12px;">
+          <span class="badge">HMAC aláírás</span>
+          <span class="badge">Idempotencia</span>
+          <span class="badge green">Timestamp védelem</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Biztonsági garanciák</h3>
+        <ul class="list">
+          <li>HMAC SHA256 aláírás minden küldésnél</li>
+          <li>Idempotency-Key: duplikáció-védelem</li>
+          <li>±5 perces timestamp ablak (replay védelem)</li>
+          <li>Kulcsrotáció támogatása</li>
+          <li>Teljes audit log minden műveletről</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Kedvezmény rendszer -->
+    <section class="split fade-in delay-2">
+      <div class="card">
+        <div class="card-icon">🏆</div>
+        <h2>Kedvezményszintek</h2>
+        <p>
+          A vásárló Sharity pontszáma alapján egy szintet kap. Ez határozza meg, 
+          mekkora kedvezményt kapsz a te partneri beállításodból.
+        </p>
+        <ul class="list">
+          <li><strong>Legend</strong> — 100% a max kedvezményből</li>
+          <li><strong>Platinum</strong> — 90%</li>
+          <li><strong>Gold</strong> — 80%</li>
+          <li><strong>Silver</strong> — 70%</li>
+          <li><strong>Bronze</strong> — 60%</li>
+          <li><strong>Basic</strong> — 50%</li>
+        </ul>
+        <p style="font-size: 0.85rem; margin-top: 12px;">
+          Példa: Ha a partneri max kedvezmény 20%, egy Gold szintű vásárló 16%-ot kap (20% × 80%).
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚖️</div>
+        <h2>Viták kezelése</h2>
+        <p>
+          Ha eltérés van (refund, összegkülönbség, hiányzó tranzakció), 
+          egyszerűen jelezd a dispute endpointon.
+        </p>
+        <ul class="list">
+          <li>Dispute nyitás: <code>/partner/dispute</code></li>
+          <li>SLA: 2 munkanap első visszajelzés</li>
+          <li>Döntés: 5 munkanapon belül</li>
+          <li>Teljes audit log minden döntésről</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Csatlakozási checklist -->
+    <h2 class="section-title fade-in delay-3" id="kezdolista">Csatlakozási Checklist</h2>
+    <section class="grid fade-in delay-3">
+      <div class="card highlight">
+        <div class="card-icon">🚀</div>
+        <h3>Gyors indulás — laikus verzió</h3>
+        <p>Íme, mit kell tenned 4 egyszerű lépésben:</p>
+        <ol class="list list-numbered">
+          <li><strong>API kulcs kérése</strong> — Kapsz tőlünk egy API kulcsot és egy titkos aláíró kulcsot. Ezeket biztonságosan tárold!</li>
+          <li><strong>Webhook beállítás</strong> — A saját rendszeredben beállítod, hogy minden vásárláskor küldjön egy JSON üzenetet nekünk.</li>
+          <li><strong>Teszt tranzakció</strong> — Elküldesz egy próba rendelést a sandbox környezetbe, mi visszajelzünk.</li>
+          <li><strong>Élesítés</strong> — Ha minden OK, átállsz production módra. Kész!</li>
+        </ol>
+        <p style="margin-top: 16px; padding: 12px; background: rgba(15, 138, 157, 0.1); border-radius: 12px;">
+          💡 <strong>Tipp:</strong> A fejlesztőd számára a teljes technikai dokumentáció lent elérhető. Te csak ennyit mondj neki: "Sharity Partner API integráció kell".
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">✅</div>
+        <h3>Ellenőrzőlista az élesítéshez</h3>
+        <ul class="list">
+          <li>API kulcs és secret megvan</li>
+          <li>Webhook endpoint beállítva</li>
+          <li>HMAC aláírás implementálva</li>
+          <li>Idempotency-Key generálás működik</li>
+          <li>Sandbox teszt sikeres</li>
+          <li>Error handling implementálva</li>
+          <li>Production kulcs bekérve</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">📞</div>
+        <h3>Segítség és támogatás</h3>
+        <p>Ha elakadsz, mi segítünk:</p>
+        <ul class="list">
+          <li>Email: <strong>office@sharity.hu</strong></li>
+          <li>Válaszidő: 24 órán belül</li>
+          <li>Sandbox hozzáférés igény szerint</li>
+          <li>Technikai konzultáció (igény esetén)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Dokumentáció -->
+    <h2 class="section-title fade-in delay-3" id="dokumentacio">Részletes Dokumentáció</h2>
+    <section class="grid fade-in delay-3" style="margin-bottom: 60px;">
+      <div class="card docs">
+        <h3>🔧 Technikai dokumentumok</h3>
+        <p>A fejlesztőknek szánt részletes specifikációk:</p>
+        <div>
+          <a href="docs/partner-api-openapi.yaml" target="_blank">📄 OpenAPI Spec (YAML)</a>
+          <a href="docs/partner-summary.md" target="_blank">📋 Partner API Summary</a>
+          <a href="docs/partner-auth-secrets.md" target="_blank">🔐 Auth & Secrets Guide</a>
+          <a href="docs/partner-db-schema.md" target="_blank">🗃️ Database Schema</a>
+        </div>
+      </div>
+      <div class="card docs">
+        <h3>📊 Üzleti dokumentumok</h3>
+        <p>Konfiguráció, policy-k és monitoring:</p>
+        <div>
+          <a href="docs/partner-config-storage.md" target="_blank">⚙️ Config Storage</a>
+          <a href="docs/partner-dispute-policy.md" target="_blank">⚖️ Dispute Policy</a>
+          <a href="docs/partner-monitoring-kpi.md" target="_blank">📈 Monitoring & KPI</a>
+          <a href="docs/partner-final-plan.md" target="_blank">🎯 Végleges Terv</a>
+        </div>
+      </div>
+      <div class="card docs">
+        <h3>🎨 UI/UX dokumentumok</h3>
+        <p>Dashboard és admin felület tervek:</p>
+        <div>
+          <a href="docs/partner-dashboard-wireframes.md" target="_blank">📐 Dashboard Wireframes</a>
+          <a href="docs/partner-admin-ui-draft.md" target="_blank">🖥️ Admin UI Draft</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity Partner API</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          Ez egy technikai-ügyfélbarát áttekintő dokumentáció, nem publikus marketing oldal.<br>
+          Verzió: 1.0 | Utolsó frissítés: 2025. január
+        </p>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Csatlakozási Modal -->
+  <div id="contactModal" class="modal-overlay" onclick="closeContactModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeContactModal()">×</button>
+      <h2 style="margin-bottom: 8px;">🤝 Csatlakozás a Sharity partnerekhez</h2>
+      <p style="color: var(--muted); margin-bottom: 24px;">Töltsd ki az alábbi űrlapot és hamarosan felkeresnek!</p>
+      
+      <form id="partnerForm" onsubmit="submitPartnerForm(event)" novalidate>
+        <div class="form-group">
+          <label for="name">Név *</label>
+          <input type="text" id="name" name="name" placeholder="Teljes neved">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="email">Email cím *</label>
+            <input type="email" id="email" name="email" placeholder="pelda@email.hu">
+          </div>
+          <div class="form-group">
+            <label for="phone">Telefonszám *</label>
+            <input type="tel" id="phone" name="phone" placeholder="+36 30 123 4567">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="business">Üzlet megnevezése *</label>
+          <input type="text" id="business" name="business" placeholder="Pl. Példa Webshop Kft.">
+        </div>
+        <div class="form-group">
+          <label for="website">Weboldal <span style="color: var(--muted);">(opcionális)</span></label>
+          <input type="url" id="website" name="website" placeholder="https://peldawebshop.hu">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="facebook">Facebook <span style="color: var(--muted);">(opc.)</span></label>
+            <input type="url" id="facebook" name="facebook" placeholder="facebook.com/...">
+          </div>
+          <div class="form-group">
+            <label for="instagram">Instagram <span style="color: var(--muted);">(opc.)</span></label>
+            <input type="text" id="instagram" name="instagram" placeholder="@felhasznalonev">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="tiktok">TikTok <span style="color: var(--muted);">(opcionális)</span></label>
+          <input type="text" id="tiktok" name="tiktok" placeholder="@felhasznalonev">
+        </div>
+        <button type="submit" class="form-submit" id="submitBtn">
+          <span id="submitText">📨 Jelentkezés beküldése</span>
+          <span id="submitLoading" style="display: none;">Küldés...</span>
+        </button>
+      </form>
+      <div id="formSuccess" style="display: none; text-align: center; padding: 40px 20px;">
+        <div style="font-size: 3rem; margin-bottom: 16px;">✅</div>
+        <h3 style="color: var(--success); margin-bottom: 8px;">Sikeresen elküldve!</h3>
+        <p style="color: var(--muted);">Hamarosan felvesszük veled a kapcsolatot.</p>
+        <button onclick="closeContactModal()" class="form-submit" style="margin-top: 20px; background: var(--ink);">Bezárás</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Modal styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 31, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 520px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(11, 31, 42, 0.3);
+      animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: rgba(11, 31, 42, 0.08);
+      border-radius: 50%;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s;
+    }
+    .modal-close:hover {
+      background: rgba(11, 31, 42, 0.15);
+      color: var(--ink);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid rgba(11, 31, 42, 0.12);
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(15, 138, 157, 0.15);
+    }
+    .form-group input::placeholder {
+      color: #aaa;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 500px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .form-submit {
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--teal);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .form-submit:hover {
+      background: #0a7a8a;
+      transform: translateY(-1px);
+    }
+    .form-submit:disabled {
+      background: #999;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
+
+  <script>
+    // Modal functions
+    function openContactModal() {
+      document.getElementById('contactModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeContactModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('contactModal').classList.remove('active');
+      document.body.style.overflow = '';
+      // Reset form
+      document.getElementById('partnerForm').reset();
+      document.getElementById('partnerForm').style.display = 'block';
+      document.getElementById('formSuccess').style.display = 'none';
+    }
+    
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeContactModal();
+    });
+    
+    // Form submit
+    function submitPartnerForm(event) {
+      event.preventDefault();
+      
+      // Collect form data
+      const formData = {
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        business: document.getElementById('business').value.trim(),
+        website: document.getElementById('website').value.trim() || '-',
+        facebook: document.getElementById('facebook').value.trim() || '-',
+        instagram: document.getElementById('instagram').value.trim() || '-',
+        tiktok: document.getElementById('tiktok').value.trim() || '-'
+      };
+      
+      // Manual validation
+      if (!formData.name) {
+        alert('Kérlek add meg a neved!');
+        document.getElementById('name').focus();
+        return;
+      }
+      if (!formData.email || !formData.email.includes('@')) {
+        alert('Kérlek adj meg egy érvényes email címet!');
+        document.getElementById('email').focus();
+        return;
+      }
+      if (!formData.phone) {
+        alert('Kérlek add meg a telefonszámod!');
+        document.getElementById('phone').focus();
+        return;
+      }
+      if (!formData.business) {
+        alert('Kérlek add meg az üzlet megnevezését!');
+        document.getElementById('business').focus();
+        return;
+      }
+      
+      // Build email body
+      const subject = encodeURIComponent('Új Sharity Partner jelentkezés: ' + formData.business);
+      const body = encodeURIComponent(
+        'Új partner jelentkezés érkezett!\n\n' +
+        '--- ADATOK ---\n\n' +
+        'Név: ' + formData.name + '\n' +
+        'Email: ' + formData.email + '\n' +
+        'Telefon: ' + formData.phone + '\n' +
+        'Üzlet neve: ' + formData.business + '\n' +
+        'Weboldal: ' + formData.website + '\n' +
+        'Facebook: ' + formData.facebook + '\n' +
+        'Instagram: ' + formData.instagram + '\n' +
+        'TikTok: ' + formData.tiktok + '\n\n' +
+        '---\nElküldve a Sharity Partner API oldalról'
+      );
+      
+      // Open mailto
+      window.location.href = 'mailto:bujdoso.arnold@bujdosoiroda.com?subject=' + subject + '&body=' + body;
+      
+      // Show success after short delay
+      setTimeout(() => {
+        document.getElementById('partnerForm').style.display = 'none';
+        document.getElementById('formSuccess').style.display = 'block';
+      }, 500);
+    }
+    
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (href === '#') return; // Skip modal triggers
+        e.preventDefault();
+        const target = document.querySelector(href);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>
