@@ -30,3 +30,34 @@
 - Start and end sessions by updating `notes.md` with what changed and outstanding risks.
 - Store distilled ChatGPT takeaways in `conversation-summaries/` to help future agents ramp quickly.
 - Use the Hungarian localisation already present when communicating with stakeholders in shared docs.
+
+## 🖥️ Lokál / VSCode Copilot Munkamód — KANONIKUS SZABÁLY
+- VSCode Copilot Chat-ben dolgozva: **Copilot válaszol** (GitHub előfizetés terhére), nem Railway/Anthropic API.
+- A pipeline, memória (memory-v2), MCP toolok mind aktívak maradnak — ezt soha nem kell eldobni.
+- Jarvis-hoz van API, de amit lehet lokálban kell megoldani (Ollama fut lokálban).
+- Railway/Anthropic hívás csak production agent tesztelésekor indokolt.
+
+## 🔁 Kötelező Session Workflow — MINDEN SESSIONBEN, KIVÉTEL NÉLKÜL
+
+> **Nem ajánlás — kötelező. Ha bármelyik lépés kimarad, a session szabályszegő.**
+
+**Session elején (első érdemi válasz ELŐTT):**
+```
+npm run memory:pre-task -- --task "[feladat]"
+```
+
+**Jogi kérdés esetén MINDIG:**
+1. `mcp_impi-mcp_legal_ask` → KB kontextus lekérése (16 000+ chunk)
+2. `mcp_impi-mcp_hallucination_guard` → forrásminőség ellenőrzése (NJT/Kúria/AB)
+3. Komplex ügynél: `mcp_impi-mcp_position_builder`
+
+**Session végén MINDIG:**
+```
+npm run memory:v2:session-save -- --summary "..." --tags "..."
+npm run memory:full-sync -- --task "..."
+```
+
+**❌ TILOS:**
+- `pre-task brief` nélkül válaszolni
+- Jogi kérdésre KB nélkül válaszolni → hallucinációs kockázat
+- Session végén `session-save` kihagyása
