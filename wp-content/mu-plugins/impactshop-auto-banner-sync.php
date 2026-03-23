@@ -16,8 +16,6 @@ if (!defined('ABSPATH')) {
 
 const IMPACTSHOP_AUTO_BANNER_SYNC_INTERVAL = DAY_IN_SECONDS;
 const IMPACTSHOP_AUTO_BANNER_SYNC_LIMIT = 1000; // Max banners to keep active
-const IMPACTSHOP_AUTO_BANNER_SYNC_MIN_DISCOUNT = 10; // Minimum discount % to include
-
 /**
  * Parse Hungarian price string like "13 990 Ft" to float 13990.00
  */
@@ -159,14 +157,14 @@ function impactshop_auto_banner_sync_run(): array
         $cols = str_getcsv($line);
         $result['fetched']++;
 
-        $slug = trim($cols[$col_slug] ?? '');
+        $slug = sanitize_title(trim($cols[$col_slug] ?? ''));
         $img = trim($cols[$col_img] ?? '');
         $href = trim($cols[$col_href] ?? '');
         $label_json = trim($cols[$col_label] ?? '');
         $category = trim($cols[$col_category] ?? '');
 
-        // Skip if missing required fields
-        if ($slug === '' || $img === '' || $href === '') {
+        // Banner tab rows are canonical offers; only slug and href are required.
+        if ($slug === '' || $href === '') {
             $result['skipped']++;
             continue;
         }
@@ -197,6 +195,12 @@ function impactshop_auto_banner_sync_run(): array
         }
 
         $title = (string) ($label['title'] ?? '');
+        if ($title === '' && $category !== '') {
+            $title = $category;
+        }
+        if ($title === '') {
+            $title = ucwords(str_replace(['-', '_'], ' ', $slug));
+        }
         
         // Parse price fields - CSV uses 'price'/'old_price' strings like "13 990 Ft"
         // Also support legacy 'price_num'/'old_price_num' float fields
@@ -211,18 +215,6 @@ function impactshop_auto_banner_sync_run(): array
         // Calculate discount if not provided
         if ($discount_pct === 0 && $price_old > 0 && $price_new > 0 && $price_new < $price_old) {
             $discount_pct = (int) round((1 - ($price_new / $price_old)) * 100);
-        }
-
-        // Skip if no title
-        if ($title === '') {
-            $result['skipped']++;
-            continue;
-        }
-
-        // Skip low discounts (keep deals with good discounts)
-        if ($discount_pct < IMPACTSHOP_AUTO_BANNER_SYNC_MIN_DISCOUNT && $discount_pct > 0) {
-            $result['skipped']++;
-            continue;
         }
 
         $offers[] = [

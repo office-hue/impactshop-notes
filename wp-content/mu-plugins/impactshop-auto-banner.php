@@ -14,6 +14,8 @@ const IMPACTSHOP_AUTO_BANNER_ADD_RATE_WINDOW = 60;
 const IMPACTSHOP_AUTO_BANNER_CLEANUP_OPTION = 'impactshop_auto_banner_cleanup_v1';
 const IMPACTSHOP_AUTO_BANNER_FEED_IMPORT_OPTION = 'impactshop_auto_banner_feed_import_v1';
 const IMPACTSHOP_AUTO_BANNER_FEED_CRON = 'impactshop_auto_banner_feed_import_cron';
+const IMPACTSHOP_AUTO_BANNER_SEEN_TRANSIENT_PREFIX = 'impactshop_auto_banner_seen_';
+const IMPACTSHOP_AUTO_BANNER_SEEN_TTL = 14 * DAY_IN_SECONDS;
 
 add_action('muplugins_loaded', 'impactshop_auto_banner_boot');
 add_action('cli_init', 'impactshop_auto_banner_register_cli');
@@ -85,9 +87,10 @@ function impactshop_auto_banner_register_routes(): void
     ]);
 }
 
-function impactshop_auto_banner_next(): WP_REST_Response
+function impactshop_auto_banner_next(WP_REST_Request $request): WP_REST_Response
 {
-    $banner = impactshop_auto_banner_get_active();
+    $pseudo_id = impactshop_auto_banner_normalize_pseudo_id((string) $request->get_param('pseudo_id'));
+    $banner = impactshop_auto_banner_get_active($pseudo_id);
     return new WP_REST_Response(['banner' => $banner], 200);
 }
 
@@ -120,7 +123,7 @@ function impactshop_is_whitelisted_partner(string $shop_slug): bool
         $shop_slug = substr($shop_slug, 5);
     }
 
-    if ($whitelist !== null) {
+    if ($whitelist !== null && !empty($whitelist)) {
         $normalized = strtolower(trim($shop_slug));
         return $normalized !== '' && isset($whitelist[$normalized]);
     }
@@ -308,21 +311,66 @@ function impactshop_auto_banner_is_valid_banner_url(string $banner_url, string $
     return true;
 }
 
+function impactshop_auto_banner_normalize_pseudo_id(string $pseudo_id): string
+{
+    $pseudo_id = strtolower(trim($pseudo_id));
+    if ($pseudo_id === '') {
+        return '';
+    }
+    $pseudo_id = preg_replace('/[^a-z0-9_-]/', '', $pseudo_id);
+    return is_string($pseudo_id) ? $pseudo_id : '';
+}
+
+function impactshop_auto_banner_seen_transient_key(string $pseudo_id): string
+{
+    return IMPACTSHOP_AUTO_BANNER_SEEN_TRANSIENT_PREFIX . md5($pseudo_id);
+}
+
+function impactshop_auto_banner_get_seen_ids(string $pseudo_id, array $rows): array
+{
+    if ($pseudo_id !== '') {
+        $seen_ids = get_transient(impactshop_auto_banner_seen_transient_key($pseudo_id));
+        if (is_array($seen_ids)) {
+            return array_values(array_unique(array_map('intval', $seen_ids)));
+        }
+        return [];
+    }
+
+    $seen_cookie = isset($_COOKIE['impactshop_seen_banners']) ? sanitize_text_field($_COOKIE['impactshop_seen_banners']) : '';
+    return $seen_cookie !== '' ? array_values(array_unique(array_map('intval', explode(',', $seen_cookie)))) : [];
+}
+
+function impactshop_auto_banner_store_seen_ids(string $pseudo_id, array $seen_ids, int $row_count): void
+{
+    $seen_ids = array_values(array_unique(array_map('intval', $seen_ids)));
+    if ($pseudo_id !== '') {
+        set_transient(
+            impactshop_auto_banner_seen_transient_key($pseudo_id),
+            $seen_ids,
+            (int) apply_filters('impactshop_auto_banner_seen_ttl', IMPACTSHOP_AUTO_BANNER_SEEN_TTL)
+        );
+        return;
+    }
+
+    // Anonymous fallback remains cookie-based, so it cannot reliably hold thousands of IDs.
+    $seen_cap = (int) apply_filters('impactshop_auto_banner_seen_cap', max(100, min($row_count, 500)));
+    if ($seen_cap <= 0) {
+        $seen_cap = max(100, min($row_count, 500));
+    }
+    $seen_ids = array_slice($seen_ids, -$seen_cap);
+    $cookie_value = implode(',', $seen_ids);
+    setcookie('impactshop_seen_banners', $cookie_value, time() + (4 * HOUR_IN_SECONDS), '/', '', true, false);
+}
+
 /**
  * Get an active banner with rotation support.
- * Tracks seen banners via cookie to avoid repetition.
+ * Tracks seen banners per pseudo ID so users do not see repeats until the full active pool is exhausted.
  */
-function impactshop_auto_banner_get_active(): array
+function impactshop_auto_banner_get_active(string $pseudo_id = ''): array
 {
     global $wpdb;
     $table = $wpdb->prefix . 'impactshop_auto_banners';
     $now = current_time('mysql');
-
-    // Get all active banners
-    $pool_limit = (int) apply_filters('impactshop_auto_banner_pool_limit', 300);
-    if ($pool_limit <= 0) {
-        $pool_limit = 300;
-    }
 
     $rows = $wpdb->get_results(
         $wpdb->prepare(
@@ -330,11 +378,9 @@ function impactshop_auto_banner_get_active(): array
              WHERE status = 'active'
                AND (starts_at IS NULL OR starts_at <= %s)
                AND (ends_at IS NULL OR ends_at >= %s)
-             ORDER BY priority DESC, created_at DESC
-             LIMIT %d",
+             ORDER BY priority DESC, created_at DESC, id DESC",
             $now,
-            $now,
-            $pool_limit
+            $now
         ),
         ARRAY_A
     );
@@ -343,43 +389,32 @@ function impactshop_auto_banner_get_active(): array
         return [];
     }
 
-    // Get seen banner IDs from cookie (comma-separated)
-    $seen_cookie = isset($_COOKIE['impactshop_seen_banners']) ? sanitize_text_field($_COOKIE['impactshop_seen_banners']) : '';
-    $seen_ids = $seen_cookie !== '' ? array_map('intval', explode(',', $seen_cookie)) : [];
-
-    $rows = array_filter($rows, function ($row) {
+    $rows = array_values(array_filter($rows, function ($row) {
         $shop_slug = (string) ($row['shop_slug'] ?? '');
         $banner_url = (string) ($row['banner_url'] ?? '');
         return impactshop_auto_banner_is_valid_banner_url($banner_url, $shop_slug);
-    });
+    }));
 
-    // Filter out seen banners
+    if (empty($rows)) {
+        return [];
+    }
+
+    $seen_ids = impactshop_auto_banner_get_seen_ids($pseudo_id, $rows);
+
     $unseen = array_filter($rows, function ($row) use ($seen_ids) {
         return !in_array((int) $row['id'], $seen_ids, true);
     });
 
-    // If all seen, reset and start over
     if (empty($unseen)) {
         $seen_ids = [];
         $unseen = $rows;
     }
 
-    // Pick random from unseen (weighted by priority for variety)
     $unseen = array_values($unseen);
-    $chosen = $unseen[array_rand($unseen)];
+    $chosen = $unseen[0];
 
-    // Update seen cookie
     $seen_ids[] = (int) $chosen['id'];
-    $seen_ids = array_unique($seen_ids);
-    // Keep a larger window so we don't repeat until most items are shown.
-    $seen_cap = (int) apply_filters('impactshop_auto_banner_seen_cap', max(100, count($rows)));
-    if ($seen_cap <= 0) {
-        $seen_cap = max(100, count($rows));
-    }
-    $seen_cap = min($seen_cap, 500);
-    $seen_ids = array_slice($seen_ids, -$seen_cap);
-    $cookie_value = implode(',', $seen_ids);
-    setcookie('impactshop_seen_banners', $cookie_value, time() + (4 * HOUR_IN_SECONDS), '/', '', true, false);
+    impactshop_auto_banner_store_seen_ids($pseudo_id, $seen_ids, count($rows));
 
     return impactshop_auto_banner_format($chosen);
 }

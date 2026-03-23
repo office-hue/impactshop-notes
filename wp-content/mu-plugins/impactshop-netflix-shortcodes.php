@@ -424,6 +424,8 @@ if (!function_exists('impactshop_get_shops')) {
                 'category'       => ($r['category'] ?? ($r['kategoria'] ?? 'Egyéb')) ?: 'Egyéb',
                 'logo'           => $r['logo_url'] ?? ($r['logo'] ?? ($r['image'] ?? '')),
                 'dognet_base'    => $r['dognet_base'] ?? '',
+                'dognet_program_id' => $r['dognet_program_id'] ?? ($r['program_id'] ?? ''),
+                'program_id'     => $r['program_id'] ?? ($r['dognet_program_id'] ?? ''),
                 'deeplink_param' => $r['pdognet_deeplink_param'] ?? ($r['dognet_deeplink_param'] ?? 'url'),
                 'product_url'    => $r['product_url'] ?? ($r['homepage'] ?? ''),
                 'commission_min' => $r['commission_min'] ?? '',

@@ -52,6 +52,23 @@ function impactshop_auto_banner_dognet_cli(): void
     }
 }
 
+function impactshop_auto_banner_dognet_shop_campaign_id(array $shop): int
+{
+    $candidates = [
+        $shop['dognet_program_id'] ?? null,
+        $shop['program_id'] ?? null,
+    ];
+    foreach ($candidates as $candidate) {
+        if (is_numeric($candidate) && (int) $candidate > 0) {
+            return (int) $candidate;
+        }
+    }
+    if (function_exists('dognet_extract_campaign_id_from_base')) {
+        return (int) dognet_extract_campaign_id_from_base($shop['dognet_base'] ?? '');
+    }
+    return 0;
+}
+
 function impactshop_auto_banner_dognet_run(): array
 {
     $result = [
@@ -89,10 +106,7 @@ function impactshop_auto_banner_dognet_run(): array
     $shops = impactshop_get_shops();
     $cid_to_shop = [];
     foreach ($shops as $shop) {
-        $cid = 0;
-        if (function_exists('dognet_extract_campaign_id_from_base')) {
-            $cid = (int) dognet_extract_campaign_id_from_base($shop['dognet_base'] ?? '');
-        }
+        $cid = impactshop_auto_banner_dognet_shop_campaign_id((array) $shop);
         if ($cid > 0) {
             $cid_to_shop[$cid] = $shop;
         }
