@@ -876,6 +876,7 @@ function impactshop_offerwall_enqueue_assets(): void
 
     wp_localize_script('impactshop-offerwall', 'impactshopOfferwall', [
         'restUrl' => esc_url_raw(rest_url('impact/v1/offerwall')),
+        'ayetSurveyUrl' => esc_url_raw(rest_url('impact/v1/ayet-surveys')),
     ]);
 }
 
@@ -890,6 +891,11 @@ function impactshop_offerwall_inline_css(): string
         '.impactshop-offerwall .offerwall-faq{margin:10px 0 16px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,0.08);font-size:12px;line-height:1.5}' .
         '.impactshop-offerwall .offerwall-note{margin:10px 0 16px;padding:10px 12px;border-radius:12px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);font-size:12px;line-height:1.5;color:#e2e8f0}' .
         '.impactshop-offerwall .offerwall-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;background:#111827;border:1px solid rgba(148,163,184,.3);color:#f8fafc;padding:6px 10px;border-radius:999px;font-size:12px;cursor:pointer}' .
+        '.impactshop-offerwall .offerwall-provider-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}' .
+        '.impactshop-offerwall .offerwall-provider-btn{border:1px solid rgba(148,163,184,.35);background:#111827;color:#e2e8f0;border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all .15s ease}' .
+        '.impactshop-offerwall .offerwall-provider-btn.is-active{background:#2563eb;border-color:#2563eb;color:#fff}' .
+        '.impactshop-offerwall .offerwall-provider-btn.is-disabled{opacity:.5;cursor:not-allowed}' .
+        '.impactshop-offerwall .offerwall-provider-btn .offerwall-provider-badge{margin-left:6px;font-size:10px;background:rgba(148,163,184,.2);padding:2px 6px;border-radius:999px}' .
 
         // === Stats panel ===
         '.impactshop-offerwall .offerwall-stats{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}' .
@@ -1031,6 +1037,9 @@ function impactshop_offerwall_shortcode(): string
     $providers = impactshop_offerwall_get_providers();
     $cpx_provider = $providers['cpx'] ?? [];
     $cpx_active = !empty($cpx_provider['enabled']);
+    $ayet_provider = $providers['ayet'] ?? [];
+    $ayet_active = !empty($ayet_provider['enabled']);
+    $ayet_survey_active = defined('AYET_OFFERWALL_SURVEYWALL_ADSLOT') && (string) AYET_OFFERWALL_SURVEYWALL_ADSLOT !== '';
     $pseudo_id = impactshop_offerwall_get_pseudo_id();
     $cpx_app_id = (string) ($cpx_provider['api_key'] ?? '');
     $cpx_secret = (string) ($cpx_provider['survey_token_secret'] ?? '');
@@ -1046,6 +1055,7 @@ function impactshop_offerwall_shortcode(): string
     $html .= '<div class="offerwall-faq" data-role="offerwall-faq" hidden>';
     $html .= '<p>Az offerwall teljesítések feldolgozása szolgáltatófüggő, ezért előfordulhat néhány órás késés.</p>';
     $html .= '</div>';
+    $html .= '<div class="offerwall-stats-anchor" data-role="offerwall-stats-anchor"></div>';
     $html .= '<div class="offerwall-tabs" data-role="offerwall-tabs">';
     $html .= '<button type="button" class="offerwall-tab is-active" data-role="offerwall-tab" data-target="offerwall">🎁 Offerwall</button>';
     $html .= '<button type="button" class="offerwall-tab" data-role="offerwall-tab" data-target="quiz">📋 Kvíz</button>';
@@ -1064,23 +1074,34 @@ function impactshop_offerwall_shortcode(): string
         : '<div class="offerwall-empty">A kvíz modul jelenleg nem elérhető.</div>';
     $survey_sections = '';
     if (shortcode_exists('impactshop_internal_survey')) {
-        $survey_sections .= '<div class="offerwall-survey-section">';
+        $survey_sections .= '<div class="offerwall-survey-section" data-provider="sharity">';
         $survey_sections .= '<h3 class="offerwall-section-title">🏠 Saját kérdőíveink</h3>';
         $survey_sections .= do_shortcode('[impactshop_internal_survey]');
         $survey_sections .= '</div>';
     }
     if ($cpx_active) {
-        $survey_sections .= '<div class="offerwall-survey-section offerwall-survey-cpx">';
+        $survey_sections .= '<div class="offerwall-survey-section offerwall-survey-cpx" data-provider="cpx">';
         $survey_sections .= '<h3 class="offerwall-section-title">🌐 Külső kérdőívek – extra pontokért</h3>';
         $survey_sections .= '<div class="offerwall-note">Töltsd ki és gyűjts extra pontokat! A jutalom a kitöltés után automatikusan jóváírásra kerül.</div>';
         $survey_sections .= '<div id="cpx-survey-container" data-cpx-app-id="' . esc_attr($cpx_app_id) . '" data-cpx-user="' . esc_attr($pseudo_id) . '" data-cpx-hash="' . esc_attr($cpx_hash) . '" data-cpx-subid1="' . esc_attr($pseudo_id) . '" data-cpx-enabled="' . ($cpx_active ? '1' : '0') . '"></div>';
         $survey_sections .= '</div>';
     }
+    $survey_sections .= '<div class="offerwall-survey-section" data-provider="ayet">';
+    $survey_sections .= '<h3 class="offerwall-section-title">🧭 AyeT kérdőívek</h3>';
+    $survey_sections .= '<div class="offerwall-note">Válassz egy kérdőívet, és teljesítés után jóváírjuk a pontot és szavazatot.</div>';
+    $survey_sections .= '<div class="offerwall-cards" data-role="offerwall-ayet-surveys"></div>';
+    $survey_sections .= '</div>';
     $survey_html = $survey_sections !== ''
         ? $survey_sections
         : '<div class="offerwall-empty">A kérdőív modul jelenleg nem elérhető.</div>';
     $html .= '<div class="offerwall-panel" data-panel="quiz">' . $quiz_html . '</div>';
-    $html .= '<div class="offerwall-panel" data-panel="survey">' . $survey_html . '</div>';
+    $html .= '<div class="offerwall-panel" data-panel="survey">';
+    $html .= '<div class="offerwall-provider-tabs" data-role="offerwall-provider-tabs" data-scope="survey">';
+    $html .= '<button type="button" class="offerwall-provider-btn is-active" data-role="offerwall-provider" data-provider="sharity">Sharity</button>';
+    $html .= '<button type="button" class="offerwall-provider-btn' . ($cpx_active ? '' : ' is-disabled') . '" data-role="offerwall-provider" data-provider="cpx"' . ($cpx_active ? '' : ' disabled') . '>CPX Research</button>';
+    $html .= '<button type="button" class="offerwall-provider-btn' . (($ayet_active && $ayet_survey_active) ? '' : ' is-disabled') . '" data-role="offerwall-provider" data-provider="ayet"' . (($ayet_active && $ayet_survey_active) ? '' : ' disabled') . '>AyeT</button>';
+    $html .= '</div>';
+    $html .= $survey_html . '</div>';
     $html .= '<div class="offerwall-panel" data-panel="active">';
     $html .= '<div class="offerwall-cards" data-role="offerwall-active"></div>';
     $html .= '</div>';

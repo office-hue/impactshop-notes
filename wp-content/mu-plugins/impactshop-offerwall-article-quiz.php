@@ -65,6 +65,7 @@ function impactshop_article_quiz_ensure_provider(): void
     }
 
     $providers = impactshop_offerwall_get_providers();
+    $needs_save = false;
     if (!isset($providers['internal_article_quiz'])) {
         $providers['internal_article_quiz'] = [
             'enabled' => false,
@@ -83,6 +84,19 @@ function impactshop_article_quiz_ensure_provider(): void
             'votes_multiplier' => 1.0,
             'allow_ips' => [],
         ];
+        $needs_save = true;
+    } else {
+        if ((float) ($providers['internal_article_quiz']['points_multiplier'] ?? 0) <= 0) {
+            $providers['internal_article_quiz']['points_multiplier'] = 1.0;
+            $needs_save = true;
+        }
+        if ((float) ($providers['internal_article_quiz']['votes_multiplier'] ?? 0) <= 0) {
+            $providers['internal_article_quiz']['votes_multiplier'] = 1.0;
+            $needs_save = true;
+        }
+    }
+
+    if ($needs_save) {
         impactshop_offerwall_save_providers($providers);
     }
 }
@@ -530,13 +544,18 @@ function impactshop_article_quiz_get_completed_ids(): array
 
 function impactshop_article_quiz_shortcode(): string
 {
+    $providers = function_exists('impactshop_offerwall_get_providers') ? impactshop_offerwall_get_providers() : [];
+    $provider = $providers['internal_article_quiz'] ?? [];
+    $pseudo_id = function_exists('impactshop_offerwall_get_pseudo_id') ? impactshop_offerwall_get_pseudo_id() : '';
+    $secret = impactshop_article_quiz_get_secret($provider);
+    $token = $pseudo_id !== '' ? impactshop_article_quiz_build_token($pseudo_id, $secret) : '';
     $bank = impactshop_article_quiz_load_bank();
     $completed = impactshop_article_quiz_get_completed_ids();
     $bank_json = wp_json_encode($bank, JSON_UNESCAPED_UNICODE);
     $completed_json = wp_json_encode($completed, JSON_UNESCAPED_UNICODE);
 
     $html = '<div class="impactshop-article-quiz-shell">';
-    $html .= '<div class="impactshop-article-quiz" data-role="impactshop-article-quiz">';
+    $html .= '<div class="impactshop-article-quiz" data-role="impactshop-article-quiz" data-quiz-token="' . esc_attr($token) . '">';
     $html .= '<div class="impactshop-article-quiz-kicker">Impact kvíz</div>';
     $html .= '<h2>Olvasás + 3 kérdés</h2>';
     $html .= '<p class="impactshop-article-quiz-lead">Olvasd el a cikket, majd válaszolj a 3 kérdésre. A jutalom a beküldés után azonnal megjelenik.</p>';
@@ -596,7 +615,7 @@ var nextBtn=root.querySelector("[data-role=impactshop-article-quiz-next]");
 var status=root.querySelector("[data-role=impactshop-article-quiz-status]");
 var startBtn=root.querySelector("[data-role=impactshop-article-quiz-start]");
 var params=new URLSearchParams(window.location.search);
-var token=params.get("quiz_token") || params.get("survey_token") || "";
+var token=params.get("quiz_token") || params.get("survey_token") || root.getAttribute("data-quiz-token") || "";
 var bank=window.impactshopArticleQuizBank||[];
 var completed=window.impactshopArticleQuizCompleted||[];
 var minReadSeconds=20;
