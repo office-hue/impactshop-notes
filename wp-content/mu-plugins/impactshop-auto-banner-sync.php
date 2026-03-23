@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 }
 
 const IMPACTSHOP_AUTO_BANNER_SYNC_INTERVAL = DAY_IN_SECONDS;
-const IMPACTSHOP_AUTO_BANNER_SYNC_LIMIT = 50; // Max banners to keep active
+const IMPACTSHOP_AUTO_BANNER_SYNC_LIMIT = 1000; // Max banners to keep active
 const IMPACTSHOP_AUTO_BANNER_SYNC_MIN_DISCOUNT = 10; // Minimum discount % to include
 
 /**

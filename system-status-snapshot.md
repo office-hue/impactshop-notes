@@ -1,3 +1,9 @@
+## 2026-03-23 12:25:00 CET - autobanner feed import snapshot
+- Branch continuity for autobanner inventory path: `fix/autobanner-feed-import-clean`.
+- Added direct JSON feed discovery/import helpers and `wp impactshop auto-banner import-feed`.
+- Raised source caps: Google Sheets `50 -> 1000`, Dognet `120 -> 1000`.
+- Validation: PHP lint clean on `impactshop-auto-banner.php`, `impactshop-auto-banner-sync.php`, `impactshop-auto-banner-dognet.php`.
+
 # ImpactShop – Projekt státusz
 
 ## 2026-03-23 10:47:00 CET - offerwall hotfix continuity snapshot

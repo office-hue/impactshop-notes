@@ -12,6 +12,8 @@ const IMPACTSHOP_AUTO_BANNER_DEFAULT_TTL_DAYS = 7;
 const IMPACTSHOP_AUTO_BANNER_ADD_RATE_LIMIT = 30;
 const IMPACTSHOP_AUTO_BANNER_ADD_RATE_WINDOW = 60;
 const IMPACTSHOP_AUTO_BANNER_CLEANUP_OPTION = 'impactshop_auto_banner_cleanup_v1';
+const IMPACTSHOP_AUTO_BANNER_FEED_IMPORT_OPTION = 'impactshop_auto_banner_feed_import_v1';
+const IMPACTSHOP_AUTO_BANNER_FEED_CRON = 'impactshop_auto_banner_feed_import_cron';
 
 add_action('muplugins_loaded', 'impactshop_auto_banner_boot');
 add_action('cli_init', 'impactshop_auto_banner_register_cli');
@@ -23,6 +25,7 @@ function impactshop_auto_banner_boot(): void
     add_action('rest_api_init', 'impactshop_auto_banner_register_routes');
     add_action('admin_menu', 'impactshop_auto_banner_admin_menu');
     impactshop_auto_banner_schedule_cleanup();
+    impactshop_auto_banner_schedule_feed_import();
     impactshop_auto_banner_schedule_whitelist_cleanup();
     if (defined('WP_CLI') && WP_CLI) {
         impactshop_auto_banner_register_cli();
@@ -113,6 +116,9 @@ function impactshop_auto_banner_add(WP_REST_Request $request): WP_REST_Response
 function impactshop_is_whitelisted_partner(string $shop_slug): bool
 {
     static $whitelist = null;
+    if (strpos($shop_slug, 'sync:') === 0) {
+        $shop_slug = substr($shop_slug, 5);
+    }
 
     if ($whitelist !== null) {
         $normalized = strtolower(trim($shop_slug));
@@ -551,13 +557,113 @@ function impactshop_auto_banner_register_cli(): void
     }
 
     WP_CLI::add_command('impactshop auto-banner import', 'impactshop_auto_banner_cli_import');
+    WP_CLI::add_command('impactshop auto-banner import-feed', 'impactshop_auto_banner_cli_import_feed');
     WP_CLI::add_command('impactshop auto-banner cleanup', 'impactshop_auto_banner_cli_cleanup');
+}
+
+function impactshop_auto_banner_feed_candidates(): array
+{
+    $workspace_root = dirname(dirname(WP_CONTENT_DIR));
+    return [
+        $workspace_root . '/ai-agent/tmp/ingest/export-coupons.json',
+        dirname(WP_CONTENT_DIR) . '/tmp/coupon-harvester/export-coupons.json',
+        dirname(WP_CONTENT_DIR) . '/tmp/ingest/export-coupons.json',
+    ];
+}
+
+function impactshop_auto_banner_resolve_feed_file(): ?string
+{
+    foreach (impactshop_auto_banner_feed_candidates() as $candidate) {
+        if (is_readable($candidate)) {
+            return $candidate;
+        }
+    }
+    return null;
+}
+
+function impactshop_auto_banner_import_file(string $file, string $source = 'cli', string $status = 'active'): array
+{
+    if ($file === '' || !is_readable($file)) {
+        return [
+            'success' => false,
+            'imported' => 0,
+            'skipped' => 0,
+            'error' => 'missing_or_unreadable_file',
+        ];
+    }
+
+    $raw = file_get_contents($file);
+    if ($raw === false) {
+        return [
+            'success' => false,
+            'imported' => 0,
+            'skipped' => 0,
+            'error' => 'read_failed',
+        ];
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return [
+            'success' => false,
+            'imported' => 0,
+            'skipped' => 0,
+            'error' => 'invalid_json',
+        ];
+    }
+
+    if (isset($decoded['offers']) && is_array($decoded['offers'])) {
+        $items = $decoded['offers'];
+    } elseif (isset($decoded['items']) && is_array($decoded['items'])) {
+        $items = $decoded['items'];
+    } else {
+        $items = $decoded;
+    }
+
+    if (!is_array($items)) {
+        return [
+            'success' => false,
+            'imported' => 0,
+            'skipped' => 0,
+            'error' => 'no_offer_list',
+        ];
+    }
+
+    $imported = 0;
+    $skipped = 0;
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            $skipped++;
+            continue;
+        }
+        $offer = impactshop_auto_banner_normalize_offer($item);
+        if ($offer === null) {
+            $skipped++;
+            continue;
+        }
+        impactshop_auto_banner_from_offer($offer, ['source' => $source, 'status' => $status]);
+        $imported++;
+    }
+
+    return [
+        'success' => true,
+        'imported' => $imported,
+        'skipped' => $skipped,
+        'file' => $file,
+    ];
 }
 
 function impactshop_auto_banner_schedule_cleanup(): void
 {
     if (!wp_next_scheduled('impactshop_auto_banner_cleanup')) {
         wp_schedule_event(time() + 300, 'daily', 'impactshop_auto_banner_cleanup');
+    }
+}
+
+function impactshop_auto_banner_schedule_feed_import(): void
+{
+    if (!wp_next_scheduled(IMPACTSHOP_AUTO_BANNER_FEED_CRON)) {
+        wp_schedule_event(time() + 600, 'hourly', IMPACTSHOP_AUTO_BANNER_FEED_CRON);
     }
 }
 
@@ -573,6 +679,34 @@ add_action('impactshop_auto_banner_cleanup', function (): void {
             $now
         )
     );
+});
+
+add_action(IMPACTSHOP_AUTO_BANNER_FEED_CRON, function (): void {
+    $file = impactshop_auto_banner_resolve_feed_file();
+    if ($file === null) {
+        $result = [
+            'success' => false,
+            'error' => 'feed_missing',
+            'checked_at' => current_time('mysql'),
+            'candidates' => impactshop_auto_banner_feed_candidates(),
+        ];
+        update_option(IMPACTSHOP_AUTO_BANNER_FEED_IMPORT_OPTION, $result, false);
+        if (function_exists('impactshop_ads_watch_log')) {
+            impactshop_ads_watch_log('warning', 'auto_banner_feed_missing', $result);
+        }
+        return;
+    }
+
+    $result = impactshop_auto_banner_import_file($file, 'feed', 'active');
+    $result['checked_at'] = current_time('mysql');
+    update_option(IMPACTSHOP_AUTO_BANNER_FEED_IMPORT_OPTION, $result, false);
+    if (function_exists('impactshop_ads_watch_log')) {
+        impactshop_ads_watch_log(
+            !empty($result['success']) ? 'info' : 'error',
+            !empty($result['success']) ? 'auto_banner_feed_import_complete' : 'auto_banner_feed_import_failed',
+            $result
+        );
+    }
 });
 
 function impactshop_auto_banner_schedule_whitelist_cleanup(): void
@@ -634,47 +768,36 @@ function impactshop_auto_banner_cli_cleanup(): void
 function impactshop_auto_banner_cli_import(array $args, array $assoc_args): void
 {
     $file = $assoc_args['file'] ?? '';
-    if ($file === '' || !is_readable($file)) {
-        WP_CLI::error('Missing or unreadable --file argument.');
+    if ($file === '') {
+        WP_CLI::error('Missing --file argument.');
     }
-
-    $raw = file_get_contents($file);
-    if ($raw === false) {
-        WP_CLI::error('Failed to read file.');
+    $result = impactshop_auto_banner_import_file($file, 'cli', 'active');
+    if (empty($result['success'])) {
+        WP_CLI::error((string) ($result['error'] ?? 'import_failed'));
     }
+    WP_CLI::success(sprintf(
+        'Imported %d auto-banner items, skipped %d.',
+        (int) $result['imported'],
+        (int) $result['skipped']
+    ));
+}
 
-    $decoded = json_decode($raw, true);
-    if (!is_array($decoded)) {
-        WP_CLI::error('Invalid JSON.');
+function impactshop_auto_banner_cli_import_feed(): void
+{
+    $file = impactshop_auto_banner_resolve_feed_file();
+    if ($file === null) {
+        WP_CLI::error('No readable autobanner feed file found.');
     }
-
-    $items = [];
-    if (isset($decoded['offers']) && is_array($decoded['offers'])) {
-        $items = $decoded['offers'];
-    } elseif (isset($decoded['items']) && is_array($decoded['items'])) {
-        $items = $decoded['items'];
-    } else {
-        $items = $decoded;
+    $result = impactshop_auto_banner_import_file($file, 'feed', 'active');
+    if (empty($result['success'])) {
+        WP_CLI::error((string) ($result['error'] ?? 'import_feed_failed'));
     }
-
-    if (!is_array($items)) {
-        WP_CLI::error('No offer list found in JSON.');
-    }
-
-    $imported = 0;
-    foreach ($items as $item) {
-        if (!is_array($item)) {
-            continue;
-        }
-        $offer = impactshop_auto_banner_normalize_offer($item);
-        if ($offer === null) {
-            continue;
-        }
-        impactshop_auto_banner_from_offer($offer, ['source' => 'cli', 'status' => 'active']);
-        $imported++;
-    }
-
-    WP_CLI::success(sprintf('Imported %d auto-banner items.', $imported));
+    WP_CLI::success(sprintf(
+        'Imported feed %s: %d imported, %d skipped.',
+        $file,
+        (int) $result['imported'],
+        (int) $result['skipped']
+    ));
 }
 
 function impactshop_auto_banner_normalize_offer(array $item): ?array

@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const IMPACTSHOP_AUTO_BANNER_DOGNET_LIMIT = 120;
+const IMPACTSHOP_AUTO_BANNER_DOGNET_LIMIT = 1000;
 const IMPACTSHOP_AUTO_BANNER_DOGNET_CRON = 'impactshop_auto_banner_dognet_cron';
 
 add_action('muplugins_loaded', 'impactshop_auto_banner_dognet_boot');
