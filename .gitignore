@@ -35,6 +35,12 @@ wp-content/uploads/**/*.log
 .codex/_preflight_*
 .codex/deploy-log.txt
 .codex/_go_no_go_*
+.codex/.metadata_never_index
+.codex/.noindex
+.codex/guard-events/
 .backups/
 .codex/_preflight_*
+vendor/.metadata_never_index
+vendor/.noindex
+conversation-summaries/*_conversation_summary.md
 wp-content/index.php
