@@ -3100,8 +3100,14 @@
             return;
         }
 
+        const params = new URLSearchParams();
+        params.set('ts', String(Date.now()));
+        if (state.pseudoId) {
+            params.set('pseudo_id', state.pseudoId);
+        }
+
         $.ajax({
-            url: `${autoBannerUrl}/next?ts=${Date.now()}`,
+            url: `${autoBannerUrl}/next?${params.toString()}`,
             method: 'GET',
             dataType: 'json',
             timeout: 8000

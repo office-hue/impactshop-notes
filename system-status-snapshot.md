@@ -1,3 +1,10 @@
+## 2026-03-23 15:45:00 CET - autobanner rotation and canonical dognet snapshot
+- Branch continuity for autobanner runtime hardening: `fix/autobanner-feed-import-clean`.
+- Added per-user autobanner rotation state via `pseudo_id`, removing the old 300-item repeat-prone pool behavior.
+- Canonical Dognet autobanner mapping now accepts `dognet_program_id` / `program_id` from the `Shops` CSV in addition to `dognet_base` CID parsing.
+- Sheets banner ingest now keeps every non-empty canonical banner row, allowing shop-logo fallback when `img` is empty instead of dropping the offer.
+- Production follow-up remains blocked by MU-plugin filesystem permissions on `/home/sharityh/app/wp-content/mu-plugins/*.php` (read-only `0444`).
+
 ## 2026-03-23 12:25:00 CET - autobanner feed import snapshot
 - Branch continuity for autobanner inventory path: `fix/autobanner-feed-import-clean`.
 - Added direct JSON feed discovery/import helpers and `wp impactshop auto-banner import-feed`.

@@ -18,3 +18,10 @@ This change adds a direct JSON feed import path for autobanner inventory and rai
 
 - WordPress can now import autobanner feed JSON generated outside the old sync-only path.
 - The autobanner inventory no longer depends only on the smaller legacy sync limits.
+
+## Follow-up Hardening
+
+- The autobanner runtime now supports per-user rotation via `pseudo_id`, so the same user does not start repeating offers until the active inventory has been exhausted.
+- The canonical `Shops` CSV remains the source of truth for Dognet autobanner mapping. Dognet mapping now also accepts `dognet_program_id` / `program_id` in addition to parsing `cid` from `dognet_base`.
+- The canonical `banners` CSV keeps every non-empty offer row. Blank rows fall out; rows without `img` stay eligible via shop-logo fallback.
+- Production deployment for this follow-up is still blocked by filesystem permissions on `/home/sharityh/app/wp-content/mu-plugins/*.php` (`0444` read-only), so the code is ready but not yet copied to the host.

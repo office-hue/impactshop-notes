@@ -6290,3 +6290,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Hook policy egységes: `pre-commit` main/master tiltás + `pre-push` direct main push tiltás.
 - Pre-push audit standard: `safe-repo-audit.sh --strict --mode push`.
 - PR kötelező checklist blokk + CI guard aktív; hiány esetén merge tiltás.
+
+## 2026-03-23 15:52:00 CET - autobanner rotation and Dognet canonical follow-up
+- Az autobanner runtime ismétléscsökkentése most már `pseudo_id` alapú per-user sorrendezéssel megy, nem a korábbi 300-as ismétlődő poolon.
+- A `Shops` CSV marad a kanonikus partnerlista; a Dognet ingest csak ehhez mapel, és a `dognet_program_id` / `program_id` mezőket is figyelembe veszi.
+- A `banners` CSV-ből az üres sorok kiesnek, minden valós ajánlat bekerülhet, `img` hiánynál shop-logo fallbackkel.
+- Production deploy még nem történt meg ehhez a körhöz, mert a MU-plugin fájlok a hoston read-only (`0444`) jogosultságúak.
