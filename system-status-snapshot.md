@@ -1,5 +1,11 @@
 # ImpactShop – Projekt státusz
 
+## 2026-03-23 10:47:00 CET - offerwall hotfix continuity snapshot
+- Branch continuity for protected MU-plugin changes: `hotfix/offerwall-sync-20260323`.
+- Production hotfix scope: survey chooser restore (`Sharity`, `CPX Research`, `AyeT`), article quiz reward-token fallback, signed WP email proxy deployment.
+- Production validation recorded: `impact-challenge` HTML contains survey chooser + CPX/AyeT containers; email proxy test returned `HTTP 200` with `{"sent":true,"count":1}`.
+- Rollback path: restore the pre-deploy MU-plugin backup directory created on the production host before targeted copy.
+
 *Generálva:* 2026-02-26 07:48:32 +0100 (Bujdoso-Mac-mini)
 
 ## Meta

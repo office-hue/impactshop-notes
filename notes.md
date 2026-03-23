@@ -6239,6 +6239,11 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - **Result:** pass (warnings=0, errors=0, duration=0s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
 
+## 2026-03-23 10:47:00 CET - offerwall hotfix continuity
+- Protected MU-plugin hotfix branch prepared for PR sync: `hotfix/offerwall-sync-20260323`.
+- Continuity evidence added for the production-hot offerwall fix set: survey provider chooser restore, article quiz reward-token fallback, and signed WP email proxy rollout.
+- Production verification kept in sync with GitHub PR: survey chooser + CPX/AyeT containers visible in live HTML, email proxy test `HTTP 200` with `{"sent":true,"count":1}`.
+
 ## 2026-03-05 10:05:00 CET - doc continuity guard baseline
 - Bevezetve a kötelező pre-push dokumentációs folytonosság gate (`scripts/safe-repo-audit.sh`) mindkét repo-ra (`impactshop-notes`, `ai-agent`).
 - Új szabály: modulmódosításnál kötelező `system-status-snapshot.md` + legalább egy `docs/*.md`; notes repo-ban kötelező `notes.md` vagy `conversation-summaries/*` is.
