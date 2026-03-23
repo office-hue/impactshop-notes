@@ -1,3 +1,9 @@
+# 2026-03-23
+
+- Autobanner feed import support added to MU plugins.
+- Legacy autobanner sync caps raised to 1000 for Sheets and Dognet paths.
+- Goal: keep live autobanner inventory above the 1000-item target without relying on a tiny sync-only window.
+
 # Projekt napló
 
 ## 0. Rövid összefoglaló
