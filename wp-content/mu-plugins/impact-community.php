@@ -845,6 +845,23 @@ function ic_register_rest_routes(): void {
         'callback'            => 'ic_rest_circle_health',
         'permission_callback' => function () { return current_user_can('manage_options'); },
     ]);
+
+    /* § Sprint 10 — settlement triage + constitution */
+    register_rest_route($ns, '/admin/moderation/settlement-queue', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_admin_settlement_queue',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/admin/moderation/settlement-queue/(?P<report_id>\d+)', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_admin_settlement_triage',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/ngo/constitution/accept', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_constitution_accept',
+        'permission_callback' => '__return_true',
+    ]);
 }
 
 /* --- Circles handlers --------------------------------------------------- */
@@ -1276,6 +1293,16 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
         }
     }
 
+    // § Toxicity friction: soft block with slow_mode flag
+    if (ic_check_toxicity($body)) {
+        do_action('ic_toxicity_friction', $cid, $pid_hash, $body);
+        return new WP_REST_Response([
+            'success'   => false,
+            'slow_mode' => true,
+            'message'   => 'Az üzenet hangvétele feszültséget kelthet. Kérjük fogalmazd át, vagy küldd be mégis a szándékod megjelölésével (intention mező).',
+        ], 422);
+    }
+
     $wpdb->insert("{$p}ic_posts", [
         'circle_id'   => $cid,
         'author_hash' => $pid_hash,
@@ -1325,6 +1352,9 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     if ($circle_obj) {
         ic_record_sprint_activation($pid_hash, $circle_obj->ref_slug, 'post');
     }
+
+    // § Trust auto-promote after posting
+    ic_trust_auto_promote($cid, $pid_hash);
 
     return ic_json_ok([
         'post' => ic_format_post($wpdb->get_row($wpdb->prepare(
@@ -1382,6 +1412,9 @@ function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
     if ($circle_obj) {
         ic_record_sprint_activation($pid_hash, $circle_obj->ref_slug, 'vote');
     }
+
+    // § Trust auto-promote after voting
+    ic_trust_auto_promote($cid, $pid_hash);
 
     return ic_json_ok(['vote_count' => $new_count]);
 }
@@ -2005,6 +2038,10 @@ function ic_schedule_crons(): void {
     // §16 Daily circle stats snapshot: 01:30 daily
     if (!wp_next_scheduled('ic_daily_circle_stats')) {
         wp_schedule_event(strtotime('tomorrow 01:30'), 'daily', 'ic_daily_circle_stats');
+    }
+    // § Sprint 10 — Monthly Circle Health Score refresh: 1st of month 05:00
+    if (!wp_next_scheduled('ic_monthly_health_refresh')) {
+        wp_schedule_event(strtotime('first day of next month 05:00'), 'monthly', 'ic_monthly_health_refresh');
     }
 }
 
@@ -4893,5 +4930,211 @@ function ic_rest_admin_sprint_queue_action( WP_REST_Request $req ): WP_REST_Resp
     }
 
     return ic_json_ok( [ 'event_id' => $event_id, 'action' => $action ] );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 10 — Trust Engine, Toxicity Friction, Moderation Settlement
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Toxicity keyword check ──────────────────────────────────────────────── */
+function ic_check_toxicity( string $body ): bool {
+    static $keywords = [
+        'idióta', 'hülye', 'taknyos', 'büdös', 'rohadt', 'mocskos',
+        'segg', 'picsába', 'kurva', 'barom', 'állat vagy', 'szar vagy',
+        'menj el', 'utállak', 'gyűlöllek', 'elpusztulsz', 'kibaszott', 'francba',
+    ];
+    $lower = mb_strtolower( $body );
+    foreach ( $keywords as $kw ) {
+        if ( mb_strpos( $lower, $kw ) !== false ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* ── Trust auto-promote (0→1→2) ─────────────────────────────────────────── */
+function ic_trust_auto_promote( int $circle_id, string $pid_hash ): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $trust   = $wpdb->get_row( $wpdb->prepare(
+        "SELECT trust_level, timeout_until FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s",
+        $circle_id, $pid_hash
+    ) );
+    $current = $trust ? (int) $trust->trust_level : 0;
+
+    // Skip promotion while timed-out
+    if ( $trust && $trust->timeout_until && strtotime( $trust->timeout_until ) > time() ) {
+        return;
+    }
+
+    if ( $current === 0 ) {
+        // 0→1 threshold: 2+ posts OR 3+ votes received
+        $post_count = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND is_deleted=0",
+            $circle_id, $pid_hash
+        ) );
+        $votes_recv = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COALESCE(SUM(vote_count),0) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND is_deleted=0",
+            $circle_id, $pid_hash
+        ) );
+        if ( $post_count >= 2 || $votes_recv >= 3 ) {
+            $wpdb->query( $wpdb->prepare(
+                "INSERT INTO {$p}ic_member_trust (circle_id,pid_hash,trust_level) VALUES(%d,%s,1)
+                 ON DUPLICATE KEY UPDATE trust_level=GREATEST(trust_level,1)",
+                $circle_id, $pid_hash
+            ) );
+        }
+    } elseif ( $current === 1 ) {
+        // 1→2 threshold: 10+ posts AND 50+ votes received
+        $posts = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND is_deleted=0",
+            $circle_id, $pid_hash
+        ) );
+        $votes = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COALESCE(SUM(vote_count),0) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND is_deleted=0",
+            $circle_id, $pid_hash
+        ) );
+        if ( $posts >= 10 && $votes >= 50 ) {
+            $wpdb->query( $wpdb->prepare(
+                "UPDATE {$p}ic_member_trust SET trust_level=2 WHERE circle_id=%d AND pid_hash=%s AND trust_level=1",
+                $circle_id, $pid_hash
+            ) );
+        }
+    }
+}
+
+/* ── Toxicity Impi rephrase suggestion ───────────────────────────────────── */
+add_action( 'ic_toxicity_friction', 'ic_impi_rephrase_suggestion', 10, 3 );
+function ic_impi_rephrase_suggestion( int $circle_id, string $pid_hash, string $body ): void {
+    ic_impi_post(
+        $circle_id,
+        '🦡 Érzem, hogy erős érzelmek vannak mögötte. Ha átfogalmazod, nagyobb eséllyel segít a közösség! 💛',
+        null,
+        'safety'
+    );
+}
+
+/* ── Admin settlement triage queue (GET) ─────────────────────────────────── */
+function ic_rest_admin_settlement_queue(): WP_REST_Response {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $rows = $wpdb->get_results(
+        "SELECT p.id AS post_id,
+                LEFT(p.body, 120)  AS excerpt,
+                p.circle_id,
+                COUNT(r.id)        AS report_count,
+                c.type,
+                c.ref_slug,
+                c.name             AS circle_name,
+                MIN(r.created_at)  AS first_report_at
+         FROM {$p}ic_reports r
+         JOIN {$p}ic_posts   p ON r.post_id  = p.id
+         JOIN {$p}ic_circles c ON c.id        = p.circle_id
+         WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+           AND r.status      = 'pending'
+           AND p.is_deleted  = 0
+         GROUP BY p.id
+         HAVING report_count >= 3
+         ORDER BY report_count DESC
+         LIMIT 100",
+        ARRAY_A
+    );
+
+    return new WP_REST_Response(
+        [ 'queue' => $rows ?: [], 'count' => count( $rows ?: [] ) ],
+        200
+    );
+}
+
+/* ── Admin settlement triage action (POST /{report_id}) ─────────────────── */
+function ic_rest_admin_settlement_triage( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $report_id = (int) $req->get_param( 'report_id' );
+    $action    = sanitize_key( $req->get_param( 'action' ) ?? '' );
+
+    if ( ! in_array( $action, [ 'dismiss', 'remove', 'timeout' ], true ) ) {
+        return ic_json_error( 'action értéke: dismiss | remove | timeout', 400 );
+    }
+
+    $report = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$p}ic_reports WHERE id=%d",
+        $report_id
+    ) );
+    if ( ! $report ) {
+        return ic_json_error( 'Report nem található.', 404 );
+    }
+
+    $now = current_time( 'mysql' );
+
+    if ( $action === 'dismiss' ) {
+        $wpdb->update(
+            "{$p}ic_reports",
+            [ 'status' => 'dismissed', 'reviewed_at' => $now ],
+            [ 'id' => $report_id ]
+        );
+    } elseif ( $action === 'remove' ) {
+        $wpdb->update( "{$p}ic_posts",   [ 'is_deleted' => 1 ],                             [ 'id' => $report->post_id ] );
+        $wpdb->update( "{$p}ic_reports", [ 'status' => 'actioned', 'reviewed_at' => $now ], [ 'post_id' => $report->post_id ] );
+    } elseif ( $action === 'timeout' ) {
+        $until = date( 'Y-m-d H:i:s', strtotime( '+7 days' ) );
+        $post  = $wpdb->get_row( $wpdb->prepare(
+            "SELECT author_hash, circle_id FROM {$p}ic_posts WHERE id=%d",
+            $report->post_id
+        ) );
+        if ( $post ) {
+            $wpdb->query( $wpdb->prepare(
+                "INSERT INTO {$p}ic_member_trust (circle_id,pid_hash,timeout_until) VALUES(%d,%s,%s)
+                 ON DUPLICATE KEY UPDATE timeout_until=%s",
+                $post->circle_id, $post->author_hash, $until, $until
+            ) );
+        }
+        $wpdb->update( "{$p}ic_reports", [ 'status' => 'actioned', 'reviewed_at' => $now ], [ 'id' => $report_id ] );
+    }
+
+    return ic_json_ok( [ 'action' => $action, 'report_id' => $report_id ] );
+}
+
+/* ── NGO constitution accept (POST) ─────────────────────────────────────── */
+function ic_rest_ngo_constitution_accept( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if ( ! $pid_hash ) {
+        return ic_json_error( 'Azonosítás szükséges.', 401 );
+    }
+
+    $cid     = (int) sanitize_text_field( $req->get_param( 'circle_id' ) ?? 0 );
+    $version = sanitize_text_field( $req->get_param( 'version' ) ?? '1.0' );
+
+    if ( ! $cid ) {
+        return ic_json_error( 'circle_id kötelező.', 400 );
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $wpdb->query( $wpdb->prepare(
+        "INSERT INTO {$p}ic_member_trust (circle_id,pid_hash,constitution_ver,accepted_at)
+         VALUES(%d,%s,%s,NOW())
+         ON DUPLICATE KEY UPDATE constitution_ver=%s, accepted_at=NOW()",
+        $cid, $pid_hash, $version, $version
+    ) );
+
+    return ic_json_ok( [ 'accepted' => true, 'version' => $version ] );
+}
+
+/* ── Monthly Circle Health Score refresh ────────────────────────────────── */
+add_action( 'ic_monthly_health_refresh', 'ic_monthly_health_refresh_handler' );
+function ic_monthly_health_refresh_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle_ids = $wpdb->get_col( "SELECT id FROM {$p}ic_circles WHERE is_active=1" );
+    foreach ( $circle_ids as $cid ) {
+        $score = ic_circle_health_score( (int) $cid );
+        $wpdb->update( "{$p}ic_circles", [ 'health_score' => $score ], [ 'id' => (int) $cid ] );
+    }
 }
 
