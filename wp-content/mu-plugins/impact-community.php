@@ -5518,6 +5518,93 @@ function ic_rest_decision_results( WP_REST_Request $req ): WP_REST_Response|WP_E
     ], 200 );
 }
 
+/* ── Sprint 12: POST /circles/{circle_id}/buddy/complete ──────────────────── */
+function ic_rest_buddy_complete( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle_id = (int) $req->get_param( 'circle_id' );
+    $pid_hash  = ic_pid_hash();
+    if ( ! $pid_hash ) {
+        return ic_json_error( 'Azonosítás szükséges.', 401 );
+    }
+
+    // Find the active buddy pair for this user in this circle
+    $buddy = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$p}ic_buddies
+         WHERE circle_id=%d
+           AND (pid_a=%s OR pid_b=%s)
+           AND completed_at IS NULL
+           AND opt_out_at IS NULL
+         LIMIT 1",
+        $circle_id, $pid_hash, $pid_hash
+    ), ARRAY_A );
+
+    if ( ! $buddy ) {
+        return ic_json_error( 'Nincs aktív buddy pár ebben a körben.', 404 );
+    }
+
+    // Enforce minimum 7 days since pairing (7-day mini-onboarding)
+    $paired_at = strtotime( $buddy['created_at'] );
+    if ( time() - $paired_at < 7 * DAY_IN_SECONDS ) {
+        $days_left = (int) ceil( ( 7 * DAY_IN_SECONDS - ( time() - $paired_at ) ) / DAY_IN_SECONDS );
+        return ic_json_error( "A 7 napos mini-onboarding még nem zárult le ({$days_left} nap van hátra).", 422 );
+    }
+
+    if ( (int) $buddy['bonus_paid'] === 1 ) {
+        return ic_json_error( 'A befejezési bónusz már ki lett fizetve.', 409 );
+    }
+
+    // Mark completed + bonus_paid
+    $wpdb->update(
+        "{$p}ic_buddies",
+        [ 'completed_at' => current_time( 'mysql' ), 'bonus_paid' => 1 ],
+        [ 'id' => (int) $buddy['id'] ]
+    );
+
+    // Award +30 pts to both members (dedupe key ensures idempotency)
+    $bid = (int) $buddy['id'];
+    foreach ( [ $buddy['pid_a'], $buddy['pid_b'] ] as $recipient ) {
+        if ( ! empty( $recipient ) ) {
+            ic_award_points(
+                $recipient, 30, 'buddy_completion',
+                "buddy:{$bid}",
+                "buddy_bonus:{$bid}:{$recipient}"
+            );
+            do_action( 'ic_buddy_completed', $circle_id, $recipient );
+        }
+    }
+
+    return ic_json_ok( [ 'buddy_id' => $bid, 'bonus_paid' => true ] );
+}
+
+/* ── Sprint 12: Tombola ritual cron ──────────────────────────────────────── */
+add_action( 'ic_tombola_ritual_cron', 'ic_tombola_ritual_cron_handler' );
+function ic_tombola_ritual_cron_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // Find active tombolas with ritual enabled, ending within 24h, not yet posted
+    $due = $wpdb->get_results(
+        "SELECT * FROM {$p}ic_tombolas
+         WHERE status='active'
+           AND ritual_enabled=1
+           AND ritual_posted=0
+           AND ends_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 24 HOUR)",
+        ARRAY_A
+    );
+
+    foreach ( $due as $tombola ) {
+        $tid = (int) $tombola['id'];
+        ic_impi_post(
+            (int) $tombola['circle_id'],
+            "🤔 Holnap zárul a tombola! Miért fontos ez az ügy a kör számára? Gondold át, amíg még van idő — és vegyél jegyet, ha még nem tetted! 🍀 **{$tombola['title']}**",
+            4
+        );
+        $wpdb->update( "{$p}ic_tombolas", [ 'ritual_posted' => 1 ], [ 'id' => $tid ] );
+    }
+}
+
 /* ── Buddy 90-day soft-delete retention cron ────────────────────────────── */
 add_action( 'ic_buddy_retention_daily', 'ic_buddy_retention_handler' );
 function ic_buddy_retention_handler(): void {
