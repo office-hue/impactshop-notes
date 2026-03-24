@@ -1,3 +1,10 @@
+# 2026-03-24
+
+- Impact Community (Hatás Körök) Sprint 1+2 MU plugin added.
+- `impact-community.php` — backend: 7 DB tables, REST API (11 endpoints), IC_Alias class, NGO circle seed, buddy pairing, Points-Manager integration.
+- `impact-community-app.php` — frontend SPA: hash routing, circle cards, post feed, voting, composer.
+- Feature flag: `IMPACT_COMMUNITY_ENABLED`. Route: `/hatas-korok/` via template_redirect priority 4.
+
 # 2026-03-23
 
 - Autobanner feed import support added to MU plugins.
