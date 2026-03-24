@@ -744,6 +744,25 @@ a:hover { text-decoration: underline; }
 .ic-back:hover { color: var(--teal); text-decoration: none; }
 
 /* ================================================================
+   Invite landing overlay
+   ================================================================ */
+.ic-invite-landing {
+    max-width: 440px;
+    margin: 48px auto;
+    text-align: center;
+    padding: 32px 24px;
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+}
+.ic-invite-icon   { font-size: 48px; margin-bottom: 12px; }
+.ic-invite-title  { font-size: 20px; font-weight: 700; margin: 0 0 6px; color: var(--text); }
+.ic-invite-circle { font-size: 16px; font-weight: 600; color: var(--teal); margin: 0 0 8px; }
+.ic-invite-meta   { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+.ic-invite-desc   { font-size: 14px; color: var(--text); margin: 0 0 24px; }
+.ic-invite-join-btn { width: 100%; font-size: 16px; padding: 14px; }
+
+/* ================================================================
    No-auth prompt
    ================================================================ */
 .ic-auth-prompt {
@@ -1094,6 +1113,12 @@ a:hover { text-decoration: underline; }
                 onClick: () => leaveCircle(c.id),
             }, '🚪 Kilépés');
             actions.appendChild(leaveBtn);
+
+            const inviteBtn = html('button', {
+                className: 'ic-btn ic-btn-outline',
+                onClick: () => shareInvite(c.id),
+            }, '📨 Meghívó');
+            actions.appendChild(inviteBtn);
         } else {
             const joinBtn = html('button', {
                 className: 'ic-btn ic-btn-primary',
@@ -1398,6 +1423,80 @@ a:hover { text-decoration: underline; }
     }
 
     /* --- Actions ---------------------------------------------------- */
+    async function shareInvite(circleId) {
+        try {
+            const data = await api(`/circles/${circleId}/invite`, {method: 'POST'});
+            const url = data.share_url || '';
+            if (!url) {
+                showStatus('Nem sikerült meghívót létrehozni.', 'error');
+                return;
+            }
+            if (navigator.share) {
+                await navigator.share({ title: 'Hatás Körök meghívó', url });
+            } else if (navigator.clipboard) {
+                await navigator.clipboard.writeText(url);
+                showStatus('Meghívó link másolva! 📋', 'success');
+            } else {
+                prompt('Másold ki a meghívó linket:', url);
+            }
+        } catch (err) {
+            showStatus(err.message || 'Hiba a meghívó létrehozásakor.', 'error');
+        }
+    }
+
+    async function openInviteLanding(refCode) {
+        try {
+            const data = await api(`/invite/${refCode}`);
+            const circle = data.circle || {};
+            const inviter = data.inviter_alias || 'egy tag';
+
+            // Render invite landing overlay
+            $content.innerHTML = '';
+            const wrap = html('div', {className: 'ic-invite-landing'});
+            wrap.appendChild(html('div', {className: 'ic-invite-icon'}, '🌱'));
+            wrap.appendChild(html('h1', {className: 'ic-invite-title'}, `${inviter} meghívott a körbe`));
+            wrap.appendChild(html('h2', {className: 'ic-invite-circle'}, circle.name || ''));
+            wrap.appendChild(html('p', {className: 'ic-invite-meta'}, `${circle.member_count || 0} tag · ${circle.type === 'ngo' ? 'NGO kör' : 'Települési kör'}`));
+            wrap.appendChild(html('p', {className: 'ic-invite-desc'},
+                'Csatlakozz ehhez a közösséghez, és +30 pontot kapsz induláshoz!'));
+
+            if (!HAS_PSEUDO) {
+                wrap.appendChild(html('p', {className: 'ic-auth-prompt'},
+                    'Böngéssz még egy kicsit az oldalon, hogy aktívan részt vehess a körben! 🌱'));
+            } else {
+                const joinBtn = html('button', {
+                    className: 'ic-btn ic-btn-primary ic-invite-join-btn',
+                    onClick: async () => {
+                        try {
+                            const res = await api(`/circles/${circle.id}/join`, {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ref_code: refCode}),
+                            });
+                            showStatus(`Csatlakoztál! Az álneved: ${res.alias || ''}`, 'success');
+                            navigate('circle');
+                            navigateCircle(circle.id);
+                        } catch (err) {
+                            showStatus(err.message, 'error');
+                        }
+                    },
+                }, '✋ Csatlakozom a körhöz');
+                wrap.appendChild(joinBtn);
+            }
+
+            const backLink = html('a', {
+                className: 'ic-back',
+                href: '#circles',
+                onClick: e => { e.preventDefault(); navigate('circles'); },
+            }, '← Vagy nézd meg az összes kört');
+            wrap.appendChild(backLink);
+            $content.appendChild(wrap);
+        } catch (err) {
+            showStatus('Érvénytelen meghívó link.', 'error');
+            navigate('circles');
+        }
+    }
+
     async function joinCircle(id) {
         try {
             const data = await api(`/circles/${id}/join`, {method: 'POST'});
@@ -1510,7 +1609,7 @@ a:hover { text-decoration: underline; }
     handleHash();
 
     /* --- Public API for shortcode ----------------------------------- */
-    window.ImpactCommunity = { init: handleHash };
+    window.ImpactCommunity = { init: handleHash, openInviteLanding };
 
 })();
 </script>

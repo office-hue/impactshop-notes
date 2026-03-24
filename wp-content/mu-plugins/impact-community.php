@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.3.1');
+define('IC_DB_VERSION', '1.3.2');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -303,6 +303,28 @@ function ic_maybe_migrate_db(): void {
         KEY idx_circle_status (circle_id, status)
     ) $charset;");
 
+    /* Sprint A tables — invite claims tracking */
+
+    dbDelta("CREATE TABLE {$p}ic_invite_claims (
+        id                    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        ref_code              VARCHAR(32) NOT NULL,
+        invitee_hash          VARCHAR(64) NOT NULL,
+        inviter_hash          VARCHAR(64) NOT NULL,
+        circle_id             INT UNSIGNED NOT NULL,
+        first_post_rewarded   TINYINT(1) DEFAULT 0,
+        active30_rewarded     TINYINT(1) DEFAULT 0,
+        claimed_at            DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_claim (ref_code, invitee_hash),
+        KEY idx_invitee (invitee_hash),
+        KEY idx_inviter (inviter_hash)
+    ) $charset;");
+
+    /* Sprint A/C — bonus_votes column for invite + badge vote rewards */
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_member_trust LIKE 'bonus_votes'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_member_trust ADD COLUMN bonus_votes SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER votes_received");
+    }
+
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
     if ($has_missions === 0) {
@@ -487,6 +509,18 @@ function ic_register_rest_routes(): void {
     register_rest_route($ns, '/circles/(?P<id>\d+)/leaderboard', [
         'methods'  => 'GET',
         'callback' => 'ic_rest_circle_leaderboard',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route($ns, '/circles/(?P<id>\d+)/invite', [
+        'methods'  => 'POST',
+        'callback' => 'ic_rest_create_invite',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route($ns, '/invite/(?P<ref_code>[a-zA-Z0-9]{10})', [
+        'methods'  => 'GET',
+        'callback' => 'ic_rest_invite_landing',
         'permission_callback' => '__return_true',
     ]);
 
@@ -732,6 +766,19 @@ function ic_rest_circle_join(WP_REST_Request $req): WP_REST_Response|WP_Error {
         do_action('ic_circle_milestone', $id, $new_count);
     }
 
+    // circle_founder badge: first 10 members of a circle
+    if ($new_count <= 10) {
+        ic_unlock_badge($pid_hash, 'circle_founder', $id);
+    }
+
+    // Invite reward: if joining via ref_code (first join only)
+    if (!$existing) {
+        $ref_code = sanitize_key($req->get_param('ref_code') ?? '');
+        if (strlen($ref_code) === 10) {
+            ic_process_invite_join($id, $pid_hash, $ref_code);
+        }
+    }
+
     return ic_json_ok([
         'joined'  => true,
         'alias'   => $alias,
@@ -805,6 +852,9 @@ function ic_rest_posts_list(WP_REST_Request $req): WP_REST_Response {
 
     // Lazy Impi Boost claim: if the current user has an unclaimed boost, award +20 pts now
     if ($pid_hash) {
+        // Drain any queued rewards (e.g. invite referral bonuses)
+        ic_claim_pending_points($pid_hash);
+
         $unclaimed = $wpdb->get_row($wpdb->prepare(
             "SELECT id FROM {$p}ic_posts
              WHERE author_hash=%s AND impi_boost=1 AND impi_boost_claimed=0
@@ -934,6 +984,17 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     ic_award_points($pid_hash, 30, 'daily_post', "circle:{$cid}", "daily_post:{$pid_hash}:{$cid}:{$today}");
 
     do_action('ic_first_post_of_day', $cid, $pid_hash);
+
+    // Streak tracking — fires ic_streak_7day / ic_streak_14day
+    ic_update_post_streak($cid, $pid_hash);
+
+    // Invite first-post reward (invitee + inviter)
+    ic_check_invite_first_post($cid, $pid_hash);
+
+    // Badge checks: receipt × 5, decision × 5
+    if ($post_type === 'receipt' || $post_type === 'decision') {
+        ic_check_post_type_badge($cid, $pid_hash, $post_type);
+    }
 
     return ic_json_ok([
         'post' => ic_format_post($wpdb->get_row($wpdb->prepare(
@@ -1581,6 +1642,10 @@ function ic_schedule_crons(): void {
     if (!wp_next_scheduled('ic_low_positive_check')) {
         wp_schedule_event(strtotime('tomorrow 20:00'), 'daily', 'ic_low_positive_check');
     }
+    // Monthly badge awards — 1st of month 01:00
+    if (!wp_next_scheduled('ic_monthly_badge_award')) {
+        wp_schedule_event(strtotime('first day of next month 01:00'), 'monthly', 'ic_monthly_badge_award');
+    }
 }
 
 /* --- 5e. Weekly Impi question ------------------------------------------- */
@@ -1781,4 +1846,558 @@ function ic_app_template_redirect(): void {
 
     require __DIR__ . '/impact-community-app.php';
     exit;
+}
+
+/* =========================================================================
+   8. Invite landing — template redirect for /invite/{ref_code}
+   ========================================================================= */
+
+add_action('template_redirect', 'ic_invite_template_redirect', 3);
+function ic_invite_template_redirect(): void {
+    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
+    if (!preg_match('~^/invite/([a-zA-Z0-9]{10})/?(\?.*)?$~', $uri, $m)) {
+        return;
+    }
+
+    $ref_code = $m[1];
+    $api_url  = rest_url('impact/v1');
+    $nonce    = wp_create_nonce('wp_rest');
+    $pseudo   = ic_get_pseudo_id();
+
+    header('Content-Type: text/html; charset=UTF-8');
+
+    require __DIR__ . '/impact-community-app.php';
+    echo '<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if (window.ImpactCommunity) {
+            window.ImpactCommunity.openInviteLanding(' . wp_json_encode($ref_code) . ');
+        }
+    });
+    </script>';
+    exit;
+}
+
+/* =========================================================================
+   §7. Meghívó — REST handlers
+   ========================================================================= */
+
+function ic_rest_create_invite(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+
+    global $wpdb;
+    $p  = $wpdb->prefix;
+    $id = (int) $req->get_param('id');
+
+    // Must be an active member
+    $is_member = (bool) $wpdb->get_var($wpdb->prepare(
+        "SELECT 1 FROM {$p}ic_memberships WHERE circle_id=%d AND pid_hash=%s AND is_active=1",
+        $id, $pid_hash
+    ));
+    if (!$is_member) {
+        return ic_json_error('Csak körtagok küldhetnek meghívót.', 403);
+    }
+
+    // Return existing active invite if already created
+    $existing = $wpdb->get_var($wpdb->prepare(
+        "SELECT ref_code FROM {$p}ic_invites WHERE circle_id=%d AND inviter_hash=%s AND is_active=1",
+        $id, $pid_hash
+    ));
+    if ($existing) {
+        return ic_json_ok([
+            'ref_code'  => $existing,
+            'share_url' => home_url('/invite/' . $existing),
+        ]);
+    }
+
+    // Generate ref_code: first 8 chars of pid_hash + 2 random alphanum (uppercase)
+    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $attempts = 0;
+    do {
+        if (++$attempts > 20) {
+            return ic_json_error('Nem sikerült meghívót létrehozni.', 500);
+        }
+        $suffix   = $chars[random_int(0, strlen($chars) - 1)] . $chars[random_int(0, strlen($chars) - 1)];
+        $ref_code = strtoupper(substr($pid_hash, 0, 8)) . $suffix;
+        $clash    = $wpdb->get_var($wpdb->prepare("SELECT 1 FROM {$p}ic_invites WHERE ref_code=%s", $ref_code));
+    } while ($clash);
+
+    $wpdb->insert("{$p}ic_invites", [
+        'circle_id'    => $id,
+        'inviter_hash' => $pid_hash,
+        'ref_code'     => $ref_code,
+    ]);
+
+    return new WP_REST_Response([
+        'ref_code'  => $ref_code,
+        'share_url' => home_url('/invite/' . $ref_code),
+    ], 201);
+}
+
+function ic_rest_invite_landing(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p        = $wpdb->prefix;
+    $ref_code = sanitize_key($req->get_param('ref_code') ?? '');
+    if (strlen($ref_code) !== 10) {
+        return ic_json_error('Érvénytelen meghívó kód.', 404);
+    }
+
+    $invite = $wpdb->get_row($wpdb->prepare(
+        "SELECT i.circle_id, i.inviter_hash, i.conversions, i.max_uses,
+                c.name AS circle_name, c.type AS circle_type,
+                (SELECT COUNT(*) FROM {$p}ic_memberships WHERE circle_id=i.circle_id AND is_active=1) AS member_count
+         FROM {$p}ic_invites i
+         JOIN {$p}ic_circles c ON c.id = i.circle_id
+         WHERE i.ref_code = %s AND i.is_active = 1",
+        $ref_code
+    ));
+
+    if (!$invite) {
+        return ic_json_error('Meghívó nem található.', 404);
+    }
+    if ((int) $invite->conversions >= (int) $invite->max_uses) {
+        return ic_json_error('Ez a meghívó elérte a felhasználási korlátot.', 410);
+    }
+
+    $inviter_alias = $wpdb->get_var($wpdb->prepare(
+        "SELECT alias FROM {$p}ic_memberships m
+         LEFT JOIN (SELECT 1) t ON 1=1
+         WHERE m.circle_id=%d AND m.pid_hash=%s LIMIT 1",
+        $invite->circle_id, $invite->inviter_hash
+    )) ?: IC_Alias::generate($invite->inviter_hash, (int) $invite->circle_id);
+
+    return ic_json_ok([
+        'circle' => [
+            'id'           => (int) $invite->circle_id,
+            'name'         => $invite->circle_name,
+            'type'         => $invite->circle_type,
+            'member_count' => (int) $invite->member_count,
+        ],
+        'inviter_alias' => $inviter_alias,
+        'ref_code'      => $ref_code,
+    ]);
+}
+
+/* =========================================================================
+   §7. Invite rewards — join + first post + 30-day active
+   ========================================================================= */
+
+/**
+ * Called when a user joins a circle via a ref_code (first join only).
+ * Awards invitee +30pts, queues inviter +50pts, records the claim.
+ */
+function ic_process_invite_join(int $circle_id, string $invitee_hash, string $ref_code): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $invite = $wpdb->get_row($wpdb->prepare(
+        "SELECT inviter_hash, conversions, max_uses FROM {$p}ic_invites
+         WHERE ref_code=%s AND circle_id=%d AND is_active=1",
+        $ref_code, $circle_id
+    ));
+    if (!$invite || (int) $invite->conversions >= (int) $invite->max_uses) {
+        return;
+    }
+    if ($invite->inviter_hash === $invitee_hash) {
+        return; // can't invite yourself
+    }
+
+    // Check no duplicate claim
+    $already = $wpdb->get_var($wpdb->prepare(
+        "SELECT 1 FROM {$p}ic_invite_claims WHERE ref_code=%s AND invitee_hash=%s",
+        $ref_code, $invitee_hash
+    ));
+    if ($already) {
+        return;
+    }
+
+    $wpdb->insert("{$p}ic_invite_claims", [
+        'ref_code'     => $ref_code,
+        'invitee_hash' => $invitee_hash,
+        'inviter_hash' => $invite->inviter_hash,
+        'circle_id'    => $circle_id,
+    ]);
+
+    $wpdb->query($wpdb->prepare(
+        "UPDATE {$p}ic_invites SET conversions = conversions + 1 WHERE ref_code=%s",
+        $ref_code
+    ));
+
+    // Invitee reward: +30pts (current HTTP user = invitee, so direct award works)
+    ic_award_points($invitee_hash, 30, 'invite_join', "invite:{$ref_code}", "invite_join:{$invitee_hash}");
+
+    // Inviter reward: +50pts (deferred — inviter is not the current user)
+    ic_queue_points($invite->inviter_hash, 50, 'invite_referral', "invite:{$ref_code}", "invite_referral:{$invite->inviter_hash}:{$ref_code}");
+
+    // community_puller badge: inviter has recruited 5 people
+    $total_conversions = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT SUM(conversions) FROM {$p}ic_invites WHERE inviter_hash=%s",
+        $invite->inviter_hash
+    ));
+    if ($total_conversions >= 5) {
+        ic_queue_badge($invite->inviter_hash, 'community_puller', $circle_id);
+    }
+}
+
+/**
+ * Called after a user creates their first post — check if invitee, reward both sides.
+ */
+function ic_check_invite_first_post(int $circle_id, string $invitee_hash): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $claim = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, inviter_hash, ref_code FROM {$p}ic_invite_claims
+         WHERE invitee_hash=%s AND circle_id=%d AND first_post_rewarded=0
+         LIMIT 1",
+        $invitee_hash, $circle_id
+    ));
+    if (!$claim) {
+        return;
+    }
+
+    // Check this is truly their first post ever in this circle
+    $post_count = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND is_deleted=0",
+        $circle_id, $invitee_hash
+    ));
+    if ($post_count !== 1) {
+        return; // already has posts
+    }
+
+    $wpdb->update("{$p}ic_invite_claims", ['first_post_rewarded' => 1], ['id' => (int) $claim->id]);
+
+    // Invitee: +50pts, +1 bonus vote (direct award)
+    ic_award_points($invitee_hash, 50, 'invite_first_post', "claim:{$claim->id}", "invite_fp_invitee:{$claim->id}");
+    ic_award_votes($invitee_hash, 1, $circle_id);
+
+    // Inviter: +100pts, +2 bonus votes (deferred)
+    ic_queue_points($claim->inviter_hash, 100, 'invite_first_post_ref', "claim:{$claim->id}", "invite_fp_inviter:{$claim->id}");
+    ic_queue_votes($claim->inviter_hash, 2, $circle_id);
+}
+
+/* =========================================================================
+   §7. Deferred points / votes queue (lazy-claim pattern)
+   ========================================================================= */
+
+/**
+ * Queue a points award for a user identified by pid_hash.
+ * Will be claimed on their next REST request.
+ */
+function ic_queue_points(string $pid_hash, int $points, string $activity, string $source_id, string $dedupe_key): void {
+    $key     = 'ic_pq_' . substr($pid_hash, 0, 32);
+    $pending = get_option($key, []);
+    if (!is_array($pending)) {
+        $pending = [];
+    }
+    // Dedupe check
+    foreach ($pending as $item) {
+        if ($item['dedupe_key'] === $dedupe_key) {
+            return;
+        }
+    }
+    $pending[] = compact('points', 'activity', 'source_id', 'dedupe_key');
+    update_option($key, $pending, false);
+}
+
+/**
+ * Claim all queued points for the current request's user.
+ */
+function ic_claim_pending_points(string $pid_hash): void {
+    if ($pid_hash === '') {
+        return;
+    }
+    $key     = 'ic_pq_' . substr($pid_hash, 0, 32);
+    $pending = get_option($key, []);
+    if (empty($pending) || !is_array($pending)) {
+        return;
+    }
+    delete_option($key); // delete first to avoid double processing on concurrent requests
+    foreach ($pending as $item) {
+        ic_award_points(
+            $pid_hash,
+            (int) ($item['points'] ?? 0),
+            (string) ($item['activity'] ?? 'deferred'),
+            (string) ($item['source_id'] ?? ''),
+            (string) ($item['dedupe_key'] ?? '')
+        );
+    }
+    // Process pending badge unlocks too
+    $bkey    = 'ic_bq_' . substr($pid_hash, 0, 32);
+    $badges  = get_option($bkey, []);
+    if (!empty($badges)) {
+        delete_option($bkey);
+        foreach ($badges as $b) {
+            ic_unlock_badge($pid_hash, (string) ($b['badge_key'] ?? ''), (int) ($b['circle_id'] ?? 0));
+        }
+    }
+    // Process pending votes
+    $vkey   = 'ic_vq_' . substr($pid_hash, 0, 32);
+    $vqueue = get_option($vkey, []);
+    if (!empty($vqueue)) {
+        delete_option($vkey);
+        foreach ($vqueue as $v) {
+            ic_award_votes($pid_hash, (int) ($v['votes'] ?? 1), (int) ($v['circle_id'] ?? 0));
+        }
+    }
+}
+
+/**
+ * Queue a badge unlock for a user (deferred until their next request).
+ */
+function ic_queue_badge(string $pid_hash, string $badge_key, int $circle_id = 0): void {
+    $key    = 'ic_bq_' . substr($pid_hash, 0, 32);
+    $badges = get_option($key, []);
+    if (!is_array($badges)) {
+        $badges = [];
+    }
+    foreach ($badges as $b) {
+        if ($b['badge_key'] === $badge_key) {
+            return;
+        }
+    }
+    $badges[] = compact('badge_key', 'circle_id');
+    update_option($key, $badges, false);
+}
+
+/**
+ * Queue bonus votes for a user (deferred).
+ */
+function ic_queue_votes(string $pid_hash, int $votes, int $circle_id = 0): void {
+    $key    = 'ic_vq_' . substr($pid_hash, 0, 32);
+    $vqueue = get_option($key, []);
+    if (!is_array($vqueue)) {
+        $vqueue = [];
+    }
+    $vqueue[] = compact('votes', 'circle_id');
+    update_option($key, $vqueue, false);
+}
+
+/**
+ * Award bonus votes to a user (direct — only call for current request user, or from cron).
+ */
+function ic_award_votes(string $pid_hash, int $votes, int $circle_id = 0): void {
+    if ($pid_hash === '' || $votes <= 0) {
+        return;
+    }
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT 1 FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s",
+        max(1, $circle_id), $pid_hash
+    ));
+    if ($exists) {
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$p}ic_member_trust SET bonus_votes = bonus_votes + %d WHERE circle_id=%d AND pid_hash=%s",
+            $votes, max(1, $circle_id), $pid_hash
+        ));
+    } else {
+        $wpdb->insert("{$p}ic_member_trust", [
+            'circle_id'   => max(1, $circle_id),
+            'pid_hash'    => $pid_hash,
+            'bonus_votes' => $votes,
+        ]);
+    }
+}
+
+/* =========================================================================
+   §8. Jelvények — badge unlock wrapper + triggers
+   ========================================================================= */
+
+/**
+ * Thin wrapper around impact_award_badge().
+ * Guards against missing plugin, deduplicates via impact_has_badge().
+ */
+function ic_unlock_badge(string $pid_hash, string $badge_key, int $circle_id = 0, string $tier = 'bronze'): void {
+    if ($pid_hash === '' || $badge_key === '') {
+        return;
+    }
+    if (!function_exists('impact_award_badge')) {
+        return;
+    }
+    if (function_exists('impact_has_badge') && impact_has_badge($pid_hash, $badge_key)) {
+        return; // already earned
+    }
+    $meta = $circle_id > 0 ? ['circle_id' => $circle_id] : [];
+    impact_award_badge($pid_hash, $badge_key, $tier, 'impact_community', $meta);
+}
+
+/**
+ * Check receipt/decision post type badges (5×receipt → impact_receipts_5, 5×decision → decision_maker).
+ */
+function ic_check_post_type_badge(int $circle_id, string $pid_hash, string $post_type): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $count = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts WHERE author_hash=%s AND post_type=%s AND is_deleted=0",
+        $pid_hash, $post_type
+    ));
+
+    if ($post_type === 'receipt' && $count >= 5) {
+        ic_unlock_badge($pid_hash, 'impact_receipts_5', $circle_id);
+    }
+    if ($post_type === 'decision' && $count >= 5) {
+        ic_unlock_badge($pid_hash, 'decision_maker', $circle_id);
+    }
+}
+
+/**
+ * Posting streak tracker. Called from ic_rest_post_create().
+ * Uses wp_options per-user-per-circle to track consecutive posting days.
+ * Fires: ic_streak_7day (7 days), ic_streak_14day (14 days).
+ */
+function ic_update_post_streak(int $circle_id, string $pid_hash): void {
+    $key   = 'ic_streak_' . substr($pid_hash, 0, 24) . '_' . $circle_id;
+    $data  = get_option($key, ['days' => 0, 'last' => '']);
+    $today = current_time('Y-m-d');
+
+    if ($data['last'] === $today) {
+        return; // already counted today
+    }
+
+    $yesterday = date('Y-m-d', strtotime('-1 day', strtotime(current_time('mysql'))));
+    if ($data['last'] === $yesterday) {
+        $data['days']++;
+    } else {
+        $data['days'] = 1; // reset streak
+    }
+    $data['last'] = $today;
+    update_option($key, $data, false);
+
+    if ($data['days'] === 7) {
+        do_action('ic_streak_7day', $circle_id, $pid_hash);
+    }
+    if ($data['days'] === 14) {
+        do_action('ic_streak_14day', $circle_id, $pid_hash);
+    }
+}
+
+add_action('ic_streak_14day', 'ic_badge_wave_rider', 10, 2);
+function ic_badge_wave_rider(int $circle_id, string $pid_hash): void {
+    ic_unlock_badge($pid_hash, 'wave_rider', $circle_id);
+}
+
+/* =========================================================================
+   §8. Monthly badge cron — core_member, circle_ambassador, ngo/settlement champions
+   ========================================================================= */
+
+add_action('ic_monthly_badge_award', 'ic_run_monthly_badges');
+function ic_run_monthly_badges(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // --- core_member: 30+ days active + 20+ posts in a circle ---
+    $candidates = $wpdb->get_results(
+        "SELECT m.pid_hash, m.circle_id
+         FROM {$p}ic_memberships m
+         WHERE m.is_active = 1
+           AND DATEDIFF(NOW(), m.joined_at) >= 30
+           AND (
+               SELECT COUNT(*) FROM {$p}ic_posts
+               WHERE circle_id = m.circle_id AND author_hash = m.pid_hash AND is_deleted = 0
+           ) >= 20"
+    );
+    foreach ($candidates as $c) {
+        ic_unlock_badge($c->pid_hash, 'core_member', (int) $c->circle_id, 'silver');
+    }
+
+    // --- circle_ambassador: Törzstag (trust_level >= 2) in 3+ circles ---
+    $ambassadors = $wpdb->get_results(
+        "SELECT pid_hash, COUNT(*) AS cnt
+         FROM {$p}ic_member_trust
+         WHERE trust_level >= 2
+         GROUP BY pid_hash HAVING cnt >= 3"
+    );
+    foreach ($ambassadors as $a) {
+        ic_unlock_badge($a->pid_hash, 'circle_ambassador', 0, 'silver');
+    }
+
+    // --- ngo_champion: top 3 in NGO circle leaderboard ---
+    $ngo_circles = $wpdb->get_col(
+        "SELECT id FROM {$p}ic_circles WHERE type='ngo' AND is_active=1"
+    );
+    $period = date('Y-m', strtotime('-1 month'));
+    foreach ($ngo_circles as $cid) {
+        $top3 = $wpdb->get_col($wpdb->prepare(
+            "SELECT pid_hash FROM {$p}ic_circle_leaderboard
+             WHERE circle_id=%d AND period=%s
+             ORDER BY score DESC LIMIT 3",
+            $cid, $period
+        ));
+        foreach ($top3 as $ph) {
+            ic_unlock_badge($ph, 'ngo_champion', (int) $cid, 'gold');
+        }
+    }
+
+    // --- settlement_hero: top 1 in settlement circle leaderboard ---
+    $settlement_circles = $wpdb->get_col(
+        "SELECT id FROM {$p}ic_circles WHERE type='settlement' AND is_active=1"
+    );
+    foreach ($settlement_circles as $cid) {
+        $top1 = $wpdb->get_var($wpdb->prepare(
+            "SELECT pid_hash FROM {$p}ic_circle_leaderboard
+             WHERE circle_id=%d AND period=%s
+             ORDER BY score DESC LIMIT 1",
+            $cid, $period
+        ));
+        if ($top1) {
+            ic_unlock_badge($top1, 'settlement_hero', (int) $cid, 'gold');
+        }
+    }
+
+    // --- 30-day invitee active reward ---
+    ic_check_invite_30day_active();
+}
+
+/**
+ * Award inviter +200pts +3votes if invitee has been active for 30+ days.
+ */
+function ic_check_invite_30day_active(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $claims = $wpdb->get_results(
+        "SELECT c.id, c.invitee_hash, c.inviter_hash, c.circle_id
+         FROM {$p}ic_invite_claims c
+         WHERE c.active30_rewarded = 0
+           AND DATEDIFF(NOW(), c.claimed_at) >= 30"
+    );
+    foreach ($claims as $claim) {
+        // Verify invitee is still active member
+        $still_active = (bool) $wpdb->get_var($wpdb->prepare(
+            "SELECT 1 FROM {$p}ic_memberships WHERE circle_id=%d AND pid_hash=%s AND is_active=1",
+            $claim->circle_id, $claim->invitee_hash
+        ));
+        if (!$still_active) {
+            continue;
+        }
+
+        $wpdb->update("{$p}ic_invite_claims", ['active30_rewarded' => 1], ['id' => (int) $claim->id]);
+
+        ic_queue_points($claim->inviter_hash, 200, 'invite_active30', "claim:{$claim->id}", "invite_a30:{$claim->id}");
+        ic_queue_votes($claim->inviter_hash, 3, (int) $claim->circle_id);
+    }
+}
+
+/* =========================================================================
+   §8. buddy_mentor badge — awarded when a user completes 3+ Impact Buddy onboardings
+   ========================================================================= */
+
+add_action('ic_buddy_completed', 'ic_check_buddy_mentor_badge', 10, 2);
+function ic_check_buddy_mentor_badge(int $circle_id, string $mentor_hash): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $completed_count = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_buddies
+         WHERE (pid_a=%s OR pid_b=%s) AND circle_id=%d AND completed_at IS NOT NULL",
+        $mentor_hash, $mentor_hash, $circle_id
+    ));
+    if ($completed_count >= 3) {
+        ic_unlock_badge($mentor_hash, 'buddy_mentor', $circle_id);
+    }
 }
