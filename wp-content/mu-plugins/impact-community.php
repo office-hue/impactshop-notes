@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.3.6');
+define('IC_DB_VERSION', '1.3.7');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -512,6 +512,17 @@ function ic_maybe_migrate_db(): void {
     if (empty($col)) {
         $wpdb->query("ALTER TABLE {$p}ic_sprint_events ADD COLUMN fraud_flag TINYINT(1) NOT NULL DEFAULT 0 AFTER is_pending_review");
     }
+
+    /* § Sprint 16 — ic_point_log: circle-level activity point log (§16 stats cron) */
+    $wpdb->query("CREATE TABLE IF NOT EXISTS `{$p}ic_point_log` (
+        `id`         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        `circle_id`  INT UNSIGNED NOT NULL,
+        `pid_hash`   VARCHAR(64) NOT NULL,
+        `pts`        INT NOT NULL,
+        `type`       VARCHAR(64) NOT NULL,
+        `earned_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY `idx_circle_date` (`circle_id`, `earned_at`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
@@ -1861,6 +1872,30 @@ function ic_time_ago(string $datetime): string {
 }
 
 function ic_award_points(string $pid_hash, int $points, string $type, string $source_id, string $dedupe_key): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // § Sprint 16 — log to ic_point_log for circle-level stats cron (§16)
+    // Extract circle_id from source_id patterns like "circle:123" or "post:456"
+    $circle_id = 0;
+    if (preg_match('/^circle:(\d+)/', $source_id, $m)) {
+        $circle_id = (int) $m[1];
+    } elseif (preg_match('/^post:(\d+)/', $source_id, $m)) {
+        $post_row = $wpdb->get_var($wpdb->prepare(
+            "SELECT circle_id FROM {$p}ic_posts WHERE id = %d LIMIT 1", (int) $m[1]
+        ));
+        $circle_id = (int) ($post_row ?? 0);
+    }
+    if ($circle_id > 0) {
+        $wpdb->insert("{$p}ic_point_log", [
+            'circle_id' => $circle_id,
+            'pid_hash'  => $pid_hash,
+            'pts'       => $points,
+            'type'      => $type,
+            'earned_at' => current_time('mysql'),
+        ]);
+    }
+
     if (!class_exists('Sharity_Points_Manager')) {
         return;
     }
