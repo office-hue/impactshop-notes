@@ -737,6 +737,18 @@ function ic_register_rest_routes(): void {
         'permission_callback' => '__return_true',
     ]);
 
+    // § Sprint 8 — Impi üzenetek NGO admin
+    register_rest_route($ns, '/ngo/impi-posts', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_ngo_impi_posts',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/impi-posts/(?P<post_id>\d+)', [
+        'methods'             => 'DELETE',
+        'callback'            => 'ic_rest_ngo_impi_delete',
+        'permission_callback' => '__return_true',
+    ]);
+
     register_rest_route($ns, '/ngo/tombola', [
         'methods'             => 'POST',
         'callback'            => 'ic_rest_ngo_create_tombola',
@@ -4698,5 +4710,66 @@ function ic_rest_admin_circles( WP_REST_Request $req ): WP_REST_Response {
     }
 
     return new WP_REST_Response( $result, 200 );
+}
+
+/* ── Sprint 8: NGO admin Impi üzenetek ────────────────────────────────────── */
+
+/**
+ * GET /ngo/impi-posts — legutóbbi Impi posztok az NGO körében (max 50).
+ */
+function ic_rest_ngo_impi_posts( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    $ngo_slug = ic_ngo_guard( $req );
+    if ( is_wp_error( $ngo_slug ) ) return $ngo_slug;
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug = %s AND type = 'ngo'",
+        $ngo_slug
+    ) );
+    if ( ! $circle ) return ic_json_error( 'Kör nem található.', 404 );
+
+    $posts = $wpdb->get_results( $wpdb->prepare(
+        "SELECT id, body, created_at
+         FROM {$p}ic_posts
+         WHERE circle_id = %d
+           AND author_type = 'impi'
+           AND is_deleted  = 0
+         ORDER BY created_at DESC
+         LIMIT 50",
+        (int) $circle->id
+    ), ARRAY_A );
+
+    return new WP_REST_Response( $posts ?: [], 200 );
+}
+
+/**
+ * DELETE /ngo/impi-posts/{post_id} — Impi poszt törlése (NGO admin joggal).
+ */
+function ic_rest_ngo_impi_delete( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    $ngo_slug = ic_ngo_guard( $req );
+    if ( is_wp_error( $ngo_slug ) ) return $ngo_slug;
+
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $post_id = (int) $req->get_param( 'post_id' );
+
+    $circle = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug = %s AND type = 'ngo'",
+        $ngo_slug
+    ) );
+    if ( ! $circle ) return ic_json_error( 'Kör nem található.', 404 );
+
+    $post = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id FROM {$p}ic_posts
+         WHERE id = %d AND circle_id = %d AND author_type = 'impi' AND is_deleted = 0",
+        $post_id, (int) $circle->id
+    ) );
+    if ( ! $post ) return ic_json_error( 'Impi poszt nem található.', 404 );
+
+    $wpdb->update( "{$p}ic_posts", [ 'is_deleted' => 1 ], [ 'id' => $post_id ] );
+
+    return ic_json_ok( [ 'deleted' => true ] );
 }
 

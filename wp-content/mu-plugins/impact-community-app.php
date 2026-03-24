@@ -2070,6 +2070,15 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
 .ica-quota-meta{font-size:12px;color:var(--ic-muted)}
 .ica-ask-btn{margin-top:10px;width:100%;padding:7px;font-size:12px;font-weight:600;border:1px solid var(--ic-primary);border-radius:7px;background:#fff;color:var(--ic-primary);cursor:pointer}
 .ica-ask-btn:disabled{opacity:.4;cursor:default}
+/* Impi üzenetek kártya */
+.ica-impi-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.ica-impi-table th{text-align:left;padding:6px 10px;border-bottom:2px solid var(--ic-border);color:var(--ic-muted);font-weight:600;font-size:12px}
+.ica-impi-table td{padding:7px 10px;border-bottom:1px solid var(--ic-border);vertical-align:top}
+.ica-impi-table tr:last-child td{border-bottom:none}
+.ica-impi-body{max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ica-impi-del-btn{font-size:12px;padding:3px 10px;border:1px solid var(--ic-danger);border-radius:6px;background:#fff;color:var(--ic-danger);cursor:pointer}
+.ica-impi-del-btn:disabled{opacity:.4;cursor:default}
+.ica-impi-empty{text-align:center;color:var(--ic-muted);padding:18px 0;font-size:13px}
 .ica-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center}
 .ica-modal-bg.open{display:flex}
 .ica-modal{background:#fff;border-radius:14px;padding:28px;max-width:460px;width:100%;margin:16px}
@@ -2273,6 +2282,7 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
         }
         renderStats(r.data);
         renderQuota(r.data.advisor);
+        loadImpiPosts();
         if (r.data.blast_locked) {
             show('ica-blast-locked');
             hide('ica-blast-form');
@@ -2313,6 +2323,53 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
 
         document.querySelectorAll('.ica-ask-btn').forEach(btn => {
             btn.addEventListener('click', () => openAskModal(btn.dataset.channel));
+        });
+    }
+
+    /* ── Impi üzenetek ───────────────────────────────────────────────────── */
+    async function loadImpiPosts() {
+        const el = document.getElementById('ica-impi-posts');
+        const countEl = document.getElementById('ica-impi-count');
+        if (!el) return;
+        const r = await api('GET', '/ngo/impi-posts', null, state.token);
+        if (!r.ok) { el.innerHTML = '<p class="ica-impi-empty">Nem sikerült betölteni.</p>'; return; }
+        const posts = r.data || [];
+        countEl.textContent = posts.length ? `(${posts.length} db)` : '';
+        if (!posts.length) { el.innerHTML = '<p class="ica-impi-empty">Még nincs Impi üzenet ebben a körben.</p>'; return; }
+        el.innerHTML = `<table class="ica-impi-table">
+            <thead><tr>
+                <th>Üzenet</th>
+                <th style="white-space:nowrap">Időpont</th>
+                <th></th>
+            </tr></thead>
+            <tbody id="ica-impi-tbody"></tbody>
+        </table>`;
+        const tbody = document.getElementById('ica-impi-tbody');
+        posts.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.dataset.pid = p.id;
+            const dt = new Date(p.created_at).toLocaleString('hu-HU', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+            tr.innerHTML = `
+                <td><div class="ica-impi-body" title="${esc(p.body)}">${esc(p.body)}</div></td>
+                <td style="white-space:nowrap;color:var(--ic-muted)">${dt}</td>
+                <td><button class="ica-impi-del-btn" data-pid="${p.id}">Törlés</button></td>`;
+            tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll('.ica-impi-del-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!confirm('Biztosan törlöd ezt az Impi üzenetet?')) return;
+                btn.disabled = true;
+                const dr = await api('DELETE', '/ngo/impi-posts/' + btn.dataset.pid, null, state.token);
+                if (dr.ok) {
+                    btn.closest('tr').remove();
+                    const remaining = tbody.querySelectorAll('tr').length;
+                    countEl.textContent = remaining ? `(${remaining} db)` : '';
+                    if (!remaining) el.innerHTML = '<p class="ica-impi-empty">Még nincs Impi üzenet ebben a körben.</p>';
+                } else {
+                    btn.disabled = false;
+                    alert('Törlés sikertelen.');
+                }
+            });
         });
     }
 
