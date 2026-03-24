@@ -862,6 +862,33 @@ function ic_register_rest_routes(): void {
         'callback'            => 'ic_rest_ngo_constitution_accept',
         'permission_callback' => '__return_true',
     ]);
+
+    // § Sprint 11 — Missions, Decision Post vote, Buddy opt-out
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/missions', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_missions_list',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/missions/(?P<mission_id>\d+)/complete', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_mission_complete',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/buddy/opt-out', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_buddy_optout',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/posts/(?P<post_id>\d+)/decision-vote', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_decision_vote',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/posts/(?P<post_id>\d+)/decision-results', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_decision_results',
+        'permission_callback' => '__return_true',
+    ]);
 }
 
 /* --- Circles handlers --------------------------------------------------- */
@@ -1260,6 +1287,14 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     $post_type = sanitize_key($req->get_param('post_type') ?? 'text');
     if (!in_array($post_type, ['text', 'image', 'event', 'link', 'receipt', 'decision'], true)) {
         $post_type = 'text';
+    }
+
+    // § Sprint 11 — Decision Post: V1 NGO admin only
+    if ($post_type === 'decision') {
+        $ngo_auth = ic_ngo_auth_from_header();
+        if (!$ngo_auth) {
+            return ic_json_error('Decision Posztot csak NGO admin tölthet fel (V1).', 403);
+        }
     }
 
     $meta = null;
@@ -2042,6 +2077,10 @@ function ic_schedule_crons(): void {
     // § Sprint 10 — Monthly Circle Health Score refresh: 1st of month 05:00
     if (!wp_next_scheduled('ic_monthly_health_refresh')) {
         wp_schedule_event(strtotime('first day of next month 05:00'), 'monthly', 'ic_monthly_health_refresh');
+    }
+    // § Sprint 11 — Buddy retention soft-delete: daily 03:30
+    if (!wp_next_scheduled('ic_buddy_retention_daily')) {
+        wp_schedule_event(strtotime('tomorrow 03:30'), 'daily', 'ic_buddy_retention_daily');
     }
 }
 
@@ -5136,5 +5175,319 @@ function ic_monthly_health_refresh_handler(): void {
         $score = ic_circle_health_score( (int) $cid );
         $wpdb->update( "{$p}ic_circles", [ 'health_score' => $score ], [ 'id' => (int) $cid ] );
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sprint 11 — Micro-missziók, Decision Post vote, Impact Buddy opt-out,
+               Buddy retention soft-delete
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── GET /circles/{circle_id}/missions — aktív misszió lista ────────────── */
+function ic_rest_missions_list( WP_REST_Request $req ): WP_REST_Response {
+    global $wpdb;
+    $p   = $wpdb->prefix;
+    $cid = (int) $req->get_param( 'circle_id' );
+
+    $now = current_time( 'mysql' );
+
+    // System-level (circle_id IS NULL) + circle-specific missions
+    $missions = $wpdb->get_results( $wpdb->prepare(
+        "SELECT id, title, description, reward_pts, reward_votes,
+                valid_from, valid_until, circle_id
+         FROM {$p}ic_missions
+         WHERE is_active = 1
+           AND (circle_id IS NULL OR circle_id = %d)
+           AND (valid_from IS NULL OR valid_from <= %s)
+           AND (valid_until IS NULL OR valid_until >= %s)
+         ORDER BY circle_id DESC, id ASC",
+        $cid, $now, $now
+    ), ARRAY_A );
+
+    // Attach completion flag for logged-in user
+    $pid_hash = ic_pid_hash() ?? '';
+    if ( $pid_hash && $missions ) {
+        $ids = array_column( $missions, 'id' );
+        $placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+        $completed_ids = $wpdb->get_col( $wpdb->prepare(
+            "SELECT mission_id FROM {$p}ic_mission_completions
+             WHERE pid_hash = %s AND circle_id = %d AND mission_id IN ($placeholders)",
+            array_merge( [ $pid_hash, $cid ], $ids )
+        ) );
+        $completed_set = array_flip( $completed_ids );
+        foreach ( $missions as &$m ) {
+            $m['completed'] = isset( $completed_set[ $m['id'] ] );
+        }
+        unset( $m );
+    }
+
+    return new WP_REST_Response( [ 'missions' => $missions ?: [] ], 200 );
+}
+
+/* ── POST /circles/{circle_id}/missions/{mission_id}/complete ───────────── */
+function ic_rest_mission_complete( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if ( ! $pid_hash ) {
+        return ic_json_error( 'Azonosítás szükséges.', 401 );
+    }
+
+    global $wpdb;
+    $p          = $wpdb->prefix;
+    $cid        = (int) $req->get_param( 'circle_id' );
+    $mission_id = (int) $req->get_param( 'mission_id' );
+
+    // Validate mission exists and is active
+    $mission = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$p}ic_missions WHERE id = %d AND is_active = 1",
+        $mission_id
+    ) );
+    if ( ! $mission ) {
+        return ic_json_error( 'Misszió nem található vagy már lezárult.', 404 );
+    }
+
+    // Check circle membership
+    $is_member = (int) $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_memberships WHERE circle_id = %d AND pid_hash = %s AND is_active = 1",
+        $cid, $pid_hash
+    ) );
+    if ( ! $is_member ) {
+        return ic_json_error( 'Nem vagy tagja ennek a körnek.', 403 );
+    }
+
+    // UNIQUE dedupe: one completion per user per mission (across circles)
+    $inserted = $wpdb->insert(
+        "{$p}ic_mission_completions",
+        [
+            'mission_id' => $mission_id,
+            'pid_hash'   => $pid_hash,
+            'circle_id'  => $cid,
+            'created_at' => current_time( 'mysql' ),
+        ]
+    );
+
+    if ( $inserted === false ) {
+        // Duplicate key — already completed
+        return ic_json_error( 'Ezt a missziót már teljesítetted! 🎉', 409 );
+    }
+
+    // Award points + votes
+    $pts   = (int) $mission->reward_pts;
+    $votes = (int) $mission->reward_votes;
+
+    if ( $pts > 0 ) {
+        ic_award_points(
+            $pid_hash, $pts, 'mission_complete',
+            "mission:{$mission_id}",
+            "mission_complete:{$pid_hash}:{$mission_id}"
+        );
+    }
+    if ( $votes > 0 ) {
+        $ngo_slug = $wpdb->get_var( $wpdb->prepare(
+            "SELECT ref_slug FROM {$p}ic_circles WHERE id = %d AND type = 'ngo'", $cid
+        ) );
+        if ( $ngo_slug ) {
+            ic_award_ngo_votes( $ngo_slug, $votes );
+        }
+    }
+
+    // Sprint activation
+    $circle_obj = $wpdb->get_row( $wpdb->prepare(
+        "SELECT ref_slug FROM {$p}ic_circles WHERE id = %d", $cid
+    ) );
+    if ( $circle_obj ) {
+        ic_record_sprint_activation( $pid_hash, $circle_obj->ref_slug, 'mission' );
+    }
+
+    return ic_json_ok( [
+        'mission_id'   => $mission_id,
+        'reward_pts'   => $pts,
+        'reward_votes' => $votes,
+    ], 201 );
+}
+
+/* ── POST /circles/{circle_id}/buddy/opt-out ────────────────────────────── */
+function ic_rest_buddy_optout( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if ( ! $pid_hash ) {
+        return ic_json_error( 'Azonosítás szükséges.', 401 );
+    }
+
+    global $wpdb;
+    $p   = $wpdb->prefix;
+    $cid = (int) $req->get_param( 'circle_id' );
+    $now = current_time( 'mysql' );
+
+    // Find active buddy pair (pid_a or pid_b)
+    $buddy = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id FROM {$p}ic_buddies
+         WHERE circle_id = %d AND opt_out_at IS NULL
+           AND (pid_a = %s OR pid_b = %s)
+         LIMIT 1",
+        $cid, $pid_hash, $pid_hash
+    ) );
+
+    if ( ! $buddy ) {
+        return ic_json_error( 'Nincs aktív Buddy párosításod ebben a körben.', 404 );
+    }
+
+    $wpdb->update(
+        "{$p}ic_buddies",
+        [ 'opt_out_at' => $now ],
+        [ 'id' => $buddy->id ]
+    );
+
+    return ic_json_ok( [ 'opted_out' => true ] );
+}
+
+/* ── POST /circles/{cid}/posts/{post_id}/decision-vote ──────────────────── */
+function ic_rest_decision_vote( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if ( ! $pid_hash ) {
+        return ic_json_error( 'Azonosítás szükséges.', 401 );
+    }
+
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $cid     = (int) $req->get_param( 'circle_id' );
+    $post_id = (int) $req->get_param( 'post_id' );
+
+    // Load decision post
+    $decision = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$p}ic_posts WHERE id = %d AND circle_id = %d AND post_type = 'decision' AND is_deleted = 0",
+        $post_id, $cid
+    ) );
+    if ( ! $decision ) {
+        return ic_json_error( 'Decision Poszt nem található.', 404 );
+    }
+
+    // Validate options
+    $meta        = json_decode( $decision->meta_json ?? '{}', true );
+    $valid_ids   = array_column( $meta['options'] ?? [], 'id' );
+    $option_ids  = array_filter( (array) ( $req->get_param( 'option_ids' ) ?? [] ), 'is_numeric' );
+    $option_ids  = array_map( 'intval', array_values( $option_ids ) );
+
+    if ( empty( $option_ids ) ) {
+        return ic_json_error( 'option_ids kötelező (tömbként).', 400 );
+    }
+    foreach ( $option_ids as $oid ) {
+        if ( ! in_array( $oid, $valid_ids, true ) ) {
+            return ic_json_error( "Ismeretlen opció ID: {$oid}", 400 );
+        }
+    }
+
+    // Closed check
+    if ( ! empty( $meta['closed_at'] ) && strtotime( $meta['closed_at'] ) < time() ) {
+        return ic_json_error( 'Ez a szavazás már lezárult.', 409 );
+    }
+
+    // Dedupe: 1 vote per user per decision post
+    $dedupe_key = "decision_vote:{$pid_hash}:{$post_id}";
+    $already    = (int) $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts
+         WHERE author_hash = %s AND circle_id = %d AND post_type = 'text'
+           AND JSON_EXTRACT(meta_json,'$.decision_vote.post_id') = %d",
+        $pid_hash, $cid, $post_id
+    ) );
+    if ( $already > 0 ) {
+        return ic_json_error( 'Már szavaztál erre a döntési posztra.', 409 );
+    }
+
+    // Store as a text post with decision_vote meta
+    $vote_meta = wp_json_encode( [ 'decision_vote' => [ 'post_id' => $post_id, 'option_ids' => $option_ids ] ] );
+    $wpdb->insert( "{$p}ic_posts", [
+        'circle_id'   => $cid,
+        'author_hash' => $pid_hash,
+        'author_type' => 'user',
+        'post_type'   => 'text',
+        'body'        => '', // votes are silent
+        'meta_json'   => $vote_meta,
+        'created_at'  => current_time( 'mysql' ),
+    ] );
+
+    // +8 points for the voter (1×/döntés dedupe via ic_award_points)
+    ic_award_points( $pid_hash, 8, 'decision_vote', "post:{$post_id}", $dedupe_key );
+
+    // Sprint activation
+    $circle_obj = $wpdb->get_row( $wpdb->prepare( "SELECT ref_slug FROM {$p}ic_circles WHERE id = %d", $cid ) );
+    if ( $circle_obj ) {
+        ic_record_sprint_activation( $pid_hash, $circle_obj->ref_slug, 'vote' );
+    }
+
+    return ic_json_ok( [ 'voted' => true, 'option_ids' => $option_ids ], 201 );
+}
+
+/* ── GET /circles/{cid}/posts/{post_id}/decision-results ────────────────── */
+function ic_rest_decision_results( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $cid     = (int) $req->get_param( 'circle_id' );
+    $post_id = (int) $req->get_param( 'post_id' );
+
+    $decision = $wpdb->get_row( $wpdb->prepare(
+        "SELECT meta_json FROM {$p}ic_posts WHERE id = %d AND circle_id = %d AND post_type = 'decision' AND is_deleted = 0",
+        $post_id, $cid
+    ) );
+    if ( ! $decision ) {
+        return ic_json_error( 'Decision Poszt nem található.', 404 );
+    }
+
+    $meta    = json_decode( $decision->meta_json ?? '{}', true );
+    $options = $meta['options'] ?? [];
+
+    // Tally votes from decision_vote text posts
+    $votes_rows = $wpdb->get_results( $wpdb->prepare(
+        "SELECT meta_json FROM {$p}ic_posts
+         WHERE circle_id = %d AND post_type = 'text' AND is_deleted = 0
+           AND JSON_EXTRACT(meta_json,'$.decision_vote.post_id') = %d",
+        $cid, $post_id
+    ) );
+
+    $tally = [];
+    $total = 0;
+    foreach ( $votes_rows as $row ) {
+        $vm = json_decode( $row->meta_json ?? '{}', true );
+        foreach ( $vm['decision_vote']['option_ids'] ?? [] as $oid ) {
+            $tally[ $oid ] = ( $tally[ $oid ] ?? 0 ) + 1;
+        }
+        $total++;
+    }
+
+    $result = [];
+    foreach ( $options as $opt ) {
+        $count          = $tally[ $opt['id'] ] ?? 0;
+        $result[]       = [
+            'id'      => $opt['id'],
+            'label'   => $opt['label'],
+            'count'   => $count,
+            'percent' => $total > 0 ? round( $count / $total * 100 ) : 0,
+        ];
+    }
+
+    return new WP_REST_Response( [
+        'post_id'       => $post_id,
+        'total_votes'   => $total,
+        'options'       => $result,
+        'closed_at'     => $meta['closed_at'] ?? null,
+    ], 200 );
+}
+
+/* ── Buddy 90-day soft-delete retention cron ────────────────────────────── */
+add_action( 'ic_buddy_retention_daily', 'ic_buddy_retention_handler' );
+function ic_buddy_retention_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // Soft-delete: NULL out pid_a/pid_b where completed_at or opt_out_at is 90+ days ago
+    $cutoff = date( 'Y-m-d H:i:s', strtotime( '-90 days' ) );
+
+    $wpdb->query( $wpdb->prepare(
+        "UPDATE {$p}ic_buddies
+         SET pid_a = NULL, pid_b = NULL
+         WHERE (pid_a IS NOT NULL OR pid_b IS NOT NULL)
+           AND (
+               (completed_at IS NOT NULL AND completed_at <= %s)
+               OR (opt_out_at IS NOT NULL AND opt_out_at <= %s)
+           )",
+        $cutoff, $cutoff
+    ) );
 }
 
