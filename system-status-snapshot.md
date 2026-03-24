@@ -324,3 +324,10 @@ PHP lint ok for identity/gamification modules
 - Funkciók: Ezüst/Arany/Platina csomag választó (1M/2M/3M Ft), gálajegy szám selector (max 2/4/6 fő), ezres törés összegmezőben.
 - Stripe maximum_amount: 2 500 000 → 3 500 000 Ft (`impactshop-event-donation-widget.php`).
 - Deploy: `sharityh@s59.tarhely.com:/home/sharityh/app/wp-content/mu-plugins/`
+
+## 2026-03-24 - Impact Community plugin (Hatás Körök) — Sprint 1–16 + audit
+
+- IC_DB_VERSION: 1.3.7 | 22 DB tábla | 47+ REST endpoint | 15+ cron
+- Branch: `feat/impact-community-sprint1` | PR #73 (office-hue/impactshop-notes)
+- Audit: 11 SQL séma-inkonzisztencia javítva; PHP lint OK; security OK
+- Status: merge pending → prod deploy szükséges (rsync to s59)
