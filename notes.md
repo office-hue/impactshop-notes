@@ -1,5 +1,6 @@
 # 2026-03-24
 
+- Jövőnk Vize gála widget: `impactshop-event-donation-widget.php` schema 1.1.0 — `ticket_count` + `selected_package` DB + Stripe metadata. Branch: `feat/jovonkvize-ticket-count`.
 - Impact Community (Hatás Körök) Sprint 1+2 MU plugin added.
 - `impact-community.php` — backend: 7 DB tables, REST API (11 endpoints), IC_Alias class, NGO circle seed, buddy pairing, Points-Manager integration.
 - `impact-community-app.php` — frontend SPA: hash routing, circle cards, post feed, voting, composer.

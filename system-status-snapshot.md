@@ -1,3 +1,9 @@
+## 2026-03-24 - Jövőnk Vize gála widget: ticket_count + selected_package
+- Branch: `feat/jovonkvize-ticket-count` from `main`.
+- `impactshop-event-donation-widget.php` schema 1.0.0 → 1.1.0: `ticket_count` + `selected_package` mentés DB-be és Stripe metadatába.
+- DB: `dbDelta` additive (meglévő soroknál DEFAULT érték).
+- Embed URL fixelve: `impactshop-event-donation-widget-jovonkvize.js`.
+
 ## 2026-03-24 - Impact Community (Hatás Körök) Sprint 1+2
 - Branch: `feat/impact-community-sprint1` from `origin/main`.
 - New modules: `impact-community.php` (backend, 978 lines) + `impact-community-app.php` (SPA frontend, 1279 lines).
