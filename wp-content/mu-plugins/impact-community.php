@@ -1973,6 +1973,10 @@ function ic_schedule_crons(): void {
     if (!wp_next_scheduled('ic_trusted_reporter_check')) {
         wp_schedule_event(strtotime('next sunday 05:00'), 'ic_weekly', 'ic_trusted_reporter_check');
     }
+    // §16 Daily circle stats snapshot: 01:30 daily
+    if (!wp_next_scheduled('ic_daily_circle_stats')) {
+        wp_schedule_event(strtotime('tomorrow 01:30'), 'daily', 'ic_daily_circle_stats');
+    }
 }
 
 /* --- 5e. Weekly Impi question ------------------------------------------- */
@@ -3567,6 +3571,80 @@ function ic_sprint_daily_check_handler(): void {
 }
 
 /* =========================================================================
+   §16 — Napi ic_circle_stats snapshot cron
+   Runs daily at 01:30 — computes yesterday's activity per active circle
+   and upserts into ic_circle_stats (UNIQUE KEY uq_circle_date).
+   ========================================================================= */
+
+add_action('ic_daily_circle_stats', 'ic_run_daily_circle_stats');
+function ic_run_daily_circle_stats(): void {
+    global $wpdb;
+    $p        = $wpdb->prefix;
+    $yesterday = gmdate('Y-m-d', strtotime('-1 day'));
+
+    $circles = $wpdb->get_col(
+        "SELECT id FROM {$p}ic_circles WHERE is_active = 1"
+    );
+
+    foreach ($circles as $cid) {
+        $cid = (int) $cid;
+
+        // Posts created yesterday in this circle
+        $posts_count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_posts
+             WHERE circle_id = %d AND is_deleted = 0
+               AND DATE(created_at) = %s",
+            $cid, $yesterday
+        ));
+
+        // Active members: at least 1 post/reaction in last 30 days (cached proxy via yesterday's activity)
+        $active_members = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT author_hash) FROM {$p}ic_posts
+             WHERE circle_id = %d AND is_deleted = 0
+               AND created_at >= %s",
+            $cid, gmdate('Y-m-d H:i:s', strtotime('-30 days'))
+        ));
+
+        // New members who joined yesterday
+        $new_members = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_memberships
+             WHERE circle_id = %d AND status = 'active'
+               AND DATE(joined_at) = %s",
+            $cid, $yesterday
+        ));
+
+        // Votes generated yesterday (helpful_votes increments on posts created or voted on)
+        $votes_generated = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(vote_count), 0) FROM {$p}ic_posts
+             WHERE circle_id = %d AND is_deleted = 0
+               AND DATE(created_at) = %s",
+            $cid, $yesterday
+        ));
+
+        // Points generated: sum of pts_earned entries logged via ic_award_points yesterday
+        $pts_generated = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(pts), 0) FROM {$p}ic_point_log
+             WHERE circle_id = %d AND DATE(earned_at) = %s",
+            $cid, $yesterday
+        ));
+
+        $wpdb->query($wpdb->prepare(
+            "INSERT INTO {$p}ic_circle_stats
+                (circle_id, stat_date, posts_count, active_members, new_members, votes_generated, pts_generated)
+             VALUES (%d, %s, %d, %d, %d, %d, %d)
+             ON DUPLICATE KEY UPDATE
+                posts_count     = VALUES(posts_count),
+                active_members  = VALUES(active_members),
+                new_members     = VALUES(new_members),
+                votes_generated = VALUES(votes_generated),
+                pts_generated   = VALUES(pts_generated)",
+            $cid, $yesterday,
+            $posts_count, $active_members, $new_members, $votes_generated, $pts_generated
+        ));
+    }
+}
+
+/* =========================================================================
    §12 — Settlement verseny (Szomszéd körök)
    Monthly competition between neighboring ZIP circles.
    Winner gets +10% community_bonus (1.10×) for next month.
@@ -3627,14 +3705,55 @@ function ic_settlement_monthly_handler(): void {
             ['id' => (int) $winner['circle']['id']]
         );
 
-        // Hatás Emlékmű: pinned Impi post in winner circle
-        $w_score = $winner['score'];
-        ic_impi_post(
-            (int) $winner['circle']['id'],
-            "🏆 Hatás Emlékmű — " . date('Y F', strtotime('-1 month')) . ": ez a körünk volt a {$region} körzet legaktívabb köre! " .
-            "{$w_score} aktivitásponttal nyertük a havi versenyt. Extra +10% pontbónusz jár minden tagnak a következő hónapra! 🎉",
-            4
+        // Hatás Emlékmű: generate GD image, then pinned Impi post in winner circle
+        $w_score      = $winner['score'];
+        $w_circle     = $winner['circle'];
+        $month_label  = date_i18n( 'Y F', strtotime( '-1 month' ) );
+
+        // Aggregate monthly stats for the winner circle (prev month)
+        $w_monthly = $wpdb->get_row( $wpdb->prepare(
+            "SELECT COALESCE(SUM(posts_count),0) AS posts,
+                    MAX(active_members)           AS members
+             FROM {$p}ic_circle_stats
+             WHERE circle_id = %d AND stat_date BETWEEN %s AND %s",
+            (int) $w_circle['id'], $prev_month_start, $prev_month_end
+        ) );
+        $w_posts   = (int) ( $w_monthly->posts   ?? 0 );
+        $w_members = (int) ( $w_monthly->members ?? 0 );
+
+        $img_url = ic_generate_emlekmu_png(
+            (int) $w_circle['id'],
+            (string) $w_circle['name'],
+            $region,
+            $w_score,
+            $w_members,
+            $w_posts,
+            $month_label
         );
+
+        // Insert Impi post directly to support image type + meta_json
+        $post_body = "🏆 Hatás Emlékmű — {$month_label}: ez a körünk volt a {$region} körzet legaktívabb köre! " .
+                     "{$w_score} aktivitásponttal nyertük a havi versenyt. Extra +10% pontbónusz jár minden tagnak a következő hónapra! 🎉";
+
+        $rate_key = 'ic_impi_rate:' . $w_circle['id'] . ':' . date('Y-m-d');
+        $count    = (int) get_transient( $rate_key );
+        if ( $count < 3 ) {
+            set_transient( $rate_key, $count + 1, DAY_IN_SECONDS );
+            $wpdb->insert( "{$p}ic_posts", [
+                'circle_id'   => (int) $w_circle['id'],
+                'author_hash' => 'impi',
+                'author_type' => 'impi',
+                'post_type'   => $img_url ? 'image' : 'text',
+                'body'        => $post_body,
+                'meta_json'   => $img_url ? wp_json_encode( [ 'img_url' => $img_url ] ) : null,
+                'is_pinned'   => 1,
+                'created_at'  => current_time( 'mysql' ),
+            ] );
+            $wpdb->query( $wpdb->prepare(
+                "UPDATE {$p}ic_circles SET post_count = post_count + 1 WHERE id = %d",
+                (int) $w_circle['id']
+            ) );
+        }
 
         // Encouragement for losing circle
         ic_impi_post(
@@ -4134,20 +4253,29 @@ function ic_rest_ngo_circle_stats( WP_REST_Request $req ) {
     $p = $wpdb->prefix;
 
     $circle = $wpdb->get_row( $wpdb->prepare(
-        "SELECT c.id, c.ref_slug, c.community_bonus, c.last_blast_at,
-                s.active_members, s.monthly_posts, s.total_votes, s.health_score,
-                s.calculated_at
-         FROM {$p}ic_circles c
-         LEFT JOIN {$p}ic_circle_stats s ON s.circle_id = c.id
-         WHERE c.ref_slug = %s AND c.type = 'ngo'
-         ORDER BY s.calculated_at DESC
-         LIMIT 1",
+        "SELECT id, ref_slug, community_bonus, last_blast_at
+         FROM {$p}ic_circles
+         WHERE ref_slug = %s AND type = 'ngo'",
         $ngo_slug
     ) );
 
     if ( ! $circle ) {
         return new WP_REST_Response( [ 'error' => 'circle_not_found' ], 404 );
     }
+
+    // Aggregate this-month stats from daily snapshot rows
+    $month_start = gmdate( 'Y-m-01' );
+    $today       = gmdate( 'Y-m-d' );
+    $monthly = $wpdb->get_row( $wpdb->prepare(
+        "SELECT COALESCE(SUM(posts_count),0)     AS monthly_posts,
+                COALESCE(SUM(active_members),0)  AS active_members,
+                COALESCE(SUM(votes_generated),0) AS total_votes,
+                MAX(stat_date)                   AS last_stat_date
+         FROM {$p}ic_circle_stats
+         WHERE circle_id = %d AND stat_date BETWEEN %s AND %s",
+        (int) $circle->id, $month_start, $today
+    ) );
+    $health_score = ic_circle_health_score( (int) $circle->id );
 
     $ym      = gmdate( 'Y-m' );
     $blasted = $circle->last_blast_at && substr( $circle->last_blast_at, 0, 7 ) === $ym;
@@ -4160,7 +4288,17 @@ function ic_rest_ngo_circle_stats( WP_REST_Request $req ) {
     }
 
     return new WP_REST_Response( [
-        'circle'       => $circle,
+        'circle'       => [
+            'id'            => $circle->id,
+            'ref_slug'      => $circle->ref_slug,
+            'community_bonus' => (float) $circle->community_bonus,
+            'last_blast_at' => $circle->last_blast_at,
+            'monthly_posts' => (int) ( $monthly->monthly_posts  ?? 0 ),
+            'active_members'=> (int) ( $monthly->active_members ?? 0 ),
+            'total_votes'   => (int) ( $monthly->total_votes    ?? 0 ),
+            'last_stat_date'=> $monthly->last_stat_date ?? null,
+            'health_score'  => $health_score,
+        ],
         'blast_locked' => $blasted,
         'advisor'      => $quotas,
     ], 200 );
@@ -4242,17 +4380,23 @@ function ic_ngo_calc_quota( string $ngo_slug, string $channel ): int {
     $base     = $bases[ $channel ] ?? 5;
     $cap      = $hard_cap[ $channel ] ?? 20;
 
-    $stats = $wpdb->get_row( $wpdb->prepare(
-        "SELECT s.active_members, s.monthly_posts
-         FROM {$p}ic_circles c
-         JOIN {$p}ic_circle_stats s ON s.circle_id = c.id
-         WHERE c.ref_slug = %s AND c.type = 'ngo'
-         ORDER BY s.calculated_at DESC LIMIT 1",
+    // Aggregate last-30-day stats from daily snapshot table
+    $month_start = gmdate( 'Y-m-01' );
+    $today       = gmdate( 'Y-m-d' );
+    $circle_id_for_stats = (int) $wpdb->get_var( $wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug = %s AND type = 'ngo'",
         $ngo_slug
     ) );
+    $stats = $circle_id_for_stats ? $wpdb->get_row( $wpdb->prepare(
+        "SELECT COALESCE(SUM(active_members),0) AS active_members,
+                COALESCE(SUM(posts_count),0)    AS posts_count
+         FROM {$p}ic_circle_stats
+         WHERE circle_id = %d AND stat_date BETWEEN %s AND %s",
+        $circle_id_for_stats, $month_start, $today
+    ) ) : null;
 
     $active_members = $stats ? (int) $stats->active_members : 0;
-    $monthly_posts  = $stats ? (int) $stats->monthly_posts  : 0;
+    $monthly_posts  = $stats ? (int) $stats->posts_count    : 0;
 
     // Valid invites: memberships created via invite in last 30 days
     $circle_id = (int) $wpdb->get_var( $wpdb->prepare(
@@ -4374,3 +4518,185 @@ function ic_rest_ngo_advisor_ask( WP_REST_Request $req ) {
         'message' => __( 'Kérdésed beérkezett — Impi hamarosan válaszol.', 'ic' ),
     ], 200 );
 }
+
+/* =========================================================================
+   §16 — Hatás Emlékmű: GD library PNG generator
+   Generates a 600×340 shareable image for the monthly settlement winner.
+   Saved to wp-content/uploads/ic-emblems/YYYY-MM-{circle_id}.png
+   Returns the public URL on success, empty string on failure.
+   ========================================================================= */
+
+function ic_generate_emlekmu_png(
+    int    $circle_id,
+    string $circle_name,
+    string $region,
+    int    $score,
+    int    $members,
+    int    $posts,
+    string $month_label   // e.g. "2026 március"
+): string {
+    if ( ! function_exists( 'imagecreatetruecolor' ) ) {
+        return ''; // GD not available on this host
+    }
+
+    $upload = wp_upload_dir();
+    $dir    = $upload['basedir'] . '/ic-emblems';
+    $url_base = $upload['baseurl'] . '/ic-emblems';
+
+    if ( ! file_exists( $dir ) ) {
+        wp_mkdir_p( $dir );
+    }
+
+    $filename = sanitize_file_name( 'emlekmu-' . gmdate('Y-m') . '-' . $circle_id . '.png' );
+    $filepath = $dir . '/' . $filename;
+
+    $W = 600; $H = 340;
+    $im = imagecreatetruecolor( $W, $H );
+
+    // Colours
+    $bg_top    = imagecolorallocate( $im, 27,  94,  32  ); // deep green
+    $bg_bot    = imagecolorallocate( $im, 46, 125,  50  ); // mid green
+    $gold      = imagecolorallocate( $im, 255, 193,   7  );
+    $white     = imagecolorallocate( $im, 255, 255, 255  );
+    $light     = imagecolorallocate( $im, 200, 230, 201  );
+    $dark_text = imagecolorallocate( $im,  27,  94,  32  );
+
+    // Gradient background (simple two-band)
+    imagefilledrectangle( $im, 0, 0, $W, $H / 2, $bg_top );
+    imagefilledrectangle( $im, 0, $H / 2, $W, $H, $bg_bot );
+
+    // Gold top bar
+    imagefilledrectangle( $im, 0, 0, $W, 6, $gold );
+
+    // Trophy emoji fallback text
+    $font_size = 5; // built-in GD font (1-5)
+
+    // Title
+    $title = 'HATAS EMLEKMŰ — ' . mb_strtoupper( $month_label );
+    $tw = imagefontwidth( $font_size ) * strlen( $title );
+    imagestring( $im, $font_size, (int)(($W - $tw) / 2), 20, $title, $gold );
+
+    // Circle name
+    $cn_short = mb_substr( $circle_name, 0, 40 );
+    $cnw = imagefontwidth( 5 ) * strlen( $cn_short );
+    imagestring( $im, 5, (int)(($W - $cnw) / 2), 55, $cn_short, $white );
+
+    // Region badge
+    $region_label = 'Korzetkod: ' . mb_strtoupper( $region );
+    imagestring( $im, 3, 30, 100, $region_label, $light );
+
+    // Separator line
+    imageline( $im, 30, 125, $W - 30, 125, $gold );
+
+    // Stats row
+    $stats_y = 145;
+    $col1_x  = 50; $col2_x = 220; $col3_x = 390;
+    imagestring( $im, 4, $col1_x, $stats_y,      'Tagok',         $light );
+    imagestring( $im, 5, $col1_x, $stats_y + 22, (string) $members, $white );
+    imagestring( $im, 4, $col2_x, $stats_y,      'Posztok',       $light );
+    imagestring( $im, 5, $col2_x, $stats_y + 22, (string) $posts,   $white );
+    imagestring( $im, 4, $col3_x, $stats_y,      'Aktivitas',     $light );
+    imagestring( $im, 5, $col3_x, $stats_y + 22, (string) $score,   $white );
+
+    // Separator
+    imageline( $im, 30, 210, $W - 30, 210, $gold );
+
+    // Congratulations text
+    $line1 = 'A KORZET LEGAKTIVABB KORE EZEN A HONAP!';
+    $line2 = '+10% pontbonusz minden tagnak a kovetkezo honapra';
+    $l1w = imagefontwidth( 3 ) * strlen( $line1 );
+    $l2w = imagefontwidth( 2 ) * strlen( $line2 );
+    imagestring( $im, 3, (int)(($W - $l1w) / 2), 225, $line1, $gold );
+    imagestring( $im, 2, (int)(($W - $l2w) / 2), 250, $line2, $light );
+
+    // Bottom branding
+    $brand = 'impactshop.hu  |  Hatas Korok';
+    $bw    = imagefontwidth( 2 ) * strlen( $brand );
+    imagestring( $im, 2, (int)(($W - $bw) / 2), $H - 24, $brand, $light );
+
+    // Gold bottom bar
+    imagefilledrectangle( $im, 0, $H - 6, $W, $H, $gold );
+
+    ob_start();
+    imagepng( $im );
+    $raw = ob_get_clean();
+    imagedestroy( $im );
+
+    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+    if ( file_put_contents( $filepath, $raw ) === false ) {
+        return '';
+    }
+
+    return $url_base . '/' . $filename;
+}
+
+/* =========================================================================
+   §16 — Admin REST: GET /ic/v1/admin/circles
+   Requires manage_options capability (WordPress admin only).
+   Returns all active circles with health score, stats summary and bonus info.
+   ========================================================================= */
+
+add_action( 'rest_api_init', function () {
+    register_rest_route( 'ic/v1', '/admin/circles', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_admin_circles',
+        'permission_callback' => function () {
+            return current_user_can( 'manage_options' );
+        },
+    ] );
+} );
+
+function ic_rest_admin_circles( WP_REST_Request $req ): WP_REST_Response {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circles = $wpdb->get_results(
+        "SELECT c.id, c.ref_slug, c.name, c.type, c.is_active,
+                c.community_bonus, c.last_blast_at,
+                COUNT(DISTINCT m.user_id) AS member_count
+         FROM {$p}ic_circles c
+         LEFT JOIN {$p}ic_memberships m ON m.circle_id = c.id AND m.status = 'active'
+         WHERE c.is_active = 1
+         GROUP BY c.id
+         ORDER BY c.type, c.ref_slug",
+        ARRAY_A
+    );
+
+    $month_start = gmdate( 'Y-m-01' );
+    $today       = gmdate( 'Y-m-d' );
+
+    $result = [];
+    foreach ( $circles as $c ) {
+        $cid = (int) $c['id'];
+
+        $monthly = $wpdb->get_row( $wpdb->prepare(
+            "SELECT COALESCE(SUM(posts_count),0)     AS monthly_posts,
+                    COALESCE(SUM(new_members),0)      AS new_members,
+                    COALESCE(SUM(votes_generated),0)  AS votes_generated,
+                    MAX(stat_date)                    AS last_stat
+             FROM {$p}ic_circle_stats
+             WHERE circle_id = %d AND stat_date BETWEEN %s AND %s",
+            $cid, $month_start, $today
+        ) );
+
+        $health = ic_circle_health_score( $cid );
+
+        $result[] = [
+            'id'             => $cid,
+            'ref_slug'       => $c['ref_slug'],
+            'name'           => $c['name'],
+            'type'           => $c['type'],
+            'member_count'   => (int) $c['member_count'],
+            'community_bonus'=> (float) $c['community_bonus'],
+            'last_blast_at'  => $c['last_blast_at'],
+            'monthly_posts'  => (int) ( $monthly->monthly_posts   ?? 0 ),
+            'new_members'    => (int) ( $monthly->new_members      ?? 0 ),
+            'votes_generated'=> (int) ( $monthly->votes_generated  ?? 0 ),
+            'last_stat'      => $monthly->last_stat ?? null,
+            'health_score'   => $health,
+        ];
+    }
+
+    return new WP_REST_Response( $result, 200 );
+}
+

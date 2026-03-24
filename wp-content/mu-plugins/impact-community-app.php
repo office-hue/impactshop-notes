@@ -2380,3 +2380,111 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
     <?php
     return ob_get_clean();
 }
+
+/* =========================================================================
+   §16 — Platform Admin Dashboard — [impact_community_admin_dashboard]
+   Requires manage_options. Shows all circles with health, stats and bonus.
+   ========================================================================= */
+
+add_shortcode( 'impact_community_admin_dashboard', 'ic_render_admin_dashboard' );
+function ic_render_admin_dashboard(): string {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return '<p>Nincs hozzáférésed ehhez az oldalhoz.</p>';
+    }
+
+    ob_start();
+    $rest_url = esc_url( rest_url( 'ic/v1/admin/circles' ) );
+    $nonce    = wp_create_nonce( 'wp_rest' );
+    ?>
+<div id="ic-admin-dash" style="font-family:system-ui,sans-serif;max-width:1200px;margin:0 auto;padding:20px">
+<h2 style="color:#1b5e20;margin-bottom:16px">🌿 Hatás Körök — Admin Dashboard</h2>
+<div id="ic-adm-status" style="color:#666;margin-bottom:12px">Betöltés…</div>
+<div id="ic-adm-summary" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
+<div style="overflow-x:auto">
+<table id="ic-adm-table" style="width:100%;border-collapse:collapse;font-size:14px">
+<thead>
+<tr style="background:#1b5e20;color:#fff">
+  <th style="padding:8px 10px;text-align:left">Slug</th>
+  <th style="padding:8px 10px;text-align:left">Név</th>
+  <th style="padding:8px 10px;text-align:left">Típus</th>
+  <th style="padding:8px 10px;text-align:right">Tagok</th>
+  <th style="padding:8px 10px;text-align:right">Havi posztok</th>
+  <th style="padding:8px 10px;text-align:right">Szavazatok</th>
+  <th style="padding:8px 10px;text-align:right">Egészség %</th>
+  <th style="padding:8px 10px;text-align:right">Bónusz×</th>
+  <th style="padding:8px 10px;text-align:left">Utolsó blast</th>
+</tr>
+</thead>
+<tbody id="ic-adm-tbody"></tbody>
+</table>
+</div>
+</div>
+<style>
+#ic-adm-tbody tr:nth-child(even){background:#f1f8e9}
+#ic-adm-tbody tr:hover{background:#dcedc8}
+.ic-health-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;font-size:12px}
+.ic-health-high{background:#c8e6c9;color:#1b5e20}
+.ic-health-mid{background:#fff9c4;color:#f57f17}
+.ic-health-low{background:#ffcdd2;color:#b71c1c}
+.ic-bonus-active{color:#e65100;font-weight:700}
+#ic-adm-summary .ic-stat-box{background:#e8f5e9;border-radius:8px;padding:12px 20px;min-width:130px;text-align:center}
+#ic-adm-summary .ic-stat-box strong{display:block;font-size:22px;color:#1b5e20}
+#ic-adm-summary .ic-stat-box span{font-size:12px;color:#555}
+</style>
+<script>
+(async () => {
+    const res = await fetch(<?php echo wp_json_encode( $rest_url ); ?>, {
+        headers: {'X-WP-Nonce': <?php echo wp_json_encode( $nonce ); ?>}
+    });
+    const statusEl = document.getElementById('ic-adm-status');
+    if (!res.ok) { statusEl.textContent = 'API hiba: ' + res.status; return; }
+    const rows = await res.json();
+    statusEl.textContent = rows.length + ' aktív kör — ' + new Date().toLocaleString('hu-HU');
+
+    // Summary cards
+    const summary = document.getElementById('ic-adm-summary');
+    const totalMembers  = rows.reduce((s,r) => s + r.member_count, 0);
+    const totalPosts    = rows.reduce((s,r) => s + r.monthly_posts, 0);
+    const avgHealth     = rows.length ? Math.round(rows.reduce((s,r) => s + r.health_score, 0) / rows.length) : 0;
+    const bonusCircles  = rows.filter(r => r.community_bonus > 1).length;
+    [
+        [totalMembers, 'Összes tag'],
+        [totalPosts,   'Havi posztok'],
+        [avgHealth + '%', 'Átl. egészség'],
+        [bonusCircles, 'Bónuszos kör'],
+    ].forEach(([val, lbl]) => {
+        summary.insertAdjacentHTML('beforeend',
+            `<div class="ic-stat-box"><strong>${val}</strong><span>${lbl}</span></div>`);
+    });
+
+    // Table rows
+    const tbody = document.getElementById('ic-adm-tbody');
+    rows.forEach(r => {
+        const hClass = r.health_score >= 70 ? 'ic-health-high'
+                     : r.health_score >= 40 ? 'ic-health-mid' : 'ic-health-low';
+        const bonusText = r.community_bonus > 1
+            ? '<span class="ic-bonus-active">×' + r.community_bonus.toFixed(2) + '</span>'
+            : '×1.00';
+        const blast = r.last_blast_at
+            ? new Date(r.last_blast_at).toLocaleDateString('hu-HU')
+            : '—';
+        tbody.insertAdjacentHTML('beforeend', `<tr>
+            <td style="padding:7px 10px;font-family:monospace">${r.ref_slug}</td>
+            <td style="padding:7px 10px">${r.name || '—'}</td>
+            <td style="padding:7px 10px">${r.type}</td>
+            <td style="padding:7px 10px;text-align:right">${r.member_count}</td>
+            <td style="padding:7px 10px;text-align:right">${r.monthly_posts}</td>
+            <td style="padding:7px 10px;text-align:right">${r.votes_generated}</td>
+            <td style="padding:7px 10px;text-align:right">
+                <span class="ic-health-pill ${hClass}">${r.health_score}</span>
+            </td>
+            <td style="padding:7px 10px;text-align:right">${bonusText}</td>
+            <td style="padding:7px 10px">${blast}</td>
+        </tr>`);
+    });
+})();
+</script>
+    <?php
+    return ob_get_clean();
+}
+
