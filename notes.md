@@ -6303,3 +6303,11 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A `Shops` CSV marad a kanonikus partnerlista; a Dognet ingest csak ehhez mapel, és a `dognet_program_id` / `program_id` mezőket is figyelembe veszi.
 - A `banners` CSV-ből az üres sorok kiesnek, minden valós ajánlat bekerülhet, `img` hiánynál shop-logo fallbackkel.
 - Production deploy még nem történt meg ehhez a körhöz, mert a MU-plugin fájlok a hoston read-only (`0444`) jogosultságúak.
+
+## 2026-03-24 - Impact Community Sprint 1–16 implementáció + audit
+- Sprint 1–16 teljes backend implementáció merge-re kész: `feat/impact-community-sprint1` → PR #73.
+- 22 tábla, 47+ REST endpoint, 15+ cron, IC_DB_VERSION 1.3.7.
+- Post-implementation audit elvégezve: 11 séma-inkonzisztencia javítva (séma és lekérdezés szinkron).
+- PHP lint: szintaktikai hiba nincs. SQL injection: nincs (minden $wpdb->prepare()).
+- Audit commit: `fix(audit): koherencia és biztonsági audit — 11 séma-inkonzisztencia javítás`.
+- Outstanding: prod deploy rsync szükséges merge után.
