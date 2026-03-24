@@ -806,6 +806,23 @@ function ic_register_rest_routes(): void {
         'callback'            => 'ic_rest_sprint_leaderboard',
         'permission_callback' => '__return_true',
     ]);
+    // § Sprint 9 — aktiváció webhook (NGO token auth)
+    register_rest_route($ns, '/ngo/sprint-activate', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_sprint_activate',
+        'permission_callback' => '__return_true',
+    ]);
+    // Sprint pending review queue (platform admin)
+    register_rest_route($ns, '/admin/sprint-queue', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_admin_sprint_queue',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/admin/sprint-queue/(?P<event_id>\d+)', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_admin_sprint_queue_action',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
 
     /* §15 Moderation routes */
     register_rest_route($ns, '/moderation/mine', [
@@ -4771,5 +4788,110 @@ function ic_rest_ngo_impi_delete( WP_REST_Request $req ): WP_REST_Response|WP_Er
     $wpdb->update( "{$p}ic_posts", [ 'is_deleted' => 1 ], [ 'id' => $post_id ] );
 
     return ic_json_ok( [ 'deleted' => true ] );
+}
+
+/* ── Sprint 9: aktiváció webhook + queue ─────────────────────────────────── */
+
+/**
+ * POST /ngo/sprint-activate
+ * NGO token alapú webhook: rögzíti a sprint aktivációs eseményt.
+ * Body: { type: 'ad'|'vote'|'offerwall'|'post'|'other', pid_hash?: string }
+ */
+function ic_rest_ngo_sprint_activate( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    $ngo_slug = ic_ngo_guard( $req );
+    if ( is_wp_error( $ngo_slug ) ) return $ngo_slug;
+
+    $valid_types = [ 'ad', 'vote', 'offerwall', 'post', 'other' ];
+    $type        = sanitize_key( $req->get_param('type') ?? 'other' );
+    if ( ! in_array( $type, $valid_types, true ) ) {
+        return ic_json_error( 'Érvénytelen activation type.', 400 );
+    }
+
+    // pid_hash kötelező — webhook híváskor nincs böngésző cookie
+    $pid_hash = sanitize_text_field( $req->get_param('pid_hash') ?? '' );
+    if ( ! $pid_hash || strlen( $pid_hash ) < 8 ) {
+        return ic_json_error( 'pid_hash kötelező (min. 8 karakter).', 400 );
+    }
+
+    ic_record_sprint_activation( $pid_hash, $ngo_slug, $type );
+
+    global $wpdb;
+    $p      = $wpdb->prefix;
+    $sprint = ic_get_current_sprint();
+    if ( ! $sprint ) {
+        return ic_json_ok( [ 'recorded' => false, 'reason' => 'no_active_sprint' ] );
+    }
+
+    $credits = (int) $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) * 25 FROM {$p}ic_sprint_events
+         WHERE sprint_id=%d AND ngo_slug=%s AND is_validated=1 AND is_pending_review=0",
+        (int) $sprint['id'], $ngo_slug
+    ) );
+
+    return ic_json_ok( [ 'recorded' => true, 'ngo_credits' => $credits ] );
+}
+
+/**
+ * GET /admin/sprint-queue — pending review events listája (platform admin).
+ */
+function ic_rest_admin_sprint_queue( WP_REST_Request $req ): WP_REST_Response {
+    global $wpdb;
+    $p      = $wpdb->prefix;
+    $sprint = ic_get_current_sprint();
+    if ( ! $sprint ) {
+        return new WP_REST_Response( [ 'sprint' => null, 'queue' => [] ], 200 );
+    }
+
+    $events = $wpdb->get_results( $wpdb->prepare(
+        "SELECT id, ngo_slug, pid_hash, activation_type, created_at
+         FROM {$p}ic_sprint_events
+         WHERE sprint_id = %d AND is_pending_review = 1
+         ORDER BY created_at ASC
+         LIMIT 200",
+        (int) $sprint['id']
+    ), ARRAY_A );
+
+    return new WP_REST_Response( [
+        'sprint_id'  => (int) $sprint['id'],
+        'ends_at'    => $sprint['ends_at'],
+        'queue_count'=> count( $events ),
+        'queue'      => $events ?: [],
+    ], 200 );
+}
+
+/**
+ * POST /admin/sprint-queue/{event_id} — approve vagy reject.
+ * Body: { action: 'approve'|'reject' }
+ */
+function ic_rest_admin_sprint_queue_action( WP_REST_Request $req ): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p        = $wpdb->prefix;
+    $event_id = (int) $req->get_param( 'event_id' );
+    $action   = sanitize_key( $req->get_param( 'action' ) ?? '' );
+
+    if ( ! in_array( $action, [ 'approve', 'reject' ], true ) ) {
+        return ic_json_error( 'action kell: approve vagy reject.', 400 );
+    }
+
+    $event = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$p}ic_sprint_events WHERE id = %d AND is_pending_review = 1",
+        $event_id
+    ) );
+    if ( ! $event ) return ic_json_error( 'Esemény nem található.', 404 );
+
+    if ( $action === 'approve' ) {
+        $wpdb->update( "{$p}ic_sprint_events",
+            [ 'is_pending_review' => 0, 'is_validated' => 1 ],
+            [ 'id' => $event_id ]
+        );
+    } else {
+        // reject: mark as not validated, not pending
+        $wpdb->update( "{$p}ic_sprint_events",
+            [ 'is_pending_review' => 0, 'is_validated' => 0 ],
+            [ 'id' => $event_id ]
+        );
+    }
+
+    return ic_json_ok( [ 'event_id' => $event_id, 'action' => $action ] );
 }
 

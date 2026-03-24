@@ -2079,6 +2079,9 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
 .ica-impi-del-btn{font-size:12px;padding:3px 10px;border:1px solid var(--ic-danger);border-radius:6px;background:#fff;color:var(--ic-danger);cursor:pointer}
 .ica-impi-del-btn:disabled{opacity:.4;cursor:default}
 .ica-impi-empty{text-align:center;color:var(--ic-muted);padding:18px 0;font-size:13px}
+.ica-sprint-grid{display:flex;flex-direction:column;gap:10px}
+.ica-sprint-row{display:flex;align-items:baseline;gap:8px;font-size:14px}
+.ica-sprint-lbl{min-width:130px;color:var(--ic-muted);font-size:13px}
 .ica-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center}
 .ica-modal-bg.open{display:flex}
 .ica-modal{background:#fff;border-radius:14px;padding:28px;max-width:460px;width:100%;margin:16px}
@@ -2157,6 +2160,16 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
     <div class="ica-card">
       <h2>Impi NGO Copilot — havi keretek</h2>
       <div class="ica-quota-grid" id="ica-quota"></div>
+    </div>
+
+    <div class="ica-card">
+      <h2>🦡 Impi üzenetek <span id="ica-impi-count"></span></h2>
+      <div id="ica-impi-posts"><p style="color:var(--ic-muted);font-size:13px">Betöltés…</p></div>
+    </div>
+
+    <div class="ica-card">
+      <h2>🏃 Sprint állapot</h2>
+      <div id="ica-sprint-info"><p style="color:var(--ic-muted);font-size:13px">Betöltés…</p></div>
     </div>
   </div>
 </div>
@@ -2283,6 +2296,7 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
         renderStats(r.data);
         renderQuota(r.data.advisor);
         loadImpiPosts();
+        loadSprintDash();
         if (r.data.blast_locked) {
             show('ica-blast-locked');
             hide('ica-blast-form');
@@ -2371,6 +2385,39 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
                 }
             });
         });
+    }
+
+    /* ── sprint státusz (NGO admin) ──────────────────────────────────────── */
+    async function loadSprintDash() {
+        const el = document.getElementById('ica-sprint-info');
+        if (!el || !state.slug) return;
+        const r = await api('GET', '/sprints/current?ngo_slug=' + encodeURIComponent(state.slug), null, state.token);
+        if (!r.ok) {
+            el.innerHTML = '<p style="color:var(--ic-muted);font-size:13px">Sprint adat nem érhető el.</p>';
+            return;
+        }
+        const d = r.data;
+        if (!d || !d.sprint_id) {
+            el.innerHTML = '<p style="color:var(--ic-muted);font-size:13px">Jelenleg nincs aktív sprint.</p>';
+            return;
+        }
+        const ends   = d.ends_at ? new Date(d.ends_at).toLocaleDateString('hu-HU',{month:'short',day:'numeric'}) : '—';
+        const days   = d.ends_at ? Math.max(0, Math.ceil((new Date(d.ends_at)-Date.now())/86400000)) : 0;
+        const cred   = d.ngo_credits != null ? d.ngo_credits : (d.validated_count != null ? d.validated_count * 25 : 0);
+        const rank   = d.ngo_rank  != null ? `${d.ngo_rank}.` : '—';
+        const pend   = d.ngo_pending != null ? d.ngo_pending : 0;
+        const pct    = Math.min(100, Math.round(cred / 2000 * 100));
+        const low    = pct >= 90 ? ' low' : '';
+        el.innerHTML = `
+          <div class="ica-sprint-grid">
+            <div class="ica-sprint-row"><span class="ica-sprint-lbl">Vége</span><strong>${esc(ends)}</strong> <span style="color:var(--ic-muted)">(${days} nap)</span></div>
+            <div class="ica-sprint-row"><span class="ica-sprint-lbl">Kreditek</span>
+              <strong>${cred}</strong> / 2000
+              <div class="ica-quota-bar-wrap" style="margin-top:4px"><div class="ica-quota-bar${low}" style="width:${pct}%"></div></div>
+            </div>
+            <div class="ica-sprint-row"><span class="ica-sprint-lbl">Helyezés</span><strong>${esc(rank)}</strong></div>
+            ${pend > 0 ? `<div class="ica-sprint-row"><span class="ica-sprint-lbl">Jóváhagyásra vár</span><strong style="color:var(--ic-danger)">${pend}</strong></div>` : ''}
+          </div>`;
     }
 
     /* ── blast ───────────────────────────────────────────────────────────── */
