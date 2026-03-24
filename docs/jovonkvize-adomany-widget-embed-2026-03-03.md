@@ -67,3 +67,13 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 - célösszeg
 - engedélyezett origin domain-ek
 - színvilág
+
+## Changelog
+
+### 2026-05-28 — Standalone jegyvásárlás + tranzakció értesítő
+
+- JS dev: `TICKET_UNIT_PRICE=150000`, `STANDALONE_TICKET_MAX=10` — solo jegy dropdown (1–10 jegy).
+- Solo dropdown automatikusan kitölti az adományösszeget: N × 150 000 Ft.
+- PHP: minden befejezett tranzakcióra email értesítő (`bujdoso.arnold@` + `koncz.veronika@mielemed.hu`).
+- PHP: adományigazolás emailekbe BCC `bujdoso.arnold@bujdosoiroda.com`.
+- Status: dev-only, production deploy külön jóváhagyás után.

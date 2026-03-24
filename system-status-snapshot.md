@@ -1,3 +1,10 @@
+## 2026-05-28 - Jövőnk Vize: solo jegyvásárlás + tranzakció értesítő + cert BCC
+- Branch: `feat/jovonkvize-ticket-count` — dev JS + PHP módosítások.
+- JS dev: `TICKET_UNIT_PRICE=150000`, `STANDALONE_TICKET_MAX=10`, solo dropdown, change handler, init() feltöltés.
+- PHP: `impactshop_event_donation_send_transaction_notification()` — minden COMMIT után email bujdoso.arnold@ + koncz.veronika@.
+- PHP: adományigazolás emailekbe BCC: `bujdoso.arnold@bujdosoiroda.com`.
+- Nincs deploy — csak dev verzió, production deploy külön jóváhagyás után.
+
 ## 2026-03-24 - Jövőnk Vize gála widget: ticket_count + selected_package
 - Branch: `feat/jovonkvize-ticket-count` from `main`.
 - `impactshop-event-donation-widget.php` schema 1.0.0 → 1.1.0: `ticket_count` + `selected_package` mentés DB-be és Stripe metadatába.

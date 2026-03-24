@@ -1155,6 +1155,11 @@ function impactshop_event_donation_fulfill(string $donationId, array $stripeData
 
     $wpdb->query('COMMIT');
 
+    // Transaction notification to admins.
+    impactshop_event_donation_send_transaction_notification(
+        array_merge((array) $row, ['status' => 'completed', 'completed_at' => $update['completed_at']])
+    );
+
     // Primary path: send certificate immediately after successful payment.
     if ($requestCertificate && $hasEmail) {
         impactshop_event_donation_send_certificate_for_donation($donationId);
@@ -1540,6 +1545,7 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
     ];
     $attachments = $pdfAttachment !== '' ? [$pdfAttachment] : [];
 
+    $headers[] = 'Bcc: bujdoso.arnold@bujdosoiroda.com';
     $sent = wp_mail([$email, 'office@sharity.hu'], $subject, $template, $headers, $attachments);
     if ($pdfAttachment !== '' && file_exists($pdfAttachment)) {
         @unlink($pdfAttachment);
@@ -1572,6 +1578,44 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
     );
     error_log('[impactshop-event-donation] donation cert send failed for donation ' . $donationId);
     return false;
+}
+
+function impactshop_event_donation_send_transaction_notification(array $row): void
+{
+    $emails = ['bujdoso.arnold@bujdosoiroda.com', 'koncz.veronika@mielemed.hu'];
+    $amount = (float) ($row['amount_display'] ?? 0);
+    $currency = strtolower((string) ($row['currency'] ?? 'huf'));
+    $email = (string) ($row['email'] ?? '');
+    $donorName = (string) ($row['donor_name'] ?? '');
+    $donationId = (string) ($row['donation_id'] ?? '');
+    $campaignSlug = (string) ($row['campaign_slug'] ?? '');
+    $completedAt = (string) ($row['completed_at'] ?? '');
+    $isCompany = (int) ($row['is_company'] ?? 0) === 1;
+    $requestCert = (int) ($row['request_certificate'] ?? 0) === 1;
+    $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
+
+    $subject = '[Sharity] Új adomány: ' . $amountFormatted . ' – ' . $campaignSlug;
+    $body = "Új teljesített adomány érkezett:\n\n"
+        . "Összeg: {$amountFormatted}\n"
+        . "E-mail cím: {$email}\n"
+        . "Adományozó neve: " . ($donorName ?: '(nem megadott)') . "\n"
+        . "Kampány: {$campaignSlug}\n"
+        . "Adomány azonosító: {$donationId}\n"
+        . "Teljesítés dátuma: {$completedAt}\n";
+
+    if ($isCompany && $requestCert) {
+        $body .= "\n--- Adományigazolás adatok (cég) ---\n"
+            . "Cégnév: " . (string) ($row['company_name'] ?? '') . "\n"
+            . "Adószám: " . (string) ($row['company_tax_id'] ?? '') . "\n"
+            . "Székhely: " . (string) ($row['company_address'] ?? '') . "\n";
+    }
+
+    $headers = [
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: Sharity Impact <office@sharity.hu>',
+    ];
+
+    wp_mail($emails, $subject, $body, $headers);
 }
 
 function impactshop_event_donation_maybe_enqueue_runtime(): void

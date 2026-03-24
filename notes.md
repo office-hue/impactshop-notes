@@ -1,3 +1,9 @@
+# 2026-05-28
+
+- Jövőnk Vize widget (`feat/jovonkvize-ticket-count`): standalone jegyvásárlás dropdown (1-10 jegy × 150 000 Ft), tranzakció értesítő email (bujdoso.arnold@ + koncz.veronika@), cert BCC bujdoso.arnold@.
+- PHP: `impactshop_event_donation_send_transaction_notification()` + `fulfill()` hook + BCC header.
+- JS dev: `TICKET_UNIT_PRICE=150000`, `STANDALONE_TICKET_MAX=10`, solo ticket change handler, `init()` dropdown feltöltés.
+
 # 2026-03-24
 
 - Jövőnk Vize gála widget: `impactshop-event-donation-widget.php` schema 1.1.0 — `ticket_count` + `selected_package` DB + Stripe metadata. Branch: `feat/jovonkvize-ticket-count`.
@@ -6312,3 +6318,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - PHP lint: szintaktikai hiba nincs. SQL injection: nincs (minden $wpdb->prepare()).
 - Audit commit: `fix(audit): koherencia és biztonsági audit — 11 séma-inkonzisztencia javítás`.
 - Outstanding: prod deploy rsync szükséges merge után.
+
+## 2026-03-24 21:03:41 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=4s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
