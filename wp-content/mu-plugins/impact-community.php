@@ -499,6 +499,14 @@ function ic_maybe_migrate_db(): void {
         $wpdb->query("ALTER TABLE {$p}ic_circles ADD COLUMN last_blast_at DATETIME DEFAULT NULL AFTER community_bonus");
     }
 
+    /* § Sprint 12 — Tombola ritual columns */
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_tombolas LIKE 'ritual_enabled'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_tombolas ADD COLUMN ritual_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER max_per_user");
+        $wpdb->query("ALTER TABLE {$p}ic_tombolas ADD COLUMN activity_gate_pts INT UNSIGNED NOT NULL DEFAULT 0 AFTER ritual_enabled");
+        $wpdb->query("ALTER TABLE {$p}ic_tombolas ADD COLUMN ritual_posted TINYINT(1) NOT NULL DEFAULT 0 AFTER activity_gate_pts");
+    }
+
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
     if ($has_missions === 0) {
@@ -877,6 +885,12 @@ function ic_register_rest_routes(): void {
     register_rest_route($ns, '/circles/(?P<circle_id>\d+)/buddy/opt-out', [
         'methods'             => 'POST',
         'callback'            => 'ic_rest_buddy_optout',
+        'permission_callback' => '__return_true',
+    ]);
+    // § Sprint 12
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/buddy/complete', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_buddy_complete',
         'permission_callback' => '__return_true',
     ]);
     register_rest_route($ns, '/circles/(?P<circle_id>\d+)/posts/(?P<post_id>\d+)/decision-vote', [
@@ -2082,6 +2096,10 @@ function ic_schedule_crons(): void {
     if (!wp_next_scheduled('ic_buddy_retention_daily')) {
         wp_schedule_event(strtotime('tomorrow 03:30'), 'daily', 'ic_buddy_retention_daily');
     }
+    // § Sprint 12 — Tombola ritual Impi question: daily 10:00
+    if (!wp_next_scheduled('ic_tombola_ritual_cron')) {
+        wp_schedule_event(strtotime('tomorrow 10:00'), 'daily', 'ic_tombola_ritual_cron');
+    }
 }
 
 /* --- 5e. Weekly Impi question ------------------------------------------- */
@@ -2877,19 +2895,25 @@ function ic_rest_ngo_create_tombola(WP_REST_Request $req): WP_REST_Response|WP_E
         return ic_json_error('Már van aktív tombola ehhez az NGO-hoz.');
     }
 
+    // § Sprint 12 — ritual params
+    $ritual_enabled   = (int) (bool) $req->get_param('ritual_enabled');
+    $activity_gate_pts = max(0, (int) ($req->get_param('activity_gate_pts') ?? 0));
+
     $wpdb->insert("{$p}ic_tombolas", [
-        'circle_id'    => $circle_id,
-        'ngo_slug'     => $ngo_slug,
-        'title'        => $title,
-        'description'  => $description,
-        'prize_image'  => $prize_image,
-        'prize_json'   => wp_json_encode(['name' => $prize_name]),
-        'ticket_cost'  => $ticket_cost,
-        'max_tickets'  => $max_tickets,
-        'max_per_user' => $max_per_user,
-        'status'       => 'active',
-        'ends_at'      => gmdate('Y-m-d H:i:s', $end_ts),
-        'created_at'   => current_time('mysql'),
+        'circle_id'         => $circle_id,
+        'ngo_slug'          => $ngo_slug,
+        'title'             => $title,
+        'description'       => $description,
+        'prize_image'       => $prize_image,
+        'prize_json'        => wp_json_encode(['name' => $prize_name]),
+        'ticket_cost'       => $ticket_cost,
+        'max_tickets'       => $max_tickets,
+        'max_per_user'      => $max_per_user,
+        'ritual_enabled'    => $ritual_enabled,
+        'activity_gate_pts' => $activity_gate_pts,
+        'status'            => 'active',
+        'ends_at'           => gmdate('Y-m-d H:i:s', $end_ts),
+        'created_at'        => current_time('mysql'),
     ]);
     $tombola_id = (int) $wpdb->insert_id;
 
@@ -2962,6 +2986,30 @@ function ic_rest_tombola_buy(WP_REST_Request $req): WP_REST_Response|WP_Error {
     }
     if (strtotime($tombola['ends_at']) < time()) {
         return ic_json_error('A tombola lejárt.');
+    }
+
+    // § Sprint 12 — Activity gate: user must have earned enough activity in the circle
+    $gate_pts = (int) ($tombola['activity_gate_pts'] ?? 0);
+    if ($gate_pts > 0) {
+        $post_count  = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND deleted_at IS NULL",
+            (int) $tombola['circle_id'], $pid_hash
+        ));
+        $react_count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_post_reactions WHERE pid_hash=%s",
+            $pid_hash
+        ));
+        $vote_count  = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(vote_count),0) FROM {$p}ic_votes WHERE pid_hash=%s",
+            $pid_hash
+        ));
+        $activity_score = $post_count * 30 + ($react_count + $vote_count) * 3;
+        if ($activity_score < $gate_pts) {
+            return ic_json_error(
+                "Aktivitás szükséges a jegyvásárláshoz (szükséges: {$gate_pts}, jelenlegi: {$activity_score}).",
+                403
+            );
+        }
     }
 
     $max_per  = (int) $tombola['max_per_user'];
