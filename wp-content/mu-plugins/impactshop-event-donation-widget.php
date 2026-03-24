@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.0.0');
-define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.0.0');
+define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
 add_action('init', 'impactshop_event_donation_ensure_schema', 5);
@@ -410,6 +410,8 @@ function impactshop_event_donation_ensure_schema(): void
         company_address VARCHAR(500) DEFAULT NULL,
         request_certificate TINYINT(1) NOT NULL DEFAULT 0,
         gdpr_email_consent TINYINT(1) NOT NULL DEFAULT 0,
+        ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        selected_package VARCHAR(20) DEFAULT NULL,
         donation_cert_id VARCHAR(40) DEFAULT NULL,
         donation_cert_status ENUM('none','pending','sent','failed') NOT NULL DEFAULT 'none',
         donation_cert_sent_at DATETIME DEFAULT NULL,
@@ -808,6 +810,9 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
     $companyTaxId = sanitize_text_field((string) ($params['company_tax_id'] ?? ''));
     $companyAddress = sanitize_text_field((string) ($params['company_address'] ?? ''));
     $gdprEmailConsent = !empty($params['gdpr_email_consent']);
+    $ticketCount = max(0, (int) ($params['ticket_count'] ?? 0));
+    $selectedPackage = sanitize_key((string) ($params['selected_package'] ?? ''));
+    $selectedPackage = in_array($selectedPackage, ['silver', 'gold', 'platinum'], true) ? $selectedPackage : '';
 
     if ($email === '') {
         return new WP_REST_Response(['error' => 'missing_email'], 400);
@@ -848,12 +853,14 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
             'company_address' => $companyAddress !== '' ? $companyAddress : null,
             'request_certificate' => $requestCertificate ? 1 : 0,
             'gdpr_email_consent' => $gdprEmailConsent ? 1 : 0,
+            'ticket_count' => $ticketCount,
+            'selected_package' => $selectedPackage !== '' ? $selectedPackage : null,
             'source_origin' => impactshop_event_donation_request_origin(),
             'return_url' => $returnUrl,
             'ip_address' => impactshop_event_donation_client_ip(),
             'user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 512),
         ],
-        ['%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%s','%s','%s','%s']
+        ['%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%d','%s','%s','%s','%s','%s']
     );
 
     if ($inserted === false) {
@@ -871,6 +878,8 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
         'donor_name' => $donorName,
         'is_company' => $isCompany,
         'request_certificate' => $requestCertificate,
+        'ticket_count' => $ticketCount,
+        'selected_package' => $selectedPackage,
     ]);
 
     if (!$session || empty($session['id']) || empty($session['url'])) {
@@ -935,6 +944,8 @@ function impactshop_event_donation_create_checkout_session(array $order): ?array
         'metadata[is_company]' => !empty($order['is_company']) ? '1' : '0',
         'metadata[amount_display]' => (string) $amountDisplay,
         'metadata[currency]' => $currency,
+        'metadata[ticket_count]' => (string) ((int) ($order['ticket_count'] ?? 0)),
+        'metadata[selected_package]' => (string) ($order['selected_package'] ?? ''),
     ];
 
     $customerName = sanitize_text_field((string) ($order['donor_name'] ?? ''));

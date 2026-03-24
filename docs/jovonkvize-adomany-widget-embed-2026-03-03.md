@@ -6,7 +6,7 @@
 <div id="jovonkvize-adomany-widget"></div>
 
 <script
-  src="https://app.sharity.hu/wp-content/mu-plugins/impactshop-event-donation-widget.js"
+  src="https://app.sharity.hu/wp-content/mu-plugins/impactshop-event-donation-widget-jovonkvize.js"
   data-impact-campaign-widget
   data-campaign="jovonkvize-2026"
   data-target="#jovonkvize-adomany-widget"
