@@ -1,3 +1,12 @@
+## 2026-03-24 - Impact Community (Hatás Körök) Sprint 1+2
+- Branch: `feat/impact-community-sprint1` from `origin/main`.
+- New modules: `impact-community.php` (backend, 978 lines) + `impact-community-app.php` (SPA frontend, 1279 lines).
+- DB: 7 tables (ic_circles, ic_memberships, ic_missions, ic_mission_completions, ic_buddies, ic_posts, ic_circle_stats).
+- REST API: 11 endpoints under `impact/v1`.
+- Feature flag: `IMPACT_COMMUNITY_ENABLED` — must be set in production wp-config.php.
+- Route: `/hatas-korok/` via `template_redirect` priority 4.
+- Guard coverage: `impactall` mu-plugins parity guard monitors presence.
+
 ## 2026-03-23 15:45:00 CET - autobanner rotation and canonical dognet snapshot
 - Branch continuity for autobanner runtime hardening: `fix/autobanner-feed-import-clean`.
 - Added per-user autobanner rotation state via `pseudo_id`, removing the old 300-item repeat-prone pool behavior.
