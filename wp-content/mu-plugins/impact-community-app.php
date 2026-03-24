@@ -805,6 +805,95 @@ a:hover { text-decoration: underline; }
         align-items: flex-start;
     }
 }
+
+/* === Tombola & Aukció === */
+.ic-tombola-section, .ic-auction-section {
+    margin: 18px 0;
+}
+.ic-tombola-section h3, .ic-auction-section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ic-campaign-card {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+.ic-campaign-card.drawn, .ic-campaign-card.closed {
+    opacity: .75;
+}
+.ic-campaign-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--text);
+}
+.ic-campaign-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+.ic-campaign-meta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+.ic-campaign-meta strong {
+    color: var(--text);
+}
+.ic-ticket-row, .ic-bid-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.ic-ticket-input, .ic-bid-input {
+    width: 70px;
+    padding: 6px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+}
+.ic-campaign-winner {
+    background: linear-gradient(135deg, #fffbea 0%, #fff3c4 100%);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    margin-top: 8px;
+}
+.ic-campaign-leader {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+.ic-campaign-leader strong {
+    color: var(--teal);
+}
+.ic-bid-history {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+}
+.ic-bid-history-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    border-bottom: 1px solid var(--border);
+}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -1206,6 +1295,15 @@ a:hover { text-decoration: underline; }
                 $content.appendChild(more);
             }
         }
+
+        // Tombola & Auction panels (before leaderboard)
+        const tombolaContainer = html('div', {id: 'ic-tombola-panel'});
+        $content.appendChild(tombolaContainer);
+        loadTombolas(c.id);
+
+        const auctionContainer = html('div', {id: 'ic-auction-panel'});
+        $content.appendChild(auctionContainer);
+        loadAuctions(c.id);
 
         // Leaderboard panel
         const lbContainer = html('div', {id: 'ic-leaderboard-panel'});
@@ -1610,6 +1708,220 @@ a:hover { text-decoration: underline; }
 
     /* --- Public API for shortcode ----------------------------------- */
     window.ImpactCommunity = { init: handleHash, openInviteLanding };
+
+    /* ================================================================
+       §9 Tombola & Aukció — panel loaders & actions
+       ================================================================ */
+
+    async function loadTombolas(circleId) {
+        const panel = document.getElementById('ic-tombola-panel');
+        if (!panel) return;
+        try {
+            const data = await api(`/circles/${circleId}/tombolas`);
+            const tombolas = data.tombolas || [];
+            if (!tombolas.length) return;
+            panel.innerHTML = '';
+            const section = html('div', {className: 'ic-tombola-section'});
+            section.appendChild(html('h3', {}, '🎟️ Tombola'));
+            tombolas.forEach(t => section.appendChild(renderTombolaCard(t)));
+            panel.appendChild(section);
+        } catch (_) { /* optional panel */ }
+    }
+
+    function renderTombolaCard(t) {
+        const card = html('div', {className: 'ic-campaign-card ' + t.status});
+        card.appendChild(html('div', {className: 'ic-campaign-title'}, t.title));
+        if (t.description) {
+            card.appendChild(html('div', {className: 'ic-campaign-desc'}, t.description));
+        }
+        const prizeName = (t.prize_json && t.prize_json.name) ? t.prize_json.name : '';
+        const meta = html('div', {className: 'ic-campaign-meta'});
+        if (prizeName) meta.appendChild(html('span', {innerHTML: `🏆 Díj: <strong>${esc(prizeName)}</strong>`}));
+        meta.appendChild(html('span', {innerHTML: `🎫 Eladt: <strong>${t.tickets_sold}</strong>${t.max_tickets ? ' / ' + t.max_tickets : ''}`}));
+        if (t.status === 'active') {
+            const secsLeft = t.ends_at_ts - Math.floor(Date.now() / 1000);
+            meta.appendChild(html('span', {innerHTML: `⏰ Hátralévő: <strong>${formatCountdown(secsLeft)}</strong>`}));
+        }
+        card.appendChild(meta);
+
+        if (t.status === 'drawn') {
+            const win = html('div', {className: 'ic-campaign-winner'});
+            win.innerHTML = `🎉 Nyertes: <strong>${esc(t.winner_alias || 'Nemér')}</strong>`;
+            card.appendChild(win);
+        } else if (t.status === 'active' && HAS_PSEUDO) {
+            const row = html('div', {className: 'ic-ticket-row'});
+            const countInput = html('input', {
+                type: 'number', min: '1', max: String(t.max_per_user - t.my_tickets),
+                value: '1', className: 'ic-ticket-input',
+            });
+            const cost = (int) => t.ticket_cost > 0 ? ` (${int * t.ticket_cost} pont)` : ' (ingyenes)';
+            const btn = html('button', {
+                className: 'ic-btn ic-btn-primary',
+                style: 'font-size:13px',
+            }, 'Jegy vásárlása');
+            btn.textContent = 'Jegy vásárlása' + cost(1);
+            countInput.addEventListener('input', () => {
+                btn.textContent = 'Jegy vásárlása' + cost(parseInt(countInput.value) || 1);
+            });
+            btn.addEventListener('click', async () => {
+                await buyTicket(t.id, parseInt(countInput.value) || 1, btn);
+            });
+            if (t.my_tickets > 0) {
+                row.appendChild(html('span', {style: 'font-size:13px;color:var(--teal)'}, `✓ ${t.my_tickets} jegyem van`));
+            }
+            if (t.my_tickets < t.max_per_user) {
+                row.appendChild(countInput);
+                row.appendChild(btn);
+            }
+            card.appendChild(row);
+        }
+        return card;
+    }
+
+    async function buyTicket(tombolaId, count, btn) {
+        btn.disabled = true;
+        try {
+            const data = await api(`/tombolas/${tombolaId}/buy`, {
+                method: 'POST',
+                body: JSON.stringify({count}),
+            });
+            showStatus(`🎫 ${data.my_tickets} jegy megvásárolva! 🍀`, 'success');
+            // Reload tombola panel
+            const c = state.circle;
+            if (c) loadTombolas(c.id);
+        } catch (err) {
+            showStatus(err.message, 'error');
+            btn.disabled = false;
+        }
+    }
+
+    async function loadAuctions(circleId) {
+        const panel = document.getElementById('ic-auction-panel');
+        if (!panel) return;
+        try {
+            const data = await api(`/circles/${circleId}/auctions`);
+            const auctions = data.auctions || [];
+            if (!auctions.length) return;
+            panel.innerHTML = '';
+            const section = html('div', {className: 'ic-auction-section'});
+            section.appendChild(html('h3', {}, '🔨 Aukció'));
+            auctions.forEach(a => section.appendChild(renderAuctionCard(a)));
+            panel.appendChild(section);
+        } catch (_) { /* optional */ }
+    }
+
+    function renderAuctionCard(a) {
+        const card = html('div', {className: 'ic-campaign-card ' + a.status});
+        card.appendChild(html('div', {className: 'ic-campaign-title'}, a.title));
+        if (a.description) {
+            card.appendChild(html('div', {className: 'ic-campaign-desc'}, a.description));
+        }
+        const meta = html('div', {className: 'ic-campaign-meta'});
+        meta.appendChild(html('span', {innerHTML: `💰 Induló licit: <strong>${a.starting_bid} pont</strong>`}));
+        meta.appendChild(html('span', {innerHTML: `📊 Liciték száma: <strong>${a.bid_count}</strong>`}));
+        if (a.status === 'active') {
+            const effectiveEnd = a.extended_to_ts || a.ends_at_ts;
+            const secsLeft = effectiveEnd - Math.floor(Date.now() / 1000);
+            meta.appendChild(html('span', {innerHTML: `⏰ Hátralévő: <strong>${formatCountdown(secsLeft)}</strong>`}));
+        }
+        card.appendChild(meta);
+
+        if (a.current_bid > 0 && a.leader_alias) {
+            const leader = html('div', {className: 'ic-campaign-leader'});
+            if (a.is_my_bid) {
+                leader.innerHTML = `🏆 Te vezeted az aukciót: <strong>${a.current_bid} pont</strong>`;
+            } else {
+                leader.innerHTML = `⬆️ Jelenlegi vezető: <strong>${esc(a.leader_alias)}</strong> (${a.current_bid} pont)`;
+            }
+            card.appendChild(leader);
+        }
+
+        if (a.status === 'closed') {
+            const win = html('div', {className: 'ic-campaign-winner'});
+            win.innerHTML = `🎉 Nyertes: <strong>${esc(a.winner_alias || '?')}</strong> — ${a.current_bid} pont`;
+            card.appendChild(win);
+        } else if (a.status === 'active' && HAS_PSEUDO && !a.is_my_bid) {
+            const minBid = Math.max(a.starting_bid, a.current_bid + 10);
+            const row = html('div', {className: 'ic-bid-row'});
+            const bidInput = html('input', {
+                type: 'number', min: String(minBid), step: '10',
+                value: String(minBid), className: 'ic-bid-input',
+                placeholder: `min ${minBid}`,
+            });
+            const bidBtn = html('button', {
+                className: 'ic-btn ic-btn-primary',
+                style: 'font-size:13px',
+            }, `Licit leadása`);
+            bidBtn.addEventListener('click', async () => {
+                await placeBid(a.id, parseInt(bidInput.value) || minBid, bidBtn);
+            });
+            row.appendChild(bidInput);
+            row.appendChild(bidBtn);
+            card.appendChild(row);
+        }
+
+        // Bid history toggle
+        if (a.bid_count > 0) {
+            const histBtn = html('button', {
+                className: 'ic-btn ic-btn-outline',
+                style: 'font-size:12px;margin-top:8px',
+            }, 'Licit történet');
+            const histDiv = html('div', {className: 'ic-bid-history', style: 'display:none'});
+            histBtn.addEventListener('click', async () => {
+                if (histDiv.style.display === 'none') {
+                    histDiv.style.display = 'block';
+                    histDiv.innerHTML = '…';
+                    try {
+                        const hd = await api(`/auctions/${a.id}/bids`);
+                        histDiv.innerHTML = '';
+                        (hd.bids || []).slice(0, 5).forEach(b => {
+                            const row2 = html('div', {className: 'ic-bid-history-row'});
+                            row2.appendChild(html('span', {}, esc(b.alias)));
+                            row2.appendChild(html('span', {style: 'font-weight:700'}, b.bid_amount + ' pont'));
+                            histDiv.appendChild(row2);
+                        });
+                    } catch (_) { histDiv.textContent = 'Nem érhető el.'; }
+                } else {
+                    histDiv.style.display = 'none';
+                }
+            });
+            card.appendChild(histBtn);
+            card.appendChild(histDiv);
+        }
+        return card;
+    }
+
+    async function placeBid(auctionId, amount, btn) {
+        btn.disabled = true;
+        try {
+            const data = await api(`/auctions/${auctionId}/bid`, {
+                method: 'POST',
+                body: JSON.stringify({amount}),
+            });
+            showStatus(`🔨 Licit leadva: ${data.new_bid} pont! ${data.extended_to ? 'Az aukció meghosszabbítva.' : ''}`, 'success');
+            const c = state.circle;
+            if (c) loadAuctions(c.id);
+        } catch (err) {
+            showStatus(err.message, 'error');
+            btn.disabled = false;
+        }
+    }
+
+    function formatCountdown(secs) {
+        if (secs <= 0) return 'lejárt';
+        const d = Math.floor(secs / 86400);
+        const h = Math.floor((secs % 86400) / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        if (d > 0) return `${d} nap ${h} óra`;
+        if (h > 0) return `${h} óra ${m} perc`;
+        return `${m} perc`;
+    }
+
+    function esc(str) {
+        const d = document.createElement('div');
+        d.textContent = String(str);
+        return d.innerHTML;
+    }
 
 })();
 </script>

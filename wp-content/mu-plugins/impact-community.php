@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.3.2');
+define('IC_DB_VERSION', '1.3.3');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -325,6 +325,74 @@ function ic_maybe_migrate_db(): void {
         $wpdb->query("ALTER TABLE {$p}ic_member_trust ADD COLUMN bonus_votes SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER votes_received");
     }
 
+    /* Sprint B tables — tombola & auction */
+
+    dbDelta("CREATE TABLE {$p}ic_tombolas (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        circle_id     INT UNSIGNED NOT NULL,
+        ngo_slug      VARCHAR(120) NOT NULL,
+        title         VARCHAR(200) NOT NULL,
+        description   TEXT,
+        prize_image   VARCHAR(500),
+        prize_json    JSON,
+        ticket_cost   INT UNSIGNED DEFAULT 0,
+        max_tickets   INT UNSIGNED DEFAULT 100,
+        max_per_user  TINYINT UNSIGNED DEFAULT 5,
+        tickets_sold  INT UNSIGNED DEFAULT 0,
+        status        ENUM('active','drawn','cancelled') DEFAULT 'active',
+        ends_at       DATETIME NOT NULL,
+        winner_hash   VARCHAR(64),
+        drawn_at      DATETIME,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_circle (circle_id),
+        INDEX idx_ngo (ngo_slug),
+        INDEX idx_status (status, ends_at)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE {$p}ic_tombola_tickets (
+        id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        tombola_id   INT UNSIGNED NOT NULL,
+        pid_hash     VARCHAR(64) NOT NULL,
+        ticket_count TINYINT UNSIGNED DEFAULT 1,
+        pts_spent    INT UNSIGNED DEFAULT 0,
+        created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_user_tombola (tombola_id, pid_hash),
+        INDEX idx_tombola (tombola_id)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE {$p}ic_auctions (
+        id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        circle_id       INT UNSIGNED NOT NULL,
+        ngo_slug        VARCHAR(120) NOT NULL,
+        title           VARCHAR(200) NOT NULL,
+        description     TEXT,
+        item_image      VARCHAR(500),
+        item_json       JSON,
+        starting_bid    INT UNSIGNED DEFAULT 50,
+        current_bid     INT UNSIGNED DEFAULT 0,
+        current_bidder  VARCHAR(64),
+        bid_count       INT UNSIGNED DEFAULT 0,
+        ends_at         DATETIME NOT NULL,
+        extended_to     DATETIME,
+        status          ENUM('active','closed','cancelled') DEFAULT 'active',
+        winner_hash     VARCHAR(64),
+        created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_circle (circle_id),
+        INDEX idx_ngo (ngo_slug),
+        INDEX idx_status (status, ends_at)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE {$p}ic_auction_bids (
+        id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        auction_id  INT UNSIGNED NOT NULL,
+        pid_hash    VARCHAR(64) NOT NULL,
+        bid_amount  INT UNSIGNED NOT NULL,
+        is_active   TINYINT(1) DEFAULT 1,
+        created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_auction (auction_id, bid_amount),
+        INDEX idx_user (pid_hash)
+    ) $charset;");
+
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
     if ($has_missions === 0) {
@@ -526,6 +594,46 @@ function ic_register_rest_routes(): void {
 
     /* --- Auth / Nonce --------------------------------------------------- */
 
+    register_rest_route($ns, '/ngo/tombola', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_create_tombola',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/ngo/auction', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_create_auction',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/circles/(?P<id>\d+)/tombolas', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_circle_tombolas',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/tombolas/(?P<id>\d+)/buy', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_tombola_buy',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/tombolas/(?P<id>\d+)/result', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_tombola_result',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/circles/(?P<id>\d+)/auctions', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_circle_auctions',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/auctions/(?P<id>\d+)/bid', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_auction_bid',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/auctions/(?P<id>\d+)/bids', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_auction_bids_list',
+        'permission_callback' => '__return_true',
+    ]);
     register_rest_route($ns, '/auth/status', [
         'methods'  => 'GET',
         'callback' => 'ic_rest_auth_status',
@@ -1646,6 +1754,14 @@ function ic_schedule_crons(): void {
     if (!wp_next_scheduled('ic_monthly_badge_award')) {
         wp_schedule_event(strtotime('first day of next month 01:00'), 'monthly', 'ic_monthly_badge_award');
     }
+    // Daily tombola draw — 02:00
+    if (!wp_next_scheduled('ic_tombola_draw_cron')) {
+        wp_schedule_event(strtotime('tomorrow 02:00'), 'daily', 'ic_tombola_draw_cron');
+    }
+    // Hourly auction close check
+    if (!wp_next_scheduled('ic_auction_close_cron')) {
+        wp_schedule_event(time() + HOUR_IN_SECONDS, 'hourly', 'ic_auction_close_cron');
+    }
 }
 
 /* --- 5e. Weekly Impi question ------------------------------------------- */
@@ -2399,5 +2515,577 @@ function ic_check_buddy_mentor_badge(int $circle_id, string $mentor_hash): void 
     ));
     if ($completed_count >= 3) {
         ic_unlock_badge($mentor_hash, 'buddy_mentor', $circle_id);
+    }
+}
+
+/* =========================================================================
+   §9. Tombola & Aukció modul
+   ========================================================================= */
+
+/* ---- 9.1 Tombola REST handlers ----------------------------------------- */
+
+function ic_rest_ngo_create_tombola(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle_id    = (int) $req->get_param('circle_id');
+    $ngo_slug     = sanitize_text_field($req->get_param('ngo_slug') ?? '');
+    $title        = sanitize_text_field($req->get_param('title') ?? '');
+    $description  = sanitize_textarea_field($req->get_param('description') ?? '');
+    $prize_image  = esc_url_raw($req->get_param('prize_image') ?? '');
+    $prize_name   = sanitize_text_field($req->get_param('prize_name') ?? '');
+    $ticket_cost  = max(0, (int) ($req->get_param('ticket_cost') ?? 0));
+    $max_tickets  = max(0, (int) ($req->get_param('max_tickets') ?? 100));
+    $max_per_user = min(5, max(1, (int) ($req->get_param('max_per_user') ?? 5)));
+    $ends_at      = sanitize_text_field($req->get_param('ends_at') ?? '');
+
+    if (!$circle_id || $ngo_slug === '' || $title === '' || $ends_at === '') {
+        return ic_json_error('Hiányzó kötelező mező.');
+    }
+
+    $end_ts = strtotime($ends_at);
+    if ($end_ts === false || $end_ts < time() + 3 * DAY_IN_SECONDS || $end_ts > time() + 30 * DAY_IN_SECONDS) {
+        return ic_json_error('A végdátumnak 3–30 nappal a jövőben kell lennie.');
+    }
+
+    // Anti-abuse: max 1 active tombola / NGO
+    $active = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_tombolas WHERE ngo_slug=%s AND status='active'",
+        $ngo_slug
+    ));
+    if ($active > 0) {
+        return ic_json_error('Már van aktív tombola ehhez az NGO-hoz.');
+    }
+
+    $wpdb->insert("{$p}ic_tombolas", [
+        'circle_id'    => $circle_id,
+        'ngo_slug'     => $ngo_slug,
+        'title'        => $title,
+        'description'  => $description,
+        'prize_image'  => $prize_image,
+        'prize_json'   => wp_json_encode(['name' => $prize_name]),
+        'ticket_cost'  => $ticket_cost,
+        'max_tickets'  => $max_tickets,
+        'max_per_user' => $max_per_user,
+        'status'       => 'active',
+        'ends_at'      => gmdate('Y-m-d H:i:s', $end_ts),
+        'created_at'   => current_time('mysql'),
+    ]);
+    $tombola_id = (int) $wpdb->insert_id;
+
+    ic_impi_post(
+        $circle_id,
+        "🎟️ Új tombola indul! **{$title}** — Nyerj egy fantasztikus díjat! Vegyél jegyet a körben. Sok sikert mindenkinek! 🍀",
+        4
+    );
+
+    return ic_json_ok(['tombola_id' => $tombola_id, 'status' => 'created'], 201);
+}
+
+function ic_rest_circle_tombolas(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle_id = (int) $req->get_param('id');
+    $pid_hash  = ic_pid_hash();
+
+    $tombolas = $wpdb->get_results($wpdb->prepare(
+        "SELECT t.*, CAST(tt.ticket_count AS UNSIGNED) as my_tickets
+         FROM {$p}ic_tombolas t
+         LEFT JOIN {$p}ic_tombola_tickets tt ON tt.tombola_id=t.id AND tt.pid_hash=%s
+         WHERE t.circle_id=%d AND t.status IN ('active','drawn')
+         ORDER BY t.status ASC, t.created_at DESC LIMIT 5",
+        $pid_hash ?: '', $circle_id
+    ), ARRAY_A);
+
+    foreach ($tombolas as &$t) {
+        $t['prize_json']   = json_decode($t['prize_json'] ?? '{}', true);
+        $t['my_tickets']   = (int) ($t['my_tickets'] ?? 0);
+        $t['tickets_sold'] = (int) $t['tickets_sold'];
+        $t['ticket_cost']  = (int) $t['ticket_cost'];
+        $t['max_per_user'] = (int) $t['max_per_user'];
+        $t['max_tickets']  = (int) $t['max_tickets'];
+        $t['ends_at_ts']   = $t['ends_at'] ? strtotime($t['ends_at']) : 0;
+        if ($t['status'] === 'drawn' && !empty($t['winner_hash'])) {
+            $alias = $wpdb->get_var($wpdb->prepare(
+                "SELECT alias FROM {$p}ic_circle_leaderboard WHERE pid_hash=%s AND circle_id=%d LIMIT 1",
+                $t['winner_hash'], $circle_id
+            ));
+            $t['winner_alias'] = $alias ?: 'Névtelen nyertes';
+        }
+        unset($t['winner_hash']);
+    }
+    unset($t);
+
+    return ic_json_ok(['tombolas' => $tombolas]);
+}
+
+function ic_rest_tombola_buy(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $tombola_id = (int) $req->get_param('id');
+    $count      = max(1, min(5, (int) ($req->get_param('count') ?? 1)));
+    $pid_hash   = ic_pid_hash();
+
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+
+    $tombola = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_tombolas WHERE id=%d",
+        $tombola_id
+    ), ARRAY_A);
+
+    if (!$tombola || $tombola['status'] !== 'active') {
+        return ic_json_error('A tombola nem aktív.');
+    }
+    if (strtotime($tombola['ends_at']) < time()) {
+        return ic_json_error('A tombola lejárt.');
+    }
+
+    $max_per  = (int) $tombola['max_per_user'];
+    $existing = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COALESCE(ticket_count,0) FROM {$p}ic_tombola_tickets WHERE tombola_id=%d AND pid_hash=%s",
+        $tombola_id, $pid_hash
+    ));
+    $new_total = $existing + $count;
+    if ($new_total > $max_per) {
+        return ic_json_error("Maximum {$max_per} jegy vehető fejenként. Már van: {$existing}.");
+    }
+
+    $max_t = (int) $tombola['max_tickets'];
+    $sold  = (int) $tombola['tickets_sold'];
+    if ($max_t > 0 && $sold + $count > $max_t) {
+        return ic_json_error('Nincs elég szabad jegy.');
+    }
+
+    $ticket_cost = (int) $tombola['ticket_cost'];
+    $total_cost  = $ticket_cost * $count;
+
+    if ($total_cost > 0) {
+        if (!class_exists('Sharity_Points_Manager')) {
+            return ic_json_error('Pont-rendszer nem elérhető.', 503);
+        }
+        $pseudo_id = ic_get_pseudo_id();
+        if ($pseudo_id === '') {
+            return ic_json_error('Azonosítás szükséges.', 401);
+        }
+        $mgr     = new Sharity_Points_Manager();
+        $snap    = $mgr->get_points_snapshot_for_pseudo($pseudo_id);
+        $balance = (int) ($snap['points_total'] ?? 0);
+        if ($balance < $total_cost) {
+            return ic_json_error("Nincs elég pontod ({$balance} van, {$total_cost} kell).");
+        }
+        $mgr->award_points_for_pseudo(
+            $pseudo_id, -$total_cost, 'tombola_ticket',
+            "tombola:{$tombola_id}", ['activity' => 'buy_ticket', 'source_type' => 'impact_community'],
+            "tkt:{$tombola_id}:{$pid_hash}:{$new_total}"
+        );
+    }
+
+    if ($existing > 0) {
+        $wpdb->update(
+            "{$p}ic_tombola_tickets",
+            ['ticket_count' => $new_total, 'pts_spent' => $existing * $ticket_cost + $total_cost],
+            ['tombola_id' => $tombola_id, 'pid_hash' => $pid_hash]
+        );
+    } else {
+        $wpdb->insert("{$p}ic_tombola_tickets", [
+            'tombola_id'   => $tombola_id,
+            'pid_hash'     => $pid_hash,
+            'ticket_count' => $count,
+            'pts_spent'    => $total_cost,
+            'created_at'   => current_time('mysql'),
+        ]);
+    }
+
+    $wpdb->query($wpdb->prepare(
+        "UPDATE {$p}ic_tombolas SET tickets_sold=tickets_sold+%d WHERE id=%d",
+        $count, $tombola_id
+    ));
+
+    // Free tombola entry earns a small engagement reward
+    if ($ticket_cost === 0) {
+        ic_award_points($pid_hash, 5, 'tombola_join', "tombola:{$tombola_id}", "tj:{$tombola_id}:{$pid_hash}");
+    }
+
+    return ic_json_ok(['my_tickets' => $new_total, 'tickets_sold' => $sold + $count]);
+}
+
+function ic_rest_tombola_result(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $tombola_id = (int) $req->get_param('id');
+    $tombola    = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_tombolas WHERE id=%d", $tombola_id
+    ), ARRAY_A);
+
+    if (!$tombola) {
+        return ic_json_error('Tombola nem található.', 404);
+    }
+
+    $result = [
+        'id'           => (int) $tombola['id'],
+        'title'        => $tombola['title'],
+        'status'       => $tombola['status'],
+        'ends_at'      => $tombola['ends_at'],
+        'drawn_at'     => $tombola['drawn_at'],
+        'tickets_sold' => (int) $tombola['tickets_sold'],
+    ];
+
+    if ($tombola['status'] === 'drawn' && !empty($tombola['winner_hash'])) {
+        $alias = $wpdb->get_var($wpdb->prepare(
+            "SELECT alias FROM {$p}ic_circle_leaderboard WHERE pid_hash=%s AND circle_id=%d LIMIT 1",
+            $tombola['winner_hash'], (int) $tombola['circle_id']
+        ));
+        $result['winner_alias'] = $alias ?: 'Névtelen nyertes';
+    }
+
+    return ic_json_ok($result);
+}
+
+/* ---- 9.1 Tombola cron — draw winner ------------------------------------ */
+
+add_action('ic_tombola_draw_cron', 'ic_tombola_draw_cron_handler');
+function ic_tombola_draw_cron_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $due = $wpdb->get_results(
+        "SELECT * FROM {$p}ic_tombolas WHERE status='active' AND ends_at <= NOW()",
+        ARRAY_A
+    );
+
+    foreach ($due as $tombola) {
+        $tid     = (int) $tombola['id'];
+        $tickets = $wpdb->get_results($wpdb->prepare(
+            "SELECT pid_hash, ticket_count FROM {$p}ic_tombola_tickets WHERE tombola_id=%d",
+            $tid
+        ), ARRAY_A);
+
+        if (empty($tickets)) {
+            $wpdb->update("{$p}ic_tombolas", ['status' => 'cancelled'], ['id' => $tid]);
+            continue;
+        }
+
+        // Weighted pool
+        $pool = [];
+        foreach ($tickets as $t) {
+            for ($i = 0; $i < (int) $t['ticket_count']; $i++) {
+                $pool[] = $t['pid_hash'];
+            }
+        }
+        $winner_hash = $pool[random_int(0, count($pool) - 1)];
+
+        $wpdb->update("{$p}ic_tombolas", [
+            'status'      => 'drawn',
+            'winner_hash' => $winner_hash,
+            'drawn_at'    => current_time('mysql'),
+        ], ['id' => $tid]);
+
+        ic_queue_points($winner_hash, 100, 'tombola_win', "tombola:{$tid}", "tw:{$tid}:{$winner_hash}");
+
+        $alias = $wpdb->get_var($wpdb->prepare(
+            "SELECT alias FROM {$p}ic_circle_leaderboard WHERE pid_hash=%s AND circle_id=%d LIMIT 1",
+            $winner_hash, (int) $tombola['circle_id']
+        ));
+        $prize_name = json_decode($tombola['prize_json'] ?? '{}', true)['name'] ?? $tombola['title'];
+        ic_impi_post(
+            (int) $tombola['circle_id'],
+            "🎉 A tombola lezárult! A nyertes: **" . ($alias ?: 'Névtelen nyertes') . "** — gratulálunk! 🏆 Díj: {$prize_name}",
+            4
+        );
+    }
+}
+
+/* ---- 9.2 Aukció REST handlers ------------------------------------------ */
+
+function ic_rest_ngo_create_auction(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle_id    = (int) $req->get_param('circle_id');
+    $ngo_slug     = sanitize_text_field($req->get_param('ngo_slug') ?? '');
+    $title        = sanitize_text_field($req->get_param('title') ?? '');
+    $description  = sanitize_textarea_field($req->get_param('description') ?? '');
+    $item_image   = esc_url_raw($req->get_param('item_image') ?? '');
+    $item_name    = sanitize_text_field($req->get_param('item_name') ?? '');
+    $starting_bid = max(50, (int) ($req->get_param('starting_bid') ?? 50));
+    $ends_at      = sanitize_text_field($req->get_param('ends_at') ?? '');
+
+    if (!$circle_id || $ngo_slug === '' || $title === '' || $ends_at === '') {
+        return ic_json_error('Hiányzó kötelező mező.');
+    }
+
+    $end_ts = strtotime($ends_at);
+    if ($end_ts === false || $end_ts < time() + 3 * DAY_IN_SECONDS || $end_ts > time() + 30 * DAY_IN_SECONDS) {
+        return ic_json_error('A végdátumnak 3–30 nappal a jövőben kell lennie.');
+    }
+
+    $active = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_auctions WHERE ngo_slug=%s AND status='active'",
+        $ngo_slug
+    ));
+    if ($active >= 2) {
+        return ic_json_error('Maximum 2 aktív aukció engedélyezett NGO-nként.');
+    }
+
+    $wpdb->insert("{$p}ic_auctions", [
+        'circle_id'    => $circle_id,
+        'ngo_slug'     => $ngo_slug,
+        'title'        => $title,
+        'description'  => $description,
+        'item_image'   => $item_image,
+        'item_json'    => wp_json_encode(['name' => $item_name]),
+        'starting_bid' => $starting_bid,
+        'current_bid'  => 0,
+        'status'       => 'active',
+        'ends_at'      => gmdate('Y-m-d H:i:s', $end_ts),
+        'created_at'   => current_time('mysql'),
+    ]);
+    $auction_id = (int) $wpdb->insert_id;
+
+    ic_impi_post(
+        $circle_id,
+        "🔨 Új aukció indul! **{$title}** — licitálj pontokkal és nyerj! Induló licit: {$starting_bid} pont.",
+        4
+    );
+
+    return ic_json_ok(['auction_id' => $auction_id, 'status' => 'created'], 201);
+}
+
+function ic_rest_circle_auctions(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle_id = (int) $req->get_param('id');
+    $pid_hash  = ic_pid_hash();
+
+    // Drain pending queue so refunded points appear immediately
+    if ($pid_hash) {
+        ic_claim_pending_points($pid_hash);
+    }
+
+    $auctions = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM {$p}ic_auctions
+         WHERE circle_id=%d AND status IN ('active','closed')
+         ORDER BY status ASC, created_at DESC LIMIT 5",
+        $circle_id
+    ), ARRAY_A);
+
+    foreach ($auctions as &$a) {
+        $a['item_json']      = json_decode($a['item_json'] ?? '{}', true);
+        $a['starting_bid']   = (int) $a['starting_bid'];
+        $a['current_bid']    = (int) $a['current_bid'];
+        $a['bid_count']      = (int) $a['bid_count'];
+        $a['ends_at_ts']     = $a['ends_at'] ? strtotime($a['ends_at']) : 0;
+        $a['extended_to_ts'] = $a['extended_to'] ? strtotime($a['extended_to']) : null;
+        $a['is_my_bid']      = $pid_hash && ($a['current_bidder'] === $pid_hash);
+
+        if ($a['current_bidder']) {
+            $alias = $wpdb->get_var($wpdb->prepare(
+                "SELECT alias FROM {$p}ic_circle_leaderboard WHERE pid_hash=%s AND circle_id=%d LIMIT 1",
+                $a['current_bidder'], $circle_id
+            ));
+            $a['leader_alias'] = $alias ?: 'Névtelen tag';
+        } else {
+            $a['leader_alias'] = null;
+        }
+
+        if (!empty($a['winner_hash'])) {
+            $wa = $wpdb->get_var($wpdb->prepare(
+                "SELECT alias FROM {$p}ic_circle_leaderboard WHERE pid_hash=%s AND circle_id=%d LIMIT 1",
+                $a['winner_hash'], $circle_id
+            ));
+            $a['winner_alias'] = $wa ?: 'Névtelen nyertes';
+        }
+        unset($a['current_bidder'], $a['winner_hash']);
+    }
+    unset($a);
+
+    return ic_json_ok(['auctions' => $auctions]);
+}
+
+function ic_rest_auction_bid(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $auction_id = (int) $req->get_param('id');
+    $bid_amount = (int) $req->get_param('amount');
+    $pid_hash   = ic_pid_hash();
+
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+    if ($bid_amount <= 0) {
+        return ic_json_error('Érvénytelen licit összeg.');
+    }
+
+    $auction = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_auctions WHERE id=%d",
+        $auction_id
+    ), ARRAY_A);
+
+    if (!$auction || $auction['status'] !== 'active') {
+        return ic_json_error('Az aukció nem aktív.');
+    }
+
+    $effective_end = $auction['extended_to']
+        ? strtotime($auction['extended_to'])
+        : strtotime($auction['ends_at']);
+    if ($effective_end < time()) {
+        return ic_json_error('Az aukció lezárult.');
+    }
+
+    $current_bid = (int) $auction['current_bid'];
+    $starting    = (int) $auction['starting_bid'];
+    $min_bid     = max($starting, $current_bid + 10);
+
+    if ($bid_amount < $min_bid) {
+        return ic_json_error("A minimális licit: {$min_bid} pont.");
+    }
+    if ($auction['current_bidder'] === $pid_hash) {
+        return ic_json_error('Már te vezeted az aukciót.');
+    }
+
+    if (!class_exists('Sharity_Points_Manager')) {
+        return ic_json_error('Pont-rendszer nem elérhető.', 503);
+    }
+    $pseudo_id = ic_get_pseudo_id();
+    if ($pseudo_id === '') {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+    $mgr     = new Sharity_Points_Manager();
+    $snap    = $mgr->get_points_snapshot_for_pseudo($pseudo_id);
+    $balance = (int) ($snap['points_total'] ?? 0);
+    if ($balance < $bid_amount) {
+        return ic_json_error("Nincs elég pontod ({$balance} van, {$bid_amount} kell).");
+    }
+
+    // Queue refund for the outbid user
+    if ($auction['current_bidder'] && $current_bid > 0) {
+        ic_queue_points(
+            $auction['current_bidder'],
+            $current_bid,
+            'auction_refund',
+            "auction:{$auction_id}:refund",
+            "ar:{$auction_id}:{$auction['current_bidder']}"
+        );
+    }
+
+    // Deduct from current bidder
+    $mgr->award_points_for_pseudo(
+        $pseudo_id, -$bid_amount, 'auction_bid',
+        "auction:{$auction_id}",
+        ['activity' => 'auction_bid', 'source_type' => 'impact_community'],
+        'ab:' . $auction_id . ':' . $pid_hash . ':' . time()
+    );
+
+    // Deactivate previous winning bid row
+    if ($auction['current_bidder']) {
+        $wpdb->update(
+            "{$p}ic_auction_bids",
+            ['is_active' => 0],
+            ['auction_id' => $auction_id, 'pid_hash' => $auction['current_bidder'], 'is_active' => 1]
+        );
+    }
+
+    $wpdb->insert("{$p}ic_auction_bids", [
+        'auction_id' => $auction_id,
+        'pid_hash'   => $pid_hash,
+        'bid_amount' => $bid_amount,
+        'is_active'  => 1,
+        'created_at' => current_time('mysql'),
+    ]);
+
+    // Anti-snipe: extend by 5 min if bid within last 5 min
+    $new_extended_to = null;
+    if (($effective_end - time()) < 5 * MINUTE_IN_SECONDS) {
+        $new_extended_to = gmdate('Y-m-d H:i:s', time() + 5 * MINUTE_IN_SECONDS);
+    }
+
+    $update = [
+        'current_bid'    => $bid_amount,
+        'current_bidder' => $pid_hash,
+        'bid_count'      => (int) $auction['bid_count'] + 1,
+    ];
+    if ($new_extended_to) {
+        $update['extended_to'] = $new_extended_to;
+    }
+    $wpdb->update("{$p}ic_auctions", $update, ['id' => $auction_id]);
+
+    return ic_json_ok([
+        'new_bid'     => $bid_amount,
+        'bid_count'   => (int) $auction['bid_count'] + 1,
+        'extended_to' => $new_extended_to,
+    ]);
+}
+
+function ic_rest_auction_bids_list(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $auction_id = (int) $req->get_param('id');
+    $bids       = $wpdb->get_results($wpdb->prepare(
+        "SELECT b.bid_amount, b.is_active, b.created_at,
+                COALESCE(lb.alias,'Névtelen') AS alias
+         FROM {$p}ic_auction_bids b
+         LEFT JOIN {$p}ic_circle_leaderboard lb ON lb.pid_hash = b.pid_hash
+         WHERE b.auction_id=%d
+         ORDER BY b.bid_amount DESC LIMIT 20",
+        $auction_id
+    ), ARRAY_A);
+
+    return ic_json_ok(['bids' => $bids]);
+}
+
+/* ---- 9.2 Aukció cron — close & finalize -------------------------------- */
+
+add_action('ic_auction_close_cron', 'ic_auction_close_cron_handler');
+function ic_auction_close_cron_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $due = $wpdb->get_results(
+        "SELECT * FROM {$p}ic_auctions
+         WHERE status='active'
+           AND (extended_to IS NULL     AND ends_at     <= NOW()
+             OR extended_to IS NOT NULL AND extended_to <= NOW())",
+        ARRAY_A
+    );
+
+    foreach ($due as $auction) {
+        $aid = (int) $auction['id'];
+
+        if (!$auction['current_bidder']) {
+            $wpdb->update("{$p}ic_auctions", ['status' => 'cancelled'], ['id' => $aid]);
+            continue;
+        }
+
+        $wpdb->update("{$p}ic_auctions", [
+            'status'      => 'closed',
+            'winner_hash' => $auction['current_bidder'],
+        ], ['id' => $aid]);
+
+        // Winner bonus
+        ic_queue_badge($auction['current_bidder'], 'auction_winner', (int) $auction['circle_id']);
+        ic_queue_points(
+            $auction['current_bidder'], 50,
+            'auction_win', "auction:{$aid}",
+            "aw:{$aid}:{$auction['current_bidder']}"
+        );
+
+        $alias = $wpdb->get_var($wpdb->prepare(
+            "SELECT alias FROM {$p}ic_circle_leaderboard WHERE pid_hash=%s AND circle_id=%d LIMIT 1",
+            $auction['current_bidder'], (int) $auction['circle_id']
+        ));
+        $bid = (int) $auction['current_bid'];
+        ic_impi_post(
+            (int) $auction['circle_id'],
+            "🔨 Az aukció lezárult! A nyertes: **" . ($alias ?: 'Névtelen nyertes') . "** — {$bid} ponttal! Gratulálunk! 🏆",
+            4
+        );
     }
 }
