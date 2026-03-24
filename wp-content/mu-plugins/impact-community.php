@@ -903,6 +903,27 @@ function ic_register_rest_routes(): void {
         'callback'            => 'ic_rest_decision_results',
         'permission_callback' => '__return_true',
     ]);
+    // § Sprint 13 — Appeal review queues
+    register_rest_route($ns, '/admin/appeals', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_admin_appeal_queue',
+        'permission_callback' => function() { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/admin/appeals/(?P<appeal_id>\d+)', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_admin_appeal_action',
+        'permission_callback' => function() { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/ngo/appeals', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_ngo_appeal_queue',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/appeals/(?P<appeal_id>\d+)', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_appeal_action',
+        'permission_callback' => '__return_true',
+    ]);
 }
 
 /* --- Circles handlers --------------------------------------------------- */
@@ -4060,6 +4081,10 @@ function ic_rest_moderation_action(WP_REST_Request $req): WP_REST_Response|WP_Er
             // Pending reports → actioned
             $wpdb->update("{$p}ic_reports", ['status' => 'actioned', 'reviewed_at' => current_time('mysql')], ['post_id' => $post_id]);
             ic_log_moderation_action($circle_id, $post_id, $target_hash, $actor_hash, 'admin', 'remove_post', $reason);
+            // § Sprint 13 — Impi értesítés az érintett tagnak
+            if ($target_hash) {
+                ic_impi_notify_moderation($circle_id, $target_hash, 'remove_post');
+            }
             break;
 
         case 'timeout_member':
@@ -4072,6 +4097,8 @@ function ic_rest_moderation_action(WP_REST_Request $req): WP_REST_Response|WP_Er
                 $circle_id, $target_hash, $until, $until
             ));
             ic_log_moderation_action($circle_id, $post_id ?: null, $target_hash, $actor_hash, 'admin', 'timeout', $reason);
+            // § Sprint 13 — Impi értesítés az érintett tagnak
+            ic_impi_notify_moderation($circle_id, $target_hash, 'timeout_member');
             break;
 
         case 'dismiss_report':
@@ -4095,6 +4122,10 @@ function ic_rest_moderation_action(WP_REST_Request $req): WP_REST_Response|WP_Er
                 'reviewed_at' => current_time('mysql'),
             ], ['id' => $appeal_id]);
             ic_log_moderation_action($circle_id, null, null, $actor_hash, 'admin', $action, $reason);
+            // § Sprint 13 — Ha approved: eredeti akció visszavonása + Impi értesítés
+            if ($action === 'approve_appeal') {
+                ic_appeal_reverse($appeal_id, $circle_id);
+            }
             break;
     }
 
@@ -5624,5 +5655,237 @@ function ic_buddy_retention_handler(): void {
            )",
         $cutoff, $cutoff
     ) );
+}
+
+// ============================================================
+// § Sprint 13 — Appeal review queues + Impi moderation notify
+// ============================================================
+
+/** GET /admin/appeals — platform admin lists pending appeals */
+function ic_rest_admin_appeal_queue(): WP_REST_Response {
+    global $wpdb;
+    $p    = $wpdb->prefix;
+    $rows = $wpdb->get_results(
+        "SELECT a.id, a.modaction_id, a.appellant_hash, a.appeal_reason,
+                a.status, a.created_at,
+                m.action_type, m.circle_id, m.post_id, m.target_hash,
+                m.reason AS mod_reason, m.created_at AS actioned_at
+         FROM {$p}ic_appeals a
+         JOIN {$p}ic_moderation_actions m ON m.id = a.modaction_id
+         WHERE a.status = 'pending'
+         ORDER BY a.created_at ASC
+         LIMIT 100",
+        ARRAY_A
+    );
+    return ic_json_ok(['appeals' => $rows ?: []]);
+}
+
+/** POST /admin/appeals/{appeal_id} — approve or uphold an appeal */
+function ic_rest_admin_appeal_action(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $appeal_id   = (int) $req->get_param('appeal_id');
+    $action      = sanitize_key($req->get_param('action') ?? '');
+    $review_note = sanitize_textarea_field($req->get_param('review_note') ?? '');
+
+    if (!in_array($action, ['approve', 'uphold'], true)) {
+        return ic_json_error('Érvénytelen akció. Használd: approve vagy uphold.', 422);
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $appeal = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_appeals WHERE id=%d", $appeal_id
+    ), ARRAY_A);
+    if (!$appeal) return ic_json_error('Fellebbezés nem található.', 404);
+    if ($appeal['status'] !== 'pending') return ic_json_error('A fellebbezés már el lett bírálva.', 409);
+
+    $new_status = ($action === 'approve') ? 'approved' : 'upheld';
+    $wpdb->update("{$p}ic_appeals", [
+        'status'      => $new_status,
+        'reviewed_by' => 'admin',
+        'reviewed_at' => current_time('mysql'),
+    ], ['id' => $appeal_id]);
+
+    $mod = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_moderation_actions WHERE id=%d", (int) $appeal['modaction_id']
+    ), ARRAY_A);
+    $circle_id = (int) ($mod['circle_id'] ?? 0);
+
+    ic_log_moderation_action($circle_id, null, null, 'admin', 'admin',
+        $action === 'approve' ? 'approve_appeal' : 'uphold_appeal', $review_note);
+
+    if ($action === 'approve') {
+        ic_appeal_reverse($appeal_id, $circle_id);
+    } else {
+        // Upheld: notify appellant via Impi
+        $appellant = $appeal['appellant_hash'];
+        if ($circle_id && $appellant) {
+            ic_impi_post_private($circle_id, $appellant,
+                "ℹ️ Fellebbezésedet megvizsgáltuk, és az eredeti döntést fenntartjuk. " .
+                "Ha további kérdésed van, fordulj a körvezetőhöz."
+            );
+        }
+    }
+
+    return ic_json_ok(['done' => true, 'status' => $new_status]);
+}
+
+/** GET /ngo/appeals — NGO admin lists pending appeals in their circles */
+function ic_rest_ngo_appeal_queue(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $ngo = $wpdb->get_row($wpdb->prepare(
+        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
+    ), ARRAY_A);
+    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
+    $circle_id = (int) $ngo['circle_id'];
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT a.id, a.modaction_id, a.appellant_hash, a.appeal_reason,
+                a.status, a.created_at,
+                m.action_type, m.post_id, m.target_hash,
+                m.reason AS mod_reason, m.created_at AS actioned_at
+         FROM {$p}ic_appeals a
+         JOIN {$p}ic_moderation_actions m ON m.id = a.modaction_id
+         WHERE a.status = 'pending' AND m.circle_id = %d
+         ORDER BY a.created_at ASC
+         LIMIT 50",
+        $circle_id
+    ), ARRAY_A);
+
+    return ic_json_ok(['circle_id' => $circle_id, 'appeals' => $rows ?: []]);
+}
+
+/** POST /ngo/appeals/{appeal_id} — NGO admin approve or uphold an appeal */
+function ic_rest_ngo_appeal_action(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $ngo = $wpdb->get_row($wpdb->prepare(
+        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
+    ), ARRAY_A);
+    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
+    $ngo_circle_id = (int) $ngo['circle_id'];
+
+    $appeal_id   = (int) $req->get_param('appeal_id');
+    $action      = sanitize_key($req->get_param('action') ?? '');
+    $review_note = sanitize_textarea_field($req->get_param('review_note') ?? '');
+
+    if (!in_array($action, ['approve', 'uphold'], true)) {
+        return ic_json_error('Érvénytelen akció. Használd: approve vagy uphold.', 422);
+    }
+
+    $appeal = $wpdb->get_row($wpdb->prepare(
+        "SELECT a.*, m.circle_id AS mod_circle_id
+         FROM {$p}ic_appeals a
+         JOIN {$p}ic_moderation_actions m ON m.id = a.modaction_id
+         WHERE a.id=%d", $appeal_id
+    ), ARRAY_A);
+    if (!$appeal) return ic_json_error('Fellebbezés nem található.', 404);
+    if ((int) $appeal['mod_circle_id'] !== $ngo_circle_id) {
+        return ic_json_error('Nincs jogosultságod ehhez a fellebbezéshez.', 403);
+    }
+    if ($appeal['status'] !== 'pending') return ic_json_error('A fellebbezés már el lett bírálva.', 409);
+
+    $new_status = ($action === 'approve') ? 'approved' : 'upheld';
+    $wpdb->update("{$p}ic_appeals", [
+        'status'      => $new_status,
+        'reviewed_by' => $pid_hash,
+        'reviewed_at' => current_time('mysql'),
+    ], ['id' => $appeal_id]);
+
+    ic_log_moderation_action($ngo_circle_id, null, null, $pid_hash, 'ngo',
+        $action === 'approve' ? 'approve_appeal' : 'uphold_appeal', $review_note);
+
+    if ($action === 'approve') {
+        ic_appeal_reverse($appeal_id, $ngo_circle_id);
+    } else {
+        $appellant = $appeal['appellant_hash'];
+        if ($appellant) {
+            ic_impi_post_private($ngo_circle_id, $appellant,
+                "ℹ️ Fellebbezésedet megvizsgáltuk, és az eredeti döntést fenntartjuk. " .
+                "Ha további kérdésed van, fordulj a körvezetőhöz."
+            );
+        }
+    }
+
+    return ic_json_ok(['done' => true, 'status' => $new_status]);
+}
+
+/**
+ * § Sprint 13 — Appeal reversal: un-delete post or clear timeout
+ * Called when an appeal is approved.
+ */
+function ic_appeal_reverse(int $appeal_id, int $circle_id): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $appeal = $wpdb->get_row($wpdb->prepare(
+        "SELECT a.appellant_hash, m.action_type, m.post_id, m.target_hash
+         FROM {$p}ic_appeals a
+         JOIN {$p}ic_moderation_actions m ON m.id = a.modaction_id
+         WHERE a.id=%d", $appeal_id
+    ), ARRAY_A);
+    if (!$appeal) return;
+
+    if ($appeal['action_type'] === 'remove_post' && $appeal['post_id']) {
+        $wpdb->update("{$p}ic_posts", ['is_deleted' => 0], ['id' => (int) $appeal['post_id']]);
+    } elseif ($appeal['action_type'] === 'timeout' && $appeal['target_hash']) {
+        $wpdb->update("{$p}ic_member_trust",
+            ['timeout_until' => null],
+            ['circle_id' => $circle_id, 'pid_hash' => $appeal['target_hash']]
+        );
+    }
+
+    // Notify appellant: approved
+    $appellant = $appeal['appellant_hash'];
+    if ($circle_id && $appellant) {
+        ic_impi_post_private($circle_id, $appellant,
+            "✅ Jó hír! Fellebbezésedet elfogadtuk, és az eredeti döntést visszavontuk. " .
+            "Köszönjük, hogy jeleztél — közösségünk jobbá válik tőled."
+        );
+    }
+}
+
+/**
+ * § Sprint 13 — Impi private notification on moderation decisions (to the affected user)
+ */
+function ic_impi_notify_moderation(int $circle_id, string $target_hash, string $action_type): void {
+    $messages = [
+        'remove_post'    => "ℹ️ Egy posztod eltávolításra került a körünkben a közösségi szabályok alapján. " .
+                            "Ha úgy gondolod, ez téves döntés volt, kérhetsz felülvizsgálatot.",
+        'timeout_member' => "⏸️ Fiókod 7 napra korlátozásra került a körünkben a közösségi szabályok alapján. " .
+                            "Ha úgy gondolod, ez téves döntés volt, kérhetsz felülvizsgálatot.",
+    ];
+    $msg = $messages[$action_type] ?? null;
+    if ($msg) {
+        ic_impi_post_private($circle_id, $target_hash, $msg);
+    }
+}
+
+/**
+ * § Sprint 13 — Impi directed/private post (only visible to recipient_hash)
+ * Stored in ic_posts with meta_json: {"private":true,"recipient_hash":"..."}
+ */
+function ic_impi_post_private(int $circle_id, string $recipient_hash, string $body): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $wpdb->insert("{$p}ic_posts", [
+        'circle_id'   => $circle_id,
+        'author_hash' => 'impi',
+        'author_type' => 'impi',
+        'post_type'   => 'text',
+        'body'        => $body,
+        'meta_json'   => wp_json_encode(['private' => true, 'recipient_hash' => $recipient_hash]),
+        'created_at'  => current_time('mysql'),
+    ]);
 }
 
