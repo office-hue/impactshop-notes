@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.3.3');
+define('IC_DB_VERSION', '1.3.4');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -393,6 +393,80 @@ function ic_maybe_migrate_db(): void {
         INDEX idx_user (pid_hash)
     ) $charset;");
 
+    /* §10 Sprint tables */
+
+    dbDelta("CREATE TABLE {$p}ic_sprints (
+        id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        status       ENUM('active','closed') DEFAULT 'active',
+        starts_at    DATETIME NOT NULL,
+        ends_at      DATETIME NOT NULL,
+        cohort_json  JSON,
+        created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_status (status)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE {$p}ic_sprint_events (
+        id                 BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        sprint_id          INT UNSIGNED NOT NULL,
+        ngo_slug           VARCHAR(120) NOT NULL,
+        pid_hash           VARCHAR(64) NOT NULL,
+        activation_type    ENUM('ad','vote','offerwall','post','other') NOT NULL DEFAULT 'other',
+        is_validated       TINYINT(1) DEFAULT 0,
+        is_pending_review  TINYINT(1) DEFAULT 0,
+        created_at         DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_sprint_pid_ngo (sprint_id, pid_hash, ngo_slug),
+        KEY idx_sprint_ngo (sprint_id, ngo_slug),
+        KEY idx_pid (pid_hash)
+    ) $charset;");
+
+    /* §15 Moderation audit log */
+
+    dbDelta("CREATE TABLE {$p}ic_moderation_actions (
+        id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        circle_id   INT UNSIGNED NOT NULL,
+        post_id     BIGINT UNSIGNED,
+        target_hash VARCHAR(64),
+        actor_hash  VARCHAR(64) NOT NULL DEFAULT 'system',
+        actor_type  ENUM('admin','ngo_admin','system','trusted_reporter') DEFAULT 'admin',
+        action      VARCHAR(60) NOT NULL,
+        reason      TEXT,
+        created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_circle (circle_id),
+        KEY idx_target (target_hash),
+        KEY idx_action (action)
+    ) $charset;");
+
+    /* §15 Appeal requests */
+
+    dbDelta("CREATE TABLE {$p}ic_appeals (
+        id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        modaction_id   BIGINT UNSIGNED NOT NULL,
+        appellant_hash VARCHAR(64) NOT NULL,
+        appeal_reason  TEXT NOT NULL,
+        status         ENUM('pending','approved','upheld') DEFAULT 'pending',
+        reviewed_by    VARCHAR(64),
+        reviewed_at    DATETIME NULL,
+        created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_appeal (modaction_id, appellant_hash),
+        KEY idx_status (status)
+    ) $charset;");
+
+    /* §10 new columns */
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_circles LIKE 'visibility_boost_until'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_circles ADD COLUMN visibility_boost_until DATETIME NULL DEFAULT NULL AFTER is_active");
+    }
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_circles LIKE 'community_bonus'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_circles ADD COLUMN community_bonus FLOAT NOT NULL DEFAULT 1.0 AFTER visibility_boost_until");
+    }
+
+    /* §15 trusted reporter flag */
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_member_trust LIKE 'is_trusted_reporter'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_member_trust ADD COLUMN is_trusted_reporter TINYINT(1) NOT NULL DEFAULT 0 AFTER strikes");
+    }
+
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
     if ($has_missions === 0) {
@@ -638,6 +712,40 @@ function ic_register_rest_routes(): void {
         'methods'  => 'GET',
         'callback' => 'ic_rest_auth_status',
         'permission_callback' => '__return_true',
+    ]);
+
+    /* §10 Sprint routes */
+    register_rest_route($ns, '/sprints/current', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_sprint_current',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/sprints/current/leaderboard', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_sprint_leaderboard',
+        'permission_callback' => '__return_true',
+    ]);
+
+    /* §15 Moderation routes */
+    register_rest_route($ns, '/moderation/mine', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_moderation_mine',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/moderation/action', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_moderation_action',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
+    ]);
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/posts/(?P<post_id>\d+)/appeal', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_post_appeal',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/circles/(?P<id>\d+)/health', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_circle_health',
+        'permission_callback' => function () { return current_user_can('manage_options'); },
     ]);
 }
 
@@ -1010,6 +1118,16 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
         return ic_json_error('Csak körtagok posztolhatnak.', 403);
     }
 
+    // §15 Auto-timeout check
+    $timeout_row = $wpdb->get_row($wpdb->prepare(
+        "SELECT timeout_until FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s LIMIT 1",
+        $cid, $pid_hash
+    ));
+    if ($timeout_row && $timeout_row->timeout_until && strtotime($timeout_row->timeout_until) > time()) {
+        $until = date_i18n(get_option('date_format'), strtotime($timeout_row->timeout_until));
+        return ic_json_error("Fiókod átmenetileg korlátozva van {$until}-ig.", 403);
+    }
+
     // Rate limit: 5 posts/hour
     $rate_key = 'ic_post_rate:' . $pid_hash;
     if (!ic_rate_check($rate_key, IC_RATE_LIMIT_POSTS_PER_HOUR, 3600)) {
@@ -1104,6 +1222,12 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
         ic_check_post_type_badge($cid, $pid_hash, $post_type);
     }
 
+    // §10 Sprint activation: posting counts as 'post' activation type
+    $circle_obj = $wpdb->get_row($wpdb->prepare("SELECT ref_slug FROM {$p}ic_circles WHERE id=%d", $cid));
+    if ($circle_obj) {
+        ic_record_sprint_activation($pid_hash, $circle_obj->ref_slug, 'post');
+    }
+
     return ic_json_ok([
         'post' => ic_format_post($wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$p}ic_posts WHERE id=%d", $post_id
@@ -1153,6 +1277,12 @@ function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
     ));
     if ($new_count === 5) {
         ic_award_points($post->author_hash, 50, 'post_5_votes', "post:{$post_id}", "post_5_votes:{$post->author_hash}:{$post_id}");
+    }
+
+    // §10 Sprint activation: vote counts as 'vote' type
+    $circle_obj = $wpdb->get_row($wpdb->prepare("SELECT ref_slug FROM {$p}ic_circles WHERE id=%d", $cid));
+    if ($circle_obj) {
+        ic_record_sprint_activation($pid_hash, $circle_obj->ref_slug, 'vote');
     }
 
     return ic_json_ok(['vote_count' => $new_count]);
@@ -1761,6 +1891,18 @@ function ic_schedule_crons(): void {
     // Hourly auction close check
     if (!wp_next_scheduled('ic_auction_close_cron')) {
         wp_schedule_event(time() + HOUR_IN_SECONDS, 'hourly', 'ic_auction_close_cron');
+    }
+    // §10 Sprint: daily check for sprint open/close — 03:00
+    if (!wp_next_scheduled('ic_sprint_daily_check')) {
+        wp_schedule_event(strtotime('tomorrow 03:00'), 'daily', 'ic_sprint_daily_check');
+    }
+    // §12 Settlement: monthly check — 1st of month 04:00
+    if (!wp_next_scheduled('ic_settlement_monthly')) {
+        wp_schedule_event(strtotime('first day of next month 04:00'), 'monthly', 'ic_settlement_monthly');
+    }
+    // §15 Trusted reporter promotion: weekly Sunday 05:00
+    if (!wp_next_scheduled('ic_trusted_reporter_check')) {
+        wp_schedule_event(strtotime('next sunday 05:00'), 'ic_weekly', 'ic_trusted_reporter_check');
     }
 }
 
@@ -3086,6 +3228,688 @@ function ic_auction_close_cron_handler(): void {
             (int) $auction['circle_id'],
             "🔨 Az aukció lezárult! A nyertes: **" . ($alias ?: 'Névtelen nyertes') . "** — {$bid} ponttal! Gratulálunk! 🏆",
             4
+        );
+    }
+}
+
+/* =========================================================================
+   §10 — NGO Catch-Up Sprint
+   14-day sprint for bottom-30% NGOs: 25 credits per validated new user,
+   max 80 users / NGO. Top 3 → 7-day visibility boost.
+   ========================================================================= */
+
+/**
+ * Record a sprint activation event.
+ * Called from ic_rest_post_create (type='post') and ic_rest_post_vote (type='vote').
+ * Also called externally for 'ad'/'offerwall' activations.
+ */
+function ic_record_sprint_activation(string $pid_hash, string $ngo_slug, string $type = 'other'): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $sprint = ic_get_current_sprint();
+    if (!$sprint) return;
+
+    // Check NGO in cohort
+    $cohort = json_decode($sprint['cohort_json'] ?? '[]', true) ?: [];
+    if (!in_array($ngo_slug, $cohort, true)) return;
+
+    // Check cap: already 2000 credits for this NGO? (80 users * 25 pts)
+    $validated_count = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_sprint_events
+         WHERE sprint_id=%d AND ngo_slug=%s AND is_validated=1",
+        (int) $sprint['id'], $ngo_slug
+    ));
+    if ($validated_count >= 80) return;
+
+    // Upsert: IGNORE duplicate sprint+pid+ngo (unique key), just record activation_type upgrade
+    $existing = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, activation_type, is_validated FROM {$p}ic_sprint_events
+         WHERE sprint_id=%d AND pid_hash=%s AND ngo_slug=%s",
+        (int) $sprint['id'], $pid_hash, $ngo_slug
+    ));
+
+    $valid_types = ['ad', 'vote', 'offerwall', 'post'];
+    $is_activated_type = in_array($type, $valid_types, true);
+
+    if (!$existing) {
+        // New entry — mark as pending_review if device cluster risk
+        $new_pid_rate_key = 'ic_new_pid_rate:' . substr(md5($_SERVER['REMOTE_ADDR'] ?? ''), 0, 16);
+        $ip_new_pids = (int) get_transient($new_pid_rate_key);
+        $is_pending = ($ip_new_pids >= 5) ? 1 : 0;
+
+        $wpdb->insert("{$p}ic_sprint_events", [
+            'sprint_id'        => (int) $sprint['id'],
+            'ngo_slug'         => $ngo_slug,
+            'pid_hash'         => $pid_hash,
+            'activation_type'  => $type,
+            'is_validated'     => $is_activated_type ? 1 : 0,
+            'is_pending_review'=> $is_pending,
+            'created_at'       => current_time('mysql'),
+        ]);
+
+        // Track new pseudo_id from this IP for anti-abuse
+        set_transient($new_pid_rate_key, $ip_new_pids + 1, DAY_IN_SECONDS);
+    } elseif (!$existing->is_validated && $is_activated_type) {
+        // Upgrade to validated
+        $wpdb->update(
+            "{$p}ic_sprint_events",
+            ['activation_type' => $type, 'is_validated' => 1],
+            ['id' => (int) $existing->id]
+        );
+    }
+}
+
+function ic_get_current_sprint(): ?array {
+    global $wpdb;
+    $p = $wpdb->prefix;
+    return $wpdb->get_row(
+        "SELECT * FROM {$p}ic_sprints WHERE status='active' AND starts_at<=NOW() AND ends_at>=NOW() LIMIT 1",
+        ARRAY_A
+    );
+}
+
+function ic_rest_sprint_current(WP_REST_Request $req): WP_REST_Response {
+    $sprint = ic_get_current_sprint();
+    if (!$sprint) {
+        return ic_json_ok(['active' => false]);
+    }
+
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $pid_hash = ic_pid_hash();
+    $ngo_slug = sanitize_key($req->get_param('ngo_slug') ?? '');
+
+    $data = [
+        'active'    => true,
+        'sprint_id' => (int) $sprint['id'],
+        'starts_at' => $sprint['starts_at'],
+        'ends_at'   => $sprint['ends_at'],
+        'days_left' => max(0, (int) ceil((strtotime($sprint['ends_at']) - time()) / DAY_IN_SECONDS)),
+    ];
+
+    if ($ngo_slug) {
+        $credits = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) * 25 FROM {$p}ic_sprint_events
+             WHERE sprint_id=%d AND ngo_slug=%s AND is_validated=1 AND is_pending_review=0",
+            (int) $sprint['id'], $ngo_slug
+        ));
+        $data['ngo_credits'] = $credits;
+
+        // Find rank for this NGO
+        $leaderboard = ic_sprint_leaderboard_rows((int) $sprint['id']);
+        $rank = 0;
+        foreach ($leaderboard as $i => $row) {
+            if ($row['ngo_slug'] === $ngo_slug) {
+                $rank = $i + 1;
+                break;
+            }
+        }
+        $data['ngo_rank'] = $rank;
+    }
+
+    return ic_json_ok($data);
+}
+
+function ic_rest_sprint_leaderboard(WP_REST_Request $req): WP_REST_Response {
+    $sprint = ic_get_current_sprint();
+    if (!$sprint) {
+        return ic_json_ok(['active' => false, 'leaderboard' => []]);
+    }
+    return ic_json_ok([
+        'active'      => true,
+        'leaderboard' => ic_sprint_leaderboard_rows((int) $sprint['id']),
+    ]);
+}
+
+function ic_sprint_leaderboard_rows(int $sprint_id): array {
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT ngo_slug, COUNT(*) AS validated_users, COUNT(*) * 25 AS credits
+         FROM {$p}ic_sprint_events
+         WHERE sprint_id=%d AND is_validated=1 AND is_pending_review=0
+         GROUP BY ngo_slug
+         ORDER BY credits DESC
+         LIMIT 10",
+        $sprint_id
+    ), ARRAY_A);
+    $out = [];
+    foreach ($rows as $i => $r) {
+        $circle = $wpdb->get_row($wpdb->prepare(
+            "SELECT name FROM {$p}ic_circles WHERE ref_slug=%s LIMIT 1",
+            $r['ngo_slug']
+        ));
+        $out[] = [
+            'rank'            => $i + 1,
+            'ngo_slug'        => $r['ngo_slug'],
+            'ngo_name'        => $circle ? $circle->name : $r['ngo_slug'],
+            'validated_users' => (int) $r['validated_users'],
+            'credits'         => (int) $r['credits'],
+        ];
+    }
+    return $out;
+}
+
+/* Sprint daily cron: open new sprint for bottom-30% NGOs; close expired sprints */
+add_action('ic_sprint_daily_check', 'ic_sprint_daily_check_handler');
+function ic_sprint_daily_check_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // 1. Close expired active sprints
+    $expired = $wpdb->get_results(
+        "SELECT * FROM {$p}ic_sprints WHERE status='active' AND ends_at < NOW()",
+        ARRAY_A
+    );
+    foreach ($expired as $sprint) {
+        $wpdb->update("{$p}ic_sprints", ['status' => 'closed'], ['id' => (int) $sprint['id']]);
+
+        // Award top 3 visibility boost (7 days)
+        $top3 = ic_sprint_leaderboard_rows((int) $sprint['id']);
+        $boost_until = date('Y-m-d H:i:s', strtotime('+7 days'));
+        foreach (array_slice($top3, 0, 3) as $row) {
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$p}ic_circles SET visibility_boost_until=%s WHERE ref_slug=%s",
+                $boost_until, $row['ngo_slug']
+            ));
+        }
+
+        // Impi sprint summary in each cohort circle
+        $cohort = json_decode($sprint['cohort_json'] ?? '[]', true) ?: [];
+        foreach ($cohort as $ngo_slug) {
+            $circle = $wpdb->get_row($wpdb->prepare(
+                "SELECT id FROM {$p}ic_circles WHERE ref_slug=%s AND is_active=1 LIMIT 1",
+                $ngo_slug
+            ));
+            if (!$circle) continue;
+            $credits = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) * 25 FROM {$p}ic_sprint_events
+                 WHERE sprint_id=%d AND ngo_slug=%s AND is_validated=1 AND is_pending_review=0",
+                (int) $sprint['id'], $ngo_slug
+            ));
+            $rank = 0;
+            foreach ($top3 as $i => $r) {
+                if ($r['ngo_slug'] === $ngo_slug) { $rank = $i + 1; break; }
+            }
+            $rank_str = $rank ? "{$rank}." : '?';
+            ic_impi_post(
+                (int) $circle->id,
+                "📊 Sprint lezárult! Körünk: {$credits} kredit, {$rank_str} helyezés. Köszönjük a részvételt! 🏁",
+                5
+            );
+        }
+    }
+
+    // 2. Start a new sprint if none active and no sprint closed in last 3 days
+    $active = ic_get_current_sprint();
+    if ($active) return;
+
+    $recent = $wpdb->get_var(
+        "SELECT COUNT(*) FROM {$p}ic_sprints WHERE closed_at > DATE_SUB(NOW(), INTERVAL 3 DAY)"
+    );
+    if ($recent) return;
+
+    // Build cohort: bottom 30% of NGO circles by vote_count in last 30 days
+    $total_circles = (int) $wpdb->get_var(
+        "SELECT COUNT(*) FROM {$p}ic_circles WHERE type='ngo' AND is_active=1"
+    );
+    if ($total_circles < 3) return;
+    $limit = max(1, (int) floor($total_circles * 0.30));
+
+    $bottom = $wpdb->get_col($wpdb->prepare(
+        "SELECT c.ref_slug
+         FROM {$p}ic_circles c
+         LEFT JOIN {$p}ic_posts p2 ON p2.circle_id = c.id AND p2.is_deleted=0
+             AND p2.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+         WHERE c.type='ngo' AND c.is_active=1
+         GROUP BY c.id
+         ORDER BY SUM(COALESCE(p2.vote_count,0)) ASC
+         LIMIT %d",
+        $limit
+    ));
+
+    if (empty($bottom)) return;
+
+    $starts = current_time('mysql');
+    $ends   = date('Y-m-d H:i:s', strtotime('+14 days'));
+    $wpdb->insert("{$p}ic_sprints", [
+        'status'      => 'active',
+        'starts_at'   => $starts,
+        'ends_at'     => $ends,
+        'cohort_json' => wp_json_encode($bottom),
+        'created_at'  => $starts,
+    ]);
+    $sprint_id = (int) $wpdb->insert_id;
+
+    // Notify cohort circles
+    foreach ($bottom as $ngo_slug) {
+        $circle = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$p}ic_circles WHERE ref_slug=%s AND is_active=1 LIMIT 1",
+            $ngo_slug
+        ));
+        if (!$circle) continue;
+        ic_impi_post(
+            (int) $circle->id,
+            "🚀 NGO Sprint-időszak kezdődött! 14 napig minden új tag, aki aktiválódik, 25 sprintkreditet hoz a körnek. Hajrá!",
+            5
+        );
+    }
+}
+
+/* =========================================================================
+   §12 — Settlement verseny (Szomszéd körök)
+   Monthly competition between neighboring ZIP circles.
+   Winner gets +10% community_bonus (1.10×) for next month.
+   ========================================================================= */
+
+add_action('ic_settlement_monthly', 'ic_settlement_monthly_handler');
+function ic_settlement_monthly_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // Reset all community_bonus to 1.0 first
+    $wpdb->query("UPDATE {$p}ic_circles SET community_bonus=1.0 WHERE community_bonus != 1.0");
+
+    $circles = $wpdb->get_results(
+        "SELECT id, ref_slug, name FROM {$p}ic_circles WHERE type='settlement' AND is_active=1",
+        ARRAY_A
+    );
+
+    // Group by first-2 chars of ref_slug (represents city/region)
+    $by_region = [];
+    foreach ($circles as $c) {
+        $region = mb_substr($c['ref_slug'], 0, 2);
+        $by_region[$region][] = $c;
+    }
+
+    $prev_month_start = date('Y-m-01', strtotime('-1 month'));
+    $prev_month_end   = date('Y-m-t', strtotime('-1 month'));
+
+    foreach ($by_region as $region => $group) {
+        if (count($group) < 2) continue;
+
+        // Score each circle: posts_count + new_members + votes_generated in last month
+        $scores = [];
+        foreach ($group as $c) {
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT COALESCE(SUM(posts_count),0) AS posts,
+                        COALESCE(SUM(new_members),0) AS members,
+                        COALESCE(SUM(votes_generated),0) AS votes
+                 FROM {$p}ic_circle_stats
+                 WHERE circle_id=%d AND stat_date BETWEEN %s AND %s",
+                (int) $c['id'], $prev_month_start, $prev_month_end
+            ));
+            $scores[$c['id']] = [
+                'circle'    => $c,
+                'score'     => (int) $row->posts + (int) $row->members + (int) $row->votes,
+            ];
+        }
+
+        arsort($scores);
+        $entries = array_values($scores);
+        $winner  = $entries[0];
+        $loser   = $entries[1];
+
+        // Award winner: community_bonus = 1.10 for the circle's members
+        $wpdb->update(
+            "{$p}ic_circles",
+            ['community_bonus' => 1.10],
+            ['id' => (int) $winner['circle']['id']]
+        );
+
+        // Hatás Emlékmű: pinned Impi post in winner circle
+        $w_score = $winner['score'];
+        ic_impi_post(
+            (int) $winner['circle']['id'],
+            "🏆 Hatás Emlékmű — " . date('Y F', strtotime('-1 month')) . ": ez a körünk volt a {$region} körzet legaktívabb köre! " .
+            "{$w_score} aktivitásponttal nyertük a havi versenyt. Extra +10% pontbónusz jár minden tagnak a következő hónapra! 🎉",
+            4
+        );
+
+        // Encouragement for losing circle
+        ic_impi_post(
+            (int) $loser['circle']['id'],
+            "💪 Ezen hónapban a szomszédos kör szaladt be előttünk. Ők dolgoztak keményen — de a következő hónapban mi leszünk erősebbek! Fel a fejjel! 🌱",
+            5
+        );
+    }
+}
+
+/* =========================================================================
+   §15 — Moderáció, Circle Health, Trust, Appeal
+   ========================================================================= */
+
+/** Circle Health Score (0–100) from recent ic_circle_stats + reports + reactions */
+function ic_circle_health_score(int $circle_id): int {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // Positive reaction ratio: (reactions last 7 days) / (posts last 7 days + 1)
+    $reactions = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_post_reactions r
+         JOIN {$p}ic_posts p2 ON p2.id=r.post_id
+         WHERE p2.circle_id=%d AND r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+        $circle_id
+    ));
+    $posts7 = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND is_deleted=0
+         AND author_type='user' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+        $circle_id
+    ));
+    $reaction_ratio = min(1.0, $reactions / max(1, $posts7));
+
+    // Report rate: reports per 1000 posts
+    $total_posts = max(1, (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND is_deleted=0 AND author_type='user'",
+        $circle_id
+    )));
+    $total_reports = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_reports WHERE circle_id=%d",
+        $circle_id
+    ));
+    $report_rate = $total_reports / $total_posts * 1000; // reports per 1000 posts
+    $low_report_score = max(0.0, 1.0 - ($report_rate / 10));
+
+    // Retention: 7-day return rate (new members this month who posted again)
+    $month_start = date('Y-m-01');
+    $new_members = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_memberships
+         WHERE circle_id=%d AND DATE(joined_at) >= %s AND is_active=1",
+        $circle_id, $month_start
+    ));
+    $returning = 0;
+    if ($new_members > 0) {
+        $returning = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT m.pid_hash)
+             FROM {$p}ic_memberships m
+             JOIN {$p}ic_posts p3 ON p3.author_hash=m.pid_hash AND p3.circle_id=m.circle_id
+                 AND p3.author_type='user' AND p3.is_deleted=0
+                 AND p3.created_at >= DATE_ADD(m.joined_at, INTERVAL 7 DAY)
+             WHERE m.circle_id=%d AND DATE(m.joined_at) >= %s",
+            $circle_id, $month_start
+        ));
+    }
+    $retention = ($new_members > 0) ? ($returning / $new_members) : 0.5;
+
+    // Decision post activity
+    $decision_total = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND post_type='decision' AND is_deleted=0",
+        $circle_id
+    ));
+    $decision_closed = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts
+         WHERE circle_id=%d AND post_type='decision' AND is_deleted=0 AND vote_count >= 3",
+        $circle_id
+    ));
+    $decision_score = ($decision_total > 0) ? ($decision_closed / $decision_total) : 0.5;
+
+    // Weighted score: 35% reaction, 30% low-report, 20% retention, 15% decision
+    $score = (int) round(
+        $reaction_ratio * 35 +
+        $low_report_score * 30 +
+        $retention * 20 +
+        $decision_score * 15
+    );
+
+    return max(0, min(100, $score));
+}
+
+function ic_rest_circle_health(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p   = $wpdb->prefix;
+    $cid = (int) $req->get_param('id');
+    $circle = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, community_bonus FROM {$p}ic_circles WHERE id=%d AND is_active=1", $cid
+    ));
+    if (!$circle) {
+        return ic_json_error('Kör nem található.', 404);
+    }
+    return ic_json_ok([
+        'circle_id'       => $cid,
+        'health_score'    => ic_circle_health_score($cid),
+        'community_bonus' => (float) $circle->community_bonus,
+    ]);
+}
+
+/** Record a moderation audit log entry */
+function ic_log_moderation_action(
+    int $circle_id,
+    ?int $post_id,
+    ?string $target_hash,
+    string $actor_hash,
+    string $actor_type,
+    string $action,
+    string $reason = ''
+): void {
+    global $wpdb;
+    $wpdb->insert("{$wpdb->prefix}ic_moderation_actions", [
+        'circle_id'   => $circle_id,
+        'post_id'     => $post_id,
+        'target_hash' => $target_hash,
+        'actor_hash'  => $actor_hash,
+        'actor_type'  => $actor_type,
+        'action'      => $action,
+        'reason'      => $reason,
+        'created_at'  => current_time('mysql'),
+    ]);
+}
+
+/** POST /moderation/action — admin: timeout, remove post, dismiss report */
+function ic_rest_moderation_action(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle_id   = (int) $req->get_param('circle_id');
+    $post_id     = (int) ($req->get_param('post_id') ?? 0);
+    $target_hash = sanitize_key($req->get_param('target_hash') ?? '');
+    $action      = sanitize_key($req->get_param('action') ?? '');
+    $reason      = sanitize_textarea_field($req->get_param('reason') ?? '');
+    $actor_hash  = 'system'; // admin actions use system identifier
+
+    $allowed_actions = ['remove_post', 'timeout_member', 'dismiss_report', 'approve_appeal', 'uphold_appeal'];
+    if (!in_array($action, $allowed_actions, true)) {
+        return ic_json_error('Érvénytelen moderációs akció.', 422);
+    }
+
+    switch ($action) {
+        case 'remove_post':
+            if (!$post_id) return ic_json_error('post_id szükséges.', 422);
+            $wpdb->update("{$p}ic_posts", ['is_deleted' => 1], ['id' => $post_id]);
+            // Pending reports → actioned
+            $wpdb->update("{$p}ic_reports", ['status' => 'actioned', 'reviewed_at' => current_time('mysql')], ['post_id' => $post_id]);
+            ic_log_moderation_action($circle_id, $post_id, $target_hash, $actor_hash, 'admin', 'remove_post', $reason);
+            break;
+
+        case 'timeout_member':
+            if (!$target_hash) return ic_json_error('target_hash szükséges.', 422);
+            $until = date('Y-m-d H:i:s', strtotime('+7 days'));
+            $wpdb->query($wpdb->prepare(
+                "INSERT INTO {$p}ic_member_trust (circle_id, pid_hash, timeout_until)
+                 VALUES (%d, %s, %s)
+                 ON DUPLICATE KEY UPDATE timeout_until=%s",
+                $circle_id, $target_hash, $until, $until
+            ));
+            ic_log_moderation_action($circle_id, $post_id ?: null, $target_hash, $actor_hash, 'admin', 'timeout', $reason);
+            break;
+
+        case 'dismiss_report':
+            if ($post_id) {
+                $wpdb->update("{$p}ic_reports", [
+                    'status'      => 'dismissed',
+                    'reviewed_at' => current_time('mysql'),
+                ], ['post_id' => $post_id, 'status' => 'pending']);
+            }
+            ic_log_moderation_action($circle_id, $post_id ?: null, $target_hash, $actor_hash, 'admin', 'dismiss_report', $reason);
+            break;
+
+        case 'approve_appeal':
+        case 'uphold_appeal':
+            $appeal_id = (int) $req->get_param('appeal_id');
+            if (!$appeal_id) return ic_json_error('appeal_id szükséges.', 422);
+            $new_status = ($action === 'approve_appeal') ? 'approved' : 'upheld';
+            $wpdb->update("{$p}ic_appeals", [
+                'status'      => $new_status,
+                'reviewed_by' => $actor_hash,
+                'reviewed_at' => current_time('mysql'),
+            ], ['id' => $appeal_id]);
+            ic_log_moderation_action($circle_id, null, null, $actor_hash, 'admin', $action, $reason);
+            break;
+    }
+
+    return ic_json_ok(['done' => true, 'action' => $action]);
+}
+
+/** GET /moderation/mine — user retrieves their own report history */
+function ic_rest_moderation_mine(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT r.id, r.circle_id, r.post_id, r.reason, r.status, r.created_at
+         FROM {$p}ic_reports r
+         WHERE r.reporter_hash=%s
+         ORDER BY r.created_at DESC LIMIT 20",
+        $pid_hash
+    ), ARRAY_A);
+
+    return ic_json_ok(['reports' => $rows]);
+}
+
+/** POST /circles/{circle_id}/posts/{post_id}/appeal */
+function ic_rest_post_appeal(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+
+    global $wpdb;
+    $p        = $wpdb->prefix;
+    $cid      = (int) $req->get_param('circle_id');
+    $post_id  = (int) $req->get_param('post_id');
+    $reason   = sanitize_textarea_field($req->get_param('appeal_reason') ?? '');
+
+    if ($reason === '') {
+        return ic_json_error('Indokok megadása kötelező.', 422);
+    }
+
+    // Find the most recent moderation action for this post
+    $mod_action = $wpdb->get_row($wpdb->prepare(
+        "SELECT id FROM {$p}ic_moderation_actions
+         WHERE circle_id=%d AND post_id=%d AND action='remove_post'
+         ORDER BY created_at DESC LIMIT 1",
+        $cid, $post_id
+    ));
+    if (!$mod_action) {
+        return ic_json_error('Nem található moderációs döntés ehhez a poszthoz.', 404);
+    }
+
+    // Max 1 appeal per modaction per user
+    $existing = $wpdb->get_var($wpdb->prepare(
+        "SELECT id FROM {$p}ic_appeals WHERE modaction_id=%d AND appellant_hash=%s",
+        (int) $mod_action->id, $pid_hash
+    ));
+    if ($existing) {
+        return ic_json_error('Már benyújtottál felülvizsgálati kérelmet ehhez a döntéshez.', 422);
+    }
+
+    $wpdb->insert("{$p}ic_appeals", [
+        'modaction_id'   => (int) $mod_action->id,
+        'appellant_hash' => $pid_hash,
+        'appeal_reason'  => $reason,
+        'status'         => 'pending',
+        'created_at'     => current_time('mysql'),
+    ]);
+
+    return ic_json_ok(['appeal_submitted' => true]);
+}
+
+/* --- §15 Trusted Reporter promotion (weekly cron) ----------------------- */
+
+add_action('ic_trusted_reporter_check', 'ic_promote_trusted_reporters');
+function ic_promote_trusted_reporters(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circles = $wpdb->get_col("SELECT id FROM {$p}ic_circles WHERE is_active=1");
+    foreach ($circles as $cid) {
+        // Max 1 promotion per week per circle
+        $promo_key = 'ic_tr_promo:' . $cid;
+        if (get_transient($promo_key)) continue;
+
+        // Candidate: trust_level=2, is_trusted_reporter=0, positive behavioral pattern
+        // (high report accuracy: their reports that got actioned / total reports)
+        $candidates = $wpdb->get_results($wpdb->prepare(
+            "SELECT t.pid_hash
+             FROM {$p}ic_member_trust t
+             WHERE t.circle_id=%d AND t.trust_level>=2 AND t.is_trusted_reporter=0
+               AND t.strikes=0
+             LIMIT 5",
+            $cid
+        ));
+
+        foreach ($candidates as $c) {
+            $total_reports = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$p}ic_reports WHERE reporter_hash=%s AND circle_id=%d",
+                $c->pid_hash, $cid
+            ));
+            if ($total_reports < 3) continue;
+
+            $actioned = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$p}ic_reports WHERE reporter_hash=%s AND circle_id=%d AND status='actioned'",
+                $c->pid_hash, $cid
+            ));
+            if ($actioned / $total_reports < 0.5) continue;
+
+            // Promote to trusted reporter
+            $wpdb->update(
+                "{$p}ic_member_trust",
+                ['is_trusted_reporter' => 1],
+                ['circle_id' => $cid, 'pid_hash' => $c->pid_hash]
+            );
+            ic_queue_badge($c->pid_hash, 'trusted_guardian', (int) $cid);
+            ic_impi_post(
+                (int) $cid,
+                "🛡️ Köszönet egy körtagnak, aki segít megőrizni a tér minőségét! Közösségi Őr státuszt nyert. Gratulálunk! 🦡",
+                3
+            );
+            set_transient($promo_key, 1, 7 * DAY_IN_SECONDS);
+            break; // max 1 promotion per circle per week
+        }
+    }
+}
+
+/* --- §15 Auto-timeout on 3 strikes (hooked to report actioned) ---------- */
+
+function ic_maybe_auto_timeout(int $circle_id, string $pid_hash): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $trust = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, strikes FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s",
+        $circle_id, $pid_hash
+    ));
+    if (!$trust) return;
+
+    $new_strikes = (int) $trust->strikes + 1;
+    if ($new_strikes >= 3) {
+        $until = date('Y-m-d H:i:s', strtotime('+7 days'));
+        $wpdb->update(
+            "{$p}ic_member_trust",
+            ['strikes' => $new_strikes, 'timeout_until' => $until],
+            ['id' => (int) $trust->id]
+        );
+        ic_log_moderation_action($circle_id, null, $pid_hash, 'system', 'system', 'auto_timeout', '3 strikes reached');
+    } else {
+        $wpdb->update(
+            "{$p}ic_member_trust",
+            ['strikes' => $new_strikes],
+            ['id' => (int) $trust->id]
         );
     }
 }

@@ -894,6 +894,18 @@ a:hover { text-decoration: underline; }
     padding: 2px 0;
     border-bottom: 1px solid var(--border);
 }
+/* §10 Sprint panel */
+.ic-sprint-panel { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin: 16px 0; }
+.ic-sprint-title { font-weight: 700; font-size: 16px; color: #15803d; margin-bottom: 6px; }
+.ic-sprint-meta  { font-size: 13px; color: #166534; }
+.ic-sprint-lb    { margin-top: 12px; }
+.ic-sprint-lb-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+/* §12 Settlement / health */
+.ic-settlement-panel { background: #fefce8; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin: 16px 0; }
+.ic-settlement-title { font-weight: 700; font-size: 16px; color: #92400e; margin-bottom: 8px; }
+.ic-health-label { font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 4px; }
+.ic-health-bar-wrap { background: #e5e7eb; border-radius: 999px; height: 10px; overflow: hidden; }
+.ic-health-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -1305,6 +1317,20 @@ a:hover { text-decoration: underline; }
         $content.appendChild(auctionContainer);
         loadAuctions(c.id);
 
+        // §10 Sprint panel (NGO circles only)
+        if (c.type === 'ngo') {
+            const sprintContainer = html('div', {id: 'ic-sprint-panel'});
+            $content.appendChild(sprintContainer);
+            loadSprintPanel(c.ref_slug);
+        }
+
+        // §12 Settlement rivalry panel
+        if (c.type === 'settlement') {
+            const rivalContainer = html('div', {id: 'ic-settlement-panel'});
+            $content.appendChild(rivalContainer);
+            loadSettlementPanel(c.id);
+        }
+
         // Leaderboard panel
         const lbContainer = html('div', {id: 'ic-leaderboard-panel'});
         $content.appendChild(lbContainer);
@@ -1337,6 +1363,80 @@ a:hover { text-decoration: underline; }
         } catch (_) {
             // Leaderboard is optional — fail silently
         }
+    }
+
+    async function loadSprintPanel(ngoSlug) {
+        const panel = document.getElementById('ic-sprint-panel');
+        if (!panel) return;
+        try {
+            const data = await api(`/sprints/current?ngo_slug=${encodeURIComponent(ngoSlug)}`);
+            panel.innerHTML = '';
+            if (!data.active) return;
+
+            const box = html('div', {className: 'ic-sprint-panel'});
+            box.appendChild(html('div', {className: 'ic-sprint-title'}, '🚀 NGO Sprint'));
+            const daysLeft = data.days_left ?? 0;
+            box.appendChild(html('div', {className: 'ic-sprint-meta'},
+                `${daysLeft} nap maradt · Körünk: ${data.ngo_credits ?? 0} kredit (${data.ngo_rank ? data.ngo_rank + '. helyezés' : 'nincs még élet'})`
+            ));
+
+            // Leaderboard button
+            const lbBtn = html('button', {
+                className: 'ic-btn ic-btn-outline',
+                style: 'margin-top:8px;font-size:13px',
+                onClick: () => loadSprintLeaderboard(box),
+            }, '📊 Rangsor megtekintése');
+            box.appendChild(lbBtn);
+            panel.appendChild(box);
+        } catch (_) { /* optional */ }
+    }
+
+    async function loadSprintLeaderboard(container) {
+        try {
+            const data = await api('/sprints/current/leaderboard');
+            if (!data.active || !data.leaderboard?.length) return;
+            const existing = container.querySelector('.ic-sprint-lb');
+            if (existing) { existing.remove(); return; } // toggle off
+            const lb = html('div', {className: 'ic-sprint-lb'});
+            lb.appendChild(html('div', {className: 'ic-sprint-lb-title'}, '🏅 Sprint top 10'));
+            const medals = ['🥇','🥈','🥉'];
+            data.leaderboard.forEach((row, i) => {
+                const r = html('div', {className: 'ic-lb-row'});
+                r.appendChild(html('span', {className: 'ic-lb-rank'}, medals[i] || String(i + 1)));
+                r.appendChild(html('span', {className: 'ic-lb-alias'}, row.ngo_name));
+                r.appendChild(html('span', {className: 'ic-lb-score'}, `${row.credits} kredit`));
+                lb.appendChild(r);
+            });
+            container.appendChild(lb);
+        } catch (_) { /* optional */ }
+    }
+
+    async function loadSettlementPanel(circleId) {
+        const panel = document.getElementById('ic-settlement-panel');
+        if (!panel) return;
+        try {
+            const data = await api(`/circles/${circleId}/health`);
+            if (data.error) return;
+            const box = html('div', {className: 'ic-settlement-panel'});
+            box.appendChild(html('div', {className: 'ic-settlement-title'}, '⚔️ Körünk havi hangulatjelző'));
+            const bar = html('div', {className: 'ic-health-bar-wrap'});
+            const fill = html('div', {className: 'ic-health-bar-fill'});
+            const score = Math.max(0, Math.min(100, data.health_score ?? 0));
+            fill.style.width = `${score}%`;
+            fill.style.background = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
+            bar.appendChild(fill);
+            box.appendChild(html('div', {className: 'ic-health-label'},
+                `Körégészség: ${score}/100`
+            ));
+            box.appendChild(bar);
+            if (data.community_bonus && data.community_bonus > 1.0) {
+                box.appendChild(html('div', {
+                    className: 'ic-card-badge settlement',
+                    style: 'margin-top:8px',
+                }, `🏆 +${Math.round((data.community_bonus - 1) * 100)}% pontbónusz aktív!`));
+            }
+            panel.appendChild(box);
+        } catch (_) { /* optional */ }
     }
 
     function renderPost(p) {
