@@ -507,6 +507,12 @@ function ic_maybe_migrate_db(): void {
         $wpdb->query("ALTER TABLE {$p}ic_tombolas ADD COLUMN ritual_posted TINYINT(1) NOT NULL DEFAULT 0 AFTER activity_gate_pts");
     }
 
+    /* § Sprint 14 — Sprint fraud_flag for retention compliance (§22.3) */
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_sprint_events LIKE 'fraud_flag'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_sprint_events ADD COLUMN fraud_flag TINYINT(1) NOT NULL DEFAULT 0 AFTER is_pending_review");
+    }
+
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
     if ($has_missions === 0) {
@@ -922,6 +928,17 @@ function ic_register_rest_routes(): void {
     register_rest_route($ns, '/ngo/appeals/(?P<appeal_id>\d+)', [
         'methods'             => 'POST',
         'callback'            => 'ic_rest_ngo_appeal_action',
+        'permission_callback' => '__return_true',
+    ]);
+    // § Sprint 14 — NGO moderation panel
+    register_rest_route($ns, '/ngo/moderation/reports', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_ngo_moderation_reports',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/moderation/action', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_moderation_action',
         'permission_callback' => '__return_true',
     ]);
 }
@@ -1364,13 +1381,21 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     }
 
     // § Toxicity friction: soft block with slow_mode flag
-    if (ic_check_toxicity($body)) {
+    // § Sprint 14 — intention bypass: if user explicitly provides their intent, allow through
+    $intention = sanitize_text_field($req->get_param('intention') ?? '');
+    if (ic_check_toxicity($body) && $intention === '') {
         do_action('ic_toxicity_friction', $cid, $pid_hash, $body);
         return new WP_REST_Response([
             'success'   => false,
             'slow_mode' => true,
             'message'   => 'Az üzenet hangvétele feszültséget kelthet. Kérjük fogalmazd át, vagy küldd be mégis a szándékod megjelölésével (intention mező).',
         ], 422);
+    }
+    // If intention provided, store it in meta_json
+    if ($intention !== '') {
+        $meta_arr = ($meta_raw && is_array($meta_raw)) ? $meta_raw : [];
+        $meta_arr['intention'] = $intention;
+        $meta = wp_json_encode($meta_arr);
     }
 
     $wpdb->insert("{$p}ic_posts", [
@@ -5887,5 +5912,129 @@ function ic_impi_post_private(int $circle_id, string $recipient_hash, string $bo
         'meta_json'   => wp_json_encode(['private' => true, 'recipient_hash' => $recipient_hash]),
         'created_at'  => current_time('mysql'),
     ]);
+}
+
+// ============================================================
+// § Sprint 14 — NGO moderation panel
+// ============================================================
+
+/** GET /ngo/moderation/reports — NGO admin lists pending reports in their circle */
+function ic_rest_ngo_moderation_reports(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $ngo = $wpdb->get_row($wpdb->prepare(
+        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
+    ), ARRAY_A);
+    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
+    $circle_id = (int) $ngo['circle_id'];
+
+    $status_filter = sanitize_key($req->get_param('status') ?? 'pending');
+    $allowed_statuses = ['pending', 'actioned', 'dismissed'];
+    if (!in_array($status_filter, $allowed_statuses, true)) {
+        $status_filter = 'pending';
+    }
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT r.id, r.post_id, r.reporter_hash, r.reason, r.status,
+                r.created_at, r.reviewed_at,
+                p.body AS post_body, p.author_hash AS post_author,
+                p.post_type
+         FROM {$p}ic_reports r
+         LEFT JOIN {$p}ic_posts p ON p.id = r.post_id
+         WHERE r.circle_id = %d AND r.status = %s
+         ORDER BY r.created_at ASC
+         LIMIT 50",
+        $circle_id, $status_filter
+    ), ARRAY_A);
+
+    return ic_json_ok(['circle_id' => $circle_id, 'status' => $status_filter, 'reports' => $rows ?: []]);
+}
+
+/** POST /ngo/moderation/action — NGO admin removes post / warns member / dismisses report */
+function ic_rest_ngo_moderation_action(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $ngo = $wpdb->get_row($wpdb->prepare(
+        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
+    ), ARRAY_A);
+    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
+    $circle_id = (int) $ngo['circle_id'];
+
+    $action      = sanitize_key($req->get_param('action') ?? '');
+    $report_id   = (int) ($req->get_param('report_id') ?? 0);
+    $post_id     = (int) ($req->get_param('post_id') ?? 0);
+    $target_hash = sanitize_key($req->get_param('target_hash') ?? '');
+    $reason      = sanitize_textarea_field($req->get_param('reason') ?? '');
+
+    $allowed = ['remove_post', 'warn_member', 'dismiss_report'];
+    if (!in_array($action, $allowed, true)) {
+        return ic_json_error('Érvénytelen akció. Érvényes: remove_post, warn_member, dismiss_report.', 422);
+    }
+
+    switch ($action) {
+        case 'remove_post':
+            if (!$post_id) return ic_json_error('post_id szükséges.', 422);
+            // Verify post belongs to this NGO's circle
+            $post = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, author_hash FROM {$p}ic_posts WHERE id=%d AND circle_id=%d AND is_deleted=0",
+                $post_id, $circle_id
+            ), ARRAY_A);
+            if (!$post) return ic_json_error('Poszt nem található ebben a körben.', 404);
+            $wpdb->update("{$p}ic_posts", ['is_deleted' => 1], ['id' => $post_id]);
+            $wpdb->update("{$p}ic_reports", [
+                'status'      => 'actioned',
+                'reviewed_at' => current_time('mysql'),
+            ], ['post_id' => $post_id, 'status' => 'pending']);
+            ic_log_moderation_action($circle_id, $post_id, $post['author_hash'], $pid_hash, 'ngo_admin', 'remove_post', $reason);
+            // Impi notify the author
+            if ($post['author_hash']) {
+                ic_impi_notify_moderation($circle_id, $post['author_hash'], 'remove_post');
+            }
+            break;
+
+        case 'warn_member':
+            if (!$target_hash) return ic_json_error('target_hash szükséges.', 422);
+            // Add a strike (no timeout — NGO admin can warn, not timeout)
+            $wpdb->query($wpdb->prepare(
+                "INSERT INTO {$p}ic_member_trust (circle_id, pid_hash, strikes)
+                 VALUES (%d, %s, 1)
+                 ON DUPLICATE KEY UPDATE strikes = LEAST(strikes + 1, 10)",
+                $circle_id, $target_hash
+            ));
+            ic_log_moderation_action($circle_id, null, $target_hash, $pid_hash, 'ngo_admin', 'warn', $reason);
+            // Impi private nudge to member
+            ic_impi_post_private($circle_id, $target_hash,
+                "⚠️ A körünk adminisztrátora emlékeztetett a közösségi szabályokra. " .
+                "Kérjük, ügyelj a körünk kultúrájának megőrzésére."
+            );
+            // Mark report actioned if report_id given
+            if ($report_id) {
+                $wpdb->update("{$p}ic_reports", [
+                    'status'      => 'actioned',
+                    'reviewed_at' => current_time('mysql'),
+                ], ['id' => $report_id, 'circle_id' => $circle_id]);
+            }
+            break;
+
+        case 'dismiss_report':
+            if (!$report_id) return ic_json_error('report_id szükséges.', 422);
+            $updated = $wpdb->update("{$p}ic_reports", [
+                'status'      => 'dismissed',
+                'reviewed_at' => current_time('mysql'),
+            ], ['id' => $report_id, 'circle_id' => $circle_id, 'status' => 'pending']);
+            if (!$updated) return ic_json_error('Bejelentés nem található vagy már el lett bírálva.', 404);
+            ic_log_moderation_action($circle_id, $post_id ?: null, $target_hash ?: null, $pid_hash, 'ngo_admin', 'dismiss_report', $reason);
+            break;
+    }
+
+    return ic_json_ok(['done' => true, 'action' => $action]);
 }
 
