@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.3.0');
+define('IC_DB_VERSION', '1.3.1');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -204,10 +204,11 @@ function ic_maybe_migrate_db(): void {
         post_type     ENUM('text','image','event','link','receipt','decision') DEFAULT 'text',
         body          TEXT NOT NULL,
         meta_json     JSON,
-        vote_count    INT UNSIGNED DEFAULT 0,
-        helpful_votes INT UNSIGNED DEFAULT 0,
-        impi_boost    TINYINT(1) DEFAULT 0,
-        is_pinned     TINYINT(1) DEFAULT 0,
+        vote_count         INT UNSIGNED DEFAULT 0,
+        helpful_votes      INT UNSIGNED DEFAULT 0,
+        impi_boost         TINYINT(1) DEFAULT 0,
+        impi_boost_claimed TINYINT(1) DEFAULT 0,
+        is_pinned          TINYINT(1) DEFAULT 0,
         is_deleted    TINYINT(1) DEFAULT 0,
         created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
         KEY idx_circle_created (circle_id, created_at),
@@ -802,6 +803,28 @@ function ic_rest_posts_list(WP_REST_Request $req): WP_REST_Response {
         $posts[] = ic_format_post($r, $cid, $reactions_by_post[(int)$r->id] ?? [], $my_reactions[(int)$r->id] ?? null);
     }
 
+    // Lazy Impi Boost claim: if the current user has an unclaimed boost, award +20 pts now
+    if ($pid_hash) {
+        $unclaimed = $wpdb->get_row($wpdb->prepare(
+            "SELECT id FROM {$p}ic_posts
+             WHERE author_hash=%s AND impi_boost=1 AND impi_boost_claimed=0
+             LIMIT 1",
+            $pid_hash
+        ));
+        if ($unclaimed) {
+            ic_award_points(
+                $pid_hash, 20, 'impi_boost',
+                "post:{$unclaimed->id}",
+                "impi_boost:{$unclaimed->id}"
+            );
+            $wpdb->update(
+                "{$p}ic_posts",
+                ['impi_boost_claimed' => 1],
+                ['id' => (int) $unclaimed->id]
+            );
+        }
+    }
+
     return ic_json_ok([
         'posts'    => $posts,
         'total'    => $total,
@@ -852,6 +875,31 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     $meta_raw = $req->get_param('meta');
     if ($meta_raw && is_array($meta_raw)) {
         $meta = wp_json_encode($meta_raw);
+    }
+
+    // Trust-level URL block: trust_level < 1 cannot post links
+    if ($post_type === 'link' || (bool) preg_match('/https?:\/\//i', $body)) {
+        $trust_level = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT trust_level FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s",
+            $cid, $pid_hash
+        ));
+        if ($trust_level < 1) {
+            do_action('ic_trust_link_blocked', $cid, $pid_hash);
+            return ic_json_error(
+                'Link poszoláshoz előbb tér alá három szavazatot és válaszolj a heti kérdésre 👋',
+                403
+            );
+        }
+    }
+
+    // Political keyword detection — fires an action, does NOT block the post
+    $political_kw = ['pártpolitika', 'fidesz', 'dlsz', 'mszp', 'lmp ', 'momentum', 'mi hazánk', 'demokratikus koalíció', 'választás kampány', 'pártlista'];
+    $body_lower   = mb_strtolower($body);
+    foreach ($political_kw as $kw) {
+        if (mb_strpos($body_lower, $kw) !== false) {
+            do_action('ic_political_keyword', $cid, $pid_hash, $body);
+            break;
+        }
     }
 
     $wpdb->insert("{$p}ic_posts", [
@@ -1096,6 +1144,16 @@ function ic_rest_post_report(WP_REST_Request $req): WP_REST_Response|WP_Error {
         'created_at'    => current_time('mysql'),
     ]);
 
+    // Report spike detection: 3+ reports in the last 24h → safety nudge
+    $recent_reports = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_reports
+         WHERE circle_id=%d AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)",
+        $cid
+    ));
+    if ($recent_reports >= 3) {
+        do_action('ic_report_spike', $cid, $recent_reports);
+    }
+
     return ic_json_ok(['reported' => true]);
 }
 
@@ -1327,20 +1385,48 @@ function ic_try_buddy_pair(int $circle_id, string $pid_hash): void {
 /* =========================================================================
    Section: Impi — 🦡 Community Bot
    Lightweight, rate-limited bot that posts contextual encouragement.
-   Max 3 Impi posts per circle per day.
+   Max 3 normal Impi posts per circle per day.
+   Priority 1 (safety nudges) bypass normal limit (own 2/day counter).
    ========================================================================= */
 
-function ic_impi_post(int $circle_id, string $body): void {
+/**
+ * Write policy gate — must be checked before every public Impi action.
+ * low  = auto publish (templates, welcome, weekly Q)
+ * medium = template-only OK (safety nudges)
+ * high = NGO approval required (not yet implemented → always false)
+ */
+function impi_can_write(string $risk_level, int $circle_id): bool {
+    if (defined('IMPI_READ_ONLY') && IMPI_READ_ONLY) return false;
+    if ($risk_level === 'high') return false; // approval pipeline not yet built
+    return true; // low + medium auto-OK
+}
+
+/**
+ * @param int    $circle_id
+ * @param string $body
+ * @param int    $priority  1=safety (own rate), 2=welcome, 3=milestone, 4=tombola,
+ *                          5=sprint/inaktív, 6=scheduled/morning (default, lowest prio)
+ */
+function ic_impi_post(int $circle_id, string $body, int $priority = 6): void {
     global $wpdb;
     $p = $wpdb->prefix;
 
-    // Rate-limit: max 3 Impi posts per circle per calendar day
-    $rate_key = 'ic_impi_rate:' . $circle_id . ':' . date('Y-m-d');
-    $count    = (int) get_transient($rate_key);
-    if ($count >= 3) {
-        return;
+    $risk = ($priority === 1) ? 'medium' : 'low';
+    if (!impi_can_write($risk, $circle_id)) return;
+
+    if ($priority === 1) {
+        // Safety nudges: own counter, max 2/day; never blocked by the normal limit
+        $safety_key = 'ic_impi_safety:' . $circle_id . ':' . date('Y-m-d');
+        $sc = (int) get_transient($safety_key);
+        if ($sc >= 2) return;
+        set_transient($safety_key, $sc + 1, DAY_IN_SECONDS);
+    } else {
+        // Normal rate-limit: max 3 per circle per calendar day
+        $rate_key = 'ic_impi_rate:' . $circle_id . ':' . date('Y-m-d');
+        $count    = (int) get_transient($rate_key);
+        if ($count >= 3) return;
+        set_transient($rate_key, $count + 1, DAY_IN_SECONDS);
     }
-    set_transient($rate_key, $count + 1, DAY_IN_SECONDS);
 
     $wpdb->insert("{$p}ic_posts", [
         'circle_id'   => $circle_id,
@@ -1384,6 +1470,284 @@ function ic_impi_streak_congrats(int $circle_id, string $pid_hash): void {
         $circle_id,
         "🔥 {$alias} 7 napos sorozatot ért el! Ez igazi elköteleződés. Ünnepelünk együtt!"
     );
+}
+
+/* --- 5b. Morning boost ---------------------------------------------------
+   Fires when the first user post of the day is made in a circle.
+   ic_first_post_of_day is already triggered in ic_rest_post_create().
+   -------------------------------------------------------------------------*/
+
+add_action('ic_first_post_of_day', 'ic_impi_morning_boost', 10, 2);
+function ic_impi_morning_boost(int $circle_id, string $pid_hash): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // Confirm this is truly the FIRST user post today in this circle
+    $today_posts = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_posts
+         WHERE circle_id=%d AND author_type='user' AND is_deleted=0
+           AND DATE(created_at) = CURDATE()",
+        $circle_id
+    ));
+    if ($today_posts !== 1) return;
+
+    $alias = IC_Alias::generate($pid_hash, $circle_id);
+    ic_impi_post(
+        $circle_id,
+        "A kör ébred! 🌅 {$alias} elindította a mai napot — ki csatlakozik?",
+        6
+    );
+}
+
+/* --- 5c. Safety nudge handlers (priority 1 — bypass normal rate limit) -- */
+
+add_action('ic_report_spike', 'ic_impi_safety_nudge_reports', 10, 2);
+function ic_impi_safety_nudge_reports(int $circle_id, int $count): void {
+    ic_impi_post(
+        $circle_id,
+        "🛡️ Emlékeztető: a Hatás Körök az ügyekről szólnak — nem egymásról. Mi legyen a következő közös lépés?",
+        1
+    );
+}
+
+add_action('ic_political_keyword', 'ic_impi_safety_nudge_politics', 10, 3);
+function ic_impi_safety_nudge_politics(int $circle_id, string $pid_hash, string $body): void {
+    // Deduplicate: max 1 political nudge per circle per 6h
+    $dedup_key = 'ic_impi_polnudge:' . $circle_id . ':' . date('Y-m-d-H');
+    if (get_transient($dedup_key)) return;
+    set_transient($dedup_key, 1, 6 * HOUR_IN_SECONDS);
+
+    ic_impi_post(
+        $circle_id,
+        "💬 Ez pártpolitika-szagú... hozzuk vissza a cselekvésre: mit tudunk ma tenni?",
+        1
+    );
+}
+
+add_action('ic_trust_link_blocked', 'ic_impi_trust_level_reminder', 10, 2);
+function ic_impi_trust_level_reminder(int $circle_id, string $pid_hash): void {
+    // The REST endpoint already returns an error to the user.
+    // Impi posts a gentle reminder to the CIRCLE max once/day.
+    $dedup_key = 'ic_impi_trustblock:' . $circle_id . ':' . date('Y-m-d');
+    if (get_transient($dedup_key)) return;
+    set_transient($dedup_key, 1, DAY_IN_SECONDS);
+
+    ic_impi_post(
+        $circle_id,
+        "🔗 Emlékeztető: linkeket csak megbízható körtagok posztolhatnak. Az bizalmat posztolással és szavazásokkal lehet felépíteni 👋",
+        2
+    );
+}
+
+add_action('ic_low_positive_reactions', 'ic_impi_gratitude_nudge', 10, 1);
+function ic_impi_gratitude_nudge(int $circle_id): void {
+    ic_impi_post(
+        $circle_id,
+        "🙏 Adj egy Köszönetet valakinek — ez a legjobb kultúraépítés!",
+        2
+    );
+}
+
+/* --- 5d. WP Cron setup -------------------------------------------------- */
+
+add_filter('cron_schedules', 'ic_cron_add_schedules');
+function ic_cron_add_schedules(array $schedules): array {
+    if (!isset($schedules['ic_weekly'])) {
+        $schedules['ic_weekly'] = [
+            'interval' => WEEK_IN_SECONDS,
+            'display'  => 'Hetente egyszer (ImpactCommunity)',
+        ];
+    }
+    return $schedules;
+}
+
+add_action('init', 'ic_schedule_crons');
+function ic_schedule_crons(): void {
+    // Weekly question — every Friday 10:00 (first run: next Friday)
+    if (!wp_next_scheduled('ic_weekly_question')) {
+        $next_friday = strtotime('next friday 10:00');
+        wp_schedule_event($next_friday, 'ic_weekly', 'ic_weekly_question');
+    }
+    // Impi Boost — every Monday 08:00
+    if (!wp_next_scheduled('ic_impi_boost_weekly')) {
+        $next_monday = strtotime('next monday 08:00');
+        wp_schedule_event($next_monday, 'ic_weekly', 'ic_impi_boost_weekly');
+    }
+    // Daily inactive member check — 09:00
+    if (!wp_next_scheduled('ic_impi_inactive_check')) {
+        wp_schedule_event(strtotime('tomorrow 09:00'), 'daily', 'ic_impi_inactive_check');
+    }
+    // Daily low-reactions check — 20:00
+    if (!wp_next_scheduled('ic_low_positive_check')) {
+        wp_schedule_event(strtotime('tomorrow 20:00'), 'daily', 'ic_low_positive_check');
+    }
+}
+
+/* --- 5e. Weekly Impi question ------------------------------------------- */
+
+add_action('ic_weekly_question', 'ic_impi_post_weekly_question');
+function ic_impi_post_weekly_question(): void {
+    global $wpdb;
+    $p      = $wpdb->prefix;
+    $pool   = ic_impi_question_pool();
+    $circles = $wpdb->get_col("SELECT id FROM {$p}ic_circles WHERE is_active=1");
+    foreach ($circles as $cid) {
+        $q = $pool[ array_rand($pool) ];
+        ic_impi_post((int) $cid, "🤔 Heti kérdés Impitől: {$q} — te mit gondolsz?", 6);
+    }
+}
+
+function ic_impi_question_pool(): array {
+    $stored = get_option('ic_impi_question_pool', []);
+    if (!empty($stored) && is_array($stored)) return $stored;
+    return [
+        "Melyik volt az idei legbüszkébb hatás-pillanatod? 🌱",
+        "Ha egy mondatban kellene leírni a küldetésünket, mi lenne az?",
+        "Melyik lokális problémát oldanátok meg, ha 1 hétig mindenki figyelt volna rátok?",
+        "Ki az a személy, aki a legjobban inspirált az ügyünkben? (nevet nem kell mondani)",
+        "Mi az a kis lépés, amit holnap meg tudnál tenni a változásért?",
+        "Mikor érezted utoljára, hogy igazán számít, amit csináltok?",
+        "Milyen erőforrást hiányoltok legjobban a munkátokhoz?",
+        "Ha 1 éved lenne és bármilyen erőforrás rendelkezésetekre állna — mit valósítanátok meg?",
+        "Melyik közösségi projekt töltött fel a legjobban ebben a hónapban?",
+        "Mit tanulhattunk az elmúlt hónap kihívásaiból? Melyikre vagytok a legbüszkébbek?",
+    ];
+}
+
+/* --- 5f. Impi Boost — heti legjobb poszt kiemelése --------------------- */
+
+add_action('ic_impi_boost_weekly', 'ic_impi_calculate_boost');
+function ic_impi_calculate_boost(): void {
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $circles = $wpdb->get_col("SELECT id FROM {$p}ic_circles WHERE is_active=1");
+
+    foreach ($circles as $cid) {
+        // Score = vote_count + 0.5 × reaction_count (last 7 days, user posts only)
+        $top = $wpdb->get_row($wpdb->prepare(
+            "SELECT p.id, p.author_hash,
+                    (p.vote_count + 0.5 * COALESCE(r.cnt, 0)) AS score
+             FROM {$p}ic_posts p
+             LEFT JOIN (
+                 SELECT post_id, COUNT(*) AS cnt
+                 FROM {$p}ic_post_reactions
+                 GROUP BY post_id
+             ) r ON r.post_id = p.id
+             WHERE p.circle_id = %d
+               AND p.author_type = 'user'
+               AND p.is_deleted = 0
+               AND p.impi_boost = 0
+               AND p.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+             ORDER BY score DESC
+             LIMIT 1",
+            $cid
+        ));
+
+        if (!$top || $top->score < 1) continue;
+
+        // Mark the post as boosted (unclaimed +20 pts — claimed lazily on next feed load)
+        $wpdb->update(
+            "{$p}ic_posts",
+            ['impi_boost' => 1, 'impi_boost_claimed' => 0],
+            ['id' => (int) $top->id]
+        );
+
+        // Impi recognition post
+        $alias = IC_Alias::generate($top->author_hash, (int) $cid);
+        ic_impi_post(
+            (int) $cid,
+            "🦡 A hét Impi-pick! {$alias} posztja mozgatott meg minket a legjobban. Jól ment — +20 pont jár érte!",
+            3
+        );
+
+        // Impi Jóindulat Radar — legsegítőkészebb komment (helpful_votes/total ratio)
+        $helpful = $wpdb->get_row($wpdb->prepare(
+            "SELECT p2.id, p2.author_hash, p2.helpful_votes, COUNT(r2.id) AS total_reactions
+             FROM {$p}ic_posts p2
+             LEFT JOIN {$p}ic_post_reactions r2 ON r2.post_id = p2.id
+             WHERE p2.circle_id = %d
+               AND p2.author_type = 'user'
+               AND p2.is_deleted = 0
+               AND p2.helpful_votes > 0
+               AND p2.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+             GROUP BY p2.id
+             ORDER BY (p2.helpful_votes / (COALESCE(COUNT(r2.id),0) + 1)) DESC
+             LIMIT 1",
+            $cid
+        ));
+        if ($helpful && $helpful->helpful_votes >= 2) {
+            $h_alias = IC_Alias::generate($helpful->author_hash, (int) $cid);
+            ic_impi_post(
+                (int) $cid,
+                "🤝 Impi Jóindulat Radar: {$h_alias} postja volt a leghasznosabb a héten. Köszönjük!",
+                3
+            );
+        }
+    }
+}
+
+/* --- 5g. Inactive member wake-up (daily cron) -------------------------- */
+
+add_action('ic_impi_inactive_check', 'ic_impi_check_inactive');
+function ic_impi_check_inactive(): void {
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $circles = $wpdb->get_col("SELECT id FROM {$p}ic_circles WHERE is_active=1");
+
+    foreach ($circles as $cid) {
+        // Max 1 wake-up per circle per 7 days
+        $cooldown = 'ic_impi_wakeup:' . $cid;
+        if (get_transient($cooldown)) continue;
+
+        $inactive = $wpdb->get_row($wpdb->prepare(
+            "SELECT m.pid_hash, m.joined_at
+             FROM {$p}ic_memberships m
+             LEFT JOIN {$p}ic_posts lp
+                 ON lp.author_hash = m.pid_hash
+                AND lp.circle_id = m.circle_id
+                AND lp.author_type = 'user'
+                AND lp.is_deleted = 0
+             WHERE m.circle_id = %d AND m.is_active = 1
+             GROUP BY m.pid_hash, m.joined_at
+             HAVING (MAX(lp.created_at) < DATE_SUB(NOW(), INTERVAL 14 DAY))
+                 OR (MAX(lp.created_at) IS NULL AND DATEDIFF(NOW(), m.joined_at) > 14)
+             LIMIT 1",
+            $cid
+        ));
+
+        if (!$inactive) continue;
+
+        $alias = IC_Alias::generate($inactive->pid_hash, (int) $cid);
+        ic_impi_post(
+            (int) $cid,
+            "Hiányzol, {$alias} 🦡 Már 14 napja csend van tőled — minek örültél mostanában?",
+            5
+        );
+        set_transient($cooldown, 1, 7 * DAY_IN_SECONDS);
+    }
+}
+
+/* --- 5h. Low positive reactions check (daily cron) --------------------- */
+
+add_action('ic_low_positive_check', 'ic_impi_check_low_reactions');
+function ic_impi_check_low_reactions(): void {
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $circles = $wpdb->get_col("SELECT id FROM {$p}ic_circles WHERE is_active=1");
+
+    foreach ($circles as $cid) {
+        $recent_reactions = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_post_reactions r
+             JOIN {$p}ic_posts p ON p.id = r.post_id
+             WHERE p.circle_id = %d
+               AND r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+            $cid
+        ));
+
+        if ($recent_reactions === 0) {
+            do_action('ic_low_positive_reactions', (int) $cid);
+        }
+    }
 }
 
 /* =========================================================================

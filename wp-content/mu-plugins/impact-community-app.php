@@ -648,6 +648,24 @@ a:hover { text-decoration: underline; }
     align-items: center;
 }
 
+/* Impi Boost — heti kiemelt poszt */
+.ic-post.impi-boost-post {
+    border: 2px solid #F59E0B;
+    background: linear-gradient(135deg, #FFFBEB 0%, #fff 100%);
+    box-shadow: 0 2px 10px rgba(245,158,11,.15);
+}
+.ic-impi-pick-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #D97706;
+    background: #FEF3C7;
+    border-radius: 4px;
+    padding: 2px 7px;
+    margin-left: 8px;
+    white-space: nowrap;
+}
+
 .ic-pinned-label {
     font-size: 11px;
     font-weight: 600;
@@ -1199,8 +1217,14 @@ a:hover { text-decoration: underline; }
     }
 
     function renderPost(p) {
-        const isImpi = p.author_type === 'impi';
-        const post = html('div', {className: 'ic-post' + (p.is_pinned ? ' pinned' : '') + (isImpi ? ' impi-post' : '')});
+        const isImpi  = p.author_type === 'impi';
+        const isBoost = !isImpi && !!p.impi_boost;
+        const post = html('div', {className:
+            'ic-post' +
+            (p.is_pinned  ? ' pinned'          : '') +
+            (isImpi       ? ' impi-post'        : '') +
+            (isBoost      ? ' impi-boost-post'  : '')
+        });
 
         const head = html('div', {className: 'ic-post-head'});
         if (isImpi) {
@@ -1210,6 +1234,9 @@ a:hover { text-decoration: underline; }
         } else {
             const authorPrefix = p.author_type === 'ngo' ? '🏢 ' : '';
             head.appendChild(html('span', {className: 'ic-post-author'}, authorPrefix + p.author_alias));
+            if (isBoost) {
+                head.appendChild(html('span', {className: 'ic-impi-pick-label'}, '🦡 Heti Impi-pick!'));
+            }
         }
 
         const timeRow = html('span', {className: 'ic-post-time'});
