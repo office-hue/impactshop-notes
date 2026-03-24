@@ -1,3 +1,9 @@
+## 2026-03-25 — v1.3.0 solo CSS !important
+- solo-select bg/color/border !important, host CSS override javítva.
+
+## 2026-03-24 — solo ticket CSS fix
+- __or-sep, __solo-tickets, __solo-label, __solo-select CSS hozzáadva (hiányzó stílusok, fehér bg szivárgás javítva).
+
 ## 2026-03-24c — PHP version 1.2.0 deploy
 - IMPACTSHOP_EVENT_DONATION_VERSION bumped 1.1.0 → 1.2.0, prod verified.
 

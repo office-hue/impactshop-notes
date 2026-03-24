@@ -87,6 +87,12 @@
       ".impact-event-widget__tickets-label{font-size:13px;color:var(--iew-muted);flex:1}" +
       ".impact-event-widget__tickets-select{appearance:none;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(5,15,47,.7);color:var(--iew-text);font-size:15px;font-weight:700;padding:8px 28px 8px 12px;cursor:pointer;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23f8f4ea'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center}" +
       ".impact-event-widget__tickets-select:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
+      /* Solo ticket selector */
+      ".impact-event-widget__or-sep{text-align:center;font-size:12px;color:var(--iew-muted);letter-spacing:.05em;margin:4px 0}" +
+      ".impact-event-widget__solo-tickets{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;background:rgba(20,30,70,.7) !important;border:1px solid rgba(255,255,255,.1)}" +
+      ".impact-event-widget__solo-label{font-size:13px;color:rgba(248,244,234,.75) !important;flex:1}" +
+      ".impact-event-widget__solo-select{-webkit-appearance:none;appearance:none;border:1px solid rgba(255,255,255,.2) !important;border-radius:10px;background:rgba(5,15,47,.9) !important;color:#f8f4ea !important;font-size:15px;font-weight:700;padding:8px 28px 8px 12px;cursor:pointer;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23f8f4ea'/%3E%3C/svg%3E\") !important;background-repeat:no-repeat !important;background-position:right 10px center !important}" +
+      ".impact-event-widget__solo-select:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
       "@media (max-width:640px){.impact-event-widget{padding:18px;border-radius:22px}.impact-event-widget__title{font-size:30px}.impact-event-widget__stats{grid-template-columns:1fr}.impact-event-widget__packages{grid-template-columns:1fr;gap:8px}.impact-event-widget__amounts{grid-template-columns:repeat(2,minmax(0,1fr))}.impact-event-widget__row{grid-template-columns:1fr}.impact-event-widget__actions{grid-template-columns:1fr}}";
 
     document.head.appendChild(style);

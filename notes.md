@@ -1,3 +1,9 @@
+## 2026-03-25
+- fix: solo jegy CSS !important hozzáadva (host override ellen), v1.3.0
+
+## 2026-03-24
+- fix: solo jegy CSS hiány javítva — or-sep, solo-tickets, solo-select stílusok hozzáadva
+
 ## 2026-03-24
 - version bump 1.1.0 → 1.2.0 (impactshop-event-donation-widget.php) — cache-bust deploy
 

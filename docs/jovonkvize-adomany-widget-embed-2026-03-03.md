@@ -89,3 +89,9 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 
 ### 2026-03-24 — version 1.2.0
 - IMPACTSHOP_EVENT_DONATION_VERSION: 1.2.0 — cache-bust új embed kódhoz.
+
+### 2026-03-24 — solo ticket CSS fix
+- Fehér háttér / világos szám probléma javítva: hiányzó CSS szabályok pótolva.
+
+### 2026-03-25 — v1.3.0
+- solo-select CSS !important: fehér bg override javítva.
