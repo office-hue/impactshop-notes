@@ -5,8 +5,10 @@
  * Rendered by impact-community.php template_redirect.
  * Variables available: $api_url, $nonce, $pseudo
  */
-if (!defined('ABSPATH')) {
-    exit;
+// Guard: csak akkor futtatjuk, ha a template_redirect explicit include-olja
+// ($api_url be van állítva). MU-plugin load közben $api_url nincs → return.
+if (!defined('ABSPATH') || !isset($api_url)) {
+    return;
 }
 ?><!DOCTYPE html>
 <html lang="hu">
