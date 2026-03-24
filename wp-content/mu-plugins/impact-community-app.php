@@ -732,6 +732,7 @@ a:hover { text-decoration: underline; }
         search: '',
         page: 1,
         totalCircles: 0,
+        perPage: 30,
         postPage: 1,
         totalPosts: 0,
         votedPosts: new Set(JSON.parse(localStorage.getItem('ic_voted') || '[]')),
@@ -905,8 +906,8 @@ a:hover { text-decoration: underline; }
         $content.appendChild(grid);
 
         // Pagination
-        if (!isMine && state.totalCircles > 30) {
-            const pages = Math.ceil(state.totalCircles / 30);
+        if (!isMine && state.totalCircles > state.perPage) {
+            const pages = Math.ceil(state.totalCircles / state.perPage);
             const pag = html('div', {className: 'ic-pagination'});
             for (let i = 1; i <= Math.min(pages, 10); i++) {
                 pag.appendChild(html('button', {
@@ -919,8 +920,14 @@ a:hover { text-decoration: underline; }
     }
 
     function filterAndRender() {
+        const wasFocused = document.activeElement &&
+            document.activeElement.classList.contains('ic-search');
         const list = state.view === 'mine' ? state.myCircles : state.circles;
         renderCircles(list, state.view === 'mine');
+        if (wasFocused) {
+            const inp = $content.querySelector('.ic-search');
+            if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+        }
     }
 
     /* --- Circle detail view ----------------------------------------- */
@@ -1106,11 +1113,13 @@ a:hover { text-decoration: underline; }
     async function loadCircles() {
         $content.innerHTML = '<div class="ic-loading"><div class="ic-spinner"></div></div>';
         try {
-            let path = `/circles?page=${state.page}`;
+            let path = `/circles?page=${state.page}&per_page=300`;
             if (state.filter) path += `&type=${state.filter}`;
+            if (state.search) path += `&search=${encodeURIComponent(state.search)}`;
             const data = await api(path);
             state.circles = data.circles;
             state.totalCircles = data.total;
+            state.perPage = data.per_page;
             render();
         } catch (err) {
             showStatus('Hiba a körök betöltésekor: ' + err.message, 'error');

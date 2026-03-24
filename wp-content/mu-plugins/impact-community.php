@@ -404,16 +404,21 @@ function ic_register_rest_routes(): void {
 function ic_rest_circles_list(WP_REST_Request $req): WP_REST_Response {
     global $wpdb;
     $p    = $wpdb->prefix;
-    $type = sanitize_key($req->get_param('type') ?? '');
-    $page = max(1, (int) ($req->get_param('page') ?? 1));
-    $per  = IC_CIRCLES_PER_PAGE;
-    $off  = ($page - 1) * $per;
+    $type   = sanitize_key($req->get_param('type') ?? '');
+    $page   = max(1, (int) ($req->get_param('page') ?? 1));
+    $search = sanitize_text_field($req->get_param('search') ?? '');
+    $per    = min(500, max(1, (int) ($req->get_param('per_page') ?? IC_CIRCLES_PER_PAGE)));
+    $off    = ($page - 1) * $per;
 
-    $where = "WHERE is_active = 1";
+    $where  = "WHERE is_active = 1";
     $params = [];
     if ($type === 'ngo' || $type === 'settlement') {
-        $where .= " AND type = %s";
+        $where  .= " AND type = %s";
         $params[] = $type;
+    }
+    if ($search !== '') {
+        $where  .= " AND name LIKE %s";
+        $params[] = '%' . $wpdb->esc_like($search) . '%';
     }
 
     $total = (int) $wpdb->get_var(
