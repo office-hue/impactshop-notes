@@ -2146,6 +2146,10 @@ function ic_schedule_crons(): void {
     if (!wp_next_scheduled('ic_tombola_ritual_cron')) {
         wp_schedule_event(strtotime('tomorrow 10:00'), 'daily', 'ic_tombola_ritual_cron');
     }
+    // § Sprint 15 — §21 Data retention: weekly Sunday 02:00
+    if (!wp_next_scheduled('ic_data_retention_weekly')) {
+        wp_schedule_event(strtotime('next sunday 02:00'), 'weekly', 'ic_data_retention_weekly');
+    }
 }
 
 /* --- 5e. Weekly Impi question ------------------------------------------- */
@@ -5663,6 +5667,57 @@ function ic_tombola_ritual_cron_handler(): void {
 
 /* ── Buddy 90-day soft-delete retention cron ────────────────────────────── */
 add_action( 'ic_buddy_retention_daily', 'ic_buddy_retention_handler' );
+
+/* =========================================================================
+   § Sprint 15 — §21 Data Retention Policy weekly cron
+   Runs every Sunday 02:00.
+   - ic_sprint_events:      anonymize pid_hash → NULL after 6 months (fraud_flag=1 kept 2y)
+   - ic_reports:            anonymize pid_hash → NULL after 2 years post-close
+   - ic_mission_completions: hard-delete after 1 year
+   - ic_circle_leaderboard: hard-delete snapshots older than 6 months
+   ========================================================================= */
+add_action( 'ic_data_retention_weekly', 'ic_data_retention_handler' );
+function ic_data_retention_handler(): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // 1. Sprint events: anonymize pid_hash after 6 months
+    //    Exception: fraud_flag=1 rows are kept for 2 years (§22.3 / §21)
+    $six_months  = date( 'Y-m-d H:i:s', strtotime( '-6 months' ) );
+    $two_years   = date( 'Y-m-d H:i:s', strtotime( '-2 years' ) );
+    $wpdb->query( $wpdb->prepare(
+        "UPDATE {$p}ic_sprint_events
+         SET pid_hash = 'anon'
+         WHERE pid_hash != 'anon'
+           AND created_at <= %s
+           AND (fraud_flag = 0 OR (fraud_flag = 1 AND created_at <= %s))",
+        $six_months, $two_years
+    ) );
+
+    // 2. Reports: anonymize pid_hash (reporter) 2 years after being closed
+    //    platform_admin-actioned rows stay permanent (preserved by actor_type)
+    $wpdb->query( $wpdb->prepare(
+        "UPDATE {$p}ic_reports
+         SET pid_hash = 'anon'
+         WHERE pid_hash != 'anon'
+           AND status IN ('actioned','dismissed')
+           AND updated_at <= %s",
+        $two_years
+    ) );
+
+    // 3. Mission completions: hard-delete after 1 year
+    $one_year = date( 'Y-m-d H:i:s', strtotime( '-1 year' ) );
+    $wpdb->query( $wpdb->prepare(
+        "DELETE FROM {$p}ic_mission_completions WHERE completed_at <= %s",
+        $one_year
+    ) );
+
+    // 4. Circle leaderboard snapshots: hard-delete older than 6 months
+    $wpdb->query( $wpdb->prepare(
+        "DELETE FROM {$p}ic_circle_leaderboard WHERE snapshot_date <= %s",
+        $six_months
+    ) );
+}
 function ic_buddy_retention_handler(): void {
     global $wpdb;
     $p = $wpdb->prefix;
