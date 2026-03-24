@@ -521,30 +521,41 @@ a:hover { text-decoration: underline; }
     gap: 16px;
 }
 
-.ic-vote-btn {
+.ic-reactions {
     display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ic-reaction-btn {
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
+    gap: 4px;
+    padding: 4px 10px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     border: 1px solid var(--border);
     color: var(--muted);
+    background: var(--surface);
     transition: all var(--transition);
+    cursor: pointer;
 }
 
-.ic-vote-btn:hover:not(:disabled) {
+.ic-reaction-btn:hover:not(:disabled) {
     border-color: var(--teal);
     color: var(--teal);
     background: var(--teal-bg);
 }
 
-.ic-vote-btn.voted {
+.ic-reaction-btn.reacted {
     background: var(--teal-bg);
     border-color: var(--teal);
-    color: var(--teal);
+    color: var(--teal-dark);
+    font-weight: 600;
 }
+
+.ic-reaction-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .ic-post-delete {
     font-size: 12px;
@@ -553,6 +564,89 @@ a:hover { text-decoration: underline; }
 }
 
 .ic-post-delete:hover { color: var(--coral); }
+
+/* Post Intent Selector */
+.ic-intent-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+.ic-intent-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+.ic-intent-pill {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.ic-intent-pill:hover { border-color: var(--teal); color: var(--teal); }
+.ic-intent-pill.selected { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+/* Leaderboard Panel */
+.ic-leaderboard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 24px;
+}
+.ic-leaderboard-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ic-lb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.ic-lb-row:last-child { border-bottom: none; }
+.ic-lb-rank { font-weight: 700; color: var(--muted); width: 28px; text-align: center; flex-shrink: 0; }
+.ic-lb-rank.top1 { color: #F59E0B; }
+.ic-lb-rank.top2 { color: #9CA3AF; }
+.ic-lb-rank.top3 { color: #B45309; }
+.ic-lb-alias { flex: 1; color: var(--teal-dark); font-weight: 500; }
+.ic-lb-score { color: var(--muted); font-size: 13px; }
+
+/* Impi Bot Post */
+.ic-post.impi-post {
+    border-left: 3px solid var(--sun);
+    background: #FFFBEB;
+}
+.ic-impi-avatar {
+    display: inline-block;
+    background: #FEF3C7;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    text-align: center;
+    line-height: 28px;
+    font-size: 16px;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+.ic-post-author.impi {
+    color: #B45309;
+    display: flex;
+    align-items: center;
+}
 
 .ic-pinned-label {
     font-size: 11px;
@@ -735,7 +829,8 @@ a:hover { text-decoration: underline; }
         perPage: 30,
         postPage: 1,
         totalPosts: 0,
-        votedPosts: new Set(JSON.parse(localStorage.getItem('ic_voted') || '[]')),
+        votedPosts: new Set(JSON.parse(localStorage.getItem('ic_voted') || '[]')), // legacy compat
+        myReactions: JSON.parse(localStorage.getItem('ic_reactions') || '{}'),
     };
 
     /* --- API helper ------------------------------------------------- */
@@ -996,6 +1091,28 @@ a:hover { text-decoration: underline; }
             const composer = html('div', {className: 'ic-composer'});
             composer.appendChild(html('div', {className: 'ic-composer-label'}, `Írj posztot ${c.my_alias} néven:`));
 
+            // Intent selector pills
+            const intentLabel = html('div', {className: 'ic-intent-label'}, 'Mit szeretnél megosztani?');
+            const intentPills = html('div', {className: 'ic-intent-pills'});
+            const intents = [
+                {value: 'help',  label: '🙋 Segítséget kérek'},
+                {value: 'info',  label: '📢 Megosztok valamit'},
+                {value: 'proof', label: '✅ Hatást igazolok'},
+                {value: 'ask',   label: '❓ Kérdést teszek fel'},
+            ];
+            intents.forEach(({value, label}) => {
+                const pill = html('button', {className: 'ic-intent-pill'});
+                pill.dataset.intent = value;
+                pill.textContent = label;
+                pill.addEventListener('click', () => {
+                    intentPills.querySelectorAll('.ic-intent-pill').forEach(p => p.classList.remove('selected'));
+                    pill.classList.add('selected');
+                });
+                intentPills.appendChild(pill);
+            });
+            composer.appendChild(intentLabel);
+            composer.appendChild(intentPills);
+
             const ta = html('textarea', {
                 placeholder: 'Oszd meg gondolataidat a körrel... (max ' + MAX_BODY + ' karakter)',
                 maxlength: MAX_BODY,
@@ -1046,15 +1163,54 @@ a:hover { text-decoration: underline; }
                 $content.appendChild(more);
             }
         }
+
+        // Leaderboard panel
+        const lbContainer = html('div', {id: 'ic-leaderboard-panel'});
+        $content.appendChild(lbContainer);
+        loadLeaderboard(c.id);
+    }
+
+    async function loadLeaderboard(circleId) {
+        const panel = document.getElementById('ic-leaderboard-panel');
+        if (!panel) return;
+        try {
+            const data = await api(`/circles/${circleId}/leaderboard`);
+            if (!data.leaderboard || data.leaderboard.length === 0) return;
+            panel.innerHTML = '';
+            const lb = html('div', {className: 'ic-leaderboard'});
+            lb.appendChild(html('div', {className: 'ic-leaderboard-title'}, '🏆 Körünk legjobb tagjai'));
+            const rankEmojis = ['🥇', '🥈', '🥉'];
+            data.leaderboard.forEach(entry => {
+                const row = html('div', {className: 'ic-lb-row'});
+                const rankClass = entry.rank <= 3 ? `top${entry.rank}` : '';
+                const rankLabel = entry.rank <= 3 ? rankEmojis[entry.rank - 1] : String(entry.rank);
+                row.appendChild(html('span', {className: `ic-lb-rank ${rankClass}`}, rankLabel));
+                row.appendChild(html('span', {className: 'ic-lb-alias'}, entry.alias));
+                if (entry.badge_count > 0) {
+                    row.appendChild(html('span', {}, '🏅'.repeat(Math.min(entry.badge_count, 3))));
+                }
+                row.appendChild(html('span', {className: 'ic-lb-score'}, `${entry.score} pont`));
+                lb.appendChild(row);
+            });
+            panel.appendChild(lb);
+        } catch (_) {
+            // Leaderboard is optional — fail silently
+        }
     }
 
     function renderPost(p) {
-        const post = html('div', {className: 'ic-post' + (p.is_pinned ? ' pinned' : '')});
+        const isImpi = p.author_type === 'impi';
+        const post = html('div', {className: 'ic-post' + (p.is_pinned ? ' pinned' : '') + (isImpi ? ' impi-post' : '')});
 
         const head = html('div', {className: 'ic-post-head'});
-        const authorClass = p.author_type === 'impi' ? 'ic-post-author impi' : 'ic-post-author';
-        const authorPrefix = p.author_type === 'impi' ? '🤖 ' : p.author_type === 'ngo' ? '🏢 ' : '';
-        head.appendChild(html('span', {className: authorClass}, authorPrefix + p.author_alias));
+        if (isImpi) {
+            const authorEl = html('span', {className: 'ic-post-author impi'});
+            authorEl.innerHTML = `<span class="ic-impi-avatar">🦡</span>${p.author_alias}`;
+            head.appendChild(authorEl);
+        } else {
+            const authorPrefix = p.author_type === 'ngo' ? '🏢 ' : '';
+            head.appendChild(html('span', {className: 'ic-post-author'}, authorPrefix + p.author_alias));
+        }
 
         const timeRow = html('span', {className: 'ic-post-time'});
         if (p.is_pinned) {
@@ -1068,14 +1224,35 @@ a:hover { text-decoration: underline; }
 
         const footer = html('div', {className: 'ic-post-footer'});
 
-        const voted = state.votedPosts.has(p.id);
-        const voteBtn = html('button', {
-            className: 'ic-vote-btn' + (voted ? ' voted' : ''),
-            disabled: p.is_own || voted || !HAS_PSEUDO,
-            onClick: () => votePost(p.circle_id, p.id, voteBtn),
-        });
-        voteBtn.innerHTML = `🙏 <span>${p.vote_count}</span>`;
-        footer.appendChild(voteBtn);
+        const myReaction = state.myReactions[p.id] || p.my_reaction || null;
+
+        if (!p.is_own && !isImpi) {
+            const reactionDefs = [
+                {type: 'thanks',  emoji: '🙏', label: 'Köszi'},
+                {type: 'useful',  emoji: '💡', label: 'Hasznos'},
+                {type: 'support', emoji: '🤝', label: 'Támogatlak'},
+                {type: 'done',    emoji: '✅', label: 'Megcsináltam'},
+            ];
+            const reactionsWrap = html('div', {className: 'ic-reactions'});
+            reactionDefs.forEach(({type, emoji, label}) => {
+                const count = (p.reactions && p.reactions[type]) || 0;
+                const isReacted = myReaction === type;
+                const alreadyReacted = myReaction !== null;
+                const btn = html('button', {
+                    className: 'ic-reaction-btn' + (isReacted ? ' reacted' : ''),
+                    disabled: !HAS_PSEUDO || alreadyReacted,
+                    title: label,
+                });
+                btn.innerHTML = `${emoji} <span class="ic-reaction-count-${type}">${count > 0 ? count : ''}</span>`;
+                btn.addEventListener('click', () => reactPost(p.circle_id, p.id, type, btn));
+                reactionsWrap.appendChild(btn);
+            });
+            footer.appendChild(reactionsWrap);
+        } else if (p.vote_count > 0) {
+            const totalEl = html('span', {style: 'font-size:13px;color:var(--muted)'});
+            totalEl.textContent = `${p.vote_count} reakció`;
+            footer.appendChild(totalEl);
+        }
 
         if (p.is_own) {
             const del = html('button', {
@@ -1087,6 +1264,35 @@ a:hover { text-decoration: underline; }
 
         post.appendChild(footer);
         return post;
+    }
+
+    async function reactPost(circleId, postId, reactionType, btn) {
+        if (state.myReactions[postId]) return;
+        try {
+            const data = await api(`/circles/${circleId}/posts/${postId}/react`, {
+                method: 'POST',
+                body: JSON.stringify({reaction_type: reactionType}),
+            });
+            state.myReactions[postId] = reactionType;
+            localStorage.setItem('ic_reactions', JSON.stringify(state.myReactions));
+
+            // Update UI: disable all reaction buttons for this post, mark the pressed one
+            const postEl = btn.closest('.ic-post');
+            if (postEl) {
+                postEl.querySelectorAll('.ic-reaction-btn').forEach(b => {
+                    b.disabled = true;
+                    if (b === btn) {
+                        b.classList.add('reacted');
+                        const countEl = b.querySelector(`.ic-reaction-count-${reactionType}`);
+                        if (countEl && data.reactions) {
+                            countEl.textContent = data.reactions[reactionType] || '';
+                        }
+                    }
+                });
+            }
+        } catch (err) {
+            showStatus(err.message, 'error');
+        }
     }
 
     /* --- Navigation ------------------------------------------------- */
@@ -1206,32 +1412,27 @@ a:hover { text-decoration: underline; }
         btn.disabled = true;
         btn.textContent = '⏳ Küldés...';
 
+        // Collect selected intent from pills
+        const selectedPill = document.querySelector('.ic-intent-pill.selected');
+        const intent = selectedPill ? selectedPill.dataset.intent : null;
+
         try {
             await api(`/circles/${circleId}/posts`, {
                 method: 'POST',
-                body: JSON.stringify({body: body}),
+                body: JSON.stringify({
+                    body: body,
+                    meta: intent ? {intent: intent} : null,
+                }),
             });
             ta.value = '';
+            // Reset intent pills
+            document.querySelectorAll('.ic-intent-pill').forEach(p => p.classList.remove('selected'));
             showStatus('Poszt elküldve! 🎉', 'success');
             loadCircleDetail(circleId);
         } catch (err) {
             showStatus(err.message, 'error');
             btn.disabled = false;
             btn.textContent = '📝 Küldés';
-        }
-    }
-
-    async function votePost(circleId, postId, btn) {
-        if (state.votedPosts.has(postId)) return;
-        try {
-            const data = await api(`/circles/${circleId}/posts/${postId}/vote`, {method: 'POST'});
-            state.votedPosts.add(postId);
-            localStorage.setItem('ic_voted', JSON.stringify([...state.votedPosts]));
-            btn.classList.add('voted');
-            btn.querySelector('span').textContent = data.vote_count;
-            btn.disabled = true;
-        } catch (err) {
-            showStatus(err.message, 'error');
         }
     }
 

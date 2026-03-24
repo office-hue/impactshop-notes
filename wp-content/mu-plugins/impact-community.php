@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.2.0');
+define('IC_DB_VERSION', '1.3.0');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -227,6 +227,81 @@ function ic_maybe_migrate_db(): void {
         UNIQUE KEY uq_circle_date (circle_id, stat_date)
     ) $charset;");
 
+    /* Sprint 3 tables */
+
+    dbDelta("CREATE TABLE {$p}ic_post_reactions (
+        id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        post_id       BIGINT UNSIGNED NOT NULL,
+        circle_id     INT UNSIGNED NOT NULL,
+        pid_hash      VARCHAR(64) NOT NULL,
+        reaction_type ENUM('thanks','useful','support','done') NOT NULL,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_reaction (post_id, pid_hash),
+        KEY idx_post (post_id),
+        KEY idx_circle (circle_id)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE {$p}ic_invites (
+        id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        circle_id     INT UNSIGNED NOT NULL,
+        inviter_hash  VARCHAR(64) NOT NULL,
+        ref_code      VARCHAR(32) NOT NULL,
+        conversions   SMALLINT UNSIGNED DEFAULT 0,
+        max_uses      SMALLINT UNSIGNED DEFAULT 20,
+        is_active     TINYINT(1) DEFAULT 1,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_code (ref_code),
+        KEY idx_inviter (inviter_hash)
+    ) $charset;");
+
+    /* Sprint 4 tables */
+
+    dbDelta("CREATE TABLE {$p}ic_circle_leaderboard (
+        id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        circle_id    INT UNSIGNED NOT NULL,
+        pid_hash     VARCHAR(64) NOT NULL,
+        alias        VARCHAR(120) NOT NULL,
+        score        INT UNSIGNED DEFAULT 0,
+        rank         SMALLINT UNSIGNED DEFAULT 0,
+        badge_count  TINYINT UNSIGNED DEFAULT 0,
+        period       VARCHAR(10) NOT NULL,
+        updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_period_member (circle_id, pid_hash, period),
+        KEY idx_circle_period (circle_id, period)
+    ) $charset;");
+
+    /* Sprint 10 tables */
+
+    dbDelta("CREATE TABLE {$p}ic_member_trust (
+        id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        circle_id         INT UNSIGNED NOT NULL,
+        pid_hash          VARCHAR(64) NOT NULL,
+        trust_level       TINYINT UNSIGNED DEFAULT 0,
+        days_active       SMALLINT UNSIGNED DEFAULT 0,
+        posts_count       INT UNSIGNED DEFAULT 0,
+        votes_received    INT UNSIGNED DEFAULT 0,
+        strikes           TINYINT UNSIGNED DEFAULT 0,
+        timeout_until     DATETIME NULL DEFAULT NULL,
+        constitution_ver  VARCHAR(20) DEFAULT '',
+        updated_at        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_trust (circle_id, pid_hash),
+        KEY idx_pid (pid_hash)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE {$p}ic_reports (
+        id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        circle_id     INT UNSIGNED NOT NULL,
+        post_id       BIGINT UNSIGNED NOT NULL,
+        reporter_hash VARCHAR(64) NOT NULL,
+        reason        VARCHAR(100) NOT NULL DEFAULT '',
+        details       TEXT,
+        status        ENUM('pending','reviewed','dismissed','actioned') DEFAULT 'pending',
+        reviewed_at   DATETIME NULL DEFAULT NULL,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_post (post_id),
+        KEY idx_circle_status (circle_id, status)
+    ) $charset;");
+
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
     if ($has_missions === 0) {
@@ -390,6 +465,30 @@ function ic_register_rest_routes(): void {
         'permission_callback' => '__return_true',
     ]);
 
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/posts/(?P<post_id>\d+)/react', [
+        'methods'  => 'POST',
+        'callback' => 'ic_rest_post_react',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/posts/(?P<post_id>\d+)/helpful_vote', [
+        'methods'  => 'POST',
+        'callback' => 'ic_rest_post_helpful_vote',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route($ns, '/circles/(?P<circle_id>\d+)/posts/(?P<post_id>\d+)/report', [
+        'methods'  => 'POST',
+        'callback' => 'ic_rest_post_report',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route($ns, '/circles/(?P<id>\d+)/leaderboard', [
+        'methods'  => 'GET',
+        'callback' => 'ic_rest_circle_leaderboard',
+        'permission_callback' => '__return_true',
+    ]);
+
     /* --- Auth / Nonce --------------------------------------------------- */
 
     register_rest_route($ns, '/auth/status', [
@@ -530,9 +629,12 @@ function ic_rest_circle_detail(WP_REST_Request $req): WP_REST_Response|WP_Error 
         $id
     ));
 
+    $post_ids = $posts ? array_map(fn($r) => (int) $r->id, $posts) : [];
+    [$reactions_by_post, $my_reactions] = ic_fetch_reactions($post_ids, $pid_hash ?? '');
+
     $post_list = [];
     foreach ($posts as $post) {
-        $post_list[] = ic_format_post($post, $id);
+        $post_list[] = ic_format_post($post, $id, $reactions_by_post[(int)$post->id] ?? [], $my_reactions[(int)$post->id] ?? null);
     }
 
     return ic_json_ok([
@@ -621,6 +723,14 @@ function ic_rest_circle_join(WP_REST_Request $req): WP_REST_Response|WP_Error {
 
     do_action('ic_member_joined', $id, $pid_hash, $alias);
 
+    // Milestone trigger
+    $new_count = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT member_count FROM {$p}ic_circles WHERE id=%d", $id
+    ));
+    if (in_array($new_count, [10, 50, 100], true)) {
+        do_action('ic_circle_milestone', $id, $new_count);
+    }
+
     return ic_json_ok([
         'joined'  => true,
         'alias'   => $alias,
@@ -683,9 +793,13 @@ function ic_rest_posts_list(WP_REST_Request $req): WP_REST_Response {
         $cid, $per, $off
     ));
 
+    $post_ids = $rows ? array_map(fn($r) => (int) $r->id, $rows) : [];
+    $pid_hash = ic_pid_hash();
+    [$reactions_by_post, $my_reactions] = ic_fetch_reactions($post_ids, $pid_hash ?? '');
+
     $posts = [];
     foreach ($rows as $r) {
-        $posts[] = ic_format_post($r, $cid);
+        $posts[] = ic_format_post($r, $cid, $reactions_by_post[(int)$r->id] ?? [], $my_reactions[(int)$r->id] ?? null);
     }
 
     return ic_json_ok([
@@ -827,6 +941,223 @@ function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
     return ic_json_ok(['vote_count' => $new_count]);
 }
 
+function ic_rest_post_react(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $cid     = (int) $req->get_param('circle_id');
+    $post_id = (int) $req->get_param('post_id');
+    $allowed = ['thanks', 'useful', 'support', 'done'];
+    $type    = sanitize_key($req->get_param('reaction_type') ?? '');
+
+    if (!in_array($type, $allowed, true)) {
+        return ic_json_error('Érvénytelen reakció típus.', 422);
+    }
+
+    $post = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_posts WHERE id=%d AND circle_id=%d AND is_deleted=0",
+        $post_id, $cid
+    ));
+    if (!$post) {
+        return ic_json_error('Poszt nem található.', 404);
+    }
+    if ($post->author_hash === $pid_hash) {
+        return ic_json_error('Saját posztra nem adhatsz reakciót.', 422);
+    }
+
+    // Dedupe: 1 reaction per post per user (any type)
+    $existing = $wpdb->get_var($wpdb->prepare(
+        "SELECT reaction_type FROM {$p}ic_post_reactions WHERE post_id=%d AND pid_hash=%s",
+        $post_id, $pid_hash
+    ));
+    if ($existing !== null) {
+        return ic_json_error('Már reagáltál erre a posztra.', 422);
+    }
+
+    $wpdb->insert("{$p}ic_post_reactions", [
+        'post_id'       => $post_id,
+        'circle_id'     => $cid,
+        'pid_hash'      => $pid_hash,
+        'reaction_type' => $type,
+        'created_at'    => current_time('mysql'),
+    ]);
+
+    // Increment legacy vote_count for Circle Health Score backward compat
+    $wpdb->query($wpdb->prepare(
+        "UPDATE {$p}ic_posts SET vote_count = vote_count + 1 WHERE id = %d", $post_id
+    ));
+
+    // +3 pts to reaction sender
+    ic_award_points($pid_hash, 3, 'reaction_sent', "post:{$post_id}", "reaction_sent:{$pid_hash}:{$post_id}");
+
+    // 5-reaction milestone → bonus for post author
+    $total_reactions = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT vote_count FROM {$p}ic_posts WHERE id=%d", $post_id
+    ));
+    if ($total_reactions === 5) {
+        ic_award_points($post->author_hash, 50, 'post_5_reactions', "post:{$post_id}", "post_5_reactions:{$post->author_hash}:{$post_id}");
+    }
+
+    [$counts] = ic_fetch_reactions([$post_id], '');
+    $reactions = array_merge(
+        ['thanks' => 0, 'useful' => 0, 'support' => 0, 'done' => 0],
+        $counts[$post_id] ?? []
+    );
+
+    return ic_json_ok([
+        'reacted'       => true,
+        'reaction_type' => $type,
+        'reactions'     => $reactions,
+        'vote_count'    => $total_reactions,
+    ]);
+}
+
+function ic_rest_post_helpful_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $cid     = (int) $req->get_param('circle_id');
+    $post_id = (int) $req->get_param('post_id');
+
+    $post = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_posts WHERE id=%d AND circle_id=%d AND is_deleted=0",
+        $post_id, $cid
+    ));
+    if (!$post) {
+        return ic_json_error('Poszt nem található.', 404);
+    }
+    if ($post->author_hash === $pid_hash) {
+        return ic_json_error('Saját posztot nem jelölhetsz hasznosnak.', 422);
+    }
+
+    $dedupe_key = "ic_hvote:{$pid_hash}:{$post_id}";
+    if (get_transient($dedupe_key)) {
+        return ic_json_error('Már jelölted ezt a posztot hasznosnak.', 422);
+    }
+    set_transient($dedupe_key, 1, DAY_IN_SECONDS * 365);
+
+    $wpdb->query($wpdb->prepare(
+        "UPDATE {$p}ic_posts SET helpful_votes = helpful_votes + 1 WHERE id = %d", $post_id
+    ));
+
+    $new_count = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT helpful_votes FROM {$p}ic_posts WHERE id=%d", $post_id
+    ));
+
+    return ic_json_ok(['helpful_votes' => $new_count]);
+}
+
+function ic_rest_post_report(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash();
+    if (!$pid_hash) {
+        return ic_json_error('Azonosítás szükséges.', 401);
+    }
+
+    global $wpdb;
+    $p       = $wpdb->prefix;
+    $cid     = (int) $req->get_param('circle_id');
+    $post_id = (int) $req->get_param('post_id');
+
+    $post = $wpdb->get_row($wpdb->prepare(
+        "SELECT id FROM {$p}ic_posts WHERE id=%d AND circle_id=%d AND is_deleted=0",
+        $post_id, $cid
+    ));
+    if (!$post) {
+        return ic_json_error('Poszt nem található.', 404);
+    }
+
+    $reason  = sanitize_text_field($req->get_param('reason') ?? '');
+    $details = sanitize_textarea_field($req->get_param('details') ?? '');
+    if ($reason === '') {
+        return ic_json_error('Add meg a bejelentés okát.', 422);
+    }
+
+    // Rate: max 3 reports per day per user
+    $rate_key = 'ic_report_rate:' . $pid_hash;
+    if (!ic_rate_check($rate_key, 3, DAY_IN_SECONDS)) {
+        return ic_json_error('Napi bejelentési limit elérve.', 429);
+    }
+
+    $wpdb->insert("{$p}ic_reports", [
+        'circle_id'     => $cid,
+        'post_id'       => $post_id,
+        'reporter_hash' => $pid_hash,
+        'reason'        => $reason,
+        'details'       => $details,
+        'status'        => 'pending',
+        'created_at'    => current_time('mysql'),
+    ]);
+
+    return ic_json_ok(['reported' => true]);
+}
+
+function ic_rest_circle_leaderboard(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    global $wpdb;
+    $p   = $wpdb->prefix;
+    $cid = (int) $req->get_param('id');
+
+    $circle = $wpdb->get_var($wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE id=%d AND is_active=1", $cid
+    ));
+    if (!$circle) {
+        return ic_json_error('Kör nem található.', 404);
+    }
+
+    $period = date('Y-m');
+
+    // Try cached leaderboard first
+    $cached = $wpdb->get_results($wpdb->prepare(
+        "SELECT alias, score, rank, badge_count FROM {$p}ic_circle_leaderboard
+         WHERE circle_id=%d AND period=%s ORDER BY rank ASC LIMIT 10",
+        $cid, $period
+    ));
+
+    if (!empty($cached)) {
+        $leaderboard = [];
+        foreach ($cached as $r) {
+            $leaderboard[] = [
+                'rank'        => (int) $r->rank,
+                'alias'       => $r->alias,
+                'score'       => (int) $r->score,
+                'badge_count' => (int) $r->badge_count,
+            ];
+        }
+    } else {
+        // Compute live from posts + reactions in current month
+        $month_start = date('Y-m-01');
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.author_hash,
+                    COUNT(DISTINCT p.id) * 30 + COALESCE(SUM(p.vote_count), 0) * 5 AS score
+             FROM {$p}ic_posts p
+             WHERE p.circle_id=%d AND p.is_deleted=0 AND p.author_type='user'
+               AND p.created_at >= %s
+             GROUP BY p.author_hash
+             ORDER BY score DESC LIMIT 10",
+            $cid, $month_start
+        ));
+        $leaderboard = [];
+        $rank = 1;
+        foreach ($rows as $r) {
+            $leaderboard[] = [
+                'rank'        => $rank++,
+                'alias'       => IC_Alias::generate($r->author_hash, $cid),
+                'score'       => (int) $r->score,
+                'badge_count' => 0,
+            ];
+        }
+    }
+
+    return ic_json_ok(['leaderboard' => $leaderboard, 'period' => $period]);
+}
+
 function ic_rest_post_delete(WP_REST_Request $req): WP_REST_Response|WP_Error {
     $pid_hash = ic_pid_hash();
     if (!$pid_hash) {
@@ -874,7 +1205,49 @@ function ic_rest_auth_status(WP_REST_Request $req): WP_REST_Response {
 
 /* --- Helpers ------------------------------------------------------------- */
 
-function ic_format_post(object $post, int $circle_id): array {
+/**
+ * Batch-fetch reaction counts and the current user's reaction for a set of post IDs.
+ *
+ * @param int[]  $post_ids
+ * @param string $pid_hash Current user's hash; pass '' to skip my_reaction lookup.
+ * @return array{0: array<int,array<string,int>>, 1: array<int,string>}
+ *              [$counts_by_post_id, $my_reaction_by_post_id]
+ */
+function ic_fetch_reactions(array $post_ids, string $pid_hash): array {
+    if (empty($post_ids)) {
+        return [[], []];
+    }
+
+    global $wpdb;
+    $p            = $wpdb->prefix;
+    $placeholders = implode(',', array_fill(0, count($post_ids), '%d'));
+    $rows         = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT post_id, reaction_type, pid_hash FROM {$p}ic_post_reactions WHERE post_id IN ($placeholders)",
+            ...$post_ids
+        )
+    );
+
+    $zero   = ['thanks' => 0, 'useful' => 0, 'support' => 0, 'done' => 0];
+    $counts = [];
+    $my     = [];
+
+    foreach ($rows as $r) {
+        $pid = (int) $r->post_id;
+        if (!isset($counts[$pid])) {
+            $counts[$pid] = $zero;
+        }
+        $counts[$pid][$r->reaction_type]++;
+        if ($pid_hash !== '' && $r->pid_hash === $pid_hash) {
+            $my[$pid] = $r->reaction_type;
+        }
+    }
+
+    return [$counts, $my];
+}
+
+function ic_format_post(object $post, int $circle_id, array $reactions = [], ?string $my_reaction = null): array {
+    $zero = ['thanks' => 0, 'useful' => 0, 'support' => 0, 'done' => 0];
     return [
         'id'            => (int) $post->id,
         'circle_id'     => (int) $post->circle_id,
@@ -885,6 +1258,8 @@ function ic_format_post(object $post, int $circle_id): array {
         'meta'          => $post->meta_json ? json_decode($post->meta_json, true) : null,
         'vote_count'    => (int) $post->vote_count,
         'helpful_votes' => (int) $post->helpful_votes,
+        'reactions'     => array_merge($zero, $reactions),
+        'my_reaction'   => $my_reaction,
         'is_pinned'     => (bool) $post->is_pinned,
         'impi_boost'    => (bool) $post->impi_boost,
         'is_own'        => $post->author_hash === ic_pid_hash(),
@@ -947,6 +1322,68 @@ function ic_try_buddy_pair(int $circle_id, string $pid_hash): void {
         'pid_b'      => $pair[1],
         'started_at' => current_time('mysql'),
     ]);
+}
+
+/* =========================================================================
+   Section: Impi — 🦡 Community Bot
+   Lightweight, rate-limited bot that posts contextual encouragement.
+   Max 3 Impi posts per circle per day.
+   ========================================================================= */
+
+function ic_impi_post(int $circle_id, string $body): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // Rate-limit: max 3 Impi posts per circle per calendar day
+    $rate_key = 'ic_impi_rate:' . $circle_id . ':' . date('Y-m-d');
+    $count    = (int) get_transient($rate_key);
+    if ($count >= 3) {
+        return;
+    }
+    set_transient($rate_key, $count + 1, DAY_IN_SECONDS);
+
+    $wpdb->insert("{$p}ic_posts", [
+        'circle_id'   => $circle_id,
+        'author_hash' => 'impi',
+        'author_type' => 'impi',
+        'post_type'   => 'text',
+        'body'        => $body,
+        'meta_json'   => null,
+        'created_at'  => current_time('mysql'),
+    ]);
+    $wpdb->query($wpdb->prepare(
+        "UPDATE {$p}ic_circles SET post_count = post_count + 1 WHERE id = %d", $circle_id
+    ));
+}
+
+add_action('ic_member_joined', 'ic_impi_welcome_member', 10, 3);
+function ic_impi_welcome_member(int $circle_id, string $pid_hash, string $alias): void {
+    ic_impi_post(
+        $circle_id,
+        "Üdvözöllek, {$alias}! 🦡 Én Impi vagyok, a körünk kis szurikátája. " .
+        "Örülök, hogy csatlakoztál! Merj posztolni — itt mindenki baráti fülekkel hallgat."
+    );
+}
+
+add_action('ic_circle_milestone', 'ic_impi_milestone_celebrate', 10, 2);
+function ic_impi_milestone_celebrate(int $circle_id, int $count): void {
+    $messages = [
+        10  => "🎉 Elértük a 10 tagot! Gratulálok a körnek — ez csak a kezdet!",
+        50  => "🚀 50 tag! Valami különleges épül itt. Köszönjük, hogy velünk tartotok!",
+        100 => "💯 100 körtagot értünk el! Ez már igazi közösség. Ti tettétek!",
+    ];
+    if (isset($messages[$count])) {
+        ic_impi_post($circle_id, $messages[$count]);
+    }
+}
+
+add_action('ic_streak_7day', 'ic_impi_streak_congrats', 10, 2);
+function ic_impi_streak_congrats(int $circle_id, string $pid_hash): void {
+    $alias = IC_Alias::generate($pid_hash, $circle_id);
+    ic_impi_post(
+        $circle_id,
+        "🔥 {$alias} 7 napos sorozatot ért el! Ez igazi elköteleződés. Ünnepelünk együtt!"
+    );
 }
 
 /* =========================================================================
