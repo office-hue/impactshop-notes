@@ -80,3 +80,6 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 ### 2026-05-28b — Version bump 1.1.0 + cache-bust embed kód
 - `IMPACTSHOP_EVENT_DONATION_VERSION` 1.0.0 → 1.1.0, production deploy megtörtént.
 - JS URL-ben `?v=1.1.0` → böngésző/CDN cache bust.
+
+### 2026-05-28c — jovonkvize.js production deploy
+- Solo jegyvásárlás (1-10 db × 150 000 Ft) élesben a `jovonkvize.hu` embedben.

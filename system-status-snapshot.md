@@ -1,3 +1,6 @@
+## 2026-05-28c - jovonkvize.js production deploy (solo jegyvásárlás)
+- `impactshop-event-donation-widget-jovonkvize.js` frissítve: TICKET_UNIT_PRICE=150000, solo dropdown, change handler.
+
 ## 2026-05-28b - Jövőnk Vize: version bump 1.1.0 + cache-bust embed kód
 - `IMPACTSHOP_EVENT_DONATION_VERSION` 1.0.0 → 1.1.0, prod-ra deploy-olva.
 - JS embed URL már `?v=1.1.0`-t tartalmaz.

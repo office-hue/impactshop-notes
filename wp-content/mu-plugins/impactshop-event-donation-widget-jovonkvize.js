@@ -5,6 +5,8 @@
   var STYLE_ID = "impact-event-donation-widget-style";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-campaigns";
   var DEFAULT_FALLBACK_BASE = "https://app.sharity.hu/";
+  var TICKET_UNIT_PRICE = 150000;
+  var STANDALONE_TICKET_MAX = 10;
 
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) {
@@ -151,6 +153,11 @@
       '<span class="impact-event-widget__tickets-label">🎟️ Gálajegyek száma:</span>' +
       '<select class="impact-event-widget__tickets-select" data-role="ticket-count"><option value="0">–</option></select>' +
       '</div>' +
+      '<div class="impact-event-widget__or-sep">— vagy sima jegyvásárlás —</div>' +
+      '<div class="impact-event-widget__solo-tickets">' +
+      '<span class="impact-event-widget__solo-label">🎫 Jegyek száma (1 jegy = 150 000 Ft)</span>' +
+      '<select class="impact-event-widget__solo-select" data-role="solo-ticket-count"><option value="0">– db –</option></select>' +
+      '</div>' +
       '<div class="impact-event-widget__amounts" data-role="preset-amounts"></div>' +
       '<div class="impact-event-widget__custom">' +
       '<input class="impact-event-widget__input" data-role="custom-amount" type="text" inputmode="numeric" placeholder="Egyedi összeg (Ft)">' +
@@ -219,6 +226,7 @@
       presets: root.querySelector('[data-role="preset-amounts"]'),
       ticketRow: root.querySelector('[data-role="ticket-row"]'),
       ticketCount: root.querySelector('[data-role="ticket-count"]'),
+      soloTicketCount: root.querySelector('[data-role="solo-ticket-count"]'),
       customAmount: root.querySelector('[data-role="custom-amount"]'),
       currencyLabel: root.querySelector('[data-role="currency-label"]'),
       donorName: root.querySelector('[data-role="donor-name"]'),
@@ -399,6 +407,9 @@
         updateTicketSelector(selectedPkg);
       } else {
         updateTicketSelector(null);
+      }
+      if (source !== "solo" && els.soloTicketCount) {
+        els.soloTicketCount.value = "0";
       }
       if (els.customAmount && state.selectedAmount > 0) {
         els.customAmount.value = formatInputAmount(state.selectedAmount);
@@ -667,11 +678,32 @@
           var pkgs = root.querySelectorAll(".impact-event-widget__pkg");
           pkgs.forEach(function (p) { p.classList.remove("is-active"); });
           updateTicketSelector(null);
+          if (els.soloTicketCount) { els.soloTicketCount.value = "0"; }
         }
       });
 
       els.ticketCount.addEventListener("change", function () {
         state.ticketCount = Number(els.ticketCount.value) || 0;
+      });
+
+      els.soloTicketCount.addEventListener("change", function () {
+        var n = Number(els.soloTicketCount.value) || 0;
+        if (n > 0) {
+          var totalAmount = n * TICKET_UNIT_PRICE;
+          state.ticketCount = n;
+          state.selectedPkg = null;
+          state.selectedAmount = totalAmount;
+          root.querySelectorAll(".impact-event-widget__pkg").forEach(function (b) { b.classList.remove("is-active"); });
+          els.ticketRow.classList.remove("is-open");
+          els.ticketCount.innerHTML = '<option value="0">–</option>';
+          els.presets.querySelectorAll(".impact-event-widget__amount-btn").forEach(function (b) { b.classList.remove("is-active"); });
+          els.customAmount.value = formatInputAmount(totalAmount);
+        } else {
+          state.ticketCount = 0;
+          state.selectedPkg = null;
+          state.selectedAmount = 0;
+          els.customAmount.value = "";
+        }
       });
 
       var pkgButtons = root.querySelectorAll(".impact-event-widget__pkg");
@@ -702,6 +734,12 @@
 
     async function init() {
       bindEvents();
+      // Populate solo ticket dropdown
+      var soloHtml = '<option value="0">– db –</option>';
+      for (var si = 1; si <= STANDALONE_TICKET_MAX; si++) {
+        soloHtml += '<option value="' + si + '">' + si + ' jegy (' + formatAmount(si * TICKET_UNIT_PRICE, 'huf') + ')</option>';
+      }
+      els.soloTicketCount.innerHTML = soloHtml;
       setStatus(els.status, "Kampány adatok betöltése...", "");
 
       try {

@@ -1,3 +1,7 @@
+# 2026-05-28 (3)
+
+- Jövőnk Vize: jovonkvize.js szinkronizálva dev.js-sel — solo jegyvásárlás (1-10 db × 150k Ft) élesben.
+
 # 2026-05-28 (2)
 
 - Jövőnk Vize widget: verzió bump 1.0.0 → 1.1.0, embed kód `?v=1.1.0` frissítve.
