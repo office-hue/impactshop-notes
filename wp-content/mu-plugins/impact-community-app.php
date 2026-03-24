@@ -2027,3 +2027,356 @@ a:hover { text-decoration: underline; }
 </script>
 </body>
 </html>
+<?php
+/* ===========================================================================
+ * §13  NGO Admin Panel — [impact_community_ngo_admin]
+ * Standalone SPA shortcode for NGO admins: login, circle stats, advisor quotas
+ * =========================================================================*/
+add_shortcode( 'impact_community_ngo_admin', 'ic_render_ngo_admin' );
+function ic_render_ngo_admin(): string {
+    $api = esc_js( trailingslashit( get_rest_url() ) . 'ic/v1' );
+    ob_start();
+    ?>
+<!DOCTYPE html>
+<html class="ic-ngo-root" lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NGO Admin &mdash; ImpactShop</title>
+<style>
+:root{--ic-primary:#2563eb;--ic-danger:#dc2626;--ic-ok:#16a34a;--ic-bg:#f8fafc;--ic-card:#fff;--ic-border:#e2e8f0;--ic-text:#1e293b;--ic-muted:#64748b}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var(--ic-text);font-size:15px}
+.ica-wrap{max-width:720px;margin:0 auto;padding:24px 16px}
+.ica-card{background:var(--ic-card);border:1px solid var(--ic-border);border-radius:12px;padding:24px;margin-bottom:20px}
+.ica-card h2{margin:0 0 16px;font-size:18px;font-weight:700}
+.ica-form label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;margin-top:12px}
+.ica-form input{width:100%;padding:8px 12px;border:1px solid var(--ic-border);border-radius:8px;font-size:14px}
+.ica-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:var(--ic-primary);color:#fff;transition:opacity .15s}
+.ica-btn:disabled{opacity:.5;cursor:default}
+.ica-btn.secondary{background:var(--ic-bg);color:var(--ic-primary);border:1px solid var(--ic-primary)}
+.ica-btn.danger{background:var(--ic-danger)}
+.ica-error{color:var(--ic-danger);font-size:13px;margin-top:8px}
+.ica-stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.ica-stat-box{background:var(--ic-bg);border:1px solid var(--ic-border);border-radius:10px;padding:14px;text-align:center}
+.ica-stat-box .val{font-size:26px;font-weight:800;color:var(--ic-primary)}
+.ica-stat-box .lbl{font-size:11px;color:var(--ic-muted);margin-top:4px}
+.ica-quota-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.ica-quota-card{background:var(--ic-bg);border:1px solid var(--ic-border);border-radius:10px;padding:16px}
+.ica-quota-card h4{margin:0 0 10px;font-size:14px;font-weight:700;text-transform:capitalize}
+.ica-quota-bar-wrap{background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px}
+.ica-quota-bar{height:100%;border-radius:6px;background:var(--ic-primary);transition:width .4s}
+.ica-quota-bar.low{background:var(--ic-danger)}
+.ica-quota-meta{font-size:12px;color:var(--ic-muted)}
+.ica-ask-btn{margin-top:10px;width:100%;padding:7px;font-size:12px;font-weight:600;border:1px solid var(--ic-primary);border-radius:7px;background:#fff;color:var(--ic-primary);cursor:pointer}
+.ica-ask-btn:disabled{opacity:.4;cursor:default}
+.ica-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center}
+.ica-modal-bg.open{display:flex}
+.ica-modal{background:#fff;border-radius:14px;padding:28px;max-width:460px;width:100%;margin:16px}
+.ica-modal h3{margin:0 0 14px}
+.ica-modal textarea{width:100%;padding:10px;border:1px solid var(--ic-border);border-radius:8px;font-size:14px;min-height:100px;resize:vertical}
+.ica-modal-actions{display:flex;gap:10px;margin-top:14px;justify-content:flex-end}
+.ica-notice{padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:16px}
+.ica-notice.ok{background:#dcfce7;color:#14532d}
+.ica-notice.err{background:#fee2e2;color:#7f1d1d}
+#ica-logout-btn{float:right;margin-top:-4px}
+</style>
+</head>
+<body>
+<div class="ica-wrap" id="ica-app">
+  <div id="ica-screen-login" style="display:none">
+    <div class="ica-card">
+      <h2>NGO Admin belépés</h2>
+      <div class="ica-form">
+        <label for="ica-email">E-mail cím</label>
+        <input id="ica-email" type="email" autocomplete="username" placeholder="ngo@example.com">
+        <label for="ica-pw">Jelszó</label>
+        <input id="ica-pw" type="password" autocomplete="current-password">
+        <div id="ica-login-err" class="ica-error" style="display:none"></div>
+        <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+          <button class="ica-btn" id="ica-login-btn">Belépés</button>
+          <a href="#" id="ica-reset-link" style="font-size:13px;color:var(--ic-primary)">Elfelejtett jelszó</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ica-screen-reset" style="display:none">
+    <div class="ica-card">
+      <h2>Jelszó visszaállítás</h2>
+      <div class="ica-form">
+        <label for="ica-reset-email">E-mail cím</label>
+        <input id="ica-reset-email" type="email" placeholder="ngo@example.com">
+        <div id="ica-reset-msg" class="ica-error" style="display:none"></div>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button class="ica-btn" id="ica-reset-send-btn">Link küldése</button>
+          <button class="ica-btn secondary" id="ica-reset-back-btn">Vissza</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ica-screen-dashboard" style="display:none">
+    <div class="ica-card">
+      <h2>
+        Körös áttekintő
+        <button class="ica-btn danger" id="ica-logout-btn" style="font-size:12px;padding:5px 12px">Kilépés</button>
+      </h2>
+      <div id="ica-notice" class="ica-notice" style="display:none"></div>
+      <div class="ica-stats-grid" id="ica-stats"></div>
+    </div>
+
+    <div class="ica-card">
+      <h2>Email blast</h2>
+      <div id="ica-blast-locked" style="display:none;color:var(--ic-muted);font-size:14px">
+        Ebben a hónapban már küldtél kampánylevelet.
+      </div>
+      <div id="ica-blast-form">
+        <div class="ica-form">
+          <label for="ica-blast-subj">Tárgy</label>
+          <input id="ica-blast-subj" type="text" placeholder="Havi hír a körtől">
+          <label for="ica-blast-body">Üzenet (szöveg)</label>
+          <textarea id="ica-blast-body" style="width:100%;padding:8px 12px;border:1px solid var(--ic-border);border-radius:8px;font-size:14px;min-height:90px;resize:vertical;margin-top:4px" placeholder="Kedves tagunk…"></textarea>
+          <div id="ica-blast-err" class="ica-error" style="display:none"></div>
+          <div style="margin-top:12px">
+            <button class="ica-btn" id="ica-blast-btn">Küldés</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ica-card">
+      <h2>Impi NGO Copilot — havi keretek</h2>
+      <div class="ica-quota-grid" id="ica-quota"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Ask Impi modal -->
+<div class="ica-modal-bg" id="ica-ask-modal">
+  <div class="ica-modal">
+    <h3 id="ica-modal-title">Kérdés küldése</h3>
+    <textarea id="ica-modal-q" placeholder="Írd le a kérdésed (min. 10 karakter)…"></textarea>
+    <div id="ica-modal-err" class="ica-error" style="display:none"></div>
+    <div class="ica-modal-actions">
+      <button class="ica-btn secondary" id="ica-modal-cancel">Mégse</button>
+      <button class="ica-btn" id="ica-modal-send">Küldés</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    const API = '<?php echo $api; ?>';
+    const SK  = 'ic_ngo_token';
+    const SL  = 'ic_ngo_slug';
+
+    let state = { token: sessionStorage.getItem(SK), slug: sessionStorage.getItem(SL), channel: null };
+
+    /* ── helpers ─────────────────────────────────────────────────────────── */
+    function show(id)  { document.getElementById(id).style.display = ''; }
+    function hide(id)  { document.getElementById(id).style.display = 'none'; }
+    function text(id, t){ document.getElementById(id).textContent = t; }
+    function esc(s)    { const d=document.createElement('div');d.textContent=String(s);return d.innerHTML; }
+
+    async function api(method, path, body, token) {
+        const opts = { method, headers: { 'Content-Type': 'application/json' } };
+        if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+        if (body)  opts.body = JSON.stringify(body);
+        const r = await fetch(API + path, opts);
+        const j = await r.json().catch(() => ({}));
+        return { ok: r.ok, status: r.status, data: j };
+    }
+
+    function notice(msg, type) {
+        const el = document.getElementById('ica-notice');
+        el.textContent = msg;
+        el.className = 'ica-notice ' + type;
+        el.style.display = '';
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    /* ── routing ─────────────────────────────────────────────────────────── */
+    function route() {
+        hide('ica-screen-login');
+        hide('ica-screen-reset');
+        hide('ica-screen-dashboard');
+        if (state.token) {
+            show('ica-screen-dashboard');
+            loadDashboard();
+        } else {
+            show('ica-screen-login');
+        }
+    }
+
+    /* ── login ───────────────────────────────────────────────────────────── */
+    document.getElementById('ica-login-btn').addEventListener('click', async () => {
+        const email = document.getElementById('ica-email').value.trim();
+        const pw    = document.getElementById('ica-pw').value;
+        const errEl = document.getElementById('ica-login-err');
+        errEl.style.display = 'none';
+        if (!email || !pw) { errEl.textContent='Töltsd ki mindkét mezőt.'; errEl.style.display=''; return; }
+        const btn = document.getElementById('ica-login-btn');
+        btn.disabled = true;
+        const r = await api('POST', '/ngo/login', { email, password: pw });
+        btn.disabled = false;
+        if (r.ok) {
+            state.token = r.data.token;
+            state.slug  = r.data.ngo_slug;
+            sessionStorage.setItem(SK, state.token);
+            sessionStorage.setItem(SL, state.slug);
+            route();
+        } else {
+            errEl.textContent = r.data.error === 'invalid_credentials'
+                ? 'Hibás e-mail vagy jelszó.' : 'Bejelentkezési hiba.';
+            errEl.style.display = '';
+        }
+    });
+
+    /* ── reset password ──────────────────────────────────────────────────── */
+    document.getElementById('ica-reset-link').addEventListener('click', e => {
+        e.preventDefault();
+        hide('ica-screen-login');
+        show('ica-screen-reset');
+    });
+    document.getElementById('ica-reset-back-btn').addEventListener('click', () => {
+        hide('ica-screen-reset');
+        show('ica-screen-login');
+    });
+    document.getElementById('ica-reset-send-btn').addEventListener('click', async () => {
+        const email = document.getElementById('ica-reset-email').value.trim();
+        const msgEl = document.getElementById('ica-reset-msg');
+        if (!email) { msgEl.textContent='Add meg az e-mail cím!'; msgEl.style.display=''; return; }
+        const btn = document.getElementById('ica-reset-send-btn');
+        btn.disabled = true;
+        await api('POST', '/ngo/reset-password', { email });
+        btn.disabled = false;
+        msgEl.textContent = 'Ha az e-mail regisztrált, hamarosan megérkezik a link.';
+        msgEl.style.color = 'var(--ic-ok)';
+        msgEl.style.display = '';
+    });
+
+    /* ── logout ──────────────────────────────────────────────────────────── */
+    document.getElementById('ica-logout-btn').addEventListener('click', () => {
+        state.token = null; state.slug = null;
+        sessionStorage.removeItem(SK); sessionStorage.removeItem(SL);
+        route();
+    });
+
+    /* ── dashboard ───────────────────────────────────────────────────────── */
+    async function loadDashboard() {
+        const r = await api('GET', '/ngo/circle', null, state.token);
+        if (!r.ok) {
+            if (r.status === 401) { state.token=null; sessionStorage.removeItem(SK); route(); }
+            return;
+        }
+        renderStats(r.data);
+        renderQuota(r.data.advisor);
+        if (r.data.blast_locked) {
+            show('ica-blast-locked');
+            hide('ica-blast-form');
+        } else {
+            hide('ica-blast-locked');
+            show('ica-blast-form');
+        }
+    }
+
+    function renderStats(data) {
+        const c = data.circle || {};
+        const items = [
+            { val: c.active_members ?? 0,  lbl: 'Aktív tag' },
+            { val: c.monthly_posts  ?? 0,  lbl: 'Havi hozzászólás' },
+            { val: c.total_votes    ?? 0,  lbl: 'Szavazatok' },
+            { val: (parseFloat(c.health_score) || 0).toFixed(1), lbl: 'Egészség %' },
+            { val: c.community_bonus ? (parseFloat(c.community_bonus)*100-100).toFixed(0)+'%' : '—', lbl: 'Közösségi bónusz' },
+        ];
+        document.getElementById('ica-stats').innerHTML = items
+            .map(i => `<div class="ica-stat-box"><div class="val">${esc(i.val)}</div><div class="lbl">${esc(i.lbl)}</div></div>`)
+            .join('');
+    }
+
+    function renderQuota(advisor) {
+        const labels = { legal: '⚖️ Jogi', finance: '💰 Pénzügyi', marketing: '📣 Marketing' };
+        document.getElementById('ica-quota').innerHTML = Object.entries(advisor || {}).map(([ch, q]) => {
+            const pct   = q.cap > 0 ? Math.min(100, Math.round(q.used / q.cap * 100)) : 0;
+            const low   = q.remaining === 0 ? ' low' : '';
+            return `<div class="ica-quota-card">
+              <h4>${labels[ch] || ch}</h4>
+              <div class="ica-quota-bar-wrap"><div class="ica-quota-bar${low}" style="width:${pct}%"></div></div>
+              <div class="ica-quota-meta">${q.used} / ${q.cap} felhasználva · <strong>${q.remaining} maradt</strong></div>
+              <button class="ica-ask-btn" data-channel="${ch}" ${q.remaining === 0 ? 'disabled' : ''}>
+                Kérdés Impinek →
+              </button>
+            </div>`;
+        }).join('');
+
+        document.querySelectorAll('.ica-ask-btn').forEach(btn => {
+            btn.addEventListener('click', () => openAskModal(btn.dataset.channel));
+        });
+    }
+
+    /* ── blast ───────────────────────────────────────────────────────────── */
+    document.getElementById('ica-blast-btn').addEventListener('click', async () => {
+        const subj = document.getElementById('ica-blast-subj').value.trim();
+        const body = document.getElementById('ica-blast-body').value.trim();
+        const errEl = document.getElementById('ica-blast-err');
+        errEl.style.display = 'none';
+        if (!subj || !body) { errEl.textContent='Tárgy és üzenet kötelező.'; errEl.style.display=''; return; }
+        const btn = document.getElementById('ica-blast-btn');
+        btn.disabled = true;
+        const r = await api('POST', '/ngo/circle/blast', { subject: subj, body }, state.token);
+        btn.disabled = false;
+        if (r.ok) {
+            notice(`Kampánylevél elküldve ${r.data.sent} tagnak!`, 'ok');
+            loadDashboard();
+        } else {
+            const msgs = { already_blasted_this_month: 'Ebben a hónapban már küldtél levelet.', missing_subject_or_body: 'Tárgy és üzenet kötelező.' };
+            errEl.textContent = msgs[r.data.error] || 'Hiba a küldés során.';
+            errEl.style.display = '';
+        }
+    });
+
+    /* ── ask modal ───────────────────────────────────────────────────────── */
+    function openAskModal(channel) {
+        const titles = { legal: '⚖️ Jogi kérdés', finance: '💰 Pénzügyi kérdés', marketing: '📣 Marketing kérdés' };
+        state.channel = channel;
+        text('ica-modal-title', titles[channel] || 'Kérdés küldése');
+        document.getElementById('ica-modal-q').value = '';
+        document.getElementById('ica-modal-err').style.display = 'none';
+        document.getElementById('ica-ask-modal').classList.add('open');
+    }
+
+    document.getElementById('ica-modal-cancel').addEventListener('click', () => {
+        document.getElementById('ica-ask-modal').classList.remove('open');
+    });
+
+    document.getElementById('ica-modal-send').addEventListener('click', async () => {
+        const q     = document.getElementById('ica-modal-q').value.trim();
+        const errEl = document.getElementById('ica-modal-err');
+        errEl.style.display = 'none';
+        if (q.length < 10) { errEl.textContent='Min. 10 karakter szükséges.'; errEl.style.display=''; return; }
+        const btn = document.getElementById('ica-modal-send');
+        btn.disabled = true;
+        const r = await api('POST', '/ngo/advisor/ask', { channel: state.channel, question: q }, state.token);
+        btn.disabled = false;
+        if (r.ok) {
+            document.getElementById('ica-ask-modal').classList.remove('open');
+            notice(r.data.message || 'Kérdés elküldve!', 'ok');
+            loadDashboard();
+        } else {
+            const msgs = { quota_exceeded:'Elfogyott a havi keret.', question_too_short:'Min. 10 karakter szükséges.' };
+            errEl.textContent = msgs[r.data.error] || 'Hiba a küldéskor.';
+            errEl.style.display = '';
+        }
+    });
+
+    /* ── init ────────────────────────────────────────────────────────────── */
+    route();
+})();
+</script>
+</body>
+</html>
+    <?php
+    return ob_get_clean();
+}

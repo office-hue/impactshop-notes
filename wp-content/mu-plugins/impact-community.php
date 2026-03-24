@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.3.4');
+define('IC_DB_VERSION', '1.3.5');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -467,6 +467,38 @@ function ic_maybe_migrate_db(): void {
         $wpdb->query("ALTER TABLE {$p}ic_member_trust ADD COLUMN is_trusted_reporter TINYINT(1) NOT NULL DEFAULT 0 AFTER strikes");
     }
 
+    /* §13 NGO accounts */
+    dbDelta("CREATE TABLE {$p}ic_ngo_accounts (
+        id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        ngo_slug      VARCHAR(120) NOT NULL,
+        email         VARCHAR(254) NOT NULL,
+        pw_hash       VARCHAR(255) NOT NULL,
+        reset_token   VARCHAR(64) DEFAULT NULL,
+        reset_expires DATETIME DEFAULT NULL,
+        last_login    DATETIME DEFAULT NULL,
+        is_active     TINYINT(1) NOT NULL DEFAULT 1,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_slug (ngo_slug),
+        UNIQUE KEY uq_email (email)
+    ) $charset;");
+
+    /* §13 Advisor usage tracking */
+    dbDelta("CREATE TABLE {$p}ic_ngo_advisor_usage (
+        id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        ngo_slug   VARCHAR(120) NOT NULL,
+        channel    ENUM('legal','finance','marketing') NOT NULL,
+        year_month CHAR(7) NOT NULL,
+        units_used SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_ngo_chan_month (ngo_slug, channel, year_month)
+    ) $charset;");
+
+    /* §13 Email blast monthly tracking */
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_circles LIKE 'last_blast_at'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_circles ADD COLUMN last_blast_at DATETIME DEFAULT NULL AFTER community_bonus");
+    }
+
     /* Seed system-level micro-missions if table was just created */
     $has_missions = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$p}ic_missions");
     if ($has_missions === 0) {
@@ -667,6 +699,43 @@ function ic_register_rest_routes(): void {
     ]);
 
     /* --- Auth / Nonce --------------------------------------------------- */
+
+    /* --- §13 NGO admin auth + advisor --------------------------------------- */
+    register_rest_route($ns, '/ngo/login', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_login',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/reset-password', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_reset_request',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/reset-password/confirm', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_reset_confirm',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/circle', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_ngo_circle_stats',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/circle/blast', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_blast',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/advisor/quota', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_ngo_advisor_quota',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/ngo/advisor/ask', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_ngo_advisor_ask',
+        'permission_callback' => '__return_true',
+    ]);
 
     register_rest_route($ns, '/ngo/tombola', [
         'methods'             => 'POST',
@@ -3912,4 +3981,396 @@ function ic_maybe_auto_timeout(int $circle_id, string $pid_hash): void {
             ['id' => (int) $trust->id]
         );
     }
+}
+
+/* ===========================================================================
+ * §13  NGO ADMIN AUTH + ADVISOR QUOTA — DB 1.3.5
+ * =========================================================================*/
+
+/**
+ * Generate a secure session token for an NGO account.
+ * Stored as a WP transient; valid for 24 h.
+ */
+function ic_ngo_generate_token( string $ngo_slug ): string {
+    $token = bin2hex( random_bytes( 32 ) );
+    set_transient( 'ic_ngo_tok_' . $token, $ngo_slug, DAY_IN_SECONDS );
+    return $token;
+}
+
+/**
+ * Extract ngo_slug from a Bearer token in the request header.
+ * Returns the slug on success, or null on failure.
+ */
+function ic_ngo_verify_token( WP_REST_Request $req ): ?string {
+    $auth = $req->get_header( 'Authorization' );
+    if ( ! $auth || strpos( $auth, 'Bearer ' ) !== 0 ) {
+        return null;
+    }
+    $token  = substr( $auth, 7 );
+    $slug   = get_transient( 'ic_ngo_tok_' . $token );
+    return $slug ? (string) $slug : null;
+}
+
+/**
+ * Guard helper: returns ngo_slug or WP_Error 401.
+ */
+function ic_ngo_guard( WP_REST_Request $req ) {
+    $slug = ic_ngo_verify_token( $req );
+    if ( ! $slug ) {
+        return new WP_Error( 'ic_unauthorized', __( 'NGO auth required.', 'ic' ), [ 'status' => 401 ] );
+    }
+    return $slug;
+}
+
+/* ===  Auth endpoints ======================================================= */
+
+/** POST /ngo/login */
+function ic_rest_ngo_login( WP_REST_Request $req ): WP_REST_Response {
+    global $wpdb;
+    $p        = $wpdb->prefix;
+    $email    = sanitize_email( (string) $req->get_param( 'email' ) );
+    $password = (string) $req->get_param( 'password' );
+
+    if ( ! $email || ! $password ) {
+        return new WP_REST_Response( [ 'error' => 'missing_fields' ], 400 );
+    }
+
+    $account = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$p}ic_ngo_accounts WHERE email = %s AND is_active = 1",
+        $email
+    ) );
+
+    if ( ! $account || ! wp_check_password( $password, $account->pw_hash ) ) {
+        return new WP_REST_Response( [ 'error' => 'invalid_credentials' ], 401 );
+    }
+
+    $token = ic_ngo_generate_token( $account->ngo_slug );
+    $wpdb->update(
+        "{$p}ic_ngo_accounts",
+        [ 'last_login' => current_time( 'mysql' ) ],
+        [ 'id' => (int) $account->id ]
+    );
+
+    return new WP_REST_Response( [ 'token' => $token, 'ngo_slug' => $account->ngo_slug ], 200 );
+}
+
+/** POST /ngo/reset-password — sends a reset link to the registered email */
+function ic_rest_ngo_reset_request( WP_REST_Request $req ): WP_REST_Response {
+    global $wpdb;
+    $p     = $wpdb->prefix;
+    $email = sanitize_email( (string) $req->get_param( 'email' ) );
+
+    if ( ! $email ) {
+        return new WP_REST_Response( [ 'error' => 'missing_email' ], 400 );
+    }
+
+    $account = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id, ngo_slug FROM {$p}ic_ngo_accounts WHERE email = %s AND is_active = 1",
+        $email
+    ) );
+
+    // Always return 200 to avoid user enumeration
+    if ( $account ) {
+        $token   = wp_generate_password( 64, false );
+        $expires = gmdate( 'Y-m-d H:i:s', time() + HOUR_IN_SECONDS );
+        $wpdb->update(
+            "{$p}ic_ngo_accounts",
+            [ 'reset_token' => $token, 'reset_expires' => $expires ],
+            [ 'id' => (int) $account->id ]
+        );
+        $reset_url = site_url( '/impact-challenge/ngo-admin/?reset=' . rawurlencode( $token ) );
+        wp_mail(
+            $email,
+            __( 'ImpactShop NGO — jelszó visszaállítás', 'ic' ),
+            sprintf(
+                __( "A jelszó visszaállítási link (1 óráig érvényes):\n%s", 'ic' ),
+                $reset_url
+            )
+        );
+    }
+
+    return new WP_REST_Response( [ 'ok' => true ], 200 );
+}
+
+/** POST /ngo/reset-password/confirm — validates token and sets new password */
+function ic_rest_ngo_reset_confirm( WP_REST_Request $req ): WP_REST_Response {
+    global $wpdb;
+    $p        = $wpdb->prefix;
+    $token    = sanitize_text_field( (string) $req->get_param( 'token' ) );
+    $password = (string) $req->get_param( 'password' );
+
+    if ( ! $token || strlen( $password ) < 8 ) {
+        return new WP_REST_Response( [ 'error' => 'invalid_input' ], 400 );
+    }
+
+    $account = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id FROM {$p}ic_ngo_accounts WHERE reset_token = %s AND reset_expires > %s AND is_active = 1",
+        $token, current_time( 'mysql' )
+    ) );
+
+    if ( ! $account ) {
+        return new WP_REST_Response( [ 'error' => 'invalid_or_expired_token' ], 400 );
+    }
+
+    $wpdb->update(
+        "{$p}ic_ngo_accounts",
+        [ 'pw_hash' => wp_hash_password( $password ), 'reset_token' => null, 'reset_expires' => null ],
+        [ 'id' => (int) $account->id ]
+    );
+
+    return new WP_REST_Response( [ 'ok' => true ], 200 );
+}
+
+/* ===  NGO Circle stats ===================================================== */
+
+/** GET /ngo/circle — circle + advisor quota summary for the authed NGO */
+function ic_rest_ngo_circle_stats( WP_REST_Request $req ) {
+    $ngo_slug = ic_ngo_guard( $req );
+    if ( is_wp_error( $ngo_slug ) ) {
+        return $ngo_slug;
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $circle = $wpdb->get_row( $wpdb->prepare(
+        "SELECT c.id, c.ref_slug, c.community_bonus, c.last_blast_at,
+                s.active_members, s.monthly_posts, s.total_votes, s.health_score,
+                s.calculated_at
+         FROM {$p}ic_circles c
+         LEFT JOIN {$p}ic_circle_stats s ON s.circle_id = c.id
+         WHERE c.ref_slug = %s AND c.type = 'ngo'
+         ORDER BY s.calculated_at DESC
+         LIMIT 1",
+        $ngo_slug
+    ) );
+
+    if ( ! $circle ) {
+        return new WP_REST_Response( [ 'error' => 'circle_not_found' ], 404 );
+    }
+
+    $ym      = gmdate( 'Y-m' );
+    $blasted = $circle->last_blast_at && substr( $circle->last_blast_at, 0, 7 ) === $ym;
+
+    $quotas = [];
+    foreach ( [ 'legal', 'finance', 'marketing' ] as $ch ) {
+        $cap  = ic_ngo_calc_quota( $ngo_slug, $ch );
+        $used = ic_ngo_advisor_used( $ngo_slug, $ch, $ym );
+        $quotas[ $ch ] = [ 'cap' => $cap, 'used' => $used, 'remaining' => max( 0, $cap - $used ) ];
+    }
+
+    return new WP_REST_Response( [
+        'circle'       => $circle,
+        'blast_locked' => $blasted,
+        'advisor'      => $quotas,
+    ], 200 );
+}
+
+/* ===  Email blast ========================================================== */
+
+/** POST /ngo/circle/blast — sends a campaign email to all active circle members (1/month) */
+function ic_rest_ngo_blast( WP_REST_Request $req ) {
+    $ngo_slug = ic_ngo_guard( $req );
+    if ( is_wp_error( $ngo_slug ) ) {
+        return $ngo_slug;
+    }
+
+    global $wpdb;
+    $p   = $wpdb->prefix;
+    $ym  = gmdate( 'Y-m' );
+
+    $circle = $wpdb->get_row( $wpdb->prepare(
+        "SELECT id, last_blast_at FROM {$p}ic_circles WHERE ref_slug = %s AND type = 'ngo'",
+        $ngo_slug
+    ) );
+
+    if ( ! $circle ) {
+        return new WP_REST_Response( [ 'error' => 'circle_not_found' ], 404 );
+    }
+
+    if ( $circle->last_blast_at && substr( $circle->last_blast_at, 0, 7 ) === $ym ) {
+        return new WP_REST_Response( [ 'error' => 'already_blasted_this_month' ], 429 );
+    }
+
+    $subject = sanitize_text_field( (string) $req->get_param( 'subject' ) );
+    $body    = wp_kses_post( (string) $req->get_param( 'body' ) );
+
+    if ( ! $subject || ! $body ) {
+        return new WP_REST_Response( [ 'error' => 'missing_subject_or_body' ], 400 );
+    }
+
+    // Collect member emails (WP users who joined this circle)
+    $emails = $wpdb->get_col( $wpdb->prepare(
+        "SELECT DISTINCT u.user_email
+         FROM {$p}ic_memberships m
+         JOIN {$p}users u ON u.ID = m.user_id
+         WHERE m.circle_id = %d AND m.status = 'active'",
+        (int) $circle->id
+    ) );
+
+    $sent = 0;
+    foreach ( $emails as $email ) {
+        if ( is_email( $email ) && wp_mail( $email, $subject, $body ) ) {
+            $sent++;
+        }
+    }
+
+    $wpdb->update(
+        "{$p}ic_circles",
+        [ 'last_blast_at' => current_time( 'mysql' ) ],
+        [ 'id' => (int) $circle->id ]
+    );
+
+    return new WP_REST_Response( [ 'sent' => $sent ], 200 );
+}
+
+/* ===  Advisor quota helpers ================================================ */
+
+/**
+ * Calculate the current monthly quota cap for one channel.
+ * Base: legal=5, finance=5, marketing=8.
+ * Bonuses (+1 per threshold, same for all channels):
+ *   +1 per 25 active_members, +1 per 40 monthly_posts, +1 per 20 valid_invites
+ * Hard caps: legal=25, finance=20, marketing=30.
+ */
+function ic_ngo_calc_quota( string $ngo_slug, string $channel ): int {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $bases    = [ 'legal' => 5, 'finance' => 5, 'marketing' => 8 ];
+    $hard_cap = [ 'legal' => 25, 'finance' => 20, 'marketing' => 30 ];
+    $base     = $bases[ $channel ] ?? 5;
+    $cap      = $hard_cap[ $channel ] ?? 20;
+
+    $stats = $wpdb->get_row( $wpdb->prepare(
+        "SELECT s.active_members, s.monthly_posts
+         FROM {$p}ic_circles c
+         JOIN {$p}ic_circle_stats s ON s.circle_id = c.id
+         WHERE c.ref_slug = %s AND c.type = 'ngo'
+         ORDER BY s.calculated_at DESC LIMIT 1",
+        $ngo_slug
+    ) );
+
+    $active_members = $stats ? (int) $stats->active_members : 0;
+    $monthly_posts  = $stats ? (int) $stats->monthly_posts  : 0;
+
+    // Valid invites: memberships created via invite in last 30 days
+    $circle_id = (int) $wpdb->get_var( $wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug = %s AND type = 'ngo'",
+        $ngo_slug
+    ) );
+    $valid_invites = $circle_id ? (int) $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_invite_claims
+         WHERE circle_id = %d AND created_at >= %s",
+        $circle_id, gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) )
+    ) ) : 0;
+
+    $bonus = (int) floor( $active_members / 25 )
+           + (int) floor( $monthly_posts  / 40 )
+           + (int) floor( $valid_invites  / 20 );
+
+    return min( $base + $bonus, $cap );
+}
+
+/**
+ * How many advisor units has this NGO consumed for a channel in a given month?
+ * $year_month format: '2026-03'
+ */
+function ic_ngo_advisor_used( string $ngo_slug, string $channel, string $year_month ): int {
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $used = $wpdb->get_var( $wpdb->prepare(
+        "SELECT units_used FROM {$p}ic_ngo_advisor_usage
+         WHERE ngo_slug = %s AND channel = %s AND year_month = %s",
+        $ngo_slug, $channel, $year_month
+    ) );
+    return (int) $used;
+}
+
+/**
+ * Consume one advisor unit.  Returns true on success, false if quota exceeded.
+ */
+function ic_ngo_advisor_consume( string $ngo_slug, string $channel ): bool {
+    global $wpdb;
+    $p  = $wpdb->prefix;
+    $ym = gmdate( 'Y-m' );
+
+    $cap  = ic_ngo_calc_quota( $ngo_slug, $channel );
+    $used = ic_ngo_advisor_used( $ngo_slug, $channel, $ym );
+
+    if ( $used >= $cap ) {
+        return false;
+    }
+
+    // Upsert: insert or increment
+    $wpdb->query( $wpdb->prepare(
+        "INSERT INTO {$p}ic_ngo_advisor_usage (ngo_slug, channel, year_month, units_used)
+         VALUES (%s, %s, %s, 1)
+         ON DUPLICATE KEY UPDATE units_used = units_used + 1",
+        $ngo_slug, $channel, $ym
+    ) );
+
+    return true;
+}
+
+/* ===  Advisor REST endpoints ============================================== */
+
+/** GET /ngo/advisor/quota — returns quota breakdown for all 3 channels */
+function ic_rest_ngo_advisor_quota( WP_REST_Request $req ) {
+    $ngo_slug = ic_ngo_guard( $req );
+    if ( is_wp_error( $ngo_slug ) ) {
+        return $ngo_slug;
+    }
+
+    $ym     = gmdate( 'Y-m' );
+    $result = [];
+    foreach ( [ 'legal', 'finance', 'marketing' ] as $ch ) {
+        $cap  = ic_ngo_calc_quota( $ngo_slug, $ch );
+        $used = ic_ngo_advisor_used( $ngo_slug, $ch, $ym );
+        $result[ $ch ] = [ 'cap' => $cap, 'used' => $used, 'remaining' => max( 0, $cap - $used ) ];
+    }
+
+    return new WP_REST_Response( [ 'year_month' => $ym, 'quota' => $result ], 200 );
+}
+
+/**
+ * POST /ngo/advisor/ask — submit an advisor question, consumes one quota unit.
+ * Body: { channel: 'legal'|'finance'|'marketing', question: string }
+ * For MVP the question is saved to a WP option log; no AI call is made here.
+ */
+function ic_rest_ngo_advisor_ask( WP_REST_Request $req ) {
+    $ngo_slug = ic_ngo_guard( $req );
+    if ( is_wp_error( $ngo_slug ) ) {
+        return $ngo_slug;
+    }
+
+    $channel  = sanitize_key( (string) $req->get_param( 'channel' ) );
+    $question = sanitize_textarea_field( (string) $req->get_param( 'question' ) );
+
+    if ( ! in_array( $channel, [ 'legal', 'finance', 'marketing' ], true ) ) {
+        return new WP_REST_Response( [ 'error' => 'invalid_channel' ], 400 );
+    }
+
+    if ( ! $question || strlen( $question ) < 10 ) {
+        return new WP_REST_Response( [ 'error' => 'question_too_short' ], 400 );
+    }
+
+    if ( ! ic_ngo_advisor_consume( $ngo_slug, $channel ) ) {
+        return new WP_REST_Response( [ 'error' => 'quota_exceeded' ], 429 );
+    }
+
+    // Store for async processing (append to option-based log)
+    $log   = get_option( 'ic_advisor_queue', [] );
+    $log[] = [
+        'ngo_slug'   => $ngo_slug,
+        'channel'    => $channel,
+        'question'   => $question,
+        'created_at' => current_time( 'mysql' ),
+    ];
+    update_option( 'ic_advisor_queue', array_slice( $log, -500 ) ); // keep last 500
+
+    return new WP_REST_Response( [
+        'ok'      => true,
+        'message' => __( 'Kérdésed beérkezett — Impi hamarosan válaszol.', 'ic' ),
+    ], 200 );
 }
