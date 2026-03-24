@@ -83,3 +83,9 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 
 ### 2026-05-28c — jovonkvize.js production deploy
 - Solo jegyvásárlás (1-10 db × 150 000 Ft) élesben a `jovonkvize.hu` embedben.
+
+### 2026-03-24 — version 1.2.0
+- IMPACTSHOP_EVENT_DONATION_VERSION: 1.2.0 — cache-bust új embed kódhoz.
+
+### 2026-03-24 — version 1.2.0
+- IMPACTSHOP_EVENT_DONATION_VERSION: 1.2.0 — cache-bust új embed kódhoz.

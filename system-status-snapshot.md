@@ -1,3 +1,9 @@
+## 2026-03-24c — PHP version 1.2.0 deploy
+- IMPACTSHOP_EVENT_DONATION_VERSION bumped 1.1.0 → 1.2.0, prod verified.
+
+## 2026-03-24c — PHP version 1.2.0 deploy
+- IMPACTSHOP_EVENT_DONATION_VERSION bumped 1.1.0 → 1.2.0, prod verified.
+
 ## 2026-05-28c - jovonkvize.js production deploy (solo jegyvásárlás)
 - `impactshop-event-donation-widget-jovonkvize.js` frissítve: TICKET_UNIT_PRICE=150000, solo dropdown, change handler.
 

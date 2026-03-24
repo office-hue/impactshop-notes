@@ -1,3 +1,9 @@
+## 2026-03-24
+- version bump 1.1.0 → 1.2.0 (impactshop-event-donation-widget.php) — cache-bust deploy
+
+## 2026-03-24
+- version bump 1.1.0 → 1.2.0 (impactshop-event-donation-widget.php) — cache-bust deploy
+
 # 2026-05-28 (3)
 
 - Jövőnk Vize: jovonkvize.js szinkronizálva dev.js-sel — solo jegyvásárlás (1-10 db × 150k Ft) élesben.

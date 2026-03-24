@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.1.0');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.2.0');
 define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
