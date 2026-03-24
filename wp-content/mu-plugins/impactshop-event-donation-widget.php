@@ -672,6 +672,31 @@ function impactshop_event_donation_stats_payload(array $campaign): array
     $goal = (float) ($campaign['goal_amount'] ?? 0);
     $progress = ($goal > 0) ? min(100, round(($total / $goal) * 100, 2)) : 0;
 
+    $breakdownRows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT
+                COALESCE(selected_package, '') AS package,
+                SUM(ticket_count)              AS tickets,
+                COUNT(*)                       AS donations
+             FROM {$table}
+             WHERE campaign_slug = %s
+               AND status = 'completed'
+             GROUP BY selected_package",
+            $slug
+        ),
+        ARRAY_A
+    ) ?: [];
+    $ticketBreakdown = [];
+    $totalTickets = 0;
+    foreach ($breakdownRows as $br) {
+        $pkg = $br['package'] !== '' ? $br['package'] : 'unknown';
+        $ticketBreakdown[$pkg] = [
+            'tickets'   => (int) $br['tickets'],
+            'donations' => (int) $br['donations'],
+        ];
+        $totalTickets += (int) $br['tickets'];
+    }
+
     return [
         'currency' => $currency,
         'total_amount' => $total,
@@ -685,6 +710,8 @@ function impactshop_event_donation_stats_payload(array $campaign): array
         'goal_progress_percent' => $progress,
         'last_completed_at' => (string) ($row['last_completed_at'] ?? ''),
         'updated_at' => gmdate('c'),
+        'total_tickets' => $totalTickets,
+        'ticket_breakdown' => $ticketBreakdown,
     ];
 }
 
@@ -1591,4 +1618,85 @@ function impactshop_event_donation_shortcode(array $atts = []): string
         esc_attr($fallbackApiBase),
         esc_attr($mode)
     );
+}
+
+// ─── WP-CLI ───────────────────────────────────────────────────────────────────
+
+if (defined('WP_CLI') && WP_CLI) {
+    /**
+     * Commands for the ImpactShop event-donation widget.
+     *
+     * ## EXAMPLES
+     *
+     *   wp impactshop event-donation stats jovonkvize-2026
+     */
+    class ImpactShop_Event_Donation_CLI {
+
+        /**
+         * Display ticket and donation stats for a campaign.
+         *
+         * ## OPTIONS
+         *
+         * <slug>
+         * : Campaign slug (e.g. jovonkvize-2026)
+         *
+         * [--format=<format>]
+         * : Output format: table, json, csv. Default: table.
+         *
+         * ## EXAMPLES
+         *
+         *   wp impactshop event-donation stats jovonkvize-2026
+         *   wp impactshop event-donation stats jovonkvize-2026 --format=json
+         *
+         * @when after_wp_load
+         */
+        public function stats(array $args, array $assoc_args): void {
+            $slug = sanitize_title((string) ($args[0] ?? ''));
+            if (!$slug) {
+                WP_CLI::error('Hiányzó kampány slug.');
+            }
+
+            $campaign = impactshop_event_donation_get_campaign($slug);
+            if (!$campaign) {
+                WP_CLI::error("Nem található kampány: {$slug}");
+            }
+
+            $payload = impactshop_event_donation_stats_payload($campaign);
+            $format  = $assoc_args['format'] ?? 'table';
+
+            if ($format === 'json') {
+                WP_CLI::line(wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                return;
+            }
+
+            // Summary table
+            $summary = [
+                ['Mező', 'Érték'],
+                ['Támogatók száma',     $payload['supporters_count']],
+                ['Összes összeg',       $payload['total_amount_formatted']],
+                ['Átlag adomány',       $payload['average_amount_formatted']],
+                ['Cél előrehaladás',    $payload['goal_progress_percent'] . '%'],
+                ['Összes jegy',         $payload['total_tickets']],
+                ['Utolsó adomány',      $payload['last_completed_at']],
+            ];
+            \WP_CLI\Utils\format_items('table', array_slice($summary, 1), ['Mező', 'Érték']);
+
+            // Ticket breakdown
+            if (!empty($payload['ticket_breakdown'])) {
+                WP_CLI::line('');
+                WP_CLI::line('Jegy breakdown (csomag szerinti bontás):');
+                $rows = [];
+                foreach ($payload['ticket_breakdown'] as $pkg => $data) {
+                    $rows[] = [
+                        'Csomag'     => $pkg,
+                        'Jegyek'     => $data['tickets'],
+                        'Adományok'  => $data['donations'],
+                    ];
+                }
+                \WP_CLI\Utils\format_items($format === 'csv' ? 'csv' : 'table', $rows, ['Csomag', 'Jegyek', 'Adományok']);
+            }
+        }
+    }
+
+    WP_CLI::add_command('impactshop event-donation', 'ImpactShop_Event_Donation_CLI');
 }
