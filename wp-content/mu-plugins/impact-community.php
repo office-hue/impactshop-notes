@@ -483,15 +483,15 @@ function ic_maybe_migrate_db(): void {
     ) $charset;");
 
     /* §13 Advisor usage tracking */
-    dbDelta("CREATE TABLE {$p}ic_ngo_advisor_usage (
-        id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        ngo_slug   VARCHAR(120) NOT NULL,
-        channel    ENUM('legal','finance','marketing') NOT NULL,
-        year_month CHAR(7) NOT NULL,
-        units_used SMALLINT UNSIGNED NOT NULL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uq_ngo_chan_month (ngo_slug, channel, year_month)
-    ) $charset;");
+    $wpdb->query("CREATE TABLE IF NOT EXISTS `{$p}ic_ngo_advisor_usage` (
+        `id`         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        `ngo_slug`   VARCHAR(120) NOT NULL,
+        `channel`    ENUM('legal','finance','marketing') NOT NULL,
+        `year_month` CHAR(7) NOT NULL,
+        `units_used` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY `uq_ngo_chan_month` (`ngo_slug`, `channel`, `year_month`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
     /* §13 Email blast monthly tracking */
     $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_circles LIKE 'last_blast_at'");
