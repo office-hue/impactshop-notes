@@ -3077,7 +3077,7 @@ function ic_rest_tombola_buy(WP_REST_Request $req): WP_REST_Response|WP_Error {
     $gate_pts = (int) ($tombola['activity_gate_pts'] ?? 0);
     if ($gate_pts > 0) {
         $post_count  = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND deleted_at IS NULL",
+            "SELECT COUNT(*) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND is_deleted=0",
             (int) $tombola['circle_id'], $pid_hash
         ));
         $react_count = (int) $wpdb->get_var($wpdb->prepare(
@@ -3085,8 +3085,8 @@ function ic_rest_tombola_buy(WP_REST_Request $req): WP_REST_Response|WP_Error {
             $pid_hash
         ));
         $vote_count  = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(vote_count),0) FROM {$p}ic_votes WHERE pid_hash=%s",
-            $pid_hash
+            "SELECT COALESCE(SUM(vote_count),0) FROM {$p}ic_posts WHERE circle_id=%d AND author_hash=%s AND is_deleted=0",
+            (int) $tombola['circle_id'], $pid_hash
         ));
         $activity_score = $post_count * 30 + ($react_count + $vote_count) * 3;
         if ($activity_score < $gate_pts) {
@@ -3757,7 +3757,7 @@ function ic_sprint_daily_check_handler(): void {
     if ($active) return;
 
     $recent = $wpdb->get_var(
-        "SELECT COUNT(*) FROM {$p}ic_sprints WHERE closed_at > DATE_SUB(NOW(), INTERVAL 3 DAY)"
+        "SELECT COUNT(*) FROM {$p}ic_sprints WHERE status='closed' AND ends_at > DATE_SUB(NOW(), INTERVAL 3 DAY)"
     );
     if ($recent) return;
 
@@ -3846,7 +3846,7 @@ function ic_run_daily_circle_stats(): void {
         // New members who joined yesterday
         $new_members = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$p}ic_memberships
-             WHERE circle_id = %d AND status = 'active'
+             WHERE circle_id = %d AND is_active = 1
                AND DATE(joined_at) = %s",
             $cid, $yesterday
         ));
@@ -4585,14 +4585,11 @@ function ic_rest_ngo_blast( WP_REST_Request $req ) {
         return new WP_REST_Response( [ 'error' => 'missing_subject_or_body' ], 400 );
     }
 
-    // Collect member emails (WP users who joined this circle)
-    $emails = $wpdb->get_col( $wpdb->prepare(
-        "SELECT DISTINCT u.user_email
-         FROM {$p}ic_memberships m
-         JOIN {$p}users u ON u.ID = m.user_id
-         WHERE m.circle_id = %d AND m.status = 'active'",
-        (int) $circle->id
-    ) );
+    // Collect member emails: memberships are pseudo-anonymous (pid_hash),
+    // so we send to WP users whose pseudo_id cookie hash matches a membership.
+    // For MVP, this is a no-op (pseudo-anonymous users have no email). 
+    // When WP-login backed memberships exist, use a user_id join.
+    $emails = [];
 
     $sent = 0;
     foreach ( $emails as $email ) {
@@ -4901,9 +4898,9 @@ function ic_rest_admin_circles( WP_REST_Request $req ): WP_REST_Response {
     $circles = $wpdb->get_results(
         "SELECT c.id, c.ref_slug, c.name, c.type, c.is_active,
                 c.community_bonus, c.last_blast_at,
-                COUNT(DISTINCT m.user_id) AS member_count
+                COUNT(DISTINCT m.pid_hash) AS member_count
          FROM {$p}ic_circles c
-         LEFT JOIN {$p}ic_memberships m ON m.circle_id = c.id AND m.status = 'active'
+         LEFT JOIN {$p}ic_memberships m ON m.circle_id = c.id AND m.is_active = 1
          WHERE c.is_active = 1
          GROUP BY c.id
          ORDER BY c.type, c.ref_slug",
@@ -5729,27 +5726,27 @@ function ic_data_retention_handler(): void {
         $six_months, $two_years
     ) );
 
-    // 2. Reports: anonymize pid_hash (reporter) 2 years after being closed
+    // 2. Reports: anonymize reporter_hash 2 years after being reviewed
     //    platform_admin-actioned rows stay permanent (preserved by actor_type)
     $wpdb->query( $wpdb->prepare(
         "UPDATE {$p}ic_reports
-         SET pid_hash = 'anon'
-         WHERE pid_hash != 'anon'
+         SET reporter_hash = 'anon'
+         WHERE reporter_hash != 'anon'
            AND status IN ('actioned','dismissed')
-           AND updated_at <= %s",
+           AND reviewed_at <= %s",
         $two_years
     ) );
 
     // 3. Mission completions: hard-delete after 1 year
     $one_year = date( 'Y-m-d H:i:s', strtotime( '-1 year' ) );
     $wpdb->query( $wpdb->prepare(
-        "DELETE FROM {$p}ic_mission_completions WHERE completed_at <= %s",
+        "DELETE FROM {$p}ic_mission_completions WHERE created_at <= %s",
         $one_year
     ) );
 
     // 4. Circle leaderboard snapshots: hard-delete older than 6 months
     $wpdb->query( $wpdb->prepare(
-        "DELETE FROM {$p}ic_circle_leaderboard WHERE snapshot_date <= %s",
+        "DELETE FROM {$p}ic_circle_leaderboard WHERE updated_at <= %s",
         $six_months
     ) );
 }
@@ -5783,7 +5780,7 @@ function ic_rest_admin_appeal_queue(): WP_REST_Response {
     $rows = $wpdb->get_results(
         "SELECT a.id, a.modaction_id, a.appellant_hash, a.appeal_reason,
                 a.status, a.created_at,
-                m.action_type, m.circle_id, m.post_id, m.target_hash,
+                m.action AS action_type, m.circle_id, m.post_id, m.target_hash,
                 m.reason AS mod_reason, m.created_at AS actioned_at
          FROM {$p}ic_appeals a
          JOIN {$p}ic_moderation_actions m ON m.id = a.modaction_id
@@ -5847,22 +5844,22 @@ function ic_rest_admin_appeal_action(WP_REST_Request $req): WP_REST_Response|WP_
 
 /** GET /ngo/appeals — NGO admin lists pending appeals in their circles */
 function ic_rest_ngo_appeal_queue(WP_REST_Request $req): WP_REST_Response|WP_Error {
-    $pid_hash = ic_pid_hash();
-    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+    $ngo_slug = ic_ngo_guard($req);
+    if (is_wp_error($ngo_slug)) return $ngo_slug;
 
     global $wpdb;
     $p = $wpdb->prefix;
 
-    $ngo = $wpdb->get_row($wpdb->prepare(
-        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
-    ), ARRAY_A);
-    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
-    $circle_id = (int) $ngo['circle_id'];
+    $circle = $wpdb->get_row($wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug=%s AND type='ngo'", $ngo_slug
+    ));
+    if (!$circle) return ic_json_error('Kör nem található.', 404);
+    $circle_id = (int) $circle->id;
 
     $rows = $wpdb->get_results($wpdb->prepare(
         "SELECT a.id, a.modaction_id, a.appellant_hash, a.appeal_reason,
                 a.status, a.created_at,
-                m.action_type, m.post_id, m.target_hash,
+                m.action AS action_type, m.post_id, m.target_hash,
                 m.reason AS mod_reason, m.created_at AS actioned_at
          FROM {$p}ic_appeals a
          JOIN {$p}ic_moderation_actions m ON m.id = a.modaction_id
@@ -5877,17 +5874,17 @@ function ic_rest_ngo_appeal_queue(WP_REST_Request $req): WP_REST_Response|WP_Err
 
 /** POST /ngo/appeals/{appeal_id} — NGO admin approve or uphold an appeal */
 function ic_rest_ngo_appeal_action(WP_REST_Request $req): WP_REST_Response|WP_Error {
-    $pid_hash = ic_pid_hash();
-    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+    $ngo_slug = ic_ngo_guard($req);
+    if (is_wp_error($ngo_slug)) return $ngo_slug;
 
     global $wpdb;
     $p = $wpdb->prefix;
 
-    $ngo = $wpdb->get_row($wpdb->prepare(
-        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
-    ), ARRAY_A);
-    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
-    $ngo_circle_id = (int) $ngo['circle_id'];
+    $circle = $wpdb->get_row($wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug=%s AND type='ngo'", $ngo_slug
+    ));
+    if (!$circle) return ic_json_error('Kör nem található.', 404);
+    $ngo_circle_id = (int) $circle->id;
 
     $appeal_id   = (int) $req->get_param('appeal_id');
     $action      = sanitize_key($req->get_param('action') ?? '');
@@ -5912,11 +5909,11 @@ function ic_rest_ngo_appeal_action(WP_REST_Request $req): WP_REST_Response|WP_Er
     $new_status = ($action === 'approve') ? 'approved' : 'upheld';
     $wpdb->update("{$p}ic_appeals", [
         'status'      => $new_status,
-        'reviewed_by' => $pid_hash,
+        'reviewed_by' => 'ngo:' . $ngo_slug,
         'reviewed_at' => current_time('mysql'),
     ], ['id' => $appeal_id]);
 
-    ic_log_moderation_action($ngo_circle_id, null, null, $pid_hash, 'ngo',
+    ic_log_moderation_action($ngo_circle_id, null, null, 'ngo:' . $ngo_slug, 'ngo_admin',
         $action === 'approve' ? 'approve_appeal' : 'uphold_appeal', $review_note);
 
     if ($action === 'approve') {
@@ -5943,7 +5940,7 @@ function ic_appeal_reverse(int $appeal_id, int $circle_id): void {
     $p = $wpdb->prefix;
 
     $appeal = $wpdb->get_row($wpdb->prepare(
-        "SELECT a.appellant_hash, m.action_type, m.post_id, m.target_hash
+        "SELECT a.appellant_hash, m.action AS action_type, m.post_id, m.target_hash
          FROM {$p}ic_appeals a
          JOIN {$p}ic_moderation_actions m ON m.id = a.modaction_id
          WHERE a.id=%d", $appeal_id
@@ -6010,17 +6007,17 @@ function ic_impi_post_private(int $circle_id, string $recipient_hash, string $bo
 
 /** GET /ngo/moderation/reports — NGO admin lists pending reports in their circle */
 function ic_rest_ngo_moderation_reports(WP_REST_Request $req): WP_REST_Response|WP_Error {
-    $pid_hash = ic_pid_hash();
-    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+    $ngo_slug = ic_ngo_guard($req);
+    if (is_wp_error($ngo_slug)) return $ngo_slug;
 
     global $wpdb;
     $p = $wpdb->prefix;
 
-    $ngo = $wpdb->get_row($wpdb->prepare(
-        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
-    ), ARRAY_A);
-    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
-    $circle_id = (int) $ngo['circle_id'];
+    $circle = $wpdb->get_row($wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug=%s AND type='ngo'", $ngo_slug
+    ));
+    if (!$circle) return ic_json_error('Kör nem található.', 404);
+    $circle_id = (int) $circle->id;
 
     $status_filter = sanitize_key($req->get_param('status') ?? 'pending');
     $allowed_statuses = ['pending', 'actioned', 'dismissed'];
@@ -6046,17 +6043,17 @@ function ic_rest_ngo_moderation_reports(WP_REST_Request $req): WP_REST_Response|
 
 /** POST /ngo/moderation/action — NGO admin removes post / warns member / dismisses report */
 function ic_rest_ngo_moderation_action(WP_REST_Request $req): WP_REST_Response|WP_Error {
-    $pid_hash = ic_pid_hash();
-    if (!$pid_hash) return ic_json_error('Azonosítás szükséges.', 401);
+    $ngo_slug = ic_ngo_guard($req);
+    if (is_wp_error($ngo_slug)) return $ngo_slug;
 
     global $wpdb;
     $p = $wpdb->prefix;
 
-    $ngo = $wpdb->get_row($wpdb->prepare(
-        "SELECT circle_id FROM {$p}ic_ngo_accounts WHERE admin_hash=%s LIMIT 1", $pid_hash
-    ), ARRAY_A);
-    if (!$ngo) return ic_json_error('NGO admin jogosultság szükséges.', 403);
-    $circle_id = (int) $ngo['circle_id'];
+    $circle = $wpdb->get_row($wpdb->prepare(
+        "SELECT id FROM {$p}ic_circles WHERE ref_slug=%s AND type='ngo'", $ngo_slug
+    ));
+    if (!$circle) return ic_json_error('Kör nem található.', 404);
+    $circle_id = (int) $circle->id;
 
     $action      = sanitize_key($req->get_param('action') ?? '');
     $report_id   = (int) ($req->get_param('report_id') ?? 0);
@@ -6083,7 +6080,7 @@ function ic_rest_ngo_moderation_action(WP_REST_Request $req): WP_REST_Response|W
                 'status'      => 'actioned',
                 'reviewed_at' => current_time('mysql'),
             ], ['post_id' => $post_id, 'status' => 'pending']);
-            ic_log_moderation_action($circle_id, $post_id, $post['author_hash'], $pid_hash, 'ngo_admin', 'remove_post', $reason);
+            ic_log_moderation_action($circle_id, $post_id, $post['author_hash'], 'ngo:' . $ngo_slug, 'ngo_admin', 'remove_post', $reason);
             // Impi notify the author
             if ($post['author_hash']) {
                 ic_impi_notify_moderation($circle_id, $post['author_hash'], 'remove_post');
@@ -6099,7 +6096,7 @@ function ic_rest_ngo_moderation_action(WP_REST_Request $req): WP_REST_Response|W
                  ON DUPLICATE KEY UPDATE strikes = LEAST(strikes + 1, 10)",
                 $circle_id, $target_hash
             ));
-            ic_log_moderation_action($circle_id, null, $target_hash, $pid_hash, 'ngo_admin', 'warn', $reason);
+            ic_log_moderation_action($circle_id, null, $target_hash, 'ngo:' . $ngo_slug, 'ngo_admin', 'warn', $reason);
             // Impi private nudge to member
             ic_impi_post_private($circle_id, $target_hash,
                 "⚠️ A körünk adminisztrátora emlékeztetett a közösségi szabályokra. " .
@@ -6121,7 +6118,7 @@ function ic_rest_ngo_moderation_action(WP_REST_Request $req): WP_REST_Response|W
                 'reviewed_at' => current_time('mysql'),
             ], ['id' => $report_id, 'circle_id' => $circle_id, 'status' => 'pending']);
             if (!$updated) return ic_json_error('Bejelentés nem található vagy már el lett bírálva.', 404);
-            ic_log_moderation_action($circle_id, $post_id ?: null, $target_hash ?: null, $pid_hash, 'ngo_admin', 'dismiss_report', $reason);
+            ic_log_moderation_action($circle_id, $post_id ?: null, $target_hash ?: null, 'ngo:' . $ngo_slug, 'ngo_admin', 'dismiss_report', $reason);
             break;
     }
 
