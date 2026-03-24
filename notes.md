@@ -1,3 +1,7 @@
+# 2026-05-28 (2)
+
+- Jövőnk Vize widget: verzió bump 1.0.0 → 1.1.0, embed kód `?v=1.1.0` frissítve.
+
 # 2026-05-28
 
 - Jövőnk Vize widget (`feat/jovonkvize-ticket-count`): standalone jegyvásárlás dropdown (1-10 jegy × 150 000 Ft), tranzakció értesítő email (bujdoso.arnold@ + koncz.veronika@), cert BCC bujdoso.arnold@.

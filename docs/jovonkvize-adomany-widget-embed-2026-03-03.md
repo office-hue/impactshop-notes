@@ -77,3 +77,6 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 - PHP: minden befejezett tranzakcióra email értesítő (`bujdoso.arnold@` + `koncz.veronika@mielemed.hu`).
 - PHP: adományigazolás emailekbe BCC `bujdoso.arnold@bujdosoiroda.com`.
 - Status: dev-only, production deploy külön jóváhagyás után.
+### 2026-05-28b — Version bump 1.1.0 + cache-bust embed kód
+- `IMPACTSHOP_EVENT_DONATION_VERSION` 1.0.0 → 1.1.0, production deploy megtörtént.
+- JS URL-ben `?v=1.1.0` → böngésző/CDN cache bust.

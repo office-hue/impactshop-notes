@@ -1,3 +1,7 @@
+## 2026-05-28b - Jövőnk Vize: version bump 1.1.0 + cache-bust embed kód
+- `IMPACTSHOP_EVENT_DONATION_VERSION` 1.0.0 → 1.1.0, prod-ra deploy-olva.
+- JS embed URL már `?v=1.1.0`-t tartalmaz.
+
 ## 2026-05-28 - Jövőnk Vize: solo jegyvásárlás + tranzakció értesítő + cert BCC
 - Branch: `feat/jovonkvize-ticket-count` — dev JS + PHP módosítások.
 - JS dev: `TICKET_UNIT_PRICE=150000`, `STANDALONE_TICKET_MAX=10`, solo dropdown, change handler, init() feltöltés.
