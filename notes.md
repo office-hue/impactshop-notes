@@ -1,3 +1,8 @@
+## 2026-03-25 Hatás Körök hotfix
+- `/hatas-korok` production route helyreállítva
+- statikus page route és community template redirect ütközés kezelve
+- REST state-changing endpointok nonce-check + vote membership-check megerősítve
+
 ## 2026-03-25 Cert aláírás kép csere
 - Pecsétes → pecsét nélküli (IMG_3880.HEIC)
 - PHP v1.5.3 deployed
