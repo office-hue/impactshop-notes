@@ -6363,3 +6363,4 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - stopPropagation: link kattintás NEM toggleli a checkboxot
 - Deploy OK, chmod 444
 - 2026-03-25: cert aláírási blokk javítva: igazgatósági tagja → meghatalmazott, Sharity Zrt. → Sharity Adományszervező Alapítvány (v1.5.1); meghatalmazás HTML doc létrehozva
+- 2026-03-25: vagy egyszerű adományozás szeparátor hozzáadva a solo jegyek és preset összegek közé (jovonkvize.js)

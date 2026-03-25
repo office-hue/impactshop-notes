@@ -1,3 +1,6 @@
+## 2026-03-25 — vagy egyszerű adományozás szeparátor
+- solo jegyek és preset összeg ikonok közé beszúrva (jovonkvize.js)
+
 ## 2026-03-25 — v1.5.1 cert aláírási blokk javítva
 - igazgatósági tagja → meghatalmazott, Sharity Zrt. → Sharity Adományszervező Alapítvány (PDF + email szöveg)
 - meghatalmazás HTML dokumentum létrehozva: docs/meghatalmazas-adomanyigazolas-kiallitas.html

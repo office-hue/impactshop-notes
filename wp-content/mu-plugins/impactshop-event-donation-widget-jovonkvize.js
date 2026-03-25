@@ -165,6 +165,7 @@
       '<span class="impact-event-widget__solo-label">🎫 Jegyek száma<br><small style="opacity:.65;font-size:11px">1 jegy = 150 000 Ft</small></span>' +
       '<input type="number" class="impact-event-widget__solo-select" data-role="solo-ticket-count" min="0" max="10" step="1" value="0">' +
       '</div>' +
+      '<div class="impact-event-widget__or-sep">— vagy egyszerű adományozás —</div>' +
       '<div class="impact-event-widget__amounts" data-role="preset-amounts"></div>' +
       '<div class="impact-event-widget__custom">' +
       '<input class="impact-event-widget__input" data-role="custom-amount" type="text" inputmode="numeric" placeholder="Egyedi összeg (Ft)">' +

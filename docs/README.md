@@ -63,3 +63,5 @@
 
 ## 2026-03-25 — meghatalmazás dokumentum
 - docs/meghatalmazas-adomanyigazolas-kiallitas.html — adományigazolás kiállítási + aláírási meghatalmazás (Sharity Adományszervező Alapítvány → dr. Bujdosó Arnold)
+
+- 2026-03-25: vagy egyszerű adományozás szeparátor (jovonkvize.js)
