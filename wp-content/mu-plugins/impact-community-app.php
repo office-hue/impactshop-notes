@@ -2032,6 +2032,7 @@ a:hover { text-decoration: underline; }
  * §13  NGO Admin Panel — [impact_community_ngo_admin]
  * Standalone SPA shortcode for NGO admins: login, circle stats, advisor quotas
  * =========================================================================*/
+if (!function_exists('ic_render_ngo_admin')) {
 add_shortcode( 'impact_community_ngo_admin', 'ic_render_ngo_admin' );
 function ic_render_ngo_admin(): string {
     $api = esc_js( trailingslashit( get_rest_url() ) . 'ic/v1' );
@@ -2484,12 +2485,14 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
     <?php
     return ob_get_clean();
 }
+}
 
 /* =========================================================================
    §16 — Platform Admin Dashboard — [impact_community_admin_dashboard]
    Requires manage_options. Shows all circles with health, stats and bonus.
    ========================================================================= */
 
+if (!function_exists('ic_render_admin_dashboard')) {
 add_shortcode( 'impact_community_admin_dashboard', 'ic_render_admin_dashboard' );
 function ic_render_admin_dashboard(): string {
     if ( ! current_user_can( 'manage_options' ) ) {
@@ -2591,4 +2594,4 @@ function ic_render_admin_dashboard(): string {
     <?php
     return ob_get_clean();
 }
-
+}
