@@ -100,3 +100,8 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 - Gyökérok: dev.js és jovonkvize.js ugyanazt a STYLE_ID-t használta → dev.js (először tölt be) injektálta a CSS-t, jovonkvize.js kihagyta → régi stílusok maradtak.
 - Fix: `STYLE_ID = "impact-event-donation-widget-style-jvk"` egyedi azonosítóra cserélve jovonkvize.js-ben.
 - Prod: `sharityh@s59.tarhely.com` → deploy OK, chmod 444 OK.
+
+### 2026-03-25 - v1.4.0 solo ticket number input
+- Gyokérok: Safari select ignoralja a CSS background-color-t.
+- Fix: input type=number (80px, sotet hatter, vilagos szoveg).
+- JS: innerHTML populacio helyett .max attribute beallitas.

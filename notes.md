@@ -6346,3 +6346,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-03-25 - jovonkvize STYLE_ID collision fix
 - STYLE_ID uniqueness fix: jovonkvize.js → `"impact-event-donation-widget-style-jvk"` (dev.js CSS override elnémítva)
 - Prod deploy OK, chmod 444 OK. Branch: feat/jovonkvize-ticket-count
+
+## 2026-03-25 - v1.4.0 solo ticket number input fix
+- Safari select CSS bug: select element ignores background-color; replaced with input type=number
+- CSS: width:80px, dark bg rgba(5,15,47,.95), light color #f8f4ea
+- STANDALONE_TICKET_MAX set via .max attribute instead of innerHTML
