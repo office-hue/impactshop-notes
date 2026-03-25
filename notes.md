@@ -1,3 +1,7 @@
+## 2026-03-25 Cert aláírás kép csere
+- Pecsétes → pecsét nélküli (IMG_3880.HEIC)
+- PHP v1.5.3 deployed
+
 ## 2026-03-25 Meghatalmazás PDF csere
 - IMG_3880.HEIC → PDF konvertálva és feltöltve
 - Pecsét nélküli, magánszemély aláírás (dr. Bujdosó Arnold)

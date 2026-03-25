@@ -1,3 +1,7 @@
+## 2026-03-25 — cert aláírás kép csere (v1.5.3)
+- Pecsétes aláírás lecserélve pecsét nélküli változatra
+- Új kép: bujdoso-alaiiras-2026.png (IMG_3880.HEIC forrás)
+
 ## 2026-03-25 13:42 — Meghatalmazás PDF frissítve
 - Új aláírású meghatalmazás feltöltve (pecsét nélküli, magánszemély)
 - Fájl: sharity-meghatalmazas-adomanyigazolas.pdf (2.4MB)

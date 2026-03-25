@@ -71,3 +71,4 @@
 
 ## 2026-03-25 Meghatalmazás PDF csere
 - Pecsét nélküli változat feltöltve prod-ra
+- 2026-03-25: cert aláírás kép csere v1.5.3
