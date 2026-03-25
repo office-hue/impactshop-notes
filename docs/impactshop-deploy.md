@@ -31,6 +31,8 @@ IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \
   bin/impactshop-guard-deploy.sh --production --non-interactive --auto-approve --reason="<ok>"
 ```
 
+Production mapping deploy után a `bin/deploy-wpcontent-map.sh` automatikusan lefuttatja a `scripts/hatas-korok-post-deploy-smoke.sh` read-only ellenőrzést, ha a script elérhető és a `PREFLIGHT_BASE_URL` be van állítva.
+
 ## Quick rollback (guard snapshot)
 A deploy kimenetében megjelenik a snapshot azonosító. Visszaállítás:
 ```bash
@@ -41,3 +43,4 @@ bin/impactshop-guard-rollback.sh deploy-YYYYMMDD-HHMMSS
 - SSH host/user a `.deploy.*.env` fájlokban. A távoli parancsoknál szükség esetén `ssh -t` használható.
 - Preflight figyelmeztetés (pl. `totals` lassú) deploy-t nem blokkol, de érdemes monitorozni.
 - MP4/asset fájlok ne kerüljenek deployba, ha nem része a mappingnek.
+- Kézi utóellenőrzéshez továbbra is használható: `bin/post-deploy-checklist.sh`, ami már tartalmazza a Hatás Körök smoke-ot is.

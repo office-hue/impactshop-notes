@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if [[ $# -gt 1 ]]; then
   echo "Usage: $0 [--staging|--production|--env=FILE|ENV_FILE]" >&2
@@ -38,6 +39,23 @@ if [[ $IS_STAGING -eq 1 ]]; then
     echo "⚠️  Guard script nem található ($SCRIPT_DIR/impactctl-guard-staging.sh)" >&2
   fi
 fi
+
+run_hatas_korok_post_deploy_smoke() {
+  local smoke_script="${ROOT_DIR}/scripts/hatas-korok-post-deploy-smoke.sh"
+  local base_url="${PREFLIGHT_BASE_URL:-}"
+
+  [[ -x "$smoke_script" ]] || return 0
+  [[ -n "$base_url" ]] || return 0
+  [[ $IS_STAGING -eq 0 ]] || return 0
+
+  echo "🧪 Hatás Körök post-deploy smoke…"
+  if "$smoke_script" "$base_url"; then
+    echo "✅ Hatás Körök post-deploy smoke OK"
+  else
+    echo "❌ Hatás Körök post-deploy smoke FAILED" >&2
+    exit 1
+  fi
+}
 
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
   echo "🛡️ DRY-RUN MODE ENABLED — rsync nem ír a távoli szerverre."
@@ -116,4 +134,7 @@ echo "🧹 WP maintenance…"
 ssh -o BatchMode=yes "$SSH_HOST" "wp --path='$REMOTE_WP_PATH' cache flush 2>/dev/null || true; \
                                    wp --path='$REMOTE_WP_PATH' cron event run --due-now 2>/dev/null || true; \
                                    wp --path='$REMOTE_WP_PATH' rewrite flush --hard 2>/dev/null || true" < /dev/null
+
+run_hatas_korok_post_deploy_smoke
+
 echo "🎉 Done."
