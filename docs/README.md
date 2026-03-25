@@ -60,3 +60,6 @@
 - `tools/partner-qa.md`
 - `tools/openapi-check.cjs`
 - `tools/openapi-check.md`
+
+## 2026-03-25 — meghatalmazás dokumentum
+- docs/meghatalmazas-adomanyigazolas-kiallitas.html — adományigazolás kiállítási + aláírási meghatalmazás (Sharity Adományszervező Alapítvány → dr. Bujdosó Arnold)

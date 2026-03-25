@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.0');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.1');
 define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
@@ -1407,7 +1407,7 @@ function impactshop_event_donation_certificate_html(array $row, string $campaign
         . '<div class="block"><p>Nyilatkozom, hogy szervezetünk a támogatást bevételként elszámolta és a juttatás nyújtásának adóévében a szervezetünk adózás előtti eredménye, adóalapja e juttatás nélkül is pozitív lenne, és nem lenne veszteséges.</p></div>'
         . '<div class="block"><p>Nyilatkozom, hogy a támogatást a fent megnevezett támogató a Sharity Mobile Application Zrt. üzemeltetésében álló Sharity megnevezésű, okostelefonokra telepíthető és azokon futtatható programon („Sharity”) keresztül juttatta szervezetünk részére.</p></div>'
         . '<div class="block"><p>Kelt: Tamási, ' . esc_html($dateParts['year']) . '. ' . esc_html($dateParts['month']) . ' ' . esc_html($dateParts['day']) . '.</p></div>'
-        . '<div class="sign"><p>P. H.</p>' . $signatureHtml . '<p>.....................................................</p><p>dr. Bujdosó Arnold</p><p>igazgatósági tagja</p><p>Sharity Zrt.</p></div>'
+        . '<div class="sign"><p>P. H.</p>' . $signatureHtml . '<p>.....................................................</p><p>dr. Bujdosó Arnold</p><p>meghatalmazott</p><p>Sharity Adományszervező Alapítvány</p></div>'
         . '<div class="block"><p>Igazolás azonosító: ' . $certIdEsc . '</p><p>Adomány azonosító: ' . $donationIdEsc . '</p><p>Dátum: ' . $completedAtEsc . '</p></div>'
         . '</body></html>';
 }
@@ -1560,8 +1560,8 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
         . "P. H.\n\n"
         . ".....................................................\n"
         . "dr. Bujdosó Arnold\n"
-        . "igazgatósági tagja\n"
-        . "Sharity Zrt.\n\n"
+        . "meghatalmazott\n"
+        . "Sharity Adományszervező Alapítvány\n\n"
         . "Igazolás azonosító: {$certId}\n"
         . "Adomány azonosító: {$donationId}\n"
         . "Dátum: {$completedAt}\n";

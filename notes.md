@@ -6362,3 +6362,4 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Target: https://app.sharity.hu/ngo-guides/jogi-dokumentumok/ (target=_blank)
 - stopPropagation: link kattintás NEM toggleli a checkboxot
 - Deploy OK, chmod 444
+- 2026-03-25: cert aláírási blokk javítva: igazgatósági tagja → meghatalmazott, Sharity Zrt. → Sharity Adományszervező Alapítvány (v1.5.1); meghatalmazás HTML doc létrehozva

@@ -1,3 +1,7 @@
+## 2026-03-25 — v1.5.1 cert aláírási blokk javítva
+- igazgatósági tagja → meghatalmazott, Sharity Zrt. → Sharity Adományszervező Alapítvány (PDF + email szöveg)
+- meghatalmazás HTML dokumentum létrehozva: docs/meghatalmazas-adomanyigazolas-kiallitas.html
+
 ## 2026-03-25 — v1.3.0 solo CSS !important
 - solo-select bg/color/border !important, host CSS override javítva.
 
