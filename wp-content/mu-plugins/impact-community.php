@@ -111,6 +111,17 @@ function ic_json_ok(array $data = [], int $status = 200): WP_REST_Response {
     return $r;
 }
 
+function ic_verify_state_nonce(WP_REST_Request $req): true|WP_Error {
+    $nonce = $req->get_header('x_wp_nonce');
+    if (!$nonce) {
+        $nonce = $req->get_header('x-wp-nonce');
+    }
+    if (!$nonce || !wp_verify_nonce($nonce, 'wp_rest')) {
+        return ic_json_error('Érvénytelen vagy hiányzó kérésazonosító.', 403);
+    }
+    return true;
+}
+
 /* =========================================================================
    3. DB Migration
    ========================================================================= */
@@ -1111,6 +1122,11 @@ function ic_rest_circle_detail(WP_REST_Request $req): WP_REST_Response|WP_Error 
 }
 
 function ic_rest_circle_join(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonce_check = ic_verify_state_nonce($req);
+    if ($nonce_check !== true) {
+        return $nonce_check;
+    }
+
     $pid_hash = ic_pid_hash();
     if (!$pid_hash) {
         return ic_json_error('Azonosítás szükséges.', 401);
@@ -1148,24 +1164,33 @@ function ic_rest_circle_join(WP_REST_Request $req): WP_REST_Response|WP_Error {
 
     if ($existing) {
         // Re-join
-        $wpdb->update("{$p}ic_memberships", [
+        $updated = $wpdb->update("{$p}ic_memberships", [
             'is_active' => 1,
             'left_at'   => null,
             'joined_at' => current_time('mysql'),
         ], ['id' => $existing->id]);
+        if ($updated === false) {
+            return ic_json_error('A csatlakozás sikertelen volt.', 500);
+        }
     } else {
-        $wpdb->insert("{$p}ic_memberships", [
+        $inserted = $wpdb->insert("{$p}ic_memberships", [
             'circle_id' => $id,
             'pid_hash'  => $pid_hash,
             'joined_at' => current_time('mysql'),
             'is_active' => 1,
         ]);
+        if ($inserted === false) {
+            return ic_json_error('A csatlakozás sikertelen volt.', 500);
+        }
     }
 
     // Increment member_count
-    $wpdb->query($wpdb->prepare(
+    $count_updated = $wpdb->query($wpdb->prepare(
         "UPDATE {$p}ic_circles SET member_count = member_count + 1 WHERE id = %d", $id
     ));
+    if ($count_updated === false) {
+        return ic_json_error('A csatlakozás részben sikerült, de a számláló nem frissült.', 500);
+    }
 
     // Award points for first 3 circles
     if ($current_count < 3) {
@@ -1208,6 +1233,11 @@ function ic_rest_circle_join(WP_REST_Request $req): WP_REST_Response|WP_Error {
 }
 
 function ic_rest_circle_leave(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonce_check = ic_verify_state_nonce($req);
+    if ($nonce_check !== true) {
+        return $nonce_check;
+    }
+
     $pid_hash = ic_pid_hash();
     if (!$pid_hash) {
         return ic_json_error('Azonosítás szükséges.', 401);
@@ -1225,14 +1255,20 @@ function ic_rest_circle_leave(WP_REST_Request $req): WP_REST_Response|WP_Error {
         return ic_json_error('Nem vagy tagja ennek a körnek.', 404);
     }
 
-    $wpdb->update("{$p}ic_memberships", [
+    $updated = $wpdb->update("{$p}ic_memberships", [
         'is_active' => 0,
         'left_at'   => current_time('mysql'),
     ], ['id' => $membership->id]);
+    if ($updated === false) {
+        return ic_json_error('A kilépés sikertelen volt.', 500);
+    }
 
-    $wpdb->query($wpdb->prepare(
+    $count_updated = $wpdb->query($wpdb->prepare(
         "UPDATE {$p}ic_circles SET member_count = GREATEST(member_count - 1, 0) WHERE id = %d", $id
     ));
+    if ($count_updated === false) {
+        return ic_json_error('A kilépés részben sikerült, de a számláló nem frissült.', 500);
+    }
 
     return ic_json_ok(['left' => true]);
 }
@@ -1305,6 +1341,11 @@ function ic_rest_posts_list(WP_REST_Request $req): WP_REST_Response {
 }
 
 function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonce_check = ic_verify_state_nonce($req);
+    if ($nonce_check !== true) {
+        return $nonce_check;
+    }
+
     $pid_hash = ic_pid_hash();
     if (!$pid_hash) {
         return ic_json_error('Azonosítás szükséges.', 401);
@@ -1409,7 +1450,7 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
         $meta = wp_json_encode($meta_arr);
     }
 
-    $wpdb->insert("{$p}ic_posts", [
+    $inserted = $wpdb->insert("{$p}ic_posts", [
         'circle_id'   => $cid,
         'author_hash' => $pid_hash,
         'author_type' => 'user',
@@ -1418,12 +1459,21 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
         'meta_json'   => $meta,
         'created_at'  => current_time('mysql'),
     ]);
+    if ($inserted === false) {
+        return ic_json_error('A poszt mentése sikertelen volt.', 500);
+    }
     $post_id = (int) $wpdb->insert_id;
+    if ($post_id <= 0) {
+        return ic_json_error('A poszt mentése sikertelen volt.', 500);
+    }
 
     // Increment post count
-    $wpdb->query($wpdb->prepare(
+    $count_updated = $wpdb->query($wpdb->prepare(
         "UPDATE {$p}ic_circles SET post_count = post_count + 1 WHERE id = %d", $cid
     ));
+    if ($count_updated === false) {
+        return ic_json_error('A poszt elment, de a számláló nem frissült.', 500);
+    }
 
     // Activity points
     $today = current_time('Y-m-d');
@@ -1462,14 +1512,24 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     // § Trust auto-promote after posting
     ic_trust_auto_promote($cid, $pid_hash);
 
+    $created_post = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_posts WHERE id=%d", $post_id
+    ));
+    if (!$created_post) {
+        return ic_json_error('A poszt létrejött, de a visszaolvasás sikertelen volt.', 500);
+    }
+
     return ic_json_ok([
-        'post' => ic_format_post($wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$p}ic_posts WHERE id=%d", $post_id
-        )), $cid),
+        'post' => ic_format_post($created_post, $cid),
     ], 201);
 }
 
 function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonce_check = ic_verify_state_nonce($req);
+    if ($nonce_check !== true) {
+        return $nonce_check;
+    }
+
     $pid_hash = ic_pid_hash();
     if (!$pid_hash) {
         return ic_json_error('Azonosítás szükséges.', 401);
@@ -1488,6 +1548,14 @@ function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
         return ic_json_error('Poszt nem található.', 404);
     }
 
+    $is_member = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$p}ic_memberships WHERE circle_id=%d AND pid_hash=%s AND is_active=1",
+        $cid, $pid_hash
+    ));
+    if (!$is_member) {
+        return ic_json_error('Csak körtagok szavazhatnak.', 403);
+    }
+
     // Can't vote own post
     if ($post->author_hash === $pid_hash) {
         return ic_json_error('Saját posztra nem szavazhatsz.', 422);
@@ -1501,14 +1569,22 @@ function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
     set_transient($dedupe_key, 1, DAY_IN_SECONDS * 365);
 
     // Increment vote
-    $wpdb->query($wpdb->prepare(
+    $updated = $wpdb->query($wpdb->prepare(
         "UPDATE {$p}ic_posts SET vote_count = vote_count + 1 WHERE id = %d", $post_id
     ));
+    if ($updated === false) {
+        delete_transient($dedupe_key);
+        return ic_json_error('A szavazat mentése sikertelen volt.', 500);
+    }
 
     // If post now has 5+ votes, award the author
     $new_count = (int) $wpdb->get_var($wpdb->prepare(
         "SELECT vote_count FROM {$p}ic_posts WHERE id = %d", $post_id
     ));
+    if ($new_count <= 0) {
+        delete_transient($dedupe_key);
+        return ic_json_error('A szavazat mentése sikertelen volt.', 500);
+    }
     if ($new_count === 5) {
         ic_award_points($post->author_hash, 50, 'post_5_votes', "post:{$post_id}", "post_5_votes:{$post->author_hash}:{$post_id}");
     }
@@ -1753,6 +1829,11 @@ function ic_rest_circle_leaderboard(WP_REST_Request $req): WP_REST_Response|WP_E
 }
 
 function ic_rest_post_delete(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonce_check = ic_verify_state_nonce($req);
+    if ($nonce_check !== true) {
+        return $nonce_check;
+    }
+
     $pid_hash = ic_pid_hash();
     if (!$pid_hash) {
         return ic_json_error('Azonosítás szükséges.', 401);
@@ -1775,11 +1856,17 @@ function ic_rest_post_delete(WP_REST_Request $req): WP_REST_Response|WP_Error {
         return ic_json_error('Csak saját posztot törölhetsz.', 403);
     }
 
-    $wpdb->update("{$p}ic_posts", ['is_deleted' => 1], ['id' => $post_id]);
+    $deleted = $wpdb->update("{$p}ic_posts", ['is_deleted' => 1], ['id' => $post_id]);
+    if ($deleted === false) {
+        return ic_json_error('A poszt törlése sikertelen volt.', 500);
+    }
 
-    $wpdb->query($wpdb->prepare(
+    $count_updated = $wpdb->query($wpdb->prepare(
         "UPDATE {$p}ic_circles SET post_count = GREATEST(post_count - 1, 0) WHERE id = %d", $cid
     ));
+    if ($count_updated === false) {
+        return ic_json_error('A poszt törlődött, de a számláló nem frissült.', 500);
+    }
 
     return ic_json_ok(['deleted' => true]);
 }
@@ -2381,6 +2468,11 @@ function ic_app_template_redirect(): void {
     $nonce   = wp_create_nonce('wp_rest');
     $pseudo  = ic_get_pseudo_id();
 
+    global $wp_query;
+    if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
+        $wp_query->is_404 = false;
+    }
+    status_header(200);
     header('Content-Type: text/html; charset=UTF-8');
 
     require __DIR__ . '/impact-community-app.php';
@@ -6124,4 +6216,3 @@ function ic_rest_ngo_moderation_action(WP_REST_Request $req): WP_REST_Response|W
 
     return ic_json_ok(['done' => true, 'action' => $action]);
 }
-

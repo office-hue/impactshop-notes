@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ImpactShop Static Pages
  * Description: Serves static HTML pages for NGO guides and partner landing pages.
- * Version: 1.1.0
+ * Version: 1.1.1
  */
 
 declare(strict_types=1);
@@ -25,6 +25,11 @@ if (!defined('ABSPATH')) {
 add_action('init', 'impactshop_ngo_guides_rewrite_rules');
 add_filter('query_vars', 'impactshop_ngo_guides_query_vars');
 add_action('template_redirect', 'impactshop_ngo_guides_template_redirect');
+
+function impactshop_hatas_korok_handled_by_community(): bool
+{
+    return defined('IMPACT_COMMUNITY_ENABLED') && IMPACT_COMMUNITY_ENABLED;
+}
 
 /**
  * Add rewrite rules for /ngo-guides/ and /cegeknek paths
@@ -56,6 +61,14 @@ function impactshop_ngo_guides_rewrite_rules(): void
         'index.php?ngo_guide_page=rolunk',
         'top'
     );
+
+    if (!impactshop_hatas_korok_handled_by_community()) {
+        add_rewrite_rule(
+            '^hatas-korok/?$',
+            'index.php?ngo_guide_page=hatas-korok',
+            'top'
+        );
+    }
 }
 
 /**
@@ -82,6 +95,10 @@ function impactshop_ngo_guides_template_redirect(): void
         wp_redirect(site_url('/ngo-guides/impact-challenge/'), 301);
         exit;
     }
+
+    if ($page === 'hatas-korok' && impactshop_hatas_korok_handled_by_community()) {
+        return;
+    }
     
     // Map slugs to HTML files
     $pages = [
@@ -91,6 +108,7 @@ function impactshop_ngo_guides_template_redirect(): void
         'ngo-card'        => 'ngo-card.html',
         'cegeknek'        => 'cegeknek.html',
         'rolunk'          => 'rolunk.html',
+        'hatas-korok'     => 'hatas-korok.html',
     ];
     
     // Validate page exists
@@ -133,8 +151,8 @@ function impactshop_ngo_guides_activate(): void
 
 // Check if rewrite rules need flushing (first run detection)
 add_action('admin_init', function() {
-    if (get_option('impactshop_ngo_guides_rules_flushed') !== '1.2.0') {
+    if (get_option('impactshop_ngo_guides_rules_flushed') !== '1.1.1') {
         impactshop_ngo_guides_activate();
-        update_option('impactshop_ngo_guides_rules_flushed', '1.2.0');
+        update_option('impactshop_ngo_guides_rules_flushed', '1.1.1');
     }
 });
