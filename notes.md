@@ -6342,3 +6342,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-03-24 21:03:41 CET - impactall auto log
 - **Result:** warn (warnings=2, errors=0, duration=4s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 - jovonkvize STYLE_ID collision fix
+- STYLE_ID uniqueness fix: jovonkvize.js → `"impact-event-donation-widget-style-jvk"` (dev.js CSS override elnémítva)
+- Prod deploy OK, chmod 444 OK. Branch: feat/jovonkvize-ticket-count

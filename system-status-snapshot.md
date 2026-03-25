@@ -363,3 +363,4 @@ PHP lint ok for identity/gamification modules
 - Branch: `feat/impact-community-sprint1` | PR #73 (office-hue/impactshop-notes)
 - Audit: 11 SQL séma-inkonzisztencia javítva; PHP lint OK; security OK
 - Status: merge pending → prod deploy szükséges (rsync to s59)
+### 2026-03-25T06:24:01Z | jovonkvize STYLE_ID collision fix deployed | branch=feat/jovonkvize-ticket-count | result=OK

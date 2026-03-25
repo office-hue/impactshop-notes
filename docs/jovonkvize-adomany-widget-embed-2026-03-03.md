@@ -95,3 +95,8 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 
 ### 2026-03-25 — v1.3.0
 - solo-select CSS !important: fehér bg override javítva.
+
+### 2026-03-25 — STYLE_ID collision fix (jvk suffix)
+- Gyökérok: dev.js és jovonkvize.js ugyanazt a STYLE_ID-t használta → dev.js (először tölt be) injektálta a CSS-t, jovonkvize.js kihagyta → régi stílusok maradtak.
+- Fix: `STYLE_ID = "impact-event-donation-widget-style-jvk"` egyedi azonosítóra cserélve jovonkvize.js-ben.
+- Prod: `sharityh@s59.tarhely.com` → deploy OK, chmod 444 OK.
