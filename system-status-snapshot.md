@@ -366,3 +366,8 @@ PHP lint ok for identity/gamification modules
 ### 2026-03-25T06:24:01Z | jovonkvize STYLE_ID collision fix deployed | branch=feat/jovonkvize-ticket-count | result=OK
 ### 2026-03-25T07:10:40Z | v1.4.0 solo ticket input fix deployed | result=OK
 ### 2026-03-25T07:39:33Z | v1.5.0 buyer email + ticket serial deploy | result=OK
+
+### 2026-03-25 — ÁSZF link kattintható (jovonkvize widget)
+- consent checkbox szöveg → kattintható `<a>` link: `/ngo-guides/jogi-dokumentumok/`
+- `stopPropagation` a link click-re → checkbox nem togglel
+- JS deployed, chmod 444

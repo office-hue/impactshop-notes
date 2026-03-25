@@ -183,7 +183,7 @@
       '</div>' +
       '<label class="impact-event-widget__checkbox"><input data-role="cert-consent" type="checkbox"> <span>Kérek adományigazolást, és hozzájárulok az e-mailes kiállításhoz.</span></label>' +
       '</div>' +
-      '<label class="impact-event-widget__checkbox"><input data-role="consent" type="checkbox"> <span>Elfogadom az ÁSZF-et és az adatkezelési tájékoztatót.</span></label>' +
+      '<label class="impact-event-widget__checkbox"><input data-role="consent" type="checkbox"> <span>Elfogadom az <a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/" target="_blank" rel="noopener" style="color:#7ec8e3;text-decoration:underline">ÁSZF-et és az adatkezelési tájékoztatót</a>.</span></label>' +
       '<div class="impact-event-widget__actions">' +
       '<button class="impact-event-widget__donate" data-role="donate" type="button">Támogatom az ügyet</button>' +
       '<button class="impact-event-widget__share" data-role="share" type="button">Megosztás</button>' +
@@ -724,6 +724,11 @@
       els.isCompany.addEventListener("change", updateCompanyVisibility);
       els.donate.addEventListener("click", submitDonation);
       els.share.addEventListener("click", onShare);
+
+      // Prevent checkbox toggle when clicking the ÁSZF link inside the label
+      root.querySelectorAll('.impact-event-widget__checkbox a').forEach(function (a) {
+        a.addEventListener("click", function (e) { e.stopPropagation(); });
+      });
 
       root.addEventListener("click", function (evt) {
         var target = evt.target;

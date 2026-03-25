@@ -6356,3 +6356,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Buyer confirmation email: vasarlo visszaigazolas jegy sorszamokkal
 - Transaction notification: ticket info hozzaadva az admin emailhez
 - Ticket serial: JVK-2026-XXXXX formatum, wp_option szamlalo
+
+### 2026-03-25 — ÁSZF link kattintható (jovonkvize widget)
+- "Elfogadom az ÁSZF-et és az adatkezelési tájékoztatót" → kattintható <a> link
+- Target: https://app.sharity.hu/ngo-guides/jogi-dokumentumok/ (target=_blank)
+- stopPropagation: link kattintás NEM toggleli a checkboxot
+- Deploy OK, chmod 444
