@@ -2,7 +2,7 @@
   "use strict";
 
   var SCRIPT_ATTR = "data-impact-campaign-widget";
-  var STYLE_ID = "impact-event-donation-widget-style";
+  var STYLE_ID = "impact-event-donation-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-campaigns";
   var DEFAULT_FALLBACK_BASE = "https://app.sharity.hu/";
   var TICKET_UNIT_PRICE = 150000;
