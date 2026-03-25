@@ -6399,3 +6399,11 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-03-25 16:25:28 CET - impactall auto log
 - **Result:** fail (warnings=3, errors=1, duration=1s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 22:51:13 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=4s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 22:51:27 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=2s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
