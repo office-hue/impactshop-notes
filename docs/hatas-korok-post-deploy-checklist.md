@@ -18,6 +18,16 @@ Egyedi hosttal:
 ./scripts/hatas-korok-post-deploy-smoke.sh https://staging.sharity.hu
 ```
 
+## Memory/context betöltés munkához
+
+Ha fejleszteni vagy hibát keresni mész a Hatás Körök flow-ban, előtte töltsd be a célzott contextet:
+
+```bash
+bash ./scripts/hatas-korok-load-memory.sh
+```
+
+Ez frissíti a dev-memory briefet, generál egy dedikált context packot és kiír egy kurált memo fájlt is.
+
 ## Mit ellenőriz a script
 
 - `GET /hatas-korok` → `HTTP 200`
