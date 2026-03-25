@@ -1,3 +1,7 @@
+## 2026-03-25 Meghatalmazás PDF csere
+- IMG_3880.HEIC → PDF konvertálva és feltöltve
+- Pecsét nélküli, magánszemély aláírás (dr. Bujdosó Arnold)
+
 ## 2026-03-25
 - feat: cert email meghatalmazás PDF auto-csatolása (v1.5.2) — sharity-meghatalmazas-adomanyigazolas.pdf feltöltve szerverre, PHP-ban WPMU_PLUGIN_DIR + file_exists csatolja
 - fix: solo jegy CSS !important hozzáadva (host override ellen), v1.3.0

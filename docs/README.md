@@ -68,3 +68,6 @@
 
 ## 2026-03-25 — v1.5.2
 - Cert email: meghatalmazás PDF (sharity-meghatalmazas-adomanyigazolas.pdf) auto-csatolva minden adományigazolás emailhez
+
+## 2026-03-25 Meghatalmazás PDF csere
+- Pecsét nélküli változat feltöltve prod-ra

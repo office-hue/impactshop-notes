@@ -1,3 +1,8 @@
+## 2026-03-25 13:42 — Meghatalmazás PDF frissítve
+- Új aláírású meghatalmazás feltöltve (pecsét nélküli, magánszemély)
+- Fájl: sharity-meghatalmazas-adomanyigazolas.pdf (2.4MB)
+- Prod szerveren frissítve: s59.tarhely.com
+
 ## 2026-03-25 — v1.5.2 meghatalmazás PDF auto-csatolás
 - sharity-meghatalmazas-adomanyigazolas.pdf feltöltve szerverre (267KB, 444 jog)
 - send_certificate_for_donation() csatolja a cert mellé (WPMU_PLUGIN_DIR + file_exists)
