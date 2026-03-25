@@ -1,5 +1,41 @@
+## 2026-03-25 Cert aláírás kép csere
+- Pecsétes → pecsét nélküli (IMG_3880.HEIC)
+- PHP v1.5.3 deployed
+
+## 2026-03-25 Meghatalmazás PDF csere
+- IMG_3880.HEIC → PDF konvertálva és feltöltve
+- Pecsét nélküli, magánszemély aláírás (dr. Bujdosó Arnold)
+
+## 2026-03-25
+- feat: cert email meghatalmazás PDF auto-csatolása (v1.5.2) — sharity-meghatalmazas-adomanyigazolas.pdf feltöltve szerverre, PHP-ban WPMU_PLUGIN_DIR + file_exists csatolja
+- fix: solo jegy CSS !important hozzáadva (host override ellen), v1.3.0
+
+## 2026-03-24
+- fix: solo jegy CSS hiány javítva — or-sep, solo-tickets, solo-select stílusok hozzáadva
+
+## 2026-03-24
+- version bump 1.1.0 → 1.2.0 (impactshop-event-donation-widget.php) — cache-bust deploy
+
+## 2026-03-24
+- version bump 1.1.0 → 1.2.0 (impactshop-event-donation-widget.php) — cache-bust deploy
+
+# 2026-05-28 (3)
+
+- Jövőnk Vize: jovonkvize.js szinkronizálva dev.js-sel — solo jegyvásárlás (1-10 db × 150k Ft) élesben.
+
+# 2026-05-28 (2)
+
+- Jövőnk Vize widget: verzió bump 1.0.0 → 1.1.0, embed kód `?v=1.1.0` frissítve.
+
+# 2026-05-28
+
+- Jövőnk Vize widget (`feat/jovonkvize-ticket-count`): standalone jegyvásárlás dropdown (1-10 jegy × 150 000 Ft), tranzakció értesítő email (bujdoso.arnold@ + koncz.veronika@), cert BCC bujdoso.arnold@.
+- PHP: `impactshop_event_donation_send_transaction_notification()` + `fulfill()` hook + BCC header.
+- JS dev: `TICKET_UNIT_PRICE=150000`, `STANDALONE_TICKET_MAX=10`, solo ticket change handler, `init()` dropdown feltöltés.
+
 # 2026-03-24
 
+- Jövőnk Vize gála widget: `impactshop-event-donation-widget.php` schema 1.1.0 — `ticket_count` + `selected_package` DB + Stripe metadata. Branch: `feat/jovonkvize-ticket-count`.
 - Impact Community (Hatás Körök) Sprint 1+2 MU plugin added.
 - `impact-community.php` — backend: 7 DB tables, REST API (11 endpoints), IC_Alias class, NGO circle seed, buddy pairing, Points-Manager integration.
 - `impact-community-app.php` — frontend SPA: hash routing, circle cards, post feed, voting, composer.
@@ -6311,3 +6347,29 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - PHP lint: szintaktikai hiba nincs. SQL injection: nincs (minden $wpdb->prepare()).
 - Audit commit: `fix(audit): koherencia és biztonsági audit — 11 séma-inkonzisztencia javítás`.
 - Outstanding: prod deploy rsync szükséges merge után.
+
+## 2026-03-24 21:03:41 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=4s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 - jovonkvize STYLE_ID collision fix
+- STYLE_ID uniqueness fix: jovonkvize.js → `"impact-event-donation-widget-style-jvk"` (dev.js CSS override elnémítva)
+- Prod deploy OK, chmod 444 OK. Branch: feat/jovonkvize-ticket-count
+
+## 2026-03-25 - v1.4.0 solo ticket number input fix
+- Safari select CSS bug: select element ignores background-color; replaced with input type=number
+- CSS: width:80px, dark bg rgba(5,15,47,.95), light color #f8f4ea
+- STANDALONE_TICKET_MAX set via .max attribute instead of innerHTML
+
+## 2026-03-25 - v1.5.0 email deploy
+- Buyer confirmation email: vasarlo visszaigazolas jegy sorszamokkal
+- Transaction notification: ticket info hozzaadva az admin emailhez
+- Ticket serial: JVK-2026-XXXXX formatum, wp_option szamlalo
+
+### 2026-03-25 — ÁSZF link kattintható (jovonkvize widget)
+- "Elfogadom az ÁSZF-et és az adatkezelési tájékoztatót" → kattintható <a> link
+- Target: https://app.sharity.hu/ngo-guides/jogi-dokumentumok/ (target=_blank)
+- stopPropagation: link kattintás NEM toggleli a checkboxot
+- Deploy OK, chmod 444
+- 2026-03-25: cert aláírási blokk javítva: igazgatósági tagja → meghatalmazott, Sharity Zrt. → Sharity Adományszervező Alapítvány (v1.5.1); meghatalmazás HTML doc létrehozva
+- 2026-03-25: vagy egyszerű adományozás szeparátor hozzáadva a solo jegyek és preset összegek közé (jovonkvize.js)

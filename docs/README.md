@@ -60,3 +60,15 @@
 - `tools/partner-qa.md`
 - `tools/openapi-check.cjs`
 - `tools/openapi-check.md`
+
+## 2026-03-25 — meghatalmazás dokumentum
+- docs/meghatalmazas-adomanyigazolas-kiallitas.html — adományigazolás kiállítási + aláírási meghatalmazás (Sharity Adományszervező Alapítvány → dr. Bujdosó Arnold)
+
+- 2026-03-25: vagy egyszerű adományozás szeparátor (jovonkvize.js)
+
+## 2026-03-25 — v1.5.2
+- Cert email: meghatalmazás PDF (sharity-meghatalmazas-adomanyigazolas.pdf) auto-csatolva minden adományigazolás emailhez
+
+## 2026-03-25 Meghatalmazás PDF csere
+- Pecsét nélküli változat feltöltve prod-ra
+- 2026-03-25: cert aláírás kép csere v1.5.3

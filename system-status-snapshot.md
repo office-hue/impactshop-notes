@@ -1,3 +1,55 @@
+## 2026-03-25 — cert aláírás kép csere (v1.5.3)
+- Pecsétes aláírás lecserélve pecsét nélküli változatra
+- Új kép: bujdoso-alaiiras-2026.png (IMG_3880.HEIC forrás)
+
+## 2026-03-25 13:42 — Meghatalmazás PDF frissítve
+- Új aláírású meghatalmazás feltöltve (pecsét nélküli, magánszemély)
+- Fájl: sharity-meghatalmazas-adomanyigazolas.pdf (2.4MB)
+- Prod szerveren frissítve: s59.tarhely.com
+
+## 2026-03-25 — v1.5.2 meghatalmazás PDF auto-csatolás
+- sharity-meghatalmazas-adomanyigazolas.pdf feltöltve szerverre (267KB, 444 jog)
+- send_certificate_for_donation() csatolja a cert mellé (WPMU_PLUGIN_DIR + file_exists)
+
+## 2026-03-25 — vagy egyszerű adományozás szeparátor
+- solo jegyek és preset összeg ikonok közé beszúrva (jovonkvize.js)
+
+## 2026-03-25 — v1.5.1 cert aláírási blokk javítva
+- igazgatósági tagja → meghatalmazott, Sharity Zrt. → Sharity Adományszervező Alapítvány (PDF + email szöveg)
+- meghatalmazás HTML dokumentum létrehozva: docs/meghatalmazas-adomanyigazolas-kiallitas.html
+
+## 2026-03-25 — v1.3.0 solo CSS !important
+- solo-select bg/color/border !important, host CSS override javítva.
+
+## 2026-03-24 — solo ticket CSS fix
+- __or-sep, __solo-tickets, __solo-label, __solo-select CSS hozzáadva (hiányzó stílusok, fehér bg szivárgás javítva).
+
+## 2026-03-24c — PHP version 1.2.0 deploy
+- IMPACTSHOP_EVENT_DONATION_VERSION bumped 1.1.0 → 1.2.0, prod verified.
+
+## 2026-03-24c — PHP version 1.2.0 deploy
+- IMPACTSHOP_EVENT_DONATION_VERSION bumped 1.1.0 → 1.2.0, prod verified.
+
+## 2026-05-28c - jovonkvize.js production deploy (solo jegyvásárlás)
+- `impactshop-event-donation-widget-jovonkvize.js` frissítve: TICKET_UNIT_PRICE=150000, solo dropdown, change handler.
+
+## 2026-05-28b - Jövőnk Vize: version bump 1.1.0 + cache-bust embed kód
+- `IMPACTSHOP_EVENT_DONATION_VERSION` 1.0.0 → 1.1.0, prod-ra deploy-olva.
+- JS embed URL már `?v=1.1.0`-t tartalmaz.
+
+## 2026-05-28 - Jövőnk Vize: solo jegyvásárlás + tranzakció értesítő + cert BCC
+- Branch: `feat/jovonkvize-ticket-count` — dev JS + PHP módosítások.
+- JS dev: `TICKET_UNIT_PRICE=150000`, `STANDALONE_TICKET_MAX=10`, solo dropdown, change handler, init() feltöltés.
+- PHP: `impactshop_event_donation_send_transaction_notification()` — minden COMMIT után email bujdoso.arnold@ + koncz.veronika@.
+- PHP: adományigazolás emailekbe BCC: `bujdoso.arnold@bujdosoiroda.com`.
+- Nincs deploy — csak dev verzió, production deploy külön jóváhagyás után.
+
+## 2026-03-24 - Jövőnk Vize gála widget: ticket_count + selected_package
+- Branch: `feat/jovonkvize-ticket-count` from `main`.
+- `impactshop-event-donation-widget.php` schema 1.0.0 → 1.1.0: `ticket_count` + `selected_package` mentés DB-be és Stripe metadatába.
+- DB: `dbDelta` additive (meglévő soroknál DEFAULT érték).
+- Embed URL fixelve: `impactshop-event-donation-widget-jovonkvize.js`.
+
 ## 2026-03-24 - Impact Community (Hatás Körök) Sprint 1+2
 - Branch: `feat/impact-community-sprint1` from `origin/main`.
 - New modules: `impact-community.php` (backend, 978 lines) + `impact-community-app.php` (SPA frontend, 1279 lines).
@@ -331,3 +383,11 @@ PHP lint ok for identity/gamification modules
 - Branch: `feat/impact-community-sprint1` | PR #73 (office-hue/impactshop-notes)
 - Audit: 11 SQL séma-inkonzisztencia javítva; PHP lint OK; security OK
 - Status: merge pending → prod deploy szükséges (rsync to s59)
+### 2026-03-25T06:24:01Z | jovonkvize STYLE_ID collision fix deployed | branch=feat/jovonkvize-ticket-count | result=OK
+### 2026-03-25T07:10:40Z | v1.4.0 solo ticket input fix deployed | result=OK
+### 2026-03-25T07:39:33Z | v1.5.0 buyer email + ticket serial deploy | result=OK
+
+### 2026-03-25 — ÁSZF link kattintható (jovonkvize widget)
+- consent checkbox szöveg → kattintható `<a>` link: `/ngo-guides/jogi-dokumentumok/`
+- `stopPropagation` a link click-re → checkbox nem togglel
+- JS deployed, chmod 444

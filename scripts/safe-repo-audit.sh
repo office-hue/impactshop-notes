@@ -88,7 +88,8 @@ NEW_MODULE_FILES="$TMP_DIR/new-module-files.txt"
 BASTION_GUARD_HITS="$TMP_DIR/bastion-guard-hits.txt"
 
 if [[ "$MODE" == "push" ]]; then
-  upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
+  upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-}"
+  [[ -z "$upstream_ref" ]] && upstream_ref="@{upstream}"
   if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
     PUSH_BASE="$(git merge-base HEAD "$upstream_ref")"
   else

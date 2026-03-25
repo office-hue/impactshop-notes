@@ -10,8 +10,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.0.0');
-define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.0.0');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.4');
+define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
 add_action('init', 'impactshop_event_donation_ensure_schema', 5);
@@ -293,6 +293,24 @@ function impactshop_event_donation_generate_cert_id(): string
     return sprintf('SHA-ADOMANY-%s-%04d', $year, $seq);
 }
 
+function impactshop_event_donation_generate_ticket_serials(string $campaignSlug, int $ticketCount): array
+{
+    if ($ticketCount <= 0) {
+        return [];
+    }
+    $prefix = strtoupper(sanitize_key($campaignSlug));
+    $year = gmdate('Y');
+    $key = 'impactshop_event_ticket_seq_' . $campaignSlug . '_' . $year;
+    $lastSeq = (int) get_option($key, 0);
+    $serials = [];
+    for ($i = 1; $i <= $ticketCount; $i++) {
+        $lastSeq++;
+        $serials[] = sprintf('%s-%s-%05d', $prefix, $year, $lastSeq);
+    }
+    update_option($key, $lastSeq, false);
+    return $serials;
+}
+
 function impactshop_event_donation_currency_name(string $currency): string
 {
     return strtolower($currency) === 'huf' ? 'forint' : strtoupper($currency);
@@ -410,6 +428,8 @@ function impactshop_event_donation_ensure_schema(): void
         company_address VARCHAR(500) DEFAULT NULL,
         request_certificate TINYINT(1) NOT NULL DEFAULT 0,
         gdpr_email_consent TINYINT(1) NOT NULL DEFAULT 0,
+        ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        selected_package VARCHAR(20) DEFAULT NULL,
         donation_cert_id VARCHAR(40) DEFAULT NULL,
         donation_cert_status ENUM('none','pending','sent','failed') NOT NULL DEFAULT 'none',
         donation_cert_sent_at DATETIME DEFAULT NULL,
@@ -670,6 +690,31 @@ function impactshop_event_donation_stats_payload(array $campaign): array
     $goal = (float) ($campaign['goal_amount'] ?? 0);
     $progress = ($goal > 0) ? min(100, round(($total / $goal) * 100, 2)) : 0;
 
+    $breakdownRows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT
+                COALESCE(selected_package, '') AS package,
+                SUM(ticket_count)              AS tickets,
+                COUNT(*)                       AS donations
+             FROM {$table}
+             WHERE campaign_slug = %s
+               AND status = 'completed'
+             GROUP BY selected_package",
+            $slug
+        ),
+        ARRAY_A
+    ) ?: [];
+    $ticketBreakdown = [];
+    $totalTickets = 0;
+    foreach ($breakdownRows as $br) {
+        $pkg = $br['package'] !== '' ? $br['package'] : 'unknown';
+        $ticketBreakdown[$pkg] = [
+            'tickets'   => (int) $br['tickets'],
+            'donations' => (int) $br['donations'],
+        ];
+        $totalTickets += (int) $br['tickets'];
+    }
+
     return [
         'currency' => $currency,
         'total_amount' => $total,
@@ -683,6 +728,8 @@ function impactshop_event_donation_stats_payload(array $campaign): array
         'goal_progress_percent' => $progress,
         'last_completed_at' => (string) ($row['last_completed_at'] ?? ''),
         'updated_at' => gmdate('c'),
+        'total_tickets' => $totalTickets,
+        'ticket_breakdown' => $ticketBreakdown,
     ];
 }
 
@@ -808,6 +855,9 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
     $companyTaxId = sanitize_text_field((string) ($params['company_tax_id'] ?? ''));
     $companyAddress = sanitize_text_field((string) ($params['company_address'] ?? ''));
     $gdprEmailConsent = !empty($params['gdpr_email_consent']);
+    $ticketCount = max(0, (int) ($params['ticket_count'] ?? 0));
+    $selectedPackage = sanitize_key((string) ($params['selected_package'] ?? ''));
+    $selectedPackage = in_array($selectedPackage, ['silver', 'gold', 'platinum'], true) ? $selectedPackage : '';
 
     if ($email === '') {
         return new WP_REST_Response(['error' => 'missing_email'], 400);
@@ -848,12 +898,14 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
             'company_address' => $companyAddress !== '' ? $companyAddress : null,
             'request_certificate' => $requestCertificate ? 1 : 0,
             'gdpr_email_consent' => $gdprEmailConsent ? 1 : 0,
+            'ticket_count' => $ticketCount,
+            'selected_package' => $selectedPackage !== '' ? $selectedPackage : null,
             'source_origin' => impactshop_event_donation_request_origin(),
             'return_url' => $returnUrl,
             'ip_address' => impactshop_event_donation_client_ip(),
             'user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 512),
         ],
-        ['%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%s','%s','%s','%s']
+        ['%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%d','%s','%s','%s','%s','%s']
     );
 
     if ($inserted === false) {
@@ -871,6 +923,8 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
         'donor_name' => $donorName,
         'is_company' => $isCompany,
         'request_certificate' => $requestCertificate,
+        'ticket_count' => $ticketCount,
+        'selected_package' => $selectedPackage,
     ]);
 
     if (!$session || empty($session['id']) || empty($session['url'])) {
@@ -935,6 +989,8 @@ function impactshop_event_donation_create_checkout_session(array $order): ?array
         'metadata[is_company]' => !empty($order['is_company']) ? '1' : '0',
         'metadata[amount_display]' => (string) $amountDisplay,
         'metadata[currency]' => $currency,
+        'metadata[ticket_count]' => (string) ((int) ($order['ticket_count'] ?? 0)),
+        'metadata[selected_package]' => (string) ($order['selected_package'] ?? ''),
     ];
 
     $customerName = sanitize_text_field((string) ($order['donor_name'] ?? ''));
@@ -1116,6 +1172,24 @@ function impactshop_event_donation_fulfill(string $donationId, array $stripeData
     }
 
     $wpdb->query('COMMIT');
+
+    $mergedRow = array_merge((array) $row, ['status' => 'completed', 'completed_at' => $update['completed_at']]);
+
+    // Generate ticket serial numbers if applicable.
+    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketSerials = impactshop_event_donation_generate_ticket_serials(
+        (string) ($row['campaign_slug'] ?? ''),
+        $ticketCount
+    );
+    $mergedRow['_ticket_serials'] = $ticketSerials;
+
+    // Transaction notification to admins.
+    impactshop_event_donation_send_transaction_notification($mergedRow);
+
+    // Buyer confirmation email.
+    if ($hasEmail) {
+        impactshop_event_donation_send_buyer_confirmation($mergedRow);
+    }
 
     // Primary path: send certificate immediately after successful payment.
     if ($requestCertificate && $hasEmail) {
@@ -1333,7 +1407,7 @@ function impactshop_event_donation_certificate_html(array $row, string $campaign
         . '<div class="block"><p>Nyilatkozom, hogy szervezetünk a támogatást bevételként elszámolta és a juttatás nyújtásának adóévében a szervezetünk adózás előtti eredménye, adóalapja e juttatás nélkül is pozitív lenne, és nem lenne veszteséges.</p></div>'
         . '<div class="block"><p>Nyilatkozom, hogy a támogatást a fent megnevezett támogató a Sharity Mobile Application Zrt. üzemeltetésében álló Sharity megnevezésű, okostelefonokra telepíthető és azokon futtatható programon („Sharity”) keresztül juttatta szervezetünk részére.</p></div>'
         . '<div class="block"><p>Kelt: Tamási, ' . esc_html($dateParts['year']) . '. ' . esc_html($dateParts['month']) . ' ' . esc_html($dateParts['day']) . '.</p></div>'
-        . '<div class="sign"><p>P. H.</p>' . $signatureHtml . '<p>.....................................................</p><p>dr. Bujdosó Arnold</p><p>igazgatósági tagja</p><p>Sharity Zrt.</p></div>'
+        . '<div class="sign"><p>P. H.</p>' . $signatureHtml . '<p>.....................................................</p><p>dr. Bujdosó Arnold</p><p>meghatalmazott</p><p>Sharity Adományszervező Alapítvány</p></div>'
         . '<div class="block"><p>Igazolás azonosító: ' . $certIdEsc . '</p><p>Adomány azonosító: ' . $donationIdEsc . '</p><p>Dátum: ' . $completedAtEsc . '</p></div>'
         . '</body></html>';
 }
@@ -1486,8 +1560,8 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
         . "P. H.\n\n"
         . ".....................................................\n"
         . "dr. Bujdosó Arnold\n"
-        . "igazgatósági tagja\n"
-        . "Sharity Zrt.\n\n"
+        . "meghatalmazott\n"
+        . "Sharity Adományszervező Alapítvány\n\n"
         . "Igazolás azonosító: {$certId}\n"
         . "Adomány azonosító: {$donationId}\n"
         . "Dátum: {$completedAt}\n";
@@ -1501,7 +1575,12 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
         'Reply-To: Sharity Impact <office@sharity.hu>',
     ];
     $attachments = $pdfAttachment !== '' ? [$pdfAttachment] : [];
+    $meghatalmazasPdf = trailingslashit(WPMU_PLUGIN_DIR) . 'sharity-meghatalmazas-adomanyigazolas.pdf';
+    if (file_exists($meghatalmazasPdf)) {
+        $attachments[] = $meghatalmazasPdf;
+    }
 
+    $headers[] = 'Bcc: bujdoso.arnold@bujdosoiroda.com';
     $sent = wp_mail([$email, 'office@sharity.hu'], $subject, $template, $headers, $attachments);
     if ($pdfAttachment !== '' && file_exists($pdfAttachment)) {
         @unlink($pdfAttachment);
@@ -1534,6 +1613,112 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
     );
     error_log('[impactshop-event-donation] donation cert send failed for donation ' . $donationId);
     return false;
+}
+
+function impactshop_event_donation_send_buyer_confirmation(array $row): void
+{
+    $email = sanitize_email((string) ($row['email'] ?? ''));
+    if ($email === '') {
+        return;
+    }
+
+    $amount = (float) ($row['amount_display'] ?? 0);
+    $currency = strtolower((string) ($row['currency'] ?? 'huf'));
+    $donorName = (string) ($row['donor_name'] ?? '');
+    $donationId = (string) ($row['donation_id'] ?? '');
+    $campaignSlug = (string) ($row['campaign_slug'] ?? '');
+    $completedAt = (string) ($row['completed_at'] ?? '');
+    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
+    $selectedPkg = (string) ($row['selected_package'] ?? '');
+    $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
+
+    $campaign = impactshop_event_donation_get_campaign($campaignSlug);
+    $campaignTitle = (string) ($campaign['title'] ?? 'Jótékonysági kampány');
+
+    $greeting = $donorName !== '' ? "Kedves {$donorName}!" : 'Kedves Támogató!';
+
+    $subject = 'Köszönjük támogatásodat! – ' . $campaignTitle;
+    $body = "{$greeting}\n\n"
+        . "Köszönjük, hogy támogattad a \"{$campaignTitle}\" kampányt!\n\n"
+        . "--- Tranzakció összesítő ---\n"
+        . "Összeg: {$amountFormatted}\n"
+        . "Azonosító: {$donationId}\n"
+        . "Dátum: {$completedAt}\n";
+
+    if ($selectedPkg !== '') {
+        $pkgNames = ['silver' => 'Ezüst', 'gold' => 'Arany', 'platinum' => 'Platina'];
+        $body .= "Csomag: " . ($pkgNames[$selectedPkg] ?? $selectedPkg) . "\n";
+    }
+
+    if ($ticketCount > 0) {
+        $body .= "\n--- Jegyek ({$ticketCount} db) ---\n";
+        foreach ($ticketSerials as $idx => $serial) {
+            $body .= ($idx + 1) . ". jegy: {$serial}\n";
+        }
+        $body .= "\nKérjük, mutasd be ezt az e-mailt vagy a jegy sorszámot a rendezvény helyszínén.\n";
+    }
+
+    $body .= "\n"
+        . "Amennyiben kérdésed van, keress minket az office@sharity.hu címen.\n\n"
+        . "Köszönettel,\n"
+        . "Sharity Adományszervező Alapítvány\n"
+        . "https://sharity.hu\n";
+
+    $headers = [
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: Sharity Impact <office@sharity.hu>',
+        'Reply-To: Sharity Impact <office@sharity.hu>',
+    ];
+
+    wp_mail([$email], $subject, $body, $headers);
+}
+
+function impactshop_event_donation_send_transaction_notification(array $row): void
+{
+    $emails = ['bujdoso.arnold@bujdosoiroda.com', 'koncz.veronika@mielemed.hu'];
+    $amount = (float) ($row['amount_display'] ?? 0);
+    $currency = strtolower((string) ($row['currency'] ?? 'huf'));
+    $email = (string) ($row['email'] ?? '');
+    $donorName = (string) ($row['donor_name'] ?? '');
+    $donationId = (string) ($row['donation_id'] ?? '');
+    $campaignSlug = (string) ($row['campaign_slug'] ?? '');
+    $completedAt = (string) ($row['completed_at'] ?? '');
+    $isCompany = (int) ($row['is_company'] ?? 0) === 1;
+    $requestCert = (int) ($row['request_certificate'] ?? 0) === 1;
+    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
+    $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
+
+    $subject = '[Sharity] Új adomány: ' . $amountFormatted . ' – ' . $campaignSlug;
+    $body = "Új teljesített adomány érkezett:\n\n"
+        . "Összeg: {$amountFormatted}\n"
+        . "E-mail cím: {$email}\n"
+        . "Adományozó neve: " . ($donorName ?: '(nem megadott)') . "\n"
+        . "Kampány: {$campaignSlug}\n"
+        . "Adomány azonosító: {$donationId}\n"
+        . "Teljesítés dátuma: {$completedAt}\n";
+
+    if ($isCompany && $requestCert) {
+        $body .= "\n--- Adományigazolás adatok (cég) ---\n"
+            . "Cégnév: " . (string) ($row['company_name'] ?? '') . "\n"
+            . "Adószám: " . (string) ($row['company_tax_id'] ?? '') . "\n"
+            . "Székhely: " . (string) ($row['company_address'] ?? '') . "\n";
+    }
+
+    if ($ticketCount > 0) {
+        $body .= "\n--- Jegyek ({$ticketCount} db) ---\n";
+        foreach ($ticketSerials as $idx => $serial) {
+            $body .= ($idx + 1) . ". jegy: {$serial}\n";
+        }
+    }
+
+    $headers = [
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: Sharity Impact <office@sharity.hu>',
+    ];
+
+    wp_mail($emails, $subject, $body, $headers);
 }
 
 function impactshop_event_donation_maybe_enqueue_runtime(): void
@@ -1580,4 +1765,85 @@ function impactshop_event_donation_shortcode(array $atts = []): string
         esc_attr($fallbackApiBase),
         esc_attr($mode)
     );
+}
+
+// ─── WP-CLI ───────────────────────────────────────────────────────────────────
+
+if (defined('WP_CLI') && WP_CLI) {
+    /**
+     * Commands for the ImpactShop event-donation widget.
+     *
+     * ## EXAMPLES
+     *
+     *   wp impactshop event-donation stats jovonkvize-2026
+     */
+    class ImpactShop_Event_Donation_CLI {
+
+        /**
+         * Display ticket and donation stats for a campaign.
+         *
+         * ## OPTIONS
+         *
+         * <slug>
+         * : Campaign slug (e.g. jovonkvize-2026)
+         *
+         * [--format=<format>]
+         * : Output format: table, json, csv. Default: table.
+         *
+         * ## EXAMPLES
+         *
+         *   wp impactshop event-donation stats jovonkvize-2026
+         *   wp impactshop event-donation stats jovonkvize-2026 --format=json
+         *
+         * @when after_wp_load
+         */
+        public function stats(array $args, array $assoc_args): void {
+            $slug = sanitize_title((string) ($args[0] ?? ''));
+            if (!$slug) {
+                WP_CLI::error('Hiányzó kampány slug.');
+            }
+
+            $campaign = impactshop_event_donation_get_campaign($slug);
+            if (!$campaign) {
+                WP_CLI::error("Nem található kampány: {$slug}");
+            }
+
+            $payload = impactshop_event_donation_stats_payload($campaign);
+            $format  = $assoc_args['format'] ?? 'table';
+
+            if ($format === 'json') {
+                WP_CLI::line(wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                return;
+            }
+
+            // Summary table
+            $summary = [
+                ['Mező', 'Érték'],
+                ['Támogatók száma',     $payload['supporters_count']],
+                ['Összes összeg',       $payload['total_amount_formatted']],
+                ['Átlag adomány',       $payload['average_amount_formatted']],
+                ['Cél előrehaladás',    $payload['goal_progress_percent'] . '%'],
+                ['Összes jegy',         $payload['total_tickets']],
+                ['Utolsó adomány',      $payload['last_completed_at']],
+            ];
+            \WP_CLI\Utils\format_items('table', array_slice($summary, 1), ['Mező', 'Érték']);
+
+            // Ticket breakdown
+            if (!empty($payload['ticket_breakdown'])) {
+                WP_CLI::line('');
+                WP_CLI::line('Jegy breakdown (csomag szerinti bontás):');
+                $rows = [];
+                foreach ($payload['ticket_breakdown'] as $pkg => $data) {
+                    $rows[] = [
+                        'Csomag'     => $pkg,
+                        'Jegyek'     => $data['tickets'],
+                        'Adományok'  => $data['donations'],
+                    ];
+                }
+                \WP_CLI\Utils\format_items($format === 'csv' ? 'csv' : 'table', $rows, ['Csomag', 'Jegyek', 'Adományok']);
+            }
+        }
+    }
+
+    WP_CLI::add_command('impactshop event-donation', 'ImpactShop_Event_Donation_CLI');
 }
