@@ -1,3 +1,8 @@
+## 2026-03-25 Hatás Körök memory loader
+- Új helper: `scripts/hatas-korok-load-memory.sh`
+- Cél: Hatás Körök route + community + deploy smoke kontextus célzott betöltése az `ai-agent` dev-memory workflow-ba
+- Kimenetek: `.codex/context/hatas-korok-work-memo.md`, `.codex/context/hatas-korok-work-context.md`
+
 ## 2026-03-25 Hatás Körök smoke bekötve a deploy rutinba
 - `bin/deploy-wpcontent-map.sh`: production mapping deploy után automatikus `scripts/hatas-korok-post-deploy-smoke.sh`
 - `bin/post-deploy-checklist.sh`: új 6. ellenőrzésként futtatja a Hatás Körök smoke-ot

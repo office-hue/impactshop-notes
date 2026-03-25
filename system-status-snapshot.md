@@ -1,3 +1,8 @@
+## 2026-03-25 22:20 - Hatás Körök memory loader
+- Új helper script: `scripts/hatas-korok-load-memory.sh`
+- Generál: `.codex/context/hatas-korok-work-memo.md` + `.codex/context/hatas-korok-work-context.md`
+- Futtatja: `memory:pre-task`, `memory:context-pack`, opcionálisan `memory:full-sync`
+
 ## 2026-03-25 21:55 - Hatás Körök smoke deploy rutinba kötve
 - `bin/deploy-wpcontent-map.sh`: production deploy végén automatikus Hatás Körök read-only smoke
 - `bin/post-deploy-checklist.sh`: kibővítve a Hatás Körök smoke ellenőrzéssel
