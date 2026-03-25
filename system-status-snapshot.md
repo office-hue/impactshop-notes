@@ -1,3 +1,8 @@
+## 2026-03-25 21:45 - Hatás Körök post-deploy smoke tooling
+- Új read-only smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
+- Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
+- Ellenőrzési kör: `/hatas-korok`, `auth/status`, `circles?page=1`, HTML bootstrap markerek
+
 ## 2026-03-25 21:30 - Hatás Körök hotfix
 - `/hatas-korok` route productionön helyreállítva, `HTTP 200`
 - route ownership: static pages plugin visszalép, ha community route aktív
