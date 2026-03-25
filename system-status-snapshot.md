@@ -1,3 +1,9 @@
+## 2026-03-25 21:30 - Hatás Körök hotfix
+- `/hatas-korok` route productionön helyreállítva, `HTTP 200`
+- route ownership: static pages plugin visszalép, ha community route aktív
+- community endpoints: nonce-check + vote membership-check + DB számláló hibakezelés
+- smoke validáció lefutott: `join`, `post`, `vote`, `delete post`, `leave`
+
 ## 2026-03-25 — cert aláírás kép csere (v1.5.3)
 - Pecsétes aláírás lecserélve pecsét nélküli változatra
 - Új kép: bujdoso-alaiiras-2026.png (IMG_3880.HEIC forrás)
