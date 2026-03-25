@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.3');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.4');
 define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
@@ -85,7 +85,7 @@ function impactshop_event_donation_campaigns(): array
                 'accent_2' => '#f4ddae',
                 'text' => '#f8f4ea',
             ],
-            'certificate_signature_image_url' => 'https://app.sharity.hu/wp-content/uploads/2026/03/bujdoso-alaiiras-2026.png',
+            'certificate_signature_image_url' => 'https://app.sharity.hu/wp-content/uploads/2026/03/Kepernyofoto-2026-03-03-du.-9.53.49.png',
         ],
     ];
 
