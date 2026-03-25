@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.4');
-define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
+define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.2.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
 add_action('init', 'impactshop_event_donation_ensure_schema', 5);
@@ -429,6 +429,7 @@ function impactshop_event_donation_ensure_schema(): void
         request_certificate TINYINT(1) NOT NULL DEFAULT 0,
         gdpr_email_consent TINYINT(1) NOT NULL DEFAULT 0,
         ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        ticket_serials TEXT DEFAULT NULL,
         selected_package VARCHAR(20) DEFAULT NULL,
         donation_cert_id VARCHAR(40) DEFAULT NULL,
         donation_cert_status ENUM('none','pending','sent','failed') NOT NULL DEFAULT 'none',
@@ -1183,6 +1184,17 @@ function impactshop_event_donation_fulfill(string $donationId, array $stripeData
     );
     $mergedRow['_ticket_serials'] = $ticketSerials;
 
+    // Persist ticket serials to DB so they survive email delivery failures.
+    if ($ticketCount > 0) {
+        $wpdb->update(
+            $table,
+            ['ticket_serials' => wp_json_encode($ticketSerials)],
+            ['donation_id' => $donationId],
+            ['%s'],
+            ['%s']
+        );
+    }
+
     // Transaction notification to admins.
     impactshop_event_donation_send_transaction_notification($mergedRow);
 
@@ -1630,6 +1642,9 @@ function impactshop_event_donation_send_buyer_confirmation(array $row): void
     $completedAt = (string) ($row['completed_at'] ?? '');
     $ticketCount = (int) ($row['ticket_count'] ?? 0);
     $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
+    if (empty($ticketSerials) && !empty($row['ticket_serials'])) {
+        $ticketSerials = (array) json_decode((string) $row['ticket_serials'], true);
+    }
     $selectedPkg = (string) ($row['selected_package'] ?? '');
     $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
 
@@ -1688,6 +1703,9 @@ function impactshop_event_donation_send_transaction_notification(array $row): vo
     $requestCert = (int) ($row['request_certificate'] ?? 0) === 1;
     $ticketCount = (int) ($row['ticket_count'] ?? 0);
     $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
+    if (empty($ticketSerials) && !empty($row['ticket_serials'])) {
+        $ticketSerials = (array) json_decode((string) $row['ticket_serials'], true);
+    }
     $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
 
     $subject = '[Sharity] Új adomány: ' . $amountFormatted . ' – ' . $campaignSlug;

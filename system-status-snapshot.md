@@ -1,3 +1,7 @@
+## 2026-03-25 — ticket_serials DB mentés (schema v1.2.0)
+- ticket_serials TEXT oszlop a donations táblában
+- fulfill(): sorszámok JSON-ben DB-be kerülnek, email fallback
+
 ## 2026-03-25 — cert aláírás kép csere (v1.5.3)
 - Pecsétes aláírás lecserélve pecsét nélküli változatra
 - Új kép: bujdoso-alaiiras-2026.png (IMG_3880.HEIC forrás)
