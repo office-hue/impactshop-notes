@@ -12,10 +12,12 @@ source ~/.production_env 2>/dev/null || {
 }
 
 PROD_URL="${STAGING_URL/staging.//}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HATAS_KOROK_SMOKE="${ROOT_DIR}/scripts/hatas-korok-post-deploy-smoke.sh"
 printf '🎯 Production URL: %s\n\n' "$PROD_URL"
 
 passed=0
-total=5
+total=6
 
 # 1. Homepage & canary
 printf '1️⃣ Homepage & Canary\n'
@@ -80,6 +82,21 @@ if [ "$rt_ms" -lt 2000 ]; then
     passed=$((passed+1))
 else
     printf '   ❌ FAILED (above 2000ms)\n'
+fi
+printf '\n'
+
+# 6. Hatás Körök route smoke
+printf '6️⃣ Hatás Körök post-deploy smoke\n'
+printf '%s\n' '--------------------------------'
+if [[ -x "$HATAS_KOROK_SMOKE" ]]; then
+    if "$HATAS_KOROK_SMOKE" "$PROD_URL" >/tmp/hatas-korok-smoke.$$.log 2>&1; then
+        printf '   ✅ PASSED\n'
+        passed=$((passed+1))
+    else
+        printf '   ❌ FAILED (see /tmp/hatas-korok-smoke.$$.log)\n'
+    fi
+else
+    printf '   ⚠️ SKIPPED (missing script: %s)\n' "$HATAS_KOROK_SMOKE"
 fi
 printf '\n'
 
