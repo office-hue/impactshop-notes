@@ -1,3 +1,22 @@
+## 2026-03-25 CJ + Dognet go-deal hotfix + merge logika
+- Bug 1: fizz shop törölve (nem volt a Dognet CSV-ben, csak AI registry-ben)
+- Bug 2: CJ limit 200→5000, Skechers (6322281) hozzáadva product catalog-hoz → 473 CJ link
+- Bug 3: Dognet tracking URL passthrough — go.dognet.com href-ek skip API, közvetlen redirect d1+data5-tel
+- --advertiser-ids CLI param bekötve cli_fetch_links → sync_links
+- --merge flag: sync_links meglévő linkeket megtartja szűrt fetch esetén
+- awin/tradedoubler nincs go-deal-ben — feed URL-ek, nem click URL-ek; a 3 érintett shop (Zooplus/Dyson/Nike) dognet_base click URL-je a passthrough-val kezelve
+- Banner CSV-ben 3 shop (Zooplus/Dyson/Nike) feed URL-t tartalmaz click URL helyett → adatminőségi hiba, javítandó
+
+## 2026-03-25 Hatás Körök smoke bekötve a deploy rutinba
+- `bin/deploy-wpcontent-map.sh`: production mapping deploy után automatikus `scripts/hatas-korok-post-deploy-smoke.sh`
+- `bin/post-deploy-checklist.sh`: új 6. ellenőrzésként futtatja a Hatás Körök smoke-ot
+- Ellenőrzés: `bash -n` mindkét shell scriptre OK, smoke futás productionön OK
+
+## 2026-03-25 Hatás Körök post-deploy smoke tooling
+- Új read-only deploy smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
+- Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
+- Cél: deploy után gyors route + bootstrap + auth + circles API ellenőrzés, production állapotmódosítás nélkül
+
 ## 2026-03-25 Cert aláírás kép csere
 - Pecsétes → pecsét nélküli (IMG_3880.HEIC)
 - PHP v1.5.3 deployed
@@ -6376,3 +6395,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 
 ## 2026-03-25 ticket_serials
 - schema v1.2.0: ticket_serials TEXT oszlop, DB fallback email küldésnél
+
+## 2026-03-25 16:25:28 CET - impactall auto log
+- **Result:** fail (warnings=3, errors=1, duration=1s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json

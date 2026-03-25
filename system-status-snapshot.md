@@ -1,6 +1,22 @@
+## 2026-03-25 — CJ + Dognet go-deal fix (impactshop-boot.php, impactshop-cj.php)
+- impactshop-boot.php: Dognet tracking URL passthrough (go.dognet.com href → skip API, append d1+data5)
+- impactshop-cj.php: limit 200→5000, --advertiser-ids CLI param, Skechers hozzáadva (473 link)
+- impactshop-cj.php: --merge flag a sync_links-hez (meglévő linkek megőrzése szűrt fetch esetén)
+- fizz shop törölve mindkét repo shops_registry.json-ból
+
 ## 2026-03-25 — ticket_serials DB mentés (schema v1.2.0)
 - ticket_serials TEXT oszlop a donations táblában
 - fulfill(): sorszámok JSON-ben DB-be kerülnek, email fallback
+
+## 2026-03-25 21:55 - Hatás Körök smoke deploy rutinba kötve
+- `bin/deploy-wpcontent-map.sh`: production deploy végén automatikus Hatás Körök read-only smoke
+- `bin/post-deploy-checklist.sh`: kibővítve a Hatás Körök smoke ellenőrzéssel
+- Validáció: shell parse OK + production smoke OK
+
+## 2026-03-25 21:45 - Hatás Körök post-deploy smoke tooling
+- Új read-only smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
+- Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
+- Ellenőrzési kör: `/hatas-korok`, `auth/status`, `circles?page=1`, HTML bootstrap markerek
 
 ## 2026-03-25 — cert aláírás kép csere (v1.5.3)
 - Pecsétes aláírás lecserélve pecsét nélküli változatra
