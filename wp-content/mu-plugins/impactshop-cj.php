@@ -237,9 +237,10 @@ final class ImpactShop_CJ
         }
         $limit = isset($assocArgs['limit']) ? max(1, absint($assocArgs['limit'])) : 5000;
         $output = $assocArgs['output'] ?? 'data/cj-links.json';
+        $merge = isset($assocArgs['merge']);
 
         try {
-            $result = self::sync_links($filters, $limit, $output);
+            $result = self::sync_links($filters, $limit, $output, $merge);
             \WP_CLI::success(sprintf('CJ links fetched: %d rows saved to %s', $result['count'], $result['path']));
         } catch (Throwable $e) {
             \WP_CLI::error($e->getMessage());
@@ -531,10 +532,21 @@ final class ImpactShop_CJ
         return $result;
     }
 
-    private static function sync_links(array $filters, int $limit, string $output): array
+    private static function sync_links(array $filters, int $limit, string $output, bool $merge = false): array
     {
         $creds = self::get_credentials(true);
         $collected = [];
+        if ($merge) {
+            $existing = get_option(self::OPTION_LINKS, []);
+            if (is_array($existing)) {
+                foreach ($existing as $item) {
+                    $key = ($item['advertiser_id'] ?? '') . ':' . ($item['link_id'] ?? '');
+                    if ($key !== ':') {
+                        $collected[$key] = $item;
+                    }
+                }
+            }
+        }
         $pageSize = isset($filters['records-per-page']) ? max(1, min(100, (int) $filters['records-per-page'])) : 100;
         $linkTypes = $filters['link-type'] ?? 'Product Link';
         if (!is_array($linkTypes)) {
@@ -622,8 +634,9 @@ final class ImpactShop_CJ
         self::write_json($output, $payload);
 
         return [
-            'count' => count($payload),
-            'path'  => $output,
+            'count'  => count($payload),
+            'path'   => $output,
+            'merged' => $merge,
         ];
     }
 
