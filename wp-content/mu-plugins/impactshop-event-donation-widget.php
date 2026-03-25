@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.1');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.2');
 define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
@@ -1575,6 +1575,10 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
         'Reply-To: Sharity Impact <office@sharity.hu>',
     ];
     $attachments = $pdfAttachment !== '' ? [$pdfAttachment] : [];
+    $meghatalmazasPdf = trailingslashit(WPMU_PLUGIN_DIR) . 'sharity-meghatalmazas-adomanyigazolas.pdf';
+    if (file_exists($meghatalmazasPdf)) {
+        $attachments[] = $meghatalmazasPdf;
+    }
 
     $headers[] = 'Bcc: bujdoso.arnold@bujdosoiroda.com';
     $sent = wp_mail([$email, 'office@sharity.hu'], $subject, $template, $headers, $attachments);

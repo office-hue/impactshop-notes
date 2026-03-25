@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-03-05
+Last updated: 2026-03-25
 
 ## Purpose
 Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/guard kiterjesztéshez.
@@ -12,6 +12,8 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-03-25 | sharity-meghatalmazas-adomanyigazolas.pdf | Statikus PDF, nincs futtatható kód. Csak olvasható (444). PHP-ból file_exists ellenőrzéssel csatolja a cert emailhez. | `impactshop-event-donation-widget.php` v1.5.2 |
+
 | 2026-03-05 | Baseline policy bevezetés | Safe repo audit kötelezővé teszi az új modulok bastion frissítését | `scripts/safe-repo-audit.sh` |
 
 | 2026-03-05 | Pre-push hook módosítás | Push-range audit (`--mode push`) bekapcsolva, dirty worktree miatti false block megszűnik | `scripts/install-hooks.sh`, `scripts/safe-repo-audit.sh` |

@@ -1,3 +1,7 @@
+## 2026-03-25 — v1.5.2 meghatalmazás PDF auto-csatolás
+- sharity-meghatalmazas-adomanyigazolas.pdf feltöltve szerverre (267KB, 444 jog)
+- send_certificate_for_donation() csatolja a cert mellé (WPMU_PLUGIN_DIR + file_exists)
+
 ## 2026-03-25 — vagy egyszerű adományozás szeparátor
 - solo jegyek és preset összeg ikonok közé beszúrva (jovonkvize.js)
 
