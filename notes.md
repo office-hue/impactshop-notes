@@ -1,3 +1,8 @@
+## 2026-03-25 Hatás Körök post-deploy smoke tooling
+- Új read-only deploy smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
+- Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
+- Cél: deploy után gyors route + bootstrap + auth + circles API ellenőrzés, production állapotmódosítás nélkül
+
 ## 2026-03-25 Hatás Körök hotfix
 - `/hatas-korok` production route helyreállítva
 - statikus page route és community template redirect ütközés kezelve
