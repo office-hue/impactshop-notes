@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.4.0');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.0');
 define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.1.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
@@ -291,6 +291,24 @@ function impactshop_event_donation_generate_cert_id(): string
     $seq = (int) get_option($key, 0) + 1;
     update_option($key, $seq, false);
     return sprintf('SHA-ADOMANY-%s-%04d', $year, $seq);
+}
+
+function impactshop_event_donation_generate_ticket_serials(string $campaignSlug, int $ticketCount): array
+{
+    if ($ticketCount <= 0) {
+        return [];
+    }
+    $prefix = strtoupper(sanitize_key($campaignSlug));
+    $year = gmdate('Y');
+    $key = 'impactshop_event_ticket_seq_' . $campaignSlug . '_' . $year;
+    $lastSeq = (int) get_option($key, 0);
+    $serials = [];
+    for ($i = 1; $i <= $ticketCount; $i++) {
+        $lastSeq++;
+        $serials[] = sprintf('%s-%s-%05d', $prefix, $year, $lastSeq);
+    }
+    update_option($key, $lastSeq, false);
+    return $serials;
 }
 
 function impactshop_event_donation_currency_name(string $currency): string
@@ -1155,10 +1173,23 @@ function impactshop_event_donation_fulfill(string $donationId, array $stripeData
 
     $wpdb->query('COMMIT');
 
-    // Transaction notification to admins.
-    impactshop_event_donation_send_transaction_notification(
-        array_merge((array) $row, ['status' => 'completed', 'completed_at' => $update['completed_at']])
+    $mergedRow = array_merge((array) $row, ['status' => 'completed', 'completed_at' => $update['completed_at']]);
+
+    // Generate ticket serial numbers if applicable.
+    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketSerials = impactshop_event_donation_generate_ticket_serials(
+        (string) ($row['campaign_slug'] ?? ''),
+        $ticketCount
     );
+    $mergedRow['_ticket_serials'] = $ticketSerials;
+
+    // Transaction notification to admins.
+    impactshop_event_donation_send_transaction_notification($mergedRow);
+
+    // Buyer confirmation email.
+    if ($hasEmail) {
+        impactshop_event_donation_send_buyer_confirmation($mergedRow);
+    }
 
     // Primary path: send certificate immediately after successful payment.
     if ($requestCertificate && $hasEmail) {
@@ -1580,6 +1611,65 @@ function impactshop_event_donation_send_certificate_for_donation(string $donatio
     return false;
 }
 
+function impactshop_event_donation_send_buyer_confirmation(array $row): void
+{
+    $email = sanitize_email((string) ($row['email'] ?? ''));
+    if ($email === '') {
+        return;
+    }
+
+    $amount = (float) ($row['amount_display'] ?? 0);
+    $currency = strtolower((string) ($row['currency'] ?? 'huf'));
+    $donorName = (string) ($row['donor_name'] ?? '');
+    $donationId = (string) ($row['donation_id'] ?? '');
+    $campaignSlug = (string) ($row['campaign_slug'] ?? '');
+    $completedAt = (string) ($row['completed_at'] ?? '');
+    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
+    $selectedPkg = (string) ($row['selected_package'] ?? '');
+    $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
+
+    $campaign = impactshop_event_donation_get_campaign($campaignSlug);
+    $campaignTitle = (string) ($campaign['title'] ?? 'Jótékonysági kampány');
+
+    $greeting = $donorName !== '' ? "Kedves {$donorName}!" : 'Kedves Támogató!';
+
+    $subject = 'Köszönjük támogatásodat! – ' . $campaignTitle;
+    $body = "{$greeting}\n\n"
+        . "Köszönjük, hogy támogattad a \"{$campaignTitle}\" kampányt!\n\n"
+        . "--- Tranzakció összesítő ---\n"
+        . "Összeg: {$amountFormatted}\n"
+        . "Azonosító: {$donationId}\n"
+        . "Dátum: {$completedAt}\n";
+
+    if ($selectedPkg !== '') {
+        $pkgNames = ['silver' => 'Ezüst', 'gold' => 'Arany', 'platinum' => 'Platina'];
+        $body .= "Csomag: " . ($pkgNames[$selectedPkg] ?? $selectedPkg) . "\n";
+    }
+
+    if ($ticketCount > 0) {
+        $body .= "\n--- Jegyek ({$ticketCount} db) ---\n";
+        foreach ($ticketSerials as $idx => $serial) {
+            $body .= ($idx + 1) . ". jegy: {$serial}\n";
+        }
+        $body .= "\nKérjük, mutasd be ezt az e-mailt vagy a jegy sorszámot a rendezvény helyszínén.\n";
+    }
+
+    $body .= "\n"
+        . "Amennyiben kérdésed van, keress minket az office@sharity.hu címen.\n\n"
+        . "Köszönettel,\n"
+        . "Sharity Adományszervező Alapítvány\n"
+        . "https://sharity.hu\n";
+
+    $headers = [
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: Sharity Impact <office@sharity.hu>',
+        'Reply-To: Sharity Impact <office@sharity.hu>',
+    ];
+
+    wp_mail([$email], $subject, $body, $headers);
+}
+
 function impactshop_event_donation_send_transaction_notification(array $row): void
 {
     $emails = ['bujdoso.arnold@bujdosoiroda.com', 'koncz.veronika@mielemed.hu'];
@@ -1592,6 +1682,8 @@ function impactshop_event_donation_send_transaction_notification(array $row): vo
     $completedAt = (string) ($row['completed_at'] ?? '');
     $isCompany = (int) ($row['is_company'] ?? 0) === 1;
     $requestCert = (int) ($row['request_certificate'] ?? 0) === 1;
+    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
     $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
 
     $subject = '[Sharity] Új adomány: ' . $amountFormatted . ' – ' . $campaignSlug;
@@ -1608,6 +1700,13 @@ function impactshop_event_donation_send_transaction_notification(array $row): vo
             . "Cégnév: " . (string) ($row['company_name'] ?? '') . "\n"
             . "Adószám: " . (string) ($row['company_tax_id'] ?? '') . "\n"
             . "Székhely: " . (string) ($row['company_address'] ?? '') . "\n";
+    }
+
+    if ($ticketCount > 0) {
+        $body .= "\n--- Jegyek ({$ticketCount} db) ---\n";
+        foreach ($ticketSerials as $idx => $serial) {
+            $body .= ($idx + 1) . ". jegy: {$serial}\n";
+        }
     }
 
     $headers = [

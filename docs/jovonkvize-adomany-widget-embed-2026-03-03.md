@@ -105,3 +105,8 @@ A `impactshop_event_donation_campaigns()` tömbben módosítható:
 - Gyokérok: Safari select ignoralja a CSS background-color-t.
 - Fix: input type=number (80px, sotet hatter, vilagos szoveg).
 - JS: innerHTML populacio helyett .max attribute beallitas.
+
+### 2026-03-25 - v1.5.0 email rendszer deploy
+- Vasarlo visszaigazolo email jegy sorszamokkal
+- Admin notification kibovitve ticket infoval
+- Ticket serial generator: JVK-2026-XXXXX

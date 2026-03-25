@@ -6351,3 +6351,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Safari select CSS bug: select element ignores background-color; replaced with input type=number
 - CSS: width:80px, dark bg rgba(5,15,47,.95), light color #f8f4ea
 - STANDALONE_TICKET_MAX set via .max attribute instead of innerHTML
+
+## 2026-03-25 - v1.5.0 email deploy
+- Buyer confirmation email: vasarlo visszaigazolas jegy sorszamokkal
+- Transaction notification: ticket info hozzaadva az admin emailhez
+- Ticket serial: JVK-2026-XXXXX formatum, wp_option szamlalo

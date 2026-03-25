@@ -365,3 +365,4 @@ PHP lint ok for identity/gamification modules
 - Status: merge pending → prod deploy szükséges (rsync to s59)
 ### 2026-03-25T06:24:01Z | jovonkvize STYLE_ID collision fix deployed | branch=feat/jovonkvize-ticket-count | result=OK
 ### 2026-03-25T07:10:40Z | v1.4.0 solo ticket input fix deployed | result=OK
+### 2026-03-25T07:39:33Z | v1.5.0 buyer email + ticket serial deploy | result=OK
