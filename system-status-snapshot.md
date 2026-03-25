@@ -1,3 +1,8 @@
+## 2026-03-25 21:55 - Hatás Körök smoke deploy rutinba kötve
+- `bin/deploy-wpcontent-map.sh`: production deploy végén automatikus Hatás Körök read-only smoke
+- `bin/post-deploy-checklist.sh`: kibővítve a Hatás Körök smoke ellenőrzéssel
+- Validáció: shell parse OK + production smoke OK
+
 ## 2026-03-25 21:45 - Hatás Körök post-deploy smoke tooling
 - Új read-only smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
 - Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
