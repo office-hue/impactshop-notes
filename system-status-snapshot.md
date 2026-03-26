@@ -461,3 +461,8 @@ PHP lint ok for identity/gamification modules
 - impact-community.php restored to 10c9930d canonical
 - impact-community-app.php restored to 10c9930d canonical
 - Reverted: ic_ngo_admin_template_redirect, guard refactor, /ngo-admin/ URLs
+
+## 2026-03-26 — Ads Watch external return recovery
+- `impactshop-ads-watch.js` now tracks outbound sponsor CTA / autobanner tab opens and reloads on return when Safari restores the original tab in a bad visual state.
+- `impactshop-ads-watch.php` version bumped to `2.5.30` for Cloudflare/browser cache bust.
+- Live verification: `/impact-challenge/` references `impactshop-ads-watch.js?ver=2.5.30`; direct header check returned `cf-cache-status: MISS`.

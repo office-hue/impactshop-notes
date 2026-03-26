@@ -6439,3 +6439,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - /ngo-admin/ route és guard refactor REVERTELVE
 - ngo_admin_url → /impact-shop_ngo/ (eredeti)
 - NGO_ADMIN_URL JS fallback → /impact-challenge/ngo-admin/ (eredeti)
+
+## 2026-03-26 — Ads Watch Safari external tab return fix
+- `impactshop-ads-watch.js`: outbound CTA/autobanner kattintáskor external-navigation state mentés
+- `visibilitychange`, `focus`, `pageshow` visszatéréskor recovery reload, ha a tab külső navigáció után hibás állapotban jön vissza
+- `impactshop-ads-watch.php`: verzió emelve `2.5.30`-ra Cloudflare cache bust miatt
+- Deploy: célzott rsync a production MU-plugin könyvtárba
+- Live check: `/impact-challenge/` már `impactshop-ads-watch.js?ver=2.5.30`-at tölti
