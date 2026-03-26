@@ -40,6 +40,11 @@ npm run memory:full-sync -- --task "<lezáró összefoglaló>"
 - Session elején és végén `notes.md` frissítése kötelező.
 - A `conversation-summaries/` és kapcsolódó operatív dokumentáció naprakészen tartandó.
 - Bastion guardrail mindig kötelező; ha nem egyértelmű, meg kell állni és jóváhagyást kérni.
+- Az Impact Challenge teljes védett köre különösen érzékeny rendszernek minősül: elsődleges fejlesztési irány csak új, additív kóddal megengedett.
+- Meglévő Impact Challenge kód, route, bekötés, pontszámítási út, adatmodell vagy workflow csak külön, explicit jóváhagyással módosítható, és csak akkor, ha nincs azonosan jó additív megoldás.
+- Védett fájl módosítása előtt kötelező a koherencia vizsgálat, a kockázatelemzés és az érintett funkciók listája.
+- Védett fájl módosítása után kötelező külön manuális UI checklistet adni a felhasználónak, hogy mit ellenőrizzen végig a weboldalon.
+- A kötelező részletes ellenőrzési rend: `docs/protected-file-change-checklist.md`
 
 ## Git / PR / merge / deploy
 
@@ -61,6 +66,7 @@ bash scripts/safe-repo-audit.sh --strict --mode push
 - Teljes repo scan / tömeges rsync csak külön jóváhagyással.
 - Védett / bastion állományhoz csak backup + rollback tervvel szabad nyúlni.
 - Védett fájl backup retention maximum 2 nap, kivéve ha külön dokumentált eltérés van.
+- Fizikai írásvédettség célállapota: a production Impact Challenge MU-plugin állományok read-only (`0444`) jogosultság alatt maradnak, és csak célzott deploy idejére tehetők írhatóvá.
 
 ## Nyelv
 

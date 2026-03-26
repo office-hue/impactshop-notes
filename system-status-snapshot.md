@@ -1,7 +1,30 @@
-## 2026-03-25 22:20 - Hatás Körök memory loader
-- Új helper script: `scripts/hatas-korok-load-memory.sh`
-- Generál: `.codex/context/hatas-korok-work-memo.md` + `.codex/context/hatas-korok-work-context.md`
-- Futtatja: `memory:pre-task`, `memory:context-pack`, opcionálisan `memory:full-sync`
+## 2026-03-26T15:42:00+0100 — Autobanner/CJ runtime perimeter lezárva
+- A hiányzó WordPress oldali autobanner/CJ runtime rés bekerült a protected körbe: `wp-content/mu-plugins/impactshop-cj.php`.
+- Ezzel a WordPress oldali autobanner runtime/import/rotáció/redirect/CJ bridge körben nincs ismert nyitott pipeline-kódfájl a protected listán kívül.
+
+## 2026-03-26T15:24:00+0100 — Protected-file koherencia és UI checklist szabály bevezetve
+- Védett fájl módosítás előtt kötelezővé vált: koherencia vizsgálat, kockázatelemzés, érintett funkciólista.
+- Védett fájl módosítás után kötelezővé vált: post-merge/deploy ellenőrzési kör és külön manuális UI checklist a felhasználónak.
+- Új kanonikus dokumentum: `docs/protected-file-change-checklist.md`, és a szabály bekötve a PR/deploy/policy fájlakba.
+
+## 2026-03-26T15:12:00+0100 — PR / merge / push / deploy bastion szabályok szigorítva
+- A bástyavédelmi és írásvédettségi szabályok most már explicit részei a PR policynek, PR template-nek, exit checklistnek és deploy runbooknak is.
+- Impact Challenge esetén rögzítve: additive new-code first; legacy touch csak explicit jóváhagyással; deploy után a védett fájlok read-only visszazárása kötelező.
+
+## 2026-03-26T14:58:30+0100 — Impact Challenge bastion perimeter bővítés
+- A bástya védelem és a védett fájllista kiterjesztve a teljes Impact Challenge működési körre: ads-watch, auto-banner, offerwall, NGO selector/guides/card, identity, points engine, vote purchase, quarter-close, redirect/go bekötések, event donation widgetek, PWA és kapcsolódó workflow modulok.
+- Policy rögzítve: elsődleges fejlesztési út csak additív, új kód; meglévő Impact Challenge kód módosítása csak külön, explicit jóváhagyással és backup+rollback mellett.
+- Kanonikus források frissítve: docs/impactshop-guard-config.json, docs/bastion-protection-extension-plan.md, docs/ai-assistant-canonical-policy.md, docs/bastion-guard-status.md, AGENTS.md
+
+## 2026-03-25 — CJ + Dognet go-deal fix (impactshop-boot.php, impactshop-cj.php)
+- impactshop-boot.php: Dognet tracking URL passthrough (go.dognet.com href → skip API, append d1+data5)
+- impactshop-cj.php: limit 200→5000, --advertiser-ids CLI param, Skechers hozzáadva (473 link)
+- impactshop-cj.php: --merge flag a sync_links-hez (meglévő linkek megőrzése szűrt fetch esetén)
+- fizz shop törölve mindkét repo shops_registry.json-ból
+
+## 2026-03-25 — ticket_serials DB mentés (schema v1.2.0)
+- ticket_serials TEXT oszlop a donations táblában
+- fulfill(): sorszámok JSON-ben DB-be kerülnek, email fallback
 
 ## 2026-03-25 21:55 - Hatás Körök smoke deploy rutinba kötve
 - `bin/deploy-wpcontent-map.sh`: production deploy végén automatikus Hatás Körök read-only smoke
@@ -12,12 +35,6 @@
 - Új read-only smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
 - Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
 - Ellenőrzési kör: `/hatas-korok`, `auth/status`, `circles?page=1`, HTML bootstrap markerek
-
-## 2026-03-25 21:30 - Hatás Körök hotfix
-- `/hatas-korok` route productionön helyreállítva, `HTTP 200`
-- route ownership: static pages plugin visszalép, ha community route aktív
-- community endpoints: nonce-check + vote membership-check + DB számláló hibakezelés
-- smoke validáció lefutott: `join`, `post`, `vote`, `delete post`, `leave`
 
 ## 2026-03-25 — cert aláírás kép csere (v1.5.3)
 - Pecsétes aláírás lecserélve pecsét nélküli változatra

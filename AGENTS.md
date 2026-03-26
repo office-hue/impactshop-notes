@@ -22,6 +22,11 @@ If any local assistant configuration conflicts with these files, treat the above
 ## Bastion Guardrail (Always On)
 - **Bastion protection is mandatory** for any deploy/guardrail decision.
 - If bastion access or rules are unclear, **stop and request approval** before proceeding.
+- Impact Challenge protected codepaths are under extended bastion protection: prefer additive new-code solutions first.
+- Existing Impact Challenge files, routes, score/vote logic, data flows, and workflow glue may be edited only with explicit approval, and only when no equally good additive option exists.
+- Protected file módosítás előtt kötelező: koherencia vizsgálat, kockázatelemzés, érintett funkciólista.
+- Protected file módosítás után kötelező: funkció-ellenőrzési lista + külön kézi UI checklist a megrendelőnek.
+- Részletes eljárás: `docs/protected-file-change-checklist.md`
 
 ## Deploy Decision (Quick)
 - **Use:** `bin/impactshop-guard-deploy.sh` (staging + production), not `deploy.sh`.
@@ -54,6 +59,7 @@ find .codex/backups -mindepth 1 -maxdepth 1 -type d -mtime +2 -print -exec rm -r
 ## Commit & Pull Request Guidelines
 - Follow the existing `scope: summary` pattern (`ops: raise production preflight latency fail to 10s`); keep subjects ≤72 chars.
 - Explain intent, rollout plan, and rollback instructions in PR descriptions; link related diagnostics or `notes.md` entries.
+- Protected-file touch esetén a PR-nek tartalmaznia kell: koherencia vizsgálat rövid kivonata, kockázati lista, érintett funkciók, kötelező post-merge/deploy ellenőrzési kör, kézi UI checklist.
 - Attach screenshots or staging logs when visual or redirect behaviour changes; flag any manual steps required post-deploy.
 
 ## Agent Notes & Handover
