@@ -451,3 +451,8 @@ PHP lint ok for identity/gamification modules
 - consent checkbox szöveg → kattintható `<a>` link: `/ngo-guides/jogi-dokumentumok/`
 - `stopPropagation` a link click-re → checkbox nem togglel
 - JS deployed, chmod 444
+
+## 2026-03-26 — ngo-admin route bevezetés
+- ic_ngo_admin_template_redirect() hozzáadva: /ngo-admin/ route kezelés
+- impact-community-app.php guard refactored (NGO admin MU-init safe)
+- PHP lint: OK, branch: feat/jovonkvize-ticket-count

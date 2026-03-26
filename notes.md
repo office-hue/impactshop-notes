@@ -6426,3 +6426,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-03-25 23:00:43 CET - impactall auto log
 - **Result:** warn (warnings=2, errors=0, duration=3s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-26 — /ngo-admin/ route hozzáadva (ic_ngo_admin_template_redirect)
+- `impact-community.php`: `ic_ngo_admin_template_redirect()` bevezetva, template_redirect priority 4
+- URL-ek átírva `/impact-shop_ngo/` → `/ngo-admin/` (3 hely)
+- `impact-community-app.php`: guard refactor — NGO admin funkciók MU-init időn is betölthetők
+- NGO_ADMIN_URL JS fallback: `/ngo-admin/`
+- Branch: feat/jovonkvize-ticket-count HEAD: 7447fd73
