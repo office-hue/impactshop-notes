@@ -1,3 +1,8 @@
+## 2026-03-26T19:30:00+0100 — feat/jovonkvize-ticket-count merge: origin/main beolvasztva
+- Konflikció-feloldás: `impact-community.php` test_mode bypass (main) megtartva; `impactshop-event-donation-widget.php` ticket_serials DB oszlop + schema 1.2.0 (feature) megtartva; `impactshop-ngo-guides.php` jogi-dokumentumok route + version 1.1.2 (feature) megtartva.
+- `scripts/hatas-korok-load-memory.sh`: feature branch verzió megtartva.
+- `impact-community-app.php`: auto-merge, konfliktus nem volt.
+
 ## 2026-03-26T16:54:00+0100 — Impact Challenge kanonikus baseline rögzítve
 - Létrejött az egységes kanonikus alapdokumentum: `docs/impact-challenge-canonical-baseline.md`.
 - Ettől kezdve ez a baseline az elsődleges referencia az Impact Challenge teljes scope-jára: ads-watch, autobanner, offerwall, identity, pont/szavazat, affiliate glue, PWA és a guide rendszer.

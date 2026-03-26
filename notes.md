@@ -1,3 +1,7 @@
+## 2026-03-26 19:30 CET - feat/jovonkvize merge: origin/main conflict resolution
+- impact-community.php: test_mode bypass (main) megtartva; event-donation-widget: ticket_serials schema 1.2.0 (feature); ngo-guides: jogi-dokumentumok + 1.1.2 (feature).
+- Merge commit: ef88de74
+
 ## 2026-03-26 16:54 CET - Impact Challenge canonical baseline
 - New canonical reference doc created: `docs/impact-challenge-canonical-baseline.md`
 - Impact Challenge runtime perimeter normalized as canonical protected baseline (ads-watch, autobanner, offerwall, identity, affiliate glue, PWA, guides).
