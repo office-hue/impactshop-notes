@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hatás Körök – Impact Community | Sharity</title>
+  <meta name="description" content="Hatás Körök: érték-alapú közösségek NGO-k és települések köré szervezve. Anonim, biztonságos, pontozásos közösségi platform az ImpactShop ökoszisztémában.">
+  <meta property="og:title" content="Hatás Körök – Impact Community">
+  <meta property="og:description" content="Közösségek, amelyek az ügy köré épülnek — nem ismerősök köré. Tombola, aukció, jelvények, verseny.">
+  <meta property="og:url" content="https://app.sharity.hu/hatas-korok">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+      --orange: #f97316;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(111, 227, 193, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(15, 138, 157, 0.1);
+      text-decoration: none;
+    }
+
+    /* Hero */
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      align-items: center;
+      padding: 48px 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--purple);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--purple);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(124, 58, 237, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(124, 58, 237, 0.4);
+      text-decoration: none;
+    }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 28px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--purple);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, #fff 100%);
+    }
+    .card.teal-highlight {
+      border: 2px solid var(--teal);
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(124, 58, 237, 0.12);
+      font-size: 1.6rem;
+      margin-bottom: 14px;
+    }
+    .card-icon.teal { background: rgba(15, 138, 157, 0.12); }
+    .card-icon.orange { background: rgba(249, 115, 22, 0.12); }
+    .card-icon.green { background: rgba(34, 197, 94, 0.12); }
+    .card-icon.sun { background: rgba(245, 182, 66, 0.12); }
+
+    /* Section */
+    .section { margin-top: 64px; }
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.1);
+      color: var(--purple);
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+    .section-label.teal {
+      background: rgba(15, 138, 157, 0.1);
+      color: var(--teal);
+    }
+    .section-label.orange {
+      background: rgba(249, 115, 22, 0.1);
+      color: var(--orange);
+    }
+
+    /* Lists */
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .list li {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+    .list li .icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    th {
+      font-weight: 700;
+      background: rgba(124, 58, 237, 0.06);
+      color: var(--ink);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    td { color: var(--muted); }
+
+    /* Flow diagram */
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 18px;
+      margin-top: 24px;
+    }
+    .flow-step {
+      padding: 12px 18px;
+      border-radius: 12px;
+      background: var(--card);
+      box-shadow: 0 4px 12px rgba(11,31,42,0.06);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-align: center;
+      min-width: 120px;
+    }
+    .flow-arrow {
+      font-size: 1.4rem;
+      color: var(--purple);
+      font-weight: 700;
+    }
+
+    /* Impi character */
+    .impi-card {
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(245, 182, 66, 0.08), rgba(111, 227, 193, 0.08));
+      border: 2px solid var(--sun);
+      border-radius: 18px;
+      position: relative;
+    }
+    .impi-avatar {
+      font-size: 2.4rem;
+      position: absolute;
+      top: -16px;
+      right: 20px;
+    }
+
+    /* Badge grid */
+    .badge-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-top: 16px;
+    }
+    .badge-item {
+      padding: 14px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      text-align: center;
+      border: 1px solid rgba(11,31,42,0.06);
+      font-size: 0.85rem;
+    }
+    .badge-item .emoji {
+      font-size: 1.8rem;
+      display: block;
+      margin-bottom: 6px;
+    }
+    .badge-item .name {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    /* Sprint / Trust level bars */
+    .level-bar {
+      display: flex;
+      gap: 0;
+      margin-top: 16px;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .level-bar .level {
+      flex: 1;
+      padding: 16px;
+      text-align: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .level-bar .level:nth-child(1) { background: var(--teal); }
+    .level-bar .level:nth-child(2) { background: var(--purple); }
+    .level-bar .level:nth-child(3) { background: var(--orange); }
+
+    /* Footer */
+    .footer {
+      margin-top: 80px;
+      padding: 40px 24px;
+      text-align: center;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 24px 24px 0 0;
+    }
+    .footer p { color: rgba(255,255,255,0.7); }
+    .footer a { color: var(--mint); }
+
+    /* Fade-in animation */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.6s ease forwards;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hero { padding: 28px 20px; }
+      .wrap { padding: 32px 16px 64px; }
+      .grid { grid-template-columns: 1fr; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .badge-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="/ngo-guides/impact-challenge/">Impact Challenge</a>
+      <a href="impact-shop-ngo.html">Impact Shop</a>
+      <a href="ngo-card.html">NGO Card</a>
+      <a href="#" style="background: rgba(124, 58, 237, 0.12); color: var(--purple);">Hatás Körök</a>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero fade-in delay-1">
+      <div>
+        <div class="pill">🔵 Hatás Körök — Impact Community</div>
+        <h1>Közösségek, amelyek az ügy köré épülnek</h1>
+        <p style="font-size: 1.15rem;">
+          Nem ismerős-alapú networking, hanem <strong>érték-alapú közösségformálás</strong>.
+          Anonim, biztonságos, pontozásos közösségi platform — ahol az NGO-k és tagjaik együtt építenek.
+        </p>
+        <a href="#hogyan-mukodik" class="cta">Hogyan működik? ↓</a>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 6rem; line-height: 1;">🦡</div>
+        <p style="font-size: 1.1rem; font-weight: 600; color: var(--purple); margin-top: 8px;">
+          Impi, a szurikáta<br>
+          <span style="font-weight: 400; color: var(--muted); font-size: 0.95rem;">A körök közösségi gazdája</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- Miért más? -->
+    <section class="section fade-in delay-2">
+      <div class="section-label">Miért más?</div>
+      <h2>Amit sehol máshol nem kapnak az NGO-k</h2>
+      <p>A Hatás Körök nem a közösségi média másolata. Az alábbi exkluzív előnyök csak itt érhetők el:</p>
+
+      <div class="grid">
+        <div class="card highlight">
+          <div class="card-icon">🎟️</div>
+          <h3>Ingyenes Tombola &amp; Aukció</h3>
+          <p>Más platformon be kell fizetni vagy saját IT-t üzemeltetni. Itt az NGO ingyen kap beépített tombola- és aukciós eszközt a saját Körében.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon teal">🏃</div>
+          <h3>Catch-Up Sprint</h3>
+          <p>Lemaradó NGO-k strukturált programmal hozhatják be a hátrányukat — nem kedvezménnyel, hanem verifikált közösségi aktivációval.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon sun">🦡</div>
+          <h3>Impi, a szurikáta</h3>
+          <p>Platform-karakter, aki élővé teszi a köröket: köszönti az új tagokat, jutalmaz, kérdez és finoman moderál.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon green">🆔</div>
+          <h3>Impact Alias</h3>
+          <p>Névtelenség, ami bátorrá tesz. Nincs Facebook-igény a valódi név használatára — az alias az identitás.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon orange">🗳️</div>
+          <h3>Szavazat-konverzió</h3>
+          <p>A körtagok aktivitása közvetlenül erősíti az NGO szavazatállományát. Posztolj, szavazz — az NGO-d profitál.</p>
+        </div>
+        <div class="card teal-highlight">
+          <div class="card-icon teal">🤝</div>
+          <h3>Impact Buddy</h3>
+          <p>Belépéskor automatikus anonim párosítás — 7 napos mini onboarding, hogy senki ne maradjon egyedül.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hogyan működik? -->
+    <section class="section fade-in" id="hogyan-mukodik">
+      <div class="section-label teal">A rendszer felépítése</div>
+      <h2>Hogyan működik a Hatás Körök?</h2>
+
+      <div class="flow">
+        <div class="flow-step">🆔 Csatlakozás<br><small>Impact Alias kapás</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">📜 Konstitúció<br><small>15 mp elfogadás</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">✍️ Posztolás<br><small>Szándékválasztó</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">🗳️ Szavazás<br><small>Pozitív reakciók</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">🦡 Impi reagál<br><small>Jutalmaz, kérdez</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">🎟️ Tombola / Aukció<br><small>NGO kampány</small></div>
+      </div>
+    </section>
+
+    <!-- Kör típusok -->
+    <section class="section fade-in">
+      <div class="section-label">Közösség típusok</div>
+      <h2>Két fajta kör épül</h2>
+
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));">
+        <div class="card highlight">
+          <div class="card-icon">🔵</div>
+          <h3>NGO Körök</h3>
+          <p>Minden regisztrált NGO automatikusan kap egy Kört. A kör neve az NGO neve, moderátora az NGO adminisztrátor.</p>
+          <ul class="list" style="margin-top: 12px;">
+            <li><span class="icon">🤝</span> <span>NGO-kiválasztásnál automatikus csatlakozás</span></li>
+            <li><span class="icon">📸</span> <span>NGO-k képeket, eseményeket, linkeket is posztolhatnak</span></li>
+            <li><span class="icon">🛡️</span> <span>NGO admin moderál: posztokat törölhet, pingelhet</span></li>
+          </ul>
+        </div>
+        <div class="card teal-highlight">
+          <div class="card-icon teal">🏘️</div>
+          <h3>Település Körök</h3>
+          <p>Irányítószám-alapú helyi közösségek. Nem szükséges explicit csatlakozás — a szomszéd körök versenyezhetnek egymással.</p>
+          <ul class="list" style="margin-top: 12px;">
+            <li><span class="icon">📮</span> <span>Irányítószámot megad → automatikus helyi kör</span></li>
+            <li><span class="icon">⚔️</span> <span>Szomszéd települések egymás rivális körei</span></li>
+            <li><span class="icon">🤖</span> <span>Automatikus NSFW szűrő + bejelentés gomb</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust szintek -->
+    <section class="section fade-in">
+      <div class="section-label orange">Bizalom rendszer</div>
+      <h2>Trust szintek — fokozatos jogok</h2>
+      <p>Az anonimitás védelmében minden új tag fokozatosan kap egyre több jogot. A szintek körönként működnek.</p>
+
+      <div class="level-bar">
+        <div class="level">
+          <div style="font-size: 1.5rem;">0</div>
+          Új tag<br>
+          <small style="opacity: 0.8;">Max 5 poszt/nap, link tiltott</small>
+        </div>
+        <div class="level">
+          <div style="font-size: 1.5rem;">1</div>
+          Tag<br>
+          <small style="opacity: 0.8;">3 visszatérő nap + 3 szavazás</small>
+        </div>
+        <div class="level">
+          <div style="font-size: 1.5rem;">2</div>
+          Törzstag<br>
+          <small style="opacity: 0.8;">30+ nap + 20+ poszt</small>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h3>📜 Impact Konstitúció</h3>
+        <p>Minden körnek van egy 3–5 pontos alapszabálya, amelyet a belépő 15 másodperc alatt elfogad — Impi hangján, viselkedési példákkal:</p>
+        <ul class="list">
+          <li><span class="icon">🎯</span> <span><strong>Cselekvés-orientált:</strong> Azért vagyunk itt, amit elértünk — nem amit gondolunk egymásról.</span></li>
+          <li><span class="icon">🚫</span> <span><strong>Politikamentes:</strong> Pártpolitika, kampány, uszítás nem fér bele. Helyi ügyek, igen.</span></li>
+          <li><span class="icon">🆔</span> <span><strong>Névtelen, de felelős:</strong> Az Impact Aliasod a te jeled — kezeld úgy.</span></li>
+          <li><span class="icon">🚩</span> <span><strong>Bejelentés = kultúravédés:</strong> A piros zászló egy kérdőjel, nem ítélet.</span></li>
+          <li><span class="icon">🙏</span> <span><strong>Impi megköszön mindent:</strong> A köszönet és az elismerés számít.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Aktivitás és pontok -->
+    <section class="section fade-in">
+      <div class="section-label teal">Aktivitás rendszer</div>
+      <h2>Pontok és szavazatok az aktivitásért</h2>
+      <p>Minden aktivitás pontot és NGO-szavazatokat generál. A pontok tétszerűen gyűlnek, és tombolán, aukción használhatók fel.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Aktivitás</th>
+              <th>Pontok</th>
+              <th>Szavazat</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Körhöz csatlakozás (első 3 kör)</td><td><strong>+20</strong></td><td>—</td></tr>
+            <tr><td>Első poszt az adott körben</td><td><strong>+75</strong></td><td>+1</td></tr>
+            <tr><td>Napi poszt (szöveg)</td><td><strong>+30</strong></td><td>+1</td></tr>
+            <tr><td>Posztod 5+ szavazatot kap</td><td><strong>+50</strong></td><td>+2</td></tr>
+            <tr><td>Meghívott csatlakozik</td><td><strong>+100</strong></td><td>+2</td></tr>
+            <tr><td>7 napos streak</td><td><strong>+150</strong></td><td>+3</td></tr>
+            <tr><td>Hatás-bizonylat (Impact Receipt)</td><td><strong>+50</strong></td><td>+2</td></tr>
+            <tr><td>Micro-misszió teljesítés</td><td><strong>+20</strong></td><td>+1</td></tr>
+            <tr><td>Impact Buddy onboarding</td><td><strong>+30</strong></td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h3>🙏💡🤝✅ Pozitív reakciók</h3>
+        <p>A sima szavazat helyett 4 nem-polarizáló reakció: <strong>Köszi</strong>, <strong>Hasznos</strong>, <strong>Támogatlak</strong>, <strong>Megcsináltam</strong>. Ezek a Circle Health Score-ba is beleszámítanak.</p>
+      </div>
+    </section>
+
+    <!-- Impi szekció -->
+    <section class="section fade-in">
+      <div class="section-label sun" style="background: rgba(245, 182, 66, 0.12); color: #b8860b;">🦡 Impi a szurikáta</div>
+      <h2>Közösségi moderátor és booster</h2>
+      <p>Impi nem algoritmus-arcú moderátor — karakteres, barátságos jelenlét, aki élővé teszi a köröket.</p>
+
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        <div class="impi-card">
+          <div class="impi-avatar">🦡</div>
+          <h3>Mikor jelenik meg?</h3>
+          <ul class="list">
+            <li><span class="icon">👋</span> <span>Új tag csatlakozik → üdvözlő üzenet aliassal</span></li>
+            <li><span class="icon">🌅</span> <span>Nap első posztja → „A kör ébred!"</span></li>
+            <li><span class="icon">🔥</span> <span>7 napos streak → gratulálás</span></li>
+            <li><span class="icon">🎯</span> <span>Kör elér 10/50/100 tagot → mérföldkő</span></li>
+            <li><span class="icon">🎉</span> <span>Tombola / aukció lezárásakor</span></li>
+            <li><span class="icon">🤔</span> <span>Heti Impi-kérdés (pénteken)</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>⭐ Impi Boost — Heti kiemelés</h3>
+          <p>Impi automatikusan kiemeli a hét legjobb posztját — arany kerettel és +20 pont bónusszal.</p>
+          <div style="margin-top: 16px;">
+            <h3>Jóindulat Radar</h3>
+            <ul class="list">
+              <li><span class="icon">🤝</span> <span><strong>Legsegítőkészebb komment</strong> — hasznosság, nem mennyiség</span></li>
+              <li><span class="icon">🌱</span> <span><strong>Legjobb új tag bemutatkozás</strong> — onboarding erősítés</span></li>
+              <li><span class="icon">🤫</span> <span><strong>Legjobb csendes hős</strong> — passzív supporterek láthatóvá tétele</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h3>🛡️ Safety Nudges — Normaőr, nem cenzor</h3>
+        <p>Impi finoman emlékeztet a normákra anélkül, hogy cenzúrázna:</p>
+        <ul class="list">
+          <li><span class="icon">🛡️</span> <span>3+ bejelentés/24h → „Emlékeztető: a Hatás Körök az ügyekről szólnak — nem egymásról."</span></li>
+          <li><span class="icon">💬</span> <span>Politikai kulcsszó → „Hozzuk vissza a cselekvésre: mit tudunk ma tenni?"</span></li>
+          <li><span class="icon">🙏</span> <span>0 pozitív reakció/7 nap → „Adj egy Köszönetet valakinek!"</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Tombola & Aukció -->
+    <section class="section fade-in">
+      <div class="section-label">🎟️ Tombola &amp; Aukció</div>
+      <h2>Ingyenes NGO kampányeszközök</h2>
+      <p>Más platformokon az NGO-k nem kapnak beépített tombola- és aukciós eszközt. A Hatás Körökben igen — ingyen.</p>
+
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));">
+        <div class="card highlight">
+          <div class="card-icon">🎲</div>
+          <h3>Tombola modul</h3>
+          <ul class="list">
+            <li><span class="icon">1️⃣</span> <span>NGO admin tombola-eseményt hoz létre a körben</span></li>
+            <li><span class="icon">2️⃣</span> <span>Tagok jegyet vesznek — ponttal vagy ingyen</span></li>
+            <li><span class="icon">3️⃣</span> <span>Végdátumon automatikus, naplózott sorsolás</span></li>
+            <li><span class="icon">4️⃣</span> <span>Impi köszönti a győztest a feedben</span></li>
+          </ul>
+          <p style="margin-top: 12px; font-size: 0.9rem;"><strong>Rituálé csomag:</strong> Tombola előtti nap Impi kérdést tesz fel, a jegy = aktivitás-kapu, nyertes után NGO hatásígéret.</p>
+        </div>
+        <div class="card teal-highlight">
+          <div class="card-icon teal">🏆</div>
+          <h3>Aukció modul</h3>
+          <ul class="list">
+            <li><span class="icon">1️⃣</span> <span>NGO admin létrehoz egy aukciót: tétel + induló licit</span></li>
+            <li><span class="icon">2️⃣</span> <span>Tagok ponttal licitálnak — pontok lefoglalva</span></li>
+            <li><span class="icon">3️⃣</span> <span>Anti-snipe: utolsó 5 perc = +5 perc hosszabbítás</span></li>
+            <li><span class="icon">4️⃣</span> <span>Nyertes felhasználónál pont véglegesen levonva</span></li>
+          </ul>
+          <p style="margin-top: 12px; font-size: 0.9rem;">Max 2 aktív aukció / NGO. Min 1 napos, max 7 napos futás.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Micro-misszió & Deliberáció -->
+    <section class="section fade-in">
+      <div class="section-label teal">Közösségi cselekvés</div>
+      <h2>Deliberáció és micro-missziók</h2>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-icon orange">🗳️</div>
+          <h3>Decision Post</h3>
+          <p>Strukturált szavazás: 1 kérdés + 3–6 opció. Nem szabad szöveges flame — csak megoszlás és döntés.</p>
+          <p style="font-size: 0.9rem;">Válasz típusok: <em>Egyetértek</em> / <em>Nem értek egyet</em> / <em>Kérdésem van</em> / <em>Bizonyítékom van</em></p>
+        </div>
+        <div class="card">
+          <div class="card-icon green">🎯</div>
+          <h3>Micro-misszió</h3>
+          <p>Hetente 1 aktív misszió körönként — 3 időigénnyel:</p>
+          <ul class="list" style="margin-top: 8px;">
+            <li><span class="icon">🕐</span> <span><strong>1 perc:</strong> „Köszönd meg valakinek a posztját"</span></li>
+            <li><span class="icon">🕔</span> <span><strong>5 perc:</strong> „Írj 3 mondatot: miért fontos neked ez az ügy?"</span></li>
+            <li><span class="icon">🕞</span> <span><strong>30 perc:</strong> „Hozz egy embert — de olyat, aki tényleg posztol"</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon sun">📋</div>
+          <h3>Hatás-bizonylat</h3>
+          <p>Speciális poszt típus: „Mit csináltunk?" — 1 kép + 1 szám + 1 forráslink. A platform hitelességi megkülönböztetője.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sprint -->
+    <section class="section fade-in">
+      <div class="section-label orange">NGO Catch-Up Sprint</div>
+      <h2>Lemaradó NGO-k felzárkóztatása</h2>
+      <p>14 napos sprint a bottom 30% NGO-nak: valós, aktivált új felhasználókat hoznak be, cserébe strukturált versenyelőnyt kapnak.</p>
+
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+        <div class="card">
+          <div class="card-icon teal">📊</div>
+          <h3>Sprint kredit</h3>
+          <p>1 validált új felhasználó = <strong>25 kredit</strong>. Max 80 felhasználó / NGO → max 2000 kredit.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon green">👁️</div>
+          <h3>Láthatósági jutalom</h3>
+          <p>Top 3 NGO: <strong>7 napos</strong> megnövelt belső láthatóság — 2× rotációs súly, spotlight helyszín.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon orange">🛡️</div>
+          <h3>Anti-abuse</h3>
+          <p>Önhivatkozás kizárva. Device cluster flagging. Aktiváció nélküli felhasználók nem számítanak.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Jelvények -->
+    <section class="section fade-in">
+      <div class="section-label">🏅 Jelvények</div>
+      <h2>Circle-exkluzív elismerések</h2>
+      <p>Jelvények, amelyeket csak a Hatás Körökben lehet elnyerni — aktivitás, streak, meghívás alapon.</p>
+
+      <div class="badge-grid">
+        <div class="badge-item">
+          <span class="emoji">🏛️</span>
+          <div class="name">Kör Alapító</div>
+          <div>Első 10 tag</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🌟</span>
+          <div class="name">Törzstag</div>
+          <div>30+ nap, 20+ poszt</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🧲</span>
+          <div class="name">Közösséghúzó</div>
+          <div>5+ meghívott</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🌊</span>
+          <div class="name">Hullámlovas</div>
+          <div>14 napos streak</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🎖️</span>
+          <div class="name">Kör Nagykövete</div>
+          <div>3 körben Törzstag</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🥇</span>
+          <div class="name">NGO Bajnok</div>
+          <div>Top 3 a hónapban</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🏡</span>
+          <div class="name">Helyi Hős</div>
+          <div>Top 1 település</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">📋</span>
+          <div class="name">Bizonyíték Mestere</div>
+          <div>5+ bizonylat</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🗳️</span>
+          <div class="name">Döntéshozó</div>
+          <div>5+ döntés válasz</div>
+        </div>
+        <div class="badge-item">
+          <span class="emoji">🤝</span>
+          <div class="name">Kör Mentor</div>
+          <div>3+ Buddy onboarding</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settlement verseny -->
+    <section class="section fade-in">
+      <div class="section-label teal">🏘️ Település vs Település</div>
+      <h2>Helyi verseny — szomszéd körök egymás ellen</h2>
+      <p>Havonta: melyik szomszéd kör aktívabb? A győztes tagjai egész hónapban <strong>+10% pont szorzót</strong> kapnak.</p>
+      <div class="card" style="margin-top: 16px;">
+        <h3>🏛️ Hatás Emlékmű</h3>
+        <p>A legjobb település kör minden hónap végén vizuális statisztika kártyát kap: tagszám, havi posztok, generált szavazatok, kiemelkedő poszt — megosztható 1×1 kép formátumban.</p>
+      </div>
+    </section>
+
+    <!-- NGO Copilot -->
+    <section class="section fade-in">
+      <div class="section-label orange">🤖 NGO Copilot</div>
+      <h2>Impi tanácsadói csomagok</h2>
+      <p>Az NGO-k aktivitásfüggő havi kvótával kapnak AI-alapú tanácsadást — jogi, pénzügyi és marketing területen.</p>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-icon">⚖️</div>
+          <h3>Impi Legal Lite</h3>
+          <p>Tombola/aukció szöveg ellenőrzés, adatkezelési kérdések, házirend draft, kampányszövegek jogi gyorstesztje.</p>
+          <p style="font-size: 0.85rem; color: var(--purple);"><strong>Alap: 5 ügy/hó</strong> | Hard cap: 25</p>
+        </div>
+        <div class="card">
+          <div class="card-icon teal">💰</div>
+          <h3>Impi Finance Lite</h3>
+          <p>Pénzügyi tervezés, kampányköltség becslés, matching pool értelmezés, cashflow és költségprioritási kérdések.</p>
+          <p style="font-size: 0.85rem; color: var(--teal);"><strong>Alap: 5 ügy/hó</strong> | Hard cap: 20</p>
+        </div>
+        <div class="card">
+          <div class="card-icon orange">📢</div>
+          <h3>Impi Marketing Lite</h3>
+          <p>Kampányszöveg-ötletek, CTA-optimalizálás, tombola/aukció promóció, csatornajavaslatok, heti kommunikációs terv.</p>
+          <p style="font-size: 0.85rem; color: var(--orange);"><strong>Alap: 8 ügy/hó</strong> | Hard cap: 30</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h3>📈 Aktivitásalapú kvótanövelés</h3>
+        <p>Minél aktívabb a Kör, annál több tanácsadói kapacitás nyílik meg:</p>
+        <ul class="list">
+          <li><span class="icon">👥</span> <span><strong>+1 ügy</strong> minden 25 aktív körtag után</span></li>
+          <li><span class="icon">✍️</span> <span><strong>+1 ügy</strong> minden 40 havi poszt után</span></li>
+          <li><span class="icon">🧲</span> <span><strong>+1 ügy</strong> minden 20 valid meghívott után</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Biztonság -->
+    <section class="section fade-in">
+      <div class="section-label orange">🛡️ Security by Design</div>
+      <h2>Biztonsági megfontolások</h2>
+
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        <div class="card">
+          <h3>Technikai védelem</h3>
+          <ul class="list">
+            <li><span class="icon">🔒</span> <span>Rate limit: max 5 poszt/óra/felhasználó</span></li>
+            <li><span class="icon">🔑</span> <span>HMAC-signed cookie + nonce minden POST-ban</span></li>
+            <li><span class="icon">🛡️</span> <span>XSS védelem: <code>wp_kses_post()</code> + <code>esc_html()</code></span></li>
+            <li><span class="icon">🔐</span> <span>NGO jelszó: bcrypt hash + brute-force lockout</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Közösségi védelem</h3>
+          <ul class="list">
+            <li><span class="icon">🚦</span> <span>Trust szintek: fokozatos jogok, spam ellen</span></li>
+            <li><span class="icon">💬</span> <span>Toxicity friction: kulcsszólista + slow mode</span></li>
+            <li><span class="icon">📊</span> <span>Circle Health Score: kör kultúra mérése</span></li>
+            <li><span class="icon">🔍</span> <span>Közösségi Őr: megbízható tagok bejelentései prioritásosak</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Összefoglaló réteg diagram -->
+    <section class="section fade-in">
+      <div class="section-label">Összefoglaló</div>
+      <h2>A Hatás Körök rétegei</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Réteg</th>
+              <th>Mit csinál?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>🆔 <strong>Identitás</strong></td><td>Pseudo-ID + Impact Alias → anonimitás és biztonságos megszólalás</td></tr>
+            <tr><td>🔵 <strong>Körök</strong></td><td>NGO és helyi körök, max 10 tagság, auto-join az NGO-kiválasztásnál</td></tr>
+            <tr><td>✍️ <strong>Aktivitás</strong></td><td>Posztolás, szavazás, meghívás → pontok + NGO szavazatok</td></tr>
+            <tr><td>🦡 <strong>Impi</strong></td><td>Üdvözlők, heti kérdés, Boost kiemelés, sprint összefoglaló</td></tr>
+            <tr><td>🎟️ <strong>Tombola / Aukció</strong></td><td>Ingyenes NGO kampányeszköz — más platformon nem elérhető</td></tr>
+            <tr><td>🏅 <strong>Jelvények</strong></td><td>Circle-exkluzív elismerések — aktivitás, streak, meghívás alapon</td></tr>
+            <tr><td>🏃 <strong>Sprint</strong></td><td>Bottom 30% NGO-knak: verifikált new userek = láthatósági jutalom</td></tr>
+            <tr><td>🏘️ <strong>Settlement</strong></td><td>Szomszéd körök versenyeztetése — havi multiplier jutalom</td></tr>
+            <tr><td>🛡️ <strong>Moderáció</strong></td><td>Trust szintek, Konstitúció, bejelentés, toxicity friction, Health Score</td></tr>
+            <tr><td>💬 <strong>Deliberáció</strong></td><td>Decision Post, Micro-misszió, Impact Buddy, pozitív reakciók</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer fade-in">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity — Hatás Körök</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          Impact Community platform az ImpactShop ökoszisztémában<br>
+          Tervdokumentum: 2026. március | Állapot: Tervezett
+        </p>
+        <div style="margin-top: 16px;">
+          <a href="/ngo-guides/impact-challenge/" style="margin-right: 16px;">Impact Challenge →</a>
+          <a href="impact-shop-ngo.html" style="margin-right: 16px;">Impact Shop →</a>
+          <a href="ngo-card.html">NGO Card →</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

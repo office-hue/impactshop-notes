@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImpactShop – Szolgáltatási Szintmegállapodás (SLA) (Magyar)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="impactshop-szolgaltatasi-szintmegallapodas-sla">ImpactShop – Szolgáltatási Szintmegállapodás (SLA)</h1>
+<p><strong>Verzió:</strong> 2.0<br />
+<strong>Hatályos:</strong> 2026. január 15-től<br />
+<strong>Utolsó frissítés:</strong> 2026-01-15  </p>
+<hr />
+<h2 id="1-rendelkezesre-allas">1. Rendelkezésre állás</h2>
+<h3 id="11-uptime-celok">1.1 Uptime-célok</h3>
+<table>
+<thead>
+<tr>
+<th>Szolgáltatás</th>
+<th>Cél (havi)</th>
+<th>Mérés módja</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Főoldal (impactshop.hu)</td>
+<td>99,5 %</td>
+<td>Automatikus ellenőrzés – 5 percenként</td>
+</tr>
+<tr>
+<td>/go átirányítás</td>
+<td>99,5 %</td>
+<td>Automatikus ellenőrzés – 5 percenként</td>
+</tr>
+<tr>
+<td>NGO Card REST API</td>
+<td>99,0 %</td>
+<td>Automatikus ellenőrzés – 5 percenként</td>
+</tr>
+<tr>
+<td>Wallet Pass letöltés</td>
+<td>98,5 %</td>
+<td>Automatikus ellenőrzés – 15 percenként</td>
+</tr>
+<tr>
+<td>Admin felület (wp-admin)</td>
+<td>98,0 %</td>
+<td>Automatikus ellenőrzés – 15 percenként</td>
+</tr>
+</tbody>
+</table>
+<p>A mérés kizárja a tervezett karbantartási ablakot (lásd §1.2).</p>
+<h3 id="12-karbantartasi-ablak">1.2 Karbantartási ablak</h3>
+<ul>
+<li><strong>Rendszeres karbantartás:</strong> kedd és csütörtök 03:00–05:00 CET.</li>
+<li>Az ablak alatt a szolgáltatás részlegesen vagy teljesen szünetelhet; ez nem számít kiesésnek.</li>
+<li>Sürgős biztonsági javítás esetén az ablak előrehozható – ilyenkor legalább 1 óra előzetes értesítést küldünk.</li>
+<li><strong>Egyedi megállapodás:</strong> rendezvény vagy kampány esetén — külön megállapodás szerinti időtartamra — a karbantartási ablak korlátozható vagy kizárható.</li>
+</ul>
+<hr />
+<h2 id="2-incidenskezeles">2. Incidenskezelés</h2>
+<h3 id="21-sulyossagi-besorolas">2.1 Súlyossági besorolás</h3>
+<table>
+<thead>
+<tr>
+<th>Szint</th>
+<th>Megnevezés</th>
+<th>Leírás</th>
+<th>Reakcióidő</th>
+<th>Megoldási cél</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>Kritikus</td>
+<td>Teljes szolgáltatáskiesés, /go nem működik</td>
+<td>15 perc</td>
+<td>1 óra</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>Súlyos</td>
+<td>NGO Card API hibás, Wallet Pass nem tölthető le</td>
+<td>30 perc</td>
+<td>4 óra</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Közepes</td>
+<td>Admin felület lassú, cache-inkonzisztencia</td>
+<td>2 óra</td>
+<td>24 óra</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>Alacsony</td>
+<td>Kozmetikai hiba, dokumentációs eltérés</td>
+<td>1 munkanap</td>
+<td>5 munkanap</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-munkaido-es-ugyeleti-rend">2.2 Munkaidő és ügyeleti rend</h3>
+<ul>
+<li><strong>Munkaidő:</strong> H–P 08:00–18:00 CET.</li>
+<li>Munkaidőn kívül automatikus monitoring figyeli a szolgáltatásokat; S1 incidens esetén riasztás.</li>
+<li>Hétvégén és ünnepnapokon kizárólag S1 incidensekre reagálunk.</li>
+</ul>
+<h3 id="23-riasztasi-lanc">2.3 Riasztási lánc</h3>
+<ol>
+<li>Automatikus monitoring észleli a hibát (5 perces ciklus).</li>
+<li>Riasztás a Discord üzemeltetési csatornán + e-mail az ügyeletesnek.</li>
+<li>S1/S2 esetén azonnali eszkaláció a rendszergazdához.</li>
+<li>Cloudflare WAF és CDN automatikus védekezés aktiválódik (pl. Under Attack Mode).</li>
+</ol>
+<h3 id="24-eszkalacio">2.4 Eszkaláció</h3>
+<table>
+<thead>
+<tr>
+<th>Lépés</th>
+<th>Időkorlát</th>
+<th>Felelős</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Automatikus riasztás</td>
+<td>0 perc</td>
+<td>Monitoring rendszer</td>
+</tr>
+<tr>
+<td>2. Üzemeltető reagál</td>
+<td>+15 perc (S1) / +30 perc (S2)</td>
+<td>Üzemeltető</td>
+</tr>
+<tr>
+<td>3. Tárhelyszolgáltató support</td>
+<td>+1 óra</td>
+<td>Tárhelyszolgáltató</td>
+</tr>
+<tr>
+<td>4. Vezetői értesítés</td>
+<td>+2 óra</td>
+<td>Üzemeltető → Vezető</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-veszhelyzeti-eljarasrend">3. Vészhelyzeti eljárásrend</h2>
+<h3 id="31-teljes-kieses-s1">3.1 Teljes kiesés (S1)</h3>
+<ol>
+<li>Cloudflare Under Attack Mode aktiválása (ha támadás okozza).</li>
+<li>Szolgáltatás állapotfelmérés (automatikus health-check eredmények áttekintése).</li>
+<li>Ha szükséges: MU plugin letiltás, cache ürítés, szerver újraindítás kérése.</li>
+<li>Visszaállítás legutóbbi stabil állapotból (biztonsági mentés).</li>
+<li>Utólagos elemzés és dokumentálás.</li>
+</ol>
+<h3 id="32-adatvedelmi-incidens">3.2 Adatvédelmi incidens</h3>
+<ol>
+<li>Érintett szolgáltatás azonnali leválasztása.</li>
+<li>GDPR incidenskezelési protokoll indítása (72 órás NAIH bejelentési kötelezettség).</li>
+<li>Érintettek értesítése az ÁSZF §16 szerint.</li>
+<li>Utólagos biztonsági audit.</li>
+</ol>
+<h3 id="33-affiliate-partner-api-kieses-dognet-stb">3.3 Affiliate partner API kiesés (Dognet, stb.)</h3>
+<ol>
+<li>Automatikus fallback: cache-ből szolgáltatás, hibaoldal megjelenítése.</li>
+<li>Partner API állapot ellenőrzése.</li>
+<li>Értesítés az érintett NGO partnereknek, ha a kiesés &gt; 4 óra.</li>
+</ol>
+<hr />
+<h2 id="4-kommunikacio">4. Kommunikáció</h2>
+<h3 id="41-hibabejelentes">4.1 Hibabejelentés</h3>
+<p>Hibabejelentés az alábbi elérhetőségeken lehetséges:</p>
+<ul>
+<li><strong>E-mail:</strong> office@sharity.hu</li>
+<li><strong>Telefon:</strong> +36 30 400 7470</li>
+<li><strong>Elérhetőség:</strong> H–P 08:00–18:00 CET</li>
+</ul>
+<p>Bejelentéskor kérjük megadni: a hiba leírását, az érintett URL-t vagy funkciót, és a hiba észlelésének időpontját.</p>
+<h3 id="42-ngo-partnerek-fele">4.2 NGO partnerek felé</h3>
+<ul>
+<li>Kiesés &gt; 30 perc esetén proaktív tájékoztatás e-mailben.</li>
+<li>Negyedéves elszámolási ütemezés és kifizetési szabályok az ÁSZF §4.6.3 szerint.</li>
+<li>Karbantartási ablak változásáról legalább 48 óra előzetes értesítés.</li>
+</ul>
+<h3 id="43-felhasznalok-fele">4.3 Felhasználók felé</h3>
+<ul>
+<li>Kiesés esetén egyedi hibaoldal jelenik meg a szolgáltatás állapotáról.</li>
+<li>Hosszabb kiesés (&gt; 2 óra) esetén közösségi média tájékoztatás.</li>
+</ul>
+<h3 id="44-partneri-sla-vitakezeles">4.4 Partneri SLA vitakezelés</h3>
+<p>A szolgáltatási szinttel kapcsolatos reklamációk kezelése az ÁSZF §15 (Panaszkezelés) szerint történik:</p>
+<ul>
+<li><strong>Első visszajelzés:</strong> legkésőbb 2 munkanapon belül.</li>
+<li><strong>Érdemi döntés:</strong> legkésőbb 5 munkanapon belül.</li>
+</ul>
+<hr />
+<h2 id="kapcsolodo-dokumentumok-es-guide-ok">Kapcsolódó dokumentumok és guide-ok</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#aszf">Általános Szerződési Feltételek (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#dispute">Vitakezelési eljárásrend</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#access-control">Hozzáférés-kezelési mátrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#gdpr">GDPR adatfeldolgozók</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge útmutató</a></li>
+<li><a href="https://app.sharity.hu/cegeknek/">Cégeknek</a></li>
+<li>Amennyiben a felhasználó vagy partner a döntéssel nem ért egyet, az ÁSZF §20.2 szerinti jogvitarendezési eljárás alkalmazandó.</li>
+</ul>
+<hr />
+<h2 id="5-monitoring-es-meres">5. Monitoring és mérés</h2>
+<h3 id="51-uptime-meres">5.1 Uptime mérés</h3>
+<ul>
+<li>Automatikus health-check 5 percenként (főoldal, /go, NGO Card API).</li>
+<li>Wallet Pass és admin felület: 15 perces ciklus.</li>
+<li>A mért adatok alapján havonta összesítő riport készül.</li>
+</ul>
+<h3 id="52-teljesitmenymutatok">5.2 Teljesítménymutatók</h3>
+<table>
+<thead>
+<tr>
+<th>Mutató</th>
+<th>Cél</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Főoldal betöltés (TTFB)</td>
+<td>&lt; 800 ms</td>
+</tr>
+<tr>
+<td>/go átirányítás</td>
+<td>&lt; 300 ms</td>
+</tr>
+<tr>
+<td>NGO Card API válaszidő</td>
+<td>&lt; 500 ms</td>
+</tr>
+<tr>
+<td>Wallet Pass letöltés</td>
+<td>&lt; 2 s</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-kereszthivatkozas">6. Kereszthivatkozás</h2>
+<p>A jelen SLA az ÁSZF §10 (A szolgáltatás szüneteltetése, korlátozása) rendelkezéseire épül, és azzal összhangban értelmezendő. Az ÁSZF és az SLA közötti eltérés esetén az ÁSZF rendelkezései az irányadók.</p>
+<hr />
+<h2 id="valtozasnaplo">Változásnapló</h2>
+<table>
+<thead>
+<tr>
+<th>Verzió</th>
+<th>Dátum</th>
+<th>Változás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2025-11-15</td>
+<td>Első kiadás</td>
+</tr>
+<tr>
+<td>2.0</td>
+<td>2026-01-15</td>
+<td>Véglegesítés: uptime-táblázat egyszerűsítés, karbantartási ablak egyedi megállapodás lehetőség, hibabejelentési elérhetőségek hozzáadása, belső hivatkozások eltávolítása, partneri vitakezelés szabályozása, Cloudflare és Discord integráció megerősítése</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

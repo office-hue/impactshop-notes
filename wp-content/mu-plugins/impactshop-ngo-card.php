@@ -1039,8 +1039,8 @@ final class ImpactShop_NGO_Card_API
         $quarterKey = function_exists('impactshop_ads_get_active_quarter') ? impactshop_ads_get_active_quarter() : '';
         $tally = [];
 
-        if (function_exists('impactshop_ads_calculate_tally_with_info')) {
-            $tally = impactshop_ads_calculate_tally_with_info($quarterKey !== '' ? $quarterKey : null);
+        if (function_exists('impactshop_ads_calculate_tally')) {
+            $tally = impactshop_ads_calculate_tally($quarterKey !== '' ? $quarterKey : null);
         } else {
             global $wpdb;
             $table = $wpdb->prefix . 'impactshop_ads_votes';

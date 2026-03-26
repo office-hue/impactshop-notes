@@ -1,6 +1,10 @@
 # Bastion Guard Status
 
-Last updated: 2026-03-26
+Last updated: 2026-03-26 19:45 CET
+
+## 2026-03-26 19:45 — impact-community.php URL fix
+- `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
+- Production nem érintett, PR #83 még nem merge-elt.
 
 ## Purpose
 Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/guard kiterjesztéshez.
@@ -12,6 +16,8 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-03-26 | Impact Challenge kanonikus baseline | Létrejött a teljes Impact Challenge rendszer kanonikus baseline-ja, amely egyetlen hivatkozási pontban rögzíti a védett scope-ot, a fizikai célállapotot, a regressziószabályt és a kötelező protected-file kapukat. A fő lokális runtime MU-plugin kör is visszazárva `0444` módra, így a guide rendszer mellett maga az Impact Challenge runtime is tényleges read-only célállapotot kapott. | `docs/impact-challenge-canonical-baseline.md`, `.codex/guard-snapshots/impact-challenge-lock-20260326-165338/`, `docs/ai-assistant-canonical-policy.md`, `docs/pr-policy.md`, `docs/impactshop-deploy.md` |
+| 2026-03-26 | NGO guide teljes fáfa | A teljes guide készlet (`impactshop-ngo-guides.php` + `wp-content/mu-plugins/impactshop-ngo-guides/**`) bekerült a protected körbe; lokálban és productionön a guide-fájlok read-only, a guide-könyvtárak execute-only/read-only módra zárva. Guide tartalmat sem deploy, sem automatika nem írhat felül explicit engedély nélkül. | `docs/impactshop-guard-config.json`, `docs/impactshop-guard-hashes.json`, `docs/ai-assistant-canonical-policy.md`, `system-status-snapshot.md` |
 | 2026-03-26 | `wp-content/mu-plugins/impactshop-cj.php` | A WordPress oldali autobanner + CJ bridge runtime rés bekerült a protected fájlkörbe; ezzel a runtime oldali autobanner/CJ láncban nincs azonosított nyitott pipeline-fájl a protected listán kívül. | `docs/impactshop-guard-config.json`, `system-status-snapshot.md` |
 | 2026-03-26 | Impact Challenge teljes védelmi perem | A bástya védelem és a file-szintű írásvédettségi policy kiterjesztve a teljes Impact Challenge működési körre: ads-watch, auto-banner, offerwall, NGO selector/guides/card, identity, points engine, vote purchase, quarter-close, event donation widget, redirect/go bekötések, PWA és kapcsolódó route/pipeline modulok. Új alapelv rögzítve: elsődlegesen csak additív, új kódos fejlesztés engedett; meglévő védett kódhoz csak külön jóváhagyással és backup+rollback mellett szabad nyúlni. | `docs/impactshop-guard-config.json`, `docs/bastion-protection-extension-plan.md`, `docs/ai-assistant-canonical-policy.md` |
 | 2026-03-25 | impactshop-boot.php: Dognet passthrough + impactshop-cj.php: merge logic | Meglévő impactall `mu-plugins parity` guard figyeli; nincs új guard, kód módosítás meglévő MU modulokon. | `system-status-snapshot.md` 2026-03-25, `notes.md` 2026-03-25, commit `60ee7235` |

@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Impact Shop Útmutató Civil Szervezeteknek | Sharity</title>
-  <meta name="description" content="Tudj meg mindent az Impact Shop affiliate rendszerről! Hogyan kapsz adományt a vásárlások után, 500+ partner webshop, fizetési ütemezés.">
-  <meta property="og:title" content="Impact Shop Útmutató – Sharity">
-  <meta property="og:description" content="Civil szervezeteknek: így működik az Impact Shop affiliate adomány rendszer.">
+  <title>Adomány lehetőségek – Impact Shop & Feladatok | Sharity</title>
+  <meta name="description" content="NGO útmutató: hogyan kapsz adományt vásárlások, feladatok és kérdőívek után a Sharity platformon. Impact Shop + Offerwall.">
+  <meta property="og:title" content="Adomány lehetőségek – Impact Shop & Feladatok | Sharity">
+  <meta property="og:description" content="Civil szervezeteknek: többféle csatornán kaphatsz adományt a Sharity-n – vásárlás, feladatok, kérdőívek.">
   <meta property="og:url" content="https://app.sharity.hu/ngo-guides/impact-shop">
   <style>
     :root {
@@ -20,6 +20,8 @@
       --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
       --success: #22c55e;
       --warning: #f59e0b;
+      --purple: #7c3aed;
+      --orange: #f97316;
     }
 
     * { box-sizing: border-box; }
@@ -75,6 +77,26 @@
       background: rgba(15, 138, 157, 0.1);
       text-decoration: none;
     }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 138, 157, 0.25);
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--teal);
+      color: #fff;
+      border-color: transparent;
+    }
 
     .hero {
       display: grid;
@@ -114,6 +136,7 @@
       box-shadow: 0 12px 26px rgba(15, 138, 157, 0.35);
       transition: transform 0.2s, box-shadow 0.2s;
       margin-right: 12px;
+      margin-bottom: 8px;
     }
     .hero .cta:hover {
       transform: translateY(-2px);
@@ -131,6 +154,7 @@
       font-weight: 600;
       border: 2px solid var(--teal);
       transition: background 0.2s;
+      margin-bottom: 8px;
     }
     .hero .cta-secondary:hover {
       background: rgba(15, 138, 157, 0.08);
@@ -155,6 +179,14 @@
       border: 2px solid var(--teal);
       background: linear-gradient(135deg, rgba(15, 138, 157, 0.05) 0%, #fff 100%);
     }
+    .card.highlight-orange {
+      border: 2px solid var(--orange);
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, #fff 100%);
+    }
+    .card.highlight-purple {
+      border: 2px solid var(--purple);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, #fff 100%);
+    }
 
     .card-icon {
       display: inline-flex;
@@ -166,6 +198,12 @@
       background: rgba(15, 138, 157, 0.12);
       font-size: 1.5rem;
       margin-bottom: 12px;
+    }
+    .card-icon.orange {
+      background: rgba(249, 115, 22, 0.12);
+    }
+    .card-icon.purple {
+      background: rgba(124, 58, 237, 0.12);
     }
 
     .list {
@@ -224,6 +262,10 @@
       text-align: center;
       font-weight: 500;
     }
+    .flow-step.orange {
+      background: rgba(249, 115, 22, 0.1);
+      border-color: rgba(249, 115, 22, 0.4);
+    }
     .flow-step strong {
       display: block;
       font-size: 2rem;
@@ -258,6 +300,10 @@
       background: rgba(15, 138, 157, 0.15);
       color: #0f8a9d;
     }
+    .badge.orange {
+      background: rgba(249, 115, 22, 0.15);
+      color: #9a3412;
+    }
 
     .callout {
       padding: 20px 24px;
@@ -266,16 +312,23 @@
       border-left: 4px solid var(--sun);
       margin: 24px 0;
     }
-    .callout.success {
+    .callout.success, .callout.green {
       background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
       border-left-color: var(--success);
+    }
+    .callout.orange {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%);
+      border-left-color: var(--orange);
     }
     .callout h3 {
       margin-bottom: 8px;
       color: #7a4b00;
     }
-    .callout.success h3 {
+    .callout.success h3, .callout.green h3 {
       color: #166534;
+    }
+    .callout.orange h3 {
+      color: #9a3412;
     }
     .callout p {
       margin: 0;
@@ -328,6 +381,26 @@
       font-weight: 600;
     }
 
+    .channel-tabs {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      margin-top: 24px;
+      align-items: start;
+    }
+    .channel-tabs .card {
+      min-width: 0;
+    }
+    .channel-tabs .list li {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      align-items: start;
+      gap: 10px;
+    }
+    .channel-tabs .list li::before {
+      margin-top: 2px;
+    }
+
     .footer {
       margin-top: 64px;
       padding: 32px 24px;
@@ -358,6 +431,11 @@
       .nav { justify-content: center; }
       .flow { grid-template-columns: repeat(2, 1fr); }
     }
+    @media (max-width: 1180px) {
+      .channel-tabs {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+    }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -367,48 +445,111 @@
   <main class="wrap">
     <!-- Navigation -->
     <nav class="nav fade-in">
-      <a href="#mi-ez">Mi ez?</a>
-      <a href="#hogyan-mukodik">Hogyan működik?</a>
+      <a href="#csatornak">Csatornák</a>
+      <a href="#impact-shop">Impact Shop</a>
+      <a href="#feladatok">Feladatok</a>
       <a href="#koltseg">Honnan jön?</a>
       <a href="#tippek">Több adomány</a>
       <a href="#faq">GYIK</a>
       <a href="/ngo-guides/impact-challenge">Impact Challenge →</a>
+      <div class="lang-switch" aria-label="Nyelvválasztó">
+        <a href="?lang=hu" class="active" aria-current="true">HU</a>
+        <a href="?lang=en"><span aria-hidden="true">&#127760;</span> EN</a>
+      </div>
     </nav>
 
     <!-- Hero Section -->
     <section class="hero fade-in" id="mi-ez">
       <div>
-        <span class="pill">🛒 Vásárlás = Adomány</span>
-        <h1>Impact Shop – Útmutató NGO-knak</h1>
+        <span class="pill">💝 Többféle csatorna – egy cél: adomány</span>
+        <h1>Adomány a Sharity-n – Útmutató NGO-knak</h1>
         <p style="font-size: 1.1rem; color: var(--ink);">
-          <strong>Vásárlásból adomány:</strong> A támogatóid a megszokott webshopokban vásárolnak, 
-          de az affiliate jutalékból automatikusan adomány képződik neked.
+          A Sharity <strong>többféle módon</strong> generál adományt a szervezetednek:
+          vásárlás, videónézés, feladatok elvégzése és kérdőívek kitöltése.
+          A támogatóidnak <strong>nem kerül pénzbe</strong> – a bevétel a kereskedőktől és hirdetőktől jön.
         </p>
         <p>
-          A vásárlónak nem kerül többe – a kereskedő jutalékából jön a támogatás. Neked csak kommunikálnod kell!
+          Ezen az oldalon az <strong>Impact Shop</strong> (affiliate vásárlás) és a <strong>Feladatok</strong> (offerwall, kérdőívek) csatornát mutatjuk be.
         </p>
         <div style="margin-top: 20px;">
           <a href="https://app.sharity.hu/impactshop/" class="cta" target="_blank">🛍️ Impact Shop</a>
-          <a href="#hogyan-mukodik" class="cta-secondary">Hogyan működik?</a>
+          <a href="https://app.sharity.hu/impact-challenge/" class="cta" style="background: var(--orange); box-shadow: 0 12px 26px rgba(249,115,22,0.35);" target="_blank">📋 Feladatok</a>
+          <a href="#csatornak" class="cta-secondary">Miben különböznek?</a>
         </div>
       </div>
       <div>
         <div class="card highlight">
           <h3>🎯 Dióhéjban</h3>
           <ul class="list" style="margin-top: 16px;">
-            <li>Támogató vásárol → affiliate jutalék keletkezik</li>
-            <li>Jutalék 50%-a automatikusan hozzád kerül</li>
-            <li>100+ partnerwebshop (Alza, eMAG, stb.)</li>
-            <li>A vásárlónak 0 Ft plusz költség</li>
+            <li><strong>Impact Shop:</strong> Vásárlás → jutalék → adomány <em>közvetlenül neked</em></li>
+            <li><strong>Feladatok & Videók:</strong> Hirdető fizet → közös adományalap nő → szavazás alapján kerül hozzád</li>
+            <li>Mindegyik ingyenes, 0 Ft a támogatónak</li>
+            <li>Kifizetés negyedévente, csatornánként min. 5 000 Ft felett</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- Hogyan működik -->
-    <h2 class="section-title fade-in delay-1" id="hogyan-mukodik">🔄 Hogyan működik?</h2>
-    
-    <div class="card fade-in delay-2">
+    <!-- Csatornák összehasonlítás -->
+    <h2 class="section-title fade-in delay-1" id="csatornak">📊 Adomány csatornák</h2>
+
+    <div class="channel-tabs fade-in delay-2">
+      <div class="card highlight">
+        <div class="card-icon">🛒</div>
+        <h3>Impact Shop</h3>
+        <p style="margin-top: 8px;">Affiliate vásárlás — <strong>közvetlenül neked</strong></p>
+        <ul class="list" style="margin-top: 12px;">
+          <li>500+ partnerwebshop (Alza, eMAG, JYSK…)</li>
+          <li>Vásárlás a megszokott áron</li>
+          <li>A partnerjutalékból <strong>közvetlen adomány</strong> keletkezik a kiválasztott NGO-nak</li>
+          <li>Magasabb szintű vásárló → erősebb adományhatás és jobb kedvezmény</li>
+          <li>Kuponok és kedvezmények is elérhetők</li>
+        </ul>
+        <div style="margin-top: 16px;">
+          <span class="badge teal">Közvetlen adomány</span>
+          <span class="badge teal">0 Ft a vásárlónak</span>
+        </div>
+      </div>
+
+      <div class="card highlight-orange">
+        <div class="card-icon orange">📋</div>
+        <h3>Feladatok (Offerwall)</h3>
+        <p style="margin-top: 8px;">Kérdőívek, regisztrációk, app letöltések</p>
+        <ul class="list" style="margin-top: 12px;">
+          <li>Rövid kérdőívek kitöltése (1-5 perc)</li>
+          <li>Ingyenes próbaverziók kipróbálása</li>
+          <li>App letöltése és regisztráció</li>
+          <li>Hirdetők fizetnek → bevétel a <strong>közös adományalapba</strong> kerül</li>
+          <li>Az alap <strong>szavazatok arányában</strong> kerül szétosztásra az NGO-k között</li>
+        </ul>
+        <div style="margin-top: 16px;">
+          <span class="badge orange">Közös alap</span>
+          <span class="badge orange">Szavazat alapú szétosztás</span>
+        </div>
+      </div>
+
+      <div class="card highlight-purple">
+        <div class="card-icon purple">🎬</div>
+        <h3>Impact Challenge (videók)</h3>
+        <p style="margin-top: 8px;">Videónézés és szavazás</p>
+        <ul class="list" style="margin-top: 12px;">
+          <li>30 mp-es szponzori videók megtekintése</li>
+          <li>A bevétel a <strong>közös adományalapot</strong> növeli</li>
+          <li>Szavazatok döntik el, melyik NGO mennyit kap az alapból</li>
+          <li>Minél több szavazatot gyűjt a szervezeted, annál nagyobb részt kap</li>
+        </ul>
+        <div style="margin-top: 16px;">
+          <span class="badge" style="background: rgba(124,58,237,0.15); color:#5b21b6;">Közös alap</span>
+          <span class="badge" style="background: rgba(124,58,237,0.15); color:#5b21b6;">Szavazat alapú</span>
+        </div>
+        <a href="/ngo-guides/impact-challenge" style="display: inline-block; margin-top: 12px;">Részletes útmutató →</a>
+      </div>
+    </div>
+
+    <!-- Impact Shop rész -->
+    <h2 class="section-title fade-in" id="impact-shop">🛒 Impact Shop – Vásárlásból adomány</h2>
+
+    <div class="card fade-in">
       <h3>A folyamat 4 lépésben</h3>
       <div class="flow" style="margin-top: 20px;">
         <div class="flow-step">
@@ -430,14 +571,14 @@
       </div>
     </div>
 
-    <div class="split fade-in delay-3">
+    <div class="split fade-in">
       <div class="card">
         <div class="card-icon">👤</div>
         <h3>A felhasználó szemszögéből</h3>
         <ul class="list list-numbered" style="margin-top: 16px;">
           <li>Impact Shop megnyitása – app.sharity.hu/impactshop/</li>
           <li>NGO kiválasztása – „Kit szeretnék támogatni?"</li>
-          <li>Bolt kiválasztása – 100+ partnerwebshop</li>
+          <li>Bolt kiválasztása – 500+ partnerwebshop</li>
           <li>Vásárlás – Normál módon, megszokott árakon</li>
         </ul>
       </div>
@@ -446,62 +587,215 @@
         <h3>Az NGO szemszögéből</h3>
         <ul class="list" style="margin-top: 16px;">
           <li>A támogatóid innen indítják a vásárlást</li>
-          <li>Minden vásárlás után te kapod az adományt</li>
+          <li>Minden vásárlás után <strong>közvetlenül te kapod</strong> az adományt</li>
           <li>Valós időben láthatod a beérkező összegeket</li>
-          <li>Havi összesítő és kifizetés</li>
+          <li>Kifizetés negyedévente, ha az összeg eléri az 5 000 Ft-ot</li>
         </ul>
       </div>
     </div>
 
     <!-- Honnan jön a pénz -->
     <h2 class="section-title fade-in" id="koltseg">💰 Honnan jön a pénz?</h2>
-    
-    <div class="card fade-in">
-      <h3>Az affiliate modell</h3>
-      <div class="flow" style="margin-top: 20px;">
-        <div class="flow-step">
-          <strong>🛒</strong>
-          Vásárlás
+
+    <div class="split fade-in">
+      <div class="card">
+        <h3>🛒 Impact Shop – Közvetlen adomány neked</h3>
+        <div class="flow" style="margin-top: 20px;">
+          <div class="flow-step">
+            <strong>🛒</strong>
+            Vásárlás
+          </div>
+          <div class="flow-step">
+            <strong>📊</strong>
+            Jutalék (pl. 5%)
+          </div>
+          <div class="flow-step">
+            <strong>❤️</strong>
+            Adomány → te
+          </div>
+          <div class="flow-step" style="background: rgba(111,227,193,0.15); border-color: var(--mint);">
+            <strong>⬆️</strong>
+            +Szintbónusz
+          </div>
         </div>
-        <div class="flow-step">
-          <strong>📊</strong>
-          Jutalék (pl. 5%)
+        <p style="margin-top: 12px; font-size: 0.9rem; color: var(--muted);">Az adomány <strong>közvetlenül</strong> a te szervezetednek kerül — nem kerül közös alapba.</p>
+      </div>
+      <div class="card">
+        <h3>📋🎬 Feladatok & Videók – Közös alap</h3>
+        <div class="flow" style="margin-top: 20px;">
+          <div class="flow-step orange">
+            <strong>📋🎬</strong>
+            Feladat / Videó
+          </div>
+          <div class="flow-step orange">
+            <strong>🏦</strong>
+            Közös alap nő
+          </div>
+          <div class="flow-step orange">
+            <strong>🗳️</strong>
+            Szavazás dönt
+          </div>
+          <div class="flow-step orange">
+            <strong>❤️</strong>
+            NGO-k kapnak
+          </div>
         </div>
-        <div class="flow-step">
-          <strong>🤝</strong>
-          50% Sharity
-        </div>
-        <div class="flow-step">
-          <strong>❤️</strong>
-          50% NGO-nak
-        </div>
+        <p style="margin-top: 12px; font-size: 0.9rem; color: var(--muted);">A bevétel a <strong>közös adományalapot</strong> növeli, amit az NGO-k szavazatok arányában osztanak fel egymás közt.</p>
       </div>
     </div>
 
     <div class="callout success fade-in">
-      <h3>📝 Példa kalkuláció</h3>
+      <h3>📝 Példa kalkuláció – Impact Shop</h3>
       <table style="margin: 12px 0 0 0;">
         <tr>
           <td>Vásárlás értéke</td>
-          <td style="text-align: right;"><strong>20.000 Ft</strong></td>
+          <td style="text-align: right;"><strong>20 000 Ft</strong></td>
         </tr>
         <tr>
-          <td>Affiliate jutalék (5%)</td>
-          <td style="text-align: right;">1.000 Ft</td>
+          <td>Affiliate jutalék (pl. 5%)</td>
+          <td style="text-align: right;">1 000 Ft</td>
         </tr>
-        <tr style="background: rgba(34, 197, 94, 0.1);">
-          <td><strong>Adomány az NGO-nak (50%)</strong></td>
-          <td style="text-align: right;"><strong style="color: var(--success);">500 Ft</strong></td>
+        <tr style="background: rgba(34, 197, 94, 0.08);">
+          <td>A szervezetedre jutó adomány</td>
+          <td style="text-align: right;">partner- és kampánymodelltől függ</td>
+        </tr>
+        <tr style="background: rgba(34, 197, 94, 0.15);">
+          <td><strong>User szint: Gold (×1,15)</strong></td>
+          <td style="text-align: right;"><strong style="color: var(--success);">növeli a végső adományhatást</strong></td>
         </tr>
       </table>
-      <p style="margin-top: 12px; font-style: italic;">
+      <p style="margin-top: 10px; font-size: 0.85rem; color: var(--muted);">A konkrét elszámolási arány partnerenként és kampányonként eltérhet. Ezért a guide-ban már nem fix NGO/platform százalékot kommunikálunk, hanem a jelenlegi működési elvet.</p>
+      <p style="margin-top: 8px; font-style: italic;">
         💡 A vásárlónak ez 0 Ft – ugyanannyiért vásárol, mint egyébként!
       </p>
     </div>
 
+    <div class="callout orange fade-in">
+      <h3>📝 Példa – Feladatok</h3>
+      <table style="margin: 12px 0 0 0;">
+        <tr>
+          <td>Támogató kitölt egy kérdőívet (3 perc)</td>
+          <td style="text-align: right;"><strong>~150-500 Ft érték</strong></td>
+        </tr>
+        <tr>
+          <td>Támogató kipróbál egy ingyenes appot</td>
+          <td style="text-align: right;"><strong>~100-1000 Ft érték</strong></td>
+        </tr>
+        <tr style="background: rgba(249, 115, 22, 0.1);">
+          <td><strong>→ Pontok + adomány automatikusan</strong></td>
+          <td style="text-align: right;"><strong style="color: var(--orange);">A hirdető fizet</strong></td>
+        </tr>
+      </table>
+      <p style="margin-top: 12px; font-style: italic;">
+        💡 A támogató ingyen végzi – a hirdetők fizetik a részvételért!
+      </p>
+    </div>
+
+    <!-- Szintbónuszok (Impact Shop) -->
+    <h2 class="section-title fade-in">🎁 Szintbónuszok – több adomány magasabb szinten</h2>
+
+    <div class="card fade-in">
+      <p>Minél magasabb szinten van egy támogatód, annál több adományt generál a szervezetednek — anélkül, hogy többet fizetne. A szint az Impact Challenge feladatainak teljesítésével, vásárlással és adományozással növekszik.</p>
+
+      <h3 style="margin-top: 24px; margin-bottom: 8px;">A jelenlegi biztos logika</h3>
+      <p style="font-size: 0.92rem; color: var(--muted); margin-bottom: 12px;">A vásárlásból keletkező partnerjutalék alapján számolunk adományt. Ezt a végső adományhatást a partnermodell, az aktuális kampánylogika és a vásárló szintje együtt befolyásolja. Emiatt a régi fix NGO/platform megosztási százalékokat már nem használjuk guide-szintű kommunikációra.</p>
+
+      <table style="margin-top: 8px;">
+        <thead>
+          <tr>
+            <th>User szint</th>
+            <th>Ponthatár</th>
+            <th>Adományszorzó</th>
+            <th>Shop kedvezmény<br><small style="font-weight:400;">(max kedvezményből)</small></th>
+            <th>Szavazatsúly</th>
+            <th>Mit jelent neked?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>🌱 Basic</td><td style="color: var(--muted);">0</td><td style="color: var(--muted);">×1,00</td><td style="color: var(--muted);">50%</td><td style="color: var(--muted);">1×</td><td>alap adományhatás</td></tr>
+          <tr><td>🥉 Bronze</td><td>2 000</td><td style="font-weight:600;">×1,05</td><td>60%</td><td>2×</td><td style="font-weight:600;">erősebb kezdő szint</td></tr>
+          <tr><td>🥈 Silver</td><td>15 000</td><td style="font-weight:600;">×1,10</td><td>70%</td><td>3×</td><td style="font-weight:600;">stabil növekedés</td></tr>
+          <tr><td>🥇 Gold</td><td>50 000</td><td style="font-weight:600;">×1,15</td><td>80%</td><td>4×</td><td style="font-weight:600;">érezhető többlet</td></tr>
+          <tr><td>💎 Platinum</td><td>120 000</td><td style="font-weight:600;">×1,20</td><td>90%</td><td>5×</td><td style="font-weight:600;">kiemelt támogatói érték</td></tr>
+          <tr style="background: rgba(111,227,193,0.12);"><td>👑 Legend</td><td>300 000</td><td style="font-weight:700; color: #166534;">×1,25</td><td style="font-weight:700;">100%</td><td style="font-weight:700;">6×</td><td style="font-weight:700; color: #166534;">maximális hatás</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 8px; font-size: 0.82rem; color: var(--muted); font-style: italic;">A ponthatárok a közösség méretéhez igazodnak — a feltüntetett értékek a jelenlegi határok.</p>
+      <p style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);">⏱️ Tájékoztató ütem: Bronze ~1–2 hét, Silver ~3–5 hét, Gold ~1–2 hónap, Platinum ~2–4 hónap, Legend ~4–6 hónap (folyamatos aktivitás mellett).</p>
+      <div style="margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+        <div style="font-weight: 600; margin-bottom: 6px;">Mi szükséges az egyes szintekhez?</div>
+        <ul style="margin: 0 0 6px 18px;">
+          <li>Bronze: rendszeres aktivitással ~1–2 hét</li>
+          <li>Silver: heti 5+ napos aktivitással ~1 hónap</li>
+          <li>Gold: aktív felhasználóknak ~1–2 hónap</li>
+          <li>Platinum: elkötelezett, napi szintű használattal ~2–4 hónap</li>
+          <li>Legend: a legaktívabbaknak ~4–6 hónap folyamatos részvétellel</li>
+        </ul>
+        <div style="font-size: 0.85rem; color: var(--muted);">Alkalmi használat mellett a Platinum/Legend tipikusan nem elérhető.</div>
+      </div>
+
+      <div class="callout success" style="margin-top: 20px;">
+        <h3>💡 Hogyan érdemes ezt kommunikálni?</h3>
+        <p>
+          A legbiztosabb NGO-s üzenet most ez: <strong>a vásárló ugyanannyit fizet, a partnerjutalékból pedig a kiválasztott NGO kap adományt</strong>.
+          A végső hatást a vásárló szintje növeli, ezért a rendszeres, magasabb szintű támogatók különösen értékesek a szervezetnek.
+        </p>
+        <p style="margin-top: 10px; font-size: 0.85rem; font-style: italic;">💡 Ha részletes partnerelszámolási kérdés merül fel, azt mindig az aktuális partner- és kampánymodell alapján kell megadni.</p>
+      </div>
+
+      <p style="margin-top: 16px;">
+        <strong>Win-win-win:</strong> A támogatód kedvezménnyel vásárol, több szavazattal szól bele az Impact Challenge elosztásába, és a te adományod is nő. Biztatsd a támogatóidat szintlépésre!
+      </p>
+    </div>
+
+    <!-- Feladatok (Offerwall) szekció -->
+    <h2 class="section-title fade-in" id="feladatok">📋 Feladatok – Offerwall & Kérdőívek</h2>
+
+    <div class="card fade-in highlight-orange">
+      <h3>🆕 Mi ez?</h3>
+      <p style="margin-top: 12px; color: var(--ink);">
+        A <strong>Feladatok</strong> tab a Sharity Impact Challenge oldalán érhető el.
+        A támogatóid itt különböző <strong>egyszerű feladatokat</strong> végezhetnek el, amiért a hirdetők fizetnek.
+        A bevétel egy része automatikusan <strong>adománnyá</strong> válik, a támogató pedig <strong>pontokat és szavazatokat</strong> kap.
+      </p>
+    </div>
+
+    <div class="split fade-in">
+      <div class="card">
+        <div class="card-icon orange">📝</div>
+        <h3>Elérhető feladat típusok</h3>
+        <ul class="list" style="margin-top: 16px;">
+          <li><strong>Kérdőívek:</strong> 1-5 perces felmérések kitöltése (véleménykutatás, piackutatás)</li>
+          <li><strong>App kipróbálás:</strong> Ingyenes alkalmazás letöltése és regisztráció</li>
+          <li><strong>Próbaverzió:</strong> Szolgáltatás ingyenes kipróbálása (pl. streaming, game)</li>
+          <li><strong>Regisztráció:</strong> Weboldal regisztráció (ingyenes, nincs kötelezettség)</li>
+          <li><strong>Cikk kvíz:</strong> Sharity saját kvízek és tartalmak</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon orange">🔄</div>
+        <h3>Hogyan működik?</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Támogató megnyitja a <strong>Feladatok</strong> tab-ot az Impact Challenge oldalon</li>
+          <li>Kiválaszt egy feladatot (kérdőív, app, stb.)</li>
+          <li>Elvégzi a feladatot (1-5 perc)</li>
+          <li>A rendszer automatikusan jóváírja a <strong>pontokat</strong> és rögzíti az <strong>adományt</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout fade-in">
+      <h3>💡 Miért jó ez az NGO-nak?</h3>
+      <p>
+        A feladatok <strong>kiegészítik</strong> a vásárlás-alapú adományt.
+        Sok támogató nem vásárol minden nap, de egy 3 perces kérdőívet bármikor kitölthet.
+        Így a <strong>napi aktív felhasználók</strong> is generálnak adományt, nemcsak a vásárlók!
+      </p>
+    </div>
+
     <!-- Partnerwebshopok -->
-    <h2 class="section-title fade-in">🏪 Partnerwebshopok</h2>
-    
+    <h2 class="section-title fade-in">🏪 Impact Shop partnerwebshopok</h2>
+
     <div class="grid fade-in">
       <div class="card">
         <div class="card-icon">💻</div>
@@ -538,14 +832,14 @@
     <div class="callout fade-in">
       <h3>🎁 Kuponok és kedvezmények</h3>
       <p>
-        Az Impact Shop-ban kuponok és akciós ajánlatok is elérhetők – 
+        Az Impact Shop-ban kuponok és akciós ajánlatok is elérhetők –
         így a támogatóid kedvezményesen vásárolhatnak, miközben téged támogatnak!
       </p>
     </div>
 
     <!-- Dashboard -->
     <h2 class="section-title fade-in">📊 Mit látsz a dashboardon?</h2>
-    
+
     <div class="split fade-in">
       <div class="card">
         <div class="card-icon">📈</div>
@@ -554,6 +848,7 @@
           <li>„Kik támogattak mostanában?" – Legutóbbi tranzakciók</li>
           <li>Összegyűjtött adomány – Aktuális hónap + összes</li>
           <li>Webshop statisztikák – Melyik boltból jön a legtöbb</li>
+          <li>Feladat statisztikák – Hány feladatot végeztek el</li>
         </ul>
       </div>
       <div class="card">
@@ -562,7 +857,7 @@
         <table style="margin-top: 12px;">
           <tr>
             <td><span class="status-pending">PENDING</span></td>
-            <td>Várakozik jóváhagyásra (30-90 nap)</td>
+            <td>Várakozik jóváhagyásra (vásárlás: 30-90 nap, feladat: 1-7 nap)</td>
           </tr>
           <tr>
             <td><span class="status-approved">APPROVED</span></td>
@@ -570,7 +865,7 @@
           </tr>
           <tr>
             <td style="color: var(--muted);">REJECTED</td>
-            <td>Visszáruzott/törölt rendelés</td>
+            <td>Visszáruzott / elutasított</td>
           </tr>
         </table>
       </div>
@@ -578,7 +873,7 @@
 
     <!-- Több adomány -->
     <h2 class="section-title fade-in" id="tippek">🚀 Hogyan szerezz több adományt?</h2>
-    
+
     <div class="grid fade-in">
       <div class="card">
         <div class="card-icon">🔗</div>
@@ -601,8 +896,18 @@
         </div>
       </div>
       <div class="card">
+        <div class="card-icon orange">📋</div>
+        <h3>3. Feladatok kommunikálása</h3>
+        <p style="margin-top: 12px;">Mondd el a támogatóidnak:</p>
+        <ul class="list" style="margin-top: 8px;">
+          <li>„Töltsd ki a 3 perces kérdőívet – automatikusan támogatsz!"</li>
+          <li>„Próbálj ki egy ingyenes appot és segíts nekünk!"</li>
+          <li>„Minden feladat pontokat és adományt ér!"</li>
+        </ul>
+      </div>
+      <div class="card">
         <div class="card-icon">📧</div>
-        <h3>3. Hírlevél kampány</h3>
+        <h3>4. Hírlevél kampány</h3>
         <p style="margin-top: 12px;">Ötletek szezonális kampányokhoz:</p>
         <ul class="list" style="margin-top: 8px;">
           <li>„Karácsonyi ajándékod dupla öröm!"</li>
@@ -612,26 +917,35 @@
       </div>
       <div class="card">
         <div class="card-icon">🎴</div>
-        <h3>4. NGO Card beágyazás</h3>
+        <h3>5. NGO Card beágyazás</h3>
         <p style="margin-top: 12px;">
           Dinamikus kártya, ami mutatja az aktuális adományodat élőben!
         </p>
         <a href="/ngo-guides/ngo-card" style="display: inline-block; margin-top: 12px;">NGO Card útmutató →</a>
       </div>
+      <div class="card">
+        <div class="card-icon purple">🎬</div>
+        <h3>6. Impact Challenge</h3>
+        <p style="margin-top: 12px;">
+          Videónézés + szavazás = még több adomány csatorna!
+        </p>
+        <a href="/ngo-guides/impact-challenge" style="display: inline-block; margin-top: 12px;">Impact Challenge útmutató →</a>
+      </div>
     </div>
 
     <!-- Kifizetés -->
     <h2 class="section-title fade-in">⏱️ Kifizetési folyamat</h2>
-    
+
     <div class="card fade-in">
       <h3>Miért van várakozási idő?</h3>
       <p style="margin-top: 12px;">
-        Az affiliate jutalékok <strong>30-90 nap késéssel</strong> kerülnek jóváhagyásra:
+        Az affiliate jutalékok <strong>30-90 nap késéssel</strong> kerülnek jóváhagyásra.
+        A feladatoknál ez jellemzően <strong>1-7 nap</strong>.
       </p>
       <ul class="list" style="margin-top: 12px;">
-        <li>Visszáru esetén a jutalék törlődik</li>
-        <li>Meg kell várni a végső tranzakció megerősítését</li>
-        <li>Ez az iparági sztenderd – nem a Sharity döntése</li>
+        <li><strong>Vásárlás:</strong> Visszáru esetén a jutalék törlődik (30-90 nap iparági sztenderd)</li>
+        <li><strong>Feladatok / videók:</strong> A hirdető ellenőrzi a teljesítést (1-7 nap)</li>
+        <li>Mindkét esetben: meg kell várni a végső jóváhagyást</li>
       </ul>
     </div>
 
@@ -640,51 +954,33 @@
       <div class="flow" style="margin-top: 16px;">
         <div class="flow-step">
           <strong>📅</strong>
-          Havi összesítés
+          Negyedév vége
+        </div>
+        <div class="flow-step">
+          <strong>✔️</strong>
+          Min. 5 000 Ft elér?
         </div>
         <div class="flow-step">
           <strong>💳</strong>
-          Átutalás 15-ig
-        </div>
-        <div class="flow-step">
-          <strong>✅</strong>
-          Nincs minimum
+          Átutalás
         </div>
       </div>
-      <p style="margin-top: 16px; font-style: italic;">
-        💡 Már 1 Ft-tól kifizetjük az adományt!
-      </p>
     </div>
 
-    <!-- Szintbónuszok -->
-    <h2 class="section-title fade-in">🎁 Szintbónuszok</h2>
-    
-    <div class="card fade-in">
-      <p>A támogatóid szintjüknek megfelelő extra kedvezményt kaphatnak:</p>
-      <table style="margin-top: 16px;">
-        <thead>
-          <tr>
-            <th>Szint</th>
-            <th>Max kedvezményből</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>🌱 Basic</td><td>50%</td></tr>
-          <tr><td>🥉 Bronze</td><td>60%</td></tr>
-          <tr><td>🥈 Silver</td><td>70%</td></tr>
-          <tr><td>🥇 Gold</td><td>80%</td></tr>
-          <tr><td>💎 Platinum</td><td>90%</td></tr>
-          <tr><td>👑 Legend</td><td>100%</td></tr>
-        </tbody>
-      </table>
-      <p style="margin-top: 16px;">
-        <strong>Win-win:</strong> A támogatód olcsóbban vásárol, te több adományt kapsz!
-      </p>
+    <div class="callout fade-in" style="border-left-color: var(--warning); background: linear-gradient(135deg, rgba(245,159,11,0.12), rgba(245,159,11,0.04)); margin-top: 4px;">
+      <h3 style="color: #92400e;">⚠️ Fontos: 5 000 Ft minimum minden negyedévben</h3>
+      <p>A kifizetés <strong>negyedévente</strong> történik. Minden csatornára (Impact Shop közvetlen adomány + Impact Challenge közös alapból járó rész) külön vonatkozik a minimum:</p>
+      <ul class="list" style="margin-top: 10px;">
+        <li>Ha a negyedév végén az <strong>Impact Shop közvetlen adományod</strong> nem éri el az 5 000 Ft-ot → az összeg <strong>elvész</strong></li>
+        <li>Ha az <strong>Impact Challenge-ből járó részed</strong> (szavazatok alapján) nem éri el az 5 000 Ft-ot → az összeg <strong>elvész</strong></li>
+        <li>A két csatorna összege <strong>nem adódik össze</strong> a minimum szempontjából</li>
+      </ul>
+      <p style="margin-top: 12px;"><strong>Mit tehetsz?</strong> Minél több támogatót motiválj vásárlásra és feladat-elvégzésre — a negyedéves minimum elérése kulcsfontosságú!</p>
     </div>
 
     <!-- FAQ -->
     <h2 class="section-title fade-in" id="faq">❓ Gyakori kérdések</h2>
-    
+
     <div class="card fade-in" style="margin-bottom: 16px;">
       <h3>A támogatóimnak regisztrálniuk kell?</h3>
       <p style="margin-top: 8px;">
@@ -698,6 +994,20 @@
       </p>
     </div>
     <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>A feladatok biztonságosak?</h3>
+      <p style="margin-top: 8px;">
+        Igen. Csak ellenőrzött hirdetők feladatai jelennek meg. Sosem kérnek fizetést vagy érzékeny adatot.
+        Ha egy feladat gyanús, a „Jelentés" gombbal jelezheted.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mi történik, ha egy feladatot elutasítanak?</h3>
+      <p style="margin-top: 8px;">
+        Ritka, de előfordul. Ilyenkor a korábban jóváírt pontokat és szavazatokat korrigáljuk,
+        és a támogató értesítést kap. Az NGO-nak ilyenkor az adott feladat nem számít be.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
       <h3>Miért van, hogy néhány boltnál nincs adomány?</h3>
       <p style="margin-top: 8px;">
         Nem minden webshop affiliate partner. Csak a rendszerben szereplő boltokból van jutalék.
@@ -706,13 +1016,19 @@
     <div class="card fade-in" style="margin-bottom: 16px;">
       <h3>Van minimum vásárlási összeg?</h3>
       <p style="margin-top: 8px;">
-        Nincs. Már 1 Ft értékű vásárlástól is képződik adomány (ha van affiliate jutalék).
+        Nincs. Már 1 Ft értékű vásárlástól is képződik adomány (ha van affiliate jutalék). A kifizetéshez azonban szükséges, hogy a negyedév végén az összeg elérje az 5 000 Ft-ot — különben elvész.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Mikor kapjuk meg a kifizetést?</h3>
+      <p style="margin-top: 8px;">
+        <strong>Negyedévente</strong> (március, június, szeptember, december végén), feltéve, hogy az adott csatorna (Impact Shop közvetlen adomány, illetve Impact Challenge-ből járó rész) eléri az <strong>5 000 Ft-os minimumot</strong>. A két csatorna összege nem adódik össze — mindkettőre külön vonatkozik a minimum.
       </p>
     </div>
 
     <!-- Kapcsolat -->
     <h2 class="section-title fade-in">📞 Kapcsolat és támogatás</h2>
-    
+
     <div class="card fade-in">
       <div class="split" style="margin-top: 0;">
         <div>
@@ -737,11 +1053,11 @@
     <footer class="footer fade-in">
       <div style="max-width: 600px; margin: 0 auto;">
         <p style="font-size: 1.1rem; margin-bottom: 8px;">
-          <strong>Sharity – Impact Shop</strong>
+          <strong>Sharity – Impact Shop & Feladatok</strong>
         </p>
         <p style="opacity: 0.8;">
           NGO útmutató a Sharity platformhoz<br>
-          Verzió: 1.0 | Utolsó frissítés: 2026. február
+          Verzió: 2.0 | Utolsó frissítés: 2026. február
         </p>
         <div style="margin-top: 16px;">
           <a href="/ngo-guides/impact-challenge" style="margin-right: 16px;">Impact Challenge →</a>

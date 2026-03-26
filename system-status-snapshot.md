@@ -1,28 +1,24 @@
-## 2026-03-26 20:30 - Hatás Körök NGO admin route fix
-- a teszt módhoz visszaadott `ngo_admin_url` a valós live oldalra mutat: `/impact-shop_ngo/`
-- a reset password link is erre az oldalra mutat
-- production deploy lefutott
-- validáció: `/impact-shop_ngo/?ic_test_mode=1&impact_pseudo_id=TESTUSER01&impact_ngo_slug=bator-tabor-alapitvany` `HTTP 200`
+## 2026-03-26T19:45:00+0100 — fix: impact-community.php ngo_admin_url URL-ek visszaállítva
+- Merge conflict resolution hiba: auto-merge visszaállította `/impact-challenge/ngo-admin/` URL-eket.
+- Javítva: `/impact-shop_ngo/` (sorok: 2058, 2647, 4743 — ngo_admin_url ×2 + reset_url ×1).
+- Production nem érintett (PR #83 még nyitott, nincs deploy).
 
-## 2026-03-26 20:20 - Hatás Körök test mode
-- új explicit teszt üzem a community backendben és SPA-ban
-- pseudo ID override: `impact_pseudo_id`
-- NGO override: `impact_ngo_slug`
-- teszt módban tagság nélkül is lehet posztolni és szavazni
-- NGO admin oldal pseudo-alapú autologinnal megnyitható
-- production deploy lefutott, standard smoke PASS
-- production validáció: `auth/status` teszt módban `authenticated=true`, `test_mode=true`
-- production validáció: teszt poszt létrehozás + azonnali törlés sikeres
+## 2026-03-26T19:30:00+0100 — feat/jovonkvize-ticket-count merge: origin/main beolvasztva
+- Konflikció-feloldás: `impact-community.php` test_mode bypass (main) megtartva; `impactshop-event-donation-widget.php` ticket_serials DB oszlop + schema 1.2.0 (feature) megtartva; `impactshop-ngo-guides.php` jogi-dokumentumok route + version 1.1.2 (feature) megtartva.
+- `scripts/hatas-korok-load-memory.sh`: feature branch verzió megtartva.
+- `impact-community-app.php`: auto-merge, konfliktus nem volt.
 
-## 2026-03-26 19:05 - Legacy cp40 host references removed from active ops paths
-- `.deploy.production.env`: production SSH host `s59.tarhely.com`
-- `bin/staging-rest-fix.sh` és `bin/impactctl-resume.sh`: operatív SSH host blokk `s59.tarhely.com`
-- Operatív doksik frissítve: `docs/ai-agent-roadmap.md`, `docs/coupon-harvester.md`
+## 2026-03-26T16:54:00+0100 — Impact Challenge kanonikus baseline rögzítve
+- Létrejött az egységes kanonikus alapdokumentum: `docs/impact-challenge-canonical-baseline.md`.
+- Ettől kezdve ez a baseline az elsődleges referencia az Impact Challenge teljes scope-jára: ads-watch, autobanner, offerwall, identity, pont/szavazat, affiliate glue, PWA és a guide rendszer.
+- A fő lokális Impact Challenge runtime MU-plugin kör is vissza lett zárva `0444` read-only célállapotra, a guide rendszer már korábban lezárt `0444/0555` állapotával együtt.
+- PR / merge / deploy kapuk most már explicit módon ehhez a baseline-hoz mérik az eltérést.
 
-## 2026-03-26 18:45 - Hatás Körök memory loader hardening
-- `scripts/hatas-korok-load-memory.sh`: célzott `dev-memory,work-memory` pre-task rétegek + `dev` budget
-- Memory helper hívások fail-open módra váltva (`pre-task`, `context-pack`, opcionális `full-sync`)
-- Validáció: `bash ./scripts/hatas-korok-load-memory.sh --full-sync --limit 1 --file-limit 1` OK
+## 2026-03-26T16:40:00+0100 — NGO guide teljes készlet beton védelem alá zárva
+- A teljes guide készlet most már nem csak router-szinten, hanem teljes fáfa-szinten védett: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` bekerült a protected perimeterbe.
+- A productionről hiányzó lokális guide elemek visszaszinkronizálva a repo-ba, így megszűnt a külön élő és külön lokális guide-készlet állapota.
+- Rögzített szabály: guide-route, guide-HTML, fordítás, jogi asset, PDF és renderelt output csak explicit felhasználói engedéllyel módosítható; sem automatika, sem deploy nem írhatja felül engedély nélkül.
+- Fizikai célállapot: lokálban és productionön guide fájlok `0444`, guide könyvtárak `0555`.
 
 ## 2026-03-26T15:42:00+0100 — Autobanner/CJ runtime perimeter lezárva
 - A hiányzó WordPress oldali autobanner/CJ runtime rés bekerült a protected körbe: `wp-content/mu-plugins/impactshop-cj.php`.
@@ -61,6 +57,7 @@
 - Új read-only smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
 - Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
 - Ellenőrzési kör: `/hatas-korok`, `auth/status`, `circles?page=1`, HTML bootstrap markerek
+
 ## 2026-03-25 — cert aláírás kép csere (v1.5.3)
 - Pecsétes aláírás lecserélve pecsét nélküli változatra
 - Új kép: bujdoso-alaiiras-2026.png (IMG_3880.HEIC forrás)
@@ -454,3 +451,8 @@ PHP lint ok for identity/gamification modules
 - consent checkbox szöveg → kattintható `<a>` link: `/ngo-guides/jogi-dokumentumok/`
 - `stopPropagation` a link click-re → checkbox nem togglel
 - JS deployed, chmod 444
+
+## 2026-03-26 — ngo-admin route bevezetés
+- ic_ngo_admin_template_redirect() hozzáadva: /ngo-admin/ route kezelés
+- impact-community-app.php guard refactored (NGO admin MU-init safe)
+- PHP lint: OK, branch: feat/jovonkvize-ticket-count

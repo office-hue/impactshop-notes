@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NGO Card Embed | Sharity</title>
+  <meta name="description" content="NGO Card embed guide: load the script + add a data-ngo-card element, variants and examples.">
+  <meta property="og:title" content="NGO Card Embed | Sharity">
+  <meta property="og:description" content="Embed the dynamic NGO Card on any website: simple script + div.">
+  <meta property="og:url" content="https://app.sharity.hu/ngo-guides/ngo-card/?lang=en">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --purple: #7c3aed;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(111, 227, 193, 0.28), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(124, 58, 237, 0.18), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); }
+    h2 { font-size: clamp(1.4rem, 2.8vw, 2.0rem); margin-top: 22px; }
+    h3 { font-size: 1.1rem; }
+
+    p { margin: 0 0 1rem 0; line-height: 1.75; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 13px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover { background: rgba(15, 138, 157, 0.10); text-decoration: none; }
+
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+    }
+    .lang-switch a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(15, 138, 157, 0.08);
+    }
+    .lang-switch a.active {
+      background: rgba(15, 138, 157, 0.16);
+    }
+
+    .hero {
+      padding: 28px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.82);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11,31,42,0.08);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15, 138, 157, 0.10);
+      color: rgba(11, 31, 42, 0.86);
+      border: 1px solid rgba(15, 138, 157, 0.18);
+      margin-bottom: 12px;
+    }
+
+    .card {
+      margin-top: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.86);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11,31,42,0.08);
+      padding: 18px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      border-radius: 14px;
+      background: rgba(11, 31, 42, 0.92);
+      color: #e6f1ff;
+      line-height: 1.55;
+      font-family: "IBM Plex Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9rem;
+    }
+
+    code { font-family: inherit; }
+
+    ul { margin: 0.25rem 0 0 1.1rem; color: var(--muted); }
+    li { margin: 0.3rem 0; }
+
+    @media (max-width: 760px) {
+      .nav { justify-content: center; }
+      .lang-switch { margin-left: 0; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <nav class="nav" aria-label="NGO Card navigation">
+      <a href="/ngo-guides/?lang=en">← NGO Guides</a>
+      <a href="/ngo-guides/impact-shop/?lang=en">Impact Shop</a>
+      <a href="/ngo-guides/impact-challenge/?lang=en">Impact Challenge</a>
+      <a href="/ngo-guides/jogi-dokumentumok/?lang=en">Legal docs</a>
+      <div class="lang-switch" aria-label="Language switch">
+        <a href="?lang=hu">HU</a>
+        <a href="?lang=en" class="active" aria-current="true"><span aria-hidden="true">&#127760;</span> EN</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <span class="pill">🪪 Dynamic card for your website</span>
+      <h1>NGO Card embed</h1>
+      <p>
+        The NGO Card is an embeddable component that loads NGO data from Sharity's API and renders a live card
+        (name, amounts, status and links). It also includes save/share options for supporters.
+      </p>
+    </section>
+
+    <h2>Embed in 2 steps</h2>
+    <div class="card">
+      <h3>1) Load the script</h3>
+      <pre><code>&lt;script async src=&quot;https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-card.js&quot;&gt;&lt;/script&gt;</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>2) Add the card container (NGO slug)</h3>
+      <pre><code>&lt;div data-ngo-card=&quot;YOUR-SLUG&quot; variant=&quot;full&quot;&gt;&lt;/div&gt;</code></pre>
+      <p style="margin-top: 10px;">
+        The slug is your NGO's identifier (as used in Sharity links). If you are unsure, email
+        <a href="mailto:office@sharity.hu">office@sharity.hu</a>.
+      </p>
+    </div>
+
+    <h2>Variants</h2>
+    <div class="card">
+      <p>Use the <code>variant</code> attribute to switch layouts:</p>
+      <ul>
+        <li><code>full</code> – detailed (default)</li>
+        <li><code>compact</code> – compact</li>
+        <li><code>widget</code> – small widget layout</li>
+      </ul>
+      <p style="margin-top: 10px;">
+        Technical note: the card calls <code>/wp-json/impact/v1/ngo-card/&lt;slug&gt;</code>.
+      </p>
+    </div>
+
+    <h2>Common issues</h2>
+    <div class="card">
+      <ul>
+        <li><strong>404 / empty card:</strong> check the slug and whether the script loads.</li>
+        <li><strong>CSP blocked:</strong> allow scripts and API calls to <code>https://app.sharity.hu</code> on your site.</li>
+        <li><strong>Multiple cards:</strong> you can place multiple <code>data-ngo-card</code> blocks on one page.</li>
+      </ul>
+    </div>
+  </main>
+</body>
+</html>

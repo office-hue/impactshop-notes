@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chargeback and Dispute Handling Procedure (English)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="chargeback-and-dispute-handling-procedure">Chargeback and Dispute Handling Procedure</h1>
+<blockquote>
+<p><strong>Version</strong>: 1.2<br />
+<strong>Date</strong>: 2026-02-25<br />
+<strong>Status</strong>: IN EFFECT<br />
+<strong>Applies to</strong>: Impact Amplifier (vote purchase) — Stripe Checkout transactions<br />
+<strong>Related</strong>: Stripe Responsibility Matrix, Impact Challenge vote purchase plan §4.5 D6</p>
+</blockquote>
+<hr />
+<h2 id="1-overview">1. Overview</h2>
+<p>The Impact Amplifier vote purchase is a <strong>donation-type</strong> transaction, subject to business rule D6:</p>
+<blockquote>
+<p><strong>D6</strong>: "Donations are non-refundable" — the transaction is by nature a donation, not a product sale.</p>
+</blockquote>
+<p>Nevertheless, the Stripe/card issuer <strong>chargeback</strong> (reversal) mechanism remains technically available to the cardholder. This procedure documents Sharity's obligations in such cases.</p>
+<hr />
+<h2 id="2-chargeback-timeframes">2. Chargeback Timeframes</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Timeframe</th>
+<th>Responsible party</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cardholder chargeback filing</strong></td>
+<td><strong>120 days</strong> from the transaction date (Visa/MC)</td>
+<td>User → issuing bank</td>
+</tr>
+<tr>
+<td><strong>Stripe notification</strong></td>
+<td>~1–2 business days after the bank filing</td>
+<td>Stripe → webhook: <code>charge.dispute.created</code></td>
+</tr>
+<tr>
+<td><strong>Sharity response window</strong></td>
+<td><strong>7 calendar days</strong> from Stripe notification</td>
+<td>Sharity admin</td>
+</tr>
+<tr>
+<td><strong>Bank decision</strong></td>
+<td>30–90 days from evidence submission</td>
+<td>Issuing bank</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-chargeback-handling-process">3. Chargeback Handling Process</h2>
+<h3 id="31-receiving-notification">3.1 Receiving Notification</h3>
+<ol>
+<li>
+<p><strong>Stripe webhook</strong> (<code>charge.dispute.created</code>) → the system automatically logs:
+   - <code>wp_impactshop_vote_purchases.status</code> → <code>disputed</code>
+   - Guard alert → Discord webhook (operations channel)
+   - Email notification → Ops Squad</p>
+</li>
+<li>
+<p><strong>Manual detection</strong> — if webhook processing fails for any reason:
+   - Stripe Dashboard → Payments → Disputes — check daily
+   - P2-level incident → see SLA §2</p>
+</li>
+</ol>
+<h3 id="32-investigation-2-business-days">3.2 Investigation (≤ 2 business days)</h3>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Where</th>
+<th>What we look for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transaction details</td>
+<td><code>wp_impactshop_vote_purchases</code> table</td>
+<td><code>stripe_session_id</code>, <code>amount</code>, <code>timestamp</code>, <code>pseudo_id</code></td>
+</tr>
+<tr>
+<td>Webhook log</td>
+<td>Application logs</td>
+<td>Successful checkout callback entry</td>
+</tr>
+<tr>
+<td>User data</td>
+<td>DB + Stripe Dashboard</td>
+<td>Email, pseudo_id, IP, Cloudflare Turnstile result</td>
+</tr>
+<tr>
+<td>Fraud signals</td>
+<td>Stripe Radar</td>
+<td>Risk score, IP country, card fingerprint</td>
+</tr>
+<tr>
+<td>Multiple purchases</td>
+<td>DB query</td>
+<td>Whether multiple purchases originated from the same pseudo_id/email/IP</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-decision">3.3 Decision</h3>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Action</th>
+<th>Vote handling</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fraud</strong> — unauthorized card use (not the actual cardholder)</td>
+<td>Submit evidence → via Stripe OR accept refund</td>
+<td>Votes <strong>revoked</strong></td>
+</tr>
+<tr>
+<td><strong>Friendly fraud</strong> — the actual buyer initiates reversal</td>
+<td>Submit evidence (checkout evidence)</td>
+<td>Votes <strong>frozen</strong> until decision</td>
+</tr>
+<tr>
+<td><strong>Legitimate complaint</strong> — actual system error, double charge</td>
+<td>Accept refund</td>
+<td>Votes corrected — only the duplicate portion revoked</td>
+</tr>
+<tr>
+<td><strong>Unknown / uncertain</strong></td>
+<td>Submit evidence if possible</td>
+<td>Votes <strong>frozen</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="34-evidence-compilation">3.4 Evidence Compilation</h3>
+<p>The following items must be attached to the Stripe dispute response:</p>
+<ol>
+<li>
+<p><strong>Transaction evidence</strong>
+   - Checkout Session screenshot (from Stripe Dashboard)
+   - Webhook delivery log (success/timestamp)
+   - Post-purchase confirmation (if email was sent)</p>
+</li>
+<li>
+<p><strong>Evidence of user intent</strong>
+   - Cloudflare Turnstile verification = pass → not a bot
+   - Checkout text confirming donation nature: <em>"Donation via Impact Challenge"</em>
+   - Terms &amp; Conditions link on the checkout page</p>
+</li>
+<li>
+<p><strong>Donation-specific argumentation</strong>
+   - The Impact Amplifier vote purchase is a <strong>donation act</strong>, not a product/service purchase
+   - Clear disclosure on the checkout page: <em>"50% of the amount goes to the Common Donation Pool, which is distributed among NGOs in proportion to votes (quarterly per Terms of Service); the user casts the received votes for the selected NGO."</em>
+   - D6 rule: occurs with the donor's prior consent</p>
+</li>
+<li>
+<p><strong>Submission</strong>: Stripe Dashboard → Disputes → Submit Evidence</p>
+</li>
+</ol>
+<h3 id="35-outcome-handling">3.5 Outcome Handling</h3>
+<table>
+<thead>
+<tr>
+<th>Stripe decision</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Won</strong> (in Sharity's favor)</td>
+<td><code>status</code> → restore to <code>completed</code>; unfreeze votes; closing log entry</td>
+</tr>
+<tr>
+<td><strong>Won partially</strong> (partially in Sharity's favor)</td>
+<td><code>status</code> → <code>completed</code> for the undisputed portion; reduce <code>votes_granted</code> in proportion to the refunded amount; partial pool correction (<code>refunded_amount × 0.5</code>); log entry for both portions</td>
+</tr>
+<tr>
+<td><strong>Lost</strong> (in cardholder's favor)</td>
+<td><code>status</code> → <code>refunded</code>; permanent Vote Revocation; pool reduction</td>
+</tr>
+<tr>
+<td><strong>Accepted</strong> (Sharity does not contest)</td>
+<td><code>status</code> → <code>refunded</code>; permanent Vote Revocation; pool reduction</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-vote-revocation-procedure">4. Vote Revocation Procedure</h2>
+<h3 id="41-manual-revocation-wp-cli">4.1 Manual Revocation (WP-CLI)</h3>
+<pre><code class="language-bash">wp impactshop vote-purchase void --order_id=&lt;stripe_session_id&gt;
+</code></pre>
+<p>This performs the following operations:
+- <code>wp_impactshop_vote_purchases.status</code> → <code>voided</code> / <code>refunded</code>
+- <code>wp_impactshop_challenges.total_votes</code> → decrease by the number of granted votes
+- <code>wp_impactshop_challenges.pool_amount</code> → decrease by the donation portion (pool_share = amount × 50%)</p>
+<h3 id="42-pool-correction">4.2 Pool Correction</h3>
+<ul>
+<li>The pool amount decreases by the donation portion (<code>amount × 0.5</code>)</li>
+<li>If the quarter has not yet closed: the votes automatically disappear from the vote ratio</li>
+<li>If the quarter <strong>has already closed</strong> and payout was made: a <strong>manual correction</strong> must be performed in the next Quarterly Distribution (negative line item for the affected NGO, <strong>if the votes proportionally influenced the result</strong>)</li>
+</ul>
+<h3 id="43-logging">4.3 Logging</h3>
+<p>Every dispute must be logged:</p>
+<pre><code>disputes.log:
+2026-02-25T14:30:00Z | dispute_id=dp_xxx | session_id=cs_xxx | amount=2000 | decision=evidence_submitted | votes_frozen=2500 | admin=sharity_admin
+</code></pre>
+<hr />
+<h2 id="related-documents-and-guides">Related Documents and Guides</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#stripe">Stripe Responsibility Matrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#aszf">Terms of Service (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#quarterly-report">Quarterly Distribution Report Template</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge Guide</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">Impact Amplifier (About Us)</a></li>
+</ul>
+<hr />
+<h2 id="5-prevention">5. Prevention</h2>
+<h3 id="51-current-protection-layers">5.1 Current Protection Layers</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Description</th>
+<th>Configuration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cloudflare Turnstile</strong></td>
+<td>Bot/automation filtering before checkout initiation</td>
+<td>Before checkout form</td>
+</tr>
+<tr>
+<td><strong>Rate limiting</strong></td>
+<td>IP: max 10 checkout/hour; pseudo_id: max 5 checkout/hour</td>
+<td>MU plugin + Cloudflare WAF</td>
+</tr>
+<tr>
+<td><strong>Stripe Radar</strong></td>
+<td>Built-in fraud scoring, blocking risky transactions</td>
+<td>Stripe Dashboard → Radar Rules</td>
+</tr>
+<tr>
+<td><strong>3D Secure</strong></td>
+<td>Mandatory SCA (Strong Customer Authentication) in the EU</td>
+<td>Stripe automatic</td>
+</tr>
+<tr>
+<td><strong>Clear disclosure</strong></td>
+<td>Using the word "Donation" instead of "Purchase"</td>
+<td>Checkout UI texts</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-escalation-matrix">6. Escalation Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Dispute amount</th>
+<th>Decision maker</th>
+<th>Escalation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>≤ HUF 5,000</strong></td>
+<td>Ops Squad self-service</td>
+<td>None (standard procedure)</td>
+</tr>
+<tr>
+<td><strong>HUF 5,001 – 50,000</strong></td>
+<td>Ops Squad + finance officer</td>
+<td>Joint decision within 48h</td>
+</tr>
+<tr>
+<td><strong>&gt; HUF 50,000</strong></td>
+<td>Management + legal counsel</td>
+<td>Immediate escalation, legal opinion requested</td>
+</tr>
+<tr>
+<td><strong>Recurring</strong> (&gt;3 disputes/month)</td>
+<td>Management</td>
+<td>Fraud pattern investigation, Stripe support involvement</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-review">7. Review</h2>
+<ul>
+<li><strong>Frequency</strong>: quarterly, or after any dispute event</li>
+<li><strong>Responsible</strong>: Ops Squad</li>
+<li><strong>Metric</strong>: dispute rate &lt; 0.1% (Stripe requirement: &lt; 0.75%)</li>
+</ul>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Initial version — draft</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>"Won partially" outcome added (§3.5)</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>2026-02-25</td>
+<td>Finalization: internal file references removed, checkout text clarified (Common Donation Pool), audit notes incorporated</td>
+</tr>
+</tbody>
+</table>
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

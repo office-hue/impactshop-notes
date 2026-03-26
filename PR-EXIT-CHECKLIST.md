@@ -16,3 +16,4 @@
 14. Protected-file touch esetén készült koherencia vizsgálat és kockázatelemzés.
 15. Protected-file touch esetén készült érintett funkciólista és post-deploy / post-merge ellenőrzési kör.
 16. Protected-file touch esetén a felhasználónak átadott manuális UI checklist elkészült.
+17. Impact Challenge PR / merge / deploy esetén ellenőrizve van az eltérés a `docs/impact-challenge-canonical-baseline.md` referenciaállapothoz képest.

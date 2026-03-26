@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access Control Matrix (English)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="access-control-matrix">Access Control Matrix</h1>
+<blockquote>
+<p><strong>Version</strong>: 1.1<br />
+<strong>Date</strong>: 2026-02-25<br />
+<strong>Status</strong>: IN EFFECT<br />
+<strong>Applies to</strong>: ImpactShop full infrastructure<br />
+<strong>Related</strong>: GDPR data processor registry, Operations handbook §1</p>
+</blockquote>
+<hr />
+<h2 id="1-overview">1. Overview</h2>
+<p>This document records who has access to which systems, at what privilege level, and with what restrictions. Access is assigned based on the <strong>principle of least privilege</strong>.</p>
+<hr />
+<h2 id="2-infrastructure-access-control-matrix">2. Infrastructure Access Control Matrix</h2>
+<h3 id="21-server-shared-hosting">2.1 Server (shared hosting)</h3>
+<table>
+<thead>
+<tr>
+<th>Access</th>
+<th>User</th>
+<th>Privilege</th>
+<th>Restriction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SSH</strong></td>
+<td><code>sharityh</code></td>
+<td>User-level shell (zsh)</td>
+<td>⛔ No root / sudo / WHM access</td>
+</tr>
+<tr>
+<td><strong>cPanel</strong></td>
+<td><code>sharityh</code></td>
+<td>File manager, cron, PHP config, email</td>
+<td>Shared hosting limits</td>
+</tr>
+<tr>
+<td><strong>FTP/SFTP</strong></td>
+<td><code>sharityh</code></td>
+<td>File upload/download</td>
+<td>Only directories under <code>~/</code></td>
+</tr>
+<tr>
+<td><strong>MySQL</strong></td>
+<td><code>sharityh_wp</code></td>
+<td>Full access to WordPress DB</td>
+<td>No access to other databases</td>
+</tr>
+<tr>
+<td><strong>Cron</strong></td>
+<td><code>sharityh</code></td>
+<td>User-level crontab</td>
+<td>No system-level cron</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Important</strong>: No root access. Any host-level changes (PHP version, Apache modules, SSL certificates) must be requested via a hosting ticket.</p>
+</blockquote>
+<h3 id="22-wordpress-appsharityhu-shariteamcom">2.2 WordPress (app.sharity.hu / shariteam.com)</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Super Admin</strong></td>
+<td>Sharity core team (max 2 people)</td>
+<td>Full WP admin, MU-plugin management, WP-CLI</td>
+<td>Multisite network admin</td>
+</tr>
+<tr>
+<td><strong>Admin</strong></td>
+<td>Ops Squad (max 3 people)</td>
+<td>Settings, user management, content</td>
+<td>NGO card approval, shortcode editing</td>
+</tr>
+<tr>
+<td><strong>Editor</strong></td>
+<td>Content manager</td>
+<td>Page/post editing</td>
+<td>No plugin/settings access</td>
+</tr>
+<tr>
+<td><strong>NGO Partner</strong></td>
+<td>Registered NGOs</td>
+<td>Own profile editing</td>
+<td>No admin area access</td>
+</tr>
+<tr>
+<td><strong>WP-CLI</strong></td>
+<td><code>sharityh</code> via SSH</td>
+<td>Full WP-CLI command line</td>
+<td>On server, in SSH session</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-stripe-dashboard">2.3 Stripe Dashboard</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Account Owner</strong></td>
+<td>Sharity finance officer (1 person)</td>
+<td>Full control: payout, settings, API keys</td>
+<td>2FA mandatory</td>
+</tr>
+<tr>
+<td><strong>Developer</strong></td>
+<td>Sharity developer (max 2 people)</td>
+<td>Webhook config, API logs, test mode</td>
+<td>No payout/bank access</td>
+</tr>
+<tr>
+<td><strong>View Only</strong></td>
+<td>Ops Squad</td>
+<td>Transaction viewing, dispute reading</td>
+<td>No modification rights</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-github-repository">2.4 GitHub Repository</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Sharity core team (1 person)</td>
+<td>Repo settings, branch protection, secrets</td>
+<td>Private repo</td>
+</tr>
+<tr>
+<td><strong>Maintainer</strong></td>
+<td>Developers (max 2 people)</td>
+<td>Push, merge, PR review</td>
+<td>Branch protection: main → PR required</td>
+</tr>
+<tr>
+<td><strong>Read</strong></td>
+<td>Ops Squad</td>
+<td>Clone, issue management</td>
+<td>No push rights</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-cloudflare">2.5 Cloudflare</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Super Admin</strong></td>
+<td>Sharity core team (1 person)</td>
+<td>DNS, WAF, Page Rules, Rate Limit</td>
+<td>2FA mandatory</td>
+</tr>
+<tr>
+<td><strong>Admin</strong></td>
+<td>Developer (1 person)</td>
+<td>WAF rules, Turnstile config, cache purge</td>
+<td>No billing access</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26-dognet-partner-portal">2.6 Dognet Partner Portal</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Partner Admin</strong></td>
+<td>Sharity affiliate manager (1 person)</td>
+<td>Campaign management, report download, API token</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>View reports</td>
+<td>No modifications</td>
+</tr>
+</tbody>
+</table>
+<h3 id="27-cj-commission-junction">2.7 CJ (Commission Junction)</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Publisher Admin</strong></td>
+<td>Sharity affiliate manager (1 person)</td>
+<td>Campaign management, link generation, reports, API access</td>
+<td>Publicis Groupe platform; 2FA recommended</td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>View reports</td>
+<td>No modifications</td>
+</tr>
+</tbody>
+</table>
+<h3 id="28-tradetracker">2.8 TradeTracker</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Publisher Admin</strong></td>
+<td>Sharity affiliate manager (1 person)</td>
+<td>Campaign management, link generation, reports</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>View reports</td>
+<td>No modifications</td>
+</tr>
+</tbody>
+</table>
+<h3 id="29-tradedoubler">2.9 Tradedoubler</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Publisher Admin</strong></td>
+<td>Sharity affiliate manager (1 person)</td>
+<td>Campaign management, link generation, reports</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>View reports</td>
+<td>No modifications</td>
+</tr>
+</tbody>
+</table>
+<h3 id="210-offerwall-providers-bitlabs-pollfish-cint-ayet-studios-cpx-research">2.10 Offerwall Providers (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)</h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Who</th>
+<th>Privileges</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dashboard Admin</strong></td>
+<td>Sharity developer / ops (1 person)</td>
+<td>Offerwall configuration, revenue reports, API keys</td>
+<td>Separate account per provider; 2FA where available</td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>View reports</td>
+<td>No modifications</td>
+</tr>
+<tr>
+<td>---</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-secret-management">3. Secret Management</h2>
+<table>
+<thead>
+<tr>
+<th>Secret type</th>
+<th>Storage location</th>
+<th>Who has access</th>
+<th>Rotation frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stripe API keys</strong> (sk_live, pk_live)</td>
+<td>Environment variables (gitignored)</td>
+<td>SSH: <code>sharityh</code>; Developers: via env file</td>
+<td>Semi-annually or upon compromise</td>
+</tr>
+<tr>
+<td><strong>Stripe webhook secret</strong></td>
+<td>Environment variables (gitignored)</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Semi-annually</td>
+</tr>
+<tr>
+<td><strong>Dognet API token</strong></td>
+<td>Environment variables / WP options</td>
+<td>SSH: <code>sharityh</code>; WP Admin: options</td>
+<td>Annually</td>
+</tr>
+<tr>
+<td><strong>Cloudflare API token</strong></td>
+<td>Environment variables</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Annually</td>
+</tr>
+<tr>
+<td><strong>WordPress salts</strong></td>
+<td><code>wp-config.php</code></td>
+<td>SSH: <code>sharityh</code></td>
+<td>Only upon compromise</td>
+</tr>
+<tr>
+<td><strong>MySQL password</strong></td>
+<td><code>wp-config.php</code></td>
+<td>SSH: <code>sharityh</code></td>
+<td>Via cPanel, as needed</td>
+</tr>
+<tr>
+<td><strong>Google Service Account key</strong></td>
+<td>Dedicated key file (gitignored)</td>
+<td>SSH: <code>sharityh</code>; AI Agent application</td>
+<td>Annually</td>
+</tr>
+<tr>
+<td><strong>CJ API credentials</strong></td>
+<td>Environment variables (gitignored)</td>
+<td>SSH: <code>sharityh</code>; Developers: via env file</td>
+<td>Annually</td>
+</tr>
+<tr>
+<td><strong>TradeTracker API credentials</strong></td>
+<td>Environment variables (gitignored)</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Annually</td>
+</tr>
+<tr>
+<td><strong>Tradedoubler API credentials</strong></td>
+<td>Environment variables (gitignored)</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Annually</td>
+</tr>
+<tr>
+<td><strong>Offerwall API keys</strong> (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)</td>
+<td>Environment variables (gitignored)</td>
+<td>SSH: <code>sharityh</code>; Developers: via env file</td>
+<td>Annually</td>
+</tr>
+<tr>
+<td><strong>SSH key</strong></td>
+<td><code>~/.ssh/authorized_keys</code></td>
+<td>Developer machines</td>
+<td>Annual rotation, ed25519</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Rule</strong>: Secrets must NEVER appear in git commits, logs, or planning documents.</p>
+</blockquote>
+<hr />
+<h2 id="related-documents-and-guides">Related Documents and Guides</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#aszf">Terms of Service (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#gdpr">GDPR Data Processors</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#stripe">Stripe Responsibility Matrix</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">About Us</a></li>
+</ul>
+<hr />
+<h2 id="4-guard-system-access">4. Guard System Access</h2>
+<table>
+<thead>
+<tr>
+<th>Guard</th>
+<th>Execution</th>
+<th>Who can trigger</th>
+<th>Logs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Central guard runner</strong></td>
+<td>Cron (15–30 min) + manual</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Central guard event log</td>
+</tr>
+<tr>
+<td><strong>Individual guard scripts</strong></td>
+<td>Cron / manual</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Guard-specific logs</td>
+</tr>
+<tr>
+<td><strong>Discord webhook</strong> (alerts)</td>
+<td>Automatic guard output</td>
+<td>Guard scripts</td>
+<td>Dedicated alert channel</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-access-request-and-revocation">5. Access Request and Revocation</h2>
+<h3 id="51-new-access-request">5.1 New Access Request</h3>
+<ol>
+<li><strong>Requester</strong> → email/issue to the core team</li>
+<li><strong>Core team approval</strong> — based on principle of least privilege</li>
+<li><strong>Implementation</strong> — created by the respective system admin</li>
+<li><strong>Documentation</strong> — this matrix must be updated</li>
+<li><strong>2FA mandatory</strong> for all critical systems (Stripe, Cloudflare, GitHub, cPanel)</li>
+</ol>
+<h3 id="52-access-revocation">5.2 Access Revocation</h3>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Action</th>
+<th>Timeframe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Team member departure</strong></td>
+<td>Remove access from all systems</td>
+<td>≤ 24 hours</td>
+</tr>
+<tr>
+<td><strong>Compromised credential</strong></td>
+<td>Immediate rotation + audit log review</td>
+<td>≤ 1 hour</td>
+</tr>
+<tr>
+<td><strong>Role change</strong></td>
+<td>Privilege reduction/expansion</td>
+<td>≤ 48 hours</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-audit">5.3 Audit</h3>
+<ul>
+<li><strong>Frequency</strong>: quarterly</li>
+<li><strong>What we check</strong>: active access list vs. current team members, 2FA status, last login</li>
+<li><strong>Responsible</strong>: Ops Squad lead</li>
+</ul>
+<hr />
+<h2 id="6-hosting-specific-restrictions">6. Hosting-Specific Restrictions</h2>
+<p>Due to the shared hosting environment, the following restrictions apply:</p>
+<table>
+<thead>
+<tr>
+<th>Not available</th>
+<th>Alternative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Root / sudo</td>
+<td>Hosting ticket</td>
+</tr>
+<tr>
+<td>Custom daemon / service</td>
+<td>Cron-based idempotent scripts</td>
+</tr>
+<tr>
+<td>Package install (apt/yum)</td>
+<td>None — only pre-installed software</td>
+</tr>
+<tr>
+<td>PHP version change</td>
+<td>cPanel PHP Selector or hosting ticket</td>
+</tr>
+<tr>
+<td>SSL cert management</td>
+<td>AutoSSL (cPanel) or Cloudflare</td>
+</tr>
+<tr>
+<td>Firewall rules</td>
+<td>Cloudflare WAF</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-review">7. Review</h2>
+<ul>
+<li><strong>Frequency</strong>: quarterly, or immediately upon team changes</li>
+<li><strong>Responsible</strong>: Core team lead</li>
+<li><strong>Checklist</strong>: active users, 2FA status, key rotation, expired access</li>
+</ul>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Initial version — full infrastructure matrix</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>Finalization: CJ, TradeTracker, Tradedoubler, offerwall providers (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research) added (§2.7–2.10), internal file paths removed, secret management extended to affiliate/offerwall keys (§3)</td>
+</tr>
+</tbody>
+</table>
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

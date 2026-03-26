@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hozzáférés-kezelési Mátrix (Access Control Matrix) (Magyar)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="hozzaferes-kezelesi-matrix-access-control-matrix">Hozzáférés-kezelési Mátrix (Access Control Matrix)</h1>
+<blockquote>
+<p><strong>Verzió</strong>: 1.1<br />
+<strong>Dátum</strong>: 2026-02-25<br />
+<strong>Státusz</strong>: HATÁLYOS<br />
+<strong>Vonatkozik</strong>: ImpactShop teljes infrastruktúra<br />
+<strong>Kapcsolódó</strong>: GDPR adatfeldolgozói nyilvántartás, Üzemeltetési kézikönyv §1</p>
+</blockquote>
+<hr />
+<h2 id="1-attekintes">1. Áttekintés</h2>
+<p>Ez a dokumentum rögzíti, hogy ki milyen rendszerekhez fér hozzá, milyen jogosultsági szinttel, és milyen korlátozásokkal. A hozzáférés a <strong>legkisebb jogosultság elve</strong> (principle of least privilege) alapján van kiosztva.</p>
+<hr />
+<h2 id="2-infrastruktura-hozzaferesi-matrix">2. Infrastruktúra hozzáférési mátrix</h2>
+<h3 id="21-szerver-shared-hosting">2.1 Szerver (shared hosting)</h3>
+<table>
+<thead>
+<tr>
+<th>Hozzáférés</th>
+<th>Felhasználó</th>
+<th>Jogosultság</th>
+<th>Korlátozás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SSH</strong></td>
+<td><code>sharityh</code></td>
+<td>User-level shell (zsh)</td>
+<td>⛔ Nincs root / sudo / WHM hozzáférés</td>
+</tr>
+<tr>
+<td><strong>cPanel</strong></td>
+<td><code>sharityh</code></td>
+<td>Fájlkezelő, cron, PHP konfig, email</td>
+<td>Shared hosting korlátok</td>
+</tr>
+<tr>
+<td><strong>FTP/SFTP</strong></td>
+<td><code>sharityh</code></td>
+<td>Fájl feltöltés/letöltés</td>
+<td>Csak a <code>~/</code> alatti könyvtárakra</td>
+</tr>
+<tr>
+<td><strong>MySQL</strong></td>
+<td><code>sharityh_wp</code></td>
+<td>WordPress DB teljes hozzáférés</td>
+<td>Nincs más DB-hez hozzáférés</td>
+</tr>
+<tr>
+<td><strong>Cron</strong></td>
+<td><code>sharityh</code></td>
+<td>User-level crontab</td>
+<td>Nincs system-level cron</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Fontos</strong>: Nincs root hozzáférés. Bármilyen host-szintű változtatás (PHP verzió, Apache mod, SSL cert) hosting ticket-en keresztül igénylendő.</p>
+</blockquote>
+<h3 id="22-wordpress-appsharityhu-shariteamcom">2.2 WordPress (app.sharity.hu / shariteam.com)</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Super Admin</strong></td>
+<td>Sharity core team (max 2 fő)</td>
+<td>Teljes WP admin, MU-plugin kezelés, WP-CLI</td>
+<td>Multisite network admin</td>
+</tr>
+<tr>
+<td><strong>Admin</strong></td>
+<td>Ops Squad (max 3 fő)</td>
+<td>Beállítások, felhasználókezelés, tartalom</td>
+<td>NGO card jóváhagyás, shortcode szerkesztés</td>
+</tr>
+<tr>
+<td><strong>Editor</strong></td>
+<td>Tartalom menedzser</td>
+<td>Oldalak/bejegyzések szerkesztése</td>
+<td>Nincs plugin/beállítás hozzáférés</td>
+</tr>
+<tr>
+<td><strong>NGO Partner</strong></td>
+<td>Regisztrált NGO-k</td>
+<td>Saját profil szerkesztése</td>
+<td>Nincs admin terület hozzáférés</td>
+</tr>
+<tr>
+<td><strong>WP-CLI</strong></td>
+<td><code>sharityh</code> SSH-n keresztül</td>
+<td>Teljes WP-CLI parancssor</td>
+<td>Szerveren, SSH session-ben</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-stripe-dashboard">2.3 Stripe Dashboard</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Account Owner</strong></td>
+<td>Sharity pénzügyi felelős (1 fő)</td>
+<td>Teljes kontroll: payout, settings, API keys</td>
+<td>2FA kötelező</td>
+</tr>
+<tr>
+<td><strong>Developer</strong></td>
+<td>Sharity fejlesztő (max 2 fő)</td>
+<td>Webhook konfig, API logok, test mód</td>
+<td>Nincs payout/bank hozzáférés</td>
+</tr>
+<tr>
+<td><strong>View Only</strong></td>
+<td>Ops Squad</td>
+<td>Tranzakció megtekintés, dispute olvasás</td>
+<td>Nincs módosítási jog</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-github-repository">2.4 GitHub Repository</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Owner</strong></td>
+<td>Sharity core team (1 fő)</td>
+<td>Repo beállítások, branch protection, secrets</td>
+<td>Private repo</td>
+</tr>
+<tr>
+<td><strong>Maintainer</strong></td>
+<td>Fejlesztők (max 2 fő)</td>
+<td>Push, merge, PR review</td>
+<td>Branch protection: main → PR required</td>
+</tr>
+<tr>
+<td><strong>Read</strong></td>
+<td>Ops Squad</td>
+<td>Clone, issue kezelés</td>
+<td>Nincs push jog</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-cloudflare">2.5 Cloudflare</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Super Admin</strong></td>
+<td>Sharity core team (1 fő)</td>
+<td>DNS, WAF, Page Rules, Rate Limit</td>
+<td>2FA kötelező</td>
+</tr>
+<tr>
+<td><strong>Admin</strong></td>
+<td>Fejlesztő (1 fő)</td>
+<td>WAF szabályok, Turnstile konfig, cache purge</td>
+<td>Nincs billing hozzáférés</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26-dognet-partner-portal">2.6 Dognet Partner Portal</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Partner Admin</strong></td>
+<td>Sharity affiliate menedzser (1 fő)</td>
+<td>Kampány kezelés, riport letöltés, API token</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>Riportok megtekintése</td>
+<td>Nincs módosítás</td>
+</tr>
+</tbody>
+</table>
+<h3 id="27-cj-commission-junction">2.7 CJ (Commission Junction)</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Publisher Admin</strong></td>
+<td>Sharity affiliate menedzser (1 fő)</td>
+<td>Kampánykezelés, link generálás, riportok, API hozzáférés</td>
+<td>Publicis Groupe platform; 2FA ajánlott</td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>Riportok megtekintése</td>
+<td>Nincs módosítás</td>
+</tr>
+</tbody>
+</table>
+<h3 id="28-tradetracker">2.8 TradeTracker</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Publisher Admin</strong></td>
+<td>Sharity affiliate menedzser (1 fő)</td>
+<td>Kampánykezelés, link generálás, riportok</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>Riportok megtekintése</td>
+<td>Nincs módosítás</td>
+</tr>
+</tbody>
+</table>
+<h3 id="29-tradedoubler">2.9 Tradedoubler</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Publisher Admin</strong></td>
+<td>Sharity affiliate menedzser (1 fő)</td>
+<td>Kampánykezelés, link generálás, riportok</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>Riportok megtekintése</td>
+<td>Nincs módosítás</td>
+</tr>
+</tbody>
+</table>
+<h3 id="210-offerwall-szolgaltatok-bitlabs-pollfish-cint-ayet-studios-cpx-research">2.10 Offerwall szolgáltatók (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)</h3>
+<table>
+<thead>
+<tr>
+<th>Szerepkör</th>
+<th>Ki</th>
+<th>Jogosultság</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dashboard Admin</strong></td>
+<td>Sharity fejlesztő / ops (1 fő)</td>
+<td>Offerwall konfiguráció, bevétel riportok, API kulcsok</td>
+<td>Szolgáltatónként külön fiók; 2FA ahol elérhető</td>
+</tr>
+<tr>
+<td><strong>Viewer</strong></td>
+<td>Ops Squad</td>
+<td>Riportok megtekintése</td>
+<td>Nincs módosítás</td>
+</tr>
+<tr>
+<td>---</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-titkos-kulcsok-kezelese-secret-management">3. Titkos kulcsok kezelése (Secret Management)</h2>
+<table>
+<thead>
+<tr>
+<th>Titok típusa</th>
+<th>Tárolás helye</th>
+<th>Ki fér hozzá</th>
+<th>Rotálás gyakorisága</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stripe API keys</strong> (sk_live, pk_live)</td>
+<td>Környezeti változókban (gitignore-olt)</td>
+<td>SSH: <code>sharityh</code>; Fejlesztők: env file-on keresztül</td>
+<td>Félévente vagy kompromittálás esetén</td>
+</tr>
+<tr>
+<td><strong>Stripe webhook secret</strong></td>
+<td>Környezeti változókban (gitignore-olt)</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Félévente</td>
+</tr>
+<tr>
+<td><strong>Dognet API token</strong></td>
+<td>Környezeti változókban / WP options</td>
+<td>SSH: <code>sharityh</code>; WP Admin: options</td>
+<td>Éves</td>
+</tr>
+<tr>
+<td><strong>Cloudflare API token</strong></td>
+<td>Környezeti változókban</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Éves</td>
+</tr>
+<tr>
+<td><strong>WordPress salts</strong></td>
+<td><code>wp-config.php</code></td>
+<td>SSH: <code>sharityh</code></td>
+<td>Csak kompromittálás esetén</td>
+</tr>
+<tr>
+<td><strong>MySQL password</strong></td>
+<td><code>wp-config.php</code></td>
+<td>SSH: <code>sharityh</code></td>
+<td>cPanel-en keresztül, szükség esetén</td>
+</tr>
+<tr>
+<td><strong>Google Service Account key</strong></td>
+<td>Dedikált kulcsfájlban (gitignore-olt)</td>
+<td>SSH: <code>sharityh</code>; AI Agent alkalmazás</td>
+<td>Éves</td>
+</tr>
+<tr>
+<td><strong>CJ API credentials</strong></td>
+<td>Környezeti változókban (gitignore-olt)</td>
+<td>SSH: <code>sharityh</code>; Fejlesztők: env file-on keresztül</td>
+<td>Éves</td>
+</tr>
+<tr>
+<td><strong>TradeTracker API credentials</strong></td>
+<td>Környezeti változókban (gitignore-olt)</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Éves</td>
+</tr>
+<tr>
+<td><strong>Tradedoubler API credentials</strong></td>
+<td>Környezeti változókban (gitignore-olt)</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Éves</td>
+</tr>
+<tr>
+<td><strong>Offerwall API kulcsok</strong> (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)</td>
+<td>Környezeti változókban (gitignore-olt)</td>
+<td>SSH: <code>sharityh</code>; Fejlesztők: env file-on keresztül</td>
+<td>Éves</td>
+</tr>
+<tr>
+<td><strong>SSH key</strong></td>
+<td><code>~/.ssh/authorized_keys</code></td>
+<td>Fejlesztő gépek</td>
+<td>Éves rotálás, ed25519</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Szabály</strong>: Titkok SOHA nem kerülhetnek git commitba, logba, vagy tervdokumentumba.</p>
+</blockquote>
+<hr />
+<h2 id="kapcsolodo-dokumentumok-es-guide-ok">Kapcsolódó dokumentumok és guide-ok</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#aszf">Általános Szerződési Feltételek (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#gdpr">GDPR adatfeldolgozók</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#stripe">Stripe felelősségmegosztás</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">Rólunk</a></li>
+</ul>
+<hr />
+<h2 id="4-guard-rendszer-hozzaferes">4. Guard rendszer hozzáférés</h2>
+<table>
+<thead>
+<tr>
+<th>Guard</th>
+<th>Futtatás</th>
+<th>Ki indíthatja</th>
+<th>Naplók</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Központi guard runner</strong></td>
+<td>Cron (15-30 perc) + manuális</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Központi guard eseménynapló</td>
+</tr>
+<tr>
+<td><strong>Egyedi guard scriptek</strong></td>
+<td>Cron / manuális</td>
+<td>SSH: <code>sharityh</code></td>
+<td>Guard-specifikus naplók</td>
+</tr>
+<tr>
+<td><strong>Discord webhook</strong> (alertek)</td>
+<td>Automatikus guard kimenete</td>
+<td>Guard scriptek</td>
+<td>Dedikált alert csatorna</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-hozzaferes-keres-es-visszavonas">5. Hozzáférés kérés és visszavonás</h2>
+<h3 id="51-uj-hozzaferes-keres">5.1 Új hozzáférés kérés</h3>
+<ol>
+<li><strong>Kérelmező</strong> → email/issue a core team felé</li>
+<li><strong>Core team jóváhagyás</strong> — principle of least privilege alapján</li>
+<li><strong>Implementáció</strong> — az adott rendszer adminje hozza létre</li>
+<li><strong>Dokumentáció</strong> — ez a mátrix frissítendő</li>
+<li><strong>2FA kötelező</strong> minden kritikus rendszernél (Stripe, Cloudflare, GitHub, cPanel)</li>
+</ol>
+<h3 id="52-hozzaferes-visszavonas">5.2 Hozzáférés visszavonás</h3>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Teendő</th>
+<th>Időkeret</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Munkatárs távozás</strong></td>
+<td>Minden rendszerből hozzáférés eltávolítása</td>
+<td>≤ 24 óra</td>
+</tr>
+<tr>
+<td><strong>Kompromittált credential</strong></td>
+<td>Azonnali rotálás + audit log ellenőrzés</td>
+<td>≤ 1 óra</td>
+</tr>
+<tr>
+<td><strong>Szerepkör változás</strong></td>
+<td>Jogosultság szűkítés/bővítés</td>
+<td>≤ 48 óra</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-audit">5.3 Audit</h3>
+<ul>
+<li><strong>Gyakoriság</strong>: negyedévente</li>
+<li><strong>Mit ellenőrzünk</strong>: aktív hozzáférések listája vs. aktuális csapattagok, 2FA státusz, utolsó bejelentkezés</li>
+<li><strong>Felelős</strong>: Ops Squad lead</li>
+</ul>
+<hr />
+<h2 id="6-hosting-specifikus-korlatozasok">6. Hosting-specifikus korlátozások</h2>
+<p>A shared hosting környezet miatt az alábbi korlátozások érvényesek:</p>
+<table>
+<thead>
+<tr>
+<th>Nem elérhető</th>
+<th>Alternatíva</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Root / sudo</td>
+<td>Hosting ticket</td>
+</tr>
+<tr>
+<td>Custom daemon / service</td>
+<td>Cron-alapú idempotens scriptek</td>
+</tr>
+<tr>
+<td>Package install (apt/yum)</td>
+<td>Nincs — csak a meglévő szoftverek</td>
+</tr>
+<tr>
+<td>PHP verzió váltás</td>
+<td>cPanel PHP Selector vagy hosting ticket</td>
+</tr>
+<tr>
+<td>SSL cert kezelés</td>
+<td>AutoSSL (cPanel) vagy Cloudflare</td>
+</tr>
+<tr>
+<td>Firewall szabályok</td>
+<td>Cloudflare WAF</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-felulvizsgalat">7. Felülvizsgálat</h2>
+<ul>
+<li><strong>Gyakoriság</strong>: negyedévente, vagy csapatváltozás esetén azonnal</li>
+<li><strong>Felelős</strong>: Core team lead</li>
+<li><strong>Ellenőrzőlista</strong>: aktív felhasználók, 2FA státusz, kulcs rotálás, lejárt hozzáférések</li>
+</ul>
+<hr />
+<h2 id="valtozasnaplo">Változásnapló</h2>
+<table>
+<thead>
+<tr>
+<th>Verzió</th>
+<th>Dátum</th>
+<th>Változás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Kezdeti verzió — teljes infrastruktúra mátrix</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>Véglegesítés: CJ, TradeTracker, Tradedoubler, offerwall szolgáltatók (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research) hozzáadva (§2.7–2.10), belső fájlútvonalak eltávolítva, titkos kulcs kezelés kiterjesztve affiliate/offerwall kulcsokra (§3)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

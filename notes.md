@@ -1,29 +1,26 @@
-## 2026-03-26 Hatás Körök NGO admin route fix
-- a korábbi `/impact-challenge/ngo-admin/` route helyett a valós live oldal lett a kanonikus URL: `/impact-shop_ngo/`
-- a teszt panel és az auth/status erre mutat vissza
-- a reset password link is javítva
+## 2026-03-26 19:45 CET - fix: impact-community.php ngo_admin_url visszaállítva
+- Merge conflict resolution során az auto-merge visszaállította a régi `/impact-challenge/ngo-admin/` URL-eket.
+- Fix: 3 helyen visszaállítva `/impact-shop_ngo/`-ra (sorok: 2058, 2647, 4743).
+- PRODUCTION NEM ÉRINTETT — csak a feat/jovonkvize-ticket-count ágon volt hiba, a PR #83 még nem volt merge-elve.
 
-## 2026-03-26 Hatás Körök test mode
-- `/hatas-korok` új teszt üzemmód pseudo ID és NGO slug query param támogatással
-- teszt módban nincs körlimit, nincs kötelező tagság posztoláshoz/szavazáshoz
-- NGO admin oldal pseudo-alapú autologint kapott
-- production deploy és smoke lefutott
-- productionön teszt poszt létrehozás + törlés validálva
+## 2026-03-26 19:30 CET - feat/jovonkvize merge: origin/main conflict resolution
+- impact-community.php: test_mode bypass (main) megtartva; event-donation-widget: ticket_serials schema 1.2.0 (feature); ngo-guides: jogi-dokumentumok + 1.1.2 (feature).
+- Merge commit: ef88de74
 
-## 2026-03-26 cp40 host references kivezetése az aktív útvonalakból
-- Production deploy env: `s59.tarhely.com`
-- Operatív helper script/SSH config példa: `bin/staging-rest-fix.sh`, `bin/impactctl-resume.sh`
-- Operatív runbook/doksi: `docs/ai-agent-roadmap.md`, `docs/coupon-harvester.md`
+## 2026-03-26 16:54 CET - Impact Challenge canonical baseline
+- New canonical reference doc created: `docs/impact-challenge-canonical-baseline.md`
+- Impact Challenge runtime perimeter normalized as canonical protected baseline (ads-watch, autobanner, offerwall, identity, affiliate glue, PWA, guides).
+- Local runtime MU-plugin set locked to `0444`; guide subtree remains `0444/0555`.
+- PR / merge / deploy policy files now explicitly reference the canonical baseline.
 
-## 2026-03-26 Hatás Körök memory loader hardening
-- `scripts/hatas-korok-load-memory.sh`: a pre-task most csak `dev-memory,work-memory` rétegeket kérdez, `dev` budgettel
-- A helper fail-open: memory hiba esetén warninggal továbbmegy, nem blokkolja a memo/context generálást
-- Ellenőrzés: `bash ./scripts/hatas-korok-load-memory.sh --full-sync --limit 1 --file-limit 1` sikeres
-
-## 2026-03-25 Hatás Körök memory loader
-- Új helper: `scripts/hatas-korok-load-memory.sh`
-- Cél: Hatás Körök route + community + deploy smoke kontextus célzott betöltése az `ai-agent` dev-memory workflow-ba
-- Kimenetek: `.codex/context/hatas-korok-work-memo.md`, `.codex/context/hatas-korok-work-context.md`
+## 2026-03-25 CJ + Dognet go-deal hotfix + merge logika
+- Bug 1: fizz shop törölve (nem volt a Dognet CSV-ben, csak AI registry-ben)
+- Bug 2: CJ limit 200→5000, Skechers (6322281) hozzáadva product catalog-hoz → 473 CJ link
+- Bug 3: Dognet tracking URL passthrough — go.dognet.com href-ek skip API, közvetlen redirect d1+data5-tel
+- --advertiser-ids CLI param bekötve cli_fetch_links → sync_links
+- --merge flag: sync_links meglévő linkeket megtartja szűrt fetch esetén
+- awin/tradedoubler nincs go-deal-ben — feed URL-ek, nem click URL-ek; a 3 érintett shop (Zooplus/Dyson/Nike) dognet_base click URL-je a passthrough-val kezelve
+- Banner CSV-ben 3 shop (Zooplus/Dyson/Nike) feed URL-t tartalmaz click URL helyett → adatminőségi hiba, javítandó
 
 ## 2026-03-25 Hatás Körök smoke bekötve a deploy rutinba
 - `bin/deploy-wpcontent-map.sh`: production mapping deploy után automatikus `scripts/hatas-korok-post-deploy-smoke.sh`
@@ -34,10 +31,6 @@
 - Új read-only deploy smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
 - Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
 - Cél: deploy után gyors route + bootstrap + auth + circles API ellenőrzés, production állapotmódosítás nélkül
-## 2026-03-25 Hatás Körök hotfix
-- `/hatas-korok` production route helyreállítva
-- statikus page route és community template redirect ütközés kezelve
-- REST state-changing endpointok nonce-check + vote membership-check megerősítve
 
 ## 2026-03-25 Cert aláírás kép csere
 - Pecsétes → pecsét nélküli (IMG_3880.HEIC)
@@ -6414,3 +6407,29 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Deploy OK, chmod 444
 - 2026-03-25: cert aláírási blokk javítva: igazgatósági tagja → meghatalmazott, Sharity Zrt. → Sharity Adományszervező Alapítvány (v1.5.1); meghatalmazás HTML doc létrehozva
 - 2026-03-25: vagy egyszerű adományozás szeparátor hozzáadva a solo jegyek és preset összegek közé (jovonkvize.js)
+
+## 2026-03-25 ticket_serials
+- schema v1.2.0: ticket_serials TEXT oszlop, DB fallback email küldésnél
+
+## 2026-03-25 16:25:28 CET - impactall auto log
+- **Result:** fail (warnings=3, errors=1, duration=1s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 22:51:13 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=4s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 22:51:27 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=2s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 23:00:43 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=3s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-26 — /ngo-admin/ route hozzáadva (ic_ngo_admin_template_redirect)
+- `impact-community.php`: `ic_ngo_admin_template_redirect()` bevezetva, template_redirect priority 4
+- URL-ek átírva `/impact-shop_ngo/` → `/ngo-admin/` (3 hely)
+- `impact-community-app.php`: guard refactor — NGO admin funkciók MU-init időn is betölthetők
+- NGO_ADMIN_URL JS fallback: `/ngo-admin/`
+- Branch: feat/jovonkvize-ticket-count HEAD: 7447fd73

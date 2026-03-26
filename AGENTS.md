@@ -4,6 +4,7 @@
 - Workspace global policy: `/Users/bujdosoarnold/AGENTS.md`
 - Shared assistant policy: `/Users/bujdosoarnold/Developer/GitHub/ai-agent/docs/ai-assistant-canonical-policy.md`
 - Local assistant policy: `docs/ai-assistant-canonical-policy.md`
+- Impact Challenge canonical baseline: `docs/impact-challenge-canonical-baseline.md`
 - PR / merge / deploy policy: `docs/pr-policy.md`
 
 If any local assistant configuration conflicts with these files, treat the above list as canonical in that order.
@@ -24,6 +25,7 @@ If any local assistant configuration conflicts with these files, treat the above
 - If bastion access or rules are unclear, **stop and request approval** before proceeding.
 - Impact Challenge protected codepaths are under extended bastion protection: prefer additive new-code solutions first.
 - Existing Impact Challenge files, routes, score/vote logic, data flows, and workflow glue may be edited only with explicit approval, and only when no equally good additive option exists.
+- The full canonical reference state for Impact Challenge is `docs/impact-challenge-canonical-baseline.md`; any unapproved drift from it must be treated as regression.
 - Protected file módosítás előtt kötelező: koherencia vizsgálat, kockázatelemzés, érintett funkciólista.
 - Protected file módosítás után kötelező: funkció-ellenőrzési lista + külön kézi UI checklist a megrendelőnek.
 - Részletes eljárás: `docs/protected-file-change-checklist.md`

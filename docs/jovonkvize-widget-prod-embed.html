@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jövőnk Vize – Adománygyűjtő widget (production embed)</title>
+  <style>
+    body {
+      background: #030c24;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 16px;
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
+    #jovonkvize-adomany-widget {
+      width: 100%;
+      max-width: 560px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       JÖVŐNK VIZE – Adománygyűjtő widget
+       Ezt a két sort kell a jovonkvize.hu oldalon beilleszteni oda,
+       ahol a widget megjelenjen.
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <div id="jovonkvize-adomany-widget"></div>
+
+  <script
+    src="https://app.sharity.hu/wp-content/mu-plugins/impactshop-event-donation-widget-jovonkvize.js?v=1.5.4"
+    data-impact-campaign-widget
+    data-campaign="jovonkvize-2026"
+    data-target="#jovonkvize-adomany-widget"
+    data-api-base="https://app.sharity.hu/wp-json/impact/v1/event-campaigns"
+    data-poll-ms="30000"
+    defer
+  ></script>
+
+</body>
+</html>

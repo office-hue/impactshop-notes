@@ -38,5 +38,5 @@ Fejlesztői és QA teszteléshez a Hatás Körök oldal kapott explicit teszt ü
 ```
 
 ```text
-/impact-challenge/ngo-admin/?ic_test_mode=1&impact_pseudo_id=TESTUSER01&impact_ngo_slug=bator-tabor-alapitvany
+/ngo-admin/?ic_test_mode=1&impact_pseudo_id=TESTUSER01&impact_ngo_slug=bator-tabor-alapitvany
 ```
