@@ -38,13 +38,13 @@ CONF="$HOME/.ssh/config"
 touch "$CONF"; chmod 600 "$CONF"
 # cseréljük az elgépelést (yesHost → HostName)
 perl -0777 -pe 's/^\s*yesHost\s+/  HostName /gmi' -i "$CONF"
-# ha nincs cp40 blokk, adjuk hozzá; ha van, fűzzük ki a minimális mezőket
-if ! grep -qE '^Host\s+cp40\.ezit\.hu\s*$' "$CONF"; then
+# ha nincs s59 blokk, adjuk hozzá; ha van, fűzzük ki a minimális mezőket
+if ! grep -qE '^Host\s+s59\.tarhely\.com\s*$' "$CONF"; then
   cat >>"$CONF" <<EOF
-Host cp40.ezit.hu
-  HostName cp40.ezit.hu
+Host s59.tarhely.com
+  HostName s59.tarhely.com
   User sharityh
-  IdentityFile ~/.ssh/id_ed25519
+  IdentityFile ~/.ssh/id_ed25519_s59
   AddKeysToAgent yes
   UseKeychain yes
   IdentitiesOnly yes

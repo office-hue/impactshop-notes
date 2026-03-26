@@ -1,3 +1,8 @@
+## 2026-03-26 cp40 host references kivezetése az aktív útvonalakból
+- Production deploy env: `s59.tarhely.com`
+- Operatív helper script/SSH config példa: `bin/staging-rest-fix.sh`, `bin/impactctl-resume.sh`
+- Operatív runbook/doksi: `docs/ai-agent-roadmap.md`, `docs/coupon-harvester.md`
+
 ## 2026-03-26 Hatás Körök memory loader hardening
 - `scripts/hatas-korok-load-memory.sh`: a pre-task most csak `dev-memory,work-memory` rétegeket kérdez, `dev` budgettel
 - A helper fail-open: memory hiba esetén warninggal továbbmegy, nem blokkolja a memo/context generálást

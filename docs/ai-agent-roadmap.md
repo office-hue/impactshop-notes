@@ -107,15 +107,15 @@ Az alábbi feladatterv lépésről lépésre végigvezeti a Playwright scraper, 
    - Feature branch → `hardening/prod-guard-baseline` rebase → `npm run build` az `ai-agent/` gyökérben.
    - Generálj release taget: `git tag ai-agent-milestone-T2.10` (példa), push + release notes.
 2. **Staging deploy**
-   - `./impactctl deploy ai-agent --env=staging` (ha script elérhető) vagy manuális `rsync` a cp40 szerverre (`/home/sharityh/ai-agent-staging`).
-   - Futtasd: `ssh sharityh@cp40.ezit.hu "cd ~/ai-agent-staging && npm run start:staging"`.
+   - `./impactctl deploy ai-agent --env=staging` (ha script elérhető) vagy manuális `rsync` az `s59` szerverre (`/home/sharityh/ai-agent-staging`).
+   - Futtasd: `ssh sharityh@s59.tarhely.com "cd ~/ai-agent-staging && npm run start:staging"`.
    - Guardok: `~/bin/impactall`, `~/Documents/GitHub/.codex/guards/ai-agent-guard.sh`.
 3. **QA ellenőrzőlista**
    - `/healthz` JSON feature flags.
    - Chat endpoint: `curl -X POST https://<staging>/api/v1/chat/command -d '{"query":"mutass decathlon kupont"}'` – ellenőrizd az új `source` mezőket.
    - Logs: `.codex/logs/arukereso-playwright.cron.log`, `.codex/logs/gmail-promotions.cron.log`, `tmp/gmail-promotions-invalid.json` mérete.
 4. **Production deploy**
-   - Cache flush: `ssh sharityh@cp40.ezit.hu "/usr/local/bin/wp --path=/home/sharityh/app impactshop cache:flush"` (ha a feedet a WP szolgálja ki).
+   - Cache flush: `ssh sharityh@s59.tarhely.com "/usr/local/bin/wp --path=/home/sharityh/app impactshop cache:flush"` (ha a feedet a WP szolgálja ki).
    - `impactctl deploy ai-agent --env=production` → `aiagentall` + `impactall` megerősítés.
 5. **Rollback terv**
    - Mentsd a korábbi release artefaktot `releases/ai-agent-<timestamp>.tar.gz` néven.
