@@ -6453,3 +6453,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - fix: eager `loadAutoBanner()` eltávolítva, a legacy banner completion pedig visszaadja a kontrollt a playernek
 - verzió: `2.5.31`
 - live ellenőrzés: Playwright snapshoton újra látszik a `▶ Reklám megtekintése` gomb mobil viewporton is
+
+## 2026-03-26 — Ads Watch 8 ikonos nav REVERT, Safari JS fixek megtartva
+- git + Time Machine összevetés alapján a fő vizuális regressziót a 2026-03-26 22:03–22:10 közötti 8 ikonos nav rewrite hozta be
+- `impactshop-ads-watch.php` és `impactshop-ads-watch.css` visszaállítva a korábbi 4 gombos floating nav állapotra
+- `impactshop-ads-watch.js` Safari external return recovery fixei változatlanul maradtak
+- verzió: `2.5.32`
+- live ellenőrzés: mobil snapshoton 4 gombos nav + látható `Reklám megtekintése` gomb

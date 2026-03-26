@@ -472,3 +472,9 @@ PHP lint ok for identity/gamification modules
 - legacy `loadAutoBanner()` completion now hides the banner and returns control to the start state instead of chaining forever.
 - `impactshop-ads-watch.php`: version bumped to `2.5.31`.
 - Live verification: desktop and mobile Playwright snapshots again show `▶ Reklám megtekintése` on `/impact-challenge/`.
+
+## 2026-03-26 — Ads Watch nav revert, Safari fixes retained
+- Reverted the 8-icon Ads Watch floating nav back to the earlier 4-button layout in `impactshop-ads-watch.php` and `impactshop-ads-watch.css`.
+- Kept the later Safari external-tab recovery logic in `impactshop-ads-watch.js`.
+- `impactshop-ads-watch` asset version bumped to `2.5.32`.
+- Live verification: `/impact-challenge/` now references `impactshop-ads-watch.css?ver=2.5.32` and the mobile snapshot again shows 4 nav buttons plus visible `Reklám megtekintése`.
