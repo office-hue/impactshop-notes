@@ -7,11 +7,17 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - Teljes repo-scan/rsync **tiltott** külön jóváhagyás nélkül.
 - Védett fájlok módosítása csak indoklással, snapshot + egykattintásos rollbackkel.
 - Deploy előtt ellenőrizd a working tree tisztaságát.
+- Impact Challenge esetén a deploy előfeltétele, hogy a módosítás additív új kód legyen, vagy külön jóváhagyott legacy touch.
 
 ## Deploy policy (gyors, kötelező minimum)
 - **Deploy parancs**: mindig `bin/impactshop-guard-deploy.sh` (runbook szerint).
 - **Uncommitted changes**: **block**. Kivétel csak külön engedéllyel.
 - **Target útvonalak**: `.deploy.staging.env` + `.deploy.production.env` az igazság.
+- **Protected Impact Challenge files**: deploy előtt célzott backup kötelező, deploy után fizikai read-only visszazárás kötelező.
+- **Canonical baseline**: Impact Challenge deploy esetén a referenciaállapot a `docs/impact-challenge-canonical-baseline.md`; ettől való eltérés csak explicit jóváhagyással vihető ki.
+- **Guide rendszer**: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` teljes subtree csak explicit engedéllyel deployolható; guide tartalmat felülíró automatika vagy hallgatólagos sync tiltott.
+- **Legacy touch**: ha védett meglévő Impact Challenge fájlt módosítasz, a deploy naplóban szerepelnie kell az explicit engedélynek és az indoknak.
+- **Protected-file change review**: deploy előtt kötelező a koherencia vizsgálat, kockázatelemzés, érintett funkciólista és a kézi UI checklist megléte.
 
 ## Kulcs helyek
 - Staging env: `.deploy.staging.env`
@@ -32,6 +38,13 @@ IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \
 ```
 
 Production mapping deploy után a `bin/deploy-wpcontent-map.sh` automatikusan lefuttatja a `scripts/hatas-korok-post-deploy-smoke.sh` read-only ellenőrzést, ha a script elérhető és a `PREFLIGHT_BASE_URL` be van állítva.
+
+## Merge / push / deploy kapu Impact Challenge esetén
+
+- Push előtt a PR/commit leírásnak egyértelműen tartalmaznia kell, hogy additív új kód vagy jóváhagyott legacy módosítás történt.
+- Merge csak akkor mehet, ha a PR body tartalmazza a bástyavédelmi és írásvédettségi megfelelést.
+- Deploy csak akkor mehet, ha backup + rollback útvonal rögzített, és a védett fájlok deploy utáni read-only visszaállítása része a lépéssornak.
+- Protected-file deploy csak akkor mehet, ha előre rögzített, hogy mely funkciókat kell utána ellenőrizni, és a felhasználónak külön UI checklist készül.
 
 ## Quick rollback (guard snapshot)
 A deploy kimenetében megjelenik a snapshot azonosító. Visszaállítás:
