@@ -2058,7 +2058,7 @@ function ic_rest_auth_status(WP_REST_Request $req): WP_REST_Response {
         'pseudo_id'     => $pseudo,
         'test_mode'     => $test_mode,
         'ngo_slug'      => $test_mode ? ic_test_mode_requested_ngo_slug($req) : '',
-        'ngo_admin_url' => site_url('/ngo-admin/'),
+        'ngo_admin_url' => site_url('/impact-shop_ngo/'),
     ]);
 }
 
@@ -2647,7 +2647,7 @@ function ic_app_template_redirect(): void {
     $pseudo  = ic_get_pseudo_id();
     $test_mode = ic_test_mode_enabled();
     $test_ngo_slug = $test_mode ? ic_test_mode_requested_ngo_slug() : '';
-    $ngo_admin_url = site_url('/ngo-admin/');
+    $ngo_admin_url = site_url('/impact-shop_ngo/');
 
     global $wp_query;
     if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
@@ -2657,33 +2657,6 @@ function ic_app_template_redirect(): void {
     header('Content-Type: text/html; charset=UTF-8');
 
     require __DIR__ . '/impact-community-app.php';
-    exit;
-}
-
-add_action('template_redirect', 'ic_ngo_admin_template_redirect', 4);
-
-function ic_ngo_admin_template_redirect(): void {
-    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
-    if (!preg_match('~^/ngo-admin/?(\?.*)?$~', $uri)) {
-        return;
-    }
-
-    require_once __DIR__ . '/impact-community-app.php';
-
-    if (!function_exists('ic_render_ngo_admin')) {
-        status_header(500);
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo 'NGO admin renderer unavailable.';
-        exit;
-    }
-
-    global $wp_query;
-    if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
-        $wp_query->is_404 = false;
-    }
-    status_header(200);
-    header('Content-Type: text/html; charset=UTF-8');
-    echo ic_render_ngo_admin();
     exit;
 }
 
@@ -4767,7 +4740,7 @@ function ic_rest_ngo_reset_request( WP_REST_Request $req ): WP_REST_Response {
             [ 'reset_token' => $token, 'reset_expires' => $expires ],
             [ 'id' => (int) $account->id ]
         );
-        $reset_url = site_url( '/ngo-admin/?reset=' . rawurlencode( $token ) );
+        $reset_url = site_url( '/impact-shop_ngo/?reset=' . rawurlencode( $token ) );
         wp_mail(
             $email,
             __( 'ImpactShop NGO — jelszó visszaállítás', 'ic' ),

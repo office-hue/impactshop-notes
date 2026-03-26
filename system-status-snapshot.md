@@ -456,3 +456,8 @@ PHP lint ok for identity/gamification modules
 - ic_ngo_admin_template_redirect() hozzáadva: /ngo-admin/ route kezelés
 - impact-community-app.php guard refactored (NGO admin MU-init safe)
 - PHP lint: OK, branch: feat/jovonkvize-ticket-count
+
+## 2026-03-26 — IC canonical restore (REVERT bf227d9e → 10c9930d state)
+- impact-community.php restored to 10c9930d canonical
+- impact-community-app.php restored to 10c9930d canonical
+- Reverted: ic_ngo_admin_template_redirect, guard refactor, /ngo-admin/ URLs
