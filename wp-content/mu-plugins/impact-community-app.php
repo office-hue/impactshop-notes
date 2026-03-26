@@ -3,7 +3,7 @@
  * Impact Community — Hatás Körök Frontend Application Template
  *
  * Rendered by impact-community.php template_redirect.
- * Variables available: $api_url, $nonce, $pseudo
+ * Variables available: $api_url, $nonce, $pseudo, $test_mode, $test_ngo_slug, $ngo_admin_url
  */
 // Guard: csak akkor futtatjuk, ha a template_redirect explicit include-olja
 // ($api_url be van állítva). MU-plugin load közben $api_url nincs → return.
@@ -158,6 +158,70 @@ a:hover { text-decoration: underline; }
 .ic-status.info { background: var(--blue-light); color: var(--blue); }
 .ic-status.success { background: var(--teal-bg); color: var(--teal-dark); }
 .ic-status.error { background: var(--coral-light); color: var(--coral); }
+
+.ic-test-panel {
+    background: linear-gradient(135deg, #fff7ed, #fffbeb);
+    border: 1px solid #fdba74;
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+}
+
+.ic-test-panel-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.ic-test-panel-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+}
+
+.ic-test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.ic-test-field label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.ic-test-field input {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: var(--radius-sm);
+    border: 1px solid #fdba74;
+    background: #fff;
+    font-size: 14px;
+}
+
+.ic-test-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ic-test-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 13px;
+    font-weight: 600;
+}
 
 /* ================================================================
    Circles Grid
@@ -947,6 +1011,10 @@ a:hover { text-decoration: underline; }
     const API = <?php echo wp_json_encode(esc_url_raw($api_url)); ?>;
     let NONCE = <?php echo wp_json_encode($nonce); ?>;
     const HAS_PSEUDO = <?php echo $pseudo ? 'true' : 'false'; ?>;
+    const TEST_MODE = <?php echo !empty($test_mode) ? 'true' : 'false'; ?>;
+    const CURRENT_PSEUDO = <?php echo wp_json_encode((string) ($pseudo ?? '')); ?>;
+    const CURRENT_NGO_SLUG = <?php echo wp_json_encode((string) ($test_ngo_slug ?? '')); ?>;
+    const NGO_ADMIN_URL = <?php echo wp_json_encode((string) ($ngo_admin_url ?? site_url('/impact-challenge/ngo-admin/'))); ?>;
     const MAX_BODY = <?php echo IC_MAX_BODY_LENGTH; ?>;
 
     const $content = document.getElementById('ic-content');
@@ -1026,7 +1094,71 @@ a:hover { text-decoration: underline; }
             case 'mine':    renderCircles(state.myCircles, true); break;
             case 'circle':  renderCircleDetail(); break;
         }
+        if (TEST_MODE) {
+            renderTestPanel();
+        }
         updateNav();
+    }
+
+    function renderTestPanel() {
+        const panel = html('div', {className: 'ic-test-panel'});
+        panel.appendChild(html('div', {className: 'ic-test-panel-title'}, 'Teszt uzem aktiv'));
+        panel.appendChild(html('p', {className: 'ic-test-panel-sub'},
+            'Pseudo ID-val szabadon valthatsz identitast, tagsag nelkul posztolhatsz, es NGO admin nezetet is nyithatsz.'));
+
+        const grid = html('div', {className: 'ic-test-grid'});
+
+        const pseudoField = html('div', {className: 'ic-test-field'});
+        pseudoField.appendChild(html('label', {for: 'ic-test-pseudo'}, 'Pseudo ID'));
+        pseudoField.appendChild(html('input', {
+            id: 'ic-test-pseudo',
+            type: 'text',
+            value: CURRENT_PSEUDO,
+            placeholder: 'TESTUSER01',
+        }));
+        grid.appendChild(pseudoField);
+
+        const ngoField = html('div', {className: 'ic-test-field'});
+        ngoField.appendChild(html('label', {for: 'ic-test-ngo'}, 'NGO slug'));
+        ngoField.appendChild(html('input', {
+            id: 'ic-test-ngo',
+            type: 'text',
+            value: CURRENT_NGO_SLUG,
+            placeholder: 'bator-tabor-alapitvany',
+        }));
+        grid.appendChild(ngoField);
+
+        panel.appendChild(grid);
+
+        const actions = html('div', {className: 'ic-test-actions'});
+        actions.appendChild(html('button', {
+            className: 'ic-btn ic-btn-primary',
+            onClick: () => applyTestIdentity(false),
+        }, 'Teszt identity csere'));
+        actions.appendChild(html('button', {
+            className: 'ic-btn ic-btn-outline',
+            onClick: () => applyTestIdentity(true),
+        }, 'NGO admin megnyitasa'));
+        panel.appendChild(actions);
+        $content.prepend(panel);
+    }
+
+    function applyTestIdentity(openNgoAdmin) {
+        const pseudoInput = document.getElementById('ic-test-pseudo');
+        const ngoInput = document.getElementById('ic-test-ngo');
+        const pseudo = (pseudoInput?.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+        const ngo = (ngoInput?.value || '').trim().toLowerCase();
+        const next = new URL(openNgoAdmin ? NGO_ADMIN_URL : window.location.href, window.location.origin);
+        next.searchParams.set('ic_test_mode', '1');
+        if (pseudo) next.searchParams.set('impact_pseudo_id', pseudo);
+        else next.searchParams.delete('impact_pseudo_id');
+        if (ngo) next.searchParams.set('impact_ngo_slug', ngo);
+        else next.searchParams.delete('impact_ngo_slug');
+        if (openNgoAdmin) {
+            window.open(next.toString(), '_blank', 'noopener');
+            return;
+        }
+        window.location.href = next.toString();
     }
 
     function updateNav() {
@@ -1208,6 +1340,13 @@ a:hover { text-decoration: underline; }
         if (!HAS_PSEUDO) {
             actions.appendChild(html('span', {className: 'ic-auth-prompt'},
                 'Böngéssz még az oldalon, hogy csatlakozhass! 🌱'));
+        } else if (TEST_MODE && !c.is_member) {
+            actions.appendChild(html('span', {className: 'ic-test-hint'},
+                'Teszt módban tagság nélkül is posztolhatsz és szavazhatsz.'));
+            actions.appendChild(html('button', {
+                className: 'ic-btn ic-btn-outline',
+                onClick: () => joinCircle(c.id),
+            }, '✋ Csatlakozom'));
         } else if (c.is_member) {
             const leaveBtn = html('button', {
                 className: 'ic-btn ic-btn-danger',
@@ -1231,9 +1370,10 @@ a:hover { text-decoration: underline; }
         $content.appendChild(hdr);
 
         // Composer (only if member)
-        if (c.is_member && HAS_PSEUDO) {
+        if ((c.is_member || TEST_MODE) && HAS_PSEUDO) {
             const composer = html('div', {className: 'ic-composer'});
-            composer.appendChild(html('div', {className: 'ic-composer-label'}, `Írj posztot ${c.my_alias} néven:`));
+            const composerAlias = c.my_alias || 'teszt identitásként';
+            composer.appendChild(html('div', {className: 'ic-composer-label'}, `Írj posztot ${composerAlias} néven:`));
 
             // Intent selector pills
             const intentLabel = html('div', {className: 'ic-intent-label'}, 'Mit szeretnél megosztani?');
@@ -2036,6 +2176,9 @@ if (!function_exists('ic_render_ngo_admin')) {
 add_shortcode( 'impact_community_ngo_admin', 'ic_render_ngo_admin' );
 function ic_render_ngo_admin(): string {
     $api = esc_js( trailingslashit( get_rest_url() ) . 'ic/v1' );
+    $test_mode = function_exists('ic_test_mode_enabled') ? ic_test_mode_enabled() : false;
+    $test_pseudo = $test_mode && function_exists('ic_get_pseudo_id') ? ic_get_pseudo_id() : '';
+    $test_ngo_slug = $test_mode && function_exists('ic_test_mode_requested_ngo_slug') ? ic_test_mode_requested_ngo_slug() : '';
     ob_start();
     ?>
 <!DOCTYPE html>
@@ -2194,8 +2337,12 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
     const API = '<?php echo $api; ?>';
     const SK  = 'ic_ngo_token';
     const SL  = 'ic_ngo_slug';
+    const TEST_MODE = <?php echo $test_mode ? 'true' : 'false'; ?>;
+    const TEST_PSEUDO = <?php echo wp_json_encode((string) $test_pseudo); ?>;
+    const TEST_NGO_SLUG = <?php echo wp_json_encode((string) $test_ngo_slug); ?>;
 
     let state = { token: sessionStorage.getItem(SK), slug: sessionStorage.getItem(SL), channel: null };
+    let disableTestAutologin = false;
 
     /* ── helpers ─────────────────────────────────────────────────────────── */
     function show(id)  { document.getElementById(id).style.display = ''; }
@@ -2221,11 +2368,37 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
     }
 
     /* ── routing ─────────────────────────────────────────────────────────── */
-    function route() {
+    async function maybeTestLogin() {
+        if (!TEST_MODE || disableTestAutologin) {
+            return false;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const pseudo = (params.get('impact_pseudo_id') || TEST_PSEUDO || '').trim();
+        const ngoSlug = (params.get('impact_ngo_slug') || TEST_NGO_SLUG || '').trim();
+        if (!pseudo || !ngoSlug) {
+            return false;
+        }
+
+        const r = await api('POST', '/ngo/login', { pseudo_id: pseudo, ngo_slug: ngoSlug });
+        if (!r.ok) {
+            return false;
+        }
+        state.token = r.data.token;
+        state.slug  = r.data.ngo_slug;
+        sessionStorage.setItem(SK, state.token);
+        sessionStorage.setItem(SL, state.slug);
+        return true;
+    }
+
+    async function route() {
         hide('ica-screen-login');
         hide('ica-screen-reset');
         hide('ica-screen-dashboard');
         if (state.token) {
+            show('ica-screen-dashboard');
+            loadDashboard();
+        } else if (await maybeTestLogin()) {
             show('ica-screen-dashboard');
             loadDashboard();
         } else {
@@ -2282,6 +2455,7 @@ body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var
 
     /* ── logout ──────────────────────────────────────────────────────────── */
     document.getElementById('ica-logout-btn').addEventListener('click', () => {
+        disableTestAutologin = true;
         state.token = null; state.slug = null;
         sessionStorage.removeItem(SK); sessionStorage.removeItem(SL);
         route();

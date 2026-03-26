@@ -27,6 +27,7 @@ define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
 define('IC_CIRCLES_PER_PAGE', 30);
 define('IC_RATE_LIMIT_POSTS_PER_HOUR', 5);
+define('IMPACT_COMMUNITY_TEST_MODE_COOKIE', 'impact_community_test_mode');
 
 /* =========================================================================
    1. Impact Alias — deterministic alias from pid_hash + circle_id
@@ -69,7 +70,169 @@ final class IC_Alias {
    2. Helpers
    ========================================================================= */
 
+function ic_boolish($value): bool {
+    if (is_bool($value)) {
+        return $value;
+    }
+    if ($value === null) {
+        return false;
+    }
+    $normalized = strtolower(trim((string) $value));
+    return in_array($normalized, ['1', 'true', 'yes', 'on', 'enabled'], true);
+}
+
+function ic_test_mode_configured(): bool {
+    static $enabled = null;
+    if ($enabled !== null) {
+        return $enabled;
+    }
+
+    if (defined('IMPACT_COMMUNITY_TEST_MODE')) {
+        return $enabled = ic_boolish(IMPACT_COMMUNITY_TEST_MODE);
+    }
+
+    $raw = getenv('IMPACT_COMMUNITY_TEST_MODE');
+    if ($raw === false || $raw === '') {
+        $raw = getenv('PIN_TEST_MODE');
+    }
+
+    return $enabled = ic_boolish($raw);
+}
+
+function ic_test_mode_set_cookie(bool $enabled): void {
+    if (headers_sent()) {
+        return;
+    }
+
+    $secure = is_ssl();
+    $expires = $enabled ? time() + DAY_IN_SECONDS : time() - HOUR_IN_SECONDS;
+    $value = $enabled ? '1' : '0';
+
+    if (PHP_VERSION_ID >= 70300) {
+        setcookie(IMPACT_COMMUNITY_TEST_MODE_COOKIE, $value, [
+            'expires'  => $expires,
+            'path'     => '/',
+            'secure'   => $secure,
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+    } else {
+        setcookie(IMPACT_COMMUNITY_TEST_MODE_COOKIE, $value, $expires, '/; samesite=Lax', '', $secure, false);
+    }
+
+    $_COOKIE[IMPACT_COMMUNITY_TEST_MODE_COOKIE] = $value;
+}
+
+function ic_test_mode_capture_request(): void {
+    if (isset($_GET['ic_test_mode'])) {
+        ic_test_mode_set_cookie(ic_boolish($_GET['ic_test_mode']));
+    }
+}
+
+add_action('init', 'ic_test_mode_capture_request', 2);
+
+function ic_test_mode_enabled(): bool {
+    if (ic_test_mode_configured()) {
+        return true;
+    }
+
+    if (isset($_GET['ic_test_mode']) && ic_boolish($_GET['ic_test_mode'])) {
+        return true;
+    }
+
+    if (isset($_SERVER['HTTP_X_IMPACT_TEST_MODE']) && ic_boolish($_SERVER['HTTP_X_IMPACT_TEST_MODE'])) {
+        return true;
+    }
+
+    return ic_boolish($_COOKIE[IMPACT_COMMUNITY_TEST_MODE_COOKIE] ?? '');
+}
+
+function ic_normalize_test_pseudo($value): string {
+    if (function_exists('impactshop_identity_normalize_pseudo')) {
+        return impactshop_identity_normalize_pseudo($value);
+    }
+    return strtoupper(substr(preg_replace('~[^A-Za-z0-9]~', '', (string) $value), 0, 12));
+}
+
+function ic_test_mode_requested_pseudo(?WP_REST_Request $req = null): string {
+    $candidates = [];
+
+    if ($req) {
+        $candidates[] = $req->get_param('pseudo_id');
+        $candidates[] = $req->get_param('impact_pseudo_id');
+        $candidates[] = $req->get_header('X-Impact-Pseudo-Id');
+        $candidates[] = $req->get_header('X-Pseudo-Id');
+    }
+
+    $candidates[] = $_GET['impact_pseudo_id'] ?? null;
+    $candidates[] = $_GET['pseudo_id'] ?? null;
+    $candidates[] = $_SERVER['HTTP_X_IMPACT_PSEUDO_ID'] ?? null;
+    $candidates[] = $_SERVER['HTTP_X_PSEUDO_ID'] ?? null;
+
+    foreach ($candidates as $candidate) {
+        $pseudo = ic_normalize_test_pseudo($candidate);
+        if ($pseudo !== '') {
+            return $pseudo;
+        }
+    }
+
+    return '';
+}
+
+function ic_test_mode_resolve_ngo_slug(string $candidate = ''): string {
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $candidate = sanitize_title($candidate);
+    if ($candidate !== '') {
+        $exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT ref_slug FROM {$p}ic_circles WHERE type='ngo' AND is_active=1 AND ref_slug=%s LIMIT 1",
+            $candidate
+        ));
+        if ($exists) {
+            return (string) $exists;
+        }
+    }
+
+    $fallback = $wpdb->get_var("SELECT ref_slug FROM {$p}ic_circles WHERE type='ngo' AND is_active=1 ORDER BY id ASC LIMIT 1");
+    return $fallback ? (string) $fallback : '';
+}
+
+function ic_test_mode_requested_ngo_slug(?WP_REST_Request $req = null): string {
+    $candidates = [];
+
+    if ($req) {
+        $candidates[] = $req->get_param('ngo_slug');
+        $candidates[] = $req->get_param('impact_ngo_slug');
+        $candidates[] = $req->get_header('X-Impact-Ngo-Slug');
+    }
+
+    $candidates[] = $_GET['impact_ngo_slug'] ?? null;
+    $candidates[] = $_GET['ngo_slug'] ?? null;
+    if (function_exists('impactshop_active_ngo_slug')) {
+        $candidates[] = impactshop_active_ngo_slug();
+    }
+    $candidates[] = $_COOKIE['impactshop_active_ngo'] ?? null;
+    $candidates[] = $_SERVER['HTTP_X_IMPACT_NGO_SLUG'] ?? null;
+
+    foreach ($candidates as $candidate) {
+        $slug = ic_test_mode_resolve_ngo_slug((string) $candidate);
+        if ($slug !== '') {
+            return $slug;
+        }
+    }
+
+    return ic_test_mode_resolve_ngo_slug('');
+}
+
 function ic_get_pseudo_id(): string {
+    if (ic_test_mode_enabled()) {
+        $override = ic_test_mode_requested_pseudo();
+        if ($override !== '') {
+            return $override;
+        }
+    }
+
     $raw = isset($_COOKIE['impactshop_pseudo_id']) ? sanitize_text_field($_COOKIE['impactshop_pseudo_id']) : '';
     if ($raw === '' || strlen($raw) < 6) {
         return '';
@@ -1148,7 +1311,7 @@ function ic_rest_circle_join(WP_REST_Request $req): WP_REST_Response|WP_Error {
         "SELECT COUNT(*) FROM {$p}ic_memberships WHERE pid_hash=%s AND is_active=1",
         $pid_hash
     ));
-    if ($current_count >= IC_MAX_CIRCLES) {
+    if (!ic_test_mode_enabled() && $current_count >= IC_MAX_CIRCLES) {
         return ic_json_error('Maximum ' . IC_MAX_CIRCLES . ' körhöz csatlakozhatsz.', 422);
     }
 
@@ -1354,30 +1517,37 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     global $wpdb;
     $p   = $wpdb->prefix;
     $cid = (int) $req->get_param('id');
+    $test_mode = ic_test_mode_enabled();
 
     // Membership check
-    $is_member = (int) $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(*) FROM {$p}ic_memberships WHERE circle_id=%d AND pid_hash=%s AND is_active=1",
-        $cid, $pid_hash
-    ));
-    if (!$is_member) {
-        return ic_json_error('Csak körtagok posztolhatnak.', 403);
+    if (!$test_mode) {
+        $is_member = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_memberships WHERE circle_id=%d AND pid_hash=%s AND is_active=1",
+            $cid, $pid_hash
+        ));
+        if (!$is_member) {
+            return ic_json_error('Csak körtagok posztolhatnak.', 403);
+        }
     }
 
     // §15 Auto-timeout check
-    $timeout_row = $wpdb->get_row($wpdb->prepare(
-        "SELECT timeout_until FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s LIMIT 1",
-        $cid, $pid_hash
-    ));
-    if ($timeout_row && $timeout_row->timeout_until && strtotime($timeout_row->timeout_until) > time()) {
-        $until = date_i18n(get_option('date_format'), strtotime($timeout_row->timeout_until));
-        return ic_json_error("Fiókod átmenetileg korlátozva van {$until}-ig.", 403);
+    if (!$test_mode) {
+        $timeout_row = $wpdb->get_row($wpdb->prepare(
+            "SELECT timeout_until FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s LIMIT 1",
+            $cid, $pid_hash
+        ));
+        if ($timeout_row && $timeout_row->timeout_until && strtotime($timeout_row->timeout_until) > time()) {
+            $until = date_i18n(get_option('date_format'), strtotime($timeout_row->timeout_until));
+            return ic_json_error("Fiókod átmenetileg korlátozva van {$until}-ig.", 403);
+        }
     }
 
     // Rate limit: 5 posts/hour
-    $rate_key = 'ic_post_rate:' . $pid_hash;
-    if (!ic_rate_check($rate_key, IC_RATE_LIMIT_POSTS_PER_HOUR, 3600)) {
-        return ic_json_error('Túl sok posztot küldtél. Próbáld újra később.', 429);
+    if (!$test_mode) {
+        $rate_key = 'ic_post_rate:' . $pid_hash;
+        if (!ic_rate_check($rate_key, IC_RATE_LIMIT_POSTS_PER_HOUR, 3600)) {
+            return ic_json_error('Túl sok posztot küldtél. Próbáld újra később.', 429);
+        }
     }
 
     $body = trim(sanitize_textarea_field($req->get_param('body') ?? ''));
@@ -1394,7 +1564,7 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     }
 
     // § Sprint 11 — Decision Post: V1 NGO admin only
-    if ($post_type === 'decision') {
+    if ($post_type === 'decision' && !$test_mode) {
         $ngo_auth = ic_ngo_auth_from_header();
         if (!$ngo_auth) {
             return ic_json_error('Decision Posztot csak NGO admin tölthet fel (V1).', 403);
@@ -1408,7 +1578,7 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     }
 
     // Trust-level URL block: trust_level < 1 cannot post links
-    if ($post_type === 'link' || (bool) preg_match('/https?:\/\//i', $body)) {
+    if (!$test_mode && ($post_type === 'link' || (bool) preg_match('/https?:\/\//i', $body))) {
         $trust_level = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT trust_level FROM {$p}ic_member_trust WHERE circle_id=%d AND pid_hash=%s",
             $cid, $pid_hash
@@ -1435,7 +1605,7 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
     // § Toxicity friction: soft block with slow_mode flag
     // § Sprint 14 — intention bypass: if user explicitly provides their intent, allow through
     $intention = sanitize_text_field($req->get_param('intention') ?? '');
-    if (ic_check_toxicity($body) && $intention === '') {
+    if (!$test_mode && ic_check_toxicity($body) && $intention === '') {
         do_action('ic_toxicity_friction', $cid, $pid_hash, $body);
         return new WP_REST_Response([
             'success'   => false,
@@ -1539,6 +1709,7 @@ function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
     $p       = $wpdb->prefix;
     $cid     = (int) $req->get_param('circle_id');
     $post_id = (int) $req->get_param('post_id');
+    $test_mode = ic_test_mode_enabled();
 
     $post = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM {$p}ic_posts WHERE id=%d AND circle_id=%d AND is_deleted=0",
@@ -1548,12 +1719,14 @@ function ic_rest_post_vote(WP_REST_Request $req): WP_REST_Response|WP_Error {
         return ic_json_error('Poszt nem található.', 404);
     }
 
-    $is_member = (int) $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(*) FROM {$p}ic_memberships WHERE circle_id=%d AND pid_hash=%s AND is_active=1",
-        $cid, $pid_hash
-    ));
-    if (!$is_member) {
-        return ic_json_error('Csak körtagok szavazhatnak.', 403);
+    if (!$test_mode) {
+        $is_member = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$p}ic_memberships WHERE circle_id=%d AND pid_hash=%s AND is_active=1",
+            $cid, $pid_hash
+        ));
+        if (!$is_member) {
+            return ic_json_error('Csak körtagok szavazhatnak.', 403);
+        }
     }
 
     // Can't vote own post
@@ -1876,11 +2049,16 @@ function ic_rest_post_delete(WP_REST_Request $req): WP_REST_Response|WP_Error {
 function ic_rest_auth_status(WP_REST_Request $req): WP_REST_Response {
     $pseudo = ic_get_pseudo_id();
     $pid_hash = ic_pid_hash($pseudo);
+    $test_mode = ic_test_mode_enabled();
 
     return ic_json_ok([
         'authenticated' => $pseudo !== '',
         'pid_hash'      => $pid_hash ? substr($pid_hash, 0, 8) . '...' : '',
         'nonce'         => wp_create_nonce('wp_rest'),
+        'pseudo_id'     => $pseudo,
+        'test_mode'     => $test_mode,
+        'ngo_slug'      => $test_mode ? ic_test_mode_requested_ngo_slug($req) : '',
+        'ngo_admin_url' => site_url('/impact-challenge/ngo-admin/'),
     ]);
 }
 
@@ -2467,6 +2645,9 @@ function ic_app_template_redirect(): void {
     $api_url = rest_url('impact/v1');
     $nonce   = wp_create_nonce('wp_rest');
     $pseudo  = ic_get_pseudo_id();
+    $test_mode = ic_test_mode_enabled();
+    $test_ngo_slug = $test_mode ? ic_test_mode_requested_ngo_slug() : '';
+    $ngo_admin_url = site_url('/impact-challenge/ngo-admin/');
 
     global $wp_query;
     if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
@@ -4485,6 +4666,28 @@ function ic_ngo_guard( WP_REST_Request $req ) {
 
 /** POST /ngo/login */
 function ic_rest_ngo_login( WP_REST_Request $req ): WP_REST_Response {
+    if (ic_test_mode_enabled()) {
+        $pseudo = ic_test_mode_requested_pseudo($req);
+        $ngo_slug = ic_test_mode_requested_ngo_slug($req);
+
+        if ($pseudo !== '' && $ngo_slug !== '') {
+            if (function_exists('impactshop_identity_set_pseudo_cookie')) {
+                impactshop_identity_set_pseudo_cookie($pseudo);
+            }
+            if (function_exists('impactshop_active_ngo_set_cookie')) {
+                impactshop_active_ngo_set_cookie($ngo_slug);
+            }
+
+            $token = ic_ngo_generate_token($ngo_slug);
+            return new WP_REST_Response([
+                'token'     => $token,
+                'ngo_slug'  => $ngo_slug,
+                'pseudo_id' => $pseudo,
+                'test_mode' => true,
+            ], 200);
+        }
+    }
+
     global $wpdb;
     $p        = $wpdb->prefix;
     $email    = sanitize_email( (string) $req->get_param( 'email' ) );
