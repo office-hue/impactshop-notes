@@ -134,9 +134,6 @@
         initChallengeCountdown();
         loadUserStatus();
         scheduleTallyLoad();
-        if (!state.unifiedDisplay) {
-            loadAutoBanner();
-        }
     });
 
     function initIdentityBridge() {
@@ -3349,7 +3346,15 @@
                 watchReward: '+1 pont, +1 szavazat',
                 clickReward: '+5 pont, +5 szavazat'
             });
-            startBannerProgress($banner, { duration: 5000, onComplete: loadAutoBanner });
+            startBannerProgress($banner, {
+                duration: 5000,
+                onComplete: function () {
+                    state.currentAutoBanner = null;
+                    $banner.prop('hidden', true);
+                    updateWatchButton();
+                    hideVideoInfoPanel();
+                }
+            });
         }).fail(function () {
             $banner.prop('hidden', true);
         });
