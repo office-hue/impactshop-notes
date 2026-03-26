@@ -1,3 +1,8 @@
+## 2026-03-26T19:45:00+0100 — fix: impact-community.php ngo_admin_url URL-ek visszaállítva
+- Merge conflict resolution hiba: auto-merge visszaállította `/impact-challenge/ngo-admin/` URL-eket.
+- Javítva: `/impact-shop_ngo/` (sorok: 2058, 2647, 4743 — ngo_admin_url ×2 + reset_url ×1).
+- Production nem érintett (PR #83 még nyitott, nincs deploy).
+
 ## 2026-03-26T19:30:00+0100 — feat/jovonkvize-ticket-count merge: origin/main beolvasztva
 - Konflikció-feloldás: `impact-community.php` test_mode bypass (main) megtartva; `impactshop-event-donation-widget.php` ticket_serials DB oszlop + schema 1.2.0 (feature) megtartva; `impactshop-ngo-guides.php` jogi-dokumentumok route + version 1.1.2 (feature) megtartva.
 - `scripts/hatas-korok-load-memory.sh`: feature branch verzió megtartva.
