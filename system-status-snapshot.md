@@ -1,3 +1,8 @@
+## 2026-03-26 18:45 - Hatás Körök memory loader hardening
+- `scripts/hatas-korok-load-memory.sh`: célzott `dev-memory,work-memory` pre-task rétegek + `dev` budget
+- Memory helper hívások fail-open módra váltva (`pre-task`, `context-pack`, opcionális `full-sync`)
+- Validáció: `bash ./scripts/hatas-korok-load-memory.sh --full-sync --limit 1 --file-limit 1` OK
+
 ## 2026-03-26T15:42:00+0100 — Autobanner/CJ runtime perimeter lezárva
 - A hiányzó WordPress oldali autobanner/CJ runtime rés bekerült a protected körbe: `wp-content/mu-plugins/impactshop-cj.php`.
 - Ezzel a WordPress oldali autobanner runtime/import/rotáció/redirect/CJ bridge körben nincs ismert nyitott pipeline-kódfájl a protected listán kívül.

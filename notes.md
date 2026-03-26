@@ -1,3 +1,8 @@
+## 2026-03-26 Hatás Körök memory loader hardening
+- `scripts/hatas-korok-load-memory.sh`: a pre-task most csak `dev-memory,work-memory` rétegeket kérdez, `dev` budgettel
+- A helper fail-open: memory hiba esetén warninggal továbbmegy, nem blokkolja a memo/context generálást
+- Ellenőrzés: `bash ./scripts/hatas-korok-load-memory.sh --full-sync --limit 1 --file-limit 1` sikeres
+
 ## 2026-03-25 Hatás Körök memory loader
 - Új helper: `scripts/hatas-korok-load-memory.sh`
 - Cél: Hatás Körök route + community + deploy smoke kontextus célzott betöltése az `ai-agent` dev-memory workflow-ba
