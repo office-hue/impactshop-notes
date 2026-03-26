@@ -1,3 +1,13 @@
+## 2026-03-26 20:20 - Hatás Körök test mode
+- új explicit teszt üzem a community backendben és SPA-ban
+- pseudo ID override: `impact_pseudo_id`
+- NGO override: `impact_ngo_slug`
+- teszt módban tagság nélkül is lehet posztolni és szavazni
+- NGO admin oldal pseudo-alapú autologinnal megnyitható
+- production deploy lefutott, standard smoke PASS
+- production validáció: `auth/status` teszt módban `authenticated=true`, `test_mode=true`
+- production validáció: teszt poszt létrehozás + azonnali törlés sikeres
+
 ## 2026-03-26 19:05 - Legacy cp40 host references removed from active ops paths
 - `.deploy.production.env`: production SSH host `s59.tarhely.com`
 - `bin/staging-rest-fix.sh` és `bin/impactctl-resume.sh`: operatív SSH host blokk `s59.tarhely.com`
@@ -45,7 +55,6 @@
 - Új read-only smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
 - Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
 - Ellenőrzési kör: `/hatas-korok`, `auth/status`, `circles?page=1`, HTML bootstrap markerek
-
 ## 2026-03-25 — cert aláírás kép csere (v1.5.3)
 - Pecsétes aláírás lecserélve pecsét nélküli változatra
 - Új kép: bujdoso-alaiiras-2026.png (IMG_3880.HEIC forrás)

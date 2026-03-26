@@ -1,3 +1,10 @@
+## 2026-03-26 Hatás Körök test mode
+- `/hatas-korok` új teszt üzemmód pseudo ID és NGO slug query param támogatással
+- teszt módban nincs körlimit, nincs kötelező tagság posztoláshoz/szavazáshoz
+- NGO admin oldal pseudo-alapú autologint kapott
+- production deploy és smoke lefutott
+- productionön teszt poszt létrehozás + törlés validálva
+
 ## 2026-03-26 cp40 host references kivezetése az aktív útvonalakból
 - Production deploy env: `s59.tarhely.com`
 - Operatív helper script/SSH config példa: `bin/staging-rest-fix.sh`, `bin/impactctl-resume.sh`
@@ -22,7 +29,6 @@
 - Új read-only deploy smoke script: `scripts/hatas-korok-post-deploy-smoke.sh`
 - Új checklist: `docs/hatas-korok-post-deploy-checklist.md`
 - Cél: deploy után gyors route + bootstrap + auth + circles API ellenőrzés, production állapotmódosítás nélkül
-
 ## 2026-03-25 Hatás Körök hotfix
 - `/hatas-korok` production route helyreállítva
 - statikus page route és community template redirect ütközés kezelve
