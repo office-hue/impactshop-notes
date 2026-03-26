@@ -466,3 +466,9 @@ PHP lint ok for identity/gamification modules
 - `impactshop-ads-watch.js` now tracks outbound sponsor CTA / autobanner tab opens and reloads on return when Safari restores the original tab in a bad visual state.
 - `impactshop-ads-watch.php` version bumped to `2.5.30` for Cloudflare/browser cache bust.
 - Live verification: `/impact-challenge/` references `impactshop-ads-watch.js?ver=2.5.30`; direct header check returned `cf-cache-status: MISS`.
+
+## 2026-03-26 — Ads Watch initial banner block fix
+- `impactshop-ads-watch.js`: page init no longer starts the idle auto-banner loop over the player.
+- legacy `loadAutoBanner()` completion now hides the banner and returns control to the start state instead of chaining forever.
+- `impactshop-ads-watch.php`: version bumped to `2.5.31`.
+- Live verification: desktop and mobile Playwright snapshots again show `▶ Reklám megtekintése` on `/impact-challenge/`.

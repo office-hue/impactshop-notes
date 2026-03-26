@@ -6446,3 +6446,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `impactshop-ads-watch.php`: verzió emelve `2.5.30`-ra Cloudflare cache bust miatt
 - Deploy: célzott rsync a production MU-plugin könyvtárba
 - Live check: `/impact-challenge/` már `impactshop-ads-watch.js?ver=2.5.30`-at tölti
+
+## 2026-03-26 — Ads Watch induló autobanner blokkolta a start gombot
+- root cause: oldalbetöltéskor automatikusan indult a `loadAutoBanner()` loop, ami ráült a playerre
+- következmény: a `Reklám megtekintése` gomb mobilon és desktopon sem látszott, az oldal lefagyottnak tűnt
+- fix: eager `loadAutoBanner()` eltávolítva, a legacy banner completion pedig visszaadja a kontrollt a playernek
+- verzió: `2.5.31`
+- live ellenőrzés: Playwright snapshoton újra látszik a `▶ Reklám megtekintése` gomb mobil viewporton is
