@@ -1,6 +1,10 @@
 # Bastion Guard Status
 
-Last updated: 2026-03-26
+Last updated: 2026-03-26 19:45 CET
+
+## 2026-03-26 19:45 — impact-community.php URL fix
+- `ngo_admin_url` és `reset_url` visszaállítva `/impact-shop_ngo/`-ra (merge conflict auto-merge hiba korrigálva).
+- Production nem érintett, PR #83 még nem merge-elt.
 
 ## Purpose
 Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/guard kiterjesztéshez.
