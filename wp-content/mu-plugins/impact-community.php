@@ -2058,7 +2058,7 @@ function ic_rest_auth_status(WP_REST_Request $req): WP_REST_Response {
         'pseudo_id'     => $pseudo,
         'test_mode'     => $test_mode,
         'ngo_slug'      => $test_mode ? ic_test_mode_requested_ngo_slug($req) : '',
-        'ngo_admin_url' => site_url('/impact-challenge/ngo-admin/'),
+        'ngo_admin_url' => site_url('/impact-shop_ngo/'),
     ]);
 }
 
@@ -2647,7 +2647,7 @@ function ic_app_template_redirect(): void {
     $pseudo  = ic_get_pseudo_id();
     $test_mode = ic_test_mode_enabled();
     $test_ngo_slug = $test_mode ? ic_test_mode_requested_ngo_slug() : '';
-    $ngo_admin_url = site_url('/impact-challenge/ngo-admin/');
+    $ngo_admin_url = site_url('/impact-shop_ngo/');
 
     global $wp_query;
     if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
@@ -4740,7 +4740,7 @@ function ic_rest_ngo_reset_request( WP_REST_Request $req ): WP_REST_Response {
             [ 'reset_token' => $token, 'reset_expires' => $expires ],
             [ 'id' => (int) $account->id ]
         );
-        $reset_url = site_url( '/impact-challenge/ngo-admin/?reset=' . rawurlencode( $token ) );
+        $reset_url = site_url( '/impact-shop_ngo/?reset=' . rawurlencode( $token ) );
         wp_mail(
             $email,
             __( 'ImpactShop NGO — jelszó visszaállítás', 'ic' ),

@@ -1,3 +1,9 @@
+## 2026-03-26 20:30 - Hatás Körök NGO admin route fix
+- a teszt módhoz visszaadott `ngo_admin_url` a valós live oldalra mutat: `/impact-shop_ngo/`
+- a reset password link is erre az oldalra mutat
+- production deploy lefutott
+- validáció: `/impact-shop_ngo/?ic_test_mode=1&impact_pseudo_id=TESTUSER01&impact_ngo_slug=bator-tabor-alapitvany` `HTTP 200`
+
 ## 2026-03-26 20:20 - Hatás Körök test mode
 - új explicit teszt üzem a community backendben és SPA-ban
 - pseudo ID override: `impact_pseudo_id`
