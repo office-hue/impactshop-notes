@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-03-25
+Last updated: 2026-03-26
 
 ## Purpose
 Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/guard kiterjesztéshez.
@@ -12,6 +12,9 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-03-26 | `wp-content/mu-plugins/impactshop-cj.php` | A WordPress oldali autobanner + CJ bridge runtime rés bekerült a protected fájlkörbe; ezzel a runtime oldali autobanner/CJ láncban nincs azonosított nyitott pipeline-fájl a protected listán kívül. | `docs/impactshop-guard-config.json`, `system-status-snapshot.md` |
+| 2026-03-26 | Impact Challenge teljes védelmi perem | A bástya védelem és a file-szintű írásvédettségi policy kiterjesztve a teljes Impact Challenge működési körre: ads-watch, auto-banner, offerwall, NGO selector/guides/card, identity, points engine, vote purchase, quarter-close, event donation widget, redirect/go bekötések, PWA és kapcsolódó route/pipeline modulok. Új alapelv rögzítve: elsődlegesen csak additív, új kódos fejlesztés engedett; meglévő védett kódhoz csak külön jóváhagyással és backup+rollback mellett szabad nyúlni. | `docs/impactshop-guard-config.json`, `docs/bastion-protection-extension-plan.md`, `docs/ai-assistant-canonical-policy.md` |
+| 2026-03-25 | impactshop-boot.php: Dognet passthrough + impactshop-cj.php: merge logic | Meglévő impactall `mu-plugins parity` guard figyeli; nincs új guard, kód módosítás meglévő MU modulokon. | `system-status-snapshot.md` 2026-03-25, `notes.md` 2026-03-25, commit `60ee7235` |
 | 2026-03-25 | sharity-meghatalmazas-adomanyigazolas.pdf | Statikus PDF, nincs futtatható kód. Csak olvasható (444). PHP-ból file_exists ellenőrzéssel csatolja a cert emailhez. | `impactshop-event-donation-widget.php` v1.5.2 |
 
 | 2026-03-05 | Baseline policy bevezetés | Safe repo audit kötelezővé teszi az új modulok bastion frissítését | `scripts/safe-repo-audit.sh` |

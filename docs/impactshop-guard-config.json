@@ -86,6 +86,12 @@
       "owner_branch": "ops/adswatch-clean"
     },
     {
+      "path": "wp-content/mu-plugins/impactshop-cj.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
       "path": "wp-content/mu-plugins/impactshop-auto-banner.php",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
@@ -243,6 +249,126 @@
     },
     {
       "path": "wp-content/mu-plugins/sharity-points-webhooks.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/sharity-points-admin.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/sharity-points-notifications.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-ads-watch-quarter.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-vote-purchase.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-vote-purchase.js",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-vote-purchase.css",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-auto-banner-dognet.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-impactad-redirect.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-event-donation-widget.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-event-donation-widget.js",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-event-donation-widget-dev.js",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-event-donation-widget-jovonkvize.js",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-ngo-selector.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-ngo-selector.js",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-ngo-guides.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-cegjelzo.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-pwa.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-pwa-push.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-ayet-offerwall.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "ops/adswatch-clean"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-offerwall-article-quiz.php",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
       "owner_branch": "ops/adswatch-clean"
