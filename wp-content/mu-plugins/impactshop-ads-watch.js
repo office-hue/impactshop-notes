@@ -103,6 +103,11 @@
         adRequestStartTime: 0,
         lastNgoSlugForBanner: '',
         currentAutoBanner: null,
+        externalNavigationPending: false,
+        externalNavigationVisibilityLost: false,
+        externalNavigationStartedAt: 0,
+        externalNavigationReloaded: false,
+        externalNavigationSource: '',
         videoBalanceReady: false,
         videoBalancePointsDisplay: 0,
         videoBalanceVotesDisplay: 0,
@@ -193,6 +198,20 @@
         // Clicks pass through to ad-container, IMA SDK opens URL
         // Points are awarded via onAdClick callback (CLICK event listener)
         document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        // Safari bfcache fix: reload page when restored from back-forward cache
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) {
+                window.location.reload();
+                return;
+            }
+            maybeRecoverFromExternalNavigation('pageshow');
+        });
+        window.addEventListener('focus', function () {
+            window.setTimeout(function () {
+                maybeRecoverFromExternalNavigation('focus');
+            }, 120);
+        });
 
         $('#btn-change-ngo').on('click', openNgoModal);
         $('#modal-close').on('click', closeNgoModal);
@@ -309,10 +328,10 @@
 
         $('#ads-watch-cta-link').on('click', function (event) {
             if (!state.ctaMeta) return;
-            event.preventDefault();
             // Only award bonus once per video
             if (state.ctaClicked) {
                 console.log('[Sponsor CTA] Already clicked - skipping bonus');
+                event.preventDefault();
                 return;
             }
             state.ctaClicked = true;
@@ -331,12 +350,14 @@
                 fallbackReward: fallbackReward
             });
 
+            // Let native <a target="_blank"> handle navigation instead of window.open
+            // to avoid Safari blank-page bug
             const href = String($(this).attr('href') || '').trim();
-            if (href && href !== '#') {
-                const opened = window.open(href, '_blank', 'noopener');
-                if (!opened) {
-                    showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
-                }
+            if (!href || href === '#') {
+                event.preventDefault();
+                clearExternalNavigationState();
+            } else {
+                markExternalNavigation('sponsor_cta');
             }
         });
 
@@ -356,11 +377,10 @@
                 ctaClicked: state.ctaClicked,
                 filloutFormId: config.filloutFormId
             });
-            event.preventDefault();
 
-            // ── Open target URL FIRST while browser still trusts the user gesture ──
+            // ── Update href with latest NGO slug and let native <a target="_blank"> handle navigation ──
+            // Using native link behaviour instead of window.open to avoid Safari blank-page bug
             const rawUrl = String($link.attr('href') || (payload && payload.cta_url) || '').trim();
-            let opened = null;
             if (rawUrl && rawUrl !== '#') {
                 const ngoSlug = state.selectedNgo ? state.selectedNgo.slug : '';
                 const shopSlug = (payload && payload.shop_slug) || '';
@@ -374,7 +394,13 @@
                     clickUrl: clickUrl,
                     isFillout: clickUrl && clickUrl.includes('fillout.com')
                 });
-                opened = window.open(clickUrl, '_blank', 'noopener');
+                // Set the correct URL on the link — browser will open it in new tab via target="_blank"
+                $link.attr('href', clickUrl);
+                markExternalNavigation('auto_banner');
+            } else {
+                // No valid URL — prevent scroll to #
+                event.preventDefault();
+                clearExternalNavigationState();
             }
 
             // ── Award bonus (once per banner rotation) ──
@@ -383,10 +409,6 @@
                 sendCtaTracking(payload, {
                     fallbackReward: getCtaFallbackReward(payload.points || 0)
                 });
-            }
-
-            if (rawUrl && rawUrl !== '#' && !opened) {
-                showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
             }
         });
     }
@@ -2097,6 +2119,13 @@
     }
 
     function handleVisibilityChange() {
+        if (state.externalNavigationPending) {
+            if (document.hidden) {
+                state.externalNavigationVisibilityLost = true;
+            } else {
+                maybeRecoverFromExternalNavigation('visibilitychange');
+            }
+        }
         if (!state.educationContent) {
             return;
         }
@@ -2141,6 +2170,44 @@
             };
         });
         return state.youtubeReady;
+    }
+
+    function markExternalNavigation(source) {
+        state.externalNavigationPending = true;
+        state.externalNavigationVisibilityLost = false;
+        state.externalNavigationStartedAt = Date.now();
+        state.externalNavigationReloaded = false;
+        state.externalNavigationSource = String(source || '');
+    }
+
+    function clearExternalNavigationState() {
+        state.externalNavigationPending = false;
+        state.externalNavigationVisibilityLost = false;
+        state.externalNavigationStartedAt = 0;
+        state.externalNavigationReloaded = false;
+        state.externalNavigationSource = '';
+    }
+
+    function maybeRecoverFromExternalNavigation(reason) {
+        if (!state.externalNavigationPending || state.externalNavigationReloaded) {
+            return;
+        }
+        if (document.hidden) {
+            return;
+        }
+        const elapsed = Date.now() - Number(state.externalNavigationStartedAt || 0);
+        const lostVisibility = !!state.externalNavigationVisibilityLost;
+        if (!lostVisibility && elapsed < 1500) {
+            return;
+        }
+        state.externalNavigationReloaded = true;
+        console.log('[AutoBanner][DEBUG] Recovering from external navigation return', {
+            reason: reason || '',
+            source: state.externalNavigationSource || '',
+            elapsed: elapsed,
+            lostVisibility: lostVisibility
+        });
+        window.location.reload();
     }
 
     function initYouTubePlayer(videoId) {
