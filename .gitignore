@@ -38,6 +38,7 @@ wp-content/uploads/**/*.log
 .codex/.metadata_never_index
 .codex/.noindex
 .codex/guard-events/
+.codex/guard-snapshots/
 .backups/
 .codex/_preflight_*
 vendor/.metadata_never_index

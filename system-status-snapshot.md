@@ -1,3 +1,33 @@
+## 2026-03-26T16:54:00+0100 — Impact Challenge kanonikus baseline rögzítve
+- Létrejött az egységes kanonikus alapdokumentum: `docs/impact-challenge-canonical-baseline.md`.
+- Ettől kezdve ez a baseline az elsődleges referencia az Impact Challenge teljes scope-jára: ads-watch, autobanner, offerwall, identity, pont/szavazat, affiliate glue, PWA és a guide rendszer.
+- A fő lokális Impact Challenge runtime MU-plugin kör is vissza lett zárva `0444` read-only célállapotra, a guide rendszer már korábban lezárt `0444/0555` állapotával együtt.
+- PR / merge / deploy kapuk most már explicit módon ehhez a baseline-hoz mérik az eltérést.
+
+## 2026-03-26T16:40:00+0100 — NGO guide teljes készlet beton védelem alá zárva
+- A teljes guide készlet most már nem csak router-szinten, hanem teljes fáfa-szinten védett: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` bekerült a protected perimeterbe.
+- A productionről hiányzó lokális guide elemek visszaszinkronizálva a repo-ba, így megszűnt a külön élő és külön lokális guide-készlet állapota.
+- Rögzített szabály: guide-route, guide-HTML, fordítás, jogi asset, PDF és renderelt output csak explicit felhasználói engedéllyel módosítható; sem automatika, sem deploy nem írhatja felül engedély nélkül.
+- Fizikai célállapot: lokálban és productionön guide fájlok `0444`, guide könyvtárak `0555`.
+
+## 2026-03-26T15:42:00+0100 — Autobanner/CJ runtime perimeter lezárva
+- A hiányzó WordPress oldali autobanner/CJ runtime rés bekerült a protected körbe: `wp-content/mu-plugins/impactshop-cj.php`.
+- Ezzel a WordPress oldali autobanner runtime/import/rotáció/redirect/CJ bridge körben nincs ismert nyitott pipeline-kódfájl a protected listán kívül.
+
+## 2026-03-26T15:24:00+0100 — Protected-file koherencia és UI checklist szabály bevezetve
+- Védett fájl módosítás előtt kötelezővé vált: koherencia vizsgálat, kockázatelemzés, érintett funkciólista.
+- Védett fájl módosítás után kötelezővé vált: post-merge/deploy ellenőrzési kör és külön manuális UI checklist a felhasználónak.
+- Új kanonikus dokumentum: `docs/protected-file-change-checklist.md`, és a szabály bekötve a PR/deploy/policy fájlakba.
+
+## 2026-03-26T15:12:00+0100 — PR / merge / push / deploy bastion szabályok szigorítva
+- A bástyavédelmi és írásvédettségi szabályok most már explicit részei a PR policynek, PR template-nek, exit checklistnek és deploy runbooknak is.
+- Impact Challenge esetén rögzítve: additive new-code first; legacy touch csak explicit jóváhagyással; deploy után a védett fájlok read-only visszazárása kötelező.
+
+## 2026-03-26T14:58:30+0100 — Impact Challenge bastion perimeter bővítés
+- A bástya védelem és a védett fájllista kiterjesztve a teljes Impact Challenge működési körre: ads-watch, auto-banner, offerwall, NGO selector/guides/card, identity, points engine, vote purchase, quarter-close, redirect/go bekötések, event donation widgetek, PWA és kapcsolódó workflow modulok.
+- Policy rögzítve: elsődleges fejlesztési út csak additív, új kód; meglévő Impact Challenge kód módosítása csak külön, explicit jóváhagyással és backup+rollback mellett.
+- Kanonikus források frissítve: docs/impactshop-guard-config.json, docs/bastion-protection-extension-plan.md, docs/ai-assistant-canonical-policy.md, docs/bastion-guard-status.md, AGENTS.md
+
 ## 2026-03-25 — CJ + Dognet go-deal fix (impactshop-boot.php, impactshop-cj.php)
 - impactshop-boot.php: Dognet tracking URL passthrough (go.dognet.com href → skip API, append d1+data5)
 - impactshop-cj.php: limit 200→5000, --advertiser-ids CLI param, Skechers hozzáadva (473 link)

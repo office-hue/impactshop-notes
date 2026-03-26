@@ -1,3 +1,9 @@
+## 2026-03-26 16:54 CET - Impact Challenge canonical baseline
+- New canonical reference doc created: `docs/impact-challenge-canonical-baseline.md`
+- Impact Challenge runtime perimeter normalized as canonical protected baseline (ads-watch, autobanner, offerwall, identity, affiliate glue, PWA, guides).
+- Local runtime MU-plugin set locked to `0444`; guide subtree remains `0444/0555`.
+- PR / merge / deploy policy files now explicitly reference the canonical baseline.
+
 ## 2026-03-25 CJ + Dognet go-deal hotfix + merge logika
 - Bug 1: fizz shop törölve (nem volt a Dognet CSV-ben, csak AI registry-ben)
 - Bug 2: CJ limit 200→5000, Skechers (6322281) hozzáadva product catalog-hoz → 473 CJ link
@@ -6406,4 +6412,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 
 ## 2026-03-25 22:51:27 CET - impactall auto log
 - **Result:** warn (warnings=2, errors=0, duration=2s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+## 2026-03-25 23:00:43 CET - impactall auto log
+- **Result:** warn (warnings=2, errors=0, duration=3s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
