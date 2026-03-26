@@ -3,7 +3,7 @@
 Last updated: 2026-03-26 19:45 CET
 
 ## 2026-03-26 19:45 — impact-community.php URL fix
-- `ngo_admin_url` és `reset_url` visszaállítva `/impact-shop_ngo/`-ra (merge conflict auto-merge hiba korrigálva).
+- `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
 - Production nem érintett, PR #83 még nem merge-elt.
 
 ## Purpose

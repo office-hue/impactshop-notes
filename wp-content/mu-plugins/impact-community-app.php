@@ -5,11 +5,12 @@
  * Rendered by impact-community.php template_redirect.
  * Variables available: $api_url, $nonce, $pseudo, $test_mode, $test_ngo_slug, $ngo_admin_url
  */
-// Guard: csak akkor futtatjuk, ha a template_redirect explicit include-olja
-// ($api_url be van állítva). MU-plugin load közben $api_url nincs → return.
-if (!defined('ABSPATH') || !isset($api_url)) {
+// Guard: a Hatás Körök shell csak explicit template_redirect include esetén rendereljen,
+// de az NGO admin shortcode függvényei MU-plugin load közben is betöltődjenek.
+if (!defined('ABSPATH')) {
     return;
 }
+if (isset($api_url)) :
 ?><!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -1014,7 +1015,7 @@ a:hover { text-decoration: underline; }
     const TEST_MODE = <?php echo !empty($test_mode) ? 'true' : 'false'; ?>;
     const CURRENT_PSEUDO = <?php echo wp_json_encode((string) ($pseudo ?? '')); ?>;
     const CURRENT_NGO_SLUG = <?php echo wp_json_encode((string) ($test_ngo_slug ?? '')); ?>;
-    const NGO_ADMIN_URL = <?php echo wp_json_encode((string) ($ngo_admin_url ?? site_url('/impact-challenge/ngo-admin/'))); ?>;
+    const NGO_ADMIN_URL = <?php echo wp_json_encode((string) ($ngo_admin_url ?? site_url('/ngo-admin/'))); ?>;
     const MAX_BODY = <?php echo IC_MAX_BODY_LENGTH; ?>;
 
     const $content = document.getElementById('ic-content');
@@ -2168,6 +2169,7 @@ a:hover { text-decoration: underline; }
 </body>
 </html>
 <?php
+endif;
 /* ===========================================================================
  * §13  NGO Admin Panel — [impact_community_ngo_admin]
  * Standalone SPA shortcode for NGO admins: login, circle stats, advisor quotas
