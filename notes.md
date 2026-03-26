@@ -6433,3 +6433,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `impact-community-app.php`: guard refactor — NGO admin funkciók MU-init időn is betölthetők
 - NGO_ADMIN_URL JS fallback: `/ngo-admin/`
 - Branch: feat/jovonkvize-ticket-count HEAD: 7447fd73
+
+## 2026-03-26 — IC kanonikus állapot visszaállítás (REVERT)
+- impact-community.php + impact-community-app.php visszaállítva 10c9930d (PR #84) kanonikus állapotra
+- /ngo-admin/ route és guard refactor REVERTELVE
+- ngo_admin_url → /impact-shop_ngo/ (eredeti)
+- NGO_ADMIN_URL JS fallback → /impact-challenge/ngo-admin/ (eredeti)
