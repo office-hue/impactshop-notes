@@ -1,3 +1,8 @@
+## 2026-03-26 19:05 - Legacy cp40 host references removed from active ops paths
+- `.deploy.production.env`: production SSH host `s59.tarhely.com`
+- `bin/staging-rest-fix.sh` és `bin/impactctl-resume.sh`: operatív SSH host blokk `s59.tarhely.com`
+- Operatív doksik frissítve: `docs/ai-agent-roadmap.md`, `docs/coupon-harvester.md`
+
 ## 2026-03-26 18:45 - Hatás Körök memory loader hardening
 - `scripts/hatas-korok-load-memory.sh`: célzott `dev-memory,work-memory` pre-task rétegek + `dev` budget
 - Memory helper hívások fail-open módra váltva (`pre-task`, `context-pack`, opcionális `full-sync`)

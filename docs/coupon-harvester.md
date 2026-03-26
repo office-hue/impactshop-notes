@@ -13,7 +13,7 @@ Cél: Gmail + whitelistelt (Dognet/CJ) partner oldalak publikus kuponjainak heti
   - Lekérés: `curl -sSL <url> -o /tmp/impactshop_Shops.csv`.  
   - Normalizálás: a repo gyökeréből futtasd a helper scriptet (`python3 scripts/generate_shops_whitelist.py --dognet-feed fixtures/coupon-harvester/feeds/dognet_programs.csv ...`), vagy egyszerű CSV szűréssel töltsd fel a `fixtures/coupon-harvester/feeds/dognet_programs.csv` fájlt (mezők: domain, slug, default_d1, landing_url).  
   - A generátor automatikusan frissíti a `tools/shops_registry.json`-t + `.codex/cron/coupon-harvester-config.json` whitelistjét.
-- **CJ shops**: SSH cp40 → `ssh sharityh@cp40.ezit.hu "cd /home/sharityh/app && wp impactshop cj:sync-shops --format=json"` majd a JSON-t mentsd le `tools/cj_shops.json`/`.csv` néven (pl. `jq -r`-rel `domain,slug,program_id`), végül add meg a generátornak: `scripts/generate_shops_whitelist.py --cj-feed tools/cj_shops.csv`.
+- **CJ shops**: SSH production host → `ssh sharityh@s59.tarhely.com "cd /home/sharityh/app && wp impactshop cj:sync-shops --format=json"` majd a JSON-t mentsd le `tools/cj_shops.json`/`.csv` néven (pl. `jq -r`-rel `domain,slug,program_id`), végül add meg a generátornak: `scripts/generate_shops_whitelist.py --cj-feed tools/cj_shops.csv`.
 - Mindkét feedet ugyanazzal a parancssal lehet egyszerre beolvasni; ha nincs elérhető CJ export, a `cj_programs.csv` üresen is hagyható, de dokumentáld a hiányt a `notes.md`-ben.
 
 ## Adatmodellek

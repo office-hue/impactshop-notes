@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SSH_HOST="sharityh@cp40.ezit.hu"
+SSH_HOST="sharityh@s59.tarhely.com"
 REMOTE_ROOT="/home/sharityh/public_html/impactshop-staging"
 BASE_URL="https://app.sharity.hu/impactshop-staging"
 
