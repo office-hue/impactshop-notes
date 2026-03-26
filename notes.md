@@ -1,3 +1,8 @@
+## 2026-03-26 Hatás Körök NGO admin route fix
+- a korábbi `/impact-challenge/ngo-admin/` route helyett a valós live oldal lett a kanonikus URL: `/impact-shop_ngo/`
+- a teszt panel és az auth/status erre mutat vissza
+- a reset password link is javítva
+
 ## 2026-03-26 Hatás Körök test mode
 - `/hatas-korok` új teszt üzemmód pseudo ID és NGO slug query param támogatással
 - teszt módban nincs körlimit, nincs kötelező tagság posztoláshoz/szavazáshoz
