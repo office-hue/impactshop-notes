@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDPR Adatfeldolgozói Nyilvántartás (Magyar)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="gdpr-adatfeldolgozoi-nyilvantartas">GDPR Adatfeldolgozói Nyilvántartás</h1>
+<blockquote>
+<p><strong>Verzió</strong>: 1.2<br />
+<strong>Dátum</strong>: 2026-02-25<br />
+<strong>Státusz</strong>: HATÁLYOS<br />
+<strong>Vonatkozik</strong>: ImpactShop teljes platform (SHARITEAM.COM, app.sharity.hu)<br />
+<strong>Adatkezelő</strong>: Sharity Adományszervező Alapítvány + Sharity Mobile Application Zrt.</p>
+</blockquote>
+<hr />
+<h2 id="1-attekintes">1. Áttekintés</h2>
+<p>Ez a dokumentum tartalmazza az ImpactShop / Sharity platform által igénybe vett <strong>adatfeldolgozók</strong> (data processors) nyilvántartását a GDPR 30. cikk (2) bekezdésének megfelelően.</p>
+<p>Az <strong>adatkezelő</strong> (data controller) minden esetben a Sharity (Alapítvány és/vagy Zrt.), amely meghatározza a személyes adatok kezelésének célját és eszközeit.</p>
+<p><strong>Pseudo ID és személyes adat:</strong> A Platform Pseudo ID-t (böngészőben generált online azonosító) használ regisztráció nélkül. A Pseudo ID a körülményektől függően személyes adatnak minősülhet (GDPR online azonosító; összekapcsolhatóság IP-vel, tranzakcióval, Stripe emaillel stb.) — ld. ÁSZF §5.2, §16.3. A Pseudo ID-t az Adatkezelési Tájékoztató külön nevesíti: tárolás (cookie/localStorage), jogalap, megőrzési idő és törlési/összekötési szabályok.</p>
+<hr />
+<h2 id="2-adatfeldolgozok-nyilvantartasa">2. Adatfeldolgozók nyilvántartása</h2>
+<h3 id="21-stripe-payments-europe-limited">2.1 Stripe Payments Europe, Limited</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Stripe Payments Europe, Limited</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>1 Grand Canal Street Lower, Dublin 2, Írország</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Adatfeldolgozó (fizetési szolgáltató)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Kártyaadatok (soha nem érinti a Sharity szerverét), email cím, tranzakciós összeg, IP cím, device fingerprint</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Impact Amplifier szavazatvásárlás fizetési tranzakciók feldolgozása</td>
+</tr>
+<tr>
+<td><strong>DPA (adatfeldolgozói megállapodás)</strong></td>
+<td>https://stripe.com/legal/dpa — automatikusan érvényes a Stripe Services Agreement elfogadásával</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Igen — Stripe Inc. (USA) — EU–US Data Privacy Framework certified</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Stripe saját policy: tranzakciós adatok a pénzmosás-megelőzési és számviteli kötelezettség szerint (min. 5 év)</td>
+</tr>
+<tr>
+<td><strong>Kapcsolódó garancia</strong></td>
+<td>PCI-DSS Level 1, SOC 2 Type II, ISO 27001</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-dognet-sro">2.2 Dognet s.r.o.</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Dognet s.r.o.</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Bratislava, Szlovákia (EU)</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Adatfeldolgozó (affiliate hálózat szolgáltató)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Cookie azonosítók, kattintási adatok (click tracking), tranzakciós visszaigazolások (affiliate conversion)</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Affiliate jutalék nyomon követése az ImpactShop → partner webshop vásárlási folyamatban</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>Dognet Általános Partneri Szerződés melléklete (GDPR záradék) — egyedileg kötött</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Nem — EU-n belüli feldolgozás</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Cookie élettartam: 30 nap; tranzakciós adat: min. 5 év (könyvelési kötelezettség)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cookie megfelelés:</strong> A Dognet affiliate tracking cookie/azonosító alapú. A cookie/tároló tájékoztatás és az esetleges hozzájárulás-kezelés megfelel a hatályos e-privacy és hazai szabályoknak, és koherens a Pseudo ID leírással (ld. ÁSZF §5.2, §16.6 és Cookie Tájékoztató).</p>
+<h3 id="23-cloudflare-inc">2.3 Cloudflare, Inc.</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Cloudflare, Inc.</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>San Francisco, USA</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Adatfeldolgozó (CDN, WAF, DNS, DDoS védelem)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>IP cím, HTTP request/response metaadatok, Turnstile token (CAPTCHA)</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Weboldal védelme, rate limiting, bot szűrés, SSL terminálás</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>https://www.cloudflare.com/cloudflare-customer-dpa/ — automatikusan érvényes Enterprise és Free/Pro/Business szinteken is</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Igen — USA + globális edge hálózat — EU–US DPF + Binding Corporate Rules</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Request logok: 72 óra (standard); Analytics: 30 nap</td>
+</tr>
+<tr>
+<td><strong>Kapcsolódó garancia</strong></td>
+<td>SOC 2 Type II, ISO 27001, C5</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-ezit-kft-tarhelyszolgaltato">2.4 Ezit Kft. (tárhelyszolgáltató)</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Ezit Kft.</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Magyarország</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Adatfeldolgozó (tárhelyszolgáltató, szerver üzemeltetés)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Teljes WordPress adatbázis (felhasználói adatok, tranzakciók), szervernaplók (IP, User-Agent)</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Weboldal és alkalmazás hosztolása</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>Ezit Kft. ÁSZF GDPR melléklete — egyedileg kötött</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Nem — magyar adatközpont</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Szerver logok: 30 nap; backup: max 20 pillanatkép</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-google-cloud-platform-opcionalis-ai-agent">2.5 Google Cloud Platform (opcionális — AI Agent)</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Google Cloud EMEA Limited / Google LLC</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Dublin, Írország / Mountain View, USA</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Adatfeldolgozó (AI/ML szolgáltatások, Google Workspace API)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Google Workspace-ból érkező email/drive adatok (csak az AI Agent funkciónál), service account credential</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>NGO adatgyűjtés automatizálása, Google Sheets szinkron</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>https://cloud.google.com/terms/data-processing-addendum</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Igen — EU–US DPF + Standard Contractual Clauses (SCC)</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Google policy szerint; Sharity: credential files titkosítva</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26-vonage-nexmo-sms-szolgaltato">2.6 Vonage / Nexmo (SMS szolgáltató)</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Vonage Holdings Corp. / Vonage Business Limited</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Hollandia (Vonage V.B.) / Egyesült Királyság (Vonage Business Limited) / USA (Vonage Holdings Corp.)</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Adatfeldolgozó (SMS kézbesítés)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Telefonszám, SMS tartalom (jegy/értesítés szöveg)</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Digitális Tombola jegy/értesítés SMS kézbesítése</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>Vonage DPA — az API-szolgáltatási szerződés melléklete</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Igen — UK/USA, az Ericsson csoporton belüli adattovábbítás</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Vonage policy szerint; SMS kézbesítési logok: max 30 nap</td>
+</tr>
+<tr>
+<td><strong>Megjegyzés</strong></td>
+<td>UK/EGT érintettek esetén csoporttagok is kezelhetnek adatot: Ericsson; Vonage Business Limited (UK); Vonage V.B. (NL) — ld. ÁSZF §16.5</td>
+</tr>
+</tbody>
+</table>
+<h3 id="27-cj-commission-junction-affiliate-halozat">2.7 CJ (Commission Junction) — affiliate hálózat</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Commission Junction LLC (a Publicis Groupe tagja)</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Santa Barbara, CA, USA</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Önálló adatkezelő / közös adatkezelő (affiliate tracking)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Cookie azonosítók, kattintási adatok, tranzakciós visszaigazolás (affiliate conversion), IP cím</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Affiliate jutalék nyomon követése (publisher → advertiser tranzakciók)</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Services Privacy Policy: https://www.cj.com/legal/privacy-policy-services</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Igen — USA (Publicis Groupe); EU–US DPF</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>CJ policy szerint; cookie élettartam: kampányfüggő (jellemzően 30–45 nap)</td>
+</tr>
+<tr>
+<td><strong>Megjegyzés</strong></td>
+<td>A CJ a tracking cookie tekintetében önálló adatkezelőként is felléphet — az ÁSZF §16.6 ennek megfelelően tájékoztat</td>
+</tr>
+</tbody>
+</table>
+<h3 id="28-tradetracker-affiliate-halozat">2.8 TradeTracker — affiliate hálózat</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>TradeTracker International B.V.</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Almere, Hollandia (EU)</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Önálló adatkezelő / közös adatkezelő (affiliate tracking)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Cookie azonosítók, kattintási adatok, tranzakciós visszaigazolás, IP cím</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Affiliate jutalék nyomon követése</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Privacy Policy: https://tradetracker.com/privacy-policy/</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Nem — EU-n belüli feldolgozás</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>TradeTracker policy szerint; cookie élettartam: kampányfüggő</td>
+</tr>
+</tbody>
+</table>
+<h3 id="29-tradedoubler-affiliate-halozat">2.9 Tradedoubler — affiliate hálózat</h3>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Tradedoubler AB (reg.no 556575-7423)</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Stockholm, Svédország (EU)</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Adatfeldolgozó (affiliate tracking — brand megbízásából); egyes esetekben önálló adatkezelő</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Cookie azonosítók, kattintási adatok, IP cím, tranzakciós visszaigazolás</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Affiliate jutalék nyomon követése (publisher hálózat)</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Privacy Policy: https://www.tradedoubler.com/en/privacy-policy/ ; DPO: dpo@tradedoubler.com</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Lehetséges — UK (adequacy decision); egyéb esetben SCC</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Cookie: max 730 nap; tranzakciós adat: helyi könyvelési törvények szerint (5–10 év)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="210-offerwall-providerek-bitlabs-pollfish-cint-ayet-studios-cpx-research">2.10 Offerwall providerek (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)</h3>
+<p>Az Impact Challenge offerwall felületén harmadik fél szolgáltatók feladatokat (kérdőívek, alkalmazás-kipróbálás, regisztrációk) kínálnak a Felhasználók számára. Ezek a providerek jellemzően <strong>önálló adatkezelőként</strong> járnak el.</p>
+<h4 id="bitlabs">Bitlabs</h4>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>BitBurst GmbH (Bitlabs)</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Németország (EU)</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Önálló adatkezelő (offerwall / kérdőív szolgáltató)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Felhasználói azonosító (publisher user ID), válaszadatok, IP cím, device info</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Offerwall feladatok biztosítása, jutalék-elszámolás</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Privacy Policy: https://bitlabs.ai/privacy</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Nem jellemző — EU-n belüli feldolgozás</td>
+</tr>
+</tbody>
+</table>
+<h4 id="pollfish">Pollfish</h4>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Pollfish LLC (a Prodege csoport tagja)</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>USA</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Önálló adatkezelő (kérdőív / survey szolgáltató)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Demográfiai adatok, válaszadatok, device info, IP cím</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Kérdőív kitöltés, piackutatás, jutalék-elszámolás</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Respondent Terms: https://www.pollfish.com/terms/respondent</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Igen — USA</td>
+</tr>
+</tbody>
+</table>
+<h4 id="cint">Cint</h4>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Cint AB</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Stockholm, Svédország (EU)</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Önálló adatkezelő (research marketplace / survey routing)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Demográfiai adatok, válaszadatok, device info, IP cím, cookie ID</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Kérdőív routing, piackutatási minta biztosítása</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Privacy Notice: https://www.cint.com/privacy-notice ; DPO: privacy@cint.com</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Az adatokat EU-n belüli szervereken tárolja; de a Cint csoport globális leányvállalatain belül lehetséges továbbítás</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Cint policy szerint</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ayet-studios">ayeT-Studios</h4>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>ayeT-Studios GmbH</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Große Düwelstraße 28, 30171 Hannover, Németország (EU)</td>
+</tr>
+<tr>
+<td><strong>Cégjegyzékszám</strong></td>
+<td>HRB 211094 (Amtsgericht Hannover); ÁFA: DE294415615</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Önálló adatkezelő (offerwall / kérdőív / rewarded ad szolgáltató)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Felhasználói azonosító (publisher user ID), device ID (GAID/IDFA), IP cím, válaszadatok, demográfiai adatok</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Offerwall feladatok (Gametastic), kérdőív routing (Polltastic), jutalék-elszámolás</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Privacy Policy: https://www.ayetstudios.com/privacy-policy ; DPO: privacy@ayetstudios.com (külső: activelaw Offenhausen.Wolter, Hannover)</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Igen — AWS US szerverek (EU SCC alapján)</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Használat ideje + 90 nap; survey adat: MR partner policy szerint</td>
+</tr>
+</tbody>
+</table>
+<h4 id="cpx-research-make-opinion">CPX Research (Make Opinion)</h4>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entitás</strong></td>
+<td>Make Opinion GmbH (d/b/a CPX Research)</td>
+</tr>
+<tr>
+<td><strong>Székhely</strong></td>
+<td>Elfenallee 5, 13127 Berlin, Németország (EU)</td>
+</tr>
+<tr>
+<td><strong>Szerep</strong></td>
+<td>Önálló adatkezelő (survey / offerwall szolgáltató)</td>
+</tr>
+<tr>
+<td><strong>Kezelt adatok</strong></td>
+<td>Felhasználói azonosító, demográfiai adatok (kor, nem, irányítószám), válaszadatok, IP cím, device fingerprint</td>
+</tr>
+<tr>
+<td><strong>Adatkezelés célja</strong></td>
+<td>Kérdőív matching és kitöltés, piackutatás, jutalék-elszámolás</td>
+</tr>
+<tr>
+<td><strong>DPA / adatvédelmi tájékoztató</strong></td>
+<td>Privacy Policy: https://cpx-research.com/main/en/privacy-user/ ; DPO: privacy@makeopinion.com (Nana Gabelia)</td>
+</tr>
+<tr>
+<td><strong>Adatátvitel harmadik országba</strong></td>
+<td>Elsődlegesen Németország (EU); survey partnereken keresztül lehetséges: USA, Kanada, Franciaország, Románia, Izrael, Pakisztán, India</td>
+</tr>
+<tr>
+<td><strong>Adatmegőrzési idő</strong></td>
+<td>Make Opinion policy szerint</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Fontos megjegyzés az offerwall providerekhez:</strong> Ezek a szolgáltatók az ÁSZF §16.6 értelmében <strong>önálló adatkezelőként</strong> alkalmazhatnak sütiket vagy hasonló technológiákat. A Felhasználót a Cookie Tájékoztató és az egyes providerek saját adatvédelmi tájékoztatója informálja. A Sharity mint publisher a felhasználói azonosítót (Pseudo ID / publisher user ID) adja át az offerwall API-nak — ld. ÁSZF §5.2 Parancs/Teendő.</p>
+</blockquote>
+<hr />
+<h2 id="3-szemelyes-adatok-aramlasi-terkep-data-flow-map">3. Személyes adatok áramlási térkép (Data Flow Map)</h2>
+<pre><code>Felhasználó (böngésző)
+    │
+    ├─── [HTTPS/TLS] ──→ Cloudflare (CDN, WAF, Turnstile)
+    │                         │
+    │                         └──→ Ezit szerver (WordPress)
+    │                                  │
+    │                                  ├── Affiliate kattintás → Dognet / CJ / TradeTracker / Tradedoubler cookie
+    │                                  │     └── Vásárlás visszaigazolás → affiliate API
+    │                                  │
+    │                                  ├── Impact Challenge offerwall → Bitlabs / Pollfish / Cint / ayeT / CPX Research API
+    │                                  │     └── Kérdőív / feladat → Pont jóváírás
+    │                                  │
+    │                                  └── Szavazatvásárlás (checkout)
+    │                                        │
+    │                                        └──→ Stripe Checkout (hosted)
+    │                                              ├── Kártyaadat → Stripe (soha Sharity)
+    │                                              └── Webhook → Ezit szerver → DB
+    │
+    ├─── [SMS] Digitális Tombola jegy/értesítés → Vonage (Nexmo) API
+    │
+    └─── [Opcionális] AI Agent → Google Cloud API
+</code></pre>
+<hr />
+<h2 id="4-erintetti-jogok-kezelese">4. Érintetti jogok kezelése</h2>
+<table>
+<thead>
+<tr>
+<th>Jog</th>
+<th>Implementáció</th>
+<th>Felelős</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hozzáférés joga</strong> (15. cikk)</td>
+<td>WP Admin → felhasználói adatok export</td>
+<td>Sharity DPO</td>
+</tr>
+<tr>
+<td><strong>Törlés joga</strong> (17. cikk)</td>
+<td>Soft-delete (céges adatok 30 nap), anonimizálás</td>
+<td>Sharity fejlesztő</td>
+</tr>
+<tr>
+<td><strong>Adathordozhatóság</strong> (20. cikk)</td>
+<td>JSON export WP Admin-ból</td>
+<td>Sharity DPO</td>
+</tr>
+<tr>
+<td><strong>Tiltakozás</strong> (21. cikk)</td>
+<td>Email → privacy@sharity.hu</td>
+<td>Sharity DPO</td>
+</tr>
+<tr>
+<td><strong>Stripe-nál tárolt adat</strong></td>
+<td>Sharity kéri Stripe-tól, vagy érintett közvetlenül Stripe-nál</td>
+<td>Sharity DPO + Stripe Support</td>
+</tr>
+</tbody>
+</table>
+<h3 id="41-torlesi-eljaras">4.1 Törlési eljárás</h3>
+<ol>
+<li><strong>Érintett kéri a törlést</strong> → office@sharity.hu</li>
+<li><strong>Sharity ellenőrzi</strong>: van-e jogi megőrzési kötelezettség (számviteli: 8 év, ÁFA: 5 év)</li>
+<li><strong>Ha nincs kötelezettség</strong>: személyes adatok törlése/anonimizálása ≤ 30 nap</li>
+<li><strong>Ha van kötelezettség</strong>: tájékoztatás az érintettnek, adatok zárolása (nem törölhetők, de nem használhatók)</li>
+<li><strong>Stripe-nál</strong>: Sharity nem tudja közvetlenül törölni → érintett a Stripe privacy policy szerint járhat el</li>
+<li><strong>Naplózás</strong>: törlési kérés + végrehajtás dátuma + ok → GDPR kérések naplója</li>
+</ol>
+<hr />
+<h2 id="5-adatfeldolgozoi-szerzodesek-statusza">5. Adatfeldolgozói szerződések státusza</h2>
+<table>
+<thead>
+<tr>
+<th>Feldolgozó</th>
+<th>DPA státusz</th>
+<th>Utolsó felülvizsgálat</th>
+<th>Következő felülvizsgálat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stripe</strong></td>
+<td>✅ Automatikus (SSA elfogadásával)</td>
+<td>2026-02-25</td>
+<td>2026-08-25</td>
+</tr>
+<tr>
+<td><strong>Dognet</strong></td>
+<td>⚠️ Felülvizsgálat szükséges — a Lead Media s.r.o. partneri szerződés GDPR záradéka alapján; publikus adatvédelmi tájékoztató: https://www.dognet.sk/wp-content/uploads/2023/11/gdpr-sk.pdf</td>
+<td>—</td>
+<td><strong>2026-03-15</strong> (sürgős)</td>
+</tr>
+<tr>
+<td><strong>Cloudflare</strong></td>
+<td>✅ Automatikus (Customer DPA)</td>
+<td>2026-02-25</td>
+<td>2026-08-25</td>
+</tr>
+<tr>
+<td><strong>Ezit</strong></td>
+<td>⚠️ Felülvizsgálat szükséges — az Ezit Kft. a Magyar Hosting (mhosting.hu) csoport része; hatályos ÁSZF: https://www.mhosting.hu/aszf/ (2025.08.04.); Adatkezelési tájékoztató: https://www.mhosting.hu/adatkezelesi-tajekoztato/ (2025.07.17.); Adattovábbítási nyilatkozat: https://www.mhosting.hu/adattovabbitasi-nyilatkozat/</td>
+<td>—</td>
+<td><strong>2026-03-15</strong> (sürgős)</td>
+</tr>
+<tr>
+<td><strong>Google Cloud</strong></td>
+<td>✅ Automatikus (Cloud DPA)</td>
+<td>2026-02-25</td>
+<td>2026-08-25</td>
+</tr>
+<tr>
+<td><strong>Vonage (Nexmo)</strong></td>
+<td>⚠️ Ellenőrizendő — API-szolgáltatási szerződés DPA melléklete</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>CJ (Commission Junction)</strong></td>
+<td>⚠️ Ellenőrizendő — önálló adatkezelő; Services Privacy Policy: https://www.cj.com/legal/privacy-policy-services</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>TradeTracker</strong></td>
+<td>⚠️ Ellenőrizendő — önálló adatkezelő; Privacy Policy: https://tradetracker.com/privacy-policy/</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>Tradedoubler</strong></td>
+<td>⚠️ Ellenőrizendő — adatfeldolgozó/önálló adatkezelő; Privacy Policy + DPO: dpo@tradedoubler.com</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>Bitlabs</strong></td>
+<td>ℹ️ Önálló adatkezelő — Privacy Policy: https://bitlabs.ai/privacy</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>Pollfish</strong></td>
+<td>ℹ️ Önálló adatkezelő — Respondent Terms: https://www.pollfish.com/terms/respondent</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>Cint</strong></td>
+<td>ℹ️ Önálló adatkezelő — Privacy Notice: https://www.cint.com/privacy-notice</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>ayeT-Studios</strong></td>
+<td>ℹ️ Önálló adatkezelő — Privacy Policy: https://www.ayetstudios.com/privacy-policy ; DPO: privacy@ayetstudios.com</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>CPX Research (Make Opinion)</strong></td>
+<td>ℹ️ Önálló adatkezelő — Privacy Policy: https://cpx-research.com/main/en/privacy-user/ ; DPO: privacy@makeopinion.com</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+</tbody>
+</table>
+<p>A Dognet és Ezit DPA-kat formálisan felül kell vizsgálni, és szükség esetén kiegészítő adatfeldolgozói megállapodást kell kötni a fenti hivatkozások alapján.</p>
+<hr />
+<h2 id="6-hatosagi-kapcsolattarto-panasz-eseten">6. Hatósági kapcsolattartó — panasz esetén</h2>
+<p>Az érintett személyes adatokkal kapcsolatos panaszát az alábbi hatósághoz is benyújthatja:</p>
+<table>
+<thead>
+<tr>
+<th>Hatóság</th>
+<th>Elérhetőség</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)</strong></td>
+<td>1055 Budapest, Falk Miksa utca 9–11.</td>
+</tr>
+<tr>
+<td>Telefon</td>
+<td>+36 1 391-1400</td>
+</tr>
+<tr>
+<td>E-mail</td>
+<td>ugyfelszolgalat@naih.hu</td>
+</tr>
+<tr>
+<td>Weboldal</td>
+<td>https://www.naih.hu</td>
+</tr>
+<tr>
+<td>Online beadvány</td>
+<td>https://www.naih.hu/panaszbejelentes</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Ez a szakasz összhangban áll az ÁSZF §19.4(d) pontjával, amely szintén hivatkozik a NAIH-ra.</p>
+</blockquote>
+<hr />
+<h2 id="7-adatvedelmi-incidens-naplovezetes">7. Adatvédelmi incidens naplóvezetés</h2>
+<p>A GDPR 33. cikk (5) bekezdése alapján az adatkezelő köteles nyilvántartást vezetni az adatvédelmi incidensekről.</p>
+<h3 id="71-naplozando-adatok">7.1 Naplózandó adatok</h3>
+<p>Minden adatvédelmi incidens esetén rögzíteni kell:</p>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Leírás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Incidens azonosító</strong></td>
+<td>Egyedi sorszám (pl. GDPR-INC-2026-001)</td>
+</tr>
+<tr>
+<td><strong>Észlelés dátuma/ideje</strong></td>
+<td>Az incidens észlelésének időpontja</td>
+</tr>
+<tr>
+<td><strong>Incidens leírása</strong></td>
+<td>Az incidens jellege, érintett rendszer(ek), körülmények</td>
+</tr>
+<tr>
+<td><strong>Érintett adatok köre</strong></td>
+<td>Milyen személyes adatokat érint (Pseudo ID, email, tranzakciós adat stb.)</td>
+</tr>
+<tr>
+<td><strong>Érintettek becsült száma</strong></td>
+<td>Hány érintett személyes adata kompromittálódott/sérült</td>
+</tr>
+<tr>
+<td><strong>Érintett adatfeldolgozó(k)</strong></td>
+<td>Stripe, Dognet, Cloudflare, Ezit, Google Cloud, Vonage, CJ, TradeTracker, Tradedoubler, Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research — amelyiknél az incidens felmerült</td>
+</tr>
+<tr>
+<td><strong>Súlyosság</strong></td>
+<td>Alacsony / Közepes / Magas / Kritikus</td>
+</tr>
+<tr>
+<td><strong>Megtett intézkedések</strong></td>
+<td>Azonnali és utólagos korrekciós lépések</td>
+</tr>
+<tr>
+<td><strong>NAIH bejelentés</strong></td>
+<td>Szükséges-e (72 órán belül); ha igen, bejelentés dátuma</td>
+</tr>
+<tr>
+<td><strong>Érintettek értesítése</strong></td>
+<td>Szükséges-e; ha igen, értesítés dátuma és módja</td>
+</tr>
+<tr>
+<td><strong>Lezárás dátuma</strong></td>
+<td>Az incidens kezelésének lezárása</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-eljarasrend">7.2 Eljárásrend</h3>
+<ol>
+<li><strong>Észlelés</strong>: automatikus monitoring vagy manuális bejelentés (office@sharity.hu).</li>
+<li><strong>Értékelés</strong> (≤ 24 óra): DPO / Ops Squad megállapítja a súlyosságot és az érintettek körét.</li>
+<li><strong>NAIH bejelentés</strong> (≤ 72 óra): ha az incidens valószínűsíthetően kockázattal jár az érintettek jogaira — GDPR 33. cikk.</li>
+<li><strong>Érintettek értesítése</strong>: ha az incidens valószínűsíthetően magas kockázattal jár — GDPR 34. cikk.</li>
+<li><strong>Korrekciós intézkedések</strong>: technikai és szervezési intézkedések az ismétlődés megelőzésére.</li>
+<li><strong>Lezárás és dokumentálás</strong>: incidens napló lezárása, tanulságok rögzítése.</li>
+</ol>
+<h3 id="73-megorzes">7.3 Megőrzés</h3>
+<p>Az incidens naplóbejegyzéseket a Szolgáltató legalább 5 évig megőrzi.</p>
+<hr />
+<h2 id="8-felulvizsgalat">8. Felülvizsgálat</h2>
+<ul>
+<li><strong>Gyakoriság</strong>: félévente, vagy új adatfeldolgozó bevonásakor</li>
+<li><strong>Felelős</strong>: DPO / Ops Squad</li>
+<li><strong>Trigger</strong>: új partner integráció, meglévő partner feltétel-változás, GDPR audit</li>
+</ul>
+<hr />
+<h2 id="valtozasnaplo">Változásnapló</h2>
+<table>
+<thead>
+<tr>
+<th>Verzió</th>
+<th>Dátum</th>
+<th>Változás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Kezdeti verzió — draft; 5 adatfeldolgozó nyilvántartása</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>NAIH hatósági elérhetőség hozzáadva (§6); koherencia az ÁSZF §19.4(d)-vel</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>2026-02-25</td>
+<td>Véglegesítés: Pseudo ID mint személyes adat beépítve (§1), cookie megfelelés rögzítve (§2.2), Vonage/Nexmo SMS hozzáadva (§2.6), affiliate alternatívák hozzáadva — CJ (§2.7), TradeTracker (§2.8), Tradedoubler (§2.9), offerwall szolgáltatók — Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research (Make Opinion) (§2.10), belső fájlhivatkozások eltávolítva, DPA státusz kiterjesztve 14 adatfeldolgozóra/adatkezelőre (§5), adatvédelmi incidens naplóvezetés hozzáadva (§7)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="kapcsolodo-dokumentumok-es-guide-ok">Kapcsolódó dokumentumok és guide-ok</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#aszf">Általános Szerződési Feltételek (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#access-control">Hozzáférés-kezelési mátrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#stripe">Stripe felelősségmegosztás</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">Rólunk</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/ngo-card/">NGO Card útmutató</a></li>
+</ul>
+</div>
+<hr />
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

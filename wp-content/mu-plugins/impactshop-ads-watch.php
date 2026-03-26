@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.23');
+define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.28');
 define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '8');
 define('IMPACTSHOP_ADS_DONATION_POOL', 500000); // Ft
 
@@ -203,6 +203,17 @@ function impactshop_ads_watch_build_cta_dedupe(string $pseudo_id, string $conten
 {
     $date_key = gmdate('Y-m-d');
     return sprintf('cta_click:%s:%s:%s', $content_id, $pseudo_id, $date_key);
+}
+
+function impactshop_ads_watch_build_cta_instance_dedupe(string $pseudo_id, string $content_id): string
+{
+    return sprintf(
+        'cta_click:%s:%s:%s:%s',
+        $content_id,
+        $pseudo_id,
+        gmdate('Y-m-d-H-i-s'),
+        wp_rand(1000, 999999)
+    );
 }
 
 function impactshop_ads_watch_get_default_cta_label(): string
@@ -1521,7 +1532,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
     $cta_points_regular = (int) apply_filters('impactshop_ads_watch_cta_points', 1, 'regular');
     $cta_points_sponsor = (int) apply_filters('impactshop_ads_watch_cta_points', 5, 'sponsor');
     $cta_points_education = (int) apply_filters('impactshop_ads_watch_cta_points', 1, 'education');
-    $cta_points_banner = (int) apply_filters('impactshop_ads_watch_cta_points', 1, 'auto_banner');
+    $cta_points_banner = (int) apply_filters('impactshop_ads_watch_cta_points', 5, 'auto_banner');
 
     if ($pseudo_id === '') {
         $cta = impactshop_ads_watch_build_cta($cta_label, $cta_url, $cta_points_regular);
@@ -1553,7 +1564,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
         $education_videos = impactshop_ads_watch_filter_education_for_user($pseudo_id, $education_videos);
     }
     $has_education = !empty($education_videos);
-    $auto_banner = function_exists('impactshop_auto_banner_get_active') ? impactshop_auto_banner_get_active() : [];
+    $auto_banner = function_exists('impactshop_auto_banner_get_active') ? impactshop_auto_banner_get_active($pseudo_id) : [];
     $has_banner = !empty($auto_banner);
     $has_sponsor = !empty($sponsor);
     $force_banner = ($ad_tag_url === '' && $has_banner);
@@ -1589,6 +1600,22 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
     }
     if ($force_banner) {
         $weights['regular'] = 0;
+    }
+    $last_type = (string) ($rotation['last_type'] ?? '');
+    if (in_array($last_type, ['auto_banner', 'sponsor', 'education'], true) && ($weights[$last_type] ?? 0) > 0) {
+        $other_special_available = false;
+        foreach (['auto_banner', 'sponsor', 'education'] as $special_type) {
+            if ($special_type === $last_type) {
+                continue;
+            }
+            if (($weights[$special_type] ?? 0) > 0) {
+                $other_special_available = true;
+                break;
+            }
+        }
+        if ($other_special_available) {
+            $weights[$last_type] = 0;
+        }
     }
 
     $max_attempts = (int) $request->get_param('batch_size');
@@ -1721,7 +1748,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
                 $sponsor['cta_url'] !== '' ? $sponsor['cta_url'] : $cta_url,
                 $cta_points_sponsor
             );
-            $cta['dedupe_key'] = impactshop_ads_watch_build_cta_dedupe($pseudo_id, $content_id);
+            $cta['dedupe_key'] = impactshop_ads_watch_build_cta_instance_dedupe($pseudo_id, $content_id);
             return new WP_REST_Response([
                 'mode'    => 'sponsor',
                 'content_type' => 'sponsor',
@@ -1779,7 +1806,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
             $auto_banner['banner_url'] !== '' ? $auto_banner['banner_url'] : $cta_url,
             $cta_points_banner
         );
-        $cta['dedupe_key'] = impactshop_ads_watch_build_cta_dedupe($pseudo_id, $content_id);
+        $cta['dedupe_key'] = impactshop_ads_watch_build_cta_instance_dedupe($pseudo_id, $content_id);
         return new WP_REST_Response([
             'mode' => 'auto_banner',
             'content_type' => 'auto_banner',
@@ -4104,6 +4131,21 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                     <span class="video-info-label">⏱️ Eddig:</span>
                     <span id="video-info-watched-time">0:00</span> →
                     <span id="video-info-earned-pts">0</span> pont jóváírva
+                </div>
+            </div>
+            <div class="ads-watch-live-balance" id="ads-watch-live-balance" aria-live="polite">
+                <div class="ads-watch-live-balance-title">Aktuális egyenleg</div>
+                <div class="ads-watch-live-balance-grid">
+                    <div class="live-balance-item" data-type="points">
+                        <span class="live-balance-label">Pontok</span>
+                        <span class="live-balance-value" id="video-balance-points">0</span>
+                        <span class="live-balance-delta" id="video-balance-points-delta"></span>
+                    </div>
+                    <div class="live-balance-item" data-type="votes">
+                        <span class="live-balance-label">Szavazatok</span>
+                        <span class="live-balance-value" id="video-balance-votes">0</span>
+                        <span class="live-balance-delta" id="video-balance-votes-delta"></span>
+                    </div>
                 </div>
             </div>
             <div class="education-info-bar" id="education-info-bar" style="display: none;">

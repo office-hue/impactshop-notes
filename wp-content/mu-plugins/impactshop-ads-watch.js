@@ -94,6 +94,7 @@
         ctaClickedKeys: {},
         ctaBonusPoints: 0,
         ctaBonusVotes: 0,
+        ctaUiDeferred: false,
         imaProgressFrameId: null,
         imaAdDuration: 0,
         imaClickThroughUrl: '',
@@ -2608,7 +2609,8 @@
         }
         if (safeMode === 'auto_banner') {
             const ctaPoints = Number(safeRules.cta_points || 5);
-            $text.html(`<strong>+${ctaPoints} pont</strong> a hirdetésre kattintás után`);
+            const ctaVotes = ctaPoints > 0 ? 5 : 0;
+            $text.html(`<strong>+${ctaPoints} pont</strong> és <strong>+${ctaVotes} szavazat</strong> a hirdetésre kattintás után`);
             return;
         }
         if (safeMode === 'sponsor') {
@@ -2672,6 +2674,9 @@
         const pseudo = state.pseudoId || '';
         const safeType = String(contentType || 'cta');
         const safeId = String(contentId || '') || (ctaUrl ? String(ctaUrl).slice(-48) : 'unknown');
+        if (safeType === 'auto_banner') {
+            return `cta:${safeType}:${safeId}:${pseudo}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+        }
         return `cta:${safeType}:${safeId}:${pseudo}`;
     }
 
@@ -2749,6 +2754,121 @@
             return candidate;
         }
         return candidate;
+    }
+
+    function getAffiliatePseudoId() {
+        const rawPseudo = String(state.pseudoId || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        return rawPseudo.slice(0, 12);
+    }
+
+    function buildAffiliateSid(ngoSlug) {
+        const parts = [];
+        const cleanNgo = String(ngoSlug || '').trim();
+        const pseudo = getAffiliatePseudoId();
+        if (cleanNgo) {
+            parts.push(cleanNgo);
+        }
+        if (pseudo) {
+            parts.push(pseudo);
+        }
+        return parts.join('~');
+    }
+
+    function parseSafeUrl(rawUrl) {
+        try {
+            return new URL(rawUrl);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function isImpactshopInternalGoUrl(rawUrl) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return false;
+        }
+        const host = String(parsed.hostname || '').toLowerCase();
+        const currentHost = String(window.location.hostname || '').toLowerCase();
+        if (host !== currentHost && host !== 'app.sharity.hu' && host !== 'sharity.hu' && host !== 'www.sharity.hu') {
+            return false;
+        }
+        return /^\/go(?:-deal)?(?:\/|$)/i.test(parsed.pathname || '');
+    }
+
+    function ensureInternalGoParams(rawUrl, ngoSlug) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return rawUrl;
+        }
+        const cleanNgo = String(ngoSlug || '').trim();
+        if (cleanNgo && !parsed.searchParams.get('d1')) {
+            parsed.searchParams.set('d1', cleanNgo);
+        }
+        return parsed.toString();
+    }
+
+    function decorateCjAffiliateUrl(rawUrl, ngoSlug) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return rawUrl;
+        }
+        const sid = buildAffiliateSid(ngoSlug);
+        if (sid) {
+            parsed.searchParams.set('sid', sid);
+        }
+        return parsed.toString();
+    }
+
+    function isDognetAffiliateUrl(rawUrl) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return false;
+        }
+        return /(^|\.)dognet\.(com|sk|hu)$/i.test(String(parsed.hostname || ''));
+    }
+
+    function decorateDognetAffiliateUrl(rawUrl, ngoSlug) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return rawUrl;
+        }
+        const cleanNgo = String(ngoSlug || '').trim();
+        const pseudo = getAffiliatePseudoId();
+        if (cleanNgo && !parsed.searchParams.get('d1')) {
+            parsed.searchParams.set('d1', cleanNgo);
+        }
+        if (pseudo && !parsed.searchParams.get('data5')) {
+            parsed.searchParams.set('data5', pseudo);
+        }
+        return parsed.toString();
+    }
+
+    function isGenericMerchantLandingUrl(rawUrl) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return false;
+        }
+        const pathname = String(parsed.pathname || '/').replace(/\/+$/, '') || '/';
+        const segments = pathname.split('/').filter(Boolean);
+        const hasQuery = String(parsed.search || '') !== '';
+        const hasHash = String(parsed.hash || '') !== '';
+
+        if (hasQuery || hasHash) {
+            return false;
+        }
+
+        if (segments.length === 0) {
+            return true;
+        }
+
+        // Locale-style homepages such as /hu or /hu/hun should use the safe base affiliate route.
+        if (segments.length <= 2 && segments.every(function (segment) {
+            return /^[a-z]{2,3}$/i.test(segment);
+        })) {
+            return true;
+        }
+
+        return false;
     }
 
     function buildFilloutUrl(targetUrl, shopSlug, ngoSlug) {
@@ -2889,11 +3009,7 @@
         return `${target.origin}${target.pathname}?${query.toString()}${target.hash || ''}`;
     }
 
-    function buildAutoBannerFallbackImage(shopSlug) {
-        const cleanSlug = String(shopSlug || '').replace(/^sync:/, '').toLowerCase();
-        if (cleanSlug) {
-            return `${window.location.origin}/wp-content/uploads/shops/${cleanSlug}-logo.png`;
-        }
+    function buildAutoBannerFallbackImage() {
         return `${window.location.origin}/wp-content/uploads/impactshop/ngo-card-default.jpg`;
     }
 
@@ -2902,7 +3018,7 @@
         if (!imgEl) {
             return;
         }
-        const fallback = buildAutoBannerFallbackImage(banner.shop_slug || '');
+        const fallback = buildAutoBannerFallbackImage();
         let rawUrl = banner.image_url || '';
         if (/^http:\/\//i.test(rawUrl)) {
             rawUrl = rawUrl.replace(/^http:\/\//i, 'https://');
@@ -2971,6 +3087,21 @@
         }
         if (isArukereso) {
             return trackedTarget;
+        }
+        if (normalizedSlug.startsWith('cj-')) {
+            return decorateCjAffiliateUrl(trackedTarget, ngoSlug);
+        }
+        if (isDognetAffiliateUrl(trackedTarget)) {
+            return decorateDognetAffiliateUrl(trackedTarget, ngoSlug);
+        }
+        if (isImpactshopInternalGoUrl(trackedTarget)) {
+            return ensureInternalGoParams(trackedTarget, ngoSlug);
+        }
+        if (ngoSlug && isGenericMerchantLandingUrl(trackedTarget)) {
+            const params = new URLSearchParams({
+                d1: ngoSlug || '',
+            });
+            return `${window.location.origin}/go/${encodeURIComponent(cleanSlug)}?${params.toString()}`;
         }
         const base = `${window.location.origin}/go-deal/${encodeURIComponent(cleanSlug)}`;
         const params = new URLSearchParams({
@@ -3142,7 +3273,7 @@
                 shop_slug: banner.shop_slug || '',
                 category: '',
                 price_range: '',
-                points: 1,
+                points: 5,
                 dedupe_key: buildCtaDedupe('auto_banner', banner.id || '', finalUrl || '')
             });
 
@@ -3209,7 +3340,7 @@
             shop_slug: state.currentAutoBanner.shop_slug || '',
             category: state.currentAutoBanner.category || '',
             price_range: state.currentAutoBanner.price_range || '',
-            points: 1,
+            points: 5,
             dedupe_key: buildCtaDedupe('auto_banner', bannerId, finalUrl || '')
         });
     }
@@ -3287,10 +3418,21 @@
             state.ctaBonusVotes = Number(state.ctaBonusVotes || 0) + awardedVotes;
         }
 
+        const shouldDeferVisibleCtaReward = state.isPlaying && (
+            awardedPoints > 0
+            || awardedVotes > 0
+            || hasServerPointsTotal
+            || hasServerVotes
+        );
+
         if (awardedPoints > 0 || awardedVotes > 0 || hasServerPointsTotal || hasServerVotes) {
-            updateStatusDisplay();
-            updateVoteControls();
-            notifyPointsUpdated();
+            if (shouldDeferVisibleCtaReward) {
+                state.ctaUiDeferred = true;
+            } else {
+                updateStatusDisplay();
+                updateVoteControls();
+                notifyPointsUpdated();
+            }
         }
     }
 
@@ -3645,9 +3787,12 @@
                 state.lastVideoRewardPoints = points;
                 state.lastVideoRewardVotes = votes;
                 
-                // Show video reward only (CTA bonus will show when clicked)
-                if (points > 0 || votes > 0) {
-                    showRewardAnimation(points, votes);
+                const displayPoints = points + ctaBonusPoints;
+                const displayVotes = votes + ctaBonusVotes;
+                state.ctaUiDeferred = false;
+
+                if (displayPoints > 0 || displayVotes > 0) {
+                    showRewardAnimation(displayPoints, displayVotes);
                 } else {
                     showNotification('A megtekintést már rögzítettük.', 'warning');
                 }
@@ -3695,6 +3840,7 @@
         state.imaAdDuration = 0;
         state.ctaBonusPoints = 0;
         state.ctaBonusVotes = 0;
+        state.ctaUiDeferred = false;
         updateWatchButton();
         $('#player-overlay').fadeIn(200);
         showLoading(false);
@@ -3706,7 +3852,6 @@
         hideVideoInfoPanel();
         hideImaCtaOverlay();
         hideCtaStickyNotice();
-
         const adContainer = document.getElementById('ad-container');
         if (adContainer) {
             adContainer.style.display = '';

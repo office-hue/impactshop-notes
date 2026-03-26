@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HR / Jegyző Checklist – Jogtanácsosi Formaváltás | Sharity</title>
+  <meta name="description" content="HR és jegyzői checklist a jogtanácsosi formaváltáshoz: elkérendő adatok, munkáltatói igazolás, kamarai kérelem csatolmányok.">
+  <meta property="og:title" content="HR / Jegyző Checklist – Jogtanácsosi Formaváltás">
+  <meta property="og:description" content="Strukturált checklist a kamarai jogtanácsosi nyilvántartásba vételhez szükséges dokumentumokról.">
+  <meta property="og:url" content="https://app.sharity.hu/hr-checklist">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --violet: #6c5ce7;
+      --paper: #f7f2ec;
+      --success: #22c55e;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 15% -10%, rgba(108, 92, 231, 0.18), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(111, 227, 193, 0.28), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f4efe8 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.5rem 0;
+    }
+    h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); }
+    h2 { font-size: clamp(1.4rem, 2.4vw, 2rem); color: var(--ink); }
+    h3 { font-size: 1.15rem; color: var(--ink); }
+    p { margin: 0 0 1rem 0; line-height: 1.75; color: var(--muted); }
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap { max-width: 960px; margin: 0 auto; padding: 40px 24px 90px; }
+
+    .nav {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      padding: 10px 14px; margin-bottom: 24px;
+      background: rgba(255,255,255,0.88); border-radius: 14px; backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 12px; border-radius: 10px; font-weight: 600; font-size: 0.88rem;
+    }
+    .nav a:hover { background: rgba(108, 92, 231, 0.1); text-decoration: none; }
+
+    .hero {
+      padding: 42px; text-align: left; border-radius: 24px;
+      background: rgba(255,255,255,0.92); box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px; border-radius: 999px;
+      background: linear-gradient(135deg, rgba(108,92,231,0.14), rgba(245,182,66,0.18));
+      color: var(--violet); font-weight: 600; font-size: 0.92rem; margin-bottom: 12px;
+    }
+    .hero-sub { font-size: 1.08rem; color: var(--muted); max-width: 640px; }
+
+    .meta-bar {
+      display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px;
+      font-size: 0.88rem; color: var(--muted);
+    }
+    .meta-bar span { display: inline-flex; align-items: center; gap: 6px; }
+
+    .section {
+      background: var(--card); border-radius: 22px; padding: 28px 28px 20px;
+      box-shadow: 0 12px 28px rgba(11, 31, 42, 0.08); margin-bottom: 20px;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .section-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--violet), var(--teal));
+      color: #fff; font-weight: 700; font-size: 1rem; flex-shrink: 0;
+    }
+    .section-tag {
+      background: rgba(108,92,231,0.12); color: var(--violet);
+      padding: 5px 12px; border-radius: 999px; font-weight: 600; font-size: 0.78rem;
+    }
+
+    .checklist { list-style: none; padding: 0; margin: 0; }
+    .checklist li {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 0; border-bottom: 1px solid rgba(11,31,42,0.06);
+      line-height: 1.65;
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .check-box {
+      flex-shrink: 0; width: 22px; height: 22px; margin-top: 2px;
+      border: 2px solid rgba(108,92,231,0.4); border-radius: 6px;
+      cursor: pointer; position: relative; transition: all 0.2s;
+    }
+    .check-box:hover { border-color: var(--violet); }
+    .check-box.checked {
+      background: var(--success); border-color: var(--success);
+    }
+    .check-box.checked::after {
+      content: "✓"; position: absolute; top: -1px; left: 3px;
+      color: #fff; font-weight: 700; font-size: 14px;
+    }
+    .checklist li.done .item-text { text-decoration: line-through; color: var(--muted); opacity: 0.6; }
+    .item-text { flex: 1; }
+    .item-note { font-size: 0.88rem; color: var(--muted); display: block; margin-top: 2px; }
+
+    .data-card {
+      background: var(--paper); border-radius: 14px; padding: 18px;
+      border: 1px solid rgba(11,31,42,0.06); margin-top: 12px;
+    }
+    .data-card h3 { font-size: 1rem; margin-bottom: 10px; }
+    .data-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+      padding: 6px 0; border-bottom: 1px dashed rgba(11,31,42,0.08); font-size: 0.95rem; }
+    .data-row:last-child { border-bottom: none; }
+    .data-label { color: var(--muted); }
+    .data-value { font-weight: 600; font-family: "IBM Plex Mono", "Courier New", monospace; font-size: 0.9rem; }
+
+    .cross-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 14px;
+      background: rgba(15, 138, 157, 0.08); border: 1px solid rgba(15, 138, 157, 0.2);
+      font-weight: 600; font-size: 0.92rem; margin: 6px 6px 6px 0;
+      transition: all 0.2s;
+    }
+    .cross-link:hover { background: rgba(15, 138, 157, 0.14); text-decoration: none; }
+    .cross-link .arrow { font-size: 1.1rem; }
+
+    .progress-bar {
+      background: rgba(108,92,231,0.1); border-radius: 999px; height: 8px;
+      margin: 16px 0 8px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--violet), var(--teal));
+      transition: width 0.4s ease;
+    }
+    .progress-label { font-size: 0.85rem; color: var(--muted); text-align: right; }
+
+    .footer-note {
+      margin-top: 32px; padding: 20px; border-radius: 14px;
+      background: rgba(255,255,255,0.8); text-align: center;
+      font-size: 0.92rem; color: var(--muted);
+    }
+    .footer-note a { color: var(--violet); }
+
+    @media (max-width: 600px) {
+      .hero { padding: 24px; }
+      .section { padding: 20px 18px 14px; }
+      .data-row { flex-direction: column; gap: 2px; }
+    }
+
+    @media print {
+      .nav, .progress-bar, .progress-label, .footer-note { display: none !important; }
+      body { background: #fff; }
+      .hero, .section { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+      .check-box { border: 2px solid #999; print-color-adjust: exact; }
+      .check-box.checked { background: #22c55e !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="https://app.sharity.hu/ngo-guides/">NGO guide összefoglaló</a>
+      <a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge</a>
+      <a href="https://app.sharity.hu/jogi-dokumentumok/">Jogi dokumentumok</a>
+      <a href="https://app.sharity.hu/rolunk/">Rólunk</a>
+    </nav>
+
+    <header class="hero">
+      <span class="pill">📋 HR / Jegyzői Checklist</span>
+      <h1>Jogtanácsosi formaváltás — teendők</h1>
+      <p class="hero-sub">Strukturált checklist a kamarai jogtanácsosi nyilvántartásba vételhez. A munkáltató HR és jegyzői feladatait foglalja össze — mit kell elkérni, mit kell megerősíteni, és mit kell csatolni a kamarai kérelemhez.</p>
+      <div class="meta-bar">
+        <span>📅 Készült: 2026. március 23.</span>
+        <span>🏛️ Tamási Polgármesteri Hivatal</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+      <div class="progress-label" id="progressLabel">0 / 0 kész</div>
+    </header>
+
+    <!-- Section 1: Elkérendő adatok és iratok -->
+    <section class="section" data-section="adatok">
+      <div class="section-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="section-num">1</span>
+          <h2>Elkérendő adatok és iratok</h2>
+        </div>
+        <span class="section-tag">HR feladat</span>
+      </div>
+      <ul class="checklist">
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Kinevezés vagy kinevezés-módosítás másolata
+            <span class="item-note">A munkakör jogtanácsosi feladatokra módosul</span>
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Megerősítés: munkáltató hivatalos neve
+            <span class="item-note">Tamási Polgármesteri Hivatal</span>
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Adószám megerősítése
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Törzskönyvi azonosító megerősítése
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Székhely megerősítése
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            A munkáltatói jogkör gyakorlójának neve és tisztsége
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Munkáltatói igazolás aláírt példánya
+            <span class="item-note">Eredeti, pecséttel ellátott dokumentum</span>
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Képviseleti jogosultságot igazoló irat
+            <span class="item-note">Szükség esetén — ha a kinevezés nem tartalmazza</span>
+          </div>
+        </li>
+      </ul>
+
+      <div class="data-card">
+        <h3>Már ismert adatok</h3>
+        <div class="data-row">
+          <span class="data-label">Munkáltató neve</span>
+          <span class="data-value">Tamási Polgármesteri Hivatal</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Adószám</span>
+          <span class="data-value">15844789-1-17</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Törzskönyvi azonosító</span>
+          <span class="data-value">844789</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Székhely</span>
+          <span class="data-value">7090 Tamási, Szabadság utca 46-48.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Munkáltatói igazolás tartalma -->
+    <section class="section" data-section="igazolas">
+      <div class="section-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="section-num">2</span>
+          <h2>Munkáltatói igazolás — tartalmi megerősítések</h2>
+        </div>
+        <span class="section-tag">Jegyző / HR</span>
+      </div>
+      <p>Az alábbi pontokat a munkáltatói igazolásnak tartalmaznia kell a kamarai kérelemhez:</p>
+      <ul class="checklist">
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            A munkaviszony jelenleg is fennáll
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            A munkakör módosulása a kamarai jogtanácsosi formaváltáshoz kapcsolódik
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            A munkáltató biztosítja az ügyvédi tevékenység gyakorlásához szükséges törvényes és elektronikus ügyintézési feltételeket
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Section 3: Kamarai kérelem csatolmányok -->
+    <section class="section" data-section="kamarai">
+      <div class="section-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="section-num">3</span>
+          <h2>Kamarai kérelem csatolmányai</h2>
+        </div>
+        <span class="section-tag">Jelentkező feladata</span>
+      </div>
+      <p>A területi ügyvédi kamarai kérelemhez csatolandó dokumentumok:</p>
+      <ul class="checklist">
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Aláírt munkáltatói igazolás
+            <span class="item-note">→ Lásd fenti 1. és 2. szekció</span>
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Kinevezés vagy kinevezés-módosítás
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Arckép
+            <span class="item-note">Igazolványkép méretben, digitálisan is</span>
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Erkölcsi bizonyítvány / hatósági bizonyítvány
+            <span class="item-note">90 napnál nem régebbi</span>
+          </div>
+        </li>
+        <li>
+          <div class="check-box" role="checkbox" aria-checked="false" tabindex="0"></div>
+          <div class="item-text">
+            Szakvizsga-bizonyítvány
+          </div>
+        </li>
+      </ul>
+
+      <div class="data-card">
+        <h3>Ismert szakvizsga-adatok</h3>
+        <div class="data-row">
+          <span class="data-label">Bizonyítvány száma</span>
+          <span class="data-value">IRM/JSZO/2007/1490</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Bizonyítvány kelte</span>
+          <span class="data-value">2007. május 17.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cross-links to Impact Challenge -->
+    <section class="section" data-section="linkek">
+      <div class="section-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="section-num">→</span>
+          <h2>Kapcsolódó dokumentumok</h2>
+        </div>
+      </div>
+      <p>Az Impact Challenge és a Sharity ökoszisztéma vonatkozó oldalai:</p>
+      <div style="display: flex; flex-wrap: wrap;">
+        <a href="https://app.sharity.hu/ngo-guides/impact-challenge/" class="cross-link">
+          <span class="arrow">🏆</span> Impact Challenge — NGO útmutató
+        </a>
+        <a href="https://app.sharity.hu/jogi-dokumentumok/" class="cross-link">
+          <span class="arrow">⚖️</span> Jogi dokumentumok
+        </a>
+        <a href="https://app.sharity.hu/ngo-guides/" class="cross-link">
+          <span class="arrow">📚</span> NGO guide összefoglaló
+        </a>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      <p>Ez egy belső munkaanyag. A Sharity platform működéséről bővebben: <a href="https://app.sharity.hu/rolunk/">Rólunk</a></p>
+      <p style="font-size: 0.82rem; margin-top: 8px;">Az oldal nem nyilvános — kizárólag a jogtanácsosi formaváltás adminisztrációjához.</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var KEY = 'hr_checklist_state';
+      var boxes = document.querySelectorAll('.check-box');
+      var saved = {};
+      try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { /* ignore */ }
+
+      function updateProgress() {
+        var total = boxes.length;
+        var checked = document.querySelectorAll('.check-box.checked').length;
+        var pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+        var fill = document.getElementById('progressFill');
+        var label = document.getElementById('progressLabel');
+        if (fill) fill.style.width = pct + '%';
+        if (label) label.textContent = checked + ' / ' + total + ' kész (' + pct + '%)';
+      }
+
+      function toggle(box, index) {
+        var isChecked = box.classList.toggle('checked');
+        box.setAttribute('aria-checked', isChecked ? 'true' : 'false');
+        var li = box.closest('li');
+        if (li) {
+          if (isChecked) { li.classList.add('done'); }
+          else { li.classList.remove('done'); }
+        }
+        saved[index] = isChecked;
+        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* ignore */ }
+        updateProgress();
+      }
+
+      boxes.forEach(function (box, i) {
+        if (saved[i]) {
+          box.classList.add('checked');
+          box.setAttribute('aria-checked', 'true');
+          var li = box.closest('li');
+          if (li) li.classList.add('done');
+        }
+        box.addEventListener('click', function () { toggle(box, i); });
+        box.addEventListener('keydown', function (e) {
+          if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(box, i); }
+        });
+      });
+
+      updateProgress();
+    })();
+  </script>
+</body>
+</html>

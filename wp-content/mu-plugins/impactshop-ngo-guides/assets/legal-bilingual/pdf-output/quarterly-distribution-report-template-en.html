@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quarterly Distribution Report — Template (English)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="quarterly-distribution-report-template">Quarterly Distribution Report — Template</h1>
+<blockquote>
+<p><strong>Version</strong>: 1.2<br />
+<strong>Date</strong>: 2026-02-25<br />
+<strong>Status</strong>: IN EFFECT<br />
+<strong>Applies to</strong>: Impact Shop direct donation + Impact Challenge/Amplifier Common Donation Pool — quarterly NGO distribution<br />
+<strong>Data source</strong>: WordPress database (quarterly distribution tables), Dognet ledger</p>
+</blockquote>
+<hr />
+<h2 id="template-usage-guide">Template Usage Guide</h2>
+<p>This template is used to prepare the Quarterly Distribution report. After the close of each quarter, it must be filled in with the relevant data and undergo the approval process described below.</p>
+<p><strong>Steps to complete:</strong>
+1. Export the quarterly data from the WP database (see §A1 — Queries)
+2. Fill in the template below
+3. Verify the summary figures
+4. Submit for approval
+5. After finalization → NGO notification + payout initiation</p>
+<hr />
+<h1 id="quarterly-distribution-report">📊 Quarterly Distribution Report</h1>
+<h2 id="basic-information">Basic Information</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Report identifier</strong></td>
+<td><code>QDR-YYYY-QN</code> (e.g. QDR-2026-Q1)</td>
+</tr>
+<tr>
+<td><strong>Quarter</strong></td>
+<td>YYYY Q_ (e.g. 2026 Q1)</td>
+</tr>
+<tr>
+<td><strong>Period</strong></td>
+<td>YYYY-MM-DD – YYYY-MM-DD</td>
+</tr>
+<tr>
+<td><strong>Report prepared by</strong></td>
+<td>[Name]</td>
+</tr>
+<tr>
+<td><strong>Preparation date</strong></td>
+<td>YYYY-MM-DD</td>
+</tr>
+<tr>
+<td><strong>Approved by</strong></td>
+<td>[Name]</td>
+</tr>
+<tr>
+<td><strong>Approval date</strong></td>
+<td>YYYY-MM-DD</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-revenue-summary">1. Revenue Summary</h2>
+<h3 id="11-affiliate-commission-dognet-cj-etc">1.1 Affiliate Commission (Dognet, CJ, etc.)</h3>
+<blockquote>
+<p><strong>Note</strong>: Direct Partner commission distribution is NGO tier-dependent (Base: 40%, Rising: 50%, Legend: 60%); therefore the amounts shown here are the sum of varying ratios per transaction. The summary row contains the total amount actually allocated to NGOs across all transactions.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Amount (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Gross affiliate commission</strong> (Dognet ledger)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Platform fee</strong> (remaining portion — depends on NGO tier: Base: 60%, Rising: 50%, Legend: 40%)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Amount directly allocated to NGOs</strong> (40–60% depending on tier + user donation multiplier effect, weighted average)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>Note for the report preparer</strong>: For Direct Partner transactions, 40% (Base), 50% (Rising), or 60% (Legend) goes to donation depending on the NGO tier. For transactions coming through the affiliate network (Dognet), the ratio depends on the affiliate agreement terms. The summary row should contain the amount actually allocated to NGOs; the platform fee row should contain the remainder. <em>(Cf. Terms of Service §4.1.2(b) and §8.1.)</em></p>
+</blockquote>
+<h3 id="12-impact-amplifier-vote-purchase">1.2 Impact Amplifier (vote purchase)</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Amount (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Total vote purchase revenue</strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Platform fee</strong> (50%)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Amount allocated to donation pool</strong> (50%)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-consolidated-donation-pool">1.3 Consolidated Donation Pool</h3>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Amount (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Affiliate commission NGO portion</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Impact Amplifier donation portion</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Total distributable pool</strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-vote-summary">2. Vote Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Total votes cast</strong> (in the quarter)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Of which earned from affiliate + Impact Challenge activity (free)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Of which from Impact Amplifier purchase</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Valid votes</strong> (after dispute deductions)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="21-dispute-correction">2.1 Dispute Correction</h3>
+<table>
+<thead>
+<tr>
+<th>Dispute type</th>
+<th>Count</th>
+<th>Affected votes</th>
+<th>Pool correction (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Accepted chargeback</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>-<strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Voided transaction</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>-<strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Total corrections</strong></td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td><strong>-<strong><em>_</em></strong></strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-ngo-distribution-detailed-table">3. NGO Distribution — Detailed Table</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>NGO name</th>
+<th>NGO slug</th>
+<th>Impact Shop direct donation (HUF)</th>
+<th>Impact Challenge/Amplifier votes (count)</th>
+<th>Vote share (%)</th>
+<th>Common Pool distribution (HUF)</th>
+<th>Total distributed (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr>
+<td><strong>Σ</strong></td>
+<td><strong>TOTAL</strong></td>
+<td>—</td>
+<td><strong><strong><em>_</em></strong></strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+<td><strong>100%</strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="31-distribution-formula">3.1 Distribution Formula</h3>
+<p><strong>Impact Challenge/Amplifier Common Donation Pool distribution:</strong></p>
+<pre><code>ngo_common_pool_share = (ngo_votes / total_valid_votes) × total_pool_amount
+</code></pre>
+<p><strong>Impact Shop direct donation:</strong></p>
+<pre><code>ngo_direct_donation = Σ (transaction_commission × NGO_tier_ratio × donation_multiplier)
+</code></pre>
+<p><strong>Total NGO distribution:</strong></p>
+<pre><code>ngo_total = ngo_direct_donation + ngo_common_pool_share
+</code></pre>
+<p>Where:
+- <code>ngo_votes</code> = the number of valid votes cast for the given NGO in the quarter
+- <code>total_valid_votes</code> = total valid votes (after dispute correction)
+- <code>total_pool_amount</code> = Common Donation Pool (Impact Amplifier 50% + a portion of Impact Challenge advertising revenue, after corrections)
+- <code>NGO tier ratio</code> = Base: 40%, Rising: 50%, Legend: 60% <em>(Terms of Service §4.1.2(b))</em>
+- <code>donation multiplier</code> = Basic ×1.00 – Legend ×1.25 <em>(Terms of Service §4.1.2(c))</em></p>
+<hr />
+<h2 id="4-payout-status">4. Payout Status</h2>
+<table>
+<thead>
+<tr>
+<th>NGO</th>
+<th>Amount (HUF)</th>
+<th>Payout method</th>
+<th>Payout date</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong></td>
+<td>Bank transfer</td>
+<td>YYYY-MM-DD</td>
+<td>⬜ Pending / ✅ Sent</td>
+</tr>
+<tr>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong></td>
+<td>Bank transfer</td>
+<td>YYYY-MM-DD</td>
+<td>⬜ Pending / ✅ Sent</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-verification-and-reconciliation">5. Verification and Reconciliation</h2>
+<h3 id="51-data-source-reconciliation">5.1 Data Source Reconciliation</h3>
+<table>
+<thead>
+<tr>
+<th>Reconciliation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DB vote totals = Stripe transaction totals ± dispute corrections</td>
+<td>✅ / ❌ Discrepancy: <strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Dognet ledger balance = DB affiliate revenue</td>
+<td>✅ / ❌ Discrepancy: <strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>NGO distribution total = Pool total</td>
+<td>✅ / ❌ Discrepancy: <strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-anomalies">5.2 Anomalies</h3>
+<table>
+<thead>
+<tr>
+<th>Anomaly</th>
+<th>Description</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(If any)</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+<tr>
+<td>—</td>
+<td>No anomalies</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-approval">6. Approval</h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Name</th>
+<th>Signature/Date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Report preparer</strong></td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+<tr>
+<td><strong>Financial auditor</strong></td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+<tr>
+<td><strong>Management</strong></td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="appendix">Appendix</h2>
+<h3 id="a1-data-queries-wp-cli-sql">A1. Data Queries (WP-CLI / SQL)</h3>
+<p><strong>Quarterly vote summary:</strong></p>
+<pre><code class="language-sql">SELECT 
+    c.slug AS ngo_slug,
+    c.name AS ngo_name,
+    SUM(vp.votes_granted) AS total_votes,
+    SUM(vp.amount) AS total_amount
+FROM wp_impactshop_vote_purchases vp
+JOIN wp_impactshop_challenges c ON vp.challenge_id = c.id
+WHERE vp.status = 'completed'
+  AND vp.created_at BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD'
+GROUP BY c.slug, c.name
+ORDER BY total_votes DESC;
+</code></pre>
+<p><strong>Affiliate revenue quarterly summary:</strong></p>
+<pre><code class="language-sql">SELECT 
+    quarter_name,
+    total_revenue,
+    ngo_share,
+    platform_share,
+    status
+FROM wp_impactshop_ads_quarters
+WHERE quarter_name = 'YYYY-QN';
+</code></pre>
+<p><strong>Detailed NGO distribution:</strong></p>
+<pre><code class="language-sql">SELECT 
+    qr.ngo_slug,
+    qr.ngo_name,
+    qr.vote_count,
+    qr.vote_percentage,
+    qr.payout_amount,
+    qr.payout_status
+FROM wp_impactshop_ads_quarter_results qr
+WHERE qr.quarter_id = (
+    SELECT id FROM wp_impactshop_ads_quarters WHERE quarter_name = 'YYYY-QN'
+)
+ORDER BY qr.vote_count DESC;
+</code></pre>
+<h3 id="a2-dispute-list-quarter">A2. Dispute List (quarter)</h3>
+<pre><code class="language-sql">SELECT 
+    vp.stripe_session_id,
+    vp.amount,
+    vp.votes_granted,
+    vp.status,
+    vp.updated_at
+FROM wp_impactshop_vote_purchases vp
+WHERE vp.status IN ('disputed', 'voided', 'refunded')
+  AND vp.created_at BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD';
+</code></pre>
+<h3 id="a3-report-export">A3. Report Export</h3>
+<ul>
+<li><strong>Markdown</strong> → this document filled in</li>
+<li><strong>PDF</strong> → Pandoc conversion (markdown → PDF)</li>
+<li><strong>Archiving</strong> → quarterly archive folder</li>
+</ul>
+<hr />
+<h2 id="review">Review</h2>
+<ul>
+<li><strong>Frequency</strong>: after the close of each quarter (Q1: by April 15, Q2: by July 15, Q3: by October 15, Q4: by January 15)</li>
+<li><strong>Responsible</strong>: Finance officer + Ops Squad</li>
+<li><strong>Deadline</strong>: quarter end date + 15 business days</li>
+</ul>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Initial template</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>Commission split (40/50/60%) clarification + minimum (HUF 5,000/channel) "forfeited" rule recorded</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>2026-02-25</td>
+<td>Finalization: 3-channel NGO distribution table (Impact Shop direct + Common Pool vote ratio), distribution formula expanded, internal file references removed, audit notes incorporated, public guide coherence established</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="related-documents-and-guides">Related Documents and Guides</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#aszf">Terms of Service (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#dispute">Dispute Handling Procedure</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-shop/">Impact Shop Guide</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge Guide</a></li>
+</ul>
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

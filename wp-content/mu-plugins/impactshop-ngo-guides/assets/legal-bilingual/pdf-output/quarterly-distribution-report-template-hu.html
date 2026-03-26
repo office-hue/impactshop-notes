@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Negyedéves Elosztási Riport — Sablon (Magyar)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="negyedeves-elosztasi-riport-sablon">Negyedéves Elosztási Riport — Sablon</h1>
+<blockquote>
+<p><strong>Verzió</strong>: 1.2<br />
+<strong>Dátum</strong>: 2026-02-25<br />
+<strong>Státusz</strong>: HATÁLYOS<br />
+<strong>Vonatkozik</strong>: Impact Shop közvetlen adomány + Impact Challenge/Amplifier Közös Adományalap — negyedéves NGO elosztás<br />
+<strong>Adatforrás</strong>: WordPress adatbázis (negyedéves elosztási táblák), Dognet ledger</p>
+</blockquote>
+<hr />
+<h2 id="sablon-hasznalati-utmutato">Sablon használati útmutató</h2>
+<p>Ez a sablon szolgál a negyedéves adományelosztási riport elkészítéséhez. Minden negyedév zárása után ki kell tölteni a megfelelő adatokkal, és az alábbi jóváhagyási folyamaton kell átesnie.</p>
+<p><strong>Kitöltési lépések:</strong>
+1. Exportáld a negyedéves adatokat a WP adatbázisból (ld. §A1 — Lekérdezések)
+2. Töltsd ki az alábbi sablont
+3. Ellenőrizd az összesítő számokat
+4. Küldd el jóváhagyásra
+5. Véglegesítés után → NGO értesítés + payout indítás</p>
+<hr />
+<h1 id="negyedeves-elosztasi-riport">📊 Negyedéves Elosztási Riport</h1>
+<h2 id="alapadatok">Alapadatok</h2>
+<table>
+<thead>
+<tr>
+<th>Mező</th>
+<th>Érték</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Riport azonosító</strong></td>
+<td><code>QDR-YYYY-QN</code> (pl. QDR-2026-Q1)</td>
+</tr>
+<tr>
+<td><strong>Negyedév</strong></td>
+<td>YYYY Q_ (pl. 2026 Q1)</td>
+</tr>
+<tr>
+<td><strong>Időszak</strong></td>
+<td>YYYY-MM-DD – YYYY-MM-DD</td>
+</tr>
+<tr>
+<td><strong>Riport készítő</strong></td>
+<td>[Név]</td>
+</tr>
+<tr>
+<td><strong>Készítés dátuma</strong></td>
+<td>YYYY-MM-DD</td>
+</tr>
+<tr>
+<td><strong>Jóváhagyó</strong></td>
+<td>[Név]</td>
+</tr>
+<tr>
+<td><strong>Jóváhagyás dátuma</strong></td>
+<td>YYYY-MM-DD</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-beveteli-osszesito">1. Bevételi összesítő</h2>
+<h3 id="11-affiliate-jutalek-dognet-cj-stb">1.1 Affiliate jutalék (Dognet, CJ stb.)</h3>
+<blockquote>
+<p><strong>Megjegyzés</strong>: A Direct Partner jutalék elosztása NGO szintfüggő (Base: 40%, Rising: 50%, Legend: 60%), ezért az itt feltüntetett összegek tranzakciónként eltérő arányokból adódnak össze. Az összesítő sorban az összes tranzakció után ténylegesen NGO-ra jutó összeg kerül.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Tétel</th>
+<th>Összeg (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Bruttó affiliate jutalék</strong> (Dognet ledger)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Platform díj</strong> (fennmaradó rész — NGO szinttől függ: Base: 60%, Rising: 50%, Legend: 40%)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>NGO-knak közvetlenül jutó összeg</strong> (szinttől függően 40–60% + user adomány-szorzó hatása, súlyozott átlag)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>Megjegyzés a riport kitöltőjének</strong>: A Direct Partner tranzakcióknál az NGO szintjétől függően 40% (Base), 50% (Rising) vagy 60% (Legend) kerül adományba. Az affiliate hálózaton (Dognet) keresztül érkező tranzakcióknál az arány az affiliate megállapodás feltételeitől függ. Az összesítő sorba a ténylegesen NGO-ra jutó összeget kell beírni, a platform díj sorba a maradékot. <em>(Vö. ÁSZF §4.1.2(b) és §8.1.)</em></p>
+</blockquote>
+<h3 id="12-impact-amplifier-szavazatvasarlas">1.2 Impact Amplifier (szavazatvásárlás)</h3>
+<table>
+<thead>
+<tr>
+<th>Tétel</th>
+<th>Összeg (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Összes szavazatvásárlás bevétel</strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Platform díj</strong> (50%)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Adományalapba kerülő összeg</strong> (50%)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-osszesitett-adomanypool">1.3 Összesített adománypool</h3>
+<table>
+<thead>
+<tr>
+<th>Forrás</th>
+<th>Összeg (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Affiliate jutalék NGO része</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Impact Amplifier adomány része</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Összes elosztható pool</strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-szavazati-osszesito">2. Szavazati összesítő</h2>
+<table>
+<thead>
+<tr>
+<th>Tétel</th>
+<th>Darab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Összes leadott szavazat</strong> (negyedévben)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Ebből affiliate-ból + Impact Challenge aktivitásból szerzett (ingyenes)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Ebből Impact Amplifier vásárlásból</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Érvényes szavazatok</strong> (dispute-ok levonása után)</td>
+<td><strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="21-dispute-korrekcio">2.1 Dispute korrekció</h3>
+<table>
+<thead>
+<tr>
+<th>Dispute típus</th>
+<th>Darab</th>
+<th>Érintett szavazat</th>
+<th>Pool korrekció (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Elfogadott chargeback</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>-<strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Voided tranzakció</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>-<strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td><strong>Összes korrekció</strong></td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td><strong>-<strong><em>_</em></strong></strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-ngo-elosztas-reszletes-tablazat">3. NGO elosztás — részletes táblázat</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>NGO név</th>
+<th>NGO slug</th>
+<th>Impact Shop közvetlen adomány (HUF)</th>
+<th>Impact Challenge/Amplifier szavazatok (db)</th>
+<th>Szavazat arány (%)</th>
+<th>Közös Alap elosztás (HUF)</th>
+<th>Összes elosztott (HUF)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong>_</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+<td>_____%</td>
+<td><strong><em>_</em></strong></td>
+<td><strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr>
+<td><strong>Σ</strong></td>
+<td><strong>ÖSSZESEN</strong></td>
+<td>—</td>
+<td><strong><strong><em>_</em></strong></strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+<td><strong>100%</strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+<td><strong><strong><em>_</em></strong></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="31-elosztasi-keplet">3.1 Elosztási képlet</h3>
+<p><strong>Impact Challenge/Amplifier Közös Alap elosztás:</strong></p>
+<pre><code>ngo_common_pool_share = (ngo_votes / total_valid_votes) × total_pool_amount
+</code></pre>
+<p><strong>Impact Shop közvetlen adomány:</strong></p>
+<pre><code>ngo_direct_donation = Σ (tranzakciós jutalék × NGO szint arány × adomány-szorzó)
+</code></pre>
+<p><strong>Teljes NGO elosztás:</strong></p>
+<pre><code>ngo_total = ngo_direct_donation + ngo_common_pool_share
+</code></pre>
+<p>Ahol:
+- <code>ngo_votes</code> = az adott NGO-ra leadott érvényes szavazatok száma a negyedévben
+- <code>total_valid_votes</code> = összes érvényes szavazat (dispute korrekció utáni)
+- <code>total_pool_amount</code> = Közös Adományalap (Impact Amplifier 50% + Impact Challenge hirdetési bevétel egy része, korrekciók levonása után)
+- <code>NGO szint arány</code> = Base: 40%, Rising: 50%, Legend: 60% <em>(ÁSZF §4.1.2(b))</em>
+- <code>adomány-szorzó</code> = Basic ×1.00 – Legend ×1.25 <em>(ÁSZF §4.1.2(c))</em></p>
+<hr />
+<h2 id="4-payout-statusz">4. Payout státusz</h2>
+<table>
+<thead>
+<tr>
+<th>NGO</th>
+<th>Összeg (HUF)</th>
+<th>Payout módszer</th>
+<th>Payout dátum</th>
+<th>Státusz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong></td>
+<td>Banki átutalás</td>
+<td>YYYY-MM-DD</td>
+<td>⬜ Függőben / ✅ Elküldve</td>
+</tr>
+<tr>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong></td>
+<td>Banki átutalás</td>
+<td>YYYY-MM-DD</td>
+<td>⬜ Függőben / ✅ Elküldve</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-ellenorzes-es-egyeztetes">5. Ellenőrzés és egyeztetés</h2>
+<h3 id="51-adatforras-egyeztetes">5.1 Adatforrás egyeztetés</h3>
+<table>
+<thead>
+<tr>
+<th>Egyeztetés</th>
+<th>Eredmény</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DB szavazatok összege = Stripe tranzakciók összege ± dispute korrekciók</td>
+<td>✅ / ❌ Eltérés: <strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>Dognet ledger egyenleg = DB affiliate bevétel</td>
+<td>✅ / ❌ Eltérés: <strong><em>_</em></strong></td>
+</tr>
+<tr>
+<td>NGO elosztás összege = Pool összeg</td>
+<td>✅ / ❌ Eltérés: <strong><em>_</em></strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-anomaliak">5.2 Anomáliák</h3>
+<table>
+<thead>
+<tr>
+<th>Anomália</th>
+<th>Leírás</th>
+<th>Akció</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(Ha van)</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Nincs anomália</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-jovahagyas">6. Jóváhagyás</h2>
+<table>
+<thead>
+<tr>
+<th>Szerep</th>
+<th>Név</th>
+<th>Aláírás/Dátum</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Riport készítő</strong></td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+<tr>
+<td><strong>Pénzügyi ellenőr</strong></td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+<tr>
+<td><strong>Vezetőség</strong></td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+<td><strong><em>_</em></strong><strong><em>_</em></strong>__</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="melleklet">Melléklet</h2>
+<h3 id="a1-adatlekerdezesek-wp-cli-sql">A1. Adatlekérdezések (WP-CLI / SQL)</h3>
+<p><strong>Negyedéves szavazat összesítő:</strong></p>
+<pre><code class="language-sql">SELECT 
+    c.slug AS ngo_slug,
+    c.name AS ngo_name,
+    SUM(vp.votes_granted) AS total_votes,
+    SUM(vp.amount) AS total_amount
+FROM wp_impactshop_vote_purchases vp
+JOIN wp_impactshop_challenges c ON vp.challenge_id = c.id
+WHERE vp.status = 'completed'
+  AND vp.created_at BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD'
+GROUP BY c.slug, c.name
+ORDER BY total_votes DESC;
+</code></pre>
+<p><strong>Affiliate bevétel negyedéves összesítő:</strong></p>
+<pre><code class="language-sql">SELECT 
+    quarter_name,
+    total_revenue,
+    ngo_share,
+    platform_share,
+    status
+FROM wp_impactshop_ads_quarters
+WHERE quarter_name = 'YYYY-QN';
+</code></pre>
+<p><strong>Részletes NGO elosztás:</strong></p>
+<pre><code class="language-sql">SELECT 
+    qr.ngo_slug,
+    qr.ngo_name,
+    qr.vote_count,
+    qr.vote_percentage,
+    qr.payout_amount,
+    qr.payout_status
+FROM wp_impactshop_ads_quarter_results qr
+WHERE qr.quarter_id = (
+    SELECT id FROM wp_impactshop_ads_quarters WHERE quarter_name = 'YYYY-QN'
+)
+ORDER BY qr.vote_count DESC;
+</code></pre>
+<h3 id="a2-dispute-lista-negyedev">A2. Dispute lista (negyedév)</h3>
+<pre><code class="language-sql">SELECT 
+    vp.stripe_session_id,
+    vp.amount,
+    vp.votes_granted,
+    vp.status,
+    vp.updated_at
+FROM wp_impactshop_vote_purchases vp
+WHERE vp.status IN ('disputed', 'voided', 'refunded')
+  AND vp.created_at BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD';
+</code></pre>
+<h3 id="a3-riport-exportalas">A3. Riport exportálás</h3>
+<ul>
+<li><strong>Markdown</strong> → ez a dokumentum kitöltve</li>
+<li><strong>PDF</strong> → Pandoc konverzió (markdown → PDF)</li>
+<li><strong>Archiválás</strong> → negyedéves archívum mappába</li>
+</ul>
+<hr />
+<h2 id="felulvizsgalat">Felülvizsgálat</h2>
+<ul>
+<li><strong>Gyakoriság</strong>: minden negyedév zárása után (Q1: április 15-ig, Q2: július 15-ig, Q3: október 15-ig, Q4: január 15-ig)</li>
+<li><strong>Felelős</strong>: Pénzügyi felelős + Ops Squad</li>
+<li><strong>Határidő</strong>: negyedév záró napja + 15 munkanap</li>
+</ul>
+<hr />
+<h2 id="valtozasnaplo">Változásnapló</h2>
+<table>
+<thead>
+<tr>
+<th>Verzió</th>
+<th>Dátum</th>
+<th>Változás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Kezdeti sablon</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>Jutalék felosztás (40/50/60%) pontosítás + minimum (5 000 Ft/csatorna) „elvész" szabály rögzítése</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>2026-02-25</td>
+<td>Véglegesítés: 3-csatornás NGO elosztási tábla (Impact Shop közvetlen + Közös Alap szavazatarány), elosztási képlet kibővítése, belső fájlhivatkozások eltávolítva, audit megjegyzések beépítve, publikus guide koherencia rögzítve</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="kapcsolodo-dokumentumok-es-guide-ok">Kapcsolódó dokumentumok és guide-ok</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#aszf">Általános Szerződési Feltételek (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#dispute">Vitakezelési eljárásrend</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-shop/">Impact Shop útmutató</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge útmutató</a></li>
+</ul>
+</div>
+<hr />
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

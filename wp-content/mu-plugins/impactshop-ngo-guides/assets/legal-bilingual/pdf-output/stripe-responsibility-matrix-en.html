@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe Responsibility Matrix (English)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="stripe-responsibility-matrix">Stripe Responsibility Matrix</h1>
+<blockquote>
+<p><strong>Version</strong>: 1.1<br />
+<strong>Date</strong>: 2026-02-25<br />
+<strong>Status</strong>: IN EFFECT<br />
+<strong>Applies to</strong>: Impact Amplifier (vote purchase) — Stripe Checkout integration<br />
+<strong>Related</strong>: Dispute Handling Procedure (dispute-handling-procedure)</p>
+</blockquote>
+<hr />
+<h2 id="1-parties">1. Parties</h2>
+<table>
+<thead>
+<tr>
+<th>Party</th>
+<th>Legal entity</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sharity</strong></td>
+<td>Sharity Donation Organizing Foundation + Sharity Mobile Application Zrt.</td>
+<td>Merchant — the Stripe account owner</td>
+</tr>
+<tr>
+<td><strong>Stripe</strong></td>
+<td>Stripe Payments Europe, Limited (Dublin, Ireland)</td>
+<td>Payment processor</td>
+</tr>
+<tr>
+<td><strong>User</strong></td>
+<td>Natural person or company</td>
+<td>Donor — pays via Stripe Checkout</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-responsibility-matrix">2. Responsibility Matrix</h2>
+<h3 id="21-payment-flow">2.1 Payment Flow</h3>
+<table>
+<thead>
+<tr>
+<th>Activity</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Checkout Session creation</strong> (REST → Stripe API)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Server-side API call</td>
+</tr>
+<tr>
+<td><strong>Payment page rendering</strong> (hosted checkout)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe hosted — card data does not touch the Sharity server</td>
+</tr>
+<tr>
+<td><strong>Card data handling</strong> (PCI-DSS)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Sharity scope: PCI SAQ-A (minimum)</td>
+</tr>
+<tr>
+<td><strong>3D Secure / SCA</strong> (Strong Customer Authentication)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe handles automatically for EU transactions</td>
+</tr>
+<tr>
+<td><strong>Fraud detection</strong> (Stripe Radar)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Built-in, automatic — no extra development required</td>
+</tr>
+<tr>
+<td><strong>Webhook reception and Signature verification</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td><code>Stripe-Signature</code> header + webhook secret</td>
+</tr>
+<tr>
+<td><strong>Vote crediting</strong> after successful payment</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Idempotent webhook handler</td>
+</tr>
+<tr>
+<td><strong>Pool increment</strong> (donation pool)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Atomic DB increment</td>
+</tr>
+<tr>
+<td><strong>Confirmation email</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Sharity email sending (msmtp / WP Mail)</td>
+</tr>
+<tr>
+<td><strong>Donation certificate</strong> (for corporate donors)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Issued by the Sharity Foundation</td>
+</tr>
+<tr>
+<td><strong>Multi-currency conversion</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe handles settlement (settlement currency: HUF)</td>
+</tr>
+<tr>
+<td><strong>Payout</strong> (disbursement to Sharity bank account)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe → Sharity bank account (automatic schedule)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-security">2.2 Security</h3>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Secure storage of API keys</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>In environment variables, excluded from version control</td>
+</tr>
+<tr>
+<td><strong>Webhook secret rotation</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td>Sharity is responsible for initiating rotation</td>
+</tr>
+<tr>
+<td><strong>SSL/TLS</strong> (communication encryption)</td>
+<td style="text-align: center;">✅ (server)</td>
+<td style="text-align: center;">✅ (API)</td>
+<td>HTTPS mandatory on both sides</td>
+</tr>
+<tr>
+<td><strong>PCI-DSS compliance</strong></td>
+<td style="text-align: center;">✅ (SAQ-A)</td>
+<td style="text-align: center;">✅ (Level 1)</td>
+<td>Hosted checkout → Sharity scope is minimal</td>
+</tr>
+<tr>
+<td><strong>Rate limiting</strong> (bot protection)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Cloudflare WAF + pseudo_id cap</td>
+</tr>
+<tr>
+<td><strong>Cloudflare Turnstile</strong> (CAPTCHA)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Before checkout initiation</td>
+</tr>
+<tr>
+<td><strong>IP fraud monitoring</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe Radar</td>
+</tr>
+<tr>
+<td><strong>Account takeover protection</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe account-level protection</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-disputes-and-refunds">2.3 Disputes and Refunds</h3>
+<table>
+<thead>
+<tr>
+<th>Activity</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Chargeback notification</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe webhook: <code>charge.dispute.created</code></td>
+</tr>
+<tr>
+<td><strong>Chargeback evidence compilation</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>See Dispute Handling Procedure</td>
+</tr>
+<tr>
+<td><strong>Chargeback evidence submission</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td>Sharity uploads → Stripe forwards to the bank</td>
+</tr>
+<tr>
+<td><strong>Refund initiation</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Admin decision (exceptional, D6: donations are non-refundable)</td>
+</tr>
+<tr>
+<td><strong>Refund execution</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe API: <code>Refund::create()</code></td>
+</tr>
+<tr>
+<td><strong>Vote revocation</strong> on refund/void</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>See Dispute Handling Procedure §4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Refund exceptions:</strong> The general rule of "donations are non-refundable" (D6) is subject to exceptions in the case of double charges and verified system errors. In such cases, Sharity initiates the refund via the Stripe API. The checkout and GTC wording clearly set out the refund conditions so that the chargeback evidence does not contain ambiguous statements.</p>
+<h3 id="24-compliance-and-data-protection">2.4 Compliance and Data Protection</h3>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>GDPR — data controller</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Sharity is the data controller</td>
+</tr>
+<tr>
+<td><strong>GDPR — data processor</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe as data processor (see GDPR Data Processor Registry)</td>
+</tr>
+<tr>
+<td><strong>DPA (Data Processing Agreement)</strong></td>
+<td style="text-align: center;">✅ (signing)</td>
+<td style="text-align: center;">✅ (provision)</td>
+<td>Stripe DPA: https://stripe.com/legal/dpa</td>
+</tr>
+<tr>
+<td><strong>Transaction data retention</strong></td>
+<td style="text-align: center;">✅ (DB)</td>
+<td style="text-align: center;">✅ (Dashboard)</td>
+<td>Both parties retain — accounting obligation: 8 years</td>
+</tr>
+<tr>
+<td><strong>User data deletion</strong> (GDPR right)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Sharity: soft-delete for corporate data; Stripe: retain for compliance</td>
+</tr>
+<tr>
+<td><strong>AML / KYC</strong> (anti-money laundering checks)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe performs (Sharity does not handle card data)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-stripe-contractual-terms-references">3. Stripe Contractual Terms References</h2>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>URL</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stripe Services Agreement</strong></td>
+<td>https://stripe.com/legal/ssa</td>
+<td>General service terms</td>
+</tr>
+<tr>
+<td><strong>Stripe Privacy Policy</strong></td>
+<td>https://stripe.com/privacy</td>
+<td>Privacy policy</td>
+</tr>
+<tr>
+<td><strong>Stripe Data Processing Agreement (DPA)</strong></td>
+<td>https://stripe.com/legal/dpa</td>
+<td>GDPR data processing agreement</td>
+</tr>
+<tr>
+<td><strong>Stripe Checkout Documentation</strong></td>
+<td>https://docs.stripe.com/payments/checkout</td>
+<td>Checkout Session API reference</td>
+</tr>
+<tr>
+<td><strong>Stripe Disputes &amp; Fraud</strong></td>
+<td>https://docs.stripe.com/disputes</td>
+<td>Chargeback handling documentation</td>
+</tr>
+<tr>
+<td><strong>Stripe PCI Compliance</strong></td>
+<td>https://stripe.com/guides/pci-compliance</td>
+<td>PCI-DSS levels and SAQ-A</td>
+</tr>
+<tr>
+<td><strong>Stripe Zero-Decimal Currencies</strong></td>
+<td>https://docs.stripe.com/currencies#zero-decimal</td>
+<td>HUF/CZK handling</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-contact-information">4. Contact Information</h2>
+<table>
+<thead>
+<tr>
+<th>Matter</th>
+<th>Handled by</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stripe account settings</td>
+<td>Sharity admin</td>
+<td>Stripe Dashboard → Settings</td>
+</tr>
+<tr>
+<td>Webhook configuration</td>
+<td>Sharity developer</td>
+<td>Stripe Dashboard → Developers → Webhooks</td>
+</tr>
+<tr>
+<td>Stripe support (technical)</td>
+<td>Sharity admin</td>
+<td>Stripe Dashboard → Support (email/chat)</td>
+</tr>
+<tr>
+<td>Chargeback response</td>
+<td>Sharity admin</td>
+<td>Stripe Dashboard → Payments → Disputes</td>
+</tr>
+<tr>
+<td>Payout settings</td>
+<td>Sharity finance</td>
+<td>Stripe Dashboard → Balance → Payouts</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-review">5. Review</h2>
+<ul>
+<li><strong>Frequency</strong>: semi-annually, or upon changes to Stripe terms</li>
+<li><strong>Responsible</strong>: Ops Squad + CFO</li>
+<li><strong>Mandatory update triggers</strong>: Stripe SSA update, addition of new currencies, post-PCI audit findings</li>
+</ul>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Initial version — draft</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>Finalization: removal of internal file references, audit note integration, refund exception documentation</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="related-documents-and-guides">Related Documents and Guides</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#dispute">Dispute Handling Procedure</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#aszf">General Terms and Conditions (GTC)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#gdpr">GDPR Data Processors</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#access-control">Access Control Matrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge Guide</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">Impact Amplifier (About Us)</a></li>
+</ul>
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

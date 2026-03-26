@@ -1,0 +1,177 @@
+# Chargeback és Dispute Kezelési Eljárásrend
+
+> **Verzió**: 1.2  
+> **Dátum**: 2026-02-25  
+> **Státusz**: HATÁLYOS  
+> **Vonatkozik**: Impact Amplifier (szavazatvásárlás) — Stripe Checkout tranzakciók  
+> **Kapcsolódó**: Stripe Felelősségmegosztási Mátrix, Impact Challenge szavazatvásárlási terv §4.5 D6
+
+---
+
+## 1. Áttekintés
+
+Az Impact Amplifier szavazatvásárlás **adományjellegű** tranzakció, amelyre a D6 üzleti szabály vonatkozik:
+
+> **D6**: „Adomány nem visszakövetelhető" — a tranzakció természete szerint adományozás, nem termékértékesítés.
+
+Ennek ellenére a Stripe/kártyakibocsátó **chargeback** (visszaterhelés) mechanizmusa technikai szinten továbbra is elérhető a kártyatulajdonos számára. Ez az eljárásrend rögzíti a Sharity teendőit ilyen esetben.
+
+---
+
+## 2. Chargeback időkeretek
+
+| Fázis | Időkeret | Ki intézi |
+|-------|---------|-----------|
+| **Kártyabirtokos chargeback bejelentés** | Tranzakciótól számított **120 nap** (Visa/MC) | Felhasználó → kibocsátó bank |
+| **Stripe értesítés** | ~1-2 munkanap a bank bejelentése után | Stripe → webhook: `charge.dispute.created` |
+| **Sharity válaszidő** | **7 naptári nap** a Stripe értesítéstől | Sharity admin |
+| **Bank döntés** | 30–90 nap a bizonyíték benyújtástól | Kibocsátó bank |
+
+---
+
+## 3. Chargeback kezelési folyamat
+
+### 3.1 Értesítés fogadása
+
+1. **Stripe webhook** (`charge.dispute.created`) → a rendszer automatikusan naplózza:
+   - `wp_impactshop_vote_purchases.status` → `disputed`
+   - Guard alert → Discord webhook (üzemeltetési csatorna)
+   - Email értesítés → Ops Squad
+
+2. **Manuális észlelés** — ha a webhook feldolgozás bármely okból sikertelen:
+   - Stripe Dashboard → Payments → Disputes ellenőrzése naponta
+   - P2 szintű incident → ld. SLA §2
+
+### 3.2 Vizsgálat (≤ 2 munkanap)
+
+| Ellenőrzés | Hol | Mit keresünk |
+|------------|-----|-------------|
+| Tranzakció részletek | `wp_impactshop_vote_purchases` tábla | `stripe_session_id`, `amount`, `timestamp`, `pseudo_id` |
+| Webhook log | Alkalmazás naplók | Sikeres checkout callback bejegyzés |
+| Felhasználói adatok | DB + Stripe Dashboard | Email, pseudo_id, IP, Cloudflare Turnstile eredmény |
+| Fraud jelek | Stripe Radar | Risk score, IP country, card fingerprint |
+| Többszörös vásárlás | DB query | Ugyanazon pseudo_id/email/IP-ről jött-e több vásárlás |
+
+### 3.3 Döntés
+
+| Helyzet | Akció | Szavazat kezelés |
+|---------|-------|-----------------|
+| **Fraud** — hamis kártyahasználat (nem a valódi tulajdonos vásárolt) | Bizonyíték benyújtás → Stripe-on keresztül VAGY refund elfogadás | Szavazatok **visszavonása** |
+| **Friendly fraud** — a tényleges vásárló vonja vissza | Bizonyíték benyújtás (checkout evidence) | Szavazatok **befagyasztása** a döntésig |
+| **Jogos reklamáció** — tényleges rendszerhiba, dupla levonás | Refund elfogadás | Szavazatok korrekcióba — csak a dupla rész visszavonása |
+| **Ismeretlen / bizonytalan** | Bizonyíték benyújtás, ha lehetséges | Szavazatok **befagyasztása** |
+
+### 3.4 Bizonyíték összeállítás
+
+Az alábbi elemeket kell csatolni a Stripe dispute response-hoz:
+
+1. **Tranzakciós bizonyíték**
+   - Checkout Session screenshot (Stripe Dashboard-ról)
+   - Webhook delivery log (siker/timestamp)
+   - Vásárlás utáni visszaigazolás (ha email küldés megtörtént)
+
+2. **Felhasználói szándék bizonyítéka**
+   - Cloudflare Turnstile verification = pass → nem bot
+   - Adomány természetét megerősítő checkout szöveg: _„Adományozás az Impact Challenge-en keresztül"_
+   - Terms & Conditions link a checkout oldalon
+
+3. **Adomány-specifikus érvelés**
+   - Az Impact Amplifier szavazatvásárlás **adományozási cselekmény**, nem termék/szolgáltatás vásárlás
+   - A checkout oldalon egyértelmű tájékoztatás: _„Az összeg 50%-a a Közös Adományalapba kerül, amelyet a civil szervezetek között a szavazatok arányában (ÁSZF szerint negyedévente) osztunk szét; a felhasználó a kapott szavazatokat a kiválasztott civil szervezetre adja le.”_
+   - D6 szabály: az adományozó előzetes beleegyezésével történik
+
+4. **Benyújtás**: Stripe Dashboard → Disputes → Submit Evidence
+
+### 3.5 Eredmény kezelés
+
+| Stripe döntés | Teendő |
+|---------------|--------|
+| **Won** (Sharity javára) | `status` → `completed` visszaállítás; szavazatok feloldása; záró naplóbejegyzés |
+| **Won partially** (részleges Sharity javára) | `status` → `completed` a nem vitatott részre; a visszatérített összeg arányában `votes_granted` csökkentése; pool részleges korrekció (`refunded_amount × 0.5`); naplóbejegyzés mindkét részre |
+| **Lost** (kártyabirtokos javára) | `status` → `refunded`; szavazatok végleges visszavonása; pool csökkentés |
+| **Accepted** (Sharity nem vitatja) | `status` → `refunded`; szavazatok végleges visszavonása; pool csökkentés |
+
+---
+
+## 4. Szavazat visszavonási eljárás
+
+### 4.1 Manuális visszavonás (WP-CLI)
+
+```bash
+wp impactshop vote-purchase void --order_id=<stripe_session_id>
+```
+
+Ez az alábbi műveleteket hajtja végre:
+- `wp_impactshop_vote_purchases.status` → `voided` / `refunded`
+- `wp_impactshop_challenges.total_votes` → csökkentés a jóváírt szavazatszámmal
+- `wp_impactshop_challenges.pool_amount` → csökkentés az adomány részével (pool_share = amount × 50%)
+
+### 4.2 Pool korrekció
+
+- A pool összeg csökken az adományrész nagyságával (`amount × 0.5`)
+- Ha a quarter még nem zárult le: a szavazat automatikusan eltűnik a szavazati arányból
+- Ha a quarter **már lezárult** és kifizetés megtörtént: **manuális korrekciót** kell végrehajtani a következő negyedéves elosztásban (negatív tétel az érintett NGO-nál, **ha a szavazatok arányosan befolyásolták**)
+
+### 4.3 Naplózás
+
+Minden dispute-ot naplózni kell:
+
+```
+disputes.log:
+2026-02-25T14:30:00Z | dispute_id=dp_xxx | session_id=cs_xxx | amount=2000 | decision=evidence_submitted | votes_frozen=2500 | admin=sharity_admin
+```
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Stripe felelősségmegosztás](./stripe-responsibility-matrix.md)
+- [Általános Szerződési Feltételek (ÁSZF)](../ÁSZF/Sharity_ASZF_2026.md)
+- [Negyedéves elosztási riport sablon](./quarterly-distribution-report-template.md)
+- [SLA](./sla-policy.md)
+- [Impact Challenge útmutató](https://app.sharity.hu/ngo-guides/impact-challenge/)
+- [Impact Amplifier (Rólunk)](https://app.sharity.hu/rolunk/)
+
+---
+
+## 5. Prevenció
+
+### 5.1 Aktuális védelmi rétegek
+
+| Réteg | Leírás | Beállítás |
+|-------|--------|-----------|
+| **Cloudflare Turnstile** | Bot/automation szűrés checkout indítás előtt | Checkout form előtt |
+| **Rate limiting** | IP: max 10 checkout/óra; pseudo_id: max 5 checkout/óra | MU plugin + Cloudflare WAF |
+| **Stripe Radar** | Beépített fraud scoring, kockázatos tranzakciók blokkolása | Stripe Dashboard → Radar Rules |
+| **3D Secure** | EU-ban kötelező SCA (Strong Customer Authentication) | Stripe automatikus |
+| **Egyértelmű tájékoztatás** | „Adomány" szó használata, nem „vásárlás" | Checkout UI szövegek |
+
+
+---
+
+## 6. Eskalációs mátrix
+
+| Dispute összeg | Döntéshozó | Eskaláció |
+|----------------|-----------|-----------|
+| **≤ 5 000 Ft** | Ops Squad self-service | Nincs (standard eljárás) |
+| **5 001 – 50 000 Ft** | Ops Squad + pénzügyi felelős | 48h-n belül közös döntés |
+| **> 50 000 Ft** | Vezetőség + jogi tanácsadó | Azonnali eskaláció, jogi vélemény kérés |
+| **Ismétlődő** (>3 dispute / hónap) | Vezetőség | Fraud pattern vizsgálat, Stripe support bevonás |
+
+---
+
+## 7. Felülvizsgálat
+
+- **Gyakoriság**: negyedévente, vagy bármely dispute esemény után
+- **Felelős**: Ops Squad
+- **Metrika**: dispute rate < 0.1% (Stripe elvárás: < 0.75%)
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2026-02-25 | Kezdeti verzió — draft |
+| 1.1 | 2026-02-25 | „Won partially" kimenet hozzáadása (§3.5) |
+| 1.2 | 2026-02-25 | Véglegesítés: belső fájlhivatkozások eltávolítása, checkout-szöveg pontosítása (Közös Adományalap), audit megjegyzések beépítése |

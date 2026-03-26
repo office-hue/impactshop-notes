@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Donation channels – Impact Shop & Tasks | Sharity</title>
+  <meta name="description" content="NGO guide: how your organization receives donations from purchases, tasks and surveys on Sharity. Impact Shop + Offerwall.">
+  <meta property="og:title" content="Donation channels – Impact Shop & Tasks | Sharity">
+  <meta property="og:description" content="For NGOs: multiple ways to receive donations on Sharity – shopping, tasks, surveys.">
+  <meta property="og:url" content="https://app.sharity.hu/ngo-guides/impact-shop?lang=en">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+      --orange: #f97316;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(15, 138, 157, 0.3), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(245, 182, 66, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(15, 138, 157, 0.1);
+      text-decoration: none;
+    }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 138, 157, 0.25);
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--teal);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(15, 138, 157, 0.12);
+      color: var(--teal);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(15, 138, 157, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+      margin-bottom: 8px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(15, 138, 157, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--teal);
+      font-weight: 600;
+      border: 2px solid var(--teal);
+      transition: background 0.2s;
+      margin-bottom: 8px;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(15, 138, 157, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--teal);
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.05) 0%, #fff 100%);
+    }
+    .card.highlight-orange {
+      border: 2px solid var(--orange);
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, #fff 100%);
+    }
+    .card.highlight-purple {
+      border: 2px solid var(--purple);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(15, 138, 157, 0.12);
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+    .card-icon.orange {
+      background: rgba(249, 115, 22, 0.12);
+    }
+    .card-icon.purple {
+      background: rgba(124, 58, 237, 0.12);
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid rgba(11, 31, 42, 0.08);
+    }
+
+    .callout {
+      margin-top: 24px;
+      padding: 20px 24px;
+      border-radius: 16px;
+      border-left: 4px solid var(--teal);
+      background: rgba(15, 138, 157, 0.08);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--purple);
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .table {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .table .row {
+      display: grid;
+      grid-template-columns: 1.2fr 1.2fr 1fr;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+    }
+    .table .row strong { color: var(--ink); }
+
+    .faq {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .faq .card { border-left: 4px solid var(--mint); }
+
+    .footer {
+      margin-top: 64px;
+      padding: 32px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.9);
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+    .fade-in.delay-1 { animation-delay: 0.1s; }
+    .fade-in.delay-2 { animation-delay: 0.2s; }
+    .fade-in.delay-3 { animation-delay: 0.3s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+      .table .row { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#csatornak">Channels</a>
+      <a href="#impact-shop">Impact Shop</a>
+      <a href="#feladatok">Tasks</a>
+      <a href="#koltseg">Funding source</a>
+      <a href="#tippek">Grow donations</a>
+      <a href="#faq">FAQ</a>
+      <a href="/ngo-guides/impact-challenge?lang=en">Impact Challenge →</a>
+      <div class="lang-switch" aria-label="Language selector">
+        <a href="?lang=hu">HU</a>
+        <a href="?lang=en" class="active" aria-current="true">EN</a>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">💝 Multiple channels – one goal: donations</span>
+        <h1>Donations on Sharity – NGO guide</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          Sharity generates <strong>donations in multiple ways</strong> for your organization:
+          purchases, video views, completing tasks, and filling out surveys.
+          <strong>It does not cost your supporters anything</strong> – revenue comes from merchants and advertisers.
+        </p>
+        <p>
+          This page focuses on the <strong>Impact Shop</strong> (affiliate shopping) and the <strong>Tasks</strong>
+          channel (offerwall, surveys).
+        </p>
+        <div style="margin-top: 20px;">
+          <a href="https://app.sharity.hu/impactshop/" class="cta">🛒 Impact Shop</a>
+          <a href="#csatornak" class="cta-secondary">See channels</a>
+        </div>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h3>✅ In short</h3>
+          <ul class="list" style="margin-top: 16px;">
+            <li>Supporters shop, watch, and complete tasks</li>
+            <li>We convert activity into donations for your NGO</li>
+            <li>Donations are tracked per NGO with full transparency</li>
+            <li>Zero cost to supporters</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Channels -->
+    <h2 class="section-title fade-in delay-1" id="csatornak">📊 Donation channels</h2>
+    <p>Two main channels drive recurring donations for NGOs.</p>
+    <div class="grid">
+      <div class="card highlight">
+        <div class="card-icon">🛒</div>
+        <h3>Impact Shop (shopping)</h3>
+        <p>Affiliate purchases from partner webshops and offline stores. Each purchase generates commission that funds donations.</p>
+      </div>
+      <div class="card highlight-orange">
+        <div class="card-icon orange">📋</div>
+        <h3>Tasks & Surveys (offerwall)</h3>
+        <p>Users complete missions, surveys, or app trials. Advertisers pay for results – your NGO receives a share.</p>
+      </div>
+      <div class="card highlight-purple">
+        <div class="card-icon purple">📺</div>
+        <h3>Impact Challenge (videos)</h3>
+        <p>Video views and engagement generate a donation pool distributed by votes. See <a href="/ngo-guides/impact-challenge?lang=en">Impact Challenge</a>.</p>
+      </div>
+    </div>
+
+    <!-- Impact Shop -->
+    <h2 class="section-title fade-in" id="impact-shop">🛒 Impact Shop – donations from shopping</h2>
+    <p>The Impact Shop is a simple flow: a supporter selects your NGO and shops as usual. The commission becomes donation + platform revenue.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>How it works</h3>
+        <ul class="list">
+          <li>Supporter selects your NGO</li>
+          <li>Shopping happens in partner stores</li>
+          <li>Commission is shared between donation + platform</li>
+          <li>You see the totals transparently</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Why it works</h3>
+        <ul class="list">
+          <li>No extra cost to the supporter</li>
+          <li>Recurring, predictable revenue stream</li>
+          <li>Easy to communicate and share</li>
+          <li>Works with 500+ partners</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Funding source -->
+    <h2 class="section-title fade-in" id="koltseg">💰 Where does the money come from?</h2>
+    <p>Partner merchants and advertisers pay affiliate commissions and ad fees. We split this into donation + platform operations.</p>
+
+    <div class="callout">
+      <h3>Example</h3>
+      <p>10,000 HUF purchase → 5% commission = 500 HUF. If your NGO is Rising (50%) and the user is Gold (1.1×): 500 × 50% × 1.1 = 275 HUF donation.</p>
+    </div>
+
+    <!-- Level bonuses -->
+    <h2 class="section-title fade-in">🎁 Level bonuses – more impact at higher levels</h2>
+    <p>User levels increase donation multipliers. This incentivizes long-term engagement and brings more to your NGO.</p>
+
+    <div class="table">
+      <div class="row"><strong>Basic</strong><span>1.00×</span><span>Base donation level</span></div>
+      <div class="row"><strong>Bronze</strong><span>1.05×</span><span>Starter bonus</span></div>
+      <div class="row"><strong>Silver</strong><span>1.10×</span><span>Steady supporter</span></div>
+      <div class="row"><strong>Gold</strong><span>1.15×</span><span>High activity</span></div>
+      <div class="row"><strong>Platinum</strong><span>1.20×</span><span>Top engagement</span></div>
+      <div class="row"><strong>Legend</strong><span>1.25×</span><span>Community leader</span></div>
+    </div>
+    <p style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);">⏱️ Guidance: Bronze ~1–2 weeks, Silver ~3–5 weeks, Gold ~1–2 months, Platinum ~2–4 months, Legend ~4–6 months with steady activity.</p>
+    <div style="margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+      <div style="font-weight: 600; margin-bottom: 6px;">What it takes for each level</div>
+      <ul style="margin: 0 0 6px 18px;">
+        <li>Bronze: ~1–2 weeks with regular activity</li>
+        <li>Silver: ~1 month with 5+ active days/week</li>
+        <li>Gold: ~1–2 months for active users</li>
+        <li>Platinum: ~2–4 months with consistent daily use</li>
+        <li>Legend: ~4–6 months for the most active users</li>
+      </ul>
+      <div style="font-size: 0.85rem; color: var(--muted);">With occasional use, Platinum/Legend are typically not reachable.</div>
+    </div>
+
+    <!-- Tasks -->
+    <h2 class="section-title fade-in" id="feladatok">📋 Tasks – Offerwall & Surveys</h2>
+    <p>Offerwall activities include surveys, registrations, app trials and other CPA tasks. Each completion generates points and donations.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>What counts as a task?</h3>
+        <ul class="list">
+          <li>Surveys and questionnaires</li>
+          <li>App installs and trials</li>
+          <li>Newsletter signups</li>
+          <li>Partner engagements</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Why it matters</h3>
+        <ul class="list">
+          <li>New donation pool revenue</li>
+          <li>Fast points and votes for users</li>
+          <li>High-margin advertiser payouts</li>
+          <li>Scales with your community</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="section-title fade-in">🏪 Impact Shop partner webshops</h2>
+    <p>We work with 500+ online and offline partners. Your NGO can promote the Impact Shop link and earn from everyday shopping.</p>
+
+    <h2 class="section-title fade-in">📊 What do you see on the dashboard?</h2>
+    <p>NGO dashboards show donations, activity, votes, and trends. You can export data and share live progress with supporters.</p>
+
+    <h2 class="section-title fade-in" id="tippek">🚀 How to get more donations</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Communicate regularly</h3>
+        <p>Share your NGO link weekly on Facebook, email and groups. Repetition brings results.</p>
+      </div>
+      <div class="card">
+        <h3>Offer clear actions</h3>
+        <p>Tell supporters what to do: shop, watch, and complete tasks. Provide direct links.</p>
+      </div>
+      <div class="card">
+        <h3>Show progress</h3>
+        <p>Update your community with donation totals and milestones. Transparency motivates action.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title fade-in">⏱️ Payout flow</h2>
+    <p>Donations are tracked continuously and paid out according to the Impact Shop payout schedule. You will always see the latest totals.</p>
+
+    <h2 class="section-title fade-in" id="faq">❓ FAQ</h2>
+    <div class="faq">
+      <div class="card">
+        <h3>Does it cost users money?</h3>
+        <p>No. Users shop or complete tasks, and advertisers pay the commission.</p>
+      </div>
+      <div class="card">
+        <h3>Can any NGO join?</h3>
+        <p>Yes. NGOs can be selected and supported even before formal registration.</p>
+      </div>
+      <div class="card">
+        <h3>How do we increase results?</h3>
+        <p>Communicate often, share direct links, and guide supporters to the easiest actions.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title fade-in">📞 Contact & support</h2>
+    <p>If you need help, write to <a href="mailto:office@sharity.hu">office@sharity.hu</a>.</p>
+
+    <footer class="footer">
+      <p><strong>Sharity</strong> – impact, revenue, community.</p>
+      <div style="margin-top: 12px;">
+        <a href="/ngo-guides/?lang=en" class="tag">NGO guide index</a>
+        <a href="/ngo-guides/impact-challenge?lang=en" class="tag">Impact Challenge</a>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ImpactShop Static Pages
  * Description: Serves static HTML pages for NGO guides and partner landing pages.
- * Version: 1.1.1
+ * Version: 1.1.2
  */
 
 declare(strict_types=1);
@@ -20,6 +20,7 @@ if (!defined('ABSPATH')) {
  * - /ngo-guides/impact-challenge → Impact Challenge útmutató  
  * - /ngo-guides/ngo-card      → NGO Card beágyazás útmutató
  * - /cegeknek                 → Partneri csatlakozás cégeknek
+ * - /ngo-guides/jogi-dokumentumok → Jogi dokumentumok
  */
 
 add_action('init', 'impactshop_ngo_guides_rewrite_rules');
@@ -109,6 +110,7 @@ function impactshop_ngo_guides_template_redirect(): void
         'cegeknek'        => 'cegeknek.html',
         'rolunk'          => 'rolunk.html',
         'hatas-korok'     => 'hatas-korok.html',
+        'jogi-dokumentumok' => 'jogi-dokumentumok.html',
     ];
     
     // Validate page exists
@@ -151,8 +153,8 @@ function impactshop_ngo_guides_activate(): void
 
 // Check if rewrite rules need flushing (first run detection)
 add_action('admin_init', function() {
-    if (get_option('impactshop_ngo_guides_rules_flushed') !== '1.1.1') {
+    if (get_option('impactshop_ngo_guides_rules_flushed') !== '1.1.2') {
         impactshop_ngo_guides_activate();
-        update_option('impactshop_ngo_guides_rules_flushed', '1.1.1');
+        update_option('impactshop_ngo_guides_rules_flushed', '1.1.2');
     }
 });

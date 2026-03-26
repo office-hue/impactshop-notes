@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDPR Record of Data Processors (English)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="gdpr-record-of-data-processors">GDPR Record of Data Processors</h1>
+<blockquote>
+<p><strong>Version</strong>: 1.2<br />
+<strong>Date</strong>: 2026-02-25<br />
+<strong>Status</strong>: IN FORCE<br />
+<strong>Scope</strong>: ImpactShop full platform (SHARITEAM.COM, app.sharity.hu)<br />
+<strong>Data Controller</strong>: Sharity Donation Organising Foundation + Sharity Mobile Application Zrt.</p>
+</blockquote>
+<hr />
+<h2 id="1-overview">1. Overview</h2>
+<p>This document contains the record of <strong>data processors</strong> engaged by the ImpactShop / Sharity platform in accordance with Article 30(2) of the GDPR.</p>
+<p>The <strong>data controller</strong> in all cases is Sharity (Foundation and/or Zrt.), which determines the purposes and means of the processing of personal data.</p>
+<p><strong>Pseudo ID and personal data:</strong> The Platform uses a Pseudo ID (an online identifier generated in the browser) without registration. Depending on the circumstances, the Pseudo ID may qualify as personal data (GDPR online identifier; linkability with IP address, transaction, Stripe email, etc.) — see Terms &amp; Conditions §5.2, §16.3. The Pseudo ID is specifically named in the Privacy Notice: storage (cookie/localStorage), legal basis, retention period, and deletion/linking rules.</p>
+<hr />
+<h2 id="2-record-of-data-processors">2. Record of Data Processors</h2>
+<h3 id="21-stripe-payments-europe-limited">2.1 Stripe Payments Europe, Limited</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Stripe Payments Europe, Limited</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>1 Grand Canal Street Lower, Dublin 2, Ireland</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Data Processor (payment service provider)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Card data (never touches Sharity's servers), email address, transaction amount, IP address, device fingerprint</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Processing payment transactions for Impact Amplifier vote purchases</td>
+</tr>
+<tr>
+<td><strong>DPA (Data Processing Agreement)</strong></td>
+<td>https://stripe.com/legal/dpa — automatically effective upon acceptance of the Stripe Services Agreement</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Yes — Stripe Inc. (USA) — EU–US Data Privacy Framework certified</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Per Stripe's own policy: transaction data per anti-money laundering and accounting obligations (min. 5 years)</td>
+</tr>
+<tr>
+<td><strong>Related certification</strong></td>
+<td>PCI-DSS Level 1, SOC 2 Type II, ISO 27001</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-dognet-sro">2.2 Dognet s.r.o.</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Dognet s.r.o.</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Bratislava, Slovakia (EU)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Data Processor (affiliate network provider)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Cookie identifiers, click tracking data, transaction confirmations (affiliate conversion)</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Affiliate commission tracking in the ImpactShop → partner webshop purchase flow</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>Annex to the Dognet General Partner Agreement (GDPR clause) — individually concluded</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>No — processing within the EU</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Cookie lifetime: 30 days; transaction data: min. 5 years (accounting obligation)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cookie compliance:</strong> Dognet affiliate tracking is cookie/identifier-based. The cookie/storage notice and any consent management comply with applicable e-Privacy and local regulations and are consistent with the Pseudo ID description (see Terms &amp; Conditions §5.2, §16.6 and Cookie Notice).</p>
+<h3 id="23-cloudflare-inc">2.3 Cloudflare, Inc.</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Cloudflare, Inc.</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>San Francisco, USA</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Data Processor (CDN, WAF, DNS, DDoS protection)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>IP address, HTTP request/response metadata, Turnstile token (CAPTCHA)</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Website protection, rate limiting, bot filtering, SSL termination</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>https://www.cloudflare.com/cloudflare-customer-dpa/ — automatically effective for Enterprise and Free/Pro/Business tiers</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Yes — USA + global edge network — EU–US DPF + Binding Corporate Rules</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Request logs: 72 hours (standard); Analytics: 30 days</td>
+</tr>
+<tr>
+<td><strong>Related certification</strong></td>
+<td>SOC 2 Type II, ISO 27001, C5</td>
+</tr>
+</tbody>
+</table>
+<h3 id="24-ezit-kft-hosting-provider">2.4 Ezit Kft. (hosting provider)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Ezit Kft.</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Hungary</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Data Processor (hosting provider, server operation)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Full WordPress database (user data, transactions), server logs (IP, User-Agent)</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Hosting of the website and application</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>GDPR annex to the Ezit Kft. Terms of Service — individually concluded</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>No — Hungarian data centre</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Server logs: 30 days; backup: max 20 snapshots</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-google-cloud-platform-optional-ai-agent">2.5 Google Cloud Platform (optional — AI Agent)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Google Cloud EMEA Limited / Google LLC</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Dublin, Ireland / Mountain View, USA</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Data Processor (AI/ML services, Google Workspace API)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Email/Drive data from Google Workspace (AI Agent function only), service account credentials</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Automation of NGO data collection, Google Sheets synchronisation</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>https://cloud.google.com/terms/data-processing-addendum</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Yes — EU–US DPF + Standard Contractual Clauses (SCC)</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Per Google policy; Sharity: credential files encrypted</td>
+</tr>
+</tbody>
+</table>
+<h3 id="26-vonage-nexmo-sms-provider">2.6 Vonage / Nexmo (SMS provider)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Vonage Holdings Corp. / Vonage Business Limited</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Netherlands (Vonage V.B.) / United Kingdom (Vonage Business Limited) / USA (Vonage Holdings Corp.)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Data Processor (SMS delivery)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Phone number, SMS content (ticket/notification text)</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>SMS delivery of Digital Raffle tickets/notifications</td>
+</tr>
+<tr>
+<td><strong>DPA</strong></td>
+<td>Vonage DPA — annex to the API service agreement</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Yes — UK/USA, intra-Ericsson group data transfer</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Per Vonage policy; SMS delivery logs: max 30 days</td>
+</tr>
+<tr>
+<td><strong>Note</strong></td>
+<td>For UK/EEA data subjects, group entities may also process data: Ericsson; Vonage Business Limited (UK); Vonage V.B. (NL) — see Terms &amp; Conditions §16.5</td>
+</tr>
+</tbody>
+</table>
+<h3 id="27-cj-commission-junction-affiliate-network">2.7 CJ (Commission Junction) — affiliate network</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Commission Junction LLC (a member of the Publicis Groupe)</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Santa Barbara, CA, USA</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Independent Data Controller / Joint Data Controller (affiliate tracking)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Cookie identifiers, click data, transaction confirmation (affiliate conversion), IP address</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Affiliate commission tracking (publisher → advertiser transactions)</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Services Privacy Policy: https://www.cj.com/legal/privacy-policy-services</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Yes — USA (Publicis Groupe); EU–US DPF</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Per CJ policy; cookie lifetime: campaign-dependent (typically 30–45 days)</td>
+</tr>
+<tr>
+<td><strong>Note</strong></td>
+<td>CJ may also act as an independent data controller with respect to the tracking cookie — the Terms &amp; Conditions §16.6 inform accordingly</td>
+</tr>
+</tbody>
+</table>
+<h3 id="28-tradetracker-affiliate-network">2.8 TradeTracker — affiliate network</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>TradeTracker International B.V.</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Almere, Netherlands (EU)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Independent Data Controller / Joint Data Controller (affiliate tracking)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Cookie identifiers, click data, transaction confirmation, IP address</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Affiliate commission tracking</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Privacy Policy: https://tradetracker.com/privacy-policy/</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>No — processing within the EU</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Per TradeTracker policy; cookie lifetime: campaign-dependent</td>
+</tr>
+</tbody>
+</table>
+<h3 id="29-tradedoubler-affiliate-network">2.9 Tradedoubler — affiliate network</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Tradedoubler AB (reg.no 556575-7423)</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Stockholm, Sweden (EU)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Data Processor (affiliate tracking — on behalf of the brand); in certain cases, Independent Data Controller</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Cookie identifiers, click data, IP address, transaction confirmation</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Affiliate commission tracking (publisher network)</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Privacy Policy: https://www.tradedoubler.com/en/privacy-policy/ ; DPO: dpo@tradedoubler.com</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Possible — UK (adequacy decision); otherwise SCC</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Cookie: max 730 days; transaction data: per local accounting laws (5–10 years)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="210-offerwall-providers-bitlabs-pollfish-cint-ayet-studios-cpx-research">2.10 Offerwall providers (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)</h3>
+<p>On the Impact Challenge offerwall interface, third-party providers offer tasks (surveys, app trials, registrations) to Users. These providers typically act as <strong>independent data controllers</strong>.</p>
+<h4 id="bitlabs">Bitlabs</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>BitBurst GmbH (Bitlabs)</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Germany (EU)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Independent Data Controller (offerwall / survey provider)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>User identifier (publisher user ID), response data, IP address, device info</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Provision of offerwall tasks, commission settlement</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Privacy Policy: https://bitlabs.ai/privacy</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Not typical — processing within the EU</td>
+</tr>
+</tbody>
+</table>
+<h4 id="pollfish">Pollfish</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Pollfish LLC (a member of the Prodege group)</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>USA</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Independent Data Controller (survey provider)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Demographic data, response data, device info, IP address</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Survey completion, market research, commission settlement</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Respondent Terms: https://www.pollfish.com/terms/respondent</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Yes — USA</td>
+</tr>
+</tbody>
+</table>
+<h4 id="cint">Cint</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Cint AB</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Stockholm, Sweden (EU)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Independent Data Controller (research marketplace / survey routing)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>Demographic data, response data, device info, IP address, cookie ID</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Survey routing, provision of market research sample</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Privacy Notice: https://www.cint.com/privacy-notice ; DPO: privacy@cint.com</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Data stored on EU servers; however, transfer within Cint group's global subsidiaries is possible</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Per Cint policy</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ayet-studios">ayeT-Studios</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>ayeT-Studios GmbH</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Große Düwelstraße 28, 30171 Hannover, Germany (EU)</td>
+</tr>
+<tr>
+<td><strong>Company registration no.</strong></td>
+<td>HRB 211094 (Amtsgericht Hannover); VAT: DE294415615</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Independent Data Controller (offerwall / survey / rewarded ad provider)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>User identifier (publisher user ID), device ID (GAID/IDFA), IP address, response data, demographic data</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Offerwall tasks (Gametastic), survey routing (Polltastic), commission settlement</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Privacy Policy: https://www.ayetstudios.com/privacy-policy ; DPO: privacy@ayetstudios.com (external: activelaw Offenhausen.Wolter, Hannover)</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Yes — AWS US servers (based on EU SCC)</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Duration of use + 90 days; survey data: per MR partner policy</td>
+</tr>
+</tbody>
+</table>
+<h4 id="cpx-research-make-opinion">CPX Research (Make Opinion)</h4>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity</strong></td>
+<td>Make Opinion GmbH (d/b/a CPX Research)</td>
+</tr>
+<tr>
+<td><strong>Registered office</strong></td>
+<td>Elfenallee 5, 13127 Berlin, Germany (EU)</td>
+</tr>
+<tr>
+<td><strong>Role</strong></td>
+<td>Independent Data Controller (survey / offerwall provider)</td>
+</tr>
+<tr>
+<td><strong>Data processed</strong></td>
+<td>User identifier, demographic data (age, gender, postal code), response data, IP address, device fingerprint</td>
+</tr>
+<tr>
+<td><strong>Purpose of processing</strong></td>
+<td>Survey matching and completion, market research, commission settlement</td>
+</tr>
+<tr>
+<td><strong>DPA / Privacy notice</strong></td>
+<td>Privacy Policy: https://cpx-research.com/main/en/privacy-user/ ; DPO: privacy@makeopinion.com (Nana Gabelia)</td>
+</tr>
+<tr>
+<td><strong>Transfer to third country</strong></td>
+<td>Primarily Germany (EU); via survey partners possible: USA, Canada, France, Romania, Israel, Pakistan, India</td>
+</tr>
+<tr>
+<td><strong>Retention period</strong></td>
+<td>Per Make Opinion policy</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Important note regarding offerwall providers:</strong> These providers may use cookies or similar technologies as <strong>independent data controllers</strong> pursuant to the Terms &amp; Conditions §16.6. The User is informed via the Cookie Notice and each provider's own privacy notice. Sharity, as publisher, passes the user identifier (Pseudo ID / publisher user ID) to the offerwall API — see Terms &amp; Conditions §5.2 Action/To-do.</p>
+</blockquote>
+<hr />
+<h2 id="3-personal-data-flow-map">3. Personal Data Flow Map</h2>
+<pre><code>User (browser)
+    │
+    ├─── [HTTPS/TLS] ──→ Cloudflare (CDN, WAF, Turnstile)
+    │                         │
+    │                         └──→ Ezit server (WordPress)
+    │                                  │
+    │                                  ├── Affiliate click → Dognet / CJ / TradeTracker / Tradedoubler cookie
+    │                                  │     └── Purchase confirmation → affiliate API
+    │                                  │
+    │                                  ├── Impact Challenge offerwall → Bitlabs / Pollfish / Cint / ayeT / CPX Research API
+    │                                  │     └── Survey / task → Points credited
+    │                                  │
+    │                                  └── Vote purchase (checkout)
+    │                                        │
+    │                                        └──→ Stripe Checkout (hosted)
+    │                                              ├── Card data → Stripe (never Sharity)
+    │                                              └── Webhook → Ezit server → DB
+    │
+    ├─── [SMS] Digital Raffle ticket/notification → Vonage (Nexmo) API
+    │
+    └─── [Optional] AI Agent → Google Cloud API
+</code></pre>
+<hr />
+<h2 id="4-handling-of-data-subject-rights">4. Handling of Data Subject Rights</h2>
+<table>
+<thead>
+<tr>
+<th>Right</th>
+<th>Implementation</th>
+<th>Responsible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Right of Access</strong> (Article 15)</td>
+<td>WP Admin → user data export</td>
+<td>Sharity DPO</td>
+</tr>
+<tr>
+<td><strong>Right to Erasure</strong> (Article 17)</td>
+<td>Soft-delete (corporate data 30 days), anonymisation</td>
+<td>Sharity Developer</td>
+</tr>
+<tr>
+<td><strong>Data Portability</strong> (Article 20)</td>
+<td>JSON export from WP Admin</td>
+<td>Sharity DPO</td>
+</tr>
+<tr>
+<td><strong>Right to Object</strong> (Article 21)</td>
+<td>Email → privacy@sharity.hu</td>
+<td>Sharity DPO</td>
+</tr>
+<tr>
+<td><strong>Data stored at Stripe</strong></td>
+<td>Sharity requests from Stripe, or data subject contacts Stripe directly</td>
+<td>Sharity DPO + Stripe Support</td>
+</tr>
+</tbody>
+</table>
+<h3 id="41-erasure-procedure">4.1 Erasure Procedure</h3>
+<ol>
+<li><strong>Data subject requests erasure</strong> → office@sharity.hu</li>
+<li><strong>Sharity verifies</strong>: whether a legal retention obligation exists (accounting: 8 years, VAT: 5 years)</li>
+<li><strong>If no obligation exists</strong>: deletion/anonymisation of personal data ≤ 30 days</li>
+<li><strong>If an obligation exists</strong>: notification to the data subject, data locked (cannot be deleted but cannot be used)</li>
+<li><strong>At Stripe</strong>: Sharity cannot delete directly → data subject may proceed per Stripe's privacy policy</li>
+<li><strong>Logging</strong>: erasure request + execution date + reason → GDPR requests log</li>
+</ol>
+<hr />
+<h2 id="5-status-of-data-processing-agreements">5. Status of Data Processing Agreements</h2>
+<table>
+<thead>
+<tr>
+<th>Processor</th>
+<th>DPA status</th>
+<th>Last review</th>
+<th>Next review</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stripe</strong></td>
+<td>✅ Automatic (upon acceptance of SSA)</td>
+<td>2026-02-25</td>
+<td>2026-08-25</td>
+</tr>
+<tr>
+<td><strong>Dognet</strong></td>
+<td>⚠️ Review required — based on the Lead Media s.r.o. partner agreement GDPR clause; public privacy notice: https://www.dognet.sk/wp-content/uploads/2023/11/gdpr-sk.pdf</td>
+<td>—</td>
+<td><strong>2026-03-15</strong> (urgent)</td>
+</tr>
+<tr>
+<td><strong>Cloudflare</strong></td>
+<td>✅ Automatic (Customer DPA)</td>
+<td>2026-02-25</td>
+<td>2026-08-25</td>
+</tr>
+<tr>
+<td><strong>Ezit</strong></td>
+<td>⚠️ Review required — Ezit Kft. is part of the Magyar Hosting (mhosting.hu) group; effective Terms of Service: https://www.mhosting.hu/aszf/ (2025.08.04.); Privacy Notice: https://www.mhosting.hu/adatkezelesi-tajekoztato/ (2025.07.17.); Data Transfer Declaration: https://www.mhosting.hu/adattovabbitasi-nyilatkozat/</td>
+<td>—</td>
+<td><strong>2026-03-15</strong> (urgent)</td>
+</tr>
+<tr>
+<td><strong>Google Cloud</strong></td>
+<td>✅ Automatic (Cloud DPA)</td>
+<td>2026-02-25</td>
+<td>2026-08-25</td>
+</tr>
+<tr>
+<td><strong>Vonage (Nexmo)</strong></td>
+<td>⚠️ To be verified — DPA annex to the API service agreement</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>CJ (Commission Junction)</strong></td>
+<td>⚠️ To be verified — independent data controller; Services Privacy Policy: https://www.cj.com/legal/privacy-policy-services</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>TradeTracker</strong></td>
+<td>⚠️ To be verified — independent data controller; Privacy Policy: https://tradetracker.com/privacy-policy/</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>Tradedoubler</strong></td>
+<td>⚠️ To be verified — data processor/independent data controller; Privacy Policy + DPO: dpo@tradedoubler.com</td>
+<td>—</td>
+<td><strong>2026-03-15</strong></td>
+</tr>
+<tr>
+<td><strong>Bitlabs</strong></td>
+<td>ℹ️ Independent data controller — Privacy Policy: https://bitlabs.ai/privacy</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>Pollfish</strong></td>
+<td>ℹ️ Independent data controller — Respondent Terms: https://www.pollfish.com/terms/respondent</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>Cint</strong></td>
+<td>ℹ️ Independent data controller — Privacy Notice: https://www.cint.com/privacy-notice</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>ayeT-Studios</strong></td>
+<td>ℹ️ Independent data controller — Privacy Policy: https://www.ayetstudios.com/privacy-policy ; DPO: privacy@ayetstudios.com</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+<tr>
+<td><strong>CPX Research (Make Opinion)</strong></td>
+<td>ℹ️ Independent data controller — Privacy Policy: https://cpx-research.com/main/en/privacy-user/ ; DPO: privacy@makeopinion.com</td>
+<td>—</td>
+<td><strong>2026-06-25</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The Dognet and Ezit DPAs must be formally reviewed and, where necessary, a supplementary data processing agreement must be concluded based on the references above.</p>
+<hr />
+<h2 id="6-supervisory-authority-contact-in-case-of-complaint">6. Supervisory Authority Contact — in case of complaint</h2>
+<p>The data subject may also submit a complaint regarding personal data to the following authority:</p>
+<table>
+<thead>
+<tr>
+<th>Authority</th>
+<th>Contact details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hungarian National Authority for Data Protection and Freedom of Information (NAIH)</strong></td>
+<td>1055 Budapest, Falk Miksa utca 9–11.</td>
+</tr>
+<tr>
+<td>Phone</td>
+<td>+36 1 391-1400</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>ugyfelszolgalat@naih.hu</td>
+</tr>
+<tr>
+<td>Website</td>
+<td>https://www.naih.hu</td>
+</tr>
+<tr>
+<td>Online submission</td>
+<td>https://www.naih.hu/panaszbejelentes</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>This section is consistent with the Terms &amp; Conditions §19.4(d), which also refers to NAIH.</p>
+</blockquote>
+<hr />
+<h2 id="7-data-breach-incident-register">7. Data Breach Incident Register</h2>
+<p>Pursuant to Article 33(5) of the GDPR, the data controller is obliged to maintain a record of data breaches.</p>
+<h3 id="71-data-to-be-recorded">7.1 Data to be recorded</h3>
+<p>The following must be recorded for every data breach incident:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Incident ID</strong></td>
+<td>Unique serial number (e.g. GDPR-INC-2026-001)</td>
+</tr>
+<tr>
+<td><strong>Date/time of detection</strong></td>
+<td>Timestamp when the incident was detected</td>
+</tr>
+<tr>
+<td><strong>Incident description</strong></td>
+<td>Nature of the incident, affected system(s), circumstances</td>
+</tr>
+<tr>
+<td><strong>Categories of data affected</strong></td>
+<td>What personal data is affected (Pseudo ID, email, transaction data, etc.)</td>
+</tr>
+<tr>
+<td><strong>Estimated number of data subjects affected</strong></td>
+<td>How many data subjects' personal data was compromised/affected</td>
+</tr>
+<tr>
+<td><strong>Affected data processor(s)</strong></td>
+<td>Stripe, Dognet, Cloudflare, Ezit, Google Cloud, Vonage, CJ, TradeTracker, Tradedoubler, Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research — whichever is involved in the incident</td>
+</tr>
+<tr>
+<td><strong>Severity</strong></td>
+<td>Low / Medium / High / Critical</td>
+</tr>
+<tr>
+<td><strong>Measures taken</strong></td>
+<td>Immediate and subsequent corrective actions</td>
+</tr>
+<tr>
+<td><strong>NAIH notification</strong></td>
+<td>Required (within 72 hours); if yes, date of notification</td>
+</tr>
+<tr>
+<td><strong>Notification of data subjects</strong></td>
+<td>Required; if yes, date and method of notification</td>
+</tr>
+<tr>
+<td><strong>Closure date</strong></td>
+<td>Closure of the incident handling</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-procedure">7.2 Procedure</h3>
+<ol>
+<li><strong>Detection</strong>: automatic monitoring or manual report (office@sharity.hu).</li>
+<li><strong>Assessment</strong> (≤ 24 hours): DPO / Ops Squad determines severity and the scope of data subjects affected.</li>
+<li><strong>NAIH notification</strong> (≤ 72 hours): if the incident is likely to result in a risk to the rights of data subjects — GDPR Article 33.</li>
+<li><strong>Notification of data subjects</strong>: if the incident is likely to result in a high risk — GDPR Article 34.</li>
+<li><strong>Corrective measures</strong>: technical and organisational measures to prevent recurrence.</li>
+<li><strong>Closure and documentation</strong>: incident log closure, lessons learned recorded.</li>
+</ol>
+<h3 id="73-retention">7.3 Retention</h3>
+<p>The Service Provider shall retain incident log entries for a minimum of 5 years.</p>
+<hr />
+<h2 id="8-review">8. Review</h2>
+<ul>
+<li><strong>Frequency</strong>: semi-annually, or upon engagement of a new data processor</li>
+<li><strong>Responsible</strong>: DPO / Ops Squad</li>
+<li><strong>Trigger</strong>: new partner integration, change in existing partner's terms, GDPR audit</li>
+</ul>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Initial version — draft; 5 data processors recorded</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>NAIH supervisory authority contact added (§6); consistency with Terms &amp; Conditions §19.4(d)</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>2026-02-25</td>
+<td>Finalisation: Pseudo ID as personal data incorporated (§1), cookie compliance recorded (§2.2), Vonage/Nexmo SMS added (§2.6), affiliate alternatives added — CJ (§2.7), TradeTracker (§2.8), Tradedoubler (§2.9), offerwall providers — Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research (Make Opinion) (§2.10), internal file references removed, DPA status extended to 14 data processors/controllers (§5), data breach incident register added (§7)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="related-documents-and-guides">Related documents and guides</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#aszf">Terms &amp; Conditions (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#access-control">Access Control Matrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#stripe">Stripe Responsibility Matrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">About Us</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/ngo-card/">NGO Card Guide</a></li>
+</ul>
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

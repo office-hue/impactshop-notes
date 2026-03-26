@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ImpactShop – Service Level Agreement (SLA) (English)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="impactshop-service-level-agreement-sla">ImpactShop – Service Level Agreement (SLA)</h1>
+<p><strong>Version:</strong> 2.0<br />
+<strong>Effective:</strong> from 15 January 2026<br />
+<strong>Last updated:</strong> 2026-01-15  </p>
+<hr />
+<h2 id="1-availability">1. Availability</h2>
+<h3 id="11-uptime-targets">1.1 Uptime Targets</h3>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Target (monthly)</th>
+<th>Measurement method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Homepage (impactshop.hu)</td>
+<td>99.5%</td>
+<td>Automated check – every 5 minutes</td>
+</tr>
+<tr>
+<td>/go redirect</td>
+<td>99.5%</td>
+<td>Automated check – every 5 minutes</td>
+</tr>
+<tr>
+<td>NGO Card REST API</td>
+<td>99.0%</td>
+<td>Automated check – every 5 minutes</td>
+</tr>
+<tr>
+<td>Wallet Pass download</td>
+<td>98.5%</td>
+<td>Automated check – every 15 minutes</td>
+</tr>
+<tr>
+<td>Admin panel (wp-admin)</td>
+<td>98.0%</td>
+<td>Automated check – every 15 minutes</td>
+</tr>
+</tbody>
+</table>
+<p>Measurements exclude the scheduled Maintenance Window (see §1.2).</p>
+<h3 id="12-maintenance-window">1.2 Maintenance Window</h3>
+<ul>
+<li><strong>Scheduled maintenance:</strong> Tuesday and Thursday 03:00–05:00 CET.</li>
+<li>During the window, the service may be partially or fully unavailable; this does not count as downtime.</li>
+<li>In case of an urgent security fix, the window may be moved forward — in such cases we will provide at least 1 hour advance notice.</li>
+<li><strong>Custom agreement:</strong> for events or campaigns — for a period as agreed separately — the Maintenance Window may be restricted or excluded.</li>
+</ul>
+<hr />
+<h2 id="2-incident-management">2. Incident Management</h2>
+<h3 id="21-severity-classification">2.1 Severity Classification</h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Name</th>
+<th>Description</th>
+<th>Response time</th>
+<th>Resolution target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>Critical</td>
+<td>Complete service outage, /go not functioning</td>
+<td>15 minutes</td>
+<td>1 hour</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>Major</td>
+<td>NGO Card API faulty, Wallet Pass not downloadable</td>
+<td>30 minutes</td>
+<td>4 hours</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Medium</td>
+<td>Admin panel slow, cache inconsistency</td>
+<td>2 hours</td>
+<td>24 hours</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>Low</td>
+<td>Cosmetic issue, documentation discrepancy</td>
+<td>1 business day</td>
+<td>5 business days</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-business-hours-and-on-call-schedule">2.2 Business Hours and On-Call Schedule</h3>
+<ul>
+<li><strong>Business hours:</strong> Mon–Fri 08:00–18:00 CET.</li>
+<li>Outside business hours, automated monitoring watches the services; alerts are triggered for S1 incidents.</li>
+<li>On weekends and public holidays, we respond only to S1 incidents.</li>
+</ul>
+<h3 id="23-alert-chain">2.3 Alert Chain</h3>
+<ol>
+<li>Automated monitoring detects the issue (5-minute cycle).</li>
+<li>Alert on the Discord operations channel + email to the on-call engineer.</li>
+<li>For S1/S2, immediate escalation to the system administrator.</li>
+<li>Cloudflare WAF and CDN automatic defenses are activated (e.g. Under Attack Mode).</li>
+</ol>
+<h3 id="24-escalation">2.4 Escalation</h3>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Time limit</th>
+<th>Responsible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Automated alert</td>
+<td>0 minutes</td>
+<td>Monitoring system</td>
+</tr>
+<tr>
+<td>2. Operator responds</td>
+<td>+15 min (S1) / +30 min (S2)</td>
+<td>Operator</td>
+</tr>
+<tr>
+<td>3. Hosting provider support</td>
+<td>+1 hour</td>
+<td>Hosting provider</td>
+</tr>
+<tr>
+<td>4. Management notification</td>
+<td>+2 hours</td>
+<td>Operator → Management</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-emergency-procedures">3. Emergency Procedures</h2>
+<h3 id="31-complete-outage-s1">3.1 Complete Outage (S1)</h3>
+<ol>
+<li>Activate Cloudflare Under Attack Mode (if caused by an attack).</li>
+<li>Service status assessment (review automated health-check results).</li>
+<li>If necessary: disable MU plugin, clear cache, request server restart.</li>
+<li>Restore from the most recent stable state (backup).</li>
+<li>Post-incident analysis and documentation.</li>
+</ol>
+<h3 id="32-data-protection-incident">3.2 Data Protection Incident</h3>
+<ol>
+<li>Immediate isolation of the affected service.</li>
+<li>Initiation of the GDPR incident management protocol (72-hour NAIH notification obligation).</li>
+<li>Notification of affected individuals pursuant to GTC §16.</li>
+<li>Post-incident security audit.</li>
+</ol>
+<h3 id="33-affiliate-partner-api-outage-dognet-etc">3.3 Affiliate Partner API Outage (Dognet, etc.)</h3>
+<ol>
+<li>Automatic fallback: serve from cache, display error page.</li>
+<li>Check partner API status.</li>
+<li>Notify affected NGO partners if the outage exceeds 4 hours.</li>
+</ol>
+<hr />
+<h2 id="4-communication">4. Communication</h2>
+<h3 id="41-issue-reporting">4.1 Issue Reporting</h3>
+<p>Issues can be reported through the following channels:</p>
+<ul>
+<li><strong>E-mail:</strong> office@sharity.hu</li>
+<li><strong>Phone:</strong> +36 30 400 7470</li>
+<li><strong>Availability:</strong> Mon–Fri 08:00–18:00 CET</li>
+</ul>
+<p>When reporting, please provide: a description of the issue, the affected URL or feature, and the time the issue was detected.</p>
+<h3 id="42-towards-ngo-partners">4.2 Towards NGO Partners</h3>
+<ul>
+<li>Proactive notification via email for outages exceeding 30 minutes.</li>
+<li>Quarterly settlement schedule and payout rules pursuant to GTC §4.6.3.</li>
+<li>At least 48 hours advance notice of Maintenance Window changes.</li>
+</ul>
+<h3 id="43-towards-users">4.3 Towards Users</h3>
+<ul>
+<li>In case of an outage, a custom error page is displayed with the service status.</li>
+<li>For extended outages (&gt; 2 hours), social media notification.</li>
+</ul>
+<h3 id="44-partner-sla-dispute-resolution">4.4 Partner SLA Dispute Resolution</h3>
+<p>Complaints related to service levels are handled pursuant to GTC §15 (Complaint Handling):</p>
+<ul>
+<li><strong>Initial response:</strong> within 2 business days at the latest.</li>
+<li><strong>Substantive decision:</strong> within 5 business days at the latest.</li>
+</ul>
+<hr />
+<h2 id="related-documents-and-guides">Related Documents and Guides</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#aszf">General Terms and Conditions (GTC)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#dispute">Dispute Handling Procedure</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#access-control">Access Control Matrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/?lang=en#gdpr">GDPR Data Processors</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge Guide</a></li>
+<li><a href="https://app.sharity.hu/cegeknek/">For Companies</a></li>
+<li>If the user or partner disagrees with the decision, the dispute resolution procedure under GTC §20.2 shall apply.</li>
+</ul>
+<hr />
+<h2 id="5-monitoring-and-measurement">5. Monitoring and Measurement</h2>
+<h3 id="51-uptime-measurement">5.1 Uptime Measurement</h3>
+<ul>
+<li>Automated health-check every 5 minutes (homepage, /go, NGO Card API).</li>
+<li>Wallet Pass and admin panel: 15-minute cycle.</li>
+<li>Monthly summary reports are prepared based on the measured data.</li>
+</ul>
+<h3 id="52-performance-metrics">5.2 Performance Metrics</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Homepage load (TTFB)</td>
+<td>&lt; 800 ms</td>
+</tr>
+<tr>
+<td>/go redirect</td>
+<td>&lt; 300 ms</td>
+</tr>
+<tr>
+<td>NGO Card API response time</td>
+<td>&lt; 500 ms</td>
+</tr>
+<tr>
+<td>Wallet Pass download</td>
+<td>&lt; 2 s</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-cross-reference">6. Cross-Reference</h2>
+<p>This SLA is based on the provisions of GTC §10 (Suspension and Restriction of the Service) and shall be interpreted in conjunction therewith. In case of discrepancy between the GTC and the SLA, the provisions of the GTC shall prevail.</p>
+<hr />
+<h2 id="changelog">Changelog</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2025-11-15</td>
+<td>First edition</td>
+</tr>
+<tr>
+<td>2.0</td>
+<td>2026-01-15</td>
+<td>Finalization: uptime table simplification, custom Maintenance Window agreement option, addition of issue reporting contacts, removal of internal references, partner dispute resolution regulation, Cloudflare and Discord integration reinforcement</td>
+</tr>
+</tbody>
+</table>
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>
