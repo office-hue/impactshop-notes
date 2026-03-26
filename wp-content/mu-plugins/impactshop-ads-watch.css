@@ -1074,49 +1074,54 @@
             margin: 10px 0 6px;
         }
 
-        /* Floating tabs - fixed at bottom of screen */
+        /* Floating tabs - fixed at bottom of screen, 8 icons in 4-col grid */
         .ads-watch-floating-tabs {
             position: fixed;
-            bottom: 60px; /* Space for accessibility button */
+            bottom: 0;
             left: 0;
             right: 0;
             z-index: 1000;
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-            padding: 12px 16px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-            background: rgba(15, 23, 42, 0.95);
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            padding: 8px 8px;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            background: rgba(15, 23, 42, 0.97);
             backdrop-filter: blur(12px);
             border-radius: 0;
             box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.3);
         }
 
         .ads-watch-tab {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
             border: 0;
-            border-radius: 999px;
-            padding: 10px 16px;
-            font-weight: 700;
+            border-radius: 10px;
+            padding: 6px 4px;
+            font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            font-size: 14px !important;
+            font-size: 10px !important;
             line-height: 1.2;
             transition: all 0.2s ease;
             white-space: nowrap;
             width: 100%;
             min-width: 0;
             text-align: center;
-            display: inline-flex;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 2px;
         }
 
-        .ads-watch-tab span,
         .ads-watch-tab .tab-icon {
-            font-size: inherit !important;
+            font-size: 18px !important;
+            line-height: 1;
+        }
+        .ads-watch-tab .tab-label {
+            font-size: 9px !important;
+            opacity: 0.85;
         }
 
         .ads-watch-tab:hover {
@@ -1153,16 +1158,16 @@
 
         /* Add bottom padding to container so content isn't hidden behind floating tabs */
         .impactshop-ads-watch-container {
-            padding-bottom: 140px; /* Extra space for floating tabs + accessibility button */
+            padding-bottom: 160px; /* Extra space for 2-row floating tabs */
         }
 
 @media (min-width: 992px) {
         .ads-watch-floating-tabs {
-            bottom: 20px;
-            padding-bottom: 12px;
+            bottom: 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
         }
             .impactshop-ads-watch-container {
-                padding-bottom: 90px;
+                padding-bottom: 130px;
 }
 
         }
@@ -1181,37 +1186,41 @@
             }
 
             .ads-watch-floating-tabs {
-                gap: 6px;
-                padding: 10px 10px;
-                padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-                bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+                gap: 3px;
+                padding: 6px 4px;
+                padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
             }
             .ads-watch-tab {
-                padding: 8px 10px;
-                font-size: 12px;
-                line-height: 1.2;
-                gap: 3px;
+                padding: 5px 2px;
+                border-radius: 8px;
             }
-            /* Smaller icons on mobile */
             .ads-watch-tab .tab-icon {
-                font-size: 14px;
+                font-size: 16px !important;
+            }
+            .ads-watch-tab .tab-label {
+                font-size: 8px !important;
             }
             .impactshop-ads-watch-container {
-                padding-bottom: 220px;
+                padding-bottom: 170px;
             }
         }
 
         @media (max-width: 360px) {
             .ads-watch-floating-tabs {
-                gap: 4px;
-                padding: 8px 6px;
+                gap: 2px;
+                padding: 4px 2px;
             }
             .ads-watch-tab {
-                padding: 6px 8px;
-                font-size: 11px;
+                padding: 4px 2px;
+            }
+            .ads-watch-tab .tab-icon {
+                font-size: 14px !important;
+            }
+            .ads-watch-tab .tab-label {
+                font-size: 7px !important;
             }
             .impactshop-ads-watch-container {
-                padding-bottom: 240px;
+                padding-bottom: 180px;
             }
             .ads-watch-status-bar {
                 grid-template-columns: 1fr;
