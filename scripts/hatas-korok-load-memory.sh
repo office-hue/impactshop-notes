@@ -162,8 +162,11 @@ echo "[hatas-korok-load-memory] memo -> $MEMO_PATH"
 npm --prefix "$AI_AGENT_REPO" run -s memory:pre-task -- \
   --task "$TASK" \
   --out "tmp/state/dev-memory/last-brief.json" \
+  --layers "dev-memory,work-memory" \
+  --budget-profile "dev" \
   --limit "$LIMIT" \
-  --file-limit "$FILE_LIMIT"
+  --file-limit "$FILE_LIMIT" || \
+  echo "[hatas-korok-load-memory] warning: memory:pre-task failed, continuing" >&2
 
 npm --prefix "$AI_AGENT_REPO" run -s memory:context-pack -- \
   --repo "$REPO_ROOT" \
@@ -171,10 +174,12 @@ npm --prefix "$AI_AGENT_REPO" run -s memory:context-pack -- \
   --task "$TASK" \
   --out "$CONTEXT_PACK_PATH" \
   --limit "$LIMIT" \
-  --file-limit "$FILE_LIMIT"
+  --file-limit "$FILE_LIMIT" || \
+  echo "[hatas-korok-load-memory] warning: memory:context-pack failed, continuing" >&2
 
 if [[ "$RUN_FULL_SYNC" == "1" ]]; then
-  npm --prefix "$AI_AGENT_REPO" run -s memory:full-sync -- --task "$TASK"
+  npm --prefix "$AI_AGENT_REPO" run -s memory:full-sync -- --task "$TASK" || \
+    echo "[hatas-korok-load-memory] warning: memory:full-sync failed, continuing" >&2
 fi
 
 echo "[hatas-korok-load-memory] context-pack -> $CONTEXT_PACK_PATH"

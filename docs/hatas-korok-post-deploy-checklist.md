@@ -28,6 +28,8 @@ bash ./scripts/hatas-korok-load-memory.sh
 
 Ez frissíti a dev-memory briefet, generál egy dedikált context packot és kiír egy kurált memo fájlt is.
 
+2026-03-26-tól a loader a Hatás Körök munkához célzott `dev-memory,work-memory` pre-task rétegeket használ, és fail-open módon fut tovább, ha a memory háttérréteg hibázik.
+
 ## Mit ellenőriz a script
 
 - `GET /hatas-korok` → `HTTP 200`
