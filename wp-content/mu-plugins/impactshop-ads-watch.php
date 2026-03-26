@@ -3900,10 +3900,14 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         </div>
 
         <div class="ads-watch-floating-tabs" data-role="ads-watch-tabs">
-            <button type="button" class="ads-watch-tab is-active" data-role="ads-watch-tab" data-target="video">🎬 Videó</button>
-            <button type="button" class="ads-watch-tab" data-role="ads-watch-tab" data-target="offerwall">🎁 Feladatok</button>
-            <a href="<?php echo esc_url(site_url('/impactshop/')); ?>" class="ads-watch-tab ads-watch-impactshop-btn" data-role="impactshop-btn" id="ads-watch-impactshop-btn" target="_blank" rel="noopener">🛍️ Impact Shop</a>
-            <a href="https://adomany.sharity.hu/kampanyok" class="ads-watch-tab ads-watch-donate-btn" data-role="donate-btn" id="ads-watch-donate-btn" target="_blank" rel="noopener">❤️ Adományozok</a>
+            <a href="https://adomany.sharity.hu/kampanyok" class="ads-watch-tab ads-watch-donate-btn" data-role="donate-btn" id="ads-watch-donate-btn" target="_blank" rel="noopener"><span class="tab-icon">❤️</span><span class="tab-label">Adományozok</span></a>
+            <a href="#ads-watch-live-balance" class="ads-watch-tab"><span class="tab-icon">🏆</span><span class="tab-label">Pontok</span></a>
+            <a href="<?php echo esc_url(site_url('/impactshop/')); ?>" class="ads-watch-tab ads-watch-impactshop-btn" data-role="impactshop-btn" id="ads-watch-impactshop-btn" target="_blank" rel="noopener"><span class="tab-icon">🛍️</span><span class="tab-label">Impact Shop</span></a>
+            <a href="#impactshop-account-top" class="ads-watch-tab"><span class="tab-icon">💬</span><span class="tab-label">Üzenetek</span></a>
+            <button type="button" class="ads-watch-tab" data-role="ads-watch-tab" data-target="offerwall"><span class="tab-icon">🎁</span><span class="tab-label">Feladatok</span></button>
+            <a href="<?php echo esc_url(site_url('/ngo-guides/')); ?>" class="ads-watch-tab" target="_blank" rel="noopener"><span class="tab-icon">🏛️</span><span class="tab-label">NGO</span></a>
+            <button type="button" class="ads-watch-tab is-active" data-role="ads-watch-tab" data-target="video"><span class="tab-icon">🎬</span><span class="tab-label">Videó</span></button>
+            <a href="<?php echo esc_url(site_url('/profil')); ?>" class="ads-watch-tab" target="_blank" rel="noopener"><span class="tab-icon">👤</span><span class="tab-label">Profil</span></a>
         </div>
 
         <div class="ads-watch-main" data-role="ads-watch-main">
