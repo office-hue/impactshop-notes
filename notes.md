@@ -6460,3 +6460,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `impactshop-ads-watch.js` Safari external return recovery fixei változatlanul maradtak
 - verzió: `2.5.32`
 - live ellenőrzés: mobil snapshoton 4 gombos nav + látható `Reklám megtekintése` gomb
+## 2026-03-31 21:45:00 CET - guard baseline bootstrap continuity
+
+- Külön, tiszta `main`-alapú baseline branch készült a guard control plane számára, hogy a protected runtime commitok ne dirty worktree guardokra támaszkodjanak.
+- A baseline három guard commitot tartalmaz: protected touch gate, workflow/push guardok, majd a guard control plane saját protected lezárása.
+- A `guarded-push.sh` most már saját maga is lefuttatja a lane- és protected-touch checkeket push előtt.
+- A guard control plane fájljai (`impactshop-protected-files.json`, lane/protected/push/workflow scriptek) most már protected körben vannak.
+- Következő lépés: baseline branch push + PR + merge, és csak utána a runtime lane-ek, például az AyeT surveywall helyreállítás.
