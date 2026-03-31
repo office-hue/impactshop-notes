@@ -502,3 +502,10 @@ PHP lint ok for identity/gamification modules
   - surveywall profile hash: `b970533bbaf884d085d7c0e6734da1c2`
 - `impactshop_ayet_surveys()` now serves surveywall questionnaires instead of general AyeT offerwall inventory.
 - `impactshop_offerwall_health()` exposes both `ayet_adslot` and `ayet_surveywall` diagnostics for post-deploy verification.
+
+## 2026-03-31T22:34:00+0200 — AyeT PR guard workflow aligned
+- `.github/workflows/protect-critical-files.yml` now treats the paired deploy env
+  files as part of the same overrideable protected runtime lane when continuity
+  evidence is present.
+- This keeps GitHub PR validation aligned with the merged local guard baseline
+  for the AyeT surveywall runtime branch.

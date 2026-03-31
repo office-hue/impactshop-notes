@@ -6489,3 +6489,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   - `wp-content/mu-plugins/impactshop-offerwall.php`
   - `wp-content/mu-plugins/impactshop-offerwall.js`
 - Protected continuity recorded in `docs/protected-change-records/2026-03-31-ayet-surveywall-restoration.md`.
+
+## 2026-03-31 22:34:00 CET - AyeT PR guard alignment
+
+- The GitHub `protect-critical-files` workflow was aligned with the merged local
+  guard baseline so paired `.deploy.production.env` / `.deploy.staging.env`
+  runtime changes can pass the same documented continuity override path as the
+  MU-plugin runtime files.
