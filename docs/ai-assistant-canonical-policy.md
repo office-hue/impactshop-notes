@@ -49,6 +49,10 @@ npm run memory:full-sync -- --task "<lezáró összefoglaló>"
 - Védett fájl módosítása előtt kötelező a koherencia vizsgálat, a kockázatelemzés és az érintett funkciók listája.
 - Védett fájl módosítása után kötelező külön manuális UI checklistet adni a felhasználónak, hogy mit ellenőrizzen végig a weboldalon.
 - A kötelező részletes ellenőrzési rend: `docs/protected-file-change-checklist.md`
+- Guard- vagy protected-modell változtatásnál kötelező külön parity ellenőrzést végezni a lokális wrapper/hook és a GitHub oldali CI guard között.
+- Protected env párokat (`.deploy.production.env` + `.deploy.staging.env`) ugyanannak a lane-nek kell tekinteni; külön staging vagy külön review nem megengedett.
+- Review komment javítása után kötelező újraellenőrizni a teljes guard-kört és a nyitott review threadeket, mielőtt merge vagy deploy történik.
+- Harmadik fél inventory/cache integrációnál az üres válasz nem tekinthető automatikusan stabil valóságnak; stale empty cache gyanú esetén forced refresh / retry / rövid TTL szükséges.
 
 ## Git / PR / merge / deploy
 

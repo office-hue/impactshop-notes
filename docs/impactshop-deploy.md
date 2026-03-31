@@ -18,6 +18,10 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - **Guide rendszer**: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` teljes subtree csak explicit engedéllyel deployolható; guide tartalmat felülíró automatika vagy hallgatólagos sync tiltott.
 - **Legacy touch**: ha védett meglévő Impact Challenge fájlt módosítasz, a deploy naplóban szerepelnie kell az explicit engedélynek és az indoknak.
 - **Protected-file change review**: deploy előtt kötelező a koherencia vizsgálat, kockázatelemzés, érintett funkciólista és a kézi UI checklist megléte.
+- **CI/local parity**: protected lane csak akkor tekinthető lezártnak, ha a lokális guard és a GitHub oldali guard ugyanazt a protected modellt értelmezi.
+- **Paired env continuity**: ha protected runtime env pár változik, a deploy scope-nak a staging és production env fájlt együtt kell tartalmaznia.
+- **Review-fix recheck**: review-javítás után deploy vagy merge előtt kötelező egy új teljes guard/check kör és a nyitott review threadek rendezése.
+- **Empty-cache hardening**: harmadik fél inventory/cache integrációnál tartós üres cache csak külön indokkal maradhat; alapértelmezésként forced refresh, retry vagy rövid TTL szükséges.
 
 ## Kulcs helyek
 - Staging env: `.deploy.staging.env`
@@ -45,6 +49,7 @@ Production mapping deploy után a `bin/deploy-wpcontent-map.sh` automatikusan le
 - Merge csak akkor mehet, ha a PR body tartalmazza a bástyavédelmi és írásvédettségi megfelelést.
 - Deploy csak akkor mehet, ha backup + rollback útvonal rögzített, és a védett fájlok deploy utáni read-only visszaállítása része a lépéssornak.
 - Protected-file deploy csak akkor mehet, ha előre rögzített, hogy mely funkciókat kell utána ellenőrizni, és a felhasználónak külön UI checklist készül.
+- Protected-file deploy vagy review-fix után kötelező ellenőrizni, hogy a GitHub oldali guard és a lokális guard ugyanarra a lane-re ugyanazt mondja.
 
 ## Quick rollback (guard snapshot)
 A deploy kimenetében megjelenik a snapshot azonosító. Visszaállítás:
