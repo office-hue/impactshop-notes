@@ -53,6 +53,21 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 - CI: PR Checklist Guard kötelező PR body ellenőrzéssel.
 - Merge/deploy döntésnél a bástyavédelmi szabály megsértése hard stop.
 
+## Általános hardening szabályok
+
+- A lokális guard és a GitHub oldali CI guard közötti szabályparitás kötelező.
+  - Új protected modell vagy guard-szigorítás csak akkor tekinthető késznek, ha lokálban és CI-ben ugyanazt a döntést adja ugyanarra a lane-re.
+- A guardolt push wrapper teljes értékű belépési pont.
+  - Nem támaszkodhat kizárólag arra, hogy a hookok telepítve vannak; saját maga is köteles futtatni a lane guardot, a protected-touch checket, a strict auditot és a memory gate-et, ha elérhetők.
+- Worktree-specifikus logika csak a valódi repo-identitásból indulhat ki.
+  - Repo- és deploy-döntés nem épülhet a worktree mappanévre.
+- Protected env párokat együtt kell kezelni.
+  - `.deploy.production.env` és `.deploy.staging.env` ugyanannak a protected runtime lane-nek a részei; külön staging, külön review vagy külön deploy scope nem megengedett.
+- Review-fix után kötelező a teljes recheck.
+  - A javítás után újra kell futniuk a guard/check köröknek, és a ténylegesen megoldott review threadeket rendezni kell merge előtt.
+- Harmadik fél inventory/cache integrációnál a stale empty cache külön kockázati kategória.
+  - Üres provider-válasz nem válhat tartós kanonikus állapottá forced refresh / retry / rövid TTL nélkül.
+
 ## Workflow kiegészítők (dev-memory)
 
 - `memory:pre-task`: task-indítási brief mentése `tmp/state/dev-memory/last-brief.json`-ba.
