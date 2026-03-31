@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "protected_globs": [
+    "wp-content/mu-plugins/impactshop-action-bar.php",
+    "wp-content/mu-plugins/impactshop-ads-watch.php",
+    "wp-content/mu-plugins/impactshop-ads-watch.js",
+    "wp-content/mu-plugins/impactshop-ads-watch.css",
+    "wp-content/mu-plugins/impactshop-ads-watch-quarter.php",
+    "wp-content/mu-plugins/impactshop-click-tracking.php",
+    "wp-content/mu-plugins/impactshop-auto-banner.php",
+    "wp-content/mu-plugins/impactshop-auto-banner-sync.php",
+    "wp-content/mu-plugins/impactshop-auto-banner-dognet.php",
+    "wp-content/mu-plugins/impactshop-boot.php",
+    "wp-content/mu-plugins/impactshop-cj.php",
+    "wp-content/mu-plugins/impactshop-go-bridge.php",
+    "wp-content/mu-plugins/impactshop-impactad-redirect.php",
+    "wp-content/mu-plugins/impactshop-saved-offers.php",
+    "wp-content/mu-plugins/impactshop-saved-offers.js",
+    "wp-content/mu-plugins/impactshop-offerwall.php",
+    "wp-content/mu-plugins/impactshop-offerwall.js",
+    "wp-content/mu-plugins/impactshop-offerwall-survey.php",
+    "wp-content/mu-plugins/impactshop-offerwall-article-quiz.php",
+    "wp-content/mu-plugins/impactshop-ayet-offerwall.php",
+    "wp-content/mu-plugins/impactshop-full-leaderboard.php",
+    "wp-content/mu-plugins/impactshop-rest-totals.php",
+    "wp-content/mu-plugins/impactshop-identity-panel.php",
+    "wp-content/mu-plugins/impactshop-identity-panel.js",
+    "wp-content/mu-plugins/impactshop-ngo-selector.php",
+    "wp-content/mu-plugins/impactshop-ngo-card.php",
+    "wp-content/mu-plugins/impactshop-vote-purchase.php",
+    "wp-content/mu-plugins/impact-gamification.php",
+    "wp-content/mu-plugins/impact-social-mvp.php",
+    "wp-content/mu-plugins/sharity-level-manager.php",
+    "wp-content/mu-plugins/sharity-points*.php",
+    "wp-content/mu-plugins/impactshop-pwa.php",
+    "wp-content/mu-plugins/impactshop-pwa-push.php",
+    "sw.js",
+    "wp-content/mu-plugins/impactshop-ngo-guides.php",
+    "wp-content/mu-plugins/impactshop-ngo-guides/**",
+    "bin/impactshop-guard-deploy.sh",
+    "bin/impactshop-guard-preflight.sh",
+    "bin/deploy-wpcontent-map.sh",
+    "docs/impactshop-guard-config.json",
+    "docs/impactshop-guard-config.sha256",
+    "docs/impactshop-guard-hashes.json",
+    "docs/impactshop-guard-hashes.sha256",
+    ".deploy.production.env",
+    ".deploy.staging.env"
+  ],
+  "additive_globs": [
+    "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
+    "docs/impact-challenge-*.md",
+    "docs/critical-surface-inventory.md",
+    "docs/impact-shop-profile-protected-perimeter.md",
+    "docs/elementor-protected-surface.md",
+    "docs/additive-first-ui-policy.md",
+    "docs/impactshop-protected-files.json",
+    "docs/protected-change-records/*.md",
+    "scripts/check-protected-file-touch.sh",
+    "scripts/check-elementor-protected-routes.sh",
+    "scripts/impact-challenge-ui-smoke.sh",
+    "scripts/guarded-remote-write.sh"
+  ],
+  "critical_routes": [
+    "/impact-challenge/",
+    "/impactad-2/",
+    "/impactshop/",
+    "/profil",
+    "/go/*",
+    "/go-deal/*"
+  ],
+  "required_smoke_tags": {
+    "ads_watch_runtime": [
+      "route:impact-challenge",
+      "flow:video-start",
+      "flow:cta-click",
+      "flow:reward-accumulation",
+      "browser:webkit",
+      "browser:chrome"
+    ],
+    "offerwall_runtime": [
+      "route:impact-challenge",
+      "flow:video-tasks-roundtrip",
+      "flow:offerwall-tabs",
+      "browser:webkit",
+      "browser:chrome"
+    ],
+    "pwa_shell": [
+      "route:impact-challenge",
+      "route:impactshop",
+      "route:home",
+      "flow:action-bar-clickability",
+      "flow:consent-overlay",
+      "flow:pwa-install-entry",
+      "browser:mobile"
+    ],
+    "identity_and_points": [
+      "route:impact-challenge",
+      "route:profil",
+      "flow:message-popup",
+      "flow:points-jump",
+      "flow:legacy-pool-visibility"
+    ],
+    "mobile_shell_runtime": [
+      "route:impact-challenge",
+      "route:impactshop",
+      "route:home",
+      "flow:mobile-shell-render",
+      "flow:consent-overlay",
+      "flow:pwa-install-entry",
+      "flow:legacy-pool-visibility",
+      "browser:mobile"
+    ],
+    "impact_shop_surface": [
+      "route:impactshop",
+      "flow:saved-offers-open",
+      "flow:go-deal",
+      "browser:webkit",
+      "browser:chrome"
+    ],
+    "profile_identity_surface": [
+      "route:profil",
+      "flow:message-popup",
+      "flow:points-jump",
+      "flow:profile-open",
+      "browser:webkit",
+      "browser:chrome"
+    ],
+    "deploy_guard": [
+      "deploy:guard-preflight",
+      "deploy:checksum-verify"
+    ]
+  },
+  "smoke_group_globs": {
+    "ads_watch_runtime": [
+      "wp-content/mu-plugins/impactshop-ads-watch.php",
+      "wp-content/mu-plugins/impactshop-ads-watch.js",
+      "wp-content/mu-plugins/impactshop-ads-watch.css",
+      "wp-content/mu-plugins/impactshop-ads-watch-quarter.php",
+      "wp-content/mu-plugins/impactshop-click-tracking.php"
+    ],
+    "offerwall_runtime": [
+      "wp-content/mu-plugins/impactshop-offerwall.php",
+      "wp-content/mu-plugins/impactshop-offerwall.js",
+      "wp-content/mu-plugins/impactshop-offerwall-survey.php",
+      "wp-content/mu-plugins/impactshop-offerwall-article-quiz.php",
+      "wp-content/mu-plugins/impactshop-ayet-offerwall.php"
+    ],
+    "pwa_shell": [
+      "wp-content/mu-plugins/impactshop-pwa.php",
+      "wp-content/mu-plugins/impactshop-pwa-push.php",
+      "sw.js"
+    ],
+    "mobile_shell_runtime": [
+      "wp-content/mu-plugins/impactshop-action-bar.php",
+      "wp-content/mu-plugins/impactshop-pwa.php",
+      "sw.js"
+    ],
+    "identity_and_points": [
+      "wp-content/mu-plugins/impactshop-identity-panel.php",
+      "wp-content/mu-plugins/impactshop-identity-panel.js",
+      "wp-content/mu-plugins/impactshop-rest-totals.php",
+      "wp-content/mu-plugins/impactshop-full-leaderboard.php",
+      "wp-content/mu-plugins/impactshop-vote-purchase.php",
+      "wp-content/mu-plugins/impact-gamification.php",
+      "wp-content/mu-plugins/sharity-points*.php",
+      "wp-content/mu-plugins/sharity-level-manager.php"
+    ],
+    "impact_shop_surface": [
+      "wp-content/mu-plugins/impactshop-saved-offers.php",
+      "wp-content/mu-plugins/impactshop-saved-offers.js",
+      "wp-content/mu-plugins/impactshop-go-bridge.php",
+      "wp-content/mu-plugins/impactshop-boot.php",
+      "wp-content/mu-plugins/impactshop-impactad-redirect.php",
+      "wp-content/mu-plugins/impactshop-auto-banner.php",
+      "wp-content/mu-plugins/impactshop-auto-banner-sync.php",
+      "wp-content/mu-plugins/impactshop-auto-banner-dognet.php"
+    ]
+  }
+}
