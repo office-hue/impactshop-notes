@@ -1,7 +1,7 @@
 ## 2026-03-31T22:10:00+0200 — Guard hardening propagation a közös policy rétegbe
 - Az utóbbi guard/review-fix körök általánosítható tanulságai most már nem csak surface-specifikus runbookokban élnek.
 - Új közös szabály lett: local/CI guard parity kötelező, a guarded push önálló belépési pont, a protected env párokat együtt kell kezelni, review-fix után kötelező a teljes recheck, stale empty cache pedig külön kockázati kategória.
-- Létrejött a hiányzó `docs/protected-file-change-checklist.md` a fő repo szabályrendszerében is.
+- Frissült és a fő repo szabályrendszerének policy felületére is kiemelésre került a `docs/protected-file-change-checklist.md`.
 
 ## 2026-03-26T19:45:00+0100 — fix: impact-community.php ngo_admin_url URL-ek visszaállítva
 - Merge conflict resolution hiba: auto-merge visszaállította `/impact-challenge/ngo-admin/` URL-eket.
@@ -32,7 +32,7 @@
 ## 2026-03-26T15:24:00+0100 — Protected-file koherencia és UI checklist szabály bevezetve
 - Védett fájl módosítás előtt kötelezővé vált: koherencia vizsgálat, kockázatelemzés, érintett funkciólista.
 - Védett fájl módosítás után kötelezővé vált: post-merge/deploy ellenőrzési kör és külön manuális UI checklist a felhasználónak.
-- Új kanonikus dokumentum: `docs/protected-file-change-checklist.md`, és a szabály bekötve a PR/deploy/policy fájlakba.
+- Kiemelt kanonikus dokumentumként frissült a `docs/protected-file-change-checklist.md`, és a szabály bekötve a PR/deploy/policy fájlakba.
 
 ## 2026-03-26T15:12:00+0100 — PR / merge / push / deploy bastion szabályok szigorítva
 - A bástyavédelmi és írásvédettségi szabályok most már explicit részei a PR policynek, PR template-nek, exit checklistnek és deploy runbooknak is.

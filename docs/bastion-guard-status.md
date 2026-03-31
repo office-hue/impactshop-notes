@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-03-26 19:45 CET
+Last updated: 2026-03-31 21:10 CET
 
 ## 2026-03-26 19:45 — impact-community.php URL fix
 - `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
