@@ -6467,3 +6467,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A `guarded-push.sh` most már saját maga is lefuttatja a lane- és protected-touch checkeket push előtt.
 - A guard control plane fájljai (`impactshop-protected-files.json`, lane/protected/push/workflow scriptek) most már protected körben vannak.
 - Következő lépés: baseline branch push + PR + merge, és csak utána a runtime lane-ek, például az AyeT surveywall helyreállítás.
+## 2026-03-31 21:52:00 CET - guard baseline review fix
+
+- PR review alapján a `guarded-push.sh` további hardeninget kapott: ha elérhető, már a safe auditot és a memory gate-et is ugyanabban a wrapperben futtatja push előtt.
+- A `workflow-state.sh` worktree-ben már a közös git könyvtárból vezeti le a repo nevét, így `impactshop-notes-*` worktree-k nem kapnak félrevezető deploy-javaslatot.

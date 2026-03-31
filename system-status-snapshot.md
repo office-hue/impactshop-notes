@@ -484,3 +484,7 @@ PHP lint ok for identity/gamification modules
 - Minimum control-plane history now exists in git, not only in dirty worktree state.
 - Control-plane hardening added: protected touch gate, workflow lane guard, guarded push prechecks, and protected classification for the guard control plane itself.
 - Follow-up expected: baseline PR/merge first, then runtime lanes such as AyeT surveywall restoration.
+## 2026-03-31 21:52:00 CET - guard baseline review hardening
+
+- `guarded-push.sh` hardened further: lane check + protected-touch gate mellé safe audit és memory gate is bekerült, ha a repo ezeket már eléri.
+- `workflow-state.sh` most már worktree-ben is a valódi repo-identitást használja a git common dir alapján, nem a worktree könyvtárnevét.

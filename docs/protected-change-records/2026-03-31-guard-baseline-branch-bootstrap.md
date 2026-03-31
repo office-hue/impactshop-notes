@@ -42,6 +42,12 @@ guarded commit, push, PR, merge, and deploy path.
   - `chore(guard): add protected touch model and gate`
   - `chore(guard): add workflow lane and push guards`
   - `chore(guard): protect guard control plane`
+- Follow-up hardening on the same branch:
+  - `fix(guard): harden guarded push and worktree repo detection`
 - `scripts/guarded-push.sh` now runs both lane and protected-touch checks before
   invoking `git push`.
+- `scripts/guarded-push.sh` also runs `safe-repo-audit` and the memory gate when
+  those entrypoints are available.
 - The guard model now treats the guard control plane itself as protected.
+- `scripts/workflow-state.sh` now derives repo identity from the git common dir,
+  so worktree names do not distort deploy guidance.
