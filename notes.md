@@ -6476,3 +6476,33 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A review-threadek alapján a push-mode guardok új branch / upstream nélküli helyzetre is korrigálva lettek, így első pushnál nem a teljes repo múltját vizsgálják.
 - A push-wrapper most egységes range/bázis feloldást ad át a lane- és protected-touch checknek.
 - A `workflow-state.sh` az üres branch-nevet is `detached`-re normalizálja.
+
+## 2026-03-31 22:22:00 CET - AyeT surveywall runtime lane
+
+- Clean runtime worktree branch: `fix/ayet-surveywall-runtime`.
+- Restored AyeT surveywall as a dedicated survey source on adslot `25740` with profile hash `b970533bbaf884d085d7c0e6734da1c2`.
+- Kept the existing AyeT offerwall/game inventory on adslot `25643`.
+- Runtime changes limited to:
+  - `.deploy.production.env`
+  - `.deploy.staging.env`
+  - `wp-content/mu-plugins/impactshop-ayet-offerwall.php`
+  - `wp-content/mu-plugins/impactshop-offerwall.php`
+  - `wp-content/mu-plugins/impactshop-offerwall.js`
+- Protected continuity recorded in `docs/protected-change-records/2026-03-31-ayet-surveywall-restoration.md`.
+
+## 2026-03-31 22:34:00 CET - AyeT PR guard alignment
+
+- The GitHub `protect-critical-files` workflow was aligned with the merged local
+  guard baseline so paired `.deploy.production.env` / `.deploy.staging.env`
+  runtime changes can pass the same documented continuity override path as the
+  MU-plugin runtime files.
+
+## 2026-03-31 22:42:00 CET - AyeT review fixes
+
+- Surveywall refresh now clears the active `default` survey cache entry too, so
+  `refresh=1` does not leave stale survey results pinned.
+- The public survey endpoint now returns `surveys: []` consistently on
+  pseudo-related errors.
+- Survey refresh is rate-limited per pseudo to avoid unnecessary upstream API
+  churn, and the inactive survey button state is no longer re-enabled blindly on
+  the frontend.

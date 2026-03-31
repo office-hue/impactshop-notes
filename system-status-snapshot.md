@@ -493,3 +493,26 @@ PHP lint ok for identity/gamification modules
 - Push-mode guardok új branch esetén upstream hiányában már nem az üres tree/full history felé esnek vissza.
 - A push-base feloldás sorrendje: upstream, `origin/HEAD`, `origin/main`, `origin/master`, `main`, `master`, végül `HEAD^` és csak legvégül empty tree.
 - `workflow-state.sh` detached HEAD esetén explicit `detached` branch-értéket ad.
+
+## 2026-03-31T22:22:00+0200 — AyeT surveywall runtime lane isolated
+- Clean runtime branch: `fix/ayet-surveywall-runtime`, based on `origin/main` after guard baseline merge.
+- AyeT runtime separation kept explicit:
+  - offerwall/game slot: `25643`
+  - surveywall slot: `25740`
+  - surveywall profile hash: `b970533bbaf884d085d7c0e6734da1c2`
+- `impactshop_ayet_surveys()` now serves surveywall questionnaires instead of general AyeT offerwall inventory.
+- `impactshop_offerwall_health()` exposes both `ayet_adslot` and `ayet_surveywall` diagnostics for post-deploy verification.
+
+## 2026-03-31T22:34:00+0200 — AyeT PR guard workflow aligned
+- `.github/workflows/protect-critical-files.yml` now treats the paired deploy env
+  files as part of the same overrideable protected runtime lane when continuity
+  evidence is present.
+- This keeps GitHub PR validation aligned with the merged local guard baseline
+  for the AyeT surveywall runtime branch.
+
+## 2026-03-31T22:42:00+0200 — AyeT review fixes applied
+- Surveywall cache flush now clears the active `default` cache key too.
+- `impactshop_ayet_surveys()` returns `surveys: []` consistently on
+  `missing_pseudo`.
+- Survey refresh is rate-limited per pseudo, and the survey tab activation logic
+  now respects the server-side disabled state.

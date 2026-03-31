@@ -30,11 +30,23 @@ if (!defined('AYET_OFFERWALL_ADSLOT')) {
 if (!defined('AYET_OFFERWALL_ADSLOT_FALLBACK')) {
     define('AYET_OFFERWALL_ADSLOT_FALLBACK', '25643');
 }
+if (!defined('AYET_SURVEYWALL_ADSLOT')) {
+    define('AYET_SURVEYWALL_ADSLOT', getenv('AYET_SURVEYWALL_ADSLOT') ?: '25740');
+}
+if (!defined('AYET_SURVEYWALL_PROFILE_HASH')) {
+    define('AYET_SURVEYWALL_PROFILE_HASH', getenv('AYET_SURVEYWALL_PROFILE_HASH') ?: 'b970533bbaf884d085d7c0e6734da1c2');
+}
 if (!defined('AYET_OFFERWALL_API_BASE')) {
     define('AYET_OFFERWALL_API_BASE', 'https://www.ayetstudios.com/offers/offerwall_api/');
 }
+if (!defined('AYET_SURVEYWALL_API_BASE')) {
+    define('AYET_SURVEYWALL_API_BASE', 'https://www.ayetstudios.com/surveys/surveywall_api/');
+}
 if (!defined('AYET_OFFERWALL_CACHE_TTL')) {
     define('AYET_OFFERWALL_CACHE_TTL', 45);
+}
+if (!defined('AYET_SURVEYWALL_CACHE_TTL')) {
+    define('AYET_SURVEYWALL_CACHE_TTL', 45);
 }
 
 // --- Calibrated reward constants (UX-REWARD-PLAN §1.2) ---
@@ -69,6 +81,12 @@ if (!defined('AYET_DAILY_TX_CAP')) {
 }
 
 add_action('rest_api_init', function (): void {
+    register_rest_route('impact/v1', '/ayet-surveys', [
+        'methods' => 'GET',
+        'callback' => 'impactshop_ayet_surveys',
+        'permission_callback' => '__return_true',
+    ]);
+
     register_rest_route('impact/v1', '/ayet-callback', [
         'methods' => 'GET',
         'callback' => 'impactshop_ayet_callback',
@@ -81,24 +99,138 @@ function impactshop_ayet_offerwall_cache_key(string $pseudo_id, string $adslot, 
     return 'impactshop_ayet_offers_' . md5($pseudo_id . '|' . $adslot . '|' . $ua_key);
 }
 
+function impactshop_ayet_parse_adslot_from_url(string $url): string
+{
+    $url = trim($url);
+    if ($url === '') {
+        return '';
+    }
+
+    $query = (string) parse_url($url, PHP_URL_QUERY);
+    if ($query !== '') {
+        parse_str($query, $params);
+        foreach (['adSlot', 'adslot', 'placementId', 'placement_id'] as $key) {
+            $value = isset($params[$key]) ? trim((string) $params[$key]) : '';
+            if ($value !== '') {
+                return $value;
+            }
+        }
+    }
+
+    return '';
+}
+
+function impactshop_ayet_get_admin_configured_adslot(): string
+{
+    if (!function_exists('impactshop_offerwall_get_providers')) {
+        return '';
+    }
+
+    $providers = impactshop_offerwall_get_providers();
+    $ayet = is_array($providers['ayet'] ?? null) ? $providers['ayet'] : [];
+    return impactshop_ayet_parse_adslot_from_url((string) ($ayet['iframe_url'] ?? ''));
+}
+
+function impactshop_ayet_get_effective_adslot(): string
+{
+    $candidates = [
+        trim((string) AYET_OFFERWALL_ADSLOT),
+        impactshop_ayet_get_admin_configured_adslot(),
+        trim((string) AYET_OFFERWALL_ADSLOT_FALLBACK),
+    ];
+
+    foreach ($candidates as $candidate) {
+        if ($candidate !== '') {
+            return $candidate;
+        }
+    }
+
+    return '';
+}
+
+function impactshop_ayet_get_effective_surveywall_adslot(): string
+{
+    $candidate = trim((string) AYET_SURVEYWALL_ADSLOT);
+    return $candidate !== '' ? $candidate : '';
+}
+
+function impactshop_ayet_get_effective_surveywall_profile_hash(): string
+{
+    $candidate = trim((string) AYET_SURVEYWALL_PROFILE_HASH);
+    return $candidate !== '' ? $candidate : '';
+}
+
+function impactshop_ayet_get_adslot_diagnostics(): array
+{
+    $env = trim((string) AYET_OFFERWALL_ADSLOT);
+    $fallback = trim((string) AYET_OFFERWALL_ADSLOT_FALLBACK);
+    $admin = impactshop_ayet_get_admin_configured_adslot();
+    $effective = '';
+    $source = '';
+
+    if ($env !== '') {
+        $effective = $env;
+        $source = 'env';
+    } elseif ($admin !== '') {
+        $effective = $admin;
+        $source = 'admin';
+    } elseif ($fallback !== '') {
+        $effective = $fallback;
+        $source = 'fallback';
+    }
+
+    return [
+        'effective' => $effective,
+        'source' => $source,
+        'env' => $env,
+        'fallback' => $fallback,
+        'admin' => $admin,
+        'env_active' => $env !== '',
+        'admin_mismatch' => ($admin !== '' && $effective !== '' && $admin !== $effective),
+        'using_fallback' => ($source === 'fallback'),
+    ];
+}
+
+function impactshop_ayet_get_surveywall_diagnostics(): array
+{
+    $adslot = impactshop_ayet_get_effective_surveywall_adslot();
+    $profile_hash = impactshop_ayet_get_effective_surveywall_profile_hash();
+
+    return [
+        'effective' => $adslot,
+        'env' => trim((string) AYET_SURVEYWALL_ADSLOT),
+        'profile_hash_configured' => $profile_hash !== '',
+        'active' => $adslot !== '',
+    ];
+}
+
 function impactshop_ayet_offerwall_flush_cache(string $pseudo_id): void
 {
-    $adslot = (string) AYET_OFFERWALL_ADSLOT;
-    if ($adslot === '') {
-        $adslot = (string) AYET_OFFERWALL_ADSLOT_FALLBACK;
-    }
+    $adslot = impactshop_ayet_get_effective_adslot();
     if ($adslot === '') {
         return;
     }
     delete_transient(impactshop_ayet_offerwall_cache_key($pseudo_id, $adslot));
 }
 
+function impactshop_ayet_surveywall_cache_key(string $pseudo_id, string $adslot, string $ua_key = ''): string
+{
+    return 'impactshop_ayet_surveys_' . md5($pseudo_id . '|' . $adslot . '|' . $ua_key);
+}
+
+function impactshop_ayet_surveywall_flush_cache(string $pseudo_id): void
+{
+    $adslot = impactshop_ayet_get_effective_surveywall_adslot();
+    if ($adslot === '') {
+        return;
+    }
+    delete_transient(impactshop_ayet_surveywall_cache_key($pseudo_id, $adslot));
+    delete_transient(impactshop_ayet_surveywall_cache_key($pseudo_id, $adslot, 'default'));
+}
+
 function impactshop_ayet_offerwall_fetch_offers_with_ua(string $pseudo_id, string $ip, string $user_agent, string $ua_key = 'default'): array
 {
-    $adslot = (string) AYET_OFFERWALL_ADSLOT;
-    if ($adslot === '') {
-        $adslot = (string) AYET_OFFERWALL_ADSLOT_FALLBACK;
-    }
+    $adslot = impactshop_ayet_get_effective_adslot();
     if ($adslot === '') {
         impactshop_ayet_log('warn', 'missing_adslot');
         return [];
@@ -148,13 +280,118 @@ function impactshop_ayet_offerwall_fetch_offers_with_ua(string $pseudo_id, strin
     $offers = array_values(array_filter($data['offers'], 'impactshop_ayet_offerwall_offer_allowed'));
     $offers = array_map('impactshop_ayet_offerwall_transform_offer', $offers);
 
-    set_transient($cache_key, $offers, (int) AYET_OFFERWALL_CACHE_TTL);
+    // Do not pin empty responses into cache, because stale inventory gaps are
+    // better handled by a fresh follow-up fetch than by serving a false zero.
+    if (!empty($offers)) {
+        set_transient($cache_key, $offers, (int) AYET_OFFERWALL_CACHE_TTL);
+    } else {
+        delete_transient($cache_key);
+    }
     return $offers;
 }
 
 function impactshop_ayet_offerwall_fetch_offers(string $pseudo_id, string $ip, string $user_agent): array
 {
     return impactshop_ayet_offerwall_fetch_offers_with_ua($pseudo_id, $ip, $user_agent, 'default');
+}
+
+function impactshop_ayet_surveywall_transform_survey(array $raw): array
+{
+    $points = max(0, (int) round((float) ($raw['cpi'] ?? 0)));
+    $votes = $points > 0 ? (int) ceil($points / 5) : 0;
+    $category = strtolower(trim((string) ($raw['category'] ?? '')));
+    $labels = [
+        'miscellaneous' => 'Általános',
+        'games' => 'Játékok',
+        'education' => 'Oktatás',
+        'shopping' => 'Vásárlás',
+        'finance' => 'Pénzügy',
+        'health' => 'Egészség',
+        'technology' => 'Technológia',
+    ];
+    $categoryLabel = $labels[$category] ?? ($category !== '' ? ucfirst($category) : 'Általános');
+
+    return [
+        'survey_id' => (int) ($raw['id'] ?? 0),
+        'name' => 'AyeT kérdőív',
+        'category' => $category,
+        'category_label' => $categoryLabel,
+        'icon' => (string) ($raw['category_icon_svg'] ?? $raw['category_icon_gif'] ?? ''),
+        'estimated_minutes' => max(1, (int) ($raw['loi'] ?? 0)),
+        'remaining_completes' => max(0, (int) ($raw['remaining_completes'] ?? 0)),
+        'is_new' => !empty($raw['is_new']),
+        'points' => $points,
+        'votes' => $votes,
+        'url' => (string) ($raw['url'] ?? ''),
+        'missing_qualifications' => max(0, (int) ($raw['missing_qualifications'] ?? 0)),
+        'conversion_rate' => (float) ($raw['cr'] ?? 0),
+    ];
+}
+
+function impactshop_ayet_surveywall_fetch_surveys_with_ua(string $pseudo_id, string $ip, string $user_agent, string $ua_key = 'default'): array
+{
+    $adslot = impactshop_ayet_get_effective_surveywall_adslot();
+    if ($adslot === '') {
+        impactshop_ayet_log('warn', 'missing_surveywall_adslot');
+        return [];
+    }
+
+    $cache_key = impactshop_ayet_surveywall_cache_key($pseudo_id, $adslot, $ua_key);
+    $cached = get_transient($cache_key);
+    if (is_array($cached)) {
+        return $cached;
+    }
+
+    $base = rtrim((string) AYET_SURVEYWALL_API_BASE, '/') . '/';
+    $url = $base . rawurlencode($adslot);
+    $query = [
+        'external_identifier' => $pseudo_id,
+        'language' => 'hu',
+        'num_surveys' => '20',
+        'survey_sorting' => 'eepm',
+    ];
+    $profile_hash = impactshop_ayet_get_effective_surveywall_profile_hash();
+    if ($profile_hash !== '') {
+        $query['hash'] = $profile_hash;
+    }
+    if ($ip !== '') {
+        $query['ip'] = $ip;
+    }
+    if ($user_agent !== '') {
+        $query['user_agent'] = $user_agent;
+    }
+    $url = add_query_arg($query, $url);
+
+    $response = wp_remote_get($url, [
+        'timeout' => 12,
+        'headers' => [
+            'Accept' => 'application/json',
+        ],
+    ]);
+
+    if (is_wp_error($response)) {
+        impactshop_ayet_log('warn', 'surveywall_api_error', ['error' => $response->get_error_message()]);
+        return [];
+    }
+
+    $body = (string) wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+    if (!is_array($data) || strtolower((string) ($data['status'] ?? '')) !== 'success') {
+        return [];
+    }
+
+    $surveys = isset($data['surveys']) && is_array($data['surveys']) ? $data['surveys'] : [];
+    $surveys = array_values(array_filter(array_map('impactshop_ayet_surveywall_transform_survey', $surveys), static function (array $survey): bool {
+        return !empty($survey['url']);
+    }));
+
+    if (!empty($surveys)) {
+        set_transient($cache_key, $surveys, (int) AYET_SURVEYWALL_CACHE_TTL);
+    } else {
+        delete_transient($cache_key);
+    }
+
+    return $surveys;
 }
 
 /**
@@ -410,6 +647,61 @@ function impactshop_ayet_callback(WP_REST_Request $request): WP_REST_Response
     impactshop_ayet_insert_ledger($pseudo_id, $original_tx, $offer_name, $payout_usd, $currency_amount);
 
     return new WP_REST_Response(['status' => 'ok'], 200);
+}
+
+function impactshop_ayet_surveys(WP_REST_Request $request): WP_REST_Response
+{
+    $pseudo_id = '';
+    if (function_exists('impactshop_identity_profile_cookie')) {
+        $pseudo_id = (string) impactshop_identity_profile_cookie();
+    }
+    if ($pseudo_id === '' && isset($_COOKIE['impactshop_pseudo_id'])) {
+        $pseudo_id = strtolower(sanitize_text_field((string) wp_unslash($_COOKIE['impactshop_pseudo_id'])));
+    }
+
+    if ($pseudo_id === '') {
+        return new WP_REST_Response([
+            'status' => 'missing_pseudo',
+            'surveys' => [],
+        ], 200);
+    }
+
+    if (function_exists('impactshop_identity_profile_valid_pseudo')
+        && !impactshop_identity_profile_valid_pseudo($pseudo_id)
+    ) {
+        return new WP_REST_Response([
+            'status' => 'missing_pseudo',
+            'surveys' => [],
+        ], 200);
+    }
+
+    $adslot = impactshop_ayet_get_effective_surveywall_adslot();
+    if ($adslot === '') {
+        return new WP_REST_Response([
+            'status' => 'missing_adslot',
+            'surveys' => [],
+        ], 200);
+    }
+
+    if ((string) $request->get_param('refresh') === '1') {
+        $refresh_key = 'impactshop_ayet_surveywall_refresh_' . md5($pseudo_id);
+        $last_refresh = (int) get_transient($refresh_key);
+        $min_refresh_interval = 60;
+        if ($last_refresh === 0 || (time() - $last_refresh) >= $min_refresh_interval) {
+            impactshop_ayet_surveywall_flush_cache($pseudo_id);
+            set_transient($refresh_key, time(), $min_refresh_interval);
+        }
+    }
+
+    $ip = impactshop_ayet_resolve_ip($request);
+    $user_agent = substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500);
+    $surveys = impactshop_ayet_surveywall_fetch_surveys_with_ua($pseudo_id, $ip, $user_agent);
+
+    return new WP_REST_Response([
+        'status' => 'ok',
+        'surveys' => $surveys,
+        'count' => count($surveys),
+    ], 200);
 }
 
 function impactshop_ayet_handle_reversal(string $pseudo_id, string $transaction_id, string $offer_name): void

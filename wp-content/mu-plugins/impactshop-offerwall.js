@@ -43,6 +43,7 @@
     var activeOffersCache = [];
     var ayetSurveyCache = [];
     var ayetSurveyLoaded = false;
+    var ayetSurveyRetryingEmpty = false;
     var activeFilter = 0;       // 0 = all, 1-4 = tier
     var activeSort = 'payout';  // payout | time | status
     var currentProvider = null;
@@ -273,9 +274,21 @@
       }
     }
 
+    function normalizeSurveyProviders(){
+      var ayetButton = root.querySelector('[data-scope="survey"] [data-role="offerwall-provider"][data-provider="ayet"]');
+      var ayetContainer = root.querySelector('[data-role="offerwall-ayet-surveys"]');
+      var ayetSurveyUrl = (window.impactshopOfferwall && window.impactshopOfferwall.ayetSurveyUrl) || '';
+      var ayetSurveyActive = !!(window.impactshopOfferwall && window.impactshopOfferwall.ayetSurveyActive);
+      if (ayetButton && ayetContainer && ayetSurveyUrl && ayetSurveyActive && !ayetButton.disabled && !ayetButton.classList.contains('is-disabled')) {
+        ayetButton.disabled = false;
+        ayetButton.classList.remove('is-disabled');
+      }
+    }
+
     function initProviderTabs(){
       if (providerTabsReady) return;
       providerTabsReady = true;
+      normalizeSurveyProviders();
       Array.prototype.forEach.call(providerTabs, function(group){
         var scope = group.getAttribute('data-scope') || '';
         var buttons = group.querySelectorAll('[data-role="offerwall-provider"]');
@@ -363,17 +376,82 @@
         });
     }
 
+    function createAyetSurveyCard(survey){
+      var card = document.createElement('div');
+      card.className = 'offerwall-card offerwall-card--offer offerwall-card--surveywall';
+
+      var iconHtml = survey.icon
+        ? '<img class="offerwall-card-icon" src="' + escAttr(survey.icon) + '" alt="" loading="lazy" />'
+        : '<div class="offerwall-card-icon offerwall-card-icon--placeholder">📊</div>';
+
+      var badgeHtml = survey.is_new
+        ? '<span class="offerwall-diff" style="background:#2563eb">Új</span>'
+        : '<span class="offerwall-diff" style="background:#0f766e">Survey</span>';
+
+      var rewardHtml = '<div class="offerwall-reward">' +
+        '<span>🎯 ' + (survey.points || 0) + ' pont + ' + (survey.votes || 0) + ' szavazat</span>' +
+        '<span>⏱ ~' + escHtml(String(survey.estimated_minutes || 0)) + ' perc · 📋 ' + escHtml(survey.category_label || 'Általános') + '</span>' +
+        '</div>';
+
+      var metaParts = [];
+      if (survey.remaining_completes != null) {
+        metaParts.push('Még ' + survey.remaining_completes + ' hely');
+      }
+      if (survey.conversion_rate != null && survey.conversion_rate > 0) {
+        metaParts.push('CR ' + Math.round(survey.conversion_rate * 1000) / 10 + '%');
+      }
+      if (survey.missing_qualifications != null && survey.missing_qualifications > 0) {
+        metaParts.push('Hiányzó profilkérdés: ' + survey.missing_qualifications);
+      }
+      var metaHtml = metaParts.length
+        ? '<div class="offerwall-meta">' + metaParts.map(escHtml).join(' · ') + '</div>'
+        : '';
+
+      card.innerHTML =
+        '<div class="offerwall-card-header">' + iconHtml +
+        '<div class="offerwall-card-title"><strong>' + escHtml(survey.name || 'AyeT kérdőív') + '</strong>' + badgeHtml + '</div></div>' +
+        '<p class="offerwall-intro">' + escHtml((survey.category_label || 'Általános') + ' kategóriájú AyeT kérdőív.') + '</p>' +
+        rewardHtml + metaHtml +
+        '<button type="button" class="offerwall-cta">📊 Kérdőív indítása</button>';
+
+      var cta = card.querySelector('.offerwall-cta');
+      if (cta) {
+        cta.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          if (!survey.url) return;
+          if (!ensureConsent()) return;
+          saveScrollPosition();
+          openTrackingLink(survey.url);
+        });
+      }
+
+      return card;
+    }
+
+    function renderAyetSurveyCardsInto(container, surveys, emptyMessage){
+      if (!container) return;
+      container.innerHTML = '';
+      if (!surveys || !surveys.length) {
+        container.appendChild(createMessageCard(emptyMessage || 'Jelenleg nincs elérhető AyeT kérdőív.'));
+        return;
+      }
+      surveys.forEach(function(survey){
+        container.appendChild(createAyetSurveyCard(survey));
+      });
+    }
+
     function fetchAyetSurveys(force){
       if (ayetSurveyLoaded && !force) return;
       var surveyUrl = (window.impactshopOfferwall && window.impactshopOfferwall.ayetSurveyUrl) || '';
       var container = root.querySelector('[data-role="offerwall-ayet-surveys"]');
       if (!surveyUrl || !container) {
-        renderOfferCardsInto(container, [], 'Az AyeT kérdőívek jelenleg nem elérhetők.');
+        renderAyetSurveyCardsInto(container, [], 'Az AyeT kérdőívek jelenleg nem elérhetők.');
         return;
       }
-      var shouldRefresh = force || !ayetSurveyLoaded;
+      var shouldRefresh = !!force;
       ayetSurveyLoaded = true;
-      renderOfferCardsInto(container, [], 'Kérdőívek betöltése...');
+      renderAyetSurveyCardsInto(container, [], 'Kérdőívek betöltése...');
       var refreshParam = shouldRefresh ? '&refresh=1' : '';
       fetchWithRetry(surveyUrl + '?_ts=' + Date.now() + refreshParam, { credentials: 'include' }, 2)
         .then(function(r){ return r.ok ? r.json() : null; })
@@ -384,11 +462,12 @@
           if (data && data.status === 'missing_adslot') {
             return { __error: 'Az AyeT kérdőívek még nincsenek beállítva.' };
           }
-          return (data && data.status === 'ok' && data.offers) ? data.offers : [];
+          return (data && data.status === 'ok' && data.surveys) ? data.surveys : [];
         })
-        .then(function(offers){
-          if (offers && offers.__error) {
-            renderOfferCardsInto(container, [], offers.__error);
+        .then(function(surveys){
+          if (surveys && surveys.__error) {
+            ayetSurveyRetryingEmpty = false;
+            renderAyetSurveyCardsInto(container, [], surveys.__error);
             var retry = document.createElement('button');
             retry.type = 'button';
             retry.className = 'offerwall-cta';
@@ -397,8 +476,14 @@
             container.appendChild(retry);
             return;
           }
-          ayetSurveyCache = offers.slice();
-          renderOfferCardsInto(container, ayetSurveyCache, 'Jelenleg nincs elérhető AyeT kérdőív.');
+          if (!surveys.length && !shouldRefresh && !ayetSurveyRetryingEmpty) {
+            ayetSurveyRetryingEmpty = true;
+            fetchAyetSurveys(true);
+            return;
+          }
+          ayetSurveyRetryingEmpty = false;
+          ayetSurveyCache = surveys.slice();
+          renderAyetSurveyCardsInto(container, ayetSurveyCache, 'Jelenleg nincs elérhető AyeT kérdőív.');
           if (!ayetSurveyCache.length) {
             var retryEmpty = document.createElement('button');
             retryEmpty.type = 'button';
@@ -409,7 +494,8 @@
           }
         })
         .catch(function(){
-          renderOfferCardsInto(container, [], 'A kérdőívek betöltése nem sikerült. Próbáld újra!');
+          ayetSurveyRetryingEmpty = false;
+          renderAyetSurveyCardsInto(container, [], 'A kérdőívek betöltése nem sikerült. Próbáld újra!');
           var retry = document.createElement('button');
           retry.type = 'button';
           retry.className = 'offerwall-cta';
@@ -992,16 +1078,30 @@
     function initTabsUI(){
       if (!tabsEl || !tabButtons.length) return;
       var panels = root.querySelectorAll('[data-panel]');
+
+      function activateTab(target) {
+        tabButtons.forEach(function(b){
+          var isTarget = b.getAttribute('data-target') === target;
+          b.classList.toggle('is-active', isTarget);
+          b.setAttribute('aria-selected', isTarget ? 'true' : 'false');
+        });
+        panels.forEach(function(panel){
+          var isTarget = panel.getAttribute('data-panel') === target;
+          panel.classList.toggle('is-active', isTarget);
+          panel.hidden = !isTarget;
+          panel.style.display = isTarget ? 'block' : 'none';
+        });
+      }
+
       tabButtons.forEach(function(btn){
         btn.addEventListener('click', function(){
           var target = btn.getAttribute('data-target');
-          tabButtons.forEach(function(b){ b.classList.remove('is-active'); });
-          btn.classList.add('is-active');
-          panels.forEach(function(panel){
-            panel.classList.toggle('is-active', panel.getAttribute('data-panel') === target);
-          });
+          activateTab(target);
         });
       });
+
+      var activeTab = root.querySelector('[data-role="offerwall-tab"].is-active');
+      activateTab(activeTab ? activeTab.getAttribute('data-target') : 'offerwall');
     }
 
     function isMobileView(){
