@@ -49,3 +49,8 @@ keeping the existing AyeT offerwall/game inventory on its own adslot.
 - The surveywall profile hash is `b970533bbaf884d085d7c0e6734da1c2`.
 - The runtime now exposes separate diagnostics for `ayet_adslot` and
   `ayet_surveywall` in the offerwall health endpoint.
+- Review follow-up hardening:
+  - `refresh=1` now clears the active survey cache entry too
+  - pseudo-related error payloads are consistently returned as `surveys: []`
+  - survey refresh is rate-limited per pseudo
+  - the frontend no longer re-enables a server-disabled AyeT survey button
