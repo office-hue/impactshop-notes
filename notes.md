@@ -6496,3 +6496,13 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   guard baseline so paired `.deploy.production.env` / `.deploy.staging.env`
   runtime changes can pass the same documented continuity override path as the
   MU-plugin runtime files.
+
+## 2026-03-31 22:42:00 CET - AyeT review fixes
+
+- Surveywall refresh now clears the active `default` survey cache entry too, so
+  `refresh=1` does not leave stale survey results pinned.
+- The public survey endpoint now returns `surveys: []` consistently on
+  pseudo-related errors.
+- Survey refresh is rate-limited per pseudo to avoid unnecessary upstream API
+  churn, and the inactive survey button state is no longer re-enabled blindly on
+  the frontend.

@@ -509,3 +509,10 @@ PHP lint ok for identity/gamification modules
   evidence is present.
 - This keeps GitHub PR validation aligned with the merged local guard baseline
   for the AyeT surveywall runtime branch.
+
+## 2026-03-31T22:42:00+0200 — AyeT review fixes applied
+- Surveywall cache flush now clears the active `default` cache key too.
+- `impactshop_ayet_surveys()` returns `surveys: []` consistently on
+  `missing_pseudo`.
+- Survey refresh is rate-limited per pseudo, and the survey tab activation logic
+  now respects the server-side disabled state.
