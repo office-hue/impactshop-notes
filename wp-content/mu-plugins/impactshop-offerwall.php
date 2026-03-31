@@ -901,6 +901,9 @@ function impactshop_offerwall_enqueue_assets(): void
     wp_localize_script('impactshop-offerwall', 'impactshopOfferwall', [
         'restUrl' => esc_url_raw(rest_url('impact/v1/offerwall')),
         'ayetSurveyUrl' => esc_url_raw(rest_url('impact/v1/ayet-surveys')),
+        'ayetSurveyActive' => function_exists('impactshop_ayet_get_effective_surveywall_adslot')
+            ? impactshop_ayet_get_effective_surveywall_adslot() !== ''
+            : false,
     ]);
 }
 

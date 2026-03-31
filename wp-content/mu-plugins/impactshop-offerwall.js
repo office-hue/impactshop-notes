@@ -278,7 +278,8 @@
       var ayetButton = root.querySelector('[data-scope="survey"] [data-role="offerwall-provider"][data-provider="ayet"]');
       var ayetContainer = root.querySelector('[data-role="offerwall-ayet-surveys"]');
       var ayetSurveyUrl = (window.impactshopOfferwall && window.impactshopOfferwall.ayetSurveyUrl) || '';
-      if (ayetButton && ayetContainer && ayetSurveyUrl) {
+      var ayetSurveyActive = !!(window.impactshopOfferwall && window.impactshopOfferwall.ayetSurveyActive);
+      if (ayetButton && ayetContainer && ayetSurveyUrl && ayetSurveyActive && !ayetButton.disabled && !ayetButton.classList.contains('is-disabled')) {
         ayetButton.disabled = false;
         ayetButton.classList.remove('is-disabled');
       }
@@ -448,7 +449,7 @@
         renderAyetSurveyCardsInto(container, [], 'Az AyeT kérdőívek jelenleg nem elérhetők.');
         return;
       }
-      var shouldRefresh = force || !ayetSurveyLoaded;
+      var shouldRefresh = !!force;
       ayetSurveyLoaded = true;
       renderAyetSurveyCardsInto(container, [], 'Kérdőívek betöltése...');
       var refreshParam = shouldRefresh ? '&refresh=1' : '';
