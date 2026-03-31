@@ -6460,3 +6460,19 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `impactshop-ads-watch.js` Safari external return recovery fixei változatlanul maradtak
 - verzió: `2.5.32`
 - live ellenőrzés: mobil snapshoton 4 gombos nav + látható `Reklám megtekintése` gomb
+## 2026-03-31 21:45:00 CET - guard baseline bootstrap continuity
+
+- Külön, tiszta `main`-alapú baseline branch készült a guard control plane számára, hogy a protected runtime commitok ne dirty worktree guardokra támaszkodjanak.
+- A baseline három guard commitot tartalmaz: protected touch gate, workflow/push guardok, majd a guard control plane saját protected lezárása.
+- A `guarded-push.sh` most már saját maga is lefuttatja a lane- és protected-touch checkeket push előtt.
+- A guard control plane fájljai (`impactshop-protected-files.json`, lane/protected/push/workflow scriptek) most már protected körben vannak.
+- Következő lépés: baseline branch push + PR + merge, és csak utána a runtime lane-ek, például az AyeT surveywall helyreállítás.
+## 2026-03-31 21:52:00 CET - guard baseline review fix
+
+- PR review alapján a `guarded-push.sh` további hardeninget kapott: ha elérhető, már a safe auditot és a memory gate-et is ugyanabban a wrapperben futtatja push előtt.
+- A `workflow-state.sh` worktree-ben már a közös git könyvtárból vezeti le a repo nevét, így `impactshop-notes-*` worktree-k nem kapnak félrevezető deploy-javaslatot.
+## 2026-03-31 21:58:00 CET - guard baseline no-upstream fix
+
+- A review-threadek alapján a push-mode guardok új branch / upstream nélküli helyzetre is korrigálva lettek, így első pushnál nem a teljes repo múltját vizsgálják.
+- A push-wrapper most egységes range/bázis feloldást ad át a lane- és protected-touch checknek.
+- A `workflow-state.sh` az üres branch-nevet is `detached`-re normalizálja.

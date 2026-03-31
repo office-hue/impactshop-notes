@@ -478,3 +478,18 @@ PHP lint ok for identity/gamification modules
 - Kept the later Safari external-tab recovery logic in `impactshop-ads-watch.js`.
 - `impactshop-ads-watch` asset version bumped to `2.5.32`.
 - Live verification: `/impact-challenge/` now references `impactshop-ads-watch.css?ver=2.5.32` and the mobile snapshot again shows 4 nav buttons plus visible `Reklám megtekintése`.
+## 2026-03-31 21:45:00 CET - guard baseline bootstrap on clean main lineage
+
+- Clean `main`-based guard baseline branch prepared so later protected runtime work can use canonical guarded commit/push/PR flow.
+- Minimum control-plane history now exists in git, not only in dirty worktree state.
+- Control-plane hardening added: protected touch gate, workflow lane guard, guarded push prechecks, and protected classification for the guard control plane itself.
+- Follow-up expected: baseline PR/merge first, then runtime lanes such as AyeT surveywall restoration.
+## 2026-03-31 21:52:00 CET - guard baseline review hardening
+
+- `guarded-push.sh` hardened further: lane check + protected-touch gate mellé safe audit és memory gate is bekerült, ha a repo ezeket már eléri.
+- `workflow-state.sh` most már worktree-ben is a valódi repo-identitást használja a git common dir alapján, nem a worktree könyvtárnevét.
+## 2026-03-31 21:58:00 CET - guard baseline upstream fallback hardening
+
+- Push-mode guardok új branch esetén upstream hiányában már nem az üres tree/full history felé esnek vissza.
+- A push-base feloldás sorrendje: upstream, `origin/HEAD`, `origin/main`, `origin/master`, `main`, `master`, végül `HEAD^` és csak legvégül empty tree.
+- `workflow-state.sh` detached HEAD esetén explicit `detached` branch-értéket ad.
