@@ -11,6 +11,29 @@ MODEL_PATH="${ROOT_DIR}/docs/impactshop-protected-files.json"
 MODE="local"
 PUSH_RANGE="${SAFE_REPO_AUDIT_PUSH_RANGE:-}"
 
+resolve_push_base() {
+  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
+  local candidate=""
+  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
+    git merge-base HEAD "$upstream_ref"
+    return 0
+  fi
+
+  for candidate in "origin/HEAD" "origin/main" "origin/master" "main" "master"; do
+    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+      git merge-base HEAD "$candidate"
+      return 0
+    fi
+  done
+
+  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    git rev-parse --verify HEAD^
+    return 0
+  fi
+
+  git hash-object -t tree /dev/null
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode)
@@ -41,12 +64,7 @@ cd "$ROOT_DIR"
 
 if [[ "$MODE" == "push" ]]; then
   if [[ -z "$PUSH_RANGE" ]]; then
-    upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
-    if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-      base="$(git merge-base HEAD "$upstream_ref")"
-    else
-      base="$(git hash-object -t tree /dev/null)"
-    fi
+    base="$(resolve_push_base)"
     PUSH_RANGE="${base}..HEAD"
   fi
   git diff --name-only "$PUSH_RANGE" | sed '/^$/d' | sort -u > "$CHANGED_LIST"

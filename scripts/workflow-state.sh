@@ -23,6 +23,9 @@ else
   REPO_NAME="$(basename "${REPO_ROOT}")"
 fi
 BRANCH="$(git -C "${REPO_ROOT}" branch --show-current 2>/dev/null || echo detached)"
+if [[ -z "${BRANCH}" ]]; then
+  BRANCH="detached"
+fi
 HEAD_SHA="$(git -C "${REPO_ROOT}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 count_lines() {
