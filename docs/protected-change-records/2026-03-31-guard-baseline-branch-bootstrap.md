@@ -44,6 +44,7 @@ guarded commit, push, PR, merge, and deploy path.
   - `chore(guard): protect guard control plane`
 - Follow-up hardening on the same branch:
   - `fix(guard): harden guarded push and worktree repo detection`
+  - `fix(guard): handle no-upstream push mode and detached heads`
 - `scripts/guarded-push.sh` now runs both lane and protected-touch checks before
   invoking `git push`.
 - `scripts/guarded-push.sh` also runs `safe-repo-audit` and the memory gate when
@@ -51,3 +52,7 @@ guarded commit, push, PR, merge, and deploy path.
 - The guard model now treats the guard control plane itself as protected.
 - `scripts/workflow-state.sh` now derives repo identity from the git common dir,
   so worktree names do not distort deploy guidance.
+- Push-mode guards now choose a commit-ish base for new branches without an
+  upstream instead of diffing against the empty tree/full history.
+- `scripts/workflow-state.sh` now also normalizes empty branch output to
+  `detached`.

@@ -488,3 +488,8 @@ PHP lint ok for identity/gamification modules
 
 - `guarded-push.sh` hardened further: lane check + protected-touch gate mellé safe audit és memory gate is bekerült, ha a repo ezeket már eléri.
 - `workflow-state.sh` most már worktree-ben is a valódi repo-identitást használja a git common dir alapján, nem a worktree könyvtárnevét.
+## 2026-03-31 21:58:00 CET - guard baseline upstream fallback hardening
+
+- Push-mode guardok új branch esetén upstream hiányában már nem az üres tree/full history felé esnek vissza.
+- A push-base feloldás sorrendje: upstream, `origin/HEAD`, `origin/main`, `origin/master`, `main`, `master`, végül `HEAD^` és csak legvégül empty tree.
+- `workflow-state.sh` detached HEAD esetén explicit `detached` branch-értéket ad.

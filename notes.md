@@ -6471,3 +6471,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 
 - PR review alapján a `guarded-push.sh` további hardeninget kapott: ha elérhető, már a safe auditot és a memory gate-et is ugyanabban a wrapperben futtatja push előtt.
 - A `workflow-state.sh` worktree-ben már a közös git könyvtárból vezeti le a repo nevét, így `impactshop-notes-*` worktree-k nem kapnak félrevezető deploy-javaslatot.
+## 2026-03-31 21:58:00 CET - guard baseline no-upstream fix
+
+- A review-threadek alapján a push-mode guardok új branch / upstream nélküli helyzetre is korrigálva lettek, így első pushnál nem a teljes repo múltját vizsgálják.
+- A push-wrapper most egységes range/bázis feloldást ad át a lane- és protected-touch checknek.
+- A `workflow-state.sh` az üres branch-nevet is `detached`-re normalizálja.
