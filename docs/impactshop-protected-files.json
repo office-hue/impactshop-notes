@@ -1,6 +1,16 @@
 {
   "version": 1,
   "protected_globs": [
+    "scripts/check-protected-file-touch.sh",
+    "scripts/check-commit-lane.sh",
+    "scripts/guarded-push.sh",
+    "scripts/workflow-state.sh",
+    "scripts/install-hooks.sh",
+    "scripts/safe-repo-audit.sh",
+    "docs/impactshop-protected-files.json",
+    "docs/impactshop-deploy.md",
+    "docs/ai-assistant-canonical-policy.md",
+    "docs/pr-policy.md",
     "wp-content/mu-plugins/impactshop-action-bar.php",
     "wp-content/mu-plugins/impactshop-ads-watch.php",
     "wp-content/mu-plugins/impactshop-ads-watch.js",
@@ -54,9 +64,7 @@
     "docs/impact-shop-profile-protected-perimeter.md",
     "docs/elementor-protected-surface.md",
     "docs/additive-first-ui-policy.md",
-    "docs/impactshop-protected-files.json",
     "docs/protected-change-records/*.md",
-    "scripts/check-protected-file-touch.sh",
     "scripts/check-elementor-protected-routes.sh",
     "scripts/impact-challenge-ui-smoke.sh",
     "scripts/guarded-remote-write.sh"
@@ -175,6 +183,18 @@
       "wp-content/mu-plugins/impactshop-auto-banner.php",
       "wp-content/mu-plugins/impactshop-auto-banner-sync.php",
       "wp-content/mu-plugins/impactshop-auto-banner-dognet.php"
+    ],
+    "deploy_guard": [
+      "scripts/check-protected-file-touch.sh",
+      "scripts/check-commit-lane.sh",
+      "scripts/guarded-push.sh",
+      "scripts/workflow-state.sh",
+      "scripts/install-hooks.sh",
+      "scripts/safe-repo-audit.sh",
+      "docs/impactshop-protected-files.json",
+      "docs/impactshop-deploy.md",
+      "docs/ai-assistant-canonical-policy.md",
+      "docs/pr-policy.md"
     ]
   }
 }

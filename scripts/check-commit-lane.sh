@@ -86,7 +86,9 @@ def matches(path, patterns):
 lane_map = {}
 
 for path in paths:
-    if matches(path, additive_globs):
+    if path.startswith("docs/protected-change-records/"):
+        lane = "docs"
+    elif matches(path, additive_globs):
         lane = "additive"
     elif matches(path, protected_globs):
         lane = "protected"
