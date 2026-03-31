@@ -1,3 +1,8 @@
+## 2026-03-31T22:10:00+0200 — Guard hardening propagation a közös policy rétegbe
+- Az utóbbi guard/review-fix körök általánosítható tanulságai most már nem csak surface-specifikus runbookokban élnek.
+- Új közös szabály lett: local/CI guard parity kötelező, a guarded push önálló belépési pont, a protected env párokat együtt kell kezelni, review-fix után kötelező a teljes recheck, stale empty cache pedig külön kockázati kategória.
+- Létrejött a hiányzó `docs/protected-file-change-checklist.md` a fő repo szabályrendszerében is.
+
 ## 2026-03-26T19:45:00+0100 — fix: impact-community.php ngo_admin_url URL-ek visszaállítva
 - Merge conflict resolution hiba: auto-merge visszaállította `/impact-challenge/ngo-admin/` URL-eket.
 - Javítva: `/impact-shop_ngo/` (sorok: 2058, 2647, 4743 — ngo_admin_url ×2 + reset_url ×1).
