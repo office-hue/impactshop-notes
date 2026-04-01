@@ -44,6 +44,7 @@ npm run memory:full-sync -- --task "<lezáró összefoglaló>"
 - Az Impact Challenge teljes védett köre különösen érzékeny rendszernek minősül: elsődleges fejlesztési irány csak új, additív kóddal megengedett.
 - Meglévő Impact Challenge kód, route, bekötés, pontszámítási út, adatmodell vagy workflow csak külön, explicit jóváhagyással módosítható, és csak akkor, ha nincs azonosan jó additív megoldás.
 - A guide rendszer teljes köre (`impactshop-ngo-guides.php` + `wp-content/mu-plugins/impactshop-ngo-guides/**`) külön beton protected perimeter: route, HTML guide, fordítás, jogi asset, PDF és renderelt output egyaránt csak explicit felhasználói engedéllyel módosítható.
+- A JYSK riport külön név szerint is max-védett guide-surface: `/jysk-riport/`, `/jysk-riport/?print=1` és `/jysk-riport.data.json` ugyanennek a protected perimeternek a része, így tartalmi, route-, print- vagy adatpayload-változás csak explicit engedéllyel, protected change recorddal és guide smoke scope-pal vihető át.
 - Nem megengedett olyan automatika, deploy-lépés vagy szinkron, amely guide tartalmat felülírhat, átnevezhet, lecserélhet vagy más forrásból visszaállíthat explicit engedély nélkül.
 - Az Impact Challenge teljes kanonikus állapotát a `docs/impact-challenge-canonical-baseline.md` rögzíti; ettől eltérő viselkedés, route, tartalom vagy fizikai jogosultsági állapot regressziónak számít, ha nincs rá külön jóváhagyás.
 - Védett fájl módosítása előtt kötelező a koherencia vizsgálat, a kockázatelemzés és az érintett funkciók listája.
@@ -79,6 +80,7 @@ bash scripts/safe-repo-audit.sh --strict --mode push
 - Védett fájl backup retention maximum 2 nap, kivéve ha külön dokumentált eltérés van.
 - Fizikai írásvédettség célállapota: a production Impact Challenge MU-plugin állományok read-only (`0444`) jogosultság alatt maradnak, és csak célzott deploy idejére tehetők írhatóvá.
 - A guide-rendszer fizikai célállapota: lokálban és productionön a guide fájlok `0444`, a guide könyvtárak `0555`, és ez az állapot minden deploy után kötelezően visszaállítandó.
+- A JYSK riporthoz tartozó guide fájlok és adatfájlok ugyanebbe a read-only célállapotba tartoznak; a `jysk-riport` route, print nézet és JSON payload nem kezelhető “könnyű statikus oldalként”.
 
 ## Nyelv
 

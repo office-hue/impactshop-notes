@@ -17,6 +17,7 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - **Guard deploy hibaállapot**: ha a wrapper maga hibás root/branch kötés vagy hiányzó guard-infra miatt nem használható, ezt nem-kanonikus incidensként kell kezelni; ilyenkor csak szűk, auditált restore mehet pontos fájllistával, backup + rollback + flush/smoke + live verifikáció mellett, és utána külön javítani kell a guard deploy pathot.
 - **Canonical baseline**: Impact Challenge deploy esetén a referenciaállapot a `docs/impact-challenge-canonical-baseline.md`; ettől való eltérés csak explicit jóváhagyással vihető ki.
 - **Guide rendszer**: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` teljes subtree csak explicit engedéllyel deployolható; guide tartalmat felülíró automatika vagy hallgatólagos sync tiltott.
+- **JYSK riport**: `/jysk-riport/`, a `?print=1` nézet és a `jysk-riport.data.json` a guide-rendszer max-védett része; deploynál külön ellenőrizni kell a route render, print render és JSON payload folytonosságát.
 - **Legacy touch**: ha védett meglévő Impact Challenge fájlt módosítasz, a deploy naplóban szerepelnie kell az explicit engedélynek és az indoknak.
 - **Protected-file change review**: deploy előtt kötelező a koherencia vizsgálat, kockázatelemzés, érintett funkciólista és a kézi UI checklist megléte.
 - **CI/local parity**: protected lane csak akkor tekinthető lezártnak, ha a lokális guard és a GitHub oldali guard ugyanazt a protected modellt értelmezi.
