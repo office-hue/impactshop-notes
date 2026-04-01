@@ -6523,3 +6523,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `impactshop-guard-deploy.sh` most ugyanabban a `docs/...` formátumban írja a hash-checksum bejegyzést, mint amit commitolunk.
 - A guard hash manifestben kézzel is frissítve lett a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-config.sha256` digest, hogy ne maradjon állandó drift a kanonikus deploy wrapperben.
 - A bastion status `Last updated` mező formátuma visszaállt időbélyeges, auditálható alakra.
+
+## 2026-04-01 15:55:00 CET - JYSK report source restoration
+
+- A korábban kivételesen, kézi guardolt úton visszaállított `/jysk-riport/` route forrása most külön kanonikus source lane-re került.
+- A `impactshop-ngo-guides.php` route map additive módon megkapta a `jysk-riport` és `jysk-riport.data.json` útvonalakat.
+- A dedikált JYSK riport HTML és JSON asset most már repo-tracked forrásként is bent van.
+- A route restore továbbra sem érinti a JYSK vote runtime-ot vagy az offerwall/challenge ágakat.

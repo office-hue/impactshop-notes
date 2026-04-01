@@ -536,3 +536,8 @@ PHP lint ok for identity/gamification modules
 - A `bin/impactshop-guard-deploy.sh` checksum output formátuma most már egyezik a kézzel commitolt `.sha256` fájlokkal (`docs/...` útvonal).
 - A `docs/impactshop-guard-hashes.json` manifest frissült a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-config.sha256` új digestjeire.
 - A `docs/bastion-guard-status.md` `Last updated` mezője visszakapta az auditbarát dátum + idő + zóna formátumot.
+## 2026-04-01 15:55:00 CET - JYSK report source restoration
+
+- A `/jysk-riport/`, `/jysk-riport/?print=1` és `/jysk-riport.data.json` route forrása most már repo-tracked lane-ben is helyreáll.
+- A `wp-content/mu-plugins/impactshop-ngo-guides.php` additive route map bővítést kapott a JYSK riporthoz.
+- A dedikált `jysk-riport.html` és `jysk-riport.data.json` asset bekerült a repo forrásfái közé, így a live restore többé nem csak szerverállapotként létezik.
