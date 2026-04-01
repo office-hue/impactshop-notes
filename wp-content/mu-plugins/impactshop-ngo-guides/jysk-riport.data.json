@@ -1,0 +1,590 @@
+{
+  "meta": {
+    "generated_at": "2026-03-06T12:31:11",
+    "report_title": "JYSK x Sharity kampánybeszámoló",
+    "focus_campaigns": [
+      "Veresegyház",
+      "Komárom",
+      "Mezőkövesd"
+    ],
+    "notes": [
+      "Komárom és Mezőkövesd adatok forrása: impact_vote_log.csv (JYSK Vote).",
+      "Veresegyház részletes bontás forrása: felhasználó által küldött táblázat screenshot.",
+      "Social poszt adatok forrása: felhasználó által küldött screenshotok.",
+      "Komárom/Mezőkövesd esetén PPT-ben 5 induló szerepel, a logban több szavazatot kapott szervezet látszik."
+    ]
+  },
+  "kpis": {
+    "focus_votes_total": 7318,
+    "focus_participants_with_votes_total": 27,
+    "winners": {
+      "Veresegyház": {
+        "name": "Patrónus Ház Közhasznú Nonprofit Kft",
+        "votes": 1654
+      },
+      "Komárom": {
+        "ngo_id": "141",
+        "name": "Az álmok valóra válnak Alapítvány",
+        "votes": 1902
+      },
+      "Mezőkövesd": {
+        "ngo_id": "139",
+        "name": "Tanulj Tesó Alapítvány",
+        "votes": 1076
+      }
+    },
+    "social_totals": {
+      "posts": 6,
+      "reactions": 500,
+      "comments": 168,
+      "shares": 117
+    }
+  },
+  "campaign_overview": [
+    {
+      "city": "Bicske",
+      "ambassador": "Harsányi Levente",
+      "participants": 7,
+      "social_reach": 9459,
+      "votes": 8858,
+      "vote_period_start": "2024-02-07",
+      "vote_period_end": "2024-02-29",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Debrecen",
+      "ambassador": "Csisztu Zsuzsa",
+      "participants": 10,
+      "social_reach": null,
+      "votes": 5829,
+      "vote_period_start": "202410.01.",
+      "vote_period_end": "2024-10-20",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Dolgozói I",
+      "ambassador": "-",
+      "participants": null,
+      "social_reach": 0,
+      "votes": 299,
+      "vote_period_start": "2024-05-07",
+      "vote_period_end": "2024-05-31",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Dolgozói II",
+      "ambassador": "-",
+      "participants": null,
+      "social_reach": 160,
+      "votes": 1054,
+      "vote_period_start": "2025-06-11",
+      "vote_period_end": "2025-06-20",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Dunaharaszti",
+      "ambassador": "IHM",
+      "participants": 10,
+      "social_reach": 15152,
+      "votes": 1518,
+      "vote_period_start": "2023-07-01",
+      "vote_period_end": "2023-07-28",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Karácsony",
+      "ambassador": "Csonka András",
+      "participants": 14,
+      "social_reach": null,
+      "votes": 3708,
+      "vote_period_start": "2024-12-03",
+      "vote_period_end": "2024-12-31",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Kispest",
+      "ambassador": "IHM",
+      "participants": 2,
+      "social_reach": 8660,
+      "votes": 272,
+      "vote_period_start": "2023-11-23",
+      "vote_period_end": "2022-12-10",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Komárom",
+      "ambassador": "Barabás Évi",
+      "participants": 11,
+      "planned_participants": 5,
+      "social_reach": null,
+      "votes": 2869,
+      "vote_period_start": "2026-02-13",
+      "vote_period_end": "2026-03-01",
+      "source": "JYSK Vote log + PPT"
+    },
+    {
+      "city": "Körmend",
+      "ambassador": "Barabás Évi",
+      "participants": 5,
+      "social_reach": 7637,
+      "votes": 1640,
+      "vote_period_start": "2025-08-04",
+      "vote_period_end": "2025-08-22",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Mezőkövesd",
+      "ambassador": "Barabás Évi",
+      "participants": 9,
+      "planned_participants": 5,
+      "social_reach": null,
+      "votes": 1109,
+      "vote_period_start": "2026-02-13",
+      "vote_period_end": "2026-03-01",
+      "source": "JYSK Vote log + PPT"
+    },
+    {
+      "city": "Solymár",
+      "ambassador": "IHM",
+      "participants": 13,
+      "social_reach": 37193,
+      "votes": 15783,
+      "vote_period_start": "2023-08-09",
+      "vote_period_end": "2023-08-28",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Szarvas",
+      "ambassador": "IHM",
+      "participants": 15,
+      "social_reach": 4921,
+      "votes": 3909,
+      "vote_period_start": "2023-11-23",
+      "vote_period_end": "2022-12-10",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Törökszentmiklós",
+      "ambassador": "Barabás Évi",
+      "participants": 6,
+      "social_reach": 207,
+      "votes": 4493,
+      "vote_period_start": "2025-06-11",
+      "vote_period_end": "2025-06-30",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Veresegyház",
+      "ambassador": "Barabás Évi",
+      "participants": 7,
+      "social_reach": null,
+      "votes": 3340,
+      "vote_period_start": null,
+      "vote_period_end": null,
+      "source": "Screenshot + manual"
+    },
+    {
+      "city": "Váci út",
+      "ambassador": "Barabás Évi",
+      "participants": 10,
+      "social_reach": 13514,
+      "votes": 3346,
+      "vote_period_start": null,
+      "vote_period_end": "2024-08-25",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Várpalota",
+      "ambassador": "Barabás Évi",
+      "participants": 10,
+      "social_reach": 10629,
+      "votes": 4849,
+      "vote_period_start": "2024-02-22",
+      "vote_period_end": "2024-03-03",
+      "source": "JYSK kampányok számok.xlsx"
+    },
+    {
+      "city": "Ózd",
+      "ambassador": "Barabás Évi",
+      "participants": 5,
+      "social_reach": null,
+      "votes": 2242,
+      "vote_period_start": "2024-10-17",
+      "vote_period_end": "2024-11-03",
+      "source": "JYSK kampányok számok.xlsx"
+    }
+  ],
+  "detailed_campaigns": {
+    "Veresegyház": {
+      "votes_total": 3340,
+      "participants_with_votes": 7,
+      "participants": [
+        {
+          "name": "Patrónus Ház Közhasznú Nonprofit Kft",
+          "votes": 1654
+        },
+        {
+          "name": "Csoda Emma Mosolyáért Alapítvány",
+          "votes": 615
+        },
+        {
+          "name": "Kéz a kézben Alapítvány",
+          "votes": 478
+        },
+        {
+          "name": "Mozdulj Velünk Egyesület",
+          "votes": 296
+        },
+        {
+          "name": "Támaszpont Mentálhigiénés Oktatási és Prevenciós Közhasznú Alapítvány",
+          "votes": 154
+        },
+        {
+          "name": "Dányi Apró Paták LSE",
+          "votes": 113
+        },
+        {
+          "name": "Együtt Pénzes Márk Gyógyulásáért Alapítvány",
+          "votes": 30
+        }
+      ],
+      "winner": {
+        "name": "Patrónus Ház Közhasznú Nonprofit Kft",
+        "votes": 1654
+      },
+      "source": "User-provided screenshot (Veresegyház table)"
+    },
+    "Komárom": {
+      "campaign_name": "JYSK Komarom szavazas",
+      "votes_total": 2869,
+      "participants_with_votes": 11,
+      "participants": [
+        {
+          "ngo_id": "141",
+          "name": "Az álmok valóra válnak Alapítvány",
+          "votes": 1902
+        },
+        {
+          "ngo_id": "143",
+          "name": "Tatabányai 4x4 Terepjárós, Polgári Védelmi és Önkéntes Tűzoltó Egyesület",
+          "votes": 923
+        },
+        {
+          "ngo_id": "18",
+          "name": "Határtalan szív Alapítvány",
+          "votes": 30
+        },
+        {
+          "ngo_id": "23",
+          "name": "Bogáncs Kutya- és Kisállatotthon Alapítvány",
+          "votes": 4
+        },
+        {
+          "ngo_id": "142",
+          "name": "Komárom-Esztergom Megye Ifjúságáért Egyesület",
+          "votes": 3
+        },
+        {
+          "ngo_id": "6",
+          "name": "Együtt könnyebb\" Női Egészségért Alapítvány",
+          "votes": 2
+        },
+        {
+          "ngo_id": "13",
+          "name": "Bácsalmási Mentő Alapítvány",
+          "votes": 1
+        },
+        {
+          "ngo_id": "32",
+          "name": "Fokról-Fokra\" a Fogyatékos gyermekek Neveléséért és Oktatásáért Alapítvány",
+          "votes": 1
+        },
+        {
+          "ngo_id": "20",
+          "name": "Tatabányai Otthon Segítünk Alapítvány",
+          "votes": 1
+        },
+        {
+          "ngo_id": "45",
+          "name": "BICE-BÓCA Hátrányos helyzetűek és Nagycsaládosok Egyesülete",
+          "votes": 1
+        },
+        {
+          "ngo_id": "24",
+          "name": "Mondjunk mancsot!\" Terápiás- és Segítőkutyás Közhasznú Egyesület",
+          "votes": 1
+        }
+      ],
+      "winner": {
+        "ngo_id": "141",
+        "name": "Az álmok valóra válnak Alapítvány",
+        "votes": 1902
+      },
+      "period_start": "2026-02-13",
+      "period_end": "2026-03-01",
+      "daily_votes": [
+        {
+          "day": "2026-02-13",
+          "votes": 117
+        },
+        {
+          "day": "2026-02-14",
+          "votes": 131
+        },
+        {
+          "day": "2026-02-15",
+          "votes": 268
+        },
+        {
+          "day": "2026-02-16",
+          "votes": 182
+        },
+        {
+          "day": "2026-02-17",
+          "votes": 206
+        },
+        {
+          "day": "2026-02-18",
+          "votes": 440
+        },
+        {
+          "day": "2026-02-19",
+          "votes": 517
+        },
+        {
+          "day": "2026-02-20",
+          "votes": 365
+        },
+        {
+          "day": "2026-02-21",
+          "votes": 140
+        },
+        {
+          "day": "2026-02-22",
+          "votes": 86
+        },
+        {
+          "day": "2026-02-23",
+          "votes": 86
+        },
+        {
+          "day": "2026-02-24",
+          "votes": 68
+        },
+        {
+          "day": "2026-02-25",
+          "votes": 64
+        },
+        {
+          "day": "2026-02-26",
+          "votes": 53
+        },
+        {
+          "day": "2026-02-27",
+          "votes": 66
+        },
+        {
+          "day": "2026-02-28",
+          "votes": 29
+        },
+        {
+          "day": "2026-03-01",
+          "votes": 51
+        }
+      ],
+      "source": "impact_vote_log.csv"
+    },
+    "Mezőkövesd": {
+      "campaign_name": "JYSK Mezokovesd szavazas",
+      "votes_total": 1109,
+      "participants_with_votes": 9,
+      "participants": [
+        {
+          "ngo_id": "139",
+          "name": "Tanulj Tesó Alapítvány",
+          "votes": 1076
+        },
+        {
+          "ngo_id": "121",
+          "name": "Mozgássérültek Mezőkövesdi Egyesülete",
+          "votes": 15
+        },
+        {
+          "ngo_id": "103",
+          "name": "SZÁDVÁRÉRT BARÁTI KÖR",
+          "votes": 7
+        },
+        {
+          "ngo_id": "73",
+          "name": "Miskolci Állatsegítő Alapítvány",
+          "votes": 4
+        },
+        {
+          "ngo_id": "74",
+          "name": "Erzsébet Hospice Alapítvány",
+          "votes": 2
+        },
+        {
+          "ngo_id": "76",
+          "name": "Kurityánért Alapítvány",
+          "votes": 2
+        },
+        {
+          "ngo_id": "83",
+          "name": "Taktaharkányi Polgárőr Szervezet",
+          "votes": 1
+        },
+        {
+          "ngo_id": "107",
+          "name": "Kazincbarcika város és környéke Művészetéért Egyesület",
+          "votes": 1
+        },
+        {
+          "ngo_id": "82",
+          "name": "Önmegvalósítás Egyesület",
+          "votes": 1
+        }
+      ],
+      "winner": {
+        "ngo_id": "139",
+        "name": "Tanulj Tesó Alapítvány",
+        "votes": 1076
+      },
+      "period_start": "2026-02-13",
+      "period_end": "2026-03-01",
+      "daily_votes": [
+        {
+          "day": "2026-02-13",
+          "votes": 1
+        },
+        {
+          "day": "2026-02-14",
+          "votes": 77
+        },
+        {
+          "day": "2026-02-15",
+          "votes": 139
+        },
+        {
+          "day": "2026-02-16",
+          "votes": 129
+        },
+        {
+          "day": "2026-02-17",
+          "votes": 117
+        },
+        {
+          "day": "2026-02-18",
+          "votes": 72
+        },
+        {
+          "day": "2026-02-19",
+          "votes": 83
+        },
+        {
+          "day": "2026-02-20",
+          "votes": 76
+        },
+        {
+          "day": "2026-02-21",
+          "votes": 58
+        },
+        {
+          "day": "2026-02-22",
+          "votes": 67
+        },
+        {
+          "day": "2026-02-23",
+          "votes": 42
+        },
+        {
+          "day": "2026-02-24",
+          "votes": 46
+        },
+        {
+          "day": "2026-02-25",
+          "votes": 43
+        },
+        {
+          "day": "2026-02-26",
+          "votes": 41
+        },
+        {
+          "day": "2026-02-27",
+          "votes": 25
+        },
+        {
+          "day": "2026-02-28",
+          "votes": 41
+        },
+        {
+          "day": "2026-03-01",
+          "votes": 52
+        }
+      ],
+      "source": "impact_vote_log.csv"
+    }
+  },
+  "social_posts": [
+    {
+      "campaign": "Veresegyház",
+      "platform": "Facebook",
+      "account": "Barabás Évi",
+      "label": "Eredményhirdető poszt",
+      "reactions": 243,
+      "comments": 12,
+      "shares": 4,
+      "source": "Screenshot"
+    },
+    {
+      "campaign": "Veresegyház",
+      "platform": "Facebook",
+      "account": "Patrónus ház",
+      "label": "Köszönő poszt",
+      "reactions": 24,
+      "comments": 4,
+      "shares": 4,
+      "source": "Screenshot"
+    },
+    {
+      "campaign": "Komárom",
+      "platform": "Facebook",
+      "account": "Az álmok valóra válnak Alapítvány",
+      "label": "Győzelmi poszt",
+      "reactions": 33,
+      "comments": 9,
+      "shares": 10,
+      "source": "Screenshot"
+    },
+    {
+      "campaign": "Komárom",
+      "platform": "Instagram",
+      "account": "evibarabas",
+      "label": "Győzelmi poszt",
+      "reactions": 29,
+      "comments": null,
+      "shares": null,
+      "source": "Screenshot"
+    },
+    {
+      "campaign": "Mezőkövesd",
+      "platform": "Facebook",
+      "account": "Tanulj Tesó Alapítvány",
+      "label": "Kampány közbeni felhívás",
+      "reactions": 77,
+      "comments": 121,
+      "shares": 86,
+      "source": "Screenshot"
+    },
+    {
+      "campaign": "Mezőkövesd",
+      "platform": "Facebook",
+      "account": "Tanulj Tesó Alapítvány",
+      "label": "Győzelmi poszt",
+      "reactions": 94,
+      "comments": 22,
+      "shares": 13,
+      "source": "Screenshot"
+    }
+  ]
+}
