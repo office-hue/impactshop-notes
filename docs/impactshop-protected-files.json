@@ -74,6 +74,9 @@
     "/impactad-2/",
     "/impactshop/",
     "/profil",
+    "/jysk-riport/",
+    "/jysk-riport/?print=1",
+    "/jysk-riport.data.json",
     "/go/*",
     "/go-deal/*"
   ],
@@ -134,6 +137,13 @@
       "browser:webkit",
       "browser:chrome"
     ],
+    "guide_runtime": [
+      "route:jysk-riport",
+      "route:ngo-guides",
+      "flow:guide-route-render",
+      "flow:guide-print-mode",
+      "flow:guide-data-json"
+    ],
     "deploy_guard": [
       "deploy:guard-preflight",
       "deploy:checksum-verify"
@@ -183,6 +193,10 @@
       "wp-content/mu-plugins/impactshop-auto-banner.php",
       "wp-content/mu-plugins/impactshop-auto-banner-sync.php",
       "wp-content/mu-plugins/impactshop-auto-banner-dognet.php"
+    ],
+    "guide_runtime": [
+      "wp-content/mu-plugins/impactshop-ngo-guides.php",
+      "wp-content/mu-plugins/impactshop-ngo-guides/**"
     ],
     "deploy_guard": [
       "scripts/check-protected-file-touch.sh",

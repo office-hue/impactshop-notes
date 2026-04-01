@@ -32,7 +32,9 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 - Ide tartozik minden releváns funkció, útvonal, bekötés, kapcsolódási pont, nyilvántartás, adatírási mód, workflow és pipeline.
 - Az Impact Challenge kanonikus baseline-ja: `docs/impact-challenge-canonical-baseline.md`. Impact Challenge PR / merge / deploy esetén ehhez kell mérni az eltérést.
 - Külön beton protected perimeternek számít a teljes guide rendszer: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**`.
+- Ezen belül a JYSK riport külön név szerint max-védett surface: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
 - Guide route / guide HTML / guide asset / guide PDF / guide fordítás módosítása csak explicit felhasználói engedéllyel mehet; sem PR, sem merge, sem deploy, sem automatika nem írhatja felül ezeket hallgatólagosan.
+- JYSK riport touch esetén a protected smoke scope-nak ki kell terjednie a route renderre, a print nézetre és a JSON payloadra is; ezt nem lehet egyszerű guide-copyként vagy statikus assetcseréként kezelni.
 - A default fejlesztési stratégia: `new code first`.
 - Legacy módosítás csak külön, kifejezett jóváhagyással és csak akkor engedhető, ha nincs azonos minőségű additív megoldás.
 - Protected file módosítás előtt kötelező a `docs/protected-file-change-checklist.md` szerinti koherencia és kockázati felmérés.
