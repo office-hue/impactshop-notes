@@ -75,6 +75,7 @@
     "/impactshop/",
     "/profil",
     "/jysk-riport/",
+    "/jysk-riport/?print=1",
     "/jysk-riport.data.json",
     "/go/*",
     "/go-deal/*"

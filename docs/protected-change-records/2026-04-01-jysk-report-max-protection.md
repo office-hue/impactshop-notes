@@ -18,7 +18,7 @@ The JYSK report route family is now named explicitly as a max-protected guide su
 ## Why
 
 - The guide subtree was already protected, but the JYSK report route family was only implicitly covered.
-- We want `/jysk-riport/`, `?print=1`, and `jysk-riport.data.json` to be explicit guard-model and smoke-scope citizens.
+- We want `/jysk-riport/`, `/jysk-riport/?print=1`, and `/jysk-riport.data.json` to be explicit guard-model and smoke-scope citizens.
 
 ## Risks
 

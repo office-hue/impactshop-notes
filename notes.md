@@ -1,5 +1,5 @@
 ## 2026-04-01 08:58 CET - JYSK riport max-védett guide surface
-- A `jysk-riport` route-család név szerint is max-védett guide surface lett: `/jysk-riport/`, `?print=1`, `jysk-riport.data.json`.
+- A `jysk-riport` route-család név szerint is max-védett guide surface lett: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
 - A protected modell új `guide_runtime` smoke scope-pal most már külön ellenőrzi a route render, print nézet és JSON payload folytonosságát.
 
 ## 2026-03-26 19:45 CET - fix: impact-community.php ngo_admin_url visszaállítva
