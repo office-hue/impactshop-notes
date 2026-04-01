@@ -145,7 +145,9 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/ngo-guides-summary-en.html",
     "wp-content/mu-plugins/impactshop-ngo-guides/ngo-guides-summary.html",
     "wp-content/mu-plugins/impactshop-ngo-guides/rolunk-en.html",
-    "wp-content/mu-plugins/impactshop-ngo-guides/rolunk.html"
+    "wp-content/mu-plugins/impactshop-ngo-guides/rolunk.html",
+    "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html",
+    "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json"
   ],
   "hashes": {
     "docs/impactshop-guard-config.json": "4421de8061a082c205d38176c2d604a5e78d1102072f588c046752a11e0f882e",
@@ -204,7 +206,7 @@
     "wp-content/mu-plugins/impactshop-event-donation-widget-jovonkvize.js": "58a0cd5333a3f288647720225a89d1532367052d19da291a25321fb8492f9456",
     "wp-content/mu-plugins/impactshop-ngo-selector.php": "833420910333556ba06c672d77b4bdc2e6bd4a4f191fd07963e3262daecbcd5c",
     "wp-content/mu-plugins/impactshop-ngo-selector.js": "7e66c81cb375d6d81006593394f7d115b566c54255ec1b4e86e1ac8e38901370",
-    "wp-content/mu-plugins/impactshop-ngo-guides.php": "9d32ed5541446c07626e2418cfbbaacef429bf676aa5a05a4ba991d8b51f5835",
+    "wp-content/mu-plugins/impactshop-ngo-guides.php": "fd44ba953562eaa93097c8dead69ebfda2384c1629e7740b62e94b9a1ad4da01",
     "wp-content/mu-plugins/impactshop-cegjelzo.php": "334e6500fa3182e22679121dc7d90126906ea6216e9cca1e3efe66455fe9ce0c",
     "wp-content/mu-plugins/impactshop-pwa.php": "5947f02fe353f00bb1dfefb2d322fa7ac8e4631c13bd1e24cda5e20a14028e75",
     "wp-content/mu-plugins/impactshop-pwa-push.php": "8f8a041afe5a9b3a710e47a04256523c7e48666cd26f97be4edd57cd5ff429ef",
@@ -287,6 +289,9 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/ngo-guides-summary-en.html": "4270896934b1862b845a3615e3fdf8d6bc35f6b1b30e9152ee93d08e3d4eea4b",
     "wp-content/mu-plugins/impactshop-ngo-guides/ngo-guides-summary.html": "a5f55008147e03add714a6dfe8b0b53af6b8aa89b546c1d480b7a70daffc5c82",
     "wp-content/mu-plugins/impactshop-ngo-guides/rolunk-en.html": "5c3ee68ecf5433608b252a0013d3392a4d131ac63337085881ca66d3d1181bcd",
-    "wp-content/mu-plugins/impactshop-ngo-guides/rolunk.html": "88dde5b78dc0167e1234fe92addc04d718a918ed10c35ebff01e11c4cf2cc2f5"
-  }
+    "wp-content/mu-plugins/impactshop-ngo-guides/rolunk.html": "88dde5b78dc0167e1234fe92addc04d718a918ed10c35ebff01e11c4cf2cc2f5",
+    "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html": "006194aba3f75ac7f05dd16ec764019c1e51ddcb8f45cd3744f36fa5b5c42dd9",
+    "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json": "5bff3439e9f1717b1d5ac1099d2576bad91faa131da9482960708ddeed856949"
+  },
+  "generated_at": "2026-04-01T14:17:21.814185+00:00"
 }

@@ -15,6 +15,10 @@ The route is restored through the protected static guide router, using the recov
 - `wp-content/mu-plugins/impactshop-ngo-guides.php`
 - `wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html`
 - `wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json`
+- `docs/impactshop-guard-config.json`
+- `docs/impactshop-guard-hashes.json`
+- `docs/impactshop-guard-config.sha256`
+- `docs/impactshop-guard-hashes.sha256`
 
 ## Coherence / Impact
 
@@ -24,6 +28,7 @@ Directly affected:
 - static asset serving for the dedicated JYSK one-page report
 - `?print=1` auto-print mode already embedded in the recovered HTML
 - explicit JSON route for the raw JYSK report data package
+- explicit canonical guard inventory + digest lock for the JYSK source assets
 
 Not affected:
 
@@ -47,6 +52,7 @@ Mitigation:
 - recovered report HTML is self-contained and already includes embedded data
 - deploy mapping includes rewrite flush
 - post-deploy manual route check on the three JYSK URLs
+- guard inventory + hash manifest now lock the source assets explicitly, so later drift cannot silently detach live route state from canonical source control
 
 ## Smoke Scope
 
