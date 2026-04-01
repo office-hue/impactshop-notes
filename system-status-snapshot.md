@@ -1,3 +1,7 @@
+## 2026-04-01T08:58:00+0200 — JYSK riport max-védett guide surface
+- A `jysk-riport` route-család név szerint is bekerült a guide-rendszer max-védett perimeterébe: `/jysk-riport/`, `?print=1`, `jysk-riport.data.json`.
+- A machine-readable protected modell új `guide_runtime` smoke csoportot kapott, így guide/JYSK touch esetén kötelező a route render, print render és JSON payload smoke scope.
+
 ## 2026-03-31T22:10:00+0200 — Guard hardening propagation a közös policy rétegbe
 - Az utóbbi guard/review-fix körök általánosítható tanulságai most már nem csak surface-specifikus runbookokban élnek.
 - Új közös szabály lett: local/CI guard parity kötelező, a guarded push önálló belépési pont, a protected env párokat együtt kell kezelni, review-fix után kötelező a teljes recheck, stale empty cache pedig külön kockázati kategória.
