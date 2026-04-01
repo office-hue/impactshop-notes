@@ -6513,3 +6513,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Fix: a `impactshop-guard-preflight.sh` worktree-kompatibilis repoazonosítást kapott a git common dir alapján.
 - Fix: a guard config és hash repo-meta `main`-re lett átállítva, a checksumok frissítve.
 - Policy update: a guard dokumentáció most már explicit kimondja, hogy hibás guard deploy infra esetén a kézi restore csak dokumentált, nem-kanonikus incidensút lehet.
+## 2026-04-01 10:00:00 CET - guard deploy review follow-up
+
+- Copilot/Codex review alapján a guard deploy checksum kontinuitást pontosítottam.
+- `impactshop-guard-deploy.sh` most ugyanabban a `docs/...` formátumban írja a hash-checksum bejegyzést, mint amit commitolunk.
+- A guard hash manifestben kézzel is frissítve lett a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-config.sha256` digest, hogy ne maradjon állandó drift a kanonikus deploy wrapperben.
+- A bastion status `Last updated` mező formátuma visszaállt időbélyeges, auditálható alakra.
