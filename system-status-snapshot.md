@@ -546,3 +546,8 @@ PHP lint ok for identity/gamification modules
 
 - A JYSK riport forrásfájljai most már explicit guard inventory és digest manifest alatt is állnak.
 - A `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` külön rögzíti a `impactshop-ngo-guides.php`, `jysk-riport.html` és `jysk-riport.data.json` kanonikus source állapotát.
+
+## 2026-04-01 16:47:00 CET - JYSK review thread cleanup
+
+- A `jysk-riport.data.json` legacy dátumhibái normalizálva lettek: Debrecen `vote_period_start` ISO formátumot kapott, Kispest/Szarvas bizonytalan végei `null` értékre kerültek.
+- A `jysk-riport.html` toolbar gombja most az aktuális scroll viselkedést nevezi meg, és a riport elsődleges adatforrása a route-on kiszolgált JSON lett; az embedded snapshot csak fail-safe fallback marad.

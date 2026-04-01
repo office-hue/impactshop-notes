@@ -6,6 +6,10 @@
 - A JYSK source assetek most már explicit guard inventory + hash lock alatt is állnak.
 - A `impactshop-ngo-guides.php`, `jysk-riport.html` és `jysk-riport.data.json` bekerült a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` kanonikus kontrollrétegébe.
 
+## 2026-04-01 16:47 CET - JYSK review thread data + UX cleanup
+- A JYSK raw JSON-ban a kevert vagy bizonytalan legacy dátummezők normalizálva lettek: Debrecen ISO dátumot kapott, Kispest/Szarvas ellentmondásos végei null-ra kerültek.
+- A riport HTML most elsődlegesen a `/jysk-riport.data.json` route-ból tölt, az embedded adat csak fallback snapshot marad, és a toolbar gomb felirata az aktuális működéshez igazodik.
+
 ## 2026-03-26 19:45 CET - fix: impact-community.php ngo_admin_url visszaállítva
 - Merge conflict resolution során az auto-merge visszaállította a régi `/impact-challenge/ngo-admin/` URL-eket.
 - Fix: 3 helyen visszaállítva `/impact-shop_ngo/`-ra (sorok: 2058, 2647, 4743).
