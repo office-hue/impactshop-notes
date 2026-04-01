@@ -14,6 +14,7 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - **Uncommitted changes**: **block**. Kivétel csak külön engedéllyel.
 - **Target útvonalak**: `.deploy.staging.env` + `.deploy.production.env` az igazság.
 - **Protected Impact Challenge files**: deploy előtt célzott backup kötelező, deploy után fizikai read-only visszazárás kötelező.
+- **Guard deploy hibaállapot**: ha a wrapper maga hibás root/branch kötés vagy hiányzó guard-infra miatt nem használható, ezt nem-kanonikus incidensként kell kezelni; ilyenkor csak szűk, auditált restore mehet pontos fájllistával, backup + rollback + flush/smoke + live verifikáció mellett, és utána külön javítani kell a guard deploy pathot.
 - **Canonical baseline**: Impact Challenge deploy esetén a referenciaállapot a `docs/impact-challenge-canonical-baseline.md`; ettől való eltérés csak explicit jóváhagyással vihető ki.
 - **Guide rendszer**: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` teljes subtree csak explicit engedéllyel deployolható; guide tartalmat felülíró automatika vagy hallgatólagos sync tiltott.
 - **Legacy touch**: ha védett meglévő Impact Challenge fájlt módosítasz, a deploy naplóban szerepelnie kell az explicit engedélynek és az indoknak.
@@ -57,3 +58,4 @@ bin/impactshop-guard-rollback.sh deploy-YYYYMMDD-HHMMSS
 - Preflight figyelmeztetés (pl. `totals` lassú) deploy-t nem blokkol, de érdemes monitorozni.
 - MP4/asset fájlok ne kerüljenek deployba, ha nem része a mappingnek.
 - Kézi utóellenőrzéshez továbbra is használható: `bin/post-deploy-checklist.sh`, ami már tartalmazza a Hatás Körök smoke-ot is.
+- A kézi restore nem válik kanonikussá attól, hogy sikeres volt; ha guard hiba miatt incidensúton kellett kimenni, azt külön dokumentálni kell és külön helyre kell hozni a guard deploy infrastruktúrát.

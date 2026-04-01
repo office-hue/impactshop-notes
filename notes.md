@@ -6476,3 +6476,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A review-threadek alapján a push-mode guardok új branch / upstream nélküli helyzetre is korrigálva lettek, így első pushnál nem a teljes repo múltját vizsgálják.
 - A push-wrapper most egységes range/bázis feloldást ad át a lane- és protected-touch checknek.
 - A `workflow-state.sh` az üres branch-nevet is `detached`-re normalizálja.
+## 2026-04-01 09:15:00 CET - guard deploy path realignment
+
+- Root cause: a guard deploy wrapper configja még a régi `ops/adswatch-clean` branchre volt rádrótozva, ezért a kanonikus deploy path hamis preflight blokkolást adott.
+- Fix: a `impactshop-guard-preflight.sh` worktree-kompatibilis repoazonosítást kapott a git common dir alapján.
+- Fix: a guard config és hash repo-meta `main`-re lett átállítva, a checksumok frissítve.
+- Policy update: a guard dokumentáció most már explicit kimondja, hogy hibás guard deploy infra esetén a kézi restore csak dokumentált, nem-kanonikus incidensút lehet.

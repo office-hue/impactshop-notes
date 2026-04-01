@@ -493,3 +493,8 @@ PHP lint ok for identity/gamification modules
 - Push-mode guardok új branch esetén upstream hiányában már nem az üres tree/full history felé esnek vissza.
 - A push-base feloldás sorrendje: upstream, `origin/HEAD`, `origin/main`, `origin/master`, `main`, `master`, végül `HEAD^` és csak legvégül empty tree.
 - `workflow-state.sh` detached HEAD esetén explicit `detached` branch-értéket ad.
+## 2026-04-01 09:15:00 CET - guard deploy path realignment
+
+- A `bin/impactshop-guard-preflight.sh` most már a git common dir alapján is felismeri az ugyanahhoz a repóhoz tartozó worktree-ket, így nem dob hamis `repo root mismatch` hibát tiszta worktree deploy-előkészítésnél.
+- A `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` repo-meta többé nem a régi `ops/adswatch-clean` branchre mutat, hanem a kanonikus `main` ágra.
+- A kanonikus policy és deploy runbook külön rögzíti, hogy hibás guard deploy infrastruktúra esetén csak explicit nem-kanonikus, auditált incidens restore megengedett.
