@@ -541,3 +541,8 @@ PHP lint ok for identity/gamification modules
 - A `/jysk-riport/`, `/jysk-riport/?print=1` és `/jysk-riport.data.json` route forrása most már repo-tracked lane-ben is helyreáll.
 - A `wp-content/mu-plugins/impactshop-ngo-guides.php` additive route map bővítést kapott a JYSK riporthoz.
 - A dedikált `jysk-riport.html` és `jysk-riport.data.json` asset bekerült a repo forrásfái közé, így a live restore többé nem csak szerverállapotként létezik.
+
+## 2026-04-01 16:40:00 CET - JYSK canonical inventory lock
+
+- A JYSK riport forrásfájljai most már explicit guard inventory és digest manifest alatt is állnak.
+- A `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` külön rögzíti a `impactshop-ngo-guides.php`, `jysk-riport.html` és `jysk-riport.data.json` kanonikus source állapotát.

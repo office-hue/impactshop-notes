@@ -2,6 +2,10 @@
 - A `jysk-riport` route-család név szerint is max-védett guide surface lett: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
 - A protected modell új `guide_runtime` smoke scope-pal most már külön ellenőrzi a route render, print nézet és JSON payload folytonosságát.
 
+## 2026-04-01 16:40 CET - JYSK canonical inventory lock
+- A JYSK source assetek most már explicit guard inventory + hash lock alatt is állnak.
+- A `impactshop-ngo-guides.php`, `jysk-riport.html` és `jysk-riport.data.json` bekerült a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` kanonikus kontrollrétegébe.
+
 ## 2026-03-26 19:45 CET - fix: impact-community.php ngo_admin_url visszaállítva
 - Merge conflict resolution során az auto-merge visszaállította a régi `/impact-challenge/ngo-admin/` URL-eket.
 - Fix: 3 helyen visszaállítva `/impact-shop_ngo/`-ra (sorok: 2058, 2647, 4743).
