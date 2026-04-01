@@ -3,7 +3,7 @@
   "repo": {
     "root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
     "remote": "https://github.com/office-hue/impactshop-notes.git",
-    "branch": "ops/adswatch-clean"
+    "branch": "main"
   },
   "protected_files": [
     "docs/impactshop-guard-config.json",

@@ -521,3 +521,9 @@ PHP lint ok for identity/gamification modules
   `missing_pseudo`.
 - Survey refresh is rate-limited per pseudo, and the survey tab activation logic
   now respects the server-side disabled state.
+
+## 2026-04-01 09:15:00 CET - guard deploy path realignment
+
+- A `bin/impactshop-guard-preflight.sh` most már a git common dir alapján is felismeri az ugyanahhoz a repóhoz tartozó worktree-ket, így nem dob hamis `repo root mismatch` hibát tiszta worktree deploy-előkészítésnél.
+- A `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` repo-meta többé nem a régi `ops/adswatch-clean` branchre mutat, hanem a kanonikus `main` ágra.
+- A kanonikus policy és deploy runbook külön rögzíti, hogy hibás guard deploy infrastruktúra esetén csak explicit nem-kanonikus, auditált incidens restore megengedett.
