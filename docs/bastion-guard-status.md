@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-03-26 19:45 CET
+Last updated: 2026-04-01
 
 ## 2026-03-26 19:45 — impact-community.php URL fix
 - `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
@@ -16,6 +16,7 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-04-01 | Guard control-plane hardening + deploy-exception rule | A védelmi rendszer saját auditja három valós rést talált és foltozott be: a `guarded-push.sh` most már push előtt teljes guard-láncot futtat (`safe-repo-audit`, `check-protected-file-touch`, `check-commit-lane`, `memory:gate`); a `workflow-state.sh` worktree-ben a valódi git common dir alapján azonosítja a repót; az `impactshop-protected-files.json` pedig explicit protected körbe emeli a guard control-plane kulcsscriptjeit. Külön rögzítve lett az is, hogy ha a kanonikus guard deploy path maga hibásan van bekötve vagy hiányos, azt nem szabad kanonikus deployként eladni: csak szűk, auditált kivételes remote helyreállítás megengedett pontos fájllistával, előzetes backuppal, rollback scripttel, flush/smoke ellenőrzéssel és utólagos guard-path javítási kötelezettséggel. | `scripts/guarded-push.sh`, `scripts/workflow-state.sh`, `docs/impactshop-protected-files.json`, `docs/ai-assistant-canonical-policy.md`, `docs/impactshop-deploy.md` |
 | 2026-03-26 | Impact Challenge kanonikus baseline | Létrejött a teljes Impact Challenge rendszer kanonikus baseline-ja, amely egyetlen hivatkozási pontban rögzíti a védett scope-ot, a fizikai célállapotot, a regressziószabályt és a kötelező protected-file kapukat. A fő lokális runtime MU-plugin kör is visszazárva `0444` módra, így a guide rendszer mellett maga az Impact Challenge runtime is tényleges read-only célállapotot kapott. | `docs/impact-challenge-canonical-baseline.md`, `.codex/guard-snapshots/impact-challenge-lock-20260326-165338/`, `docs/ai-assistant-canonical-policy.md`, `docs/pr-policy.md`, `docs/impactshop-deploy.md` |
 | 2026-03-26 | NGO guide teljes fáfa | A teljes guide készlet (`impactshop-ngo-guides.php` + `wp-content/mu-plugins/impactshop-ngo-guides/**`) bekerült a protected körbe; lokálban és productionön a guide-fájlok read-only, a guide-könyvtárak execute-only/read-only módra zárva. Guide tartalmat sem deploy, sem automatika nem írhat felül explicit engedély nélkül. | `docs/impactshop-guard-config.json`, `docs/impactshop-guard-hashes.json`, `docs/ai-assistant-canonical-policy.md`, `system-status-snapshot.md` |
 | 2026-03-26 | `wp-content/mu-plugins/impactshop-cj.php` | A WordPress oldali autobanner + CJ bridge runtime rés bekerült a protected fájlkörbe; ezzel a runtime oldali autobanner/CJ láncban nincs azonosított nyitott pipeline-fájl a protected listán kívül. | `docs/impactshop-guard-config.json`, `system-status-snapshot.md` |
