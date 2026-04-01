@@ -11,7 +11,8 @@
       "Komárom és Mezőkövesd adatok forrása: impact_vote_log.csv (JYSK Vote).",
       "Veresegyház részletes bontás forrása: felhasználó által küldött táblázat screenshot.",
       "Social poszt adatok forrása: felhasználó által küldött screenshotok.",
-      "Komárom/Mezőkövesd esetén PPT-ben 5 induló szerepel, a logban több szavazatot kapott szervezet látszik."
+      "Komárom/Mezőkövesd esetén PPT-ben 5 induló szerepel, a logban több szavazatot kapott szervezet látszik.",
+      "A legacy Excelben bizonytalan vagy kevert dátummezők ISO formára normalizálva vagy null-ra állítva szerepelnek."
     ]
   },
   "kpis": {
@@ -57,7 +58,7 @@
       "participants": 10,
       "social_reach": null,
       "votes": 5829,
-      "vote_period_start": "202410.01.",
+      "vote_period_start": "2024-10-01",
       "vote_period_end": "2024-10-20",
       "source": "JYSK kampányok számok.xlsx"
     },
@@ -108,7 +109,7 @@
       "social_reach": 8660,
       "votes": 272,
       "vote_period_start": "2023-11-23",
-      "vote_period_end": "2022-12-10",
+      "vote_period_end": null,
       "source": "JYSK kampányok számok.xlsx"
     },
     {
@@ -159,8 +160,8 @@
       "participants": 15,
       "social_reach": 4921,
       "votes": 3909,
-      "vote_period_start": "2023-11-23",
-      "vote_period_end": "2022-12-10",
+      "vote_period_start": null,
+      "vote_period_end": null,
       "source": "JYSK kampányok számok.xlsx"
     },
     {

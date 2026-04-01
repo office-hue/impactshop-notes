@@ -2,7 +2,7 @@
 
 ## Summary
 
-Restore the dedicated JYSK campaign report routes that currently return WordPress 404:
+Restore the dedicated JYSK campaign report routes into a canonical repo-tracked source lane after they had already been brought back live via incident restore:
 
 - `/jysk-riport/`
 - `/jysk-riport/?print=1`
