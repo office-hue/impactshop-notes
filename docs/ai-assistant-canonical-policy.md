@@ -81,6 +81,8 @@ bash scripts/safe-repo-audit.sh --strict --mode push
 - Fizikai írásvédettség célállapota: a production Impact Challenge MU-plugin állományok read-only (`0444`) jogosultság alatt maradnak, és csak célzott deploy idejére tehetők írhatóvá.
 - A guide-rendszer fizikai célállapota: lokálban és productionön a guide fájlok `0444`, a guide könyvtárak `0555`, és ez az állapot minden deploy után kötelezően visszaállítandó.
 - A JYSK riporthoz tartozó guide fájlok és adatfájlok ugyanebbe a read-only célállapotba tartoznak; a `jysk-riport` route, print nézet és JSON payload nem kezelhető “könnyű statikus oldalként”.
+- A JYSK source assetek kanonikus guard-inventory elemek is.
+  - Minimum: `wp-content/mu-plugins/impactshop-ngo-guides.php`, `wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html`, `wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json`, valamint ezek digest-lockja a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` fájlokban.
 
 ## Nyelv
 

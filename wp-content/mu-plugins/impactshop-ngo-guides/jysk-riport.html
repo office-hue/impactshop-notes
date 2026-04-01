@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JYSK x Sharity kampánybeszámoló</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --jysk-blue: #0f3a96;
+      --jysk-deep: #07235f;
+      --jysk-ice: #e9f0ff;
+      --ink: #0d1b2a;
+      --muted: #60718f;
+      --card: #ffffff;
+      --accent: #f4b740;
+      --accent-soft: #fde7b4;
+      --ok: #1f8f5f;
+      --warn: #b16900;
+      --bg-a: #f7f9ff;
+      --bg-b: #eef3ff;
+      --shadow: 0 10px 30px rgba(15, 40, 90, 0.12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "IBM Plex Sans", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 0% -5%, rgba(64, 116, 231, 0.22), transparent 60%),
+        radial-gradient(900px 540px at 100% 0%, rgba(244, 183, 64, 0.18), transparent 50%),
+        linear-gradient(160deg, var(--bg-a), var(--bg-b));
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 18px 44px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .toolbar-left {
+      font-size: 13px;
+      color: #4f6484;
+      font-weight: 600;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .toolbar-actions button {
+      border: 1px solid #b8c9f0;
+      background: #fff;
+      color: #123677;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+
+    .toolbar-actions button:hover {
+      transform: translateY(-1px);
+      border-color: #7d9ee6;
+      box-shadow: 0 8px 18px rgba(15, 58, 150, 0.14);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(130deg, var(--jysk-deep), var(--jysk-blue));
+      color: white;
+      border-radius: 24px;
+      padding: 28px 28px 24px;
+      box-shadow: var(--shadow);
+      animation: fadeUp .7s ease-out both;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -80px;
+      top: -120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.22), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #d7e2ff;
+    }
+
+    h1 {
+      margin: 8px 0 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(30px, 4.2vw, 50px);
+      line-height: 1.04;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-sub {
+      margin: 0;
+      color: #deebff;
+      font-size: clamp(14px, 1.9vw, 18px);
+      max-width: 880px;
+    }
+
+    .kpi-grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kpi {
+      background: rgba(255,255,255,.13);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 14px;
+      padding: 12px;
+      backdrop-filter: blur(6px);
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: #d0defb;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .kpi-value {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(20px, 2.2vw, 30px);
+      font-weight: 700;
+      line-height: 1.05;
+    }
+
+    section {
+      margin-top: 18px;
+      animation: fadeUp .7s ease-out both;
+    }
+
+    section:nth-of-type(2) { animation-delay: .08s; }
+    section:nth-of-type(3) { animation-delay: .12s; }
+    section:nth-of-type(4) { animation-delay: .16s; }
+    section:nth-of-type(5) { animation-delay: .2s; }
+
+    .section-title {
+      margin: 0 0 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(22px, 2.8vw, 34px);
+      letter-spacing: -0.02em;
+    }
+
+    .section-desc {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #dde7ff;
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .chart-wrap {
+      height: 320px;
+      position: relative;
+    }
+
+    .focus-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .focus-title {
+      margin: 0;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 22px;
+    }
+
+    .chip-row {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 9px;
+      background: var(--jysk-ice);
+      color: var(--jysk-deep);
+      border: 1px solid #c9d8ff;
+    }
+
+    .winner {
+      margin-top: 10px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fff6e0, #ffe9b4);
+      border: 1px solid #f3d17f;
+      padding: 10px;
+      color: #5e3a00;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    th, td {
+      padding: 7px 8px;
+      text-align: left;
+      border-bottom: 1px solid #ebf0ff;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #6d7f9f;
+      font-weight: 700;
+    }
+
+    .num { text-align: right; }
+    .tiny { color: #6d7f9f; font-size: 12px; }
+
+    .full-width { width: 100%; overflow-x: auto; }
+
+    .notes {
+      margin: 0;
+      padding-left: 18px;
+      color: #506180;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .foot {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #667a99;
+      text-align: right;
+    }
+
+    @media (max-width: 1060px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .focus-grid { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 700px) {
+      .hero { padding: 22px 18px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .chart-wrap { height: 280px; }
+      .section-desc { font-size: 13px; }
+      .toolbar { align-items: stretch; }
+      .toolbar-actions { width: 100%; }
+      .toolbar-actions button { flex: 1 1 auto; }
+    }
+
+    @media print {
+      @page { size: A4 portrait; margin: 12mm; }
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .page {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .toolbar {
+        display: none !important;
+      }
+      .hero {
+        box-shadow: none;
+        border: 1px solid #d5e0fb;
+      }
+      .card {
+        box-shadow: none;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .chart-wrap {
+        height: 260px;
+      }
+      section {
+        margin-top: 10px;
+      }
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="toolbar">
+      <div class="toolbar-left">JYSK partner riport • kivetítés / nyomtatás</div>
+      <div class="toolbar-actions">
+        <button type="button" id="btnExpandAll">Ugrás a táblázatokhoz</button>
+        <button type="button" id="btnPrint">Nyomtatás / PDF</button>
+      </div>
+    </div>
+
+    <header class="hero">
+      <p class="eyebrow">JYSK x Sharity • Kampányriport</p>
+      <h1>Komárom + Mezőkövesd + Veresegyház<br/>egy oldalon</h1>
+      <p class="hero-sub">Átlátható partner riport a JYSK részére: szavazási/reklámmegtekintési számok, nyertesek, résztvevő szervezetek és social eredmények kampányonként, valamint összesítve.</p>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Fókusz kampányok össz. szavazat</div><div class="kpi-value" id="kpiVotes">-</div></div>
+        <div class="kpi"><div class="kpi-label">Fókusz kampányokban szavazatot kapott szervezet</div><div class="kpi-value" id="kpiParticipants">-</div></div>
+        <div class="kpi"><div class="kpi-label">Social reakció összesen</div><div class="kpi-value" id="kpiReactions">-</div></div>
+        <div class="kpi"><div class="kpi-label">Social komment + megosztás</div><div class="kpi-value" id="kpiInteractions">-</div></div>
+      </div>
+    </header>
+
+    <section>
+      <h2 class="section-title">Kampányok Összehasonlítása</h2>
+      <p class="section-desc">A korábbi JYSK városi kampányok fő számai az excel alapján, kiegészítve Komárom + Mezőkövesd JYSK Vote adataival és a Veresegyház screenshot bontással.</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="chart-wrap"><canvas id="votesByCampaignChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="chart-wrap"><canvas id="socialReachChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">Fókusz Kampányok Részletei</h2>
+      <p class="section-desc">Komárom és Mezőkövesd adatok forrása: JYSK Vote log. Veresegyház adatok forrása: beküldött táblázat screenshot.</p>
+      <div class="focus-grid" id="focusCards"></div>
+    </section>
+
+    <section>
+      <h2 class="section-title">Napi Szavazási Trend</h2>
+      <p class="section-desc">JYSK Vote napi lefutás (Komárom és Mezőkövesd), a kampányidőszak alatti dinamika vizuálisan.</p>
+      <div class="card">
+        <div class="chart-wrap"><canvas id="dailyTrendChart"></canvas></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">Social Poszt Eredmények</h2>
+      <p class="section-desc">A számok a küldött képernyőképek alapján kerültek rögzítésre (pillanatkép jellegű értékek).</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="chart-wrap"><canvas id="socialByCampaignChart"></canvas></div>
+        </div>
+        <div class="card full-width">
+          <table>
+            <thead>
+              <tr>
+                <th>Kampány</th>
+                <th>Platform</th>
+                <th>Fiók</th>
+                <th>Poszt</th>
+                <th class="num">Reakció</th>
+                <th class="num">Komment</th>
+                <th class="num">Megosztás</th>
+              </tr>
+            </thead>
+            <tbody id="socialTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-title">Korábbi JYSK Kampányok Táblázata</h2>
+      <p class="section-desc">Excel szerinti kampányszintű összesítő (szavazás/reklámmegtekintés + social elérés + induló szervezetek).</p>
+      <div class="card full-width">
+        <table>
+          <thead>
+            <tr>
+              <th>Város / Kampány</th>
+              <th>Nagykövet</th>
+              <th class="num">Indulók</th>
+              <th class="num">Szavazat / Reklámmegtekintés</th>
+              <th class="num">Social elérés</th>
+              <th>Megjegyzés</th>
+            </tr>
+          </thead>
+          <tbody id="overviewTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title" style="font-size:24px; margin-bottom:6px;">Forrásmegjegyzések</h2>
+      <ul class="notes" id="notesList"></ul>
+    </section>
+
+    <div class="foot" id="footMeta"></div>
+  </div>
+
+  <script>
+    const EMBEDDED_REPORT_DATA = {"meta": {"generated_at": "2026-03-06T12:31:11", "report_title": "JYSK x Sharity kampánybeszámoló", "focus_campaigns": ["Veresegyház", "Komárom", "Mezőkövesd"], "notes": ["Komárom és Mezőkövesd adatok forrása: impact_vote_log.csv (JYSK Vote).", "Veresegyház részletes bontás forrása: felhasználó által küldött táblázat screenshot.", "Social poszt adatok forrása: felhasználó által küldött screenshotok.", "Komárom/Mezőkövesd esetén PPT-ben 5 induló szerepel, a logban több szavazatot kapott szervezet látszik.", "A legacy Excelben bizonytalan vagy kevert dátummezők ISO formára normalizálva vagy null-ra állítva szerepelnek." ]}, "kpis": {"focus_votes_total": 7318, "focus_participants_with_votes_total": 27, "winners": {"Veresegyház": {"name": "Patrónus Ház Közhasznú Nonprofit Kft", "votes": 1654}, "Komárom": {"ngo_id": "141", "name": "Az álmok valóra válnak Alapítvány", "votes": 1902}, "Mezőkövesd": {"ngo_id": "139", "name": "Tanulj Tesó Alapítvány", "votes": 1076}}, "social_totals": {"posts": 6, "reactions": 500, "comments": 168, "shares": 117}}, "campaign_overview": [{"city": "Bicske", "ambassador": "Harsányi Levente", "participants": 7, "social_reach": 9459, "votes": 8858, "vote_period_start": "2024-02-07", "vote_period_end": "2024-02-29", "source": "JYSK kampányok számok.xlsx"}, {"city": "Debrecen", "ambassador": "Csisztu Zsuzsa", "participants": 10, "social_reach": null, "votes": 5829, "vote_period_start": "2024-10-01", "vote_period_end": "2024-10-20", "source": "JYSK kampányok számok.xlsx"}, {"city": "Dolgozói I", "ambassador": "-", "participants": null, "social_reach": 0, "votes": 299, "vote_period_start": "2024-05-07", "vote_period_end": "2024-05-31", "source": "JYSK kampányok számok.xlsx"}, {"city": "Dolgozói II", "ambassador": "-", "participants": null, "social_reach": 160, "votes": 1054, "vote_period_start": "2025-06-11", "vote_period_end": "2025-06-20", "source": "JYSK kampányok számok.xlsx"}, {"city": "Dunaharaszti", "ambassador": "IHM", "participants": 10, "social_reach": 15152, "votes": 1518, "vote_period_start": "2023-07-01", "vote_period_end": "2023-07-28", "source": "JYSK kampányok számok.xlsx"}, {"city": "Karácsony", "ambassador": "Csonka András", "participants": 14, "social_reach": null, "votes": 3708, "vote_period_start": "2024-12-03", "vote_period_end": "2024-12-31", "source": "JYSK kampányok számok.xlsx"}, {"city": "Kispest", "ambassador": "IHM", "participants": 2, "social_reach": 8660, "votes": 272, "vote_period_start": "2023-11-23", "vote_period_end": null, "source": "JYSK kampányok számok.xlsx"}, {"city": "Komárom", "ambassador": "Barabás Évi", "participants": 11, "planned_participants": 5, "social_reach": null, "votes": 2869, "vote_period_start": "2026-02-13", "vote_period_end": "2026-03-01", "source": "JYSK Vote log + PPT"}, {"city": "Körmend", "ambassador": "Barabás Évi", "participants": 5, "social_reach": 7637, "votes": 1640, "vote_period_start": "2025-08-04", "vote_period_end": "2025-08-22", "source": "JYSK kampányok számok.xlsx"}, {"city": "Mezőkövesd", "ambassador": "Barabás Évi", "participants": 9, "planned_participants": 5, "social_reach": null, "votes": 1109, "vote_period_start": "2026-02-13", "vote_period_end": "2026-03-01", "source": "JYSK Vote log + PPT"}, {"city": "Solymár", "ambassador": "IHM", "participants": 13, "social_reach": 37193, "votes": 15783, "vote_period_start": "2023-08-09", "vote_period_end": "2023-08-28", "source": "JYSK kampányok számok.xlsx"}, {"city": "Szarvas", "ambassador": "IHM", "participants": 15, "social_reach": 4921, "votes": 3909, "vote_period_start": null, "vote_period_end": null, "source": "JYSK kampányok számok.xlsx"}, {"city": "Törökszentmiklós", "ambassador": "Barabás Évi", "participants": 6, "social_reach": 207, "votes": 4493, "vote_period_start": "2025-06-11", "vote_period_end": "2025-06-30", "source": "JYSK kampányok számok.xlsx"}, {"city": "Veresegyház", "ambassador": "Barabás Évi", "participants": 7, "social_reach": null, "votes": 3340, "vote_period_start": null, "vote_period_end": null, "source": "Screenshot + manual"}, {"city": "Váci út", "ambassador": "Barabás Évi", "participants": 10, "social_reach": 13514, "votes": 3346, "vote_period_start": null, "vote_period_end": "2024-08-25", "source": "JYSK kampányok számok.xlsx"}, {"city": "Várpalota", "ambassador": "Barabás Évi", "participants": 10, "social_reach": 10629, "votes": 4849, "vote_period_start": "2024-02-22", "vote_period_end": "2024-03-03", "source": "JYSK kampányok számok.xlsx"}, {"city": "Ózd", "ambassador": "Barabás Évi", "participants": 5, "social_reach": null, "votes": 2242, "vote_period_start": "2024-10-17", "vote_period_end": "2024-11-03", "source": "JYSK kampányok számok.xlsx"}], "detailed_campaigns": {"Veresegyház": {"votes_total": 3340, "participants_with_votes": 7, "participants": [{"name": "Patrónus Ház Közhasznú Nonprofit Kft", "votes": 1654}, {"name": "Csoda Emma Mosolyáért Alapítvány", "votes": 615}, {"name": "Kéz a kézben Alapítvány", "votes": 478}, {"name": "Mozdulj Velünk Egyesület", "votes": 296}, {"name": "Támaszpont Mentálhigiénés Oktatási és Prevenciós Közhasznú Alapítvány", "votes": 154}, {"name": "Dányi Apró Paták LSE", "votes": 113}, {"name": "Együtt Pénzes Márk Gyógyulásáért Alapítvány", "votes": 30}], "winner": {"name": "Patrónus Ház Közhasznú Nonprofit Kft", "votes": 1654}, "source": "User-provided screenshot (Veresegyház table)"}, "Komárom": {"campaign_name": "JYSK Komarom szavazas", "votes_total": 2869, "participants_with_votes": 11, "participants": [{"ngo_id": "141", "name": "Az álmok valóra válnak Alapítvány", "votes": 1902}, {"ngo_id": "143", "name": "Tatabányai 4x4 Terepjárós, Polgári Védelmi és Önkéntes Tűzoltó Egyesület", "votes": 923}, {"ngo_id": "18", "name": "Határtalan szív Alapítvány", "votes": 30}, {"ngo_id": "23", "name": "Bogáncs Kutya- és Kisállatotthon Alapítvány", "votes": 4}, {"ngo_id": "142", "name": "Komárom-Esztergom Megye Ifjúságáért Egyesület", "votes": 3}, {"ngo_id": "6", "name": "Együtt könnyebb\" Női Egészségért Alapítvány", "votes": 2}, {"ngo_id": "13", "name": "Bácsalmási Mentő Alapítvány", "votes": 1}, {"ngo_id": "32", "name": "Fokról-Fokra\" a Fogyatékos gyermekek Neveléséért és Oktatásáért Alapítvány", "votes": 1}, {"ngo_id": "20", "name": "Tatabányai Otthon Segítünk Alapítvány", "votes": 1}, {"ngo_id": "45", "name": "BICE-BÓCA Hátrányos helyzetűek és Nagycsaládosok Egyesülete", "votes": 1}, {"ngo_id": "24", "name": "Mondjunk mancsot!\" Terápiás- és Segítőkutyás Közhasznú Egyesület", "votes": 1}], "winner": {"ngo_id": "141", "name": "Az álmok valóra válnak Alapítvány", "votes": 1902}, "period_start": "2026-02-13", "period_end": "2026-03-01", "daily_votes": [{"day": "2026-02-13", "votes": 117}, {"day": "2026-02-14", "votes": 131}, {"day": "2026-02-15", "votes": 268}, {"day": "2026-02-16", "votes": 182}, {"day": "2026-02-17", "votes": 206}, {"day": "2026-02-18", "votes": 440}, {"day": "2026-02-19", "votes": 517}, {"day": "2026-02-20", "votes": 365}, {"day": "2026-02-21", "votes": 140}, {"day": "2026-02-22", "votes": 86}, {"day": "2026-02-23", "votes": 86}, {"day": "2026-02-24", "votes": 68}, {"day": "2026-02-25", "votes": 64}, {"day": "2026-02-26", "votes": 53}, {"day": "2026-02-27", "votes": 66}, {"day": "2026-02-28", "votes": 29}, {"day": "2026-03-01", "votes": 51}], "source": "impact_vote_log.csv"}, "Mezőkövesd": {"campaign_name": "JYSK Mezokovesd szavazas", "votes_total": 1109, "participants_with_votes": 9, "participants": [{"ngo_id": "139", "name": "Tanulj Tesó Alapítvány", "votes": 1076}, {"ngo_id": "121", "name": "Mozgássérültek Mezőkövesdi Egyesülete", "votes": 15}, {"ngo_id": "103", "name": "SZÁDVÁRÉRT BARÁTI KÖR", "votes": 7}, {"ngo_id": "73", "name": "Miskolci Állatsegítő Alapítvány", "votes": 4}, {"ngo_id": "74", "name": "Erzsébet Hospice Alapítvány", "votes": 2}, {"ngo_id": "76", "name": "Kurityánért Alapítvány", "votes": 2}, {"ngo_id": "83", "name": "Taktaharkányi Polgárőr Szervezet", "votes": 1}, {"ngo_id": "107", "name": "Kazincbarcika város és környéke Művészetéért Egyesület", "votes": 1}, {"ngo_id": "82", "name": "Önmegvalósítás Egyesület", "votes": 1}], "winner": {"ngo_id": "139", "name": "Tanulj Tesó Alapítvány", "votes": 1076}, "period_start": "2026-02-13", "period_end": "2026-03-01", "daily_votes": [{"day": "2026-02-13", "votes": 1}, {"day": "2026-02-14", "votes": 77}, {"day": "2026-02-15", "votes": 139}, {"day": "2026-02-16", "votes": 129}, {"day": "2026-02-17", "votes": 117}, {"day": "2026-02-18", "votes": 72}, {"day": "2026-02-19", "votes": 83}, {"day": "2026-02-20", "votes": 76}, {"day": "2026-02-21", "votes": 58}, {"day": "2026-02-22", "votes": 67}, {"day": "2026-02-23", "votes": 42}, {"day": "2026-02-24", "votes": 46}, {"day": "2026-02-25", "votes": 43}, {"day": "2026-02-26", "votes": 41}, {"day": "2026-02-27", "votes": 25}, {"day": "2026-02-28", "votes": 41}, {"day": "2026-03-01", "votes": 52}], "source": "impact_vote_log.csv"}}, "social_posts": [{"campaign": "Veresegyház", "platform": "Facebook", "account": "Barabás Évi", "label": "Eredményhirdető poszt", "reactions": 243, "comments": 12, "shares": 4, "source": "Screenshot"}, {"campaign": "Veresegyház", "platform": "Facebook", "account": "Patrónus ház", "label": "Köszönő poszt", "reactions": 24, "comments": 4, "shares": 4, "source": "Screenshot"}, {"campaign": "Komárom", "platform": "Facebook", "account": "Az álmok valóra válnak Alapítvány", "label": "Győzelmi poszt", "reactions": 33, "comments": 9, "shares": 10, "source": "Screenshot"}, {"campaign": "Komárom", "platform": "Instagram", "account": "evibarabas", "label": "Győzelmi poszt", "reactions": 29, "comments": null, "shares": null, "source": "Screenshot"}, {"campaign": "Mezőkövesd", "platform": "Facebook", "account": "Tanulj Tesó Alapítvány", "label": "Kampány közbeni felhívás", "reactions": 77, "comments": 121, "shares": 86, "source": "Screenshot"}, {"campaign": "Mezőkövesd", "platform": "Facebook", "account": "Tanulj Tesó Alapítvány", "label": "Győzelmi poszt", "reactions": 94, "comments": 22, "shares": 13, "source": "Screenshot"}]};
+    let REPORT_DATA = EMBEDDED_REPORT_DATA;
+    const REPORT_DATA_URL = `${window.location.pathname.replace(/\/$/, '')}.data.json`;
+
+    const fmt = new Intl.NumberFormat('hu-HU');
+    const byCityColor = {
+      'Veresegyház': '#1a5cff',
+      'Komárom': '#f4b740',
+      'Mezőkövesd': '#27a06a'
+    };
+
+    function n(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return '—';
+      return fmt.format(v);
+    }
+
+    async function loadReportData() {
+      try {
+        const response = await fetch(REPORT_DATA_URL, { cache: 'no-store' });
+        if (!response.ok) return;
+        const remoteData = await response.json();
+        if (remoteData && typeof remoteData === 'object') {
+          REPORT_DATA = remoteData;
+        }
+      } catch (error) {
+        console.warn('JYSK report JSON fallback to embedded snapshot.', error);
+      }
+    }
+
+    function bindToolbar() {
+      const printButton = document.getElementById('btnPrint');
+      const expandButton = document.getElementById('btnExpandAll');
+
+      if (printButton) {
+        printButton.addEventListener('click', () => window.print());
+      }
+
+      if (expandButton) {
+        expandButton.addEventListener('click', () => {
+          const firstFocus = document.querySelector('#focusCards');
+          if (firstFocus) {
+            firstFocus.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('print') === '1') {
+        window.setTimeout(() => window.print(), 350);
+      }
+    }
+
+    function setKpis() {
+      const k = REPORT_DATA.kpis;
+      document.getElementById('kpiVotes').textContent = n(k.focus_votes_total);
+      document.getElementById('kpiParticipants').textContent = n(k.focus_participants_with_votes_total);
+      document.getElementById('kpiReactions').textContent = n(k.social_totals.reactions);
+      document.getElementById('kpiInteractions').textContent = n((k.social_totals.comments || 0) + (k.social_totals.shares || 0));
+    }
+
+    function renderFocusCards() {
+      const container = document.getElementById('focusCards');
+      const focus = REPORT_DATA.meta.focus_campaigns;
+      const details = REPORT_DATA.detailed_campaigns;
+
+      focus.forEach(city => {
+        const c = details[city];
+        if (!c) return;
+        const winner = c.winner ? `${c.winner.name} (${n(c.winner.votes)})` : '—';
+        const rows = (c.participants || []).map((p, i) => `
+          <tr>
+            <td>${i + 1}.</td>
+            <td>${p.name || '—'}</td>
+            <td class="num">${n(p.votes)}</td>
+          </tr>
+        `).join('');
+
+        const period = c.period_start && c.period_end ? `${c.period_start} – ${c.period_end}` : '—';
+
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <h3 class="focus-title">${city}</h3>
+          <div class="chip-row">
+            <span class="chip">Össz. szavazat: ${n(c.votes_total)}</span>
+            <span class="chip">Szavazatot kapott szervezetek: ${n(c.participants_with_votes)}</span>
+            <span class="chip">Időszak: ${period}</span>
+          </div>
+          <div class="winner"><strong>Nyertes:</strong> ${winner}</div>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Szervezet</th>
+                <th class="num">Szavazat</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="tiny">Forrás: ${c.source || '—'}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderOverviewTable() {
+      const tbody = document.getElementById('overviewTableBody');
+      const rows = [...REPORT_DATA.campaign_overview].sort((a, b) => (b.votes || 0) - (a.votes || 0));
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        const note = r.planned_participants ? `PPT induló: ${r.planned_participants}` : '';
+        tr.innerHTML = `
+          <td>${r.city}</td>
+          <td>${r.ambassador || '—'}</td>
+          <td class="num">${n(r.participants)}</td>
+          <td class="num">${n(r.votes)}</td>
+          <td class="num">${n(r.social_reach)}</td>
+          <td class="tiny">${note || (r.source || '—')}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderSocialTable() {
+      const tbody = document.getElementById('socialTableBody');
+      REPORT_DATA.social_posts.forEach(post => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${post.campaign}</td>
+          <td>${post.platform}</td>
+          <td>${post.account}</td>
+          <td>${post.label}</td>
+          <td class="num">${n(post.reactions)}</td>
+          <td class="num">${n(post.comments)}</td>
+          <td class="num">${n(post.shares)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderNotes() {
+      const ul = document.getElementById('notesList');
+      (REPORT_DATA.meta.notes || []).forEach(note => {
+        const li = document.createElement('li');
+        li.textContent = note;
+        ul.appendChild(li);
+      });
+
+      document.getElementById('footMeta').textContent = `Frissítve: ${REPORT_DATA.meta.generated_at}`;
+    }
+
+    function chartVotesByCampaign() {
+      const rows = [...REPORT_DATA.campaign_overview]
+        .filter(r => (r.votes || 0) > 0)
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+        .slice(0, 12);
+      new Chart(document.getElementById('votesByCampaignChart'), {
+        type: 'bar',
+        data: {
+          labels: rows.map(r => r.city),
+          datasets: [{
+            label: 'Szavazat / reklámmegtekintés',
+            data: rows.map(r => r.votes || 0),
+            backgroundColor: rows.map(r => byCityColor[r.city] || '#2c69d1'),
+            borderRadius: 8,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { maxRotation: 45, minRotation: 30 } },
+            y: { beginAtZero: true, ticks: { callback: (v) => n(v) } }
+          }
+        }
+      });
+    }
+
+    function chartSocialReach() {
+      const rows = [...REPORT_DATA.campaign_overview]
+        .filter(r => (r.social_reach || 0) > 0)
+        .sort((a, b) => (b.social_reach || 0) - (a.social_reach || 0))
+        .slice(0, 12);
+      new Chart(document.getElementById('socialReachChart'), {
+        type: 'bar',
+        data: {
+          labels: rows.map(r => r.city),
+          datasets: [{
+            label: 'Social elérés',
+            data: rows.map(r => r.social_reach || 0),
+            backgroundColor: '#173f9c',
+            borderRadius: 8,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { maxRotation: 45, minRotation: 30 } },
+            y: { beginAtZero: true, ticks: { callback: (v) => n(v) } }
+          }
+        }
+      });
+    }
+
+    function chartDailyTrend() {
+      const kom = REPORT_DATA.detailed_campaigns['Komárom']?.daily_votes || [];
+      const mez = REPORT_DATA.detailed_campaigns['Mezőkövesd']?.daily_votes || [];
+      const allDays = [...new Set([...kom.map(x => x.day), ...mez.map(x => x.day)])].sort();
+      const mapSeries = (arr) => {
+        const map = new Map(arr.map(x => [x.day, x.votes]));
+        return allDays.map(day => map.get(day) || 0);
+      };
+
+      new Chart(document.getElementById('dailyTrendChart'), {
+        type: 'line',
+        data: {
+          labels: allDays,
+          datasets: [
+            {
+              label: 'Komárom',
+              data: mapSeries(kom),
+              borderColor: byCityColor['Komárom'],
+              backgroundColor: 'rgba(244,183,64,.18)',
+              borderWidth: 3,
+              tension: 0.25,
+              fill: true,
+              pointRadius: 2,
+            },
+            {
+              label: 'Mezőkövesd',
+              data: mapSeries(mez),
+              borderColor: byCityColor['Mezőkövesd'],
+              backgroundColor: 'rgba(39,160,106,.16)',
+              borderWidth: 3,
+              tension: 0.25,
+              fill: true,
+              pointRadius: 2,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { beginAtZero: true, ticks: { callback: (v) => n(v) } } }
+        }
+      });
+    }
+
+    function chartSocialByCampaign() {
+      const grouped = {};
+      for (const post of REPORT_DATA.social_posts) {
+        const city = post.campaign;
+        if (!grouped[city]) grouped[city] = { reactions: 0, comments: 0, shares: 0 };
+        grouped[city].reactions += Number(post.reactions || 0);
+        grouped[city].comments += Number(post.comments || 0);
+        grouped[city].shares += Number(post.shares || 0);
+      }
+      const cities = Object.keys(grouped);
+      new Chart(document.getElementById('socialByCampaignChart'), {
+        type: 'bar',
+        data: {
+          labels: cities,
+          datasets: [
+            { label: 'Reakció', data: cities.map(c => grouped[c].reactions), backgroundColor: '#2456d3', borderRadius: 7 },
+            { label: 'Komment', data: cities.map(c => grouped[c].comments), backgroundColor: '#f4b740', borderRadius: 7 },
+            { label: 'Megosztás', data: cities.map(c => grouped[c].shares), backgroundColor: '#27a06a', borderRadius: 7 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { callback: (v) => n(v) } } }
+        }
+      });
+    }
+
+    async function initReport() {
+      await loadReportData();
+      bindToolbar();
+      setKpis();
+      renderFocusCards();
+      renderOverviewTable();
+      renderSocialTable();
+      renderNotes();
+      chartVotesByCampaign();
+      chartSocialReach();
+      chartDailyTrend();
+      chartSocialByCampaign();
+    }
+
+    initReport();
+  </script>
+</body>
+</html>

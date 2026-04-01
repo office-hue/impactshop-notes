@@ -2,6 +2,14 @@
 - A `jysk-riport` route-család név szerint is max-védett guide surface lett: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
 - A protected modell új `guide_runtime` smoke scope-pal most már külön ellenőrzi a route render, print nézet és JSON payload folytonosságát.
 
+## 2026-04-01 16:40 CET - JYSK canonical inventory lock
+- A JYSK source assetek most már explicit guard inventory + hash lock alatt is állnak.
+- A `impactshop-ngo-guides.php`, `jysk-riport.html` és `jysk-riport.data.json` bekerült a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` kanonikus kontrollrétegébe.
+
+## 2026-04-01 16:47 CET - JYSK review thread data + UX cleanup
+- A JYSK raw JSON-ban a kevert vagy bizonytalan legacy dátummezők normalizálva lettek: Debrecen ISO dátumot kapott, Kispest/Szarvas ellentmondásos végei null-ra kerültek.
+- A riport HTML most elsődlegesen a `/jysk-riport.data.json` route-ból tölt, az embedded adat csak fallback snapshot marad, és a toolbar gomb felirata az aktuális működéshez igazodik.
+
 ## 2026-03-26 19:45 CET - fix: impact-community.php ngo_admin_url visszaállítva
 - Merge conflict resolution során az auto-merge visszaállította a régi `/impact-challenge/ngo-admin/` URL-eket.
 - Fix: 3 helyen visszaállítva `/impact-shop_ngo/`-ra (sorok: 2058, 2647, 4743).
@@ -6523,3 +6531,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - `impactshop-guard-deploy.sh` most ugyanabban a `docs/...` formátumban írja a hash-checksum bejegyzést, mint amit commitolunk.
 - A guard hash manifestben kézzel is frissítve lett a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-config.sha256` digest, hogy ne maradjon állandó drift a kanonikus deploy wrapperben.
 - A bastion status `Last updated` mező formátuma visszaállt időbélyeges, auditálható alakra.
+
+## 2026-04-01 15:55:00 CET - JYSK report source restoration
+
+- A korábban kivételesen, kézi guardolt úton visszaállított `/jysk-riport/` route forrása most külön kanonikus source lane-re került.
+- A `impactshop-ngo-guides.php` route map additive módon megkapta a `jysk-riport` és `jysk-riport.data.json` útvonalakat.
+- A dedikált JYSK riport HTML és JSON asset most már repo-tracked forrásként is bent van.
+- A route restore továbbra sem érinti a JYSK vote runtime-ot vagy az offerwall/challenge ágakat.
