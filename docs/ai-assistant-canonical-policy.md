@@ -68,10 +68,13 @@ bash scripts/safe-repo-audit.sh --strict --mode push
 - Deploy csak guardolt útvonalon és csak merge-elt főágból mehet.
 - Preferált deploy útvonal: `bin/impactshop-guard-deploy.sh`.
 - Deploy után guard és smoke ellenőrzés kötelező, eredménnyel együtt dokumentálva.
+- Ha a kanonikus guard deploy útvonal maga hibás root/branch kötés, hiányzó script vagy más guard-infra hiba miatt nem használható, ezt explicit nem-kanonikus kivételként kell kimondani; ilyenkor csak szűk, auditált helyreállítás engedett pontos fájllistával, előzetes backuppal, távoli rollback scripttel, cache/rewrite flush-sel, utólagos live verifikációval és külön follow-up feladattal a kanonikus deploy path javítására.
 
 ## Védett műveletek
 
 - Teljes repo scan / tömeges rsync csak külön jóváhagyással.
+- Közvetlen production remote write (`scp`, `rsync`, `ssh cp`, kézi chmod+copy`) tiltott; ha kivétel kell, csak guardolt emergency wrapperrel és auditált indokkal mehet.
+- Ha a guardolt emergency wrapper dokumentáltan hiányzik vagy hibás, ezt nem szabad csendben megkerülni: a kivételes kézi helyreállítás csak ideiglenes incidensútvonal lehet, és külön dokumentálni kell, hogy nem kanonikus deploy történt.
 - Védett / bastion állományhoz csak backup + rollback tervvel szabad nyúlni.
 - Védett fájl backup retention maximum 2 nap, kivéve ha külön dokumentált eltérés van.
 - Fizikai írásvédettség célállapota: a production Impact Challenge MU-plugin állományok read-only (`0444`) jogosultság alatt maradnak, és csak célzott deploy idejére tehetők írhatóvá.

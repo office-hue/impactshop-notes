@@ -3,7 +3,7 @@
   "repo": {
     "root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
     "remote": "https://github.com/office-hue/impactshop-notes.git",
-    "branch": "ops/adswatch-clean"
+    "branch": "main"
   },
   "protected_files": [
     "docs/impactshop-guard-config.json",
@@ -148,7 +148,7 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/rolunk.html"
   ],
   "hashes": {
-    "docs/impactshop-guard-config.json": "b2bca05fc75b78dcd9342dbcc53b300e350cbb7566363ec9d9f2010db768617e",
+    "docs/impactshop-guard-config.json": "4421de8061a082c205d38176c2d604a5e78d1102072f588c046752a11e0f882e",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "1ccc272046edd31a4f8cfe4b1cb3c90af8ce29fb6e3bd0e7d92ce7b835f0aaca",
@@ -218,7 +218,7 @@
     "bin/impactshop-guard-deploy.sh": "80d6b206635eda52f18e4445dfb89bc75aeb9bc88dac536022f65e2557a581b1",
     "bin/impactshop-guard-preflight.sh": "16086de57edd4b7abc5dd6395d45b34630d1dc1e7be3fa6c64495b5a5f5af17d",
     "docs/bastion-protection-extension-plan.md": "c138cf6f1a18fcb8f36c666fd554bc3a1cee9cb3de9c340eecadf30bc2309361",
-    "docs/impactshop-guard-config.sha256": "b8a63cf41ec7079d87acdc583123b82be48d4c366267dd80502ca3ec3dfc86a2",
+    "docs/impactshop-guard-config.sha256": "3bd409112789197e5c0c7c5efc63fb03573295d6409569387e1030732b4ebfbd",
     "wp-content/mu-plugins/impact-arukereso-guard.php": "6707993fde9f3a1c465289ae010c7447edf22010f07ccf802151ee76a7a4df9c",
     "wp-content/mu-plugins/impact-combat-pack.php": "50a1a6b9e22b3fd17035406d8ede87553d206c29252f8dccb63fd5ac1b4a7868",
     "wp-content/mu-plugins/impactshop-ngo-guides/assets/access-control-matrix.md": "08a4d4a5fafc20dd536a6e3925b6bc56a85e941ec6e2070b2391bb9c9a427c0f",
