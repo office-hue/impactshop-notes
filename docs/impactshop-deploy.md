@@ -18,6 +18,7 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - **Canonical baseline**: Impact Challenge deploy esetén a referenciaállapot a `docs/impact-challenge-canonical-baseline.md`; ettől való eltérés csak explicit jóváhagyással vihető ki.
 - **Guide rendszer**: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` teljes subtree csak explicit engedéllyel deployolható; guide tartalmat felülíró automatika vagy hallgatólagos sync tiltott.
 - **JYSK riport**: `/jysk-riport/`, a `/jysk-riport/?print=1` nézet és a `/jysk-riport.data.json` a guide-rendszer max-védett része; deploynál külön ellenőrizni kell a route render, print render és JSON payload folytonosságát.
+- **JYSK source inventory**: a route csak akkor tekinthető teljesen kanonikusnak, ha a forrásfájlok (`impactshop-ngo-guides.php`, `jysk-riport.html`, `jysk-riport.data.json`) a guard-config és hash-manifest alatt is rögzítve vannak; pusztán live restore nem elég.
 - **Legacy touch**: ha védett meglévő Impact Challenge fájlt módosítasz, a deploy naplóban szerepelnie kell az explicit engedélynek és az indoknak.
 - **Protected-file change review**: deploy előtt kötelező a koherencia vizsgálat, kockázatelemzés, érintett funkciólista és a kézi UI checklist megléte.
 - **CI/local parity**: protected lane csak akkor tekinthető lezártnak, ha a lokális guard és a GitHub oldali guard ugyanazt a protected modellt értelmezi.

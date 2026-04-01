@@ -19,6 +19,8 @@ The route is restored through the protected static guide router, using the recov
 - `docs/impactshop-guard-hashes.json`
 - `docs/impactshop-guard-config.sha256`
 - `docs/impactshop-guard-hashes.sha256`
+- `docs/ai-assistant-canonical-policy.md`
+- `docs/impactshop-deploy.md`
 
 ## Coherence / Impact
 
