@@ -12,6 +12,7 @@
     "docs/ai-assistant-canonical-policy.md",
     "docs/pr-policy.md",
     "wp-content/mu-plugins/impactshop-action-bar.php",
+    "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
     "wp-content/mu-plugins/impactshop-ads-watch.php",
     "wp-content/mu-plugins/impactshop-ads-watch.js",
     "wp-content/mu-plugins/impactshop-ads-watch.css",
@@ -54,11 +55,11 @@
     "docs/impactshop-guard-config.sha256",
     "docs/impactshop-guard-hashes.json",
     "docs/impactshop-guard-hashes.sha256",
+    "scripts/impact-challenge-ui-smoke.sh",
     ".deploy.production.env",
     ".deploy.staging.env"
   ],
   "additive_globs": [
-    "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
     "docs/impact-challenge-*.md",
     "docs/critical-surface-inventory.md",
     "docs/impact-shop-profile-protected-perimeter.md",
@@ -66,7 +67,6 @@
     "docs/additive-first-ui-policy.md",
     "docs/protected-change-records/*.md",
     "scripts/check-elementor-protected-routes.sh",
-    "scripts/impact-challenge-ui-smoke.sh",
     "scripts/guarded-remote-write.sh"
   ],
   "critical_routes": [
@@ -161,6 +161,7 @@
     ],
     "mobile_shell_runtime": [
       "wp-content/mu-plugins/impactshop-action-bar.php",
+      "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
       "wp-content/mu-plugins/impactshop-pwa.php",
       "sw.js"
     ],

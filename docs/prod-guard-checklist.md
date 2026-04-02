@@ -62,6 +62,7 @@ curl -s https://app.sharity.hu/wp-json/impact/v1/health | jq .
 1. `IMPACT_ENV=production DRY_RUN=1 bin/staging-qa-suite.sh`
 2. Guard `doctor` staging + prod (`WP=/home/sharityh/app` / `.../app-staging`)
 3. Új TM snapshot (`tm-snapshot`) és log archiválás (`impactshop-guard.log`)
+4. IC shell sentinel smoke: `scripts/impact-challenge-ui-smoke.sh https://app.sharity.hu/impact-challenge/`
 
 ## 5. Gyors ellenőrző lista (deploy előtt)
 
@@ -72,6 +73,7 @@ curl -s https://app.sharity.hu/wp-json/impact/v1/health | jq .
 - [ ] Health endpoint 200-at ad  
 - [ ] Langfuse dashboard + alert ellenőrizve, screenshot elmentve (`docs/langfuse-enablement.md`)  
 - [ ] `source .codex/.env.local && ~/bin/impactall` → „Git dataless scan” zöld (nincs iCloud által offloadolt tracked fájl)  
+- [ ] `scripts/impact-challenge-ui-smoke.sh https://app.sharity.hu/impact-challenge/` zöld
 - [ ] Hotfix script csak megerősítés után fut  
 - [ ] Deploy után `QA suite` + `doctor`
 

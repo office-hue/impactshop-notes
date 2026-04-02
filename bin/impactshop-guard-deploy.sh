@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_PATH="${ROOT_DIR}/docs/impactshop-guard-config.json"
 HASH_PATH="${ROOT_DIR}/docs/impactshop-guard-hashes.json"
 CONFIG_CHECKSUM_PATH="${ROOT_DIR}/docs/impactshop-guard-config.sha256"
+PROTECTED_MODEL_PATH="${ROOT_DIR}/docs/impactshop-protected-files.json"
+PROTECTED_TOUCH_SCRIPT="${ROOT_DIR}/scripts/check-protected-file-touch.sh"
 SNAPSHOT_DIR_DEFAULT="${ROOT_DIR}/.codex/guard-snapshots"
 AUDIT_DIR="${ROOT_DIR}/.codex/guard-events"
 EMERGENCY_LOG="${AUDIT_DIR}/emergency-override.jsonl"
@@ -191,6 +193,11 @@ PY
 
 "${ROOT_DIR}/bin/impactshop-guard-preflight.sh"
 
+if [[ -f "$PROTECTED_MODEL_PATH" && -x "$PROTECTED_TOUCH_SCRIPT" ]]; then
+  echo "🧭 Protected-touch guard ellenőrzés…"
+  "$PROTECTED_TOUCH_SCRIPT" --mode local
+fi
+
 AUTO_COMMIT="$(python3 - <<'PY'
 import json
 cfg = json.loads(open("/tmp/impactshop_guard_cfg.json","r").read())
@@ -341,6 +348,7 @@ if os.path.isfile(hash_path):
 PY
 
 echo "📦 Guard snapshot: $snapshot_path"
+export IMPACTSHOP_DEPLOY_GUARD_SNAPSHOT_PATH="$snapshot_path"
 
 if [[ "$SAFE_MODE" == "1" && "$EMERGENCY_OVERRIDE" == "1" ]]; then
   echo "❌ Safe-mode aktív: emergency override tiltva (IMPACTSHOP_GUARD_SAFE_MODE=1)" >&2
@@ -418,6 +426,9 @@ PY
     fi
   fi
   echo "🚨 Emergency override aktív: $EMERGENCY_REASON"
+  export IMPACTSHOP_PROTECTED_DEPLOY="${IMPACTSHOP_PROTECTED_DEPLOY:-1}"
+  export IMPACTSHOP_POST_DEPLOY_UI_SMOKE="${IMPACTSHOP_POST_DEPLOY_UI_SMOKE:-1}"
+  export IMPACTSHOP_POST_DEPLOY_ELEMENTOR_AUDIT="${IMPACTSHOP_POST_DEPLOY_ELEMENTOR_AUDIT:-1}"
   "${ROOT_DIR}/bin/deploy-wpcontent-map.sh" "${ARGS[@]}"
   deploy_status=$?
   goto_finalize=1
@@ -530,6 +541,31 @@ data = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
 print(len(data.get("changed", [])))
 PY
 )
+auto_approve_blocked_json="$(
+CONFIG_JSON="$CONFIG_JSON" GUARD_STATE="$guard_state" python3 - <<'PY'
+import fnmatch
+import json
+import os
+
+cfg = json.loads(os.environ.get("CONFIG_JSON", "{}") or "{}")
+state = json.loads(os.environ.get("GUARD_STATE", "{}") or "{}")
+allowed = cfg.get("approval", {}).get("auto_approve_allowed_globs", [])
+changed = state.get("changed", [])
+blocked = []
+for rel in changed:
+    if not any(fnmatch.fnmatch(rel, pattern) for pattern in allowed):
+        blocked.append(rel)
+print(json.dumps({"blocked": blocked}, ensure_ascii=False))
+PY
+)"
+auto_approve_blocked_count="$(
+AUTO_APPROVE_BLOCKED_JSON="$auto_approve_blocked_json" python3 - <<'PY'
+import json
+import os
+data = json.loads(os.environ.get("AUTO_APPROVE_BLOCKED_JSON", "{}") or "{}")
+print(len(data.get("blocked", [])))
+PY
+)"
 
 if [[ "$invalid_count" -gt 0 ]]; then
   echo "❌ Guard: védett fájl a repo-n kívülre mutat." >&2
@@ -583,6 +619,18 @@ PY
 
   if [[ "$NON_INTERACTIVE" == "1" ]]; then
     if [[ "$AUTO_APPROVE" == "1" ]]; then
+      if [[ "$auto_approve_blocked_count" -gt 0 ]]; then
+        echo "❌ Non-interactive auto-approve tiltva: protected runtime/shell drift észlelve." >&2
+        AUTO_APPROVE_BLOCKED_JSON="$auto_approve_blocked_json" python3 - <<'PY' >&2
+import json
+import os
+data = json.loads(os.environ.get("AUTO_APPROVE_BLOCKED_JSON", "{}") or "{}")
+for rel in data.get("blocked", []):
+    print(f"  - {rel}")
+PY
+        echo "   Ezekhez kézi jóváhagyás kell, auto-approve nem használható." >&2
+        exit 1
+      fi
       echo "⚠️  Non-interactive: auto-approve aktív."
     else
       echo "❌ Non-interactive módban nincs auto-approve → deploy megszakítva."
@@ -713,7 +761,7 @@ hash_path = sys.argv[1]
 checksum_path = os.path.join(os.path.dirname(hash_path), "impactshop-guard-hashes.sha256")
 checksum = hashlib.sha256(open(hash_path, "rb").read()).hexdigest()
 with open(checksum_path, "w", encoding="utf-8") as fh:
-    fh.write(f"{checksum}  {hash_path}\n")
+    fh.write(f"{checksum}  {os.path.basename(hash_path)}\n")
 print(f"✅ Checksum frissítve: {checksum_path}")
 PY
 
@@ -724,6 +772,13 @@ PY
 fi
 
 if [[ "${goto_finalize:-0}" -eq 0 ]]; then
+  if [[ "$changed_count" -gt 0 ]]; then
+    export IMPACTSHOP_PROTECTED_DEPLOY="${IMPACTSHOP_PROTECTED_DEPLOY:-1}"
+    export IMPACTSHOP_POST_DEPLOY_UI_SMOKE="${IMPACTSHOP_POST_DEPLOY_UI_SMOKE:-1}"
+    export IMPACTSHOP_POST_DEPLOY_ELEMENTOR_AUDIT="${IMPACTSHOP_POST_DEPLOY_ELEMENTOR_AUDIT:-1}"
+  else
+    export IMPACTSHOP_PROTECTED_DEPLOY="${IMPACTSHOP_PROTECTED_DEPLOY:-0}"
+  fi
   "${ROOT_DIR}/bin/deploy-wpcontent-map.sh" ${ARGS+"${ARGS[@]}"}
   deploy_status=$?
 fi
