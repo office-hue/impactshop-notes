@@ -147,6 +147,16 @@ PY" < /dev/null)"
   fi
 }
 
+require_remote_bastion_manifest() {
+  local remote_app_root="${1:-}"
+  [[ -n "$remote_app_root" ]] || return 0
+
+  if ! ssh -o BatchMode=yes "$SSH_HOST" "[ -f '${remote_app_root}/.bastion/protected-hashes.json' ]" < /dev/null; then
+    echo "❌ Remote bastion manifest hiányzik: ${SSH_HOST}:${remote_app_root}/.bastion/protected-hashes.json" >&2
+    exit 1
+  fi
+}
+
 verify_mapped_protected_sources() {
   [[ -f "$CONFIG_PATH" ]] || return 0
 
@@ -282,7 +292,7 @@ fi
 
 echo "🎯 Cél: $SSH_HOST:$REMOTE_WP_CONTENT"
 ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
-verify_remote_bastion_manifest "$(dirname "${REMOTE_WP_CONTENT}")"
+require_remote_bastion_manifest "$(dirname "${REMOTE_WP_CONTENT}")"
 
 # Szelídített rsync opciók (régi verziókhoz is)
 RSYNC_OPTS_SAFE="${RSYNC_OPTS:-}"

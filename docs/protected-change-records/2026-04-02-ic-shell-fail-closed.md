@@ -35,3 +35,9 @@
 ## Notes
 - Auto-approve mostantól csak guard control-plane fájlokra engedett.
 - IC runtime/shell drift esetén kézi jóváhagyás kötelező.
+
+## Review follow-up (2026-04-02)
+- Koherencia: a remote bastion parity check változatlanul kötelező, de a checksum-egyezőség csak a remote manifest szinkron után értelmezhető; a sync előtti kapu ezért jelenlét-ellenőrzésre lett szűkítve.
+- Érintett funkciók: mapped deploy preflight, remote `.bastion/protected-hashes.json` sync/parity, `impact-challenge` shell sentinel smoke.
+- Kockázatcsökkentés: hiányzó remote manifest továbbra is hard fail, legitim protected-hash deploy pedig nem akad el még a manifest másolása előtt.
+- Kötelező ellenőrzés ehhez a follow-uphoz: `bash -n bin/deploy-wpcontent-map.sh`, `bash -n scripts/impact-challenge-ui-smoke.sh`, valamint egy smoke futás hibás URL-lel vagy staging URL-lel a timeout/error path miatt.

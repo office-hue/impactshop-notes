@@ -1,3 +1,8 @@
+## 2026-04-02 11:18 CET - PR #97 review-fix follow-up
+- `bin/deploy-wpcontent-map.sh`: a remote bastion manifest check ketté lett bontva. Pre-sync most már csak a remote manifest jelenléte kötelező, checksum-egyezőség továbbra is fail-closed, de csak a `sync_remote_bastion_manifest()` utáni állapotra.
+- `scripts/impact-challenge-ui-smoke.sh`: a smoke explicit `urlopen(..., timeout=10)` időkorlátot kapott, HTTP/URL hibákra olvasható fail üzenetet ad, és a floating-tabs CSS ellenőrzése whitespace-tűrő regexre váltott.
+- Kockázat: a deploy lane továbbra is blokkol, ha a remote `.bastion/protected-hashes.json` hiányzik; csak a legitim protected-hash frissítések nem akadnak el pre-sync állapotban.
+
 ## 2026-03-26 19:45 CET - fix: impact-community.php ngo_admin_url visszaállítva
 - Merge conflict resolution során az auto-merge visszaállította a régi `/impact-challenge/ngo-admin/` URL-eket.
 - Fix: 3 helyen visszaállítva `/impact-shop_ngo/`-ra (sorok: 2058, 2647, 4743).

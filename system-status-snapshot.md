@@ -1,3 +1,8 @@
+## 2026-04-02T11:18:00+0200 — PR #97 review-fix a guard lane-en
+- A mapped deploy lane pre-sync remote bastion checkje most már nem vár checksum-egyezőséget a még fel nem másolt új manifesttel; csak a remote `.bastion/protected-hashes.json` jelenléte kötelező a sync előtt.
+- A checksum parity fail-closed ellenőrzés megmaradt, de kizárólag a `sync_remote_bastion_manifest()` utáni célállapotra.
+- Az `impact-challenge` UI smoke explicit 10 másodperces timeoutot és olvasható HTTP/URL hibakezelést kapott, a CSS sentinel minta pedig whitespace-toleráns lett.
+
 ## 2026-03-31T22:10:00+0200 — Guard hardening propagation a közös policy rétegbe
 - Az utóbbi guard/review-fix körök általánosítható tanulságai most már nem csak surface-specifikus runbookokban élnek.
 - Új közös szabály lett: local/CI guard parity kötelező, a guarded push önálló belépési pont, a protected env párokat együtt kell kezelni, review-fix után kötelező a teljes recheck, stale empty cache pedig külön kockázati kategória.

@@ -14,14 +14,34 @@ fi
 python3 - "$url" <<'PY'
 import re
 import sys
+import urllib.error
 import urllib.request
 
 url = sys.argv[1]
-html = urllib.request.urlopen(url).read().decode("utf-8", "replace")
+try:
+    with urllib.request.urlopen(url, timeout=10) as response:
+        html = response.read().decode("utf-8", "replace")
+except urllib.error.HTTPError as exc:
+    print(
+        f"❌ Impact Challenge UI smoke FAILED: HTTP hiba ({exc.code}) a(z) {url} elérésekor: {exc.reason}",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+except urllib.error.URLError as exc:
+    print(
+        f"❌ Impact Challenge UI smoke FAILED: hálózati hiba a(z) {url} elérésekor: {exc.reason}",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
 
 checks = [
     (
-        bool(re.search(r"ads-watch-floating-tabs\{display:\s*none!important;\}", html)),
+        bool(
+            re.search(
+                r"ads-watch-floating-tabs\s*\{\s*display\s*:\s*none\s*!important\s*;",
+                html,
+            )
+        ),
         "legacy floating tabs hidden rule",
     ),
     (
