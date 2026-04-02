@@ -7,11 +7,27 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - Teljes repo-scan/rsync **tiltott** külön jóváhagyás nélkül.
 - Védett fájlok módosítása csak indoklással, snapshot + egykattintásos rollbackkel.
 - Deploy előtt ellenőrizd a working tree tisztaságát.
+- Impact Challenge esetén a deploy előfeltétele, hogy a módosítás additív új kód legyen, vagy külön jóváhagyott legacy touch.
 
 ## Deploy policy (gyors, kötelező minimum)
 - **Deploy parancs**: mindig `bin/impactshop-guard-deploy.sh` (runbook szerint).
+- **Legacy entrypoint**: `bin/deploy.sh` deprekált wrapper, ami már csak a guardolt deployra delegál.
 - **Uncommitted changes**: **block**. Kivétel csak külön engedéllyel.
 - **Target útvonalak**: `.deploy.staging.env` + `.deploy.production.env` az igazság.
+- **Protected Impact Challenge files**: deploy előtt célzott backup kötelező, deploy után fizikai read-only visszazárás kötelező.
+- **Canonical baseline**: Impact Challenge deploy esetén a referenciaállapot a `docs/impact-challenge-canonical-baseline.md`; ettől való eltérés csak explicit jóváhagyással vihető ki.
+- **Guide rendszer**: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**` teljes subtree csak explicit engedéllyel deployolható; guide tartalmat felülíró automatika vagy hallgatólagos sync tiltott.
+- **JYSK riport**: `/jysk-riport/`, a `?print=1` nézet és a `jysk-riport.data.json` a guide-rendszer max-védett része; deploynál külön ellenőrizni kell a route render, print render és JSON payload folytonosságát.
+- **Legacy touch**: ha védett meglévő Impact Challenge fájlt módosítasz, a deploy naplóban szerepelnie kell az explicit engedélynek és az indoknak.
+- **Protected-file change review**: deploy előtt kötelező a koherencia vizsgálat, kockázatelemzés, érintett funkciólista és a kézi UI checklist megléte.
+- **Kézi remote overwrite**: közvetlen `scp` / `rsync` / `ssh cp` production protected fájlokra tiltott; emergency esetben a `scripts/guarded-remote-write.sh` az egyetlen támogatott út.
+- **Protected smoke scope**: protected deploy vagy protected emergency write csak akkor mehet, ha a megadott smoke tagek lefedik az érintett protected csoportok összes kötelező tagját a `docs/impactshop-protected-files.json` alapján.
+- **Protected change record quality gate**: a change recordnak ténylegesen tartalmaznia kell az érintett protected fájlokat, rollback részt és smoke/ellenőrzési részt; formális, üres record nem elég.
+- **Emergency remote write parity**: a `scripts/guarded-remote-write.sh` protected fájlnál ugyanazt a `BASTION_OVERRIDE + change record + rollback note + full smoke scope` fegyelmet követeli, mint a normál protected-touch gate.
+- **CI/local parity**: protected lane csak akkor tekinthető lezártnak, ha a lokális guard és a GitHub oldali guard ugyanazt a protected modellt értelmezi.
+- **Paired env continuity**: ha protected runtime env pár változik, a deploy scope-nak a staging és production env fájlt együtt kell tartalmaznia.
+- **Review-fix recheck**: review-javítás után deploy vagy merge előtt kötelező egy új teljes guard/check kör és a nyitott review threadek rendezése.
+- **Empty-cache hardening**: harmadik fél inventory/cache integrációnál tartós üres cache csak külön indokkal maradhat; alapértelmezésként forced refresh, retry vagy rövid TTL szükséges.
 
 ## Kulcs helyek
 - Staging env: `.deploy.staging.env`
@@ -32,6 +48,14 @@ IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \
 ```
 
 Production mapping deploy után a `bin/deploy-wpcontent-map.sh` automatikusan lefuttatja a `scripts/hatas-korok-post-deploy-smoke.sh` read-only ellenőrzést, ha a script elérhető és a `PREFLIGHT_BASE_URL` be van állítva.
+
+## Merge / push / deploy kapu Impact Challenge esetén
+
+- Push előtt a PR/commit leírásnak egyértelműen tartalmaznia kell, hogy additív új kód vagy jóváhagyott legacy módosítás történt.
+- Merge csak akkor mehet, ha a PR body tartalmazza a bástyavédelmi és írásvédettségi megfelelést.
+- Deploy csak akkor mehet, ha backup + rollback útvonal rögzített, és a védett fájlok deploy utáni read-only visszaállítása része a lépéssornak.
+- Protected-file deploy csak akkor mehet, ha előre rögzített, hogy mely funkciókat kell utána ellenőrizni, és a felhasználónak külön UI checklist készül.
+- Protected-file deploy vagy emergency remote write csak akkor mehet, ha a smoke scope group-szinten is teljes.
 
 ## Quick rollback (guard snapshot)
 A deploy kimenetében megjelenik a snapshot azonosító. Visszaállítás:

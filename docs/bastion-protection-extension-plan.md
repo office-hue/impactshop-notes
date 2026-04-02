@@ -120,6 +120,16 @@ A guard/deploy folyamatot úgy erősítjük meg, hogy:
 - A bástya védelem ezt a listát tekinti **kanonikusnak**; minden változtatás itt indul és itt kerül auditálásra.
 - Ha új, végleges Impact Shop fájl kerül be vagy kivezetésre kerül, kizárólag a guard config frissíthető (indok + notes.md bejegyzés kötelező).
 
+## Impact Challenge védelmi perem
+- A védelem kiterjed az Impact Challenge teljes működési körére: ads-watch, auto-banner, offerwall, NGO kiválasztás és NGO-card, leaderboard, identity, pont- és szavazatmotor, szavazatvásárlás, quarter-close, redirect/go/go-deal bekötések, kapcsolódó event donation widgetek, PWA shell/push, valamint az ezekhez kapcsolódó guard/deploy konfiguráció.
+- A route, bekötési pont, adatrögzítés, workflow és pipeline szintű védelem kanonikus listája a `docs/impactshop-guard-config.json` `protected_files` tömbje.
+- A célállapot nem csak logikai, hanem fizikai védelem is: productionön ezek a fájlok alapállapotban read-only (`0444`) jogosultsággal maradnak.
+- Új fejlesztési igény elsődleges megoldási útja additív, új kód legyen (új modul, új wrapper, új hook, új különálló integrációs réteg).
+- Meglévő Impact Challenge kód módosítása csak külön, explicit jóváhagyással engedett, és csak akkor, ha nincs azonosan jó additív megoldás.
+- Protected-file módosítás előtt kötelező a koherencia vizsgálat, kockázatelemzés és érintett funkciólista.
+- Protected-file módosítás után kötelező a post-merge/deploy ellenőrzési lista és a felhasználónak szóló kézi UI checklist.
+- A kötelező eljárás külön dokumentuma: `docs/protected-file-change-checklist.md`
+
 ## Árukereső autobanner véglegesített flow
 - **Állapot:** Fillout → `/go-deal` → Dognet deeplink → Árukereső termékoldal.
 - **Kliens tiltás:** `impact-arukereso-deeplink-fix.php` **OFF** (interceptor nem futhat).
