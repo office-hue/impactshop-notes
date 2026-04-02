@@ -532,3 +532,10 @@ PHP lint ok for identity/gamification modules
 - A `bin/impactshop-guard-deploy.sh` checksum output formátuma most már egyezik a kézzel commitolt `.sha256` fájlokkal (`docs/...` útvonal).
 - A `docs/impactshop-guard-hashes.json` manifest frissült a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-config.sha256` új digestjeire.
 - A `docs/bastion-guard-status.md` `Last updated` mezője visszakapta az auditbarát dátum + idő + zóna formátumot.
+
+## 2026-04-02 11:05:00 CET - IC shell fail-closed push continuity
+
+- A clean `codex/ic-bastion-mainline` branchen külön protected fix került a bastion lane-re az `impactshop-action-bar.php` és `zzz-impactshop-ui-lock.php` shell-fájlok védelmére.
+- A mapped deploy most már hard-faillel megáll, ha a source repóból hiányzik bármelyik kanonikus IC shell fájl.
+- A push előtti sentinel smoke a live `impact-challenge/` route-on a 8 ikon és a legacy tabs tiltása alapján ellenőrizhető.
+- A postmortem és a continuity record külön additív/docs lane-ben maradt, hogy a protected fix ne keveredjen más dirty munkával.
