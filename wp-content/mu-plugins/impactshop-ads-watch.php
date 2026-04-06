@@ -20,8 +20,8 @@ if (!defined('ABSPATH')) {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.23');
-define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '8');
+define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.56');
+define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '9');
 define('IMPACTSHOP_ADS_DONATION_POOL', 500000); // Ft
 
 define('IMPACTSHOP_ADS_POINTS_REGULAR', 1);
@@ -203,6 +203,17 @@ function impactshop_ads_watch_build_cta_dedupe(string $pseudo_id, string $conten
 {
     $date_key = gmdate('Y-m-d');
     return sprintf('cta_click:%s:%s:%s', $content_id, $pseudo_id, $date_key);
+}
+
+function impactshop_ads_watch_build_cta_instance_dedupe(string $pseudo_id, string $content_id): string
+{
+    return sprintf(
+        'cta_click:%s:%s:%s:%s',
+        $content_id,
+        $pseudo_id,
+        gmdate('Y-m-d-H-i-s'),
+        wp_rand(1000, 999999)
+    );
 }
 
 function impactshop_ads_watch_get_default_cta_label(): string
@@ -620,16 +631,22 @@ add_action('init', 'impactshop_ads_watch_ensure_schema', 5);
 function impactshop_ads_watch_ensure_schema(): void
 {
     $version = (string) get_option('impactshop_ads_watch_schema_version', '');
-    if ($version === IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION) {
+    global $wpdb;
+    $table_prefs = $wpdb->prefix . 'impactshop_ads_user_ngo';
+    $auto_vote_column = $wpdb->get_var(
+        $wpdb->prepare(
+            "SHOW COLUMNS FROM {$table_prefs} LIKE %s",
+            'auto_vote_enabled'
+        )
+    );
+    if ($version === IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION && $auto_vote_column) {
         return;
     }
 
-    global $wpdb;
     $charset = $wpdb->get_charset_collate();
 
     $table_views = $wpdb->prefix . 'impactshop_ads_views';
     $table_votes = $wpdb->prefix . 'impactshop_ads_votes';
-    $table_prefs = $wpdb->prefix . 'impactshop_ads_user_ngo';
     $table_user_votes = $wpdb->prefix . 'impactshop_ads_user_votes';
     $table_stats = $wpdb->prefix . 'impactshop_ads_user_stats';
     $table_education = $wpdb->prefix . 'impactshop_education_views';
@@ -678,6 +695,7 @@ function impactshop_ads_watch_ensure_schema(): void
     $sql_prefs = "CREATE TABLE IF NOT EXISTS {$table_prefs} (
         pseudo_id VARCHAR(32) PRIMARY KEY,
         ngo_slug VARCHAR(190) NOT NULL,
+        auto_vote_enabled TINYINT(1) NOT NULL DEFAULT 0,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) {$charset};";
 
@@ -754,6 +772,12 @@ function impactshop_ads_watch_ensure_schema(): void
     dbDelta($sql_education);
     dbDelta($sql_quarters);
     dbDelta($sql_quarter_results);
+
+    if (!$auto_vote_column) {
+        $wpdb->query(
+            "ALTER TABLE {$table_prefs} ADD COLUMN auto_vote_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER ngo_slug"
+        );
+    }
 
     update_option('impactshop_ads_watch_schema_version', IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION, false);
 }
@@ -1337,6 +1361,12 @@ add_action('rest_api_init', function () {
         'permission_callback' => 'impactshop_ads_watch_require_nonce',
     ]);
 
+    register_rest_route($namespace, '/ads-watch/set-auto-vote', [
+        'methods'             => 'POST',
+        'callback'            => 'impactshop_ads_watch_set_auto_vote',
+        'permission_callback' => 'impactshop_ads_watch_require_nonce',
+    ]);
+
     register_rest_route($namespace, '/ads-watch/tally', [
         'methods'             => 'GET',
         'callback'            => 'impactshop_ads_watch_tally',
@@ -1521,7 +1551,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
     $cta_points_regular = (int) apply_filters('impactshop_ads_watch_cta_points', 1, 'regular');
     $cta_points_sponsor = (int) apply_filters('impactshop_ads_watch_cta_points', 5, 'sponsor');
     $cta_points_education = (int) apply_filters('impactshop_ads_watch_cta_points', 1, 'education');
-    $cta_points_banner = (int) apply_filters('impactshop_ads_watch_cta_points', 1, 'auto_banner');
+    $cta_points_banner = (int) apply_filters('impactshop_ads_watch_cta_points', 5, 'auto_banner');
 
     if ($pseudo_id === '') {
         $cta = impactshop_ads_watch_build_cta($cta_label, $cta_url, $cta_points_regular);
@@ -1553,7 +1583,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
         $education_videos = impactshop_ads_watch_filter_education_for_user($pseudo_id, $education_videos);
     }
     $has_education = !empty($education_videos);
-    $auto_banner = function_exists('impactshop_auto_banner_get_active') ? impactshop_auto_banner_get_active() : [];
+    $auto_banner = function_exists('impactshop_auto_banner_get_active') ? impactshop_auto_banner_get_active($pseudo_id) : [];
     $has_banner = !empty($auto_banner);
     $has_sponsor = !empty($sponsor);
     $force_banner = ($ad_tag_url === '' && $has_banner);
@@ -1589,6 +1619,22 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
     }
     if ($force_banner) {
         $weights['regular'] = 0;
+    }
+    $last_type = (string) ($rotation['last_type'] ?? '');
+    if (in_array($last_type, ['auto_banner', 'sponsor', 'education'], true) && ($weights[$last_type] ?? 0) > 0) {
+        $other_special_available = false;
+        foreach (['auto_banner', 'sponsor', 'education'] as $special_type) {
+            if ($special_type === $last_type) {
+                continue;
+            }
+            if (($weights[$special_type] ?? 0) > 0) {
+                $other_special_available = true;
+                break;
+            }
+        }
+        if ($other_special_available) {
+            $weights[$last_type] = 0;
+        }
     }
 
     $max_attempts = (int) $request->get_param('batch_size');
@@ -1721,7 +1767,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
                 $sponsor['cta_url'] !== '' ? $sponsor['cta_url'] : $cta_url,
                 $cta_points_sponsor
             );
-            $cta['dedupe_key'] = impactshop_ads_watch_build_cta_dedupe($pseudo_id, $content_id);
+            $cta['dedupe_key'] = impactshop_ads_watch_build_cta_instance_dedupe($pseudo_id, $content_id);
             return new WP_REST_Response([
                 'mode'    => 'sponsor',
                 'content_type' => 'sponsor',
@@ -1779,7 +1825,7 @@ function impactshop_ads_watch_next(WP_REST_Request $request): WP_REST_Response
             $auto_banner['banner_url'] !== '' ? $auto_banner['banner_url'] : $cta_url,
             $cta_points_banner
         );
-        $cta['dedupe_key'] = impactshop_ads_watch_build_cta_dedupe($pseudo_id, $content_id);
+        $cta['dedupe_key'] = impactshop_ads_watch_build_cta_instance_dedupe($pseudo_id, $content_id);
         return new WP_REST_Response([
             'mode' => 'auto_banner',
             'content_type' => 'auto_banner',
@@ -1864,6 +1910,7 @@ function impactshop_ads_watch_status(WP_REST_Request $request): WP_REST_Response
         'vote_weight_sponsor'=> $vote_weight_sponsor,
         'donation_multiplier'=> $donation_multiplier,
         'selected_ngo'       => $selected_ngo,
+        'auto_vote_enabled'  => impactshop_ads_watch_get_user_auto_vote_enabled($pseudo_id),
         'today_views'        => $today_views,
         'available_votes'    => $available_votes,
         'stats'              => $stats,
@@ -2333,10 +2380,18 @@ function impactshop_ads_watch_set_ngo(WP_REST_Request $request): WP_REST_Respons
 
     global $wpdb;
     $table_prefs = $wpdb->prefix . 'impactshop_ads_user_ngo';
-    $wpdb->replace($table_prefs, [
-        'pseudo_id' => $pseudo_id,
-        'ngo_slug'  => $ngo_slug,
-    ], ['%s', '%s']);
+    if (impactshop_ads_watch_get_user_auto_vote_enabled($pseudo_id) || $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table_prefs} LIKE %s", 'auto_vote_enabled'))) {
+        $wpdb->replace($table_prefs, [
+            'pseudo_id'          => $pseudo_id,
+            'ngo_slug'           => $ngo_slug,
+            'auto_vote_enabled'  => impactshop_ads_watch_get_user_auto_vote_enabled($pseudo_id) ? 1 : 0,
+        ], ['%s', '%s', '%d']);
+    } else {
+        $wpdb->replace($table_prefs, [
+            'pseudo_id' => $pseudo_id,
+            'ngo_slug'  => $ngo_slug,
+        ], ['%s', '%s']);
+    }
 
     if (function_exists('impactshop_identity_profile_store_last_ngo')) {
         impactshop_identity_profile_store_last_ngo($pseudo_id, $ngo_slug);
@@ -2345,6 +2400,26 @@ function impactshop_ads_watch_set_ngo(WP_REST_Request $request): WP_REST_Respons
     return new WP_REST_Response([
         'success' => true,
         'ngo'     => $ngo,
+    ], 200);
+}
+
+function impactshop_ads_watch_set_auto_vote(WP_REST_Request $request): WP_REST_Response
+{
+    $pseudo_id = impactshop_ads_watch_get_pseudo_from_request($request);
+    if ($pseudo_id === '') {
+        return new WP_REST_Response([
+            'success' => false,
+            'error'   => 'missing_identity',
+            'message' => 'Hiányzó azonosító.',
+        ], 401);
+    }
+
+    $enabled = rest_sanitize_boolean($request->get_param('enabled')) ? 1 : 0;
+    impactshop_ads_watch_store_user_auto_vote_enabled($pseudo_id, $enabled === 1);
+
+    return new WP_REST_Response([
+        'success'            => true,
+        'auto_vote_enabled'  => $enabled === 1,
     ], 200);
 }
 
@@ -2877,6 +2952,60 @@ function impactshop_ads_watch_get_user_ngo_slug(string $pseudo_id): string
     ));
 
     return is_string($slug) ? $slug : '';
+}
+
+function impactshop_ads_watch_get_user_auto_vote_enabled(string $pseudo_id): bool
+{
+    if ($pseudo_id === '') {
+        return false;
+    }
+
+    global $wpdb;
+    $table_prefs = $wpdb->prefix . 'impactshop_ads_user_ngo';
+    $has_column = $wpdb->get_var(
+        $wpdb->prepare(
+            "SHOW COLUMNS FROM {$table_prefs} LIKE %s",
+            'auto_vote_enabled'
+        )
+    );
+    if (!$has_column) {
+        return false;
+    }
+    $enabled = $wpdb->get_var($wpdb->prepare(
+        "SELECT auto_vote_enabled FROM {$table_prefs} WHERE pseudo_id = %s",
+        $pseudo_id
+    ));
+
+    return (int) $enabled === 1;
+}
+
+function impactshop_ads_watch_store_user_auto_vote_enabled(string $pseudo_id, bool $enabled): void
+{
+    if ($pseudo_id === '') {
+        return;
+    }
+
+    global $wpdb;
+    $table_prefs = $wpdb->prefix . 'impactshop_ads_user_ngo';
+    $has_column = $wpdb->get_var(
+        $wpdb->prepare(
+            "SHOW COLUMNS FROM {$table_prefs} LIKE %s",
+            'auto_vote_enabled'
+        )
+    );
+    if (!$has_column) {
+        return;
+    }
+    $current_slug = impactshop_ads_watch_get_user_ngo_slug($pseudo_id);
+    if ($current_slug === '' && function_exists('impactshop_identity_profile_last_ngo')) {
+        $current_slug = (string) impactshop_identity_profile_last_ngo($pseudo_id);
+    }
+
+    $wpdb->replace($table_prefs, [
+        'pseudo_id'          => $pseudo_id,
+        'ngo_slug'           => $current_slug,
+        'auto_vote_enabled'  => $enabled ? 1 : 0,
+    ], ['%s', '%s', '%d']);
 }
 
 function impactshop_ads_watch_get_user_votes(string $pseudo_id): int
@@ -3755,6 +3884,44 @@ function impactshop_ads_watch_sponsor_stats_page(): void
 
 add_shortcode('impactshop_ads_watch', 'impactshop_ads_watch_shortcode');
 
+add_action('template_redirect', 'impactshop_ads_watch_send_nocache_headers', 1);
+
+function impactshop_ads_watch_is_page_request(): bool
+{
+    if (is_admin() || wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
+        return false;
+    }
+
+    if (is_page(19056) || is_page('impact-challenge')) {
+        return true;
+    }
+
+    if (!is_singular()) {
+        return false;
+    }
+
+    $post = get_queried_object();
+    if (!$post instanceof WP_Post) {
+        return false;
+    }
+
+    return has_shortcode((string) $post->post_content, 'impactshop_ads_watch');
+}
+
+function impactshop_ads_watch_send_nocache_headers(): void
+{
+    if (!impactshop_ads_watch_is_page_request() || headers_sent()) {
+        return;
+    }
+
+    nocache_headers();
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0', true);
+    header('Pragma: no-cache', true);
+    header('Expires: Wed, 11 Jan 1984 05:00:00 GMT', true);
+    header('Clear-Site-Data: "cache"', false);
+    header('X-ImpactShop-AdsWatch-Version: ' . IMPACTSHOP_ADS_WATCH_VERSION, false);
+}
+
 function impactshop_ads_watch_shortcode(array $atts = []): string
 {
     $atts = shortcode_atts([
@@ -3880,6 +4047,129 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         </div>
 
         <div class="ads-watch-main" data-role="ads-watch-main">
+        <div class="ads-watch-player-area" id="ads-watch-video">
+            <div class="video-container" id="video-container">
+                <video id="content-video" playsinline>
+                    <source src="" type="video/mp4">
+                </video>
+                <div id="ad-container"></div>
+                <button type="button" class="ima-cta-overlay" id="ima-cta-overlay" style="display: none;" title="Kattints a bónusz pontokért!">
+                    <span class="ima-cta-icon">👆</span>
+                    <span class="ima-cta-text">Kattints a videóra!</span>
+                </button>
+                <div class="ads-watch-cta sponsor-cta-overlay" id="ads-watch-cta" style="display: none;">
+                    <a href="#" target="_blank" rel="noopener" id="ads-watch-cta-link" title="Kattints a bónusz pontokért">
+                        <span class="ima-cta-icon">👆</span>
+                        <span class="ima-cta-text">Kattints ide!</span>
+                    </a>
+                </div>
+                <div class="education-iframe" id="education-iframe" style="display: none;"></div>
+                <div class="presence-check-overlay" id="presence-check-overlay" style="display: none;" aria-live="polite">
+                    <div class="presence-check-title">Még itt vagy?</div>
+                    <div class="presence-check-subtitle">Kattints a folytatáshoz, hogy tovább kapd a jutalmakat.</div>
+                    <button type="button" class="btn-presence-confirm" id="presence-confirm">Igen, folytatom</button>
+                    <div class="presence-timeout-bar">
+                        <div class="presence-timeout-fill" id="presence-timeout-fill"></div>
+                    </div>
+                </div>
+                <div class="player-overlay" id="player-overlay">
+                    <button type="button" class="btn-watch-ad" id="btn-watch-ad" disabled>
+                        <span class="btn-icon">▶</span>
+                        <span class="btn-text">Reklám megtekintése</span>
+                    </button>
+                </div>
+            </div>
+            <div class="player-loading" id="player-loading" style="display: none;">
+                <div class="spinner"></div>
+                <span>Reklám betöltése...</span>
+            </div>
+            <div class="ad-progress-bar" id="ad-progress-bar" style="display: none;">
+                <div class="ad-progress-fill" id="ad-progress-fill"></div>
+            </div>
+            <div class="ad-progress-meta" id="ad-progress-meta" style="display: none;">
+                <span id="ad-progress-text">Videó megtekintése szükséges a szavazathoz.</span>
+                <span class="ad-progress-help">
+                    <span class="ad-progress-help-label">Miért kell végignézni?</span>
+                    <span class="ad-progress-help-bubble">A szavazás hitelesítése miatt csak a végignézett videó után jár a jutalom.</span>
+                </span>
+            </div>
+            <button type="button" class="btn-skip-video" id="btn-skip-video" style="display: none;">
+                Videó kihagyása
+            </button>
+            <button type="button" class="btn-resume-ad" id="btn-resume-ad" style="display: none;">
+                ▶ Folytatás
+            </button>
+            <div class="video-info-panel" id="video-info-panel" style="display: none;">
+                <div class="video-info-title">
+                    <span class="video-info-icon" id="video-info-icon">📺</span>
+                    <span id="video-info-title-text"></span>
+                </div>
+                <div class="video-info-section video-info-watch">
+                    <span class="video-info-label">👀 Megnézésért:</span>
+                    <span class="video-info-value" id="video-info-watch-reward"></span>
+                </div>
+                <div class="video-info-section video-info-click" id="video-info-click-section" style="display: none;">
+                    <span class="video-info-label">👆 Kattintásért:</span>
+                    <span class="video-info-value" id="video-info-click-reward"></span>
+                </div>
+                <div class="video-info-progress" id="video-info-progress-section" style="display: none;">
+                    <span class="video-info-label">⏱️ Eddig:</span>
+                    <span id="video-info-watched-time">0:00</span> →
+                    <span id="video-info-earned-pts">0</span> pont jóváírva
+                </div>
+            </div>
+            <div class="ads-watch-live-balance" id="ads-watch-live-balance" aria-live="polite">
+                <div class="ads-watch-live-balance-title">Aktuális egyenleg</div>
+                <div class="ads-watch-live-balance-grid">
+                    <div class="live-balance-item" data-type="points">
+                        <span class="live-balance-label">Pontok</span>
+                        <span class="live-balance-value" id="video-balance-points">0</span>
+                        <span class="live-balance-delta" id="video-balance-points-delta"></span>
+                    </div>
+                    <div class="live-balance-item" data-type="votes">
+                        <span class="live-balance-label">Szavazatok</span>
+                        <span class="live-balance-value" id="video-balance-votes">0</span>
+                        <span class="live-balance-delta" id="video-balance-votes-delta"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="education-info-bar" id="education-info-bar" style="display: none;">
+                <div class="edu-info-title">📚 <span id="edu-video-title"></span></div>
+                <div class="edu-info-rewards">
+                    💰 Minden <span id="edu-interval-sec">30</span> mp-ért:
+                    +<span id="edu-pts-interval">5</span> pont,
+                    +<span id="edu-votes-interval">5</span> szavazat
+                </div>
+                <div class="edu-info-bonus">
+                    🎁 Végignézésért: +<span id="edu-bonus-pts">10</span> bónusz pont,
+                    +<span id="edu-bonus-votes">10</span> bónusz szavazat
+                </div>
+                <div class="edu-info-progress">
+                    ⏱️ Eddig: <span id="edu-watched-time">0:00</span> →
+                    <span id="edu-earned-pts">0</span> pont jóváírva
+                </div>
+                <button type="button" class="btn-skip-education" id="btn-skip-education" style="display: none;">
+                    Videó kihagyása
+                </button>
+            </div>
+            <div class="ads-watch-banner" data-role="auto-banner" hidden>
+                <div class="auto-banner-card">
+                    <div class="auto-banner-media">
+                        <img src="" alt="" data-role="auto-banner-image">
+                    </div>
+                    <div class="auto-banner-body">
+                        <div class="auto-banner-title" data-role="auto-banner-title"></div>
+                        <div class="auto-banner-prices" data-role="auto-banner-prices"></div>
+                        <a class="auto-banner-link" href="#" target="_blank" rel="noopener" data-role="auto-banner-link">Megnézem</a>
+                        <div class="auto-banner-progress">
+                            <span class="auto-banner-fill" data-role="auto-banner-progress"></span>
+                        </div>
+                        <div class="auto-banner-hint">Automatikus ajánló – 15 mp után frissül.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="ads-watch-status-bar" id="ads-watch-status-bar">
             <div class="status-item user-points">
                 <span class="label">Pontjaid:</span>
@@ -4032,114 +4322,6 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                     <input type="checkbox" id="auto-vote-enabled">
                     Automatikus szavazás (minden új szavazat azonnal a kiválasztott NGO-ra megy)
                 </label>
-            </div>
-        </div>
-
-        <div class="ads-watch-player-area" id="ads-watch-video">
-            <div class="video-container" id="video-container">
-                <video id="content-video" playsinline>
-                    <source src="" type="video/mp4">
-                </video>
-                <div id="ad-container"></div>
-                <button type="button" class="ima-cta-overlay" id="ima-cta-overlay" style="display: none;" title="Kattints a bónusz pontokért!">
-                    <span class="ima-cta-icon">👆</span>
-                    <span class="ima-cta-text">Kattints a videóra!</span>
-                </button>
-                <div class="ads-watch-cta sponsor-cta-overlay" id="ads-watch-cta" style="display: none;">
-                    <a href="#" target="_blank" rel="noopener" id="ads-watch-cta-link" title="Kattints a bónusz pontokért">
-                        <span class="ima-cta-icon">👆</span>
-                        <span class="ima-cta-text">Kattints ide!</span>
-                    </a>
-                </div>
-                <div class="education-iframe" id="education-iframe" style="display: none;"></div>
-                <div class="presence-check-overlay" id="presence-check-overlay" style="display: none;" aria-live="polite">
-                    <div class="presence-check-title">Még itt vagy?</div>
-                    <div class="presence-check-subtitle">Kattints a folytatáshoz, hogy tovább kapd a jutalmakat.</div>
-                    <button type="button" class="btn-presence-confirm" id="presence-confirm">Igen, folytatom</button>
-                    <div class="presence-timeout-bar">
-                        <div class="presence-timeout-fill" id="presence-timeout-fill"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="player-overlay" id="player-overlay">
-                <button type="button" class="btn-watch-ad" id="btn-watch-ad" disabled>
-                    <span class="btn-icon">▶</span>
-                    <span class="btn-text">Reklám megtekintése</span>
-                </button>
-            </div>
-            <div class="player-loading" id="player-loading" style="display: none;">
-                <div class="spinner"></div>
-                <span>Reklám betöltése...</span>
-            </div>
-            <div class="ad-progress-bar" id="ad-progress-bar" style="display: none;">
-                <div class="ad-progress-fill" id="ad-progress-fill"></div>
-            </div>
-            <div class="ad-progress-meta" id="ad-progress-meta" style="display: none;">
-                <span id="ad-progress-text">Videó megtekintése szükséges a szavazathoz.</span>
-                <span class="ad-progress-help">
-                    <span class="ad-progress-help-label">Miért kell végignézni?</span>
-                    <span class="ad-progress-help-bubble">A szavazás hitelesítése miatt csak a végignézett videó után jár a jutalom.</span>
-                </span>
-            </div>
-            <button type="button" class="btn-skip-video" id="btn-skip-video" style="display: none;">
-                Videó kihagyása
-            </button>
-            <button type="button" class="btn-resume-ad" id="btn-resume-ad" style="display: none;">
-                ▶ Folytatás
-            </button>
-            <div class="video-info-panel" id="video-info-panel" style="display: none;">
-                <div class="video-info-title">
-                    <span class="video-info-icon" id="video-info-icon">📺</span>
-                    <span id="video-info-title-text"></span>
-                </div>
-                <div class="video-info-section video-info-watch">
-                    <span class="video-info-label">👀 Megnézésért:</span>
-                    <span class="video-info-value" id="video-info-watch-reward"></span>
-                </div>
-                <div class="video-info-section video-info-click" id="video-info-click-section" style="display: none;">
-                    <span class="video-info-label">👆 Kattintásért:</span>
-                    <span class="video-info-value" id="video-info-click-reward"></span>
-                </div>
-                <div class="video-info-progress" id="video-info-progress-section" style="display: none;">
-                    <span class="video-info-label">⏱️ Eddig:</span>
-                    <span id="video-info-watched-time">0:00</span> →
-                    <span id="video-info-earned-pts">0</span> pont jóváírva
-                </div>
-            </div>
-            <div class="education-info-bar" id="education-info-bar" style="display: none;">
-                <div class="edu-info-title">📚 <span id="edu-video-title"></span></div>
-                <div class="edu-info-rewards">
-                    💰 Minden <span id="edu-interval-sec">30</span> mp-ért:
-                    +<span id="edu-pts-interval">5</span> pont,
-                    +<span id="edu-votes-interval">5</span> szavazat
-                </div>
-                <div class="edu-info-bonus">
-                    🎁 Végignézésért: +<span id="edu-bonus-pts">10</span> bónusz pont,
-                    +<span id="edu-bonus-votes">10</span> bónusz szavazat
-                </div>
-                <div class="edu-info-progress">
-                    ⏱️ Eddig: <span id="edu-watched-time">0:00</span> →
-                    <span id="edu-earned-pts">0</span> pont jóváírva
-                </div>
-                <button type="button" class="btn-skip-education" id="btn-skip-education" style="display: none;">
-                    Videó kihagyása
-                </button>
-            </div>
-            <div class="ads-watch-banner" data-role="auto-banner" hidden>
-                <div class="auto-banner-card">
-                    <div class="auto-banner-media">
-                        <img src="" alt="" data-role="auto-banner-image">
-                    </div>
-                    <div class="auto-banner-body">
-                        <div class="auto-banner-title" data-role="auto-banner-title"></div>
-                        <div class="auto-banner-prices" data-role="auto-banner-prices"></div>
-                        <a class="auto-banner-link" href="#" target="_blank" rel="noopener" data-role="auto-banner-link">Megnézem</a>
-                        <div class="auto-banner-progress">
-                            <span class="auto-banner-fill" data-role="auto-banner-progress"></span>
-                        </div>
-                        <div class="auto-banner-hint">Automatikus ajánló – 15 mp után frissül.</div>
-                    </div>
-                </div>
             </div>
         </div>
 

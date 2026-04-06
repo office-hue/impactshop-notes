@@ -94,6 +94,11 @@
         ctaClickedKeys: {},
         ctaBonusPoints: 0,
         ctaBonusVotes: 0,
+        ctaBonusCounted: false,
+        ctaUiDeferred: false,
+        pendingCtaPayload: null,
+        pendingCtaFallbackReward: null,
+        pendingCtaResolved: false,
         imaProgressFrameId: null,
         imaAdDuration: 0,
         imaClickThroughUrl: '',
@@ -102,6 +107,18 @@
         adRequestStartTime: 0,
         lastNgoSlugForBanner: '',
         currentAutoBanner: null,
+        externalNavigationPending: false,
+        externalNavigationStartedAt: 0,
+        externalNavigationUrl: '',
+        externalNavigationSource: '',
+        externalNavigationVisibilityLost: false,
+        externalNavigationTimer: null,
+        autoBannerFrameId: null,
+        autoBannerStartedAt: 0,
+        autoBannerRemainingMs: 0,
+        autoBannerTotalMs: 0,
+        autoBannerOnComplete: null,
+        autoBannerPaused: false,
         videoBalanceReady: false,
         videoBalancePointsDisplay: 0,
         videoBalanceVotesDisplay: 0,
@@ -192,6 +209,8 @@
         // Clicks pass through to ad-container, IMA SDK opens URL
         // Points are awarded via onAdClick callback (CLICK event listener)
         document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleExternalReturn);
+        window.addEventListener('pageshow', handleExternalReturn);
 
         $('#btn-change-ngo').on('click', openNgoModal);
         $('#modal-close').on('click', closeNgoModal);
@@ -303,6 +322,7 @@
                 } catch (e) {
                     // ignore
                 }
+                persistAutoVotePreference();
             });
         }
 
@@ -332,8 +352,17 @@
 
             const href = String($(this).attr('href') || '').trim();
             if (href && href !== '#') {
-                const opened = window.open(href, '_blank', 'noopener');
-                if (!opened) {
+                markExternalNavigation(href, 'sponsor_cta');
+                try {
+                    const popup = window.open(href, '_blank', 'noopener,noreferrer');
+                    if (!popup) {
+                        clearExternalNavigationState();
+                        showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
+                    } else {
+                        scheduleExternalReturnRecovery();
+                    }
+                } catch (e) {
+                    clearExternalNavigationState();
                     showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
                 }
             }
@@ -355,16 +384,15 @@
                 ctaClicked: state.ctaClicked,
                 filloutFormId: config.filloutFormId
             });
-            event.preventDefault();
-
-            // ── Open target URL FIRST while browser still trusts the user gesture ──
-            const rawUrl = String($link.attr('href') || (payload && payload.cta_url) || '').trim();
-            let opened = null;
+            const linkHref = String($link.attr('href') || '').trim();
+            const payloadHref = String((payload && payload.cta_url) || '').trim();
+            const rawUrl = linkHref && linkHref !== '#' ? linkHref : payloadHref;
+            let clickUrl = '';
             if (rawUrl && rawUrl !== '#') {
                 const ngoSlug = state.selectedNgo ? state.selectedNgo.slug : '';
                 const shopSlug = (payload && payload.shop_slug) || '';
                 const rawTarget = (payload && payload.raw_url) || rawUrl;
-                const clickUrl = transformBannerUrl(rawTarget, shopSlug, ngoSlug);
+                clickUrl = transformBannerUrl(rawTarget, shopSlug, ngoSlug);
                 console.log('[AutoBanner][DEBUG] CLICK resolved URLs', {
                     rawUrl: rawUrl,
                     rawTarget: rawTarget,
@@ -373,20 +401,45 @@
                     clickUrl: clickUrl,
                     isFillout: clickUrl && clickUrl.includes('fillout.com')
                 });
-                opened = window.open(clickUrl, '_blank', 'noopener');
             }
 
             // ── Award bonus (once per banner rotation) ──
+            let trackingRequest = null;
             if (payload && !state.ctaClicked) {
                 state.ctaClicked = true;
-                sendCtaTracking(payload, {
-                    fallbackReward: getCtaFallbackReward(payload.points || 0)
+                const fallbackReward = getCtaFallbackReward(payload.points || 0);
+                stashPendingCtaTracking(payload, fallbackReward);
+                trackingRequest = sendCtaTracking(payload, {
+                    fallbackReward: fallbackReward,
+                    transport: 'keepalive'
+                }).done(function () {
+                    markPendingCtaTrackingResolved();
                 });
             }
 
-            if (rawUrl && rawUrl !== '#' && !opened) {
-                showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
+            if (!clickUrl || clickUrl === '#') {
+                event.preventDefault();
+                showCtaStickyNotice('Az ajánlat linkje most nem érhető el. Próbáld újra.');
+                return;
             }
+
+            $link
+                .attr('href', clickUrl)
+                .attr('target', '_blank')
+                .attr('rel', 'noopener');
+            markExternalNavigation(clickUrl);
+            window.setTimeout(function () {
+                if (state.externalNavigationPending && !document.hidden && !state.autoBannerPaused) {
+                    clearExternalNavigationState();
+                }
+            }, 1500);
+
+            if (trackingRequest && typeof trackingRequest.fail === 'function') {
+                trackingRequest.fail(function () {
+                    console.warn('[AutoBanner] CTA tracking failed, native navigation continues');
+                });
+            }
+
         });
     }
 
@@ -481,7 +534,7 @@
                 return;
             }
             showVideo(true);
-            if (hash === '#ads-watch-video') {
+            if (hash === '' || hash === '#ads-watch-video') {
                 scrollToTarget('#ads-watch-video');
             }
         };
@@ -595,11 +648,18 @@
                 state.voteWeightSponsor = response.vote_weight_sponsor || 5;
                 state.donationMultiplier = Number(response.donation_multiplier || 1);
                 state.selectedNgo = response.selected_ngo || null;
+                state.autoVote = Boolean(Number(response.auto_vote_enabled || 0));
                 state.todayViews = response.today_views || 0;
                 state.availableVotes = response.available_votes || 0;
                 state.stats = response.stats || {};
                 state.achievements = response.achievements || [];
 
+                $('#auto-vote-enabled').prop('checked', state.autoVote);
+                try {
+                    localStorage.setItem('impactshop_ads_watch_autovote', state.autoVote ? '1' : '0');
+                } catch (e) {
+                    // ignore
+                }
                 updateStatusDisplay();
                 updateNgoDisplay();
                 updateWatchButton();
@@ -773,6 +833,19 @@
             .fail(function (xhr) {
                 console.error('Failed to set NGO:', xhr);
                 showNotification('Nem sikerült menteni a választást.', 'error');
+            });
+    }
+
+    function persistAutoVotePreference() {
+        if (!state.pseudoId) {
+            return;
+        }
+        apiRequest('set-auto-vote', 'POST', {
+            pseudo_id: state.pseudoId,
+            enabled: state.autoVote ? 1 : 0
+        }, { notifyOnFail: false })
+            .fail(function () {
+                showNotification('Az automatikus szavazás mentése nem sikerült.', 'warning');
             });
     }
 
@@ -1360,6 +1433,8 @@
             state.isPlaying = true;
             state.adProgress = 0;
             state.ctaClicked = false; // Reset CTA clicked flag for new ad
+            state.ctaBonusCounted = false;
+            clearPendingCtaTracking();
             updateWatchButton();
             showLoading(true);
 
@@ -2009,6 +2084,9 @@
     }
 
     function skipEducationVideo() {
+        if (document.hidden && state.currentMode === 'auto_banner' && state.externalNavigationPending) {
+            pauseAutoBannerForExternalNavigation();
+        }
         if (!state.educationContent) {
             return;
         }
@@ -2096,6 +2174,15 @@
     }
 
     function handleVisibilityChange() {
+        if (!document.hidden) {
+            handleExternalReturn();
+        }
+        if (document.hidden && state.externalNavigationPending) {
+            state.externalNavigationVisibilityLost = true;
+            if (state.currentMode === 'auto_banner') {
+                pauseAutoBannerForExternalNavigation();
+            }
+        }
         if (!state.educationContent) {
             return;
         }
@@ -2108,6 +2195,127 @@
         if (!state.educationPresenceActive) {
             resumeEducationPlayback();
         }
+    }
+
+    function openExternalUrl(url, source) {
+        const href = String(url || '').trim();
+        if (!href || href === '#') {
+            return false;
+        }
+
+        markExternalNavigation(href, source || '');
+
+        try {
+            const popup = window.open(href, '_blank', 'noopener,noreferrer');
+            if (!popup) {
+                clearExternalNavigationState();
+                return false;
+            }
+            scheduleExternalReturnRecovery();
+            return true;
+        } catch (error) {
+            console.error('[AdsWatch] External open failed:', error);
+            clearExternalNavigationState();
+            return false;
+        }
+    }
+
+    function markExternalNavigation(url, source) {
+        state.externalNavigationPending = true;
+        state.externalNavigationStartedAt = Date.now();
+        state.externalNavigationUrl = String(url || '');
+        state.externalNavigationSource = String(source || '');
+        state.externalNavigationVisibilityLost = false;
+    }
+
+    function clearExternalNavigationState() {
+        state.externalNavigationPending = false;
+        state.externalNavigationStartedAt = 0;
+        state.externalNavigationUrl = '';
+        state.externalNavigationSource = '';
+        state.externalNavigationVisibilityLost = false;
+        if (state.externalNavigationTimer) {
+            clearTimeout(state.externalNavigationTimer);
+            state.externalNavigationTimer = null;
+        }
+    }
+
+    function scheduleExternalReturnRecovery() {
+        if (state.externalNavigationTimer) {
+            clearTimeout(state.externalNavigationTimer);
+        }
+        state.externalNavigationTimer = setTimeout(function () {
+            handleExternalReturn();
+        }, 1200);
+    }
+
+    function handleExternalReturn() {
+        if (!state.externalNavigationPending || document.hidden) {
+            return;
+        }
+
+        if (!state.externalNavigationVisibilityLost) {
+            clearExternalNavigationState();
+            return;
+        }
+
+        showLoading(false);
+        hideResumeButton();
+        hideCtaStickyNotice();
+
+        if (state.currentMode === 'auto_banner') {
+            if (state.ctaClicked && !state.pendingCtaResolved && state.pendingCtaPayload) {
+                flushPendingCtaTracking();
+            }
+            if (state.autoBannerPaused) {
+                resumeAutoBannerAfterExternalReturn();
+                clearExternalNavigationState();
+            }
+            return;
+        }
+
+        if (state.currentMode === 'sponsor') {
+            updateCta('', '', null);
+            hideVideoInfoPanel();
+        }
+
+        let resumed = false;
+
+        if (state.adsManager && (state.currentMode === 'regular' || state.currentMode === 'sponsor')) {
+            try {
+                state.adsManager.resume();
+                resumed = true;
+                console.log('[AdsWatch] Resumed IMA ad after external return');
+            } catch (error) {
+                console.log('[AdsWatch] IMA resume after return failed:', error);
+            }
+        }
+
+        if (!resumed && state.currentMode === 'sponsor') {
+            if (state.youtubePlayer && typeof state.youtubePlayer.playVideo === 'function') {
+                try {
+                    state.youtubePlayer.playVideo();
+                    resumed = true;
+                    console.log('[AdsWatch] Resumed sponsor YouTube after external return');
+                } catch (error) {
+                    console.log('[AdsWatch] Sponsor YouTube resume failed:', error);
+                }
+            } else {
+                const videoElement = document.getElementById('content-video');
+                if (videoElement && videoElement.currentSrc && typeof videoElement.play === 'function') {
+                    videoElement.play().catch(function (error) {
+                        console.log('[AdsWatch] Sponsor MP4 resume failed:', error);
+                    });
+                    resumed = true;
+                }
+            }
+        }
+
+        if (resumed || state.isPlaying) {
+            $('#player-overlay').hide();
+        }
+
+        clearExternalNavigationState();
     }
 
     function loadYouTubeApi() {
@@ -2608,7 +2816,8 @@
         }
         if (safeMode === 'auto_banner') {
             const ctaPoints = Number(safeRules.cta_points || 5);
-            $text.html(`<strong>+${ctaPoints} pont</strong> a hirdetésre kattintás után`);
+            const ctaVotes = ctaPoints > 0 ? 5 : 0;
+            $text.html(`<strong>+${ctaPoints} pont</strong> és <strong>+${ctaVotes} szavazat</strong> a hirdetésre kattintás után`);
             return;
         }
         if (safeMode === 'sponsor') {
@@ -2672,6 +2881,9 @@
         const pseudo = state.pseudoId || '';
         const safeType = String(contentType || 'cta');
         const safeId = String(contentId || '') || (ctaUrl ? String(ctaUrl).slice(-48) : 'unknown');
+        if (safeType === 'auto_banner') {
+            return `cta:${safeType}:${safeId}:${pseudo}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+        }
         return `cta:${safeType}:${safeId}:${pseudo}`;
     }
 
@@ -2749,6 +2961,121 @@
             return candidate;
         }
         return candidate;
+    }
+
+    function getAffiliatePseudoId() {
+        const rawPseudo = String(state.pseudoId || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        return rawPseudo.slice(0, 12);
+    }
+
+    function buildAffiliateSid(ngoSlug) {
+        const parts = [];
+        const cleanNgo = String(ngoSlug || '').trim();
+        const pseudo = getAffiliatePseudoId();
+        if (cleanNgo) {
+            parts.push(cleanNgo);
+        }
+        if (pseudo) {
+            parts.push(pseudo);
+        }
+        return parts.join('~');
+    }
+
+    function parseSafeUrl(rawUrl) {
+        try {
+            return new URL(rawUrl);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function isImpactshopInternalGoUrl(rawUrl) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return false;
+        }
+        const host = String(parsed.hostname || '').toLowerCase();
+        const currentHost = String(window.location.hostname || '').toLowerCase();
+        if (host !== currentHost && host !== 'app.sharity.hu' && host !== 'sharity.hu' && host !== 'www.sharity.hu') {
+            return false;
+        }
+        return /^\/go(?:-deal)?(?:\/|$)/i.test(parsed.pathname || '');
+    }
+
+    function ensureInternalGoParams(rawUrl, ngoSlug) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return rawUrl;
+        }
+        const cleanNgo = String(ngoSlug || '').trim();
+        if (cleanNgo && !parsed.searchParams.get('d1')) {
+            parsed.searchParams.set('d1', cleanNgo);
+        }
+        return parsed.toString();
+    }
+
+    function decorateCjAffiliateUrl(rawUrl, ngoSlug) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return rawUrl;
+        }
+        const sid = buildAffiliateSid(ngoSlug);
+        if (sid) {
+            parsed.searchParams.set('sid', sid);
+        }
+        return parsed.toString();
+    }
+
+    function isDognetAffiliateUrl(rawUrl) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return false;
+        }
+        return /(^|\.)dognet\.(com|sk|hu)$/i.test(String(parsed.hostname || ''));
+    }
+
+    function decorateDognetAffiliateUrl(rawUrl, ngoSlug) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return rawUrl;
+        }
+        const cleanNgo = String(ngoSlug || '').trim();
+        const pseudo = getAffiliatePseudoId();
+        if (cleanNgo && !parsed.searchParams.get('d1')) {
+            parsed.searchParams.set('d1', cleanNgo);
+        }
+        if (pseudo && !parsed.searchParams.get('data5')) {
+            parsed.searchParams.set('data5', pseudo);
+        }
+        return parsed.toString();
+    }
+
+    function isGenericMerchantLandingUrl(rawUrl) {
+        const parsed = parseSafeUrl(rawUrl);
+        if (!parsed) {
+            return false;
+        }
+        const pathname = String(parsed.pathname || '/').replace(/\/+$/, '') || '/';
+        const segments = pathname.split('/').filter(Boolean);
+        const hasQuery = String(parsed.search || '') !== '';
+        const hasHash = String(parsed.hash || '') !== '';
+
+        if (hasQuery || hasHash) {
+            return false;
+        }
+
+        if (segments.length === 0) {
+            return true;
+        }
+
+        // Locale-style homepages such as /hu or /hu/hun should use the safe base affiliate route.
+        if (segments.length <= 2 && segments.every(function (segment) {
+            return /^[a-z]{2,3}$/i.test(segment);
+        })) {
+            return true;
+        }
+
+        return false;
     }
 
     function buildFilloutUrl(targetUrl, shopSlug, ngoSlug) {
@@ -2889,11 +3216,7 @@
         return `${target.origin}${target.pathname}?${query.toString()}${target.hash || ''}`;
     }
 
-    function buildAutoBannerFallbackImage(shopSlug) {
-        const cleanSlug = String(shopSlug || '').replace(/^sync:/, '').toLowerCase();
-        if (cleanSlug) {
-            return `${window.location.origin}/wp-content/uploads/shops/${cleanSlug}-logo.png`;
-        }
+    function buildAutoBannerFallbackImage() {
         return `${window.location.origin}/wp-content/uploads/impactshop/ngo-card-default.jpg`;
     }
 
@@ -2902,7 +3225,7 @@
         if (!imgEl) {
             return;
         }
-        const fallback = buildAutoBannerFallbackImage(banner.shop_slug || '');
+        const fallback = buildAutoBannerFallbackImage();
         let rawUrl = banner.image_url || '';
         if (/^http:\/\//i.test(rawUrl)) {
             rawUrl = rawUrl.replace(/^http:\/\//i, 'https://');
@@ -2972,6 +3295,21 @@
         if (isArukereso) {
             return trackedTarget;
         }
+        if (normalizedSlug.startsWith('cj-')) {
+            return decorateCjAffiliateUrl(trackedTarget, ngoSlug);
+        }
+        if (isDognetAffiliateUrl(trackedTarget)) {
+            return decorateDognetAffiliateUrl(trackedTarget, ngoSlug);
+        }
+        if (isImpactshopInternalGoUrl(trackedTarget)) {
+            return ensureInternalGoParams(trackedTarget, ngoSlug);
+        }
+        if (ngoSlug && isGenericMerchantLandingUrl(trackedTarget)) {
+            const params = new URLSearchParams({
+                d1: ngoSlug || '',
+            });
+            return `${window.location.origin}/go/${encodeURIComponent(cleanSlug)}?${params.toString()}`;
+        }
         const base = `${window.location.origin}/go-deal/${encodeURIComponent(cleanSlug)}`;
         const params = new URLSearchParams({
             d1: ngoSlug || '',
@@ -3033,8 +3371,9 @@
         }
 
         const bannerId = contentId || banner.id || '';
-        const ctaPoints = Number((cta && cta.points) || 1);
+        const ctaPoints = Math.max(0, Number((cta && cta.points) || state.currentCtaPoints || 5));
         state.currentAutoBanner = banner || null;
+        prepareAutoBannerSurface();
         // Reset CTA tracking for new banner so bonus can be earned again
         state.ctaClicked = false;
         const finalUrl = transformBannerUrl(
@@ -3074,6 +3413,7 @@
             points: ctaPoints,
             dedupe_key: ctaDedupe
         });
+        ensureAutoBannerCtaVisible();
 
         showLoading(false);
         showVideoInfoPanel('auto_banner', {
@@ -3086,12 +3426,29 @@
             onComplete: function () {
                 $banner.prop('hidden', true);
                 // Award points and votes for banner view completion
-                handleAdCompletion(true, 1);
-                state.isPlaying = false;
-                updateWatchButton();
-                showLoading(false);
+                handleAdCompletion(true, 1, {
+                    resetAfterDone: true,
+                    keepProgressBar: true
+                });
             }
         });
+    }
+
+    function ensureAutoBannerCtaVisible() {
+        if (window.innerWidth > 640) {
+            return;
+        }
+        const link = document.querySelector('[data-role=auto-banner-link]');
+        if (!link || !link.scrollIntoView) {
+            return;
+        }
+        window.setTimeout(function () {
+            try {
+                link.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            } catch (error) {
+                link.scrollIntoView(true);
+            }
+        }, 40);
     }
 
     function loadAutoBanner() {
@@ -3119,6 +3476,7 @@
             }
 
             state.currentAutoBanner = banner;
+            prepareAutoBannerSurface();
             const finalUrl = transformBannerUrl(
                 banner.banner_url || '',
                 banner.shop_slug || '',
@@ -3142,7 +3500,7 @@
                 shop_slug: banner.shop_slug || '',
                 category: '',
                 price_range: '',
-                points: 1,
+                points: 5,
                 dedupe_key: buildCtaDedupe('auto_banner', banner.id || '', finalUrl || '')
             });
 
@@ -3162,22 +3520,75 @@
         if (!$progress.length) {
             return;
         }
-        $progress.css('width', '0%');
         const safeOptions = options && typeof options === 'object' ? options : {};
-        const duration = Math.max(1000, Number(safeOptions.duration || 15000));
+        const duration = Math.max(1000, Number(safeOptions.duration || state.autoBannerRemainingMs || 15000));
         const onComplete = typeof safeOptions.onComplete === 'function' ? safeOptions.onComplete : null;
+        const isResume = !!safeOptions.resume;
+        const totalDuration = isResume
+            ? Math.max(duration, Number(state.autoBannerTotalMs || duration))
+            : duration;
+
+        stopAutoBannerProgress();
+        if (!isResume) {
+            $progress.css('width', '0%');
+        }
+        state.autoBannerPaused = false;
+        state.autoBannerOnComplete = onComplete;
+        state.autoBannerTotalMs = totalDuration;
+        state.autoBannerRemainingMs = duration;
+        state.autoBannerStartedAt = Date.now();
         const start = Date.now();
         const step = function () {
             const elapsed = Date.now() - start;
             const ratio = Math.min(1, elapsed / duration);
-            $progress.css('width', `${(ratio * 100).toFixed(1)}%`);
+            const remaining = Math.max(0, duration - elapsed);
+            state.autoBannerRemainingMs = remaining;
+            const overallRatio = totalDuration > 0
+                ? Math.min(1, (totalDuration - remaining) / totalDuration)
+                : ratio;
+            $progress.css('width', `${(overallRatio * 100).toFixed(1)}%`);
             if (ratio < 1) {
-                requestAnimationFrame(step);
+                state.autoBannerFrameId = requestAnimationFrame(step);
             } else if (onComplete) {
+                state.autoBannerFrameId = null;
+                state.autoBannerRemainingMs = 0;
+                state.autoBannerStartedAt = 0;
                 onComplete();
             }
         };
-        requestAnimationFrame(step);
+        state.autoBannerFrameId = requestAnimationFrame(step);
+    }
+
+    function stopAutoBannerProgress() {
+        if (state.autoBannerFrameId) {
+            if (state.autoBannerStartedAt > 0 && state.autoBannerRemainingMs <= 0 && state.autoBannerTotalMs > 0) {
+                const elapsed = Date.now() - state.autoBannerStartedAt;
+                state.autoBannerRemainingMs = Math.max(0, state.autoBannerRemainingMs || (state.autoBannerTotalMs - elapsed));
+            }
+            cancelAnimationFrame(state.autoBannerFrameId);
+            state.autoBannerFrameId = null;
+        }
+    }
+
+    function pauseAutoBannerForExternalNavigation() {
+        stopAutoBannerProgress();
+        state.autoBannerPaused = true;
+    }
+
+    function resumeAutoBannerAfterExternalReturn() {
+        const $banner = $('[data-role=auto-banner]');
+        if (!$banner.length || !$banner.is(':visible')) {
+            return;
+        }
+        if (!state.currentAutoBanner || !state.autoBannerPaused) {
+            return;
+        }
+        const remaining = Math.max(250, Number(state.autoBannerRemainingMs || 0));
+        startBannerProgress($banner, {
+            duration: remaining,
+            onComplete: state.autoBannerOnComplete,
+            resume: true
+        });
     }
 
     function updateAutoBannerLink() {
@@ -3209,7 +3620,7 @@
             shop_slug: state.currentAutoBanner.shop_slug || '',
             category: state.currentAutoBanner.category || '',
             price_range: state.currentAutoBanner.price_range || '',
-            points: 1,
+            points: 5,
             dedupe_key: buildCtaDedupe('auto_banner', bannerId, finalUrl || '')
         });
     }
@@ -3246,6 +3657,44 @@
         };
     }
 
+    function cloneCtaPayload(payload) {
+        if (!payload || typeof payload !== 'object') {
+            return null;
+        }
+        return {
+            content_type: payload.content_type || '',
+            content_id: payload.content_id || '',
+            cta_url: payload.cta_url || '',
+            raw_url: payload.raw_url || '',
+            shop_slug: payload.shop_slug || '',
+            category: payload.category || '',
+            price_range: payload.price_range || '',
+            points: Number(payload.points || 0),
+            dedupe_key: payload.dedupe_key || ''
+        };
+    }
+
+    function stashPendingCtaTracking(payload, fallbackReward) {
+        state.pendingCtaPayload = cloneCtaPayload(payload);
+        state.pendingCtaFallbackReward = {
+            points: Number((fallbackReward && fallbackReward.points) || 0),
+            votes: Number((fallbackReward && fallbackReward.votes) || 0)
+        };
+        state.pendingCtaResolved = false;
+    }
+
+    function clearPendingCtaTracking() {
+        state.pendingCtaPayload = null;
+        state.pendingCtaFallbackReward = null;
+        state.pendingCtaResolved = false;
+    }
+
+    function markPendingCtaTrackingResolved() {
+        state.pendingCtaResolved = true;
+        state.pendingCtaPayload = null;
+        state.pendingCtaFallbackReward = null;
+    }
+
     function applyCtaTrackingReward(response, fallbackReward) {
         const safeResponse = response && typeof response === 'object' ? response : null;
         const hasAwardedPoints = !!(safeResponse && Object.prototype.hasOwnProperty.call(safeResponse, 'awarded_points'));
@@ -3267,6 +3716,20 @@
         awardedPoints = Math.round(awardedPoints);
         awardedVotes = Math.round(awardedVotes);
 
+        const duplicateRecoveredReward = !!(
+            safeResponse
+            && safeResponse.duplicate
+            && !state.ctaBonusCounted
+            && awardedPoints === 0
+            && awardedVotes === 0
+            && fallbackReward
+            && (Number(fallbackReward.points || 0) > 0 || Number(fallbackReward.votes || 0) > 0)
+        );
+        if (duplicateRecoveredReward) {
+            awardedPoints = Math.max(0, Math.round(Number((fallbackReward && fallbackReward.points) || 0)));
+            awardedVotes = Math.max(0, Math.round(Number((fallbackReward && fallbackReward.votes) || 0)));
+        }
+
         const hasServerPointsTotal = !!(safeResponse && typeof safeResponse.new_total === 'number' && Number.isFinite(safeResponse.new_total));
         const hasServerVotes = !!(safeResponse && typeof safeResponse.available_votes === 'number' && Number.isFinite(safeResponse.available_votes));
 
@@ -3282,16 +3745,47 @@
             state.availableVotes = Math.max(0, Math.round(Number(state.availableVotes || 0))) + awardedVotes;
         }
 
-        if (awardedPoints > 0 || awardedVotes > 0) {
+        if (!state.ctaBonusCounted && (awardedPoints > 0 || awardedVotes > 0)) {
             state.ctaBonusPoints = Number(state.ctaBonusPoints || 0) + awardedPoints;
             state.ctaBonusVotes = Number(state.ctaBonusVotes || 0) + awardedVotes;
+            state.ctaBonusCounted = true;
         }
 
+        const shouldDeferVisibleCtaReward = state.isPlaying && (
+            awardedPoints > 0
+            || awardedVotes > 0
+            || hasServerPointsTotal
+            || hasServerVotes
+        );
+
         if (awardedPoints > 0 || awardedVotes > 0 || hasServerPointsTotal || hasServerVotes) {
-            updateStatusDisplay();
-            updateVoteControls();
-            notifyPointsUpdated();
+            if (shouldDeferVisibleCtaReward) {
+                state.ctaUiDeferred = true;
+            } else {
+                updateStatusDisplay();
+                updateVoteControls();
+                notifyPointsUpdated();
+            }
         }
+    }
+
+    function flushPendingCtaTracking() {
+        if (!state.ctaClicked || state.pendingCtaResolved || !state.pendingCtaPayload) {
+            return $.Deferred().resolve({ status: 'noop' }).promise();
+        }
+
+        const payload = cloneCtaPayload(state.pendingCtaPayload);
+        const fallbackReward = state.pendingCtaFallbackReward || getCtaFallbackReward(payload && payload.points ? payload.points : 0);
+
+        return sendCtaTracking(payload, {
+            fallbackReward: fallbackReward
+        })
+            .done(function () {
+                markPendingCtaTrackingResolved();
+            })
+            .fail(function (error) {
+                console.warn('[CTA] deferred reward retry failed', error);
+            });
     }
 
     function sendCtaTracking(payload, options) {
@@ -3313,6 +3807,41 @@
         const headers = {};
         if (restNonce) {
             headers['X-WP-Nonce'] = restNonce;
+        }
+        if (safeOptions.transport === 'keepalive' && window.fetch) {
+            const deferred = $.Deferred();
+            const fetchHeaders = Object.assign({
+                'Content-Type': 'application/json'
+            }, headers);
+            window.fetch('/wp-json/impact/v1/tracking/cta-click', {
+                method: 'POST',
+                credentials: 'same-origin',
+                keepalive: true,
+                headers: fetchHeaders,
+                body: JSON.stringify(body)
+            })
+                .then(function (response) {
+                    return response
+                        .json()
+                        .catch(function () {
+                            return null;
+                        })
+                        .then(function (responseBody) {
+                            if (!response.ok) {
+                                throw {
+                                    response: response,
+                                    body: responseBody
+                                };
+                            }
+                            applyCtaTrackingReward(responseBody, fallbackReward);
+                            deferred.resolve(responseBody);
+                        });
+                })
+                .catch(function (error) {
+                    console.error('[CTA] keepalive tracking failed', error);
+                    deferred.reject(error);
+                });
+            return deferred.promise();
         }
         return $.ajax({
             url: '/wp-json/impact/v1/tracking/cta-click',
@@ -3526,18 +4055,11 @@
         }, {
             fallbackReward: getCtaFallbackReward(ctaPointsHint)
         });
-        
-        // Resume ad playback after click (IMA pauses on click)
-        setTimeout(function() {
-            if (state.adsManager) {
-                try {
-                    state.adsManager.resume();
-                    console.log('[IMA] Resumed ad after click');
-                } catch (e) {
-                    console.log('[IMA] Could not resume ad:', e);
-                }
-            }
-        }, 500);
+
+        if (state.imaClickThroughUrl) {
+            markExternalNavigation(state.imaClickThroughUrl);
+            scheduleExternalReturnRecovery();
+        }
     }
 
     function onAllAdsCompleted() {
@@ -3603,79 +4125,101 @@
         resetPlayer();
     }
 
-    function handleAdCompletion(success, completionRatio = 1) {
+    function handleAdCompletion(success, completionRatio = 1, options) {
         if (!success) {
             return;
         }
+        const safeOptions = options && typeof options === 'object' ? options : {};
+        const resetAfterDone = !!safeOptions.resetAfterDone;
+        const keepProgressBar = !!safeOptions.keepProgressBar;
 
         const adType = state.currentAdType || 'regular';
         const sponsorId = state.currentSponsorId || 0;
+        const proceedWithViewRecording = function () {
+            recordAdView(adType, sponsorId, completionRatio)
+                .done(function (viewResponse) {
+                    const prevAvailable = Number(state.availableVotes || 0);
+                    let points = viewResponse.points || 0;
+                    let votes = viewResponse.votes || 0;
+                    
+                    // Add CTA bonus if clicked during this video
+                    const ctaBonusPoints = Math.max(0, Number(state.ctaBonusPoints || 0));
+                    const ctaBonusVotes = Math.max(0, Number(state.ctaBonusVotes || 0));
+                    
+                    if (typeof viewResponse.new_total === 'number') {
+                        state.points = Math.max(
+                            Math.max(0, Math.round(Number(state.points || 0))),
+                            Math.max(0, Math.round(Number(viewResponse.new_total)))
+                        );
+                    } else {
+                        state.points = state.points + points;
+                    }
+                    if (typeof viewResponse.available_votes === 'number') {
+                        state.availableVotes = Math.max(
+                            Math.max(0, Math.round(Number(state.availableVotes || 0))),
+                            Math.max(0, Math.round(Number(viewResponse.available_votes)))
+                        );
+                    } else {
+                        state.availableVotes = state.availableVotes + votes;
+                    }
 
-        recordAdView(adType, sponsorId, completionRatio)
-            .done(function (viewResponse) {
-                const prevAvailable = Number(state.availableVotes || 0);
-                let points = viewResponse.points || 0;
-                let votes = viewResponse.votes || 0;
-                
-                // Add CTA bonus if clicked during this video
-                const ctaBonusPoints = Math.max(0, Number(state.ctaBonusPoints || 0));
-                const ctaBonusVotes = Math.max(0, Number(state.ctaBonusVotes || 0));
-                
-                if (typeof viewResponse.new_total === 'number') {
-                    state.points = Math.max(
-                        Math.max(0, Math.round(Number(state.points || 0))),
-                        Math.max(0, Math.round(Number(viewResponse.new_total)))
-                    );
-                } else {
-                    state.points = state.points + points;
-                }
-                if (typeof viewResponse.available_votes === 'number') {
-                    state.availableVotes = Math.max(
-                        Math.max(0, Math.round(Number(state.availableVotes || 0))),
-                        Math.max(0, Math.round(Number(viewResponse.available_votes)))
-                    );
-                } else {
-                    state.availableVotes = state.availableVotes + votes;
-                }
+                    updateStatusDisplay();
+                    updateVoteControls();
+                    
+                    // Store base video reward for combined display at CTA click
+                    state.lastVideoRewardPoints = points;
+                    state.lastVideoRewardVotes = votes;
+                    
+                    const displayPoints = points + ctaBonusPoints;
+                    const displayVotes = votes + ctaBonusVotes;
+                    state.ctaUiDeferred = false;
 
-                updateStatusDisplay();
-                updateVoteControls();
-                
-                // Store base video reward for combined display at CTA click
-                state.lastVideoRewardPoints = points;
-                state.lastVideoRewardVotes = votes;
-                
-                // Show video reward only (CTA bonus will show when clicked)
-                if (points > 0 || votes > 0) {
-                    showRewardAnimation(points, votes);
-                } else {
-                    showNotification('A megtekintést már rögzítettük.', 'warning');
-                }
-                
-                hideCtaStickyNotice();
-                trackEvent('ads_watch_view_complete', {
-                    ad_type: adType,
-                    sponsor_id: sponsorId,
-                    points: points,
-                    votes: votes,
-                    cta_bonus_points: ctaBonusPoints,
-                    cta_bonus_votes: ctaBonusVotes
+                    if (displayPoints > 0 || displayVotes > 0) {
+                        showRewardAnimation(displayPoints, displayVotes);
+                    } else {
+                        showNotification('A megtekintést már rögzítettük.', 'warning');
+                    }
+                    
+                    hideCtaStickyNotice();
+                    trackEvent('ads_watch_view_complete', {
+                        ad_type: adType,
+                        sponsor_id: sponsorId,
+                        points: points,
+                        votes: votes,
+                        cta_bonus_points: ctaBonusPoints,
+                        cta_bonus_votes: ctaBonusVotes
+                    });
+                    notifyPointsUpdated();
+
+                    const addedVotes = Math.max(0, Number(state.availableVotes) - prevAvailable);
+                    if (state.autoVote && addedVotes > 0 && state.selectedNgo) {
+                        autoAllocateVotes(addedVotes);
+                    }
+
+                    if (resetAfterDone) {
+                        window.setTimeout(function () {
+                            resetPlayer(keepProgressBar);
+                        }, 120);
+                    }
+
+                    setTimeout(function () {
+                        loadTally();
+                    }, 1000);
+                })
+                .fail(function (xhr) {
+                    console.error('View recording failed:', xhr);
+                    showNotification('Nem sikerült rögzíteni a megtekintést. Próbáld újra.', 'error');
+                    if (resetAfterDone) {
+                        resetPlayer(keepProgressBar);
+                    }
                 });
-                notifyPointsUpdated();
+        };
+        if (adType === 'auto_banner' && state.ctaClicked && !state.pendingCtaResolved && state.pendingCtaPayload) {
+            flushPendingCtaTracking().always(proceedWithViewRecording);
+            return;
+        }
 
-                const addedVotes = Math.max(0, Number(state.availableVotes) - prevAvailable);
-                if (state.autoVote && addedVotes > 0 && state.selectedNgo) {
-                    autoAllocateVotes(addedVotes);
-                }
-
-                setTimeout(function () {
-                    loadTally();
-                }, 1000);
-            })
-            .fail(function (xhr) {
-                console.error('View recording failed:', xhr);
-                showNotification('Nem sikerült rögzíteni a megtekintést. Próbáld újra.', 'error');
-            });
+        proceedWithViewRecording();
     }
 
     function resetPlayer(keepProgressBar) {
@@ -3695,6 +4239,16 @@
         state.imaAdDuration = 0;
         state.ctaBonusPoints = 0;
         state.ctaBonusVotes = 0;
+        state.ctaBonusCounted = false;
+        state.ctaUiDeferred = false;
+        clearPendingCtaTracking();
+        stopAutoBannerProgress();
+        state.autoBannerPaused = false;
+        state.autoBannerStartedAt = 0;
+        state.autoBannerRemainingMs = 0;
+        state.autoBannerTotalMs = 0;
+        state.autoBannerOnComplete = null;
+        clearExternalNavigationState();
         updateWatchButton();
         $('#player-overlay').fadeIn(200);
         showLoading(false);
@@ -3702,11 +4256,11 @@
             hideAdProgressBar();
         }
         updateCta('', '', null);
+        $('[data-role=auto-banner]').prop('hidden', true);
         resetEducationState();
         hideVideoInfoPanel();
         hideImaCtaOverlay();
         hideCtaStickyNotice();
-
         const adContainer = document.getElementById('ad-container');
         if (adContainer) {
             adContainer.style.display = '';
@@ -3741,6 +4295,35 @@
     function hideImaCtaOverlay() {
         state.imaClickThroughUrl = '';
         $('#ima-cta-overlay').hide();
+    }
+
+    function prepareAutoBannerSurface() {
+        const videoElement = document.getElementById('content-video');
+        const adContainer = document.getElementById('ad-container');
+        const iframeContainer = document.getElementById('education-iframe');
+
+        if (videoElement) {
+            try {
+                videoElement.pause();
+            } catch (error) {}
+        }
+
+        if (adContainer) {
+            adContainer.innerHTML = '';
+            adContainer.style.display = 'none';
+        }
+
+        if (iframeContainer) {
+            iframeContainer.innerHTML = '';
+            iframeContainer.style.display = 'none';
+        }
+
+        stopImaProgressLoop();
+        hideResumeButton();
+        hideImaCtaOverlay();
+        $('#ads-watch-cta').hide();
+        $('#player-overlay').hide();
+        showLoading(false);
     }
 
     function updateAdProgressBar() {
