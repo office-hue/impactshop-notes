@@ -1,3 +1,10 @@
+## 2026-04-07T23:30:00+0200 — fix(ads-watch): v2.5.53 CTA navigation + MutationObserver bundle disable
+- v2.5.53: CTA click handler window.open() hozzáadva — event.preventDefault() után a sponsor oldal ténylegesen megnyílik új tabban.
+- ui-cta-bundle.php: return; az add_action() előtt — a MutationObserver deferred UI ami ~240 callback/sec-et tüzelt RAF progress közben le van tiltva.
+- ui-cta-bundle.js: re-entrancy guard (_applying) mint biztonsági háló.
+- Production deploy SCP-vel megtörtént és verifikált (ver=2.5.53).
+- Change record: docs/protected-change-records/2026-04-07-cta-freeze-fix-v2.5.53.md
+
 ## 2026-04-07T21:00:00+0200 — fix(ads-watch): v2.5.52 sponsor video freeze fix
 - A v2.5.52 visszaállítja a 7 kritikus sponsor return patternt ami v2.5.55-ben működött de v2.5.51-ben elveszett.
 - Érintett fájlok: impactshop-ads-watch.js, .php, .css (917 ins, 339 del vs v2.5.32 origin/main).
