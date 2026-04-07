@@ -26,15 +26,10 @@ if (!defined('ABSPATH')) {
  */
 
 add_action('init', 'impactshop_ngo_guides_rewrite_rules');
-add_action('init', 'impactshop_ngo_guides_register_sitemap', 20);
+add_action('wpseo_sitemaps_init', 'impactshop_ngo_guides_register_sitemap');
 add_filter('query_vars', 'impactshop_ngo_guides_query_vars');
 add_action('template_redirect', 'impactshop_ngo_guides_template_redirect');
 add_filter('wpseo_sitemap_index', 'impactshop_ngo_guides_add_sitemap_to_index');
-
-function impactshop_hatas_korok_handled_by_community(): bool
-{
-    return defined('IMPACT_COMMUNITY_ENABLED') && IMPACT_COMMUNITY_ENABLED;
-}
 
 function impactshop_hatas_korok_handled_by_community(): bool
 {
@@ -266,15 +261,13 @@ function impactshop_ngo_guides_sitemap_url(): string
     return home_url('/impactshop-static-sitemap.xml');
 }
 
-function impactshop_ngo_guides_register_sitemap(): void
+function impactshop_ngo_guides_register_sitemap(\WPSEO_Sitemaps $sitemaps): void
 {
-    global $wpseo_sitemaps;
-
-    if (!isset($wpseo_sitemaps) || empty($wpseo_sitemaps) || !method_exists($wpseo_sitemaps, 'register_sitemap')) {
+    if (!method_exists($sitemaps, 'register_sitemap')) {
         return;
     }
 
-    $wpseo_sitemaps->register_sitemap('impactshop-static', 'impactshop_ngo_guides_render_sitemap');
+    $sitemaps->register_sitemap('impactshop-static', 'impactshop_ngo_guides_render_sitemap');
 }
 
 function impactshop_ngo_guides_add_sitemap_to_index(string $sitemap_index): string
