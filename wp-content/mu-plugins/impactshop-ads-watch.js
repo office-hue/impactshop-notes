@@ -332,13 +332,19 @@
         $('#ads-watch-cta-link').on('click', function (event) {
             if (!state.ctaMeta) return;
             event.preventDefault();
-            // Only award bonus once per video
+
+            var href = String($(this).attr('href') || '').trim();
+
+            // Only award bonus once per video, but still navigate on repeat clicks
             if (state.ctaClicked) {
-                console.log('[Sponsor CTA] Already clicked - skipping bonus');
+                console.log('[Sponsor CTA] Already clicked - skipping bonus, still navigating');
+                if (href && href !== '#') {
+                    window.open(href, '_blank', 'noopener');
+                }
                 return;
             }
             state.ctaClicked = true;
-            const fallbackReward = getCtaFallbackReward(state.ctaMeta.points || 0);
+            var fallbackReward = getCtaFallbackReward(state.ctaMeta.points || 0);
             // Track CTA click
             sendCtaTracking({
                 content_type: state.ctaMeta.content_type,
@@ -353,16 +359,15 @@
                 fallbackReward: fallbackReward
             });
 
-            const href = String($(this).attr('href') || '').trim();
             if (href && href !== '#') {
                 markExternalNavigation(href, 'sponsor_cta');
+                window.open(href, '_blank', 'noopener');
                 window.setTimeout(function () {
                     if (state.externalNavigationPending && !document.hidden) {
                         clearExternalNavigationState();
                     }
                 }, 1500);
             } else {
-                event.preventDefault();
                 clearExternalNavigationState();
             }
         });
