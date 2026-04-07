@@ -1067,7 +1067,7 @@
             margin: 10px 0 6px;
         }
 
-        /* Floating tabs - fixed at bottom of screen, 8 icons in 4-col grid */
+        /* Floating tabs - fixed at bottom of screen */
         .ads-watch-floating-tabs {
             position: fixed;
             bottom: 60px; /* Space for accessibility button */
@@ -1185,6 +1185,7 @@
                 line-height: 1.2;
                 gap: 3px;
             }
+            /* Smaller icons on mobile */
             .ads-watch-tab .tab-icon {
                 font-size: 14px;
             }

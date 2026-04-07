@@ -1,3 +1,8 @@
+## 2026-04-07 21:00 CET - ads-watch v2.5.52 sponsor video freeze fix
+- v2.5.52 visszaállítja a 7 kritikus sponsor return patternt (externalNavigationSource, CTA _blank link, visibility handler, contentComplete placement).
+- Gyökér ok: v2.5.51 nem hozta át a v2.5.55 sponsor-specifikus kezelését → Chrome/Safari freeze a sponsor videó végén.
+- Production deploy verifikált. Change record: docs/protected-change-records/2026-04-07-ads-watch-sponsor-v252.md
+
 ## 2026-04-01 08:58 CET - JYSK riport max-védett guide surface
 - A `jysk-riport` route-család név szerint is max-védett guide surface lett: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
 - A protected modell új `guide_runtime` smoke scope-pal most már külön ellenőrzi a route render, print nézet és JSON payload folytonosságát.

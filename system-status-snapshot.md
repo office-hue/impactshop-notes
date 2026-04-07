@@ -1,3 +1,11 @@
+## 2026-04-07T21:00:00+0200 — fix(ads-watch): v2.5.52 sponsor video freeze fix
+- A v2.5.52 visszaállítja a 7 kritikus sponsor return patternt ami v2.5.55-ben működött de v2.5.51-ben elveszett.
+- Érintett fájlok: impactshop-ads-watch.js, .php, .css (917 ins, 339 del vs v2.5.32 origin/main).
+- Kulcs javítások: externalNavigationSource/externalNavigationVisibilityLost tracking, sponsor CTA native _blank link, visibility handler minden módhoz, adsLoader.contentComplete() elhelyezés.
+- Gyökér ok: v2.5.51 nem tartalmazta a v2.5.55 sponsor-specifikus kezelését → Chrome/Safari freeze.
+- Production deploy megtörtént és verifikált (x-impactshop-adswatch-version: 2.5.52).
+- Change record: docs/protected-change-records/2026-04-07-ads-watch-sponsor-v252.md
+
 ## 2026-04-01T08:58:00+0200 — JYSK riport max-védett guide surface
 - A `jysk-riport` route-család név szerint is bekerült a guide-rendszer max-védett perimeterébe: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
 - A machine-readable protected modell új `guide_runtime` smoke csoportot kapott, így guide/JYSK touch esetén kötelező a route render, print render és JSON payload smoke scope.
