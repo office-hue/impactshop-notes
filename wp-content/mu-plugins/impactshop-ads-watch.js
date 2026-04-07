@@ -94,7 +94,11 @@
         ctaClickedKeys: {},
         ctaBonusPoints: 0,
         ctaBonusVotes: 0,
+        ctaBonusCounted: false,
         ctaUiDeferred: false,
+        pendingCtaPayload: null,
+        pendingCtaFallbackReward: null,
+        pendingCtaResolved: false,
         imaProgressFrameId: null,
         imaAdDuration: 0,
         imaClickThroughUrl: '',
@@ -104,10 +108,19 @@
         lastNgoSlugForBanner: '',
         currentAutoBanner: null,
         externalNavigationPending: false,
-        externalNavigationVisibilityLost: false,
         externalNavigationStartedAt: 0,
-        externalNavigationReloaded: false,
+        externalNavigationUrl: '',
         externalNavigationSource: '',
+        externalNavigationVisibilityLost: false,
+        externalNavigationTimer: null,
+        autoBannerRewardBasePoints: 0,
+        autoBannerRewardBaseVotes: 0,
+        autoBannerFrameId: null,
+        autoBannerStartedAt: 0,
+        autoBannerRemainingMs: 0,
+        autoBannerTotalMs: 0,
+        autoBannerOnComplete: null,
+        autoBannerPaused: false,
         videoBalanceReady: false,
         videoBalancePointsDisplay: 0,
         videoBalanceVotesDisplay: 0,
@@ -134,6 +147,9 @@
         initChallengeCountdown();
         loadUserStatus();
         scheduleTallyLoad();
+        if (!state.unifiedDisplay) {
+            loadAutoBanner();
+        }
     });
 
     function initIdentityBridge() {
@@ -198,20 +214,6 @@
         window.addEventListener('focus', handleExternalReturn);
         window.addEventListener('pageshow', handleExternalReturn);
         window.addEventListener('resize', handleWindowResize);
-
-        // Safari bfcache fix: reload page when restored from back-forward cache
-        window.addEventListener('pageshow', function (e) {
-            if (e.persisted) {
-                window.location.reload();
-                return;
-            }
-            maybeRecoverFromExternalNavigation('pageshow');
-        });
-        window.addEventListener('focus', function () {
-            window.setTimeout(function () {
-                maybeRecoverFromExternalNavigation('focus');
-            }, 120);
-        });
 
         $('#btn-change-ngo').on('click', openNgoModal);
         $('#modal-close').on('click', closeNgoModal);
@@ -329,10 +331,10 @@
 
         $('#ads-watch-cta-link').on('click', function (event) {
             if (!state.ctaMeta) return;
+            event.preventDefault();
             // Only award bonus once per video
             if (state.ctaClicked) {
                 console.log('[Sponsor CTA] Already clicked - skipping bonus');
-                event.preventDefault();
                 return;
             }
             state.ctaClicked = true;
@@ -351,14 +353,17 @@
                 fallbackReward: fallbackReward
             });
 
-            // Let native <a target="_blank"> handle navigation instead of window.open
-            // to avoid Safari blank-page bug
             const href = String($(this).attr('href') || '').trim();
-            if (!href || href === '#') {
+            if (href && href !== '#') {
+                markExternalNavigation(href, 'sponsor_cta');
+                window.setTimeout(function () {
+                    if (state.externalNavigationPending && !document.hidden) {
+                        clearExternalNavigationState();
+                    }
+                }, 1500);
+            } else {
                 event.preventDefault();
                 clearExternalNavigationState();
-            } else {
-                markExternalNavigation('sponsor_cta');
             }
         });
 
@@ -378,10 +383,10 @@
                 ctaClicked: state.ctaClicked,
                 filloutFormId: config.filloutFormId
             });
-
-            // ── Update href with latest NGO slug and let native <a target="_blank"> handle navigation ──
-            // Using native link behaviour instead of window.open to avoid Safari blank-page bug
-            const rawUrl = String($link.attr('href') || (payload && payload.cta_url) || '').trim();
+            const linkHref = String($link.attr('href') || '').trim();
+            const payloadHref = String((payload && payload.cta_url) || '').trim();
+            const rawUrl = linkHref && linkHref !== '#' ? linkHref : payloadHref;
+            let clickUrl = '';
             if (rawUrl && rawUrl !== '#') {
                 const ngoSlug = state.selectedNgo ? state.selectedNgo.slug : '';
                 const shopSlug = (payload && payload.shop_slug) || '';
@@ -395,13 +400,6 @@
                     clickUrl: clickUrl,
                     isFillout: clickUrl && clickUrl.includes('fillout.com')
                 });
-                // Set the correct URL on the link — browser will open it in new tab via target="_blank"
-                $link.attr('href', clickUrl);
-                markExternalNavigation('auto_banner');
-            } else {
-                // No valid URL — prevent scroll to #
-                event.preventDefault();
-                clearExternalNavigationState();
             }
 
             // ── Award bonus (once per banner rotation) ──
@@ -417,6 +415,30 @@
                     markPendingCtaTrackingResolved();
                 });
             }
+
+            if (!clickUrl || clickUrl === '#') {
+                event.preventDefault();
+                showCtaStickyNotice('Az ajánlat linkje most nem érhető el. Próbáld újra.');
+                return;
+            }
+
+            $link
+                .attr('href', clickUrl)
+                .attr('target', '_blank')
+                .attr('rel', 'noopener');
+            markExternalNavigation(clickUrl, 'auto_banner');
+            window.setTimeout(function () {
+                if (state.externalNavigationPending && !document.hidden && !state.autoBannerPaused) {
+                    clearExternalNavigationState();
+                }
+            }, 1500);
+
+            if (trackingRequest && typeof trackingRequest.fail === 'function') {
+                trackingRequest.fail(function () {
+                    console.warn('[AutoBanner] CTA tracking failed, native navigation continues');
+                });
+            }
+
         });
     }
 
@@ -2154,11 +2176,13 @@
     }
 
     function handleVisibilityChange() {
-        if (state.externalNavigationPending) {
-            if (document.hidden) {
-                state.externalNavigationVisibilityLost = true;
-            } else {
-                maybeRecoverFromExternalNavigation('visibilitychange');
+        if (!document.hidden) {
+            handleExternalReturn();
+        }
+        if (document.hidden && state.externalNavigationPending) {
+            state.externalNavigationVisibilityLost = true;
+            if (state.currentMode === 'auto_banner') {
+                pauseAutoBannerForExternalNavigation();
             }
         }
         if (!state.educationContent) {
@@ -2298,44 +2322,6 @@
             };
         });
         return state.youtubeReady;
-    }
-
-    function markExternalNavigation(source) {
-        state.externalNavigationPending = true;
-        state.externalNavigationVisibilityLost = false;
-        state.externalNavigationStartedAt = Date.now();
-        state.externalNavigationReloaded = false;
-        state.externalNavigationSource = String(source || '');
-    }
-
-    function clearExternalNavigationState() {
-        state.externalNavigationPending = false;
-        state.externalNavigationVisibilityLost = false;
-        state.externalNavigationStartedAt = 0;
-        state.externalNavigationReloaded = false;
-        state.externalNavigationSource = '';
-    }
-
-    function maybeRecoverFromExternalNavigation(reason) {
-        if (!state.externalNavigationPending || state.externalNavigationReloaded) {
-            return;
-        }
-        if (document.hidden) {
-            return;
-        }
-        const elapsed = Date.now() - Number(state.externalNavigationStartedAt || 0);
-        const lostVisibility = !!state.externalNavigationVisibilityLost;
-        if (!lostVisibility && elapsed < 1500) {
-            return;
-        }
-        state.externalNavigationReloaded = true;
-        console.log('[AutoBanner][DEBUG] Recovering from external navigation return', {
-            reason: reason || '',
-            source: state.externalNavigationSource || '',
-            elapsed: elapsed,
-            lostVisibility: lostVisibility
-        });
-        window.location.reload();
     }
 
     function initYouTubePlayer(videoId) {
@@ -3499,15 +3485,7 @@
                 watchReward: '+1 pont, +1 szavazat',
                 clickReward: '+5 pont, +5 szavazat'
             });
-            startBannerProgress($banner, {
-                duration: 5000,
-                onComplete: function () {
-                    state.currentAutoBanner = null;
-                    $banner.prop('hidden', true);
-                    updateWatchButton();
-                    hideVideoInfoPanel();
-                }
-            });
+            startBannerProgress($banner, { duration: 5000, onComplete: loadAutoBanner });
         }).fail(function () {
             $banner.prop('hidden', true);
         });
@@ -4196,31 +4174,63 @@
                     }
                     state.ctaUiDeferred = false;
 
-                updateStatusDisplay();
-                updateVoteControls();
-                
-                // Store base video reward for combined display at CTA click
-                state.lastVideoRewardPoints = points;
-                state.lastVideoRewardVotes = votes;
-                
-                const displayPoints = points + ctaBonusPoints;
-                const displayVotes = votes + ctaBonusVotes;
-                state.ctaUiDeferred = false;
+                    // Override the delta overlay to show combined reward (view + CTA bonus)
+                    // when CTA bonus was deferred during banner playback.
+                    if (ctaBonusPoints > 0) {
+                        showVideoBalanceDelta('points', displayPoints);
+                    }
+                    if (ctaBonusVotes > 0) {
+                        showVideoBalanceDelta('votes', displayVotes);
+                    }
 
-                if (displayPoints > 0 || displayVotes > 0) {
-                    showRewardAnimation(displayPoints, displayVotes);
-                } else {
-                    showNotification('A megtekintést már rögzítettük.', 'warning');
-                }
-                
-                hideCtaStickyNotice();
-                trackEvent('ads_watch_view_complete', {
-                    ad_type: adType,
-                    sponsor_id: sponsorId,
-                    points: points,
-                    votes: votes,
-                    cta_bonus_points: ctaBonusPoints,
-                    cta_bonus_votes: ctaBonusVotes
+                    if (displayPoints > 0 || displayVotes > 0) {
+                        showRewardAnimation(displayPoints, displayVotes);
+                    } else {
+                        showNotification('A megtekintést már rögzítettük.', 'warning');
+                    }
+
+                    // Show explicit notification for CTA bonus
+                    if (ctaBonusPoints > 0 || ctaBonusVotes > 0) {
+                        var ctaParts = [];
+                        if (displayPoints > 0) ctaParts.push('+' + displayPoints + ' pont');
+                        if (displayVotes > 0) ctaParts.push('+' + displayVotes + ' szavazat');
+                        if (ctaParts.length > 0) {
+                            showNotification(ctaParts.join(', '), 'success');
+                        }
+                    }
+                    
+                    hideCtaStickyNotice();
+                    trackEvent('ads_watch_view_complete', {
+                        ad_type: adType,
+                        sponsor_id: sponsorId,
+                        points: points,
+                        votes: votes,
+                        cta_bonus_points: ctaBonusPoints,
+                        cta_bonus_votes: ctaBonusVotes
+                    });
+                    notifyPointsUpdated();
+
+                    const addedVotes = Math.max(0, Number(state.availableVotes) - prevAvailable);
+                    if (state.autoVote && addedVotes > 0 && state.selectedNgo) {
+                        autoAllocateVotes(addedVotes);
+                    }
+
+                    if (resetAfterDone) {
+                        window.setTimeout(function () {
+                            resetPlayer(keepProgressBar);
+                        }, 120);
+                    }
+
+                    setTimeout(function () {
+                        loadTally();
+                    }, 1000);
+                })
+                .fail(function (xhr) {
+                    console.error('View recording failed:', xhr);
+                    showNotification('Nem sikerült rögzíteni a megtekintést. Próbáld újra.', 'error');
+                    if (resetAfterDone) {
+                        resetPlayer(keepProgressBar);
+                    }
                 });
         };
         if (adType === 'auto_banner' && state.ctaClicked && !state.pendingCtaResolved && state.pendingCtaPayload) {
@@ -4248,7 +4258,18 @@
         state.imaAdDuration = 0;
         state.ctaBonusPoints = 0;
         state.ctaBonusVotes = 0;
+        state.ctaBonusCounted = false;
         state.ctaUiDeferred = false;
+        clearPendingCtaTracking();
+        stopAutoBannerProgress();
+        state.autoBannerPaused = false;
+        state.autoBannerStartedAt = 0;
+        state.autoBannerRemainingMs = 0;
+        state.autoBannerTotalMs = 0;
+        state.autoBannerOnComplete = null;
+        state.autoBannerRewardBasePoints = 0;
+        state.autoBannerRewardBaseVotes = 0;
+        clearExternalNavigationState();
         updateWatchButton();
         $('#player-overlay').fadeIn(200);
         showLoading(false);

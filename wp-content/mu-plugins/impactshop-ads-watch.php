@@ -20,8 +20,8 @@ if (!defined('ABSPATH')) {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.32');
-define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '8');
+define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.52');
+define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '9');
 define('IMPACTSHOP_ADS_DONATION_POOL', 500000); // Ft
 
 define('IMPACTSHOP_ADS_POINTS_REGULAR', 1);
@@ -4322,129 +4322,6 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                     <input type="checkbox" id="auto-vote-enabled">
                     Automatikus szavazás (minden új szavazat azonnal a kiválasztott NGO-ra megy)
                 </label>
-            </div>
-        </div>
-
-        <div class="ads-watch-player-area" id="ads-watch-video">
-            <div class="video-container" id="video-container">
-                <video id="content-video" playsinline>
-                    <source src="" type="video/mp4">
-                </video>
-                <div id="ad-container"></div>
-                <button type="button" class="ima-cta-overlay" id="ima-cta-overlay" style="display: none;" title="Kattints a bónusz pontokért!">
-                    <span class="ima-cta-icon">👆</span>
-                    <span class="ima-cta-text">Kattints a videóra!</span>
-                </button>
-                <div class="ads-watch-cta sponsor-cta-overlay" id="ads-watch-cta" style="display: none;">
-                    <a href="#" target="_blank" rel="noopener" id="ads-watch-cta-link" title="Kattints a bónusz pontokért">
-                        <span class="ima-cta-icon">👆</span>
-                        <span class="ima-cta-text">Kattints ide!</span>
-                    </a>
-                </div>
-                <div class="education-iframe" id="education-iframe" style="display: none;"></div>
-                <div class="presence-check-overlay" id="presence-check-overlay" style="display: none;" aria-live="polite">
-                    <div class="presence-check-title">Még itt vagy?</div>
-                    <div class="presence-check-subtitle">Kattints a folytatáshoz, hogy tovább kapd a jutalmakat.</div>
-                    <button type="button" class="btn-presence-confirm" id="presence-confirm">Igen, folytatom</button>
-                    <div class="presence-timeout-bar">
-                        <div class="presence-timeout-fill" id="presence-timeout-fill"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="player-overlay" id="player-overlay">
-                <button type="button" class="btn-watch-ad" id="btn-watch-ad" disabled>
-                    <span class="btn-icon">▶</span>
-                    <span class="btn-text">Reklám megtekintése</span>
-                </button>
-            </div>
-            <div class="player-loading" id="player-loading" style="display: none;">
-                <div class="spinner"></div>
-                <span>Reklám betöltése...</span>
-            </div>
-            <div class="ad-progress-bar" id="ad-progress-bar" style="display: none;">
-                <div class="ad-progress-fill" id="ad-progress-fill"></div>
-            </div>
-            <div class="ad-progress-meta" id="ad-progress-meta" style="display: none;">
-                <span id="ad-progress-text">Videó megtekintése szükséges a szavazathoz.</span>
-                <span class="ad-progress-help">
-                    <span class="ad-progress-help-label">Miért kell végignézni?</span>
-                    <span class="ad-progress-help-bubble">A szavazás hitelesítése miatt csak a végignézett videó után jár a jutalom.</span>
-                </span>
-            </div>
-            <button type="button" class="btn-skip-video" id="btn-skip-video" style="display: none;">
-                Videó kihagyása
-            </button>
-            <button type="button" class="btn-resume-ad" id="btn-resume-ad" style="display: none;">
-                ▶ Folytatás
-            </button>
-            <div class="video-info-panel" id="video-info-panel" style="display: none;">
-                <div class="video-info-title">
-                    <span class="video-info-icon" id="video-info-icon">📺</span>
-                    <span id="video-info-title-text"></span>
-                </div>
-                <div class="video-info-section video-info-watch">
-                    <span class="video-info-label">👀 Megnézésért:</span>
-                    <span class="video-info-value" id="video-info-watch-reward"></span>
-                </div>
-                <div class="video-info-section video-info-click" id="video-info-click-section" style="display: none;">
-                    <span class="video-info-label">👆 Kattintásért:</span>
-                    <span class="video-info-value" id="video-info-click-reward"></span>
-                </div>
-                <div class="video-info-progress" id="video-info-progress-section" style="display: none;">
-                    <span class="video-info-label">⏱️ Eddig:</span>
-                    <span id="video-info-watched-time">0:00</span> →
-                    <span id="video-info-earned-pts">0</span> pont jóváírva
-                </div>
-            </div>
-            <div class="ads-watch-live-balance" id="ads-watch-live-balance" aria-live="polite">
-                <div class="ads-watch-live-balance-title">Aktuális egyenleg</div>
-                <div class="ads-watch-live-balance-grid">
-                    <div class="live-balance-item" data-type="points">
-                        <span class="live-balance-label">Pontok</span>
-                        <span class="live-balance-value" id="video-balance-points">0</span>
-                        <span class="live-balance-delta" id="video-balance-points-delta"></span>
-                    </div>
-                    <div class="live-balance-item" data-type="votes">
-                        <span class="live-balance-label">Szavazatok</span>
-                        <span class="live-balance-value" id="video-balance-votes">0</span>
-                        <span class="live-balance-delta" id="video-balance-votes-delta"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="education-info-bar" id="education-info-bar" style="display: none;">
-                <div class="edu-info-title">📚 <span id="edu-video-title"></span></div>
-                <div class="edu-info-rewards">
-                    💰 Minden <span id="edu-interval-sec">30</span> mp-ért:
-                    +<span id="edu-pts-interval">5</span> pont,
-                    +<span id="edu-votes-interval">5</span> szavazat
-                </div>
-                <div class="edu-info-bonus">
-                    🎁 Végignézésért: +<span id="edu-bonus-pts">10</span> bónusz pont,
-                    +<span id="edu-bonus-votes">10</span> bónusz szavazat
-                </div>
-                <div class="edu-info-progress">
-                    ⏱️ Eddig: <span id="edu-watched-time">0:00</span> →
-                    <span id="edu-earned-pts">0</span> pont jóváírva
-                </div>
-                <button type="button" class="btn-skip-education" id="btn-skip-education" style="display: none;">
-                    Videó kihagyása
-                </button>
-            </div>
-            <div class="ads-watch-banner" data-role="auto-banner" hidden>
-                <div class="auto-banner-card">
-                    <div class="auto-banner-media">
-                        <img src="" alt="" data-role="auto-banner-image">
-                    </div>
-                    <div class="auto-banner-body">
-                        <div class="auto-banner-title" data-role="auto-banner-title"></div>
-                        <div class="auto-banner-prices" data-role="auto-banner-prices"></div>
-                        <a class="auto-banner-link" href="#" target="_blank" rel="noopener" data-role="auto-banner-link">Megnézem</a>
-                        <div class="auto-banner-progress">
-                            <span class="auto-banner-fill" data-role="auto-banner-progress"></span>
-                        </div>
-                        <div class="auto-banner-hint">Automatikus ajánló – 15 mp után frissül.</div>
-                    </div>
-                </div>
             </div>
         </div>
 
