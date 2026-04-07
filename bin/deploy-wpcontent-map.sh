@@ -88,6 +88,7 @@ fi
 
 echo "🎯 Cél: $SSH_HOST:$REMOTE_WP_CONTENT"
 ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
+verify_remote_bastion_manifest "$(dirname "${REMOTE_WP_CONTENT}")"
 
 # Szelídített rsync opciók (régi verziókhoz is)
 RSYNC_OPTS_SAFE="${RSYNC_OPTS:-}"

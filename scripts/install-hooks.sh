@@ -66,6 +66,9 @@ if [[ ! -f "${COMMIT_TEMPLATE}" ]]; then
 TPL
 fi
 git -C "${REPO_ROOT}" config commit.template "${COMMIT_TEMPLATE}"
+git -C "${REPO_ROOT}" config alias.wstate '!bash scripts/workflow-state.sh'
+git -C "${REPO_ROOT}" config alias.wnext '!bash scripts/workflow-state.sh'
+git -C "${REPO_ROOT}" config alias.wpush '!bash scripts/guarded-push.sh'
 
 cat > "${HOOK_DIR}/pre-commit" <<'HOOK'
 #!/usr/bin/env bash
@@ -73,6 +76,14 @@ set -euo pipefail
 
 if [[ "${IMPACT_POLICY_ALLOW_MAIN_COMMIT:-0}" == "1" ]]; then
   exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -n "${REPO_ROOT}" && -x "${REPO_ROOT}/scripts/check-protected-file-touch.sh" ]]; then
+  "${REPO_ROOT}/scripts/check-protected-file-touch.sh" --mode local
+fi
+if [[ -n "${REPO_ROOT}" && -x "${REPO_ROOT}/scripts/check-commit-lane.sh" ]]; then
+  "${REPO_ROOT}/scripts/check-commit-lane.sh" --mode local
 fi
 
 BRANCH="$(git branch --show-current 2>/dev/null || echo detached)"
@@ -170,11 +181,23 @@ if [[ "\$missing" -ne 0 ]]; then
 fi
 
 SAFE_AUDIT_SCRIPT=""
+PROTECTED_TOUCH_SCRIPT=""
+COMMIT_LANE_SCRIPT=""
 search_dir="\$REPO_ROOT"
 for _ in 1 2 3 4 5 6; do
   candidate="\$search_dir/scripts/safe-repo-audit.sh"
   if [[ -x "\$candidate" ]]; then
     SAFE_AUDIT_SCRIPT="\$candidate"
+  fi
+  protected_candidate="\$search_dir/scripts/check-protected-file-touch.sh"
+  if [[ -x "\$protected_candidate" ]]; then
+    PROTECTED_TOUCH_SCRIPT="\$protected_candidate"
+  fi
+  commit_lane_candidate="\$search_dir/scripts/check-commit-lane.sh"
+  if [[ -x "\$commit_lane_candidate" ]]; then
+    COMMIT_LANE_SCRIPT="\$commit_lane_candidate"
+  fi
+  if [[ -n "\$SAFE_AUDIT_SCRIPT" && -n "\$PROTECTED_TOUCH_SCRIPT" && -n "\$COMMIT_LANE_SCRIPT" ]]; then
     break
   fi
   parent="\$(cd "\$search_dir/.." && pwd)"
@@ -188,6 +211,14 @@ if [[ -z "\$SAFE_AUDIT_SCRIPT" ]]; then
 fi
 
 "\${SAFE_AUDIT_SCRIPT}" --repo "\${REPO_ROOT}" --strict --mode push
+
+if [[ -n "\$PROTECTED_TOUCH_SCRIPT" ]]; then
+  "\${PROTECTED_TOUCH_SCRIPT}" --mode push
+fi
+
+if [[ -n "\$COMMIT_LANE_SCRIPT" ]]; then
+  "\${COMMIT_LANE_SCRIPT}" --mode push
+fi
 
 AI_AGENT_REPO="\$(resolve_ai_agent_repo "\$REPO_ROOT" 2>/dev/null || true)"
 if [[ -n "\$AI_AGENT_REPO" ]] && command -v npm >/dev/null 2>&1; then
@@ -277,6 +308,10 @@ COMMIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
   npm --prefix "$AI_AGENT_REPO" run -s memory:sync -- --limit 120 >/dev/null 2>&1 || true
 ) &
 
+if [[ -x "$REPO_ROOT/scripts/post-commit-status.sh" ]]; then
+  "$REPO_ROOT/scripts/post-commit-status.sh" || true
+fi
+
 exit 0
 HOOK
 
@@ -344,6 +379,10 @@ printf '%s\n' "$NOW_TS" > "$LAST_FILE"
     --chunk-lines 80 \
     --chunk-overlap 20 >/dev/null 2>&1 || true
 ) &
+
+if [[ -x "$REPO_ROOT/scripts/post-merge-deploy-guard.sh" ]]; then
+  "$REPO_ROOT/scripts/post-merge-deploy-guard.sh" || true
+fi
 
 exit 0
 HOOK
@@ -428,4 +467,5 @@ echo "[install-hooks] OK: ${HOOK_DIR}/post-commit telepítve (auto memory captur
 echo "[install-hooks] OK: ${HOOK_DIR}/post-merge telepítve (auto memory refresh)."
 echo "[install-hooks] OK: ${HOOK_DIR}/post-checkout telepítve (auto memory refresh)."
 echo "[install-hooks] commit template: ${COMMIT_TEMPLATE}"
+echo "[install-hooks] git aliasok: wstate, wnext, wpush"
 echo "[install-hooks] enforced one-path policy aktív (commit/push/PR/deploy flow)."

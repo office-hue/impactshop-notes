@@ -86,6 +86,9 @@ SNAPSHOT_HITS="$TMP_DIR/snapshot-hits.txt"
 NOTES_OR_CONV_HITS="$TMP_DIR/notes-or-conv-hits.txt"
 NEW_MODULE_FILES="$TMP_DIR/new-module-files.txt"
 BASTION_GUARD_HITS="$TMP_DIR/bastion-guard-hits.txt"
+PROTECTED_TOUCH_OUTPUT="$TMP_DIR/protected-touch-output.txt"
+COMMIT_LANE_OUTPUT="$TMP_DIR/commit-lane-output.txt"
+REMOTE_WRITE_HITS="$TMP_DIR/remote-write-hits.txt"
 
 if [[ "$MODE" == "push" ]]; then
   upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-}"
@@ -302,7 +305,46 @@ if [[ -s "$NEW_MODULE_FILES.filtered" ]]; then
   fi
 fi
 
-# 6) Informational: tracked sensitive files already inside repository.
+# 7) Protected-touch semantic guard.
+PROTECTED_TOUCH_SCRIPT="$REPO_ROOT/scripts/check-protected-file-touch.sh"
+if [[ -x "$PROTECTED_TOUCH_SCRIPT" ]]; then
+  if "$PROTECTED_TOUCH_SCRIPT" --mode "$MODE" >"$PROTECTED_TOUCH_OUTPUT" 2>&1; then
+    :
+  else
+    WARNINGS=$((WARNINGS + 1))
+    echo "WARN: protected-touch guard triggered:"
+    sed -n '1,80p' "$PROTECTED_TOUCH_OUTPUT"
+    echo
+  fi
+fi
+
+# 8) Commit-lane guard to prevent mixed catch-up commits.
+COMMIT_LANE_SCRIPT="$REPO_ROOT/scripts/check-commit-lane.sh"
+if [[ -x "$COMMIT_LANE_SCRIPT" ]]; then
+  if "$COMMIT_LANE_SCRIPT" --mode "$MODE" >"$COMMIT_LANE_OUTPUT" 2>&1; then
+    :
+  else
+    WARNINGS=$((WARNINGS + 1))
+    echo "WARN: commit-lane guard triggered:"
+    sed -n '1,80p' "$COMMIT_LANE_OUTPUT"
+    echo
+  fi
+fi
+
+# 9) Warn on manual remote write patterns that bypass the guarded deploy flow.
+grep -Ein -- \
+  '(^|[^A-Za-z0-9_-])(scp|rsync)[[:space:]].*@|ssh[[:space:]].*(cp|mv|install|chmod)[[:space:]]|git[[:space:]]+commit[[:space:]].*--no-verify|git[[:space:]]+push[[:space:]].*--no-verify' \
+  "$ADDED_LINES" > "$REMOTE_WRITE_HITS" || true
+
+if [[ -s "$REMOTE_WRITE_HITS" ]]; then
+  WARNINGS=$((WARNINGS + 1))
+  echo "WARN: possible manual remote-write / guard-bypass patterns detected in added lines:"
+  sed -n '1,40p' "$REMOTE_WRITE_HITS"
+  echo "      Prefer bin/impactshop-guard-deploy.sh or scripts/guarded-remote-write.sh."
+  echo
+fi
+
+# 10) Informational: tracked sensitive files already inside repository.
 git ls-files | grep -Ei -- \
   '(^|/)\.env($|\.|/)|\.pem$|\.p12$|\.pfx$|\.key$|(^|/)id_rsa($|\.|/)|(^|/)(secrets?|credentials?)(/|$)|master\.key$|credentials\.yml\.enc$' \
   > "$TRACKED_SENSITIVE" || true

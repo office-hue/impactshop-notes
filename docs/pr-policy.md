@@ -43,6 +43,7 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 ## Hard enforce (technikailag beállítva)
 
 - `pre-commit` hook: blokkolja a commitot `main/master` ágon.
+- `pre-commit` hook: commit-lane guard fut, és blokkolja a kevert staged commitot.
 - `commit-msg` hook: automatikusan hozzáadja a `Memory-ID: none` sort, ha hiányzik.
 - `pre-push` hook: blokkolja a közvetlen `main/master` push-t.
 - `pre-push` hook: kötelező policy fájlok meglétét ellenőrzi.
@@ -51,7 +52,9 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 - `pre-push` hook: memory gate (`memory:gate`) kötelező.
 - `pre-push` hook: PR auto-memory sync (`memory:sync-pr`) fail-open módban.
 - `post-commit` hook: automatikusan memóriába rögzíti a commit kontextust (fail-open).
+- `post-commit` hook: kiírja a következő logikus workflow-lépést.
 - `post-merge` + `post-checkout` hook: automatikus memóriafrissítés throttlinggal (fail-open).
+- `post-merge` hook: repo-specifikus deploy-döntési guardot futtat.
 - CI: PR Checklist Guard kötelező PR body ellenőrzéssel.
 - Merge/deploy döntésnél a bástyavédelmi szabály megsértése hard stop.
 

@@ -869,6 +869,17 @@
   "approval": {
     "require_reason": true,
     "auto_commit_hash": false,
+    "auto_approve_allowed_globs": [
+      "docs/impactshop-guard-config.json",
+      "docs/impactshop-guard-config.sha256",
+      "docs/impactshop-guard-hashes.json",
+      "docs/impactshop-guard-hashes.sha256",
+      "docs/impactshop-protected-files.json",
+      "bin/impactshop-guard-deploy.sh",
+      "bin/impactshop-guard-preflight.sh",
+      "bin/deploy-wpcontent-map.sh",
+      "scripts/check-protected-file-touch.sh"
+    ],
     "diff_tool": "git diff --no-index"
   },
   "deploy_targets": {

@@ -427,9 +427,40 @@
     }
 
     @media (max-width: 720px) {
+      body { overflow-x: hidden; }
       .hero { padding: 24px; }
       .nav { justify-content: center; }
       .flow { grid-template-columns: repeat(2, 1fr); }
+      .grid,
+      .split,
+      .channel-tabs {
+        grid-template-columns: 1fr;
+      }
+      .card {
+        min-width: 0;
+        padding: 20px;
+        overflow-x: auto;
+      }
+      .hero .cta,
+      .hero .cta-secondary {
+        width: 100%;
+        justify-content: center;
+        margin-right: 0;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+      th, td {
+        min-width: 120px;
+      }
+    }
+    @media (max-width: 1180px) {
+      .channel-tabs {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
     }
     @media (max-width: 1180px) {
       .channel-tabs {

@@ -10,6 +10,8 @@
     "Hirdetési fiókok integrációja TERV.ini.md",
     "impact-hub-system-v1.3.md",
     "wp-content/mu-plugins/impactshop-boot.php",
+    "wp-content/mu-plugins/impactshop-action-bar.php",
+    "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
     "wp-content/mu-plugins/impactshop-metrics-ngo.php",
     "wp-content/mu-plugins/impactshop-ads-watch.php",
     "wp-content/mu-plugins/impactshop-ads-watch.js",

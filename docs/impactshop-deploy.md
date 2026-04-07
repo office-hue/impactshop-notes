@@ -11,6 +11,7 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 
 ## Deploy policy (gyors, kötelező minimum)
 - **Deploy parancs**: mindig `bin/impactshop-guard-deploy.sh` (runbook szerint).
+- **Legacy entrypoint**: `bin/deploy.sh` deprekált wrapper, ami már csak a guardolt deployra delegál.
 - **Uncommitted changes**: **block**. Kivétel csak külön engedéllyel.
 - **Target útvonalak**: `.deploy.staging.env` + `.deploy.production.env` az igazság.
 - **Protected Impact Challenge files**: deploy előtt célzott backup kötelező, deploy után fizikai read-only visszazárás kötelező.

@@ -41,7 +41,16 @@ wp-content/uploads/**/*.log
 .codex/guard-snapshots/
 .backups/
 .codex/_preflight_*
+.codex/backups/
+
 vendor/.metadata_never_index
 vendor/.noindex
 conversation-summaries/*_conversation_summary.md
 wp-content/index.php
+
+# Generált PDF/HTML output (forrás: bilingual .md fájlok)
+wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/
+
+# Cleanup backup artefaktok
+.cleanup-backups/
+*.v256-broken

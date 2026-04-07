@@ -31,7 +31,7 @@ resolve_push_base() {
     return 0
   fi
 
-  git hash-object -t tree /dev/null
+  git hash-object -w -t tree /dev/null
 }
 
 while [[ $# -gt 0 ]]; do

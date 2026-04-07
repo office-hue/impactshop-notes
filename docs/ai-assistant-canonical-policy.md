@@ -21,6 +21,13 @@ cd /Users/bujdosoarnold/Developer/GitHub/ai-agent
 npm run memory:pre-task -- --task "<rövid feladatleírás>"
 ```
 
+Ha a feladat a guardrendszert, protected lane-t, Impact Challenge / Impact Shop surface-t vagy offerwall protected runtime-ot érinti, ezt a célzott betöltőt kell előnyben részesíteni:
+
+```bash
+cd /Users/bujdosoarnold/Developer/GitHub/ai-agent
+npm run memory:impact-challenge-load -- --task "<rövid feladatleírás>"
+```
+
 Ha a kontextus stale vagy hiányos:
 
 ```bash
