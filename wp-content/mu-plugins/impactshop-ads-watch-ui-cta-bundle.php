@@ -6,7 +6,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const IMPACTSHOP_ADS_WATCH_UI_CTA_BUNDLE_VERSION = '20260326.1';
+const IMPACTSHOP_ADS_WATCH_UI_CTA_BUNDLE_VERSION = '20260407.2';
+
+// HOTFIX 2026-04-07: CTA bundle disabled — MutationObserver causes UI freeze
+// during ad playback (subtree+characterData triggers on every RAF progress update).
+// The deferred-UI feature will be re-implemented without MutationObserver.
+return;
 
 add_action('wp_print_footer_scripts', 'impactshop_ads_watch_ui_cta_bundle_enqueue', 5);
 
