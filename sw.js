@@ -1,5 +1,5 @@
 /* Sharity PWA Service Worker */
-const CACHE_VERSION = '20260217';
+const CACHE_VERSION = '20260331-3';
 const STATIC_CACHE = `pwa-static-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 

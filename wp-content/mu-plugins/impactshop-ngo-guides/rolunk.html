@@ -4,11 +4,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sharity – Rólunk | Támogass ingyen, vásárlással és feladatokkal</title>
-  <meta name="description" content="A Sharity-vel ingyen támogathatsz civil szervezeteket – vásárlással az Impact Shopban, vagy videókkal és feladatokkal az Impact Challenge-ben.">
-  <meta property="og:title" content="Sharity – Rólunk | Támogass ingyen">
-  <meta property="og:description" content="Kétféle módon tehetsz jót ingyen: kedvezményes vásárlás (Impact Shop) és videók + feladatok (Impact Challenge). Pontokat és szavazatokat kapsz – 0 Ft neked.">
-  <meta property="og:url" content="https://app.sharity.hu/rolunk">
+  <title>Sharity – Rólunk | Brand, küldetés és működés</title>
+  <meta name="description" content="A Sharity összeköti a mindennapi döntéseket a civil hatással: vásárlással, videókkal és feladatokkal támogathatsz szervezeteket, miközben te is előnyöket kapsz.">
+  <meta property="og:title" content="Sharity – Rólunk | Küldetés és működés">
+  <meta property="og:description" content="A Sharity-ben a jó ügy támogatása a hétköznapi rutin része lesz: vásárlás, videók és feladatok valódi civil hatássá alakulnak.">
+  <meta property="og:url" content="https://app.sharity.hu/rolunk/">
   <style>
     :root {
       --ink: #0b1f2a;
@@ -75,6 +75,26 @@
       transition: background 0.2s;
     }
     .nav a:hover { background: rgba(124, 58, 237, 0.1); text-decoration: none; }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(124, 58, 237, 0.25);
+      color: var(--purple);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--purple);
+      color: #fff;
+      border-color: transparent;
+    }
 
     /* ── Hero ── */
     .hero {
@@ -273,22 +293,6 @@
     .level-card.gold { border-color: #ffd700; }
     .level-card.platinum { border-color: #e5e4e2; }
     .level-card.legend { border-color: var(--purple); background: linear-gradient(135deg, rgba(124,58,237,0.04), #fff); }
-    .level-card .pont-badge {
-      display: inline-block;
-      margin-top: 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--teal);
-      background: rgba(20,184,166,0.10);
-      border-radius: 999px;
-      padding: 2px 10px;
-    }
-    .level-table { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 0.9rem; }
-    .level-table th { background: var(--ink); color: #fff; padding: 10px 12px; text-align: left; }
-    .level-table td { padding: 9px 12px; border-bottom: 1px solid rgba(11,31,42,0.07); vertical-align: middle; }
-    .level-table tr:last-child td { border-bottom: none; }
-    .level-table tr:hover td { background: rgba(20,184,166,0.04); }
-    .level-table td:nth-child(1) { font-weight: 700; white-space: nowrap; }
 
     /* ── Benefit cards ── */
     .benefit-grid {
@@ -360,30 +364,78 @@
 
     <!-- ════ NAV ════ -->
     <nav class="nav fade-in">
+      <a href="#story">Mi a Sharity?</a>
       <a href="#csatornak">2 csatorna</a>
       <a href="#pontok">Pontok &amp; Szavazatok</a>
       <a href="#szintek">Szintek &amp; Előnyök</a>
       <a href="#hogyan">Hogyan működik?</a>
+      <a href="#szavazatvasarlas">⚡ Impact Amplifier</a>
       <a href="#faq">GYIK</a>
       <a href="/impactshop">Impact Shop →</a>
+      <div class="lang-switch" aria-label="Nyelvválasztó">
+        <a href="?lang=hu" class="active" aria-current="true">HU</a>
+        <a href="?lang=en"><span aria-hidden="true">&#127760;</span> EN</a>
+      </div>
     </nav>
 
     <!-- ════ HERO ════ -->
     <section class="hero fade-in">
-      <span class="pill">💝 Ingyen jótékonyság – 0 Ft neked</span>
-      <h1>Támogass ingyen,<br>kétféle módon!</h1>
+      <span class="pill">💝 A mindennapi jó ügy platformja</span>
+      <h1>A Sharity-ben a hétköznapi döntéseidből<br>valódi civil hatás lesz.</h1>
       <p style="font-size: 1.15rem; color: var(--ink); max-width: 640px; margin: 16px auto;">
-        A <strong>Sharity</strong>-vel kétféleképpen tehetsz jót – mindkettőből
-        <strong>pontokat</strong> és <strong>szavazatokat</strong> kapsz.
-        A szavazataiddal adományt küldesz, a pontjaiddal szintet lépsz és extra előnyöket kapsz.
-        <strong>Neked nem kerül semmibe.</strong>
+        A <strong>Sharity</strong> azért jött létre, hogy a támogatás ne külön program legyen,
+        hanem a napi rutin része. Vásárlással, videónézéssel és feladatokkal
+        <strong>valódi adományt</strong> generálhatsz civil szervezeteknek, miközben
+        <strong>kedvezményeket, pontokat és előnyöket</strong> is kapsz.
+      </p>
+      <p style="max-width: 660px; margin: 0 auto; font-size: 1rem;">
+        Ez az oldal a teljes képet mutatja meg: először a márkát és a küldetést,
+        utána pedig a működés részletes mechanikáját.
       </p>
       <div style="margin-top: 20px;">
-        <a href="/impactshop" class="btn btn-teal">🛒 Impact Shop</a>
-        <a href="https://app.sharity.hu/impactad-2/" class="btn btn-purple">🏆 Impact Challenge</a>
-        <a href="#csatornak" class="btn btn-outline">Hogyan működik? ↓</a>
+        <a href="#story" class="btn btn-purple">✨ Mi a Sharity?</a>
+        <a href="/cegeknek/" class="btn btn-teal">🤝 Cégeknek</a>
+        <a href="#csatornak" class="btn btn-outline">Működés részletesen ↓</a>
       </div>
     </section>
+
+    <h2 class="section-title fade-in" id="story" style="margin-top: 48px;">✨ Mi a Sharity?</h2>
+
+    <div class="grid grid-2 fade-in">
+      <div class="card purple-border">
+        <div class="card-icon purple">🌍</div>
+        <h3>A küldetésünk</h3>
+        <p style="margin-top: 12px; font-size: 1rem; color: var(--ink);">
+          A jótékonyság akkor tud tömegessé válni, ha nem extra erőfeszítésként jelenik meg,
+          hanem természetes része lesz annak, ahogyan vásárolunk, tartalmat fogyasztunk és döntéseket hozunk.
+        </p>
+        <p>
+          A Sharity ezt fordítja le napi élménnyé: a felhasználó támogat, a civil szervezet bevételhez jut,
+          a partner pedig értelmes, mérhető társadalmi hatást teremt.
+        </p>
+      </div>
+
+      <div class="card teal-border">
+        <div class="card-icon teal">🤝</div>
+        <h3>Miért más?</h3>
+        <p style="margin-top: 12px; font-size: 1rem; color: var(--ink);">
+          Nem külön adománygyűjtő kampányokra építünk, hanem arra, hogy az emberek már most is
+          vásárolnak, videókat néznek, appokat próbálnak ki és döntéseket hoznak.
+        </p>
+        <p>
+          A Sharity ezeket a hétköznapi aktivitásokat köti össze <strong>átlátható civil támogatással</strong>,
+          pont- és szintrendszerrel, valamint partneri kedvezményekkel.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout purple fade-in" style="margin-top: 24px;">
+      <h3>💡 Röviden</h3>
+      <p>
+        A Sharity egyszerre <strong>brand</strong>, <strong>civil hatásplatform</strong> és <strong>felhasználói élmény</strong>:
+        azért létezik, hogy a jó ügy támogatása egyszerű, örömteli és újra meg újra megismételhető legyen.
+      </p>
+    </div>
 
     <!-- ════ AZ EGÉSZ RENDSZER 1 KÉPEN ════ -->
     <h2 class="section-title fade-in" style="margin-top: 48px;">🗺️ Így működik a Sharity – egy képben</h2>
@@ -456,7 +508,7 @@
         <p style="margin-top: 12px; font-size: 0.9rem;">
           💸 Teljesen ingyenes – a hirdetők és szponzorok fizetnek.
         </p>
-        <a href="https://app.sharity.hu/impactad-2/" style="display: inline-block; margin-top: 10px; font-weight: 600; color: var(--purple);">Impact Challenge megnyitása →</a>
+        <a href="https://app.sharity.hu/impact-challenge/" style="display: inline-block; margin-top: 10px; font-weight: 600; color: var(--purple);">Impact Challenge megnyitása →</a>
       </div>
     </div>
 
@@ -486,9 +538,12 @@
         </p>
         <div class="callout green" style="margin-top: 16px; padding: 14px;">
           <p style="font-size: 0.92rem;">
-            🏦 <strong>Központi adományalap:</strong> a bevételekből gyűlik.
+            🏦 <strong>Központi adományalap:</strong> a bevételekből és az adományokból gyűlik.
             Negyedévente elosztjuk a szervezetek között – <strong>a szavazataid alapján</strong>.
             Minél több szavazatod van, annál nagyobb részt kap a te szervezeted!
+          </p>
+          <p style="font-size: 0.88rem; margin-top: 8px; margin-bottom: 0;">
+            💡 <strong>Gyors szavazatszerzés:</strong> az <a href="#szavazatvasarlas" style="color: var(--teal); font-weight: 600;">adományozással</a> azonnal kaphatsz 500–20 000 szavazatot.
           </p>
         </div>
       </div>
@@ -499,7 +554,13 @@
         <h3>Pontok → Szintlépés → Előnyök</h3>
         <p style="margin-top: 12px; font-size: 1rem; color: var(--ink);">
           A pontjaid <strong>szintlépésre</strong> szolgálnak. Magasabb szint = <strong>3 féle előny</strong>.
-          A pontjaid hosszabb inaktivitás esetén lassan csökkenhetnek, aktív használattal mindig növekszenek!
+          A pontjaid megmaradnak, de <strong>tartós inaktivitásnál lassan csökkenhetnek</strong>.
+        </p>
+        <p style="margin-top: 8px; font-size: 0.92rem; color: var(--muted);">
+          ⏳ 3 nap türelmi idő után inaktivitási csökkenés indul, és magasabb szinteken heti természetes avulás is van. 100 pont alá nem eshet.
+        </p>
+        <p style="margin-top: 6px; font-size: 0.9rem; color: var(--muted);">
+          🎯 Napi pontszerzési limit: 1 500 pont. Videókra külön napi limitek érvényesek.
         </p>
         <div class="callout sun" style="margin-top: 16px; padding: 14px;">
           <p style="font-size: 0.92rem;">
@@ -508,6 +569,11 @@
           </p>
         </div>
       </div>
+    </div>
+
+    <div class="callout green fade-in" style="margin-top: 20px;">
+      <h3>🆔 Pseudo ID — automatikus indulás</h3>
+      <p>Az első látogatáskor a böngésződben létrejön egy Pseudo ID (anonim azonosító), és ehhez kötjük a pontjaidat és szavazataidat — így <strong>regisztráció nélkül</strong> is haladsz. Ha törlöd a böngésző adatait vagy eszközt váltasz, ez az azonosító elveszhet, ezért érdemes <strong>elmenteni a helyreállító azonosítót</strong>, hogy később össze tudd kötni a haladásod. Részletek: <a href="/impactshop" style="color: var(--teal); font-weight: 600;">Impact Shop</a> · <a href="/ngo-guides/impact-challenge/" style="color: var(--teal); font-weight: 600;">Impact Challenge</a> · <a href="/ngo-guides/ngo-card/" style="color: var(--teal); font-weight: 600;">NGO Card</a>.</p>
     </div>
 
     <!-- ════ 3 ELŐNY ════ -->
@@ -526,9 +592,22 @@
           Magasabb szinten <strong>nagyobb kedvezményt kapsz</strong> a partnerboltokban.
           A bolt meghatároz egy max. kedvezményt – a szinted dönti el, mennyit kapsz belőle.
         </p>
-        <p style="margin-top: 8px; font-size: 0.88rem; color: var(--teal); font-weight: 600;">
-          Példa: Gold szinten a max. kedvezmény 80%-át kapod meg. Legend szinten 100%-ot.
-        </p>
+        <table style="width: 100%; font-size: 0.82rem; border-collapse: collapse; margin-top: 10px;">
+          <thead><tr style="background: rgba(15,138,157,0.08);">
+            <th style="padding: 5px 8px; text-align: left;">Szint</th>
+            <th style="padding: 5px 8px; text-align: center;">Ponthatár</th>
+            <th style="padding: 5px 8px; text-align: right;">Max kedvezményből</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding: 4px 8px;">🌱 Basic</td><td style="padding: 4px 8px; text-align: center;">0</td><td style="padding: 4px 8px; text-align: right;">50%</td></tr>
+            <tr style="background: rgba(205,127,50,0.07);"><td style="padding: 4px 8px;">🥉 Bronze</td><td style="padding: 4px 8px; text-align: center;">2 000</td><td style="padding: 4px 8px; text-align: right;">60%</td></tr>
+            <tr><td style="padding: 4px 8px;">🥈 Silver</td><td style="padding: 4px 8px; text-align: center;">15 000</td><td style="padding: 4px 8px; text-align: right;">70%</td></tr>
+            <tr style="background: rgba(255,215,0,0.1);"><td style="padding: 4px 8px;">🥇 Gold</td><td style="padding: 4px 8px; text-align: center;">50 000</td><td style="padding: 4px 8px; text-align: right; font-weight: 600;">80%</td></tr>
+            <tr><td style="padding: 4px 8px;">💎 Platinum</td><td style="padding: 4px 8px; text-align: center;">120 000</td><td style="padding: 4px 8px; text-align: right;">90%</td></tr>
+            <tr style="background: rgba(124,58,237,0.07);"><td style="padding: 4px 8px;">👑 Legend</td><td style="padding: 4px 8px; text-align: center;">300 000</td><td style="padding: 4px 8px; text-align: right; font-weight: 700; color: var(--purple);">100%</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.82rem; color: var(--muted);">Pl. ha egy bolt max. 20% kedvezményt ad, Gold szinten 16%-ot kapsz (20% × 80%).</p>
       </div>
 
       <!-- Előny 2 -->
@@ -539,9 +618,23 @@
           Magasabb szinten <strong>egyetlen szavazatod többet ér</strong>.
           Mintha több szavazatot adnál le egyszerre – a szervezeted több adományt kap utána!
         </p>
-        <p style="margin-top: 8px; font-size: 0.88rem; color: var(--purple); font-weight: 600;">
-          Példa: Bronze (2×) szinten 1 szavazatod úgy számít, mintha 2 lenne. Legend (6×) szinten 6!
-        </p>
+        <table style="width: 100%; font-size: 0.82rem; border-collapse: collapse; margin-top: 10px;">
+          <thead><tr style="background: rgba(124,58,237,0.08);">
+            <th style="padding: 5px 8px; text-align: left;">Szint</th>
+            <th style="padding: 5px 8px; text-align: center;">Ponthatár</th>
+            <th style="padding: 5px 8px; text-align: right;">Szorzó</th>
+            <th style="padding: 5px 8px; text-align: right;">100 szav. ér</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding: 4px 8px;">🌱 Basic</td><td style="padding: 4px 8px; text-align: center;">0</td><td style="padding: 4px 8px; text-align: right;">1×</td><td style="padding: 4px 8px; text-align: right;">100</td></tr>
+            <tr style="background: rgba(205,127,50,0.07);"><td style="padding: 4px 8px;">🥉 Bronze</td><td style="padding: 4px 8px; text-align: center;">2 000</td><td style="padding: 4px 8px; text-align: right;">2×</td><td style="padding: 4px 8px; text-align: right;">200</td></tr>
+            <tr><td style="padding: 4px 8px;">🥈 Silver</td><td style="padding: 4px 8px; text-align: center;">15 000</td><td style="padding: 4px 8px; text-align: right;">3×</td><td style="padding: 4px 8px; text-align: right;">300</td></tr>
+            <tr style="background: rgba(255,215,0,0.1);"><td style="padding: 4px 8px;">🥇 Gold</td><td style="padding: 4px 8px; text-align: center;">50 000</td><td style="padding: 4px 8px; text-align: right; font-weight: 600;">4×</td><td style="padding: 4px 8px; text-align: right; font-weight: 600;">400</td></tr>
+            <tr><td style="padding: 4px 8px;">💎 Platinum</td><td style="padding: 4px 8px; text-align: center;">120 000</td><td style="padding: 4px 8px; text-align: right;">5×</td><td style="padding: 4px 8px; text-align: right;">500</td></tr>
+            <tr style="background: rgba(124,58,237,0.07);"><td style="padding: 4px 8px;">👑 Legend</td><td style="padding: 4px 8px; text-align: center;">300 000</td><td style="padding: 4px 8px; text-align: right; font-weight: 700; color: var(--purple);">6×</td><td style="padding: 4px 8px; text-align: right; font-weight: 700; color: var(--purple);">600</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.82rem; color: var(--muted);">A szorzó a szavazataid leadásakor érvényesül – nem kell külön beállítani.</p>
       </div>
 
       <!-- Előny 3 -->
@@ -552,9 +645,23 @@
           Magasabb szinten az Impact Shopban tett vásárlásod <strong>több adományt generál</strong>
           – anélkül, hogy te többet fizetnél!
         </p>
-        <p style="margin-top: 8px; font-size: 0.88rem; color: var(--orange); font-weight: 600;">
-          Példa: Legend szinten (1.25×) 100 Ft helyett 125 Ft adomány keletkezik – plusz ingyen!
-        </p>
+        <table style="width: 100%; font-size: 0.82rem; border-collapse: collapse; margin-top: 10px;">
+          <thead><tr style="background: rgba(249,115,22,0.08);">
+            <th style="padding: 5px 8px; text-align: left;">Szint</th>
+            <th style="padding: 5px 8px; text-align: center;">Ponthatár</th>
+            <th style="padding: 5px 8px; text-align: right;">Szorzó</th>
+            <th style="padding: 5px 8px; text-align: right;">100 Ft adom. helyett</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding: 4px 8px;">🌱 Basic</td><td style="padding: 4px 8px; text-align: center;">0</td><td style="padding: 4px 8px; text-align: right;">1×</td><td style="padding: 4px 8px; text-align: right;">100 Ft</td></tr>
+            <tr style="background: rgba(205,127,50,0.07);"><td style="padding: 4px 8px;">🥉 Bronze</td><td style="padding: 4px 8px; text-align: center;">2 000</td><td style="padding: 4px 8px; text-align: right;">1.05×</td><td style="padding: 4px 8px; text-align: right;">105 Ft</td></tr>
+            <tr><td style="padding: 4px 8px;">🥈 Silver</td><td style="padding: 4px 8px; text-align: center;">15 000</td><td style="padding: 4px 8px; text-align: right;">1.10×</td><td style="padding: 4px 8px; text-align: right;">110 Ft</td></tr>
+            <tr style="background: rgba(255,215,0,0.1);"><td style="padding: 4px 8px;">🥇 Gold</td><td style="padding: 4px 8px; text-align: center;">50 000</td><td style="padding: 4px 8px; text-align: right; font-weight: 600;">1.15×</td><td style="padding: 4px 8px; text-align: right; font-weight: 600;">115 Ft</td></tr>
+            <tr><td style="padding: 4px 8px;">💎 Platinum</td><td style="padding: 4px 8px; text-align: center;">120 000</td><td style="padding: 4px 8px; text-align: right;">1.20×</td><td style="padding: 4px 8px; text-align: right;">120 Ft</td></tr>
+            <tr style="background: rgba(249,115,22,0.08);"><td style="padding: 4px 8px;">👑 Legend</td><td style="padding: 4px 8px; text-align: center;">300 000</td><td style="padding: 4px 8px; text-align: right; font-weight: 700; color: var(--orange);">1.25×</td><td style="padding: 4px 8px; text-align: right; font-weight: 700; color: var(--orange);">125 Ft</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 8px; font-size: 0.82rem; color: var(--muted);">A szorzó automatikusan alkalmazzuk a bolt jutalékára – neked nem kerül többe a vásárlás.</p>
       </div>
     </div>
 
@@ -565,6 +672,19 @@
         <strong>a szervezetednek is</strong> (erősebb szavazat + több adomány).
         Minél aktívabb vagy, annál nagyobb a hatásod!
       </p>
+      <p style="margin-top: 8px; font-size: 0.82rem; color: var(--muted); font-style: italic;">A ponthatárok a közösség méretéhez igazodnak — a feltüntetett értékek a jelenlegi határok.</p>
+      <p style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);">⏱️ Tájékoztató ütem: Bronze ~1–2 hét, Silver ~3–5 hét, Gold ~1–2 hónap, Platinum ~2–4 hónap, Legend ~4–6 hónap (folyamatos aktivitás mellett).</p>
+      <div style="margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+        <div style="font-weight: 600; margin-bottom: 6px;">Mi szükséges az egyes szintekhez?</div>
+        <ul style="margin: 0 0 6px 18px;">
+          <li>Bronze: rendszeres aktivitással ~1–2 hét</li>
+          <li>Silver: heti 5+ napos aktivitással ~1 hónap</li>
+          <li>Gold: aktív felhasználóknak ~1–2 hónap</li>
+          <li>Platinum: elkötelezett, napi szintű használattal ~2–4 hónap</li>
+          <li>Legend: a legaktívabbaknak ~4–6 hónap folyamatos részvétellel</li>
+        </ul>
+        <div style="font-size: 0.85rem; color: var(--muted);">Alkalmi használat mellett a Platinum/Legend tipikusan nem elérhető.</div>
+      </div>
     </div>
 
     <!-- ════ SZINTRENDSZER ════ -->
@@ -578,99 +698,33 @@
       <div class="level-card">
         <div class="emoji">🌱</div>
         <h4>Basic</h4>
-        <div class="perk">Max. kedvezmény 50%-a<br>1× szavazatsúly<br>1.00× adomány</div>
-        <span class="pont-badge">0–999 pont</span>
+        <div class="perk"><strong>0 pont</strong><br>50% kedvezmény<br>1× szavazatsúly<br>1× adomány</div>
       </div>
       <div class="level-card bronze">
         <div class="emoji">🥉</div>
         <h4>Bronze</h4>
-        <div class="perk">Max. kedvezmény 60%-a<br>2× szavazatsúly<br>1.05× adomány</div>
-        <span class="pont-badge">1 000 pont</span>
+        <div class="perk"><strong>2 000 pont</strong><br>60% kedvezmény<br>2× szavazatsúly<br>1.05× adomány</div>
       </div>
       <div class="level-card silver">
         <div class="emoji">🥈</div>
         <h4>Silver</h4>
-        <div class="perk">Max. kedvezmény 70%-a<br>3× szavazatsúly<br>1.10× adomány</div>
-        <span class="pont-badge">5 000 pont</span>
+        <div class="perk"><strong>15 000 pont</strong><br>70% kedvezmény<br>3× szavazatsúly<br>1.10× adomány</div>
       </div>
       <div class="level-card gold">
         <div class="emoji">🥇</div>
         <h4>Gold</h4>
-        <div class="perk">Max. kedvezmény 80%-a<br>4× szavazatsúly<br>1.15× adomány</div>
-        <span class="pont-badge">15 000 pont</span>
+        <div class="perk"><strong>50 000 pont</strong><br>80% kedvezmény<br>4× szavazatsúly<br>1.15× adomány</div>
       </div>
       <div class="level-card platinum">
         <div class="emoji">💎</div>
         <h4>Platinum</h4>
-        <div class="perk">Max. kedvezmény 90%-a<br>5× szavazatsúly<br>1.20× adomány</div>
-        <span class="pont-badge">40 000 pont</span>
+        <div class="perk"><strong>120 000 pont</strong><br>90% kedvezmény<br>5× szavazatsúly<br>1.20× adomány</div>
       </div>
       <div class="level-card legend">
         <div class="emoji">👑</div>
         <h4>Legend</h4>
-        <div class="perk">Max. kedvezmény 100%-a<br>6× szavazatsúly<br>1.25× adomány</div>
-        <span class="pont-badge">100 000 pont</span>
+        <div class="perk"><strong>300 000 pont</strong><br>100% kedvezmény<br>6× szavazatsúly<br>1.25× adomány</div>
       </div>
-    </div>
-
-    <!-- Részletes szint-táblázat -->
-    <div class="fade-in" style="margin-top: 32px; overflow-x: auto;">
-      <table class="level-table">
-        <thead>
-          <tr>
-            <th>Szint</th>
-            <th>Ponthatár (tól)</th>
-            <th>Szavazatsúly</th>
-            <th>Adomány szorzó</th>
-            <th>Kedvezmény (max-ból)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>🌱 Basic</td>
-            <td>0 pont</td>
-            <td>×1</td>
-            <td>×1.00</td>
-            <td>50%</td>
-          </tr>
-          <tr>
-            <td>🥉 Bronze</td>
-            <td>1 000 pont</td>
-            <td>×2</td>
-            <td>×1.05</td>
-            <td>60%</td>
-          </tr>
-          <tr>
-            <td>🥈 Silver</td>
-            <td>5 000 pont</td>
-            <td>×3</td>
-            <td>×1.10</td>
-            <td>70%</td>
-          </tr>
-          <tr>
-            <td>🥇 Gold</td>
-            <td>15 000 pont</td>
-            <td>×4</td>
-            <td>×1.15</td>
-            <td>80%</td>
-          </tr>
-          <tr>
-            <td>💎 Platinum</td>
-            <td>40 000 pont</td>
-            <td>×5</td>
-            <td>×1.20</td>
-            <td>90%</td>
-          </tr>
-          <tr>
-            <td>👑 Legend</td>
-            <td>100 000 pont</td>
-            <td>×6</td>
-            <td>×1.25</td>
-            <td>100%</td>
-          </tr>
-        </tbody>
-      </table>
-      <p style="font-size: 0.8rem; color: var(--muted); margin-top: 8px;">* A ponthatárok tájékoztató jellegűek – 10+ aktív felhasználó esetén a szint percentilis alapon is számítódhat.</p>
     </div>
 
     <!-- ════ HOGYAN MŰKÖDIK (lépésről lépésre) ════ -->
@@ -718,13 +772,73 @@
       </div>
       <div class="card">
         <div class="card-icon orange">📋</div>
-        <h3>Feladatok (Offerwall)</h3>
+        <h3>Feladatok az Impact Challenge-ben (Offerwall)</h3>
         <p style="margin-top: 12px;">
           Egyszerű feladatok: <strong>kérdőívek kitöltése</strong>, ingyenes appok kipróbálása,
           regisztrációk. 1-5 perc, teljesen ingyenes.
           A hirdetők fizetnek – neked <strong>pont + szavazat</strong> jár.
         </p>
       </div>
+    </div>
+
+    <!-- ════ PONT- ÉS SZAVAZATSZERZÉS ════ -->
+    <div class="card fade-in" style="margin-top: 24px;">
+      <h3 style="font-size: 1.15rem;">🎯 Mennyit kapsz az egyes tevékenységekért?</h3>
+
+      <h4 style="margin-top: 16px;">📺 Videónézés</h4>
+      <table style="margin-top: 8px; font-size: 0.95rem;">
+        <thead>
+          <tr>
+            <th>Tartalom</th>
+            <th>Pont</th>
+            <th>Szavazat</th>
+            <th>Streak</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Normál videó</td><td>1</td><td>1</td><td>✅ érvényes</td></tr>
+          <tr><td>Szponzor videó</td><td>5</td><td>5</td><td>❌ nem</td></tr>
+          <tr><td>Auto banner</td><td>1</td><td>1</td><td>✅ érvényes</td></tr>
+          <tr><td>Edukációs tartalom</td><td>1</td><td>1</td><td>✅ + bónusz</td></tr>
+        </tbody>
+      </table>
+
+      <div style="background: rgba(255,175,43,0.08); border-radius: 10px; padding: 14px 18px; margin-top: 14px;">
+        <strong>🔥 Streak bónusz:</strong> Ha egymást követő napokon nézel videót, a pontjaid és szavazataid szorzódnak (szponzor videó kivételével):
+        <br><strong>7 nap</strong> → ×1,10 · <strong>14 nap</strong> → ×1,20 · <strong>30 nap</strong> → ×1,30
+      </div>
+
+      <h4 style="margin-top: 20px;">🔗 CTA kattintás</h4>
+      <p style="margin-top: 6px;">Ha a videó/banner melletti gombra kattintasz (pl. „Tudj meg többet"):</p>
+      <div style="display: inline-block; background: rgba(15,138,157,0.08); border-radius: 10px; padding: 8px 16px; margin-top: 6px;">
+        <strong style="color: var(--teal);">+5 pont</strong> &nbsp;·&nbsp; <strong style="color: var(--purple);">+5 szavazat</strong> <span style="color: var(--muted); font-size: 0.88rem;">/ kattintás</span>
+      </div>
+
+      <h4 style="margin-top: 24px;">📋 Egyéb pontforrások</h4>
+      <p style="margin-top: 6px; font-size: 0.95rem;">A videónézésen és feladatokon kívül is gyűjthetsz pontokat — ezek a szintedet emelik:</p>
+      <table style="margin-top: 8px; font-size: 0.93rem;">
+        <thead>
+          <tr>
+            <th>Tevékenység</th>
+            <th>Pont</th>
+            <th>Megkötés</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Napi bejelentkezés</td><td>2</td><td>Naponta 1×</td></tr>
+          <tr><td>Profil kitöltése</td><td>10</td><td>Egyszeri</td></tr>
+          <tr><td>Becenév mentése</td><td>15</td><td>Egyszeri</td></tr>
+          <tr><td>Oldal megosztása</td><td>10</td><td>Napi limit: 3</td></tr>
+          <tr><td>Wallet Pass letöltése</td><td>25</td><td>NGO-nként</td></tr>
+          <tr><td>Impact Challenge megnyitása</td><td>5</td><td>Naponta 1×</td></tr>
+          <tr><td>Vásárlás az Impact Shop-ban</td><td>≈ vásárlás összege (Ft)</td><td>Tranzakciónként</td></tr>
+          <tr><td>Első vásárlás bónusz</td><td>100</td><td>Egyszeri</td></tr>
+          <tr><td>Új bolt felfedezése</td><td>25</td><td>Boltonként</td></tr>
+          <tr><td>Barát meghívása</td><td>200</td><td>Te kapsz (meghívó)</td></tr>
+          <tr><td>Meghívással csatlakozás</td><td>50</td><td>A barátod kapja</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 8px; font-size: 0.88rem; color: #555;">💡 Ezek csak pontot adnak (szavazatot nem) — de a szinted emelésével a szavazataid is többet érnek!</p>
     </div>
 
     <!-- ════ IMPACT SHOP RÉSZLETESEN ════ -->
@@ -771,6 +885,140 @@
       <a href="/impactshop" class="btn btn-teal">Összes partner megtekintése →</a>
     </div>
 
+    <!-- ════ SZAVAZATVÁSÁRLÁS ════ -->
+    <h2 class="section-title fade-in" id="szavazatvasarlas">⚡ Impact Amplifier</h2>
+    <p class="fade-in" style="font-size: 1.1rem; color: var(--muted); margin-top: -12px; margin-bottom: 20px;">Erősítsd fel az adományod hatását</p>
+
+    <p class="fade-in" style="max-width: 720px; font-size: 1.05rem;">
+      Nem akarsz videókat nézni, de gyorsan szeretnél szavazatokat a kedvenc szervezetedre?
+      <strong>Adományozz, és azonnal megkapod a szavazatokat</strong> — amelyek rögtön a választott NGO-ra kerülnek.
+      Az <strong>Impact Amplifier</strong> segítségével az adományod hatása többszörözhető: nem csak a saját adományod jut el a szervezethez, hanem a közös alapból is jóval nagyobb szeletet szerzel nekik.
+    </p>
+
+    <div class="callout sun fade-in" style="margin-bottom: 24px;">
+      <h3>💡 Hogyan működik?</h3>
+      <p>Adományozol → az adomány <strong>50%-a</strong> a közös adományalapba kerül (az NGO-k ebből kapnak negyedévente), <strong>50%-a</strong> a platform fenntartását fedezi. Cserébe azonnal megkapod a szavazatokat, amelyek automatikusan leadódnak a kiválasztott szervezetre.</p>
+    </div>
+
+    <div style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));" class="fade-in">
+
+      <div class="card" style="text-align: center; padding: 20px 16px;">
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">🌱</div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem;">Starter</div>
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--teal); margin: 6px 0;">500 Ft</div>
+        <div style="font-size: 0.88rem; color: var(--muted); margin-bottom: 10px;">500 szavazat</div>
+        <div style="font-size: 0.78rem; background: rgba(15,138,157,0.08); border-radius: 8px; padding: 6px;">1.00 Ft/szavazat</div>
+      </div>
+
+      <div class="card" style="text-align: center; padding: 20px 16px;">
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">🌿</div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem;">Supporter</div>
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--teal); margin: 6px 0;">1 000 Ft</div>
+        <div style="font-size: 0.88rem; color: var(--muted); margin-bottom: 4px;">1 100 szavazat</div>
+        <div style="font-size: 0.78rem; color: var(--orange); font-weight: 600; margin-bottom: 6px;">+10% bónusz</div>
+        <div style="font-size: 0.78rem; background: rgba(15,138,157,0.08); border-radius: 8px; padding: 6px;">0.91 Ft/szavazat</div>
+      </div>
+
+      <div class="card" style="text-align: center; padding: 20px 16px; border: 2px solid var(--sun); background: linear-gradient(135deg, rgba(245,182,66,0.06), #fff); position: relative;">
+        <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--sun); color: #7a4b00; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap;">⭐ Legjobb érték</div>
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">🌳</div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem;">Champion</div>
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--teal); margin: 6px 0;">2 500 Ft</div>
+        <div style="font-size: 0.88rem; color: var(--muted); margin-bottom: 4px;">3 000 szavazat</div>
+        <div style="font-size: 0.78rem; color: var(--orange); font-weight: 600; margin-bottom: 6px;">+20% bónusz</div>
+        <div style="font-size: 0.78rem; background: rgba(245,182,66,0.15); border-radius: 8px; padding: 6px; font-weight: 600;">0.83 Ft/szavazat</div>
+      </div>
+
+      <div class="card" style="text-align: center; padding: 20px 16px;">
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">🔥</div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem;">Hero</div>
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--teal); margin: 6px 0;">5 000 Ft</div>
+        <div style="font-size: 0.88rem; color: var(--muted); margin-bottom: 4px;">6 500 szavazat</div>
+        <div style="font-size: 0.78rem; color: var(--orange); font-weight: 600; margin-bottom: 6px;">+30% bónusz</div>
+        <div style="font-size: 0.78rem; background: rgba(15,138,157,0.08); border-radius: 8px; padding: 6px;">0.77 Ft/szavazat</div>
+      </div>
+
+      <div class="card" style="text-align: center; padding: 20px 16px; border: 2px solid var(--purple); background: linear-gradient(135deg, rgba(124,58,237,0.04), #fff);">
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">💎</div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.1rem;">Legend</div>
+        <div style="font-size: 1.4rem; font-weight: 700; color: var(--purple); margin: 6px 0;">10 000 Ft</div>
+        <div style="font-size: 0.88rem; color: var(--muted); margin-bottom: 4px;">20 000 szavazat</div>
+        <div style="font-size: 0.78rem; color: var(--purple); font-weight: 600; margin-bottom: 6px;">+50% bónusz</div>
+        <div style="font-size: 0.78rem; background: rgba(124,58,237,0.08); border-radius: 8px; padding: 6px; font-weight: 600;">0.67 Ft/szavazat</div>
+      </div>
+
+    </div>
+
+    <div class="callout green fade-in" style="margin-top: 24px;">
+      <h3>📊 Hová megy az adományod?</h3>
+      <p>
+        <strong>50%</strong> → közös adományalap (negyedévente szétosztjuk az NGO-k között a szavazatok arányában)<br>
+        <strong>50%</strong> → platform fenntartás (Sharity működési költségei)<br>
+        A szavazatok azonnal és automatikusan a választott szervezetre kerülnek — nem kell manuálisan leadni.
+      </p>
+    </div>
+
+    <!-- Példa: miért éri meg jobban a szavazásos út -->
+    <div class="card fade-in" style="margin-top: 20px; border: 2px solid var(--sun); background: linear-gradient(135deg, rgba(245,182,66,0.06), #fff);">
+      <h3 style="margin-bottom: 4px;">⚡ Impact Amplifier — hogyan sokszorozódik az adományod?</h3>
+      <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 16px;">
+        A szavazataiddal nemcsak a saját adományodat juttatod el a szervezetednek — hanem
+        <strong>a teljes közös adományalapból</strong> is nagyobb szeletet szerzel nekik. Íme egy valós példa:
+      </p>
+
+      <div style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+
+        <!-- Előtte -->
+        <div style="background: rgba(11,31,42,0.04); border-radius: 14px; padding: 16px;">
+          <div style="font-weight: 700; font-family: 'Space Grotesk', sans-serif; margin-bottom: 10px; font-size: 0.95rem;">📍 Helyzet adomány előtt</div>
+          <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+            <tr><td style="padding: 4px 0; color: var(--muted);">Közös adományalap</td><td style="text-align: right; font-weight: 600;">1 000 000 Ft</td></tr>
+            <tr><td style="padding: 4px 0; color: var(--muted);">Összes szavazat</td><td style="text-align: right; font-weight: 600;">100 000 db</td></tr>
+            <tr><td style="padding: 4px 0; color: var(--muted);">Kedvenc NGO szavazata</td><td style="text-align: right; font-weight: 600;">10 000 db</td></tr>
+            <tr style="border-top: 1px solid rgba(11,31,42,0.1);"><td style="padding: 6px 0 0; color: var(--muted);">NGO részesedése</td><td style="text-align: right; font-weight: 700; padding-top: 6px;">10% = <span style="color: var(--teal);">100 000 Ft</span></td></tr>
+          </table>
+        </div>
+
+        <!-- Utána -->
+        <div style="background: rgba(111,227,193,0.12); border-radius: 14px; padding: 16px; border: 1px solid rgba(111,227,193,0.4);">
+          <div style="font-weight: 700; font-family: 'Space Grotesk', sans-serif; margin-bottom: 10px; font-size: 0.95rem;">🎯 10 000 Ft adományozás után <span style="font-size: 0.78rem; background: var(--sun); color: #7a4b00; padding: 2px 7px; border-radius: 999px; vertical-align: middle;">💎 Legend csomag</span></div>
+          <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+            <tr><td style="padding: 4px 0; color: var(--muted);">Adományalap nő <span style="font-size: 0.78rem;">(+5 000 Ft)</span></td><td style="text-align: right; font-weight: 600;">1 005 000 Ft</td></tr>
+            <tr><td style="padding: 4px 0; color: var(--muted);">Kapott szavazat</td><td style="text-align: right; font-weight: 600;">+20 000 db</td></tr>
+            <tr><td style="padding: 4px 0; color: var(--muted);">NGO új szavazata</td><td style="text-align: right; font-weight: 600;">25 000 db</td></tr>
+            <tr><td style="padding: 4px 0; color: var(--muted);">Összes szavazat</td><td style="text-align: right; font-weight: 600;">120 000 db</td></tr>
+            <tr style="border-top: 1px solid rgba(111,227,193,0.5);"><td style="padding: 6px 0 0; color: var(--muted);">NGO részesedése</td><td style="text-align: right; font-weight: 700; padding-top: 6px;">21,7% = <span style="color: #166534;">218 000 Ft</span></td></tr>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Összesítés -->
+      <div style="margin-top: 16px; padding: 14px; background: rgba(124,58,237,0.07); border-radius: 12px; border-left: 4px solid var(--purple);">
+        <div style="display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); font-size: 0.88rem;">
+          <div>
+            <div style="color: var(--muted); margin-bottom: 2px;">💸 Közvetlen adomány esetén:</div>
+            <div style="font-weight: 700;">10 000 Ft → <span style="color: var(--muted);">pontosan 10 000 Ft jut az NGO-nak</span></div>
+          </div>
+          <div>
+            <div style="color: var(--muted); margin-bottom: 2px;">🗳️ Szavazásos úton:</div>
+            <div style="font-weight: 700;">10 000 Ft → <span style="color: #166534;">+118 000 Ft jutott az NGO-nak</span></div>
+          </div>
+          <div>
+            <div style="color: var(--muted); margin-bottom: 2px;">📈 Hatékonyság:</div>
+            <div style="font-weight: 700; color: var(--purple);">~12× jobb mint a közvetlen adomány</div>
+          </div>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--muted); margin: 10px 0 0;">
+          * A tényleges szorzó az aktuális pool méretétől és a szavazateloszlástól függ. Minél nagyobb a pool és minél kisebb a szavazatarány, annál jobban megéri.
+        </p>
+      </div>
+    </div>
+
+    <p class="fade-in" style="font-size: 0.9rem; color: var(--muted); margin-top: 12px;">
+      A befizetés <strong>adomány</strong> a Sharity Adományszervező Alapítvány részére. Céges adományozóknak adományigazolást állítunk ki (igény esetén). Az adomány nem visszakövetelhető.
+    </p>
+
     <!-- ════ FAQ ════ -->
     <h2 class="section-title fade-in" id="faq">❓ Gyakori kérdések</h2>
 
@@ -792,11 +1040,11 @@
     </div>
     <div class="faq-item fade-in">
       <h3>Mi az a szavazatsúly-szorzó?</h3>
-      <p>Magasabb szinten az egyetlen szavazatod többet ér. Pl. 2× szorzóval 1 szavazatod úgy számít, mintha 2 lenne – a szervezeted több adományt kap!</p>
+      <p>Magasabb szinten az egyetlen szavazatod többet ér. Pl. Gold szinten 4× szorzóval 1 szavazatod úgy számít, mintha 4 lenne – a szervezeted több adományt kap! Legend szinten a szorzó 6×.</p>
     </div>
     <div class="faq-item fade-in">
       <h3>Mi az adomány-szorzó?</h3>
-      <p>Magasabb szinten az Impact Shopban tett vásárlásod több adományt generál, anélkül hogy te többet fizetnél. Pl. 1.25× szorzóval 100 Ft adomány helyett 125 Ft keletkezik.</p>
+      <p>Magasabb szinten az Impact Shopban tett vásárlásod több adományt generál, anélkül hogy te többet fizetnél. Pl. Gold szinten 1.15× szorzóval 100 Ft adomány helyett 115 Ft keletkezik.</p>
     </div>
     <div class="faq-item fade-in">
       <h3>Milyen feladatokat végezhetek el?</h3>
@@ -806,16 +1054,29 @@
       <h3>Módosíthatom a támogatott szervezetet?</h3>
       <p>Igen, bármikor megváltoztathatod. Több mint 100 civil szervezet közül választhatsz.</p>
     </div>
+    <div class="faq-item fade-in">
+      <h3>Mi az az Impact Amplifier?</h3>
+      <p>Az <strong>Impact Amplifier</strong> (korábbi nevén szavazatvásárlás) a Sharity egyedi adományhatás-erősítő funkciója. Adományozhatsz az Impact Challenge-ben, és cserébe azonnali szavazatokat kapsz — amelyek nemcsak a saját adományodat juttatják el a szervezetednek, hanem a közös adományalapból is nagyobb szeletet szereznek nekik. Az adomány 50%-a a közös adományalapba megy (ebből kapnak az NGO-k negyedévente), 50%-a a platform fenntartását fedezi. A szavazatok automatikusan a kiválasztott szervezetre kerülnek.</p>
+    </div>
+    <div class="faq-item fade-in">
+      <h3>Miben más a vásárolt szavazat az ingyenestől?</h3>
+      <p>Semmiben — ugyanúgy számítanak a negyedéves szétosztásban. A különbség csak az, hogy az adományból kapott szavazatokkal a közös adományalap is nő (az adomány 50%-ával), tehát <strong>minden szavazat összességében többet ér</strong>.</p>
+    </div>
+    <div class="faq-item fade-in">
+      <h3>Kaphatok adományigazolást?</h3>
+      <p>Igen, céges adományozók kérhetnek adományigazolást a fizetési folyamat során. Az igazolást a Sharity Adományszervező Alapítvány állítja ki, és emailben küldi el.</p>
+    </div>
 
     <!-- ════ CTA ════ -->
     <div class="hero fade-in" style="margin-top: 48px; text-align: center;">
       <h2>🚀 Készen állsz?</h2>
       <p style="font-size: 1.08rem; max-width: 560px; margin: 12px auto;">
-        Válaszd ki a szervezetedet és kezdj el támogatni – vásárlással, videónézéssel vagy feladatokkal!
+        Válaszd ki a szervezetedet és kezdj el támogatni – vásárlással, videónézéssel, feladatokkal vagy adományozással!
       </p>
       <div style="margin-top: 20px;">
         <a href="/impactshop" class="btn btn-teal">🛒 Impact Shop</a>
-        <a href="https://app.sharity.hu/impactad-2/" class="btn btn-purple">🏆 Impact Challenge</a>
+        <a href="https://app.sharity.hu/impact-challenge/" class="btn btn-purple">🏆 Impact Challenge</a>
+        <a href="#szavazatvasarlas" class="btn" style="background: var(--sun); color: #7a4b00; box-shadow: 0 8px 20px rgba(245,182,66,0.3);">⚡ Impact Amplifier</a>
       </div>
     </div>
 
@@ -824,7 +1085,7 @@
       <p style="font-size: 1rem; margin-bottom: 6px;"><strong>Sharity</strong></p>
       <p style="opacity: 0.8;">
         Támogass ingyen – kétféle módon!<br>
-        Verzió 3.0 | 2026. február
+        Verzió 3.2 | 2026. február
       </p>
       <div style="margin-top: 14px;">
         <a href="/impactshop" style="margin-right: 14px;">Impact Shop →</a>

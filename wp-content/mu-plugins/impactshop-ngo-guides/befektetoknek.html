@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharity – Befektetőknek | Impact-vezérelt affiliate platform</title>
+  <meta name="description" content="A Sharity egy jótékonyság-vezérelt affiliate marketplace. Megismételhető bevételi modell, erős növekedési potenciál, kettős hatás: profit és társadalmi impact.">
+  <meta property="og:title" content="Sharity – Befektetőknek | Impact-vezérelt affiliate platform">
+  <meta property="og:description" content="Magyarország első impact-alapú affiliate marketplace-e. Bevétel 3 csatornán, 35K+ aktív felhasználó, 500+ partner webshop és offline üzlet, 300+ civil szervezet. Befektetési lehetőség.">
+  <meta property="og:url" content="https://app.sharity.hu/befektetoknek">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --purple: #7c3aed;
+      --pink: #ec4899;
+      --orange: #f97316;
+      --green: #166534;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(15,138,157,0.15), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(124, 58, 237, 0.2), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3, h4 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.5rem 0;
+    }
+    h1 { font-size: clamp(2.2rem, 4vw, 3.4rem); }
+    h2 { font-size: clamp(1.5rem, 2.8vw, 2.2rem); }
+    h3 { font-size: 1.15rem; }
+
+    p { margin: 0 0 1rem 0; line-height: 1.75; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── Navigation ── */
+    .nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 13px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover { background: rgba(15,138,157,0.1); text-decoration: none; }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15,138,157,0.25);
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--teal);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 52px 44px;
+      background: rgba(255,255,255,0.92);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      text-align: center;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(15,138,157,0.14), rgba(124,58,237,0.14));
+      color: var(--teal);
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 14px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 26px;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin: 6px;
+    }
+    .btn:hover { transform: translateY(-2px); text-decoration: none; }
+    .btn-teal {
+      background: var(--teal);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(15,138,157,0.35);
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(124,58,237,0.3);
+    }
+    .btn-outline {
+      background: #fff;
+      color: var(--teal);
+      border: 2px solid var(--teal);
+    }
+    .btn-outline:hover { background: rgba(15,138,157,0.06); }
+
+    /* ── Sections ── */
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(11,31,42,0.08);
+    }
+
+    /* ── Cards / grid ── */
+    .grid { display: grid; gap: 20px; margin-top: 24px; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    .card {
+      padding: 28px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11,31,42,0.08);
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-3px); }
+    .card.teal-border { border: 2px solid var(--teal); background: linear-gradient(135deg, rgba(15,138,157,0.04), #fff); }
+    .card.purple-border { border: 2px solid var(--purple); background: linear-gradient(135deg, rgba(124,58,237,0.04), #fff); }
+    .card.sun-border { border: 2px solid var(--sun); background: linear-gradient(135deg, rgba(245,182,66,0.06), #fff); }
+    .card.mint-border { border: 2px solid var(--mint); background: linear-gradient(135deg, rgba(111,227,193,0.08), #fff); }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      font-size: 1.7rem;
+      margin-bottom: 14px;
+    }
+    .card-icon.purple { background: rgba(124,58,237,0.12); }
+    .card-icon.teal { background: rgba(15,138,157,0.12); }
+    .card-icon.sun { background: rgba(245,182,66,0.2); }
+    .card-icon.mint { background: rgba(111,227,193,0.2); }
+    .card-icon.orange { background: rgba(249,115,22,0.12); }
+    .card-icon.green { background: rgba(34,197,94,0.12); }
+
+    /* ── Callout ── */
+    .callout {
+      padding: 22px 24px;
+      border-radius: 16px;
+      border-left: 4px solid;
+      margin: 24px 0;
+    }
+    .callout.green { background: rgba(111,227,193,0.15); border-color: var(--mint); }
+    .callout.green h3 { color: #166534; }
+    .callout.purple { background: rgba(124,58,237,0.08); border-color: var(--purple); }
+    .callout.purple h3 { color: #5b21b6; }
+    .callout.sun { background: rgba(245,182,66,0.12); border-color: var(--sun); }
+    .callout.sun h3 { color: #7a4b00; }
+    .callout.teal { background: rgba(15,138,157,0.08); border-color: var(--teal); }
+    .callout.teal h3 { color: #0e7490; }
+    .callout p { margin: 0; color: var(--ink); }
+
+    /* ── Steps ── */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 28px; }
+    .step {
+      text-align: center;
+      padding: 22px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), var(--purple));
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .step h3 { margin-bottom: 6px; }
+    .step p { margin: 0; font-size: 0.92rem; }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .stat-item {
+      text-align: center;
+      padding: 20px 16px;
+      background: rgba(255,255,255,0.92);
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(11,31,42,0.08);
+    }
+    .stat-num {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--teal), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      line-height: 1.1;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* ── Revenue model ── */
+    .revenue-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 22px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 6px 16px rgba(11,31,42,0.07);
+      margin-bottom: 12px;
+      border-left: 4px solid var(--teal);
+    }
+    .revenue-row .rev-icon { font-size: 2rem; min-width: 44px; text-align: center; }
+    .revenue-row .rev-label { font-weight: 700; font-family: "Space Grotesk", sans-serif; color: var(--ink); font-size: 1rem; }
+    .revenue-row .rev-desc { font-size: 0.88rem; color: var(--muted); margin-top: 2px; }
+    .revenue-row .rev-tag {
+      margin-left: auto;
+      white-space: nowrap;
+      background: rgba(15,138,157,0.1);
+      color: var(--teal);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    /* ── Timeline ── */
+    .timeline { margin-top: 28px; }
+    .timeline-item {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .timeline-dot {
+      min-width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      font-family: "Space Grotesk", sans-serif;
+      color: #fff;
+      background: linear-gradient(135deg, var(--teal), var(--purple));
+      flex-shrink: 0;
+    }
+    .timeline-content {
+      padding: 16px 20px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 6px 16px rgba(11,31,42,0.07);
+      flex: 1;
+    }
+    .timeline-content h3 { margin-bottom: 4px; }
+    .timeline-content p { margin: 0; font-size: 0.9rem; }
+
+    /* ── Comparison table ── */
+    .compare-table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+    .compare-table th, .compare-table td {
+      padding: 13px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11,31,42,0.07);
+      font-size: 0.9rem;
+    }
+    .compare-table th {
+      background: rgba(15,138,157,0.08);
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .compare-table tr:hover td { background: rgba(15,138,157,0.03); }
+    .compare-table td:first-child { font-weight: 600; color: var(--ink); }
+    .tick { color: var(--success); font-weight: bold; }
+    .cross { color: #ef4444; }
+
+    /* ── Moat diagram ── */
+    .moat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .moat-item {
+      padding: 20px;
+      border-radius: 16px;
+      border: 2px solid transparent;
+      background: #fff;
+      box-shadow: 0 6px 20px rgba(11,31,42,0.08);
+      text-align: center;
+    }
+    .moat-item .moat-icon { font-size: 2.2rem; margin-bottom: 10px; display: block; }
+    .moat-item h3 { font-size: 1rem; margin-bottom: 6px; }
+    .moat-item p { font-size: 0.85rem; margin: 0; }
+
+    /* ── FAQ ── */
+    details {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 6px 16px rgba(11,31,42,0.07);
+      margin-bottom: 12px;
+      padding: 18px 22px;
+      cursor: pointer;
+    }
+    details summary {
+      font-weight: 700;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 1rem;
+      list-style: none;
+    }
+    details summary::after { content: " ＋"; color: var(--teal); }
+    details[open] summary::after { content: " ✕"; }
+    details p { margin-top: 12px; margin-bottom: 0; }
+
+    /* ── Footer CTA ── */
+    .footer-cta {
+      margin-top: 64px;
+      padding: 48px;
+      background: linear-gradient(135deg, rgba(15,138,157,0.12), rgba(124,58,237,0.1));
+      border-radius: 24px;
+      text-align: center;
+      border: 1px solid rgba(15,138,157,0.2);
+    }
+    .footer-cta h2 { margin-bottom: 10px; }
+    .footer-cta p { max-width: 560px; margin: 0 auto 24px; }
+
+    /* ── Disclaimer ── */
+    .disclaimer {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 40px;
+      padding: 16px 20px;
+      background: rgba(11,31,42,0.04);
+      border-radius: 10px;
+      line-height: 1.6;
+    }
+
+    /* ── Fade-in ── */
+    .fade-in { animation: fadeUp 0.5s ease both; }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: translateY(0); } }
+
+    /* ── Page footer ── */
+    .page-footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(11,31,42,0.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .page-footer a { color: var(--teal); font-weight: 600; }
+
+    @media (max-width: 600px) {
+      .hero { padding: 32px 20px; }
+      .footer-cta { padding: 32px 20px; }
+      .revenue-row { flex-wrap: wrap; }
+      .revenue-row .rev-tag { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Navigation -->
+  <nav class="nav" aria-label="Navigáció">
+    <a href="https://app.sharity.hu/rolunk/">ℹ️ Rólunk</a>
+    <a href="https://app.sharity.hu/cegeknek/">🏢 Cégeknek</a>
+    <a href="https://app.sharity.hu/partner-api">⚙️ Partner API</a>
+    <a href="https://app.sharity.hu/ngo-guides/">🤝 NGO-knak</a>
+    <a href="https://app.sharity.hu/impactshop">🛒 Impact Shop</a>
+    <a href="#aktivitasok">⚡ Aktivitások</a>
+    <a href="#ai-agent">🧠 AI Agent</a>
+    <div class="lang-switch" aria-label="Nyelvválasztó">
+      <a href="?lang=hu" class="active" aria-current="true">HU</a>
+      <a href="?lang=en"><span aria-hidden="true">&#127760;</span> EN</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero fade-in">
+    <div class="pill">💼 Befektetőknek</div>
+    <h1>Impact-vezérelt affiliate platform<br>kettős megtérüléssel</h1>
+    <p style="max-width:620px; margin:16px auto 28px; font-size:1.1rem;">
+      A Sharity Magyarország első olyan affiliate marketplace-e, ahol minden vásárlás, videómegtekintés és feladat-teljesítés egyszerre termel <strong>bevételt</strong> és <strong>társadalmi hatást</strong>. A modell önmagát erősíti: az NGO-k aktívan terelik a saját közösségeiket a platformra.
+    </p>
+    <a href="mailto:office@sharity.hu?subject=Befektetői%20érdeklődés" class="btn btn-teal">📩 Kapcsolatfelvétel</a>
+    <a href="#modell" class="btn btn-outline">Üzleti modell ↓</a>
+
+    <!-- Key metrics -->
+    <div class="stats-bar" style="margin-top:40px;">
+      <div class="stat-item">
+        <span class="stat-num">500+</span>
+        <span class="stat-label">Partner webshop</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">35K+</span>
+        <span class="stat-label">Aktív felhasználó</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">300+</span>
+        <span class="stat-label">Civil szervezet</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">25M+</span>
+        <span class="stat-label">Ft adomány eddig</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">3×</span>
+        <span class="stat-label">Bevételi csatorna</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="callout teal" style="margin-top: 28px;">
+    <h3>📌 Mit tudunk ma bizonyítani?</h3>
+    <p>A befektetői sztori alapja nem egy jövőbeli ígéret, hanem egy már működő platform. A Sharity esetében ma is látható a live partner- és NGO-hálózat, a valós felhasználói aktivitás, a többcsatornás bevételi logika és a dokumentált, auditálható technikai működés.</p>
+  </div>
+
+  <div class="grid grid-3" style="margin-top: 20px;">
+    <div class="card teal-border">
+      <div class="card-icon teal">✅</div>
+      <h3>Live működés</h3>
+      <p>Nem pre-launch projekt: a fő publikus route-ok, a partner- és NGO-oldalak, valamint a bevételi és aktivitási surface-ek élesben működnek.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">📊</div>
+      <h3>Mérhető traction</h3>
+      <p>A platformhoz tartoznak valós, kommunikálható topline mutatók: partnerhálózat, aktív felhasználói bázis, NGO-lefedettség és összesített adományvolumen.</p>
+    </div>
+    <div class="card sun-border">
+      <div class="card-icon sun">🛡️</div>
+      <h3>Diligence-képes háttér</h3>
+      <p>A technikai működés nem fekete doboz: guardolt rendszer, dokumentált flow-k, kontrollált deploy és NDA után megosztható részletesebb KPI- és auditanyag.</p>
+    </div>
+  </div>
+
+  <!-- The opportunity -->
+  <h2 class="section-title fade-in" id="lehetoseg">🎯 A lehetőség</h2>
+  <div class="grid grid-2">
+    <div class="card teal-border">
+      <div class="card-icon teal">📈</div>
+      <h3>Az affiliate piac robban</h3>
+      <p>A globális affiliate marketing piac 2027-re várhatóan <strong>27 milliárd dollárra</strong> nő. Magyarországon a Dognet, Tradedoubler és TradeTracker hálózatokon keresztül évente milliárdos összegű jutalék folyik át — ebből a Sharity egyedi pozíciót tud kivágni magának.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">💚</div>
+      <h3>Az impact investing mainstream lett</h3>
+      <p>Az ESG, CSR és impact szempontok egyre fontosabbak a vállalatoknak és a fogyasztóknak is. A Sharity erre a tartós irányváltásra épít: a vásárlási szándékot és a társadalmi hozzájárulást egy rendszerben kapcsolja össze.</p>
+    </div>
+    <div class="card sun-border">
+      <div class="card-icon sun">🔁</div>
+      <h3>Önmegerősítő hálózat-hatás</h3>
+      <p>Minél több NGO kommunikálja a Shari­ty-t a közösségének, annál több felhasználó regisztrál → annál vonzóbb a platformra a partnereknek → annál több bevétel → annál több adomány → NGO-k még aktívabban promotálják.</p>
+    </div>
+    <div class="card mint-border">
+      <div class="card-icon mint">🏆</div>
+      <h3>First-mover hazai piacon</h3>
+      <p>A Sharity hazai szinten ritka kombinációt épít: affiliate kereskedelem, gamifikált adományozás és NGO-vezérelt user acquisition egy platformon. Ez kedvező induló pozíciót ad egy olyan kategóriában, ahol még nem alakult ki erős, közvetlen szereplő.</p>
+    </div>
+  </div>
+
+  <!-- User activities & incentives -->
+  <h2 class="section-title fade-in" id="aktivitasok">⚡ User aktivitások és ösztönzők</h2>
+  <p>A felhasználók <strong>pontokkal, szavazatokkal, szintlépéssel</strong> és adomány-szorzókkal motiváltak. Ezek az aktivitások egyszerre növelik a bevételt és az NGO-k támogatását. Rövid áttekintés, részletek a releváns guide‑okon és oldalakban.</p>
+  <p style="margin-top: 8px; font-size: 0.9rem; color: var(--muted);">⏱️ Tájékoztató ütem: Bronze néhány nap, Silver ~3–4 hét, Gold ~2–3 hónap, Platinum ~3–4 hónap, Legend ~6–7 hónap (folyamatos aktivitás mellett).</p>
+  <div style="margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+    <div style="font-weight: 600; margin-bottom: 6px;">Mi szükséges az egyes szintekhez?</div>
+    <ul style="margin: 0 0 6px 18px;">
+      <li>Bronze: már néhány nap aktív használattal elérhető</li>
+      <li>Silver: rendszeres, heti 5+ napos aktivitással ~1 hónap</li>
+      <li>Gold: aktív felhasználóknak ~2–3 hónap</li>
+      <li>Platinum: elkötelezett, napi szintű használattal ~3–4 hónap</li>
+      <li>Legend: a legaktívabbaknak ~6–7 hónap folyamatos részvétellel</li>
+    </ul>
+    <div style="font-size: 0.85rem; color: var(--muted);">Alkalmi használat mellett a Platinum/Legend tipikusan nem elérhető.</div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card teal-border">
+      <div class="card-icon teal">🛒</div>
+      <h3>Impact Shop vásárlás</h3>
+      <p>Vásárlás → jutalék + pont, az NGO előre kiválasztva. Részletek: <a href="/ngo-guides/impact-shop/">Impact Shop guide</a> · <a href="https://app.sharity.hu/impactshop">Impact Shop</a>.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">📺</div>
+      <h3>Videók & Impact Challenge</h3>
+      <p>Videómegtekintés → szavazat, közösségi rangsor. Részletek: <a href="/ngo-guides/impact-challenge/">Impact Challenge guide</a> · <a href="/rolunk/">Rólunk</a>.</p>
+    </div>
+    <div class="card sun-border">
+      <div class="card-icon sun">🧩</div>
+      <h3>Offerwall feladatok</h3>
+      <p>Kérdőívek, app‑kipróbálás, regisztrációk → pont + szavazat. Részletek: <a href="/ngo-guides/impact-challenge/">Impact Challenge</a> · <a href="/ngo-guides/">NGO guide‑ok</a>.</p>
+    </div>
+    <div class="card mint-border">
+      <div class="card-icon mint">💝</div>
+      <h3>Szavazatok & Impact Amplifier</h3>
+      <p>Közvetlen adomány → azonnali szavazatok. Részletek: <a href="/rolunk/#szavazatvasarlas">támogatói leírás</a> · <a href="/ngo-guides/ngo-card/">NGO Card</a>.</p>
+    </div>
+    <div class="card teal-border">
+      <div class="card-icon teal">🤝</div>
+      <h3>NGO Card & megosztás</h3>
+      <p>Megosztás → új felhasználók, nagyobb szavazati súly. Részletek: <a href="/ngo-guides/ngo-card/">NGO Card guide</a> · <a href="/ngo-guides/">NGO guide‑ok</a>.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">🏢</div>
+      <h3>Partnerek & offline aktivitás</h3>
+      <p>Partnerek, QR‑kódos offline vásárlások és automata adományozás. Részletek: <a href="/cegeknek/">Cégeknek</a> · <a href="/partner-api">Partner API</a> · <a href="https://app.sharity.hu/adomany-automata/">adományautomaták</a>.</p>
+    </div>
+  </div>
+
+  <div class="callout teal" style="margin-top: 18px;">
+    <h3>🆔 Pseudo ID — súrlódásmentes belépés</h3>
+    <p>Az első látogatáskor automatikusan létrejön egy anonim Pseudo ID (cookie‑alapú), így a pontok és szavazatok <strong>regisztráció nélkül</strong> is gyűlnek. Ez gyorsítja az aktiválást és a megtartást, miközben az adatkezelés privacy‑barát. Későbbi regisztrációkor az aktivitás összekapcsolható. Részletek: <a href="/rolunk/">Rólunk</a> · <a href="/ngo-guides/impact-challenge/">Impact Challenge guide</a> · <a href="/partner-api">Partner API</a>.</p>
+  </div>
+
+  <p style="margin-top:18px;">További részletek: <a href="/rolunk/">Rólunk</a> · <a href="/cegeknek/">Cégeknek</a> · <a href="/partner-api">Partner API</a> · <a href="/ngo-guides/">NGO guide‑ok</a> · <a href="/ngo-guides/impact-shop/">Impact Shop guide</a> · <a href="/ngo-guides/impact-challenge/">Impact Challenge guide</a> · <a href="/ngo-guides/ngo-card/">NGO Card guide</a>.</p>
+
+  <!-- Business model -->
+  <h2 class="section-title fade-in" id="modell">💰 Üzleti modell — 3 bevételi csatorna</h2>
+  <p>A Sharity nem egycsatornás: a bevétel több, egymást erősítő forrásból érkezik.</p>
+
+  <div class="revenue-row">
+    <div class="rev-icon">🛒</div>
+    <div>
+      <div class="rev-label">Partner jutalék (<a href="/ngo-guides/impact-shop/" style="color:inherit;">Impact Shop</a>)</div>
+      <div class="rev-desc">500+ webshop és offline üzlet fizet vásárlásonkénti jutalékot (1–15%) — csatlakozhat bármely webshop, sőt fizikai bolt is (QR / <a href="/partner-api" style="color:inherit;">Partner API</a>), nem csak affiliate hálózat tagja. A jutalékból először levonódik az <strong>NGO szintjének megfelelő alap-adomány</strong> (Basic: 40% · Rising: 50% · Legend: 60%), amit a felhasználó szintjének <strong>adomány-szorzója</strong> (1×–1.25×) még felszoroz. <strong>Ami megmarad, az a Sharity bevétele.</strong></div>
+    </div>
+    <div class="rev-tag">Fő bevétel · recurring</div>
+  </div>
+
+  <div class="revenue-row" style="border-left-color: var(--purple);">
+    <div class="rev-icon">📺</div>
+    <div>
+      <div class="rev-label">Hirdetési bevétel (<a href="/ngo-guides/impact-challenge/" style="color:inherit;">Impact Challenge</a>)</div>
+      <div class="rev-desc">Szponzorok és hirdetők CPM/CPA alapon fizetnek videómegtekintésekért és offerwall-feladatokért (kérdőívek, app-kipróbálás, regisztrációk). A befolyt összeg <strong>egy része</strong> egy negyedéves adományalapba kerül, amelyet a platform a beérkező szavazatok arányában oszt el a civil szervezetek között.</div>
+    </div>
+    <div class="rev-tag" style="color: var(--purple); background: rgba(124,58,237,0.1);">Növekvő · scalable</div>
+  </div>
+
+  <div class="revenue-row" style="border-left-color: var(--sun);">
+    <div class="rev-icon">⚡</div>
+    <div>
+      <div class="rev-label">Impact Amplifier (szavazatcsomag)</div>
+      <div class="rev-desc">Felhasználók közvetlen adományt fizetnek (pl. 500–10 000 Ft), cserébe azonnali szavazatokat kapnak, amelyek a kiválasztott NGO adományalapból való részesedését növelik — az <a href="/ngo-guides/ngo-card/" style="color:inherit;">NGO Card</a> oldalon is elérhető. A befizetett összeg <strong>50%-a megy adományba</strong> a kiválasztott NGO-nak, <strong>50%-a a Sharity működését</strong> fedezi — ez a csatorna ezért magas margójú prémium bevétel.</div>
+    </div>
+    <div class="rev-tag" style="color: #7a4b00; background: rgba(245,182,66,0.15);">Prémium · high margin</div>
+  </div>
+
+  <div class="callout teal" style="margin-top: 28px;">
+    <h3>📊 Elszámolási modell (Direct Partner példa)</h3>
+    <p>Példa: 10 000 Ft vásárlás · 5% affiliate jutalék → 500 Ft jutalék keletkezik.<br>
+    Ha az NGO szintje Rising (50%) és a user szintje Gold (1.1× szorzó) → 500 × 50% × 1.1 = <strong>275 Ft adomány</strong> az NGO-nak.<br>
+    <strong>A maradék 225 Ft a Sharity bevétele.</strong> Magasabb szinteken több adomány keletkezik — ami a user-t is motiválja, az NGO-t is.<br>
+    Az affiliate csatornán a jutalék automatikusan fut — nincs manuális adminisztráció.</p>
+  </div>
+
+  <div class="callout purple" style="margin-top: 22px;">
+    <h3>🧾 Milyen KPI-logikát érdemes nézni?</h3>
+    <p>Befektetői szemmel a legfontosabb kombináció nem egyetlen vanity metric, hanem a következő négyes: aktiváció, ismétlődő vásárlás / visszatérés, NGO-vezérelt akvirálás hatékonysága és partneroldali monetizáció. A részletes cohort- és funnel-logika NDA után értelmezhető igazán.</p>
+  </div>
+
+  <!-- Competitive moat -->
+  <h2 class="section-title fade-in" id="vedofalak">🏰 Versenyképes védőfalak (moat)</h2>
+  <div class="moat-grid">
+    <div class="moat-item">
+      <span class="moat-icon">🤝</span>
+      <h3>NGO-vezérelt akvirálás</h3>
+      <p>300+ civil szervezet érdekelt abban, hogy a saját közösségét a Sharity-re terelje. Ez strukturálisan nulla CAC-ot jelent egy jelentős user-szegmensre — a <a href="/ngo-guides/ngo-card/" style="color: inherit; text-decoration: underline;">NGO Card</a> ennek a kommunikációs motorja.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">🎮</span>
+      <h3>Gamifikált loyalty</h3>
+      <p>6 szintes rendszer (Basic → Legend), szorzók, szavazatsúlyok — ez olyan habituális viselkedést teremt, amit más affiliate platfomok nem tudnak egykönnyen lemásolni.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">🔗</span>
+      <h3>Meglévő affiliate integráció</h3>
+      <p>Dognet, Tradedoubler, TradeTracker és saját API — a teljes hazai affiliate öko­szisztéma lefedve. Új partner belépési küszöbe minimális (zero-cost affiliate join).</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">📊</span>
+      <h3>Adat-előny</h3>
+      <p>Szavazat-, pont- és vásárlási adatok kombinációja egyedi user-profilt alkot. Ez prémium célzási lehetőséget nyit hirdetőknek — és növeli az ARPU-t. Kiegészítő input: social csatornák visszajelzései, offline vásárlások, valamint a <a href="https://app.sharity.hu/adomany-automata/" style="color: inherit; text-decoration: underline;">Sharitizer adományautomaták</a> geolokációs adatai.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">💝</span>
+      <h3>Érzelmi kötés</h3>
+      <p>A user nem egy bolt hűségprogramjához kötődik, hanem a saját NGO-jához. Ez az elköteleződés erősebb és tartósabb, mint a hagyományos cashback programoké.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">⚡</span>
+      <h3>Impact Amplifier hatás</h3>
+      <p>Az adomány-szorzó mechanizmus (1 Ft adomány → akár 12× hatás a szavazatok útján) olyan egyedi értékajánlatot teremt, amit a versenytársak nem tudnak gyorsan replikálni. <a href="https://app.sharity.hu/rolunk/#szavazatvasarlas" style="color: inherit; text-decoration: underline;">Részletes leírás a támogatói guide-ban</a>.</p>
+    </div>
+  </div>
+
+  <!-- Growth levers -->
+  <h2 class="section-title fade-in" id="novekedes">🚀 Növekedési emelők</h2>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-icon teal">🌍</div>
+      <h3>Regionális terjeszkedés</h3>
+      <p>A modell könnyen replikálható más CEE piacokon (Lengyelország, Csehország, Románia), ahol az affiliate ökoszisztéma fejlett, de az impact-alapú megközelítés ismeretlen.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">🏷️</div>
+      <h3>White-label B2B</h3>
+      <p>Nagyvállalatok (bankok, telekomok, retail láncok) saját brandű impact loyalty programot indíthatnak a Sharity infrastruktúráján. Ez magas értékű, szolgáltatás-jellegű B2B bevételi réteget nyithat meg. Már partnereink: <strong>Jysk, Synlab, Gierlinger, Philip Morris</strong>.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">🤖</div>
+      <h3>AI operating layer</h3>
+      <p>Az AI a Sharity-ben nem külön feature, hanem a növekedést segítő operációs réteg: rangsorol, személyre szab, tartalmat támogat, és gyorsítja a partner- meg NGO-flow-kat. <a href="#ai-agent">Részletek lentebb ↓</a></p>
+    </div>
+    <div class="card">
+      <div class="card-icon mint">📱</div>
+      <h3>PWA — kész ✓</h3>
+      <p>A platform már ma PWA-ként fut — telepíthető, offline-képes, push értesítéseket küld, natív apphoz hasonló élménnyel. Nincs szükség dedikált iOS/Android app-ra: a PWA költséghatékony, karbantartható, és teljes körű mobilfunkciót nyújt.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon green">🎓</div>
+      <h3>Education & Offerwall skálázás</h3>
+      <p>Az oktatási tartalom (education_views) és az offerwall feladatok bővítése növeli a session-hosszt és a hirdető-keresletet — ez közvetlenül hat a bevételre. <a href="/ngo-guides/impact-shop/#feladatok" style="color: inherit; text-decoration: underline;">Offerwall leírás</a>; az <strong>AyeT</strong> és <strong>CPX Research</strong> implementáció már kész.</p>
+    </div>
+  </div>
+
+  <!-- AI Agent Core -->
+  <h2 class="section-title fade-in" id="ai-agent">🧠 AI operating layer — a Sharity növekedési motorja</h2>
+  <div class="card" style="margin-top: 24px; border-left: 4px solid var(--purple);">
+    <p style="font-size: 1.05rem; color: var(--ink);">A Sharity AI-rétege nem egy standalone chatbot, hanem egy beágyazott döntési és asszisztív rendszer. Ott teremt értéket, ahol a platformnak valóban számít: felhasználói ajánlásokban, NGO-aktivációban, partnerkommunikációban, tartalom-előkészítésben és növekedési operációban.</p>
+  </div>
+
+  <div class="grid grid-3" style="margin-top: 24px;">
+    <div class="card">
+      <div class="card-icon purple">🔗</div>
+      <h3>Beágyazott döntéstámogatás</h3>
+      <p>Az AI nem külön termék, hanem több kritikus felület mögött dolgozik: ajánlások, tartalmi előkészítés, kommunikációs támogatás és operációs priorizálás.</p>
+    </div>
+    <div class="card">
+      <img src="https://app.sharity.hu/wp-content/uploads/2025/12/20251125_0859_Coupon-Hunter-Meerkat_simple_compose_01kax0a6g0f24va5gd51a68gra.png" alt="Impi, a Sharity szurikáta" style="width: 100%; border-radius: 16px; margin-bottom: 14px;">
+      <h3>Impi mint termékfelület</h3>
+      <p>Az AI emberközeli megjelenést is kapott: Impi nem öncélú karakter, hanem a discovery, ajánlás és eligazítás felhasználóbarát belépőpontja.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon teal">🧬</div>
+      <h3>Tartós kontextus és memória</h3>
+      <p>A rendszer nem minden interakciót nulláról kezel: a felhasználói szándék, NGO-kontextus és kampánytanulságok újrahasznosíthatók a jobb döntésekhez.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">🤖</div>
+      <h3>Model-agnostic architektúra</h3>
+      <p>A Sharity nem egyetlen modellre épül. Ez csökkenti a vendor-lock kockázatát, és lehetővé teszi, hogy az AI-réteg költség, minőség és rendelkezésre állás szerint fejlődjön.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon mint">📊</div>
+      <h3>Adatból operatív jel</h3>
+      <p>Különböző partner-, kampány- és tartalmi forrásokból operatív jel lesz: mit érdemes kiemelni, hol romlik a teljesítmény, mire érdemes forrást allokálni.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon green">🎯</div>
+      <h3>Konverzióra hangolt személyre szabás</h3>
+      <p>Az AI egyik legfontosabb feladata a jobb matching: melyik ajánlat, melyik ügy, melyik következő lépés a legvalószínűbb a user számára. Ez közvetlenül hat a konverzióra és a visszatérésre.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">🧪</div>
+      <h3>Tartalmi skálázás</h3>
+      <p>Az AI segít abban, hogy több NGO, több ajánlat és több user-szegmens mellett is fenntartható maradjon a friss, releváns platformtartalom.</p>
+    </div>
+  </div>
+
+  <h3 class="fade-in" style="margin-top: 40px; margin-bottom: 16px;">🔁 Hol ad valódi üzleti értéket?</h3>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-icon teal">💬</div>
+      <h3>NGO aktiváció</h3>
+      <p>Az NGO-k nem csak listázva vannak a platformon: az AI segíthet jobban csomagolni az impact story-kat, aktiválni a közösséget és növelni a részvételt.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">📈</div>
+      <h3>Növekedési operáció</h3>
+      <p>Az AI képes priorizálni: mely kampány, partner vagy user-flow érdemel több figyelmet. Ez gyorsabb döntést és hatékonyabb erőforrás-felhasználást jelent.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">📣</div>
+      <h3>Partner- és user journey optimalizálás</h3>
+      <p>A partner onboarding, az ajánlatfelfedezés és a visszatérési utak mind jobbá tehetők egy olyan AI-réteggel, amely a platform működésébe van beépítve.</p>
+    </div>
+  </div>
+
+  <h3 class="fade-in" style="margin-top: 40px; margin-bottom: 16px;">🛡️ Miért hihető ez befektetői szemmel?</h3>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-icon mint">📡</div>
+      <h3>Valós platformba ágyazva</h3>
+      <p>Az AI nem pitch-deck slide, hanem élő marketplace-, NGO- és partnerfolyamatokban értelmezett réteg. Ez lényegesen hitelesebb, mint egy külön AI-demó.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon green">🔌</div>
+      <h3>Skálázható működési előny</h3>
+      <p>A cél nem az, hogy minden kézi lépést kiváltsunk, hanem hogy ugyanazzal a csapattal több usert, több NGO-t és több partnerkapcsolatot lehessen jól kiszolgálni.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">🏗️</div>
+      <h3>Auditálható rendszer</h3>
+      <p>A Sharity technikai működése dokumentált, guardolt és ellenőrizhető. Ez fontos különbség egy olyan AI-narratívához képest, ami csak ígéretet kommunikál, de nem mutat kontrollt.</p>
+    </div>
+  </div>
+
+  <div class="callout sun" style="margin-top: 32px;">
+    <h3>💡 Miért fontos ez egy befektetőnek?</h3>
+    <p>Az AI a Sharity-ben akkor értékes, ha gyorsabban növeli a platformot, mint ahogy a költségoldalt növeli. A lényeg tehát nem az, hogy hány modell vagy pipeline elem fut a háttérben, hanem az, hogy az AI javítja-e a konverziót, a retentiont, az NGO-aktivációt és a partneroldali skálázhatóságot. Ez a valódi moat.</p>
+  </div>
+
+  <!-- Traction / roadmap -->
+  <h2 class="section-title fade-in" id="roadmap">🗓️ Mérföldkövek és roadmap</h2>
+  <div class="callout teal" style="margin-top: 24px;">
+    <h3>🧭 Mi bizonyított már, és mi a következő lépés?</h3>
+    <p>Az alábbi idővonal kétféle elemet vegyít: a már működő, bizonyított platformállapotot és a következő növekedési fókuszokat. A cél, hogy világos legyen, mi az, ami ma is valós, és mi az, amit a következő fázisban szeretnénk felgyorsítani.</p>
+  </div>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>Platform live — 500+ partner, 300+ NGO</h3>
+        <p>Az Impact Shop, Impact Challenge, NGO Card és Partner API éles üzemben. Dognet, Tradedoubler és TradeTracker integráció aktív, az <strong>AyeT</strong> és <strong>CPX Research</strong> offerwall implementáció kész. WP-alapú MU plugin architektúra, egyedi ledger + gamifikáció rendszerrel.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>Affiliate + Offerwall hálózatok implementálva, AI beépítve</h3>
+        <p>Affiliate hálózatok élesítve (Dognet, Tradedoubler, TradeTracker), offerwall csatornák kész (AyeT, CPX Research), az AI-réteg pedig beépült a platform döntési és ajánló folyamataiba.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>25M+ Ft adomány generálva</h3>
+        <p>A platform bizonyítottan generál valós adományokat. 35 000+ aktív felhasználó, ismétlődő tranzakciókkal és növekvő engagement-mutatókkal.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>Impact Amplifier (szavazatvásárlás) bevezetve</h3>
+        <p>Prémium bevételi csatorna élesítve: közvetlen adományból szavazatszorzó mechanizmus, amely akár 12× hatást produkál a befizetett összeggel szemben.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: linear-gradient(135deg, #f97316, #f5b642);">Q3</div>
+      <div class="timeline-content">
+        <h3>2026 Q3 — Marketing &amp; UX skálázás</h3>
+        <p>A PWA már élesben fut. Fókusz: UX/UI fejlesztés, push kampányok skálázása, paid marketing, influencer program, NGO-kommunikációs csatornák bővítése.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: linear-gradient(135deg, #7c3aed, #ec4899);">Q4</div>
+      <div class="timeline-content">
+        <h3>2026 Q4 — B2B white-label pilot</h3>
+        <p>White-label bővítés meglévő partnerekkel (<strong>Jysk, Synlab, Gierlinger, Philip Morris</strong>) és új nagyvállalati pilotokkal. Az infrastruktúra már kész — a fókusz a skálázáson.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: linear-gradient(135deg, #0f8a9d, #6fe3c1);">27</div>
+      <div class="timeline-content">
+        <h3>2027 — CEE terjeszkedés</h3>
+        <p>Első külföldi piac belépése (Lengyelország vagy Románia). Lokális NGO-hálózattal és meglévő affiliate partnerekkel gyors market-entry.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why Sharity wins -->
+  <h2 class="section-title fade-in" id="miert">⚖️ Miért nyerhet a Sharity — versenytárs összehasonlítás</h2>
+  <p>A Sharity nem egy sima cashback app. Az alábbi táblázat megmutatja, miben különbözik a meglévő szereplőktől:</p>
+  <div style="overflow-x:auto;">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Kritérium</th>
+          <th>Sharity</th>
+          <th>Hagyományos cashback</th>
+          <th>Egyedi CSR app</th>
+          <th>Affiliate hálózat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>User akvirálás ára</td>
+          <td><span class="tick">✓</span> NGO-vezérelt (közel 0 CAC)</td>
+          <td>Magas (reklám)</td>
+          <td>Közepes</td>
+          <td>Magas</td>
+        </tr>
+        <tr>
+          <td>Érzelmi elköteleződés</td>
+          <td><span class="tick">✓</span> Nagyon magas (NGO kötés)</td>
+          <td>Alacsony (pénzügyi)</td>
+          <td>Közepes</td>
+          <td>Nincs</td>
+        </tr>
+        <tr>
+          <td>Bevételi csatornák</td>
+          <td><span class="tick">✓</span> 3 (affiliate + hirdetés + premium)</td>
+          <td>1 (cashback margin)</td>
+          <td>1–2</td>
+          <td>1 (jutalék)</td>
+        </tr>
+        <tr>
+          <td>B2B white-label potenciál</td>
+          <td><span class="tick">✓</span> Igen</td>
+          <td>Ritkán</td>
+          <td>Igen</td>
+          <td>Nem jellemző</td>
+        </tr>
+        <tr>
+          <td>Gamifikáció / retention</td>
+          <td><span class="tick">✓</span> 6 szint, szorzók, szavazás</td>
+          <td>Minimális</td>
+          <td>Változó</td>
+          <td>Nincs</td>
+        </tr>
+        <tr>
+          <td>Társadalmi hatás mérhetőség</td>
+          <td><span class="tick">✓</span> Real-time NGO card</td>
+          <td>Nem releváns</td>
+          <td>Közepes</td>
+          <td>Nincs</td>
+        </tr>
+        <tr>
+          <td>Partner integráció könnyűsége</td>
+          <td><span class="tick">✓</span> 0 Ft, meglévő affiliate</td>
+          <td>Közepes</td>
+          <td>Nehéz</td>
+          <td>Közepes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- The ask -->
+  <h2 class="section-title fade-in" id="lehetoseg-befekteto">💼 Mit kínálunk befektetőknek?</h2>
+  <div class="callout sun">
+    <h3>⚠️ Fontos: ez nem nyilvános tőkebevonási ajánlat</h3>
+    <p>Az alábbi információk tájékoztató jellegűek. A konkrét feltételekről, értékeltésről és részesedési struktúráról kizárólag közvetlen egyeztetés keretében tájékoztatunk.</p>
+  </div>
+  <div class="grid grid-3" style="margin-top: 24px;">
+    <div class="card">
+      <div class="card-icon teal">🌱</div>
+      <h3>Korai befektető prémium</h3>
+      <p>A korai fázisban csatlakozó befektetők a meglévő trakció és bizonyított modell mellé kedvező belépési értékelést kapnak — az intézményi round előtt.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">🎯</div>
+      <h3>Stratégiai érték is</h3>
+      <p>Affiliate hálózat, retail, telekom vagy pénzügyi szektorban aktív stratégiai befektető esetén a Sharity azonnali szinergiákat kínál: kész user-bázis és partner-hálózat.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">📋</div>
+      <h3>Átláthatóság</h3>
+      <p>Komoly érdeklődő számára NDA után elérhetővé tesszük: részletes pénzügyi modellt, KPI-definíciókat, technikai dokumentációt, audit logot és a guard-infrastruktúra releváns részeit.</p>
+    </div>
+  </div>
+
+  <!-- Use of funds -->
+  <h2 class="section-title fade-in" id="felhasznalás">🗺️ Mire megy a befektetés?</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Marketing & UX/UI</h3>
+      <p>UX/UI fejlesztés és felhasználói élmény javítása, paid marketing kampányok, influencer partner program, NGO-kommunikációs program skálázása — a platform technikailag kész, a cél a növekedés.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Marketing & Akvirálás</h3>
+      <p>NGO-kommunikációs program skálázása, paid kampányok, influencer partner program — cél: 200K+ user 12 hónapon belül.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Értékesítés (B2B)</h3>
+      <p>Dedicated sales team a nagyvállalati white-label és szponzor csatornához — az első pilotok már validáltak.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>CEE Terjeszkedés</h3>
+      <p>Első külföldi piac (PL / RO) belépési költségei: lokalizáció, NGO-onboarding, affiliate hálózat csatlakozás.</p>
+    </div>
+  </div>
+
+  <!-- The team / story -->
+  <h2 class="section-title fade-in" id="tortenete">🌱 A Sharity story — miért higgyél benne?</h2>
+  <div class="card" style="margin-top: 24px;">
+    <p>A Sharity-t az a meggyőződés hívta életre, hogy a jótékonyság nem kell, hogy áldozatot igényeljen. A magyarok évente milliárdokat költenek affiliate partnereken keresztül — de ennek a pénznek töredéke sem jut el civil szervezetekhez, miközben az ökoszisztéma technikai infrastruktúrája már adott.</p>
+    <p>A platform három éve épül, mára bizonyított trakció és <strong>25M+ Ft valós adomány</strong> mögötte áll. A rendszer moduláris: az MU plugin alapú architektúra, a guard-infrastruktúra, a Partner API és a ledger rendszer production-ready, auditálható és skálázható állapotban van.</p>
+    <p><strong>15 nagykövetünk</strong> aláírt megállapodással, több milliós követőtáborral támogatja a növekedést — ez ritka erősítése a hitelességnek és a skálázhatóságnak.</p>
+    <p>A következő fázis a skálázás — mobilon, B2B-n és CEE szinten. Ehhez keresünk olyan befektetőt, aki <strong>nem csak tőkét</strong>, hanem stratégiai értéket is hoz.</p>
+  </div>
+
+  <!-- FAQ -->
+  <h2 class="section-title fade-in" id="faq">❓ Befektetői GYIK</h2>
+
+  <details>
+    <summary>Milyen szakaszban van a cég?</summary>
+    <p>Korai növekedési (early growth) fázis. A platform éles üzemben van, van bizonyított bevétel és trakció, de a nagy skálázás (mobil, B2B, CEE) még előttünk áll. Nem seed, nem series A — a közvetlen befektetői megbeszélésen pontosítjuk a pozicionálást.</p>
+  </details>
+
+  <details>
+    <summary>Mi a monetizáció, van-e ismétlődő bevétel?</summary>
+    <p>Igen. Az affiliate jutalék természeténél fogva tranzakció-alapú, ismétlődő bevétel — minden egyes vásárlásnál keletkezik. A hirdetési bevétel és az Impact Amplifier prémium csatorna erre épül rá. A bevételi modell nem project-alapú, hanem folyamatos.</p>
+  </details>
+
+  <details>
+    <summary>Mekkora a jelenlegi piaci lefedettség Magyarországon?</summary>
+    <p>500+ partner webshop és offline üzlet elérhető (Dognet, Tradedoubler, TradeTracker hálózatokon keresztül, illetve közvetlen Partner API-integráción át), 35K+ aktív felhasználó, 300+ NGO. Az affiliate piac egészéhez képest ez még kis szelet — a skálázás a fő fókusz.</p>
+  </details>
+
+  <details>
+    <summary>Mi a differenciátor, miért nem másolható le egykönnyen?</summary>
+    <p>A technológia egy része önmagában lemásolható, de a Sharity előnye nem egyetlen komponensből áll. Az NGO-hálózat, a kialakult user-elköteleződés, a gamifikált impact-logika és a partnerkapcsolatok együtt alkotják azt a rendszert, amit nehéz gyorsan újraépíteni.</p>
+  </details>
+
+  <details>
+    <summary>Van-e exit stratégia?</summary>
+    <p>Több potenciális exit út is adódik: (1) stratégiai felvásárlás egy nagyvállalat (bank, telecom, retail lánc) részéről, aki a kész user-bázist és NGO-hálózatot akarja; (2) trade sale egy regionális affiliate/loyalty platform felé; (3) IPO hosszabb távon, ha a CEE skálázás sikeres. Az exit időhorizontot és formátumot a befektetői tárgyaláson rögzítjük.</p>
+  </details>
+
+  <details>
+    <summary>Hogyan kezdhetek el érdemi párbeszédet?</summary>
+    <p>Írj a <a href="mailto:office@sharity.hu">office@sharity.hu</a> címre "Befektetői érdeklődés" tárggyal. 24–48 órán belül visszajelzünk. Komoly érdeklődés esetén NDA → pitch deck + pénzügyi modell → személyes találkozó.</p>
+  </details>
+
+  <!-- Footer CTA -->
+  <div class="footer-cta">
+    <h2>📩 Érdekli a lehetőség?</h2>
+    <p>Ha úgy gondolod, hogy a Sharity üzleti modellje, víziója és piaci pozíciója illeszkedik a befektetési stratégiádhoz, vegyük fel a kapcsolatot.</p>
+    <a href="mailto:office@sharity.hu?subject=Befektetői%20érdeklődés" class="btn btn-teal">✉️ Kapcsolatfelvétel</a>
+    <a href="https://app.sharity.hu/rolunk/" class="btn btn-outline">ℹ️ Rólunk oldal</a>
+    <a href="https://app.sharity.hu/cegeknek/" class="btn btn-outline">🏢 Cégeknek</a>
+  </div>
+
+  <!-- Disclaimer -->
+  <p class="disclaimer">
+    ⚠️ Ez az oldal kizárólag tájékoztató célt szolgál, és nem minősül nyilvános értékpapír-kibocsátási tájékoztatónak, befektetési tanácsadásnak, ajánlattételnek vagy bármilyen pénzügyi eszköz vásárlására, eladására vonatkozó felhívásnak. Az ezen az oldalon szereplő adatok és mérőszámok az aktuális platform-állapotra vonatkoznak és előzetes értesítés nélkül változhatnak. Minden befektetési döntés előtt ajánlott független jogi és pénzügyi tanácsadást igénybe venni.
+  </p>
+
+  <!-- Page footer -->
+  <footer class="page-footer">
+    <span>Sharity – Befektetőknek · Verzió 1.1 · 2026. február</span>
+    <span>
+      <a href="https://app.sharity.hu/rolunk/">Rólunk</a> ·
+      <a href="https://app.sharity.hu/cegeknek/">Cégeknek</a> ·
+      <a href="https://app.sharity.hu/partner-api">Partner API</a> ·
+      <a href="https://app.sharity.hu/ngo-guides/">NGO-knak</a>
+    </span>
+  </footer>
+
+</div>
+</body>
+</html>

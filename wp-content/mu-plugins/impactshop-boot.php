@@ -248,6 +248,11 @@ if (!defined('DOGNET_API_BASE'))       define('DOGNET_API_BASE', 'https://api.ap
 
 /* ============================ CSV SEGÉD ============================ */
 
+function isb_is_retired_shop($shopSlug){
+  $normalized = sanitize_title((string) $shopSlug);
+  return $normalized !== '' && in_array($normalized, ['decathlon'], true);
+}
+
 function isb_settings() {
   return [
     'shops_csv_url' => 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR8ASri56jQ1h7yzeb1lWqOvvOY3Kli7x8WxdkLwlet6I7QnBoOg2oiaNEcxdjSp3UbV8kjhMKWzXPz/pub?gid=0&single=true&output=csv',
@@ -276,12 +281,91 @@ function isb_fetch_csv_assoc($url,$key,$ttl){
   }
   set_transient($key,$rows,$ttl); return $rows;
 }
+function isb_parse_csv_assoc($body){
+  if (!is_string($body) || $body === '') return [];
+  if(substr($body,0,3)==="\xEF\xBB\xBF") $body=substr($body,3);
+  $lines = preg_split("/\r\n|\n|\r/",$body); if(!$lines) return [];
+  $delim = (substr_count($lines[0],';')>substr_count($lines[0],','))?';':',';
+  $headers = array_map('isb_slugify_header', str_getcsv($lines[0],$delim));
+  $rows=[];
+  for($i=1;$i<count($lines);$i++){
+    if($lines[$i]==='') continue;
+    $cols=str_getcsv($lines[$i],$delim);
+    $row=[]; foreach($headers as $ix=>$k){ $row[$k]=isset($cols[$ix])?trim($cols[$ix]):''; }
+    if(implode('',$row)!=='') $rows[]=$row;
+  }
+  return $rows;
+}
+function isb_fetch_local_csv_assoc($path){
+  if (!is_string($path) || $path === '' || !is_readable($path)) return [];
+  $body = file_get_contents($path);
+  if ($body === false || $body === '') return [];
+  return isb_parse_csv_assoc($body);
+}
+function isb_cj_local_logo_url($slug){
+  $slug = sanitize_title((string) $slug);
+  if ($slug === '' || strpos($slug, 'cj-') !== 0) return '';
+  $baseDir = WP_CONTENT_DIR . '/uploads/impactshop/cj-logos/';
+  $baseUrl = set_url_scheme(content_url('uploads/impactshop/cj-logos/'), 'https');
+  foreach (['png', 'webp', 'jpg', 'jpeg'] as $ext) {
+    $file = $baseDir . $slug . '.' . $ext;
+    if (is_readable($file)) {
+      return trailingslashit($baseUrl) . $slug . '.' . $ext;
+    }
+  }
+  return '';
+}
+function isb_get_cj_shops(){
+  static $cache = null;
+  if ($cache !== null) return $cache;
+
+  $cache = [];
+  $optionRows = get_option('impactshop_cj_shops', []);
+  if (is_array($optionRows)) {
+    foreach ($optionRows as $shop) {
+      $slug = sanitize_title((string)($shop['slug'] ?? ''));
+      if ($slug === '') continue;
+      $cache[strtolower($slug)] = $shop;
+    }
+  }
+
+  $csvCandidates = array_values(array_unique([
+    trailingslashit(ABSPATH) . 'tools/cj_shops.csv',
+    dirname(WP_CONTENT_DIR) . '/tools/cj_shops.csv',
+  ]));
+
+  foreach ($csvCandidates as $csvPath) {
+    $rows = isb_fetch_local_csv_assoc($csvPath);
+    if (!$rows) continue;
+    foreach ($rows as $row) {
+      $slug = sanitize_title((string)($row['slug'] ?? $row['shop_slug'] ?? ''));
+      if ($slug === '' || isset($cache[strtolower($slug)])) {
+        continue;
+      }
+      $domain = trim((string)($row['domain'] ?? ''));
+      $programUrl = $domain !== '' ? ('https://' . preg_replace('~^https?://~i', '', $domain)) : '';
+      $logoUrl = isb_cj_local_logo_url($slug);
+      $cache[strtolower($slug)] = [
+        'slug' => $slug,
+        'name' => (string)($row['name'] ?? $domain ?: $slug),
+        'status' => 'joined',
+        'advertiser_id' => (string)($row['program_id'] ?? $row['advertiser_id'] ?? ''),
+        'program_url' => $programUrl,
+        'logo_url' => $logoUrl,
+        'category' => (string)($row['category'] ?? $row['kategoria'] ?? ''),
+      ];
+    }
+  }
+
+  return array_values($cache);
+}
 function isb_get_shops(){
   $rows=isb_fetch_csv_assoc(isb_settings()['shops_csv_url'],'impactshop_csv_shops',isb_settings()['cache_ttl']);
   $out=[];
   $seen=[];
   foreach($rows as $r){
     $name=$r['name']??($r['nev']??''); $slug=$r['shop_slug']??($r['slug']??($r['go_slug']??'')); if(!$name||!$slug) continue;
+    if (isb_is_retired_shop($slug)) continue;
     $defaultD1='';
     foreach (['default_d1','ngo_slug','ngo','default_ngo'] as $dKey) {
       if (!empty($r[$dKey]) && is_string($r[$dKey])) {
@@ -297,19 +381,32 @@ function isb_get_shops(){
       'deeplink_param'=>($r['pdognet_deeplink_param']??($r['dognet_deeplink_param']??'url'))?:'url',
       'product_url'=>$r['product_url']??($r['homepage']??''),
       'site'=>$r['product_url']??($r['homepage']??''),
+      'logo_url'=>$r['logo_url']??'',
+      'category'=>($r['category']??($r['kategoria']??'')),
       'default_d1'=>$defaultD1,
       'network_source'=>$r['network_source']??'',
     ];
   }
-  $cj = get_option('impactshop_cj_shops', []);
+  $cj = isb_get_cj_shops();
   if (is_array($cj) && $cj) {
     foreach ($cj as $shop) {
       if (($shop['status'] ?? '') !== 'joined') {
         continue;
       }
       $slug = trim((string)($shop['slug'] ?? ''));
-      if ($slug === '' || isset($seen[strtolower($slug)])) {
+      if ($slug === '' || isb_is_retired_shop($slug) || isset($seen[strtolower($slug)])) {
         continue;
+      }
+      $logoUrl = (string) ($shop['logo_url'] ?? $shop['logo'] ?? '');
+      if ($logoUrl === '') {
+        $logoUrl = isb_cj_local_logo_url($slug);
+      }
+      $advertiserId = (string) ($shop['advertiser_id'] ?? '');
+      if ($logoUrl === '' && $advertiserId !== '') {
+        $link = isb_cj_pick_link($advertiserId);
+        if (is_array($link)) {
+          $logoUrl = (string) ($link['logo_url'] ?? '');
+        }
       }
       $seen[strtolower($slug)] = true;
       $out[] = [
@@ -319,19 +416,31 @@ function isb_get_shops(){
         'deeplink_param'=> 'url',
         'product_url'   => $shop['program_url'] ?? '',
         'site'          => $shop['program_url'] ?? '',
+        'logo_url'      => $logoUrl,
+        'category'      => (string) ($shop['category'] ?? ''),
         'default_d1'    => '',
         'network_source'=> 'cj',
-        'cj_advertiser_id' => $shop['advertiser_id'] ?? '',
+        'cj_advertiser_id' => $advertiserId,
       ];
     }
   }
   if (function_exists('sib_cj_products_index')) {
     foreach (sib_cj_products_index() as $slug => $product) {
       $slug = sib_slug($slug);
-      if ($slug === '' || isset($seen[strtolower($slug)])) {
+      if ($slug === '' || isb_is_retired_shop($slug) || isset($seen[strtolower($slug)])) {
         continue;
       }
       $url = $product['link'] ?? ($product['product_url'] ?? '');
+      $advertiserId = (string) ($product['advertiser_id'] ?? '');
+      $logoUrl = isb_cj_local_logo_url($slug);
+      if ($advertiserId !== '') {
+        if ($logoUrl === '') {
+          $link = isb_cj_pick_link($advertiserId);
+          if (is_array($link)) {
+            $logoUrl = (string) ($link['logo_url'] ?? '');
+          }
+        }
+      }
       $seen[strtolower($slug)] = true;
       $out[] = [
         'name'          => $product['advertiser_name'] ?? $slug,
@@ -340,9 +449,11 @@ function isb_get_shops(){
         'deeplink_param'=> 'url',
         'product_url'   => $url,
         'site'          => $url,
+        'logo_url'      => $logoUrl,
+        'category'      => (string) ($product['category'] ?? ''),
         'default_d1'    => '',
         'network_source'=> 'cj',
-        'cj_advertiser_id' => $product['advertiser_id'] ?? '',
+        'cj_advertiser_id' => $advertiserId,
       ];
     }
   }
@@ -350,6 +461,7 @@ function isb_get_shops(){
 }
 function isb_find_shop($slug){
   $slug=trim(strtolower($slug));
+  if (isb_is_retired_shop($slug)) return null;
   foreach(isb_get_shops() as $s){ if(strtolower($s['shop_slug'])===$slug) return $s; }
   return null;
 }
@@ -616,6 +728,9 @@ function isb_handle_go($is_deal){
       exit;
     }
     isb_error('Hiányzó paraméter (shop).');
+  }
+  if (isb_is_retired_shop($shop)) {
+    isb_error('Inaktív shop: '.esc_html($shop));
   }
 
   if(!$ngo){

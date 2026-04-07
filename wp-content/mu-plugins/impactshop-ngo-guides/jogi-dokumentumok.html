@@ -1,0 +1,2485 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharity – Trust Center | Jogi és működési dokumentumok</title>
+  <meta name="description" content="A Sharity trust center oldala: jogi, működési és compliance dokumentumok egy helyen, gyors eléréssel, letöltéssel és nyomtatható nézettel.">
+  <meta property="og:title" content="Sharity – Trust Center | Jogi és működési dokumentumok">
+  <meta property="og:description" content="ÁSZF, SLA, GDPR, dispute, hozzáférés-kezelés és elosztási riport sablonok a Sharity trust centerben.">
+  <meta property="og:url" content="https://app.sharity.hu/ngo-guides/jogi-dokumentumok">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --violet: #6c5ce7;
+      --paper: #f7f2ec;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 15% -10%, rgba(108, 92, 231, 0.18), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(111, 227, 193, 0.28), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f4efe8 100%);
+    }
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.5rem 0;
+    }
+    h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); }
+    h2 { font-size: clamp(1.4rem, 2.4vw, 2rem); }
+    p { margin: 0 0 1rem 0; line-height: 1.75; color: var(--muted); }
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 90px; }
+    .nav {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      padding: 10px 14px; margin-bottom: 24px;
+      background: rgba(255,255,255,0.88); border-radius: 14px; backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 12px; border-radius: 10px; font-weight: 600; font-size: 0.88rem;
+    }
+    .nav a:hover { background: rgba(108, 92, 231, 0.1); text-decoration: none; }
+    .lang-switch { margin-left: auto; display: inline-flex; gap: 8px; }
+    .lang-switch a { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(108,92,231,0.3); color: var(--violet); font-weight: 600; font-size: 0.8rem; }
+
+    .hero {
+      padding: 42px; text-align: left; border-radius: 24px;
+      background: rgba(255,255,255,0.92); box-shadow: var(--shadow);
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px; border-radius: 999px;
+      background: linear-gradient(135deg, rgba(108,92,231,0.14), rgba(245,182,66,0.18));
+      color: var(--violet); font-weight: 600; font-size: 0.92rem; margin-bottom: 12px;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 24px 0 30px; }
+    .card { background: var(--card); border-radius: 18px; padding: 18px; box-shadow: 0 12px 28px rgba(11, 31, 42, 0.08); }
+    .card h3 { margin-bottom: 6px; }
+    .card p { font-size: 0.95rem; }
+
+    .index { background: rgba(255,255,255,0.9); border-radius: 18px; padding: 20px; box-shadow: var(--shadow); }
+    .index ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+    .index li { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .index .meta { color: var(--muted); font-size: 0.85rem; }
+
+    .doc-card { background: var(--card); border-radius: 22px; padding: 22px; box-shadow: var(--shadow); margin: 22px 0; }
+    .doc-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .doc-meta { font-size: 0.92rem; color: var(--muted); }
+    .doc-tag { background: rgba(108,92,231,0.14); color: var(--violet); padding: 6px 12px; border-radius: 999px; font-weight: 600; font-size: 0.8rem; }
+    .doc-summary { margin-bottom: 10px; }
+    .doc-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; background: var(--violet); color: #fff; font-weight: 600; font-size: 0.88rem; }
+    .btn.ghost { background: transparent; color: var(--violet); border: 1px solid rgba(108,92,231,0.3); }
+
+    details.doc-details { margin-top: 10px; }
+    details.doc-details summary { cursor: pointer; font-weight: 600; }
+    .doc-pre {
+      white-space: pre-wrap; background: var(--paper);
+      padding: 18px; border-radius: 14px; font-size: 1rem; line-height: 1.8; color: #1a2b33;
+      font-family: "Source Serif 4", "Georgia", serif;
+      max-height: 520px; overflow: auto; border: 1px solid rgba(11,31,42,0.08);
+    }
+
+    .footer-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; font-size: 0.92rem; }
+    .highlight { color: var(--violet); font-weight: 700; }
+
+    @media print {
+      .nav, .index, .doc-actions, .footer-links, .card, .pill { display: none !important; }
+      body { background: #fff; }
+      .doc-card { box-shadow: none; border: 1px solid #ddd; }
+      .doc-pre { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav">
+      <a href="https://app.sharity.hu/ngo-guides/">NGO guide összefoglaló</a>
+      <a href="https://app.sharity.hu/ngo-guides/impact-shop/">Impact Shop</a>
+      <a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge</a>
+      <a href="https://app.sharity.hu/ngo-guides/ngo-card/">NGO Card</a>
+      <a href="https://app.sharity.hu/rolunk/">Rólunk</a>
+      <a href="https://app.sharity.hu/cegeknek/">Cégeknek</a>
+      <a href="https://app.sharity.hu/befektetoknek/">Befektetőknek</a>
+      <span class="lang-switch"><a href="?lang=en">EN</a></span>
+    </nav>
+
+    <header class="hero">
+      <span class="pill">Trust Center</span>
+      <h1>Sharity trust center — jogi és működési dokumentumok</h1>
+      <p>Itt érhetők el a Sharity hivatalos jogi, működési és compliance dokumentumai egységes, gyorsan áttekinthető formában. A cél nem onboarding, hanem az átláthatóság, az ellenőrizhetőség és a bizalom támogatása.</p>
+      <div class="grid">
+        <div class="card">
+          <h3>Gyors elérés</h3>
+          <p><a href="#aszf">ÁSZF</a>, <a href="#sla">SLA</a>, <a href="#gdpr">GDPR</a>, <a href="#dispute">Dispute</a></p>
+          <p>A legfontosabb trust és compliance dokumentumok közvetlenül innen nyithatók.</p>
+        </div>
+        <div class="card">
+          <h3>Hivatalos szabályzatok</h3>
+          <p><a class="highlight" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/win4good-szabalyzat.pdf" target="_blank">PDF megnyitása</a></p>
+          <p>Letölthető szabályzatok, mellékletek és publikálható dokumentumverziók.</p>
+        </div>
+        <div class="card">
+          <h3>Audit és export</h3>
+          <p>A dokumentumok nyomtathatók, PDF-be menthetők és külső partnerek felé is továbbadhatók.</p>
+          <p><a class="highlight" href="#" onclick="window.print(); return false;">Nyomtatás / PDF</a></p>
+        </div>
+      </div>
+    </header>
+
+    <section class="index">
+      <h2>Trust center dokumentumlista</h2>
+      <ul>
+        <li><a href="#aszf">Általános Szerződési Feltételek (ÁSZF)</a><span class="meta">Hatályos: 2026. 02. 25. | Verzió: 2.0</span></li><li><a href="#szponzori-melleklet">1. sz. melléklet — Szponzori / reklámozói megállapodás</a><span class="meta">Verzió: 1.1 | Státusz: Hatályos</span></li><li><a href="#sla">Szolgáltatási Szintmegállapodás (SLA)</a><span class="meta">Hatályos: 2026-01-15 | Verzió: 2.0</span></li><li><a href="#stripe-matrix">Stripe felelősségmegosztási mátrix</a><span class="meta">Dátum: 2026-02-25 | Verzió: 1.1</span></li><li><a href="#dispute">Chargeback és dispute kezelési eljárásrend</a><span class="meta">Dátum: 2026-02-25 | Verzió: 1.2</span></li><li><a href="#gdpr">GDPR adatfeldolgozói nyilvántartás</a><span class="meta">Dátum: 2026-02-25 | Verzió: 1.2</span></li><li><a href="#access">Hozzáférés-kezelési mátrix</a><span class="meta">Dátum: 2026-02-25 | Verzió: 1.1</span></li><li><a href="#quarterly">Negyedéves elosztási riport — sablon</a><span class="meta">Dátum: 2026-02-25 | Verzió: 1.2</span></li>
+        <li><a href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/win4good-szabalyzat.pdf" target="_blank">Win4Good szabályzat (PDF)</a><span class="meta">Letöltés</span></li>
+      </ul>
+    </section>
+
+    
+    <section class="doc-card" id="aszf">
+      <div class="doc-head">
+        <div>
+          <h2>Általános Szerződési Feltételek (ÁSZF)</h2>
+          <p class="doc-meta">Hatályos: 2026. 02. 25. | Verzió: 2.0</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">A Sharity platform használatának általános feltételei, fogalmak és szolgáltatások leírása.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/Sharity_ASZF_2026-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/Sharity_ASZF_2026-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/aszf-2026-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/Sharity_ASZF_2026-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># ÁLTALÁNOS SZERZŐDÉSI FELTÉTELEK (ÁSZF)
+
+&gt; **Hatályos**: 2026. 02. 25. napjától  
+&gt; **Verzió**: 2.0  
+&gt; **Státusz**: HATÁLYOS  
+&gt; **Előző verzió**: Sharity ÁSZF 2022.11.10.
+
+---
+
+## 1. A Szolgáltató adatai
+
+| Megnevezés | Adat |
+|-----------|------|
+| **Szolgáltató neve** | Sharity Mobile Application Zrt. (a továbbiakban: **Szolgáltató**) |
+| **Székhely** | 7090 Tamási, Petőfi Sándor utca 12. |
+| **Cégjegyzékszám** | 17-10-001325 |
+| **Adószám** | 28751843-2-17 |
+| **Kapcsolattartó e-mail** | office@sharity.hu |
+| **Weboldal** | https://app.sharity.hu |
+
+| Megnevezés | Adat |
+|-----------|------|
+| **Adományszervező neve** | Sharity Adományszervező Alapítvány (a továbbiakban: **Adományszervező**) |
+| **Székhely** | 7090 Tamási, Petőfi Sándor utca 12. |
+| **Nyilvántartási szám** | 17-01-0000200 |
+| **Adószám** | 19329006-1-17 |
+
+A Szolgáltató és az Adományszervező a jelen ÁSZF-ben együttesen **„Sharity&quot;**-ként is említhetők, amennyiben a kontextusból egyértelmű, melyik entitás jár el.
+
+---
+
+## 2. Fogalommeghatározások
+
+| Fogalom | Jelentés |
+|---------|---------|
+| **Platform** | A Szolgáltató által üzemeltetett webes szolgáltatás, amely az `app.sharity.hu` és a `shariteam.com` domain neveken érhető el, beleértve az ahhoz kapcsolódó valamennyi al-oldalt és API végpontot. |
+| **Impact Shop** | A Platform azon funkciója, amelyen keresztül a Felhasználó 500+ partnerbolt (webshop) affiliate linkjein keresztül vásárolhat, és a vásárlásból származó affiliate jutalék egy része közvetlenül az általa választott Civil szervezet javára adománnyá válik. |
+| **Impact Challenge** | A Platform azon funkciója, amelyen a Felhasználó rövid (max. 30 mp) szponzori videókat tekinthet meg, offerwall feladatokat (kérdőívek, alkalmazás-kipróbálás, regisztrációk) teljesíthet, és ennek fejében Pontokat és Szavazatokat kap. |
+| **Impact Amplifier** | A Platform azon funkciója, amelyen keresztül a Felhasználó adományozhat az Adományszervező részére, és cserébe Szavazatokat kap az adott összeg és csomag függvényében. |
+| **Digitális Tombola** | A Platform azon funkciója, amelyen keresztül a Felhasználó Digitális Tombolajegyet szerezhet, és a Tombolajegyhez tartozó nyereménykódszám(ok) alapján automatikus sorsoláson vehet részt. |
+| **Digitális Tombolajegy** (vagy **Tombolajegy**) | A Digitális Tombolán való részvételre jogosító, egyedi azonosítóval / nyereménykódszámmal rendelkező digitális jegy, amelyet a Szolgáltató emailben vagy SMS-ben juttat el a Felhasználónak. |
+| **Win4Good – Nyereményjáték** | A Szolgáltató által a Platformon szervezett Digitális Tombola/nyereményjáték, amelynek részletes szabályait a jelen ÁSZF melléklete tartalmazza. |
+| **Aukció** | A Platform azon funkciója, amelyben a Felhasználók meghatározott szabályok szerint, adományfizetéssel összekötött módon licitálhatnak/támogatást tehetnek, és a feltételek teljesülése esetén nyereményre jogosultságot szerezhetnek. |
+| **Holland típusú aukció** | Olyan Aukció, amelyben a kikiáltási ár időben csökken, és az nyer, aki az aktuális árat „leüti”, és azonnali, sikeres adományfizetéssel teljesíti a leütést. |
+| **NGO Card** | Beágyazható webes widget (kártya), amelyet a Civil szervezetek saját weboldalukon helyezhetnek el, és amely élő adatot mutat az adott szervezetre gyűjtött adományról. |
+| **Partner API** | A Szolgáltató által üzemeltetett programozási felület (REST API), amelyen keresztül a Partnerek tranzakciókat rögzíthetnek, kedvezményt kérdezhetnek le, és vitát nyithatnak. |
+| **Felhasználó** | Természetes személy, aki a Platformot használja (vásárol az Impact Shopban, részt vesz az Impact Challenge-ben, vagy az Impact Amplifier-en keresztül adományoz). A Felhasználó regisztráció nélkül, Pseudo ID alapján is használhatja a Platformot. |
+| **Pseudo ID** | A Felhasználó böngészőjében automatikusan generált, 12 karakter hosszúságú, anonim azonosító (base36), amelyhez a Pontok, Szavazatok és a szintbesorolás kötődik. |
+| **Sharity ID** | A Felhasználó egyedi azonosítója, amely a Pseudo ID-hez vagy — regisztráció esetén — email címhez kötődik, és amellyel a Felhasználó a Partnerek rendszereiben kedvezményt vehet igénybe. |
+| **Civil szervezet** (vagy **NGO**) | A Platformon regisztrált, a Civil szervezetek bírósági nyilvántartásáról és az ezzel összefüggő eljárási szabályokról szóló 2011. évi CLXXXI. törvény szerinti civil szervezet, alapítvány, egyesület, vagy közhasznú szervezet. |
+| **Partner** | Vállalkozás (webshop, offline üzlet, szolgáltató), amely a Szolgáltatóval affiliate, direct (API) vagy szponzori megállapodás keretében együttműködik. |
+| **Szponzor** | Vállalkozás, amely az Impact Challenge-ben videó- vagy bannermegjelenést vásárol egyedi megállapodás alapján. |
+| **Offerwall Partner** | Vállalkozás, amely az Impact Challenge offerwall felületén feladatokat (kérdőívek, alkalmazás-kipróbálás stb.) kínál a Felhasználók számára, közvetlenül vagy offerwall provider-en (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research) keresztül. |
+| **Pont** | A Platform motivációs rendszerének egysége, amelyet a Felhasználó különböző tevékenységekért kap (vásárlás, videónézés, feladatok, napi bejelentkezés stb.), és amely kizárólag szintlépésre szolgál. |
+| **Szavazat** | A Platform adományelosztási rendszerének egysége. A Felhasználó a Szavazatait az általa választott Civil szervezetre adja le, és a negyedéves adományelosztás a szavazatok arányában történik. |
+| **Szint** | A Felhasználó aktivitása alapján elért besorolás (Basic, Bronze, Silver, Gold, Platinum, Legend), amely meghatározza a kedvezményszázalékot, a szavazatsúly-szorzót és az adomány-szorzót. |
+| **Közös Adományalap** | A Szolgáltató által kezelt pénzalap, amelybe az Impact Amplifier adományok 50%-a, valamint az Impact Challenge hirdetési bevételek egy része kerül, és amelyet negyedévente a szavazatok arányában osztanak szét a Civil szervezetek között. |
+| **Negyedéves Elosztás** | A Közös Adományalap negyedéves szétosztása a Civil szervezetek között, a szavazatok arányában. |
+| **Szerződés** | A Szolgáltató és a Felhasználó, a Civil szervezet, illetve a Partner között a jelen ÁSZF elfogadásával létrejövő jogviszony. |
+
+---
+
+## 3. Az ÁSZF hatálya és elfogadása
+
+3.1. A jelen ÁSZF a Szolgáltató és az alábbi személyek közötti jogviszonyt szabályozza:
+
+- (a) **Felhasználók** — akik a Platformot használják;
+- (b) **Civil szervezetek** — amelyek a Platformon regisztráltak és adományt kapnak;
+- (c) **Partnerek** — amelyek a Szolgáltatóval partneri megállapodás keretében együttműködnek.
+
+3.2. A Platform bármely funkciójának használatával — ideértve az Impact Shopban való vásárlást, az Impact Challenge-ben való részvételt, az Impact Amplifier-en keresztül történő adományozást, a Partner API használatát, valamint a Digitális Tombolán és/vagy az Aukción való részvételt — a felhasználó kijelenti, hogy a jelen ÁSZF-et és az Adatkezelési Tájékoztatót elolvasta, megértette, és magára nézve kötelezőnek elfogadja. 
+
+3.3. A jelen ÁSZF a 2013. évi V. törvény (Ptk.) 6:77–6:81. §-ai szerinti általános szerződési feltételnek minősül.
+
+3.4. Az ÁSZF elfogadása:
+- **Felhasználók esetén**: a Platform használatának megkezdésével (ráutaló magatartás) vagy az esetleges regisztráció során az ÁSZF elfogadásának jelölőnégyzet bejelölésével;
+- **Civil szervezetek esetén**: a Platformra történő regisztrációval és az ÁSZF kifejezett elfogadásával;
+- **Partnerek esetén**: az egyedi partneri szerződés aláírásával, amely a jelen ÁSZF-re hivatkozik.
+
+---
+
+## 4. A Szolgáltatások leírása
+
+### 4.1 Impact Shop
+
+4.1.1. Az Impact Shop 500+ partnerbolt affiliate linkjeit kínálja. A Felhasználó a megszokott áron vásárol; a bolt affiliate jutalékot fizet, amelynek egy része közvetlenül az általa választott Civil szervezet javára adomány lesz.
+
+4.1.2. Az adomány nagysága az alábbi tényezők szerint alakul:
+- (a) Az affiliate jutalék mértéke (boltonként eltérő, jellemzően 2–15%);
+- (b) A Civil szervezet NGO szintje: Base (40%), Rising (50%), Legend (60%);
+- (c) A Felhasználó szintjéhez tartozó **adomány-szorzó** (Basic ×1,00 – Legend ×1,25).
+
+4.1.3. Az adomány-szorzó különbözetet a Szolgáltató a saját részesedése terhére biztosítja — a Felhasználónak nem jelent többletköltséget, a Partnernek nem jelent többletdíjat.
+
+4.1.4. A Felhasználó a vásárlás mellett Pontokat és Szavazatokat is kap.
+
+### 4.2 Impact Challenge
+
+4.2.1. Az Impact Challenge-ben a Felhasználó:
+- (a) rövid (max. 30 mp) szponzori videókat tekinthet meg;
+- (b) offerwall feladatokat teljesíthet (kérdőívek kitöltése, alkalmazások kipróbálása, regisztrációk);
+- (c) egyéb aktivitásokért (napi bejelentkezés, profil kitöltése, oldal megosztása stb.) Pontokat kaphat.
+
+4.2.2. A videónézés és feladatteljesítés a Felhasználónak ingyenes. A bevétel a hirdetőktől és Szponzoroktól származik.
+
+4.2.3. **Streak bónusz**: egymást követő napokon végzett aktivitás szorzót ad a Pontokra és Szavazatokra (7 nap: ×1,10; 14 nap: ×1,20; 30 nap: ×1,30). Szponzor videókra a streak nem érvényes.
+
+### 4.3 Impact Amplifier (adományozás)
+
+4.3.1. Az Impact Amplifier funkción keresztül a Felhasználó adományt juttathat az Adományszervező részére, és cserébe azonnal Szavazatokat kap.
+
+4.3.2. **Szavazatcsomagok:**
+
+| Csomag | Adomány | Szavazat | Bónusz |
+|--------|---------|----------|--------|
+| 🌱 Starter | 500 Ft | 500 | — |
+| 🌿 Supporter | 1 000 Ft | 1 100 | +10% |
+| 🌳 Champion | 2 500 Ft | 3 000 | +20% |
+| 🔥 Hero | 5 000 Ft | 6 500 | +30% |
+| 💎 Legend | 10 000 Ft | 20 000 | +50% |
+
+4.3.3. Az adomány szétosztása:
+- **50%** → Közös Adományalap (a Civil szervezetek között negyedévente szavazatok arányában kerül felosztásra);
+- **50%** → Platform fenntartási költség (a Szolgáltató rendszerhasználati díja az Adományszervező felé számlázva).
+
+4.3.4. A befizetés jogi minősítése: **adomány** a Sharity Adományszervező Alapítvány részére. Az adomány főszabály szerint **nem visszakövetelhető** (D6 szabály). A Felhasználó tudomásul veszi, hogy a fizetési szolgáltató/kártyatársasági eljárásrend alapján **chargeback** technikailag kezdeményezhető; a Szolgáltató visszatérítésről kizárólag kivételes, bizonyított esetekben (különösen bizonyított technikai hiba vagy bizonyított dupla terhelés) dönthet. Visszatérítés esetén a jóváírt Szavazatok visszavonásra kerülnek.
+
+**Parancs/Teendő:** a `docs/dispute-handling-procedure.md` és a refund/chargeback kommunikáció jogi véglegesítése (kivételes esetek, bizonyítás, határidők, döntési elvek).
+
+4.3.5. Céges adományozók számára az Adományszervező — az Adományszervező **nem közhasznú** jogállására is tekintettel — a hatályos jogszabályok szerint adományigazolást állít ki, amely a vállalati adóalap-kedvezmény/igazolás céljára szükséges jogalapot és kötelező tartalmi elemeket tartalmazza.
+
+**Parancs/Teendő:** a hatálybalépésig jogi tanácsadóval pontosítani: (1) az Adományszervező tényleges jogállásának pontos megnevezését, (2) a Tao. tv. szerinti megfelelő hivatkozást (pl. 7. § (1) bek. z) vs d) vagy egyéb releváns pont), (3) az adományigazolás kötelező tartalmi elemeit és feltételeit.
+
+4.3.6. A fizetés a Stripe fizetési szolgáltatón keresztül, Stripe Checkout hosted felületen történik. A kártyaadatok kizárólag a Stripe rendszerébe kerülnek — a Szolgáltató szervere kártyaadatot nem kezel (PCI-DSS SAQ-A).
+
+4.3.7. Többvalutás árazás elérhető (EUR, USD, GBP, CZK, PLN). Az aktuális árak a Platform felületén találhatók; a Szolgáltató negyedévente felülvizsgálhatja azokat.
+
+### 4.4 NGO Card
+
+4.4.1. A Civil szervezetek saját weboldalukon elhelyezhetnek egy beágyazható kártyát (NGO Card), amely valós időben mutatja az adott szervezetre összegyűjtött adomány összegét.
+
+4.4.2. A beágyazás egy JavaScript kódrészlet elhelyezésével történik, amelynek technikai specifikációja a https://app.sharity.hu/ngo-guides/ngo-card/ oldalon található.
+
+4.4.3. Az NGO Card elérhető Apple Wallet Pass formátumban is.
+
+### 4.5 Pont- és szintrendszer
+
+4.5.1. A Felhasználók az alábbi tevékenységekért kapnak Pontokat (nem teljes lista):
+
+| Tevékenység | Pont | Megjegyzés |
+|------------|------|-----------|
+| Videónézés (normál) | 1 | Streak szorzó érvényes |
+| Videónézés (szponzor) | 5 | Streak szorzó nem érvényes |
+| CTA kattintás | 5 | |
+| Napi bejelentkezés | 2 | Naponta 1× |
+| Profil kitöltése | 10 | Egyszeri |
+| Vásárlás (Impact Shop) | ≈ vásárlás értéke (Ft) | Tranzakciónként |
+| Első vásárlás bónusz | 100 | Egyszeri |
+| Barát meghívása | 200 | Meghívó kap |
+
+4.5.2. **Szintek és előnyök:**
+
+| Szint | Ponthatár | Kedvezmény | Szavazatsúly | Adomány-szorzó |
+|-------|----------|-----------|-------------|---------------|
+| 🌱 Basic | 0 | 50% | ×1 | ×1,00 |
+| 🥉 Bronze | 2 000 | 60% | ×2 | ×1,05 |
+| 🥈 Silver | 15 000 | 70% | ×3 | ×1,10 |
+| 🥇 Gold | 50 000 | 80% | ×4 | ×1,15 |
+| 💎 Platinum | 120 000 | 90% | ×5 | ×1,20 |
+| 👑 Legend | 300 000 | 100% | ×6 | ×1,25 |
+
+4.5.3. A kedvezményszázalék azt jelenti, hogy a Partner által beállított maximális kedvezményből milyen arányt kap a Felhasználó (pl. ha a max. kedvezmény 20% és a Felhasználó Gold szintű, 20% × 80% = 16% kedvezményt kap).
+
+4.5.4. A szavazatsúly-szorzó a szavazat leadásakor érvényesül: egy Legend szintű Felhasználó egyetlen szavazata 6× annyit ér, mint egy Basic szintű szavazat.
+
+4.5.5. A ponthatárok a közösség méretéhez igazodnak. A Szolgáltató fenntartja a jogot a ponthatárok módosítására, erről legalább 30 nappal korábban tájékoztatja a Felhasználókat a Platformon.
+
+4.5.6. **Pont-csökkenés (decay)**: a Pontok 3 nap inaktivitás után napi mértékben csökkenhetnek, magasabb szinteken heti természetes avulás is érvényes. 100 Pont alá nem eshetnek. Az aktív használat megállítja az inaktivitási csökkenést.
+
+4.5.7. **Napi pont- és videó limitek:** a Szolgáltató fenntartja a jogot napi pont- és videó limitek beállítására (pl. globális napi pontlimit, valamint forrásonkénti videó limit) a rendszer integritásának védelme érdekében. A limitek bevezetéséről a Felhasználók tájékoztatást kapnak.
+
+### 4.6 Szavazatok és Negyedéves Elosztás
+
+4.6.1. A Felhasználó a Szavazatait egy vagy több Civil szervezetre adhatja le.
+
+4.6.2. A Közös Adományalap negyedévente kerül elosztásra a Civil szervezetek között, a leadott szavazatok arányában:
+
+```
+ngo_share = (ngo_votes / total_valid_votes) × total_pool_amount
+```
+
+4.6.3. A kifizetés negyedévente történik (március, június, szeptember, december vége). Csatornánként (Impact Shop közvetlen adomány, illetve Impact Challenge/Amplifier Közös Adományalapból járó rész) a **minimális kifizetési összeg 5 000 Ft**. A két csatorna **nem adódik össze** a minimum szempontjából. A Szolgáltató tájékoztatási anyagaiban a **negyedéves** ütemezést tekinti kanonikusnak; a publikus guide-ok esetleges eltérése nem módosítja a jelen ÁSZF rendelkezéseit.
+
+**Parancs/Teendő:** a publikus guide-ok koherencia-helyreállítása a hatályba lépésig: `https://app.sharity.hu/ngo-guides/impact-challenge/` oldalon a „havi … elosztás/kifizetés” szövegek átírása **negyedévesre**, és ellenőrzés a `https://app.sharity.hu/rolunk/` oldallal.
+
+4.6.4. Amennyiben a negyedéves összeg nem éri el az 5 000 Ft minimumot valamely csatornán, az összeg az adott negyedévben **nem kerül kifizetésre és elvész**. A Szolgáltató a Civil szervezeteket erről tájékoztatja.
+
+4.6.5. Az Impact Amplifier-en keresztül kapott szavazatok és az ingyenesen szerzett szavazatok a negyedéves elosztásnál azonos súllyal számítanak (a szavazatsúly-szorzót figyelembe véve).
+
+---
+
+## 5. A Felhasználó Regisztrációja és azonosítása
+
+5.1. A Platform használatához nem szükséges formális regisztráció. Az első látogatáskor a Felhasználó böngészőjében automatikusan létrejön egy **Pseudo ID** (anonim azonosító), amelyhez a Pontok és Szavazatok kötődnek.
+
+5.2. A Felhasználó tudomásul veszi, hogy a Pseudo ID a böngésző helyi tárhelyéhez (cookie / localStorage) kötött. A böngészőadatok törlése vagy eszközváltás esetén a Pseudo ID elveszhet. A Felhasználó a helyreállító azonosítóját elmentheti.
+
+A Felhasználó tudomásul veszi, hogy a Pseudo ID és a hozzá kapcsolódó technikai azonosítók (pl. cookie/localStorage azonosító, IP cím, tranzakciós azonosítók) a körülményektől függően **személyes adatnak minősülhetnek**, különösen ha egyéb adatokkal (pl. email cím, fizetési tranzakció) összekapcsolhatók.
+
+**Parancs/Teendő:** az Adatkezelési Tájékoztató és a Cookie Tájékoztató koherencia-frissítése: tárolási módok (cookie/localStorage), jogalap(ok), megőrzési idők, továbbá affiliate tracking partnerek (különösen Dognet, CJ, TradeTracker) és offerwall provider-ek (pl. Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research) szerepköreinek és tájékoztatásának pontosítása.
+
+5.3. A Felhasználó opcionálisan regisztrálhat email cím és jelszó megadásával, amellyel a haladása eszközök között szinkronizálható.
+
+5.4. A Felhasználó tudomásul veszi, hogy a 16. életévét be nem töltött személy a Platformot nem használhatja. A Szolgáltató nem köteles az életkor ellenőrzésére, de a szabály megszegésének tudomásra jutásakor haladéktalanul törli az érintett Felhasználó adatait.
+
+5.5. A Felhasználó az Impact Amplifier fizetési folyamat során **email cím** megadására köteles, amennyiben adományigazolást kér (céges adomány esetén kötelező). Az email cím kizárólag az adományigazolás kiállítása és visszaigazolás küldése céljából kerül kezelésre.
+
+---
+
+## 6. A Civil szervezet Regisztrációja
+
+6.1. A Civil szervezet Platformra történő regisztrációjának feltételei:
+
+- (a) Magyarországon nyilvántartásba vett civil szervezet, alapítvány, egyesület, közhasznú szervezet;
+- (b) nem áll felszámolás, csőd, végelszámolás, végrehajtás alatt;
+- (c) nem folyik ellene vagy vezető tisztségviselője ellen büntetőeljárás;
+- (d) a megadott adatai teljes körűek és a valóságnak megfelelnek.
+
+6.2. A Szolgáltató a regisztrációs kérelmet elbírálja, és döntéséről a Civil szervezetet elektronikus úton értesíti. A Szolgáltató jogosult a regisztrációt indokolás nélkül elutasítani.
+
+6.3. A Civil szervezet köteles adatainak változását 5 munkanapon belül bejelenteni. Ennek elmulasztása esetén a Szolgáltató jogosult a Civil szervezet Platformon keresztüli részvételét felfüggeszteni.
+
+6.4. **NGO szintek**: A Civil szervezet rangsor-alapú besorolást kap (Base, Rising, Legend), amely meghatározza, hogy a jutalékból milyen arányban részesül adományban. A besorolást a Szolgáltató a szavazatszám és aktivitás alapján állapítja meg és rendszeresen felülvizsgálja.
+
+---
+
+## 7. A Partner csatlakozása
+
+7.1. A Szolgáltató négyféle csatlakozási módot kínál a Partnereknek:
+
+| Mód | Leírás | Költség |
+|-----|--------|--------|
+| **Affiliate Partner** | Meglévő affiliate hálózaton (Dognet, Tradedoubler stb.) keresztül csatlakozik | 0 Ft — meglévő affiliate jutalékból |
+| **Direct Partner (API)** | A Partner API-n keresztül saját integrációval csatlakozik, kedvezményt is tud adni | 0 Ft csatlakozás — te döntöd el a jutalék %-ot |
+| **Szponzor** | Videó- vagy bannermegjelenés az Impact Challenge-ben | Egyedi árazás |
+| **Offerwall Partner** | Kérdőívek, kvízek, feladatok a Felhasználók számára | Egyedi megállapodás |
+
+7.2. Az Affiliate és Direct Partner csatlakozás ingyenes; a Szolgáltató kizárólag a sikeres tranzakciók utáni jutalékból részesedik.
+
+7.3. A Direct Partner API használata HMAC SHA-256 aláírással, idempotenciával és timestamp-védelemmel biztosított. A technikai specifikáció: https://app.sharity.hu/partner-api.
+
+7.4. A Partner vállalja, hogy a Felhasználóknak a szintjüknek megfelelő kedvezményt biztosítja (amennyiben a Partner kedvezményrendszert alkalmaz).
+
+7.5. A Partner az egyedi partneri szerződésben foglalt feltételek mellett jogosult a Szolgáltatóval fennálló megállapodást megszüntetni.
+
+---
+
+## 8. Adomány-szorzó és jutalékelosztás (Direct Partner)
+
+8.1. A Direct Partner által beállított jutalékszázalék automatikusan kerül szétosztásra:
+
+- (a) **40–60%** → Adomány a Civil szervezetnek (NGO szintjétől függően: Base 40%, Rising 50%, Legend 60%);
+- (b) **Fennmaradó rész** → Sharity platform díj.
+
+8.2. A Felhasználó szintjéhez tartozó **adomány-szorzó** (×1,00 – ×1,25) az NGO-nak járó adományrészt szorozza. Példa: Legend NGO (60%) × Legend user (×1,25) = a jutalék 75%-a lesz adomány. A szorzó-különbözetet a Szolgáltató a saját részesedése terhére biztosítja.
+
+8.3. Az ügyfélkedvezmény a jutaléktól független, külön megállapodás alapján működik.
+
+---
+
+## 9. A Szolgáltató jogai és kötelezettségei
+
+9.1. A Szolgáltató vállalja, hogy:
+- (a) a Platformot a jelen ÁSZF hatálya alatt üzemelteti és a szolgáltatásokat nyújtja;
+- (b) a Közös Adományalapot negyedévente, átlátható módon szétosztja a Civil szervezetek között;
+- (c) a Partnereknek hozzáférést biztosít a partner dashboardhoz és riportokhoz;
+- (d) a Felhasználók és Civil szervezetek megkereséseit észszerű határidőn (max. 5 munkanapon) belül megválaszolja.
+
+9.2. A Szolgáltató fenntartja a jogot, hogy:
+- (a) a Szolgáltatások nyújtását és a Platform üzemeltetését bármikor, indokolás nélkül megszüntesse, erről a Felhasználókat és Civil szervezeteket legalább 30 nappal korábban értesítve;
+- (b) új funkciókat vezessen be, vagy meglévő funkciókat módosítson, megszüntessen;
+- (c) a szinthatárokat, pontértékeket, szavazatszorzókat a közösség méretéhez igazítsa;
+- (d) a Platformon megjelenő jogszabálysértő, megtévesztő, vagy egyébként nem megfelelő tartalmat eltávolítsa.
+
+9.3. A Szolgáltató jogosult a Szerződés teljesítéséhez közreműködőt igénybe venni.
+
+---
+
+## 10. Felelősségkorlátozás
+
+10.1. A Szolgáltató az Impact Shop-ban, az Impact Challenge-ben és az Impact Amplifier-ben elérhető Szolgáltatásokat **jelen állapotukban** („as is&quot;) nyújtja.
+
+10.2. A Szolgáltató **nem felel**:
+- (a) a Platform technikai hibáiért (hálózati kapcsolat, szerver teljesítmény, hálózati leterheltség, Cloudflare/CDN kiesés);
+- (b) az affiliate hálózat (Dognet) szolgáltatásainak kieséséért vagy a jutalék jóváírásának késedelméért;
+- (c) a Stripe fizetési szolgáltatás meghibásodásáért vagy a Stripe által okozott késedelemért;
+- (d) a Felhasználó által megadott hibás adatokból (pl. téves email cím, helytelen Pseudo ID) eredő károkért;
+- (e) a Pseudo ID elvesztéséből (böngészőadat törlése, eszközváltás) eredő pont- vagy szavazatveszteségért;
+- (f) harmadik személy által a Platformon közzétett tartalmak jogszerűségéért;
+- (g) a Civil szervezet adatainak valóságtartalmáért;
+- (h) a Partnerek termékeinek vagy szolgáltatásainak minőségéért, a Felhasználó és Partner közötti jogvitáért.
+
+10.3. A fenti felelősségkorlátozás nem érinti a Szolgáltató szándékosan okozott, továbbá emberi életet, testi épséget vagy egészséget megkárosító szerződésszegéséért fennálló felelősségét.
+
+10.4. A Platform használata ingyenes a Felhasználók számára. Az ingyenességre tekintettel — a Ptk. 6:521. § (2) bekezdésének figyelembevételével — a Szolgáltató a Felhasználókkal szemben kizárja a közvetlen és következményi kártérítési felelősségét, a jogszabály által engedett legszélesebb mértékben.
+
+---
+
+## 11. Szellemi tulajdonjogok
+
+11.1. A Platform — ideértve a forráskódot, tárgykódot, grafikai elemeket, dokumentációt, adatbázisokat és a szoftverarchitektúrát — szerzői vagyoni jogainak jogosultja a Szolgáltató, amelyet a szerzői jogról szóló 1999. évi LXXVI. törvény (Szjt.) véd.
+
+11.2. A Szolgáltató a Felhasználónak és a Civil szervezetnek nem kizárólagos, nem átruházható, visszavonható felhasználási jogot enged a Platform rendeltetésszerű használatára.
+
+11.3. A felhasználási jog nem terjed ki a Platform átdolgozására, visszafejtésére, fordítására, vagy bármely más módosítására. Al-felhasználási jog nem engedélyezhető.
+
+11.4. A Civil szervezet és a Felhasználó szavatolja, hogy az általa feltöltött tartalmak (képek, szövegek, videók) nem sértik harmadik személy szerzői jogát, védjegyjogát, személyiségi jogát, vagy egyéb jogszabályi rendelkezést. A jogsértő tartalmakból eredő bármilyen kárigény vagy szankció a feltöltőt terheli.
+
+---
+
+## 12. A Felhasználó kötelezettségei
+
+12.1. A Felhasználó köteles:
+- (a) a Platformot rendeltetésszerűen, a jelen ÁSZF-nek, a vonatkozó jogszabályoknak és a jó erkölcsnek megfelelően használni;
+- (b) tartózkodni minden olyan tevékenységtől, amely a Platform informatikai működését veszélyezteti (pl. automatizált scriptek, botok, DDoS);
+- (c) valós adatokat megadni, amennyiben a Platform adatmegadást kér (Impact Amplifier fizetési folyamat, regisztráció);
+- (d) haladéktalanul értesíteni a Szolgáltatót, ha a fiókjának vagy Pseudo ID-jának illetéktelen használatát észleli.
+
+12.2. A Felhasználó nem jogosult:
+- (a) politikai, gyűlöletkeltő, obszcén, vagy egyéb jogszabályba ütköző tartalmat közzétenni;
+- (b) mások személyes adatait visszaélésszerűen felhasználni;
+- (c) a szavazat- vagy pontrendszert manipulálni (pl. hamis Pseudo ID-k létrehozásával, automatizált szavazással).
+
+12.3. A 12.2. pont megsértése esetén a Szolgáltató jogosult a Felhasználó azonnali kizárására (Pseudo ID / fiók törlése), amely egyben a Szerződés megszűnését jelenti.
+
+---
+
+## 13. A Civil szervezet kötelezettségei
+
+13.1. A Civil szervezet köteles:
+- (a) a regisztrációkor megadott adatai valóságát és teljeskörűségét biztosítani;
+- (b) az adatváltozásokat 5 munkanapon belül bejelenteni;
+- (c) a Szolgáltató által kért információkat, igazolásokat 8 munkanapon belül rendelkezésre bocsátani;
+- (d) a Platformon közzétett tartalmak jogszerűségéért, a szerzői jogok betartásáért felelősséget vállalni.
+
+13.2. A Civil szervezet tudomásul veszi, hogy a Platformon regisztrációja és az adományjogosultsága a Szolgáltató döntése alapján felfüggeszthető vagy megszüntethető, különösen:
+- (a) ha a Civil szervezet a Belépési feltételeknek nem felel meg;
+- (b) ha jogszabályba ütköző magatartást tanúsít;
+- (c) ha adatait nem tartja naprakészen;
+- (d) ha a Szolgáltató felszólítására nem tesz eleget együttműködési kötelezettségének.
+
+---
+
+## 14. Fizetés és pénzügyi rendelkezések
+
+### 14.1 Impact Amplifier — fizetés
+
+14.1.1. A fizetés a **Stripe Payments Europe, Limited** (Dublin, Írország) által biztosított Stripe Checkout hosted felületen történik. A Szolgáltató szervere kártyaadatot nem kezel.
+
+14.1.2. A Szolgáltató biztonsági intézkedései:
+- Cloudflare Turnstile (CAPTCHA) a checkout indítása előtt;
+- Rate limiting: max. 10 checkout / óra / IP; max. 5 checkout / óra / Pseudo ID;
+- Stripe Radar beépített fraud detection;
+- 3D Secure / SCA az EU-s tranzakcióknál automatikusan.
+
+14.1.3. A sikeres fizetést követően a Szavazatok azonnal jóváírásra kerülnek a Felhasználó egyenlegén, és automatikusan a kiválasztott Civil szervezet(ek)re kerülnek.
+
+14.1.4. Az adomány **nem visszakövetelhető** (D6 szabály). Kivételes esetben (pl. bizonyított technikai hiba, dupla terhelés) a Szolgáltató egyedileg dönthet a refundról — ebben az esetben a jóváírt Szavazatok visszavonásra kerülnek.
+
+### 14.2 Impact Shop — affiliate jutalék
+
+14.2.1. Az affiliate jutalékok jóváírása az affiliate hálózat (jellemzően Dognet) szabályai szerint történik. A jóváírás jellemzően 30–90 napos késedelemmel történik (iparági sztenderd).
+
+14.2.2. A Felhasználó visszáruzott rendelése esetén a jutalék törlődik, és abból adomány nem keletkezik.
+
+### 14.3 Civil szervezeteknek történő kifizetés
+
+14.3.1. A kifizetés negyedévente történik, banki átutalással, az ÁSZF 4.6.3–4.6.4. pontjában foglaltak szerint.
+
+14.3.2. A Szolgáltató a kifizetéshez negyedéves elosztási riportot készít, amelyet a Civil szervezet számára elérhetővé tesz.
+
+### 14.4 A Szolgáltatások díjmentessége
+
+14.4.1. A Szolgáltató a Platformot a Felhasználók számára **ingyenesen** biztosítja.
+
+14.4.2. A Civil szervezetektől a Szolgáltató semmilyen jogcímen nem számít fel csatlakozási díjat, tagsági díjat vagy egyéb közvetlen költséget. A Szolgáltató a bevételeit kizárólag a partneri jutalékból, az Impact Amplifier platform-részéből és a szponzori díjakból fedezi.
+
+14.4.3. Az Affiliate és Direct Partner csatlakozás szintén díjmentes.
+
+---
+
+## 15. Viták kezelése (Dispute)
+
+15.1. A Partner a Partner API `/partner/dispute` végponton keresztül, vagy a partner dashboard-on jelezhet vitát (refund, összegkülönbség, hiányzó tranzakció).
+
+15.2. A Szolgáltató a vita első visszajelzését 2 munkanapon belül, a döntést 5 munkanapon belül adja meg.
+
+15.3. Az Impact Amplifier-rel kapcsolatos viták kezelésére a belső `docs/dispute-handling-procedure.md` operatív eljárásrend irányadó. A Felhasználóval szembeni chargeback esetén az adomány visszakövetelhetőségének kizárása a §4.3.4 (D6 szabály) alapján érvényesül. A Stripe chargeback eljárással kapcsolatos felelősségmegosztást a `docs/stripe-responsibility-matrix.md` rögzíti.
+
+---
+
+## 16. Adatvédelem
+
+16.1. A személyes adatok kezelésére az Európai Parlament és a Tanács (EU) 2016/679 rendelete (**GDPR**) és az információs önrendelkezési jogról és az információszabadságról szóló 2011. évi CXII. törvény (Infotv.) az irányadó.
+
+16.2. A Szolgáltató részletes Adatkezelési Tájékoztatóját a https://app.sharity.hu/adatkezeles oldalon teszi közzé.
+
+16.3. A Platform alapvetően a **Pseudo ID** rendszerre épül, amely önmagában jellemzően nem alkalmas a Felhasználó azonosítására, ugyanakkor a Pseudo ID és a hozzá kapcsolódó technikai azonosítók a körülményektől függően **személyes adatnak minősülhetnek** (különösen, ha IP-vel, tranzakcióval vagy emaillel összekapcsolhatók).
+
+16.4. Személyes adat kezelésére kizárólag az alábbi esetekben kerül sor:
+- (a) Impact Amplifier fizetésnél: email cím (adományigazolás céljából, hozzájárulás alapján), céges adatok;
+- (b) opcionális regisztrációnál: email cím + jelszó;
+- (c) Civil szervezet regisztrációnál: szervezet adatai, kapcsolattartó adatai (szerződés teljesítéséhez szükséges);
+- (d) Partner csatlakozásnál: cégadatok, kapcsolattartó (szerződés teljesítéséhez szükséges).
+- (e) Digitális Tombola / nyereményjáték esetén: a részvétel adminisztrációjához szükséges kapcsolattartási adatok (különösen email cím, és — amennyiben a jegy/értesítés SMS-ben kerül kézbesítésre — telefonszám), valamint a részvételhez kapcsolódó aktivitásadatok (pl. megtekintett tartalom/érintett kampány azonosítója) a sorsolás és nyereményjuttatás lebonyolítása céljából.
+- (f) Aukció esetén: a részvételhez és a leütéshez/adományfizetéshez kapcsolódó azonosítók és tranzakciós adatok (különösen fizetési státusz és tranzakció-azonosítók) a szerződés teljesítése és visszaélések megelőzése céljából.
+
+16.5. A Szolgáltató adatfeldolgozói:
+- **Stripe Payments Europe, Limited** — fizetési szolgáltató;
+- **Dognet s.r.o.** — affiliate hálózat;
+- **Cloudflare, Inc.** — CDN, WAF, DDoS védelem;
+- **Ezit Kft.** — tárhelyszolgáltató;
+- **Vonage (Nexmo SMS API)** — SMS kézbesítés (Digitális Tombola jegy/értesítés). UK/EGT (EEA) érintettek esetén a Vonage Holdings Corp. mellett az alábbi csoporttagok is kezelhetnek személyes adatot (szolgáltatásnyújtás, marketing, támogatás): **Ericsson**; **Vonage Business Limited** (cégjegyzékszám: 03602868; 5 Churchill Place, 10th Floor, London E14 5HU, UK); **Vonage V.B.** (Radarweg 29 A 12 Office, 1043NX Amsterdam, The Netherlands);
+- **Google Cloud** — AI Agent funkciók (opcionális).
+
+Az adatfeldolgozók részletes nyilvántartását a `docs/gdpr-data-processors.md` dokumentum tartalmazza.
+
+16.6. **Cookie-k**: a Platform funkcionális cookie-kat használ (Pseudo ID tárolás, session). A Platform egyes funkcióihoz kapcsolódóan affiliate és offerwall partnerek is alkalmazhatnak sütiket vagy hasonló technológiákat; az ezekhez kapcsolódó adatkezelési szerepkör (önálló adatkezelő/adatfeldolgozó) eltérő lehet. A cookie-kezelés részleteiről a Cookie Tájékoztató rendelkezik.
+
+16.7. **Törlési jog**: az érintett a privacy@sharity.hu email címen kérheti személyes adatai törlését. A Szolgáltató 30 napon belül teljesíti a kérést, kivéve, ha jogszabályi megőrzési kötelezettség áll fenn (számviteli: 8 év, ÁFA: 5 év).
+
+---
+
+## 17. Az ÁSZF módosítása
+
+17.1. A Szolgáltató jogosult az ÁSZF-et egyoldalúan módosítani. A módosításról:
+- **Civil szervezetek esetén**: a módosítás hatálybalépése előtt legalább 30 nappal korábban, az admin felületen és elektronikus levélben értesíti a Szolgáltató;
+- **Felhasználók esetén**: a módosítás hatálybalépése előtt legalább 7 nappal korábban, a Platformon értesíti a Szolgáltató;
+- **Partnerek esetén**: az egyedi partneri szerződésben foglaltak szerint.
+
+17.2. A módosítás a Platformon történő közzététellel lép hatályba.
+
+17.3. Sürgős esetben (visszaélés megfékezése, bírósági/hatósági intézkedés, jogszabályváltozás) a Szolgáltató azonnali hatállyal módosíthatja az ÁSZF-et, utólagos tájékoztatás mellett.
+
+17.4. A Civil szervezet az ÁSZF módosítás hatálybalépése előtt mondhatja fel a Szerződést.
+
+---
+
+## 18. A Szerződés megszűnése
+
+### 18.1 Felhasználó esetén
+
+18.1.1. A Felhasználó bármikor törölheti regisztrációját (amennyiben regisztrált) vagy abbahagyhatja a Platform használatát.
+
+18.1.2. A Pseudo ID és a hozzá tartozó adatok inaktivitás esetén nem kerülnek automatikusan törlésre, de a Szolgáltató 12 hónapos inaktivitás után jogosult azokat törölni.
+
+18.1.3. A Szolgáltató azonnali hatállyal törli a Felhasználó Pseudo ID-jét / fiókját az ÁSZF súlyos megsértése esetén (12.2–12.3. pont).
+
+### 18.2 Civil szervezet esetén
+
+18.2.1. A Civil szervezet és a Szolgáltató a Szerződést 15 napos felmondási idővel, írásban, bármikor felmondhatja.
+
+18.2.2. A Szolgáltató azonnali hatállyal felmondhatja a Szerződést, ha:
+- (a) a Civil szervezet nem felel meg a Belépési feltételeknek (6.1. pont);
+- (b) jogszabályba vagy ÁSZF-be ütköző magatartást tanúsít;
+- (c) a Szolgáltató felszólítására nem tesz eleget együttműködési kötelezettségének;
+- (d) a szellemi tulajdonjogi rendelkezéseket (11. pont) megsérti.
+
+18.2.3. A Szerződés bármely okból történő megszűnése nem érinti a Civil szervezet jogosultságát a megszűnés időpontjáig összegyűjtött, de még ki nem fizetett adományra, feltéve, hogy az eléri a minimális kifizetési összeget (5 000 Ft / csatorna).
+
+### 18.3 Partner esetén
+
+18.3.1. A Partneri megállapodás megszüntetésére az egyedi partneri szerződés rendelkezései az irányadók.
+
+---
+
+## 19. Panaszkezelés
+
+19.1. A Felhasználó panaszait az alábbi elérhetőségen terjesztheti elő:
+- **E-mail**: office@sharity.hu
+- **Levelezési cím**: 7090 Tamási, Petőfi Sándor utca 12.
+
+19.2. A Szolgáltató a panaszt 30 napon belül érdemben megválaszolja. Amennyiben a panasz azonnali kivizsgálására nincs mód, a Szolgáltató jegyzőkönyvet vesz fel, amelynek másolatát az érdemi válasszal együtt megküldi.
+
+19.3. A panaszról felvett jegyzőkönyvet és a válasz másolati példányát a Szolgáltató 3 évig megőrzi.
+
+19.4. Ha a panasz nem rendezhető, a Felhasználónak az alábbi jogérvényesítési lehetőségek állnak rendelkezésére:
+
+**(a) Békéltető Testület:**
+- Tolna Vármegyei Békéltető Testület
+- Cím: 7100 Szekszárd, Arany János utca 23–25.
+- E-mail: kamara@tmkik.hu
+- Telefon: (74) 411-661
+
+**(b) Fogyasztóvédelmi hatóság:**
+- A lakóhely szerint illetékes fővárosi vagy vármegyei kormányhivatal fogyasztóvédelmi főosztálya
+- https://www.kormanyhivatal.hu
+
+**(c) Online vitarendezés (ODR):**
+(https://consumer-redress.ec.europa.eu/index_hu)
+https://europa.eu/youreurope/citizens/consumers/consumers-dispute-resolution/index_hu.htm
+
+**(d) Adatvédelmi panasz:**
+- Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)
+- 1055 Budapest, Falk Miksa utca 9–11.
+- https://www.naih.hu
+
+19.5. A Civil szervezet a Szolgáltató bármely döntése ellen írásban (office@sharity.hu) nyújthat be panaszt, amelyet a Szolgáltató 30 napon belül kivizsgál.
+
+---
+
+## 20. Jogviták rendezése
+
+20.1. A Szolgáltató és a Civil szervezet a közöttük felmerülő vitás kérdéseket elsősorban peren kívüli egyeztetés útján kísérlik meg rendezni.
+
+20.2. Az egyeztetés sikertelensége esetén a Szolgáltató és a Civil szervezet a Szekszárdi Törvényszék kizárólagos illetékességét kötik ki, amennyiben az ügyben rendes bírósági eljárásnak van helye.
+
+Tájékoztatás: a 2022-es ÁSZF a fenti rendes bírósági út helyett választottbírósági kikötést tartalmazott. Amennyiben a felek a választottbírósági kikötést kívánják alkalmazni, az alábbi mintaszöveg használható:
+
+&gt; *„Az egyeztetés sikertelensége esetén bármely, a Szolgáltató és a Civil szervezet közötti, a Szerződésből vagy azzal összefüggésben keletkező vita elbírálására a felek a Magyar Kereskedelmi és Iparkamara mellett működő Állandó Választottbíróság (Kereskedelmi Választottbíróság Budapest) kizárólagos és végleges döntésének vetik alá magukat. Az eljárás a Választottbíróság Eljárási Szabályzata szerint folyik, az eljáró választottbírók száma három, az eljárás nyelve magyar. A felek kizárják a 2017. évi LX. törvény IX. fejezetében szabályozott eljárásújítást.”*
+
+**Parancs/Teendő:** jogi döntés és véglegesítés: rendes bírósági út vs. választottbírósági kikötés; a nem választott opció törlendő a hatályba lépésig.
+
+20.3. A Szolgáltató és a Felhasználó közötti jogvitában az irányadó jogszabályok szerint illetékes és hatáskörrel rendelkező bíróság jár el.
+
+20.4. A Szerződésre a magyar jog irányadó.
+
+---
+
+## 21. Vonatkozó jogszabályok
+
+A jelen ÁSZF értelmezése és alkalmazása során különösen az alábbi jogszabályok irányadók:
+
+| Jogszabály | Tárgykör |
+|-----------|---------|
+| 2013. évi V. törvény (Ptk.) | Polgári jog — szerződéskötés, ÁSZF, felelősség |
+| 2001. évi CVIII. törvény (Eker tv.) | Elektronikus kereskedelmi szolgáltatások |
+| (EU) 2016/679 rendelet (GDPR) | Általános adatvédelmi rendelet |
+| 2011. évi CXII. törvény (Infotv.) | Információs önrendelkezési jog |
+| 1999. évi LXXVI. törvény (Szjt.) | Szerzői jog |
+| 1997. évi CLV. törvény (Fgytv.) | Fogyasztóvédelem |
+| 2008. évi XLVIII. törvény (Grt.) | Gazdasági reklámtevékenység |
+| 2008. évi XLVII. törvény (Fttv.) | Fogyasztókkal szembeni tisztességtelen kereskedelmi gyakorlat tilalma — releváns a szponzori/reklám tartalmakra (vö. 1. sz. melléklet §5.3) |
+| 1996. évi LXXXI. törvény (Tao. tv.) | Társasági adó — adományigazolás |
+| 2011. évi CLXXV. törvény (Civil tv.) | Civil szervezetek |
+| 2011. évi CLXXXI. törvény | Civil szervezetek bírósági nyilvántartása |
+| 2017. évi LIII. törvény (Pmt.) | Pénzmosás és terrorizmus-finanszírozás megelőzése |
+| (EU) 2022/2065 rendelet (DSA) | Digitális szolgáltatások — közvetítő szolgáltatók kötelezettségei |
+| 45/2014. (II. 26.) Korm. rendelet | Fogyasztó és vállalkozás közötti szerződésekre vonatkozó szabályok |
+
+**DSA tájékoztatás:** A Sharity a DSA 3. cikk (l) pontja szerint várhatóan „nagyon kis méretű vállalkozásnak” vagy „kis vállalkozásnak” minősül (feltételezve, hogy az éves átlagos aktív felhasználók száma az EU-ban nem haladja meg a 45 milliót). Ennek megfelelően a mikro-/kisvállalkozási státuszhoz kötött mentességek alkalmazhatók lehetnek.
+
+**Parancs/Teendő:** jogi ellenőrzéssel pontosítani, hogy a Sharity pontosan milyen DSA-szerepkörben jár el (pl. hosting/online platform), és a mentesség mely **konkrét** kötelezettségekre terjed ki; a releváns cikkhelyek és kötelezettséglista tételes rögzítése.
+
+---
+
+## 22. Vegyes rendelkezések
+
+22.1. A Szolgáltató a Szerződés teljesítési körébe eső kérdésekben az office@sharity.hu e-mail címen biztosítja a kapcsolattartást.
+
+22.2. Amennyiben a jelen ÁSZF bármely rendelkezése érvénytelen, az érvénytelenség jogkövetkezményeit kizárólag az érintett rendelkezésre kell alkalmazni; az ÁSZF többi része hatályban marad.
+
+22.3. A Szolgáltató és a Civil szervezet közötti Szerződés megszüntetésével kapcsolatos írásbeli jognyilatkozatok kézbesítettnek minősülnek, ha azokat:
+- (a) ajánlott/tértivevényes postai küldeményként adták fel a másik fél székhelyére; vagy
+- (b) elektronikus aláírással ellátva küldték a jelen ÁSZF-ben megjelölt e-mail címre.
+
+22.4. Kézbesítettnek minősül a „nem kereste&quot; vagy „átvételt megtagadta&quot; jelzéssel visszaérkezett küldemény is.
+
+22.5. A jelen ÁSZF az abban szabályozott jogviszony tekintetében a felek teljes megállapodását tartalmazza, és felülír minden korábbi írásbeli vagy szóbeli megállapodást.
+
+22.6. **[ÚJ — GDPR Art. 37 DPO]**: A Sharity Mobile Application Zrt. megvizsgálta az adatvédelmi tisztviselő (DPO) kötelező kinevezésének feltételeit a GDPR 37. cikke alapján, és arra a következtetésre jutott, hogy a Sharity Platform jelenleg nem minősül „közhatalmi szervnek vagy közfeladatot ellátó szervnek&quot; [Art. 37(1)(a)], a személyes adatok kezelése nem kíván „rendszeres és szisztematikus, nagyszabású megfigyelést&quot; [Art. 37(1)(b)], és nem folytat a 37(1)(c) pont alá eső, különleges kategóriájú adatok nagyszabású kezelését. Ennek alapján a DPO kinevezése jelenleg nem kötelező. A döntést felül kell vizsgálni, ha a Platform aktív felhasználószáma, az adatkezelés köre vagy jellege lényegesen megváltozik.
+
+---
+
+## Mellékletek
+
+### 1. sz. melléklet: Egyedi szerződés szponzori / reklámozói megállapodásra
+
+*(Ld. külön dokumentum: `ÁSZF/1sz_melleklet_szponzori_megallapodas.md`)*
+
+### 2. sz. melléklet: Adatkezelési Tájékoztató
+
+*(Ld. külön dokumentum: https://app.sharity.hu/adatkezeles)*
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2022-11-10 | Eredeti ÁSZF — Sharity Alkalmazás (adomány-kampány modell) |
+| 2.0 | 2026-02-25 | Teljes átdolgozás és aktualizált jogi hivatkozások |
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Szponzori megállapodás melléklet](./1sz_melleklet_szponzori_megallapodas.md)
+- [SLA](../docs/sla-policy.md)
+- [Stripe felelősségmegosztás](../docs/stripe-responsibility-matrix.md)
+- [Vitakezelési eljárásrend](../docs/dispute-handling-procedure.md)
+- [GDPR adatfeldolgozók](../docs/gdpr-data-processors.md)
+- [Hozzáférés-kezelési mátrix](../docs/access-control-matrix.md)
+- [Negyedéves elosztási riport sablon](../docs/quarterly-distribution-report-template.md)
+- [Win4Good szabályzat](./Win4Good szabályzat.pdf)
+- [Impact Shop útmutató](https://app.sharity.hu/ngo-guides/impact-shop/)
+- [Impact Challenge útmutató](https://app.sharity.hu/ngo-guides/impact-challenge/)
+- [NGO Card útmutató](https://app.sharity.hu/ngo-guides/ngo-card/)
+- [Rólunk](https://app.sharity.hu/rolunk/)
+- [Cégeknek](https://app.sharity.hu/cegeknek/)
+- [Befektetőknek](https://app.sharity.hu/befektetoknek/)
+</pre>
+      </details>
+    </section>
+    
+    <section class="doc-card" id="szponzori-melleklet">
+      <div class="doc-head">
+        <div>
+          <h2>1. sz. melléklet — Szponzori / reklámozói megállapodás</h2>
+          <p class="doc-meta">Verzió: 1.1 | Státusz: Hatályos</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">Sablon a szponzori megjelenésekre vonatkozó egyedi megállapodáshoz.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/1sz_melleklet_szponzori_megallapodas-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/1sz_melleklet_szponzori_megallapodas-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/szponzori-megallapodas-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/1sz_melleklet_szponzori_megallapodas-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># 1. sz. melléklet — Egyedi szerződés szponzori / reklámozói megállapodásra
+
+&gt; **Az Általános Szerződési Feltételek (ÁSZF) 2.0 melléklete**  
+&gt; **Verzió**: 1.1  
+&gt; **Státusz**: HATÁLYOS
+
+---
+
+## EGYEDI MEGÁLLAPODÁS
+
+amely létrejött egyrészről
+
+**Sharity Mobile Application Zrt.**  
+Székhely: 7090 Tamási, Petőfi Sándor utca 12.  
+Cégjegyzékszám: 17-10-001325  
+Adószám: 28751843-2-17  
+Képviseli: ……………………………… (……………… beosztás)  
+E-mail: office@sharity.hu  
+(a továbbiakban: **Szolgáltató**)
+
+másrészről
+
+**[Szponzor / Reklámozó cégneve]**  
+Székhely: ………………………………  
+Cégjegyzékszám: ………………………………  
+Adószám: ………………………………  
+Képviseli: ……………………………… (……………… beosztás)  
+E-mail: ………………………………  
+(a továbbiakban: **Szponzor**)
+
+a Szolgáltató és a Szponzor a továbbiakban együttesen: **Felek**
+
+---
+
+## 1. A megállapodás tárgya
+
+1.1. A Szolgáltató a Platform Impact Challenge funkciójának keretein belül a Szponzor számára reklám-/szponzori megjelenési lehetőséget biztosít az alábbi formában:
+
+- [ ] **Videó megjelenés** (max. 30 mp szponzori videó az Impact Challenge-ben)
+- [ ] **Banner megjelenés** (kártya formátumú vizuális megjelenés az Impact Challenge-ben)
+- [ ] **CTA (call-to-action) gomb** (kattintásra átirányítás a Szponzor weboldalára)
+- [ ] **Offerwall feladat** (egyedi aktivitás a Felhasználók számára, pl. kérdőív, kvíz, alkalmazás-kipróbálás)
+- [ ] **Egyéb** (ld. 2. sz. melléklet leírása): ………………………
+
+1.2. A megjelenés technikai specifikációja az alábbi:
+
+| Paraméter | Érték |
+|-----------|-------|
+| **Formátum** | ……………… (MP4 / JPG / PNG / HTML5) |
+| **Max. időtartam** (videó) | ……… mp |
+| **Felbontás** | min. 720p (1280×720), ajánlott 1080p |
+| **Max. fájlméret** | ……… MB |
+| **Landing page URL** | ……………………………… |
+| **CTA szöveg** | ……………………………… |
+| **Céloldal tracking paraméter** | ?utm_source=sharity&amp;utm_medium=... |
+
+---
+
+## 2. Időtartam és mennyiség
+
+2.1. A megállapodás időtartama: **…… hónap**, a jelen szerződés aláírásának napjától.
+
+2.2. A Szolgáltató az alábbi mennyiségű megjelenést biztosítja:
+
+| Megjelenés típusa | Garantált mennyiség | Időszak |
+|-------------------|-------------------|---------|
+| Videó megtekintés (≥75% lejátszás) | ……………… db | ……-tól ……-ig |
+| CTA kattintás | ……………… db (becslés) | ……-tól ……-ig |
+| Banner impresszió | ……………… db | ……-tól ……-ig |
+| Offerwall kitöltés | ……………… db | ……-tól ……-ig |
+
+2.3. A Szolgáltató a megjelenések teljesülését havonta riportban dokumentálja, amelyet elektronikus úton küld meg a Szponzor által megadott email címre.
+
+---
+
+## 3. Díjazás
+
+3.1. A Szponzor a megjelenésért az alábbi díjat fizeti a Szolgáltató részére:
+
+| Díjtétel | Összeg | Fizetési ütem |
+|---------|--------|--------------|
+| ……………………… | ……………… Ft + ÁFA | ……………… |
+| ……………………… | ……………… Ft + ÁFA | ……………… |
+| **Összesen** | **……………… Ft + ÁFA** | |
+
+3.2. A díjat a Szolgáltató számlájára történő átutalással kell megfizetni az alábbi bankszámlára:
+
+| Adatok | Érték |
+|--------|-------|
+| Számlatulajdonos | Sharity Mobile Application Zrt. |
+| Bank neve | ……………………… |
+| Számlaszám | ……………………… |
+| IBAN | ……………………… |
+| Közlemény | „Impact Challenge – [Szponzor neve] – [hónap]&quot; |
+
+3.3. Fizetési határidő: a számla keltétől számított **15 nap**.
+
+3.4. Késedelmes fizetés esetén a Ptk. 6:155. § szerinti késedelmi kamat számítható fel.
+
+---
+
+## 4. Az adomány-szponzori modell (megtekintés-alapú adomány)
+
+4.1. A Szponzor tudomásul veszi, hogy a Szponzor által fizetett díj egy része közvetlenül az Impact Challenge Közös Adományalapjába kerül, és a Platform negyedéves elosztás keretében a Civil szervezetek között a szavazatok arányában kerül felosztásra. A kifizetés ütemezését az ÁSZF és a negyedéves elosztási riport sablon rögzíti.
+
+4.2. A bevétel felosztásának aránya:
+
+| Hányad | Címzett |
+|--------|---------|
+| ……% | Közös Adományalap (Civil szervezetek) |
+| ……% | Szolgáltató (platform üzemeltetés, fejlesztés) |
+
+4.3. A Szponzor az adomány-szponzori modellben **nem rendelkezik** arról, melyik Civil szervezet kapja az adományt — a felosztás a Felhasználók szavazatai alapján történik.
+
+4.4. A Szponzor jogosult kommunikációjában feltüntetni, hogy „Impact Challenge szponzor&quot; és hogy a megjelenései hozzájárulnak a Civil szervezetek támogatásához.
+
+---
+
+## 5. Tartalom-jóváhagyás és megfelelőség
+
+5.1. A Szponzor a kreatív anyagokat (videó, banner, CTA szöveg, landing page URL) a megjelenés tervezett indulása előtt legalább **5 munkanappal** köteles megküldeni a Szolgáltatónak jóváhagyásra.
+
+5.2. A Szolgáltató az anyagokat 3 munkanapon belül elfogadja, vagy indokolt módosítást kér.
+
+5.3. A Szolgáltató megtagadhatja vagy felfüggesztheti a megjelenést, ha a kreatív anyag:
+- ~~(a) jogszabályba ütközik (különösen a gazdasági reklámtevékenységről szóló 2008. évi XLVIII. törvény — Grt.);~~
+- (a) jogszabályba ütközik (különösen a gazdasági reklámtevékenységről szóló 2008. évi XLVIII. törvény — Grt., ideértve a **Grt. 5. §** szerinti reklámozói azonosítási kötelezettséget; szponzori megjelenésnél a reklámozó azonosíthatósága kötelező).
+- (b) megtévesztő, az emberi méltóságot sértő, vagy gyűlöletkeltő;
+- (c) a 2008. évi XLVII. törvény (Fttv.) szerinti tisztességtelen kereskedelmi gyakorlatot valósít meg; *(az Fttv. az ÁSZF §21 jogszabályok táblázatában is szerepel)*
+- (d) a Platformhoz nem illő tartalmat jelenít meg (erőszak, pornográfia, alkohol, dohány, szerencsejáték — kivéve, ha jogszabály által engedélyezett);
+- (e) a Szponzor nem szerezte meg a szükséges szerzői jogi, védjegyjogi vagy egyéb engedélyeket.
+
+5.4. A Szponzor szavatolja, hogy a megjelenített tartalom:
+- (a) nem sérti harmadik személy szerzői jogát, védjegyjogát, személyiségi jogát;
+- (b) megfelel a vonatkozó reklámjogi és fogyasztóvédelmi szabályoknak;
+- (c) a reklámfelügyeleti hatóság (Gazdasági Versenyhivatal / GVH, illetve a fogyasztóvédelmi hatóság) előtt nem kifogásolható.
+
+5.5. A Szponzor mentesíti a Szolgáltatót minden harmadik fél által az 5.4. pont szerinti szavatosságvállalás megsértése miatt benyújtott igény alól (ideértve a perköltségeket, bírságokat, kártérítést).
+
+---
+
+## 6. Mérés és riportolás
+
+6.1. A Szolgáltató az alábbi mérőszámokat (KPI) biztosítja havi riportban:
+
+- Videó megtekintés (≥75% lejátszás);
+- Videó lejátszási arány (%);
+- CTA kattintás (unique);
+- Impresszió (banner);
+- Offerwall kitöltés;
+- Szavazatok az adott időszakban (anonimizáltan).
+
+6.2. A Szponzor tudomásul veszi, hogy a Platform Felhasználói Pseudo ID alapon azonosítottak, ezért a Szolgáltató nem tud személyes adatokat (email, név) megosztani a riportokban.
+
+6.3. A Szponzor jogosult az UTM tracking paramétereinek hozzáadását kérni a landing page URL-hez a saját mérési rendszere számára.
+
+---
+
+## 7. Titoktartás
+
+7.1. A Felek a jelen Megállapodás tartalmát, a díjazási feltételeket és a riportban kapott adatokat üzleti titokként kezelik. Nyilvánosságra hozataluk kizárólag a másik fél írásbeli hozzájárulásával lehetséges.
+
+7.2. A titoktartási kötelezettség a Megállapodás megszűnését követően 2 évig áll fenn.
+
+7.3. Nem minősül titoktartás megsértésének, ha a fél a Megállapodás tényét (nem a részletes feltételeit) referencia célból megemlíti.
+
+---
+
+## 8. Felmondás és módosítás
+
+8.1. A Megállapodást bármelyik fél írásban, 30 napos felmondási idővel mondhatja fel.
+
+8.2. Azonnali hatályú felmondás lehetséges, ha:
+- (a) a másik fél a jelen Megállapodást vagy az ÁSZF-et súlyosan megsérti;
+- (b) a Szponzor 30 napos késedelembe esik a fizetéssel;
+- (c) a Szponzor kreatív anyaga harmadik fél jogait sérti, és a Szponzor a Szolgáltató felszólítására 5 munkanapon belül nem orvosolja.
+
+8.3. A Megállapodás módosítása kizárólag írásbeli megállapodással lehetséges.
+
+---
+
+## 9. Felelősségkorlátozás
+
+9.1. A Szolgáltató felelőssége a jelen Megállapodás alapján a Szponzor által a Megállapodás időtartama alatt megfizetett összes nettó díj összegére korlátozódik.
+
+9.2. A Szolgáltató nem felel:
+- (a) a Platform kieséséből eredő következményi károkért;
+- (b) a Felhasználók várt aktivitásának elmaradásáért (a garantált mennyiségen felül);
+- (c) vis maior eseményekből eredő teljesítési akadályokért.
+
+9.3. A vis maior fenntartására a Ptk. 6:142. § rendelkezései az irányadók.
+
+---
+
+## 10. Vegyes rendelkezések
+
+10.1. A jelen Megállapodásban nem szabályozott kérdésekben a Szolgáltató ÁSZF-je (Sharity_ASZF_2026.md) és a Ptk. rendelkezései az irányadók.
+
+10.2. A Megállapodásból eredő jogviták esetén a Szekszárdi Törvényszék kizárólagos illetékességét kötik ki a Felek.
+
+10.3. A jelen Megállapodás 2 eredeti példányban készült, amelyből 1-1 példány a Szolgáltatót, illetve a Szponzort illeti meg.
+
+---
+
+## Aláírás
+
+| | Szolgáltató | Szponzor |
+|---|-----------|---------|
+| **Cég neve** | Sharity Mobile Application Zrt. | ……………………………… |
+| **Aláírás helye, ideje** | ………………, 2026. ……… ……… | ………………, 2026. ……… ……… |
+| **Aláíró neve** | ……………………………… | ……………………………… |
+| **Beosztás** | ……………………………… | ……………………………… |
+| **Aláírás** | ……………………………… | ……………………………… |
+
+---
+
+**Mellékletek ehhez a Megállapodáshoz:**
+- [ ] A melléklet: Kreatív anyagok specifikáció
+- [ ] B melléklet: Média terv (megjelenési ütemezés)
+- [ ] C melléklet: Branding guideline
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2026-02-25 | Kezdeti verzió — draft |
+| 1.1 | 2026-02-25 | Véglegesítés és jogi hivatkozások pontosítása |
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Általános Szerződési Feltételek (ÁSZF)](./Sharity_ASZF_2026.md)
+- [SLA](../docs/sla-policy.md)
+- [Vitakezelési eljárásrend](../docs/dispute-handling-procedure.md)
+- [Stripe felelősségmegosztás](../docs/stripe-responsibility-matrix.md)
+- [Negyedéves elosztási riport sablon](../docs/quarterly-distribution-report-template.md)
+- [Impact Challenge útmutató](https://app.sharity.hu/ngo-guides/impact-challenge/)
+- [Cégeknek](https://app.sharity.hu/cegeknek/)
+</pre>
+      </details>
+    </section>
+    
+    <section class="doc-card" id="sla">
+      <div class="doc-head">
+        <div>
+          <h2>Szolgáltatási Szintmegállapodás (SLA)</h2>
+          <p class="doc-meta">Hatályos: 2026-01-15 | Verzió: 2.0</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">Rendelkezésre állás, incidenskezelés és üzemeltetési válaszidők.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/sla-policy-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/sla-policy-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/sla-policy-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/sla-policy-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># ImpactShop – Szolgáltatási Szintmegállapodás (SLA)
+
+**Verzió:** 2.0  
+**Hatályos:** 2026. január 15-től  
+**Utolsó frissítés:** 2026-01-15  
+
+---
+
+## 1. Rendelkezésre állás
+
+### 1.1 Uptime-célok
+
+| Szolgáltatás | Cél (havi) | Mérés módja |
+|---|---|---|
+| Főoldal (impactshop.hu) | 99,5 % | Automatikus ellenőrzés – 5 percenként |
+| /go átirányítás | 99,5 % | Automatikus ellenőrzés – 5 percenként |
+| NGO Card REST API | 99,0 % | Automatikus ellenőrzés – 5 percenként |
+| Wallet Pass letöltés | 98,5 % | Automatikus ellenőrzés – 15 percenként |
+| Admin felület (wp-admin) | 98,0 % | Automatikus ellenőrzés – 15 percenként |
+
+A mérés kizárja a tervezett karbantartási ablakot (lásd §1.2).
+
+### 1.2 Karbantartási ablak
+
+- **Rendszeres karbantartás:** kedd és csütörtök 03:00–05:00 CET.
+- Az ablak alatt a szolgáltatás részlegesen vagy teljesen szünetelhet; ez nem számít kiesésnek.
+- Sürgős biztonsági javítás esetén az ablak előrehozható – ilyenkor legalább 1 óra előzetes értesítést küldünk.
+- **Egyedi megállapodás:** rendezvény vagy kampány esetén — külön megállapodás szerinti időtartamra — a karbantartási ablak korlátozható vagy kizárható.
+
+---
+
+## 2. Incidenskezelés
+
+### 2.1 Súlyossági besorolás
+
+| Szint | Megnevezés | Leírás | Reakcióidő | Megoldási cél |
+|---|---|---|---|---|
+| S1 | Kritikus | Teljes szolgáltatáskiesés, /go nem működik | 15 perc | 1 óra |
+| S2 | Súlyos | NGO Card API hibás, Wallet Pass nem tölthető le | 30 perc | 4 óra |
+| S3 | Közepes | Admin felület lassú, cache-inkonzisztencia | 2 óra | 24 óra |
+| S4 | Alacsony | Kozmetikai hiba, dokumentációs eltérés | 1 munkanap | 5 munkanap |
+
+### 2.2 Munkaidő és ügyeleti rend
+
+- **Munkaidő:** H–P 08:00–18:00 CET.
+- Munkaidőn kívül automatikus monitoring figyeli a szolgáltatásokat; S1 incidens esetén riasztás.
+- Hétvégén és ünnepnapokon kizárólag S1 incidensekre reagálunk.
+
+### 2.3 Riasztási lánc
+
+1. Automatikus monitoring észleli a hibát (5 perces ciklus).
+2. Riasztás a Discord üzemeltetési csatornán + e-mail az ügyeletesnek.
+3. S1/S2 esetén azonnali eszkaláció a rendszergazdához.
+4. Cloudflare WAF és CDN automatikus védekezés aktiválódik (pl. Under Attack Mode).
+
+### 2.4 Eszkaláció
+
+| Lépés | Időkorlát | Felelős |
+|---|---|---|
+| 1. Automatikus riasztás | 0 perc | Monitoring rendszer |
+| 2. Üzemeltető reagál | +15 perc (S1) / +30 perc (S2) | Üzemeltető |
+| 3. Tárhelyszolgáltató support | +1 óra | Tárhelyszolgáltató |
+| 4. Vezetői értesítés | +2 óra | Üzemeltető → Vezető |
+
+---
+
+## 3. Vészhelyzeti eljárásrend
+
+### 3.1 Teljes kiesés (S1)
+
+1. Cloudflare Under Attack Mode aktiválása (ha támadás okozza).
+2. Szolgáltatás állapotfelmérés (automatikus health-check eredmények áttekintése).
+3. Ha szükséges: MU plugin letiltás, cache ürítés, szerver újraindítás kérése.
+4. Visszaállítás legutóbbi stabil állapotból (biztonsági mentés).
+5. Utólagos elemzés és dokumentálás.
+
+### 3.2 Adatvédelmi incidens
+
+1. Érintett szolgáltatás azonnali leválasztása.
+2. GDPR incidenskezelési protokoll indítása (72 órás NAIH bejelentési kötelezettség).
+3. Érintettek értesítése az ÁSZF §16 szerint.
+4. Utólagos biztonsági audit.
+
+### 3.3 Affiliate partner API kiesés (Dognet, stb.)
+
+1. Automatikus fallback: cache-ből szolgáltatás, hibaoldal megjelenítése.
+2. Partner API állapot ellenőrzése.
+3. Értesítés az érintett NGO partnereknek, ha a kiesés &gt; 4 óra.
+
+---
+
+## 4. Kommunikáció
+
+### 4.1 Hibabejelentés
+
+Hibabejelentés az alábbi elérhetőségeken lehetséges:
+
+- **E-mail:** office@sharity.hu
+- **Telefon:** +36 30 400 7470
+- **Elérhetőség:** H–P 08:00–18:00 CET
+
+Bejelentéskor kérjük megadni: a hiba leírását, az érintett URL-t vagy funkciót, és a hiba észlelésének időpontját.
+
+### 4.2 NGO partnerek felé
+
+- Kiesés &gt; 30 perc esetén proaktív tájékoztatás e-mailben.
+- Negyedéves elszámolási ütemezés és kifizetési szabályok az ÁSZF §4.6.3 szerint.
+- Karbantartási ablak változásáról legalább 48 óra előzetes értesítés.
+
+### 4.3 Felhasználók felé
+
+- Kiesés esetén egyedi hibaoldal jelenik meg a szolgáltatás állapotáról.
+- Hosszabb kiesés (&gt; 2 óra) esetén közösségi média tájékoztatás.
+
+### 4.4 Partneri SLA vitakezelés
+
+A szolgáltatási szinttel kapcsolatos reklamációk kezelése az ÁSZF §15 (Panaszkezelés) szerint történik:
+
+- **Első visszajelzés:** legkésőbb 2 munkanapon belül.
+- **Érdemi döntés:** legkésőbb 5 munkanapon belül.
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Általános Szerződési Feltételek (ÁSZF)](../ÁSZF/Sharity_ASZF_2026.md)
+- [Vitakezelési eljárásrend](./dispute-handling-procedure.md)
+- [Hozzáférés-kezelési mátrix](./access-control-matrix.md)
+- [GDPR adatfeldolgozók](./gdpr-data-processors.md)
+- [Impact Challenge útmutató](https://app.sharity.hu/ngo-guides/impact-challenge/)
+- [Cégeknek](https://app.sharity.hu/cegeknek/)
+- Amennyiben a felhasználó vagy partner a döntéssel nem ért egyet, az ÁSZF §20.2 szerinti jogvitarendezési eljárás alkalmazandó.
+
+---
+
+## 5. Monitoring és mérés
+
+### 5.1 Uptime mérés
+
+- Automatikus health-check 5 percenként (főoldal, /go, NGO Card API).
+- Wallet Pass és admin felület: 15 perces ciklus.
+- A mért adatok alapján havonta összesítő riport készül.
+
+### 5.2 Teljesítménymutatók
+
+| Mutató | Cél |
+|---|---|
+| Főoldal betöltés (TTFB) | &lt; 800 ms |
+| /go átirányítás | &lt; 300 ms |
+| NGO Card API válaszidő | &lt; 500 ms |
+| Wallet Pass letöltés | &lt; 2 s |
+
+---
+
+## 6. Kereszthivatkozás
+
+A jelen SLA az ÁSZF §10 (A szolgáltatás szüneteltetése, korlátozása) rendelkezéseire épül, és azzal összhangban értelmezendő. Az ÁSZF és az SLA közötti eltérés esetén az ÁSZF rendelkezései az irányadók.
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|---|---|---|
+| 1.0 | 2025-11-15 | Első kiadás |
+| 2.0 | 2026-01-15 | Véglegesítés: uptime-táblázat egyszerűsítés, karbantartási ablak egyedi megállapodás lehetőség, hibabejelentési elérhetőségek hozzáadása, belső hivatkozások eltávolítása, partneri vitakezelés szabályozása, Cloudflare és Discord integráció megerősítése |
+</pre>
+      </details>
+    </section>
+    
+    <section class="doc-card" id="stripe-matrix">
+      <div class="doc-head">
+        <div>
+          <h2>Stripe felelősségmegosztási mátrix</h2>
+          <p class="doc-meta">Dátum: 2026-02-25 | Verzió: 1.1</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">A Stripe Checkout integrációban viselt felelősségek és folyamatok.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/stripe-responsibility-matrix-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/stripe-responsibility-matrix-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/stripe-responsibility-matrix-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/stripe-responsibility-matrix-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># Stripe Felelősségmegosztási Mátrix
+
+&gt; **Verzió**: 1.1  
+&gt; **Dátum**: 2026-02-25  
+&gt; **Státusz**: HATÁLYOS  
+&gt; **Vonatkozik**: Impact Amplifier (szavazatvásárlás) — Stripe Checkout integráció  
+&gt; **Kapcsolódó**: Vitakezelési eljárásrend (dispute-handling-procedure)
+
+---
+
+## 1. Felek
+
+| Fél | Jogi entitás | Szerep |
+|-----|-------------|--------|
+| **Sharity** | Sharity Adományszervező Alapítvány + Sharity Mobile Application Zrt. | Kereskedő (merchant) — a Stripe fióktulajdonos |
+| **Stripe** | Stripe Payments Europe, Limited (Dublin, Írország) | Fizetési szolgáltató (payment processor) |
+| **Felhasználó** | Magánszemély vagy cég | Adományozó — Stripe Checkout-on keresztül fizet |
+
+---
+
+## 2. Felelősségi mátrix
+
+### 2.1 Fizetési folyamat
+
+| Tevékenység | Sharity | Stripe | Megjegyzés |
+|-------------|:-------:|:------:|-----------|
+| **Checkout Session létrehozása** (REST → Stripe API) | ✅ | — | Szerveroldali API-hívás |
+| **Fizetési oldal megjelenítése** (hosted checkout) | — | ✅ | Stripe hosted — kártyaadat nem érinti a Sharity szerverét |
+| **Kártyaadatok kezelése** (PCI-DSS) | — | ✅ | Sharity scope: PCI SAQ-A (legkisebb) |
+| **3D Secure / SCA** (erős ügyfél-hitelesítés) | — | ✅ | Stripe automatikusan kezeli EU tranzakcióknál |
+| **Fraud detection** (Stripe Radar) | — | ✅ | Beépített, automatikus — nincs extra fejlesztés |
+| **Webhook fogadása és Signature ellenőrzés** | ✅ | — | `Stripe-Signature` header + webhook secret |
+| **Szavazat jóváírás** sikeres fizetés után | ✅ | — | Idempotens webhook handler |
+| **Pool növelés** (adományalap) | ✅ | — | Atomic DB increment |
+| **Visszaigazolás emailben** | ✅ | — | Sharity email küldés (msmtp / WP Mail) |
+| **Adományigazolás** (céges adományozóknak) | ✅ | — | Sharity Alapítvány állítja ki |
+| **Többvalutás konverzió** | — | ✅ | Stripe kezeli a settlement-et (settlement currency: HUF) |
+| **Payout** (kifizetés Sharity bankszámlára) | — | ✅ | Stripe → Sharity bankszámla (automatikus ütemezés) |
+
+### 2.2 Biztonság
+
+| Terület | Sharity | Stripe | Megjegyzés |
+|---------|:-------:|:------:|-----------|
+| **API kulcsok biztonságos tárolása** | ✅ | — | Környezeti változókban, verziókezelésből kizárva |
+| **Webhook secret rotálás** | ✅ | ✅ | Sharity felelős a rotálás kezdeményezéséért |
+| **SSL/TLS** (kommunikáció titkosítás) | ✅ (szerver) | ✅ (API) | HTTPS mindkét oldalon kötelező |
+| **PCI-DSS compliance** | ✅ (SAQ-A) | ✅ (Level 1) | Hosted checkout → Sharity scope minimális |
+| **Rate limiting** (bot védelem) | ✅ | — | Cloudflare WAF + pseudo_id cap |
+| **Cloudflare Turnstile** (CAPTCHA) | ✅ | — | Checkout indítás előtt |
+| **IP fraud monitoring** | — | ✅ | Stripe Radar |
+| **Account takeover protection** | — | ✅ | Stripe fiók szintű védelem |
+
+### 2.3 Vitás ügyek és visszatérítés
+
+| Tevékenység | Sharity | Stripe | Megjegyzés |
+|-------------|:-------:|:------:|-----------|
+| **Chargeback értesítés** | — | ✅ | Stripe webhook: `charge.dispute.created` |
+| **Chargeback bizonyíték összeállítás** | ✅ | — | Ld. Vitakezelési eljárásrend |
+| **Chargeback bizonyíték benyújtás** | ✅ | ✅ | Sharity feltölti → Stripe továbbítja a banknak |
+| **Refund kezdeményezés** | ✅ | — | Admin döntés (kivételes, D6: adomány nem visszakövetelhető) |
+| **Refund végrehajtás** | — | ✅ | Stripe API: `Refund::create()` |
+| **Szavazat visszavonás** refund/void esetén | ✅ | — | Ld. Vitakezelési eljárásrend §4 |
+
+**Visszatérítési kivételek:** Az „adomány nem visszakövetelhető&quot; főszabály (D6) alól kivételt képez a dupla levonás és a bizonyított rendszerhiba. Ezekben az esetekben a Sharity kezdeményezi a visszatérítést a Stripe API-n keresztül. A checkout és az ÁSZF szövegezése egyértelműen tartalmazza a visszatérítési feltételeket, hogy a chargeback-bizonyíték ne tartalmazzon félreérthető állításokat.
+
+### 2.4 Megfelelőség és adatvédelem
+
+| Terület | Sharity | Stripe | Megjegyzés |
+|---------|:-------:|:------:|-----------|
+| **GDPR — adatkezelő** | ✅ | — | Sharity az adatkezelő |
+| **GDPR — adatfeldolgozó** | — | ✅ | Stripe mint adatfeldolgozó (ld. GDPR Adatfeldolgozói nyilvántartás) |
+| **DPA (Data Processing Agreement)** | ✅ (aláírás) | ✅ (biztosítás) | Stripe DPA: https://stripe.com/legal/dpa |
+| **Tranzakciós adatok megőrzése** | ✅ (DB) | ✅ (Dashboard) | Mindkét fél megőrzi — számviteli kötelezettség: 8 év |
+| **Felhasználói adattörlés** (GDPR jog) | ✅ | — | Sharity: soft-delete céges adatoknál; Stripe: retain for compliance |
+| **AML / KYC** (pénzmosás elleni ellenőrzés) | — | ✅ | Stripe végzi (Sharity nem kezel kártyaadatot) |
+
+---
+
+## 3. Stripe szerződési feltételek hivatkozások
+
+| Dokumentum | URL | Vonatkozik |
+|-----------|-----|-----------|
+| **Stripe Services Agreement** | https://stripe.com/legal/ssa | Általános szolgáltatási feltételek |
+| **Stripe Privacy Policy** | https://stripe.com/privacy | Adatvédelmi szabályzat |
+| **Stripe Data Processing Agreement (DPA)** | https://stripe.com/legal/dpa | GDPR adatfeldolgozói megállapodás |
+| **Stripe Checkout Documentation** | https://docs.stripe.com/payments/checkout | Checkout Session API referencia |
+| **Stripe Disputes &amp; Fraud** | https://docs.stripe.com/disputes | Chargeback kezelés dokumentáció |
+| **Stripe PCI Compliance** | https://stripe.com/guides/pci-compliance | PCI-DSS szintek és SAQ-A |
+| **Stripe Zero-Decimal Currencies** | https://docs.stripe.com/currencies#zero-decimal | HUF/CZK kezelés |
+
+---
+
+## 4. Kapcsolattartás
+
+| Ügy | Ki intézi | Hogyan |
+|-----|-----------|--------|
+| Stripe fiók beállítások | Sharity admin | Stripe Dashboard → Settings |
+| Webhook konfiguráció | Sharity fejlesztő | Stripe Dashboard → Developers → Webhooks |
+| Stripe support (technikai) | Sharity admin | Stripe Dashboard → Support (email/chat) |
+| Chargeback válasz | Sharity admin | Stripe Dashboard → Payments → Disputes |
+| Payout beállítás | Sharity pénzügy | Stripe Dashboard → Balance → Payouts |
+
+---
+
+## 5. Felülvizsgálat
+
+- **Gyakoriság**: félévente, vagy Stripe feltételek változásakor
+- **Felelős**: Ops Squad + pénzügyi vezető
+- **Mikor kötelező frissíteni**: Stripe SSA frissítésekor, új valuták hozzáadásakor, PCI audit utáni megállapítás
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2026-02-25 | Kezdeti verzió — draft |
+| 1.1 | 2026-02-25 | Véglegesítés: belső fájlhivatkozások eltávolítása, audit megjegyzés beépítése, visszatérítési kivételek rögzítése |
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Vitakezelési eljárásrend](./dispute-handling-procedure.md)
+- [Általános Szerződési Feltételek (ÁSZF)](../ÁSZF/Sharity_ASZF_2026.md)
+- [GDPR adatfeldolgozók](./gdpr-data-processors.md)
+- [Hozzáférés-kezelési mátrix](./access-control-matrix.md)
+- [Impact Challenge útmutató](https://app.sharity.hu/ngo-guides/impact-challenge/)
+- [Impact Amplifier (Rólunk)](https://app.sharity.hu/rolunk/)
+</pre>
+      </details>
+    </section>
+    
+    <section class="doc-card" id="dispute">
+      <div class="doc-head">
+        <div>
+          <h2>Chargeback és dispute kezelési eljárásrend</h2>
+          <p class="doc-meta">Dátum: 2026-02-25 | Verzió: 1.2</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">Dispute/chargeback folyamat, határidők és bizonyítékkezelés.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/dispute-handling-procedure-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/dispute-handling-procedure-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/dispute-handling-procedure-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/dispute-handling-procedure-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># Chargeback és Dispute Kezelési Eljárásrend
+
+&gt; **Verzió**: 1.2  
+&gt; **Dátum**: 2026-02-25  
+&gt; **Státusz**: HATÁLYOS  
+&gt; **Vonatkozik**: Impact Amplifier (szavazatvásárlás) — Stripe Checkout tranzakciók  
+&gt; **Kapcsolódó**: Stripe Felelősségmegosztási Mátrix, Impact Challenge szavazatvásárlási terv §4.5 D6
+
+---
+
+## 1. Áttekintés
+
+Az Impact Amplifier szavazatvásárlás **adományjellegű** tranzakció, amelyre a D6 üzleti szabály vonatkozik:
+
+&gt; **D6**: „Adomány nem visszakövetelhető&quot; — a tranzakció természete szerint adományozás, nem termékértékesítés.
+
+Ennek ellenére a Stripe/kártyakibocsátó **chargeback** (visszaterhelés) mechanizmusa technikai szinten továbbra is elérhető a kártyatulajdonos számára. Ez az eljárásrend rögzíti a Sharity teendőit ilyen esetben.
+
+---
+
+## 2. Chargeback időkeretek
+
+| Fázis | Időkeret | Ki intézi |
+|-------|---------|-----------|
+| **Kártyabirtokos chargeback bejelentés** | Tranzakciótól számított **120 nap** (Visa/MC) | Felhasználó → kibocsátó bank |
+| **Stripe értesítés** | ~1-2 munkanap a bank bejelentése után | Stripe → webhook: `charge.dispute.created` |
+| **Sharity válaszidő** | **7 naptári nap** a Stripe értesítéstől | Sharity admin |
+| **Bank döntés** | 30–90 nap a bizonyíték benyújtástól | Kibocsátó bank |
+
+---
+
+## 3. Chargeback kezelési folyamat
+
+### 3.1 Értesítés fogadása
+
+1. **Stripe webhook** (`charge.dispute.created`) → a rendszer automatikusan naplózza:
+   - `wp_impactshop_vote_purchases.status` → `disputed`
+   - Guard alert → Discord webhook (üzemeltetési csatorna)
+   - Email értesítés → Ops Squad
+
+2. **Manuális észlelés** — ha a webhook feldolgozás bármely okból sikertelen:
+   - Stripe Dashboard → Payments → Disputes ellenőrzése naponta
+   - P2 szintű incident → ld. SLA §2
+
+### 3.2 Vizsgálat (≤ 2 munkanap)
+
+| Ellenőrzés | Hol | Mit keresünk |
+|------------|-----|-------------|
+| Tranzakció részletek | `wp_impactshop_vote_purchases` tábla | `stripe_session_id`, `amount`, `timestamp`, `pseudo_id` |
+| Webhook log | Alkalmazás naplók | Sikeres checkout callback bejegyzés |
+| Felhasználói adatok | DB + Stripe Dashboard | Email, pseudo_id, IP, Cloudflare Turnstile eredmény |
+| Fraud jelek | Stripe Radar | Risk score, IP country, card fingerprint |
+| Többszörös vásárlás | DB query | Ugyanazon pseudo_id/email/IP-ről jött-e több vásárlás |
+
+### 3.3 Döntés
+
+| Helyzet | Akció | Szavazat kezelés |
+|---------|-------|-----------------|
+| **Fraud** — hamis kártyahasználat (nem a valódi tulajdonos vásárolt) | Bizonyíték benyújtás → Stripe-on keresztül VAGY refund elfogadás | Szavazatok **visszavonása** |
+| **Friendly fraud** — a tényleges vásárló vonja vissza | Bizonyíték benyújtás (checkout evidence) | Szavazatok **befagyasztása** a döntésig |
+| **Jogos reklamáció** — tényleges rendszerhiba, dupla levonás | Refund elfogadás | Szavazatok korrekcióba — csak a dupla rész visszavonása |
+| **Ismeretlen / bizonytalan** | Bizonyíték benyújtás, ha lehetséges | Szavazatok **befagyasztása** |
+
+### 3.4 Bizonyíték összeállítás
+
+Az alábbi elemeket kell csatolni a Stripe dispute response-hoz:
+
+1. **Tranzakciós bizonyíték**
+   - Checkout Session screenshot (Stripe Dashboard-ról)
+   - Webhook delivery log (siker/timestamp)
+   - Vásárlás utáni visszaigazolás (ha email küldés megtörtént)
+
+2. **Felhasználói szándék bizonyítéka**
+   - Cloudflare Turnstile verification = pass → nem bot
+   - Adomány természetét megerősítő checkout szöveg: _„Adományozás az Impact Challenge-en keresztül&quot;_
+   - Terms &amp; Conditions link a checkout oldalon
+
+3. **Adomány-specifikus érvelés**
+   - Az Impact Amplifier szavazatvásárlás **adományozási cselekmény**, nem termék/szolgáltatás vásárlás
+   - A checkout oldalon egyértelmű tájékoztatás: _„Az összeg 50%-a a Közös Adományalapba kerül, amelyet a civil szervezetek között a szavazatok arányában (ÁSZF szerint negyedévente) osztunk szét; a felhasználó a kapott szavazatokat a kiválasztott civil szervezetre adja le.”_
+   - D6 szabály: az adományozó előzetes beleegyezésével történik
+
+4. **Benyújtás**: Stripe Dashboard → Disputes → Submit Evidence
+
+### 3.5 Eredmény kezelés
+
+| Stripe döntés | Teendő |
+|---------------|--------|
+| **Won** (Sharity javára) | `status` → `completed` visszaállítás; szavazatok feloldása; záró naplóbejegyzés |
+| **Won partially** (részleges Sharity javára) | `status` → `completed` a nem vitatott részre; a visszatérített összeg arányában `votes_granted` csökkentése; pool részleges korrekció (`refunded_amount × 0.5`); naplóbejegyzés mindkét részre |
+| **Lost** (kártyabirtokos javára) | `status` → `refunded`; szavazatok végleges visszavonása; pool csökkentés |
+| **Accepted** (Sharity nem vitatja) | `status` → `refunded`; szavazatok végleges visszavonása; pool csökkentés |
+
+---
+
+## 4. Szavazat visszavonási eljárás
+
+### 4.1 Manuális visszavonás (WP-CLI)
+
+```bash
+wp impactshop vote-purchase void --order_id=&lt;stripe_session_id&gt;
+```
+
+Ez az alábbi műveleteket hajtja végre:
+- `wp_impactshop_vote_purchases.status` → `voided` / `refunded`
+- `wp_impactshop_challenges.total_votes` → csökkentés a jóváírt szavazatszámmal
+- `wp_impactshop_challenges.pool_amount` → csökkentés az adomány részével (pool_share = amount × 50%)
+
+### 4.2 Pool korrekció
+
+- A pool összeg csökken az adományrész nagyságával (`amount × 0.5`)
+- Ha a quarter még nem zárult le: a szavazat automatikusan eltűnik a szavazati arányból
+- Ha a quarter **már lezárult** és kifizetés megtörtént: **manuális korrekciót** kell végrehajtani a következő negyedéves elosztásban (negatív tétel az érintett NGO-nál, **ha a szavazatok arányosan befolyásolták**)
+
+### 4.3 Naplózás
+
+Minden dispute-ot naplózni kell:
+
+```
+disputes.log:
+2026-02-25T14:30:00Z | dispute_id=dp_xxx | session_id=cs_xxx | amount=2000 | decision=evidence_submitted | votes_frozen=2500 | admin=sharity_admin
+```
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Stripe felelősségmegosztás](./stripe-responsibility-matrix.md)
+- [Általános Szerződési Feltételek (ÁSZF)](../ÁSZF/Sharity_ASZF_2026.md)
+- [Negyedéves elosztási riport sablon](./quarterly-distribution-report-template.md)
+- [SLA](./sla-policy.md)
+- [Impact Challenge útmutató](https://app.sharity.hu/ngo-guides/impact-challenge/)
+- [Impact Amplifier (Rólunk)](https://app.sharity.hu/rolunk/)
+
+---
+
+## 5. Prevenció
+
+### 5.1 Aktuális védelmi rétegek
+
+| Réteg | Leírás | Beállítás |
+|-------|--------|-----------|
+| **Cloudflare Turnstile** | Bot/automation szűrés checkout indítás előtt | Checkout form előtt |
+| **Rate limiting** | IP: max 10 checkout/óra; pseudo_id: max 5 checkout/óra | MU plugin + Cloudflare WAF |
+| **Stripe Radar** | Beépített fraud scoring, kockázatos tranzakciók blokkolása | Stripe Dashboard → Radar Rules |
+| **3D Secure** | EU-ban kötelező SCA (Strong Customer Authentication) | Stripe automatikus |
+| **Egyértelmű tájékoztatás** | „Adomány&quot; szó használata, nem „vásárlás&quot; | Checkout UI szövegek |
+
+
+---
+
+## 6. Eskalációs mátrix
+
+| Dispute összeg | Döntéshozó | Eskaláció |
+|----------------|-----------|-----------|
+| **≤ 5 000 Ft** | Ops Squad self-service | Nincs (standard eljárás) |
+| **5 001 – 60 000 Ft** | Ops Squad + pénzügyi felelős | 48h-n belül közös döntés |
+| **&gt; 60 000 Ft** | Vezetőség + jogi tanácsadó | Azonnali eskaláció, jogi vélemény kérés |
+| **Ismétlődő** (&gt;3 dispute / hónap) | Vezetőség | Fraud pattern vizsgálat, Stripe support bevonás |
+
+---
+
+## 7. Felülvizsgálat
+
+- **Gyakoriság**: negyedévente, vagy bármely dispute esemény után
+- **Felelős**: Ops Squad
+- **Metrika**: dispute rate &lt; 0.1% (Stripe elvárás: &lt; 0.75%)
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2026-02-25 | Kezdeti verzió — draft |
+| 1.1 | 2026-02-25 | „Won partially&quot; kimenet hozzáadása (§3.5) |
+| 1.2 | 2026-02-25 | Véglegesítés: belső fájlhivatkozások eltávolítása, checkout-szöveg pontosítása (Közös Adományalap), audit megjegyzések beépítése |
+</pre>
+      </details>
+    </section>
+    
+    <section class="doc-card" id="gdpr">
+      <div class="doc-head">
+        <div>
+          <h2>GDPR adatfeldolgozói nyilvántartás</h2>
+          <p class="doc-meta">Dátum: 2026-02-25 | Verzió: 1.2</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">Adatfeldolgozók listája és adatkezelési szerepek.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/gdpr-data-processors-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/gdpr-data-processors-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/gdpr-data-processors-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/gdpr-data-processors-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># GDPR Adatfeldolgozói Nyilvántartás
+
+&gt; **Verzió**: 1.2  
+&gt; **Dátum**: 2026-02-25  
+&gt; **Státusz**: HATÁLYOS  
+&gt; **Vonatkozik**: ImpactShop teljes platform (SHARITEAM.COM, app.sharity.hu)  
+&gt; **Adatkezelő**: Sharity Adományszervező Alapítvány + Sharity Mobile Application Zrt.
+
+---
+
+## 1. Áttekintés
+
+Ez a dokumentum tartalmazza az ImpactShop / Sharity platform által igénybe vett **adatfeldolgozók** (data processors) nyilvántartását a GDPR 30. cikk (2) bekezdésének megfelelően.
+
+Az **adatkezelő** (data controller) minden esetben a Sharity (Alapítvány és/vagy Zrt.), amely meghatározza a személyes adatok kezelésének célját és eszközeit.
+
+**Pseudo ID és személyes adat:** A Platform Pseudo ID-t (böngészőben generált online azonosító) használ regisztráció nélkül. A Pseudo ID a körülményektől függően személyes adatnak minősülhet (GDPR online azonosító; összekapcsolhatóság IP-vel, tranzakcióval, Stripe emaillel stb.) — ld. ÁSZF §5.2, §16.3. A Pseudo ID-t az Adatkezelési Tájékoztató külön nevesíti: tárolás (cookie/localStorage), jogalap, megőrzési idő és törlési/összekötési szabályok.
+
+---
+
+## 2. Adatfeldolgozók nyilvántartása 
+
+### 2.1 Stripe Payments Europe, Limited
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Stripe Payments Europe, Limited |
+| **Székhely** | 1 Grand Canal Street Lower, Dublin 2, Írország |
+| **Szerep** | Adatfeldolgozó (fizetési szolgáltató) |
+| **Kezelt adatok** | Kártyaadatok (soha nem érinti a Sharity szerverét), email cím, tranzakciós összeg, IP cím, device fingerprint |
+| **Adatkezelés célja** | Impact Amplifier szavazatvásárlás fizetési tranzakciók feldolgozása |
+| **DPA (adatfeldolgozói megállapodás)** | https://stripe.com/legal/dpa — automatikusan érvényes a Stripe Services Agreement elfogadásával |
+| **Adatátvitel harmadik országba** | Igen — Stripe Inc. (USA) — EU–US Data Privacy Framework certified |
+| **Adatmegőrzési idő** | Stripe saját policy: tranzakciós adatok a pénzmosás-megelőzési és számviteli kötelezettség szerint (min. 5 év) |
+| **Kapcsolódó garancia** | PCI-DSS Level 1, SOC 2 Type II, ISO 27001 |
+
+### 2.2 Dognet s.r.o.
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Dognet s.r.o. |
+| **Székhely** | Bratislava, Szlovákia (EU) |
+| **Szerep** | Adatfeldolgozó (affiliate hálózat szolgáltató) |
+| **Kezelt adatok** | Cookie azonosítók, kattintási adatok (click tracking), tranzakciós visszaigazolások (affiliate conversion) |
+| **Adatkezelés célja** | Affiliate jutalék nyomon követése az ImpactShop → partner webshop vásárlási folyamatban |
+| **DPA** | Dognet Általános Partneri Szerződés melléklete (GDPR záradék) — egyedileg kötött |
+| **Adatátvitel harmadik országba** | Nem — EU-n belüli feldolgozás |
+| **Adatmegőrzési idő** | Cookie élettartam: 30 nap; tranzakciós adat: min. 5 év (könyvelési kötelezettség) |
+
+**Cookie megfelelés:** A Dognet affiliate tracking cookie/azonosító alapú. A cookie/tároló tájékoztatás és az esetleges hozzájárulás-kezelés megfelel a hatályos e-privacy és hazai szabályoknak, és koherens a Pseudo ID leírással (ld. ÁSZF §5.2, §16.6 és Cookie Tájékoztató).
+
+### 2.3 Cloudflare, Inc.
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Cloudflare, Inc. |
+| **Székhely** | San Francisco, USA |
+| **Szerep** | Adatfeldolgozó (CDN, WAF, DNS, DDoS védelem) |
+| **Kezelt adatok** | IP cím, HTTP request/response metaadatok, Turnstile token (CAPTCHA) |
+| **Adatkezelés célja** | Weboldal védelme, rate limiting, bot szűrés, SSL terminálás |
+| **DPA** | https://www.cloudflare.com/cloudflare-customer-dpa/ — automatikusan érvényes Enterprise és Free/Pro/Business szinteken is |
+| **Adatátvitel harmadik országba** | Igen — USA + globális edge hálózat — EU–US DPF + Binding Corporate Rules |
+| **Adatmegőrzési idő** | Request logok: 72 óra (standard); Analytics: 30 nap |
+| **Kapcsolódó garancia** | SOC 2 Type II, ISO 27001, C5 |
+
+### 2.4 Ezit Kft. (tárhelyszolgáltató)
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Ezit Kft. |
+| **Székhely** | Magyarország |
+| **Szerep** | Adatfeldolgozó (tárhelyszolgáltató, szerver üzemeltetés) |
+| **Kezelt adatok** | Teljes WordPress adatbázis (felhasználói adatok, tranzakciók), szervernaplók (IP, User-Agent) |
+| **Adatkezelés célja** | Weboldal és alkalmazás hosztolása |
+| **DPA** | Ezit Kft. ÁSZF GDPR melléklete — egyedileg kötött |
+| **Adatátvitel harmadik országba** | Nem — magyar adatközpont |
+| **Adatmegőrzési idő** | Szerver logok: 30 nap; backup: max 20 pillanatkép |
+
+### 2.5 Google Cloud Platform (opcionális — AI Agent)
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Google Cloud EMEA Limited / Google LLC |
+| **Székhely** | Dublin, Írország / Mountain View, USA |
+| **Szerep** | Adatfeldolgozó (AI/ML szolgáltatások, Google Workspace API) |
+| **Kezelt adatok** | Google Workspace-ból érkező email/drive adatok (csak az AI Agent funkciónál), service account credential |
+| **Adatkezelés célja** | NGO adatgyűjtés automatizálása, Google Sheets szinkron |
+| **DPA** | https://cloud.google.com/terms/data-processing-addendum |
+| **Adatátvitel harmadik országba** | Igen — EU–US DPF + Standard Contractual Clauses (SCC) |
+| **Adatmegőrzési idő** | Google policy szerint; Sharity: credential files titkosítva |
+
+### 2.6 Vonage / Nexmo (SMS szolgáltató)
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Vonage Holdings Corp. / Vonage Business Limited |
+| **Székhely** | Hollandia (Vonage V.B.) / Egyesült Királyság (Vonage Business Limited) / USA (Vonage Holdings Corp.) |
+| **Szerep** | Adatfeldolgozó (SMS kézbesítés) |
+| **Kezelt adatok** | Telefonszám, SMS tartalom (jegy/értesítés szöveg) |
+| **Adatkezelés célja** | Digitális Tombola jegy/értesítés SMS kézbesítése |
+| **DPA** | Vonage DPA — az API-szolgáltatási szerződés melléklete |
+| **Adatátvitel harmadik országba** | Igen — UK/USA, az Ericsson csoporton belüli adattovábbítás |
+| **Adatmegőrzési idő** | Vonage policy szerint; SMS kézbesítési logok: max 30 nap |
+| **Megjegyzés** | UK/EGT érintettek esetén csoporttagok is kezelhetnek adatot: Ericsson; Vonage Business Limited (UK); Vonage V.B. (NL) — ld. ÁSZF §16.5 |
+
+### 2.7 CJ (Commission Junction) — affiliate hálózat
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Commission Junction LLC (a Publicis Groupe tagja) |
+| **Székhely** | Santa Barbara, CA, USA |
+| **Szerep** | Önálló adatkezelő / közös adatkezelő (affiliate tracking) |
+| **Kezelt adatok** | Cookie azonosítók, kattintási adatok, tranzakciós visszaigazolás (affiliate conversion), IP cím |
+| **Adatkezelés célja** | Affiliate jutalék nyomon követése (publisher → advertiser tranzakciók) |
+| **DPA / adatvédelmi tájékoztató** | Services Privacy Policy: https://www.cj.com/legal/privacy-policy-services |
+| **Adatátvitel harmadik országba** | Igen — USA (Publicis Groupe); EU–US DPF |
+| **Adatmegőrzési idő** | CJ policy szerint; cookie élettartam: kampányfüggő (jellemzően 30–45 nap) |
+| **Megjegyzés** | A CJ a tracking cookie tekintetében önálló adatkezelőként is felléphet — az ÁSZF §16.6 ennek megfelelően tájékoztat |
+
+### 2.8 TradeTracker — affiliate hálózat
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | TradeTracker International B.V. |
+| **Székhely** | Almere, Hollandia (EU) |
+| **Szerep** | Önálló adatkezelő / közös adatkezelő (affiliate tracking) |
+| **Kezelt adatok** | Cookie azonosítók, kattintási adatok, tranzakciós visszaigazolás, IP cím |
+| **Adatkezelés célja** | Affiliate jutalék nyomon követése |
+| **DPA / adatvédelmi tájékoztató** | Privacy Policy: https://tradetracker.com/privacy-policy/ |
+| **Adatátvitel harmadik országba** | Nem — EU-n belüli feldolgozás |
+| **Adatmegőrzési idő** | TradeTracker policy szerint; cookie élettartam: kampányfüggő |
+
+### 2.9 Tradedoubler — affiliate hálózat
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Tradedoubler AB (reg.no 556575-7423) |
+| **Székhely** | Stockholm, Svédország (EU) |
+| **Szerep** | Adatfeldolgozó (affiliate tracking — brand megbízásából); egyes esetekben önálló adatkezelő |
+| **Kezelt adatok** | Cookie azonosítók, kattintási adatok, IP cím, tranzakciós visszaigazolás |
+| **Adatkezelés célja** | Affiliate jutalék nyomon követése (publisher hálózat) |
+| **DPA / adatvédelmi tájékoztató** | Privacy Policy: https://www.tradedoubler.com/en/privacy-policy/ ; DPO: dpo@tradedoubler.com |
+| **Adatátvitel harmadik országba** | Lehetséges — UK (adequacy decision); egyéb esetben SCC |
+| **Adatmegőrzési idő** | Cookie: max 730 nap; tranzakciós adat: helyi könyvelési törvények szerint (5–10 év) |
+
+### 2.10 Offerwall providerek (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)
+
+Az Impact Challenge offerwall felületén harmadik fél szolgáltatók feladatokat (kérdőívek, alkalmazás-kipróbálás, regisztrációk) kínálnak a Felhasználók számára. Ezek a providerek jellemzően **önálló adatkezelőként** járnak el.
+
+#### Bitlabs
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | BitBurst GmbH (Bitlabs) |
+| **Székhely** | Németország (EU) |
+| **Szerep** | Önálló adatkezelő (offerwall / kérdőív szolgáltató) |
+| **Kezelt adatok** | Felhasználói azonosító (publisher user ID), válaszadatok, IP cím, device info |
+| **Adatkezelés célja** | Offerwall feladatok biztosítása, jutalék-elszámolás |
+| **DPA / adatvédelmi tájékoztató** | Privacy Policy: https://bitlabs.ai/privacy |
+| **Adatátvitel harmadik országba** | Nem jellemző — EU-n belüli feldolgozás |
+
+#### Pollfish
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Pollfish LLC (a Prodege csoport tagja) |
+| **Székhely** | USA |
+| **Szerep** | Önálló adatkezelő (kérdőív / survey szolgáltató) |
+| **Kezelt adatok** | Demográfiai adatok, válaszadatok, device info, IP cím |
+| **Adatkezelés célja** | Kérdőív kitöltés, piackutatás, jutalék-elszámolás |
+| **DPA / adatvédelmi tájékoztató** | Respondent Terms: https://www.pollfish.com/terms/respondent |
+| **Adatátvitel harmadik országba** | Igen — USA |
+
+#### Cint
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Cint AB |
+| **Székhely** | Stockholm, Svédország (EU) |
+| **Szerep** | Önálló adatkezelő (research marketplace / survey routing) |
+| **Kezelt adatok** | Demográfiai adatok, válaszadatok, device info, IP cím, cookie ID |
+| **Adatkezelés célja** | Kérdőív routing, piackutatási minta biztosítása |
+| **DPA / adatvédelmi tájékoztató** | Privacy Notice: https://www.cint.com/privacy-notice ; DPO: privacy@cint.com |
+| **Adatátvitel harmadik országba** | Az adatokat EU-n belüli szervereken tárolja; de a Cint csoport globális leányvállalatain belül lehetséges továbbítás |
+| **Adatmegőrzési idő** | Cint policy szerint |
+
+#### ayeT-Studios
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | ayeT-Studios GmbH |
+| **Székhely** | Große Düwelstraße 28, 30171 Hannover, Németország (EU) |
+| **Cégjegyzékszám** | HRB 211094 (Amtsgericht Hannover); ÁFA: DE294415615 |
+| **Szerep** | Önálló adatkezelő (offerwall / kérdőív / rewarded ad szolgáltató) |
+| **Kezelt adatok** | Felhasználói azonosító (publisher user ID), device ID (GAID/IDFA), IP cím, válaszadatok, demográfiai adatok |
+| **Adatkezelés célja** | Offerwall feladatok (Gametastic), kérdőív routing (Polltastic), jutalék-elszámolás |
+| **DPA / adatvédelmi tájékoztató** | Privacy Policy: https://www.ayetstudios.com/privacy-policy ; DPO: privacy@ayetstudios.com (külső: activelaw Offenhausen.Wolter, Hannover) |
+| **Adatátvitel harmadik országba** | Igen — AWS US szerverek (EU SCC alapján) |
+| **Adatmegőrzési idő** | Használat ideje + 90 nap; survey adat: MR partner policy szerint |
+
+#### CPX Research (Make Opinion)
+
+| Mező | Érték |
+|------|-------|
+| **Entitás** | Make Opinion GmbH (d/b/a CPX Research) |
+| **Székhely** | Elfenallee 5, 13127 Berlin, Németország (EU) |
+| **Szerep** | Önálló adatkezelő (survey / offerwall szolgáltató) |
+| **Kezelt adatok** | Felhasználói azonosító, demográfiai adatok (kor, nem, irányítószám), válaszadatok, IP cím, device fingerprint |
+| **Adatkezelés célja** | Kérdőív matching és kitöltés, piackutatás, jutalék-elszámolás |
+| **DPA / adatvédelmi tájékoztató** | Privacy Policy: https://cpx-research.com/main/en/privacy-user/ ; DPO: privacy@makeopinion.com (Nana Gabelia) |
+| **Adatátvitel harmadik országba** | Elsődlegesen Németország (EU); survey partnereken keresztül lehetséges: USA, Kanada, Franciaország, Románia, Izrael, Pakisztán, India |
+| **Adatmegőrzési idő** | Make Opinion policy szerint |
+
+&gt; **Fontos megjegyzés az offerwall providerekhez:** Ezek a szolgáltatók az ÁSZF §16.6 értelmében **önálló adatkezelőként** alkalmazhatnak sütiket vagy hasonló technológiákat. A Felhasználót a Cookie Tájékoztató és az egyes providerek saját adatvédelmi tájékoztatója informálja. A Sharity mint publisher a felhasználói azonosítót (Pseudo ID / publisher user ID) adja át az offerwall API-nak — ld. ÁSZF §5.2 Parancs/Teendő.
+
+---
+
+## 3. Személyes adatok áramlási térkép (Data Flow Map)
+
+```
+Felhasználó (böngésző)
+    │
+    ├─── [HTTPS/TLS] ──→ Cloudflare (CDN, WAF, Turnstile)
+    │                         │
+    │                         └──→ Ezit szerver (WordPress)
+    │                                  │
+    │                                  ├── Affiliate kattintás → Dognet / CJ / TradeTracker / Tradedoubler cookie
+    │                                  │     └── Vásárlás visszaigazolás → affiliate API
+    │                                  │
+    │                                  ├── Impact Challenge offerwall → Bitlabs / Pollfish / Cint / ayeT / CPX Research API
+    │                                  │     └── Kérdőív / feladat → Pont jóváírás
+    │                                  │
+    │                                  └── Szavazatvásárlás (checkout)
+    │                                        │
+    │                                        └──→ Stripe Checkout (hosted)
+    │                                              ├── Kártyaadat → Stripe (soha Sharity)
+    │                                              └── Webhook → Ezit szerver → DB
+    │
+    ├─── [SMS] Digitális Tombola jegy/értesítés → Vonage (Nexmo) API
+    │
+    └─── [Opcionális] AI Agent → Google Cloud API
+```
+
+---
+
+## 4. Érintetti jogok kezelése
+
+| Jog | Implementáció | Felelős |
+|-----|--------------|---------|
+| **Hozzáférés joga** (15. cikk) | WP Admin → felhasználói adatok export | Sharity DPO |
+| **Törlés joga** (17. cikk) | Soft-delete (céges adatok 30 nap), anonimizálás | Sharity fejlesztő |
+| **Adathordozhatóság** (20. cikk) | JSON export WP Admin-ból | Sharity DPO |
+| **Tiltakozás** (21. cikk) | Email → privacy@sharity.hu | Sharity DPO |
+| **Stripe-nál tárolt adat** | Sharity kéri Stripe-tól, vagy érintett közvetlenül Stripe-nál | Sharity DPO + Stripe Support |
+
+### 4.1 Törlési eljárás
+
+1. **Érintett kéri a törlést** → office@sharity.hu
+2. **Sharity ellenőrzi**: van-e jogi megőrzési kötelezettség (számviteli: 8 év, ÁFA: 5 év)
+3. **Ha nincs kötelezettség**: személyes adatok törlése/anonimizálása ≤ 30 nap
+4. **Ha van kötelezettség**: tájékoztatás az érintettnek, adatok zárolása (nem törölhetők, de nem használhatók)
+5. **Stripe-nál**: Sharity nem tudja közvetlenül törölni → érintett a Stripe privacy policy szerint járhat el
+6. **Naplózás**: törlési kérés + végrehajtás dátuma + ok → GDPR kérések naplója
+
+---
+
+## 5. Adatfeldolgozói szerződések státusza
+
+| Feldolgozó | DPA státusz | Utolsó felülvizsgálat | Következő felülvizsgálat |
+|-----------|-------------|----------------------|-------------------------|
+| **Stripe** | ✅ Automatikus (SSA elfogadásával) | 2026-02-25 | 2026-08-25 |
+| **Dognet** | ⚠️ Felülvizsgálat szükséges — a Lead Media s.r.o. partneri szerződés GDPR záradéka alapján; publikus adatvédelmi tájékoztató: https://www.dognet.sk/wp-content/uploads/2023/11/gdpr-sk.pdf | — | **2026-03-15** (sürgős) |
+| **Cloudflare** | ✅ Automatikus (Customer DPA) | 2026-02-25 | 2026-08-25 |
+| **Ezit** | ⚠️ Felülvizsgálat szükséges — az Ezit Kft. a Magyar Hosting (mhosting.hu) csoport része; hatályos ÁSZF: https://www.mhosting.hu/aszf/ (2025.08.04.); Adatkezelési tájékoztató: https://www.mhosting.hu/adatkezelesi-tajekoztato/ (2025.07.17.); Adattovábbítási nyilatkozat: https://www.mhosting.hu/adattovabbitasi-nyilatkozat/ | — | **2026-03-15** (sürgős) |
+| **Google Cloud** | ✅ Automatikus (Cloud DPA) | 2026-02-25 | 2026-08-25 |
+| **Vonage (Nexmo)** | ⚠️ Ellenőrizendő — API-szolgáltatási szerződés DPA melléklete | — | **2026-03-15** |
+| **CJ (Commission Junction)** | ⚠️ Ellenőrizendő — önálló adatkezelő; Services Privacy Policy: https://www.cj.com/legal/privacy-policy-services | — | **2026-03-15** |
+| **TradeTracker** | ⚠️ Ellenőrizendő — önálló adatkezelő; Privacy Policy: https://tradetracker.com/privacy-policy/ | — | **2026-03-15** |
+| **Tradedoubler** | ⚠️ Ellenőrizendő — adatfeldolgozó/önálló adatkezelő; Privacy Policy + DPO: dpo@tradedoubler.com | — | **2026-03-15** |
+| **Bitlabs** | ℹ️ Önálló adatkezelő — Privacy Policy: https://bitlabs.ai/privacy | — | **2026-06-25** |
+| **Pollfish** | ℹ️ Önálló adatkezelő — Respondent Terms: https://www.pollfish.com/terms/respondent | — | **2026-06-25** |
+| **Cint** | ℹ️ Önálló adatkezelő — Privacy Notice: https://www.cint.com/privacy-notice | — | **2026-06-25** |
+| **ayeT-Studios** | ℹ️ Önálló adatkezelő — Privacy Policy: https://www.ayetstudios.com/privacy-policy ; DPO: privacy@ayetstudios.com | — | **2026-06-25** |
+| **CPX Research (Make Opinion)** | ℹ️ Önálló adatkezelő — Privacy Policy: https://cpx-research.com/main/en/privacy-user/ ; DPO: privacy@makeopinion.com | — | **2026-06-25** |
+
+A Dognet és Ezit DPA-kat formálisan felül kell vizsgálni, és szükség esetén kiegészítő adatfeldolgozói megállapodást kell kötni a fenti hivatkozások alapján.
+
+---
+
+## 6. Hatósági kapcsolattartó — panasz esetén
+
+Az érintett személyes adatokkal kapcsolatos panaszát az alábbi hatósághoz is benyújthatja:
+
+| Hatóság | Elérhetőség |
+|---------|-------------|
+| **Nemzeti Adatvédelmi és Információszabadság Hatóság (NAIH)** | 1055 Budapest, Falk Miksa utca 9–11. |
+| Telefon | +36 1 391-1400 |
+| E-mail | ugyfelszolgalat@naih.hu |
+| Weboldal | https://www.naih.hu |
+| Online beadvány | https://www.naih.hu/panaszbejelentes |
+
+&gt; Ez a szakasz összhangban áll az ÁSZF §19.4(d) pontjával, amely szintén hivatkozik a NAIH-ra.
+
+---
+
+## 7. Adatvédelmi incidens naplóvezetés
+
+A GDPR 33. cikk (5) bekezdése alapján az adatkezelő köteles nyilvántartást vezetni az adatvédelmi incidensekről.
+
+### 7.1 Naplózandó adatok
+
+Minden adatvédelmi incidens esetén rögzíteni kell:
+
+| Mező | Leírás |
+|------|--------|
+| **Incidens azonosító** | Egyedi sorszám (pl. GDPR-INC-2026-001) |
+| **Észlelés dátuma/ideje** | Az incidens észlelésének időpontja |
+| **Incidens leírása** | Az incidens jellege, érintett rendszer(ek), körülmények |
+| **Érintett adatok köre** | Milyen személyes adatokat érint (Pseudo ID, email, tranzakciós adat stb.) |
+| **Érintettek becsült száma** | Hány érintett személyes adata kompromittálódott/sérült |
+| **Érintett adatfeldolgozó(k)** | Stripe, Dognet, Cloudflare, Ezit, Google Cloud, Vonage, CJ, TradeTracker, Tradedoubler, Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research — amelyiknél az incidens felmerült |
+| **Súlyosság** | Alacsony / Közepes / Magas / Kritikus |
+| **Megtett intézkedések** | Azonnali és utólagos korrekciós lépések |
+| **NAIH bejelentés** | Szükséges-e (72 órán belül); ha igen, bejelentés dátuma |
+| **Érintettek értesítése** | Szükséges-e; ha igen, értesítés dátuma és módja |
+| **Lezárás dátuma** | Az incidens kezelésének lezárása |
+
+### 7.2 Eljárásrend
+
+1. **Észlelés**: automatikus monitoring vagy manuális bejelentés (office@sharity.hu).
+2. **Értékelés** (≤ 24 óra): DPO / Ops Squad megállapítja a súlyosságot és az érintettek körét.
+3. **NAIH bejelentés** (≤ 72 óra): ha az incidens valószínűsíthetően kockázattal jár az érintettek jogaira — GDPR 33. cikk.
+4. **Érintettek értesítése**: ha az incidens valószínűsíthetően magas kockázattal jár — GDPR 34. cikk.
+5. **Korrekciós intézkedések**: technikai és szervezési intézkedések az ismétlődés megelőzésére.
+6. **Lezárás és dokumentálás**: incidens napló lezárása, tanulságok rögzítése.
+
+### 7.3 Megőrzés
+
+Az incidens naplóbejegyzéseket a Szolgáltató legalább 5 évig megőrzi.
+
+---
+
+## 8. Felülvizsgálat
+
+- **Gyakoriság**: félévente, vagy új adatfeldolgozó bevonásakor
+- **Felelős**: DPO / Ops Squad
+- **Trigger**: új partner integráció, meglévő partner feltétel-változás, GDPR audit
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2026-02-25 | Kezdeti verzió — draft; 5 adatfeldolgozó nyilvántartása |
+| 1.1 | 2026-02-25 | NAIH hatósági elérhetőség hozzáadva (§6); koherencia az ÁSZF §19.4(d)-vel |
+| 1.2 | 2026-02-25 | Véglegesítés: Pseudo ID mint személyes adat beépítve (§1), cookie megfelelés rögzítve (§2.2), Vonage/Nexmo SMS hozzáadva (§2.6), affiliate alternatívák hozzáadva — CJ (§2.7), TradeTracker (§2.8), Tradedoubler (§2.9), offerwall szolgáltatók — Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research (Make Opinion) (§2.10), belső fájlhivatkozások eltávolítva, DPA státusz kiterjesztve 14 adatfeldolgozóra/adatkezelőre (§5), adatvédelmi incidens naplóvezetés hozzáadva (§7) |
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Általános Szerződési Feltételek (ÁSZF)](../ÁSZF/Sharity_ASZF_2026.md)
+- [Hozzáférés-kezelési mátrix](./access-control-matrix.md)
+- [Stripe felelősségmegosztás](./stripe-responsibility-matrix.md)
+- [SLA](./sla-policy.md)
+- [Rólunk](https://app.sharity.hu/rolunk/)
+- [NGO Card útmutató](https://app.sharity.hu/ngo-guides/ngo-card/)
+</pre>
+      </details>
+    </section>
+    
+    <section class="doc-card" id="access">
+      <div class="doc-head">
+        <div>
+          <h2>Hozzáférés-kezelési mátrix</h2>
+          <p class="doc-meta">Dátum: 2026-02-25 | Verzió: 1.1</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">Infrastruktúra hozzáférések és jogosultságok összefoglalója.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/access-control-matrix-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/access-control-matrix-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/access-control-matrix-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/access-control-matrix-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># Hozzáférés-kezelési Mátrix (Access Control Matrix)
+
+&gt; **Verzió**: 1.1  
+&gt; **Dátum**: 2026-02-25  
+&gt; **Státusz**: HATÁLYOS  
+&gt; **Vonatkozik**: ImpactShop teljes infrastruktúra  
+&gt; **Kapcsolódó**: GDPR adatfeldolgozói nyilvántartás, Üzemeltetési kézikönyv §1
+
+---
+
+## 1. Áttekintés
+
+Ez a dokumentum rögzíti, hogy ki milyen rendszerekhez fér hozzá, milyen jogosultsági szinttel, és milyen korlátozásokkal. A hozzáférés a **legkisebb jogosultság elve** (principle of least privilege) alapján van kiosztva.
+
+---
+
+## 2. Infrastruktúra hozzáférési mátrix
+
+### 2.1 Szerver (shared hosting)
+
+| Hozzáférés | Felhasználó | Jogosultság | Korlátozás |
+|-----------|-------------|-------------|-----------|
+| **SSH** | `sharityh` | User-level shell (zsh) | ⛔ Nincs root / sudo / WHM hozzáférés |
+| **cPanel** | `sharityh` | Fájlkezelő, cron, PHP konfig, email | Shared hosting korlátok |
+| **FTP/SFTP** | `sharityh` | Fájl feltöltés/letöltés | Csak a `~/` alatti könyvtárakra |
+| **MySQL** | `sharityh_wp` | WordPress DB teljes hozzáférés | Nincs más DB-hez hozzáférés |
+| **Cron** | `sharityh` | User-level crontab | Nincs system-level cron |
+
+&gt; **Fontos**: Nincs root hozzáférés. Bármilyen host-szintű változtatás (PHP verzió, Apache mod, SSL cert) hosting ticket-en keresztül igénylendő.
+
+### 2.2 WordPress (app.sharity.hu / shariteam.com)
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|-----------|
+| **Super Admin** | Sharity core team (max 2 fő) | Teljes WP admin, MU-plugin kezelés, WP-CLI | Multisite network admin |
+| **Admin** | Ops Squad (max 3 fő) | Beállítások, felhasználókezelés, tartalom | NGO card jóváhagyás, shortcode szerkesztés |
+| **Editor** | Tartalom menedzser | Oldalak/bejegyzések szerkesztése | Nincs plugin/beállítás hozzáférés |
+| **NGO Partner** | Regisztrált NGO-k | Saját profil szerkesztése | Nincs admin terület hozzáférés |
+| **WP-CLI** | `sharityh` SSH-n keresztül | Teljes WP-CLI parancssor | Szerveren, SSH session-ben |
+
+### 2.3 Stripe Dashboard
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|-----------|
+| **Account Owner** | Sharity pénzügyi felelős (1 fő) | Teljes kontroll: payout, settings, API keys | 2FA kötelező |
+| **Developer** | Sharity fejlesztő (max 2 fő) | Webhook konfig, API logok, test mód | Nincs payout/bank hozzáférés |
+| **View Only** | Ops Squad | Tranzakció megtekintés, dispute olvasás | Nincs módosítási jog |
+
+### 2.4 GitHub Repository
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|-----------|
+| **Owner** | Sharity core team (1 fő) | Repo beállítások, branch protection, secrets | Private repo |
+| **Maintainer** | Fejlesztők (max 2 fő) | Push, merge, PR review | Branch protection: main → PR required |
+| **Read** | Ops Squad | Clone, issue kezelés | Nincs push jog |
+
+### 2.5 Cloudflare
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|-----------|
+| **Super Admin** | Sharity core team (1 fő) | DNS, WAF, Page Rules, Rate Limit | 2FA kötelező |
+| **Admin** | Fejlesztő (1 fő) | WAF szabályok, Turnstile konfig, cache purge | Nincs billing hozzáférés |
+
+### 2.6 Dognet Partner Portal
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|-----------|
+| **Partner Admin** | Sharity affiliate menedzser (1 fő) | Kampány kezelés, riport letöltés, API token | |
+| **Viewer** | Ops Squad | Riportok megtekintése | Nincs módosítás |
+
+### 2.7 CJ (Commission Junction)
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|------------|
+| **Publisher Admin** | Sharity affiliate menedzser (1 fő) | Kampánykezelés, link generálás, riportok, API hozzáférés | Publicis Groupe platform; 2FA ajánlott |
+| **Viewer** | Ops Squad | Riportok megtekintése | Nincs módosítás |
+
+### 2.8 TradeTracker
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|------------|
+| **Publisher Admin** | Sharity affiliate menedzser (1 fő) | Kampánykezelés, link generálás, riportok | |
+| **Viewer** | Ops Squad | Riportok megtekintése | Nincs módosítás |
+
+### 2.9 Tradedoubler
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|------------|
+| **Publisher Admin** | Sharity affiliate menedzser (1 fő) | Kampánykezelés, link generálás, riportok | |
+| **Viewer** | Ops Squad | Riportok megtekintése | Nincs módosítás |
+
+### 2.10 Offerwall szolgáltatók (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research)
+
+| Szerepkör | Ki | Jogosultság | Megjegyzés |
+|-----------|-----|-------------|------------|
+| **Dashboard Admin** | Sharity fejlesztő / ops (1 fő) | Offerwall konfiguráció, bevétel riportok, API kulcsok | Szolgáltatónként külön fiók; 2FA ahol elérhető |
+| **Viewer** | Ops Squad | Riportok megtekintése | Nincs módosítás |
+---
+
+## 3. Titkos kulcsok kezelése (Secret Management)
+
+| Titok típusa | Tárolás helye | Ki fér hozzá | Rotálás gyakorisága |
+|-------------|--------------|--------------|-------------------|
+| **Stripe API keys** (sk_live, pk_live) | Környezeti változókban (gitignore-olt) | SSH: `sharityh`; Fejlesztők: env file-on keresztül | Félévente vagy kompromittálás esetén |
+| **Stripe webhook secret** | Környezeti változókban (gitignore-olt) | SSH: `sharityh` | Félévente |
+| **Dognet API token** | Környezeti változókban / WP options | SSH: `sharityh`; WP Admin: options | Éves |
+| **Cloudflare API token** | Környezeti változókban | SSH: `sharityh` | Éves |
+| **WordPress salts** | `wp-config.php` | SSH: `sharityh` | Csak kompromittálás esetén |
+| **MySQL password** | `wp-config.php` | SSH: `sharityh` | cPanel-en keresztül, szükség esetén |
+| **Google Service Account key** | Dedikált kulcsfájlban (gitignore-olt) | SSH: `sharityh`; AI Agent alkalmazás | Éves |
+| **CJ API credentials** | Környezeti változókban (gitignore-olt) | SSH: `sharityh`; Fejlesztők: env file-on keresztül | Éves |
+| **TradeTracker API credentials** | Környezeti változókban (gitignore-olt) | SSH: `sharityh` | Éves |
+| **Tradedoubler API credentials** | Környezeti változókban (gitignore-olt) | SSH: `sharityh` | Éves |
+| **Offerwall API kulcsok** (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research) | Környezeti változókban (gitignore-olt) | SSH: `sharityh`; Fejlesztők: env file-on keresztül | Éves |
+| **SSH key** | `~/.ssh/authorized_keys` | Fejlesztő gépek | Éves rotálás, ed25519 |
+
+&gt; **Szabály**: Titkok SOHA nem kerülhetnek git commitba, logba, vagy tervdokumentumba.
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Általános Szerződési Feltételek (ÁSZF)](../ÁSZF/Sharity_ASZF_2026.md)
+- [GDPR adatfeldolgozók](./gdpr-data-processors.md)
+- [SLA](./sla-policy.md)
+- [Stripe felelősségmegosztás](./stripe-responsibility-matrix.md)
+- [Rólunk](https://app.sharity.hu/rolunk/)
+
+
+---
+
+## 4. Guard rendszer hozzáférés
+
+| Guard | Futtatás | Ki indíthatja | Naplók |
+|-------|---------|--------------|--------|
+| **Központi guard runner** | Cron (15-30 perc) + manuális | SSH: `sharityh` | Központi guard eseménynapló |
+| **Egyedi guard scriptek** | Cron / manuális | SSH: `sharityh` | Guard-specifikus naplók |
+| **Discord webhook** (alertek) | Automatikus guard kimenete | Guard scriptek | Dedikált alert csatorna |
+
+---
+
+## 5. Hozzáférés kérés és visszavonás
+
+### 5.1 Új hozzáférés kérés
+
+1. **Kérelmező** → email/issue a core team felé
+2. **Core team jóváhagyás** — principle of least privilege alapján
+3. **Implementáció** — az adott rendszer adminje hozza létre
+4. **Dokumentáció** — ez a mátrix frissítendő
+5. **2FA kötelező** minden kritikus rendszernél (Stripe, Cloudflare, GitHub, cPanel)
+
+### 5.2 Hozzáférés visszavonás
+
+| Trigger | Teendő | Időkeret |
+|---------|--------|---------|
+| **Munkatárs távozás** | Minden rendszerből hozzáférés eltávolítása | ≤ 24 óra |
+| **Kompromittált credential** | Azonnali rotálás + audit log ellenőrzés | ≤ 1 óra |
+| **Szerepkör változás** | Jogosultság szűkítés/bővítés | ≤ 48 óra |
+
+### 5.3 Audit
+
+- **Gyakoriság**: negyedévente
+- **Mit ellenőrzünk**: aktív hozzáférések listája vs. aktuális csapattagok, 2FA státusz, utolsó bejelentkezés
+- **Felelős**: Ops Squad lead
+
+---
+
+## 6. Hosting-specifikus korlátozások
+
+A shared hosting környezet miatt az alábbi korlátozások érvényesek:
+
+| Nem elérhető | Alternatíva |
+|-------------|-------------|
+| Root / sudo | Hosting ticket |
+| Custom daemon / service | Cron-alapú idempotens scriptek |
+| Package install (apt/yum) | Nincs — csak a meglévő szoftverek |
+| PHP verzió váltás | cPanel PHP Selector vagy hosting ticket |
+| SSL cert kezelés | AutoSSL (cPanel) vagy Cloudflare |
+| Firewall szabályok | Cloudflare WAF |
+
+---
+
+## 7. Felülvizsgálat
+
+- **Gyakoriság**: negyedévente, vagy csapatváltozás esetén azonnal
+- **Felelős**: Core team lead
+- **Ellenőrzőlista**: aktív felhasználók, 2FA státusz, kulcs rotálás, lejárt hozzáférések
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2026-02-25 | Kezdeti verzió — teljes infrastruktúra mátrix |
+| 1.1 | 2026-02-25 | Véglegesítés: CJ, TradeTracker, Tradedoubler, offerwall szolgáltatók (Bitlabs, Pollfish, Cint, ayeT-Studios, CPX Research) hozzáadva (§2.7–2.10), belső fájlútvonalak eltávolítva, titkos kulcs kezelés kiterjesztve affiliate/offerwall kulcsokra (§3) |
+</pre>
+      </details>
+    </section>
+    
+    <section class="doc-card" id="quarterly">
+      <div class="doc-head">
+        <div>
+          <h2>Negyedéves elosztási riport — sablon</h2>
+          <p class="doc-meta">Dátum: 2026-02-25 | Verzió: 1.2</p>
+        </div>
+        <span class="doc-tag">Dokumentum</span>
+      </div>
+      <p class="doc-summary">Negyedéves NGO elosztási riport kitöltési sablon.</p>
+      <div class="doc-actions">
+        <a class="btn" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/quarterly-distribution-report-template-hu.html" target="_blank">Megnyitás (HU)</a>
+        <a class="btn ghost" href="https://app.sharity.hu/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/pdf-output/quarterly-distribution-report-template-en.html" target="_blank">Megnyitás (EN)</a>
+        <a class="btn ghost" href="/wp-content/mu-plugins/impactshop-ngo-guides/assets/legal-bilingual/quarterly-distribution-report-template-bilingual.md" download>Letöltés (MD)</a>
+        <a class="btn ghost" href="/wp-content/uploads/legal-pdfs/quarterly-distribution-report-template-hu.pdf" download>Letöltés (PDF)</a>
+      </div>
+      <details class="doc-details">
+        <summary>Szöveg megjelenítése</summary>
+        <pre class="doc-pre"># Negyedéves Elosztási Riport — Sablon
+
+&gt; **Verzió**: 1.2  
+&gt; **Dátum**: 2026-02-25  
+&gt; **Státusz**: HATÁLYOS  
+&gt; **Vonatkozik**: Impact Shop közvetlen adomány + Impact Challenge/Amplifier Közös Adományalap — negyedéves NGO elosztás  
+&gt; **Adatforrás**: WordPress adatbázis (negyedéves elosztási táblák), Dognet ledger
+
+---
+
+## Sablon használati útmutató
+
+Ez a sablon szolgál a negyedéves adományelosztási riport elkészítéséhez. Minden negyedév zárása után ki kell tölteni a megfelelő adatokkal, és az alábbi jóváhagyási folyamaton kell átesnie.
+
+**Kitöltési lépések:**
+1. Exportáld a negyedéves adatokat a WP adatbázisból (ld. §A1 — Lekérdezések)
+2. Töltsd ki az alábbi sablont
+3. Ellenőrizd az összesítő számokat
+4. Küldd el jóváhagyásra
+5. Véglegesítés után → NGO értesítés + payout indítás
+
+---
+
+# 📊 Negyedéves Elosztási Riport
+
+## Alapadatok
+
+| Mező | Érték |
+|------|-------|
+| **Riport azonosító** | `QDR-YYYY-QN` (pl. QDR-2026-Q1) |
+| **Negyedév** | YYYY Q_ (pl. 2026 Q1) |
+| **Időszak** | YYYY-MM-DD – YYYY-MM-DD |
+| **Riport készítő** | [Név] |
+| **Készítés dátuma** | YYYY-MM-DD |
+| **Jóváhagyó** | [Név] |
+| **Jóváhagyás dátuma** | YYYY-MM-DD |
+
+---
+
+## 1. Bevételi összesítő
+
+### 1.1 Affiliate jutalék (Dognet, CJ stb.)
+
+&gt; **Megjegyzés**: A Direct Partner jutalék elosztása NGO szintfüggő (Base: 40%, Rising: 50%, Legend: 60%), ezért az itt feltüntetett összegek tranzakciónként eltérő arányokból adódnak össze. Az összesítő sorban az összes tranzakció után ténylegesen NGO-ra jutó összeg kerül.
+
+| Tétel | Összeg (HUF) |
+|-------|-------------|
+| **Bruttó affiliate jutalék** (Dognet ledger) | _______ |
+| **Platform díj** (fennmaradó rész — NGO szinttől függ: Base: 60%, Rising: 50%, Legend: 40%) | _______ |
+| **NGO-knak közvetlenül jutó összeg** (szinttől függően 40–60% + user adomány-szorzó hatása, súlyozott átlag) | _______ |
+
+&gt; 💡 **Megjegyzés a riport kitöltőjének**: A Direct Partner tranzakcióknál az NGO szintjétől függően 40% (Base), 50% (Rising) vagy 60% (Legend) kerül adományba. Az affiliate hálózaton (Dognet) keresztül érkező tranzakcióknál az arány az affiliate megállapodás feltételeitől függ. Az összesítő sorba a ténylegesen NGO-ra jutó összeget kell beírni, a platform díj sorba a maradékot. *(Vö. ÁSZF §4.1.2(b) és §8.1.)*
+
+### 1.2 Impact Amplifier (szavazatvásárlás)
+
+| Tétel | Összeg (HUF) |
+|-------|-------------|
+| **Összes szavazatvásárlás bevétel** | _______ |
+| **Platform díj** (50%) | _______ |
+| **Adományalapba kerülő összeg** (50%) | _______ |
+
+### 1.3 Összesített adománypool
+
+| Forrás | Összeg (HUF) |
+|--------|-------------|
+| Affiliate jutalék NGO része | _______ |
+| Impact Amplifier adomány része | _______ |
+| **Összes elosztható pool** | **_______** |
+
+---
+
+## 2. Szavazati összesítő
+
+| Tétel | Darab |
+|-------|-------|
+| **Összes leadott szavazat** (negyedévben) | _______ |
+| Ebből affiliate-ból + Impact Challenge aktivitásból szerzett (ingyenes) | _______ |
+| Ebből Impact Amplifier vásárlásból | _______ |
+| **Érvényes szavazatok** (dispute-ok levonása után) | _______ |
+
+### 2.1 Dispute korrekció
+
+| Dispute típus | Darab | Érintett szavazat | Pool korrekció (HUF) |
+|--------------|-------|-------------------|---------------------|
+| Elfogadott chargeback | _______ | _______ | -_______ |
+| Voided tranzakció | _______ | _______ | -_______ |
+| **Összes korrekció** | _______ | _______ | **-_______** |
+
+---
+
+## 3. NGO elosztás — részletes táblázat
+
+| # | NGO név | NGO slug | Impact Shop közvetlen adomány (HUF) | Impact Challenge/Amplifier szavazatok (db) | Szavazat arány (%) | Közös Alap elosztás (HUF) | Összes elosztott (HUF) |
+|---|---------|----------|-----------------------------------|--------------------------------------------|-------------------|---------------------------|------------------------|
+| 1 | ________________ | ________ | _______ | _______ | _____% | _______ | _______ |
+| 2 | ________________ | ________ | _______ | _______ | _____% | _______ | _______ |
+| 3 | ________________ | ________ | _______ | _______ | _____% | _______ | _______ |
+| 4 | ________________ | ________ | _______ | _______ | _____% | _______ | _______ |
+| 5 | ________________ | ________ | _______ | _______ | _____% | _______ | _______ |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| **Σ** | **ÖSSZESEN** | — | **_______** | **_______** | **100%** | **_______** | **_______** |
+
+### 3.1 Elosztási képlet
+
+**Impact Challenge/Amplifier Közös Alap elosztás:**
+```
+ngo_common_pool_share = (ngo_votes / total_valid_votes) × total_pool_amount
+```
+
+**Impact Shop közvetlen adomány:**
+```
+ngo_direct_donation = Σ (tranzakciós jutalék × NGO szint arány × adomány-szorzó)
+```
+
+**Teljes NGO elosztás:**
+```
+ngo_total = ngo_direct_donation + ngo_common_pool_share
+```
+
+Ahol:
+- `ngo_votes` = az adott NGO-ra leadott érvényes szavazatok száma a negyedévben
+- `total_valid_votes` = összes érvényes szavazat (dispute korrekció utáni)
+- `total_pool_amount` = Közös Adományalap (Impact Amplifier 50% + Impact Challenge hirdetési bevétel egy része, korrekciók levonása után)
+- `NGO szint arány` = Base: 40%, Rising: 50%, Legend: 60% *(ÁSZF §4.1.2(b))*
+- `adomány-szorzó` = Basic ×1,00 – Legend ×1,25 *(ÁSZF §4.1.2(c))*
+
+---
+
+## 4. Payout státusz
+
+| NGO | Összeg (HUF) | Payout módszer | Payout dátum | Státusz |
+|-----|-------------|---------------|-------------|---------|
+| ________________ | _______ | Banki átutalás | YYYY-MM-DD | ⬜ Függőben / ✅ Elküldve |
+| ________________ | _______ | Banki átutalás | YYYY-MM-DD | ⬜ Függőben / ✅ Elküldve |
+| ... | ... | ... | ... | ... |
+
+
+---
+
+## 5. Ellenőrzés és egyeztetés
+
+### 5.1 Adatforrás egyeztetés
+
+| Egyeztetés | Eredmény |
+|-----------|---------|
+| DB szavazatok összege = Stripe tranzakciók összege ± dispute korrekciók | ✅ / ❌ Eltérés: _______ |
+| Dognet ledger egyenleg = DB affiliate bevétel | ✅ / ❌ Eltérés: _______ |
+| NGO elosztás összege = Pool összeg | ✅ / ❌ Eltérés: _______ |
+
+### 5.2 Anomáliák
+
+| Anomália | Leírás | Akció |
+|---------|--------|-------|
+| (Ha van) | ________________ | ________________ |
+| — | Nincs anomália | — |
+
+---
+
+## 6. Jóváhagyás
+
+| Szerep | Név | Aláírás/Dátum |
+|--------|-----|--------------|
+| **Riport készítő** | ________________ | ________________ |
+| **Pénzügyi ellenőr** | ________________ | ________________ |
+| **Vezetőség** | ________________ | ________________ |
+
+---
+
+## Melléklet
+
+### A1. Adatlekérdezések (WP-CLI / SQL)
+
+**Negyedéves szavazat összesítő:**
+```sql
+SELECT 
+    c.slug AS ngo_slug,
+    c.name AS ngo_name,
+    SUM(vp.votes_granted) AS total_votes,
+    SUM(vp.amount) AS total_amount
+FROM wp_impactshop_vote_purchases vp
+JOIN wp_impactshop_challenges c ON vp.challenge_id = c.id
+WHERE vp.status = &#x27;completed&#x27;
+  AND vp.created_at BETWEEN &#x27;YYYY-MM-DD&#x27; AND &#x27;YYYY-MM-DD&#x27;
+GROUP BY c.slug, c.name
+ORDER BY total_votes DESC;
+```
+
+**Affiliate bevétel negyedéves összesítő:**
+```sql
+SELECT 
+    quarter_name,
+    total_revenue,
+    ngo_share,
+    platform_share,
+    status
+FROM wp_impactshop_ads_quarters
+WHERE quarter_name = &#x27;YYYY-QN&#x27;;
+```
+
+**Részletes NGO elosztás:**
+```sql
+SELECT 
+    qr.ngo_slug,
+    qr.ngo_name,
+    qr.vote_count,
+    qr.vote_percentage,
+    qr.payout_amount,
+    qr.payout_status
+FROM wp_impactshop_ads_quarter_results qr
+WHERE qr.quarter_id = (
+    SELECT id FROM wp_impactshop_ads_quarters WHERE quarter_name = &#x27;YYYY-QN&#x27;
+)
+ORDER BY qr.vote_count DESC;
+```
+
+### A2. Dispute lista (negyedév)
+
+```sql
+SELECT 
+    vp.stripe_session_id,
+    vp.amount,
+    vp.votes_granted,
+    vp.status,
+    vp.updated_at
+FROM wp_impactshop_vote_purchases vp
+WHERE vp.status IN (&#x27;disputed&#x27;, &#x27;voided&#x27;, &#x27;refunded&#x27;)
+  AND vp.created_at BETWEEN &#x27;YYYY-MM-DD&#x27; AND &#x27;YYYY-MM-DD&#x27;;
+```
+
+### A3. Riport exportálás
+
+- **Markdown** → ez a dokumentum kitöltve
+- **PDF** → Pandoc konverzió (markdown → PDF)
+- **Archiválás** → negyedéves archívum mappába
+
+---
+
+## Felülvizsgálat
+
+- **Gyakoriság**: minden negyedév zárása után (Q1: április 15-ig, Q2: július 15-ig, Q3: október 15-ig, Q4: január 15-ig)
+- **Felelős**: Pénzügyi felelős + Ops Squad
+- **Határidő**: negyedév záró napja + 15 munkanap
+
+---
+
+## Változásnapló
+
+| Verzió | Dátum | Változás |
+|--------|-------|---------|
+| 1.0 | 2026-02-25 | Kezdeti sablon |
+| 1.1 | 2026-02-25 | Jutalék felosztás (40/50/60%) pontosítás + minimum (5 000 Ft/csatorna) „elvész&quot; szabály rögzítése |
+| 1.2 | 2026-02-25 | Véglegesítés: 3-csatornás NGO elosztási tábla (Impact Shop közvetlen + Közös Alap szavazatarány), elosztási képlet kibővítése, belső fájlhivatkozások eltávolítva, audit megjegyzések beépítve, publikus guide koherencia rögzítve |
+
+---
+
+## Kapcsolódó dokumentumok és guide-ok
+
+- [Általános Szerződési Feltételek (ÁSZF)](../ÁSZF/Sharity_ASZF_2026.md)
+- [Vitakezelési eljárásrend](./dispute-handling-procedure.md)
+- [SLA](./sla-policy.md)
+- [Impact Shop útmutató](https://app.sharity.hu/ngo-guides/impact-shop/)
+- [Impact Challenge útmutató](https://app.sharity.hu/ngo-guides/impact-challenge/)
+</pre>
+      </details>
+    </section>
+    
+
+    <footer class="doc-card">
+      <h2>Kapcsolódó guide-ok</h2>
+      <p>Ha a dokumentumok gyakorlati alkalmazása érdekel, itt találod a releváns útmutatókat:</p>
+      <div class="footer-links">
+        <a href="https://app.sharity.hu/ngo-guides/impact-shop/">Impact Shop</a>
+        <a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge</a>
+        <a href="https://app.sharity.hu/ngo-guides/ngo-card/">NGO Card</a>
+        <a href="https://app.sharity.hu/rolunk/">Rólunk</a>
+        <a href="https://app.sharity.hu/cegeknek/">Cégeknek</a>
+        <a href="https://app.sharity.hu/befektetoknek/">Befektetőknek</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

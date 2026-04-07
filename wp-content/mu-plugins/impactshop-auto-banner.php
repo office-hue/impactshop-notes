@@ -20,6 +20,15 @@ const IMPACTSHOP_AUTO_BANNER_SEEN_TTL = 14 * DAY_IN_SECONDS;
 add_action('muplugins_loaded', 'impactshop_auto_banner_boot');
 add_action('cli_init', 'impactshop_auto_banner_register_cli');
 
+function impactshop_is_retired_shop(string $shop_slug): bool
+{
+    if (strpos($shop_slug, 'sync:') === 0) {
+        $shop_slug = substr($shop_slug, 5);
+    }
+    $normalized = strtolower(trim($shop_slug));
+    return $normalized !== '' && in_array($normalized, ['decathlon'], true);
+}
+
 function impactshop_auto_banner_boot(): void
 {
     impactshop_auto_banner_maybe_install();
@@ -118,28 +127,49 @@ function impactshop_auto_banner_add(WP_REST_Request $request): WP_REST_Response
 
 function impactshop_is_whitelisted_partner(string $shop_slug): bool
 {
-    static $whitelist = null;
+    static $arukereso_whitelist = null;
     if (strpos($shop_slug, 'sync:') === 0) {
         $shop_slug = substr($shop_slug, 5);
     }
 
-    if ($whitelist !== null && !empty($whitelist)) {
-        $normalized = strtolower(trim($shop_slug));
-        return $normalized !== '' && isset($whitelist[$normalized]);
+    $normalized = strtolower(trim($shop_slug));
+    if ($normalized === '') {
+        return false;
+    }
+    if (impactshop_is_retired_shop($normalized)) {
+        return false;
     }
 
-    $whitelist = [];
-    $registry_path = dirname(WP_CONTENT_DIR) . '/tools/shops_registry.json';
-    if (file_exists($registry_path)) {
-        $raw = file_get_contents($registry_path);
-        if ($raw !== false) {
-            $data = json_decode($raw, true);
-            if (is_array($data)) {
-                foreach ($data as $shop) {
-                    if (is_array($shop) && !empty($shop['slug'])) {
+    if (function_exists('impactshop_find_shop')) {
+        $row = impactshop_find_shop($normalized);
+        if (is_array($row) && !empty($row['shop_slug'])) {
+            return true;
+        }
+    }
+
+    if (function_exists('isb_find_shop')) {
+        $row = isb_find_shop($normalized);
+        if (is_array($row) && !empty($row['shop_slug'])) {
+            return true;
+        }
+    }
+
+    if ($arukereso_whitelist === null) {
+        $arukereso_whitelist = [];
+        $registry_path = dirname(WP_CONTENT_DIR) . '/tools/shops_registry.json';
+        if (file_exists($registry_path)) {
+            $raw = file_get_contents($registry_path);
+            if ($raw !== false) {
+                $data = json_decode($raw, true);
+                if (is_array($data)) {
+                    foreach ($data as $shop) {
+                        if (!is_array($shop) || empty($shop['slug']) || empty($shop['arukereso_playwright'])) {
+                            continue;
+                        }
                         $slug = strtolower(trim((string) $shop['slug']));
-                        if ($slug !== '') {
-                            $whitelist[$slug] = true;
+                        $domain = strtolower(trim((string) ($shop['domain'] ?? '')));
+                        if ($slug !== '' && strpos($domain, 'arukereso.hu') !== false) {
+                            $arukereso_whitelist[$slug] = true;
                         }
                     }
                 }
@@ -147,20 +177,7 @@ function impactshop_is_whitelisted_partner(string $shop_slug): bool
         }
     }
 
-    if (empty($whitelist) && function_exists('impactshop_get_shops')) {
-        $shops = impactshop_get_shops();
-        foreach ($shops as $shop) {
-            if (!empty($shop['shop_slug'])) {
-                $slug = strtolower(trim((string) $shop['shop_slug']));
-                if ($slug !== '') {
-                    $whitelist[$slug] = true;
-                }
-            }
-        }
-    }
-
-    $normalized = strtolower(trim($shop_slug));
-    return $normalized !== '' && isset($whitelist[$normalized]);
+    return isset($arukereso_whitelist[$normalized]);
 }
 
 function impactshop_auto_banner_registry_domains(): array
@@ -362,6 +379,304 @@ function impactshop_auto_banner_store_seen_ids(string $pseudo_id, array $seen_id
     setcookie('impactshop_seen_banners', $cookie_value, time() + (4 * HOUR_IN_SECONDS), '/', '', true, false);
 }
 
+function impactshop_auto_banner_lookup_shop_meta(string $shop_slug): array
+{
+    static $cache = [];
+
+    $normalized = strtolower(trim($shop_slug));
+    if ($normalized === '') {
+        return [];
+    }
+    if (array_key_exists($normalized, $cache)) {
+        return $cache[$normalized];
+    }
+
+    if (function_exists('impactshop_find_shop')) {
+        $row = impactshop_find_shop($normalized);
+        if (is_array($row)) {
+            return $cache[$normalized] = $row;
+        }
+    }
+    if (function_exists('isb_find_shop')) {
+        $row = isb_find_shop($normalized);
+        if (is_array($row)) {
+            return $cache[$normalized] = $row;
+        }
+    }
+
+    return $cache[$normalized] = [];
+}
+
+function impactshop_auto_banner_bucket_for_row(array $row): string
+{
+    $shop_slug = strtolower((string) ($row['shop_slug'] ?? ''));
+    if ($shop_slug === '') {
+        return 'other';
+    }
+    if (strpos($shop_slug, 'arukereso') !== false) {
+        return 'arukereso';
+    }
+
+    $meta = impactshop_auto_banner_lookup_shop_meta($shop_slug);
+    $network = strtolower(trim((string) ($meta['network_source'] ?? '')));
+    if (strpos($shop_slug, 'cj-') === 0 || $network === 'cj') {
+        return 'cj';
+    }
+
+    return 'dognet';
+}
+
+function impactshop_auto_banner_normalize_category(string $value): string
+{
+    $value = trim(wp_strip_all_tags($value));
+    if ($value === '') {
+        return '';
+    }
+    $value = remove_accents(mb_strtolower($value, 'UTF-8'));
+    $value = preg_replace('/[^a-z0-9]+/', '-', $value);
+    $value = trim((string) $value, '-');
+    if (in_array($value, ['egyeb', 'vegyes', 'other', 'general', 'altalanos'], true)) {
+        return '';
+    }
+    return is_string($value) ? $value : '';
+}
+
+function impactshop_auto_banner_arukereso_category_from_url(string $banner_url): string
+{
+    $host = (string) parse_url($banner_url, PHP_URL_HOST);
+    $path = (string) parse_url($banner_url, PHP_URL_PATH);
+    if ($path === '' && $host === '') {
+        return '';
+    }
+
+    $host = remove_accents(mb_strtolower($host, 'UTF-8'));
+    $path = remove_accents(mb_strtolower($path, 'UTF-8'));
+    $segments = array_values(array_filter(explode('/', trim($path, '/'))));
+    $source = trim($host . ' ' . implode(' ', $segments));
+
+    $patterns = [
+        'baba' => ['pelenka', 'torlokendo', 'baba', 'babakocsi', 'baba-mama', 'babaknak-szolo-jatek', 'cumisuveg', 'bebi', 'pelus', 'pampers'],
+        'mobil' => ['mobiltelefon', 'telefon', 'okostelefon'],
+        'laptop' => ['laptop', 'notebook'],
+        'tv' => ['televizio', 'tv', 'projektor'],
+        'audio' => ['fulhallgato', 'fejhallgato', 'hangfal', 'hangszoro', 'soundbar'],
+        'gaming' => ['jatekkonzol', 'konzol', 'videojatek', 'gamer'],
+        'szepseg' => ['parfum', 'szepsegapolas', 'kozmetikum', 'borapolas', 'hajapolas'],
+        'sport' => ['sporteszkoz', 'sportfelszereles', 'futopad', 'kerekpar', 'fitness'],
+        'jatek' => ['jatek', 'lego', 'pluss-figura', 'tarsasjatek'],
+        'otthon' => ['haztartasi-gep', 'konyhai-gep', 'butor', 'matrac', 'lampa', 'torolkozo'],
+        'divat' => ['ruhazat', 'cipo', 'taska', 'ora-karora', 'ekszer'],
+        'auto' => ['autoalkatresz', 'gumiabroncs', 'motorolaj'],
+    ];
+
+    foreach ($patterns as $bucket => $keywords) {
+        foreach ($keywords as $keyword) {
+            if (strpos($source, $keyword) !== false) {
+                return $bucket;
+            }
+        }
+    }
+
+    if (!empty($segments)) {
+        return impactshop_auto_banner_normalize_category((string) $segments[0]);
+    }
+
+    return '';
+}
+
+function impactshop_auto_banner_category_for_row(array $row): string
+{
+    $shop_slug = strtolower((string) ($row['shop_slug'] ?? ''));
+    $meta = impactshop_auto_banner_lookup_shop_meta($shop_slug);
+    $category = impactshop_auto_banner_normalize_category((string) ($meta['category'] ?? $meta['kategoria'] ?? ''));
+    if ($category !== '') {
+        return $category;
+    }
+
+    if (strpos($shop_slug, 'arukereso') !== false) {
+        $arukeresoCategory = impactshop_auto_banner_arukereso_category_from_url((string) ($row['banner_url'] ?? ''));
+        if ($arukeresoCategory !== '') {
+            return $arukeresoCategory;
+        }
+    }
+
+    $signals = remove_accents(mb_strtolower(
+        trim((string) ($row['title'] ?? '')) . ' ' . trim((string) ($row['banner_url'] ?? '')),
+        'UTF-8'
+    ));
+
+    $patterns = [
+        'mobil' => ['mobil', 'telefon', 'iphone', 'galaxy', 'redmi', 'xiaomi'],
+        'laptop' => ['laptop', 'notebook', 'macbook'],
+        'tv' => ['televizio', 'televizio', 'tv', 'oled', 'qled'],
+        'audio' => ['fulhallg', 'headphone', 'earbud', 'soundbar', 'hangszoro'],
+        'gaming' => ['playstation', 'xbox', 'nintendo', 'konzol', 'gamepad'],
+        'szepseg' => ['parfum', 'illat', 'kozmet', 'smink', 'krem'],
+        'sport' => ['sport', 'fitness', 'edzes', 'futo', 'bicikli', 'kerekpar'],
+        'jatek' => ['jatek', 'lego', 'baba', 'tarsas'],
+        'otthon' => ['konyha', 'lamp', 'matrac', 'porszivo', 'butor'],
+        'divat' => ['ruha', 'cip', 'taska', 'kabat'],
+    ];
+
+    foreach ($patterns as $bucket => $keywords) {
+        foreach ($keywords as $keyword) {
+            if (strpos($signals, $keyword) !== false) {
+                return $bucket;
+            }
+        }
+    }
+
+    return '';
+}
+
+function impactshop_auto_banner_recent_categories(array $seen_ids, array $rowsById, string $bucket, int $limit = 3): array
+{
+    if ($limit <= 0 || empty($seen_ids) || empty($rowsById)) {
+        return [];
+    }
+
+    $recent = [];
+    for ($i = count($seen_ids) - 1; $i >= 0; $i--) {
+        $seenId = (int) $seen_ids[$i];
+        if ($seenId <= 0 || !isset($rowsById[$seenId])) {
+            continue;
+        }
+        $row = $rowsById[$seenId];
+        if (impactshop_auto_banner_bucket_for_row($row) !== $bucket) {
+            continue;
+        }
+        $category = impactshop_auto_banner_category_for_row($row);
+        if ($category === '' || in_array($category, $recent, true)) {
+            continue;
+        }
+        $recent[] = $category;
+        if (count($recent) >= $limit) {
+            break;
+        }
+    }
+
+    return $recent;
+}
+
+function impactshop_auto_banner_bucket_pattern(): array
+{
+    $pattern = apply_filters('impactshop_auto_banner_bucket_pattern', ['cj', 'arukereso', 'dognet', 'arukereso']);
+    if (!is_array($pattern)) {
+        return ['cj', 'arukereso', 'dognet', 'arukereso'];
+    }
+    $pattern = array_values(array_filter(array_map(static function ($bucket) {
+        $bucket = strtolower(trim((string) $bucket));
+        return in_array($bucket, ['cj', 'dognet', 'arukereso'], true) ? $bucket : '';
+    }, $pattern)));
+    return !empty($pattern) ? $pattern : ['cj', 'arukereso', 'dognet', 'arukereso'];
+}
+
+function impactshop_auto_banner_bucket_order(array $availableBuckets, string $preferredBucket): array
+{
+    $pattern = impactshop_auto_banner_bucket_pattern();
+    $availableMap = array_fill_keys($availableBuckets, true);
+    $ordered = [];
+
+    $startIndex = array_search($preferredBucket, $pattern, true);
+    if ($startIndex === false) {
+        $startIndex = 0;
+    }
+
+    $count = count($pattern);
+    for ($offset = 0; $offset < $count; $offset++) {
+        $bucket = $pattern[($startIndex + $offset) % $count];
+        if (!isset($availableMap[$bucket]) || in_array($bucket, $ordered, true)) {
+            continue;
+        }
+        $ordered[] = $bucket;
+    }
+
+    foreach ($availableBuckets as $bucket) {
+        if (!in_array($bucket, $ordered, true)) {
+            $ordered[] = $bucket;
+        }
+    }
+
+    return $ordered;
+}
+
+function impactshop_auto_banner_pick_unseen(array $rows, array $seen_ids, array $all_rows): array
+{
+    if (empty($rows)) {
+        return [];
+    }
+
+    $rowsById = [];
+    foreach ($all_rows as $row) {
+        $rowsById[(int) ($row['id'] ?? 0)] = $row;
+    }
+
+    $lastRow = [];
+    if (!empty($seen_ids)) {
+        $lastSeenId = (int) end($seen_ids);
+        if ($lastSeenId > 0 && isset($rowsById[$lastSeenId])) {
+            $lastRow = $rowsById[$lastSeenId];
+        }
+    }
+
+    $lastBucket = !empty($lastRow) ? impactshop_auto_banner_bucket_for_row($lastRow) : '';
+    $lastCategory = !empty($lastRow) ? impactshop_auto_banner_category_for_row($lastRow) : '';
+    $recentArukeresoCategories = impactshop_auto_banner_recent_categories($seen_ids, $rowsById, 'arukereso', 3);
+
+    $pattern = impactshop_auto_banner_bucket_pattern();
+    $preferredBucket = $pattern[count($seen_ids) % count($pattern)];
+    $availableBuckets = array_values(array_unique(array_map('impactshop_auto_banner_bucket_for_row', $rows)));
+    $bucketOrder = impactshop_auto_banner_bucket_order($availableBuckets, $preferredBucket);
+
+    $passes = [
+        ['avoid_bucket' => true, 'avoid_category' => true],
+        ['avoid_bucket' => true, 'avoid_category' => false],
+        ['avoid_bucket' => false, 'avoid_category' => true],
+        ['avoid_bucket' => false, 'avoid_category' => false],
+    ];
+
+    foreach ($passes as $pass) {
+        foreach ($bucketOrder as $bucket) {
+            if ($pass['avoid_bucket'] && $lastBucket !== '' && $bucket === $lastBucket && count($availableBuckets) > 1) {
+                continue;
+            }
+
+            $bucketRows = array_values(array_filter($rows, static function ($row) use ($bucket) {
+                return impactshop_auto_banner_bucket_for_row($row) === $bucket;
+            }));
+            if (empty($bucketRows)) {
+                continue;
+            }
+
+            if ($pass['avoid_category'] && $lastCategory !== '') {
+                $differentCategoryRows = array_values(array_filter($bucketRows, static function ($row) use ($lastCategory) {
+                    $category = impactshop_auto_banner_category_for_row($row);
+                    return $category === '' || $category !== $lastCategory;
+                }));
+                if (!empty($differentCategoryRows)) {
+                    $bucketRows = $differentCategoryRows;
+                }
+            }
+
+            if ($bucket === 'arukereso' && !empty($recentArukeresoCategories)) {
+                $differentArukeresoRows = array_values(array_filter($bucketRows, static function ($row) use ($recentArukeresoCategories) {
+                    $category = impactshop_auto_banner_category_for_row($row);
+                    return $category === '' || !in_array($category, $recentArukeresoCategories, true);
+                }));
+                if (!empty($differentArukeresoRows)) {
+                    $bucketRows = $differentArukeresoRows;
+                }
+            }
+
+            if (!empty($bucketRows)) {
+                return $bucketRows[0];
+            }
+        }
+    }
+
+    return $rows[0];
+}
+
 /**
  * Get an active banner with rotation support.
  * Tracks seen banners per pseudo ID so users do not see repeats until the full active pool is exhausted.
@@ -411,7 +726,7 @@ function impactshop_auto_banner_get_active(string $pseudo_id = ''): array
     }
 
     $unseen = array_values($unseen);
-    $chosen = $unseen[0];
+    $chosen = impactshop_auto_banner_pick_unseen($unseen, $seen_ids, $rows);
 
     $seen_ids[] = (int) $chosen['id'];
     impactshop_auto_banner_store_seen_ids($pseudo_id, $seen_ids, count($rows));
@@ -431,7 +746,32 @@ function impactshop_auto_banner_resolve_image(string $image_url, string $shop_sl
         if ($filtered !== '') {
             return $filtered;
         }
-        return site_url('/wp-content/uploads/shops/' . $shop_slug . '-logo.png');
+
+        if (function_exists('isb_find_shop')) {
+            $row = isb_find_shop($shop_slug);
+            if (is_array($row)) {
+                $logoUrl = trim((string) ($row['logo_url'] ?? ''));
+                if ($logoUrl !== '') {
+                    return $logoUrl;
+                }
+
+                $candidateUrls = [
+                    (string) ($row['product_url'] ?? ''),
+                    (string) ($row['site'] ?? ''),
+                    (string) ($row['homepage'] ?? ''),
+                ];
+                foreach ($candidateUrls as $candidateUrl) {
+                    $host = (string) parse_url($candidateUrl, PHP_URL_HOST);
+                    if ($host === '') {
+                        continue;
+                    }
+                    $host = strtolower(preg_replace('~^www\.~i', '', $host));
+                    if ($host !== '') {
+                        return 'https://logo.clearbit.com/' . $host;
+                    }
+                }
+            }
+        }
     }
 
     return site_url('/wp-content/uploads/impactshop/ngo-card-default.jpg');
@@ -481,7 +821,7 @@ function impactshop_auto_banner_from_offer(array $offer, array $context = []): v
 
     $title = sanitize_text_field((string) $offer['title']);
     $shop_slug = sanitize_text_field((string) ($offer['shop_slug'] ?? ''));
-    if ($shop_slug === '' || !impactshop_is_whitelisted_partner($shop_slug)) {
+    if ($shop_slug === '' || impactshop_is_retired_shop($shop_slug) || !impactshop_is_whitelisted_partner($shop_slug)) {
         return;
     }
     $banner_url = esc_url_raw((string) ($offer['url'] ?? ''));
@@ -733,6 +1073,7 @@ add_action(IMPACTSHOP_AUTO_BANNER_FEED_CRON, function (): void {
     }
 
     $result = impactshop_auto_banner_import_file($file, 'feed', 'active');
+    $result['cleanup'] = impactshop_auto_banner_cleanup_non_whitelisted();
     $result['checked_at'] = current_time('mysql');
     update_option(IMPACTSHOP_AUTO_BANNER_FEED_IMPORT_OPTION, $result, false);
     if (function_exists('impactshop_ads_watch_log')) {
@@ -763,27 +1104,37 @@ function impactshop_auto_banner_cleanup_non_whitelisted(): array
 {
     global $wpdb;
     $table = $wpdb->prefix . 'impactshop_auto_banners';
-    $rows = $wpdb->get_results("SELECT id, shop_slug FROM {$table}", ARRAY_A);
+    $rows = $wpdb->get_results("SELECT id, shop_slug, banner_url FROM {$table}", ARRAY_A);
     $result = [
         'checked' => 0,
         'deleted' => 0,
         'kept' => 0,
+        'deleted_invalid_url' => 0,
     ];
 
     foreach ($rows as $row) {
         $result['checked']++;
-        $shop_slug = (string) ($row['shop_slug'] ?? '');
+        $raw_shop_slug = (string) ($row['shop_slug'] ?? '');
+        $shop_slug = $raw_shop_slug;
         if (strpos($shop_slug, 'sync:') === 0) {
             $shop_slug = substr($shop_slug, 5);
         }
 
-        if ($shop_slug !== '' && impactshop_is_whitelisted_partner($shop_slug)) {
-            $result['kept']++;
+        if ($shop_slug === '' || !impactshop_is_whitelisted_partner($shop_slug)) {
+            $wpdb->delete($table, ['id' => (int) $row['id']], ['%d']);
+            $result['deleted']++;
             continue;
         }
 
-        $wpdb->delete($table, ['id' => (int) $row['id']], ['%d']);
-        $result['deleted']++;
+        $banner_url = (string) ($row['banner_url'] ?? '');
+        if ($banner_url === '' || !impactshop_auto_banner_is_valid_banner_url($banner_url, $raw_shop_slug)) {
+            $wpdb->delete($table, ['id' => (int) $row['id']], ['%d']);
+            $result['deleted']++;
+            $result['deleted_invalid_url']++;
+            continue;
+        }
+
+        $result['kept']++;
     }
 
     return $result;

@@ -113,6 +113,8 @@
         externalNavigationSource: '',
         externalNavigationVisibilityLost: false,
         externalNavigationTimer: null,
+        autoBannerRewardBasePoints: 0,
+        autoBannerRewardBaseVotes: 0,
         autoBannerFrameId: null,
         autoBannerStartedAt: 0,
         autoBannerRemainingMs: 0,
@@ -211,6 +213,7 @@
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleExternalReturn);
         window.addEventListener('pageshow', handleExternalReturn);
+        window.addEventListener('resize', handleWindowResize);
 
         $('#btn-change-ngo').on('click', openNgoModal);
         $('#modal-close').on('click', closeNgoModal);
@@ -353,18 +356,14 @@
             const href = String($(this).attr('href') || '').trim();
             if (href && href !== '#') {
                 markExternalNavigation(href, 'sponsor_cta');
-                try {
-                    const popup = window.open(href, '_blank', 'noopener,noreferrer');
-                    if (!popup) {
+                window.setTimeout(function () {
+                    if (state.externalNavigationPending && !document.hidden) {
                         clearExternalNavigationState();
-                        showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
-                    } else {
-                        scheduleExternalReturnRecovery();
                     }
-                } catch (e) {
-                    clearExternalNavigationState();
-                    showCtaStickyNotice('A böngésző blokkolta az új ablakot. Engedélyezd a felugró ablakokat.');
-                }
+                }, 1500);
+            } else {
+                event.preventDefault();
+                clearExternalNavigationState();
             }
         });
 
@@ -427,7 +426,7 @@
                 .attr('href', clickUrl)
                 .attr('target', '_blank')
                 .attr('rel', 'noopener');
-            markExternalNavigation(clickUrl);
+            markExternalNavigation(clickUrl, 'auto_banner');
             window.setTimeout(function () {
                 if (state.externalNavigationPending && !document.hidden && !state.autoBannerPaused) {
                     clearExternalNavigationState();
@@ -2084,8 +2083,11 @@
     }
 
     function skipEducationVideo() {
-        if (document.hidden && state.currentMode === 'auto_banner' && state.externalNavigationPending) {
-            pauseAutoBannerForExternalNavigation();
+        if (document.hidden && state.externalNavigationPending) {
+            state.externalNavigationVisibilityLost = true;
+            if (state.currentMode === 'auto_banner') {
+                pauseAutoBannerForExternalNavigation();
+            }
         }
         if (!state.educationContent) {
             return;
@@ -2197,35 +2199,16 @@
         }
     }
 
-    function openExternalUrl(url, source) {
-        const href = String(url || '').trim();
-        if (!href || href === '#') {
-            return false;
-        }
-
-        markExternalNavigation(href, source || '');
-
-        try {
-            const popup = window.open(href, '_blank', 'noopener,noreferrer');
-            if (!popup) {
-                clearExternalNavigationState();
-                return false;
-            }
-            scheduleExternalReturnRecovery();
-            return true;
-        } catch (error) {
-            console.error('[AdsWatch] External open failed:', error);
-            clearExternalNavigationState();
-            return false;
-        }
-    }
-
     function markExternalNavigation(url, source) {
         state.externalNavigationPending = true;
         state.externalNavigationStartedAt = Date.now();
         state.externalNavigationUrl = String(url || '');
         state.externalNavigationSource = String(source || '');
         state.externalNavigationVisibilityLost = false;
+        if (state.externalNavigationTimer) {
+            clearTimeout(state.externalNavigationTimer);
+            state.externalNavigationTimer = null;
+        }
     }
 
     function clearExternalNavigationState() {
@@ -2240,20 +2223,10 @@
         }
     }
 
-    function scheduleExternalReturnRecovery() {
-        if (state.externalNavigationTimer) {
-            clearTimeout(state.externalNavigationTimer);
-        }
-        state.externalNavigationTimer = setTimeout(function () {
-            handleExternalReturn();
-        }, 1200);
-    }
-
     function handleExternalReturn() {
         if (!state.externalNavigationPending || document.hidden) {
             return;
         }
-
         if (!state.externalNavigationVisibilityLost) {
             clearExternalNavigationState();
             return;
@@ -2272,11 +2245,6 @@
                 clearExternalNavigationState();
             }
             return;
-        }
-
-        if (state.currentMode === 'sponsor') {
-            updateCta('', '', null);
-            hideVideoInfoPanel();
         }
 
         let resumed = false;
@@ -2309,6 +2277,12 @@
                     resumed = true;
                 }
             }
+        }
+
+        if (state.currentMode === 'sponsor') {
+            hideSponsorCta();
+            hideVideoInfoPanel();
+            state.ctaVisible = false;
         }
 
         if (resumed || state.isPlaying) {
@@ -3373,6 +3347,8 @@
         const bannerId = contentId || banner.id || '';
         const ctaPoints = Math.max(0, Number((cta && cta.points) || state.currentCtaPoints || 5));
         state.currentAutoBanner = banner || null;
+        state.autoBannerRewardBasePoints = Math.max(0, Math.round(Number(state.points || 0)));
+        state.autoBannerRewardBaseVotes = Math.max(0, Math.round(Number(state.availableVotes || 0)));
         prepareAutoBannerSurface();
         // Reset CTA tracking for new banner so bonus can be earned again
         state.ctaClicked = false;
@@ -3907,6 +3883,19 @@
         }
     }
 
+    function handleWindowResize() {
+        if (state.adsManager && state.isPlaying && (state.currentMode === 'regular' || state.currentMode === 'sponsor')) {
+            try {
+                const container = document.getElementById('video-container');
+                if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+                    state.adsManager.resize(container.clientWidth, container.clientHeight, google.ima.ViewMode.NORMAL);
+                }
+            } catch (e) {
+                // Ignore resize errors
+            }
+        }
+    }
+
     function onContentPauseRequested() {
         const videoElement = document.getElementById('content-video');
         if (videoElement) {
@@ -4057,8 +4046,7 @@
         });
 
         if (state.imaClickThroughUrl) {
-            markExternalNavigation(state.imaClickThroughUrl);
-            scheduleExternalReturnRecovery();
+            markExternalNavigation(state.imaClickThroughUrl, 'ima_cta');
         }
     }
 
@@ -4170,14 +4158,45 @@
                     state.lastVideoRewardPoints = points;
                     state.lastVideoRewardVotes = votes;
                     
-                    const displayPoints = points + ctaBonusPoints;
-                    const displayVotes = votes + ctaBonusVotes;
+                    let displayPoints = points + ctaBonusPoints;
+                    let displayVotes = votes + ctaBonusVotes;
+                    if (adType === 'auto_banner') {
+                        const bannerDeltaPoints = Math.max(
+                            0,
+                            Math.round(Number(state.points || 0)) - Math.max(0, Math.round(Number(state.autoBannerRewardBasePoints || 0)))
+                        );
+                        const bannerDeltaVotes = Math.max(
+                            0,
+                            Math.round(Number(state.availableVotes || 0)) - Math.max(0, Math.round(Number(state.autoBannerRewardBaseVotes || 0)))
+                        );
+                        displayPoints = Math.max(displayPoints, bannerDeltaPoints);
+                        displayVotes = Math.max(displayVotes, bannerDeltaVotes);
+                    }
                     state.ctaUiDeferred = false;
+
+                    // Override the delta overlay to show combined reward (view + CTA bonus)
+                    // when CTA bonus was deferred during banner playback.
+                    if (ctaBonusPoints > 0) {
+                        showVideoBalanceDelta('points', displayPoints);
+                    }
+                    if (ctaBonusVotes > 0) {
+                        showVideoBalanceDelta('votes', displayVotes);
+                    }
 
                     if (displayPoints > 0 || displayVotes > 0) {
                         showRewardAnimation(displayPoints, displayVotes);
                     } else {
                         showNotification('A megtekintést már rögzítettük.', 'warning');
+                    }
+
+                    // Show explicit notification for CTA bonus
+                    if (ctaBonusPoints > 0 || ctaBonusVotes > 0) {
+                        var ctaParts = [];
+                        if (displayPoints > 0) ctaParts.push('+' + displayPoints + ' pont');
+                        if (displayVotes > 0) ctaParts.push('+' + displayVotes + ' szavazat');
+                        if (ctaParts.length > 0) {
+                            showNotification(ctaParts.join(', '), 'success');
+                        }
                     }
                     
                     hideCtaStickyNotice();
@@ -4248,6 +4267,8 @@
         state.autoBannerRemainingMs = 0;
         state.autoBannerTotalMs = 0;
         state.autoBannerOnComplete = null;
+        state.autoBannerRewardBasePoints = 0;
+        state.autoBannerRewardBaseVotes = 0;
         clearExternalNavigationState();
         updateWatchButton();
         $('#player-overlay').fadeIn(200);
@@ -4388,8 +4409,9 @@
     }
 
     function showRewardAnimation(points, votes) {
-        // Reward popups are intentionally disabled.
-        // Real-time feedback is shown by the animated in-player balance counters.
+        // Reward popups are intentionally disabled for auto views.
+        // Real-time feedback is shown by the animated in-player balance counters
+        // and explicit notifications for CTA bonus rewards.
         return;
     }
 

@@ -366,6 +366,30 @@
     @media (max-width: 720px) {
       .hero { padding: 24px; }
       .nav { justify-content: center; }
+      .grid,
+      .split {
+        grid-template-columns: 1fr;
+      }
+      .card {
+        min-width: 0;
+        padding: 20px;
+      }
+      .hero .cta,
+      .hero .cta-secondary {
+        width: 100%;
+        justify-content: center;
+        margin-right: 0;
+        margin-bottom: 10px;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+      th, td {
+        min-width: 110px;
+      }
     }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -387,14 +411,19 @@
     <!-- Hero Section -->
     <section class="hero fade-in" id="mi-ez">
       <div>
-        <span class="pill">🎴 Beágyazható Widget</span>
-        <h1>NGO Card – Útmutató</h1>
+        <span class="pill">🎴 Beágyazható widget NGO-knak</span>
+        <h1>NGO Card – beágyazási útmutató</h1>
         <p style="font-size: 1.1rem; color: var(--ink);">
           <strong>Élő adomány kijelzés:</strong> Beágyazható kártya a saját weboldaladra, 
           ami automatikusan mutatja az eddig gyűjtött támogatást.
         </p>
         <p>
-          Egyetlen kódrészlet – és máris látják a látogatóid, mennyi adományt gyűjtöttetek!
+          Egyetlen kódrészlet – és máris látják a látogatóid, mennyi adományt gyűjtöttetek.
+          Ez a kanonikus guide ahhoz, ha a Sharity jelenlétét a saját NGO oldaladon szeretnéd láthatóvá tenni.
+        </p>
+        <p style="padding: 14px 16px; border-radius: 14px; background: rgba(11, 31, 42, 0.05); color: var(--ink);">
+          <strong>Mikor használd?</strong> Akkor, ha van saját weboldalad, és szeretnéd egyszerre növelni a hitelességet,
+          az átláthatóságot és a Sharityből érkező támogatások láthatóságát.
         </p>
         <div style="margin-top: 20px;">
           <a href="#beagyazas" class="cta">📋 Kód másolása</a>
@@ -447,6 +476,15 @@
           Egyetlen kódrészlet beillesztése – semmi több!
         </p>
       </div>
+    </div>
+
+    <div class="callout fade-in">
+      <h3>🧭 Hogyan illeszkedik a guide-rendszerbe?</h3>
+      <p>
+        Az <strong>NGO Card</strong> a saját weboldaladon növeli a láthatóságot. Ha a támogatás gyűjtésének csatornáit is
+        szeretnéd erősíteni, nézd meg az <a href="/ngo-guides/impact-shop/" style="font-weight: 700;">Impact Shop</a>
+        és az <a href="/ngo-guides/impact-challenge/" style="font-weight: 700;">Impact Challenge</a> útmutatókat is.
+      </p>
     </div>
 
     <!-- Demo -->

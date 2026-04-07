@@ -30,18 +30,27 @@ if not repo_root or not repo_remote or not repo_branch:
     print("❌ Guard preflight: hiányzó repo meta (root/remote/branch).")
     sys.exit(1)
 
-if root != repo_root:
-    print(f"❌ Guard preflight: repo root mismatch. current={root} expected={repo_root}")
-    sys.exit(1)
+def git_output(*args: str) -> str:
+    try:
+        return subprocess.check_output(["git", "-C", root, *args], text=True).strip()
+    except subprocess.CalledProcessError:
+        return ""
 
-try:
-    current_remote = subprocess.check_output(["git", "-C", root, "remote", "get-url", "origin"], text=True).strip()
-except subprocess.CalledProcessError:
-    current_remote = ""
-try:
-    current_branch = subprocess.check_output(["git", "-C", root, "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
-except subprocess.CalledProcessError:
-    current_branch = ""
+current_remote = git_output("remote", "get-url", "origin")
+current_branch = git_output("rev-parse", "--abbrev-ref", "HEAD")
+common_dir_raw = git_output("rev-parse", "--git-common-dir")
+current_common_dir = os.path.realpath(os.path.join(root, common_dir_raw)) if common_dir_raw else ""
+expected_common_dir = os.path.realpath(os.path.join(repo_root, ".git"))
+
+same_repo_root = root == repo_root
+same_common_dir = current_common_dir == expected_common_dir if current_common_dir else False
+
+if not (same_repo_root or same_common_dir):
+    print(
+        f"❌ Guard preflight: repo root mismatch. current={root} expected={repo_root} "
+        f"current_common={current_common_dir or '<unknown>'} expected_common={expected_common_dir}"
+    )
+    sys.exit(1)
 
 if current_remote != repo_remote:
     print(f"❌ Guard preflight: remote mismatch. current={current_remote} expected={repo_remote}")

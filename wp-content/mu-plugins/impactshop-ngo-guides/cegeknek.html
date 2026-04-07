@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Csatlakozz a Sharity-hez – Cégeknek | Sharity</title>
-  <meta name="description" content="Legyél Sharity partner! Affiliate, szponzori vagy közvetlen integráció – válaszd ki a hozzád illő csatlakozási módot és támogasd a civil szervezeteket vásárlóiddal együtt.">
+  <meta name="description" content="Legyél Sharity partner! Webshop, offline üzlet, szolgáltató — affiliate, szponzori, Offerwall vagy közvetlen integráció. Támogasd a civil szervezeteket ügyfeleddel együtt.">
   <meta property="og:title" content="Sharity Partneri Csatlakozás – Cégeknek">
-  <meta property="og:description" content="Növeld a lojalitást, szerezz új vásárlókat és tégy jót – mindezt egyetlen integrációval.">
+  <meta property="og:description" content="Növeld az eladásaidat, az elköteleződést és a márkád erejét — jótékonysággal. Online és offline egyaránt.">
   <meta property="og:url" content="https://app.sharity.hu/cegeknek">
   <style>
     :root {
@@ -77,6 +77,26 @@
     .nav a:hover {
       background: rgba(59, 130, 246, 0.1);
       text-decoration: none;
+    }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: transparent;
     }
 
     .hero {
@@ -170,6 +190,10 @@
       border: 2px solid var(--sun);
       background: linear-gradient(135deg, rgba(245, 182, 66, 0.1) 0%, #fff 100%);
     }
+    .card.coral {
+      border: 2px solid var(--coral);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, #fff 100%);
+    }
 
     .card-icon {
       display: inline-flex;
@@ -186,6 +210,7 @@
     .card-icon.purple { background: rgba(124, 58, 237, 0.12); }
     .card-icon.sun { background: rgba(245, 182, 66, 0.2); }
     .card-icon.mint { background: rgba(111, 227, 193, 0.2); }
+    .card-icon.coral { background: rgba(255, 107, 107, 0.15); }
 
     .list {
       margin: 0;
@@ -255,6 +280,10 @@
     .badge.teal {
       background: rgba(15, 138, 157, 0.15);
       color: #0f766e;
+    }
+    .badge.coral {
+      background: rgba(255, 107, 107, 0.15);
+      color: #b91c1c;
     }
 
     .callout {
@@ -430,42 +459,54 @@
     <!-- Navigation -->
     <nav class="nav fade-in">
       <a href="#elonyok">Előnyök</a>
+      <a href="#ugyfelek">Hogyan hozunk ügyfeleket?</a>
       <a href="#csatlakozas">Csatlakozási módok</a>
+      <a href="#meret">KKV & Nagyvállalat</a>
       <a href="#araink">Áraink</a>
       <a href="#hogyan">Hogyan működik?</a>
       <a href="#faq">GYIK</a>
-      <a href="/partner-api">Partner API Docs →</a>
+      <a href="/partner-api">Fejlesztői API →</a>
+      <div class="lang-switch" aria-label="Nyelvválasztó">
+        <a href="?lang=hu" class="active" aria-current="true">HU</a>
+        <a href="?lang=en"><span aria-hidden="true">&#127760;</span> EN</a>
+      </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Section — §1.1 -->
     <section class="hero fade-in" id="mi-ez">
       <div>
         <span class="pill">🏢 Cégeknek & Márkáknak</span>
-        <h1>Növeld az eladásaidat<br>jótékonysággal</h1>
+        <h1>Növeld az eladásaidat, az elköteleződést és a márkád erejét — jótékonysággal</h1>
         <p style="font-size: 1.1rem; color: var(--ink);">
-          <strong>A Sharity összekötő kapocs</strong> a vásárlók, a webshopok és a civil szervezetek között. 
-          A vásárlóid kedvezményt kapnak – te új, lojális ügyfeleket nyersz – és közben adomány megy jó célra.
+          <strong>A Sharity összeköti az ügyfeleidet, a cégedet és a civil szervezeteket.</strong>
+          Legyen szó webshopról, offline üzletről vagy szolgáltatásról — a Sharity minden
+          értékesítési csatornán működik. KKV-ként is, nagyvállalatként is.
         </p>
         <p>
-          500+ partner webshop, 50.000+ aktív felhasználó, 100+ civil szervezet. Csatlakozz te is!
+          500+ partner · 35 000+ aktív felhasználó · 300+ civil szervezet · 25M+ Ft adomány
+        </p>
+        <p style="padding: 14px 16px; border-radius: 14px; background: rgba(11, 31, 42, 0.05); color: var(--ink);">
+          <strong>Ez a fő partner belépőoldal.</strong> Ha az üzleti modell és a csatlakozási forma már tiszta,
+          a fejlesztőd a <a href="/partner-api" style="font-weight: 700;">Partner API technikai dokumentációban</a>
+          tud továbblépni.
         </p>
         <div style="margin-top: 20px;">
           <a href="#csatlakozas" class="cta">🚀 Csatlakozom</a>
-          <a href="#hogyan" class="cta-secondary">Hogyan működik?</a>
+          <a href="#hogyan" class="cta-secondary">Üzleti áttekintés</a>
         </div>
       </div>
       <div>
         <div class="stats-grid">
           <div class="stat-box">
             <span class="number">500+</span>
-            <span class="label">Partner webshop</span>
+            <span class="label">Partner cég</span>
           </div>
           <div class="stat-box">
-            <span class="number">50K+</span>
+            <span class="number">35K+</span>
             <span class="label">Aktív felhasználó</span>
           </div>
           <div class="stat-box">
-            <span class="number">100+</span>
+            <span class="number">300+</span>
             <span class="label">Civil szervezet</span>
           </div>
           <div class="stat-box">
@@ -476,60 +517,203 @@
       </div>
     </section>
 
-    <!-- Miért éri meg -->
+    <!-- Miért éri meg — §1.2 (6 meglévő + 3 új kártya) -->
     <h2 class="section-title fade-in" id="elonyok">💡 Miért éri meg csatlakozni?</h2>
-    
+
     <div class="grid fade-in">
       <div class="card">
         <div class="card-icon">🎯</div>
         <h3>Célzott, elkötelezett közönség</h3>
         <p style="margin-top: 12px;">
-          A Sharity felhasználói <strong>tudatosan vásárolnak</strong> – a civil szervezetek aktívan ajánlják partnereinket közösségeiknek.
+          A Sharity felhasználói <strong>tudatosan vásárolnak</strong> – a civil szervezetek <strong>NGO Card hálózatukon</strong> és közösségeiken keresztül aktívan ajánlják partnereinket.
         </p>
       </div>
       <div class="card">
         <div class="card-icon teal">💝</div>
         <h3>CSR és márkaépítés</h3>
         <p style="margin-top: 12px;">
-          Minden vásárlásból adomány lesz. <strong>Jótékonykodj úgy, hogy a vásárlódnak sem kerül többe</strong> – pozitív márkaimage garantálva.
+          Minden vásárlásból adomány lesz. <strong>Jótékonykodj úgy, hogy az ügyfelednek sem kerül többe</strong> – pozitív márkaimage garantálva.
         </p>
       </div>
       <div class="card">
         <div class="card-icon purple">🔁</div>
         <h3>Magasabb visszatérési arány</h3>
         <p style="margin-top: 12px;">
-          A Sharity ID tulajdonosok <strong>kedvezményt kapnak nálad</strong> – ez lojális, visszatérő vásárlókat jelent.
+          A Sharity ID tulajdonosok <strong>kedvezményt kapnak nálad</strong> – ez lojális, visszatérő ügyfeleket / vásárlókat jelent.
         </p>
       </div>
       <div class="card">
         <div class="card-icon sun">📺</div>
-        <h3>Ingyenes reklámfelület</h3>
+        <h3>Reklámfelület az <a href="https://app.sharity.hu/ngo-guides/impact-challenge/" target="_blank" style="color: var(--blue);">Impact Challenge</a>-ban</h3>
         <p style="margin-top: 12px;">
-          Partnerként a bannered/videód <strong>ingyen fut az Impact Challenge-ban</strong> – eléred a legaktívabb támogatókat.
+          <strong>Direct partnerként</strong> a bannered/videód <strong>ingyen fut az <a href="https://app.sharity.hu/ngo-guides/impact-challenge/" target="_blank" style="color: var(--blue);">Impact Challenge</a>-ban</strong> — eléred a legaktívabb támogatókat. Affiliate partnereknél a megjelenés a jutalékból fedeződik. Szponzori/márkaépítési megjelenés egyedi árazású.
         </p>
       </div>
       <div class="card">
         <div class="card-icon mint">🎰</div>
         <h3>Nyereményjátékok</h3>
         <p style="margin-top: 12px;">
-          Vásárlóid automatikusan részt vesznek a Sharity tomboláin. <strong>Felajánlhatsz nyereményt is</strong> – a nyertes akár új törzsvendéged lehet!
+          Ügyfeleid automatikusan részt vesznek a Sharity tomboláin. <strong>Felajánlhatsz nyereményt is</strong> – a nyertes akár új törzsvendéged lehet!
         </p>
       </div>
       <div class="card">
         <div class="card-icon">📊</div>
         <h3>Átlátható riportok</h3>
         <p style="margin-top: 12px;">
-          Partner dashboardon látod a <strong>tranzakciókat, KPI-kat</strong>, és az általad generált társadalmi hatást.
+          Partner dashboardon látod a <strong>tranzakciókat, KPI-kat</strong>, és az általad generált társadalmi hatást <strong>ESG-kompatibilis formátumban is</strong>.
+        </p>
+      </div>
+      <!-- 3 ÚJ kártya — §1.2 -->
+      <div class="card coral">
+        <div class="card-icon coral">🧩</div>
+        <h3>Offerwall — Ismerd meg az ügyfeleidet</h3>
+        <p style="margin-top: 12px;">
+          Kérdőívek, kvízek, játékok és interaktív feladatok a Sharity felületen. A felhasználók
+          pontot kapnak a kitöltésért, te pedig <strong>valós fogyasztói insightokat</strong>. Csatlakozhatsz meglévő
+          offerwall hálózaton (pl. Bitlabs, Pollfish) vagy közvetlenül egyedi megállapodással.
+        </p>
+      </div>
+      <div class="card sun">
+        <div class="card-icon sun">🏪</div>
+        <h3>Online és offline — mindenhol működik</h3>
+        <p style="margin-top: 12px;">
+          Nem csak webshopoknak: <strong>éttermek, boltok, szalonok, szállodák, fitness-termek</strong> — bármely
+          fizikai üzlet is integrálhatja a Sharity-t. NFC-s Sharity ID a kasszánál
+          vagy QR-kód a nyugtán — az offline világ is a rendszer része.
+        </p>
+      </div>
+      <div class="card highlight">
+        <div class="card-icon">🏆</div>
+        <h3>Gamifikáció — pontok, szintek, szavazatok</h3>
+        <p style="margin-top: 12px;">
+          A Sharity motivációs rendszere (pontgyűjtés, szintlépés, <a href="https://app.sharity.hu/ngo-guides/impact-challenge/" target="_blank" style="color: var(--blue);">Impact Challenge</a> szavazatok)
+          <strong>folyamatosan aktiválja az ügyfeleidet</strong>. Nem csak a vásárláskor — hanem közte is. Ez magasabb
+          engagement-et, visszatérést és márkahűséget jelent a partnereink számára.
+        </p>
+        <p style="margin-top: 8px; font-size: 0.9rem;">
+          🔗 <a href="https://app.sharity.hu/rolunk/#pontok" target="_blank" style="color: var(--blue); font-weight: 600;">Miért gyűjtenek a felhasználók pontokat és szavazatokat? →</a>
+        </p>
+        <p style="margin-top: 8px; font-size: 0.9rem; color: var(--muted);">⏱️ Tájékoztató ütem: Bronze néhány nap, Silver ~3–4 hét, Gold ~2–3 hónap, Platinum ~3–4 hónap, Legend ~6–7 hónap (folyamatos aktivitás mellett).</p>
+        <div style="margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+          <div style="font-weight: 600; margin-bottom: 6px;">Mi szükséges az egyes szintekhez?</div>
+          <ul style="margin: 0 0 6px 18px;">
+            <li>Bronze: már néhány nap aktív használattal elérhető</li>
+            <li>Silver: rendszeres, heti 5+ napos aktivitással ~1 hónap</li>
+            <li>Gold: aktív felhasználóknak ~2–3 hónap</li>
+            <li>Platinum: elkötelezett, napi szintű használattal ~3–4 hónap</li>
+            <li>Legend: a legaktívabbaknak ~6–7 hónap folyamatos részvétellel</li>
+          </ul>
+          <div style="font-size: 0.85rem; color: var(--muted);">Alkalmi használat mellett a Platinum/Legend tipikusan nem elérhető.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÚJ SZEKCIÓ: Hogyan hozunk ügyfeleket? — §1.3 -->
+    <h2 class="section-title fade-in" id="ugyfelek">🎯 Hogyan hozunk neked ügyfeleket?</h2>
+
+    <div class="grid fade-in">
+      <!-- 1. NGO hálózat -->
+      <div class="card teal">
+        <div class="card-icon teal">🌍</div>
+        <h3>1. NGO hálózat — 300+ civil szervezet, mint lead forrás</h3>
+        <p style="margin-top: 12px;">
+          A Sharity-ben részt vevő <strong>300+ civil szervezet</strong> mindegyike aktívan kommunikálja
+          támogatóinak, hogy a partnereinknél vásárolva automatikusan jótékonykodhatnak.
+        </p>
+        <div class="callout" style="margin-top: 16px;">
+          <h3 style="font-size: 1rem;">🪪 NGO Card</h3>
+          <p>
+            Minden szervezet kap egy <strong>digitális kártyát (<a href="https://app.sharity.hu/ngo-guides/ngo-card/" target="_blank" style="color: var(--teal); font-weight: 600;">NGO Card</a>)</strong>, amit a
+            közösségi médiában, hírlevelükben és eseményeiken osztanak meg. Ez a kártya
+            közvetlenül a te ajánlatodhoz is vezet, ha az NGO támogatói nálad vásárolnak.
+          </p>
+        </div>
+        <p style="margin-top: 12px; font-weight: 600; color: var(--teal);">
+          → Ingyenes, organikus lead-gen — a civil szervezet hozza a közönséget, te csak a minőségi ajánlatot adod.
+        </p>
+      </div>
+
+      <!-- 2. Motivációs rendszer -->
+      <div class="card" style="border: 2px solid var(--sun); background: linear-gradient(135deg, rgba(245, 182, 66, 0.06) 0%, #fff 100%);">
+        <div class="card-icon sun">🏆</div>
+        <h3>2. Motivációs rendszer — az ügyfél mindig aktív</h3>
+        <p style="margin-top: 12px;">
+          A Sharity felhasználói nem csak vásárláskor vannak jelen. Minden aktivitásért pontot és szavazatot kapnak — vásárlásnál kedvezményt is.
+        </p>
+        <div style="margin-top: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table style="font-size: 0.8rem; table-layout: fixed; width: 100%; word-wrap: break-word; overflow-wrap: break-word;">
+          <colgroup>
+            <col style="width: 38%;">
+            <col style="width: 62%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="background: rgba(245, 182, 66, 0.15); color: var(--ink); padding: 8px 8px;">Aktivitás</th>
+              <th style="background: rgba(245, 182, 66, 0.15); color: var(--ink); padding: 8px 8px;">Miért jó neked?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px 8px;">Videónézés (<a href="https://app.sharity.hu/ngo-guides/impact-challenge/" target="_blank" style="color: var(--blue);">IC</a>)</td>
+              <td style="padding: 8px 8px;">A bannered/videód megjelenik (Direct: ingyen, Affiliate: jutalékból)</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Szavazás NGO-ra</td>
+              <td style="padding: 8px 8px;">Magasabb szint = lojálisabb ügyfél</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Kérdőív kitöltés (Offerwall)</td>
+              <td style="padding: 8px 8px;">Insightokat kapsz a fogyasztóidról</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Vásárlás nálad</td>
+              <td style="padding: 8px 8px;">Visszatérő, elkötelezett ügyfél</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Vásárlás értékelése</td>
+              <td style="padding: 8px 8px;">Valós vásárlói visszajelzés a partnerednek</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Kvíz / játék</td>
+              <td style="padding: 8px 8px;">Engagement a vásárlások között is</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <p style="margin-top: 12px; font-weight: 600; color: var(--ink);">
+          → Az ügyfél a te márkáddal is rendszeresen találkozik — nem csak vásárláskor.
+        </p>
+        <p style="margin-top: 8px; font-size: 0.9rem;">
+          🔗 <a href="https://app.sharity.hu/rolunk/#pontok" target="_blank" style="color: var(--blue); font-weight: 600;">Miért gyűjtenek pontot és szavazatot? Részletes magyarázat →</a>
+        </p>
+      </div>
+
+      <!-- 3. Pozitív hatásmérés -->
+      <div class="card">
+        <div class="card-icon mint">📏</div>
+        <h3>3. Pozitív hatásmérés — a CSR, ami valódi</h3>
+        <p style="margin-top: 12px;">
+          Minden partnerünk számára készítünk hatásriportot:
+        </p>
+        <ul class="list" style="margin-top: 12px;">
+          <li><strong>Hány Ft adomány</strong> keletkezett a te ügyfeleidnek köszönhetően</li>
+          <li><strong>Hány civil szervezet</strong> kapott támogatást</li>
+          <li><strong>Hány ügyfeled</strong> vesz részt aktívan a Sharity-ben</li>
+          <li><strong>ESG-kompatibilis</strong> összesítés az éves CSR jelentésedhez</li>
+          <li><strong>Pozitív hatásindikátorok</strong> az ESG jelentésedhez (Big4 validált módszertan)</li>
+        </ul>
+        <p style="margin-top: 12px; font-weight: 600; color: var(--ink);">
+          → Ez nem öncélú zöldmosás — <strong>minden adomány valós, auditálható, transzparens</strong>.
         </p>
       </div>
     </div>
 
-    <!-- Csatlakozási módok -->
+    <!-- Csatlakozási módok — §1.4 (3+1 Offerwall) -->
     <h2 class="section-title fade-in" id="csatlakozas">🔌 Csatlakozási módok</h2>
-    
+
     <p class="fade-in" style="font-size: 1.05rem; max-width: 700px;">
-      Válaszd ki a hozzád illő csatlakozási módot! Bármelyiket választod, a végeredmény ugyanaz: 
-      vásárlóid kedvezményt kapnak, te új ügyfeleket szerzel, és közben adomány megy jó célra.
+      Válaszd ki a hozzád illő csatlakozási módot! Bármelyiket választod, a végeredmény ugyanaz:
+      ügyfeleid kedvezményt kapnak, te új vevőket szerzel, és közben adomány megy jó célra.
     </p>
 
     <div class="grid fade-in">
@@ -540,14 +724,14 @@
         <span class="badge teal">Leggyorsabb</span>
         <span class="badge green">0 Ft indulás</span>
         <p style="margin-top: 16px;">
-          Ha már affiliate hálózat tagja vagy (Dognet, Tradedoubler, CJ stb.), 
+          Ha már affiliate hálózat tagja vagy (Dognet, Tradedoubler, CJ stb.),
           <strong>azonnal megjelenhetsz</strong> az Impact Shopban.
         </p>
         <ul class="list" style="margin-top: 16px;">
           <li>Nincs technikai integráció</li>
           <li>Meglévő affiliate jutalékból megy</li>
           <li>Banner és deal feltöltése</li>
-          <li>Azonnal elérhető 50K+ felhasználónak</li>
+          <li>Azonnal elérhető 35K+ felhasználónak</li>
         </ul>
         <div style="margin-top: 20px;">
           <a href="mailto:office@sharity.hu?subject=Affiliate%20partner%20csatlakozás" class="cta" style="background: var(--teal); width: 100%; text-align: center; display: block;">
@@ -563,7 +747,7 @@
         <span class="badge purple">Márkaépítés</span>
         <span class="badge sun">Impact Challenge</span>
         <p style="margin-top: 16px;">
-          Szeretnél <strong>videót vagy bannert futtatni</strong> a Sharity platformon? 
+          Szeretnél <strong>videót vagy bannert futtatni</strong> a Sharity platformon?
           Eléred a legaktívabb, társadalmilag tudatos közönséget.
         </p>
         <ul class="list" style="margin-top: 16px;">
@@ -586,7 +770,7 @@
         <span class="badge">Saját integráció</span>
         <span class="badge green">Kedvezmények</span>
         <p style="margin-top: 16px;">
-          Nincs affiliate hálózatod? Semmi gond! A <strong>Partner API-val közvetlen integrációt</strong> 
+          Nincs affiliate hálózatod? Semmi gond! A <strong>Partner API-val közvetlen integrációt</strong>
           építhetsz – és még kedvezményt is adhatsz Sharity ID-val.
         </p>
         <ul class="list" style="margin-top: 16px;">
@@ -597,15 +781,96 @@
         </ul>
         <div style="margin-top: 20px;">
           <a href="/partner-api" class="cta" style="width: 100%; text-align: center; display: block;">
-            Partner API dokumentáció
+            Fejlesztőnek: Partner API
+          </a>
+        </div>
+      </div>
+
+      <!-- ÚJ: Offerwall Partner — §1.4 -->
+      <div class="card coral">
+        <div class="card-icon coral">🧩</div>
+        <h3>Offerwall Partner</h3>
+        <span class="badge coral">Fogyasztói insightok</span>
+        <span class="badge sun">Egyedi megállapodás</span>
+        <p style="margin-top: 16px;">
+          Szeretnéd jobban megismerni az ügyfeleidet? Az Offerwall-on keresztül <strong>kérdőíveket,
+          kvízeket, játékokat</strong> és interaktív tartalmakat futtathatsz a Sharity felhasználói
+          számára.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>Kérdőívek, kvízek, játékok, feladatok</li>
+          <li>Csatlakozás meglévő offerwall providereken (Bitlabs, Pollfish) vagy közvetlenül</li>
+          <li>Felhasználók pontot kapnak — motivált kitöltés</li>
+          <li>Valós fogyasztói insight a célközönségedről</li>
+          <li>Egyedi megállapodás és díjazás</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="mailto:office@sharity.hu?subject=Offerwall%20partner%20érdeklődés" class="cta" style="background: var(--coral); width: 100%; text-align: center; display: block;">
+            Érdeklődöm
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Összehasonlító táblázat -->
+    <!-- ÚJ SZEKCIÓ: KKV vs Nagyvállalat — §1.6 -->
+    <h2 class="section-title fade-in" id="meret">🏢 KKV-nak és nagyvállalatnak is</h2>
+
+    <div class="split fade-in">
+      <div class="card">
+        <h3>Kis- és középvállalkozások (KKV)</h3>
+        <table style="margin-top: 12px;">
+          <tbody>
+            <tr>
+              <td><strong>0 Ft indulás</strong></td>
+              <td>Nincs belépési díj, nincs havi fix — az affiliate és direct partner mód ingyenes</td>
+            </tr>
+            <tr>
+              <td><strong>Azonnali lead-gen</strong></td>
+              <td>Az NGO hálózat azonnal hoz célzott forgalmat — nem kell marketingbüdzsé</td>
+            </tr>
+            <tr>
+              <td><strong>Differenciáció</strong></td>
+              <td>A jótékonysági elem megkülönböztet a versenytársaktól</td>
+            </tr>
+            <tr>
+              <td><strong>Könnyű integráció</strong></td>
+              <td>Affiliate: 0 fejlesztés; Direct: egyszerű webhook</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Nagyvállalatok és multik</h3>
+        <table style="margin-top: 12px;">
+          <tbody>
+            <tr>
+              <td><strong>ESG / CSR riporting</strong></td>
+              <td>Auditálható, transzparens hatásriport az éves jelentéshez</td>
+            </tr>
+            <tr>
+              <td><strong>Munkavállalói engagement</strong></td>
+              <td>Belső CSR program: a dolgozók a Sharity-n keresztül is adományozhatnak</td>
+            </tr>
+            <tr>
+              <td><strong>Offerwall: piackutatás</strong></td>
+              <td>Kérdőívek, kvízek a motivált Sharity közönséggel — jobb válaszarány</td>
+            </tr>
+            <tr>
+              <td><strong>Egyedi integráció</strong></td>
+              <td>Partner API: teljes testreszabás, dedikált support</td>
+            </tr>
+            <tr>
+              <td><strong>Márkaépítés</strong></td>
+              <td>Impact Challenge szponzori megjelenés: nagy elérés, pozitív kontextus</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Összehasonlító táblázat — §1.5 (bővített, +Offerwall oszlop) -->
     <h2 class="section-title fade-in">📋 Összehasonlítás</h2>
-    
+
     <div class="card fade-in" style="overflow-x: auto;">
       <table>
         <thead>
@@ -614,6 +879,7 @@
             <th>Affiliate Partner</th>
             <th>Szponzor</th>
             <th>Direct Partner</th>
+            <th>Offerwall</th>
           </tr>
         </thead>
         <tbody>
@@ -622,17 +888,20 @@
             <td><span class="badge green">0 Ft</span></td>
             <td>Egyedi árazás</td>
             <td><span class="badge green">0 Ft</span></td>
+            <td>Egyedi</td>
           </tr>
           <tr>
             <td>Technikai integráció</td>
             <td>Nem kell</td>
             <td>Banner/videó feltöltés</td>
             <td>API integráció</td>
+            <td>Egyedi vagy provider</td>
           </tr>
           <tr>
             <td>Impact Shop megjelenés</td>
             <td>✅ Igen</td>
             <td>✅ Banner</td>
+            <td>✅ Igen</td>
             <td>✅ Igen</td>
           </tr>
           <tr>
@@ -640,41 +909,52 @@
             <td>✅ Ingyenes</td>
             <td>✅ Kiemelt</td>
             <td>✅ Ingyenes</td>
+            <td>✅ Ingyenes</td>
           </tr>
           <tr>
             <td>Kedvezmény Sharity ID-val</td>
             <td>❌</td>
             <td>❌</td>
             <td>✅ Saját beállítás</td>
+            <td>❌</td>
+          </tr>
+          <tr>
+            <td>Fogyasztói insight</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>✅ Kérdőívek, kvízek</td>
           </tr>
           <tr>
             <td>Partner dashboard</td>
             <td>Affiliate hálózaté</td>
             <td>✅ Kampány riport</td>
             <td>✅ Teljes analytics</td>
+            <td>✅ Kampány + insight riport</td>
           </tr>
           <tr>
             <td>Ideális</td>
             <td>Webshopok affiliate-tel</td>
             <td>Márkák, nagyvállalatok</td>
             <td>Saját rendszerrel dolgozók</td>
+            <td>Marketing / research</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Árazás -->
+    <!-- Árazás — §1.8 (3+1 Offerwall ár) -->
     <h2 class="section-title fade-in" id="araink">💰 Áraink</h2>
 
     <div class="callout blue fade-in">
       <h3>🎁 Nincs csatlakozási díj!</h3>
       <p>
-        Az affiliate és direct partner csatlakozás <strong>ingyenes</strong>. 
+        Az affiliate és direct partner csatlakozás <strong>ingyenes</strong>.
         Csak a sikeres tranzakciók után fizetsz – és azt is te határozod meg, mennyi legyen.
       </p>
     </div>
-    
-    <div class="grid fade-in">
+
+    <div class="grid fade-in" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
       <!-- Affiliate -->
       <div class="card pricing-card">
         <div class="card-icon teal" style="margin: 0 auto 16px;">🔗</div>
@@ -701,11 +981,11 @@
         <ul class="list" style="text-align: left; margin-top: 20px;">
           <li>Nincs fix díj</li>
           <li>Kedvezmény rendszer</li>
-          <li>Partner API hozzáférés</li>
+          <li>Partner API hozzáférés a fejlesztői csapatodnak</li>
           <li>Teljes dashboard</li>
         </ul>
         <a href="/partner-api" class="cta">
-          Dokumentáció
+          Fejlesztői dokumentáció
         </a>
       </div>
 
@@ -725,35 +1005,56 @@
           Ajánlatkérés
         </a>
       </div>
+
+      <!-- ÚJ: Offerwall ár — §1.8 -->
+      <div class="card pricing-card coral">
+        <div class="card-icon coral" style="margin: 0 auto 16px;">🧩</div>
+        <h3>Offerwall</h3>
+        <div class="price">Egyedi</div>
+        <div class="price-note">kampányonkénti árazás</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>Kérdőív / kvíz / játék</li>
+          <li>Fogyasztói insight riport</li>
+          <li>Motivált, aktív közönség</li>
+          <li>Egyedi megállapodás</li>
+        </ul>
+        <a href="mailto:office@sharity.hu?subject=Offerwall%20árajánlat" class="cta" style="background: var(--coral);">
+          Érdeklődöm
+        </a>
+      </div>
     </div>
 
     <!-- Direct Partner árazás részletesen -->
     <div class="callout fade-in" style="margin-top: 32px;">
       <h3>📊 Hogyan működik a Direct Partner elszámolás?</h3>
       <p style="margin-bottom: 16px;">
-        Te határozod meg, hogy a tranzakciók hány %-át ajánlod fel a Sharity együttműködésre. 
+        Te határozod meg, hogy a tranzakciók hány %-át ajánlod fel a Sharity együttműködésre.
         Ez az összeg automatikusan szétosztásra kerül:
       </p>
       <div class="split" style="margin-top: 0;">
         <div>
-          <strong>Szétosztás:</strong>
+          <strong>A jutalék szétosztása:</strong>
           <ul class="list" style="margin-top: 8px;">
-            <li><strong>60%</strong> – Sharity jutalék (platform)</li>
-            <li><strong>20%</strong> – Kedvezmény a vásárlónak</li>
-            <li><strong>20%</strong> – Adomány a civil szervezetnek</li>
+            <li><strong>40–60%</strong> – Adomány a civil szervezetnek (NGO szint szerint: Base 40% · Rising 50% · Legend 60%)</li>
+            <li><strong>Fennmaradó rész</strong> – Sharity platform díj</li>
           </ul>
+          <p style="margin-top: 8px; font-size: 0.88rem; color: #555;">A user szintbónusz (Basic ×1,00 → Legend ×1,25) az NGO adományrészét szorozza — pl. Legend NGO 60% × Legend user ×1,25 = a jutalék <strong>75%-a</strong> lesz adomány. A különbséget a Sharity állja.</p>
+          <p style="margin-top: 6px; font-size: 0.88rem; color: #555;">💡 Az ügyfélkedvezmény külön megállapodás alapján működik, nem a jutalékból vonjuk le.</p>
         </div>
         <div>
-          <strong>Példa (2% felajánlás, 10.000 Ft vásárlás):</strong>
+          <strong>Példa (2% jutalék, 10.000 Ft tranzakció):</strong>
           <ul class="list" style="margin-top: 8px;">
-            <li>10.000 Ft × 2% = 200 Ft kerül szétosztásra</li>
-            <li>Ebből: 120 Ft Sharity · 40 Ft kedvezmény · 40 Ft adomány</li>
+            <li>10.000 Ft × 2% = 200 Ft jutalék</li>
+            <li>Base NGO: <strong>80 Ft</strong> adomány · <strong>120 Ft</strong> Sharity</li>
+            <li>Rising NGO: <strong>100 Ft</strong> adomány · <strong>100 Ft</strong> Sharity</li>
+            <li>Legend NGO: <strong>120 Ft</strong> adomány · <strong>80 Ft</strong> Sharity</li>
+            <li>+ Legend user szintbónusszal (×1,25): az adomány akár a jutalék <strong>75%-ára</strong> is nőhet (Sharity terhére)</li>
           </ul>
         </div>
       </div>
       <p style="margin-top: 16px; font-size: 0.9rem;">
-        ⭐ <strong>A szintbónuszokat</strong> (Gold, Platinum, Legend vásárlóknak több kedvezmény) 
-        <strong>a Sharity a saját részesedése terhére biztosítja</strong> – neked nem okoz többletköltséget!
+        ⭐ <strong>Minél magasabb szintű az NGO, annál nagyobb az adományrész</strong> – és a user szintbónusz (×1,25-ig) ezt a részt szorozza tovább
+        (pl. 60% × 1,25 = 75%), <strong>a Sharity saját részesedése terhére</strong> – neked nem okoz többletköltséget!
       </p>
     </div>
 
@@ -777,14 +1078,14 @@
           <li>Kérsz API kulcsot a Sharity-től</li>
           <li>Beállítod a webhook-ot a rendszeredben</li>
           <li>Tesztelsz sandbox környezetben</li>
-          <li>Élesítés után minden vásárlás automatikusan rögzül</li>
-          <li>Vásárlóid kedvezményt kapnak, adomány megy jó célra</li>
+          <li>Élesítés után minden tranzakció automatikusan rögzül</li>
+          <li>Ügyfeleid kedvezményt kapnak, adomány megy jó célra</li>
         </ul>
       </div>
     </div>
 
     <div class="card fade-in" style="margin-top: 24px;">
-      <h3>📺 Szponzori megjelenés folyamat</h3>
+      <h3>📺 Szponzori megjelenés folyamat (<a href="https://app.sharity.hu/ngo-guides/impact-challenge/" target="_blank" style="color: var(--blue);">Impact Challenge</a>)</h3>
       <ul class="list list-numbered" style="margin-top: 16px;">
         <li>Ajánlatkérés emailben – célok, büdzsé, időtartam</li>
         <li>Egyedi ajánlat készítése a kampányodhoz</li>
@@ -794,51 +1095,55 @@
       </ul>
     </div>
 
-    <!-- FAQ -->
+    <!-- FAQ — §1.7 -->
     <h2 class="section-title fade-in" id="faq">❓ Gyakori kérdések</h2>
-    
+
     <div class="card fade-in" style="margin-bottom: 16px;">
       <h3>Melyik csatlakozási módot válasszam?</h3>
       <p style="margin-top: 8px;">
         Ha már affiliate hálózat tagja vagy → <strong>Affiliate Partner</strong> (leggyorsabb)<br>
         Ha márkát építenél, kampányt futatnál → <strong>Szponzor</strong><br>
-        Ha saját rendszered van és kedvezményt is adnál → <strong>Direct Partner</strong>
+        Ha saját rendszered van és kedvezményt is adnál → <strong>Direct Partner</strong><br>
+        Ha ügyfélinsightokra van szükséged → <strong>Offerwall Partner</strong>
       </p>
     </div>
     <div class="card fade-in" style="margin-bottom: 16px;">
       <h3>Mennyibe kerül a csatlakozás?</h3>
       <p style="margin-top: 8px;">
-        Az affiliate és direct partner csatlakozás <strong>ingyenes</strong>. 
+        Az affiliate és direct partner csatlakozás <strong>ingyenes</strong>.
         Nincs fix díj, csak a tranzakciók után fizetsz (amit te határozol meg).
-        A szponzori megjelenés egyedi árazású.
+        A szponzori és offerwall megjelenés egyedi árazású.
       </p>
     </div>
     <div class="card fade-in" style="margin-bottom: 16px;">
       <h3>Mit jelent az „ingyenes reklámfelület"?</h3>
       <p style="margin-top: 8px;">
-        Partnerként a bannered vagy videód <strong>ingyen megjelenik az Impact Challenge-ban</strong>, 
-        ahol a felhasználók videókat néznek és szavaznak. Ez extra expozíció, amit nem kell külön fizetned.
+        <strong>Direct partnerként</strong> a bannered vagy videód <strong>ingyen megjelenik az <a href="https://app.sharity.hu/ngo-guides/impact-challenge/" target="_blank" style="color: var(--blue);">Impact Challenge</a>-ban</strong>,
+        ahol a felhasználók videókat néznek és szavaznak. Affiliate partnereknél a megjelenés a jutalékból fedeződik.
+        Ha kizárólag szponzori/márkaépítési célú megjelenést szeretnél, az egyedi árazás alapján történik.
       </p>
     </div>
     <div class="card fade-in" style="margin-bottom: 16px;">
-      <h3>Mennyi adomány keletkezik a vásárlásokból?</h3>
+      <h3>Mennyi adomány keletkezik a tranzakciókból?</h3>
       <p style="margin-top: 8px;">
         Affiliate esetén: a jutalék egy része automatikusan adomány lesz.<br>
-        Direct partner esetén: te döntöd el a %-ot, amiből 20% megy adományra.
+        Direct partner esetén: te döntöd el a %-ot. Az adományrész az NGO szintjétől függően <strong>40–60%</strong>, és a vásárló szintszorzója (×1,00 → ×1,25) ezt az arányt szorozza — pl. Legend NGO 60% × Legend user ×1,25 = a jutalék <strong>75%-a</strong> lesz adomány.
       </p>
     </div>
     <div class="card fade-in" style="margin-bottom: 16px;">
       <h3>Hogyan látom az eredményeket?</h3>
       <p style="margin-top: 8px;">
-        <strong>Partner dashboardon</strong> követheted a tranzakciókat, konverziókat és a társadalmi hatást. 
+        <strong>Partner dashboardon</strong> követheted a tranzakciókat, konverziókat és a társadalmi hatást.
         Direct partnereknél teljes analytics, affiliate-eknél a hálózat saját dashboardja + Sharity riport.
       </p>
     </div>
     <div class="card fade-in" style="margin-bottom: 16px;">
-      <h3>Milyen webshopok csatlakozhatnak?</h3>
+      <h3>Milyen cégek csatlakozhatnak?</h3>
       <p style="margin-top: 8px;">
-        Bármilyen magyar webshop, szolgáltató vagy márka – <strong>legyen szó ruházatról, elektronikáról, 
-        szépségápolásról, utazásról vagy bármi másról</strong>. Az egyetlen kritérium: legális, etikus működés.
+        Bármilyen magyar <strong>webshop, offline üzlet, szolgáltató vagy márka</strong> — legyen szó
+        e-kereskedelemről, vendéglátásról, szálláshely-szolgáltatásról, szépségápolásról, fitneszről,
+        kiskereskedelemről vagy bármi másról. Nem szükséges webshop: <strong>éttermek, boltok, szalonok,
+        szállodák</strong> is csatlakozhatnak. Az egyetlen kritérium: legális, etikus működés.
       </p>
     </div>
 
@@ -854,7 +1159,7 @@
             ✉️ Jelentkezem partnernek
           </a>
           <a href="/partner-api" class="cta-secondary">
-            📄 Partner API dokumentáció
+            📄 Fejlesztői API dokumentáció
           </a>
         </div>
       </div>
@@ -862,7 +1167,7 @@
 
     <!-- Kapcsolat -->
     <h2 class="section-title fade-in">📞 Kapcsolat</h2>
-    
+
     <div class="card fade-in">
       <div class="split" style="margin-top: 0;">
         <div>
@@ -876,7 +1181,7 @@
         <div>
           <h3>Hasznos linkek:</h3>
           <ul class="list" style="margin-top: 12px;">
-            <li><a href="/partner-api">Partner API dokumentáció</a></li>
+            <li><a href="/partner-api">Partner API technikai dokumentáció</a></li>
             <li><a href="/impactshop">Impact Shop</a></li>
             <li><a href="/ngo-guides/impact-challenge">Impact Challenge</a></li>
           </ul>
@@ -892,10 +1197,10 @@
         </p>
         <p style="opacity: 0.8;">
           Útmutató cégeknek és márkáknak<br>
-          Verzió: 1.0 | Utolsó frissítés: 2026. február
+          Verzió: 2.0 | Utolsó frissítés: 2026. február
         </p>
         <div style="margin-top: 16px;">
-          <a href="/partner-api" style="margin-right: 16px;">Partner API →</a>
+          <a href="/partner-api" style="margin-right: 16px;">Fejlesztői API →</a>
           <a href="/impactshop">Impact Shop →</a>
         </div>
       </div>

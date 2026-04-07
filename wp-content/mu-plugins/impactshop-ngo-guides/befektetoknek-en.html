@@ -1,0 +1,904 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharity - Investors | Impact-driven affiliate platform</title>
+  <meta name="description" content="Sharity is an impact-driven affiliate marketplace. Repeatable revenue model, strong growth potential, and dual return: profit + social impact.">
+  <meta property="og:title" content="Sharity - Investors | Impact-driven affiliate platform">
+  <meta property="og:description" content="Hungary's first impact-based affiliate marketplace. 3 revenue streams, 35K+ active users, 500+ partner stores, 300+ NGOs. Investment opportunity.">
+  <meta property="og:url" content="https://app.sharity.hu/befektetoknek?lang=en">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --purple: #7c3aed;
+      --pink: #ec4899;
+      --orange: #f97316;
+      --green: #166534;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(15,138,157,0.15), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(124, 58, 237, 0.2), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3, h4 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.5rem 0;
+    }
+    h1 { font-size: clamp(2.2rem, 4vw, 3.4rem); }
+    h2 { font-size: clamp(1.5rem, 2.8vw, 2.2rem); }
+    h3 { font-size: 1.15rem; }
+
+    p { margin: 0 0 1rem 0; line-height: 1.75; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 13px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover { background: rgba(15,138,157,0.1); text-decoration: none; }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15,138,157,0.25);
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--teal);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .hero {
+      padding: 52px 44px;
+      background: rgba(255,255,255,0.92);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      text-align: center;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(15,138,157,0.14), rgba(124,58,237,0.14));
+      color: var(--teal);
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 14px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 26px;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin: 6px;
+    }
+    .btn:hover { transform: translateY(-2px); text-decoration: none; }
+    .btn-teal {
+      background: var(--teal);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(15,138,157,0.35);
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(124,58,237,0.3);
+    }
+    .btn-outline {
+      background: #fff;
+      color: var(--teal);
+      border: 2px solid var(--teal);
+    }
+    .btn-outline:hover { background: rgba(15,138,157,0.06); }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(11,31,42,0.08);
+    }
+
+    .grid { display: grid; gap: 20px; margin-top: 24px; }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+    .card {
+      padding: 28px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11,31,42,0.08);
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-3px); }
+    .card.teal-border { border: 2px solid var(--teal); background: linear-gradient(135deg, rgba(15,138,157,0.04), #fff); }
+    .card.purple-border { border: 2px solid var(--purple); background: linear-gradient(135deg, rgba(124,58,237,0.04), #fff); }
+    .card.sun-border { border: 2px solid var(--sun); background: linear-gradient(135deg, rgba(245,182,66,0.06), #fff); }
+    .card.mint-border { border: 2px solid var(--mint); background: linear-gradient(135deg, rgba(111,227,193,0.08), #fff); }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      font-size: 1.7rem;
+      margin-bottom: 14px;
+    }
+    .card-icon.purple { background: rgba(124,58,237,0.12); }
+    .card-icon.teal { background: rgba(15,138,157,0.12); }
+    .card-icon.sun { background: rgba(245,182,66,0.2); }
+    .card-icon.mint { background: rgba(111,227,193,0.2); }
+    .card-icon.orange { background: rgba(249,115,22,0.12); }
+    .card-icon.green { background: rgba(34,197,94,0.12); }
+
+    .callout {
+      padding: 22px 24px;
+      border-radius: 16px;
+      border-left: 4px solid;
+      margin: 24px 0;
+    }
+    .callout.green { background: rgba(111,227,193,0.15); border-color: var(--mint); }
+    .callout.green h3 { color: #166534; }
+    .callout.purple { background: rgba(124,58,237,0.08); border-color: var(--purple); }
+    .callout.purple h3 { color: #5b21b6; }
+    .callout.sun { background: rgba(245,182,66,0.12); border-color: var(--sun); }
+    .callout.sun h3 { color: #7a4b00; }
+    .callout.teal { background: rgba(15,138,157,0.08); border-color: var(--teal); }
+    .callout.teal h3 { color: #0e7490; }
+    .callout p { margin: 0; color: var(--ink); }
+
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 28px; }
+    .step {
+      text-align: center;
+      padding: 22px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .stats-bar {
+      margin-top: 36px;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+    .stat-item {
+      padding: 16px 14px;
+      border-radius: 14px;
+      background: rgba(15,138,157,0.08);
+    }
+    .stat-num { display: block; font-size: 1.6rem; font-weight: 700; color: var(--teal); }
+    .stat-label { font-size: 0.82rem; color: var(--muted); }
+
+    .revenue-row {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 64px 1fr auto;
+      align-items: start;
+      padding: 20px 24px;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      border-left: 6px solid var(--teal);
+      margin-top: 18px;
+    }
+    .rev-icon { font-size: 2rem; }
+    .rev-label { font-weight: 700; }
+    .rev-desc { color: var(--muted); }
+    .rev-tag {
+      align-self: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(15,138,157,0.1);
+      color: var(--teal);
+      white-space: nowrap;
+    }
+
+    .moat-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 24px; }
+    .moat-item { padding: 20px; border-radius: 16px; background: #fff; box-shadow: var(--shadow); }
+    .moat-icon { font-size: 1.6rem; }
+
+    .timeline { display: grid; gap: 16px; margin-top: 24px; }
+    .timeline-item { display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start; }
+    .timeline-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--success);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .timeline-content { background: #fff; border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
+
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .compare-table th, .compare-table td { padding: 12px 10px; border-bottom: 1px solid rgba(11,31,42,0.08); text-align: left; }
+    .tick { color: #16a34a; font-weight: 700; }
+
+    details { background: #fff; border-radius: 12px; padding: 12px 16px; margin: 10px 0; box-shadow: var(--shadow); }
+    summary { cursor: pointer; font-weight: 600; }
+
+    .footer-cta { text-align: center; padding: 32px; margin-top: 32px; background: rgba(15,138,157,0.08); border-radius: 18px; }
+    .disclaimer { font-size: 0.82rem; color: var(--muted); margin-top: 28px; }
+    .page-footer { margin-top: 28px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 0.86rem; color: var(--muted); }
+
+    @media (max-width: 780px) {
+      .revenue-row { grid-template-columns: 1fr; }
+      .rev-tag { justify-self: start; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Navigation -->
+  <nav class="nav" aria-label="Navigation">
+    <a href="https://app.sharity.hu/rolunk/?lang=en">ℹ️ About</a>
+    <a href="https://app.sharity.hu/cegeknek/?lang=en">🏢 For companies</a>
+    <a href="https://app.sharity.hu/partner-api">⚙️ Partner API</a>
+    <a href="https://app.sharity.hu/ngo-guides/?lang=en">🤝 For NGOs</a>
+    <a href="https://app.sharity.hu/impactshop">🛒 Impact Shop</a>
+    <a href="#aktivitasok">⚡ Activities</a>
+    <a href="#ai-agent">🧠 AI Agent</a>
+    <div class="lang-switch" aria-label="Language selector">
+      <a href="?lang=hu">HU</a>
+      <a href="?lang=en" class="active" aria-current="true">EN</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="pill">💼 For investors</div>
+    <h1>Impact-driven affiliate platform<br>with dual return</h1>
+    <p style="max-width:620px; margin:16px auto 28px; font-size:1.1rem;">
+      Sharity is Hungary's first affiliate marketplace where every purchase, video view, and task generates
+      <strong>revenue</strong> and <strong>social impact</strong> at the same time. The model is self-reinforcing:
+      NGOs actively drive their communities to the platform.
+    </p>
+    <a href="mailto:office@sharity.hu?subject=Investor%20inquiry" class="btn btn-teal">📩 Contact</a>
+    <a href="#modell" class="btn btn-outline">Business model ↓</a>
+
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-num">500+</span>
+        <span class="stat-label">Partner stores</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">35K+</span>
+        <span class="stat-label">Active users</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">300+</span>
+        <span class="stat-label">NGOs</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">25M+</span>
+        <span class="stat-label">HUF donated</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">3×</span>
+        <span class="stat-label">Revenue streams</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="callout teal" style="margin-top: 28px;">
+    <h3>📌 What can we evidence today?</h3>
+    <p>The investor case is not built on a future promise alone. In Sharity's case, a live partner and NGO network, real user activity, multi-layer revenue logic, and documented technical operations already exist today.</p>
+  </div>
+
+  <div class="grid grid-3" style="margin-top: 20px;">
+    <div class="card teal-border">
+      <div class="card-icon teal">✅</div>
+      <h3>Live operation</h3>
+      <p>This is not a pre-launch project. Core public routes, partner and NGO surfaces, and the main revenue and activity layers already operate in production.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">📊</div>
+      <h3>Measurable traction</h3>
+      <p>The platform already has communicable topline metrics: partner network size, active user base, NGO coverage, and cumulative donation volume.</p>
+    </div>
+    <div class="card sun-border">
+      <div class="card-icon sun">🛡️</div>
+      <h3>Diligence-ready backbone</h3>
+      <p>The technical operation is not a black box: guarded systems, documented flows, controlled deploys, and deeper KPI and audit material available under NDA.</p>
+    </div>
+  </div>
+
+  <!-- Opportunity -->
+  <h2 class="section-title" id="lehetoseg">🎯 The opportunity</h2>
+  <div class="grid grid-2">
+    <div class="card teal-border">
+      <div class="card-icon teal">📈</div>
+      <h3>Affiliate market is growing fast</h3>
+      <p>The global affiliate market is expected to reach <strong>$27B by 2027</strong>. In Hungary, Dognet, Tradedoubler, and TradeTracker move billions in commissions - Sharity captures a unique position.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">💚</div>
+      <h3>Impact investing is mainstream</h3>
+      <p>ESG, CSR, and impact considerations are becoming more important for both companies and consumers. Sharity is built around that durable shift by connecting purchasing intent with measurable social contribution.</p>
+    </div>
+    <div class="card sun-border">
+      <div class="card-icon sun">🔁</div>
+      <h3>Self-reinforcing network effect</h3>
+      <p>More NGOs promote Sharity → more users → more partners → more revenue → more donations → NGOs promote even harder.</p>
+    </div>
+    <div class="card mint-border">
+      <div class="card-icon mint">🏆</div>
+      <h3>First mover in local market</h3>
+      <p>Sharity combines affiliate commerce, gamified giving, and NGO-led user acquisition in a way that is still unusual in the Hungarian market. That creates a favorable starting position in a category without a clearly dominant direct player.</p>
+    </div>
+  </div>
+
+  <!-- User activities & incentives -->
+  <h2 class="section-title" id="aktivitasok">⚡ User activities and incentives</h2>
+  <p>Users are motivated by <strong>points, votes, level-ups</strong> and donation multipliers. These activities increase both revenue and NGO support. Summary with cross-links to detailed guides.</p>
+  <p style="margin-top: 8px; font-size: 0.9rem; color: var(--muted);">⏱️ Guidance: Bronze in a few days, Silver ~3–4 weeks, Gold ~2–3 months, Platinum ~3–4 months, Legend ~6–7 months with steady activity.</p>
+  <div style="margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+    <div style="font-weight: 600; margin-bottom: 6px;">What it takes for each level</div>
+    <ul style="margin: 0 0 6px 18px;">
+      <li>Bronze: reachable in a few days of active use</li>
+      <li>Silver: ~1 month with regular 5+ days/week activity</li>
+      <li>Gold: ~2–3 months for active users</li>
+      <li>Platinum: ~3–4 months with consistent daily use</li>
+      <li>Legend: ~6–7 months for the most active users</li>
+    </ul>
+    <div style="font-size: 0.85rem; color: var(--muted);">With occasional use, Platinum/Legend are typically not reachable.</div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card teal-border">
+      <div class="card-icon teal">🛒</div>
+      <h3>Impact Shop purchases</h3>
+      <p>Shopping → commission + points, NGO pre-selected. Details: <a href="/ngo-guides/impact-shop/?lang=en">Impact Shop guide</a> · <a href="https://app.sharity.hu/impactshop">Impact Shop</a>.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">📺</div>
+      <h3>Videos & Impact Challenge</h3>
+      <p>Video views → votes and community ranking. Details: <a href="/ngo-guides/impact-challenge/?lang=en">Impact Challenge guide</a> · <a href="/rolunk/?lang=en">About</a>.</p>
+    </div>
+    <div class="card sun-border">
+      <div class="card-icon sun">🧩</div>
+      <h3>Offerwall tasks</h3>
+      <p>Surveys, app trials, registrations → points + votes. Details: <a href="/ngo-guides/impact-challenge/?lang=en">Impact Challenge</a> · <a href="/ngo-guides/?lang=en">NGO guides</a>.</p>
+    </div>
+    <div class="card mint-border">
+      <div class="card-icon mint">💝</div>
+      <h3>Votes & Impact Amplifier</h3>
+      <p>Direct donation → instant votes. Details: <a href="/rolunk/?lang=en#szavazatvasarlas">supporter guide</a> · <a href="/ngo-guides/ngo-card/?lang=en">NGO Card</a>.</p>
+    </div>
+    <div class="card teal-border">
+      <div class="card-icon teal">🤝</div>
+      <h3>NGO Card & sharing</h3>
+      <p>Sharing → new users, higher vote weight. Details: <a href="/ngo-guides/ngo-card/?lang=en">NGO Card guide</a> · <a href="/ngo-guides/?lang=en">NGO guides</a>.</p>
+    </div>
+    <div class="card purple-border">
+      <div class="card-icon purple">🏢</div>
+      <h3>Partners & offline activity</h3>
+      <p>Partners, QR offline shopping, and donation kiosks. Details: <a href="/cegeknek/?lang=en">For companies</a> · <a href="/partner-api">Partner API</a> · <a href="https://app.sharity.hu/adomany-automata/">Donation kiosks</a>.</p>
+    </div>
+  </div>
+
+  <div class="callout teal" style="margin-top: 18px;">
+    <h3>🆔 Pseudo ID — frictionless entry</h3>
+    <p>On the first visit an anonymous Pseudo ID is created (cookie‑based), so points and votes start accumulating <strong>without registration</strong>. This speeds activation and retention while staying privacy‑friendly. Later registration can be linked to the same activity history. Details: <a href="/rolunk/?lang=en">About</a> · <a href="/ngo-guides/impact-challenge/?lang=en">Impact Challenge guide</a> · <a href="/partner-api">Partner API</a>.</p>
+  </div>
+
+  <p style="margin-top:18px;">More details: <a href="/rolunk/?lang=en">About</a> · <a href="/cegeknek/?lang=en">For companies</a> · <a href="/partner-api">Partner API</a> · <a href="/ngo-guides/?lang=en">NGO guides</a> · <a href="/ngo-guides/impact-shop/?lang=en">Impact Shop guide</a> · <a href="/ngo-guides/impact-challenge/?lang=en">Impact Challenge guide</a> · <a href="/ngo-guides/ngo-card/?lang=en">NGO Card guide</a>.</p>
+
+  <!-- Business model -->
+  <h2 class="section-title" id="modell">💰 Business model - 3 revenue streams</h2>
+  <p>Sharity is not single-channel. Revenue comes from multiple reinforcing sources.</p>
+
+  <div class="revenue-row">
+    <div class="rev-icon">🛒</div>
+    <div>
+      <div class="rev-label">Partner commission (<a href="/ngo-guides/impact-shop/?lang=en" style="color:inherit;">Impact Shop</a>)</div>
+      <div class="rev-desc">500+ webshops and offline stores pay purchase commission (1-15%). Any webshop or physical store can join (QR / <a href="/partner-api" style="color:inherit;">Partner API</a>). From the commission, the <strong>base NGO donation share</strong> is taken first (Basic 40% · Rising 50% · Legend 60%), then multiplied by the <strong>user donation multiplier</strong> (1×-1.25×). <strong>The remainder is Sharity revenue.</strong></div>
+    </div>
+    <div class="rev-tag">Core revenue · recurring</div>
+  </div>
+
+  <div class="revenue-row" style="border-left-color: var(--purple);">
+    <div class="rev-icon">📺</div>
+    <div>
+      <div class="rev-label">Advertising revenue (<a href="/ngo-guides/impact-challenge/?lang=en" style="color:inherit;">Impact Challenge</a>)</div>
+      <div class="rev-desc">Sponsors and advertisers pay CPM/CPA for video views and offerwall tasks (surveys, app trials, registrations). <strong>A portion</strong> flows into a quarterly donation pool distributed by vote share.</div>
+    </div>
+    <div class="rev-tag" style="color: var(--purple); background: rgba(124,58,237,0.1);">Growing · scalable</div>
+  </div>
+
+  <div class="revenue-row" style="border-left-color: var(--sun);">
+    <div class="rev-icon">⚡</div>
+    <div>
+      <div class="rev-label">Impact Amplifier (vote packages)</div>
+      <div class="rev-desc">Users donate directly (e.g. 500-10,000 HUF) and receive instant votes that increase NGO allocation. Accessible via <a href="/ngo-guides/ngo-card/?lang=en" style="color:inherit;">NGO Card</a>. <strong>50%</strong> of the donation goes to NGOs, <strong>50%</strong> covers platform costs - high-margin premium revenue.</div>
+    </div>
+    <div class="rev-tag" style="color: #7a4b00; background: rgba(245,182,66,0.15);">Premium · high margin</div>
+  </div>
+
+  <div class="callout teal" style="margin-top: 28px;">
+    <h3>📊 Settlement model (Direct Partner example)</h3>
+    <p>Example: 10,000 HUF purchase · 5% commission → 500 HUF commission.<br>
+    If NGO level is Rising (50%) and user is Gold (1.1×) → 500 × 50% × 1.1 = <strong>275 HUF donation</strong> to the NGO.<br>
+    <strong>The remaining 225 HUF is Sharity revenue.</strong> Higher levels increase donations - motivating both users and NGOs. Affiliate commissions run automatically.</p>
+  </div>
+
+  <div class="callout purple" style="margin-top: 22px;">
+    <h3>🧾 Which KPI logic matters most?</h3>
+    <p>From an investor standpoint, the key is not any single vanity metric. The more meaningful lens is the combination of activation, repeat purchase / return behavior, NGO-led acquisition efficiency, and partner-side monetization. Detailed cohort and funnel logic is best reviewed under NDA.</p>
+  </div>
+
+  <!-- Moat -->
+  <h2 class="section-title" id="vedofalak">🏰 Competitive moats</h2>
+  <div class="moat-grid">
+    <div class="moat-item">
+      <span class="moat-icon">🤝</span>
+      <h3>NGO-driven acquisition</h3>
+      <p>300+ NGOs actively drive their communities to Sharity. This can create structurally efficient acquisition in a meaningful user segment - the <a href="/ngo-guides/ngo-card/?lang=en" style="color: inherit; text-decoration: underline;">NGO Card</a> is the communication engine.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">🎮</span>
+      <h3>Gamified loyalty</h3>
+      <p>6-level system (Basic → Legend), multipliers, vote weights - creates habitual behavior that competitors cannot easily replicate.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">🔗</span>
+      <h3>Affiliate ecosystem coverage</h3>
+      <p>Dognet, Tradedoubler, TradeTracker + own API - full local affiliate ecosystem covered. Low entry barrier for new partners.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">📊</span>
+      <h3>Data advantage</h3>
+      <p>Votes, points, and purchase data build unique user profiles. Premium targeting for advertisers, higher ARPU. Extra inputs: social feedback, offline purchases, and <a href="https://app.sharity.hu/adomany-automata/" style="color: inherit; text-decoration: underline;">Sharitizer kiosks</a> geo data.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">💝</span>
+      <h3>Emotional attachment</h3>
+      <p>Users are attached to their NGO, not a cashback program. Stronger, more durable loyalty.</p>
+    </div>
+    <div class="moat-item">
+      <span class="moat-icon">⚡</span>
+      <h3>Impact Amplifier effect</h3>
+      <p>Donation multiplier mechanics (1 HUF → up to 12× impact through votes) create a unique value proposition. <a href="https://app.sharity.hu/rolunk/?lang=en#szavazatvasarlas" style="color: inherit; text-decoration: underline;">Details in supporter guide</a>.</p>
+    </div>
+  </div>
+
+  <!-- Growth levers -->
+  <h2 class="section-title" id="novekedes">🚀 Growth levers</h2>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-icon teal">🌍</div>
+      <h3>Regional expansion</h3>
+      <p>Model is replicable in CEE markets (Poland, Czechia, Romania) with mature affiliate ecosystems and low impact competition.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">🏷️</div>
+      <h3>White-label B2B</h3>
+      <p>Enterprises (banks, telco, retail chains) can launch branded impact loyalty programs on top of Sharity's infrastructure. This opens a high-value, service-led B2B revenue layer. Partners already include <strong>Jysk, Synlab, Gierlinger, Philip Morris</strong>.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">🤖</div>
+      <h3>AI operating layer</h3>
+      <p>AI is not a side feature in Sharity. It acts as an operating layer for ranking, personalization, content assistance, and faster partner and NGO workflows. <a href="#ai-agent">Details below ↓</a></p>
+    </div>
+    <div class="card">
+      <div class="card-icon mint">📱</div>
+      <h3>PWA - live</h3>
+      <p>Platform already runs as PWA: installable, offline-capable, push notifications. No native app required.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon green">🎓</div>
+      <h3>Education & Offerwall scale</h3>
+      <p>Education content and offerwall expansion increase session length and ad demand. <a href="/ngo-guides/impact-shop/?lang=en#feladatok" style="color: inherit; text-decoration: underline;">Offerwall guide</a>; <strong>AyeT</strong> and <strong>CPX Research</strong> are already implemented.</p>
+    </div>
+  </div>
+
+  <!-- AI Agent Core -->
+  <h2 class="section-title" id="ai-agent">🧠 AI operating layer - Sharity's growth engine</h2>
+  <div class="card" style="margin-top: 24px; border-left: 4px solid var(--purple);">
+    <p style="font-size: 1.05rem; color: var(--ink);">Sharity's AI layer is not a standalone chatbot. It is an embedded decision and assistance system that creates value where the platform actually needs it most: recommendations, NGO activation, partner communication, content preparation, and growth operations.</p>
+  </div>
+
+  <div class="grid grid-3" style="margin-top: 24px;">
+    <div class="card">
+      <div class="card-icon purple">🔗</div>
+      <h3>Embedded decision support</h3>
+      <p>AI is not a separate product inside Sharity. It sits behind critical flows: recommendations, content preparation, communication support, and operational prioritization.</p>
+    </div>
+    <div class="card">
+      <img src="https://app.sharity.hu/wp-content/uploads/2025/12/20251125_0859_Coupon-Hunter-Meerkat_simple_compose_01kax0a6g0f24va5gd51a68gra.png" alt="Impi, Sharity's meerkat" style="width: 100%; border-radius: 16px; margin-bottom: 14px;">
+      <h3>Impi as product interface</h3>
+      <p>Impi is not just a mascot. It is the user-facing entry point for discovery, guidance, and recommendation in a way that feels approachable rather than technical.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon teal">🧬</div>
+      <h3>Persistent context and memory</h3>
+      <p>The system does not treat every interaction from scratch. User intent, NGO context, and campaign learnings can be reused to improve future decisions.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">🤖</div>
+      <h3>Model-agnostic architecture</h3>
+      <p>Sharity is not locked into a single model vendor. That reduces dependency risk and allows the AI layer to evolve based on cost, quality, and reliability.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon mint">📊</div>
+      <h3>Data turned into operating signal</h3>
+      <p>Partner, campaign, and content signals can be converted into operational guidance: what to feature, where performance drops, and where resources should go next.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon green">🎯</div>
+      <h3>Conversion-focused personalization</h3>
+      <p>One of the most valuable jobs of AI in Sharity is better matching: the right offer, cause, or next action for the right user at the right time.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">🧪</div>
+      <h3>Content scalability</h3>
+      <p>AI helps keep the platform relevant as the number of NGOs, offers, and user segments grows, without linear growth in manual content effort.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 40px; margin-bottom: 16px;">🔁 Where it creates real business value</h3>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-icon teal">💬</div>
+      <h3>NGO activation</h3>
+      <p>NGOs are not just listed on the platform. AI can help package their impact stories better, activate communities, and improve participation.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">📈</div>
+      <h3>Growth operations</h3>
+      <p>AI can help prioritize which campaign, partner, or user flow deserves attention next. That means faster decisions and more efficient resource allocation.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">📣</div>
+      <h3>Partner and user journey optimization</h3>
+      <p>Partner onboarding, offer discovery, and return paths all become stronger when AI is embedded into how the platform operates.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 40px; margin-bottom: 16px;">🛡️ Why this is credible for investors</h3>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-icon mint">📡</div>
+      <h3>Embedded in a real platform</h3>
+      <p>This is not a pitch-deck AI story. The AI layer sits inside a live marketplace, NGO, and partner environment, which makes it much more defensible than a standalone demo.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon green">🔌</div>
+      <h3>Scalable operating leverage</h3>
+      <p>The goal is not to replace every manual action. The goal is to let the same team serve more users, more NGOs, and more partners at higher quality.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">🏗️</div>
+      <h3>Auditable system design</h3>
+      <p>Sharity's technical operation is documented, guarded, and reviewable. That matters because it turns the AI layer from a story into something operators and investors can trust.</p>
+    </div>
+  </div>
+
+  <div class="callout sun" style="margin-top: 32px;">
+    <h3>💡 Why this matters for investors</h3>
+    <p>AI is valuable inside Sharity only if it grows the platform faster than it grows the cost base. The real question is not how many models or orchestration layers run in the background, but whether AI improves conversion, retention, NGO activation, and partner-side scalability. That is the real moat.</p>
+  </div>
+
+  <!-- Roadmap -->
+  <h2 class="section-title" id="roadmap">🗓️ Milestones and roadmap</h2>
+  <div class="callout teal" style="margin-top: 24px;">
+    <h3>🧭 What is proven already, and what comes next?</h3>
+    <p>The timeline below mixes two layers: what is already live and evidenced today, and what we see as the next growth priorities. The point is to separate current traction from the next acceleration phase.</p>
+  </div>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>Platform live - 500+ partners, 300+ NGOs</h3>
+        <p>Impact Shop, Impact Challenge, NGO Card, Partner API in production. Dognet, Tradedoubler, TradeTracker integrations active, <strong>AyeT</strong> and <strong>CPX Research</strong> offerwall ready.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>Affiliate + Offerwall networks implemented, AI integrated</h3>
+        <p>Affiliate networks live, offerwall channels ready, and the AI layer embedded in decision and recommendation flows.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>25M+ HUF donations generated</h3>
+        <p>Proven donations, 35,000+ active users, repeat transactions and growing engagement.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-content">
+        <h3>Impact Amplifier launched</h3>
+        <p>Premium revenue channel: direct donation with vote multiplier, up to 12× impact.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: linear-gradient(135deg, #f97316, #f5b642);">Q3</div>
+      <div class="timeline-content">
+        <h3>2026 Q3 - Marketing & UX scale</h3>
+        <p>PWA is live. Focus on UX/UI, push campaigns, paid marketing, influencer program, NGO communications.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: linear-gradient(135deg, #7c3aed, #ec4899);">Q4</div>
+      <div class="timeline-content">
+        <h3>2026 Q4 - B2B white-label pilot</h3>
+        <p>White-label expansion with existing partners (<strong>Jysk, Synlab, Gierlinger, Philip Morris</strong>) and new enterprise pilots.</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: linear-gradient(135deg, #0f8a9d, #6fe3c1);">27</div>
+      <div class="timeline-content">
+        <h3>2027 - CEE expansion</h3>
+        <p>First foreign market entry (Poland or Romania) with local NGO networks and affiliate partners.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <h2 class="section-title" id="miert">⚖️ Why Sharity can win - comparison</h2>
+  <p>Sharity is not a standard cashback app. The table below shows differentiation.</p>
+  <div style="overflow-x:auto;">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Criteria</th>
+          <th>Sharity</th>
+          <th>Traditional cashback</th>
+          <th>CSR app</th>
+          <th>Affiliate network</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>User acquisition cost</td>
+          <td><span class="tick">✓</span> NGO-driven (near 0 CAC)</td>
+          <td>High (ads)</td>
+          <td>Medium</td>
+          <td>High</td>
+        </tr>
+        <tr>
+          <td>Emotional engagement</td>
+          <td><span class="tick">✓</span> Very high (NGO tie)</td>
+          <td>Low</td>
+          <td>Medium</td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <td>Revenue streams</td>
+          <td><span class="tick">✓</span> 3 (affiliate + ads + premium)</td>
+          <td>1</td>
+          <td>1-2</td>
+          <td>1</td>
+        </tr>
+        <tr>
+          <td>B2B white-label potential</td>
+          <td><span class="tick">✓</span> Yes</td>
+          <td>Rare</td>
+          <td>Yes</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <td>Gamification / retention</td>
+          <td><span class="tick">✓</span> 6 levels, multipliers, voting</td>
+          <td>Minimal</td>
+          <td>Varies</td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <td>Impact measurement</td>
+          <td><span class="tick">✓</span> Real-time NGO card</td>
+          <td>Not relevant</td>
+          <td>Medium</td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <td>Integration ease</td>
+          <td><span class="tick">✓</span> 0 HUF, existing affiliate</td>
+          <td>Medium</td>
+          <td>Hard</td>
+          <td>Medium</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Investor offer -->
+  <h2 class="section-title" id="lehetoseg-befekteto">💼 What we offer investors</h2>
+  <div class="callout sun">
+    <h3>⚠️ This is not a public securities offer</h3>
+    <p>Information is for discussion only. Terms, valuation, and structure are provided in direct conversations.</p>
+  </div>
+  <div class="grid grid-3" style="margin-top: 24px;">
+    <div class="card">
+      <div class="card-icon teal">🌱</div>
+      <h3>Early investor premium</h3>
+      <p>Early-stage investors receive favorable entry valuation with proven traction.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon purple">🎯</div>
+      <h3>Strategic value</h3>
+      <p>Strategic investors in affiliate, retail, telco, or finance get immediate synergies: user base + partner network.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon sun">📋</div>
+      <h3>Transparency</h3>
+      <p>Under NDA, serious investors can review the financial model, KPI definitions, technical documentation, audit logs, and the relevant parts of the guard infrastructure.</p>
+    </div>
+  </div>
+
+  <!-- Use of funds -->
+  <h2 class="section-title" id="felhasznalás">🗺️ Use of funds</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Marketing & UX/UI</h3>
+      <p>UX improvements, paid campaigns, influencer program, NGO comms. Platform is ready - focus is growth.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Acquisition scale</h3>
+      <p>Scale NGO communications, paid campaigns, influencer partners - target 200K+ users in 12 months.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>B2B sales</h3>
+      <p>Dedicated sales team for white-label and sponsor channels - pilots already validated.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>CEE expansion</h3>
+      <p>Market entry costs for first foreign market (PL / RO): localization, NGO onboarding, affiliate network access.</p>
+    </div>
+  </div>
+
+  <!-- Story -->
+  <h2 class="section-title" id="tortenete">🌱 The Sharity story - why believe</h2>
+  <div class="card" style="margin-top: 24px;">
+    <p>Sharity was created from the belief that charity should not require sacrifice. Hungarians spend billions via affiliate partners every year - yet only a fraction reaches NGOs, despite the existing infrastructure.</p>
+    <p>The platform has been built for three years, with proven traction and <strong>25M+ HUF real donations</strong>. The system is modular: MU plugin architecture, guard infrastructure, Partner API, and ledger are production-ready, auditable, and scalable.</p>
+    <p><strong>15 ambassadors</strong> with signed agreements and multi-million follower reach support growth - a rare credibility and scale signal.</p>
+    <p>The next phase is scaling - mobile, B2B, and CEE. We seek investors who bring <strong>strategic value</strong>, not just capital.</p>
+  </div>
+
+  <!-- FAQ -->
+  <h2 class="section-title" id="faq">❓ Investor FAQ</h2>
+
+  <details>
+    <summary>What stage is the company in?</summary>
+    <p>Early growth stage. Platform is live with proven revenue and traction, large-scale expansion (mobile, B2B, CEE) is ahead.</p>
+  </details>
+
+  <details>
+    <summary>What is the monetization, is revenue recurring?</summary>
+    <p>Yes. Affiliate commission is transaction-based recurring revenue. Ads and Impact Amplifier build on top of it.</p>
+  </details>
+
+  <details>
+    <summary>How large is current market coverage in Hungary?</summary>
+    <p>500+ partner stores (Dognet, Tradedoubler, TradeTracker networks + Partner API), 35K+ active users, 300+ NGOs. Still a small share of the total affiliate market - scale is the focus.</p>
+  </details>
+
+  <details>
+    <summary>What is the key differentiator?</summary>
+    <p>Parts of the technology can be copied in isolation, but Sharity's advantage does not come from a single component. The NGO network, engaged user base, gamified impact logic, and partner relationships together create a system that is difficult to rebuild quickly.</p>
+  </details>
+
+  <details>
+    <summary>Is there an exit strategy?</summary>
+    <p>Potential exits: strategic acquisition (bank, telco, retail), trade sale to regional affiliate/loyalty platform, or IPO long term. Timing and structure are discussed with investors.</p>
+  </details>
+
+  <details>
+    <summary>How to start a serious discussion?</summary>
+    <p>Email <a href="mailto:office@sharity.hu">office@sharity.hu</a> with "Investor inquiry" subject. We respond within 24-48 hours. For serious interest: NDA → pitch deck + model → meeting.</p>
+  </details>
+
+  <!-- Footer CTA -->
+  <div class="footer-cta">
+    <h2>📩 Interested?</h2>
+    <p>If Sharity's model, vision, and market position match your investment strategy, let's talk.</p>
+    <a href="mailto:office@sharity.hu?subject=Investor%20inquiry" class="btn btn-teal">✉️ Contact</a>
+    <a href="https://app.sharity.hu/rolunk/?lang=en" class="btn btn-outline">ℹ️ About</a>
+    <a href="https://app.sharity.hu/cegeknek/?lang=en" class="btn btn-outline">🏢 For companies</a>
+  </div>
+
+  <!-- Disclaimer -->
+  <p class="disclaimer">
+    ⚠️ This page is for informational purposes only and does not constitute a public securities offer, investment advice, or solicitation. Data and metrics reflect current platform state and may change without notice. Please seek independent legal and financial advice before any investment decision.
+  </p>
+
+  <!-- Page footer -->
+  <footer class="page-footer">
+    <span>Sharity - Investors · Version 1.1 · February 2026</span>
+    <span>
+      <a href="https://app.sharity.hu/rolunk/?lang=en">About</a> ·
+      <a href="https://app.sharity.hu/cegeknek/?lang=en">For companies</a> ·
+      <a href="https://app.sharity.hu/partner-api">Partner API</a> ·
+      <a href="https://app.sharity.hu/ngo-guides/?lang=en">For NGOs</a>
+    </span>
+  </footer>
+
+</div>
+</body>
+</html>

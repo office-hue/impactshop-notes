@@ -28,12 +28,7 @@
             min-height: 100vh;
         }
 
-        /* Alternative: Soft animated gradient */
-        @keyframes ads-watch-bg-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
+        /* Soft fixed gradient overlay */
         .impactshop-ads-watch-container::before {
             content: '';
             position: fixed;
@@ -42,8 +37,6 @@
             right: 0;
             bottom: 0;
             background: linear-gradient(-45deg, #e0f2fe, #ddd6fe, #fce7f3, #fed7aa, #d1fae5);
-            background-size: 400% 400%;
-            animation: ads-watch-bg-shift 20s ease infinite;
             z-index: -1;
             opacity: 0.4;
         }
@@ -462,17 +455,13 @@
 
         .player-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            aspect-ratio: 16 / 9;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             background: rgba(0, 0, 0, 0.7);
-            border-radius: 16px;
-            z-index: 12;
+            border-radius: 10px;
         }
 
         .btn-watch-ad {
@@ -1335,6 +1324,13 @@
             align-items: center;
         }
 
+        .auto-banner-body {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .auto-banner-media img {
             width: 100%;
             border-radius: 12px;
@@ -1354,15 +1350,22 @@
             margin-bottom: 8px;
         }
 
-        .auto-banner-link {
+        .auto-banner-link,
+        .auto-banner-link:visited,
+        .auto-banner-link:hover,
+        .auto-banner-link:active,
+        .auto-banner-link:focus {
             display: inline-flex;
+            align-items: center;
+            justify-content: center;
             padding: 8px 14px;
             border-radius: 999px;
-            background: #0f172a;
-            color: #fff;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            color: #fff !important;
             text-decoration: none;
             font-weight: 700;
             margin-bottom: 8px;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
         }
 
         .auto-banner-progress {
@@ -1421,7 +1424,7 @@
             color: #e2e8f0;
             font-size: 14px;
             position: relative;
-            z-index: 20;
+            z-index: 1501;
         }
 
         .video-info-title {
@@ -1475,6 +1478,8 @@
             border-radius: 12px;
             background: linear-gradient(135deg, #0f172a 0%, #111f3f 100%);
             border: 1px solid rgba(148, 163, 184, 0.22);
+            position: relative;
+            z-index: 1501;
         }
 
         .ads-watch-live-balance-title {
@@ -1696,7 +1701,9 @@
         @media (max-width: 640px) {
             .ads-watch-banner {
                 align-items: flex-start;
-                padding: 16px 14px 180px;
+                justify-content: flex-start;
+                padding: 12px 10px 140px;
+                overflow-y: auto;
             }
 
             .ads-watch-status-bar {
@@ -1760,40 +1767,70 @@
                 flex-direction: column;
             }
 
-            /* Auto-banner card: vertical layout on mobile */
+            /* Keep the CTA visible on mobile by using a compact horizontal card. */
             .auto-banner-card {
-                grid-template-columns: 1fr;
-                gap: 12px;
-                padding: 12px;
-                max-width: 92vw;
+                grid-template-columns: 76px minmax(0, 1fr);
+                gap: 8px;
+                padding: 10px;
+                max-width: min(90vw, 320px);
+                align-items: center;
+            }
+
+            .auto-banner-media {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
             }
 
             .auto-banner-media img {
-                max-height: 140px;
-                width: 100%;
+                width: 76px;
+                height: 76px;
+                max-width: 76px;
+                max-height: 76px;
                 object-fit: contain;
+                margin: 0 auto;
+            }
+
+            .auto-banner-body {
+                gap: 6px;
             }
 
             .auto-banner-title {
-                font-size: 15px;
-                line-height: 1.3;
+                font-size: 13px;
+                line-height: 1.2;
+                margin-bottom: 0;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
             }
 
             .auto-banner-prices {
-                font-size: 12px;
+                font-size: 11px;
+                margin-bottom: 0;
             }
 
-            .auto-banner-link {
+            .auto-banner-link,
+            .auto-banner-link:visited,
+            .auto-banner-link:hover,
+            .auto-banner-link:active,
+            .auto-banner-link:focus {
                 font-size: 14px;
-                padding: 12px 16px;
-                width: 100%;
-                min-height: 40px;
+                padding: 10px 14px;
+                width: auto;
+                min-width: 116px;
+                min-height: 0;
                 justify-content: center;
                 align-items: center;
                 display: flex !important;
                 visibility: visible !important;
                 opacity: 1 !important;
                 pointer-events: auto !important;
+                color: #fff !important;
+                align-self: flex-start;
+                margin-bottom: 0;
+                line-height: 1;
             }
 
             /* CTA button: compact circle on mobile */
@@ -1805,7 +1842,7 @@
 
             /* Sponsor CTA overlay: keep readable on mobile */
             .ads-watch-cta.sponsor-cta-overlay {
-                bottom: 150px;
+                bottom: 12px;
                 right: 12px;
                 z-index: 1100;
             }
@@ -1813,6 +1850,16 @@
             .ads-watch-cta.sponsor-cta-overlay a {
                 width: auto;
                 height: auto;
+                min-width: 120px;
+                min-height: 68px;
+                padding: 14px 18px;
+                font-size: 13px;
+                line-height: 1.2;
+            }
+
+            .ima-cta-overlay {
+                bottom: 12px;
+                right: 12px;
                 min-width: 120px;
                 min-height: 68px;
                 padding: 14px 18px;

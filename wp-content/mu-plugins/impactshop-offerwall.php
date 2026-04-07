@@ -717,7 +717,9 @@ function impactshop_offerwall_get_reward_status(): WP_REST_Response
         return new WP_REST_Response(['status' => 'missing_pseudo', 'campaigns' => []], 200);
     }
 
-    $adslot = defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '';
+    $adslot = function_exists('impactshop_ayet_get_effective_adslot')
+        ? impactshop_ayet_get_effective_adslot()
+        : (defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '');
     if ($adslot === '') {
         return new WP_REST_Response(['status' => 'missing_adslot', 'campaigns' => []], 200);
     }
@@ -836,11 +838,33 @@ function impactshop_offerwall_health(): WP_REST_Response
         $since
     ), ARRAY_A);
 
+    $ayet_adslot = function_exists('impactshop_ayet_get_adslot_diagnostics')
+        ? impactshop_ayet_get_adslot_diagnostics()
+        : [
+            'effective' => defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '',
+            'env' => defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '',
+            'fallback' => defined('AYET_OFFERWALL_ADSLOT_FALLBACK') ? (string) AYET_OFFERWALL_ADSLOT_FALLBACK : '',
+            'admin' => '',
+            'env_active' => false,
+            'admin_mismatch' => false,
+            'using_fallback' => false,
+        ];
+    $ayet_surveywall = function_exists('impactshop_ayet_get_surveywall_diagnostics')
+        ? impactshop_ayet_get_surveywall_diagnostics()
+        : [
+            'effective' => '',
+            'env' => '',
+            'profile_hash_configured' => false,
+            'active' => false,
+        ];
+
     return new WP_REST_Response([
         'status' => 'ok',
         'last_postback' => $last,
         'count_24h' => $count,
         'providers' => $by_provider,
+        'ayet_adslot' => $ayet_adslot,
+        'ayet_surveywall' => $ayet_surveywall,
     ], 200);
 }
 
@@ -1038,8 +1062,11 @@ function impactshop_offerwall_shortcode(): string
     $cpx_provider = $providers['cpx'] ?? [];
     $cpx_active = !empty($cpx_provider['enabled']);
     $ayet_provider = $providers['ayet'] ?? [];
-    $ayet_active = !empty($ayet_provider['enabled']);
-    $ayet_survey_active = defined('AYET_OFFERWALL_SURVEYWALL_ADSLOT') && (string) AYET_OFFERWALL_SURVEYWALL_ADSLOT !== '';
+    $ayet_survey_adslot = function_exists('impactshop_ayet_get_effective_surveywall_adslot')
+        ? impactshop_ayet_get_effective_surveywall_adslot()
+        : '';
+    $ayet_active = !empty($ayet_provider['enabled']) || $ayet_survey_adslot !== '';
+    $ayet_survey_active = $ayet_survey_adslot !== '';
     $pseudo_id = impactshop_offerwall_get_pseudo_id();
     $cpx_app_id = (string) ($cpx_provider['api_key'] ?? '');
     $cpx_secret = (string) ($cpx_provider['survey_token_secret'] ?? '');
@@ -1087,9 +1114,9 @@ function impactshop_offerwall_shortcode(): string
         $survey_sections .= '</div>';
     }
     $survey_sections .= '<div class="offerwall-survey-section" data-provider="ayet">';
-    $survey_sections .= '<h3 class="offerwall-section-title">🧭 AyeT kérdőívek</h3>';
-    $survey_sections .= '<div class="offerwall-note">Válassz egy kérdőívet, és teljesítés után jóváírjuk a pontot és szavazatot.</div>';
-    $survey_sections .= '<div class="offerwall-cards" data-role="offerwall-ayet-surveys"></div>';
+    $survey_sections .= '<h3 class="offerwall-section-title">🧭 AyeT Surveywall</h3>';
+    $survey_sections .= '<div class="offerwall-note">Itt csak a külön AyeT Surveywall kérdőívek jelennek meg. Az AyeT játékok és offerwall ajánlatok továbbra is az offerwall ágon maradnak.</div>';
+    $survey_sections .= '<div class="offerwall-cards offerwall-cards--surveywall" data-role="offerwall-ayet-surveys"></div>';
     $survey_sections .= '</div>';
     $survey_html = $survey_sections !== ''
         ? $survey_sections

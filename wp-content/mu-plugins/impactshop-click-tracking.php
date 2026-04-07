@@ -88,6 +88,8 @@ function impactshop_click_tracking_handle(WP_REST_Request $request): WP_REST_Res
         $points_hint = 0;
     }
     $dedupe_key = sanitize_text_field((string) ($params['dedupe_key'] ?? ''));
+    // TEMPORARY DEBUG — remove after investigation
+    @file_put_contents(ABSPATH . 'wp-content/uploads/cta-debug.log', date('c') . ' points_hint=' . $points_hint . ' raw_points=' . var_export($params['points'] ?? 'KEY_MISSING', true) . ' params_keys=' . implode(',', array_keys($params ?? [])) . ' method=' . $request->get_method() . ' ct_header=' . ($request->get_content_type()['value'] ?? 'NONE') . ' raw_body=' . substr($request->get_body(), 0, 300) . "\n", FILE_APPEND);
 
     if ($content_type === '') {
         $content_type = 'unknown';

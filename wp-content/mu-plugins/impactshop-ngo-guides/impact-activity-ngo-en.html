@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Impact Challenge NGO Guide | Sharity</title>
+  <meta name="description" content="NGO guide to Impact Challenge: video views and offerwall tasks turn into votes and quarterly donation-pool distribution for NGOs.">
+  <meta property="og:title" content="Impact Challenge NGO Guide | Sharity">
+  <meta property="og:description" content="How Impact Challenge works for NGOs: videos, offerwall tasks, votes, rankings, and quarterly donation-pool distribution.">
+  <meta property="og:url" content="https://app.sharity.hu/ngo-guides/impact-challenge/?lang=en">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(111, 227, 193, 0.35), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--teal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(15, 138, 157, 0.1);
+      text-decoration: none;
+    }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 138, 157, 0.25);
+      color: var(--teal);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--teal);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.12);
+      color: var(--purple);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--purple);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(124, 58, 237, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(124, 58, 237, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--purple);
+      font-weight: 600;
+      border: 2px solid var(--purple);
+      transition: background 0.2s;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(124, 58, 237, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--purple);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(124, 58, 237, 0.12);
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .list-numbered {
+      counter-reset: step;
+    }
+    .list-numbered li {
+      counter-increment: step;
+    }
+    .list-numbered li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(124, 58, 237, 0.15);
+      color: var(--purple);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 16px;
+    }
+
+    .split {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 24px;
+    }
+
+    .callout {
+      margin-top: 20px;
+      padding: 20px 24px;
+      border-radius: 16px;
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+    }
+
+    .callout.sun {
+      background: rgba(245, 182, 66, 0.15);
+      border-color: rgba(245, 182, 66, 0.35);
+    }
+
+    .callout.success {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin-top: 16px;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    th {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .flow {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+    .flow-step {
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(124, 58, 237, 0.08);
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+      margin-right: 8px;
+    }
+
+    .badge.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+
+    .footer {
+      margin-top: 64px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+    .fade-in.delay-1 { animation-delay: 0.1s; }
+    .fade-in.delay-2 { animation-delay: 0.2s; }
+    .fade-in.delay-3 { animation-delay: 0.3s; }
+
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#mi-ez">What is it?</a>
+      <a href="#hogyan-mukodik">How it works</a>
+      <a href="#szintek">Levels</a>
+      <a href="#tippek">More votes</a>
+      <a href="#faq">FAQ</a>
+      <a href="/ngo-guides/impact-shop?lang=en">Impact Shop →</a>
+      <div class="lang-switch" aria-label="Language selector">
+        <a href="?lang=hu">HU</a>
+        <a href="?lang=en" class="active" aria-current="true">EN</a>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">🎬 Video views = donations</span>
+        <h1>Impact Challenge NGO Guide</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          <strong>Activity turns into donations:</strong> supporters watch short videos, earn votes,
+          and allocate them to their favorite NGO. Advertisers pay for the views, NGOs receive the donation.
+        </p>
+        <p>
+          You participate automatically - just tell your community and collect votes.
+        </p>
+        <div style="margin-top: 20px;">
+          <a href="https://app.sharity.hu/impact-challenge/" class="cta" target="_blank">🎬 Impact Challenge</a>
+          <a href="#hogyan-mukodik" class="cta-secondary">How it works</a>
+        </div>
+      </div>
+      <div>
+        <div class="card highlight">
+          <h3>🎯 In short</h3>
+          <ul class="list" style="margin-top: 16px;">
+            <li>Supporters watch videos and earn votes</li>
+            <li>Votes are allocated to your NGO</li>
+            <li>Quarterly donation pool is split by vote share</li>
+            <li>Participation is automatic and free</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <h2 class="section-title fade-in delay-1" id="hogyan-mukodik">🔄 How it works</h2>
+
+    <div class="card fade-in delay-2">
+      <h3>The 4-step flow</h3>
+      <div class="flow" style="margin-top: 20px;">
+        <div class="flow-step">
+          <strong>📺</strong>
+          Watch videos
+        </div>
+        <div class="flow-step">
+          <strong>🗳️</strong>
+          Earn votes
+        </div>
+        <div class="flow-step">
+          <strong>❤️</strong>
+          Choose NGO
+        </div>
+        <div class="flow-step">
+          <strong>💰</strong>
+          Donation
+        </div>
+      </div>
+    </div>
+
+    <div class="split fade-in delay-3">
+      <div class="card">
+        <div class="card-icon">👤</div>
+        <h3>Supporter journey</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Watch a short video (max ~30s) - earn points and votes</li>
+          <li>Select an NGO to support</li>
+          <li>Allocate votes anytime (to one or multiple NGOs)</li>
+          <li>Donations are distributed by vote share</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏢</div>
+        <h3>NGO side</h3>
+        <ul class="list" style="margin-top: 16px;">
+          <li>Receive donations when supporters vote for you</li>
+          <li>See your position on the leaderboard</li>
+          <li>Track incoming votes in real time</li>
+          <li>Quarterly summary and payout</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Points and votes -->
+    <h2 class="section-title fade-in" id="pontszerzes">🎯 Points and votes</h2>
+
+    <div class="card fade-in">
+      <p>Supporters earn <strong>points and votes</strong> through the activities below. Points raise their level and increase vote weight.</p>
+      <p style="margin-top: 8px; font-size: 0.92rem; color: var(--muted);">
+        🎯 Daily points cap: 1,500 points. Each video type has its own daily limit.
+        ⏳ After 3 days of inactivity, decay starts; higher levels also have weekly natural decay (never below 100 points).
+      </p>
+
+      <h3 style="margin-top: 20px;">📺 Video views (Ad Watch)</h3>
+      <table style="margin-top: 12px;">
+        <thead>
+          <tr>
+            <th>Content type</th>
+            <th>Points</th>
+            <th>Votes</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Standard video</td><td>1</td><td>1</td><td>Streak multiplier applies</td></tr>
+          <tr><td>Sponsor video</td><td>5</td><td>5</td><td>No streak multiplier</td></tr>
+          <tr><td>Auto banner</td><td>1</td><td>1</td><td>Streak multiplier applies</td></tr>
+          <tr><td>Educational content</td><td>1</td><td>1</td><td>Interval reward + bonus</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout sun" style="margin-top: 16px;">
+        <h3>🔥 Streak bonus</h3>
+        <p>Daily consecutive activity adds a multiplier to <strong>points and votes</strong> (except sponsor content):</p>
+        <ul class="list" style="margin-top: 8px;">
+          <li><strong>7 days</strong> → ×1.10</li>
+          <li><strong>14 days</strong> → ×1.20</li>
+          <li><strong>30 days</strong> → ×1.30</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top: 24px;">🔗 CTA clicks</h3>
+      <p style="margin-top: 8px;">Clicking a CTA button next to the video/banner ("Learn more", "View") gives a fixed reward:</p>
+      <div style="display: inline-block; background: rgba(15,138,157,0.08); border-radius: 10px; padding: 10px 20px; margin-top: 8px;">
+        <strong style="color: var(--teal);">+5 points</strong> &nbsp;·&nbsp; <strong style="color: var(--purple);">+5 votes</strong> <span style="color: var(--muted); font-size: 0.88rem;">/ click</span>
+      </div>
+
+      <h3 style="margin-top: 28px;">📋 Other point sources</h3>
+      <p style="margin-top: 8px;">Supporters can also earn points outside video/task flow. These raise levels (no votes):</p>
+      <table style="margin-top: 12px;">
+        <thead>
+          <tr>
+            <th>Activity</th>
+            <th>Points</th>
+            <th>Limit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Daily login</td><td>2</td><td>Once per day</td></tr>
+          <tr><td>Profile completion</td><td>10</td><td>One-time</td></tr>
+          <tr><td>Save nickname</td><td>15</td><td>One-time</td></tr>
+          <tr><td>Share page</td><td>10</td><td>Daily limit: 3</td></tr>
+          <tr><td>Download Wallet Pass</td><td>25</td><td>Per NGO</td></tr>
+          <tr><td>Open Impact Challenge page</td><td>5</td><td>Once per day</td></tr>
+          <tr><td>Shop in Impact Shop</td><td>~ purchase amount (HUF)</td><td>Per transaction</td></tr>
+          <tr><td>First purchase bonus</td><td>100</td><td>One-time</td></tr>
+          <tr><td>Discover a new shop</td><td>25</td><td>Per shop</td></tr>
+          <tr><td>Invite a friend (referral)</td><td>200 / 50</td><td>Inviter / invited</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 8px; font-size: 0.88rem; color: #555;">💡 The more active your supporters are, the faster they level up - and the more donations your NGO receives.</p>
+    </div>
+
+    <!-- Cost -->
+    <h2 class="section-title fade-in" id="koltseg">💰 How much does it cost?</h2>
+
+    <div class="grid fade-in">
+      <div class="card highlight">
+        <div class="card-icon">🎁</div>
+        <h3>Joining: FREE</h3>
+        <p style="margin-top: 12px;">
+          Participation in Impact Challenge is free. You only benefit - donations are driven by supporter activity.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Where the money comes from</h3>
+        <p style="margin-top: 12px;">
+          Advertisers pay for video views. A portion goes into the donation pool, which is split by vote share.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout success fade-in">
+      <h3>📝 Example calculation</h3>
+      <p>
+        <strong>Current shared donation pool:</strong> 500,000 HUF<br>
+        <strong>Total votes:</strong> 10,000<br>
+        <strong>Your votes:</strong> 1,000 (10%)<br>
+        <strong>Your share:</strong> <span style="color: var(--success); font-weight: bold;">60,000 HUF</span>
+      </p>
+    </div>
+
+    <!-- Levels -->
+    <h2 class="section-title fade-in" id="szintek">🏆 Levels and benefits</h2>
+
+    <div class="card fade-in">
+      <p>User level affects vote weight, discount, and the donation multiplier. A Legend-level supporter vote counts <strong>6x</strong>.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Point threshold</th>
+            <th>Vote weight</th>
+            <th>Discount</th>
+            <th>Donation multiplier</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🌱 Basic</td>
+            <td>0</td>
+            <td>×1</td>
+            <td>50%</td>
+            <td>×1.00</td>
+          </tr>
+          <tr>
+            <td>🥉 Bronze</td>
+            <td>3,000</td>
+            <td>×2</td>
+            <td>60%</td>
+            <td>×1.05</td>
+          </tr>
+          <tr>
+            <td>🥈 Silver</td>
+            <td>20,000</td>
+            <td>×3</td>
+            <td>70%</td>
+            <td>×1.10</td>
+          </tr>
+          <tr>
+            <td>🥇 Gold</td>
+            <td>60,000</td>
+            <td>×4</td>
+            <td>80%</td>
+            <td>×1.15</td>
+          </tr>
+          <tr>
+            <td>💎 Platinum</td>
+            <td>150,000</td>
+            <td>×5</td>
+            <td>90%</td>
+            <td>×1.20</td>
+          </tr>
+          <tr>
+            <td>👑 Legend</td>
+            <td>300,000+</td>
+            <td>×6</td>
+            <td>100%</td>
+            <td>×1.25</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 16px; font-style: italic;">
+        💡 <strong>Tip:</strong> Keep loyal, active supporters - they matter more. A Legend vote counts 6x and the donation multiplier adds +25%.
+      </p>
+      <p style="margin-top: 8px; font-size: 0.82rem; color: var(--muted); font-style: italic;">Point thresholds adapt to community size - values shown are the current thresholds.</p>
+      <p style="margin-top: 10px; font-size: 0.9rem; color: var(--muted);">⏱️ Guidance: Bronze in a few days, Silver ~3–4 weeks, Gold ~2–3 months, Platinum ~3–4 months, Legend ~6–7 months with steady activity.</p>
+      <div style="margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+        <div style="font-weight: 600; margin-bottom: 6px;">What it takes for each level</div>
+        <ul style="margin: 0 0 6px 18px;">
+          <li>Bronze: reachable in a few days of active use</li>
+          <li>Silver: ~1 month with regular 5+ days/week activity</li>
+          <li>Gold: ~2–3 months for active users</li>
+          <li>Platinum: ~3–4 months with consistent daily use</li>
+          <li>Legend: ~6–7 months for the most active users</li>
+        </ul>
+        <div style="font-size: 0.85rem; color: var(--muted);">With occasional use, Platinum/Legend are typically not reachable.</div>
+      </div>
+    </div>
+
+    <div class="callout fade-in" style="margin-top: 24px;">
+      <h3>📊 Why this matters for NGOs</h3>
+      <p>
+        <strong>Vote weight:</strong> Higher-level supporters have stronger votes. Ten Legend votes count as sixty Basic votes.<br><br>
+        <strong>Donation multiplier:</strong> Higher-level users generate more donation from the same purchase (Legend: ×1.25).<br><br>
+        <strong>Discount:</strong> Users receive higher discounts at partner stores (50-100% of the max discount), which boosts buying frequency.
+      </p>
+    </div>
+
+    <!-- Ranking -->
+    <h2 class="section-title fade-in">📊 Ranking and visibility</h2>
+
+    <div class="split fade-in">
+      <div class="card">
+        <div class="card-icon">🏅</div>
+        <h3>Top 10 NGO list</h3>
+        <p style="margin-top: 12px;">
+          The platform highlights the top NGOs by votes. Being in the top list drives more new supporters.
+        </p>
+        <div style="margin-top: 16px;">
+          <span class="badge green">Visibility</span>
+          <span class="badge green">Trust</span>
+          <span class="badge green">Motivation</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <h3>Reports</h3>
+        <ul class="list" style="margin-top: 12px;">
+          <li>Live vote count</li>
+          <li>Leaderboard position</li>
+          <li>Estimated donation based on current ratios</li>
+          <li>Historical data by month</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- More votes -->
+    <h2 class="section-title fade-in" id="tippek">🚀 How to get more votes</h2>
+
+    <div class="grid fade-in">
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <h3>1. Communicate on your channels</h3>
+        <p style="margin-top: 12px;">
+          Share the Sharity logo and link:
+        </p>
+        <div style="background: rgba(11, 31, 42, 0.06); padding: 12px; border-radius: 8px; margin-top: 8px; font-family: monospace; font-size: 0.85rem;">
+          "Support us by watching videos - costs you 0 HUF!"<br>
+          app.sharity.hu/impact-challenge/
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h3>2. Social media</h3>
+        <ul class="list" style="margin-top: 12px;">
+          <li>Share your leaderboard position</li>
+          <li>Show donation progress</li>
+          <li>Ask followers to vote</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>3. Embed the NGO Card</h3>
+        <p style="margin-top: 12px;">
+          Add the NGO card to your website - it shows live vote counts.
+        </p>
+        <a href="/ngo-guides/ngo-card?lang=en" style="display: inline-block; margin-top: 12px;">NGO Card guide →</a>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎉</div>
+        <h3>4. Community challenges</h3>
+        <p style="margin-top: 12px;">
+          Run campaigns like:
+        </p>
+        <ul class="list" style="margin-top: 8px;">
+          <li>"Let's hit 1,000 votes this week!"</li>
+          <li>"Top 3 spot = extra post"</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <h2 class="section-title fade-in" id="faq">❓ FAQ</h2>
+
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Do we need a separate registration?</h3>
+      <p style="margin-top: 8px;">
+        No. If your NGO is already in the Sharity system, you are included automatically.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>What if no one votes for us?</h3>
+      <p style="margin-top: 8px;">
+        Then your NGO does not receive a share from that quarterly Impact Challenge distribution. Impact Shop purchases can still generate donations.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Is there a minimum vote count?</h3>
+      <p style="margin-top: 8px;">
+        No. Even 1 vote qualifies you for a proportional share.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>How do supporters make sure they vote for us?</h3>
+      <p style="margin-top: 8px;">
+        Users can pick from the NGO list, or arrive from your unique link where your NGO is pre-selected.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>How much is a Legend-level vote worth?</h3>
+      <p style="margin-top: 8px;">
+        A Legend user vote counts <strong>6x</strong> compared to Basic. At 300,000+ points, votes are heavily weighted in the distribution.
+      </p>
+    </div>
+
+    <!-- Contact -->
+    <h2 class="section-title fade-in">📞 Contact and support</h2>
+
+    <div class="card fade-in">
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <h3>Questions?</h3>
+          <p style="margin-top: 12px;">
+            <strong>Email:</strong> <a href="mailto:office@sharity.hu">office@sharity.hu</a><br>
+            <strong>Response time:</strong> within 24 hours
+          </p>
+        </div>
+        <div>
+          <h3>Useful links:</h3>
+          <ul class="list" style="margin-top: 12px;">
+            <li><a href="https://app.sharity.hu/impact-challenge/" target="_blank">Impact Challenge page</a></li>
+            <li><a href="/ngo-guides/ngo-card?lang=en">NGO Card embed</a></li>
+            <li><a href="/ngo-guides/impact-shop?lang=en">Impact Shop guide</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer fade-in">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity - Impact Challenge</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          NGO guide for the Sharity platform<br>
+          Version 1.1 | Last update: February 2026
+        </p>
+        <div style="margin-top: 16px;">
+          <a href="/ngo-guides/impact-shop?lang=en" style="margin-right: 16px;">Impact Shop →</a>
+          <a href="/ngo-guides/ngo-card?lang=en">NGO Card →</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join Sharity - For Companies | Sharity</title>
+  <meta name="description" content="Become a Sharity partner: webshop, offline store, or service - affiliate, sponsor, offerwall, or direct integration. Support NGOs with your customers.">
+  <meta property="og:title" content="Sharity Partner Integration - For Companies">
+  <meta property="og:description" content="Grow sales, engagement, and brand trust with measurable impact. Online and offline.">
+  <meta property="og:url" content="https://app.sharity.hu/cegeknek?lang=en">
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --muted: #4b5c66;
+      --teal: #0f8a9d;
+      --mint: #6fe3c1;
+      --sun: #f5b642;
+      --sand: #f6efe6;
+      --card: #ffffff;
+      --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #7c3aed;
+      --coral: #ff6b6b;
+      --blue: #3b82f6;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Source Serif 4", "Georgia", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(59, 130, 246, 0.25), transparent 60%),
+        radial-gradient(900px 500px at 110% 10%, rgba(245, 182, 66, 0.3), transparent 55%),
+        linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", "Trebuchet MS", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.6rem 0;
+    }
+
+    h1 { font-size: clamp(2.4rem, 4vw, 3.6rem); }
+    h2 { font-size: clamp(1.6rem, 2.8vw, 2.4rem); }
+    h3 { font-size: 1.2rem; color: var(--ink); }
+
+    p { margin: 0 0 1rem 0; line-height: 1.7; color: var(--muted); }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 96px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .nav a {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .nav a:hover {
+      background: rgba(59, 130, 246, 0.1);
+      text-decoration: none;
+    }
+    .lang-switch {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+    .lang-switch a {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .lang-switch a.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .hero {
+      display: grid;
+      gap: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--blue);
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hero .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 12px 26px rgba(59, 130, 246, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-right: 12px;
+    }
+    .hero .cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(59, 130, 246, 0.4);
+      text-decoration: none;
+    }
+    .hero .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--blue);
+      font-weight: 600;
+      border: 2px solid var(--blue);
+      transition: background 0.2s;
+    }
+    .hero .cta-secondary:hover {
+      background: rgba(59, 130, 246, 0.08);
+      text-decoration: none;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 40px;
+    }
+
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    .card.highlight {
+      border: 2px solid var(--blue);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, #fff 100%);
+    }
+    .card.teal {
+      border: 2px solid var(--teal);
+      background: linear-gradient(135deg, rgba(15, 138, 157, 0.05) 0%, #fff 100%);
+    }
+    .card.purple {
+      border: 2px solid var(--purple);
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, #fff 100%);
+    }
+    .card.sun {
+      border: 2px solid var(--sun);
+      background: linear-gradient(135deg, rgba(245, 182, 66, 0.1) 0%, #fff 100%);
+    }
+    .card.coral {
+      border: 2px solid var(--coral);
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, #fff 100%);
+    }
+
+    .card-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.12);
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+    .card-icon.teal { background: rgba(15, 138, 157, 0.12); }
+    .card-icon.purple { background: rgba(124, 58, 237, 0.12); }
+    .card-icon.sun { background: rgba(245, 182, 66, 0.2); }
+    .card-icon.mint { background: rgba(111, 227, 193, 0.2); }
+    .card-icon.coral { background: rgba(255, 107, 107, 0.15); }
+
+    .list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .list li {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(11, 31, 42, 0.04);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .list-numbered {
+      counter-reset: step;
+    }
+    .list-numbered li {
+      counter-increment: step;
+    }
+    .list-numbered li::before {
+      content: counter(step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--blue);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .section-title {
+      margin-top: 56px;
+      margin-bottom: 16px;
+    }
+
+    .split {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin-top: 24px;
+    }
+
+    .callout {
+      margin-top: 20px;
+      padding: 20px 24px;
+      border-radius: 16px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .callout.blue {
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--blue);
+      margin-right: 6px;
+    }
+    .badge.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+    .badge.purple {
+      background: rgba(124, 58, 237, 0.15);
+      color: #5b21b6;
+    }
+    .badge.sun {
+      background: rgba(245, 182, 66, 0.2);
+      color: #7a4b00;
+    }
+    .badge.teal {
+      background: rgba(15, 138, 157, 0.15);
+      color: #0b5d6a;
+    }
+    .badge.coral {
+      background: rgba(255, 107, 107, 0.2);
+      color: #9f1239;
+    }
+
+    .stats-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+    }
+    .stat-box {
+      padding: 18px;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.08);
+      text-align: center;
+    }
+    .stat-box .number {
+      display: block;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--blue);
+    }
+    .stat-box .label {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin-top: 16px;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(11, 31, 42, 0.08);
+    }
+    th {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .pricing-card {
+      text-align: center;
+      padding: 24px 20px;
+    }
+    .pricing-card .price {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 12px 0 4px;
+    }
+    .pricing-card .price-note {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .pricing-card .cta {
+      display: inline-flex;
+      justify-content: center;
+      margin-top: 18px;
+      width: 100%;
+    }
+    .pricing-card.recommended {
+      transform: translateY(-8px);
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: reveal 0.6s ease forwards;
+    }
+    @keyframes reveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .hero { padding: 24px; }
+      .nav { justify-content: center; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main class="wrap">
+    <!-- Navigation -->
+    <nav class="nav fade-in">
+      <a href="#elonyok">Benefits</a>
+      <a href="#ugyfelek">How we bring customers</a>
+      <a href="#csatlakozas">Integration modes</a>
+      <a href="#meret">SME & Enterprise</a>
+      <a href="#araink">Pricing</a>
+      <a href="#hogyan">How it works</a>
+      <a href="#faq">FAQ</a>
+      <a href="/partner-api">Developer API →</a>
+      <div class="lang-switch" aria-label="Language selector">
+        <a href="?lang=hu">HU</a>
+        <a href="?lang=en" class="active" aria-current="true">EN</a>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero fade-in" id="mi-ez">
+      <div>
+        <span class="pill">🏢 For companies & brands</span>
+        <h1>Grow sales, engagement, and brand trust with measurable impact</h1>
+        <p style="font-size: 1.1rem; color: var(--ink);">
+          <strong>Sharity connects your customers, your company, and NGOs.</strong>
+          Whether you run a webshop, an offline store, or a service business - Sharity works across all channels.
+          From SMEs to enterprises.
+        </p>
+        <p>
+          500+ partners · 35,000+ active users · 300+ NGOs · 25M+ HUF donated
+        </p>
+        <p style="padding: 14px 16px; border-radius: 14px; background: rgba(11, 31, 42, 0.05); color: var(--ink);">
+          <strong>This is the main partner entry page.</strong> Once the business model and joining path are clear,
+          your developer can continue in the <a href="/partner-api" style="font-weight: 700;">Partner API technical docs</a>.
+        </p>
+        <div style="margin-top: 20px;">
+          <a href="#csatlakozas" class="cta">🚀 Join now</a>
+          <a href="#hogyan" class="cta-secondary">Business overview</a>
+        </div>
+      </div>
+      <div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="number">500+</span>
+            <span class="label">Partner companies</span>
+          </div>
+          <div class="stat-box">
+            <span class="number">35K+</span>
+            <span class="label">Active users</span>
+          </div>
+          <div class="stat-box">
+            <span class="number">300+</span>
+            <span class="label">NGOs</span>
+          </div>
+          <div class="stat-box">
+            <span class="number">25M+</span>
+            <span class="label">HUF donated</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Benefits -->
+    <h2 class="section-title fade-in" id="elonyok">💡 Why join Sharity?</h2>
+
+    <div class="grid fade-in">
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>Targeted, engaged audience</h3>
+        <p style="margin-top: 12px;">
+          Sharity users <strong>shop with intent</strong>. NGOs actively recommend partners through their <strong>NGO Card network</strong> and communities.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon teal">💝</div>
+        <h3>CSR and brand building</h3>
+        <p style="margin-top: 12px;">
+          Every purchase generates a donation. <strong>Do good without charging your customers more</strong> - a strong positive brand signal.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon purple">🔁</div>
+        <h3>Higher return rate</h3>
+        <p style="margin-top: 12px;">
+          Sharity ID users <strong>receive discounts</strong> - leading to loyal, repeat customers.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon sun">📺</div>
+        <h3>Ad inventory in <a href="/ngo-guides/impact-challenge?lang=en" target="_blank" style="color: var(--blue);">Impact Challenge</a></h3>
+        <p style="margin-top: 12px;">
+          <strong>Direct partners</strong> run their banner/video <strong>for free in Impact Challenge</strong> - reaching the most active supporters.
+          For affiliate partners, visibility is covered by commission. Sponsor/brand placements have custom pricing.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon mint">🎰</div>
+        <h3>Giveaways</h3>
+        <p style="margin-top: 12px;">
+          Customers automatically participate in Sharity raffles. You can add prizes - winners can become loyal customers.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Transparent reporting</h3>
+        <p style="margin-top: 12px;">
+          Track transactions, KPIs, and social impact in the partner dashboard - ESG-compatible reporting included.
+        </p>
+      </div>
+      <div class="card coral">
+        <div class="card-icon coral">🧩</div>
+        <h3>Offerwall - learn about your customers</h3>
+        <p style="margin-top: 12px;">
+          Surveys, quizzes, games, and interactive tasks inside Sharity. Users earn points, and you get <strong>real consumer insights</strong>.
+          Connect via offerwall networks (e.g. Bitlabs, Pollfish) or custom deals.
+        </p>
+      </div>
+      <div class="card sun">
+        <div class="card-icon sun">🏪</div>
+        <h3>Online and offline - works everywhere</h3>
+        <p style="margin-top: 12px;">
+          Not just webshops: <strong>restaurants, stores, salons, hotels, gyms</strong> and any physical store can integrate Sharity.
+          NFC-based Sharity ID at checkout or QR code on the receipt - offline is part of the system.
+        </p>
+      </div>
+      <div class="card highlight">
+        <div class="card-icon">🏆</div>
+        <h3>Gamification - points, levels, votes</h3>
+        <p style="margin-top: 12px;">
+          Sharity's motivation system (points, level-ups, <a href="/ngo-guides/impact-challenge?lang=en" target="_blank" style="color: var(--blue);">Impact Challenge</a> votes)
+          keeps customers active even between purchases. Higher engagement drives retention and loyalty.
+        </p>
+        <p style="margin-top: 8px; font-size: 0.9rem;">
+          🔗 <a href="https://app.sharity.hu/rolunk/?lang=en#pontok" target="_blank" style="color: var(--blue); font-weight: 600;">Why users collect points and votes →</a>
+        </p>
+        <p style="margin-top: 8px; font-size: 0.9rem; color: var(--muted);">⏱️ Guidance: Bronze in a few days, Silver ~3–4 weeks, Gold ~2–3 months, Platinum ~3–4 months, Legend ~6–7 months with steady activity.</p>
+        <div style="margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.04); font-size: 0.9rem;">
+          <div style="font-weight: 600; margin-bottom: 6px;">What it takes for each level</div>
+          <ul style="margin: 0 0 6px 18px;">
+            <li>Bronze: reachable in a few days of active use</li>
+            <li>Silver: ~1 month with regular 5+ days/week activity</li>
+            <li>Gold: ~2–3 months for active users</li>
+            <li>Platinum: ~3–4 months with consistent daily use</li>
+            <li>Legend: ~6–7 months for the most active users</li>
+          </ul>
+          <div style="font-size: 0.85rem; color: var(--muted);">With occasional use, Platinum/Legend are typically not reachable.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How we bring customers -->
+    <h2 class="section-title fade-in" id="ugyfelek">🎯 How we bring you customers</h2>
+
+    <div class="grid fade-in">
+      <div class="card teal">
+        <div class="card-icon teal">🌍</div>
+        <h3>1. NGO network - 300+ NGOs as lead sources</h3>
+        <p style="margin-top: 12px;">
+          Every NGO actively communicates to their community that purchases at partner stores automatically create donations.
+        </p>
+        <div class="callout" style="margin-top: 16px;">
+          <h3 style="font-size: 1rem;">🪪 NGO Card</h3>
+          <p>
+            Each NGO has a <strong>digital card (<a href="https://app.sharity.hu/ngo-guides/ngo-card/?lang=en" target="_blank" style="color: var(--teal); font-weight: 600;">NGO Card</a>)</strong>
+            shared on social media, newsletters, and events. The card can direct supporters to your offer.
+          </p>
+        </div>
+        <p style="margin-top: 12px; font-weight: 600; color: var(--teal);">
+          → Free, organic lead-gen. NGOs bring the audience, you provide the offer.
+        </p>
+      </div>
+
+      <div class="card" style="border: 2px solid var(--sun); background: linear-gradient(135deg, rgba(245, 182, 66, 0.06) 0%, #fff 100%);">
+        <div class="card-icon sun">🏆</div>
+        <h3>2. Motivation system - customers stay active</h3>
+        <p style="margin-top: 12px;">
+          Users earn points and votes for every activity - and discounts for shopping. They stay active even between purchases.
+        </p>
+        <div style="margin-top: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table style="font-size: 0.8rem; table-layout: fixed; width: 100%; word-wrap: break-word; overflow-wrap: break-word;">
+          <colgroup>
+            <col style="width: 38%;">
+            <col style="width: 62%;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="background: rgba(245, 182, 66, 0.15); color: var(--ink); padding: 8px 8px;">Activity</th>
+              <th style="background: rgba(245, 182, 66, 0.15); color: var(--ink); padding: 8px 8px;">Why it helps you</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px 8px;">Video views (<a href="/ngo-guides/impact-challenge?lang=en" target="_blank" style="color: var(--blue);">IC</a>)</td>
+              <td style="padding: 8px 8px;">Your banner/video appears (Direct: free, Affiliate: from commission)</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Voting for NGOs</td>
+              <td style="padding: 8px 8px;">Higher level = more loyal customers</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Survey completion (Offerwall)</td>
+              <td style="padding: 8px 8px;">Consumer insights from your audience</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Shopping with you</td>
+              <td style="padding: 8px 8px;">Repeat, engaged customers</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Reviewing a purchase</td>
+              <td style="padding: 8px 8px;">Real feedback for your partner team</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 8px;">Quiz / game</td>
+              <td style="padding: 8px 8px;">Engagement between purchases</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <p style="margin-top: 12px; font-weight: 600; color: var(--ink);">
+          → Your brand is present regularly, not only at checkout.
+        </p>
+        <p style="margin-top: 8px; font-size: 0.9rem;">
+          🔗 <a href="https://app.sharity.hu/rolunk/?lang=en#pontok" target="_blank" style="color: var(--blue); font-weight: 600;">Why users collect points and votes →</a>
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon mint">📏</div>
+        <h3>3. Real impact measurement</h3>
+        <p style="margin-top: 12px;">
+          We provide impact reports for partners:
+        </p>
+        <ul class="list" style="margin-top: 12px;">
+          <li><strong>Donation volume (HUF)</strong> generated by your customers</li>
+          <li><strong>Number of NGOs</strong> supported</li>
+          <li><strong>Active customers</strong> engaging with Sharity</li>
+          <li><strong>ESG-ready</strong> summary for annual reporting</li>
+          <li><strong>Impact indicators</strong> based on Big4-validated methodology</li>
+        </ul>
+        <p style="margin-top: 12px; font-weight: 600; color: var(--ink);">
+          → This is not greenwashing. <strong>Every donation is real, audited, and transparent</strong>.
+        </p>
+      </div>
+    </div>
+
+    <!-- Integration modes -->
+    <h2 class="section-title fade-in" id="csatlakozas">🔌 Integration modes</h2>
+
+    <p class="fade-in" style="font-size: 1.05rem; max-width: 700px;">
+      Choose the integration that fits you. The outcome is the same: customers get discounts, you gain new buyers, and donations go to good causes.
+    </p>
+
+    <div class="grid fade-in">
+      <div class="card teal">
+        <div class="card-icon teal">🔗</div>
+        <h3>Affiliate Partner</h3>
+        <span class="badge teal">Fastest</span>
+        <span class="badge green">0 HUF start</span>
+        <p style="margin-top: 16px;">
+          If you already use an affiliate network (Dognet, Tradedoubler, CJ, etc.), you can appear in Impact Shop immediately.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>No technical integration</li>
+          <li>Runs from your existing commission</li>
+          <li>Upload banners and deals</li>
+          <li>Instant access to 35K+ users</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="mailto:office@sharity.hu?subject=Affiliate%20partner%20integration" class="cta" style="background: var(--teal); width: 100%; text-align: center; display: block;">
+            Join as affiliate
+          </a>
+        </div>
+      </div>
+
+      <div class="card purple">
+        <div class="card-icon purple">📺</div>
+        <h3>Sponsor / Advertiser</h3>
+        <span class="badge purple">Brand building</span>
+        <span class="badge sun">Impact Challenge</span>
+        <p style="margin-top: 16px;">
+          Run <strong>video or banner ads</strong> on Sharity and reach the most active, impact-driven audience.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>15-30 sec video ads</li>
+          <li>Banner placement in Impact Shop</li>
+          <li>Targeted reach via NGO audiences</li>
+          <li>Transparent impact reporting</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="mailto:office@sharity.hu?subject=Sponsor%20/%20advertising%20inquiry" class="cta" style="background: var(--purple); width: 100%; text-align: center; display: block;">
+            I want to advertise
+          </a>
+        </div>
+      </div>
+
+      <div class="card highlight">
+        <div class="card-icon">⚡</div>
+        <h3>Direct Partner (API)</h3>
+        <span class="badge">Custom integration</span>
+        <span class="badge green">Discounts</span>
+        <p style="margin-top: 16px;">
+          No affiliate network? No problem. Use the <strong>Partner API</strong> for direct integration and optional Sharity ID discounts.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>Webhook-based transaction tracking</li>
+          <li>Discount API (by Sharity level)</li>
+          <li>HMAC signing and secure communication</li>
+          <li>Partner dashboard and reports</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="/partner-api" class="cta" style="width: 100%; text-align: center; display: block;">
+            For developers: Partner API
+          </a>
+        </div>
+      </div>
+
+      <div class="card coral">
+        <div class="card-icon coral">🧩</div>
+        <h3>Offerwall Partner</h3>
+        <span class="badge coral">Consumer insights</span>
+        <span class="badge sun">Custom deal</span>
+        <p style="margin-top: 16px;">
+          Run surveys, quizzes, games, and interactive tasks for Sharity users to gain research-grade insights.
+        </p>
+        <ul class="list" style="margin-top: 16px;">
+          <li>Surveys, quizzes, games, tasks</li>
+          <li>Connect via providers (Bitlabs, Pollfish) or direct</li>
+          <li>Users are motivated by points</li>
+          <li>Real consumer insights</li>
+          <li>Custom terms and pricing</li>
+        </ul>
+        <div style="margin-top: 20px;">
+          <a href="mailto:office@sharity.hu?subject=Offerwall%20partner%20inquiry" class="cta" style="background: var(--coral); width: 100%; text-align: center; display: block;">
+            Get in touch
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SME vs Enterprise -->
+    <h2 class="section-title fade-in" id="meret">🏢 For SMEs and enterprises</h2>
+
+    <div class="split fade-in">
+      <div class="card">
+        <h3>SMEs</h3>
+        <table style="margin-top: 12px;">
+          <tbody>
+            <tr>
+              <td><strong>0 HUF start</strong></td>
+              <td>No entry fee, no monthly fixed cost - affiliate and direct modes are free</td>
+            </tr>
+            <tr>
+              <td><strong>Instant lead-gen</strong></td>
+              <td>NGO network drives targeted traffic with no ad budget</td>
+            </tr>
+            <tr>
+              <td><strong>Differentiation</strong></td>
+              <td>Charity integration sets you apart from competitors</td>
+            </tr>
+            <tr>
+              <td><strong>Easy integration</strong></td>
+              <td>Affiliate: zero dev; Direct: simple webhook</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Enterprises</h3>
+        <table style="margin-top: 12px;">
+          <tbody>
+            <tr>
+              <td><strong>ESG / CSR reporting</strong></td>
+              <td>Auditable, transparent impact reporting for annual CSR</td>
+            </tr>
+            <tr>
+              <td><strong>Employee engagement</strong></td>
+              <td>Internal CSR program for employees via Sharity</td>
+            </tr>
+            <tr>
+              <td><strong>Offerwall research</strong></td>
+              <td>Surveys and quizzes with motivated audiences</td>
+            </tr>
+            <tr>
+              <td><strong>Custom integration</strong></td>
+              <td>Partner API with full customization and dedicated support</td>
+            </tr>
+            <tr>
+              <td><strong>Brand building</strong></td>
+              <td>Impact Challenge sponsor placement: reach + positive context</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Comparison table -->
+    <h2 class="section-title fade-in">📋 Comparison</h2>
+
+    <div class="card fade-in" style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Affiliate Partner</th>
+            <th>Sponsor</th>
+            <th>Direct Partner</th>
+            <th>Offerwall</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Start cost</td>
+            <td><span class="badge green">0 HUF</span></td>
+            <td>Custom pricing</td>
+            <td><span class="badge green">0 HUF</span></td>
+            <td>Custom</td>
+          </tr>
+          <tr>
+            <td>Technical integration</td>
+            <td>Not needed</td>
+            <td>Upload banner/video</td>
+            <td>API integration</td>
+            <td>Provider or custom</td>
+          </tr>
+          <tr>
+            <td>Impact Shop visibility</td>
+            <td>✅ Yes</td>
+            <td>✅ Banner</td>
+            <td>✅ Yes</td>
+            <td>✅ Yes</td>
+          </tr>
+          <tr>
+            <td>Impact Challenge ads</td>
+            <td>✅ Free</td>
+            <td>✅ Featured</td>
+            <td>✅ Free</td>
+            <td>✅ Free</td>
+          </tr>
+          <tr>
+            <td>Discount with Sharity ID</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>✅ Configurable</td>
+            <td>❌</td>
+          </tr>
+          <tr>
+            <td>Consumer insights</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>❌</td>
+            <td>✅ Surveys, quizzes</td>
+          </tr>
+          <tr>
+            <td>Partner dashboard</td>
+            <td>Affiliate network</td>
+            <td>✅ Campaign report</td>
+            <td>✅ Full analytics</td>
+            <td>✅ Campaign + insight report</td>
+          </tr>
+          <tr>
+            <td>Best for</td>
+            <td>Webshops with affiliate</td>
+            <td>Brands and enterprises</td>
+            <td>Own systems</td>
+            <td>Marketing / research</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pricing -->
+    <h2 class="section-title fade-in" id="araink">💰 Pricing</h2>
+
+    <div class="callout blue fade-in">
+      <h3>🎁 No onboarding fee!</h3>
+      <p>
+        Affiliate and direct partner integrations are <strong>free</strong>.
+        You only pay after successful transactions - and you decide the commission rate.
+      </p>
+    </div>
+
+    <div class="grid fade-in" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+      <div class="card pricing-card">
+        <div class="card-icon teal" style="margin: 0 auto 16px;">🔗</div>
+        <h3>Affiliate Partner</h3>
+        <div class="price">0 HUF</div>
+        <div class="price-note">start + operations</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>From existing affiliate commission</li>
+          <li>Automatic donations</li>
+          <li>Impact Shop presence</li>
+          <li>Free ad inventory</li>
+        </ul>
+        <a href="mailto:office@sharity.hu?subject=Affiliate%20partner%20signup" class="cta" style="background: var(--teal);">
+          Apply
+        </a>
+      </div>
+
+      <div class="card pricing-card recommended highlight">
+        <div class="card-icon" style="margin: 0 auto 16px;">⚡</div>
+        <h3>Direct Partner</h3>
+        <div class="price">You decide</div>
+        <div class="price-note">commission % per transaction</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>No fixed fee</li>
+          <li>Discount system</li>
+          <li>Partner API access for your developer team</li>
+          <li>Full dashboard</li>
+        </ul>
+        <a href="/partner-api" class="cta">
+          Developer documentation
+        </a>
+      </div>
+
+      <div class="card pricing-card purple">
+        <div class="card-icon purple" style="margin: 0 auto 16px;">📺</div>
+        <h3>Sponsor</h3>
+        <div class="price">Custom</div>
+        <div class="price-note">campaign-based</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>Video or banner</li>
+          <li>Targeted reach</li>
+          <li>Campaign report</li>
+          <li>Brand building</li>
+        </ul>
+        <a href="mailto:office@sharity.hu?subject=Sponsor%20offer%20request" class="cta" style="background: var(--purple);">
+          Request offer
+        </a>
+      </div>
+
+      <div class="card pricing-card coral">
+        <div class="card-icon coral" style="margin: 0 auto 16px;">🧩</div>
+        <h3>Offerwall</h3>
+        <div class="price">Custom</div>
+        <div class="price-note">per campaign</div>
+        <ul class="list" style="text-align: left; margin-top: 20px;">
+          <li>Survey / quiz / game</li>
+          <li>Consumer insight report</li>
+          <li>Motivated audience</li>
+          <li>Custom deal</li>
+        </ul>
+        <a href="mailto:office@sharity.hu?subject=Offerwall%20pricing" class="cta" style="background: var(--coral);">
+          Contact us
+        </a>
+      </div>
+    </div>
+
+    <div class="callout fade-in" style="margin-top: 32px;">
+      <h3>📊 Direct Partner settlement - example</h3>
+      <p style="margin-bottom: 16px;">
+        You decide how much of the commission you allocate to Sharity. The amount is split automatically:
+      </p>
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <strong>Commission split:</strong>
+          <ul class="list" style="margin-top: 8px;">
+            <li><strong>40-60%</strong> - Donation to NGO (by NGO level: Base 40% · Rising 50% · Legend 60%)</li>
+            <li><strong>Remaining share</strong> - Sharity platform fee</li>
+          </ul>
+          <p style="margin-top: 8px; font-size: 0.88rem; color: #555;">User level bonus (Basic ×1.00 → Legend ×1.25) multiplies the NGO donation share. Example: Legend NGO 60% × Legend user ×1.25 = <strong>75%</strong> donation share. Sharity covers the difference.</p>
+          <p style="margin-top: 6px; font-size: 0.88rem; color: #555;">💡 Customer discounts are set separately, not deducted from commission.</p>
+        </div>
+        <div>
+          <strong>Example (2% commission on 10,000 HUF purchase):</strong>
+          <ul class="list" style="margin-top: 8px;">
+            <li>10,000 HUF × 2% = 200 HUF commission</li>
+            <li>Base NGO: <strong>80 HUF</strong> donation · <strong>120 HUF</strong> Sharity</li>
+            <li>Rising NGO: <strong>100 HUF</strong> donation · <strong>100 HUF</strong> Sharity</li>
+            <li>Legend NGO: <strong>120 HUF</strong> donation · <strong>80 HUF</strong> Sharity</li>
+            <li>+ Legend user bonus (×1.25): donation can reach <strong>75% of commission</strong> (Sharity covers)</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top: 16px; font-size: 0.9rem;">
+        ⭐ <strong>Higher NGO level = higher donation share</strong> and user level bonus (up to ×1.25) further increases it - <strong>at Sharity's expense</strong>, not yours.
+      </p>
+    </div>
+
+    <!-- How it works -->
+    <h2 class="section-title fade-in" id="hogyan">🔄 How it works</h2>
+
+    <div class="split fade-in">
+      <div class="card">
+        <h3>🔗 Affiliate partner flow</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Apply by email to the Sharity team</li>
+          <li>We confirm your affiliate network</li>
+          <li>We upload your banners and deals</li>
+          <li>You appear in Impact Shop</li>
+          <li>Donations are automated from commission</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>⚡ Direct partner flow</h3>
+        <ul class="list list-numbered" style="margin-top: 16px;">
+          <li>Request an API key</li>
+          <li>Configure webhook in your system</li>
+          <li>Test in sandbox</li>
+          <li>Go live - transactions are recorded automatically</li>
+          <li>Your customers receive discounts, donations go to NGOs</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="margin-top: 24px;">
+      <h3>📺 Sponsor flow (<a href="/ngo-guides/impact-challenge?lang=en" target="_blank" style="color: var(--blue);">Impact Challenge</a>)</h3>
+      <ul class="list list-numbered" style="margin-top: 16px;">
+        <li>Request a proposal - goals, budget, duration</li>
+        <li>We prepare a custom offer for your campaign</li>
+        <li>Upload creative assets (video/banner)</li>
+        <li>Launch the campaign in Impact Challenge</li>
+        <li>Weekly/monthly reports on reach and impact</li>
+      </ul>
+    </div>
+
+    <!-- FAQ -->
+    <h2 class="section-title fade-in" id="faq">❓ FAQ</h2>
+
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>Which integration should I choose?</h3>
+      <p style="margin-top: 8px;">
+        Already on an affiliate network → <strong>Affiliate Partner</strong> (fastest)<br>
+        Brand awareness or campaigns → <strong>Sponsor</strong><br>
+        Own system + discounts → <strong>Direct Partner</strong><br>
+        Need consumer insights → <strong>Offerwall Partner</strong>
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>How much does it cost?</h3>
+      <p style="margin-top: 8px;">
+        Affiliate and direct integration are <strong>free</strong>.
+        No fixed fee, you pay only after transactions (rate set by you).
+        Sponsor and offerwall placements have custom pricing.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>What does "free ad inventory" mean?</h3>
+      <p style="margin-top: 8px;">
+        <strong>Direct partners</strong> get free banner/video placement in <a href="/ngo-guides/impact-challenge?lang=en" target="_blank" style="color: var(--blue);">Impact Challenge</a>.
+        For affiliate partners, visibility is funded from commission. Sponsor-only placements are priced separately.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>How much donation is generated?</h3>
+      <p style="margin-top: 8px;">
+        Affiliate: part of commission becomes donation automatically.<br>
+        Direct: you decide the percentage. Donation share is <strong>40-60%</strong> based on NGO level, and user multiplier (×1.00 → ×1.25) scales it further - e.g. Legend NGO 60% × Legend user ×1.25 = <strong>75%</strong> donation.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>How do I see results?</h3>
+      <p style="margin-top: 8px;">
+        Track transactions, conversions, and impact in the <strong>partner dashboard</strong>.
+        Direct partners get full analytics, affiliate partners get network dashboards plus Sharity reports.
+      </p>
+    </div>
+    <div class="card fade-in" style="margin-bottom: 16px;">
+      <h3>What companies can join?</h3>
+      <p style="margin-top: 8px;">
+        Any Hungarian <strong>webshop, offline store, service provider, or brand</strong> - ecommerce, hospitality,
+        accommodation, beauty, fitness, retail, and more. Webshop is not required: <strong>restaurants, stores, salons,
+        hotels</strong> can also join. Requirement: legal and ethical operation.
+      </p>
+    </div>
+
+    <!-- CTA -->
+    <div class="hero fade-in" style="margin-top: 48px; text-align: center;">
+      <div style="grid-column: 1 / -1;">
+        <h2>🚀 Ready to join?</h2>
+        <p style="font-size: 1.1rem; max-width: 600px; margin: 16px auto;">
+          Contact us and we will respond within 24 hours. We help you choose the best integration.
+        </p>
+        <div style="margin-top: 24px;">
+          <a href="mailto:office@sharity.hu?subject=Sharity%20partner%20integration" class="cta">
+            ✉️ Apply as partner
+          </a>
+          <a href="/partner-api" class="cta-secondary">
+            📄 Developer API docs
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <h2 class="section-title fade-in">📞 Contact</h2>
+
+    <div class="card fade-in">
+      <div class="split" style="margin-top: 0;">
+        <div>
+          <h3>Partner contact:</h3>
+          <p style="margin-top: 12px;">
+            <strong>Email:</strong> <a href="mailto:office@sharity.hu">office@sharity.hu</a><br>
+            <strong>Response time:</strong> within 24 hours<br>
+            <strong>Technical consultation:</strong> video call if needed
+          </p>
+        </div>
+        <div>
+          <h3>Useful links:</h3>
+          <ul class="list" style="margin-top: 12px;">
+            <li><a href="/partner-api">Partner API technical documentation</a></li>
+            <li><a href="/impactshop">Impact Shop</a></li>
+            <li><a href="/ngo-guides/impact-challenge?lang=en">Impact Challenge</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer fade-in">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">
+          <strong>Sharity - Partner Integration</strong>
+        </p>
+        <p style="opacity: 0.8;">
+          Guide for companies and brands<br>
+          Version 2.0 | Last update: February 2026
+        </p>
+        <div style="margin-top: 16px;">
+          <a href="/partner-api" style="margin-right: 16px;">Developer API →</a>
+          <a href="/impactshop">Impact Shop →</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
