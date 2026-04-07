@@ -11,6 +11,29 @@ MODEL_PATH="${ROOT_DIR}/docs/impactshop-protected-files.json"
 MODE="local"
 PUSH_RANGE="${SAFE_REPO_AUDIT_PUSH_RANGE:-}"
 
+resolve_push_base() {
+  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
+  local candidate=""
+  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
+    git merge-base HEAD "$upstream_ref"
+    return 0
+  fi
+
+  for candidate in "origin/HEAD" "origin/main" "origin/master" "main" "master"; do
+    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+      git merge-base HEAD "$candidate"
+      return 0
+    fi
+  done
+
+  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    git rev-parse --verify HEAD^
+    return 0
+  fi
+
+  git hash-object -t tree /dev/null
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode)
@@ -86,7 +109,9 @@ def matches(path, patterns):
 lane_map = {}
 
 for path in paths:
-    if matches(path, additive_globs):
+    if path.startswith("docs/protected-change-records/"):
+        lane = "docs"
+    elif matches(path, additive_globs):
         lane = "additive"
     elif matches(path, protected_globs):
         lane = "protected"
@@ -112,12 +137,7 @@ PY
 
 if [[ "$MODE" == "push" ]]; then
   if [[ -z "$PUSH_RANGE" ]]; then
-    upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
-    if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-      base="$(git merge-base HEAD "$upstream_ref")"
-    else
-      base="$(git hash-object -t tree /dev/null)"
-    fi
+    base="$(resolve_push_base)"
     PUSH_RANGE="${base}..HEAD"
   fi
 
@@ -230,21 +250,16 @@ PY
     python3 - "$TMP_DIR/cross.json" <<'PY' >&2
 import json, sys
 data = json.load(open(sys.argv[1], "r", encoding="utf-8"))
-print(f"[commit-lane] ⚠ FIGYELMEZTETÉS: {len(data['cross'])} másik elsődleges lane is nyitva van az unstaged/untracked állapotban.")
+print("[commit-lane] Blocked: a staged commit mellett másik elsődleges lane is nyitva van az unstaged/untracked állapotban.")
 print(f"[commit-lane] Staged lane: {data['staged_main'] or 'none'}")
-print(f"[commit-lane] Unstaged lane-ek: {', '.join(data['cross'])}")
+print(f"[commit-lane] Ütköző lane-ek: {', '.join(data['cross'])}")
 for lane in data["cross"]:
-    print(f"[commit-lane] ⚠ {lane}:")
+    print(f"[commit-lane] {lane}:")
     for path in data["unstaged_lane_map"].get(lane, [])[:8]:
-        print(f"    ⚠ {path}")
-    remaining = len(data["unstaged_lane_map"].get(lane, [])) - 8
-    if remaining > 0:
-        print(f"    ⚠ ... és még {remaining} további.")
-print("[commit-lane] Push előtt rendezd: stash, külön worktree vagy külön commit.")
-print("[commit-lane] A push hook továbbra is blokkolja a mixed-lane commitokat.")
+        print(f"  - {path}")
+print("[commit-lane] Előbb tisztítsd szét: stash, külön worktree vagy külön commit.")
 PY
-    # Nem blokkol: az unstaged fájlok NEM kerülnek a commitba.
-    # A push mód (--mode push) továbbra is ellenőriz és blokkol.
+    exit 3
   fi
 fi
 

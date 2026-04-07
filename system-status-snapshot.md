@@ -1,3 +1,22 @@
+## 2026-04-01T08:58:00+0200 — JYSK riport max-védett guide surface
+- A `jysk-riport` route-család név szerint is bekerült a guide-rendszer max-védett perimeterébe: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
+- A machine-readable protected modell új `guide_runtime` smoke csoportot kapott, így guide/JYSK touch esetén kötelező a route render, print render és JSON payload smoke scope.
+
+## 2026-03-31T22:10:00+0200 — Guard hardening propagation a közös policy rétegbe
+- Az utóbbi guard/review-fix körök általánosítható tanulságai most már nem csak surface-specifikus runbookokban élnek.
+- Új közös szabály lett: local/CI guard parity kötelező, a guarded push önálló belépési pont, a protected env párokat együtt kell kezelni, review-fix után kötelező a teljes recheck, stale empty cache pedig külön kockázati kategória.
+- Frissült és a fő repo szabályrendszerének policy felületére is kiemelésre került a `docs/protected-file-change-checklist.md`.
+
+## 2026-03-26T19:45:00+0100 — fix: impact-community.php ngo_admin_url URL-ek visszaállítva
+- Merge conflict resolution hiba: auto-merge visszaállította `/impact-challenge/ngo-admin/` URL-eket.
+- Javítva: `/impact-shop_ngo/` (sorok: 2058, 2647, 4743 — ngo_admin_url ×2 + reset_url ×1).
+- Production nem érintett (PR #83 még nyitott, nincs deploy).
+
+## 2026-03-26T19:30:00+0100 — feat/jovonkvize-ticket-count merge: origin/main beolvasztva
+- Konflikció-feloldás: `impact-community.php` test_mode bypass (main) megtartva; `impactshop-event-donation-widget.php` ticket_serials DB oszlop + schema 1.2.0 (feature) megtartva; `impactshop-ngo-guides.php` jogi-dokumentumok route + version 1.1.2 (feature) megtartva.
+- `scripts/hatas-korok-load-memory.sh`: feature branch verzió megtartva.
+- `impact-community-app.php`: auto-merge, konfliktus nem volt.
+
 ## 2026-03-26T16:54:00+0100 — Impact Challenge kanonikus baseline rögzítve
 - Létrejött az egységes kanonikus alapdokumentum: `docs/impact-challenge-canonical-baseline.md`.
 - Ettől kezdve ez a baseline az elsődleges referencia az Impact Challenge teljes scope-jára: ads-watch, autobanner, offerwall, identity, pont/szavazat, affiliate glue, PWA és a guide rendszer.
@@ -17,7 +36,7 @@
 ## 2026-03-26T15:24:00+0100 — Protected-file koherencia és UI checklist szabály bevezetve
 - Védett fájl módosítás előtt kötelezővé vált: koherencia vizsgálat, kockázatelemzés, érintett funkciólista.
 - Védett fájl módosítás után kötelezővé vált: post-merge/deploy ellenőrzési kör és külön manuális UI checklist a felhasználónak.
-- Új kanonikus dokumentum: `docs/protected-file-change-checklist.md`, és a szabály bekötve a PR/deploy/policy fájlakba.
+- Kiemelt kanonikus dokumentumként frissült a `docs/protected-file-change-checklist.md`, és a szabály bekötve a PR/deploy/policy fájlakba.
 
 ## 2026-03-26T15:12:00+0100 — PR / merge / push / deploy bastion szabályok szigorítva
 - A bástyavédelmi és írásvédettségi szabályok most már explicit részei a PR policynek, PR template-nek, exit checklistnek és deploy runbooknak is.
@@ -441,3 +460,94 @@ PHP lint ok for identity/gamification modules
 - consent checkbox szöveg → kattintható `<a>` link: `/ngo-guides/jogi-dokumentumok/`
 - `stopPropagation` a link click-re → checkbox nem togglel
 - JS deployed, chmod 444
+
+## 2026-03-26 — ngo-admin route bevezetés
+- ic_ngo_admin_template_redirect() hozzáadva: /ngo-admin/ route kezelés
+- impact-community-app.php guard refactored (NGO admin MU-init safe)
+- PHP lint: OK, branch: feat/jovonkvize-ticket-count
+
+## 2026-03-26 — IC canonical restore (REVERT bf227d9e → 10c9930d state)
+- impact-community.php restored to 10c9930d canonical
+- impact-community-app.php restored to 10c9930d canonical
+- Reverted: ic_ngo_admin_template_redirect, guard refactor, /ngo-admin/ URLs
+
+## 2026-03-26 — Ads Watch external return recovery
+- `impactshop-ads-watch.js` now tracks outbound sponsor CTA / autobanner tab opens and reloads on return when Safari restores the original tab in a bad visual state.
+- `impactshop-ads-watch.php` version bumped to `2.5.30` for Cloudflare/browser cache bust.
+- Live verification: `/impact-challenge/` references `impactshop-ads-watch.js?ver=2.5.30`; direct header check returned `cf-cache-status: MISS`.
+
+## 2026-03-26 — Ads Watch initial banner block fix
+- `impactshop-ads-watch.js`: page init no longer starts the idle auto-banner loop over the player.
+- legacy `loadAutoBanner()` completion now hides the banner and returns control to the start state instead of chaining forever.
+- `impactshop-ads-watch.php`: version bumped to `2.5.31`.
+- Live verification: desktop and mobile Playwright snapshots again show `▶ Reklám megtekintése` on `/impact-challenge/`.
+
+## 2026-03-26 — Ads Watch nav revert, Safari fixes retained
+- Reverted the 8-icon Ads Watch floating nav back to the earlier 4-button layout in `impactshop-ads-watch.php` and `impactshop-ads-watch.css`.
+- Kept the later Safari external-tab recovery logic in `impactshop-ads-watch.js`.
+- `impactshop-ads-watch` asset version bumped to `2.5.32`.
+- Live verification: `/impact-challenge/` now references `impactshop-ads-watch.css?ver=2.5.32` and the mobile snapshot again shows 4 nav buttons plus visible `Reklám megtekintése`.
+## 2026-03-31 21:45:00 CET - guard baseline bootstrap on clean main lineage
+
+- Clean `main`-based guard baseline branch prepared so later protected runtime work can use canonical guarded commit/push/PR flow.
+- Minimum control-plane history now exists in git, not only in dirty worktree state.
+- Control-plane hardening added: protected touch gate, workflow lane guard, guarded push prechecks, and protected classification for the guard control plane itself.
+- Follow-up expected: baseline PR/merge first, then runtime lanes such as AyeT surveywall restoration.
+## 2026-03-31 21:52:00 CET - guard baseline review hardening
+
+- `guarded-push.sh` hardened further: lane check + protected-touch gate mellé safe audit és memory gate is bekerült, ha a repo ezeket már eléri.
+- `workflow-state.sh` most már worktree-ben is a valódi repo-identitást használja a git common dir alapján, nem a worktree könyvtárnevét.
+## 2026-03-31 21:58:00 CET - guard baseline upstream fallback hardening
+
+- Push-mode guardok új branch esetén upstream hiányában már nem az üres tree/full history felé esnek vissza.
+- A push-base feloldás sorrendje: upstream, `origin/HEAD`, `origin/main`, `origin/master`, `main`, `master`, végül `HEAD^` és csak legvégül empty tree.
+- `workflow-state.sh` detached HEAD esetén explicit `detached` branch-értéket ad.
+
+## 2026-03-31T22:22:00+0200 — AyeT surveywall runtime lane isolated
+- Clean runtime branch: `fix/ayet-surveywall-runtime`, based on `origin/main` after guard baseline merge.
+- AyeT runtime separation kept explicit:
+  - offerwall/game slot: `25643`
+  - surveywall slot: `25740`
+  - surveywall profile hash: `b970533bbaf884d085d7c0e6734da1c2`
+- `impactshop_ayet_surveys()` now serves surveywall questionnaires instead of general AyeT offerwall inventory.
+- `impactshop_offerwall_health()` exposes both `ayet_adslot` and `ayet_surveywall` diagnostics for post-deploy verification.
+
+## 2026-03-31T22:34:00+0200 — AyeT PR guard workflow aligned
+- `.github/workflows/protect-critical-files.yml` now treats the paired deploy env
+  files as part of the same overrideable protected runtime lane when continuity
+  evidence is present.
+- This keeps GitHub PR validation aligned with the merged local guard baseline
+  for the AyeT surveywall runtime branch.
+
+## 2026-03-31T22:42:00+0200 — AyeT review fixes applied
+- Surveywall cache flush now clears the active `default` cache key too.
+- `impactshop_ayet_surveys()` returns `surveys: []` consistently on
+  `missing_pseudo`.
+- Survey refresh is rate-limited per pseudo, and the survey tab activation logic
+  now respects the server-side disabled state.
+
+## 2026-04-01 09:15:00 CET - guard deploy path realignment
+
+- A `bin/impactshop-guard-preflight.sh` most már a git common dir alapján is felismeri az ugyanahhoz a repóhoz tartozó worktree-ket, így nem dob hamis `repo root mismatch` hibát tiszta worktree deploy-előkészítésnél.
+- A `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` repo-meta többé nem a régi `ops/adswatch-clean` branchre mutat, hanem a kanonikus `main` ágra.
+- A kanonikus policy és deploy runbook külön rögzíti, hogy hibás guard deploy infrastruktúra esetén csak explicit nem-kanonikus, auditált incidens restore megengedett.
+## 2026-04-01 10:00:00 CET - guard deploy review follow-up
+
+- A `bin/impactshop-guard-deploy.sh` checksum output formátuma most már egyezik a kézzel commitolt `.sha256` fájlokkal (`docs/...` útvonal).
+- A `docs/impactshop-guard-hashes.json` manifest frissült a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-config.sha256` új digestjeire.
+- A `docs/bastion-guard-status.md` `Last updated` mezője visszakapta az auditbarát dátum + idő + zóna formátumot.
+## 2026-04-01 15:55:00 CET - JYSK report source restoration
+
+- A `/jysk-riport/`, `/jysk-riport/?print=1` és `/jysk-riport.data.json` route forrása most már repo-tracked lane-ben is helyreáll.
+- A `wp-content/mu-plugins/impactshop-ngo-guides.php` additive route map bővítést kapott a JYSK riporthoz.
+- A dedikált `jysk-riport.html` és `jysk-riport.data.json` asset bekerült a repo forrásfái közé, így a live restore többé nem csak szerverállapotként létezik.
+
+## 2026-04-01 16:40:00 CET - JYSK canonical inventory lock
+
+- A JYSK riport forrásfájljai most már explicit guard inventory és digest manifest alatt is állnak.
+- A `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` külön rögzíti a `impactshop-ngo-guides.php`, `jysk-riport.html` és `jysk-riport.data.json` kanonikus source állapotát.
+
+## 2026-04-01 16:47:00 CET - JYSK review thread cleanup
+
+- A `jysk-riport.data.json` legacy dátumhibái normalizálva lettek: Debrecen `vote_period_start` ISO formátumot kapott, Kispest/Szarvas bizonytalan végei `null` értékre kerültek.
+- A `jysk-riport.html` toolbar gombja most az aktuális scroll viselkedést nevezi meg, és a riport elsődleges adatforrása a route-on kiszolgált JSON lett; az embedded snapshot csak fail-safe fallback marad.

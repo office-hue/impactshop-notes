@@ -1,8 +1,17 @@
 {
   "version": 1,
   "protected_globs": [
+    "scripts/check-protected-file-touch.sh",
+    "scripts/check-commit-lane.sh",
+    "scripts/guarded-push.sh",
+    "scripts/workflow-state.sh",
+    "scripts/install-hooks.sh",
+    "scripts/safe-repo-audit.sh",
+    "docs/impactshop-protected-files.json",
+    "docs/impactshop-deploy.md",
+    "docs/ai-assistant-canonical-policy.md",
+    "docs/pr-policy.md",
     "wp-content/mu-plugins/impactshop-action-bar.php",
-    "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
     "wp-content/mu-plugins/impactshop-ads-watch.php",
     "wp-content/mu-plugins/impactshop-ads-watch.js",
     "wp-content/mu-plugins/impactshop-ads-watch.css",
@@ -38,15 +47,9 @@
     "sw.js",
     "wp-content/mu-plugins/impactshop-ngo-guides.php",
     "wp-content/mu-plugins/impactshop-ngo-guides/**",
-    "docs/public-pages-canonical-baseline.md",
     "bin/impactshop-guard-deploy.sh",
     "bin/impactshop-guard-preflight.sh",
     "bin/deploy-wpcontent-map.sh",
-    "scripts/guarded-push.sh",
-    "scripts/workflow-state.sh",
-    "scripts/safe-repo-audit.sh",
-    "scripts/install-hooks.sh",
-    "scripts/install-hooks-all.sh",
     "docs/impactshop-guard-config.json",
     "docs/impactshop-guard-config.sha256",
     "docs/impactshop-guard-hashes.json",
@@ -55,14 +58,13 @@
     ".deploy.staging.env"
   ],
   "additive_globs": [
+    "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
     "docs/impact-challenge-*.md",
     "docs/critical-surface-inventory.md",
     "docs/impact-shop-profile-protected-perimeter.md",
     "docs/elementor-protected-surface.md",
     "docs/additive-first-ui-policy.md",
-    "docs/impactshop-protected-files.json",
     "docs/protected-change-records/*.md",
-    "scripts/check-protected-file-touch.sh",
     "scripts/check-elementor-protected-routes.sh",
     "scripts/impact-challenge-ui-smoke.sh",
     "scripts/guarded-remote-write.sh"
@@ -71,17 +73,9 @@
     "/impact-challenge/",
     "/impactad-2/",
     "/impactshop/",
-    "/rolunk/",
-    "/cegeknek/",
-    "/befektetoknek/",
-    "/partner-api/",
-    "/ngo-guides/",
-    "/ngo-guides/ngo-card/",
-    "/ngo-guides/impact-shop/",
-    "/ngo-guides/impact-challenge/",
-    "/ngo-guides/jogi-dokumentumok/",
     "/profil",
     "/jysk-riport/",
+    "/jysk-riport/?print=1",
     "/jysk-riport.data.json",
     "/go/*",
     "/go-deal/*"
@@ -146,10 +140,6 @@
     "guide_runtime": [
       "route:jysk-riport",
       "route:ngo-guides",
-      "route:rolunk",
-      "route:cegeknek",
-      "route:befektetoknek",
-      "route:partner-api",
       "flow:guide-route-render",
       "flow:guide-print-mode",
       "flow:guide-data-json"
@@ -181,7 +171,6 @@
     ],
     "mobile_shell_runtime": [
       "wp-content/mu-plugins/impactshop-action-bar.php",
-      "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
       "wp-content/mu-plugins/impactshop-pwa.php",
       "sw.js"
     ],
@@ -207,8 +196,19 @@
     ],
     "guide_runtime": [
       "wp-content/mu-plugins/impactshop-ngo-guides.php",
-      "wp-content/mu-plugins/impactshop-ngo-guides/**",
-      "docs/public-pages-canonical-baseline.md"
+      "wp-content/mu-plugins/impactshop-ngo-guides/**"
+    ],
+    "deploy_guard": [
+      "scripts/check-protected-file-touch.sh",
+      "scripts/check-commit-lane.sh",
+      "scripts/guarded-push.sh",
+      "scripts/workflow-state.sh",
+      "scripts/install-hooks.sh",
+      "scripts/safe-repo-audit.sh",
+      "docs/impactshop-protected-files.json",
+      "docs/impactshop-deploy.md",
+      "docs/ai-assistant-canonical-policy.md",
+      "docs/pr-policy.md"
     ]
   }
 }

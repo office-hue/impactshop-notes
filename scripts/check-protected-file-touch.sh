@@ -11,6 +11,29 @@ MODEL_PATH="${ROOT_DIR}/docs/impactshop-protected-files.json"
 MODE="local"
 PUSH_RANGE="${SAFE_REPO_AUDIT_PUSH_RANGE:-}"
 
+resolve_push_base() {
+  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
+  local candidate=""
+  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
+    git merge-base HEAD "$upstream_ref"
+    return 0
+  fi
+
+  for candidate in "origin/HEAD" "origin/main" "origin/master" "main" "master"; do
+    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+      git merge-base HEAD "$candidate"
+      return 0
+    fi
+  done
+
+  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    git rev-parse --verify HEAD^
+    return 0
+  fi
+
+  git hash-object -t tree /dev/null
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode)
@@ -41,48 +64,11 @@ cd "$ROOT_DIR"
 
 if [[ "$MODE" == "push" ]]; then
   if [[ -z "$PUSH_RANGE" ]]; then
-    upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
-    if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-      base="$(git merge-base HEAD "$upstream_ref")"
-    else
-      base="$(git hash-object -t tree /dev/null)"
-    fi
+    base="$(resolve_push_base)"
     PUSH_RANGE="${base}..HEAD"
   fi
   git diff --name-only "$PUSH_RANGE" | sed '/^$/d' | sort -u > "$CHANGED_LIST"
-elif [[ "$MODE" == "local" ]]; then
-  # Pre-commit: CSAK a staged fájlokat ellenőrizzük — azt commitolod, azt védjük.
-  git diff --cached --name-only | sed '/^$/d' | sort -u > "$CHANGED_LIST"
-
-  # Figyelmeztetés: ha a working tree-ben (unstaged/untracked) is vannak védett fájlok.
-  UNSTAGED_LIST="$TMP_DIR/unstaged-protected.txt"
-  {
-    git diff --name-only
-    git ls-files --others --exclude-standard
-  } | sed '/^$/d' | sort -u > "$TMP_DIR/wt-files.txt"
-
-  if [[ -s "$TMP_DIR/wt-files.txt" ]] && [[ -f "$MODEL_PATH" ]]; then
-    python3 - "$MODEL_PATH" "$TMP_DIR/wt-files.txt" <<'WTPY' > "$UNSTAGED_LIST"
-import fnmatch, json, sys
-model = json.load(open(sys.argv[1], "r", encoding="utf-8"))
-files = [l.strip() for l in open(sys.argv[2], "r", encoding="utf-8") if l.strip()]
-globs = model.get("protected_globs", [])
-for f in files:
-    if any(fnmatch.fnmatch(f, g) for g in globs):
-        print(f)
-WTPY
-    wt_count="$(wc -l < "$UNSTAGED_LIST" | tr -d ' ')"
-    if [[ "$wt_count" -gt 0 ]]; then
-      echo "[protected-touch] ⚠ FIGYELMEZTETÉS: ${wt_count} védett fájl módosítva a working tree-ben (nem staged)." >&2
-      echo "[protected-touch] Ezek NEM kerülnek be a commitba, de push előtt rendezni kell:" >&2
-      head -10 "$UNSTAGED_LIST" | while IFS= read -r line; do echo "  ⚠ $line" >&2; done
-      if [[ "$wt_count" -gt 10 ]]; then
-        echo "  ... és még $((wt_count - 10)) további." >&2
-      fi
-    fi
-  fi
 else
-  # Fallback (audit/scan mód): minden módosított fájl
   {
     git diff --name-only
     git diff --cached --name-only

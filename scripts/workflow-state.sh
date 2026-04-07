@@ -13,17 +13,19 @@ if [[ -z "${REPO_ROOT}" ]]; then
 fi
 
 COMMON_GIT_DIR="$(git -C "${REPO_ROOT}" rev-parse --git-common-dir 2>/dev/null || true)"
-if [[ -n "${COMMON_GIT_DIR}" && "${COMMON_GIT_DIR}" != /* ]]; then
-  COMMON_GIT_DIR="${REPO_ROOT}/${COMMON_GIT_DIR}"
-fi
 if [[ -n "${COMMON_GIT_DIR}" ]]; then
-  COMMON_REPO_ROOT="$(cd "$(dirname "${COMMON_GIT_DIR}")" && pwd)"
+  if [[ "${COMMON_GIT_DIR}" != /* ]]; then
+    COMMON_GIT_DIR="${REPO_ROOT}/${COMMON_GIT_DIR}"
+  fi
+  COMMON_GIT_DIR="$(cd "${COMMON_GIT_DIR}" && pwd)"
+  REPO_NAME="$(basename "$(dirname "${COMMON_GIT_DIR}")")"
 else
-  COMMON_REPO_ROOT="${REPO_ROOT}"
+  REPO_NAME="$(basename "${REPO_ROOT}")"
 fi
-
-REPO_NAME="$(basename "${COMMON_REPO_ROOT}")"
 BRANCH="$(git -C "${REPO_ROOT}" branch --show-current 2>/dev/null || echo detached)"
+if [[ -z "${BRANCH}" ]]; then
+  BRANCH="detached"
+fi
 HEAD_SHA="$(git -C "${REPO_ROOT}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 count_lines() {

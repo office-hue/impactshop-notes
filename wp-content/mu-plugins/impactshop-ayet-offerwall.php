@@ -154,6 +154,12 @@ function impactshop_ayet_get_effective_surveywall_adslot(): string
     return $candidate !== '' ? $candidate : '';
 }
 
+function impactshop_ayet_get_effective_surveywall_profile_hash(): string
+{
+    $candidate = trim((string) AYET_SURVEYWALL_PROFILE_HASH);
+    return $candidate !== '' ? $candidate : '';
+}
+
 function impactshop_ayet_get_adslot_diagnostics(): array
 {
     $env = trim((string) AYET_OFFERWALL_ADSLOT);
@@ -188,11 +194,12 @@ function impactshop_ayet_get_adslot_diagnostics(): array
 function impactshop_ayet_get_surveywall_diagnostics(): array
 {
     $adslot = impactshop_ayet_get_effective_surveywall_adslot();
+    $profile_hash = impactshop_ayet_get_effective_surveywall_profile_hash();
 
     return [
         'effective' => $adslot,
         'env' => trim((string) AYET_SURVEYWALL_ADSLOT),
-        'profile_hash_configured' => trim((string) AYET_SURVEYWALL_PROFILE_HASH) !== '',
+        'profile_hash_configured' => $profile_hash !== '',
         'active' => $adslot !== '',
     ];
 }
@@ -218,6 +225,7 @@ function impactshop_ayet_surveywall_flush_cache(string $pseudo_id): void
         return;
     }
     delete_transient(impactshop_ayet_surveywall_cache_key($pseudo_id, $adslot));
+    delete_transient(impactshop_ayet_surveywall_cache_key($pseudo_id, $adslot, 'default'));
 }
 
 function impactshop_ayet_offerwall_fetch_offers_with_ua(string $pseudo_id, string $ip, string $user_agent, string $ua_key = 'default'): array
@@ -287,88 +295,6 @@ function impactshop_ayet_offerwall_fetch_offers(string $pseudo_id, string $ip, s
     return impactshop_ayet_offerwall_fetch_offers_with_ua($pseudo_id, $ip, $user_agent, 'default');
 }
 
-function impactshop_ayet_offerwall_merge_offer_variants(array $offers): array
-{
-    if (count($offers) < 2) {
-        return array_values($offers);
-    }
-
-    $merged = [];
-    foreach ($offers as $offer) {
-        $key = '';
-        if (isset($offer['offer_id']) && $offer['offer_id'] !== null) {
-            $key = 'offer:' . (string) $offer['offer_id'];
-        } elseif (isset($offer['id']) && $offer['id'] !== null) {
-            $key = 'id:' . (string) $offer['id'];
-        } else {
-            $key = 'name:' . strtolower(trim((string) ($offer['name'] ?? '')));
-        }
-
-        if ($key === 'name:') {
-            continue;
-        }
-
-        if (!isset($merged[$key])) {
-            $merged[$key] = $offer;
-            continue;
-        }
-
-        $current = $merged[$key];
-        $currentPlatforms = is_array($current['platforms'] ?? null) ? $current['platforms'] : [];
-        $offerPlatforms = is_array($offer['platforms'] ?? null) ? $offer['platforms'] : [];
-        $current['platforms'] = array_values(array_unique(array_filter(array_merge($currentPlatforms, $offerPlatforms))));
-
-        if (($offer['rating'] ?? 0) > ($current['rating'] ?? 0)) {
-            $current['rating'] = $offer['rating'];
-        }
-        if (($offer['total_points'] ?? 0) > ($current['total_points'] ?? 0)) {
-            $current['total_points'] = $offer['total_points'];
-            $current['points_display'] = $offer['points_display'] ?? $offer['total_points'];
-        }
-        if (($offer['total_votes'] ?? 0) > ($current['total_votes'] ?? 0)) {
-            $current['total_votes'] = $offer['total_votes'];
-            $current['votes_display'] = $offer['votes_display'] ?? $offer['total_votes'];
-        }
-        if (($offer['mobile_only'] ?? false) === false) {
-            $current['mobile_only'] = false;
-        }
-        if (($offer['platform'] ?? '') === 'web') {
-            $current['platform'] = 'web';
-        }
-
-        $merged[$key] = $current;
-    }
-
-    return array_values($merged);
-}
-
-function impactshop_ayet_offerwall_fetch_surveys_contextual(string $pseudo_id, string $ip, string $user_agent): array
-{
-    $offers = impactshop_ayet_offerwall_fetch_offers($pseudo_id, $ip, $user_agent);
-    if (!empty($offers)) {
-        return $offers;
-    }
-
-    $variants = [
-        'android' => 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36',
-        'ios' => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        'desktop' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-    ];
-
-    $fallbackOffers = [];
-    foreach ($variants as $variantKey => $variantUa) {
-        if ($user_agent !== '' && $variantUa === $user_agent) {
-            continue;
-        }
-        $variantOffers = impactshop_ayet_offerwall_fetch_offers_with_ua($pseudo_id, $ip, $variantUa, $variantKey);
-        if (!empty($variantOffers)) {
-            $fallbackOffers = array_merge($fallbackOffers, $variantOffers);
-        }
-    }
-
-    return impactshop_ayet_offerwall_merge_offer_variants($fallbackOffers);
-}
-
 function impactshop_ayet_surveywall_transform_survey(array $raw): array
 {
     $points = max(0, (int) round((float) ($raw['cpi'] ?? 0)));
@@ -424,6 +350,10 @@ function impactshop_ayet_surveywall_fetch_surveys_with_ua(string $pseudo_id, str
         'num_surveys' => '20',
         'survey_sorting' => 'eepm',
     ];
+    $profile_hash = impactshop_ayet_get_effective_surveywall_profile_hash();
+    if ($profile_hash !== '') {
+        $query['hash'] = $profile_hash;
+    }
     if ($ip !== '') {
         $query['ip'] = $ip;
     }
@@ -732,7 +662,7 @@ function impactshop_ayet_surveys(WP_REST_Request $request): WP_REST_Response
     if ($pseudo_id === '') {
         return new WP_REST_Response([
             'status' => 'missing_pseudo',
-            'offers' => [],
+            'surveys' => [],
         ], 200);
     }
 
@@ -741,7 +671,7 @@ function impactshop_ayet_surveys(WP_REST_Request $request): WP_REST_Response
     ) {
         return new WP_REST_Response([
             'status' => 'missing_pseudo',
-            'offers' => [],
+            'surveys' => [],
         ], 200);
     }
 
@@ -754,7 +684,13 @@ function impactshop_ayet_surveys(WP_REST_Request $request): WP_REST_Response
     }
 
     if ((string) $request->get_param('refresh') === '1') {
-        impactshop_ayet_surveywall_flush_cache($pseudo_id);
+        $refresh_key = 'impactshop_ayet_surveywall_refresh_' . md5($pseudo_id);
+        $last_refresh = (int) get_transient($refresh_key);
+        $min_refresh_interval = 60;
+        if ($last_refresh === 0 || (time() - $last_refresh) >= $min_refresh_interval) {
+            impactshop_ayet_surveywall_flush_cache($pseudo_id);
+            set_transient($refresh_key, time(), $min_refresh_interval);
+        }
     }
 
     $ip = impactshop_ayet_resolve_ip($request);

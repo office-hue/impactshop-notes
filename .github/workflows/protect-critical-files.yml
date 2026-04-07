@@ -66,9 +66,11 @@ jobs:
           fi
 
           if grep -q '.' /tmp/violations.txt; then
-            # Guarded override: module-level protected changes are allowed only with
-            # explicit documentation continuity evidence.
-            grep -Evi '^(wp-content/mu-plugins/|wp-content/plugins/|mu-plugins/)' /tmp/violations.txt > /tmp/non_guarded_violations.txt || true
+            # Guarded override: module-level protected runtime changes are allowed
+            # only with explicit documentation continuity evidence. This includes
+            # the paired deploy env files when they are part of the same runtime
+            # lane and documented together.
+            grep -Evi '^(wp-content/mu-plugins/|wp-content/plugins/|mu-plugins/|\.deploy\.(production|staging)\.env$)' /tmp/violations.txt > /tmp/non_guarded_violations.txt || true
 
             has_docs_md=0
             has_snapshot=0

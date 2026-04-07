@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chargeback és Dispute Kezelési Eljárásrend (Magyar)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="chargeback-es-dispute-kezelesi-eljarasrend">Chargeback és Dispute Kezelési Eljárásrend</h1>
+<blockquote>
+<p><strong>Verzió</strong>: 1.2<br />
+<strong>Dátum</strong>: 2026-02-25<br />
+<strong>Státusz</strong>: HATÁLYOS<br />
+<strong>Vonatkozik</strong>: Impact Amplifier (szavazatvásárlás) — Stripe Checkout tranzakciók<br />
+<strong>Kapcsolódó</strong>: Stripe Felelősségmegosztási Mátrix, Impact Challenge szavazatvásárlási terv §4.5 D6</p>
+</blockquote>
+<hr />
+<h2 id="1-attekintes">1. Áttekintés</h2>
+<p>Az Impact Amplifier szavazatvásárlás <strong>adományjellegű</strong> tranzakció, amelyre a D6 üzleti szabály vonatkozik:</p>
+<blockquote>
+<p><strong>D6</strong>: „Adomány nem visszakövetelhető" — a tranzakció természete szerint adományozás, nem termékértékesítés.</p>
+</blockquote>
+<p>Ennek ellenére a Stripe/kártyakibocsátó <strong>chargeback</strong> (visszaterhelés) mechanizmusa technikai szinten továbbra is elérhető a kártyatulajdonos számára. Ez az eljárásrend rögzíti a Sharity teendőit ilyen esetben.</p>
+<hr />
+<h2 id="2-chargeback-idokeretek">2. Chargeback időkeretek</h2>
+<table>
+<thead>
+<tr>
+<th>Fázis</th>
+<th>Időkeret</th>
+<th>Ki intézi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Kártyabirtokos chargeback bejelentés</strong></td>
+<td>Tranzakciótól számított <strong>120 nap</strong> (Visa/MC)</td>
+<td>Felhasználó → kibocsátó bank</td>
+</tr>
+<tr>
+<td><strong>Stripe értesítés</strong></td>
+<td>~1-2 munkanap a bank bejelentése után</td>
+<td>Stripe → webhook: <code>charge.dispute.created</code></td>
+</tr>
+<tr>
+<td><strong>Sharity válaszidő</strong></td>
+<td><strong>7 naptári nap</strong> a Stripe értesítéstől</td>
+<td>Sharity admin</td>
+</tr>
+<tr>
+<td><strong>Bank döntés</strong></td>
+<td>30–90 nap a bizonyíték benyújtástól</td>
+<td>Kibocsátó bank</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-chargeback-kezelesi-folyamat">3. Chargeback kezelési folyamat</h2>
+<h3 id="31-ertesites-fogadasa">3.1 Értesítés fogadása</h3>
+<ol>
+<li>
+<p><strong>Stripe webhook</strong> (<code>charge.dispute.created</code>) → a rendszer automatikusan naplózza:
+   - <code>wp_impactshop_vote_purchases.status</code> → <code>disputed</code>
+   - Guard alert → Discord webhook (üzemeltetési csatorna)
+   - Email értesítés → Ops Squad</p>
+</li>
+<li>
+<p><strong>Manuális észlelés</strong> — ha a webhook feldolgozás bármely okból sikertelen:
+   - Stripe Dashboard → Payments → Disputes ellenőrzése naponta
+   - P2 szintű incident → ld. SLA §2</p>
+</li>
+</ol>
+<h3 id="32-vizsgalat-2-munkanap">3.2 Vizsgálat (≤ 2 munkanap)</h3>
+<table>
+<thead>
+<tr>
+<th>Ellenőrzés</th>
+<th>Hol</th>
+<th>Mit keresünk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tranzakció részletek</td>
+<td><code>wp_impactshop_vote_purchases</code> tábla</td>
+<td><code>stripe_session_id</code>, <code>amount</code>, <code>timestamp</code>, <code>pseudo_id</code></td>
+</tr>
+<tr>
+<td>Webhook log</td>
+<td>Alkalmazás naplók</td>
+<td>Sikeres checkout callback bejegyzés</td>
+</tr>
+<tr>
+<td>Felhasználói adatok</td>
+<td>DB + Stripe Dashboard</td>
+<td>Email, pseudo_id, IP, Cloudflare Turnstile eredmény</td>
+</tr>
+<tr>
+<td>Fraud jelek</td>
+<td>Stripe Radar</td>
+<td>Risk score, IP country, card fingerprint</td>
+</tr>
+<tr>
+<td>Többszörös vásárlás</td>
+<td>DB query</td>
+<td>Ugyanazon pseudo_id/email/IP-ről jött-e több vásárlás</td>
+</tr>
+</tbody>
+</table>
+<h3 id="33-dontes">3.3 Döntés</h3>
+<table>
+<thead>
+<tr>
+<th>Helyzet</th>
+<th>Akció</th>
+<th>Szavazat kezelés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fraud</strong> — hamis kártyahasználat (nem a valódi tulajdonos vásárolt)</td>
+<td>Bizonyíték benyújtás → Stripe-on keresztül VAGY refund elfogadás</td>
+<td>Szavazatok <strong>visszavonása</strong></td>
+</tr>
+<tr>
+<td><strong>Friendly fraud</strong> — a tényleges vásárló vonja vissza</td>
+<td>Bizonyíték benyújtás (checkout evidence)</td>
+<td>Szavazatok <strong>befagyasztása</strong> a döntésig</td>
+</tr>
+<tr>
+<td><strong>Jogos reklamáció</strong> — tényleges rendszerhiba, dupla levonás</td>
+<td>Refund elfogadás</td>
+<td>Szavazatok korrekcióba — csak a dupla rész visszavonása</td>
+</tr>
+<tr>
+<td><strong>Ismeretlen / bizonytalan</strong></td>
+<td>Bizonyíték benyújtás, ha lehetséges</td>
+<td>Szavazatok <strong>befagyasztása</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="34-bizonyitek-osszeallitas">3.4 Bizonyíték összeállítás</h3>
+<p>Az alábbi elemeket kell csatolni a Stripe dispute response-hoz:</p>
+<ol>
+<li>
+<p><strong>Tranzakciós bizonyíték</strong>
+   - Checkout Session screenshot (Stripe Dashboard-ról)
+   - Webhook delivery log (siker/timestamp)
+   - Vásárlás utáni visszaigazolás (ha email küldés megtörtént)</p>
+</li>
+<li>
+<p><strong>Felhasználói szándék bizonyítéka</strong>
+   - Cloudflare Turnstile verification = pass → nem bot
+   - Adomány természetét megerősítő checkout szöveg: <em>„Adományozás az Impact Challenge-en keresztül"</em>
+   - Terms &amp; Conditions link a checkout oldalon</p>
+</li>
+<li>
+<p><strong>Adomány-specifikus érvelés</strong>
+   - Az Impact Amplifier szavazatvásárlás <strong>adományozási cselekmény</strong>, nem termék/szolgáltatás vásárlás
+   - A checkout oldalon egyértelmű tájékoztatás: <em>„Az összeg 50%-a a Közös Adományalapba kerül, amelyet a civil szervezetek között a szavazatok arányában (ÁSZF szerint negyedévente) osztunk szét; a felhasználó a kapott szavazatokat a kiválasztott civil szervezetre adja le."</em>
+   - D6 szabály: az adományozó előzetes beleegyezésével történik</p>
+</li>
+<li>
+<p><strong>Benyújtás</strong>: Stripe Dashboard → Disputes → Submit Evidence</p>
+</li>
+</ol>
+<h3 id="35-eredmeny-kezeles">3.5 Eredmény kezelés</h3>
+<table>
+<thead>
+<tr>
+<th>Stripe döntés</th>
+<th>Teendő</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Won</strong> (Sharity javára)</td>
+<td><code>status</code> → <code>completed</code> visszaállítás; szavazatok feloldása; záró naplóbejegyzés</td>
+</tr>
+<tr>
+<td><strong>Won partially</strong> (részleges Sharity javára)</td>
+<td><code>status</code> → <code>completed</code> a nem vitatott részre; a visszatérített összeg arányában <code>votes_granted</code> csökkentése; pool részleges korrekció (<code>refunded_amount × 0.5</code>); naplóbejegyzés mindkét részre</td>
+</tr>
+<tr>
+<td><strong>Lost</strong> (kártyabirtokos javára)</td>
+<td><code>status</code> → <code>refunded</code>; szavazatok végleges visszavonása; pool csökkentés</td>
+</tr>
+<tr>
+<td><strong>Accepted</strong> (Sharity nem vitatja)</td>
+<td><code>status</code> → <code>refunded</code>; szavazatok végleges visszavonása; pool csökkentés</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-szavazat-visszavonasi-eljaras">4. Szavazat visszavonási eljárás</h2>
+<h3 id="41-manualis-visszavonas-wp-cli">4.1 Manuális visszavonás (WP-CLI)</h3>
+<pre><code class="language-bash">wp impactshop vote-purchase void --order_id=&lt;stripe_session_id&gt;
+</code></pre>
+<p>Ez az alábbi műveleteket hajtja végre:
+- <code>wp_impactshop_vote_purchases.status</code> → <code>voided</code> / <code>refunded</code>
+- <code>wp_impactshop_challenges.total_votes</code> → csökkentés a jóváírt szavazatszámmal
+- <code>wp_impactshop_challenges.pool_amount</code> → csökkentés az adomány részével (pool_share = amount × 50%)</p>
+<h3 id="42-pool-korrekcio">4.2 Pool korrekció</h3>
+<ul>
+<li>A pool összeg csökken az adományrész nagyságával (<code>amount × 0.5</code>)</li>
+<li>Ha a quarter még nem zárult le: a szavazat automatikusan eltűnik a szavazati arányból</li>
+<li>Ha a quarter <strong>már lezárult</strong> és kifizetés megtörtént: <strong>manuális korrekciót</strong> kell végrehajtani a következő negyedéves elosztásban (negatív tétel az érintett NGO-nál, <strong>ha a szavazatok arányosan befolyásolták</strong>)</li>
+</ul>
+<h3 id="43-naplozas">4.3 Naplózás</h3>
+<p>Minden dispute-ot naplózni kell:</p>
+<pre><code>disputes.log:
+2026-02-25T14:30:00Z | dispute_id=dp_xxx | session_id=cs_xxx | amount=2000 | decision=evidence_submitted | votes_frozen=2500 | admin=sharity_admin
+</code></pre>
+<hr />
+<h2 id="kapcsolodo-dokumentumok-es-guide-ok">Kapcsolódó dokumentumok és guide-ok</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#stripe">Stripe felelősségmegosztás</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#aszf">Általános Szerződési Feltételek (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#quarterly-report">Negyedéves elosztási riport sablon</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#sla">SLA</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge útmutató</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">Impact Amplifier (Rólunk)</a></li>
+</ul>
+<hr />
+<h2 id="5-prevencio">5. Prevenció</h2>
+<h3 id="51-aktualis-vedelmi-retegek">5.1 Aktuális védelmi rétegek</h3>
+<table>
+<thead>
+<tr>
+<th>Réteg</th>
+<th>Leírás</th>
+<th>Beállítás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cloudflare Turnstile</strong></td>
+<td>Bot/automation szűrés checkout indítás előtt</td>
+<td>Checkout form előtt</td>
+</tr>
+<tr>
+<td><strong>Rate limiting</strong></td>
+<td>IP: max 10 checkout/óra; pseudo_id: max 5 checkout/óra</td>
+<td>MU plugin + Cloudflare WAF</td>
+</tr>
+<tr>
+<td><strong>Stripe Radar</strong></td>
+<td>Beépített fraud scoring, kockázatos tranzakciók blokkolása</td>
+<td>Stripe Dashboard → Radar Rules</td>
+</tr>
+<tr>
+<td><strong>3D Secure</strong></td>
+<td>EU-ban kötelező SCA (Strong Customer Authentication)</td>
+<td>Stripe automatikus</td>
+</tr>
+<tr>
+<td><strong>Egyértelmű tájékoztatás</strong></td>
+<td>„Adomány" szó használata, nem „vásárlás"</td>
+<td>Checkout UI szövegek</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-eskalacios-matrix">6. Eskalációs mátrix</h2>
+<table>
+<thead>
+<tr>
+<th>Dispute összeg</th>
+<th>Döntéshozó</th>
+<th>Eskaláció</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>≤ 5 000 Ft</strong></td>
+<td>Ops Squad self-service</td>
+<td>Nincs (standard eljárás)</td>
+</tr>
+<tr>
+<td><strong>5 001 – 50 000 Ft</strong></td>
+<td>Ops Squad + pénzügyi felelős</td>
+<td>48h-n belül közös döntés</td>
+</tr>
+<tr>
+<td><strong>&gt; 50 000 Ft</strong></td>
+<td>Vezetőség + jogi tanácsadó</td>
+<td>Azonnali eskaláció, jogi vélemény kérés</td>
+</tr>
+<tr>
+<td><strong>Ismétlődő</strong> (&gt;3 dispute / hónap)</td>
+<td>Vezetőség</td>
+<td>Fraud pattern vizsgálat, Stripe support bevonás</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-felulvizsgalat">7. Felülvizsgálat</h2>
+<ul>
+<li><strong>Gyakoriság</strong>: negyedévente, vagy bármely dispute esemény után</li>
+<li><strong>Felelős</strong>: Ops Squad</li>
+<li><strong>Metrika</strong>: dispute rate &lt; 0.1% (Stripe elvárás: &lt; 0.75%)</li>
+</ul>
+<hr />
+<h2 id="valtozasnaplo">Változásnapló</h2>
+<table>
+<thead>
+<tr>
+<th>Verzió</th>
+<th>Dátum</th>
+<th>Változás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Kezdeti verzió — draft</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>„Won partially" kimenet hozzáadása (§3.5)</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>2026-02-25</td>
+<td>Véglegesítés: belső fájlhivatkozások eltávolítása, checkout-szöveg pontosítása (Közös Adományalap), audit megjegyzések beépítése</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

@@ -9,7 +9,6 @@ Ez a dokumentum az `impactshop-notes` repo helyi, kanonikus agent policy összef
 - Repo-specifikus szabályok: `AGENTS.md`
 - PR / merge / deploy policy: `docs/pr-policy.md`
 - Impact Challenge baseline: `docs/impact-challenge-canonical-baseline.md`
-- Public pages baseline: `docs/public-pages-canonical-baseline.md`
 
 Ha eltérés van a lokális asszisztens-config és a repo szabályok között, a fenti sorrend az elsődleges.
 
@@ -50,15 +49,8 @@ npm run memory:full-sync -- --task "<lezáró összefoglaló>"
 - A `conversation-summaries/` és kapcsolódó operatív dokumentáció naprakészen tartandó.
 - Bastion guardrail mindig kötelező; ha nem egyértelmű, meg kell állni és jóváhagyást kérni.
 - Az Impact Challenge teljes védett köre különösen érzékeny rendszernek minősül: elsődleges fejlesztési irány csak új, additív kóddal megengedett.
-- Az `Impact Shop` és a `Profil / Üzenetek / Pontok` surface-ek ugyanilyen max-védett kategóriába tartoznak; ezekhez is csak additív-first megoldás vagy explicit protected override út engedett.
 - Meglévő Impact Challenge kód, route, bekötés, pontszámítási út, adatmodell vagy workflow csak külön, explicit jóváhagyással módosítható, és csak akkor, ha nincs azonosan jó additív megoldás.
-- A max-védett surface-ek authoritative leírása:
-  - `docs/critical-surface-inventory.md`
-  - `docs/impact-shop-profile-protected-perimeter.md`
-  - `docs/impact-challenge-protected-perimeter.md`
 - A guide rendszer teljes köre (`impactshop-ngo-guides.php` + `wp-content/mu-plugins/impactshop-ngo-guides/**`) külön beton protected perimeter: route, HTML guide, fordítás, jogi asset, PDF és renderelt output egyaránt csak explicit felhasználói engedéllyel módosítható.
-- A publikus információs IA kanonikus baseline-ja a `docs/public-pages-canonical-baseline.md`. Ez lefedi a `/rolunk/`, `/cegeknek/`, `/befektetoknek/`, `/partner-api/`, `/ngo-guides/`, `/ngo-guides/ngo-card/`, `/ngo-guides/impact-shop/`, `/ngo-guides/impact-challenge/` és `/ngo-guides/jogi-dokumentumok/` route-okat.
-- A `partner-api` forrásai jelenleg repo-határon kívül élnek (`/Users/bujdosoarnold/Developer/GitHub/partner-docs.html`, `/Users/bujdosoarnold/Developer/GitHub/partner-docs-en.html`), ezért itt kétlépcsős védelem az előírt: kötelező backup + rollback, valamint fizikai read-only célállapot. Ezt nem szabad repo-szintű guard enforcementként félrekommunikálni.
 - A JYSK riport külön név szerint is max-védett guide-surface: `/jysk-riport/`, `/jysk-riport/?print=1` és `/jysk-riport.data.json` ugyanennek a protected perimeternek a része, így tartalmi, route-, print- vagy adatpayload-változás csak explicit engedéllyel, protected change recorddal és guide smoke scope-pal vihető át.
 - Nem megengedett olyan automatika, deploy-lépés vagy szinkron, amely guide tartalmat felülírhat, átnevezhet, lecserélhet vagy más forrásból visszaállíthat explicit engedély nélkül.
 - Az Impact Challenge teljes kanonikus állapotát a `docs/impact-challenge-canonical-baseline.md` rögzíti; ettől eltérő viselkedés, route, tartalom vagy fizikai jogosultsági állapot regressziónak számít, ha nincs rá külön jóváhagyás.
@@ -96,6 +88,8 @@ bash scripts/safe-repo-audit.sh --strict --mode push
 - Fizikai írásvédettség célállapota: a production Impact Challenge MU-plugin állományok read-only (`0444`) jogosultság alatt maradnak, és csak célzott deploy idejére tehetők írhatóvá.
 - A guide-rendszer fizikai célállapota: lokálban és productionön a guide fájlok `0444`, a guide könyvtárak `0555`, és ez az állapot minden deploy után kötelezően visszaállítandó.
 - A JYSK riporthoz tartozó guide fájlok és adatfájlok ugyanebbe a read-only célállapotba tartoznak; a `jysk-riport` route, print nézet és JSON payload nem kezelhető “könnyű statikus oldalként”.
+- A JYSK source assetek kanonikus guard-inventory elemek is.
+  - Minimum: `wp-content/mu-plugins/impactshop-ngo-guides.php`, `wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html`, `wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json`, valamint ezek digest-lockja a `docs/impactshop-guard-config.json` és `docs/impactshop-guard-hashes.json` fájlokban.
 
 ## Nyelv
 

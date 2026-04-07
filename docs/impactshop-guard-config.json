@@ -26,18 +26,6 @@
       "owner_branch": "main"
     },
     {
-      "path": "wp-content/mu-plugins/impactshop-action-bar.php",
-      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
-      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
-      "owner_branch": "main"
-    },
-    {
-      "path": "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
-      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
-      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
-      "owner_branch": "main"
-    },
-    {
       "path": "wp-content/mu-plugins/impactshop-metrics-ngo.php",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
@@ -770,18 +758,6 @@
       "owner_branch": "main"
     },
     {
-      "path": "wp-content/mu-plugins/impactshop-ngo-guides/befektetoknek-en.html",
-      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
-      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
-      "owner_branch": "main"
-    },
-    {
-      "path": "wp-content/mu-plugins/impactshop-ngo-guides/befektetoknek.html",
-      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
-      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
-      "owner_branch": "main"
-    },
-    {
       "path": "wp-content/mu-plugins/impactshop-ngo-guides/hatas-korok.html",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
@@ -866,7 +842,13 @@
       "owner_branch": "main"
     },
     {
-      "path": "docs/public-pages-canonical-baseline.md",
+      "path": "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
       "owner_branch": "main"

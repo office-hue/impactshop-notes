@@ -761,7 +761,7 @@ hash_path = sys.argv[1]
 checksum_path = os.path.join(os.path.dirname(hash_path), "impactshop-guard-hashes.sha256")
 checksum = hashlib.sha256(open(hash_path, "rb").read()).hexdigest()
 with open(checksum_path, "w", encoding="utf-8") as fh:
-    fh.write(f"{checksum}  {os.path.basename(hash_path)}\n")
+    fh.write(f"{checksum}  {hash_path}\n")
 print(f"✅ Checksum frissítve: {checksum_path}")
 PY
 

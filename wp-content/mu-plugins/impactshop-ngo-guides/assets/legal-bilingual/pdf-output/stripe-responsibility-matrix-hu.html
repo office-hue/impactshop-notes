@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe Felelősségmegosztási Mátrix (Magyar)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --accent: #0f8a9d;
+    --accent-light: rgba(15,138,157,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.85;
+    font-size: 16px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.1rem;
+    margin: 36px 0 18px;
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    margin: 30px 0 14px;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 22px 0 10px;
+    color: var(--text);
+  }
+
+  h4, h5, h6 {
+    font-size: 1rem;
+    margin: 18px 0 8px;
+  }
+
+  p { margin: 10px 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e5e7eb;
+    padding: 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 14px 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    padding: 10px 18px;
+    margin: 14px 0;
+    background: var(--accent-light);
+    border-radius: 0 10px 10px 0;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 26px;
+  }
+
+  li { margin: 6px 0; }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--accent);
+    margin: 44px 0;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Language selector */
+  .lang-nav {
+    background: var(--accent-light);
+    padding: 14px 22px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 600;
+  }
+
+  .lang-nav a {
+    margin: 0 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+  }
+
+  .lang-nav a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* Print styles */
+  @page {
+    margin: 20mm 18mm;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      page-break-after: avoid;
+      margin-top: 32px;
+      border-bottom: 2px solid var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      page-break-after: avoid;
+      margin-top: 26px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      page-break-after: avoid;
+      margin-top: 20px;
+    }
+
+    p { margin: 8px 0; }
+
+    table {
+      page-break-inside: avoid;
+      font-size: 0.85rem;
+    }
+    pre { page-break-inside: avoid; }
+    blockquote { page-break-inside: avoid; }
+
+    hr {
+      page-break-before: always;
+      border: none;
+      margin: 0;
+    }
+
+    .lang-nav { display: none; }
+
+    a { color: var(--accent); }
+    a[href]:after { content: ""; }
+  }
+
+  /* Page break between major sections */
+  @media print {
+    hr {
+      page-break-before: always;
+    }
+  }
+</style>
+</head>
+<body>
+<h1 id="stripe-felelossegmegosztasi-matrix">Stripe Felelősségmegosztási Mátrix</h1>
+<blockquote>
+<p><strong>Verzió</strong>: 1.1<br />
+<strong>Dátum</strong>: 2026-02-25<br />
+<strong>Státusz</strong>: HATÁLYOS<br />
+<strong>Vonatkozik</strong>: Impact Amplifier (szavazatvásárlás) — Stripe Checkout integráció<br />
+<strong>Kapcsolódó</strong>: Vitakezelési eljárásrend (dispute-handling-procedure)</p>
+</blockquote>
+<hr />
+<h2 id="1-felek">1. Felek</h2>
+<table>
+<thead>
+<tr>
+<th>Fél</th>
+<th>Jogi entitás</th>
+<th>Szerep</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sharity</strong></td>
+<td>Sharity Adományszervező Alapítvány + Sharity Mobile Application Zrt.</td>
+<td>Kereskedő (merchant) — a Stripe fióktulajdonos</td>
+</tr>
+<tr>
+<td><strong>Stripe</strong></td>
+<td>Stripe Payments Europe, Limited (Dublin, Írország)</td>
+<td>Fizetési szolgáltató (payment processor)</td>
+</tr>
+<tr>
+<td><strong>Felhasználó</strong></td>
+<td>Magánszemély vagy cég</td>
+<td>Adományozó — Stripe Checkout-on keresztül fizet</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-felelossegi-matrix">2. Felelősségi mátrix</h2>
+<h3 id="21-fizetesi-folyamat">2.1 Fizetési folyamat</h3>
+<table>
+<thead>
+<tr>
+<th>Tevékenység</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Checkout Session létrehozása</strong> (REST → Stripe API)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Szerveroldali API-hívás</td>
+</tr>
+<tr>
+<td><strong>Fizetési oldal megjelenítése</strong> (hosted checkout)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe hosted — kártyaadat nem érinti a Sharity szerverét</td>
+</tr>
+<tr>
+<td><strong>Kártyaadatok kezelése</strong> (PCI-DSS)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Sharity scope: PCI SAQ-A (legkisebb)</td>
+</tr>
+<tr>
+<td><strong>3D Secure / SCA</strong> (erős ügyfél-hitelesítés)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe automatikusan kezeli EU tranzakcióknál</td>
+</tr>
+<tr>
+<td><strong>Fraud detection</strong> (Stripe Radar)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Beépített, automatikus — nincs extra fejlesztés</td>
+</tr>
+<tr>
+<td><strong>Webhook fogadása és Signature ellenőrzés</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td><code>Stripe-Signature</code> header + webhook secret</td>
+</tr>
+<tr>
+<td><strong>Szavazat jóváírás</strong> sikeres fizetés után</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Idempotens webhook handler</td>
+</tr>
+<tr>
+<td><strong>Pool növelés</strong> (adományalap)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Atomic DB increment</td>
+</tr>
+<tr>
+<td><strong>Visszaigazolás emailben</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Sharity email küldés (msmtp / WP Mail)</td>
+</tr>
+<tr>
+<td><strong>Adományigazolás</strong> (céges adományozóknak)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Sharity Alapítvány állítja ki</td>
+</tr>
+<tr>
+<td><strong>Többvalutás konverzió</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe kezeli a settlement-et (settlement currency: HUF)</td>
+</tr>
+<tr>
+<td><strong>Payout</strong> (kifizetés Sharity bankszámlára)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe → Sharity bankszámla (automatikus ütemezés)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="22-biztonsag">2.2 Biztonság</h3>
+<table>
+<thead>
+<tr>
+<th>Terület</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>API kulcsok biztonságos tárolása</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Környezeti változókban, verziókezelésből kizárva</td>
+</tr>
+<tr>
+<td><strong>Webhook secret rotálás</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td>Sharity felelős a rotálás kezdeményezéséért</td>
+</tr>
+<tr>
+<td><strong>SSL/TLS</strong> (kommunikáció titkosítás)</td>
+<td style="text-align: center;">✅ (szerver)</td>
+<td style="text-align: center;">✅ (API)</td>
+<td>HTTPS mindkét oldalon kötelező</td>
+</tr>
+<tr>
+<td><strong>PCI-DSS compliance</strong></td>
+<td style="text-align: center;">✅ (SAQ-A)</td>
+<td style="text-align: center;">✅ (Level 1)</td>
+<td>Hosted checkout → Sharity scope minimális</td>
+</tr>
+<tr>
+<td><strong>Rate limiting</strong> (bot védelem)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Cloudflare WAF + pseudo_id cap</td>
+</tr>
+<tr>
+<td><strong>Cloudflare Turnstile</strong> (CAPTCHA)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Checkout indítás előtt</td>
+</tr>
+<tr>
+<td><strong>IP fraud monitoring</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe Radar</td>
+</tr>
+<tr>
+<td><strong>Account takeover protection</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe fiók szintű védelem</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-vitas-ugyek-es-visszaterites">2.3 Vitás ügyek és visszatérítés</h3>
+<table>
+<thead>
+<tr>
+<th>Tevékenység</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Chargeback értesítés</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe webhook: <code>charge.dispute.created</code></td>
+</tr>
+<tr>
+<td><strong>Chargeback bizonyíték összeállítás</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Ld. Vitakezelési eljárásrend</td>
+</tr>
+<tr>
+<td><strong>Chargeback bizonyíték benyújtás</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td>Sharity feltölti → Stripe továbbítja a banknak</td>
+</tr>
+<tr>
+<td><strong>Refund kezdeményezés</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Admin döntés (kivételes, D6: adomány nem visszakövetelhető)</td>
+</tr>
+<tr>
+<td><strong>Refund végrehajtás</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe API: <code>Refund::create()</code></td>
+</tr>
+<tr>
+<td><strong>Szavazat visszavonás</strong> refund/void esetén</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Ld. Vitakezelési eljárásrend §4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Visszatérítési kivételek:</strong> Az „adomány nem visszakövetelhető" főszabály (D6) alól kivételt képez a dupla levonás és a bizonyított rendszerhiba. Ezekben az esetekben a Sharity kezdeményezi a visszatérítést a Stripe API-n keresztül. A checkout és az ÁSZF szövegezése egyértelműen tartalmazza a visszatérítési feltételeket, hogy a chargeback-bizonyíték ne tartalmazzon félreérthető állításokat.</p>
+<h3 id="24-megfeleloseg-es-adatvedelem">2.4 Megfelelőség és adatvédelem</h3>
+<table>
+<thead>
+<tr>
+<th>Terület</th>
+<th style="text-align: center;">Sharity</th>
+<th style="text-align: center;">Stripe</th>
+<th>Megjegyzés</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>GDPR — adatkezelő</strong></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Sharity az adatkezelő</td>
+</tr>
+<tr>
+<td><strong>GDPR — adatfeldolgozó</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe mint adatfeldolgozó (ld. GDPR Adatfeldolgozói nyilvántartás)</td>
+</tr>
+<tr>
+<td><strong>DPA (Data Processing Agreement)</strong></td>
+<td style="text-align: center;">✅ (aláírás)</td>
+<td style="text-align: center;">✅ (biztosítás)</td>
+<td>Stripe DPA: https://stripe.com/legal/dpa</td>
+</tr>
+<tr>
+<td><strong>Tranzakciós adatok megőrzése</strong></td>
+<td style="text-align: center;">✅ (DB)</td>
+<td style="text-align: center;">✅ (Dashboard)</td>
+<td>Mindkét fél megőrzi — számviteli kötelezettség: 8 év</td>
+</tr>
+<tr>
+<td><strong>Felhasználói adattörlés</strong> (GDPR jog)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+<td>Sharity: soft-delete céges adatoknál; Stripe: retain for compliance</td>
+</tr>
+<tr>
+<td><strong>AML / KYC</strong> (pénzmosás elleni ellenőrzés)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">✅</td>
+<td>Stripe végzi (Sharity nem kezel kártyaadatot)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-stripe-szerzodesi-feltetelek-hivatkozasok">3. Stripe szerződési feltételek hivatkozások</h2>
+<table>
+<thead>
+<tr>
+<th>Dokumentum</th>
+<th>URL</th>
+<th>Vonatkozik</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stripe Services Agreement</strong></td>
+<td>https://stripe.com/legal/ssa</td>
+<td>Általános szolgáltatási feltételek</td>
+</tr>
+<tr>
+<td><strong>Stripe Privacy Policy</strong></td>
+<td>https://stripe.com/privacy</td>
+<td>Adatvédelmi szabályzat</td>
+</tr>
+<tr>
+<td><strong>Stripe Data Processing Agreement (DPA)</strong></td>
+<td>https://stripe.com/legal/dpa</td>
+<td>GDPR adatfeldolgozói megállapodás</td>
+</tr>
+<tr>
+<td><strong>Stripe Checkout Documentation</strong></td>
+<td>https://docs.stripe.com/payments/checkout</td>
+<td>Checkout Session API referencia</td>
+</tr>
+<tr>
+<td><strong>Stripe Disputes &amp; Fraud</strong></td>
+<td>https://docs.stripe.com/disputes</td>
+<td>Chargeback kezelés dokumentáció</td>
+</tr>
+<tr>
+<td><strong>Stripe PCI Compliance</strong></td>
+<td>https://stripe.com/guides/pci-compliance</td>
+<td>PCI-DSS szintek és SAQ-A</td>
+</tr>
+<tr>
+<td><strong>Stripe Zero-Decimal Currencies</strong></td>
+<td>https://docs.stripe.com/currencies#zero-decimal</td>
+<td>HUF/CZK kezelés</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-kapcsolattartas">4. Kapcsolattartás</h2>
+<table>
+<thead>
+<tr>
+<th>Ügy</th>
+<th>Ki intézi</th>
+<th>Hogyan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stripe fiók beállítások</td>
+<td>Sharity admin</td>
+<td>Stripe Dashboard → Settings</td>
+</tr>
+<tr>
+<td>Webhook konfiguráció</td>
+<td>Sharity fejlesztő</td>
+<td>Stripe Dashboard → Developers → Webhooks</td>
+</tr>
+<tr>
+<td>Stripe support (technikai)</td>
+<td>Sharity admin</td>
+<td>Stripe Dashboard → Support (email/chat)</td>
+</tr>
+<tr>
+<td>Chargeback válasz</td>
+<td>Sharity admin</td>
+<td>Stripe Dashboard → Payments → Disputes</td>
+</tr>
+<tr>
+<td>Payout beállítás</td>
+<td>Sharity pénzügy</td>
+<td>Stripe Dashboard → Balance → Payouts</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-felulvizsgalat">5. Felülvizsgálat</h2>
+<ul>
+<li><strong>Gyakoriság</strong>: félévente, vagy Stripe feltételek változásakor</li>
+<li><strong>Felelős</strong>: Ops Squad + pénzügyi vezető</li>
+<li><strong>Mikor kötelező frissíteni</strong>: Stripe SSA frissítésekor, új valuták hozzáadásakor, PCI audit utáni megállapítás</li>
+</ul>
+<hr />
+<h2 id="valtozasnaplo">Változásnapló</h2>
+<table>
+<thead>
+<tr>
+<th>Verzió</th>
+<th>Dátum</th>
+<th>Változás</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-02-25</td>
+<td>Kezdeti verzió — draft</td>
+</tr>
+<tr>
+<td>1.1</td>
+<td>2026-02-25</td>
+<td>Véglegesítés: belső fájlhivatkozások eltávolítása, audit megjegyzés beépítése, visszatérítési kivételek rögzítése</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="kapcsolodo-dokumentumok-es-guide-ok">Kapcsolódó dokumentumok és guide-ok</h2>
+<ul>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#dispute">Vitakezelési eljárásrend</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#aszf">Általános Szerződési Feltételek (ÁSZF)</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#gdpr">GDPR adatfeldolgozók</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/#access-control">Hozzáférés-kezelési mátrix</a></li>
+<li><a href="https://app.sharity.hu/ngo-guides/impact-challenge/">Impact Challenge útmutató</a></li>
+<li><a href="https://app.sharity.hu/rolunk/">Impact Amplifier (Rólunk)</a></li>
+</ul>
+</div>
+<hr />
+<footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); text-align: center;">
+  © Sharity Mobile Application Zrt. — Bilingual Legal Document — Generated 2026-02-26
+</footer>
+</body>
+</html>

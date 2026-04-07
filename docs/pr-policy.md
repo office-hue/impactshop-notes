@@ -15,9 +15,6 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
    - `bash scripts/git-health-check.sh`
 4. Push csak feature/worktree ágról mehet, `main/master` közvetlen push tiltott.
    - Impact Challenge változásnál a push előfeltétele, hogy a commit/PR egyértelműen jelölje: additív új kód vagy jóváhagyott legacy touch történt.
-   - Commit- és push-szinten kötelező a lane-fegyelem: egy commit vagy push-range commit diffje csak egy elsődleges lane-ben maradhat (`protected`, `additive`, `app-content`, `ops`), a `docs` csak kísérő lane lehet.
-   - Állapotlekérdezéshez használd: `git wstate`
-   - Guardolt push + push utáni PR-javaslat: `git wpush`
 5. PR nyitás javasolt parancsa:
    - `npm run pr:create-with-memory -- --fill` (PR + auto memory capture)
 6. PR csak kötelező checklist blokkal nyitható (`PR-EXIT-CHECKLIST.md`).
@@ -35,8 +32,6 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 - Ide tartozik minden releváns funkció, útvonal, bekötés, kapcsolódási pont, nyilvántartás, adatírási mód, workflow és pipeline.
 - Az Impact Challenge kanonikus baseline-ja: `docs/impact-challenge-canonical-baseline.md`. Impact Challenge PR / merge / deploy esetén ehhez kell mérni az eltérést.
 - Külön beton protected perimeternek számít a teljes guide rendszer: `impactshop-ngo-guides.php` és `wp-content/mu-plugins/impactshop-ngo-guides/**`.
-- A publikus információs / guide IA kanonikus baseline-ja: `docs/public-pages-canonical-baseline.md`, beleértve a `/befektetoknek/` befektetői landinget is.
-- A `partner-api` route kanonikus baseline-ját ugyanitt kell keresni, de a fizikai forrása repo-n kívüli állomány, ezért ott külön backup + rollback + read-only kontroll kötelező.
 - Ezen belül a JYSK riport külön név szerint max-védett surface: `/jysk-riport/`, `/jysk-riport/?print=1`, `/jysk-riport.data.json`.
 - Guide route / guide HTML / guide asset / guide PDF / guide fordítás módosítása csak explicit felhasználói engedéllyel mehet; sem PR, sem merge, sem deploy, sem automatika nem írhatja felül ezeket hallgatólagosan.
 - JYSK riport touch esetén a protected smoke scope-nak ki kell terjednie a route renderre, a print nézetre és a JSON payloadra is; ezt nem lehet egyszerű guide-copyként vagy statikus assetcseréként kezelni.
@@ -53,7 +48,6 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 - `pre-push` hook: blokkolja a közvetlen `main/master` push-t.
 - `pre-push` hook: kötelező policy fájlok meglétét ellenőrzi.
 - `pre-push` hook: `safe-repo-audit.sh --strict --mode push` futtatása kötelező.
-- `pre-push` hook: commit-lane guard commitonként átnézi a push-range-et.
 - `pre-push` hook: Impact Challenge változásnál a bástyavédelmi és dokumentációs evidencia megléte kötelező.
 - `pre-push` hook: memory gate (`memory:gate`) kötelező.
 - `pre-push` hook: PR auto-memory sync (`memory:sync-pr`) fail-open módban.

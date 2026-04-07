@@ -53,13 +53,6 @@ Minimum:
 - milyen kattintási vagy végigjátszási flow-t futtasson le
 - milyen regressziójelekre figyeljen
 
-Példa:
-
-- oldalak: `/impact-challenge`, releváns céloldalak, partner/redirect flow
-- UI blokkok: player, számláló, CTA, NGO lista, top lista, identity blokk
-- flow: videó indítás, CTA kattintás, videóvégi jutalom, redirect, visszatérés
-- regressziójelek: eltűnő számláló, nem frissülő jutalom, hibás link, rossz logó, rossz shop, üres lista
-
 ## 4. Deploy / PR / merge utáni kötelező ellenőrzés
 
 Protected-file módosítás után az asszisztensnek kötelező:

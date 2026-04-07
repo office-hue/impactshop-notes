@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NGO Card Embed Guide | Sharity</title>
-  <meta name="description" content="Canonical NGO Card embed guide for nonprofits: add a live Sharity card to your website with the script, slug, variants and setup tips.">
-  <meta property="og:title" content="NGO Card Embed Guide | Sharity">
-  <meta property="og:description" content="Canonical NGO Card setup guide for nonprofits: add a live Sharity card to your website in two steps.">
+  <title>NGO Card Embed | Sharity</title>
+  <meta name="description" content="NGO Card embed guide: load the script + add a data-ngo-card element, variants and examples.">
+  <meta property="og:title" content="NGO Card Embed | Sharity">
+  <meta property="og:description" content="Embed the dynamic NGO Card on any website: simple script + div.">
   <meta property="og:url" content="https://app.sharity.hu/ngo-guides/ngo-card/?lang=en">
   <style>
     :root {
@@ -18,7 +18,7 @@
       --sand: #f6efe6;
       --card: #ffffff;
       --shadow: 0 18px 40px rgba(11, 31, 42, 0.12);
-      --warning: #f59e0b;
+      --purple: #7c3aed;
     }
 
     * { box-sizing: border-box; }
@@ -28,7 +28,7 @@
       color: var(--ink);
       background:
         radial-gradient(1200px 600px at 10% -10%, rgba(111, 227, 193, 0.28), transparent 60%),
-        radial-gradient(900px 500px at 110% 10%, rgba(245, 182, 66, 0.22), transparent 55%),
+        radial-gradient(900px 500px at 110% 10%, rgba(124, 58, 237, 0.18), transparent 55%),
         linear-gradient(180deg, #fefcf9 0%, #f6efe6 100%);
     }
 
@@ -122,25 +122,6 @@
       padding: 18px;
     }
 
-    .callout {
-      padding: 18px 22px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, rgba(111, 227, 193, 0.18) 0%, rgba(111, 227, 193, 0.05) 100%);
-      border-left: 4px solid var(--mint);
-      margin: 22px 0;
-    }
-    .callout.warning {
-      background: linear-gradient(135deg, rgba(245, 182, 66, 0.16) 0%, rgba(245, 182, 66, 0.05) 100%);
-      border-left-color: var(--warning);
-    }
-    .callout h3 {
-      margin-bottom: 8px;
-      color: var(--ink);
-    }
-    .callout p {
-      margin: 0;
-    }
-
     pre {
       margin: 0;
       padding: 14px;
@@ -181,23 +162,13 @@
     </nav>
 
     <section class="hero">
-      <span class="pill">🪪 Embeddable nonprofit widget</span>
-      <h1>NGO Card embed guide</h1>
+      <span class="pill">🪪 Dynamic card for your website</span>
+      <h1>NGO Card embed</h1>
       <p>
-        This is the canonical guide for placing the Sharity NGO Card on your nonprofit's website. The component
-        loads live NGO data from Sharity's API and renders a public-facing card with your name, current amounts,
-        status and supporter actions.
+        The NGO Card is an embeddable component that loads NGO data from Sharity's API and renders a live card
+        (name, amounts, status and links). It also includes save/share options for supporters.
       </p>
-      <div class="callout warning">
-        <h3>When to use it</h3>
-        <p>Choose the NGO Card if you want a lightweight Sharity presence on your own website without sending visitors through a longer product explainer first.</p>
-      </div>
     </section>
-
-    <div class="callout">
-      <h3>How it fits into the guide system</h3>
-      <p>The NGO Card is the easiest website integration. If you also want donation growth guides, continue with <a href="/ngo-guides/impact-shop/?lang=en">Impact Shop</a> for shopping-based donations or <a href="/ngo-guides/impact-challenge/?lang=en">Impact Challenge</a> for video, offerwall and voting-based support.</p>
-    </div>
 
     <h2>Embed in 2 steps</h2>
     <div class="card">

@@ -4,11 +4,48 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -n "${REPO_ROOT}" ]] || exit 1
 
-SAFE_AUDIT_SCRIPT="${REPO_ROOT}/scripts/safe-repo-audit.sh"
-PROTECTED_TOUCH_SCRIPT="${REPO_ROOT}/scripts/check-protected-file-touch.sh"
-COMMIT_LANE_SCRIPT="${REPO_ROOT}/scripts/check-commit-lane.sh"
+LANE_GUARD="${REPO_ROOT}/scripts/check-commit-lane.sh"
+PROTECTED_GUARD="${REPO_ROOT}/scripts/check-protected-file-touch.sh"
+SAFE_AUDIT="${REPO_ROOT}/scripts/safe-repo-audit.sh"
 
-AI_AGENT_REPO=""
+resolve_push_base_ref() {
+  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
+  local candidate=""
+  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
+    printf '%s\n' "$upstream_ref"
+    return 0
+  fi
+
+  for candidate in "origin/HEAD" "origin/main" "origin/master" "main" "master"; do
+    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    printf '%s\n' "HEAD^"
+    return 0
+  fi
+
+  printf '%s\n' "$(git hash-object -t tree /dev/null)"
+}
+
+resolve_push_range() {
+  local base_ref="$1"
+  local base_sha=""
+  if [[ "$base_ref" == *".."* ]]; then
+    printf '%s\n' "$base_ref"
+    return 0
+  fi
+  if [[ "$base_ref" == "$(git hash-object -t tree /dev/null)" ]]; then
+    printf '%s..HEAD\n' "$base_ref"
+    return 0
+  fi
+  base_sha="$(git merge-base HEAD "$base_ref" 2>/dev/null || git rev-parse --verify "$base_ref")"
+  printf '%s..HEAD\n' "$base_sha"
+}
+
 resolve_ai_agent_repo() {
   local repo_root="$1"
   local search="$repo_root"
@@ -22,6 +59,12 @@ resolve_ai_agent_repo() {
       echo "$search/ai-agent"
       return 0
     fi
+    for wt in "$search"/.worktrees/ai-agent*; do
+      if [[ -d "$wt" && -f "$wt/scripts/dev-memory.ts" ]]; then
+        echo "$wt"
+        return 0
+      fi
+    done
     parent="$(cd "$search/.." && pwd)"
     [[ "$parent" == "$search" ]] && break
     search="$parent"
@@ -29,16 +72,21 @@ resolve_ai_agent_repo() {
   return 1
 }
 
-if [[ -x "${SAFE_AUDIT_SCRIPT}" ]]; then
-  "${SAFE_AUDIT_SCRIPT}" --repo "${REPO_ROOT}" --strict --mode push
+if [[ -x "${LANE_GUARD}" ]]; then
+  PUSH_BASE_REF="$(resolve_push_base_ref)"
+  PUSH_RANGE="$(resolve_push_range "${PUSH_BASE_REF}")"
+  "${LANE_GUARD}" --mode push --push-range "${PUSH_RANGE}"
 fi
 
-if [[ -x "${PROTECTED_TOUCH_SCRIPT}" ]]; then
-  "${PROTECTED_TOUCH_SCRIPT}" --mode push
+if [[ -x "${PROTECTED_GUARD}" ]]; then
+  PUSH_BASE_REF="${PUSH_BASE_REF:-$(resolve_push_base_ref)}"
+  PUSH_RANGE="${PUSH_RANGE:-$(resolve_push_range "${PUSH_BASE_REF}")}"
+  "${PROTECTED_GUARD}" --mode push --push-range "${PUSH_RANGE}"
 fi
 
-if [[ -x "${COMMIT_LANE_SCRIPT}" ]]; then
-  "${COMMIT_LANE_SCRIPT}" --mode push
+if [[ -x "${SAFE_AUDIT}" ]]; then
+  SAFE_REPO_AUDIT_UPSTREAM="${PUSH_BASE_REF:-$(resolve_push_base_ref)}" \
+    "${SAFE_AUDIT}" --repo "${REPO_ROOT}" --strict --mode push
 fi
 
 AI_AGENT_REPO="$(resolve_ai_agent_repo "${REPO_ROOT}" 2>/dev/null || true)"
