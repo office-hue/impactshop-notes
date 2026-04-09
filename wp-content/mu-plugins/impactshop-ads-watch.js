@@ -84,6 +84,8 @@
         educationInFlight: false,
         educationLastPlayerTime: 0,  // Track last player position for seek detection
         sponsorYoutubeTimer: null,
+        sponsorYoutubeDeadlineId: null,
+        sponsorCompletionFired: false,
         youtubePlayer: null,
         youtubeReady: null,
         ctaLabel: '',
@@ -116,6 +118,7 @@
         autoBannerRewardBasePoints: 0,
         autoBannerRewardBaseVotes: 0,
         autoBannerFrameId: null,
+        autoBannerDeadlineId: null,
         autoBannerStartedAt: 0,
         autoBannerRemainingMs: 0,
         autoBannerTotalMs: 0,
@@ -214,6 +217,9 @@
         window.addEventListener('focus', handleExternalReturn);
         window.addEventListener('pageshow', handleExternalReturn);
         window.addEventListener('resize', handleWindowResize);
+
+        // Block AdSense autoads from injecting into critical UI zones
+        blockAdSenseInProtectedZones();
 
         $('#btn-change-ngo').on('click', openNgoModal);
         $('#modal-close').on('click', closeNgoModal);
@@ -1434,6 +1440,8 @@
         }
 
         const proceed = function () {
+            stopAutoBannerProgress();
+            $('[data-role=auto-banner]').prop('hidden', true);
             state.isPlaying = true;
             state.adProgress = 0;
             state.ctaClicked = false; // Reset CTA clicked flag for new ad
@@ -1788,15 +1796,55 @@
                     },
                     onStateChange: function (event) {
                         console.log('[YouTube] Sponsor player state change:', event.data);
+                        if (event.data === window.YT.PlayerState.PLAYING) {
+                            // Hard deadline backup for Android Chrome: ENDED event may not fire
+                            // when YT IFrame is background-throttled. Deadline fires after
+                            // video duration + 3s grace, only if completion hasn't already happened.
+                            if (state.sponsorYoutubeDeadlineId) {
+                                clearTimeout(state.sponsorYoutubeDeadlineId);
+                                state.sponsorYoutubeDeadlineId = null;
+                            }
+                            var ytDur = 0;
+                            try {
+                                ytDur = Number(event.target.getDuration() || 0);
+                            } catch (e) {}
+                            if (ytDur > 0) {
+                                state.sponsorYoutubeDeadlineId = window.setTimeout(function () {
+                                    state.sponsorYoutubeDeadlineId = null;
+                                    if (!state.sponsorCompletionFired && state.isPlaying && state.currentMode === 'sponsor') {
+                                        console.warn('[YouTube] Sponsor hard deadline fired — ENDED event not received (mobile throttle)');
+                                        state.sponsorCompletionFired = true;
+                                        if (state.sponsorYoutubeTimer) {
+                                            clearInterval(state.sponsorYoutubeTimer);
+                                            state.sponsorYoutubeTimer = null;
+                                        }
+                                        state.adProgress = 1;
+                                        updateAdProgressBar();
+                                        handleAdCompletion(true, 1, { resetAfterDone: true, keepProgressBar: true });
+                                    }
+                                }, ytDur * 1000 + 3000);
+                                console.log('[YouTube] Sponsor hard deadline set:', ytDur + 3, 'sec');
+                            }
+                        }
                         if (event.data === window.YT.PlayerState.ENDED) {
+                            // Guard against double ENDED (YouTube fires it twice on mobile/tab-switch)
+                            if (state.sponsorCompletionFired) {
+                                console.log('[YouTube] Sponsor ENDED double-fire ignored');
+                                return;
+                            }
+                            state.sponsorCompletionFired = true;
+                            if (state.sponsorYoutubeDeadlineId) {
+                                clearTimeout(state.sponsorYoutubeDeadlineId);
+                                state.sponsorYoutubeDeadlineId = null;
+                            }
                             if (state.sponsorYoutubeTimer) {
                                 clearInterval(state.sponsorYoutubeTimer);
                                 state.sponsorYoutubeTimer = null;
                             }
                             state.adProgress = 1;
                             updateAdProgressBar();
-                            handleAdCompletion(true, 1);
-                            resetPlayer(true); // Keep progress bar visible
+                            // resetAfterDone: true ensures resetPlayer runs AFTER the AJAX reward call
+                            handleAdCompletion(true, 1, { resetAfterDone: true, keepProgressBar: true });
                         }
                     },
                     onError: function (event) {
@@ -1856,6 +1904,10 @@
         if (state.sponsorYoutubeTimer) {
             clearInterval(state.sponsorYoutubeTimer);
             state.sponsorYoutubeTimer = null;
+        }
+        if (state.sponsorYoutubeDeadlineId) {
+            clearTimeout(state.sponsorYoutubeDeadlineId);
+            state.sponsorYoutubeDeadlineId = null;
         }
         state.educationContent = null;
         state.educationSessionToken = '';
@@ -2247,8 +2299,8 @@
             }
             if (state.autoBannerPaused) {
                 resumeAutoBannerAfterExternalReturn();
-                clearExternalNavigationState();
             }
+            clearExternalNavigationState();
             return;
         }
 
@@ -3433,6 +3485,11 @@
     }
 
     function loadAutoBanner() {
+        // Don't interfere when main ad flow is actively playing an auto banner
+        if (state.isPlaying && state.currentMode === 'auto_banner') {
+            console.log('[AutoBanner][DEBUG] loadAutoBanner skipped (main flow active)');
+            return;
+        }
         const $banner = $('[data-role=auto-banner]');
         if (!$banner.length) {
             return;
@@ -3453,6 +3510,13 @@
             const banner = response && response.banner ? response.banner : null;
             if (!banner || !banner.banner_url) {
                 $banner.prop('hidden', true);
+                // Fallback: show watch overlay so user can request next ad
+                if (state.isPlaying) {
+                    state.isPlaying = false;
+                    updateWatchButton();
+                }
+                $('#player-overlay').fadeIn(200);
+                hideVideoInfoPanel();
                 return;
             }
 
@@ -3493,6 +3557,13 @@
             startBannerProgress($banner, { duration: 5000, onComplete: loadAutoBanner });
         }).fail(function () {
             $banner.prop('hidden', true);
+            // Fallback: show watch overlay so user can request next ad
+            if (state.isPlaying) {
+                state.isPlaying = false;
+                updateWatchButton();
+            }
+            $('#player-overlay').fadeIn(200);
+            hideVideoInfoPanel();
         });
     }
 
@@ -3509,6 +3580,7 @@
             ? Math.max(duration, Number(state.autoBannerTotalMs || duration))
             : duration;
 
+        console.log('[AutoBanner][DEBUG] startBannerProgress called', { duration: duration, isResume: isResume, hasOnComplete: !!onComplete, isPlaying: state.isPlaying, currentMode: state.currentMode });
         stopAutoBannerProgress();
         if (!isResume) {
             $progress.css('width', '0%');
@@ -3519,7 +3591,29 @@
         state.autoBannerRemainingMs = duration;
         state.autoBannerStartedAt = Date.now();
         const start = Date.now();
-        const step = function () {
+        var _bannerCompleteFired = false;
+        function _fireBannerComplete() {
+            if (_bannerCompleteFired) { return; }
+            _bannerCompleteFired = true;
+            clearInterval(state.autoBannerFrameId);
+            state.autoBannerFrameId = null;
+            state.autoBannerRemainingMs = 0;
+            state.autoBannerStartedAt = 0;
+            console.log('[AutoBanner][DEBUG] timer onComplete firing', { isPlaying: state.isPlaying, currentMode: state.currentMode });
+            if (onComplete) { onComplete(); }
+        }
+        // Hard deadline backup: mobile browsers throttle/suspend setInterval
+        // This setTimeout guarantees onComplete fires even if interval is frozen
+        // Stored in state so stopAutoBannerProgress() can cancel it on reset
+        if (state.autoBannerDeadlineId) {
+            clearTimeout(state.autoBannerDeadlineId);
+            state.autoBannerDeadlineId = null;
+        }
+        state.autoBannerDeadlineId = window.setTimeout(function () {
+            state.autoBannerDeadlineId = null;
+            _fireBannerComplete();
+        }, duration + 500);
+        state.autoBannerFrameId = setInterval(function () {
             const elapsed = Date.now() - start;
             const ratio = Math.min(1, elapsed / duration);
             const remaining = Math.max(0, duration - elapsed);
@@ -3527,26 +3621,29 @@
             const overallRatio = totalDuration > 0
                 ? Math.min(1, (totalDuration - remaining) / totalDuration)
                 : ratio;
-            $progress.css('width', `${(overallRatio * 100).toFixed(1)}%`);
-            if (ratio < 1) {
-                state.autoBannerFrameId = requestAnimationFrame(step);
-            } else if (onComplete) {
-                state.autoBannerFrameId = null;
-                state.autoBannerRemainingMs = 0;
-                state.autoBannerStartedAt = 0;
-                onComplete();
+            $progress.css('width', (overallRatio * 100).toFixed(1) + '%');
+            if (ratio >= 1) {
+                clearTimeout(state.autoBannerDeadlineId);
+                state.autoBannerDeadlineId = null;
+                _fireBannerComplete();
             }
-        };
-        state.autoBannerFrameId = requestAnimationFrame(step);
+        }, 100);
     }
 
     function stopAutoBannerProgress() {
+        if (state.autoBannerDeadlineId) {
+            clearTimeout(state.autoBannerDeadlineId);
+            state.autoBannerDeadlineId = null;
+        }
         if (state.autoBannerFrameId) {
-            if (state.autoBannerStartedAt > 0 && state.autoBannerRemainingMs <= 0 && state.autoBannerTotalMs > 0) {
+            if (state.autoBannerStartedAt > 0) {
                 const elapsed = Date.now() - state.autoBannerStartedAt;
-                state.autoBannerRemainingMs = Math.max(0, state.autoBannerRemainingMs || (state.autoBannerTotalMs - elapsed));
+                const computedRemaining = Math.max(0, (state.autoBannerTotalMs || 0) - elapsed);
+                if (state.autoBannerRemainingMs <= 0) {
+                    state.autoBannerRemainingMs = computedRemaining;
+                }
             }
-            cancelAnimationFrame(state.autoBannerFrameId);
+            clearInterval(state.autoBannerFrameId);
             state.autoBannerFrameId = null;
         }
     }
@@ -3888,6 +3985,76 @@
         }
     }
 
+    function blockAdSenseInProtectedZones() {
+        // Protected element IDs where AdSense must NOT inject ads
+        var protectedIds = [
+            'video-container', 'player-overlay', 'ad-container', 'content-video',
+            'education-iframe', 'video-info-panel', 'ad-progress-bar',
+            'btn-watch-ad', 'player-loading', 'reward-animation',
+            'ads-watch-video', 'ads-watch-status-bar', 'ads-watch-live',
+            'ads-watch-ngo', 'ads-watch-vote', 'ads-watch-purchase',
+            'ads-watch-steps', 'ads-watch-chance',
+            'impactshop-offerwall', 'ngo-selection-modal',
+            'education-info-bar', 'presence-check-overlay',
+            'ima-cta-overlay', 'ads-watch-cta',
+            'selected-ngo-display', 'tally-list'
+        ];
+
+        function purgeAdsFromElement(el) {
+            if (!el) return;
+            var injected = el.querySelectorAll('ins.adsbygoogle, iframe[id^="google_ads_iframe"], div[id^="google_ads"]');
+            for (var i = 0; i < injected.length; i++) {
+                injected[i].remove();
+            }
+        }
+
+        function setDataNoAd(el) {
+            if (!el) return;
+            el.setAttribute('data-nosnippet', '');
+            el.setAttribute('data-ad-region', 'none');
+        }
+
+        // Initial sweep
+        for (var i = 0; i < protectedIds.length; i++) {
+            var el = document.getElementById(protectedIds[i]);
+            if (el) {
+                setDataNoAd(el);
+                purgeAdsFromElement(el);
+            }
+        }
+
+        // MutationObserver: continuously remove injected ads from protected zones
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function (mutations) {
+                for (var m = 0; m < mutations.length; m++) {
+                    var added = mutations[m].addedNodes;
+                    for (var n = 0; n < added.length; n++) {
+                        var node = added[n];
+                        if (node.nodeType !== 1) continue;
+                        // Check if the injected node IS an ad
+                        var isAd = (node.tagName === 'INS' && node.classList.contains('adsbygoogle')) ||
+                                   (node.tagName === 'IFRAME' && node.id && node.id.indexOf('google_ads_iframe') === 0) ||
+                                   (node.tagName === 'DIV' && node.id && node.id.indexOf('google_ads') === 0);
+                        if (isAd) {
+                            // Check if it's inside a protected zone
+                            for (var p = 0; p < protectedIds.length; p++) {
+                                var protectedEl = document.getElementById(protectedIds[p]);
+                                if (protectedEl && protectedEl.contains(node)) {
+                                    node.remove();
+                                    console.log('[AdSense Guard] Removed injected ad from #' + protectedIds[p]);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            // Observe the main widget area
+            var watchRoot = document.getElementById('ads-watch-message') || document.body;
+            observer.observe(watchRoot, { childList: true, subtree: true });
+        }
+    }
+
     function handleWindowResize() {
         if (state.adsManager && state.isPlaying && (state.currentMode === 'regular' || state.currentMode === 'sponsor')) {
             try {
@@ -3914,16 +4081,16 @@
 
     function stopImaProgressLoop() {
         if (state.imaProgressFrameId) {
-            cancelAnimationFrame(state.imaProgressFrameId);
+            clearInterval(state.imaProgressFrameId);
             state.imaProgressFrameId = null;
         }
     }
 
     function startImaProgressLoop() {
         stopImaProgressLoop();
-        function tick() {
+        state.imaProgressFrameId = setInterval(function () {
             if (!state.adsManager || !state.isPlaying) {
-                state.imaProgressFrameId = null;
+                stopImaProgressLoop();
                 return;
             }
             try {
@@ -3936,9 +4103,7 @@
             } catch (e) {
                 // adsManager may throw if destroyed
             }
-            state.imaProgressFrameId = requestAnimationFrame(tick);
-        }
-        state.imaProgressFrameId = requestAnimationFrame(tick);
+        }, 200);
     }
 
     function onAdStarted(adEvent) {
@@ -3986,7 +4151,7 @@
         hideResumeButton();
         state.adProgress = 1;
         updateAdProgressBar();
-        handleAdCompletion(true, state.adProgress);
+        handleAdCompletion(true, state.adProgress, { resetAfterDone: true });
     }
 
     function onAdSkipped() {
@@ -4129,6 +4294,16 @@
         const adType = state.currentAdType || 'regular';
         const sponsorId = state.currentSponsorId || 0;
         const proceedWithViewRecording = function () {
+            // Safety fallback: if AJAX hangs (mobile network drop), force-reset after 10s
+            var _safetyTimer = null;
+            if (resetAfterDone) {
+                _safetyTimer = window.setTimeout(function () {
+                    if (state.isPlaying) {
+                        console.warn('[AdsWatch] Safety timeout: AJAX hung, force-resetting player');
+                        resetPlayer(keepProgressBar);
+                    }
+                }, 10000);
+            }
             recordAdView(adType, sponsorId, completionRatio)
                 .done(function (viewResponse) {
                     const prevAvailable = Number(state.availableVotes || 0);
@@ -4221,6 +4396,7 @@
                     }
 
                     if (resetAfterDone) {
+                        if (_safetyTimer) { clearTimeout(_safetyTimer); _safetyTimer = null; }
                         window.setTimeout(function () {
                             resetPlayer(keepProgressBar);
                         }, 120);
@@ -4231,6 +4407,7 @@
                     }, 1000);
                 })
                 .fail(function (xhr) {
+                    if (_safetyTimer) { clearTimeout(_safetyTimer); _safetyTimer = null; }
                     console.error('View recording failed:', xhr);
                     showNotification('Nem sikerült rögzíteni a megtekintést. Próbáld újra.', 'error');
                     if (resetAfterDone) {
@@ -4259,6 +4436,7 @@
         state.currentSponsorId = 0;
         state.pendingAdTagUrl = '';
         state.currentMode = 'regular';
+        state.sponsorCompletionFired = false;
         state.currentCtaPoints = 0;
         state.imaAdDuration = 0;
         state.ctaBonusPoints = 0;
@@ -4292,6 +4470,30 @@
             adContainer.style.display = '';
         }
 
+        // Destroy YouTube sponsor player to free memory (ghost iframe prevention)
+        if (state.youtubePlayer && typeof state.youtubePlayer.destroy === 'function') {
+            try { state.youtubePlayer.destroy(); } catch (e) {}
+            state.youtubePlayer = null;
+        }
+        // Clear sponsor YouTube progress timer
+        if (state.sponsorYoutubeTimer) {
+            clearInterval(state.sponsorYoutubeTimer);
+            state.sponsorYoutubeTimer = null;
+        }
+        // Release video element buffer
+        var videoEl = document.getElementById('content-video');
+        if (videoEl) {
+            try { videoEl.pause(); } catch (e) {}
+            videoEl.removeAttribute('src');
+            videoEl.load();
+        }
+        // Clear education iframe
+        var eduIframe = document.getElementById('education-iframe');
+        if (eduIframe) {
+            eduIframe.innerHTML = '';
+            eduIframe.style.display = 'none';
+        }
+
         if (state.adsManager) {
             state.adsManager.destroy();
             state.adsManager = null;
@@ -4305,6 +4507,7 @@
                 // Ignore if already completed
             }
         }
+
     }
 
     function showImaCtaOverlay(clickUrl) {
@@ -4352,12 +4555,16 @@
         showLoading(false);
     }
 
+    var _$progressBar, _$progressFill, _$progressMeta, _$progressText;
+    var _lastProgressPercent = -1;
+    var _progressAnimateRafId = null;
+
     function updateAdProgressBar() {
-        const $bar = $('#ad-progress-bar');
-        const $fill = $('#ad-progress-fill');
-        const $meta = $('#ad-progress-meta');
-        const $text = $('#ad-progress-text');
-        if (!$bar.length || !$fill.length) return;
+        if (!_$progressBar) _$progressBar = $('#ad-progress-bar');
+        if (!_$progressFill) _$progressFill = $('#ad-progress-fill');
+        if (!_$progressMeta) _$progressMeta = $('#ad-progress-meta');
+        if (!_$progressText) _$progressText = $('#ad-progress-text');
+        if (!_$progressBar.length || !_$progressFill.length) return;
         const progressSource = state.currentMode === 'education'
             ? Number(state.educationProgress || 0)
             : Number(state.adProgress || 0);
@@ -4366,6 +4573,7 @@
         state.progressTarget = rawPercent;
         if (!state.progressAnimating) {
             state.progressAnimating = true;
+            var lastAnimCssUpdate = 0;
             const animate = function () {
                 const diff = state.progressTarget - state.progressDisplay;
                 if (Math.abs(diff) < 0.2) {
@@ -4373,36 +4581,47 @@
                 } else {
                     state.progressDisplay += diff * 0.18;
                 }
-                $fill.css('width', state.progressDisplay.toFixed(1) + '%');
+                var now = Date.now();
+                if (now - lastAnimCssUpdate >= 50 || state.progressDisplay === state.progressTarget) {
+                    lastAnimCssUpdate = now;
+                    _$progressFill.css('width', state.progressDisplay.toFixed(1) + '%');
+                }
                 if (state.progressDisplay !== state.progressTarget) {
-                    requestAnimationFrame(animate);
+                    _progressAnimateRafId = requestAnimationFrame(animate);
                 } else {
                     state.progressAnimating = false;
+                    _progressAnimateRafId = null;
                 }
             };
-            requestAnimationFrame(animate);
+            _progressAnimateRafId = requestAnimationFrame(animate);
         }
-        $bar.show();
-        if ($meta.length) {
-            $meta.show();
+        _$progressBar.show();
+        if (_$progressMeta.length) {
+            _$progressMeta.show();
         }
-        if ($text.length) {
+        if (_$progressText.length && percent !== _lastProgressPercent) {
+            _lastProgressPercent = percent;
             if (percent >= 100) {
-                $text.text('Videó teljesítve.');
+                _$progressText.text('Videó teljesítve.');
             } else {
-                $text.text('Eddig hitelesen: ' + percent + '%');
+                _$progressText.text('Eddig hitelesen: ' + percent + '%');
             }
         }
         // Keep progress bar visible after completion - don't hide it
     }
 
     function hideAdProgressBar() {
+        if (_progressAnimateRafId) {
+            cancelAnimationFrame(_progressAnimateRafId);
+            _progressAnimateRafId = null;
+        }
         $('#ad-progress-bar').hide();
         $('#ad-progress-fill').css('width', '0%');
         $('#ad-progress-meta').hide();
         state.progressTarget = 0;
         state.progressDisplay = 0;
         state.progressAnimating = false;
+        _lastProgressPercent = -1;
     }
 
     function showLoading(show) {
@@ -4599,7 +4818,7 @@
             sponsor_id: sponsorId,
             pseudo_id: state.pseudoId,
             completion_ratio: completionRatio
-        }, { retries: 3, retryDelay: 500 });
+        }, { retries: 1, retryDelay: 500, timeout: 8000 });
     }
 
 })(jQuery);
