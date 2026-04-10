@@ -1808,23 +1808,24 @@
                             try {
                                 ytDur = Number(event.target.getDuration() || 0);
                             } catch (e) {}
-                            if (ytDur > 0) {
-                                state.sponsorYoutubeDeadlineId = window.setTimeout(function () {
-                                    state.sponsorYoutubeDeadlineId = null;
-                                    if (!state.sponsorCompletionFired && state.isPlaying && state.currentMode === 'sponsor') {
-                                        console.warn('[YouTube] Sponsor hard deadline fired — ENDED event not received (mobile throttle)');
-                                        state.sponsorCompletionFired = true;
-                                        if (state.sponsorYoutubeTimer) {
-                                            clearInterval(state.sponsorYoutubeTimer);
-                                            state.sponsorYoutubeTimer = null;
-                                        }
-                                        state.adProgress = 1;
-                                        updateAdProgressBar();
-                                        handleAdCompletion(true, 1, { resetAfterDone: true, keepProgressBar: true });
+                            // iOS WebKit may return 0 from getDuration() when PLAYING fires early
+                            // — fallback to 180s conservative deadline so ENDED-miss doesn't freeze forever
+                            var deadlineSec = ytDur > 0 ? ytDur + 3 : 180;
+                            state.sponsorYoutubeDeadlineId = window.setTimeout(function () {
+                                state.sponsorYoutubeDeadlineId = null;
+                                if (!state.sponsorCompletionFired && state.isPlaying && state.currentMode === 'sponsor') {
+                                    console.warn('[YouTube] Sponsor hard deadline fired — ENDED event not received (mobile throttle, ytDur=' + ytDur + ')');
+                                    state.sponsorCompletionFired = true;
+                                    if (state.sponsorYoutubeTimer) {
+                                        clearInterval(state.sponsorYoutubeTimer);
+                                        state.sponsorYoutubeTimer = null;
                                     }
-                                }, ytDur * 1000 + 3000);
-                                console.log('[YouTube] Sponsor hard deadline set:', ytDur + 3, 'sec');
-                            }
+                                    state.adProgress = 1;
+                                    updateAdProgressBar();
+                                    handleAdCompletion(true, 1, { resetAfterDone: true, keepProgressBar: true });
+                                }
+                            }, deadlineSec * 1000);
+                            console.log('[YouTube] Sponsor hard deadline set:', deadlineSec, 'sec (ytDur=' + ytDur + ')');
                         }
                         if (event.data === window.YT.PlayerState.ENDED) {
                             // Guard against double ENDED (YouTube fires it twice on mobile/tab-switch)
