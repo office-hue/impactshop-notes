@@ -6543,3 +6543,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A `impactshop-ngo-guides.php` route map additive módon megkapta a `jysk-riport` és `jysk-riport.data.json` útvonalakat.
 - A dedikált JYSK riport HTML és JSON asset most már repo-tracked forrásként is bent van.
 - A route restore továbbra sem érinti a JYSK vote runtime-ot vagy az offerwall/challenge ágakat.
+
+### 2026-04-10 — ngo-guides v1.1.4: befektetoknek 404 + lang fix
+
+- `impactshop-ngo-guides.php` v1.1.4 (fix/ngo-guides-befektetoknek-lang branch)
+- Bug 1: `/befektetoknek/` → 404 javítva — `page_meta()` bejegyzés hozzáadva
+- Bug 2: `?lang=en` mindig magyar fájlt adott vissza — `resolve_file($lang)` bekötve
+- Rollback: `backups/ngo-guides-fix-20260410/rollback.sh`

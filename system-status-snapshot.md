@@ -559,3 +559,8 @@ PHP lint ok for identity/gamification modules
 
 - A `jysk-riport.data.json` legacy dátumhibái normalizálva lettek: Debrecen `vote_period_start` ISO formátumot kapott, Kispest/Szarvas bizonytalan végei `null` értékre kerültek.
 - A `jysk-riport.html` toolbar gombja most az aktuális scroll viselkedést nevezi meg, és a riport elsődleges adatforrása a route-on kiszolgált JSON lett; az embedded snapshot csak fail-safe fallback marad.
+
+## 2026-04-10 10:59:00 CET - ngo-guides v1.1.4 — befektetoknek 404 + lang fix
+
+- `impactshop-ngo-guides.php` v1.1.4: `befektetoknek` bejegyzés visszakerült `page_meta()`-ba, `resolve_file($lang)` bekötve `template_redirect()`-be.
+- Rollback: `backups/ngo-guides-fix-20260410/rollback.sh` (MD5-el ellenőrzött v1.1.3 backup, git commit `9b7ab942`).
