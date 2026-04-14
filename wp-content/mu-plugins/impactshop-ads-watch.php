@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.52');
+define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.65');
 define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '9');
 define('IMPACTSHOP_ADS_DONATION_POOL', 500000); // Ft
 
@@ -54,6 +54,7 @@ define('IMPACTSHOP_ADS_ROTATE_MAX_AD_STREAK', 3);
 define('IMPACTSHOP_ADS_DEV_CLONE_SLUG', 'impact-challenge-dev');
 define('IMPACTSHOP_ADS_DEV_CLONE_CAPABILITY', 'manage_options');
 define('IMPACTSHOP_ADS_DEV_CLONE_WRITE_MODE', 'sandbox');
+define('IMPACTSHOP_ADS_DEBUG_CAPABILITY', IMPACTSHOP_ADS_DEV_CLONE_CAPABILITY);
 define('IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED', false);
 define('IMPACTSHOP_ADS_DEBUG_RATE_LIMIT_PER_MIN', 10);
 
@@ -100,7 +101,7 @@ function impactshop_ads_watch_debug_permission(WP_REST_Request $request): bool
         return false;
     }
 
-    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+    if (!is_user_logged_in() || !current_user_can(IMPACTSHOP_ADS_DEBUG_CAPABILITY)) {
         return false;
     }
 
@@ -110,13 +111,31 @@ function impactshop_ads_watch_debug_permission(WP_REST_Request $request): bool
 function impactshop_ads_watch_get_request_write_mode(WP_REST_Request $request): string
 {
     $mode = strtolower(trim((string) $request->get_header('x-impactshop-write-mode')));
-    if ($mode === '') {
-        $mode = strtolower(trim((string) $request->get_param('write_mode')));
+    $requested_mode = in_array($mode, ['production', 'sandbox'], true) ? $mode : '';
+
+    $is_admin_sandbox_cap = is_user_logged_in()
+        && current_user_can(IMPACTSHOP_ADS_DEV_CLONE_CAPABILITY)
+        && impactshop_ads_watch_require_nonce($request);
+
+    if ($requested_mode === 'sandbox') {
+        return $is_admin_sandbox_cap ? 'sandbox' : 'production';
     }
-    if (!in_array($mode, ['production', 'sandbox'], true)) {
+
+    if ($requested_mode === 'production') {
         return 'production';
     }
-    return $mode;
+
+    $referer = (string) $request->get_header('referer');
+    if ($referer === '' && isset($_SERVER['HTTP_REFERER'])) {
+        $referer = (string) $_SERVER['HTTP_REFERER'];
+    }
+    $from_dev_clone = $referer !== '' && strpos($referer, '/' . IMPACTSHOP_ADS_DEV_CLONE_SLUG) !== false;
+
+    if ($is_admin_sandbox_cap && $from_dev_clone) {
+        return IMPACTSHOP_ADS_DEV_CLONE_WRITE_MODE;
+    }
+
+    return 'production';
 }
 
 function impactshop_ads_watch_get_points_total_for_pseudo(string $pseudo_id): int
@@ -2639,15 +2658,6 @@ function impactshop_ads_watch_allocate_votes(WP_REST_Request $request): WP_REST_
         ], 400);
     }
 
-    $selected = impactshop_ads_watch_get_user_ngo_slug($pseudo_id);
-    if ($selected === '' || $selected !== $ngo_slug) {
-        return new WP_REST_Response([
-            'success' => false,
-            'error'   => 'ngo_mismatch',
-            'message' => 'A kiválasztott NGO nem egyezik.',
-        ], 409);
-    }
-
     if (impactshop_ads_watch_get_request_write_mode($request) === 'sandbox') {
         return new WP_REST_Response([
             'success' => true,
@@ -2656,6 +2666,15 @@ function impactshop_ads_watch_allocate_votes(WP_REST_Request $request): WP_REST_
             'votes_spent' => 0,
             'weighted_votes' => 0,
         ], 200);
+    }
+
+    $selected = impactshop_ads_watch_get_user_ngo_slug($pseudo_id);
+    if ($selected === '' || $selected !== $ngo_slug) {
+        return new WP_REST_Response([
+            'success' => false,
+            'error'   => 'ngo_mismatch',
+            'message' => 'A kiválasztott NGO nem egyezik.',
+        ], 409);
     }
 
     $spend = impactshop_ads_watch_spend_votes($pseudo_id, $votes);
