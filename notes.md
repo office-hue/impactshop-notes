@@ -1,3 +1,9 @@
+## 2026-04-14 15:50 CET - PR103 review-fix: sandbox trust tightening
+- `impactshop_ads_watch_get_request_write_mode()` mostantól csak admin+nonce kérésnél enged sandbox módot.
+- `write_mode` query param fallback kivezetve (header-only control).
+- `allocate_votes` sandbox early-return az NGO-mismatch validáció elé került, így dev clone tesztflow nem akad el.
+- Cache-buster bump: `IMPACTSHOP_ADS_WATCH_VERSION=2.5.65`.
+
 ## 2026-04-14 15:25 CET - ads-watch security hardening + dev-clone sandbox deploy
 - Security hardening deploy kész: debug endpoint default OFF + admin/nonce gate + response redaction.
 - Dev clone guard aktív: anon `/impact-challenge-dev` 404, noindex header policy bent maradt.

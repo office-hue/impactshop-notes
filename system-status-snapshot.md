@@ -1,3 +1,8 @@
+## 2026-04-14T15:50:00+0200 — fix(review): ads-watch sandbox trust tightening
+- Sandbox write mode most már csak admin+nonce request esetén aktiválható; query param fallback eltávolítva.
+- `allocate_votes` sandbox ág validációs sorrendje javítva (sandbox return az NGO-mismatch elé).
+- Asset cache-buster bump: `IMPACTSHOP_ADS_WATCH_VERSION=2.5.65`.
+
 ## 2026-04-14T15:25:00+0200 — security(ads-watch): debug hardening + dev-clone sandbox route guard
 - Debug endpoint lezárva alapértelmezésben: route nincs regisztrálva ha `IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED=false`.
 - Dev clone route anon hozzáférés tiltva (`/impact-challenge-dev` -> 404), noindex header aktív.
