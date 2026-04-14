@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# LEGACY ENTRYPOINT
+# Canonical script: ai-agent/scripts/hatas-korok-load-memory.sh
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -32,7 +35,7 @@ resolve_ai_agent_repo() {
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/hatas-korok-load-memory.sh [--task "<task>"] [--full-sync] [--limit N] [--file-limit N]
+  ./scripts/hatas-korok-load-memory.sh [--task "<task>"] [--full-sync --confirm-full-sync] [--limit N] [--file-limit N]
 
 Default:
   - generál egy kurált Hatás Körök memo fájlt
@@ -42,6 +45,7 @@ Default:
 Opciók:
   --task        Egyedi task szöveg a memory kereséshez
   --full-sync   A végén futtat egy teljes memory:full-sync-et is
+  --confirm-full-sync  Kötelező megerősítés a --full-sync futtatásához
   --limit       Memory találati limit (default: 10)
   --file-limit  File chunk limit (default: 10)
   --help        Súgó
@@ -50,6 +54,7 @@ EOF
 
 TASK="hatas-korok route, impact-community, impactshop-ngo-guides, deploy smoke, post-deploy checklist, production hotfix"
 RUN_FULL_SYNC=0
+FULL_SYNC_CONFIRMED=0
 LIMIT=10
 FILE_LIMIT=10
 
@@ -61,6 +66,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --full-sync)
       RUN_FULL_SYNC=1
+      shift
+      ;;
+    --confirm-full-sync)
+      FULL_SYNC_CONFIRMED=1
       shift
       ;;
     --limit)
@@ -85,6 +94,12 @@ done
 
 if ! [[ "$LIMIT" =~ ^[0-9]+$ ]] || ! [[ "$FILE_LIMIT" =~ ^[0-9]+$ ]]; then
   echo "ERROR: a --limit és --file-limit egész szám legyen." >&2
+  exit 1
+fi
+
+if [[ "$RUN_FULL_SYNC" == "1" && "$FULL_SYNC_CONFIRMED" != "1" && "${HATAS_KOROK_ALLOW_FULL_SYNC:-0}" != "1" ]]; then
+  echo "ERROR: --full-sync tiltva explicit megerősítés nélkül." >&2
+  echo "Adj meg --confirm-full-sync kapcsolót vagy állítsd: HATAS_KOROK_ALLOW_FULL_SYNC=1" >&2
   exit 1
 fi
 
@@ -158,6 +173,7 @@ memo_files=(
 } > "$MEMO_PATH"
 
 echo "[hatas-korok-load-memory] memo -> $MEMO_PATH"
+echo "[hatas-korok-load-memory] warning: legacy script fut. Canonical: ai-agent/scripts/hatas-korok-load-memory.sh"
 
 npm --prefix "$AI_AGENT_REPO" run -s memory:pre-task -- \
   --task "$TASK" \
