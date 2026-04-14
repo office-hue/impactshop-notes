@@ -14,6 +14,7 @@
     const restUrl = config.restUrl || '/wp-json/impact/v1/ads-watch';
     const impactShopBaseUrl = config.impactShopBaseUrl || 'https://app.sharity.hu/impactshop/';
     const restNonce = config.restNonce || '';
+    const writeMode = (config.writeMode === 'sandbox' || config.writeMode === 'production') ? config.writeMode : 'production';
     // No fallback test/sample ad tags - production tags come from config
     const fallbackAdTagBase = '';
     const i18n = config.i18n || {};
@@ -585,6 +586,7 @@
                 if (restNonce) {
                     options.headers['X-WP-Nonce'] = restNonce;
                 }
+                options.headers['X-ImpactShop-Write-Mode'] = writeMode;
             }
 
             $.ajax(options)

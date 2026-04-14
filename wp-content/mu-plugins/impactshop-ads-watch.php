@@ -51,6 +51,11 @@ define('IMPACTSHOP_ADS_ROTATE_WEIGHT_BANNER', 20);
 define('IMPACTSHOP_ADS_ROTATE_WEIGHT_SPONSOR', 15);
 define('IMPACTSHOP_ADS_ROTATE_WEIGHT_EDU', 5);
 define('IMPACTSHOP_ADS_ROTATE_MAX_AD_STREAK', 3);
+define('IMPACTSHOP_ADS_DEV_CLONE_SLUG', 'impact-challenge-dev');
+define('IMPACTSHOP_ADS_DEV_CLONE_CAPABILITY', 'manage_options');
+define('IMPACTSHOP_ADS_DEV_CLONE_WRITE_MODE', 'sandbox');
+define('IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED', false);
+define('IMPACTSHOP_ADS_DEBUG_RATE_LIMIT_PER_MIN', 10);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -82,6 +87,64 @@ function impactshop_ads_watch_require_nonce(WP_REST_Request $request): bool
         return false;
     }
     return wp_verify_nonce($nonce, 'wp_rest') !== false;
+}
+
+function impactshop_ads_watch_debug_enabled(): bool
+{
+    return (bool) apply_filters('impactshop_ads_watch_debug_enabled', IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED);
+}
+
+function impactshop_ads_watch_debug_permission(WP_REST_Request $request): bool
+{
+    if (!impactshop_ads_watch_debug_enabled()) {
+        return false;
+    }
+
+    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+        return false;
+    }
+
+    return impactshop_ads_watch_require_nonce($request);
+}
+
+function impactshop_ads_watch_get_request_write_mode(WP_REST_Request $request): string
+{
+    $mode = strtolower(trim((string) $request->get_header('x-impactshop-write-mode')));
+    if ($mode === '') {
+        $mode = strtolower(trim((string) $request->get_param('write_mode')));
+    }
+    if (!in_array($mode, ['production', 'sandbox'], true)) {
+        return 'production';
+    }
+    return $mode;
+}
+
+function impactshop_ads_watch_get_points_total_for_pseudo(string $pseudo_id): int
+{
+    if ($pseudo_id === '' || !class_exists('Sharity_Points_Manager')) {
+        return 0;
+    }
+    $points_manager = new Sharity_Points_Manager();
+    $snapshot = $points_manager->get_points_snapshot_for_pseudo($pseudo_id);
+    return isset($snapshot['points_total']) ? (int) $snapshot['points_total'] : 0;
+}
+
+function impactshop_ads_watch_is_dev_clone_request(): bool
+{
+    return is_page(IMPACTSHOP_ADS_DEV_CLONE_SLUG);
+}
+
+function impactshop_ads_watch_is_dev_clone_authorized(): bool
+{
+    return is_user_logged_in() && current_user_can(IMPACTSHOP_ADS_DEV_CLONE_CAPABILITY);
+}
+
+function impactshop_ads_watch_get_frontend_write_mode(): string
+{
+    if (!impactshop_ads_watch_is_dev_clone_request()) {
+        return 'production';
+    }
+    return IMPACTSHOP_ADS_DEV_CLONE_WRITE_MODE;
 }
 
 function impactshop_ads_watch_rate_limit_check(string $key, int $limit, int $window, bool $increment = true): array
@@ -1385,17 +1448,32 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ]);
 
-    // DEBUG endpoint - remove after testing
-    register_rest_route($namespace, '/ads-watch/debug-rotation', [
-        'methods'             => 'GET',
-        'callback'            => 'impactshop_ads_watch_debug_rotation',
-        'permission_callback' => '__return_true',
-    ]);
+    if (impactshop_ads_watch_debug_enabled()) {
+        register_rest_route($namespace, '/ads-watch/debug-rotation', [
+            'methods'             => 'GET',
+            'callback'            => 'impactshop_ads_watch_debug_rotation',
+            'permission_callback' => 'impactshop_ads_watch_debug_permission',
+        ]);
+    }
 });
 
-// DEBUG: Rotation diagnosztika - törölhető tesztelés után
+// Debug endpoint csak explicit engedélyezéssel, admin + nonce mellett aktív.
 function impactshop_ads_watch_debug_rotation(WP_REST_Request $request): WP_REST_Response
 {
+    $rate_key = 'impactshop_ads_debug_rl:' . md5(impactshop_ads_watch_get_client_ip());
+    $rate = impactshop_ads_watch_rate_limit_check(
+        $rate_key,
+        IMPACTSHOP_ADS_DEBUG_RATE_LIMIT_PER_MIN,
+        MINUTE_IN_SECONDS,
+        true
+    );
+    if (!$rate['allowed']) {
+        return new WP_REST_Response([
+            'error' => 'rate_limited',
+            'message' => 'Túl sok debug kérés.',
+        ], 429, impactshop_ads_watch_rate_limit_headers($rate));
+    }
+
     $pseudo_id = impactshop_ads_watch_get_pseudo_from_request($request);
     
     // Sponsor check
@@ -1422,7 +1500,6 @@ function impactshop_ads_watch_debug_rotation(WP_REST_Request $request): WP_REST_
             'is_active' => $is_active,
             'can_view' => $can_view,
             'can_view_reason' => $can_view_reason,
-            'settings' => $settings,
         ];
     }
     
@@ -1440,7 +1517,8 @@ function impactshop_ads_watch_debug_rotation(WP_REST_Request $request): WP_REST_
             'id' => $post->ID,
             'title' => get_the_title($post),
             'status' => $post->post_status,
-            'settings' => $settings,
+            'media_type' => $settings['media_type'] ?? '',
+            'has_url' => !empty($settings['url']),
         ];
     }
     
@@ -1490,22 +1568,32 @@ function impactshop_ads_watch_debug_rotation(WP_REST_Request $request): WP_REST_
         $weights_adjusted['education'] = 0;
     }
     
+    $pseudo_id_hash = $pseudo_id !== '' ? substr(hash('sha256', strtolower($pseudo_id)), 0, 12) : '';
+    $sponsor_found_summary = null;
+    if (is_array($sponsor) && !empty($sponsor)) {
+        $sponsor_found_summary = [
+            'id' => (int) ($sponsor['id'] ?? 0),
+            'type' => (string) ($sponsor['type'] ?? ''),
+            'kind' => (string) ($sponsor['kind'] ?? ''),
+        ];
+    }
+
     return new WP_REST_Response([
-        'pseudo_id' => $pseudo_id,
-        'sponsor_found' => $sponsor,
+        'pseudo_id_hash' => $pseudo_id_hash,
+        'sponsor_found' => $sponsor_found_summary,
         'sponsor_posts_count' => count($sponsor_posts),
         'sponsor_details' => $sponsor_details,
         'education_videos_count' => count($education_videos),
         'education_posts_count' => count($education_posts),
         'education_details' => $education_details,
-        'education_normalized' => $education_videos,
+        'education_normalized_count' => count($education_videos),
         'has_sponsor' => $has_sponsor,
         'has_education' => $has_education,
         'weights_original' => $weights_original,
         'weights_adjusted' => $weights_adjusted,
         'sponsor_already_seen' => $sponsor_already_seen,
         'education_already_seen' => $education_already_seen,
-        'seen_content' => $seen,
+        'seen_content_count' => count($seen),
         'constants' => [
             'WEIGHT_AD' => IMPACTSHOP_ADS_ROTATE_WEIGHT_AD,
             'WEIGHT_BANNER' => IMPACTSHOP_ADS_ROTATE_WEIGHT_BANNER,
@@ -2023,6 +2111,19 @@ function impactshop_ads_watch_view(WP_REST_Request $request): WP_REST_Response
         $votes_added = 0;
     }
 
+    if (impactshop_ads_watch_get_request_write_mode($request) === 'sandbox') {
+        return new WP_REST_Response([
+            'success' => true,
+            'sandbox' => true,
+            'points' => 0,
+            'votes' => 0,
+            'available_votes' => impactshop_ads_watch_get_user_votes($pseudo_id),
+            'new_total' => impactshop_ads_watch_get_points_total_for_pseudo($pseudo_id),
+            'ad_type' => $ad_type,
+            'stats' => $stats,
+        ], 200);
+    }
+
     $day_key = current_time('Y-m-d');
     $block = (int) floor(time() / 5);
     $dedupe_key = sprintf('ads_watch:%s:%d:%s:%s:%s', $ad_type, $sponsor_id, $pseudo_id, $day_key, $block);
@@ -2234,6 +2335,19 @@ function impactshop_ads_watch_education(WP_REST_Request $request): WP_REST_Respo
         ], 200);
     }
 
+    if (impactshop_ads_watch_get_request_write_mode($request) === 'sandbox') {
+        return new WP_REST_Response([
+            'success' => true,
+            'sandbox' => true,
+            'points' => 0,
+            'votes' => 0,
+            'intervals_awarded' => (int) ($session['intervals_awarded'] ?? 0),
+            'available_votes' => impactshop_ads_watch_get_user_votes($pseudo_id),
+            'new_total' => impactshop_ads_watch_get_points_total_for_pseudo($pseudo_id),
+            'stats' => impactshop_ads_watch_get_user_stats($pseudo_id),
+        ], 200);
+    }
+
     $content_id = (string) ($session['content_id'] ?? '');
     $day_key = current_time('Y-m-d');
     $points_total = 0;
@@ -2378,6 +2492,14 @@ function impactshop_ads_watch_set_ngo(WP_REST_Request $request): WP_REST_Respons
         ], 404);
     }
 
+    if (impactshop_ads_watch_get_request_write_mode($request) === 'sandbox') {
+        return new WP_REST_Response([
+            'success' => true,
+            'sandbox' => true,
+            'ngo'     => $ngo,
+        ], 200);
+    }
+
     global $wpdb;
     $table_prefs = $wpdb->prefix . 'impactshop_ads_user_ngo';
     if (impactshop_ads_watch_get_user_auto_vote_enabled($pseudo_id) || $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table_prefs} LIKE %s", 'auto_vote_enabled'))) {
@@ -2415,6 +2537,15 @@ function impactshop_ads_watch_set_auto_vote(WP_REST_Request $request): WP_REST_R
     }
 
     $enabled = rest_sanitize_boolean($request->get_param('enabled')) ? 1 : 0;
+
+    if (impactshop_ads_watch_get_request_write_mode($request) === 'sandbox') {
+        return new WP_REST_Response([
+            'success'            => true,
+            'sandbox'            => true,
+            'auto_vote_enabled'  => $enabled === 1,
+        ], 200);
+    }
+
     impactshop_ads_watch_store_user_auto_vote_enabled($pseudo_id, $enabled === 1);
 
     return new WP_REST_Response([
@@ -2515,6 +2646,16 @@ function impactshop_ads_watch_allocate_votes(WP_REST_Request $request): WP_REST_
             'error'   => 'ngo_mismatch',
             'message' => 'A kiválasztott NGO nem egyezik.',
         ], 409);
+    }
+
+    if (impactshop_ads_watch_get_request_write_mode($request) === 'sandbox') {
+        return new WP_REST_Response([
+            'success' => true,
+            'sandbox' => true,
+            'remaining_votes' => impactshop_ads_watch_get_user_votes($pseudo_id),
+            'votes_spent' => 0,
+            'weighted_votes' => 0,
+        ], 200);
     }
 
     $spend = impactshop_ads_watch_spend_votes($pseudo_id, $votes);
@@ -3884,12 +4025,18 @@ function impactshop_ads_watch_sponsor_stats_page(): void
 
 add_shortcode('impactshop_ads_watch', 'impactshop_ads_watch_shortcode');
 
+add_action('template_redirect', 'impactshop_ads_watch_guard_dev_clone_access', 0);
 add_action('template_redirect', 'impactshop_ads_watch_send_nocache_headers', 1);
+add_action('template_redirect', 'impactshop_ads_watch_send_dev_clone_noindex_headers', 2);
 
 function impactshop_ads_watch_is_page_request(): bool
 {
     if (is_admin() || wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
         return false;
+    }
+
+    if (impactshop_ads_watch_is_dev_clone_request()) {
+        return impactshop_ads_watch_is_dev_clone_authorized();
     }
 
     if (is_page(19056) || is_page('impact-challenge')) {
@@ -3906,6 +4053,34 @@ function impactshop_ads_watch_is_page_request(): bool
     }
 
     return has_shortcode((string) $post->post_content, 'impactshop_ads_watch');
+}
+
+function impactshop_ads_watch_guard_dev_clone_access(): void
+{
+    if (!impactshop_ads_watch_is_dev_clone_request()) {
+        return;
+    }
+    if (impactshop_ads_watch_is_dev_clone_authorized()) {
+        return;
+    }
+
+    nocache_headers();
+    wp_die('Not Found', 'Not Found', ['response' => 404]);
+}
+
+function impactshop_ads_watch_send_dev_clone_noindex_headers(): void
+{
+    if (!impactshop_ads_watch_is_dev_clone_request()) {
+        return;
+    }
+    if (!impactshop_ads_watch_is_dev_clone_authorized()) {
+        return;
+    }
+    if (headers_sent()) {
+        return;
+    }
+
+    header('X-Robots-Tag: noindex, nofollow, noarchive', true);
 }
 
 function impactshop_ads_watch_send_nocache_headers(): void
@@ -3974,6 +4149,12 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
     wp_localize_script('impactshop-ads-watch', 'impactshopAdsWatch', [
         'restUrl'        => rest_url('impact/v1/ads-watch'),
         'restNonce'      => wp_create_nonce('wp_rest'),
+        'writeMode'      => impactshop_ads_watch_get_frontend_write_mode(),
+        'devClone'       => [
+            'enabled' => impactshop_ads_watch_is_dev_clone_request(),
+            'authorized' => impactshop_ads_watch_is_dev_clone_authorized(),
+            'slug' => IMPACTSHOP_ADS_DEV_CLONE_SLUG,
+        ],
         'donationPool'   => impactshop_ads_get_active_pool(),
         'filloutFormId'  => $fillout_form_id,
         'adTagUrl'       => impactshop_ads_watch_get_ad_tag_url(),
