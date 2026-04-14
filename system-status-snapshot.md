@@ -1,3 +1,14 @@
+## 2026-04-14T15:50:00+0200 — fix(review): ads-watch sandbox trust tightening
+- Sandbox write mode most már csak admin+nonce request esetén aktiválható; query param fallback eltávolítva.
+- `allocate_votes` sandbox ág validációs sorrendje javítva (sandbox return az NGO-mismatch elé).
+- Asset cache-buster bump: `IMPACTSHOP_ADS_WATCH_VERSION=2.5.65`.
+
+## 2026-04-14T15:25:00+0200 — security(ads-watch): debug hardening + dev-clone sandbox route guard
+- Debug endpoint lezárva alapértelmezésben: route nincs regisztrálva ha `IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED=false`.
+- Dev clone route anon hozzáférés tiltva (`/impact-challenge-dev` -> 404), noindex header aktív.
+- Production sync megtörtént (`impactshop-ads-watch.php`, `impactshop-ads-watch.js`), remote hash parity ellenőrizve.
+- Operatív smoke: `https://app.sharity.hu/wp-json/` 200, debug endpoint 404, dev clone route 404.
+
 ## 2026-04-07T21:00:00+0200 — fix(ads-watch): v2.5.52 sponsor video freeze fix
 - A v2.5.52 visszaállítja a 7 kritikus sponsor return patternt ami v2.5.55-ben működött de v2.5.51-ben elveszett.
 - Érintett fájlok: impactshop-ads-watch.js, .php, .css (917 ins, 339 del vs v2.5.32 origin/main).

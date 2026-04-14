@@ -30,6 +30,15 @@ If any local assistant configuration conflicts with these files, treat the above
 - Protected file módosítás után kötelező: funkció-ellenőrzési lista + külön kézi UI checklist a megrendelőnek.
 - Részletes eljárás: `docs/protected-file-change-checklist.md`
 
+## Hatás Körök Memory Isolation
+- `scripts/hatas-korok-load-memory.sh` ebben a repóban **legacy kompatibilitási wrapper**.
+- Kanonikus entrypoint: `ai-agent/scripts/hatas-korok-load-memory.sh`.
+- Új fejlesztés / módosítás csak a kanonikus ai-agent scriptben történhet.
+- `--full-sync` futtatás csak explicit megerősítéssel engedett:
+  - `--confirm-full-sync`, vagy
+  - `HATAS_KOROK_ALLOW_FULL_SYNC=1`.
+- A legacy script törlése tilos; fagyasztott fallback belépési pontként megmarad.
+
 ## Deploy Decision (Quick)
 - **Use:** `bin/impactshop-guard-deploy.sh` (staging + production), not `deploy.sh`.
 - **Uncommitted policy:** targeted commits are a **priority** (e.g., `ads.txt`, `robots.txt`); avoid blanket stashing.
