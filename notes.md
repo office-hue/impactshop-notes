@@ -1,3 +1,15 @@
+## 2026-04-14 15:50 CET - PR103 review-fix: sandbox trust tightening
+- `impactshop_ads_watch_get_request_write_mode()` mostantól csak admin+nonce kérésnél enged sandbox módot.
+- `write_mode` query param fallback kivezetve (header-only control).
+- `allocate_votes` sandbox early-return az NGO-mismatch validáció elé került, így dev clone tesztflow nem akad el.
+- Cache-buster bump: `IMPACTSHOP_ADS_WATCH_VERSION=2.5.65`.
+
+## 2026-04-14 15:25 CET - ads-watch security hardening + dev-clone sandbox deploy
+- Security hardening deploy kész: debug endpoint default OFF + admin/nonce gate + response redaction.
+- Dev clone guard aktív: anon `/impact-challenge-dev` 404, noindex header policy bent maradt.
+- Sandbox write mode bekötve: `X-ImpactShop-Write-Mode` header kezelve, write endpointok sandbox early-return ágon.
+- Deploy verifikáció: prod API 200, debug endpoint 404, dev clone route 404, remote hash parity egyezik.
+
 ## 2026-04-07 23:30 CET - ads-watch v2.5.53 CTA navigation fix + bundle disable
 - v2.5.53: CTA window.open() hiányzott event.preventDefault() után → sponsor oldal nem nyílt meg. Javítva.
 - MutationObserver bundle (ui-cta-bundle) letiltva PHP return;-nel — ez okozta a ~240/sec observer callback freeze-t.
@@ -6548,6 +6560,13 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A `impactshop-ngo-guides.php` route map additive módon megkapta a `jysk-riport` és `jysk-riport.data.json` útvonalakat.
 - A dedikált JYSK riport HTML és JSON asset most már repo-tracked forrásként is bent van.
 - A route restore továbbra sem érinti a JYSK vote runtime-ot vagy az offerwall/challenge ágakat.
+
+### 2026-04-10 — ngo-guides v1.1.4: befektetoknek 404 + lang fix
+
+- `impactshop-ngo-guides.php` v1.1.4 (fix/ngo-guides-befektetoknek-lang branch)
+- Bug 1: `/befektetoknek/` → 404 javítva — `page_meta()` bejegyzés hozzáadva
+- Bug 2: `?lang=en` mindig magyar fájlt adott vissza — `resolve_file($lang)` bekötve
+- Rollback: `backups/ngo-guides-fix-20260410/rollback.sh`
 
 ## 2026-04-07 14:33:39 CEST - impactall auto log
 - **Result:** warn (warnings=1, errors=0, duration=2s)

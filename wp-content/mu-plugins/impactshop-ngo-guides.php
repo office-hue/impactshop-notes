@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ImpactShop Static Pages
  * Description: Serves static HTML pages for NGO guides and partner landing pages.
- * Version: 1.1.3
+ * Version: 1.1.4
  */
 
 declare(strict_types=1);
@@ -350,6 +350,11 @@ function impactshop_ngo_guides_page_meta(string $page): ?array
             'content_type' => 'text/html; charset=UTF-8',
             'cache_control' => 'public, max-age=3600',
         ],
+        'befektetoknek' => [
+            'file' => 'befektetoknek.html',
+            'content_type' => 'text/html; charset=UTF-8',
+            'cache_control' => 'public, max-age=3600',
+        ],
         'rolunk' => [
             'file' => 'rolunk.html',
             'content_type' => 'text/html; charset=UTF-8',
@@ -411,7 +416,7 @@ function impactshop_ngo_guides_template_redirect(): void
         return;
     }
 
-    $file = __DIR__ . '/impactshop-ngo-guides/' . $page_meta['file'];
+    $file = impactshop_ngo_guides_resolve_file($page_meta['file'], $lang);
     
     if (!file_exists($file)) {
         // File not found
@@ -447,8 +452,8 @@ function impactshop_ngo_guides_activate(): void
 
 // Check if rewrite rules need flushing (first run detection)
 add_action('admin_init', function() {
-    if (get_option('impactshop_ngo_guides_rules_flushed') !== '1.1.3') {
+    if (get_option('impactshop_ngo_guides_rules_flushed') !== '1.1.4') {
         impactshop_ngo_guides_activate();
-        update_option('impactshop_ngo_guides_rules_flushed', '1.1.3');
+        update_option('impactshop_ngo_guides_rules_flushed', '1.1.4');
     }
 });

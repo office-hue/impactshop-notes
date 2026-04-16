@@ -11,6 +11,14 @@
 
 ## Változások
 
+### Review-fix kiegészítés (2026-04-14)
+- `impactshop_ads_watch_get_request_write_mode()` szigorítás:
+  - `sandbox` mód csak admin + valid REST nonce esetén engedélyezett
+  - `write_mode` query param fallback eltávolítva (header-only)
+  - dev clone referer + admin+nonce esetén hiányzó headernél is sandbox fallback
+- `allocate_votes` sorrendjavítás: sandbox early-return az `ngo_mismatch` check elé került (dev clone tesztflow unblock)
+- `IMPACTSHOP_ADS_WATCH_VERSION` bump: `2.5.65` (stale JS cache ellen)
+
 ### Debug endpoint (impactshop-ads-watch.php)
 - `IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED = false` konstans (alapértelmezés: letiltva)
 - `impactshop_ads_watch_debug_enabled()` — filterable wrapper

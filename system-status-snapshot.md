@@ -1,9 +1,13 @@
-## 2026-04-07T23:30:00+0200 — fix(ads-watch): v2.5.53 CTA navigation + MutationObserver bundle disable
-- v2.5.53: CTA click handler window.open() hozzáadva — event.preventDefault() után a sponsor oldal ténylegesen megnyílik új tabban.
-- ui-cta-bundle.php: return; az add_action() előtt — a MutationObserver deferred UI ami ~240 callback/sec-et tüzelt RAF progress közben le van tiltva.
-- ui-cta-bundle.js: re-entrancy guard (_applying) mint biztonsági háló.
-- Production deploy SCP-vel megtörtént és verifikált (ver=2.5.53).
-- Change record: docs/protected-change-records/2026-04-07-cta-freeze-fix-v2.5.53.md
+## 2026-04-14T15:50:00+0200 — fix(review): ads-watch sandbox trust tightening
+- Sandbox write mode most már csak admin+nonce request esetén aktiválható; query param fallback eltávolítva.
+- `allocate_votes` sandbox ág validációs sorrendje javítva (sandbox return az NGO-mismatch elé).
+- Asset cache-buster bump: `IMPACTSHOP_ADS_WATCH_VERSION=2.5.65`.
+
+## 2026-04-14T15:25:00+0200 — security(ads-watch): debug hardening + dev-clone sandbox route guard
+- Debug endpoint lezárva alapértelmezésben: route nincs regisztrálva ha `IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED=false`.
+- Dev clone route anon hozzáférés tiltva (`/impact-challenge-dev` -> 404), noindex header aktív.
+- Production sync megtörtént (`impactshop-ads-watch.php`, `impactshop-ads-watch.js`), remote hash parity ellenőrizve.
+- Operatív smoke: `https://app.sharity.hu/wp-json/` 200, debug endpoint 404, dev clone route 404.
 
 ## 2026-04-07T21:00:00+0200 — fix(ads-watch): v2.5.52 sponsor video freeze fix
 - A v2.5.52 visszaállítja a 7 kritikus sponsor return patternt ami v2.5.55-ben működött de v2.5.51-ben elveszett.
@@ -566,3 +570,8 @@ PHP lint ok for identity/gamification modules
 
 - A `jysk-riport.data.json` legacy dátumhibái normalizálva lettek: Debrecen `vote_period_start` ISO formátumot kapott, Kispest/Szarvas bizonytalan végei `null` értékre kerültek.
 - A `jysk-riport.html` toolbar gombja most az aktuális scroll viselkedést nevezi meg, és a riport elsődleges adatforrása a route-on kiszolgált JSON lett; az embedded snapshot csak fail-safe fallback marad.
+
+## 2026-04-10 10:59:00 CET - ngo-guides v1.1.4 — befektetoknek 404 + lang fix
+
+- `impactshop-ngo-guides.php` v1.1.4: `befektetoknek` bejegyzés visszakerült `page_meta()`-ba, `resolve_file($lang)` bekötve `template_redirect()`-be.
+- Rollback: `backups/ngo-guides-fix-20260410/rollback.sh` (MD5-el ellenőrzött v1.1.3 backup, git commit `9b7ab942`).
