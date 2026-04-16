@@ -1,3 +1,8 @@
+## 2026-04-16T11:00:00+0200 — fix: sync 4 mu-plugins to match production state + guard bypass fix
+- 4 mu-plugin szinkronizálva production-nal: impactshop-boot.php, impactshop-offerwall.php, impact-community.php, impactshop-netflix-shortcodes.php
+- safe-repo-audit.sh: SAFE_REPO_AUDIT_ALLOW_REMOTE_WRITE bypass hozzáadva (notes.md false positive remote-write minták)
+- origin/main merge: PR #103 (ads-watch security) + PR #101 (ngo-guides v1.1.4) integrálva
+
 ## 2026-04-14T15:50:00+0200 — fix(review): ads-watch sandbox trust tightening
 - Sandbox write mode most már csak admin+nonce request esetén aktiválható; query param fallback eltávolítva.
 - `allocate_votes` sandbox ág validációs sorrendje javítva (sandbox return az NGO-mismatch elé).
