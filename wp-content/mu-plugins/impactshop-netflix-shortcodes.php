@@ -13,14 +13,61 @@ if (!defined('ABSPATH')) {
 /* ------------------------------------------------------------------
  * Minimal configuration & helpers (mirrors legacy snippets)
  * ------------------------------------------------------------------ */
+
+// Load Dognet credentials from env files (same pattern as AyeT secrets)
+(function () {
+    $needs = ['DOGNET_LOGIN_EMAIL', 'DOGNET_LOGIN_PASSWORD', 'DOGNET_API_TOKEN'];
+    $missing = [];
+    foreach ($needs as $key) {
+        $value = getenv($key);
+        if ($value === false || $value === '') {
+            $missing[] = $key;
+        }
+    }
+    if (!$missing) {
+        return;
+    }
+    $paths = [
+        '/home/sharityh/.impact-secrets/env.d/dognet.env',
+        '/home/sharityh/.impact-secrets/env.d/capi.env',
+    ];
+    $local = getenv('HOME') . '/.impact-secrets/env.d/capi.env';
+    if ($local && is_readable($local)) {
+        array_unshift($paths, $local);
+    }
+    foreach ($paths as $path) {
+        if (!$path || !is_readable($path)) {
+            continue;
+        }
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!is_array($lines)) {
+            continue;
+        }
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                continue;
+            }
+            [$k, $v] = explode('=', $line, 2);
+            $k = trim($k);
+            if ($k === '' || !in_array($k, $missing, true)) {
+                continue;
+            }
+            $v = trim($v);
+            putenv($k . '=' . $v);
+            $_ENV[$k] = $v;
+        }
+    }
+})();
+
 if (!defined('DOGNET_LOGIN_EMAIL')) {
-    define('DOGNET_LOGIN_EMAIL', 'office@sharity.hu');
+    define('DOGNET_LOGIN_EMAIL', getenv('DOGNET_LOGIN_EMAIL') ?: '');
 }
 if (!defined('DOGNET_LOGIN_PASSWORD')) {
-    define('DOGNET_LOGIN_PASSWORD', 'kudwyr-wavgaf-tYtzo2');
+    define('DOGNET_LOGIN_PASSWORD', getenv('DOGNET_LOGIN_PASSWORD') ?: '');
 }
 if (!defined('DOGNET_API_TOKEN')) {
-    define('DOGNET_API_TOKEN', '');
+    define('DOGNET_API_TOKEN', getenv('DOGNET_API_TOKEN') ?: '');
 }
 if (!defined('DOGNET_AD_CHANNEL_ID')) {
     define('DOGNET_AD_CHANNEL_ID', 26081);
@@ -47,21 +94,6 @@ if (!function_exists('impactshop_settings')) {
     }
 }
 
-if (!function_exists('impactshop_get_fillout_url')) {
-    function impactshop_get_fillout_url(): string
-    {
-        $fillout = '';
-        if (function_exists('impactshop_settings')) {
-            $settings = impactshop_settings();
-            $fillout = isset($settings['fillout_url']) ? trim((string) $settings['fillout_url']) : '';
-        }
-        if ($fillout === '' || stripos($fillout, 'fillout.com') === false) {
-            $fillout = 'https://form.fillout.com/t/eM61RLkz6jus';
-        }
-        return $fillout;
-    }
-}
-
 if (!function_exists('impactshop_q')) {
     function impactshop_q($key, $def = '')
     {
@@ -77,131 +109,6 @@ if (!function_exists('impactshop_slugify_header')) {
         $s = strtr($s, $map);
         $s = preg_replace('~[^a-z0-9]+~u', '_', $s);
         return trim($s, '_');
-    }
-}
-
-if (!function_exists('impactshop_b64url_encode')) {
-    function impactshop_b64url_encode($value)
-    {
-        return base64_encode((string)$value);
-    }
-}
-
-if (!function_exists('impactshop_extract_product_url')) {
-    function impactshop_extract_product_url($href)
-    {
-        $href = trim((string)$href);
-        if ($href === '') {
-            return '';
-        }
-        $parts = wp_parse_url($href);
-        if (!$parts) {
-            return '';
-        }
-        $host = strtolower($parts['host'] ?? '');
-        if (!empty($parts['query'])) {
-            parse_str($parts['query'], $qs);
-            if (!empty($qs['u']) && is_string($qs['u'])) {
-                $u = html_entity_decode($qs['u'], ENT_QUOTES, 'UTF-8');
-                if (preg_match('~^[A-Za-z0-9+/]+={0,2}$~', $u)) {
-                    $decoded = base64_decode($u, true);
-                    if ($decoded !== false && preg_match('~^https?://~i', $decoded)) {
-                        return $decoded;
-                    }
-                }
-                if (preg_match('~^https?://~i', $u)) {
-                    return $u;
-                }
-            }
-        }
-        if ($host && !preg_match('~(^|\\.)fillout\\.com$~i', $host) && !preg_match('~(^|\\.)app\\.sharity\\.hu$~i', $host)) {
-            return $href;
-        }
-        return '';
-    }
-}
-
-if (!function_exists('impactshop_build_deal_cta')) {
-    function impactshop_build_deal_cta($shop_slug, $product_url, $fillout, $d1, $amb, $src)
-    {
-        $shop_slug = (string)$shop_slug;
-        $product_url = trim((string)$product_url);
-        $fillout = trim((string)$fillout);
-        if ($fillout === '' || stripos($fillout, 'fillout.com') === false) {
-            $fillout = impactshop_get_fillout_url();
-        }
-        $amb = trim((string)$amb);
-        $src = trim((string)$src) ?: 'impactshop';
-
-        if ($d1) {
-            $params = ['d1' => $d1, 'amb' => $amb, 'src' => $src];
-            if ($product_url !== '') {
-                $params['u'] = impactshop_b64url_encode($product_url);
-            }
-            return add_query_arg($params, home_url('/go-deal/' . rawurlencode($shop_slug)));
-        }
-
-        if ($fillout !== '') {
-            $params = ['shop' => $shop_slug, 'amb' => $amb];
-            if ($product_url !== '') {
-                $params['u'] = impactshop_b64url_encode($product_url);
-            }
-            return add_query_arg($params, $fillout);
-        }
-
-        return home_url('/go-deal/' . rawurlencode($shop_slug));
-    }
-}
-
-if (!function_exists('impactshop_get_ngo_name_map')) {
-    function impactshop_get_ngo_name_map()
-    {
-        static $map = null;
-        if ($map !== null) {
-            return $map;
-        }
-        $map = [];
-        $path = trailingslashit(ABSPATH) . 'ngo_codes.csv';
-        if (!file_exists($path)) {
-            return $map;
-        }
-        $handle = fopen($path, 'r');
-        if ($handle === false) {
-            return $map;
-        }
-        $row = 0;
-        while (($data = fgetcsv($handle)) !== false) {
-            $row++;
-            if ($row === 1) {
-                continue;
-            }
-            $label = isset($data[0]) ? trim((string)$data[0]) : '';
-            $slug = isset($data[1]) ? sanitize_title($data[1]) : '';
-            if ($label !== '' && $slug !== '') {
-                $map[$slug] = $label;
-            }
-        }
-        fclose($handle);
-        return $map;
-    }
-}
-
-if (!function_exists('impactshop_format_ngo_name')) {
-    function impactshop_format_ngo_name($slug)
-    {
-        $slug = sanitize_title((string)$slug);
-        if ($slug === '') {
-            return '';
-        }
-        $map = impactshop_get_ngo_name_map();
-        if (isset($map[$slug])) {
-            return $map[$slug];
-        }
-        $fallback = str_replace(['-', '_'], ' ', $slug);
-        if (function_exists('mb_convert_case')) {
-            return mb_convert_case($fallback, MB_CASE_TITLE, 'UTF-8');
-        }
-        return ucwords($fallback);
     }
 }
 
@@ -283,140 +190,16 @@ if (!function_exists('impactshop_get_shops_raw')) {
     }
 }
 
-if (!function_exists('impactshop_normalize_cj_category')) {
-    function impactshop_normalize_cj_category($raw)
-    {
-        $raw = trim((string)$raw);
-        if ($raw === '') {
-            return 'Egyéb';
-        }
-        $key = strtolower($raw);
-        $map = [
-            'air' => 'Szabadidő',
-            'travel' => 'Szabadidő',
-            'leisure' => 'Szabadidő',
-            'outdoors' => 'Sport',
-            'sport' => 'Sport',
-            'sports' => 'Sport',
-            'exercise & health' => 'Egészség',
-            'exercise and health' => 'Egészség',
-            'health' => 'Egészség',
-            'vision care' => 'Egészség',
-            'nutritional supplements' => 'Egészség',
-            'cosmetics' => 'Egészség',
-            'bath & body' => 'Egészség',
-            'bath and body' => 'Egészség',
-            'bed & bath' => 'Otthon',
-            'bed and bath' => 'Otthon',
-            'kitchen' => 'Otthon',
-            'home' => 'Otthon',
-            'furniture' => 'Bútor',
-            'women\'s' => 'Divat',
-            'womens' => 'Divat',
-            'fashion' => 'Divat',
-            'children' => 'Játék',
-            'kids' => 'Játék',
-            'babies' => 'Játék',
-            'toys' => 'Játék',
-            'games' => 'Játék',
-            'photo' => 'Elektronika',
-            'peripherals' => 'Elektronika',
-            'computer hw' => 'Műszaki',
-            'electronics' => 'Elektronika',
-            'hardware' => 'Műszaki',
-            'jewelry' => 'Ékszer',
-            'food' => 'Élelmiszer',
-        ];
-        return $map[$key] ?? $raw;
-    }
-}
-
-if (!function_exists('impactshop_get_cj_shops')) {
-    function impactshop_get_cj_shops(array $csvMap = [])
-    {
-        $opt = get_option('impactshop_shops');
-        $registry = [];
-        if (is_string($opt)) {
-            $decoded = json_decode($opt, true);
-            if (is_array($decoded)) {
-                $registry = $decoded;
-            }
-        } elseif (is_array($opt)) {
-            $registry = $opt;
-        }
-
-        $out = [];
-        foreach ($registry as $candidate) {
-            if (!is_array($candidate) || empty($candidate['slug'])) {
-                continue;
-            }
-            $slug = sanitize_title($candidate['slug']);
-            if ($slug === '') {
-                continue;
-            }
-            $network = strtolower((string)($candidate['network'] ?? ''));
-            if ($network !== 'cj' && strpos($slug, 'cj-') !== 0) {
-                continue;
-            }
-            $hasLink = !empty($candidate['cj_click_url']) || !empty($candidate['program_id']);
-            if (!$hasLink) {
-                continue;
-            }
-
-            $domain = strtolower((string)($candidate['domain'] ?? ''));
-            $mapHit = $domain && isset($csvMap[$domain]) ? $csvMap[$domain] : [];
-            $name = $candidate['name'] ?? ($mapHit['name'] ?? ($candidate['domain'] ?? $slug));
-            $logo = $candidate['logo_url'] ?? ($candidate['logo'] ?? ($mapHit['logo'] ?? ''));
-            $category = $candidate['category'] ?? ($mapHit['category'] ?? 'Egyéb');
-            $category = impactshop_normalize_cj_category($category);
-            $out[] = [
-                'name'           => $name,
-                'shop_slug'      => $slug,
-                'category'       => $category,
-                'logo'           => $logo,
-                'dognet_base'    => '',
-                'deeplink_param' => $candidate['deeplink_param'] ?? 'url',
-                'product_url'    => $candidate['default_cta_url'] ?? '',
-                'commission_min' => '',
-                'commission_max' => '',
-                'deals_feed'     => '',
-                'featured'       => $candidate['featured'] ?? '',
-                'added_at'       => $candidate['added_at'] ?? '',
-                'default_d1'     => $candidate['default_d1'] ?? '',
-                'network'        => 'cj',
-                'cj_click_url'   => $candidate['cj_click_url'] ?? '',
-                'cj_program_id'  => $candidate['program_id'] ?? '',
-            ];
-        }
-
-        return $out;
-    }
-}
-
 if (!function_exists('impactshop_get_shops')) {
     function impactshop_get_shops()
     {
         $rows = impactshop_get_shops_raw();
         $out  = [];
-        $existing = [];
-        $csvMap = [];
         foreach ($rows as $r) {
             $name = $r['name'] ?? ($r['nev'] ?? '');
             $slug = $r['shop_slug'] ?? ($r['slug'] ?? ($r['go_slug'] ?? ''));
             if (!$name || !$slug) {
                 continue;
-            }
-            $domain = strtolower((string)($r['domain'] ?? ($r['site'] ?? ($r['url'] ?? ($r['website'] ?? '')))));
-            $key = sanitize_title($slug);
-            if ($key !== '') {
-                $existing[$key] = true;
-            }
-            if ($domain !== '' && !isset($csvMap[$domain])) {
-                $csvMap[$domain] = [
-                    'name'     => $name,
-                    'logo'     => $r['logo_url'] ?? ($r['logo'] ?? ($r['image'] ?? '')),
-                    'category' => ($r['category'] ?? ($r['kategoria'] ?? 'Egyéb')) ?: 'Egyéb',
-                ];
             }
             $out[] = [
                 'name'           => $name,
@@ -424,8 +207,6 @@ if (!function_exists('impactshop_get_shops')) {
                 'category'       => ($r['category'] ?? ($r['kategoria'] ?? 'Egyéb')) ?: 'Egyéb',
                 'logo'           => $r['logo_url'] ?? ($r['logo'] ?? ($r['image'] ?? '')),
                 'dognet_base'    => $r['dognet_base'] ?? '',
-                'dognet_program_id' => $r['dognet_program_id'] ?? ($r['program_id'] ?? ''),
-                'program_id'     => $r['program_id'] ?? ($r['dognet_program_id'] ?? ''),
                 'deeplink_param' => $r['pdognet_deeplink_param'] ?? ($r['dognet_deeplink_param'] ?? 'url'),
                 'product_url'    => $r['product_url'] ?? ($r['homepage'] ?? ''),
                 'commission_min' => $r['commission_min'] ?? '',
@@ -435,16 +216,6 @@ if (!function_exists('impactshop_get_shops')) {
                 'added_at'       => $r['added_at'] ?? '',
             ];
         }
-
-        foreach (impactshop_get_cj_shops($csvMap) as $cj) {
-            $key = sanitize_title($cj['shop_slug'] ?? '');
-            if ($key === '' || isset($existing[$key])) {
-                continue;
-            }
-            $existing[$key] = true;
-            $out[] = $cj;
-        }
-
         return $out;
     }
 }
@@ -562,168 +333,11 @@ if (!function_exists('dognet_api_request')) {
     }
 }
 
-if (!function_exists('dognet__status_map')) {
-    function dognet__status_map(string $status): array
-    {
-        $s = strtolower(trim($status));
-        if ($s === 'approved') {
-            return ['A'];
-        }
-        if ($s === 'pending') {
-            return ['P'];
-        }
-        if ($s === 'rejected') {
-            return ['D'];
-        }
-        return [];
-    }
-}
-
-if (!function_exists('dognet_api_list_conversions_batch')) {
-    function dognet_api_list_conversions_batch(
-        string $from,
-        string $to,
-        string $status = 'all',
-        ?int $lastId = null,
-        int $perPage = 200
-    ): array {
-        $fromDt = $from . ' 00:00:00';
-        $toDt = $to . ' 23:59:59';
-
-        $filter = [
-            ['created_at' => ['gte' => $fromDt]],
-            ['created_at' => ['lte' => $toDt]],
-        ];
-        $rstatus = dognet__status_map($status);
-        if ($rstatus) {
-            $filter[] = ['rstatus' => ['in' => $rstatus]];
-        }
-        if (defined('DOGNET_AD_CHANNEL_ID') && DOGNET_AD_CHANNEL_ID) {
-            $filter[] = ['ad_channel_id' => ['eq' => intval(DOGNET_AD_CHANNEL_ID)]];
-        }
-
-        $body = [
-            'per-page' => max(1, min(1000, $perPage)),
-            'filter' => $filter,
-        ];
-        if ($lastId !== null) {
-            $body['last_id'] = intval($lastId);
-        }
-
-        $resp = dognet_api_request('POST', '/raw-transactions/filter', $body);
-        if (is_wp_error($resp)) {
-            return ['error' => $resp];
-        }
-
-        $items = [];
-        if (isset($resp['data']) && is_array($resp['data'])) {
-            $items = $resp['data'];
-        } elseif (isset($resp['items']) && is_array($resp['items'])) {
-            $items = $resp['items'];
-        }
-
-        $nextLastId = null;
-        if (isset($resp['meta']['last_id'])) {
-            $nextLastId = intval($resp['meta']['last_id']);
-        } elseif ($items) {
-            $maxId = null;
-            foreach ($items as $it) {
-                foreach (['id', 'transaction_id', 'tid'] as $k) {
-                    if (isset($it[$k]) && is_numeric($it[$k])) {
-                        $maxId = max(intval($it[$k]), intval($maxId));
-                        break;
-                    }
-                }
-            }
-            if ($maxId !== null) {
-                $nextLastId = $maxId;
-            }
-        }
-
-        return ['items' => $items, 'last_id' => $nextLastId];
-    }
-}
-
-if (!function_exists('dognet_api_list_conversions_all')) {
-    function dognet_api_list_conversions_all(
-        string $from,
-        string $to,
-        string $status = 'all',
-        int $maxBatches = 200,
-        int $perPage = 200
-    ): array {
-        $all = [];
-        $lastId = null;
-        for ($i = 0; $i < $maxBatches; $i++) {
-            $batch = dognet_api_list_conversions_batch($from, $to, $status, $lastId, $perPage);
-            if (isset($batch['error']) && is_wp_error($batch['error'])) {
-                return ['error' => $batch['error']];
-            }
-            $items = $batch['items'] ?? [];
-            if (!$items) {
-                break;
-            }
-            $all = array_merge($all, $items);
-            $lastId = $batch['last_id'] ?? null;
-            if ($lastId === null) {
-                break;
-            }
-        }
-        return ['items' => $all];
-    }
-}
-
 if (!function_exists('impactshop_get_banners')) {
     function impactshop_get_banners()
     {
         $settings = impactshop_settings();
         return impactshop_fetch_csv_assoc($settings['banners_csv_url'], 'impactshop_csv_banners', $settings['cache_ttl']);
-    }
-}
-
-if (!function_exists('impactshop_load_cj_links')) {
-    function impactshop_load_cj_links(): array
-    {
-        $opt = get_option('impactshop_cj_links');
-        if (is_string($opt)) {
-            $decoded = json_decode($opt, true);
-        } elseif (is_array($opt)) {
-            $decoded = $opt;
-        } else {
-            $decoded = [];
-        }
-        return is_array($decoded) ? $decoded : [];
-    }
-}
-
-if (!function_exists('impactshop_cj_link_shop_slug')) {
-    function impactshop_cj_link_shop_slug(array $link): string
-    {
-        $adv = (string)($link['advertiser_id'] ?? ($link['advertiserId'] ?? ''));
-        $adv = trim($adv);
-        if ($adv === '') {
-            return '';
-        }
-        $adv = preg_replace('/[^0-9a-zA-Z_-]/', '', $adv);
-        return 'cj-' . strtolower($adv);
-    }
-}
-
-if (!function_exists('impactshop_cj_link_country_ok')) {
-    function impactshop_cj_link_country_ok(array $link): bool
-    {
-        $targets = $link['targeted_countries'] ?? [];
-        if (is_string($targets)) {
-            $targets = array_filter(array_map('trim', explode(',', $targets)));
-        }
-        if (!is_array($targets)) {
-            $targets = [];
-        }
-        if (!$targets) {
-            return true;
-        }
-        $targets = array_map('strtoupper', array_map('trim', $targets));
-        return in_array('HU', $targets, true) || in_array('NULL', $targets, true);
     }
 }
 
@@ -743,11 +357,6 @@ if (!function_exists('impactshop_deals_banners_shortcode')) {
             if (!function_exists('impactshop_get_banners')) {
                 return '';
             }
-
-            $d1  = function_exists('impactshop_q') ? impactshop_q('d1') : (isset($_GET['d1']) ? sanitize_text_field($_GET['d1']) : '');
-            $amb = function_exists('impactshop_q') ? impactshop_q('amb') : (isset($_GET['amb']) ? sanitize_text_field($_GET['amb']) : '');
-            $src = function_exists('impactshop_q') ? impactshop_q('src') : (isset($_GET['src']) ? sanitize_text_field($_GET['src']) : 'impactshop');
-            $fillout = impactshop_get_fillout_url();
 
             $limit = intval($a['limit']);
             $category = trim($a['category']);
@@ -801,12 +410,10 @@ if (!function_exists('impactshop_deals_banners_shortcode')) {
                     $pct = (float)$row['pct'];
                 }
 
-                $product_url = impactshop_extract_product_url($row['href'] ?? '');
-                $cta = impactshop_build_deal_cta($slug, $product_url, $fillout, $d1, $amb, $src);
                 $result[] = [
                     'shop_slug' => $slug,
                     'slug'      => $slug,
-                    'href'      => (string)$cta,
+                    'href'      => (string)($row['href'] ?? ''),
                     'img'       => (string)($row['img'] ?? ''),
                     'title'     => $title ?: ($shops_by_slug[$slug]['name'] ?? ''),
                     'price'     => $price,
@@ -816,52 +423,6 @@ if (!function_exists('impactshop_deals_banners_shortcode')) {
                 ];
                 if ($limit > 0 && count($result) >= $limit) {
                     break;
-                }
-            }
-
-            $cj_links = impactshop_load_cj_links();
-            if ($cj_links) {
-                $existing = array_fill_keys(array_map(function ($r) {
-                    return strtolower((string)($r['shop_slug'] ?? $r['slug'] ?? ''));
-                }, $result), true);
-                foreach ($cj_links as $link) {
-                    if (!is_array($link) || !impactshop_cj_link_country_ok($link)) {
-                        continue;
-                    }
-                    $slug = impactshop_cj_link_shop_slug($link);
-                    if ($slug === '' || isset($existing[$slug])) {
-                        continue;
-                    }
-                    $shop = $shops_by_slug[$slug] ?? [];
-                    $title = (string)($link['link_name'] ?? ($link['description'] ?? ($shop['name'] ?? $slug)));
-                    $img = (string)($shop['logo'] ?? ($link['logo_url'] ?? ''));
-                    $destination = (string)($link['destination'] ?? '');
-                    $cta = '';
-                    if ($d1) {
-                        $cta = add_query_arg(
-                            ['d1' => $d1, 'amb' => $amb, 'src' => $src ?: 'impactshop', 'u' => $destination],
-                            home_url('/go/' . rawurlencode($slug))
-                        );
-                    } elseif ($fillout) {
-                        $cta = add_query_arg(['shop' => $slug, 'amb' => $amb], $fillout);
-                    } else {
-                        $cta = home_url('/go/' . rawurlencode($slug));
-                    }
-                    $result[] = [
-                        'shop_slug' => $slug,
-                        'slug'      => $slug,
-                        'href'      => $cta,
-                        'img'       => $img,
-                        'title'     => $title,
-                        'price'     => '',
-                        'old_price' => '',
-                        'pct'       => 0,
-                        'shop_name' => $shop['name'] ?? ($link['advertiser_name'] ?? $slug),
-                    ];
-                    $existing[$slug] = true;
-                    if ($limit > 0 && count($result) >= $limit) {
-                        break;
-                    }
                 }
             }
 
@@ -932,15 +493,6 @@ if (!function_exists('impactshop_shortcode_netflix')) {
     $shops = impactshop_get_shops();
     if (!$shops) return '<div>Nincs megjeleníthető partner.</div>';
 
-    $d1  = function_exists('impactshop_q') ? impactshop_q('d1') : (isset($_GET['d1']) ? sanitize_text_field($_GET['d1']) : '');
-    $ngo_label = $d1 ? impactshop_format_ngo_name($d1) : '';
-    $ngo_notice = '';
-    if ($d1 && $ngo_label) {
-        $current_url = (is_ssl() ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? '') . ($_SERVER['REQUEST_URI'] ?? '');
-        $switch_url = $current_url ? remove_query_arg(['d1', 'ngo'], $current_url) : home_url('/impactshop/');
-        $ngo_notice = '<div class="impactshop-ngo-banner">Jelenleg ezt a szervezetet támogatod: <strong>' . esc_html($ngo_label) . '</strong><a class="impactshop-ngo-change" href="' . esc_url($switch_url) . '">Másik szervezetet támogatok</a></div>';
-    }
-
     // featured_only
     if ($a['featured_only'] === '1') {
       $shops = array_values(array_filter($shops, function($s){
@@ -970,7 +522,7 @@ if (!function_exists('impactshop_shortcode_netflix')) {
     $d1  = function_exists('impactshop_q') ? impactshop_q('d1') : (isset($_GET['d1']) ? sanitize_text_field($_GET['d1']) : '');
     $amb = function_exists('impactshop_q') ? impactshop_q('amb') : (isset($_GET['amb']) ? sanitize_text_field($_GET['amb']) : '');
     $src = function_exists('impactshop_q') ? impactshop_q('src') : (isset($_GET['src']) ? sanitize_text_field($_GET['src']) : 'impactshop');
-    $fillout = impactshop_get_fillout_url();
+    $fillout = function_exists('impactshop_settings') ? (impactshop_settings()['fillout_url'] ?? '') : '';
 
     $fragment_params = [
       'atts' => $a,
@@ -1049,32 +601,6 @@ if (!function_exists('impactshop_shortcode_netflix')) {
 
     ob_start(); ?>
     <style>
-      .impactshop-ngo-banner{
-        margin: 0 0 14px;
-        padding: 10px 14px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, rgba(14,116,144,.12), rgba(14,165,233,.10));
-        color: #0f172a;
-        font-weight: 600;
-        border: 1px solid rgba(14,116,144,.2);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-      }
-      .impactshop-ngo-change{
-        margin-left: auto;
-        padding: 6px 12px;
-        border-radius: 999px;
-        border: 1px solid rgba(15,23,42,0.2);
-        background: rgba(255,255,255,0.7);
-        color: #0f172a;
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 12px;
-        white-space: nowrap;
-      }
-      .impactshop-ngo-change:hover{ background: rgba(255,255,255,0.9); }
       .<?php echo $uid; ?>{ --gap: <?php echo $gap; ?>px; --w: <?php echo $cardW; ?>px; --h: <?php echo $cardH; ?>px; --accent:#8b5cf6; }
       .<?php echo $uid; ?> .ifx-cats{display:flex;gap:10px;align-items:center;overflow-x:auto;padding:6px 2px 12px;margin-bottom:8px;scrollbar-width:none}
       .<?php echo $uid; ?> .ifx-cats::-webkit-scrollbar{display:none}
@@ -1134,7 +660,6 @@ if (!function_exists('impactshop_shortcode_netflix')) {
     </style>
 
     <div class="<?php echo $uid; ?> impactshop-netflix" data-autoplay="<?php echo esc_attr($autoplay ? '1':'0'); ?>" data-interval="<?php echo esc_attr($interval); ?>">
-      <?php echo $ngo_notice; ?>
       <div class="ifx-cats" role="tablist">
         <?php if ($a['show_all']==='1'): ?>
           <div class="ifx-pill <?php echo ($activeCat==='__ALL__')?'active':''; ?>" data-cat="__ALL__">Összes</div>
@@ -1449,44 +974,6 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       ];
     }
 
-    $d1  = function_exists('impactshop_q') ? impactshop_q('d1') : (isset($_GET['d1']) ? sanitize_text_field($_GET['d1']) : '');
-    $amb = function_exists('impactshop_q') ? impactshop_q('amb') : (isset($_GET['amb']) ? sanitize_text_field($_GET['amb']) : '');
-    $src = function_exists('impactshop_q') ? impactshop_q('src') : (isset($_GET['src']) ? sanitize_text_field($_GET['src']) : 'impactshop');
-    $fillout = impactshop_get_fillout_url();
-
-    if ($banner_by_slug) {
-      $seen = [];
-      foreach ($items as $it) {
-        if (!empty($it['shop_slug'])) {
-          $seen[strtolower((string)$it['shop_slug'])] = true;
-        }
-      }
-      foreach ($banner_by_slug as $slug => $b) {
-        if (strpos($slug, 'cj-') !== 0 || isset($seen[$slug])) {
-          continue;
-        }
-        $href = $b['href'] ?? '';
-        if (!$href) {
-          $href = $d1
-            ? add_query_arg(['d1' => $d1, 'amb' => $amb, 'src' => $src ?: 'impactshop'], home_url('/go/' . rawurlencode($slug)))
-            : add_query_arg(['shop' => $slug, 'amb' => $amb], $fillout);
-        }
-        $items[] = [
-          'id'        => '',
-          'title'     => (string)($b['title'] ?? ''),
-          'percent'   => (int)($b['pct'] ?? 0),
-          'image'     => (string)($b['img'] ?? ''),
-          'shop_slug' => $slug,
-          'shop_name' => (string)($b['shop_name'] ?? ''),
-          'url'       => $href,
-          'price'     => (string)($b['price'] ?? ''),
-          'old_price' => (string)($b['old_price'] ?? ''),
-          'currency'  => '',
-        ];
-        $seen[$slug] = true;
-      }
-    }
-
     // ha REST üres volt → közvetlenül a bannereket tesszük ki
     if (!$items && $banner_by_slug) {
       foreach ($banner_by_slug as $slug=>$b) {
@@ -1507,16 +994,6 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       }
     }
 
-    // CTA finomítás: ha nincs d1 → Fillout, ha van d1 → /go-deal + u (termék URL)
-    foreach ($items as &$item) {
-      $product_url = impactshop_extract_product_url($item['url'] ?? '');
-      $cta = impactshop_build_deal_cta($item['shop_slug'] ?? '', $product_url, $fillout, $d1, $amb, $src);
-      if ($cta) {
-        $item['url'] = $cta;
-      }
-    }
-    unset($item);
-
     // szűrés + limit
     $items = array_values(array_filter($items, function ($x) {
         return !empty($x['image']) && !empty($x['url']);
@@ -1534,19 +1011,11 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       .<?php echo $uid; ?> .rail{
         display:flex; gap:var(--gap); overflow:hidden; scroll-behavior:smooth; padding:4px 48px;
         cursor:grab; user-select:none; -webkit-user-drag:none; touch-action:pan-x pan-y pinch-zoom;
-        position:relative; z-index:5; pointer-events:auto;
       }
       .<?php echo $uid; ?> .card{
         position:relative; flex:0 0 var(--cardW); height:var(--cardH); border-radius:var(--radius);
         border:1px solid rgba(0,0,0,.08); background:#0b1220; box-shadow:var(--shadow); overflow:hidden
       }
-      .<?php echo $uid; ?> .card{ cursor:pointer; pointer-events:auto; z-index:6; }
-      .<?php echo $uid; ?> .media,
-      .<?php echo $uid; ?> .media *{ pointer-events:none; }
-      .<?php echo $uid; ?> .badge,
-      .<?php echo $uid; ?> .shop,
-      .<?php echo $uid; ?> .label,
-      .<?php echo $uid; ?> .price{ pointer-events:none; }
       .<?php echo $uid; ?> .media{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; background:#0b1220 }
       .<?php echo $uid; ?> .media::before{
         content:""; position:absolute; inset:0;
@@ -1652,12 +1121,9 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       requestAnimationFrame(()=>{ if (dirSign < 0) rail.scrollLeft = Math.max(rail.scrollWidth - rail.clientWidth, 0); });
 
       // SWIPE/DRAG + inercia
-      let isDown=false, sx=0, sl=0, moved=0, vx=0, raf=null, lastX=0, lastT=0, dragged=false;
+      let isDown=false, sx=0, sl=0, moved=0, vx=0, raf=null, lastX=0, lastT=0;
       rail.addEventListener('pointerdown', (e)=>{
-        if (e.pointerType && e.pointerType !== 'touch') {
-          return;
-        }
-        isDown=true; moved=0; dragged=false; vx=0; sx=e.clientX; sl=rail.scrollLeft; lastX=e.clientX; lastT=performance.now();
+        isDown=true; moved=0; vx=0; sx=e.clientX; sl=rail.scrollLeft; lastX=e.clientX; lastT=performance.now();
         rail.setPointerCapture(e.pointerId); rail.style.cursor='grabbing'; if (raf) cancelAnimationFrame(raf), raf=null;
       });
       rail.addEventListener('pointermove', (e)=>{
@@ -1669,14 +1135,6 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       function pointerEnd(e){
         if(!isDown) return; isDown=false; rail.style.cursor='grab';
         try{ rail.releasePointerCapture(e.pointerId); }catch(_){}
-        const scrollMoved = Math.abs(rail.scrollLeft - sl);
-        dragged = moved > 32 || scrollMoved > 32;
-        if (!dragged) {
-          const link = e.target && e.target.closest ? e.target.closest('a.card') : null;
-          if (link && link.href) {
-            window.open(link.href, link.getAttribute('target') || '_blank', 'noopener');
-          }
-        }
         let v = Math.max(-1.5, Math.min(1.5, vx)) * 24;
         function tick(){ if (Math.abs(v) < 0.1) return; rail.scrollLeft -= v; v *= 0.92; raf = requestAnimationFrame(tick); }
         raf = requestAnimationFrame(tick);
@@ -1685,13 +1143,7 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       rail.addEventListener('pointercancel', pointerEnd);
 
       // Kattintás csak ha nem húzott (küszöb 14px)
-      rail.addEventListener('click', (e)=>{
-        if(dragged){
-          e.preventDefault();
-          e.stopPropagation();
-          dragged = false;
-        }
-      }, true);
+      rail.addEventListener('click', (e)=>{ if(moved > 14){ e.preventDefault(); e.stopPropagation(); } }, true);
 
       // Görgő/trackpad: Y→X kényelmi görgetés
       rail.addEventListener('wheel', (e)=>{
@@ -1757,13 +1209,12 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
       'show_expiry' => '1',     // 1 = visszaszámláló / lejárati info megjelenítése
     ], $atts, 'impact_coupons_netflix');
 
-    if (!function_exists('dognet_api_request'))  return '<div>Hiányzó függvény: dognet_api_request</div>';
     if (!function_exists('impactshop_get_shops')) return '<div>Hiányzó függvény: impactshop_get_shops</div>';
 
     $d1  = function_exists('impactshop_q') ? impactshop_q('d1') : (isset($_GET['d1']) ? sanitize_text_field($_GET['d1']) : '');
     $amb = function_exists('impactshop_q') ? impactshop_q('amb') : (isset($_GET['amb']) ? sanitize_text_field($_GET['amb']) : '');
     $src = function_exists('impactshop_q') ? impactshop_q('src') : (isset($_GET['src']) ? sanitize_text_field($_GET['src']) : 'impactshop');
-    $fillout = impactshop_get_fillout_url();
+    $fillout = function_exists('impactshop_settings') ? (impactshop_settings()['fillout_url'] ?? '') : '';
 
     $fragment_params = [
       'atts' => $a,
@@ -1781,20 +1232,100 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
     $cache_key = 'impact_coupons_present_cards_v3';
     $coupons = get_transient($cache_key);
     if ($coupons === false) {
-      $ad_id = defined('DOGNET_AD_CHANNEL_ID') ? intval(DOGNET_AD_CHANNEL_ID) : 0;
-      $body  = ['filter'=>['validity'=>['eq'=>'present']], 'per-page'=>500];
-      if ($ad_id) $body['ad_channel_id'] = $ad_id;
-
-      $resp = dognet_api_request('POST','/coupons/filter',$body);
       $items = [];
-      if (!is_wp_error($resp)) {
-        if (isset($resp['data'])  && is_array($resp['data']))  $items = $resp['data'];
-        if (isset($resp['items']) && is_array($resp['items'])) $items = $resp['items'];
+      if (function_exists('dognet_api_request')) {
+        $ad_id = defined('DOGNET_AD_CHANNEL_ID') ? intval(DOGNET_AD_CHANNEL_ID) : 0;
+        $body  = ['filter'=>['validity'=>['eq'=>'present']], 'per-page'=>500];
+        if ($ad_id) {
+          $body['ad_channel_id'] = $ad_id;
+        }
+
+        $resp = dognet_api_request('POST','/coupons/filter',$body);
+        if (!is_wp_error($resp)) {
+          if (isset($resp['data'])  && is_array($resp['data']))  $items = $resp['data'];
+          if (isset($resp['items']) && is_array($resp['items'])) $items = $resp['items'];
+        }
       }
       $coupons = $items;
       set_transient($cache_key, $coupons, 10 * MINUTE_IN_SECONDS);
     }
-    if (!$coupons || !is_array($coupons)) return '<div>Jelenleg nincs aktív kupon.</div>';
+
+    $cj_cache_key = 'impactshop_cj_coupons_v1';
+    $cj_cards = get_transient($cj_cache_key);
+    if ($cj_cards === false) {
+      $cj_cards = [];
+      $cj_links = get_option('impactshop_cj_coupon_links');
+      if (!is_array($cj_links)) {
+        $cj_links = get_option('impactshop_cj_links');
+      }
+      if (is_array($cj_links)) {
+        foreach ($cj_links as $link) {
+          $advertiser_id = trim((string)($link['advertiser_id'] ?? ''));
+          if ($advertiser_id === '') {
+            continue;
+          }
+          $promotion_type_raw = $link['promotion_type'] ?? '';
+          $promotion_type = strtolower(trim((string)$promotion_type_raw));
+          $coupon_code = trim((string)($link['coupon_code'] ?? ''));
+          $is_coupon = ($coupon_code !== '') || (!empty($link['is_coupon'])) || ($promotion_type !== '' && str_contains($promotion_type, 'coupon'));
+          if (!$is_coupon) {
+            continue;
+          }
+          $shop_slug = sanitize_title('cj-' . $advertiser_id);
+          if ($shop_slug === '') {
+            continue;
+          }
+          $shop_name = (string)($link['advertiser_name'] ?? ($link['link_name'] ?? 'CJ kupon'));
+          $logo = trim((string)($link['logo_url'] ?? ''));
+          $destination = trim((string)($link['destination'] ?? ''));
+          if ($logo === '' && $destination !== '') {
+            $host = parse_url($destination, PHP_URL_HOST);
+            if (is_string($host) && $host !== '') {
+              $logo = 'https://logo.clearbit.com/' . strtolower($host);
+            }
+          }
+          $title = trim((string)($link['link_name'] ?? ($link['description'] ?? $shop_name)));
+          $primary = $promotion_type_raw !== '' && strtolower($promotion_type_raw) !== 'n/a'
+            ? (string) $promotion_type_raw
+            : 'Kupon';
+          $expiry = '';
+          foreach (['promotion_end','promotion_end_date','promotion_end_at','promotion_end_time','promotion_end_date_time'] as $key) {
+            if (!empty($link[$key])) {
+              $expiry = trim((string)$link[$key]);
+              break;
+            }
+          }
+          if ($expiry && preg_match('~^\d{4}-\d{2}-\d{2}$~', $expiry)) {
+            $expiry .= 'T23:59:59';
+          }
+          $params = [
+            'shop' => $shop_slug,
+            'u'    => $destination !== '' ? strtr(base64_encode($destination), '+/', '-_') : '',
+            'd1'   => $d1,
+            'amb'  => $amb,
+            'src'  => $src ?: 'impactshop',
+          ];
+          $params = array_filter($params, static fn($v) => $v !== '' && $v !== null);
+          $cta = $fillout !== ''
+            ? add_query_arg($params, $fillout)
+            : add_query_arg($params, home_url('/go-deal/' . rawurlencode($shop_slug)));
+
+          $cj_cards[] = [
+            'cid'       => 0,
+            'shop_slug' => $shop_slug,
+            'shop_name' => $shop_name,
+            'shop_logo' => $logo,
+            'category'  => (string)($link['category'] ?? 'CJ kupon'),
+            'primary'   => $primary,
+            'title'     => $title,
+            'code'      => $coupon_code,
+            'expiry'    => $expiry,
+            'cta'       => $cta,
+          ];
+        }
+      }
+      set_transient($cj_cache_key, $cj_cards, 10 * MINUTE_IN_SECONDS);
+    }
 
     // -- 2) Shop mapping (campaign_id → shop)
     $shops = impactshop_get_shops(); // [{shop_slug, name, logo, category, dognet_base, ...}]
@@ -1862,52 +1393,8 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
         'cta'       => $cta,
       ];
     }
-
-    $cj_links = impactshop_load_cj_links();
-    if ($cj_links) {
-      $shop_map = [];
-      foreach ($shops as $s) {
-        if (!empty($s['shop_slug'])) {
-          $shop_map[strtolower((string)$s['shop_slug'])] = $s;
-        }
-      }
-      $seen = array_fill_keys(array_map(function ($c) {
-        return strtolower((string)($c['shop_slug'] ?? ''));
-      }, $cards), true);
-
-      foreach ($cj_links as $link) {
-        if (!is_array($link) || !impactshop_cj_link_country_ok($link)) {
-          continue;
-        }
-        $slug = impactshop_cj_link_shop_slug($link);
-        if ($slug === '' || isset($seen[$slug])) {
-          continue;
-        }
-        $shop = $shop_map[$slug] ?? [];
-        $title = (string)($link['link_name'] ?? ($link['description'] ?? ''));
-        $code = (string)($link['coupon_code'] ?? '');
-        $primary = $code !== '' ? ('Kupon: ' . $code) : ($title ?: 'Akció');
-        $expiry = (string)($link['promotion_end'] ?? '');
-        if ($expiry && preg_match('~^\d{4}-\d{2}-\d{2}$~', $expiry)) {
-          $expiry .= 'T23:59:59';
-        }
-        $cta = $d1
-          ? add_query_arg(['d1' => $d1, 'amb' => $amb, 'src' => $src ?: 'impactshop'], home_url('/go/' . rawurlencode($slug)))
-          : add_query_arg(['shop' => $slug, 'amb' => $amb], $fillout);
-        $cards[] = [
-          'cid'       => 0,
-          'shop_slug' => $slug,
-          'shop_name' => $shop['name'] ?? ($link['advertiser_name'] ?? $slug),
-          'shop_logo' => $shop['logo'] ?? ($link['logo_url'] ?? ''),
-          'category'  => $shop['category'] ?? '',
-          'primary'   => $primary,
-          'title'     => $title,
-          'code'      => $code,
-          'expiry'    => $expiry,
-          'cta'       => $cta,
-        ];
-        $seen[$slug] = true;
-      }
+    if ($cj_cards) {
+      $cards = array_merge($cards, $cj_cards);
     }
     if (!$cards) return '<div>Jelenleg nincs megjeleníthető kupon.</div>';
 
@@ -2235,3 +1722,44 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
   }
   add_shortcode('impact_coupons_netflix','impact_coupons_netflix_shortcode');
 }
+
+add_filter('the_content', function ($content) {
+    if (is_admin() || !is_front_page()) {
+        return $content;
+    }
+
+    if (strpos($content, 'impact_deals_netflix') !== false || strpos($content, '/go-deal/') !== false) {
+        return $content;
+    }
+
+    if (!function_exists('do_shortcode')) {
+        return $content;
+    }
+
+    $block = "\n\n<h2>Impact Shop ajánlatok</h2>\n" . do_shortcode('[impact_deals_netflix limit="12" autoplay="1" interval="4000" ga4="1"]');
+
+    return $content . $block;
+});
+
+add_action('wp_footer', function () {
+    if (is_admin() || !is_front_page()) {
+        return;
+    }
+
+    static $rendered = false;
+    if ($rendered) {
+        return;
+    }
+    $rendered = true;
+
+    if (!function_exists('do_shortcode')) {
+        return;
+    }
+
+    $block = do_shortcode('[impact_deals_netflix limit="12" autoplay="1" interval="4000" ga4="1"]');
+    if ($block === '') {
+        return;
+    }
+
+    echo "\n<section id=\"impactshop-home-deals\" class=\"impactshop-home-deals\">\n<h2>Impact Shop ajánlatok</h2>\n{$block}\n</section>\n";
+});

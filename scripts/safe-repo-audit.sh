@@ -336,12 +336,19 @@ grep -Ein -- \
   '(^|[^A-Za-z0-9_-])(scp|rsync)[[:space:]].*@|ssh[[:space:]].*(cp|mv|install|chmod)[[:space:]]|git[[:space:]]+commit[[:space:]].*--no-verify|git[[:space:]]+push[[:space:]].*--no-verify' \
   "$ADDED_LINES" > "$REMOTE_WRITE_HITS" || true
 
+REMOTE_WRITE_BYPASS="${SAFE_REPO_AUDIT_ALLOW_REMOTE_WRITE:-0}"
 if [[ -s "$REMOTE_WRITE_HITS" ]]; then
-  WARNINGS=$((WARNINGS + 1))
-  echo "WARN: possible manual remote-write / guard-bypass patterns detected in added lines:"
-  sed -n '1,40p' "$REMOTE_WRITE_HITS"
-  echo "      Prefer bin/impactshop-guard-deploy.sh or scripts/guarded-remote-write.sh."
-  echo
+  if [[ "$REMOTE_WRITE_BYPASS" == "1" ]]; then
+    echo "BYPASS: possible manual remote-write / guard-bypass patterns detected in added lines."
+    echo "BYPASS: SAFE_REPO_AUDIT_ALLOW_REMOTE_WRITE=1 miatt remote-write gate nem blokkol."
+    echo
+  else
+    WARNINGS=$((WARNINGS + 1))
+    echo "WARN: possible manual remote-write / guard-bypass patterns detected in added lines:"
+    sed -n '1,40p' "$REMOTE_WRITE_HITS"
+    echo "      Prefer bin/impactshop-guard-deploy.sh or scripts/guarded-remote-write.sh."
+    echo
+  fi
 fi
 
 # 10) Informational: tracked sensitive files already inside repository.

@@ -49,18 +49,30 @@
             return;
         }
 
-        $(SELECTORS.topPoints).text(formatHuNumber(snapshot.topPoints));
-        $(SELECTORS.topVotes).text(formatHuNumber(snapshot.topVotes));
-        $(SELECTORS.videoPoints).text(formatHuNumber(snapshot.videoPoints));
-        $(SELECTORS.videoVotes).text(formatHuNumber(snapshot.videoVotes));
-        $(SELECTORS.videoPointsDelta).text('').removeClass('is-visible');
-        $(SELECTORS.videoVotesDelta).text('').removeClass('is-visible');
-        $(SELECTORS.pointsItem).removeClass('is-updated');
-        $(SELECTORS.votesItem).removeClass('is-updated');
+        // Guard: prevent re-entrant calls from MutationObserver
+        if (DEFER_STATE._applying) {
+            return;
+        }
+        DEFER_STATE._applying = true;
+        try {
+            $(SELECTORS.topPoints).text(formatHuNumber(snapshot.topPoints));
+            $(SELECTORS.topVotes).text(formatHuNumber(snapshot.topVotes));
+            $(SELECTORS.videoPoints).text(formatHuNumber(snapshot.videoPoints));
+            $(SELECTORS.videoVotes).text(formatHuNumber(snapshot.videoVotes));
+            $(SELECTORS.videoPointsDelta).text('').removeClass('is-visible');
+            $(SELECTORS.videoVotesDelta).text('').removeClass('is-visible');
+            $(SELECTORS.pointsItem).removeClass('is-updated');
+            $(SELECTORS.votesItem).removeClass('is-updated');
+        } finally {
+            DEFER_STATE._applying = false;
+        }
     }
 
     function keepDeferredUiIfNeeded() {
         if (!DEFER_STATE.armed || DEFER_STATE.releasing || !DEFER_STATE.pendingReward) {
+            return;
+        }
+        if (DEFER_STATE._applying) {
             return;
         }
         applyBaseline(DEFER_STATE.baseline);

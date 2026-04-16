@@ -10,6 +10,11 @@
 - Sandbox write mode bekötve: `X-ImpactShop-Write-Mode` header kezelve, write endpointok sandbox early-return ágon.
 - Deploy verifikáció: prod API 200, debug endpoint 404, dev clone route 404, remote hash parity egyezik.
 
+## 2026-04-07 23:30 CET - ads-watch v2.5.53 CTA navigation fix + bundle disable
+- v2.5.53: CTA window.open() hiányzott event.preventDefault() után → sponsor oldal nem nyílt meg. Javítva.
+- MutationObserver bundle (ui-cta-bundle) letiltva PHP return;-nel — ez okozta a ~240/sec observer callback freeze-t.
+- Production deploy verifikált. Change record: docs/protected-change-records/2026-04-07-cta-freeze-fix-v2.5.53.md
+
 ## 2026-04-07 21:00 CET - ads-watch v2.5.52 sponsor video freeze fix
 - v2.5.52 visszaállítja a 7 kritikus sponsor return patternt (externalNavigationSource, CTA _blank link, visibility handler, contentComplete placement).
 - Gyökér ok: v2.5.51 nem hozta át a v2.5.55 sponsor-specifikus kezelését → Chrome/Safari freeze a sponsor videó végén.
@@ -6562,3 +6567,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Bug 1: `/befektetoknek/` → 404 javítva — `page_meta()` bejegyzés hozzáadva
 - Bug 2: `?lang=en` mindig magyar fájlt adott vissza — `resolve_file($lang)` bekötve
 - Rollback: `backups/ngo-guides-fix-20260410/rollback.sh`
+
+## 2026-04-07 14:33:39 CEST - impactall auto log
+- **Result:** warn (warnings=1, errors=0, duration=2s)
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
