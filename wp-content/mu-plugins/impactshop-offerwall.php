@@ -184,19 +184,19 @@ function impactshop_offerwall_register_routes(): void
     register_rest_route('impact/v1', '/offerwall/history', [
         'methods' => 'GET',
         'callback' => 'impactshop_offerwall_get_history',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'impactshop_offerwall_require_pseudo_id',
     ]);
 
     register_rest_route('impact/v1', '/offerwall/reward-status', [
         'methods' => 'GET',
         'callback' => 'impactshop_offerwall_get_reward_status',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'impactshop_offerwall_require_pseudo_id',
     ]);
 
     register_rest_route('impact/v1', '/offerwall/stats', [
         'methods' => 'GET',
         'callback' => 'impactshop_offerwall_get_stats',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'impactshop_offerwall_require_pseudo_id',
     ]);
 
     register_rest_route('impact/v1', '/offerwall/health', [
@@ -215,6 +215,11 @@ function impactshop_offerwall_get_pseudo_id(): string
         return sanitize_text_field((string) $_COOKIE['impactshop_pseudo_id']);
     }
     return '';
+}
+
+function impactshop_offerwall_require_pseudo_id(): bool
+{
+    return impactshop_offerwall_get_pseudo_id() !== '';
 }
 
 function impactshop_offerwall_rate_limit(string $key, int $limit, int $window): bool
@@ -298,11 +303,12 @@ function impactshop_offerwall_signature_valid(array $params, array $provider): b
 {
     $secret = (string) ($provider['postback_secret'] ?? '');
     $sig_param = (string) ($provider['signature_param'] ?? 'signature');
-    $signature = isset($params[$sig_param]) ? (string) $params[$sig_param] : '';
+    $signature_raw = isset($params[$sig_param]) ? (string) $params[$sig_param] : '';
+    $signature = strtolower(trim($signature_raw));
     if ($secret === '' || $signature === '') {
         return true;
     }
-    $transaction_id = (string) ($params['transaction_id'] ?? $params['tx_id'] ?? '');
+    $transaction_id = (string) ($params['transaction_id'] ?? $params['tx_id'] ?? $params['transaction'] ?? $params['trans_id'] ?? '');
     if ($transaction_id === '') {
         return false;
     }
@@ -313,7 +319,7 @@ function impactshop_offerwall_signature_valid(array $params, array $provider): b
         $timestamp = (string) ($params['timestamp'] ?? '');
         $canonical = $transaction_id . '|' . $user_id . '|' . $payout . '|' . $timestamp;
         $expected = hash_hmac('sha256', $canonical, $secret);
-        return hash_equals($expected, $signature);
+        return hash_equals(strtolower($expected), $signature);
     }
 
     $candidates = [
@@ -324,8 +330,58 @@ function impactshop_offerwall_signature_valid(array $params, array $provider): b
         md5($secret . ':' . $transaction_id),
     ];
     foreach ($candidates as $expected) {
-        if (hash_equals($expected, $signature)) {
+        if (hash_equals(strtolower($expected), $signature)) {
             return true;
+        }
+    }
+
+    // CPX often signs a different canonical payload than the generic providers.
+    $provider_name = strtolower((string) ($provider['name'] ?? ''));
+    $user_param = strtolower((string) ($provider['user_param'] ?? ''));
+    $is_cpx = (strpos($provider_name, 'cpx') !== false)
+        || in_array($user_param, ['subid_1', 'subid1', 'ext_user_id'], true)
+        || strtolower($sig_param) === 'hash';
+    if (!$is_cpx) {
+        return false;
+    }
+
+    $user_id = (string) ($params['pseudo_id'] ?? $params['subid_1'] ?? $params['subid1'] ?? $params['ext_user_id'] ?? $params['user_id'] ?? '');
+    $payout = (string) ($params['payout'] ?? $params['amount'] ?? $params['amount_usd'] ?? $params['reward'] ?? '');
+    $timestamp = (string) ($params['timestamp'] ?? '');
+    $offer_id = (string) ($params['offer_id'] ?? $params['offerid'] ?? '');
+
+    $messages = array_filter(array_unique([
+        $transaction_id,
+        $user_id,
+        $transaction_id . '|' . $user_id,
+        $user_id . '|' . $transaction_id,
+        $transaction_id . '|' . $payout,
+        $transaction_id . '|' . $user_id . '|' . $payout,
+        $transaction_id . '|' . $user_id . '|' . $payout . '|' . $timestamp,
+        $transaction_id . '|' . $payout . '|' . $timestamp,
+        $transaction_id . '|' . $offer_id,
+        $transaction_id . '|' . $user_id . '|' . $offer_id,
+    ]), static fn ($v) => is_string($v) && $v !== '');
+
+    foreach ($messages as $message) {
+        $flex = [
+            hash_hmac('sha256', $message, $secret),
+            hash_hmac('sha1', $message, $secret),
+            md5($message . $secret),
+            md5($secret . $message),
+            md5($message . ':' . $secret),
+            md5($secret . ':' . $message),
+            md5($message . '|' . $secret),
+            md5($secret . '|' . $message),
+            sha1($message . $secret),
+            sha1($secret . $message),
+            hash('sha256', $message . $secret),
+            hash('sha256', $secret . $message),
+        ];
+        foreach ($flex as $expected) {
+            if (hash_equals(strtolower($expected), $signature)) {
+                return true;
+            }
         }
     }
 
@@ -419,6 +475,9 @@ function impactshop_offerwall_handle_postback(WP_REST_Request $request): WP_REST
             'provider' => $provider_key,
             'transaction_id' => $transaction_id,
             'pseudo_id' => $pseudo_id,
+            'sig_param' => (string) ($provider['signature_param'] ?? 'signature'),
+            'sig_len' => strlen((string) ($params[(string) ($provider['signature_param'] ?? 'signature')] ?? '')),
+            'query_keys' => array_keys($params),
         ]);
         return new WP_REST_Response(['status' => 'invalid_signature'], 403);
     }
@@ -487,6 +546,10 @@ function impactshop_offerwall_handle_postback(WP_REST_Request $request): WP_REST
 
     $points_awarded = $payout > 0 ? max(1, (int) ceil($payout * 100 * $points_multiplier)) : 0;
     $votes_awarded = $payout > 0 ? max(1, (int) ceil($payout * 10 * $votes_multiplier)) : 0;
+    if ($provider_key === 'internal_survey') {
+        $points_awarded = 10;
+        $votes_awarded = 10;
+    }
 
     $request_id = wp_generate_uuid4();
 
@@ -608,6 +671,17 @@ function impactshop_offerwall_get_config(): WP_REST_Response
     ], 200);
 }
 
+function impactshop_offerwall_get_adslot_override(WP_REST_Request $request): string
+{
+    $mode = strtolower((string) $request->get_param('mode'));
+    $adslot = strtolower((string) $request->get_param('adslot'));
+    if ($mode === 'survey' || $adslot === 'survey') {
+        return defined('AYET_OFFERWALL_SURVEYWALL_ADSLOT') ? (string) AYET_OFFERWALL_SURVEYWALL_ADSLOT : '';
+    }
+
+    return '';
+}
+
 function impactshop_offerwall_get_offers(WP_REST_Request $request): WP_REST_Response
 {
     $provider_key = (string) $request['provider'];
@@ -625,6 +699,7 @@ function impactshop_offerwall_get_offers(WP_REST_Request $request): WP_REST_Resp
         return new WP_REST_Response(['status' => 'missing_pseudo', 'offers' => []], 200);
     }
 
+    $adslot_override = impactshop_offerwall_get_adslot_override($request);
     $refresh = (string) $request->get_param('refresh');
     if ($refresh === '1') {
         $rate_key = 'offerwall_refresh_' . md5($pseudo_id);
@@ -632,7 +707,7 @@ function impactshop_offerwall_get_offers(WP_REST_Request $request): WP_REST_Resp
             return new WP_REST_Response(['status' => 'rate_limited', 'offers' => []], 200);
         }
         if (function_exists('impactshop_ayet_offerwall_flush_cache')) {
-            impactshop_ayet_offerwall_flush_cache($pseudo_id);
+            impactshop_ayet_offerwall_flush_cache($pseudo_id, $adslot_override);
         }
     }
 
@@ -646,7 +721,7 @@ function impactshop_offerwall_get_offers(WP_REST_Request $request): WP_REST_Resp
 
     $user_agent = (string) $request->get_header('user-agent');
 
-    $offers = impactshop_ayet_offerwall_fetch_offers($pseudo_id, $ip, $user_agent);
+    $offers = impactshop_ayet_offerwall_fetch_offers($pseudo_id, $ip, $user_agent, $adslot_override);
     $include_mobile = (string) $request->get_param('include_mobile') === '1';
     if ($include_mobile && function_exists('impactshop_ayet_offerwall_fetch_offers_with_ua')) {
         $merged = [];
@@ -657,7 +732,7 @@ function impactshop_offerwall_get_offers(WP_REST_Request $request): WP_REST_Resp
             }
         }
         $android_ua = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Mobile Safari/537.36';
-        $android_offers = impactshop_ayet_offerwall_fetch_offers_with_ua($pseudo_id, $ip, $android_ua, 'android');
+        $android_offers = impactshop_ayet_offerwall_fetch_offers_with_ua($pseudo_id, $ip, $android_ua, 'android', $adslot_override);
         foreach ($android_offers as $offer) {
             $key = $offer['offer_id'] ?? $offer['id'] ?? null;
             if ($key === null) {
@@ -667,7 +742,7 @@ function impactshop_offerwall_get_offers(WP_REST_Request $request): WP_REST_Resp
             }
         }
         $ios_ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-        $ios_offers = impactshop_ayet_offerwall_fetch_offers_with_ua($pseudo_id, $ip, $ios_ua, 'ios');
+        $ios_offers = impactshop_ayet_offerwall_fetch_offers_with_ua($pseudo_id, $ip, $ios_ua, 'ios', $adslot_override);
         foreach ($ios_offers as $offer) {
             $key = $offer['offer_id'] ?? $offer['id'] ?? null;
             if ($key === null) {
@@ -710,16 +785,18 @@ function impactshop_offerwall_get_history(): WP_REST_Response
  * Proxy for AyeT Reward Status API — returns CPE task progress per user.
  * Cached 5 minutes per pseudo_id.
  */
-function impactshop_offerwall_get_reward_status(): WP_REST_Response
+function impactshop_offerwall_get_reward_status(WP_REST_Request $request): WP_REST_Response
 {
     $pseudo_id = impactshop_offerwall_get_pseudo_id();
     if ($pseudo_id === '') {
         return new WP_REST_Response(['status' => 'missing_pseudo', 'campaigns' => []], 200);
     }
 
-    $adslot = function_exists('impactshop_ayet_get_effective_adslot')
-        ? impactshop_ayet_get_effective_adslot()
-        : (defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '');
+    $adslot_override = impactshop_offerwall_get_adslot_override($request);
+    $adslot = $adslot_override !== '' ? $adslot_override : (defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '');
+    if ($adslot === '' && defined('AYET_OFFERWALL_ADSLOT_FALLBACK')) {
+        $adslot = (string) AYET_OFFERWALL_ADSLOT_FALLBACK;
+    }
     if ($adslot === '') {
         return new WP_REST_Response(['status' => 'missing_adslot', 'campaigns' => []], 200);
     }
@@ -838,33 +915,11 @@ function impactshop_offerwall_health(): WP_REST_Response
         $since
     ), ARRAY_A);
 
-    $ayet_adslot = function_exists('impactshop_ayet_get_adslot_diagnostics')
-        ? impactshop_ayet_get_adslot_diagnostics()
-        : [
-            'effective' => defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '',
-            'env' => defined('AYET_OFFERWALL_ADSLOT') ? (string) AYET_OFFERWALL_ADSLOT : '',
-            'fallback' => defined('AYET_OFFERWALL_ADSLOT_FALLBACK') ? (string) AYET_OFFERWALL_ADSLOT_FALLBACK : '',
-            'admin' => '',
-            'env_active' => false,
-            'admin_mismatch' => false,
-            'using_fallback' => false,
-        ];
-    $ayet_surveywall = function_exists('impactshop_ayet_get_surveywall_diagnostics')
-        ? impactshop_ayet_get_surveywall_diagnostics()
-        : [
-            'effective' => '',
-            'env' => '',
-            'profile_hash_configured' => false,
-            'active' => false,
-        ];
-
     return new WP_REST_Response([
         'status' => 'ok',
         'last_postback' => $last,
         'count_24h' => $count,
         'providers' => $by_provider,
-        'ayet_adslot' => $ayet_adslot,
-        'ayet_surveywall' => $ayet_surveywall,
     ], 200);
 }
 
@@ -901,9 +956,6 @@ function impactshop_offerwall_enqueue_assets(): void
     wp_localize_script('impactshop-offerwall', 'impactshopOfferwall', [
         'restUrl' => esc_url_raw(rest_url('impact/v1/offerwall')),
         'ayetSurveyUrl' => esc_url_raw(rest_url('impact/v1/ayet-surveys')),
-        'ayetSurveyActive' => function_exists('impactshop_ayet_get_effective_surveywall_adslot')
-            ? impactshop_ayet_get_effective_surveywall_adslot() !== ''
-            : false,
     ]);
 }
 
@@ -1065,11 +1117,9 @@ function impactshop_offerwall_shortcode(): string
     $cpx_provider = $providers['cpx'] ?? [];
     $cpx_active = !empty($cpx_provider['enabled']);
     $ayet_provider = $providers['ayet'] ?? [];
-    $ayet_survey_adslot = function_exists('impactshop_ayet_get_effective_surveywall_adslot')
-        ? impactshop_ayet_get_effective_surveywall_adslot()
-        : '';
-    $ayet_active = !empty($ayet_provider['enabled']) || $ayet_survey_adslot !== '';
-    $ayet_survey_active = $ayet_survey_adslot !== '';
+    $ayet_active = !empty($ayet_provider['enabled']);
+    $ayet_survey_active = (defined('AYET_OFFERWALL_SURVEYWALL_ADSLOT') && (string) AYET_OFFERWALL_SURVEYWALL_ADSLOT !== '')
+        || (defined('AYET_OFFERWALL_ADSLOT_FALLBACK') && (string) AYET_OFFERWALL_ADSLOT_FALLBACK !== '');
     $pseudo_id = impactshop_offerwall_get_pseudo_id();
     $cpx_app_id = (string) ($cpx_provider['api_key'] ?? '');
     $cpx_secret = (string) ($cpx_provider['survey_token_secret'] ?? '');
@@ -1087,12 +1137,16 @@ function impactshop_offerwall_shortcode(): string
     $html .= '</div>';
     $html .= '<div class="offerwall-stats-anchor" data-role="offerwall-stats-anchor"></div>';
     $html .= '<div class="offerwall-tabs" data-role="offerwall-tabs">';
-    $html .= '<button type="button" class="offerwall-tab is-active" data-role="offerwall-tab" data-target="offerwall">🎁 Offerwall</button>';
+    $html .= '<button type="button" class="offerwall-tab is-active" data-role="offerwall-tab" data-target="offerwall">🎮 Játékok</button>';
     $html .= '<button type="button" class="offerwall-tab" data-role="offerwall-tab" data-target="quiz">📋 Kvíz</button>';
     $html .= '<button type="button" class="offerwall-tab" data-role="offerwall-tab" data-target="survey">📊 Kérdőív</button>';
     $html .= '<button type="button" class="offerwall-tab" data-role="offerwall-tab" data-target="active">✅ Aktívak</button>';
     $html .= '</div>';
     $html .= '<div class="offerwall-panel is-active" data-panel="offerwall">';
+    $html .= '<div class="offerwall-provider-tabs" data-role="offerwall-provider-tabs" data-scope="games">';
+    $html .= '<button type="button" class="offerwall-provider-btn' . ($ayet_active ? ' is-active' : ' is-disabled') . '" data-role="offerwall-provider" data-provider="ayet"' . ($ayet_active ? '' : ' disabled') . '>AyeT</button>';
+    $html .= '<button type="button" class="offerwall-provider-btn is-disabled" data-role="offerwall-provider" data-provider="torox" disabled>Torox<span class="offerwall-provider-badge">hamarosan</span></button>';
+    $html .= '</div>';
     $html .= '<div class="offerwall-cards" data-role="offerwall-cards"></div>';
     $html .= '<div class="offerwall-history">';
     $html .= '<strong>Legutóbbi teljesítések</strong>';
@@ -1102,6 +1156,7 @@ function impactshop_offerwall_shortcode(): string
     $quiz_html = shortcode_exists('impactshop_article_quiz')
         ? do_shortcode('[impactshop_article_quiz]')
         : '<div class="offerwall-empty">A kvíz modul jelenleg nem elérhető.</div>';
+    $quiz_html = '<div class="offerwall-quiz-section" data-provider="sharity">' . $quiz_html . '</div>';
     $survey_sections = '';
     if (shortcode_exists('impactshop_internal_survey')) {
         $survey_sections .= '<div class="offerwall-survey-section" data-provider="sharity">';
@@ -1112,24 +1167,28 @@ function impactshop_offerwall_shortcode(): string
     if ($cpx_active) {
         $survey_sections .= '<div class="offerwall-survey-section offerwall-survey-cpx" data-provider="cpx">';
         $survey_sections .= '<h3 class="offerwall-section-title">🌐 Külső kérdőívek – extra pontokért</h3>';
-        $survey_sections .= '<div class="offerwall-note">Töltsd ki és gyűjts extra pontokat! A jutalom a kitöltés után automatikusan jóváírásra kerül.</div>';
+        $survey_sections .= '<div class="offerwall-note">Töltsd ki és gyűjts extra pontokat! A jutalom a kitöltés után automatikusan jóváírásra kerül. (CPX Research: tesztüzem)</div>';
         $survey_sections .= '<div id="cpx-survey-container" data-cpx-app-id="' . esc_attr($cpx_app_id) . '" data-cpx-user="' . esc_attr($pseudo_id) . '" data-cpx-hash="' . esc_attr($cpx_hash) . '" data-cpx-subid1="' . esc_attr($pseudo_id) . '" data-cpx-enabled="' . ($cpx_active ? '1' : '0') . '"></div>';
         $survey_sections .= '</div>';
     }
     $survey_sections .= '<div class="offerwall-survey-section" data-provider="ayet">';
-    $survey_sections .= '<h3 class="offerwall-section-title">🧭 AyeT Surveywall</h3>';
-    $survey_sections .= '<div class="offerwall-note">Itt csak a külön AyeT Surveywall kérdőívek jelennek meg. Az AyeT játékok és offerwall ajánlatok továbbra is az offerwall ágon maradnak.</div>';
-    $survey_sections .= '<div class="offerwall-cards offerwall-cards--surveywall" data-role="offerwall-ayet-surveys"></div>';
+    $survey_sections .= '<h3 class="offerwall-section-title">🧭 AyeT kérdőívek</h3>';
+    $survey_sections .= '<div class="offerwall-note">Válassz egy kérdőívet, és teljesítés után jóváírjuk a pontot és szavazatot.</div>';
+    $survey_sections .= '<div class="offerwall-cards" data-role="offerwall-ayet-surveys"></div>';
     $survey_sections .= '</div>';
     $survey_html = $survey_sections !== ''
         ? $survey_sections
         : '<div class="offerwall-empty">A kérdőív modul jelenleg nem elérhető.</div>';
-    $html .= '<div class="offerwall-panel" data-panel="quiz">' . $quiz_html . '</div>';
+    $html .= '<div class="offerwall-panel" data-panel="quiz">';
+    $html .= '<div class="offerwall-provider-tabs" data-role="offerwall-provider-tabs" data-scope="quiz">';
+    $html .= '<button type="button" class="offerwall-provider-btn is-active" data-role="offerwall-provider" data-provider="sharity">Sharity</button>';
+    $html .= '</div>';
+    $html .= $quiz_html . '</div>';
     $html .= '<div class="offerwall-panel" data-panel="survey">';
     $html .= '<div class="offerwall-provider-tabs" data-role="offerwall-provider-tabs" data-scope="survey">';
     $html .= '<button type="button" class="offerwall-provider-btn is-active" data-role="offerwall-provider" data-provider="sharity">Sharity</button>';
     $html .= '<button type="button" class="offerwall-provider-btn' . ($cpx_active ? '' : ' is-disabled') . '" data-role="offerwall-provider" data-provider="cpx"' . ($cpx_active ? '' : ' disabled') . '>CPX Research</button>';
-    $html .= '<button type="button" class="offerwall-provider-btn' . (($ayet_active && $ayet_survey_active) ? '' : ' is-disabled') . '" data-role="offerwall-provider" data-provider="ayet"' . (($ayet_active && $ayet_survey_active) ? '' : ' disabled') . '>AyeT</button>';
+    $html .= '<button type="button" class="offerwall-provider-btn' . ($ayet_survey_active ? '' : ' is-disabled') . '" data-role="offerwall-provider" data-provider="ayet"' . ($ayet_survey_active ? '' : ' disabled') . '>AyeT</button>';
     $html .= '</div>';
     $html .= $survey_html . '</div>';
     $html .= '<div class="offerwall-panel" data-panel="active">';
