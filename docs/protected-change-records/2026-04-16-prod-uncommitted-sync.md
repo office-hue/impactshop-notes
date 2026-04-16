@@ -8,6 +8,7 @@
 
 - `impactshop-boot.php` — remove retired CJ helpers (isb_is_retired_shop, isb_parse_csv_assoc, etc.)
 - `impactshop-offerwall.php` — __return_true → require_pseudo_id (3 endpoints), CPX HMAC
+- `scripts/safe-repo-audit.sh` — add SAFE_REPO_AUDIT_ALLOW_REMOTE_WRITE bypass for false-positive remote-write patterns in docs/notes
 
 ## Non-protected files (same commit)
 
