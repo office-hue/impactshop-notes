@@ -28,6 +28,8 @@ define('IC_POSTS_PER_PAGE', 20);
 define('IC_CIRCLES_PER_PAGE', 30);
 define('IC_RATE_LIMIT_POSTS_PER_HOUR', 5);
 define('IMPACT_COMMUNITY_TEST_MODE_COOKIE', 'impact_community_test_mode');
+define('IMPACT_COMMUNITY_DEV_CLONE_SLUG', 'hatas-korok-dev');
+define('IMPACT_COMMUNITY_DEV_CLONE_CAPABILITY', 'manage_options');
 
 /* =========================================================================
    1. Impact Alias — deterministic alias from pid_hash + circle_id
@@ -79,6 +81,64 @@ function ic_boolish($value): bool {
     }
     $normalized = strtolower(trim((string) $value));
     return in_array($normalized, ['1', 'true', 'yes', 'on', 'enabled'], true);
+}
+
+function ic_is_dev_clone_request(): bool {
+    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
+    return (bool) preg_match('~^/' . preg_quote(IMPACT_COMMUNITY_DEV_CLONE_SLUG, '~') . '/?(\?.*)?$~', $uri);
+}
+
+function ic_is_dev_clone_authorized(): bool {
+    return is_user_logged_in() && current_user_can(IMPACT_COMMUNITY_DEV_CLONE_CAPABILITY);
+}
+
+function ic_is_page_request(): bool {
+    if (is_admin() || wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
+        return false;
+    }
+
+    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
+    if (preg_match('~^/hatas-korok/?(\?.*)?$~', $uri)) {
+        return true;
+    }
+
+    if (ic_is_dev_clone_request()) {
+        return ic_is_dev_clone_authorized();
+    }
+
+    return false;
+}
+
+function ic_guard_dev_clone_access(): void {
+    if (!ic_is_dev_clone_request()) {
+        return;
+    }
+
+    if (ic_is_dev_clone_authorized()) {
+        return;
+    }
+
+    nocache_headers();
+    wp_die('Not Found', 'Not Found', ['response' => 404]);
+}
+
+function ic_send_nocache_headers(): void {
+    if (!ic_is_page_request() || headers_sent()) {
+        return;
+    }
+
+    nocache_headers();
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0', true);
+    header('Pragma: no-cache', true);
+    header('Expires: Wed, 11 Jan 1984 05:00:00 GMT', true);
+}
+
+function ic_send_dev_clone_noindex_headers(): void {
+    if (!ic_is_dev_clone_request() || !ic_is_dev_clone_authorized() || headers_sent()) {
+        return;
+    }
+
+    header('X-Robots-Tag: noindex, nofollow, noarchive', true);
 }
 
 function ic_test_mode_configured(): bool {
@@ -2634,11 +2694,14 @@ add_shortcode('impact_community_app', function () {
    7. Template Redirect — serve the app at /hatas-korok/
    ========================================================================= */
 
+add_action('template_redirect', 'ic_guard_dev_clone_access', 0);
+add_action('template_redirect', 'ic_send_nocache_headers', 1);
+add_action('template_redirect', 'ic_send_dev_clone_noindex_headers', 2);
 add_action('template_redirect', 'ic_app_template_redirect', 4);
 
 function ic_app_template_redirect(): void {
     $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
-    if (!preg_match('~^/hatas-korok/?(\?.*)?$~', $uri)) {
+    if (!preg_match('~^/hatas-korok(?:-dev)?/?(\?.*)?$~', $uri)) {
         return;
     }
 
