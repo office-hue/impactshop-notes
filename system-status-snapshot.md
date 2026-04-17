@@ -1,3 +1,9 @@
+## 2026-04-17T09:45:00+0200 - analytics guard stabilization: routes + skip telemetry + audit range fix
+- Added signed analytics canary routes in MU runtime: `/wp-json/impact/v1/analytics/summary` and `/wp-json/impact/v1/analytics/flags`.
+- Added SKIP telemetry log (`.codex/logs/analytics-skip-events.log`) and 24h WARN threshold in `scripts/verify/analytics-suite.sh`.
+- Hardened `scripts/safe-repo-audit.sh` push range resolution to avoid full-history false positives on fresh branches.
+- No deploy executed in this change set; this is code + ops readiness only.
+
 ## 2026-04-16T11:00:00+0200 — fix: sync 4 mu-plugins to match production state + guard bypass fix
 - 4 mu-plugin szinkronizálva production-nal: impactshop-boot.php, impactshop-offerwall.php, impact-community.php, impactshop-netflix-shortcodes.php
 - safe-repo-audit.sh: SAFE_REPO_AUDIT_ALLOW_REMOTE_WRITE bypass hozzáadva (notes.md false positive remote-write minták)
