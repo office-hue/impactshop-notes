@@ -16,13 +16,18 @@ FROM_DATE="${FROM_DATE:-$(date -u -v-1d +%Y-%m-%d 2>/dev/null || date -u -d '1 d
 TO_DATE="${TO_DATE:-$(date -u +%Y-%m-%d)}"
 BASE="${ANALYTICS_WP_REST_BASE%/}"
 
+build_hmac_hex() {
+  local payload="$1"
+  printf '%s' "$payload" | openssl dgst -sha256 -hmac "${ANALYTICS_WP_API_SECRET}" | awk '{print $NF}'
+}
+
 ts="$(date +%s)"
 payload="${ts}|${FROM_DATE}|${TO_DATE}"
-sig="$(printf '%s' "$payload" | openssl dgst -sha256 -hmac "${ANALYTICS_WP_API_SECRET}" | tr -d '[:space:]')"
+sig="$(build_hmac_hex "$payload")"
 
 summary_url="${BASE}/analytics/summary?from=${FROM_DATE}&to=${TO_DATE}&impact_ts=${ts}&impact_sig=${sig}"
 flags_payload="${ts}|flags"
-flags_sig="$(printf '%s' "$flags_payload" | openssl dgst -sha256 -hmac "${ANALYTICS_WP_API_SECRET}" | tr -d '[:space:]')"
+flags_sig="$(build_hmac_hex "$flags_payload")"
 flags_url="${BASE}/analytics/flags?impact_ts=${ts}&impact_sig=${flags_sig}"
 
 call_endpoint_or_skip_if_route_missing() {
