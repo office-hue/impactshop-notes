@@ -1,3 +1,10 @@
+## 2026-04-17T08:55:00+0200 - production deploy complete: guard parity + analytics canary pass
+- Guarded production deploy sikeresen lefutott (`deploy-20260417-064909`) a bastion manifest parity rendezése után.
+- `docs/impactshop-guard-hashes.json` feltöltve production `.bastion/protected-hashes.json` célra, checksum mismatch megszűnt.
+- Post-deploy smoke eredmény: `analytics-canary-guard OK (2026-04-16..2026-04-17)`.
+- Route check: `https://www.sharity.hu/` 200, `https://www.sharity.hu/hatas-korok` 200, NGO card endpoint 200.
+- Megjegyzés: rsync során egy MU delete `Permission denied` figyelmeztetés maradt (`impactshop-mobile-adsense-block.php`), de a deploy és smoke pass állapotban zárult.
+
 ## 2026-04-17T09:45:00+0200 - analytics guard stabilization: routes + skip telemetry + audit range fix
 - Added signed analytics canary routes in MU runtime: `/wp-json/impact/v1/analytics/summary` and `/wp-json/impact/v1/analytics/flags`.
 - Added SKIP telemetry log (`.codex/logs/analytics-skip-events.log`) and 24h WARN threshold in `scripts/verify/analytics-suite.sh`.
