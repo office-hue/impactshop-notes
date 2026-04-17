@@ -22,6 +22,69 @@ final class ImpactShop_Email_Proxy {
             'callback' => [__CLASS__, 'handle_send'],
             'permission_callback' => '__return_true',
         ]);
+
+        register_rest_route('impact/v1', '/analytics/summary', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'handle_analytics_summary'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        register_rest_route('impact/v1', '/analytics/flags', [
+            'methods' => 'GET',
+            'callback' => [__CLASS__, 'handle_analytics_flags'],
+            'permission_callback' => '__return_true',
+        ]);
+    }
+
+    public static function handle_analytics_summary(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $secret = self::get_shared_secret();
+        if ($secret === '') {
+            return new WP_Error('impact_analytics_not_configured', 'Analytics secret missing', ['status' => 501]);
+        }
+
+        $from = sanitize_text_field((string) ($request->get_param('from') ?? ''));
+        $to = sanitize_text_field((string) ($request->get_param('to') ?? ''));
+        if ($from === '' || $to === '') {
+            return new WP_Error('impact_analytics_invalid', 'Missing from/to query params', ['status' => 400]);
+        }
+
+        $ts = self::extract_impact_ts($request);
+        $sig = self::extract_impact_sig($request);
+        $sig_error = self::verify_analytics_signature($secret, $ts, $sig, $ts . '|' . $from . '|' . $to);
+        if ($sig_error !== null) {
+            return $sig_error;
+        }
+
+        return new WP_REST_Response([
+            'ok' => true,
+            'status' => 'ok',
+            'from' => $from,
+            'to' => $to,
+            'generated_at' => gmdate('c'),
+        ], 200);
+    }
+
+    public static function handle_analytics_flags(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $secret = self::get_shared_secret();
+        if ($secret === '') {
+            return new WP_Error('impact_analytics_not_configured', 'Analytics secret missing', ['status' => 501]);
+        }
+
+        $ts = self::extract_impact_ts($request);
+        $sig = self::extract_impact_sig($request);
+        $sig_error = self::verify_analytics_signature($secret, $ts, $sig, $ts . '|flags');
+        if ($sig_error !== null) {
+            return $sig_error;
+        }
+
+        $prod_enabled = self::allow_on_host();
+        return new WP_REST_Response([
+            'ok' => true,
+            'status' => 'ok',
+            'ingest_enabled' => true,
+            'prod_analytics_enabled' => $prod_enabled,
+            'generated_at' => gmdate('c'),
+        ], 200);
     }
 
     public static function handle_send(WP_REST_Request $request): WP_REST_Response|WP_Error {
@@ -159,6 +222,57 @@ final class ImpactShop_Email_Proxy {
             return new WP_Error('impact_email_unauthorized', 'Invalid signature', ['status' => 403]);
         }
         return null;
+    }
+
+    private static function verify_analytics_signature(string $secret, string $ts_raw, string $sig_raw, string $payload): ?WP_Error {
+        if ($ts_raw === '' || $sig_raw === '') {
+            return new WP_Error('impact_analytics_unauthorized', 'Missing signature headers', ['status' => 403]);
+        }
+
+        $ts_value = (int) $ts_raw;
+        if (!$ts_value || abs(time() - $ts_value) > 300) {
+            return new WP_Error('impact_analytics_unauthorized', 'Signature timestamp out of range', ['status' => 403]);
+        }
+
+        $normalized_sig = strtolower(trim($sig_raw));
+        if (str_starts_with($normalized_sig, 'sha256=')) {
+            $normalized_sig = substr($normalized_sig, 7);
+        }
+
+        $expected_sig = hash_hmac('sha256', $payload, $secret);
+        if (!hash_equals($expected_sig, $normalized_sig)) {
+            return new WP_Error('impact_analytics_unauthorized', 'Invalid signature', ['status' => 403]);
+        }
+
+        return null;
+    }
+
+    private static function extract_impact_ts(WP_REST_Request $request): string {
+        $header = (string) $request->get_header('x-impact-ts');
+        $param = (string) ($request->get_param('impact_ts') ?? '');
+        $fallback = (string) ($_GET['impact_ts'] ?? $_GET['x-impact-ts'] ?? '');
+
+        if ($header !== '') {
+            return $header;
+        }
+        if ($param !== '') {
+            return $param;
+        }
+        return $fallback;
+    }
+
+    private static function extract_impact_sig(WP_REST_Request $request): string {
+        $header = (string) $request->get_header('x-impact-signature');
+        $param = (string) ($request->get_param('impact_sig') ?? '');
+        $fallback = (string) ($_GET['impact_sig'] ?? $_GET['x-impact-signature'] ?? '');
+
+        if ($header !== '') {
+            return $header;
+        }
+        if ($param !== '') {
+            return $param;
+        }
+        return $fallback;
     }
 
     private static function allow_on_host(): bool {

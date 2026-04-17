@@ -10,6 +10,30 @@ MODE="local"
 PUSH_BASE=""
 PUSH_RANGE=""
 
+resolve_push_base() {
+  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
+  local candidate=""
+
+  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
+    git merge-base HEAD "$upstream_ref"
+    return 0
+  fi
+
+  for candidate in "origin/HEAD" "origin/main" "origin/master" "main" "master"; do
+    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+      git merge-base HEAD "$candidate"
+      return 0
+    fi
+  done
+
+  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    git rev-parse --verify HEAD^
+    return 0
+  fi
+
+  git hash-object -t tree /dev/null
+}
+
 usage() {
   cat <<'EOF'
 Usage:
@@ -91,13 +115,7 @@ COMMIT_LANE_OUTPUT="$TMP_DIR/commit-lane-output.txt"
 REMOTE_WRITE_HITS="$TMP_DIR/remote-write-hits.txt"
 
 if [[ "$MODE" == "push" ]]; then
-  upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-}"
-  [[ -z "$upstream_ref" ]] && upstream_ref="@{upstream}"
-  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-    PUSH_BASE="$(git merge-base HEAD "$upstream_ref")"
-  else
-    PUSH_BASE="$(git hash-object -t tree /dev/null)"
-  fi
+  PUSH_BASE="$(resolve_push_base)"
   PUSH_RANGE="${PUSH_BASE}..HEAD"
 fi
 
