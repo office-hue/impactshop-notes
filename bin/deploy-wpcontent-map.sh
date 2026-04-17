@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+HASH_PATH="${ROOT_DIR}/docs/impactshop-guard-hashes.json"
 
 if [[ $# -gt 1 ]]; then
   echo "Usage: $0 [--staging|--production|--env=FILE|ENV_FILE]" >&2
@@ -53,6 +54,41 @@ run_hatas_korok_post_deploy_smoke() {
     echo "✅ Hatás Körök post-deploy smoke OK"
   else
     echo "❌ Hatás Körök post-deploy smoke FAILED" >&2
+    exit 1
+  fi
+}
+
+verify_remote_bastion_manifest() {
+  local remote_app_root="${1:-}"
+  [[ -n "$remote_app_root" ]] || return 0
+  [[ -f "$HASH_PATH" ]] || return 0
+
+  local local_hash remote_hash
+  local_hash="$(python3 - "$HASH_PATH" <<'PY'
+import hashlib
+import sys
+print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
+PY
+)"
+
+  remote_hash="$(ssh -o BatchMode=yes "$SSH_HOST" "python3 - <<'PY'
+import hashlib
+path = '${remote_app_root}/.bastion/protected-hashes.json'
+try:
+    print(hashlib.sha256(open(path, 'rb').read()).hexdigest())
+except FileNotFoundError:
+    print('')
+PY" < /dev/null)"
+
+  if [[ -z "$remote_hash" ]]; then
+    echo "❌ Remote bastion manifest hiányzik: ${SSH_HOST}:${remote_app_root}/.bastion/protected-hashes.json" >&2
+    exit 1
+  fi
+
+  if [[ "$local_hash" != "$remote_hash" ]]; then
+    echo "❌ Remote bastion manifest checksum mismatch." >&2
+    echo "   local : $local_hash" >&2
+    echo "   remote: $remote_hash" >&2
     exit 1
   fi
 }
