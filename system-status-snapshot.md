@@ -9,6 +9,11 @@
 - `impact-challenge-ui-smoke.sh` továbbra is zöld.
 - Külön audit finding rögzítve: a dokumentált production deploy path és a ténylegesen kiszolgált live asset út között drift gyanú áll fenn.
 
+## 2026-04-20T07:00:00+0200 - ads-watch review-fix: trailing resize after burst
+- Review-fix kör: a leading-edge throttle mellé trailing IMA resize futás került, hogy a mobil resize burst utolsó konténermérete se vesszen el.
+- A kapcsolódó postmortem follow-up szövegben javítva lett az `eldobj` → `eldob` elírás.
+- Gyors verifikáció: `node --check` OK, `impact-challenge-ui-smoke.sh` OK.
+
 ## 2026-04-17T09:45:00+0200 - analytics guard stabilization: routes + skip telemetry + audit range fix
 - Added signed analytics canary routes in MU runtime: `/wp-json/impact/v1/analytics/summary` and `/wp-json/impact/v1/analytics/flags`.
 - Added SKIP telemetry log (`.codex/logs/analytics-skip-events.log`) and 24h WARN threshold in `scripts/verify/analytics-suite.sh`.

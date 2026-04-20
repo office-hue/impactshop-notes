@@ -1,3 +1,8 @@
+## 2026-04-20 07:00 CEST - ads-watch review-fix: trailing resize after burst
+- PR review visszajelzés alapján a mobil resize throttle most már trailing futást is ütemez, így a burst végén érkező végső konténerméret is átmegy az IMA resize felé.
+- A kapcsolódó postmortem addendum szövegében javítva lett az `eldobj` elírás.
+- Ellenőrzés: `node --check wp-content/mu-plugins/impactshop-ads-watch.js` OK, `impact-challenge-ui-smoke.sh` OK.
+
 ## 2026-04-19 16:08 CEST - ads-watch cache-bypass verzióbump lezárva
 - Az `impactshop-ads-watch.php` asset verzió `2.5.65` → `2.5.66` lett, hogy új JS URL keletkezzen purge nélkül.
 - A PHP deploy backup + rollback mellett kiment mindkét érintett példányra:
