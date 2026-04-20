@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Állítsd be:
 STAGING_WP_PATH="/home/sharityh/app-staging"
-PROD_WP_PATH="/home/sharityh/public_html"
+PROD_WP_PATH="/home/sharityh/app"
 
 PLUGINS=(
   "impact-bridge-local"

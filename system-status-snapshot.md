@@ -9,6 +9,13 @@
 - `impact-challenge-ui-smoke.sh` továbbra is zöld.
 - Külön audit finding rögzítve: a dokumentált production deploy path és a ténylegesen kiszolgált live asset út között drift gyanú áll fenn.
 
+## 2026-04-20T08:30:00+0200 - production deploy-path audit closed for ads-watch incident follow-up
+- Audit bizonyította, hogy a kanonikus production WordPress runtime gyökér továbbra is `/home/sharityh/app`.
+- A publikus belépési pont `public_html/index.php`, de ez csak wrapper, amely az `../app/wp-blog-header.php` runtime-ra mutat.
+- `bin/deploy-wpcontent-map.sh` most már explicit production-origin alignment ellenőrzést futtat erre a wrapper-kapcsolatra.
+- `bin/post-deploy-activate.sh` production pathja korrigálva lett `/home/sharityh/app` értékre.
+- A runbook és az audit/follow-up docs most már ugyanazt a production truth-ot nevezik meg.
+
 ## 2026-04-20T07:00:00+0200 - ads-watch review-fix: trailing resize after burst
 - Review-fix kör: a leading-edge throttle mellé trailing IMA resize futás került, hogy a mobil resize burst utolsó konténermérete se vesszen el.
 - A kapcsolódó postmortem follow-up szövegben javítva lett az `eldobj` → `eldob` elírás.

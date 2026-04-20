@@ -32,6 +32,8 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - Production env: `.deploy.production.env`
 - Guard wrapper: `bin/impactshop-guard-deploy.sh`
 - Mapping deploy: `bin/deploy-wpcontent-map.sh`
+- Production runtime truth: `/home/sharityh/app`
+- Public entry wrapper: `/home/sharityh/public_html/index.php` → `../app/wp-blog-header.php`
 
 ## Staging deploy (guard + mapping)
 ```bash
@@ -63,6 +65,7 @@ bin/impactshop-guard-rollback.sh deploy-YYYYMMDD-HHMMSS
 
 ## Megjegyzések
 - SSH host/user a `.deploy.*.env` fájlokban. A távoli parancsoknál szükség esetén `ssh -t` használható.
+- `public_html` productionön entry wrapper, nem a kanonikus WP runtime gyökér; a guard/deploy path igazsága az `/home/sharityh/app`.
 - Preflight figyelmeztetés (pl. `totals` lassú) deploy-t nem blokkol, de érdemes monitorozni.
 - MP4/asset fájlok ne kerüljenek deployba, ha nem része a mappingnek.
 - Kézi utóellenőrzéshez továbbra is használható: `bin/post-deploy-checklist.sh`, ami már tartalmazza a Hatás Körök smoke-ot is.

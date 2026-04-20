@@ -57,6 +57,37 @@ run_hatas_korok_post_deploy_smoke() {
   fi
 }
 
+verify_production_origin_alignment() {
+  [[ $IS_STAGING -eq 0 ]] || return 0
+  [[ "${REMOTE_WP_PATH:-}" == "/home/sharityh/app" ]] || return 0
+
+  local remote_check=""
+  remote_check="$(ssh -o BatchMode=yes "$SSH_HOST" "python3 - <<'PY'
+from pathlib import Path
+public_index = Path('/home/sharityh/public_html/index.php')
+app_index = Path('/home/sharityh/app/index.php')
+if not public_index.exists() or not app_index.exists():
+    print('missing')
+    raise SystemExit(0)
+txt = public_index.read_text(encoding='utf-8', errors='ignore')
+print('ok' if '../app/wp-blog-header.php' in txt else 'mismatch')
+PY" < /dev/null)"
+
+  case "$remote_check" in
+    ok)
+      echo "✅ Production origin alignment OK: public_html entrypoint -> /home/sharityh/app"
+      ;;
+    missing)
+      echo "❌ Production origin alignment check failed: missing public_html/app index.php" >&2
+      exit 1
+      ;;
+    *)
+      echo "❌ Production origin alignment mismatch: public_html wrapper does not point to /home/sharityh/app" >&2
+      exit 1
+      ;;
+  esac
+}
+
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
   echo "🛡️ DRY-RUN MODE ENABLED — rsync nem ír a távoli szerverre."
   RSYNC_OPTS="${RSYNC_OPTS:-} -n"
@@ -89,6 +120,7 @@ fi
 echo "🎯 Cél: $SSH_HOST:$REMOTE_WP_CONTENT"
 ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
 verify_remote_bastion_manifest "$(dirname "${REMOTE_WP_CONTENT}")"
+verify_production_origin_alignment
 
 # Szelídített rsync opciók (régi verziókhoz is)
 RSYNC_OPTS_SAFE="${RSYNC_OPTS:-}"

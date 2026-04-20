@@ -1,3 +1,10 @@
+## 2026-04-20 08:30 CEST - deploy-path audit lezárva + guard origin check
+- A production deploy-path audit lezárása alapján a kanonikus production runtime továbbra is `/home/sharityh/app`.
+- A `public_html/index.php` csak entry wrapper, amely az `../app/wp-blog-header.php` runtime-ra mutat.
+- `bin/deploy-wpcontent-map.sh` kapott explicit production-origin alignment ellenőrzést erre a wrapper kapcsolatra.
+- `bin/post-deploy-activate.sh` production pathja javítva lett `/home/sharityh/app` értékre.
+- Az audit és a guard follow-up dokumentumok most már lezáró következtetéssel ezt a production truth-ot rögzítik.
+
 ## 2026-04-20 07:00 CEST - ads-watch review-fix: trailing resize after burst
 - PR review visszajelzés alapján a mobil resize throttle most már trailing futást is ütemez, így a burst végén érkező végső konténerméret is átmegy az IMA resize felé.
 - A kapcsolódó postmortem addendum szövegében javítva lett az `eldobj` elírás.
