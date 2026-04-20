@@ -30,17 +30,23 @@
 
 ## Következtetés
 
-A production deploy út jelenleg nincs elég szorosan összezárva a ténylegesen kiszolgált origin/docroot valósággal. A guard deploy runbook és a valós live asset útvonal között legalább egy történeti vagy vhost szintű drift létezik.
+Az audit alapján a kanonikus production WordPress runtime gyökér **`/home/sharityh/app`**.
+
+- A publikus belépési pont **`/home/sharityh/public_html/index.php`**, de ez csak wrapper:
+  - `require __DIR__ . '/../app/wp-blog-header.php';`
+- Ez azt jelenti, hogy a deploy/runbook truth helyesen az `.deploy.production.env` szerinti `/home/sharityh/app`.
+- Az incidens közbeni `app-staging` asset-egyezés nem source-of-truth, hanem környezeti drift/cache parity jel volt.
+- A guard deploy irányt tehát nem átírni kell `app-staging`-re, hanem expliciten rögzíteni, hogy productionön a `public_html` csak entry wrapper, a valódi origin pedig az `app`.
 
 ## Nyitott kérdések
 
-1. Az `app.sharity.hu` tényleges document rootja mi?
-2. Az `/home/sharityh/app-staging` miért tudott egyezni a publikus assettel productionön?
-3. Van-e olyan vhost/symlink/release mapping, amit a `.deploy.production.env` jelenleg nem ír le?
-4. A JS és a PHP miért ugyanabba a drift-mintába futott bele?
+1. Mi okozta pontosan az `app-staging` asset-egyezést az incidens időablakában?
+2. Cache parity, kézi restore vagy történeti fájlszinkron állt mögötte?
+3. Van-e olyan vhost/rewrite vagy operátori útvonal, amely production incidensnél még mindig két pathot érinthet?
 
-## Döntési javaslat
+## Döntés
 
-- A kanonikus production source of truth-ot külön audit eredménnyel ki kell mondani.
-- Addig a mostani incidens-hotfixet érvényes, de nem teljesen kanonikus restore-nak kell tekinteni.
-- A guard deploy infrastruktúrát csak az audit lezárása után szabad átállítani.
+- A production source of truth kimondva: `/home/sharityh/app`
+- A `public_html` szerepe: entry wrapper, nem deploy target
+- A guard deploy infrastruktúrát ehhez kell igazítani és ezzel kell ellenőrizni
+- Az `app-staging` production-egyezést külön drift-megfigyelésként kell kezelni, nem kanonikus célpathként
