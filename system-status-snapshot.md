@@ -1,3 +1,14 @@
+## 2026-04-20T06:45:00+0200 - ads-watch mobile resize hotfix canonicalized + cache-bypass closed
+- A 2026-04-19-es mobil-freeze incidens resize hotfixe most már repo truthként is rögzítve van.
+- `impactshop-ads-watch.js`: IMA resize throttle + hidden-doc guard + tiny-delta skip.
+- `impactshop-ads-watch.php`: asset verzió bump `2.5.65 -> 2.5.66`, hogy az új JS URL megkerülje a beragadt CDN cache-t.
+- Publikus verifikáció megtörtént:
+  - `X-ImpactShop-AdsWatch-Version: 2.5.66`
+  - `impactshop-ads-watch.js?ver=2.5.66`
+  - publikus JS hash: `3cd313f32a253cff5226a8322a971d7f529bba999cf3b698af22a88da48a614b`
+- `impact-challenge-ui-smoke.sh` továbbra is zöld.
+- Külön audit finding rögzítve: a dokumentált production deploy path és a ténylegesen kiszolgált live asset út között drift gyanú áll fenn.
+
 ## 2026-04-17T09:45:00+0200 - analytics guard stabilization: routes + skip telemetry + audit range fix
 - Added signed analytics canary routes in MU runtime: `/wp-json/impact/v1/analytics/summary` and `/wp-json/impact/v1/analytics/flags`.
 - Added SKIP telemetry log (`.codex/logs/analytics-skip-events.log`) and 24h WARN threshold in `scripts/verify/analytics-suite.sh`.
