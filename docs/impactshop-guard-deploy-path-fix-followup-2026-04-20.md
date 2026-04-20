@@ -10,19 +10,26 @@ A guard deploy infrastruktúrát össze kell igazítani a tényleges production 
 - A 2026-04-19-es incidens során a publikus asset-egyezés alapján az `/home/sharityh/app-staging` is érintettnek bizonyult
 - Ez sérti a `Guard scope and source of truth` és a `Canonical guard workflow path` elvet
 
+## Audit eredmény
+
+- A kanonikus production runtime path megerősítve: `/home/sharityh/app`
+- A publikus `public_html/index.php` wrapper innen tölti a WordPress runtime-ot:
+  - `../app/wp-blog-header.php`
+- Ennek megfelelően a production deploy env alapiránya helyes volt; a nyitott rés valójában az volt, hogy ez a wrapper-kapcsolat nem volt explicit guardolt/runbookolt tényként rögzítve
+
 ## Kötelező korrekciók
 
 1. `.deploy.production.env`
-- ellenőrizni kell, hogy a benne lévő `REMOTE_WP_PATH` a tényleges production originre mutat-e
+- lezárt: a benne lévő `REMOTE_WP_PATH=/home/sharityh/app` a tényleges production originre mutat
 
 2. `docs/impactshop-deploy.md`
-- a runbook csak a valós, auditált deploy pathot nevezheti ki production truth-nak
+- frissítve kell kimondania, hogy a production truth az `/home/sharityh/app`, míg `public_html` csak entry wrapper
 
 3. `bin/impactshop-guard-deploy.sh`
 - ellenőrizni kell, hogy ugyanazt a pathot használja, mint a dokumentáció és a live site
 
 4. `bin/deploy-wpcontent-map.sh`
-- production mapping során explicit ellenőrzés kell a tényleges célpathra
+- production mapping során explicit ellenőrzés kell arra, hogy a `public_html` wrapper valóban az `/home/sharityh/app` runtime-ra mutat
 
 5. post-deploy verifikáció
 - az ellenőrzésnek nem elég a HTML route vagy health endpoint
