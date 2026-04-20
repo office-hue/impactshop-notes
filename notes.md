@@ -1,3 +1,27 @@
+## 2026-04-19 16:08 CEST - ads-watch cache-bypass verzióbump lezárva
+- Az `impactshop-ads-watch.php` asset verzió `2.5.65` → `2.5.66` lett, hogy új JS URL keletkezzen purge nélkül.
+- A PHP deploy backup + rollback mellett kiment mindkét érintett példányra:
+  - `/home/sharityh/app/wp-content/mu-plugins/impactshop-ads-watch.php`
+  - `/home/sharityh/app-staging/wp-content/mu-plugins/impactshop-ads-watch.php`
+- Publikus ellenőrzés:
+  - `X-ImpactShop-AdsWatch-Version: 2.5.66`
+  - HTML script URL: `impactshop-ads-watch.js?ver=2.5.66`
+  - publikus JS hash: `3cd313f32a253cff5226a8322a971d7f529bba999cf3b698af22a88da48a614b`
+- `impact-challenge-ui-smoke.sh` zöld maradt, a cache-bypass lezárás sikeres.
+
+## 2026-04-19 15:35 CEST - ads-watch mobile resize hotfix + deploy-path drift
+- Szűk incidens-hotfix készült az `impactshop-ads-watch.js` mobil resize ágára: hidden-doc guard, tiny-delta skip, burst throttle.
+- Protected change record: `docs/protected-change-records/2026-04-19-ads-watch-mobile-resize-throttle-hotfix.md`.
+- A deploy kivizsgálás közben kiderült, hogy a publikus `app.sharity.hu` JS hash nem az `/home/sharityh/app`, hanem az `/home/sharityh/app-staging` példánnyal egyezett.
+- Emiatt a hotfix backup + rollback mellett mindkét pathra kiment: `app` és `app-staging`.
+- Health endpoint és `impact-challenge-ui-smoke.sh` zöld maradt.
+- A publikus asset a frissítés után is Cloudflare `HIT` cache-ből a régi `2.5.65` tartalmat szolgálta, ezért a kliensoldali látható hatás purge vagy verzióbump nélkül nem garantált azonnal.
+
+## 2026-04-19 15:35:17 CEST - impactall auto log
+- **Result:** stale/no-fresh-run
+- **Megjegyzés:** kézi `~/bin/impactall` újrafuttatás indult, de nem írt friss `impactall-last-run.json` állapotot; a legutóbbi ismert snapshot továbbra is `2026-04-17 07:20:24 CEST`, `warn` (warnings=2, errors=0, duration=4s).
+- **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
 ## 2026-04-14 15:50 CET - PR103 review-fix: sandbox trust tightening
 - `impactshop_ads_watch_get_request_write_mode()` mostantól csak admin+nonce kérésnél enged sandbox módot.
 - `write_mode` query param fallback kivezetve (header-only control).

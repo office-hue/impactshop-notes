@@ -10,6 +10,26 @@
 
 ---
 
+## 0.1 Utólagos korrekció — 2026-04-19 resize-hotfix follow-up
+
+> Ez a rész **nem** a v2.5.63 hotfix része, hanem egy későbbi, külön mobil-only incidenskör tanulsága.
+
+- A v2.5.65 környékén új, mobil-specifikus gyanú merült fel: a `handleWindowResize()` minden viewport-változásnál közvetlenül hívta az `adsManager.resize(...)` ágat.
+- Biztonságos, rollback-first hotfix készült, amely:
+  - rejtett dokumentumnál nem resize-ol
+  - kis vagy duplikált méretváltozásokat eldobj
+  - resize burst alatt throttlingot alkalmaz
+- A deploy kivizsgálás közben fontos környezeti drift derült ki:
+  - a production env szerinti célpath `/home/sharityh/app/.../impactshop-ads-watch.js` volt
+  - a publikus `app.sharity.hu` asset hash-e viszont ténylegesen az `/home/sharityh/app-staging/.../impactshop-ads-watch.js` példánnyal egyezett
+  - emiatt a hotfixet mindkét pathra ki kellett tenni backup + rollback mellett
+- A szerveroldali origin frissült, de a publikus URL továbbra is Cloudflare `cf-cache-status: HIT` állapotban a régi assetet szolgálta.
+- Következtetés:
+  - a runtime hotfix önmagában nem elég, ha az asset path vagy CDN cache driftben van
+  - külön purge vagy verzióbump nélkül a kliensoldali validáció hamis negatív lehet
+
+---
+
 ## 1. Összefoglaló idővonal — "Hete szenvedtünk vele"
 
 | Dátum | Esemény | Érintett platformok |
