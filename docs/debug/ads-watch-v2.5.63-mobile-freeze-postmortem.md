@@ -17,7 +17,7 @@
 - A v2.5.65 környékén új, mobil-specifikus gyanú merült fel: a `handleWindowResize()` minden viewport-változásnál közvetlenül hívta az `adsManager.resize(...)` ágat.
 - Biztonságos, rollback-first hotfix készült, amely:
   - rejtett dokumentumnál nem resize-ol
-  - kis vagy duplikált méretváltozásokat eldobj
+  - kis vagy duplikált méretváltozásokat eldob
   - resize burst alatt throttlingot alkalmaz
 - A deploy kivizsgálás közben fontos környezeti drift derült ki:
   - a production env szerinti célpath `/home/sharityh/app/.../impactshop-ads-watch.js` volt
