@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.65');
+define('IMPACTSHOP_ADS_WATCH_VERSION', '2.5.66');
 define('IMPACTSHOP_ADS_WATCH_SCHEMA_VERSION', '9');
 define('IMPACTSHOP_ADS_DONATION_POOL', 500000); // Ft
 

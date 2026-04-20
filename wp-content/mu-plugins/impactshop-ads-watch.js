@@ -105,6 +105,12 @@
         imaProgressFrameId: null,
         imaAdDuration: 0,
         imaClickThroughUrl: '',
+        lastImaResizeAt: 0,
+        lastImaResizeWidth: 0,
+        lastImaResizeHeight: 0,
+        pendingImaResizeWidth: 0,
+        pendingImaResizeHeight: 0,
+        pendingImaResizeTimer: null,
         adLoadTimeout: null,
         adRequestPending: false,
         adRequestStartTime: 0,
@@ -4062,9 +4068,56 @@
         if (state.adsManager && state.isPlaying && (state.currentMode === 'regular' || state.currentMode === 'sponsor')) {
             try {
                 const container = document.getElementById('video-container');
-                if (container && container.clientWidth > 0 && container.clientHeight > 0) {
-                    state.adsManager.resize(container.clientWidth, container.clientHeight, google.ima.ViewMode.NORMAL);
+                if (document.hidden || !container || container.clientWidth <= 0 || container.clientHeight <= 0) {
+                    return;
                 }
+
+                const width = Math.round(container.clientWidth);
+                const height = Math.round(container.clientHeight);
+                const now = Date.now();
+                const deltaWidth = Math.abs(width - Number(state.lastImaResizeWidth || 0));
+                const deltaHeight = Math.abs(height - Number(state.lastImaResizeHeight || 0));
+
+                // Mobile browsers emit resize bursts while browser chrome or
+                // overlays animate. Ignore tiny or duplicate size changes.
+                if (deltaWidth < 8 && deltaHeight < 8) {
+                    return;
+                }
+
+                // Avoid hammering IMA with repeated resize calls in the same burst.
+                if (now - Number(state.lastImaResizeAt || 0) < 200) {
+                    state.pendingImaResizeWidth = width;
+                    state.pendingImaResizeHeight = height;
+                    if (state.pendingImaResizeTimer) {
+                        clearTimeout(state.pendingImaResizeTimer);
+                    }
+                    state.pendingImaResizeTimer = window.setTimeout(function () {
+                        state.pendingImaResizeTimer = null;
+                        if (!state.adsManager || !state.isPlaying || (state.currentMode !== 'regular' && state.currentMode !== 'sponsor')) {
+                            return;
+                        }
+                        if (document.hidden) {
+                            return;
+                        }
+                        var finalWidth = Math.round(Number(state.pendingImaResizeWidth || 0));
+                        var finalHeight = Math.round(Number(state.pendingImaResizeHeight || 0));
+                        if (finalWidth <= 0 || finalHeight <= 0) {
+                            return;
+                        }
+                        state.lastImaResizeAt = Date.now();
+                        state.lastImaResizeWidth = finalWidth;
+                        state.lastImaResizeHeight = finalHeight;
+                        state.adsManager.resize(finalWidth, finalHeight, google.ima.ViewMode.NORMAL);
+                    }, 220);
+                    return;
+                }
+
+                state.lastImaResizeAt = now;
+                state.lastImaResizeWidth = width;
+                state.lastImaResizeHeight = height;
+                state.pendingImaResizeWidth = width;
+                state.pendingImaResizeHeight = height;
+                state.adsManager.resize(width, height, google.ima.ViewMode.NORMAL);
             } catch (e) {
                 // Ignore resize errors
             }
