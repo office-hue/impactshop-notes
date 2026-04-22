@@ -33,6 +33,17 @@ Egyedi hosttal:
   - van `total`
   - az első körnek van `name`
 
+## Settlement picker extra ellenőrzés
+
+- `GET /wp-json/impact/v1/settlements/search?q=P%C3%A9cs`
+  - `HTTP 200`
+  - van `settlements[]`
+  - a találatok közt megjelenik egy valós településnév
+- kézi UI:
+  - settlement filter kiválasztása után látszik a picker panel
+  - legalább egy valós településnévre ad találatot
+  - kattintás után megnyílik a megfelelő kör detail nézet
+
 ## Kézi utóellenőrzés
 
 - Nyisd meg böngészőben a `/hatas-korok` oldalt.

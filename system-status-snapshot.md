@@ -1,3 +1,9 @@
+## 2026-04-22T13:30:00+0200 - feat: Hatás Körök settlement picker országos listával
+- `impact-community.php`: új settlement kereső REST végpont (`/wp-json/impact/v1/settlements/search`) és új find-or-create végpont (`/wp-json/impact/v1/circles/settlement/find-or-create`).
+- `impact-community-app.php`: settlement filter alatt új typeahead picker jelenik meg; a UI már nem a korábban seedelt 2 settlement körre támaszkodik.
+- Településkör létrehozás: on-demand, kanonikus magyar településlista alapján validálva; opcionális CSV override `wp-content/uploads/settlements.csv`-ből.
+- Deploy utáni célzott verifikáció: `/hatas-korok`, settlement picker UI, settlement search endpoint, find-or-create endpoint.
+
 ## 2026-04-17T09:45:00+0200 - analytics guard stabilization: routes + skip telemetry + audit range fix
 - Added signed analytics canary routes in MU runtime: `/wp-json/impact/v1/analytics/summary` and `/wp-json/impact/v1/analytics/flags`.
 - Added SKIP telemetry log (`.codex/logs/analytics-skip-events.log`) and 24h WARN threshold in `scripts/verify/analytics-suite.sh`.

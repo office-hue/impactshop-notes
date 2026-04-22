@@ -1,3 +1,10 @@
+## 2026-04-22 13:30 CET - Hatás Körök: országos settlement picker + on-demand kör létrehozás
+- `impact-community.php`: új `GET /wp-json/impact/v1/settlements/search` végpont és új `POST /wp-json/impact/v1/circles/settlement/find-or-create` végpont.
+- A settlement körök már nem csak előre seedelt DB sorokból érhetők el: a rendszer kanonikus HU településlistából validál, majd első választáskor létrehozza a hiányzó `settlement` kört.
+- `impact-community-app.php`: settlement filter alatt új typeahead picker UI, debounced keresés, találatra kör megnyitás + csatlakozási kísérlet.
+- CSV override támogatás: `wp-content/uploads/settlements.csv` használható a teljes KSH településlista betöltésére kódmódosítás nélkül.
+- Lokális validáció: `php -l wp-content/mu-plugins/impact-community.php` és `php -l wp-content/mu-plugins/impact-community-app.php` OK.
+
 ## 2026-04-14 15:50 CET - PR103 review-fix: sandbox trust tightening
 - `impactshop_ads_watch_get_request_write_mode()` mostantól csak admin+nonce kérésnél enged sandbox módot.
 - `write_mode` query param fallback kivezetve (header-only control).
