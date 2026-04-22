@@ -694,22 +694,61 @@ a:hover { text-decoration: underline; }
     border-left: 3px solid var(--sun);
     background: #FFFBEB;
 }
-.ic-impi-avatar {
-    display: inline-block;
-    background: #FEF3C7;
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
-    text-align: center;
-    line-height: 28px;
-    font-size: 16px;
-    margin-right: 6px;
+.ic-post-author.impi { color: #0ea5e9; }
+.ic-impi-avatar-wrap {
+    position: relative;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
 }
-.ic-post-author.impi {
-    color: #B45309;
+.ic-impi-avatar-wrap video,
+.ic-impi-avatar-wrap img {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    object-fit: cover;
+    display: block;
+    position: relative;
+    z-index: 1;
+}
+.ic-impi-avatar-ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    z-index: 0;
+    animation: impi-ring-pulse 2s ease-in-out infinite;
+    opacity: 0.7;
+}
+@keyframes impi-ring-pulse {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50%       { opacity: 0.9;  transform: scale(1.06); }
+}
+.ic-impi-author-block {
     display: flex;
     align-items: center;
+    gap: 8px;
+}
+.ic-impi-label {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.ic-impi-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0ea5e9;
+    line-height: 1.2;
+}
+.ic-impi-tag {
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(125deg, #2563eb, #0ea5e9);
+    border-radius: 6px;
+    padding: 1px 5px;
+    line-height: 1.4;
+    letter-spacing: 0.3px;
 }
 
 /* Impi Boost — heti kiemelt poszt */
@@ -1591,9 +1630,27 @@ a:hover { text-decoration: underline; }
 
         const head = html('div', {className: 'ic-post-head'});
         if (isImpi) {
-            const authorEl = html('span', {className: 'ic-post-author impi'});
-            authorEl.innerHTML = `<span class="ic-impi-avatar">🦡</span>${p.author_alias}`;
-            head.appendChild(authorEl);
+            const block = html('div', {className: 'ic-impi-author-block'});
+            const wrap = html('div', {className: 'ic-impi-avatar-wrap'});
+            const ring = html('div', {className: 'ic-impi-avatar-ring'});
+            wrap.appendChild(ring);
+            const vid = document.createElement('video');
+            vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
+            const src = document.createElement('source');
+            src.src = 'https://app.sharity.hu/wp-content/uploads/2025/12/Impi-Loop_Animation_Request.mp4';
+            src.type = 'video/mp4';
+            vid.appendChild(src);
+            const img = document.createElement('img');
+            img.src = 'https://app.sharity.hu/wp-content/uploads/2025/12/20251125_0859_Coupon-Hunter-Meerkat_simple_compose_01kax0a6g0f24va5gd51a68gra.png';
+            img.alt = 'Impi';
+            vid.appendChild(img);
+            wrap.appendChild(vid);
+            block.appendChild(wrap);
+            const lbl = html('div', {className: 'ic-impi-label'});
+            lbl.appendChild(html('span', {className: 'ic-impi-name'}, p.author_alias || 'Impi'));
+            lbl.appendChild(html('span', {className: 'ic-impi-tag'}, 'AI'));
+            block.appendChild(lbl);
+            head.appendChild(block);
         } else {
             const authorPrefix = p.author_type === 'ngo' ? '🏢 ' : '';
             head.appendChild(html('span', {className: 'ic-post-author'}, authorPrefix + p.author_alias));
