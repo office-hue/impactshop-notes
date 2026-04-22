@@ -21,7 +21,7 @@ if (!defined('IMPACT_COMMUNITY_ENABLED') || !IMPACT_COMMUNITY_ENABLED) {
    Constants
    ========================================================================= */
 
-define('IC_DB_VERSION', '1.3.7');
+define('IC_DB_VERSION', '1.3.9');
 define('IC_MAX_CIRCLES', 10);
 define('IC_MAX_BODY_LENGTH', 600);
 define('IC_POSTS_PER_PAGE', 20);
@@ -332,6 +332,236 @@ function ic_json_error(string $message, int $status = 400): WP_Error {
 function ic_json_ok(array $data = [], int $status = 200): WP_REST_Response {
     $r = new WP_REST_Response($data, $status);
     return $r;
+}
+
+function ic_mask_target(string $channel, string $target): string {
+    $target = trim($target);
+    if ($target === '') {
+        return '';
+    }
+    if ($channel === 'sms') {
+        $digits = preg_replace('~\D+~', '', $target);
+        if (strlen($digits) <= 4) {
+            return str_repeat('*', strlen($digits));
+        }
+        return str_repeat('*', max(strlen($digits) - 4, 0)) . substr($digits, -4);
+    }
+
+    if (!str_contains($target, '@')) {
+        return '***';
+    }
+
+    [$local, $domain] = explode('@', $target, 2);
+    $localMasked = substr($local, 0, 1) . str_repeat('*', max(strlen($local) - 1, 0));
+    return $localMasked . '@' . $domain;
+}
+
+function ic_generate_verification_code(): string {
+    return (string) random_int(100000, 999999);
+}
+
+function ic_valid_bank_account(string $bank): bool {
+    $clean = preg_replace('~[^0-9-]~', '', $bank);
+    return (bool) preg_match('~^[0-9]{8}-[0-9]{8}-[0-9]{8}$~', $clean);
+}
+
+function ic_valid_hu_tax_number(string $value): bool {
+    $value = trim($value);
+    if ($value === '') {
+        return true;
+    }
+    return (bool) preg_match('~^[0-9]{8}-[0-9]-[0-9]{2}$~', $value);
+}
+
+function ic_org_string_norm(string $value): string {
+    $value = mb_strtolower(trim($value), 'UTF-8');
+    $value = preg_replace('~\s+~u', ' ', $value);
+    return (string) $value;
+}
+
+function ic_org_lookup_exact_ngo(string $org_name): array|WP_Error|null {
+    if (!class_exists('ImpactShop_Cegjelzo_Client')) {
+        return new WP_Error('ic_cegjelzo_unavailable', 'A Cegjelzo szolgaltatas jelenleg nem elerheto.', ['status' => 503]);
+    }
+
+    $client = new ImpactShop_Cegjelzo_Client();
+    $result = $client->autocomplete_civil_org($org_name, 10);
+    if (is_wp_error($result)) {
+        return $result;
+    }
+
+    $rows = [];
+    if (isset($result['items']) && is_array($result['items'])) {
+        $rows = $result['items'];
+    } elseif (isset($result['data']) && is_array($result['data'])) {
+        $rows = $result['data'];
+    } elseif (is_array($result)) {
+        $rows = $result;
+    }
+
+    $needle = ic_org_string_norm($org_name);
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $name = (string) ($row['official_name'] ?? $row['name'] ?? $row['short_name'] ?? '');
+        if ($name === '') {
+            continue;
+        }
+        if (ic_org_string_norm($name) === $needle) {
+            return [
+                'name' => $name,
+                'slug' => sanitize_title($name),
+                'registry_id' => (string) ($row['registration_number'] ?? $row['id'] ?? ''),
+                'tax_number' => (string) ($row['tax_number'] ?? ''),
+                'status_label' => (string) ($row['status_label'] ?? $row['status'] ?? ''),
+                'activity' => (string) ($row['activity'] ?? ''),
+            ];
+        }
+    }
+
+    return null;
+}
+
+function ic_org_slug_name_consistent(string $circle_name, string $cegjelzo_name): bool {
+    $a = ic_org_string_norm($circle_name);
+    $b = ic_org_string_norm($cegjelzo_name);
+    if ($a === '' || $b === '') {
+        return false;
+    }
+    if ($a === $b) {
+        return true;
+    }
+    return sanitize_title($circle_name) === sanitize_title($cegjelzo_name);
+}
+
+function ic_org_is_approved(array $row): bool {
+    if (($row['status'] ?? '') !== 'verified') {
+        return false;
+    }
+    $approval = (string) ($row['approval_status'] ?? '');
+    if ($approval === '') {
+        // Backward compatibility for rows created before admin-approval rollout.
+        return true;
+    }
+    return $approval === 'approved';
+}
+
+function ic_org_send_verification_email(string $target, string $code): bool {
+    $subject = 'Impact Community szervezeti megerosito kod';
+    $message = "A megerosito kodod: {$code}\n\nA kod 15 percig ervenyes.";
+    return wp_mail($target, $subject, $message);
+}
+
+function ic_org_send_verification_sms(string $target, string $code): bool {
+    $apiKey = defined('IMPACTSHOP_VONAGE_API_KEY') ? (string) IMPACTSHOP_VONAGE_API_KEY : (string) get_option('impactshop_vonage_api_key', '');
+    $apiSecret = defined('IMPACTSHOP_VONAGE_API_SECRET') ? (string) IMPACTSHOP_VONAGE_API_SECRET : (string) get_option('impactshop_vonage_api_secret', '');
+    $from = defined('IMPACTSHOP_VONAGE_FROM') ? (string) IMPACTSHOP_VONAGE_FROM : ((string) get_option('impactshop_vonage_from', '') ?: 'ImpactShop');
+
+    if ($apiKey === '' || $apiSecret === '') {
+        return false;
+    }
+
+    $resp = wp_remote_post('https://rest.nexmo.com/sms/json', [
+        'timeout' => 15,
+        'body' => [
+            'api_key' => $apiKey,
+            'api_secret' => $apiSecret,
+            'to' => $target,
+            'from' => $from,
+            'text' => 'Impact Community kod: ' . $code,
+        ],
+    ]);
+
+    if (is_wp_error($resp)) {
+        return false;
+    }
+
+    $json = json_decode(wp_remote_retrieve_body($resp), true);
+    $status = (string) (($json['messages'][0]['status'] ?? '1'));
+    return $status === '0';
+}
+
+function ic_org_verification_row_for_pid(string $pid_hash): ?array {
+    global $wpdb;
+    $p = $wpdb->prefix;
+    if ($pid_hash === '') {
+        return null;
+    }
+
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_org_verifications WHERE pid_hash=%s LIMIT 1",
+        $pid_hash
+    ), ARRAY_A);
+
+    return is_array($row) ? $row : null;
+}
+
+function ic_org_verification_public_payload(?array $row): array {
+    if (!$row) {
+        return [
+            'registered' => false,
+            'verified' => false,
+        ];
+    }
+
+    return [
+        'registered' => true,
+        'verified' => (($row['status'] ?? '') === 'verified'),
+        'approved' => ic_org_is_approved($row),
+        'status' => (string) ($row['status'] ?? 'pending'),
+        'approval_status' => (string) ($row['approval_status'] ?? ''),
+        'approval_rejection_reason' => (string) ($row['rejection_reason'] ?? ''),
+        'org_type' => (string) ($row['org_type'] ?? ''),
+        'org_name' => (string) ($row['org_name'] ?? ''),
+        'org_slug' => (string) ($row['org_slug'] ?? ''),
+        'bank_account' => (string) ($row['bank_account'] ?? ''),
+        'verification_channel' => (string) ($row['verification_channel'] ?? ''),
+        'verification_target_masked' => ic_mask_target((string) ($row['verification_channel'] ?? ''), (string) ($row['verification_target'] ?? '')),
+        'verified_at' => (string) ($row['verified_at'] ?? ''),
+        'approved_at' => (string) ($row['approved_at'] ?? ''),
+    ];
+}
+
+function ic_org_verification_admin_payload(array $row): array {
+    return [
+        'id' => (int) ($row['id'] ?? 0),
+        'pid_hash_short' => substr((string) ($row['pid_hash'] ?? ''), 0, 10) . '...',
+        'org_type' => (string) ($row['org_type'] ?? ''),
+        'org_name' => (string) ($row['org_name'] ?? ''),
+        'org_slug' => (string) ($row['org_slug'] ?? ''),
+        'bank_account' => (string) ($row['bank_account'] ?? ''),
+        'org_registry_id' => (string) ($row['org_registry_id'] ?? ''),
+        'org_tax_number' => (string) ($row['org_tax_number'] ?? ''),
+        'org_status_label' => (string) ($row['org_status_label'] ?? ''),
+        'org_activity' => (string) ($row['org_activity'] ?? ''),
+        'verification_channel' => (string) ($row['verification_channel'] ?? ''),
+        'verification_target_masked' => ic_mask_target((string) ($row['verification_channel'] ?? ''), (string) ($row['verification_target'] ?? '')),
+        'status' => (string) ($row['status'] ?? ''),
+        'approval_status' => (string) ($row['approval_status'] ?? ''),
+        'rejection_reason' => (string) ($row['rejection_reason'] ?? ''),
+        'created_at' => (string) ($row['created_at'] ?? ''),
+        'verified_at' => (string) ($row['verified_at'] ?? ''),
+        'approved_at' => (string) ($row['approved_at'] ?? ''),
+    ];
+}
+
+function ic_org_audit_log(int $registration_id, string $action, array $before = [], array $after = [], string $note = ''): void {
+    global $wpdb;
+    $p = $wpdb->prefix;
+    if ($registration_id <= 0 || $action === '') {
+        return;
+    }
+
+    $wpdb->insert("{$p}ic_org_verification_audit", [
+        'registration_id' => $registration_id,
+        'action' => $action,
+        'actor_user_id' => (int) get_current_user_id(),
+        'note' => $note !== '' ? $note : null,
+        'before_json' => !empty($before) ? wp_json_encode($before) : null,
+        'after_json' => !empty($after) ? wp_json_encode($after) : null,
+        'created_at' => current_time('mysql'),
+    ]);
 }
 
 function ic_verify_state_nonce(WP_REST_Request $req): true|WP_Error {
@@ -716,6 +946,73 @@ function ic_maybe_migrate_db(): void {
         UNIQUE KEY uq_email (email)
     ) $charset;");
 
+    dbDelta("CREATE TABLE {$p}ic_org_verifications (
+        id                   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        pid_hash             VARCHAR(64) NOT NULL,
+        org_type             ENUM('ngo','municipality') NOT NULL,
+        org_slug             VARCHAR(120) DEFAULT NULL,
+        org_name             VARCHAR(255) NOT NULL,
+        org_registry_id      VARCHAR(80) DEFAULT NULL,
+        org_tax_number       VARCHAR(40) DEFAULT NULL,
+        org_status_label     VARCHAR(120) DEFAULT NULL,
+        org_activity         VARCHAR(255) DEFAULT NULL,
+        bank_account         VARCHAR(64) NOT NULL,
+        verification_channel ENUM('email','sms') NOT NULL,
+        verification_target  VARCHAR(254) NOT NULL,
+        verification_code    VARCHAR(10) DEFAULT NULL,
+        verification_expires DATETIME DEFAULT NULL,
+        status               ENUM('pending','verified','rejected') NOT NULL DEFAULT 'pending',
+        approval_status      ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+        verified_at          DATETIME DEFAULT NULL,
+        approved_at          DATETIME DEFAULT NULL,
+        approved_by          BIGINT UNSIGNED DEFAULT NULL,
+        rejection_reason     VARCHAR(255) DEFAULT NULL,
+        metadata_json        LONGTEXT DEFAULT NULL,
+        created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at           DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_pid_hash (pid_hash),
+        KEY idx_org_slug (org_slug),
+        KEY idx_status (status)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE {$p}ic_org_verification_audit (
+        id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        registration_id   BIGINT UNSIGNED NOT NULL,
+        action            VARCHAR(60) NOT NULL,
+        actor_user_id     BIGINT UNSIGNED DEFAULT NULL,
+        note              VARCHAR(255) DEFAULT NULL,
+        before_json       LONGTEXT DEFAULT NULL,
+        after_json        LONGTEXT DEFAULT NULL,
+        created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_registration (registration_id),
+        KEY idx_action (action)
+    ) $charset;");
+
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_org_verifications LIKE 'approval_status'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_org_verifications ADD COLUMN approval_status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending' AFTER status");
+    }
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_org_verifications LIKE 'approved_at'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_org_verifications ADD COLUMN approved_at DATETIME DEFAULT NULL AFTER verified_at");
+    }
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_org_verifications LIKE 'approved_by'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_org_verifications ADD COLUMN approved_by BIGINT UNSIGNED DEFAULT NULL AFTER approved_at");
+    }
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_org_verifications LIKE 'rejection_reason'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_org_verifications ADD COLUMN rejection_reason VARCHAR(255) DEFAULT NULL AFTER approved_by");
+    }
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_org_verifications LIKE 'verification_attempts'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_org_verifications ADD COLUMN verification_attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0 AFTER verification_expires");
+    }
+    $col = $wpdb->get_results("SHOW COLUMNS FROM {$p}ic_org_verifications LIKE 'locked_until'");
+    if (empty($col)) {
+        $wpdb->query("ALTER TABLE {$p}ic_org_verifications ADD COLUMN locked_until DATETIME DEFAULT NULL AFTER verification_attempts");
+    }
+
     /* §13 Advisor usage tracking */
     $wpdb->query("CREATE TABLE IF NOT EXISTS `{$p}ic_ngo_advisor_usage` (
         `id`         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -975,6 +1272,54 @@ function ic_register_rest_routes(): void {
         'callback'            => 'ic_rest_ngo_reset_confirm',
         'permission_callback' => '__return_true',
     ]);
+    register_rest_route($ns, '/org/lookup-ngo', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_org_lookup_ngo',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/org/registration/start', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_org_registration_start',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/org/registration/verify', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_org_registration_verify',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/org/registration/me', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_org_registration_me',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/org/registration/queue', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_org_registration_queue',
+        'permission_callback' => function () {
+            return current_user_can('manage_options');
+        },
+    ]);
+    register_rest_route($ns, '/org/registration/(?P<id>\d+)/decision', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_org_registration_decision',
+        'permission_callback' => function () {
+            return current_user_can('manage_options');
+        },
+    ]);
+    register_rest_route($ns, '/org/registration/audit', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_org_registration_audit',
+        'permission_callback' => function () {
+            return current_user_can('manage_options');
+        },
+    ]);
+    register_rest_route($ns, '/org/registration/audit-export', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_org_registration_audit_export',
+        'permission_callback' => function () {
+            return current_user_can('manage_options');
+        },
+    ]);
     register_rest_route($ns, '/ngo/circle', [
         'methods'             => 'GET',
         'callback'            => 'ic_rest_ngo_circle_stats',
@@ -1186,6 +1531,291 @@ function ic_register_rest_routes(): void {
         'callback'            => 'ic_rest_ngo_moderation_action',
         'permission_callback' => '__return_true',
     ]);
+
+    /* --- Settlements (§16) ---------------------------------------------- */
+    register_rest_route($ns, '/settlements/search', [
+        'methods'             => 'GET',
+        'callback'            => 'ic_rest_settlements_search',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route($ns, '/circles/settlement/find-or-create', [
+        'methods'             => 'POST',
+        'callback'            => 'ic_rest_settlement_find_or_create',
+        'permission_callback' => '__return_true',
+    ]);
+}
+
+/* =========================================================================
+   §16 — Settlements canonical list + find-or-create
+   ========================================================================= */
+
+/**
+ * Returns the canonical list of Hungarian settlements.
+ *
+ * Override: upload wp-content/uploads/settlements.csv (one settlement per line,
+ * UTF-8) and it will be loaded instead of the hardcoded list below.
+ *
+ * @return array<int, array{name: string, slug: string}>
+ */
+function ic_get_hungary_settlements(): array {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+
+    // CSV override check
+    $csv_path = WP_CONTENT_DIR . '/uploads/settlements.csv';
+    if (file_exists($csv_path)) {
+        $lines = file($csv_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!empty($lines)) {
+            $cache = [];
+            foreach ($lines as $line) {
+                $name = sanitize_text_field(trim((string) $line));
+                if ($name !== '' && mb_strlen($name) >= 2) {
+                    $cache[] = ['name' => $name, 'slug' => 'hu-' . sanitize_title($name)];
+                }
+            }
+            return $cache;
+        }
+    }
+
+    // Hardcoded canonical list (~400 major settlements — all városok + district seats).
+    // For the complete 3 155-entry KSH list, upload uploads/settlements.csv.
+    $raw = [
+        // Budapest kerületek
+        'Budapest I. kerület', 'Budapest II. kerület', 'Budapest III. kerület',
+        'Budapest IV. kerület', 'Budapest V. kerület', 'Budapest VI. kerület',
+        'Budapest VII. kerület', 'Budapest VIII. kerület', 'Budapest IX. kerület',
+        'Budapest X. kerület', 'Budapest XI. kerület', 'Budapest XII. kerület',
+        'Budapest XIII. kerület', 'Budapest XIV. kerület', 'Budapest XV. kerület',
+        'Budapest XVI. kerület', 'Budapest XVII. kerület', 'Budapest XVIII. kerület',
+        'Budapest XIX. kerület', 'Budapest XX. kerület', 'Budapest XXI. kerület',
+        'Budapest XXII. kerület', 'Budapest XXIII. kerület',
+
+        // Baranya
+        'Pécs', 'Komló', 'Mohács', 'Siklós', 'Szigetvár', 'Pécsvárad', 'Sellye', 'Villány',
+        'Bóly', 'Orfű', 'Harkány', 'Beremend', 'Sásd', 'Mágocs', 'Kozármisleny', 'Pellérd',
+
+        // Bács-Kiskun
+        'Kecskemét', 'Baja', 'Kiskunfélegyháza', 'Kiskunhalas', 'Kalocsa', 'Kiskunmajsa',
+        'Tiszakécske', 'Lajosmizse', 'Kunszentmiklós', 'Izsák', 'Kiskőrös', 'Soltvadkert',
+        'Jánoshalma', 'Kecel', 'Dunapataj', 'Apostag', 'Solt', 'Mélykút', 'Tompa',
+        'Csávoly', 'Kunbaja', 'Vaskút', 'Bácsalmás',
+
+        // Békés
+        'Békéscsaba', 'Gyula', 'Orosháza', 'Békés', 'Szarvas', 'Mezőkovácsháza', 'Sarkad',
+        'Gyomaendrőd', 'Battonya', 'Dévaványa', 'Mezőberény', 'Tótkomlós', 'Kondoros',
+        'Füzesgyarmat', 'Békésszentandrás', 'Vésztő', 'Köröstarcsa',
+
+        // Borsod-Abaúj-Zemplén
+        'Miskolc', 'Kazincbarcika', 'Ózd', 'Tiszaújváros', 'Sátoraljaújhely', 'Sárospatak',
+        'Mezőkövesd', 'Encs', 'Szerencs', 'Tokaj', 'Edelény', 'Putnok', 'Szikszó', 'Gönc',
+        'Boldva', 'Bodrogkeresztúr', 'Abaújszántó', 'Füzér', 'Mád', 'Tállya', 'Hernádnémeti',
+        'Sajószentpéter', 'Sajóbábony', 'Emőd', 'Hejőbába',
+
+        // Csongrád-Csanád
+        'Szeged', 'Hódmezővásárhely', 'Szentes', 'Makó', 'Csongrád', 'Mórahalom',
+        'Mindszent', 'Csanytelek', 'Kistelek', 'Ásotthalom', 'Domaszék', 'Balástya',
+        'Algyő', 'Röszke', 'Szőreg', 'Deszk',
+
+        // Fejér
+        'Székesfehérvár', 'Dunaújváros', 'Mór', 'Bicske', 'Enying', 'Sárbogárd',
+        'Martonvásár', 'Polgárdi', 'Aba', 'Adony', 'Dunavecse', 'Lajoskomárom',
+        'Tác', 'Szabadbattyán', 'Gárdony', 'Velence', 'Agárd',
+
+        // Győr-Moson-Sopron
+        'Győr', 'Sopron', 'Mosonmagyaróvár', 'Kapuvár', 'Csorna', 'Fertőd',
+        'Győrújbarát', 'Lébény', 'Fertőszentmiklós', 'Beled', 'Fertőendréd',
+        'Abda', 'Győrladamér', 'Győrszemere', 'Győrzámoly', 'Mecsér', 'Öttevény',
+        'Jánossomorja', 'Kimle', 'Halászi', 'Dunasziget', 'Ásványráró', 'Győrújfalu',
+        'Fertőrákos',
+
+        // Hajdú-Bihar
+        'Debrecen', 'Hajdúböszörmény', 'Hajdúszoboszló', 'Hajdúnánás', 'Hajdúdorog',
+        'Hajdúhadház', 'Berettyóújfalu', 'Püspökladány', 'Balmazújváros', 'Biharkeresztes',
+        'Nádudvar', 'Téglás', 'Nyírábrány', 'Derecske', 'Mikepércs', 'Hosszúpályi',
+        'Monostorpályi', 'Hajdúbagos', 'Álmosd', 'Létavértes',
+
+        // Heves
+        'Eger', 'Gyöngyös', 'Hatvan', 'Heves', 'Füzesabony', 'Pétervására',
+        'Bélapátfalva', 'Recsk', 'Lőrinci', 'Hatvany', 'Maklár', 'Ostoros',
+        'Verpeléti', 'Gyöngyöspata', 'Gyöngyöstarján', 'Domoszló',
+
+        // Jász-Nagykun-Szolnok
+        'Szolnok', 'Jászberény', 'Karcag', 'Törökszentmiklós', 'Kunszentmárton',
+        'Tiszafüred', 'Kisújszállás', 'Jászapáti', 'Jászárokszállás', 'Tiszaföldvár',
+        'Martfű', 'Kunhegyes', 'Mezőtúr', 'Fegyvernek', 'Kenderes', 'Jánoshida',
+        'Rákóczifalva', 'Szajol', 'Jászkisér', 'Jászdózsa', 'Tiszapüspöki',
+
+        // Komárom-Esztergom
+        'Tatabánya', 'Esztergom', 'Komárom', 'Oroszlány', 'Tata', 'Dorog', 'Ács',
+        'Kisbér', 'Lábatlan', 'Nyergesújfalu', 'Süttő', 'Tardos', 'Tokod',
+        'Bajót', 'Esztergom-Kertváros',
+
+        // Nógrád
+        'Salgótarján', 'Balassagyarmat', 'Pásztó', 'Bátonyterenye', 'Szécsény',
+        'Rétság', 'Karancskeszi', 'Nógrádmegyer', 'Romhány', 'Kozárd',
+
+        // Pest
+        'Érd', 'Gödöllő', 'Vác', 'Cegléd', 'Dunakeszi', 'Budaörs', 'Törökbálint',
+        'Szentendre', 'Ráckeve', 'Monor', 'Albertirsa', 'Gyál', 'Fót', 'Szigetszentmiklós',
+        'Gyömrő', 'Pomáz', 'Vecsés', 'Nagykáta', 'Aszód', 'Abony', 'Pilis', 'Göd',
+        'Nagykőrös', 'Dunavarsány', 'Pécel', 'Maglód', 'Ecser', 'Üllő', 'Ocsa',
+        'Dabas', 'Pánd', 'Ceglédbercel', 'Tápiószele', 'Tápiószentmárton', 'Tápiógyörgye',
+        'Tápióbicske', 'Tápióság', 'Kóka', 'Galgahévíz', 'Tura', 'Bag', 'Domony',
+        'Hévízgyörk', 'Kartal', 'Valkó', 'Isaszeg', 'Kistarcsa', 'Péteri', 'Nyáregyháza',
+        'Sülysáp', 'Kakucs', 'Vasad', 'Inárcs', 'Inárcsi', 'Bugyi', 'Dömsöd', 'Apaj',
+        'Kiskunlacháza', 'Dunaharaszti', 'Taksony', 'Délegyháza', 'Szigetcsép',
+        'Szigetújfalu', 'Szigetszentmárton', 'Halásztelek', 'Százhalombatta',
+        'Diósd', 'Érd-Ófalu', 'Biatorbágy', 'Budakeszi', 'Budajenő', 'Telki',
+        'Páty', 'Zsámbék', 'Etyek', 'Mány', 'Bicske', 'Alcsútdoboz', 'Tabajd',
+        'Csabdi', 'Vácduka', 'Vácrátót', 'Váchartyán', 'Szokolya', 'Verőce',
+        'Kismaros', 'Zebegény', 'Szob', 'Letkés', 'Helemba', 'Pilismarót',
+        'Dömös', 'Visegrád', 'Pilisszentlászló', 'Pomáz', 'Budakalász',
+        'Pilisborosjenő', 'Solymár', 'Pilisvörösvár', 'Pilisszentiván',
+        'Piliscsaba', 'Csobánka', 'Szentendre', 'Leányfalu', 'Tahitótfalu',
+        'Pócsmegyer', 'Szigetmonostor', 'Horány',
+
+        // Somogy
+        'Kaposvár', 'Marcali', 'Siófok', 'Nagyatád', 'Barcs', 'Tab', 'Fonyód',
+        'Balatonlelle', 'Balatonboglár', 'Lengyeltóti', 'Csurgó', 'Zamárdi',
+        'Balatonföldvár', 'Balatonszárszó', 'Somogyvár', 'Balatonszemes',
+        'Balatonberény', 'Balatonmáriafürdő', 'Őszöd', 'Balatonőszöd',
+        'Kőröshegy', 'Szárszó', 'Taszár', 'Kaposújlak',
+
+        // Szabolcs-Szatmár-Bereg
+        'Nyíregyháza', 'Kisvárda', 'Mátészalka', 'Fehérgyarmat', 'Nyírbátor',
+        'Vásárosnamény', 'Záhony', 'Baktalórántháza', 'Nyírtelek', 'Nyírtura',
+        'Mándok', 'Kemecse', 'Demecser', 'Ibrány', 'Tiszabercel', 'Tiszavasvári',
+        'Nyírpazony', 'Tiszalök', 'Tiszadada', 'Rakamaz', 'Szabolcs',
+        'Balkány', 'Nagykálló', 'Nyíradony', 'Nyírmártonfalva', 'Nyíregyháza',
+        'Kállósemjén', 'Nyírbogát', 'Piricse', 'Nyírgyulaj', 'Ófehértó',
+        'Tiszabezdéd', 'Tiszaszalka', 'Vásárosnamény',
+
+        // Tolna
+        'Szekszárd', 'Dombóvár', 'Bonyhád', 'Paks', 'Tamási', 'Tolna', 'Bátaszék',
+        'Fadd', 'Bölcske', 'Madocsa', 'Paks', 'Dunakömlőd', 'Kölesd',
+        'Hőgyész', 'Értény', 'Dalmand', 'Závod',
+
+        // Vas
+        'Szombathely', 'Körmend', 'Kőszeg', 'Sárvár', 'Szentgotthárd', 'Vasvár',
+        'Celldömölk', 'Bük', 'Őriszentpéter', 'Répcelak', 'Jánosháza',
+        'Egyházasrádóc', 'Ikervár', 'Nárai', 'Rum', 'Pecöl', 'Meggyeskovácsi',
+
+        // Veszprém
+        'Veszprém', 'Ajka', 'Pápa', 'Tapolca', 'Devecser', 'Zirc', 'Sümeg',
+        'Várpalota', 'Balatonfüred', 'Balatonfűzfő', 'Balatonalmádi', 'Herend',
+        'Ugod', 'Somlóvásárhely', 'Pula', 'Vigántpetend', 'Tótvázsony',
+        'Veszprémfajsz', 'Hajmáskér', 'Öskü', 'Litér', 'Nemesvámos',
+        'Márkó', 'Bánd', 'Tés', 'Eplény', 'Bakonybél', 'Porva', 'Borzavár',
+        'Csesznek', 'Olaszfalu', 'Bakonyoszlop', 'Fenyőfő',
+
+        // Zala
+        'Zalaegerszeg', 'Nagykanizsa', 'Keszthely', 'Lenti', 'Letenye',
+        'Zalaszentgrót', 'Zalakomár', 'Hévíz', 'Gyenesdiás', 'Vonyarcvashegy',
+        'Balatongyörök', 'Balatonszentgyörgy', 'Fenékpuszta', 'Sármellék',
+        'Zalaszentmihály', 'Zalakaros', 'Galambok', 'Nagyrécse', 'Sormás',
+        'Miklósfa', 'Pogányszentpéter', 'Homokkomárom',
+    ];
+
+    $cache = array_values(array_map(
+        static fn(string $n): array => ['name' => $n, 'slug' => 'hu-' . sanitize_title($n)],
+        $raw
+    ));
+    return $cache;
+}
+
+/**
+ * GET /impact/v1/settlements/search?q=<query>
+ * Returns up to 20 matching settlements from the canonical list.
+ */
+function ic_rest_settlements_search(WP_REST_Request $req): WP_REST_Response {
+    $q = mb_strtolower(sanitize_text_field((string) ($req->get_param('q') ?? '')));
+    if (mb_strlen($q) < 2) {
+        return new WP_REST_Response(['settlements' => []], 200);
+    }
+
+    $all     = ic_get_hungary_settlements();
+    $matches = [];
+    foreach ($all as $s) {
+        if (mb_strpos(mb_strtolower($s['name']), $q) !== false) {
+            $matches[] = $s;
+            if (count($matches) === 20) break;
+        }
+    }
+    return new WP_REST_Response(['settlements' => $matches], 200);
+}
+
+/**
+ * POST /impact/v1/circles/settlement/find-or-create
+ * Body JSON: { "settlement_name": "Pécs" }
+ *
+ * Validates the name against the canonical list, then finds the existing
+ * settlement circle or creates a new one on demand.
+ * Returns { circle_id, name, created }.
+ */
+function ic_rest_settlement_find_or_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $name = sanitize_text_field((string) ($req->get_param('settlement_name') ?? ''));
+    if (mb_strlen($name) < 2) {
+        return new WP_Error('invalid_settlement', 'A település neve túl rövid.', ['status' => 422]);
+    }
+
+    // Validate against canonical list
+    $all       = ic_get_hungary_settlements();
+    $canonical = null;
+    $name_lc   = mb_strtolower($name);
+    foreach ($all as $s) {
+        if (mb_strtolower($s['name']) === $name_lc) {
+            $canonical = $s;
+            break;
+        }
+    }
+    if ($canonical === null) {
+        return new WP_Error(
+            'unknown_settlement',
+            'Ismeretlen település. Keresd a listában!',
+            ['status' => 422]
+        );
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    // Find existing settlement circle
+    $existing = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, name FROM {$p}ic_circles WHERE type = 'settlement' AND ref_slug = %s LIMIT 1",
+        $canonical['slug']
+    ));
+
+    if ($existing) {
+        return new WP_REST_Response(
+            ['circle_id' => (int) $existing->id, 'name' => $existing->name, 'created' => false],
+            200
+        );
+    }
+
+    // Create new settlement circle on demand
+    $inserted = $wpdb->insert(
+        "{$p}ic_circles",
+        [
+            'type'         => 'settlement',
+            'ref_slug'     => $canonical['slug'],
+            'name'         => $canonical['name'],
+            'description'  => '',
+            'is_active'    => 1,
+            'member_count' => 0,
+            'post_count'   => 0,
+            'created_at'   => current_time('mysql'),
+        ],
+        ['%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s']
+    );
+
+    if (!$inserted) {
+        return new WP_Error('db_error', 'Nem sikerült létrehozni a kört.', ['status' => 500]);
+    }
+
+    return new WP_REST_Response(
+        ['circle_id' => (int) $wpdb->insert_id, 'name' => $canonical['name'], 'created' => true],
+        201
+    );
 }
 
 /* --- Circles handlers --------------------------------------------------- */
@@ -1680,10 +2310,27 @@ function ic_rest_post_create(WP_REST_Request $req): WP_REST_Response|WP_Error {
         $meta = wp_json_encode($meta_arr);
     }
 
+    $authorType = 'user';
+    $verifiedOrg = ic_org_verification_row_for_pid($pid_hash);
+    if (is_array($verifiedOrg) && ic_org_is_approved($verifiedOrg)) {
+        if (($verifiedOrg['org_type'] ?? '') === 'ngo') {
+            $authorType = 'ngo';
+        }
+
+        $meta_arr = ($meta_raw && is_array($meta_raw)) ? $meta_raw : [];
+        $meta_arr['official_org'] = [
+            'verified' => true,
+            'org_type' => (string) ($verifiedOrg['org_type'] ?? ''),
+            'org_name' => (string) ($verifiedOrg['org_name'] ?? ''),
+            'org_slug' => (string) ($verifiedOrg['org_slug'] ?? ''),
+        ];
+        $meta = wp_json_encode($meta_arr);
+    }
+
     $inserted = $wpdb->insert("{$p}ic_posts", [
         'circle_id'   => $cid,
         'author_hash' => $pid_hash,
-        'author_type' => 'user',
+        'author_type' => $authorType,
         'post_type'   => $post_type,
         'body'        => $body,
         'meta_json'   => $meta,
@@ -2110,15 +2757,20 @@ function ic_rest_auth_status(WP_REST_Request $req): WP_REST_Response {
     $pseudo = ic_get_pseudo_id();
     $pid_hash = ic_pid_hash($pseudo);
     $test_mode = ic_test_mode_enabled();
+    $orgRow = $pid_hash !== '' ? ic_org_verification_row_for_pid($pid_hash) : null;
 
     return ic_json_ok([
         'authenticated' => $pseudo !== '',
+        'is_admin'      => current_user_can('manage_options'),
         'pid_hash'      => $pid_hash ? substr($pid_hash, 0, 8) . '...' : '',
         'nonce'         => wp_create_nonce('wp_rest'),
         'pseudo_id'     => $pseudo,
         'test_mode'     => $test_mode,
         'ngo_slug'      => $test_mode ? ic_test_mode_requested_ngo_slug($req) : '',
         'ngo_admin_url' => site_url('/impact-shop_ngo/'),
+        'org_registration_url' => site_url('/hatas-korok/#org-register'),
+        'org_admin_url' => site_url('/hatas-korok-admin/'),
+        'org_registration' => ic_org_verification_public_payload($orgRow),
     ]);
 }
 
@@ -2697,7 +3349,35 @@ add_shortcode('impact_community_app', function () {
 add_action('template_redirect', 'ic_guard_dev_clone_access', 0);
 add_action('template_redirect', 'ic_send_nocache_headers', 1);
 add_action('template_redirect', 'ic_send_dev_clone_noindex_headers', 2);
+add_action('template_redirect', 'ic_org_admin_template_redirect', 3);
 add_action('template_redirect', 'ic_app_template_redirect', 4);
+
+function ic_org_admin_template_redirect(): void {
+    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
+    if (!preg_match('~^/hatas-korok-admin/?(\?.*)?$~', $uri)) {
+        return;
+    }
+
+    if (!current_user_can('manage_options')) {
+        status_header(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Nincs jogosultsag.';
+        exit;
+    }
+
+    $api_url = rest_url('impact/v1');
+    $nonce   = wp_create_nonce('wp_rest');
+
+    global $wp_query;
+    if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
+        $wp_query->is_404 = false;
+    }
+    status_header(200);
+    header('Content-Type: text/html; charset=UTF-8');
+
+    require __DIR__ . '/impact-community-templates/org-admin.php';
+    exit;
+}
 
 function ic_app_template_redirect(): void {
     $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
@@ -4689,6 +5369,602 @@ function ic_maybe_auto_timeout(int $circle_id, string $pid_hash): void {
 /* ===========================================================================
  * §13  NGO ADMIN AUTH + ADVISOR QUOTA — DB 1.3.5
  * =========================================================================*/
+
+function ic_rest_org_lookup_ngo(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $query = trim((string) $req->get_param('query'));
+    if (mb_strlen($query) < 3) {
+        return ic_json_error('Minimum 3 karakter szukseges.', 400);
+    }
+
+    if (!class_exists('ImpactShop_Cegjelzo_Client')) {
+        return ic_json_error('A Cegjelzo szolgaltatas jelenleg nem elerheto.', 503);
+    }
+
+    $client = new ImpactShop_Cegjelzo_Client();
+    $result = $client->autocomplete_civil_org($query, 10);
+    if (is_wp_error($result)) {
+        return new WP_Error('ic_cegjelzo_error', $result->get_error_message(), ['status' => (int) ($result->get_error_data()['status'] ?? 502)]);
+    }
+
+    $items = [];
+    $rows = [];
+    if (isset($result['items']) && is_array($result['items'])) {
+        $rows = $result['items'];
+    } elseif (isset($result['data']) && is_array($result['data'])) {
+        $rows = $result['data'];
+    } elseif (is_array($result)) {
+        $rows = $result;
+    }
+
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $name = (string) ($row['official_name'] ?? $row['name'] ?? $row['short_name'] ?? '');
+        if ($name === '') {
+            continue;
+        }
+        $slug = sanitize_title($name);
+
+        $items[] = [
+            'name' => $name,
+            'slug' => $slug,
+            'registry_id' => (string) ($row['registration_number'] ?? $row['id'] ?? ''),
+            'tax_number' => (string) ($row['tax_number'] ?? ''),
+            'status_label' => (string) ($row['status_label'] ?? $row['status'] ?? ''),
+            'activity' => (string) ($row['activity'] ?? ''),
+            'raw' => $row,
+        ];
+    }
+
+    return ic_json_ok(['items' => $items]);
+}
+
+function ic_rest_org_registration_start(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonceCheck = ic_verify_state_nonce($req);
+    if (is_wp_error($nonceCheck)) {
+        return $nonceCheck;
+    }
+
+    $pseudo = ic_get_pseudo_id();
+    $pid_hash = ic_pid_hash($pseudo);
+    if ($pid_hash === '') {
+        return ic_json_error('Pseudo ID szukseges a regisztraciohoz.', 401);
+    }
+
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field((string) $_SERVER['REMOTE_ADDR']) : 'na';
+    if (!ic_rate_check('ic_orgreg_start_' . md5($pid_hash . '|' . $ip), 8, HOUR_IN_SECONDS)) {
+        return ic_json_error('Tul sok regisztracios probalkozas. Probald ujra kesobb.', 429);
+    }
+
+    $orgType = sanitize_key((string) $req->get_param('org_type'));
+    if (!in_array($orgType, ['ngo', 'municipality'], true)) {
+        return ic_json_error('Ervenytelen szervezet tipus.', 422);
+    }
+
+    $orgName = sanitize_text_field((string) $req->get_param('org_name'));
+    $orgSlug = sanitize_title((string) $req->get_param('org_slug'));
+    $bankAccount = sanitize_text_field((string) $req->get_param('bank_account'));
+    $channel = sanitize_key((string) $req->get_param('verification_channel'));
+    $verificationTarget = trim((string) $req->get_param('verification_target'));
+    $registryId = sanitize_text_field((string) $req->get_param('org_registry_id'));
+    $taxNumber = sanitize_text_field((string) $req->get_param('org_tax_number'));
+    $statusLabel = sanitize_text_field((string) $req->get_param('org_status_label'));
+    $activity = sanitize_text_field((string) $req->get_param('org_activity'));
+    $metadata = $req->get_param('metadata');
+
+    if ($orgName === '' || $bankAccount === '') {
+        return ic_json_error('A nev es bankszamlaszam kotelezo.', 422);
+    }
+
+    if (!ic_valid_bank_account($bankAccount)) {
+        return ic_json_error('Ervenytelen bankszamlaszam formatum. Elvart: 00000000-00000000-00000000', 422);
+    }
+
+    if (!in_array($channel, ['email', 'sms'], true)) {
+        return ic_json_error('Ervenytelen megerositesi csatorna.', 422);
+    }
+
+    if (!ic_valid_hu_tax_number($taxNumber)) {
+        return ic_json_error('Ervenytelen adoszam formatum. Elvart: 12345678-1-12', 422);
+    }
+
+    if ($channel === 'email') {
+        $verificationTarget = sanitize_email($verificationTarget);
+        if (!is_email($verificationTarget)) {
+            return ic_json_error('Ervenytelen email cim.', 422);
+        }
+    } else {
+        $verificationTarget = preg_replace('~\s+~', '', $verificationTarget);
+        if (!preg_match('~^\+?[0-9]{9,15}$~', $verificationTarget)) {
+            return ic_json_error('Ervenytelen telefonszam formatum.', 422);
+        }
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $existing = ic_org_verification_row_for_pid($pid_hash);
+
+    if (is_array($existing)) {
+        $lockedUntilRaw = (string) ($existing['locked_until'] ?? '');
+        if ($lockedUntilRaw !== '') {
+            $lockedTs = strtotime($lockedUntilRaw);
+            if ($lockedTs && $lockedTs > time()) {
+                return ic_json_error('Tobb hibas kod miatt ideiglenesen zarolva. Probald ujra kesobb.', 429);
+            }
+        }
+    }
+
+    if ($orgType === 'ngo') {
+        if ($orgSlug === '') {
+            return ic_json_error('NGO tipusnal kotelezo az NGO slug.', 422);
+        }
+        $circleName = (string) $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$p}ic_circles WHERE type='ngo' AND ref_slug=%s LIMIT 1",
+            $orgSlug
+        ));
+        if ($circleName === '') {
+            return ic_json_error('Ismeretlen NGO slug a Hataskorok rendszerben.', 422);
+        }
+
+        $matched = ic_org_lookup_exact_ngo($orgName);
+        if (is_wp_error($matched)) {
+            $status = (int) (($matched->get_error_data()['status'] ?? 503));
+            return ic_json_error($matched->get_error_message(), $status);
+        }
+        if (!is_array($matched)) {
+            return ic_json_error('NGO regisztracio csak Cegjelzo-talalat alapjan indithato.', 422);
+        }
+
+        if (!ic_org_slug_name_consistent($circleName, (string) ($matched['name'] ?? ''))) {
+            return ic_json_error('A megadott NGO slug nem illeszkedik a Cegjelzo talalathoz.', 422);
+        }
+
+        // Server-side lock: always trust and persist canonical Cegjelzo fields.
+        $orgName = (string) ($matched['name'] ?? $orgName);
+        $taxNumber = (string) ($matched['tax_number'] ?? $taxNumber);
+        $registryId = (string) ($matched['registry_id'] ?? $registryId);
+        $statusLabel = (string) ($matched['status_label'] ?? $statusLabel);
+        $activity = (string) ($matched['activity'] ?? $activity);
+    } else {
+        $orgSlug = '';
+        if (mb_strlen($orgName) < 4) {
+            return ic_json_error('Onkormanyzatnal legalabb 4 karakteres nev kotelezo.', 422);
+        }
+    }
+
+    $code = ic_generate_verification_code();
+    $expires = gmdate('Y-m-d H:i:s', time() + 15 * MINUTE_IN_SECONDS);
+    $metadataJson = is_array($metadata) ? wp_json_encode($metadata) : null;
+
+    $row = [
+        'pid_hash' => $pid_hash,
+        'org_type' => $orgType,
+        'org_slug' => $orgSlug !== '' ? $orgSlug : null,
+        'org_name' => $orgName,
+        'org_registry_id' => $registryId !== '' ? $registryId : null,
+        'org_tax_number' => $taxNumber !== '' ? $taxNumber : null,
+        'org_status_label' => $statusLabel !== '' ? $statusLabel : null,
+        'org_activity' => $activity !== '' ? $activity : null,
+        'bank_account' => $bankAccount,
+        'verification_channel' => $channel,
+        'verification_target' => $verificationTarget,
+        'verification_code' => $code,
+        'verification_expires' => $expires,
+        'verification_attempts' => 0,
+        'locked_until' => null,
+        'status' => 'pending',
+        'approval_status' => 'pending',
+        'verified_at' => null,
+        'approved_at' => null,
+        'approved_by' => null,
+        'rejection_reason' => null,
+        'metadata_json' => $metadataJson,
+    ];
+
+    if ($existing) {
+        $ok = $wpdb->update("{$p}ic_org_verifications", $row, ['id' => (int) $existing['id']]);
+    } else {
+        $ok = $wpdb->insert("{$p}ic_org_verifications", $row);
+    }
+
+    if ($ok === false) {
+        return ic_json_error('A regisztracio mentese sikertelen.', 500);
+    }
+
+    $savedRow = ic_org_verification_row_for_pid($pid_hash);
+    if (is_array($savedRow)) {
+        ic_org_audit_log((int) ($savedRow['id'] ?? 0), 'registration_started', [], $savedRow, 'start endpoint');
+    }
+
+    $sent = ($channel === 'email')
+        ? ic_org_send_verification_email($verificationTarget, $code)
+        : ic_org_send_verification_sms($verificationTarget, $code);
+
+    if (!$sent) {
+        return ic_json_error('A megerosito kod kuldese sikertelen.', 502);
+    }
+
+    return ic_json_ok([
+        'sent' => true,
+        'channel' => $channel,
+        'target_masked' => ic_mask_target($channel, $verificationTarget),
+        'expires_at' => $expires,
+    ]);
+}
+
+function ic_rest_org_registration_verify(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonceCheck = ic_verify_state_nonce($req);
+    if (is_wp_error($nonceCheck)) {
+        return $nonceCheck;
+    }
+
+    $pid_hash = ic_pid_hash(ic_get_pseudo_id());
+    if ($pid_hash === '') {
+        return ic_json_error('Pseudo ID szukseges.', 401);
+    }
+
+    if (!ic_rate_check('ic_orgreg_verify_' . md5($pid_hash), 24, HOUR_IN_SECONDS)) {
+        return ic_json_error('Tul sok kod-ellenorzes. Probald ujra kesobb.', 429);
+    }
+
+    $code = trim((string) $req->get_param('verification_code'));
+    if (!preg_match('~^[0-9]{6}$~', $code)) {
+        return ic_json_error('Ervenytelen megerosito kod.', 422);
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $row = ic_org_verification_row_for_pid($pid_hash);
+    if (!$row) {
+        return ic_json_error('Nincs folyamatban regisztracio.', 404);
+    }
+
+    if (($row['status'] ?? '') === 'verified') {
+        return ic_json_ok(['verified' => true, 'registration' => ic_org_verification_public_payload($row)]);
+    }
+
+    $lockedUntilRaw = (string) ($row['locked_until'] ?? '');
+    if ($lockedUntilRaw !== '') {
+        $lockedTs = strtotime($lockedUntilRaw);
+        if ($lockedTs && $lockedTs > time()) {
+            return ic_json_error('Tobb hibas kod miatt ideiglenesen zarolva. Probald ujra kesobb.', 429);
+        }
+    }
+
+    $expires = strtotime((string) ($row['verification_expires'] ?? ''));
+    if (!$expires || $expires < time()) {
+        return ic_json_error('Lejart megerosito kod.', 410);
+    }
+
+    if (!hash_equals((string) ($row['verification_code'] ?? ''), $code)) {
+        $attempts = (int) ($row['verification_attempts'] ?? 0) + 1;
+        $update = [
+            'verification_attempts' => $attempts,
+        ];
+        $note = 'wrong_code_attempt=' . $attempts;
+        if ($attempts >= 5) {
+            $update['locked_until'] = gmdate('Y-m-d H:i:s', time() + 15 * MINUTE_IN_SECONDS);
+            $update['verification_attempts'] = 0;
+            $note .= ';locked';
+        }
+        $wpdb->update("{$p}ic_org_verifications", $update, ['id' => (int) $row['id']]);
+        $afterWrong = ic_org_verification_row_for_pid($pid_hash);
+        if (is_array($afterWrong)) {
+            ic_org_audit_log((int) ($afterWrong['id'] ?? 0), 'verification_failed', $row, $afterWrong, $note);
+        }
+        return ic_json_error('Hibas megerosito kod.', 422);
+    }
+
+    $verifiedAt = current_time('mysql');
+    $ok = $wpdb->update(
+        "{$p}ic_org_verifications",
+        [
+            'status' => 'verified',
+            'approval_status' => 'pending',
+            'verified_at' => $verifiedAt,
+            'verification_code' => null,
+            'verification_expires' => null,
+            'verification_attempts' => 0,
+            'locked_until' => null,
+        ],
+        ['id' => (int) $row['id']]
+    );
+
+    if ($ok === false) {
+        return ic_json_error('A megerosites mentese sikertelen.', 500);
+    }
+
+    $updated = ic_org_verification_row_for_pid($pid_hash);
+    if (is_array($updated)) {
+        ic_org_audit_log((int) ($updated['id'] ?? 0), 'verification_success', $row, $updated, 'code ok');
+    }
+    return ic_json_ok(['verified' => true, 'registration' => ic_org_verification_public_payload($updated)]);
+}
+
+function ic_rest_org_registration_queue(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonceCheck = ic_verify_state_nonce($req);
+    if (is_wp_error($nonceCheck)) {
+        return $nonceCheck;
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $status = sanitize_key((string) $req->get_param('status'));
+    if (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+        $status = 'pending';
+    }
+    $q = trim((string) $req->get_param('q'));
+    $tax = trim((string) $req->get_param('tax_number'));
+    $orgType = sanitize_key((string) $req->get_param('org_type'));
+    if (!in_array($orgType, ['', 'ngo', 'municipality'], true)) {
+        $orgType = '';
+    }
+    $dateFrom = trim((string) $req->get_param('date_from'));
+    $dateTo = trim((string) $req->get_param('date_to'));
+    $limit = (int) $req->get_param('limit');
+    if ($limit <= 0 || $limit > 100) {
+        $limit = 30;
+    }
+
+    $where = ["status IN ('verified','rejected')", "approval_status=%s"];
+    $params = [$status];
+
+    if ($q !== '') {
+        $where[] = '(org_name LIKE %s OR org_slug LIKE %s OR org_registry_id LIKE %s)';
+        $like = '%' . $wpdb->esc_like($q) . '%';
+        $params[] = $like;
+        $params[] = $like;
+        $params[] = $like;
+    }
+    if ($tax !== '') {
+        $where[] = 'org_tax_number LIKE %s';
+        $params[] = '%' . $wpdb->esc_like($tax) . '%';
+    }
+    if ($orgType !== '') {
+        $where[] = 'org_type=%s';
+        $params[] = $orgType;
+    }
+    if ($dateFrom !== '' && preg_match('~^[0-9]{4}-[0-9]{2}-[0-9]{2}$~', $dateFrom)) {
+        $where[] = 'DATE(verified_at) >= %s';
+        $params[] = $dateFrom;
+    }
+    if ($dateTo !== '' && preg_match('~^[0-9]{4}-[0-9]{2}-[0-9]{2}$~', $dateTo)) {
+        $where[] = 'DATE(verified_at) <= %s';
+        $params[] = $dateTo;
+    }
+
+    $params[] = $limit;
+    $sql = "SELECT * FROM {$p}ic_org_verifications WHERE " . implode(' AND ', $where) . ' ORDER BY verified_at DESC, id DESC LIMIT %d';
+    $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
+
+    $items = [];
+    foreach ((array) $rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $items[] = ic_org_verification_admin_payload($row);
+    }
+
+    return ic_json_ok([
+        'items' => $items,
+        'status' => $status,
+        'count' => count($items),
+    ]);
+}
+
+function ic_rest_org_registration_decision(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonceCheck = ic_verify_state_nonce($req);
+    if (is_wp_error($nonceCheck)) {
+        return $nonceCheck;
+    }
+
+    $id = (int) $req->get_param('id');
+    if ($id <= 0) {
+        return ic_json_error('Ervenytelen azonosito.', 422);
+    }
+
+    $decision = sanitize_key((string) $req->get_param('decision'));
+    if (!in_array($decision, ['approve', 'reject'], true)) {
+        return ic_json_error('Ervenytelen dontes.', 422);
+    }
+
+    $reason = sanitize_text_field((string) $req->get_param('reason'));
+    if ($decision === 'reject' && $reason === '') {
+        return ic_json_error('Elutasitashoz indoklas kotelezo.', 422);
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_org_verifications WHERE id=%d LIMIT 1",
+        $id
+    ), ARRAY_A);
+    if (!is_array($row)) {
+        return ic_json_error('Regisztracio nem talalhato.', 404);
+    }
+    if (($row['status'] ?? '') !== 'verified') {
+        return ic_json_error('Csak hitelesitett, koddal megerositett regisztracio biralhato el.', 409);
+    }
+
+    $now = current_time('mysql');
+    $adminId = (int) get_current_user_id();
+    $update = [
+        'approval_status' => $decision === 'approve' ? 'approved' : 'rejected',
+        'approved_at' => $now,
+        'approved_by' => $adminId > 0 ? $adminId : null,
+        'rejection_reason' => $decision === 'reject' ? $reason : null,
+    ];
+
+    if ($decision === 'reject') {
+        $update['status'] = 'rejected';
+    }
+
+    $ok = $wpdb->update("{$p}ic_org_verifications", $update, ['id' => $id]);
+    if ($ok === false) {
+        return ic_json_error('A dontes mentese sikertelen.', 500);
+    }
+
+    $updated = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$p}ic_org_verifications WHERE id=%d LIMIT 1",
+        $id
+    ), ARRAY_A);
+
+    if (is_array($updated)) {
+        ic_org_audit_log(
+            $id,
+            $decision === 'approve' ? 'approved' : 'rejected',
+            $row,
+            $updated,
+            $reason
+        );
+    }
+
+    return ic_json_ok([
+        'saved' => true,
+        'item' => is_array($updated) ? ic_org_verification_admin_payload($updated) : null,
+    ]);
+}
+
+function ic_rest_org_registration_audit(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonceCheck = ic_verify_state_nonce($req);
+    if (is_wp_error($nonceCheck)) {
+        return $nonceCheck;
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+    $registrationId = (int) $req->get_param('registration_id');
+    if ($registrationId <= 0) {
+        return ic_json_error('Ervenytelen registration_id.', 422);
+    }
+    $limit = (int) $req->get_param('limit');
+    if ($limit <= 0 || $limit > 200) {
+        $limit = 50;
+    }
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, registration_id, action, actor_user_id, note, before_json, after_json, created_at
+         FROM {$p}ic_org_verification_audit
+         WHERE registration_id=%d
+         ORDER BY id DESC
+         LIMIT %d",
+        $registrationId,
+        $limit
+    ), ARRAY_A);
+
+    $items = [];
+    foreach ((array) $rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $items[] = [
+            'id' => (int) ($row['id'] ?? 0),
+            'registration_id' => (int) ($row['registration_id'] ?? 0),
+            'action' => (string) ($row['action'] ?? ''),
+            'actor_user_id' => (int) ($row['actor_user_id'] ?? 0),
+            'note' => (string) ($row['note'] ?? ''),
+            'before' => !empty($row['before_json']) ? json_decode((string) $row['before_json'], true) : null,
+            'after' => !empty($row['after_json']) ? json_decode((string) $row['after_json'], true) : null,
+            'created_at' => (string) ($row['created_at'] ?? ''),
+        ];
+    }
+
+    return ic_json_ok([
+        'registration_id' => $registrationId,
+        'items' => $items,
+        'count' => count($items),
+    ]);
+}
+
+function ic_rest_org_registration_audit_export(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $nonceCheck = ic_verify_state_nonce($req);
+    if (is_wp_error($nonceCheck)) {
+        return $nonceCheck;
+    }
+
+    global $wpdb;
+    $p = $wpdb->prefix;
+
+    $registrationId = (int) $req->get_param('registration_id');
+    $action = sanitize_key((string) $req->get_param('action'));
+    $dateFrom = trim((string) $req->get_param('date_from'));
+    $dateTo = trim((string) $req->get_param('date_to'));
+    $limit = (int) $req->get_param('limit');
+    if ($limit <= 0 || $limit > 5000) {
+        $limit = 1000;
+    }
+
+    $where = ['1=1'];
+    $params = [];
+    if ($registrationId > 0) {
+        $where[] = 'registration_id=%d';
+        $params[] = $registrationId;
+    }
+    if ($action !== '') {
+        $where[] = 'action=%s';
+        $params[] = $action;
+    }
+    if ($dateFrom !== '' && preg_match('~^[0-9]{4}-[0-9]{2}-[0-9]{2}$~', $dateFrom)) {
+        $where[] = 'DATE(created_at) >= %s';
+        $params[] = $dateFrom;
+    }
+    if ($dateTo !== '' && preg_match('~^[0-9]{4}-[0-9]{2}-[0-9]{2}$~', $dateTo)) {
+        $where[] = 'DATE(created_at) <= %s';
+        $params[] = $dateTo;
+    }
+    $params[] = $limit;
+
+    $sql = "SELECT id, registration_id, action, actor_user_id, note, created_at
+            FROM {$p}ic_org_verification_audit
+            WHERE " . implode(' AND ', $where) . ' ORDER BY id DESC LIMIT %d';
+    $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
+
+    $fp = fopen('php://temp', 'r+');
+    if ($fp === false) {
+        return ic_json_error('CSV export letrehozasa sikertelen.', 500);
+    }
+    fputcsv($fp, ['id', 'registration_id', 'action', 'actor_user_id', 'note', 'created_at']);
+    foreach ((array) $rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        fputcsv($fp, [
+            (int) ($row['id'] ?? 0),
+            (int) ($row['registration_id'] ?? 0),
+            (string) ($row['action'] ?? ''),
+            (int) ($row['actor_user_id'] ?? 0),
+            (string) ($row['note'] ?? ''),
+            (string) ($row['created_at'] ?? ''),
+        ]);
+    }
+    rewind($fp);
+    $csv = stream_get_contents($fp);
+    fclose($fp);
+
+    $suffix = gmdate('Ymd_His');
+    $filename = 'org-registration-audit-' . $suffix . '.csv';
+    $response = new WP_REST_Response($csv ?: '', 200);
+    $response->header('Content-Type', 'text/csv; charset=UTF-8');
+    $response->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    return $response;
+}
+
+function ic_rest_org_registration_me(WP_REST_Request $req): WP_REST_Response|WP_Error {
+    $pid_hash = ic_pid_hash(ic_get_pseudo_id());
+    if ($pid_hash === '') {
+        return ic_json_ok([
+            'authenticated' => false,
+            'registration' => ic_org_verification_public_payload(null),
+        ]);
+    }
+
+    $row = ic_org_verification_row_for_pid($pid_hash);
+    return ic_json_ok([
+        'authenticated' => true,
+        'registration' => ic_org_verification_public_payload($row),
+    ]);
+}
 
 /**
  * Generate a secure session token for an NGO account.

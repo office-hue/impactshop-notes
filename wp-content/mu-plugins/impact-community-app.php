@@ -10,6 +10,14 @@
 if (!defined('ABSPATH') || !isset($api_url)) {
     return;
 }
+
+$ngo_admin_public_url = add_query_arg(['impactshop_ngo_admin' => '1'], home_url('/'));
+if (defined('IMPACTSHOP_NGO_ADMIN_PUBLIC_TOKEN') && IMPACTSHOP_NGO_ADMIN_PUBLIC_TOKEN) {
+    $ngo_admin_public_url = add_query_arg(
+        ['token' => (string) IMPACTSHOP_NGO_ADMIN_PUBLIC_TOKEN],
+        $ngo_admin_public_url
+    );
+}
 ?><!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -970,6 +978,19 @@ a:hover { text-decoration: underline; }
 .ic-health-label { font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 4px; }
 .ic-health-bar-wrap { background: #e5e7eb; border-radius: 999px; height: 10px; overflow: hidden; }
 .ic-health-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
+
+/* §16 Settlement picker */
+.ic-settlement-picker { background: linear-gradient(135deg,#f0fdf4,#ecfdf5); border: 2px solid #a7f3d0; border-radius: 14px; padding: 20px 20px 16px; margin: 16px 0; }
+.ic-settlement-picker-title { font-weight: 700; font-size: 17px; color: #065f46; margin-bottom: 6px; }
+.ic-settlement-picker-sub { font-size: 13px; color: #6b7280; margin-bottom: 12px; }
+.ic-settlement-input-wrap { position: relative; }
+.ic-settlement-input { width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 15px; border: 2px solid #6ee7b7; border-radius: 10px; outline: none; font-family: inherit; transition: border-color 0.2s; }
+.ic-settlement-input:focus { border-color: #059669; }
+.ic-settlement-results { background: #fff; border: 1.5px solid #6ee7b7; border-radius: 10px; margin-top: 4px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); max-height: 240px; overflow-y: auto; }
+.ic-settlement-item { display: block; width: 100%; text-align: left; padding: 10px 14px; background: none; border: none; border-bottom: 1px solid #f0fdf4; font-size: 14px; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.ic-settlement-item:last-child { border-bottom: none; }
+.ic-settlement-item:hover { background: #ecfdf5; color: #065f46; font-weight: 600; }
+.ic-settlement-loading, .ic-settlement-no-result { padding: 10px 14px; font-size: 13px; color: #6b7280; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -986,6 +1007,8 @@ a:hover { text-decoration: underline; }
         <nav class="ic-nav">
             <button class="ic-nav-btn active" data-nav="circles">Körök</button>
             <button class="ic-nav-btn" data-nav="mine">Saját köreim</button>
+            <button class="ic-nav-btn" data-nav="org-register">Szervezeti reg</button>
+            <a class="ic-nav-btn" href="<?php echo esc_url($ngo_admin_public_url); ?>">NGO admin (teszt)</a>
         </nav>
     </div>
 </header>
@@ -1022,7 +1045,7 @@ a:hover { text-decoration: underline; }
 
     /* --- State ------------------------------------------------------ */
     let state = {
-        view: 'circles',        // 'circles' | 'mine' | 'circle'
+        view: 'circles',        // 'circles' | 'mine' | 'circle' | 'org-register'
         circleId: null,
         circles: [],
         myCircles: [],
@@ -1037,6 +1060,10 @@ a:hover { text-decoration: underline; }
         totalPosts: 0,
         votedPosts: new Set(JSON.parse(localStorage.getItem('ic_voted') || '[]')), // legacy compat
         myReactions: JSON.parse(localStorage.getItem('ic_reactions') || '{}'),
+        orgRegistration: null,
+        authStatus: null,
+        orgQueue: [],
+        orgQueueStatus: 'pending',
     };
 
     /* --- API helper ------------------------------------------------- */
@@ -1093,6 +1120,7 @@ a:hover { text-decoration: underline; }
             case 'circles': renderCircles(state.circles, false); break;
             case 'mine':    renderCircles(state.myCircles, true); break;
             case 'circle':  renderCircleDetail(); break;
+            case 'org-register': renderOrgRegistration(); break;
         }
         if (TEST_MODE) {
             renderTestPanel();
@@ -1167,6 +1195,346 @@ a:hover { text-decoration: underline; }
         });
     }
 
+    async function loadOrgRegistration() {
+        try {
+            const [data, auth] = await Promise.all([
+                api('/org/registration/me'),
+                api('/auth/status'),
+            ]);
+            state.orgRegistration = data.registration || null;
+            state.authStatus = auth || null;
+        } catch (_) {
+            state.orgRegistration = null;
+            state.authStatus = null;
+        }
+    }
+
+    async function loadOrgQueue(status = 'pending') {
+        try {
+            const data = await api(`/org/registration/queue?status=${encodeURIComponent(status)}&limit=50`);
+            state.orgQueue = data.items || [];
+            state.orgQueueStatus = status;
+        } catch (_) {
+            state.orgQueue = [];
+        }
+    }
+
+    function renderOrgRegistration() {
+        $content.innerHTML = '';
+
+        const titleWrap = html('div', {});
+        titleWrap.appendChild(html('h1', {className: 'ic-section-title'}, 'Szervezeti regisztracio'));
+        titleWrap.appendChild(html('p', {className: 'ic-section-sub'}, 'NGO es onkormanyzati szervezetek hivatalos posztolasi hitelesitese.'));
+        $content.appendChild(titleWrap);
+
+        const current = state.orgRegistration || {registered: false, verified: false};
+        const statusCard = html('div', {className: 'ic-post', style: 'margin-bottom:16px;'});
+        if (!current.registered) {
+            statusCard.appendChild(html('strong', {}, 'Allapot: nincs aktiv regisztracio'));
+        } else if (current.verified && current.approved) {
+            statusCard.appendChild(html('strong', {}, 'Allapot: hitelesitve es jovahagyva ✅'));
+            statusCard.appendChild(html('p', {style: 'margin-top:8px;'}, `${current.org_name || ''} (${current.org_type || ''})`));
+        } else if (current.verified && !current.approved) {
+            statusCard.appendChild(html('strong', {}, 'Allapot: kod hitelesitve, admin jovahagyasra var ⏳'));
+            if (current.approval_rejection_reason) {
+                statusCard.appendChild(html('p', {style: 'margin-top:8px;color:#b91c1c;'}, `Elutasitas indoka: ${current.approval_rejection_reason}`));
+            }
+        } else {
+            statusCard.appendChild(html('strong', {}, 'Allapot: megerositesre var ⏳'));
+            statusCard.appendChild(html('p', {style: 'margin-top:8px;'}, `Kod kuldve: ${current.verification_target_masked || ''}`));
+        }
+        $content.appendChild(statusCard);
+
+        const card = html('div', {className: 'ic-post'});
+        const form = html('form', {className: 'ic-form'});
+        form.innerHTML = `
+            <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr;">
+                <label>Tipus
+                    <select id="ic-org-type" class="ic-search" style="width:100%;">
+                        <option value="ngo">NGO</option>
+                        <option value="municipality">Onkormanyzat</option>
+                    </select>
+                </label>
+                <label>Csatorna
+                    <select id="ic-verify-channel" class="ic-search" style="width:100%;">
+                        <option value="email">Email</option>
+                        <option value="sms">SMS</option>
+                    </select>
+                </label>
+            </div>
+            <label style="display:block;margin-top:10px;">Szervezet neve
+                <input id="ic-org-name" class="ic-search" list="ic-org-name-list" placeholder="Kezdd el beirni a nevet..." />
+                <datalist id="ic-org-name-list"></datalist>
+            </label>
+            <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr;">
+                <label>NGO slug (NGO eseten)
+                    <input id="ic-org-slug" class="ic-search" placeholder="pl. zold-jovo-alapitvany" />
+                </label>
+                <label>Bankszamlaszam
+                    <input id="ic-org-bank" class="ic-search" placeholder="00000000-00000000-00000000" />
+                </label>
+            </div>
+            <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr;">
+                <label>Adoszam (automata / kezi)
+                    <input id="ic-org-tax" class="ic-search" />
+                </label>
+                <label>Megerositesi cim/szam
+                    <input id="ic-verify-target" class="ic-search" placeholder="email vagy +3630..." />
+                </label>
+            </div>
+            <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr;">
+                <label>Cegjelzo ID (ha van)
+                    <input id="ic-org-regid" class="ic-search" />
+                </label>
+                <label>Tevekenyseg / statusz
+                    <input id="ic-org-activity" class="ic-search" />
+                </label>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                <button type="button" class="ic-btn ic-btn-primary" id="ic-org-send-code">Megerosito kod kuldese</button>
+                <input id="ic-org-code" class="ic-search" style="max-width:180px;" placeholder="6 jegyu kod" />
+                <button type="button" class="ic-btn ic-btn-outline" id="ic-org-verify-code">Kod ellenorzes</button>
+            </div>
+            <p id="ic-org-feedback" style="margin-top:12px;color:#374151;"></p>
+        `;
+        card.appendChild(form);
+        $content.appendChild(card);
+
+        const $type = document.getElementById('ic-org-type');
+        const $name = document.getElementById('ic-org-name');
+        const $slug = document.getElementById('ic-org-slug');
+        const $bank = document.getElementById('ic-org-bank');
+        const $tax = document.getElementById('ic-org-tax');
+        const $regid = document.getElementById('ic-org-regid');
+        const $activity = document.getElementById('ic-org-activity');
+        const $channel = document.getElementById('ic-verify-channel');
+        const $target = document.getElementById('ic-verify-target');
+        const $code = document.getElementById('ic-org-code');
+        const $sendBtn = document.getElementById('ic-org-send-code');
+        const $verifyBtn = document.getElementById('ic-org-verify-code');
+        const $feedback = document.getElementById('ic-org-feedback');
+        const $datalist = document.getElementById('ic-org-name-list');
+        let selectedNgo = null;
+
+        const applyOrgMode = () => {
+            const ngoMode = $type.value === 'ngo';
+            $slug.disabled = !ngoMode;
+            if (!ngoMode) {
+                $slug.value = '';
+                selectedNgo = null;
+                $name.readOnly = false;
+                $tax.readOnly = false;
+                $regid.readOnly = false;
+                $activity.readOnly = false;
+            }
+        };
+
+        const lockNgoFields = (item) => {
+            selectedNgo = item;
+            $name.value = item.name || $name.value;
+            $slug.value = item.slug || $slug.value;
+            $tax.value = item.tax_number || $tax.value;
+            $regid.value = item.registry_id || $regid.value;
+            $activity.value = item.activity || item.status_label || $activity.value;
+            $name.readOnly = true;
+            $tax.readOnly = true;
+            $regid.readOnly = true;
+            $activity.readOnly = true;
+            $feedback.textContent = 'Cegjelzo talalat rogzitve. NGO adatok lockolva lettek.';
+        };
+
+        const lookupState = { map: {} };
+        const fillFromCurrent = () => {
+            if (!current || !current.registered) return;
+            $type.value = current.org_type || 'ngo';
+            $name.value = current.org_name || '';
+            $slug.value = current.org_slug || '';
+            $bank.value = current.bank_account || '';
+            $channel.value = current.verification_channel || 'email';
+        };
+        fillFromCurrent();
+        applyOrgMode();
+
+        $type.addEventListener('change', applyOrgMode);
+
+        const lookupNgo = debounce(async () => {
+            if ($type.value !== 'ngo') {
+                $datalist.innerHTML = '';
+                lookupState.map = {};
+                return;
+            }
+            const q = ($name.value || '').trim();
+            if (q.length < 3) {
+                $datalist.innerHTML = '';
+                lookupState.map = {};
+                return;
+            }
+            try {
+                const data = await api(`/org/lookup-ngo?query=${encodeURIComponent(q)}`);
+                const items = data.items || [];
+                lookupState.map = {};
+                $datalist.innerHTML = '';
+                items.forEach(item => {
+                    lookupState.map[item.name] = item;
+                    const opt = document.createElement('option');
+                    opt.value = item.name;
+                    $datalist.appendChild(opt);
+                });
+            } catch (_) {
+                // no-op
+            }
+        }, 300);
+
+        $name.addEventListener('input', lookupNgo);
+        $name.addEventListener('change', () => {
+            const item = lookupState.map[$name.value];
+            if (!item) return;
+            lockNgoFields(item);
+        });
+
+        $name.addEventListener('focus', () => {
+            if ($type.value !== 'ngo') return;
+            if (!selectedNgo) return;
+            // Allow re-search if the user wants another org.
+            selectedNgo = null;
+            $name.readOnly = false;
+            $tax.readOnly = false;
+            $regid.readOnly = false;
+            $activity.readOnly = false;
+        });
+
+        $sendBtn.addEventListener('click', async () => {
+            try {
+                const payload = {
+                    org_type: $type.value,
+                    org_name: ($name.value || '').trim(),
+                    org_slug: ($slug.value || '').trim(),
+                    bank_account: ($bank.value || '').trim(),
+                    org_tax_number: ($tax.value || '').trim(),
+                    org_registry_id: ($regid.value || '').trim(),
+                    org_activity: ($activity.value || '').trim(),
+                    org_status_label: '',
+                    verification_channel: $channel.value,
+                    verification_target: ($target.value || '').trim(),
+                    metadata: selectedNgo ? {
+                        cegjelzo_locked: true,
+                        cegjelzo_snapshot: selectedNgo,
+                    } : null,
+                };
+                const res = await api('/org/registration/start', {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+                $feedback.textContent = `Kod elkuldve (${res.target_masked || ''}).`;
+                await loadOrgRegistration();
+                if (state.authStatus && state.authStatus.is_admin) {
+                    await loadOrgQueue(state.orgQueueStatus || 'pending');
+                }
+                render();
+            } catch (err) {
+                $feedback.textContent = err.message || 'Hiba tortent.';
+            }
+        });
+
+        $verifyBtn.addEventListener('click', async () => {
+            try {
+                await api('/org/registration/verify', {
+                    method: 'POST',
+                    body: JSON.stringify({ verification_code: ($code.value || '').trim() }),
+                });
+                await loadOrgRegistration();
+                if (state.authStatus && state.authStatus.is_admin) {
+                    await loadOrgQueue(state.orgQueueStatus || 'pending');
+                }
+                render();
+                showStatus('Szervezeti regisztracio hitelesitve.', 'success');
+            } catch (err) {
+                $feedback.textContent = err.message || 'Hiba tortent.';
+            }
+        });
+
+        if (state.authStatus && state.authStatus.is_admin) {
+            const adminWrap = html('div', {className: 'ic-post', style: 'margin-top:16px;'});
+            adminWrap.appendChild(html('h3', {style: 'margin:0 0 8px 0;'}, 'Admin jovahagyasi queue'));
+
+            const controls = html('div', {style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;'});
+            ['pending', 'approved', 'rejected'].forEach(s => {
+                controls.appendChild(html('button', {
+                    type: 'button',
+                    className: 'ic-btn ' + (state.orgQueueStatus === s ? 'ic-btn-primary' : 'ic-btn-outline'),
+                    onClick: async () => {
+                        await loadOrgQueue(s);
+                        render();
+                    },
+                }, s));
+            });
+            adminWrap.appendChild(controls);
+
+            const list = html('div', {style: 'display:grid;gap:10px;'});
+            const items = Array.isArray(state.orgQueue) ? state.orgQueue : [];
+            if (!items.length) {
+                list.appendChild(html('p', {style: 'margin:0;color:#6b7280;'}, 'Nincs elem ebben a statuszban.'));
+            }
+
+            items.forEach(item => {
+                const row = html('div', {style: 'border:1px solid #e5e7eb;border-radius:12px;padding:10px;'});
+                row.appendChild(html('strong', {}, `${item.org_name} (${item.org_type})`));
+                row.appendChild(html('p', {style: 'margin:6px 0;'}, `Adoszam: ${item.org_tax_number || '-'} | Nyilv.: ${item.org_registry_id || '-'} | Bank: ${item.bank_account || '-'}`));
+                row.appendChild(html('p', {style: 'margin:6px 0;color:#6b7280;'}, `Kod csatorna: ${item.verification_channel} (${item.verification_target_masked || ''})`));
+
+                if (state.orgQueueStatus === 'pending') {
+                    const action = html('div', {style: 'display:flex;gap:8px;flex-wrap:wrap;'});
+                    action.appendChild(html('button', {
+                        className: 'ic-btn ic-btn-primary',
+                        type: 'button',
+                        onClick: async () => {
+                            try {
+                                await api(`/org/registration/${item.id}/decision`, {
+                                    method: 'POST',
+                                    body: JSON.stringify({ decision: 'approve' }),
+                                });
+                                await loadOrgQueue(state.orgQueueStatus || 'pending');
+                                render();
+                                showStatus('Regisztracio jovahagyva.', 'success');
+                            } catch (err) {
+                                showStatus(err.message || 'Hiba jovahagyas kozben.', 'error');
+                            }
+                        },
+                    }, 'Jovahagyas'));
+                    action.appendChild(html('button', {
+                        className: 'ic-btn ic-btn-danger',
+                        type: 'button',
+                        onClick: async () => {
+                            const reason = prompt('Elutasitas indoklasa:');
+                            if (!reason) return;
+                            try {
+                                await api(`/org/registration/${item.id}/decision`, {
+                                    method: 'POST',
+                                    body: JSON.stringify({ decision: 'reject', reason }),
+                                });
+                                await loadOrgQueue(state.orgQueueStatus || 'pending');
+                                render();
+                                showStatus('Regisztracio elutasitva.', 'info');
+                            } catch (err) {
+                                showStatus(err.message || 'Hiba elutasitas kozben.', 'error');
+                            }
+                        },
+                    }, 'Elutasitas'));
+                    row.appendChild(action);
+                }
+
+                if (item.rejection_reason) {
+                    row.appendChild(html('p', {style: 'margin:8px 0 0 0;color:#b91c1c;'}, `Indok: ${item.rejection_reason}`));
+                }
+
+                list.appendChild(row);
+            });
+
+            adminWrap.appendChild(list);
+            $content.appendChild(adminWrap);
+        }
+    }
+
     function html(tag, attrs = {}, ...children) {
         const el = document.createElement(tag);
         for (const [k, v] of Object.entries(attrs)) {
@@ -1217,6 +1585,11 @@ a:hover { text-decoration: underline; }
             }, 250));
             bar.appendChild(search);
             $content.appendChild(bar);
+
+            // §16 — Settlement picker: full HU settlement typeahead
+            if (state.filter === 'settlement') {
+                $content.appendChild(renderSettlementPicker());
+            }
         }
 
         const filtered = state.search
@@ -1292,6 +1665,105 @@ a:hover { text-decoration: underline; }
         if (wasFocused) {
             const inp = $content.querySelector('.ic-search');
             if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+        }
+    }
+
+    /* --- §16 Settlement picker ------------------------------------------ */
+
+    /**
+     * Renders the "Válaszd ki a te települtesédet" typeahead panel.
+     * Shown above the circles grid when settlement filter is active.
+     */
+    function renderSettlementPicker() {
+        const panel = html('div', {className: 'ic-settlement-picker'});
+        panel.appendChild(html('div', {className: 'ic-settlement-picker-title'},
+            '🔍 Válaszd ki a te településedet'));
+        panel.appendChild(html('p', {className: 'ic-settlement-picker-sub'},
+            'Magyarország összes települése elérhető. Keresd a nevedet és lépj be a körbe!'));
+
+        const inputWrap = html('div', {className: 'ic-settlement-input-wrap'});
+        const input = html('input', {
+            type: 'text',
+            className: 'ic-settlement-input',
+            placeholder: 'Pl.: Pécs, Tokaj, Veszprém...',
+            autocomplete: 'off',
+        });
+        inputWrap.appendChild(input);
+        panel.appendChild(inputWrap);
+
+        const results = html('div', {className: 'ic-settlement-results', style: 'display:none'});
+        panel.appendChild(results);
+
+        let abortCtrl = null;
+
+        input.addEventListener('input', debounce(async () => {
+            const q = input.value.trim();
+            if (q.length < 2) {
+                results.style.display = 'none';
+                results.innerHTML = '';
+                return;
+            }
+            if (abortCtrl) abortCtrl.abort();
+            abortCtrl = new AbortController();
+
+            results.innerHTML = '<div class="ic-settlement-loading">⏳ Keresés...</div>';
+            results.style.display = 'block';
+
+            try {
+                const data = await api(`/settlements/search?q=${encodeURIComponent(q)}`, {signal: abortCtrl.signal});
+                results.innerHTML = '';
+                if (!data.settlements || data.settlements.length === 0) {
+                    results.innerHTML = '<div class="ic-settlement-no-result">Nem találtuk a listában. Ellenőrizd a helyesírást!</div>';
+                    return;
+                }
+                data.settlements.forEach(s => {
+                    const item = html('button', {
+                        className: 'ic-settlement-item',
+                        type: 'button',
+                    }, s.name);
+                    item.addEventListener('click', async () => {
+                        input.value = s.name;
+                        input.disabled = true;
+                        results.innerHTML = '<div class="ic-settlement-loading">⏳ Kör megnyitása...</div>';
+                        await findOrCreateSettlement(s.name);
+                        input.disabled = false;
+                    });
+                    results.appendChild(item);
+                });
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                results.innerHTML = '<div class="ic-settlement-no-result">Hiba: ' + err.message + '</div>';
+            }
+        }, 300));
+
+        return panel;
+    }
+
+    /**
+     * Finds or creates a settlement circle for the given canonical settlement name,
+     * then navigates to it (auto-joining if the user has a pseudo-identity).
+     */
+    async function findOrCreateSettlement(settlementName) {
+        try {
+            const data = await api('/circles/settlement/find-or-create', {
+                method: 'POST',
+                body: JSON.stringify({settlement_name: settlementName}),
+            });
+            const circleId = data.circle_id;
+            if (!circleId) throw new Error('Nem kaptunk circle_id-t.');
+
+            // Auto-join if not already a member and user has pseudo-identity
+            if (HAS_PSEUDO) {
+                try {
+                    await api(`/circles/${circleId}/join`, {method: 'POST', body: JSON.stringify({})});
+                } catch (_) {
+                    // Already a member or join failed — continue to navigate regardless
+                }
+            }
+
+            navigateCircle(circleId);
+        } catch (err) {
+            showStatus('Hiba: ' + err.message, 'error');
         }
     }
 
@@ -1692,9 +2164,18 @@ a:hover { text-decoration: underline; }
         state.circle = null;
         state.posts = [];
         state.search = '';
-        window.location.hash = view === 'mine' ? '#mine' : '#circles';
+        if (view === 'mine') {
+            window.location.hash = '#mine';
+        } else if (view === 'org-register') {
+            window.location.hash = '#org-register';
+        } else {
+            window.location.hash = '#circles';
+        }
         if (view === 'circles') loadCircles();
         else if (view === 'mine') loadMyCircles();
+        else if (view === 'org-register') {
+            loadOrgRegistration().then(render);
+        }
     }
 
     function navigateCircle(id) {
@@ -1923,6 +2404,9 @@ a:hover { text-decoration: underline; }
         if (hash === '#mine') {
             state.view = 'mine';
             loadMyCircles();
+        } else if (hash === '#org-register') {
+            state.view = 'org-register';
+            loadOrgRegistration().then(render);
         } else if (hash.startsWith('#circle/')) {
             const id = parseInt(hash.split('/')[1], 10);
             if (id) {
@@ -1938,7 +2422,7 @@ a:hover { text-decoration: underline; }
     }
 
     /* --- Nav click handlers ----------------------------------------- */
-    document.querySelectorAll('.ic-nav-btn').forEach(btn => {
+    document.querySelectorAll('.ic-nav-btn[data-nav]').forEach(btn => {
         btn.addEventListener('click', () => navigate(btn.dataset.nav));
     });
 
