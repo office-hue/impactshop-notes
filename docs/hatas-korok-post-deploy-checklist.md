@@ -37,6 +37,7 @@ Egyedi hosttal:
 
 - Nyisd meg böngészőben a `/hatas-korok` oldalt.
 - Kattints be legalább egy kör detail nézetébe.
+- Ha van Impi poszt a listában, ellenőrizd hogy az avatar videó/fallback kép megjelenik, a kék ring látszik, és a fejlécben az `AI` badge is megjelenik.
 - Nézd meg a `wp-content/debug.log` végét, nincs-e új `impact-community` fatál vagy warning.
 
 ## Mikor kell több, mint read-only smoke
