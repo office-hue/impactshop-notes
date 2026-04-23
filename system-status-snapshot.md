@@ -1,3 +1,8 @@
+## 2026-04-23T08:15:00+0200 - hatas-korok: Impi avatar UI refresh prepared as isolated clean PR
+- A Hatás Körök frontendben az Impi szerző-blokk emoji avatar helyett animált meerkat videó + pulzáló kék ring UI-t kapott.
+- A változás kizárólag a `impact-community-app.php` frontend markup/CSS réteget érinti; backend route vagy REST szerződés nem változott.
+- A clean PR célja, hogy a korábbi kevert settlement-picker ág nélkül, önállóan merge-elhető legyen az Impi vizuális frissítés.
+
 ## 2026-04-20T06:45:00+0200 - ads-watch mobile resize hotfix canonicalized + cache-bypass closed
 - A 2026-04-19-es mobil-freeze incidens resize hotfixe most már repo truthként is rögzítve van.
 - `impactshop-ads-watch.js`: IMA resize throttle + hidden-doc guard + tiny-delta skip.

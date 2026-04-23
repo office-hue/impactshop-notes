@@ -1,3 +1,9 @@
+## 2026-04-23 08:15 CEST - Hatás Körök clean avatar PR előkészítve
+- Külön, `origin/main` alapú clean worktree ágon újraépítettem az Impi avatar vizuális frissítést, hogy ne húzza magával a settlement-picker fejlesztési diffet.
+- A clean ág csak a `wp-content/mu-plugins/impact-community-app.php` fájlt módosítja.
+- Változás: emoji avatar helyett animált meerkat videó, pulzáló kék ring, AI badge és rendezettebb Impi author blokk.
+- Ellenőrzés: `php -l wp-content/mu-plugins/impact-community-app.php` OK.
+
 ## 2026-04-20 08:30 CEST - deploy-path audit lezárva + guard origin check
 - A production deploy-path audit lezárása alapján a kanonikus production runtime továbbra is `/home/sharityh/app`.
 - A `public_html/index.php` csak entry wrapper, amely az `../app/wp-blog-header.php` runtime-ra mutat.
