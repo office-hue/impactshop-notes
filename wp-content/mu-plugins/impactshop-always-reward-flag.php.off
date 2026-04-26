@@ -1,0 +1,26 @@
+<?php
+/**
+ * ImpactShop — Always Reward Feature Flag
+ *
+ * Minden videómegtekintés és CTA-kattintás jutalmazása (ismételtek is).
+ *
+ * BEKAPCSOLÁS (staging vagy canary teszt):
+ *   - Nevezd át: impactshop-always-reward-flag.php.off → impactshop-always-reward-flag.php
+ *   - Vagy: másolj egy sornyi mu-plugin snippetet a staging-only mappába
+ *
+ * KIKAPCSOLÁS (azonnali rollback, kód-módosítás nélkül):
+ *   - Nevezd át vissza: impactshop-always-reward-flag.php → impactshop-always-reward-flag.php.off
+ *
+ * Alapértelmezés (ha ez a fájl NINCS betöltve): KIKAPCSOLT (legacy dedupe marad)
+ *
+ * @package ImpactShop
+ * @since   2.5.65
+ */
+
+declare(strict_types=1);
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+add_filter('impactshop_ads_watch_always_reward_enabled', '__return_true');
