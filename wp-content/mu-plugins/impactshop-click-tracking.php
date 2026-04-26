@@ -11,6 +11,37 @@ const IMPACTSHOP_CLICK_TRACKING_OPTION_SCHEMA = 'impactshop_click_tracking_schem
 
 add_action('muplugins_loaded', 'impactshop_click_tracking_boot');
 
+function impactshop_click_tracking_is_always_reward_enabled(): bool
+{
+    if (function_exists('impactshop_ads_watch_is_always_reward_enabled')) {
+        return (bool) impactshop_ads_watch_is_always_reward_enabled();
+    }
+
+    return (bool) apply_filters('impactshop_ads_watch_always_reward_enabled', false);
+}
+
+function impactshop_click_tracking_is_sandbox_request(WP_REST_Request $request): bool
+{
+    if (function_exists('impactshop_ads_watch_get_request_write_mode')) {
+        return impactshop_ads_watch_get_request_write_mode($request) === 'sandbox';
+    }
+    $referer = (string) ($request->get_header('referer') ?? '');
+    $dev_slug = defined('IMPACTSHOP_ADS_DEV_CLONE_SLUG') ? IMPACTSHOP_ADS_DEV_CLONE_SLUG : 'impact-challenge-dev';
+    return $referer !== '' && strpos($referer, '/' . $dev_slug) !== false;
+}
+
+function impactshop_click_tracking_build_instance_dedupe(string $content_type, string $content_id, string $pseudo_id): string
+{
+    return sprintf(
+        'cta_click:%s:%s:%s:%s:%d',
+        $content_type,
+        $content_id !== '' ? $content_id : 'unknown',
+        $pseudo_id,
+        current_time('Y-m-d-H-i-s'),
+        wp_rand(1000, 999999)
+    );
+}
+
 function impactshop_click_tracking_boot(): void
 {
     impactshop_click_tracking_maybe_install();
@@ -94,8 +125,16 @@ function impactshop_click_tracking_handle(WP_REST_Request $request): WP_REST_Res
     }
 
     if ($dedupe_key === '') {
-        $dedupe_key = 'cta_click:' . $content_type . ':' . $content_id . ':' . md5($cta_url);
+        if (impactshop_click_tracking_is_always_reward_enabled()) {
+            $dedupe_key = impactshop_click_tracking_build_instance_dedupe($content_type, $content_id, $pseudo_id);
+        } else {
+            $dedupe_key = 'cta_click:' . $content_type . ':' . $content_id . ':' . md5($cta_url);
+        }
+    } elseif (impactshop_click_tracking_is_always_reward_enabled()) {
+        $dedupe_key = $dedupe_key . ':' . current_time('Y-m-d-H-i-s') . ':' . wp_rand(1000, 999999);
     }
+
+    $dedupe_key = substr($dedupe_key, 0, 140);
 
     global $wpdb;
     $table = $wpdb->prefix . 'impactshop_click_tracking';
@@ -113,6 +152,21 @@ function impactshop_click_tracking_handle(WP_REST_Request $request): WP_REST_Res
         ],
         ['%s','%s','%s','%s','%s','%s','%s','%s']
     );
+
+    if (impactshop_click_tracking_is_sandbox_request($request)) {
+        return new WP_REST_Response([
+            'status' => 'ok',
+            'sandbox' => true,
+            'reward_enabled' => $points_hint > 0,
+            'duplicate' => false,
+            'awarded_points' => 0,
+            'awarded_votes' => 0,
+            'new_total' => null,
+            'available_votes' => function_exists('impactshop_ads_watch_get_user_votes')
+                ? (int) impactshop_ads_watch_get_user_votes($pseudo_id)
+                : null,
+        ], 200);
+    }
 
     $reward_enabled = $points_hint > 0;
     $cta_points = $reward_enabled ? 5 : 0;

@@ -57,6 +57,7 @@ define('IMPACTSHOP_ADS_DEV_CLONE_WRITE_MODE', 'sandbox');
 define('IMPACTSHOP_ADS_DEBUG_CAPABILITY', IMPACTSHOP_ADS_DEV_CLONE_CAPABILITY);
 define('IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED', false);
 define('IMPACTSHOP_ADS_DEBUG_RATE_LIMIT_PER_MIN', 10);
+define('IMPACTSHOP_ADS_ALWAYS_REWARD_DEFAULT', false);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -146,6 +147,14 @@ function impactshop_ads_watch_get_points_total_for_pseudo(string $pseudo_id): in
     $points_manager = new Sharity_Points_Manager();
     $snapshot = $points_manager->get_points_snapshot_for_pseudo($pseudo_id);
     return isset($snapshot['points_total']) ? (int) $snapshot['points_total'] : 0;
+}
+
+function impactshop_ads_watch_is_always_reward_enabled(): bool
+{
+    return (bool) apply_filters(
+        'impactshop_ads_watch_always_reward_enabled',
+        IMPACTSHOP_ADS_ALWAYS_REWARD_DEFAULT
+    );
 }
 
 function impactshop_ads_watch_is_dev_clone_request(): bool
@@ -283,6 +292,10 @@ function impactshop_ads_watch_build_cta(string $label, string $url, int $points)
 
 function impactshop_ads_watch_build_cta_dedupe(string $pseudo_id, string $content_id): string
 {
+    if (impactshop_ads_watch_is_always_reward_enabled()) {
+        return impactshop_ads_watch_build_cta_instance_dedupe($pseudo_id, $content_id);
+    }
+
     $date_key = gmdate('Y-m-d');
     return sprintf('cta_click:%s:%s:%s', $content_id, $pseudo_id, $date_key);
 }
@@ -2144,8 +2157,20 @@ function impactshop_ads_watch_view(WP_REST_Request $request): WP_REST_Response
     }
 
     $day_key = current_time('Y-m-d');
-    $block = (int) floor(time() / 5);
-    $dedupe_key = sprintf('ads_watch:%s:%d:%s:%s:%s', $ad_type, $sponsor_id, $pseudo_id, $day_key, $block);
+    if (impactshop_ads_watch_is_always_reward_enabled()) {
+        $dedupe_key = sprintf(
+            'ads_watch:%s:%d:%s:%s:%s:%d',
+            $ad_type,
+            $sponsor_id,
+            $pseudo_id,
+            current_time('Y-m-d-H-i-s'),
+            wp_generate_password(6, false, false),
+            wp_rand(1000, 999999)
+        );
+    } else {
+        $block = (int) floor(time() / 5);
+        $dedupe_key = sprintf('ads_watch:%s:%d:%s:%s:%s', $ad_type, $sponsor_id, $pseudo_id, $day_key, $block);
+    }
 
     global $wpdb;
     $table_views = $wpdb->prefix . 'impactshop_ads_views';

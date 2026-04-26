@@ -26,6 +26,12 @@
 - A kapcsolódó postmortem follow-up szövegben javítva lett az `eldobj` → `eldob` elírás.
 - Gyors verifikáció: `node --check` OK, `impact-challenge-ui-smoke.sh` OK.
 
+## 2026-04-26T11:40:00+0200 - fix(impact-challenge): always-reward flag rollout + CTA sandbox parity
+- `wp-content/mu-plugins/impactshop-ads-watch.php`: default-off always-reward feature flag gate added (`IMPACTSHOP_ADS_ALWAYS_REWARD_DEFAULT=false`) with filter-controlled activation.
+- `wp-content/mu-plugins/impactshop-click-tracking.php`: always-reward dedupe parity added and CTA sandbox early-return introduced for dev-clone safe testing.
+- Bastion-approved deploy executed to production+staging, with auto backup/manifests + rollback script emitted by `scripts/hotfix-sync.sh`.
+- Cache flush completed on both environments; production runtime check confirms flag file active and CTA post-flag mismatch metric = 0.
+
 ## 2026-04-17T09:45:00+0200 - analytics guard stabilization: routes + skip telemetry + audit range fix
 - Added signed analytics canary routes in MU runtime: `/wp-json/impact/v1/analytics/summary` and `/wp-json/impact/v1/analytics/flags`.
 - Added SKIP telemetry log (`.codex/logs/analytics-skip-events.log`) and 24h WARN threshold in `scripts/verify/analytics-suite.sh`.
