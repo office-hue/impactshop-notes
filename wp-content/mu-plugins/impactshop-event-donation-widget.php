@@ -10,8 +10,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.4');
-define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.2.0');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.5');
+define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.3.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
 add_action('init', 'impactshop_event_donation_ensure_schema', 5);
@@ -401,15 +401,38 @@ function impactshop_event_donation_table_name(): string
     return $wpdb->prefix . 'impactshop_event_donations';
 }
 
+function impactshop_event_donation_ensure_ticket_mix_columns(string $table): void
+{
+    global $wpdb;
+
+    $columns = [
+        'ticket_count' => "ADD COLUMN ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER gdpr_email_consent",
+        'regular_ticket_count' => "ADD COLUMN regular_ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER ticket_count",
+        'supporter_ticket_count' => "ADD COLUMN supporter_ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER regular_ticket_count",
+        'ticket_serials' => "ADD COLUMN ticket_serials TEXT DEFAULT NULL AFTER supporter_ticket_count",
+        'selected_package' => "ADD COLUMN selected_package VARCHAR(20) DEFAULT NULL AFTER ticket_serials",
+    ];
+
+    foreach ($columns as $column => $alterSql) {
+        $exists = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $column));
+        if ($exists === $column) {
+            continue;
+        }
+
+        $wpdb->query("ALTER TABLE {$table} {$alterSql}");
+    }
+}
+
 function impactshop_event_donation_ensure_schema(): void
 {
     $current = (string) get_option('impactshop_event_donation_schema_version', '');
+    $table = impactshop_event_donation_table_name();
     if ($current === IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION) {
+        impactshop_event_donation_ensure_ticket_mix_columns($table);
         return;
     }
 
     global $wpdb;
-    $table = impactshop_event_donation_table_name();
     $charset = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE IF NOT EXISTS {$table} (
@@ -429,6 +452,8 @@ function impactshop_event_donation_ensure_schema(): void
         request_certificate TINYINT(1) NOT NULL DEFAULT 0,
         gdpr_email_consent TINYINT(1) NOT NULL DEFAULT 0,
         ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        regular_ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        supporter_ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0,
         ticket_serials TEXT DEFAULT NULL,
         selected_package VARCHAR(20) DEFAULT NULL,
         donation_cert_id VARCHAR(40) DEFAULT NULL,
@@ -454,6 +479,7 @@ function impactshop_event_donation_ensure_schema(): void
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
+    impactshop_event_donation_ensure_ticket_mix_columns($table);
 
     update_option('impactshop_event_donation_schema_version', IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION, false);
 }
@@ -466,6 +492,71 @@ function impactshop_event_donation_register_routes(): void
         'permission_callback' => '__return_true',
     ]);
 
+
+if (!function_exists('impactshop_event_donation_normalize_ticket_mix')) {
+    function impactshop_event_donation_normalize_ticket_mix(array $params): array
+    {
+        $regularTicketCount = max(0, (int) ($params['regular_ticket_count'] ?? 0));
+        $supporterTicketCount = max(0, (int) ($params['supporter_ticket_count'] ?? 0));
+        $ticketCount = max(0, (int) ($params['ticket_count'] ?? 0));
+        $ticketMixCount = $regularTicketCount + $supporterTicketCount;
+
+        if ($ticketMixCount > 0) {
+            $ticketCount = $ticketMixCount;
+        }
+
+        return [
+            'ticket_count' => $ticketCount,
+            'regular_ticket_count' => $regularTicketCount,
+            'supporter_ticket_count' => $supporterTicketCount,
+        ];
+    }
+}
+
+if (!function_exists('impactshop_event_donation_ticket_mix_summary')) {
+    function impactshop_event_donation_ticket_mix_summary(array $row): array
+    {
+        $regularTicketCount = max(0, (int) ($row['regular_ticket_count'] ?? 0));
+        $supporterTicketCount = max(0, (int) ($row['supporter_ticket_count'] ?? 0));
+        $ticketCount = max(0, (int) ($row['ticket_count'] ?? 0));
+
+        if ($ticketCount === 0) {
+            $ticketCount = $regularTicketCount + $supporterTicketCount;
+        }
+
+        return [
+            'ticket_count' => $ticketCount,
+            'regular_ticket_count' => $regularTicketCount,
+            'supporter_ticket_count' => $supporterTicketCount,
+        ];
+    }
+}
+
+if (!function_exists('impactshop_event_donation_append_ticket_mix_lines')) {
+    function impactshop_event_donation_append_ticket_mix_lines(string $body, array $ticketMix): string
+    {
+        $ticketCount = (int) ($ticketMix['ticket_count'] ?? 0);
+        if ($ticketCount <= 0) {
+            return $body;
+        }
+
+        $regularTicketCount = (int) ($ticketMix['regular_ticket_count'] ?? 0);
+        $supporterTicketCount = (int) ($ticketMix['supporter_ticket_count'] ?? 0);
+        $body .= "Összes jegy: {$ticketCount} db\n";
+
+        if ($regularTicketCount > 0 || $supporterTicketCount > 0) {
+            $body .= "Jegybontás:\n";
+            if ($regularTicketCount > 0) {
+                $body .= "- Alapjegy: {$regularTicketCount} db\n";
+            }
+            if ($supporterTicketCount > 0) {
+                $body .= "- Támogatói jegy: {$supporterTicketCount} db\n";
+            }
+        }
+
+        return $body;
+    }
+}
     register_rest_route('impact/v1', '/event-campaigns/(?P<slug>[a-z0-9\-]+)/stats', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'impactshop_event_donation_stats',
@@ -696,6 +787,8 @@ function impactshop_event_donation_stats_payload(array $campaign): array
             "SELECT
                 COALESCE(selected_package, '') AS package,
                 SUM(ticket_count)              AS tickets,
+                SUM(regular_ticket_count)      AS regular_tickets,
+                SUM(supporter_ticket_count)    AS supporter_tickets,
                 COUNT(*)                       AS donations
              FROM {$table}
              WHERE campaign_slug = %s
@@ -711,6 +804,8 @@ function impactshop_event_donation_stats_payload(array $campaign): array
         $pkg = $br['package'] !== '' ? $br['package'] : 'unknown';
         $ticketBreakdown[$pkg] = [
             'tickets'   => (int) $br['tickets'],
+            'regular_tickets' => (int) ($br['regular_tickets'] ?? 0),
+            'supporter_tickets' => (int) ($br['supporter_tickets'] ?? 0),
             'donations' => (int) $br['donations'],
         ];
         $totalTickets += (int) $br['tickets'];
@@ -856,7 +951,10 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
     $companyTaxId = sanitize_text_field((string) ($params['company_tax_id'] ?? ''));
     $companyAddress = sanitize_text_field((string) ($params['company_address'] ?? ''));
     $gdprEmailConsent = !empty($params['gdpr_email_consent']);
-    $ticketCount = max(0, (int) ($params['ticket_count'] ?? 0));
+    $ticketMix = impactshop_event_donation_normalize_ticket_mix($params);
+    $ticketCount = (int) $ticketMix['ticket_count'];
+    $regularTicketCount = (int) $ticketMix['regular_ticket_count'];
+    $supporterTicketCount = (int) $ticketMix['supporter_ticket_count'];
     $selectedPackage = sanitize_key((string) ($params['selected_package'] ?? ''));
     $selectedPackage = in_array($selectedPackage, ['silver', 'gold', 'platinum'], true) ? $selectedPackage : '';
 
@@ -900,13 +998,15 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
             'request_certificate' => $requestCertificate ? 1 : 0,
             'gdpr_email_consent' => $gdprEmailConsent ? 1 : 0,
             'ticket_count' => $ticketCount,
+            'regular_ticket_count' => $regularTicketCount,
+            'supporter_ticket_count' => $supporterTicketCount,
             'selected_package' => $selectedPackage !== '' ? $selectedPackage : null,
             'source_origin' => impactshop_event_donation_request_origin(),
             'return_url' => $returnUrl,
             'ip_address' => impactshop_event_donation_client_ip(),
             'user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 512),
         ],
-        ['%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%d','%s','%s','%s','%s','%s']
+        ['%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%d','%d','%d','%s','%s','%s','%s','%s']
     );
 
     if ($inserted === false) {
@@ -925,6 +1025,8 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
         'is_company' => $isCompany,
         'request_certificate' => $requestCertificate,
         'ticket_count' => $ticketCount,
+        'regular_ticket_count' => $regularTicketCount,
+        'supporter_ticket_count' => $supporterTicketCount,
         'selected_package' => $selectedPackage,
     ]);
 
@@ -991,6 +1093,8 @@ function impactshop_event_donation_create_checkout_session(array $order): ?array
         'metadata[amount_display]' => (string) $amountDisplay,
         'metadata[currency]' => $currency,
         'metadata[ticket_count]' => (string) ((int) ($order['ticket_count'] ?? 0)),
+        'metadata[regular_ticket_count]' => (string) ((int) ($order['regular_ticket_count'] ?? 0)),
+        'metadata[supporter_ticket_count]' => (string) ((int) ($order['supporter_ticket_count'] ?? 0)),
         'metadata[selected_package]' => (string) ($order['selected_package'] ?? ''),
     ];
 
@@ -1640,7 +1744,8 @@ function impactshop_event_donation_send_buyer_confirmation(array $row): void
     $donationId = (string) ($row['donation_id'] ?? '');
     $campaignSlug = (string) ($row['campaign_slug'] ?? '');
     $completedAt = (string) ($row['completed_at'] ?? '');
-    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketMix = impactshop_event_donation_ticket_mix_summary($row);
+    $ticketCount = (int) $ticketMix['ticket_count'];
     $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
     if (empty($ticketSerials) && !empty($row['ticket_serials'])) {
         $ticketSerials = (array) json_decode((string) $row['ticket_serials'], true);
@@ -1668,6 +1773,7 @@ function impactshop_event_donation_send_buyer_confirmation(array $row): void
 
     if ($ticketCount > 0) {
         $body .= "\n--- Jegyek ({$ticketCount} db) ---\n";
+        $body = impactshop_event_donation_append_ticket_mix_lines($body, $ticketMix);
         foreach ($ticketSerials as $idx => $serial) {
             $body .= ($idx + 1) . ". jegy: {$serial}\n";
         }
@@ -1701,7 +1807,8 @@ function impactshop_event_donation_send_transaction_notification(array $row): vo
     $completedAt = (string) ($row['completed_at'] ?? '');
     $isCompany = (int) ($row['is_company'] ?? 0) === 1;
     $requestCert = (int) ($row['request_certificate'] ?? 0) === 1;
-    $ticketCount = (int) ($row['ticket_count'] ?? 0);
+    $ticketMix = impactshop_event_donation_ticket_mix_summary($row);
+    $ticketCount = (int) $ticketMix['ticket_count'];
     $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
     if (empty($ticketSerials) && !empty($row['ticket_serials'])) {
         $ticketSerials = (array) json_decode((string) $row['ticket_serials'], true);
@@ -1726,6 +1833,7 @@ function impactshop_event_donation_send_transaction_notification(array $row): vo
 
     if ($ticketCount > 0) {
         $body .= "\n--- Jegyek ({$ticketCount} db) ---\n";
+        $body = impactshop_event_donation_append_ticket_mix_lines($body, $ticketMix);
         foreach ($ticketSerials as $idx => $serial) {
             $body .= ($idx + 1) . ". jegy: {$serial}\n";
         }

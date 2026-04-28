@@ -1,3 +1,12 @@
+## 2026-04-28 12:25 CEST - Jövőnk Vize widget ticket-mix parity + live/dev szétválasztás lezárva
+- A Jövőnk Vize widget backend most külön menti és továbbítja az `regular_ticket_count` és `supporter_ticket_count` mezőket; a buyer/admin e-mailek és a stats payload is külön bontást kapott.
+- A sémafrissítés explicit hiányzó-oszlop backfillt kapott, így production és staging alatt a régebbi táblák is felhozhatók a szükséges ticket mezőkre.
+- A frontend `1.7.2` logika most már dev és live URL-en is azonos: vegyes jegyválasztó, csomag + extra jegyek additív összesítése, egyértelműbb összegző szöveg.
+- A cache megkerüléséhez fizikai verziózott fájlnevek kerültek dokumentálásra:
+  - dev: `impactshop-event-donation-widget-dev-1.7.2.js`
+  - live: `impactshop-event-donation-widget-jovonkvize-1.7.2.js`
+- Deploy a sessionben bastion-approved hotfix útvonalon ment ki productionre és stagingre; rollback artefakt: `.codex/reports/hotfix-sync/rollback_20260428T093909Z.sh`.
+
 ## 2026-04-28 11:05 CEST - Hatás Körök report flow: reakció + report + inbox útvonal lezárva
 - A feed reakciógombok gyökérok javítva: a frontend `html(...)` helper eddig `disabled=false` esetben is kirakta a `disabled` attribútumot, ezért a reakciógombok ténylegesen le voltak tiltva. Javítva és deployolva.
 - A feed composer alias badge most már kör-detail fallbackből is hidratálódik, ezért a posztoló álneve nem generikus fallback szöveg.
