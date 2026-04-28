@@ -1,11 +1,13 @@
 (function () {
   "use strict";
 
+  var WIDGET_VERSION = "1.7.2";
   var SCRIPT_ATTR = "data-impact-campaign-widget";
   var STYLE_ID = "impact-event-donation-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-campaigns";
   var DEFAULT_FALLBACK_BASE = "https://app.sharity.hu/";
-  var TICKET_UNIT_PRICE = 150000;
+  var REGULAR_TICKET_UNIT_PRICE = 50000;
+  var SUPPORTER_TICKET_UNIT_PRICE = 150000;
   var STANDALONE_TICKET_MAX = 10;
 
   function ensureStyles() {
@@ -87,13 +89,19 @@
       ".impact-event-widget__tickets-label{font-size:13px;color:var(--iew-muted);flex:1}" +
       ".impact-event-widget__tickets-select{appearance:none;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(5,15,47,.7);color:var(--iew-text);font-size:15px;font-weight:700;padding:8px 28px 8px 12px;cursor:pointer;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23f8f4ea'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center}" +
       ".impact-event-widget__tickets-select:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
-      /* Solo ticket selector */
+      /* Mixed ticket selector */
       ".impact-event-widget__or-sep{text-align:center;font-size:12px;color:var(--iew-muted);letter-spacing:.05em;margin:4px 0}" +
-      ".impact-event-widget__solo-tickets{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;background:rgba(20,30,70,.8);border:1px solid rgba(255,255,255,.15)}" +
-      ".impact-event-widget__solo-label{font-size:13px;color:rgba(248,244,234,.85);flex:1;line-height:1.3}" +
-      ".impact-event-widget__solo-select{width:80px;flex-shrink:0;text-align:center;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(5,15,47,.95);color:#f8f4ea;font-size:18px;font-weight:700;padding:8px 10px;-moz-appearance:textfield}" +
-      ".impact-event-widget__solo-select:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
-      ".impact-event-widget__solo-select::-webkit-inner-spin-button,.impact-event-widget__solo-select::-webkit-outer-spin-button{opacity:1;cursor:pointer}" +
+      ".impact-event-widget__ticket-mix{display:grid;gap:10px;padding:14px;border-radius:16px;background:rgba(20,30,70,.8);border:1px solid rgba(255,255,255,.15)}" +
+      ".impact-event-widget__ticket-mix-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}" +
+      ".impact-event-widget__ticket-mix-title{font-size:13px;color:rgba(248,244,234,.88);line-height:1.35}" +
+      ".impact-event-widget__ticket-mix-note{font-size:11px;color:var(--iew-muted);text-align:right}" +
+      ".impact-event-widget__ticket-option{display:grid;grid-template-columns:1fr 84px;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(5,15,47,.52);border:1px solid rgba(255,255,255,.08)}" +
+      ".impact-event-widget__ticket-option-label{font-size:13px;color:var(--iew-text);font-weight:700}" +
+      ".impact-event-widget__ticket-option-sub{display:block;font-size:11px;color:var(--iew-muted);font-weight:500;margin-top:2px}" +
+      ".impact-event-widget__ticket-count{width:84px;flex-shrink:0;text-align:center;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(5,15,47,.95);color:#f8f4ea;font-size:18px;font-weight:700;padding:8px 10px;-moz-appearance:textfield}" +
+      ".impact-event-widget__ticket-count:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
+      ".impact-event-widget__ticket-count::-webkit-inner-spin-button,.impact-event-widget__ticket-count::-webkit-outer-spin-button{opacity:1;cursor:pointer}" +
+      ".impact-event-widget__ticket-mix-summary{font-size:12px;color:rgba(248,244,234,.86);padding-top:4px;border-top:1px solid rgba(255,255,255,.08)}" +
       "@media (max-width:640px){.impact-event-widget{padding:18px;border-radius:22px}.impact-event-widget__title{font-size:30px}.impact-event-widget__stats{grid-template-columns:1fr}.impact-event-widget__packages{grid-template-columns:1fr;gap:8px}.impact-event-widget__amounts{grid-template-columns:repeat(2,minmax(0,1fr))}.impact-event-widget__row{grid-template-columns:1fr}.impact-event-widget__actions{grid-template-columns:1fr}}";
 
     document.head.appendChild(style);
@@ -160,10 +168,21 @@
       '<span class="impact-event-widget__tickets-label">🎟️ Gálajegyek száma:</span>' +
       '<select class="impact-event-widget__tickets-select" data-role="ticket-count"><option value="0">–</option></select>' +
       '</div>' +
-      '<div class="impact-event-widget__or-sep">— vagy sima jegyvásárlás —</div>' +
-      '<div class="impact-event-widget__solo-tickets">' +
-      '<span class="impact-event-widget__solo-label">🎫 Jegyek száma<br><small style="opacity:.65;font-size:11px">1 jegy = 150 000 Ft</small></span>' +
-      '<input type="number" class="impact-event-widget__solo-select" data-role="solo-ticket-count" min="0" max="10" step="1" value="0">' +
+      '<div class="impact-event-widget__or-sep">— vagy jegyvásárlás —</div>' +
+      '<div class="impact-event-widget__ticket-mix">' +
+      '<div class="impact-event-widget__ticket-mix-head">' +
+      '<span class="impact-event-widget__ticket-mix-title">🎫 Jegytípus választó<br><small style="opacity:.7;font-size:11px">Vegyesen is kombinálható: pl. 1 támogatói + 2 alapjegy</small></span>' +
+      '<span class="impact-event-widget__ticket-mix-note">Max. ' + STANDALONE_TICKET_MAX + ' jegy összesen</span>' +
+      '</div>' +
+      '<div class="impact-event-widget__ticket-option">' +
+      '<span class="impact-event-widget__ticket-option-label">Alapjegy<span class="impact-event-widget__ticket-option-sub">1 db = 50 000 Ft</span></span>' +
+      '<input type="number" class="impact-event-widget__ticket-count" data-role="regular-ticket-count" min="0" max="10" step="1" value="0">' +
+      '</div>' +
+      '<div class="impact-event-widget__ticket-option">' +
+      '<span class="impact-event-widget__ticket-option-label">Támogatói jegy<span class="impact-event-widget__ticket-option-sub">1 db = 150 000 Ft</span></span>' +
+      '<input type="number" class="impact-event-widget__ticket-count" data-role="supporter-ticket-count" min="0" max="10" step="1" value="0">' +
+      '</div>' +
+      '<div class="impact-event-widget__ticket-mix-summary" data-role="ticket-mix-summary">Jegyek összesen: 0 db<br>Fizetendő végösszeg: 0 Ft</div>' +
       '</div>' +
       '<div class="impact-event-widget__or-sep">— vagy egyszerű adományozás —</div>' +
       '<div class="impact-event-widget__amounts" data-role="preset-amounts"></div>' +
@@ -234,7 +253,9 @@
       presets: root.querySelector('[data-role="preset-amounts"]'),
       ticketRow: root.querySelector('[data-role="ticket-row"]'),
       ticketCount: root.querySelector('[data-role="ticket-count"]'),
-      soloTicketCount: root.querySelector('[data-role="solo-ticket-count"]'),
+      regularTicketCount: root.querySelector('[data-role="regular-ticket-count"]'),
+      supporterTicketCount: root.querySelector('[data-role="supporter-ticket-count"]'),
+      ticketMixSummary: root.querySelector('[data-role="ticket-mix-summary"]'),
       customAmount: root.querySelector('[data-role="custom-amount"]'),
       currencyLabel: root.querySelector('[data-role="currency-label"]'),
       donorName: root.querySelector('[data-role="donor-name"]'),
@@ -256,8 +277,13 @@
       info: null,
       stats: null,
       selectedAmount: 0,
+      baseAmount: 0,
+      packageAmount: 0,
       selectedPkg: null,
       ticketCount: 0,
+      packageTicketCount: 0,
+      regularTicketCount: 0,
+      supporterTicketCount: 0,
       shareUrl: "https://jovonkvize.hu",
       pending: false,
       useFallbackApi: false,
@@ -374,8 +400,9 @@
       state.selectedPkg = pkg;
       if (!pkg) {
         els.ticketRow.classList.remove("is-open");
-        state.ticketCount = 0;
+        state.packageTicketCount = 0;
         els.ticketCount.innerHTML = '<option value="0">–</option>';
+        els.ticketCount.value = "0";
         return;
       }
       var max = PKG_MAX_TICKETS[pkg] || 2;
@@ -385,43 +412,124 @@
       }
       els.ticketCount.innerHTML = html;
       els.ticketCount.value = String(max);
-      state.ticketCount = max;
+      state.packageTicketCount = max;
       els.ticketRow.classList.add("is-open");
     }
 
+    function clampTicketCount(value) {
+      return Math.max(0, Math.min(STANDALONE_TICKET_MAX, Number(value) || 0));
+    }
+
+    function renderTicketMixSummary() {
+      if (!els.ticketMixSummary) {
+        return;
+      }
+      var extraCount = state.regularTicketCount + state.supporterTicketCount;
+      var extraAmount = (state.regularTicketCount * REGULAR_TICKET_UNIT_PRICE) + (state.supporterTicketCount * SUPPORTER_TICKET_UNIT_PRICE);
+      if (state.ticketCount <= 0) {
+        els.ticketMixSummary.innerHTML = "Jegyek összesen: 0 db<br>Fizetendő végösszeg: 0 Ft";
+        return;
+      }
+      var details = "";
+      if (state.selectedPkg) {
+        details = "<br>Csomag jegyek: " + state.packageTicketCount + " db";
+        details += "<br>Extra jegyek: " + extraCount + " db";
+      }
+      var parts = [];
+      if (state.regularTicketCount > 0) {
+        parts.push(state.regularTicketCount + " alapjegy");
+      }
+      if (state.supporterTicketCount > 0) {
+        parts.push(state.supporterTicketCount + " támogatói jegy");
+      }
+      if (parts.length > 0) {
+        details += "<br>Jegybontás: " + parts.join(" + ");
+      }
+      if (!state.selectedPkg && extraCount > 0) {
+        details += "<br>Extra jegyek ára: " + formatAmount(extraAmount, "huf");
+      }
+      els.ticketMixSummary.innerHTML = "Jegyek összesen: " + state.ticketCount + " db" +
+        details +
+        "<br>Fizetendő végösszeg: " + formatAmount(state.selectedAmount, "huf");
+    }
+
+    function refreshComputedTotals(options) {
+      var extraCount = state.regularTicketCount + state.supporterTicketCount;
+      var extraAmount = (state.regularTicketCount * REGULAR_TICKET_UNIT_PRICE) + (state.supporterTicketCount * SUPPORTER_TICKET_UNIT_PRICE);
+      var packageTickets = state.selectedPkg ? (Number(els.ticketCount.value) || 0) : 0;
+      var baseAmount = state.selectedPkg ? state.packageAmount : state.baseAmount;
+
+      state.packageTicketCount = packageTickets;
+      state.ticketCount = packageTickets + extraCount;
+      state.selectedAmount = Math.max(0, Math.round(baseAmount + extraAmount));
+
+      if (!(options && options.preserveCustomField) && els.customAmount) {
+        els.customAmount.value = state.selectedAmount > 0 ? formatInputAmount(state.selectedAmount) : "";
+      }
+
+      renderTicketMixSummary();
+    }
+
+    function resetTicketMix() {
+      state.regularTicketCount = 0;
+      state.supporterTicketCount = 0;
+      if (els.regularTicketCount) {
+        els.regularTicketCount.value = "0";
+      }
+      if (els.supporterTicketCount) {
+        els.supporterTicketCount.value = "0";
+      }
+      renderTicketMixSummary();
+    }
+
+    function recalculateTicketMix(changedType) {
+      var regularCount = clampTicketCount(els.regularTicketCount ? els.regularTicketCount.value : 0);
+      var supporterCount = clampTicketCount(els.supporterTicketCount ? els.supporterTicketCount.value : 0);
+
+      if (regularCount + supporterCount > STANDALONE_TICKET_MAX) {
+        if (changedType === "supporter") {
+          supporterCount = Math.max(0, STANDALONE_TICKET_MAX - regularCount);
+        } else {
+          regularCount = Math.max(0, STANDALONE_TICKET_MAX - supporterCount);
+        }
+      }
+
+      if (els.regularTicketCount) {
+        els.regularTicketCount.value = String(regularCount);
+      }
+      if (els.supporterTicketCount) {
+        els.supporterTicketCount.value = String(supporterCount);
+      }
+
+      var totalCount = regularCount + supporterCount;
+
+      state.regularTicketCount = regularCount;
+      state.supporterTicketCount = supporterCount;
+      if (!state.selectedPkg && totalCount > 0) {
+        state.baseAmount = 0;
+        els.presets.querySelectorAll(".impact-event-widget__amount-btn").forEach(function (b) { b.classList.remove("is-active"); });
+      }
+
+      refreshComputedTotals();
+    }
+
     function setSelectedAmount(amount, source) {
-      state.selectedAmount = Math.max(0, Math.round(toNumber(amount)));
+      state.baseAmount = Math.max(0, Math.round(toNumber(amount)));
       var buttons = els.presets.querySelectorAll(".impact-event-widget__amount-btn");
       buttons.forEach(function (button) {
         var value = Number(button.getAttribute("data-amount") || 0);
-        if (value === state.selectedAmount && source !== "package") {
+        if (value === state.baseAmount && source !== "package") {
           button.classList.add("is-active");
         } else {
           button.classList.remove("is-active");
         }
       });
-      var pkgButtons = root.querySelectorAll(".impact-event-widget__pkg");
-      var selectedPkg = null;
-      pkgButtons.forEach(function (btn) {
-        var pkgVal = Number(btn.getAttribute("data-pkg-amount") || 0);
-        if (pkgVal === state.selectedAmount && source === "package") {
-          btn.classList.add("is-active");
-          selectedPkg = btn.getAttribute("data-pkg");
-        } else {
-          btn.classList.remove("is-active");
-        }
-      });
-      if (source === "package") {
-        updateTicketSelector(selectedPkg);
-      } else {
-        updateTicketSelector(null);
-      }
-      if (source !== "solo" && els.soloTicketCount) {
-        els.soloTicketCount.value = "0";
-      }
-      if (els.customAmount && state.selectedAmount > 0) {
-        els.customAmount.value = formatInputAmount(state.selectedAmount);
-      }
+      root.querySelectorAll(".impact-event-widget__pkg").forEach(function (btn) { btn.classList.remove("is-active"); });
+      state.selectedPkg = null;
+      state.packageAmount = 0;
+      updateTicketSelector(null);
+      resetTicketMix();
+      refreshComputedTotals({ preserveCustomField: source === "custom-input" });
     }
 
     function renderPresets(amounts, currency) {
@@ -435,12 +543,12 @@
         button.setAttribute("data-amount", String(value));
         button.textContent = formatAmount(value, currency);
         button.addEventListener("click", function () {
-          setSelectedAmount(value);
+          setSelectedAmount(value, "preset");
         });
         els.presets.appendChild(button);
 
         if (index === 0 && state.selectedAmount === 0) {
-          setSelectedAmount(value);
+          setSelectedAmount(value, "preset-default");
         }
       });
     }
@@ -470,6 +578,8 @@
       return {
         amount: amount,
         ticket_count: state.ticketCount || 0,
+        regular_ticket_count: state.regularTicketCount || 0,
+        supporter_ticket_count: state.supporterTicketCount || 0,
         selected_package: state.selectedPkg || null,
         donor_name: (els.donorName.value || "").trim(),
         email: (els.donorEmail.value || "").trim(),
@@ -680,45 +790,46 @@
         var diff = formatted.length - beforeLen;
         els.customAmount.setSelectionRange(caret + diff, caret + diff);
         if (v > 0) {
-          state.selectedAmount = v;
+          state.baseAmount = v;
           var buttons = els.presets.querySelectorAll(".impact-event-widget__amount-btn");
           buttons.forEach(function (button) { button.classList.remove("is-active"); });
           var pkgs = root.querySelectorAll(".impact-event-widget__pkg");
           pkgs.forEach(function (p) { p.classList.remove("is-active"); });
+          state.selectedPkg = null;
+          state.packageAmount = 0;
           updateTicketSelector(null);
-          if (els.soloTicketCount) { els.soloTicketCount.value = "0"; }
+          resetTicketMix();
+          refreshComputedTotals({ preserveCustomField: true });
         }
       });
 
       els.ticketCount.addEventListener("change", function () {
-        state.ticketCount = Number(els.ticketCount.value) || 0;
+        state.packageTicketCount = Number(els.ticketCount.value) || 0;
+        refreshComputedTotals();
       });
 
-      els.soloTicketCount.addEventListener("change", function () {
-        var n = Number(els.soloTicketCount.value) || 0;
-        if (n > 0) {
-          var totalAmount = n * TICKET_UNIT_PRICE;
-          state.ticketCount = n;
-          state.selectedPkg = null;
-          state.selectedAmount = totalAmount;
-          root.querySelectorAll(".impact-event-widget__pkg").forEach(function (b) { b.classList.remove("is-active"); });
-          els.ticketRow.classList.remove("is-open");
-          els.ticketCount.innerHTML = '<option value="0">–</option>';
-          els.presets.querySelectorAll(".impact-event-widget__amount-btn").forEach(function (b) { b.classList.remove("is-active"); });
-          els.customAmount.value = formatInputAmount(totalAmount);
-        } else {
-          state.ticketCount = 0;
-          state.selectedPkg = null;
-          state.selectedAmount = 0;
-          els.customAmount.value = "";
-        }
+      els.regularTicketCount.addEventListener("input", function () {
+        recalculateTicketMix("regular");
+      });
+
+      els.supporterTicketCount.addEventListener("input", function () {
+        recalculateTicketMix("supporter");
       });
 
       var pkgButtons = root.querySelectorAll(".impact-event-widget__pkg");
       pkgButtons.forEach(function (btn) {
         btn.addEventListener("click", function () {
           var amount = Number(btn.getAttribute("data-pkg-amount") || 0);
-          if (amount > 0) { setSelectedAmount(amount, "package"); }
+          if (amount > 0) {
+            state.packageAmount = amount;
+            state.selectedPkg = btn.getAttribute("data-pkg") || null;
+            state.baseAmount = 0;
+            els.presets.querySelectorAll(".impact-event-widget__amount-btn").forEach(function (b) { b.classList.remove("is-active"); });
+            root.querySelectorAll(".impact-event-widget__pkg").forEach(function (b) { b.classList.remove("is-active"); });
+            btn.classList.add("is-active");
+            updateTicketSelector(state.selectedPkg);
+            refreshComputedTotals();
+          }
         });
       });
 
@@ -747,9 +858,11 @@
 
     async function init() {
       bindEvents();
-      // Number input: set max based on config
-      els.soloTicketCount.max = String(STANDALONE_TICKET_MAX);
-      els.soloTicketCount.value = "0";
+      els.regularTicketCount.max = String(STANDALONE_TICKET_MAX);
+      els.regularTicketCount.value = "0";
+      els.supporterTicketCount.max = String(STANDALONE_TICKET_MAX);
+      els.supporterTicketCount.value = "0";
+      renderTicketMixSummary();
       setStatus(els.status, "Kampány adatok betöltése...", "");
 
       try {

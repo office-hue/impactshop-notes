@@ -1,3 +1,12 @@
+## 2026-04-28T12:25:00+0200 - jovonkvize widget ticket-mix parity + cache-proof dev/live split
+- `impactshop-event-donation-widget.php`: schema `1.3.0`, runtime `1.5.5`; separate `regular_ticket_count` / `supporter_ticket_count` storage, Stripe metadata, stats and buyer/admin email breakdown added.
+- Schema hardening added for older prod/staging tables via explicit missing-column backfill, plus helper `function_exists` guards for MU double-load tolerance.
+- Widget JS parity established across dev and live files with identical `1.7.2` behavior: mixed ticket selector, clearer summary copy, and additive package + extra ticket computation.
+- Cache bypass canonicalized through physical versioned URLs:
+  - dev: `impactshop-event-donation-widget-dev-1.7.2.js`
+  - live: `impactshop-event-donation-widget-jovonkvize-1.7.2.js`
+- Deploy verification during session: production and staging hotfix sync completed, cache flush completed, remote grep confirmed live files contain `WIDGET_VERSION = "1.7.2"` and additive total logic.
+
 ## 2026-04-28T11:05:00+0200 - hatas-korok report flow fixed end-to-end (store + mail)
 - A `impact-community.php` report útvonala most már közvetlenül menti a bejelentéseket a `wp_ic_reports` táblába, nem csak `do_action` + log ágon fut.
 - A report válasz most visszaadja a `report_id` és `emailed` mezőket is, így a kliens és a debug log külön tudja azonosítani a sikeres report kérést.

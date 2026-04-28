@@ -1,10 +1,14 @@
 (function () {
   "use strict";
 
+  var WIDGET_VERSION = "1.7.2";
   var SCRIPT_ATTR = "data-impact-campaign-widget";
-  var STYLE_ID = "impact-event-donation-widget-style";
+  var STYLE_ID = "impact-event-donation-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-campaigns";
   var DEFAULT_FALLBACK_BASE = "https://app.sharity.hu/";
+  var REGULAR_TICKET_UNIT_PRICE = 50000;
+  var SUPPORTER_TICKET_UNIT_PRICE = 150000;
+  var STANDALONE_TICKET_MAX = 10;
 
   function ensureStyles() {
     if (document.getElementById(STYLE_ID)) {
@@ -53,7 +57,52 @@
       ".impact-event-widget__share-menu.is-open{display:grid;gap:4px}" +
       ".impact-event-widget__share-link{border:none;background:transparent;color:var(--iew-text);padding:8px 10px;text-align:left;cursor:pointer;border-radius:10px;font-size:13px}" +
       ".impact-event-widget__share-link:hover{background:rgba(255,255,255,.12)}" +
-      "@media (max-width:640px){.impact-event-widget{padding:18px;border-radius:22px}.impact-event-widget__title{font-size:30px}.impact-event-widget__stats{grid-template-columns:1fr}.impact-event-widget__amounts{grid-template-columns:repeat(2,minmax(0,1fr))}.impact-event-widget__row{grid-template-columns:1fr}.impact-event-widget__actions{grid-template-columns:1fr}}";
+      /* ── Package tier cards ───────────────────────────── */
+      ".impact-event-widget__packages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}" +
+      ".impact-event-widget__pkg{position:relative;padding:14px 12px;border-radius:16px;border:2px solid transparent;cursor:pointer;transition:all .25s ease;text-align:center;overflow:hidden}" +
+      ".impact-event-widget__pkg:before{content:'';position:absolute;inset:0;border-radius:14px;opacity:.13;pointer-events:none;transition:opacity .25s ease}" +
+      ".impact-event-widget__pkg:hover:before{opacity:.22}" +
+      ".impact-event-widget__pkg.is-active{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}" +
+      /* Silver */
+      ".impact-event-widget__pkg--silver{border-color:rgba(192,192,208,.35);background:linear-gradient(165deg,rgba(160,170,190,.14),rgba(220,225,235,.08))}" +
+      ".impact-event-widget__pkg--silver:before{background:linear-gradient(165deg,#a0aabe,#dce1eb)}" +
+      ".impact-event-widget__pkg--silver.is-active{border-color:rgba(192,200,220,.7);box-shadow:0 8px 24px rgba(160,170,200,.25)}" +
+      ".impact-event-widget__pkg--silver .impact-event-widget__pkg-icon{color:#c0c8dc}" +
+      /* Gold */
+      ".impact-event-widget__pkg--gold{border-color:rgba(198,154,95,.4);background:linear-gradient(165deg,rgba(198,154,95,.16),rgba(244,221,174,.08))}" +
+      ".impact-event-widget__pkg--gold:before{background:linear-gradient(165deg,#c69a5f,#f4ddae)}" +
+      ".impact-event-widget__pkg--gold.is-active{border-color:rgba(244,221,174,.72);box-shadow:0 8px 24px rgba(198,154,95,.28)}" +
+      ".impact-event-widget__pkg--gold .impact-event-widget__pkg-icon{color:#f4ddae}" +
+      /* Platinum */
+      ".impact-event-widget__pkg--platinum{border-color:rgba(180,160,220,.4);background:linear-gradient(165deg,rgba(120,100,180,.16),rgba(200,185,240,.08))}" +
+      ".impact-event-widget__pkg--platinum:before{background:linear-gradient(165deg,#8878b8,#c8b9f0)}" +
+      ".impact-event-widget__pkg--platinum.is-active{border-color:rgba(200,185,240,.72);box-shadow:0 8px 24px rgba(120,100,180,.28)}" +
+      ".impact-event-widget__pkg--platinum .impact-event-widget__pkg-icon{color:#c8b9f0}" +
+      /* Package inner elements */
+      ".impact-event-widget__pkg-icon{font-size:28px;line-height:1;margin-bottom:6px}" +
+      ".impact-event-widget__pkg-name{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;letter-spacing:.02em;margin-bottom:4px}" +
+      ".impact-event-widget__pkg-amount{font-size:15px;font-weight:800;margin-bottom:2px}" +
+      ".impact-event-widget__pkg-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--iew-muted)}" +
+      /* Ticket selector */
+      ".impact-event-widget__tickets{display:none;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--iew-panel);border:1px solid rgba(255,255,255,.1)}" +
+      ".impact-event-widget__tickets.is-open{display:flex}" +
+      ".impact-event-widget__tickets-label{font-size:13px;color:var(--iew-muted);flex:1}" +
+      ".impact-event-widget__tickets-select{appearance:none;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(5,15,47,.7);color:var(--iew-text);font-size:15px;font-weight:700;padding:8px 28px 8px 12px;cursor:pointer;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23f8f4ea'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center}" +
+      ".impact-event-widget__tickets-select:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
+      /* Mixed ticket selector */
+      ".impact-event-widget__or-sep{text-align:center;font-size:12px;color:var(--iew-muted);letter-spacing:.05em;margin:4px 0}" +
+      ".impact-event-widget__ticket-mix{display:grid;gap:10px;padding:14px;border-radius:16px;background:rgba(20,30,70,.8);border:1px solid rgba(255,255,255,.15)}" +
+      ".impact-event-widget__ticket-mix-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}" +
+      ".impact-event-widget__ticket-mix-title{font-size:13px;color:rgba(248,244,234,.88);line-height:1.35}" +
+      ".impact-event-widget__ticket-mix-note{font-size:11px;color:var(--iew-muted);text-align:right}" +
+      ".impact-event-widget__ticket-option{display:grid;grid-template-columns:1fr 84px;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:rgba(5,15,47,.52);border:1px solid rgba(255,255,255,.08)}" +
+      ".impact-event-widget__ticket-option-label{font-size:13px;color:var(--iew-text);font-weight:700}" +
+      ".impact-event-widget__ticket-option-sub{display:block;font-size:11px;color:var(--iew-muted);font-weight:500;margin-top:2px}" +
+      ".impact-event-widget__ticket-count{width:84px;flex-shrink:0;text-align:center;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(5,15,47,.95);color:#f8f4ea;font-size:18px;font-weight:700;padding:8px 10px;-moz-appearance:textfield}" +
+      ".impact-event-widget__ticket-count:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
+      ".impact-event-widget__ticket-count::-webkit-inner-spin-button,.impact-event-widget__ticket-count::-webkit-outer-spin-button{opacity:1;cursor:pointer}" +
+      ".impact-event-widget__ticket-mix-summary{font-size:12px;color:rgba(248,244,234,.86);padding-top:4px;border-top:1px solid rgba(255,255,255,.08)}" +
+      "@media (max-width:640px){.impact-event-widget{padding:18px;border-radius:22px}.impact-event-widget__title{font-size:30px}.impact-event-widget__stats{grid-template-columns:1fr}.impact-event-widget__packages{grid-template-columns:1fr;gap:8px}.impact-event-widget__amounts{grid-template-columns:repeat(2,minmax(0,1fr))}.impact-event-widget__row{grid-template-columns:1fr}.impact-event-widget__actions{grid-template-columns:1fr}}";
 
     document.head.appendChild(style);
   }
@@ -94,9 +143,51 @@
       '<div class="impact-event-widget__stat"><div class="impact-event-widget__stat-label">Átlag / támogató</div><div class="impact-event-widget__stat-value" data-role="stat-average">0 Ft</div></div>' +
       '</div>' +
       '<div class="impact-event-widget__progress" aria-hidden="true"><span data-role="progress"></span></div>' +
+      /* ── Package tier cards ── */
+      '<div class="impact-event-widget__packages" data-role="packages">' +
+      '<button type="button" class="impact-event-widget__pkg impact-event-widget__pkg--silver" data-pkg="silver" data-pkg-amount="1000000">' +
+      '<div class="impact-event-widget__pkg-icon">🥈</div>' +
+      '<div class="impact-event-widget__pkg-name">Ezüst</div>' +
+      '<div class="impact-event-widget__pkg-amount" data-role="pkg-amount-silver">1 000 000 Ft</div>' +
+      '<div class="impact-event-widget__pkg-label">csomag</div>' +
+      '</button>' +
+      '<button type="button" class="impact-event-widget__pkg impact-event-widget__pkg--gold" data-pkg="gold" data-pkg-amount="2000000">' +
+      '<div class="impact-event-widget__pkg-icon">🥇</div>' +
+      '<div class="impact-event-widget__pkg-name">Arany</div>' +
+      '<div class="impact-event-widget__pkg-amount" data-role="pkg-amount-gold">2 000 000 Ft</div>' +
+      '<div class="impact-event-widget__pkg-label">csomag</div>' +
+      '</button>' +
+      '<button type="button" class="impact-event-widget__pkg impact-event-widget__pkg--platinum" data-pkg="platinum" data-pkg-amount="3000000">' +
+      '<div class="impact-event-widget__pkg-icon">💎</div>' +
+      '<div class="impact-event-widget__pkg-name">Platina</div>' +
+      '<div class="impact-event-widget__pkg-amount" data-role="pkg-amount-platinum">3 000 000 Ft</div>' +
+      '<div class="impact-event-widget__pkg-label">csomag</div>' +
+      '</button>' +
+      '</div>' +
+      '<div class="impact-event-widget__tickets" data-role="ticket-row">' +
+      '<span class="impact-event-widget__tickets-label">🎟️ Gálajegyek száma:</span>' +
+      '<select class="impact-event-widget__tickets-select" data-role="ticket-count"><option value="0">–</option></select>' +
+      '</div>' +
+      '<div class="impact-event-widget__or-sep">— vagy jegyvásárlás —</div>' +
+      '<div class="impact-event-widget__ticket-mix">' +
+      '<div class="impact-event-widget__ticket-mix-head">' +
+      '<span class="impact-event-widget__ticket-mix-title">🎫 Jegytípus választó<br><small style="opacity:.7;font-size:11px">Vegyesen is kombinálható: pl. 1 támogatói + 2 alapjegy</small></span>' +
+      '<span class="impact-event-widget__ticket-mix-note">Max. ' + STANDALONE_TICKET_MAX + ' jegy összesen</span>' +
+      '</div>' +
+      '<div class="impact-event-widget__ticket-option">' +
+      '<span class="impact-event-widget__ticket-option-label">Alapjegy<span class="impact-event-widget__ticket-option-sub">1 db = 50 000 Ft</span></span>' +
+      '<input type="number" class="impact-event-widget__ticket-count" data-role="regular-ticket-count" min="0" max="10" step="1" value="0">' +
+      '</div>' +
+      '<div class="impact-event-widget__ticket-option">' +
+      '<span class="impact-event-widget__ticket-option-label">Támogatói jegy<span class="impact-event-widget__ticket-option-sub">1 db = 150 000 Ft</span></span>' +
+      '<input type="number" class="impact-event-widget__ticket-count" data-role="supporter-ticket-count" min="0" max="10" step="1" value="0">' +
+      '</div>' +
+      '<div class="impact-event-widget__ticket-mix-summary" data-role="ticket-mix-summary">Jegyek összesen: 0 db<br>Fizetendő végösszeg: 0 Ft</div>' +
+      '</div>' +
+      '<div class="impact-event-widget__or-sep">— vagy egyszerű adományozás —</div>' +
       '<div class="impact-event-widget__amounts" data-role="preset-amounts"></div>' +
       '<div class="impact-event-widget__custom">' +
-      '<input class="impact-event-widget__input" data-role="custom-amount" type="number" min="500" step="500" inputmode="numeric" placeholder="Egyedi összeg (Ft)">' +
+      '<input class="impact-event-widget__input" data-role="custom-amount" type="text" inputmode="numeric" placeholder="Egyedi összeg (Ft)">' +
       '<span data-role="currency-label">HUF</span>' +
       '</div>' +
       '<div class="impact-event-widget__row">' +
@@ -112,7 +203,7 @@
       '</div>' +
       '<label class="impact-event-widget__checkbox"><input data-role="cert-consent" type="checkbox"> <span>Kérek adományigazolást, és hozzájárulok az e-mailes kiállításhoz.</span></label>' +
       '</div>' +
-      '<label class="impact-event-widget__checkbox"><input data-role="consent" type="checkbox"> <span>Elfogadom az ÁSZF-et és az adatkezelési tájékoztatót.</span></label>' +
+      '<label class="impact-event-widget__checkbox"><input data-role="consent" type="checkbox"> <span>Elfogadom az <a href="https://app.sharity.hu/ngo-guides/jogi-dokumentumok/" target="_blank" rel="noopener" style="color:#7ec8e3;text-decoration:underline">ÁSZF-et és az adatkezelési tájékoztatót</a>.</span></label>' +
       '<div class="impact-event-widget__actions">' +
       '<button class="impact-event-widget__donate" data-role="donate" type="button">Támogatom az ügyet</button>' +
       '<button class="impact-event-widget__share" data-role="share" type="button">Megosztás</button>' +
@@ -160,6 +251,11 @@
       statAverage: root.querySelector('[data-role="stat-average"]'),
       progress: root.querySelector('[data-role="progress"]'),
       presets: root.querySelector('[data-role="preset-amounts"]'),
+      ticketRow: root.querySelector('[data-role="ticket-row"]'),
+      ticketCount: root.querySelector('[data-role="ticket-count"]'),
+      regularTicketCount: root.querySelector('[data-role="regular-ticket-count"]'),
+      supporterTicketCount: root.querySelector('[data-role="supporter-ticket-count"]'),
+      ticketMixSummary: root.querySelector('[data-role="ticket-mix-summary"]'),
       customAmount: root.querySelector('[data-role="custom-amount"]'),
       currencyLabel: root.querySelector('[data-role="currency-label"]'),
       donorName: root.querySelector('[data-role="donor-name"]'),
@@ -181,6 +277,13 @@
       info: null,
       stats: null,
       selectedAmount: 0,
+      baseAmount: 0,
+      packageAmount: 0,
+      selectedPkg: null,
+      ticketCount: 0,
+      packageTicketCount: 0,
+      regularTicketCount: 0,
+      supporterTicketCount: 0,
       shareUrl: "https://jovonkvize.hu",
       pending: false,
       useFallbackApi: false,
@@ -282,20 +385,151 @@
       if (theme.text) root.style.setProperty("--iew-text", theme.text);
     }
 
-    function setSelectedAmount(amount) {
-      state.selectedAmount = Math.max(0, Math.round(toNumber(amount)));
+    var PKG_MAX_TICKETS = { silver: 2, gold: 4, platinum: 6 };
+
+    function formatInputAmount(val) {
+      var n = String(val).replace(/\D/g, "");
+      return n.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
+
+    function parseInputAmount(str) {
+      return Math.round(toNumber(String(str).replace(/\s/g, "")));
+    }
+
+    function updateTicketSelector(pkg) {
+      state.selectedPkg = pkg;
+      if (!pkg) {
+        els.ticketRow.classList.remove("is-open");
+        state.packageTicketCount = 0;
+        els.ticketCount.innerHTML = '<option value="0">–</option>';
+        els.ticketCount.value = "0";
+        return;
+      }
+      var max = PKG_MAX_TICKETS[pkg] || 2;
+      var html = '';
+      for (var i = 0; i <= max; i++) {
+        html += '<option value="' + i + '">' + (i === 0 ? '–' : i + ' fő') + '</option>';
+      }
+      els.ticketCount.innerHTML = html;
+      els.ticketCount.value = String(max);
+      state.packageTicketCount = max;
+      els.ticketRow.classList.add("is-open");
+    }
+
+    function clampTicketCount(value) {
+      return Math.max(0, Math.min(STANDALONE_TICKET_MAX, Number(value) || 0));
+    }
+
+    function renderTicketMixSummary() {
+      if (!els.ticketMixSummary) {
+        return;
+      }
+      var extraCount = state.regularTicketCount + state.supporterTicketCount;
+      var extraAmount = (state.regularTicketCount * REGULAR_TICKET_UNIT_PRICE) + (state.supporterTicketCount * SUPPORTER_TICKET_UNIT_PRICE);
+      if (state.ticketCount <= 0) {
+        els.ticketMixSummary.innerHTML = "Jegyek összesen: 0 db<br>Fizetendő végösszeg: 0 Ft";
+        return;
+      }
+      var details = "";
+      if (state.selectedPkg) {
+        details = "<br>Csomag jegyek: " + state.packageTicketCount + " db";
+        details += "<br>Extra jegyek: " + extraCount + " db";
+      }
+      var parts = [];
+      if (state.regularTicketCount > 0) {
+        parts.push(state.regularTicketCount + " alapjegy");
+      }
+      if (state.supporterTicketCount > 0) {
+        parts.push(state.supporterTicketCount + " támogatói jegy");
+      }
+      if (parts.length > 0) {
+        details += "<br>Jegybontás: " + parts.join(" + ");
+      }
+      if (!state.selectedPkg && extraCount > 0) {
+        details += "<br>Extra jegyek ára: " + formatAmount(extraAmount, "huf");
+      }
+      els.ticketMixSummary.innerHTML = "Jegyek összesen: " + state.ticketCount + " db" +
+        details +
+        "<br>Fizetendő végösszeg: " + formatAmount(state.selectedAmount, "huf");
+    }
+
+    function refreshComputedTotals(options) {
+      var extraCount = state.regularTicketCount + state.supporterTicketCount;
+      var extraAmount = (state.regularTicketCount * REGULAR_TICKET_UNIT_PRICE) + (state.supporterTicketCount * SUPPORTER_TICKET_UNIT_PRICE);
+      var packageTickets = state.selectedPkg ? (Number(els.ticketCount.value) || 0) : 0;
+      var baseAmount = state.selectedPkg ? state.packageAmount : state.baseAmount;
+
+      state.packageTicketCount = packageTickets;
+      state.ticketCount = packageTickets + extraCount;
+      state.selectedAmount = Math.max(0, Math.round(baseAmount + extraAmount));
+
+      if (!(options && options.preserveCustomField) && els.customAmount) {
+        els.customAmount.value = state.selectedAmount > 0 ? formatInputAmount(state.selectedAmount) : "";
+      }
+
+      renderTicketMixSummary();
+    }
+
+    function resetTicketMix() {
+      state.regularTicketCount = 0;
+      state.supporterTicketCount = 0;
+      if (els.regularTicketCount) {
+        els.regularTicketCount.value = "0";
+      }
+      if (els.supporterTicketCount) {
+        els.supporterTicketCount.value = "0";
+      }
+      renderTicketMixSummary();
+    }
+
+    function recalculateTicketMix(changedType) {
+      var regularCount = clampTicketCount(els.regularTicketCount ? els.regularTicketCount.value : 0);
+      var supporterCount = clampTicketCount(els.supporterTicketCount ? els.supporterTicketCount.value : 0);
+
+      if (regularCount + supporterCount > STANDALONE_TICKET_MAX) {
+        if (changedType === "supporter") {
+          supporterCount = Math.max(0, STANDALONE_TICKET_MAX - regularCount);
+        } else {
+          regularCount = Math.max(0, STANDALONE_TICKET_MAX - supporterCount);
+        }
+      }
+
+      if (els.regularTicketCount) {
+        els.regularTicketCount.value = String(regularCount);
+      }
+      if (els.supporterTicketCount) {
+        els.supporterTicketCount.value = String(supporterCount);
+      }
+
+      var totalCount = regularCount + supporterCount;
+
+      state.regularTicketCount = regularCount;
+      state.supporterTicketCount = supporterCount;
+      if (!state.selectedPkg && totalCount > 0) {
+        state.baseAmount = 0;
+        els.presets.querySelectorAll(".impact-event-widget__amount-btn").forEach(function (b) { b.classList.remove("is-active"); });
+      }
+
+      refreshComputedTotals();
+    }
+
+    function setSelectedAmount(amount, source) {
+      state.baseAmount = Math.max(0, Math.round(toNumber(amount)));
       var buttons = els.presets.querySelectorAll(".impact-event-widget__amount-btn");
       buttons.forEach(function (button) {
         var value = Number(button.getAttribute("data-amount") || 0);
-        if (value === state.selectedAmount) {
+        if (value === state.baseAmount && source !== "package") {
           button.classList.add("is-active");
         } else {
           button.classList.remove("is-active");
         }
       });
-      if (els.customAmount && state.selectedAmount > 0) {
-        els.customAmount.value = String(state.selectedAmount);
-      }
+      root.querySelectorAll(".impact-event-widget__pkg").forEach(function (btn) { btn.classList.remove("is-active"); });
+      state.selectedPkg = null;
+      state.packageAmount = 0;
+      updateTicketSelector(null);
+      resetTicketMix();
+      refreshComputedTotals({ preserveCustomField: source === "custom-input" });
     }
 
     function renderPresets(amounts, currency) {
@@ -309,12 +543,12 @@
         button.setAttribute("data-amount", String(value));
         button.textContent = formatAmount(value, currency);
         button.addEventListener("click", function () {
-          setSelectedAmount(value);
+          setSelectedAmount(value, "preset");
         });
         els.presets.appendChild(button);
 
         if (index === 0 && state.selectedAmount === 0) {
-          setSelectedAmount(value);
+          setSelectedAmount(value, "preset-default");
         }
       });
     }
@@ -338,11 +572,15 @@
     function buildPayload() {
       var amount = state.selectedAmount;
       if (els.customAmount.value) {
-        amount = Math.round(toNumber(els.customAmount.value));
+        amount = parseInputAmount(els.customAmount.value);
       }
 
       return {
         amount: amount,
+        ticket_count: state.ticketCount || 0,
+        regular_ticket_count: state.regularTicketCount || 0,
+        supporter_ticket_count: state.supporterTicketCount || 0,
+        selected_package: state.selectedPkg || null,
         donor_name: (els.donorName.value || "").trim(),
         email: (els.donorEmail.value || "").trim(),
         is_company: !!els.isCompany.checked,
@@ -543,17 +781,66 @@
 
     function bindEvents() {
       els.customAmount.addEventListener("input", function () {
-        var v = Math.round(toNumber(els.customAmount.value));
+        var raw = els.customAmount.value;
+        var caret = els.customAmount.selectionStart;
+        var beforeLen = raw.length;
+        var v = parseInputAmount(raw);
+        var formatted = v > 0 ? formatInputAmount(v) : "";
+        els.customAmount.value = formatted;
+        var diff = formatted.length - beforeLen;
+        els.customAmount.setSelectionRange(caret + diff, caret + diff);
         if (v > 0) {
-          state.selectedAmount = v;
+          state.baseAmount = v;
           var buttons = els.presets.querySelectorAll(".impact-event-widget__amount-btn");
           buttons.forEach(function (button) { button.classList.remove("is-active"); });
+          var pkgs = root.querySelectorAll(".impact-event-widget__pkg");
+          pkgs.forEach(function (p) { p.classList.remove("is-active"); });
+          state.selectedPkg = null;
+          state.packageAmount = 0;
+          updateTicketSelector(null);
+          resetTicketMix();
+          refreshComputedTotals({ preserveCustomField: true });
         }
+      });
+
+      els.ticketCount.addEventListener("change", function () {
+        state.packageTicketCount = Number(els.ticketCount.value) || 0;
+        refreshComputedTotals();
+      });
+
+      els.regularTicketCount.addEventListener("input", function () {
+        recalculateTicketMix("regular");
+      });
+
+      els.supporterTicketCount.addEventListener("input", function () {
+        recalculateTicketMix("supporter");
+      });
+
+      var pkgButtons = root.querySelectorAll(".impact-event-widget__pkg");
+      pkgButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var amount = Number(btn.getAttribute("data-pkg-amount") || 0);
+          if (amount > 0) {
+            state.packageAmount = amount;
+            state.selectedPkg = btn.getAttribute("data-pkg") || null;
+            state.baseAmount = 0;
+            els.presets.querySelectorAll(".impact-event-widget__amount-btn").forEach(function (b) { b.classList.remove("is-active"); });
+            root.querySelectorAll(".impact-event-widget__pkg").forEach(function (b) { b.classList.remove("is-active"); });
+            btn.classList.add("is-active");
+            updateTicketSelector(state.selectedPkg);
+            refreshComputedTotals();
+          }
+        });
       });
 
       els.isCompany.addEventListener("change", updateCompanyVisibility);
       els.donate.addEventListener("click", submitDonation);
       els.share.addEventListener("click", onShare);
+
+      // Prevent checkbox toggle when clicking the ÁSZF link inside the label
+      root.querySelectorAll('.impact-event-widget__checkbox a').forEach(function (a) {
+        a.addEventListener("click", function (e) { e.stopPropagation(); });
+      });
 
       root.addEventListener("click", function (evt) {
         var target = evt.target;
@@ -571,6 +858,11 @@
 
     async function init() {
       bindEvents();
+      els.regularTicketCount.max = String(STANDALONE_TICKET_MAX);
+      els.regularTicketCount.value = "0";
+      els.supporterTicketCount.max = String(STANDALONE_TICKET_MAX);
+      els.supporterTicketCount.value = "0";
+      renderTicketMixSummary();
       setStatus(els.status, "Kampány adatok betöltése...", "");
 
       try {
