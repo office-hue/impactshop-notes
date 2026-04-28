@@ -1,3 +1,10 @@
+## 2026-04-28T11:05:00+0200 - hatas-korok report flow fixed end-to-end (store + mail)
+- A `impact-community.php` report útvonala most már közvetlenül menti a bejelentéseket a `wp_ic_reports` táblába, nem csak `do_action` + log ágon fut.
+- A report válasz most visszaadja a `report_id` és `emailed` mezőket is, így a kliens és a debug log külön tudja azonosítani a sikeres report kérést.
+- A report e-mail a bevált Sharity `From`/`Reply-To` profillal megy, és külön `ic_post_report_mail_result` log sor rögzíti a küldési eredményt.
+- A `@sharity.hu` címre menő report levél scoped Google MX SMTP routingot kapott csak erre a csatornára, hogy a kézbesítés ne a default lokális útvonalon múljon.
+- Production verifikáció: report rekordok létrejöttek (`wp_ic_reports` id: 1, 2, 3), a debug logban `sent:true` mail result sorok jelentek meg, a felhasználói inbox kézhezvétel is megerősített.
+
 ## 2026-04-23T08:15:00+0200 - hatas-korok: Impi avatar UI refresh prepared as isolated clean PR
 - A Hatás Körök frontendben az Impi szerző-blokk emoji avatar helyett animált meerkat videó + pulzáló kék ring UI-t kapott.
 - A változás kizárólag a `impact-community-app.php` frontend markup/CSS réteget érinti; backend route vagy REST szerződés nem változott.

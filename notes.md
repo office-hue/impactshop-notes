@@ -1,3 +1,13 @@
+## 2026-04-28 11:05 CEST - Hatás Körök report flow: reakció + report + inbox útvonal lezárva
+- A feed reakciógombok gyökérok javítva: a frontend `html(...)` helper eddig `disabled=false` esetben is kirakta a `disabled` attribútumot, ezért a reakciógombok ténylegesen le voltak tiltva. Javítva és deployolva.
+- A feed composer alias badge most már kör-detail fallbackből is hidratálódik, ezért a posztoló álneve nem generikus fallback szöveg.
+- A `/report` backend útvonal most már közvetlenül ment a `wp_ic_reports` táblába, nem csak logol.
+- A report e-mail előbb bevált header-profillal lett egységesítve, majd scoped Google MX SMTP routingot kapott a `@sharity.hu` címzettekre.
+- Production verifikáció:
+  - `wp_ic_reports` rekordok: `#1`, `#2`, `#3`
+  - debug log: `ic_post_report_mail_result ... sent:true`
+  - felhasználói visszajelzés: az inboxba a report levél megérkezett.
+
 ## 2026-04-23 08:15 CEST - Hatás Körök clean avatar PR előkészítve
 - Külön, `origin/main` alapú clean worktree ágon újraépítettem az Impi avatar vizuális frissítést, hogy ne húzza magával a settlement-picker fejlesztési diffet.
 - A clean ág csak a `wp-content/mu-plugins/impact-community-app.php` fájlt módosítja.

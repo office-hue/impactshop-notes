@@ -3,12 +3,20 @@
  * Impact Community — Hatás Körök Frontend Application Template
  *
  * Rendered by impact-community.php template_redirect.
- * Variables available: $api_url, $nonce, $pseudo, $test_mode, $test_ngo_slug, $ngo_admin_url
+ * Variables available: $api_url, $nonce, $pseudo
  */
 // Guard: csak akkor futtatjuk, ha a template_redirect explicit include-olja
 // ($api_url be van állítva). MU-plugin load közben $api_url nincs → return.
 if (!defined('ABSPATH') || !isset($api_url)) {
     return;
+}
+
+$ngo_admin_public_url = add_query_arg(['impactshop_ngo_admin' => '1'], home_url('/'));
+if (defined('IMPACTSHOP_NGO_ADMIN_PUBLIC_TOKEN') && IMPACTSHOP_NGO_ADMIN_PUBLIC_TOKEN) {
+    $ngo_admin_public_url = add_query_arg(
+        ['token' => (string) IMPACTSHOP_NGO_ADMIN_PUBLIC_TOKEN],
+        $ngo_admin_public_url
+    );
 }
 ?><!DOCTYPE html>
 <html lang="hu">
@@ -123,21 +131,39 @@ a:hover { text-decoration: underline; }
 }
 
 .ic-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 7px 14px;
     font-size: 14px;
     font-weight: 500;
     border-radius: var(--radius-sm);
     color: var(--muted);
+    background: rgba(255, 255, 255, .72);
+    border: 1px solid rgba(13, 148, 136, .14);
+    box-shadow: 0 2px 8px rgba(14, 116, 110, .06);
     transition: all var(--transition);
 }
 
+.ic-nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-size: 14px;
+}
+
 .ic-nav-btn:hover {
-    background: var(--teal-bg);
+    background: rgba(236, 253, 245, .88);
+    border-color: rgba(13, 148, 136, .34);
     color: var(--teal);
 }
 
 .ic-nav-btn.active {
-    background: var(--teal);
+    background: linear-gradient(140deg, #0d9488, #059669);
+    border-color: transparent;
+    box-shadow: 0 8px 18px rgba(13, 148, 136, .24);
     color: #fff;
 }
 
@@ -158,70 +184,6 @@ a:hover { text-decoration: underline; }
 .ic-status.info { background: var(--blue-light); color: var(--blue); }
 .ic-status.success { background: var(--teal-bg); color: var(--teal-dark); }
 .ic-status.error { background: var(--coral-light); color: var(--coral); }
-
-.ic-test-panel {
-    background: linear-gradient(135deg, #fff7ed, #fffbeb);
-    border: 1px solid #fdba74;
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 18px;
-    box-shadow: var(--shadow-sm);
-}
-
-.ic-test-panel-title {
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.ic-test-panel-sub {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 12px;
-}
-
-.ic-test-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.ic-test-field label {
-    display: block;
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 4px;
-}
-
-.ic-test-field input {
-    width: 100%;
-    padding: 9px 11px;
-    border-radius: var(--radius-sm);
-    border: 1px solid #fdba74;
-    background: #fff;
-    font-size: 14px;
-}
-
-.ic-test-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.ic-test-hint {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92400e;
-    font-size: 13px;
-    font-weight: 600;
-}
 
 /* ================================================================
    Circles Grid
@@ -282,6 +244,72 @@ a:hover { text-decoration: underline; }
     margin-bottom: 32px;
 }
 
+.ic-view-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 24px;
+    margin-bottom: 20px;
+    border-radius: 24px;
+    border: 1px solid rgba(13, 148, 136, .12);
+    background:
+        radial-gradient(circle at top right, rgba(167, 243, 208, .65), transparent 28%),
+        linear-gradient(135deg, #ffffff 0%, #f0fdfa 55%, #ecfeff 100%);
+    box-shadow: 0 18px 40px rgba(13, 148, 136, .08);
+}
+
+.ic-view-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    margin-bottom: 10px;
+    border-radius: 999px;
+    background: rgba(13, 148, 136, .08);
+    color: var(--teal-dark);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.ic-view-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.ic-view-meta-card {
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .8);
+    border: 1px solid rgba(13, 148, 136, .1);
+}
+
+.ic-view-meta-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.ic-view-meta-value {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ink);
+}
+
+.ic-view-meta-note {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
 /* ================================================================
    Circle Card
    ================================================================ */
@@ -294,6 +322,16 @@ a:hover { text-decoration: underline; }
     cursor: pointer;
     position: relative;
     overflow: hidden;
+}
+
+.ic-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--teal) 0%, #14b8a6 45%, #f59e0b 100%);
+    opacity: .9;
 }
 
 .ic-card:hover {
@@ -373,6 +411,17 @@ a:hover { text-decoration: underline; }
     border-radius: var(--radius);
     padding: 24px;
     margin-bottom: 20px;
+}
+
+.ic-circle-header-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(13, 148, 136, .12);
+    background:
+        radial-gradient(circle at top right, rgba(167, 243, 208, .5), transparent 24%),
+        linear-gradient(135deg, #ffffff 0%, #f8fffd 55%, #f0fdfa 100%);
+    box-shadow: 0 18px 40px rgba(13, 148, 136, .08);
 }
 
 .ic-circle-top {
@@ -480,35 +529,142 @@ a:hover { text-decoration: underline; }
    Post Composer
    ================================================================ */
 .ic-composer {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top right, rgba(167, 243, 208, .28), transparent 28%),
+        linear-gradient(135deg, rgba(255, 255, 255, .98), rgba(240, 253, 250, .96));
+    border: 1px solid rgba(13, 148, 136, .14);
+    border-radius: 18px;
     padding: 18px;
     margin-bottom: 16px;
+    box-shadow: 0 12px 28px rgba(13, 148, 136, .08);
+}
+
+.ic-composer::after {
+    content: '';
+    position: absolute;
+    inset: auto -60px -70px auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(45, 212, 191, .12), transparent 70%);
+    pointer-events: none;
+}
+
+.ic-composer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.ic-composer-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(13, 148, 136, .08);
+    color: var(--teal-dark);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
 }
 
 .ic-composer-label {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+.ic-composer-sub {
+    font-size: 12px;
     color: var(--muted);
-    margin-bottom: 8px;
+    margin-top: 4px;
+}
+
+.ic-composer-alias {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: rgba(13, 148, 136, .08);
+    color: var(--teal-dark);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ic-composer-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.ic-composer-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.ic-composer-tools-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.ic-emoji-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ic-emoji-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid rgba(13, 148, 136, .14);
+    background: rgba(255, 255, 255, .82);
+    font-size: 18px;
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.ic-emoji-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(13, 148, 136, .42);
+    background: rgba(236, 253, 245, .94);
 }
 
 .ic-composer textarea {
     width: 100%;
-    min-height: 80px;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    min-height: 92px;
+    padding: 14px 15px;
+    border: 1px solid rgba(13, 148, 136, .14);
+    border-radius: 14px;
     font-family: inherit;
     font-size: 14px;
     line-height: 1.5;
     resize: vertical;
     outline: none;
-    transition: border-color var(--transition);
+    background: rgba(255, 255, 255, .92);
+    transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-.ic-composer textarea:focus { border-color: var(--teal); }
+.ic-composer textarea:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, .12);
+}
 
 .ic-composer-footer {
     display: flex;
@@ -534,17 +690,68 @@ a:hover { text-decoration: underline; }
     margin-bottom: 14px;
 }
 
+.ic-feed-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.ic-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.ic-chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.ic-post-circle {
+    margin-bottom: 10px;
+}
+
+.ic-chip.type-ngo { background: #ecfeff; color: #155e75; }
+.ic-chip.type-ngo .ic-chip-dot { background: #0e7490; }
+.ic-chip.type-settlement { background: #fffbeb; color: #92400e; }
+.ic-chip.type-settlement .ic-chip-dot { background: #d97706; }
+
+.ic-chip.color-lagoon { border: 1px solid #0ea5a3; }
+.ic-chip.color-mint { border: 1px solid #10b981; }
+.ic-chip.color-cobalt { border: 1px solid #2563eb; }
+.ic-chip.color-amber { border: 1px solid #f59e0b; }
+.ic-chip.color-coral { border: 1px solid #f43f5e; }
+.ic-chip.color-slate { border: 1px solid #64748b; }
+.ic-chip.color-moss { border: 1px solid #4d7c0f; }
+.ic-chip.color-rose { border: 1px solid #e11d48; }
+.ic-chip.color-indigo { border: 1px solid #4f46e5; }
+.ic-chip.color-ember { border: 1px solid #ea580c; }
+
 .ic-post {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: linear-gradient(150deg, rgba(240, 253, 244, .84), rgba(236, 253, 245, .68));
+    border: 1px solid rgba(16, 185, 129, .24);
+    backdrop-filter: blur(8px);
     border-radius: var(--radius);
     padding: 18px;
     margin-bottom: 12px;
-    transition: box-shadow var(--transition);
+    box-shadow: 0 8px 20px rgba(15, 118, 110, .08);
+    transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
 }
 
 .ic-post:hover {
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 12px 24px rgba(13, 148, 136, .14);
+    transform: translateY(-1px);
+    border-color: rgba(5, 150, 105, .38);
 }
 
 .ic-post.pinned {
@@ -564,7 +771,63 @@ a:hover { text-decoration: underline; }
     color: var(--teal-dark);
 }
 
-.ic-post-author.impi { color: var(--sun); }
+.ic-post-author.impi { color: #0ea5e9; }
+
+    .ic-impi-avatar-wrap {
+        position: relative;
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+    }
+    .ic-impi-avatar-wrap video,
+    .ic-impi-avatar-wrap img {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        object-fit: cover;
+        display: block;
+        position: relative;
+        z-index: 1;
+    }
+    .ic-impi-avatar-ring {
+        position: absolute;
+        inset: -3px;
+        border-radius: 13px;
+        background: linear-gradient(135deg, #0ea5e9, #2563eb);
+        z-index: 0;
+        animation: impi-ring-pulse 2s ease-in-out infinite;
+        opacity: 0.7;
+    }
+    @keyframes impi-ring-pulse {
+        0%, 100% { opacity: 0.55; transform: scale(1); }
+        50%       { opacity: 0.9;  transform: scale(1.06); }
+    }
+    .ic-impi-author-block {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .ic-impi-label {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+    .ic-impi-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0ea5e9;
+        line-height: 1.2;
+    }
+    .ic-impi-tag {
+        font-size: 10px;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(125deg, #2563eb, #0ea5e9);
+        border-radius: 6px;
+        padding: 1px 5px;
+        line-height: 1.4;
+        letter-spacing: 0.3px;
+    }
 
 .ic-post-time {
     font-size: 12px;
@@ -585,41 +848,94 @@ a:hover { text-decoration: underline; }
     gap: 16px;
 }
 
-.ic-reactions {
-    display: flex;
+.ic-post-reactions {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
     flex-wrap: wrap;
 }
 
-.ic-reaction-btn {
+.ic-reaction-icon-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 20px;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(16, 185, 129, .3);
+    background: rgba(255, 255, 255, .74);
+    color: #115e59;
+    font-size: 14px;
+    font-weight: 600;
+    pointer-events: auto;
+    touch-action: manipulation;
+    transition: all var(--transition);
+}
+
+.ic-reaction-icon-btn:hover:not(:disabled) {
+    background: rgba(236, 253, 245, .94);
+    border-color: rgba(13, 148, 136, .62);
+    transform: translateY(-1px);
+}
+
+.ic-reaction-icon-btn.voted {
+    background: linear-gradient(145deg, rgba(13, 148, 136, .9), rgba(5, 150, 105, .88));
+    color: #fff;
+    border-color: transparent;
+}
+
+.ic-reaction-icon-btn.blocked {
+    border-style: dashed;
+    background: rgba(248, 250, 252, .92);
+    color: #64748b;
+}
+
+.ic-reaction-count {
+    min-width: 18px;
+    text-align: center;
     font-size: 12px;
+    font-weight: 700;
+}
+
+.ic-reaction-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 10px;
+}
+
+.ic-feed-actions {
+    margin-left: auto;
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ic-vote-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
     font-weight: 500;
     border: 1px solid var(--border);
     color: var(--muted);
-    background: var(--surface);
     transition: all var(--transition);
-    cursor: pointer;
 }
 
-.ic-reaction-btn:hover:not(:disabled) {
+.ic-vote-btn:hover:not(:disabled) {
     border-color: var(--teal);
     color: var(--teal);
     background: var(--teal-bg);
 }
 
-.ic-reaction-btn.reacted {
+.ic-vote-btn.voted {
     background: var(--teal-bg);
     border-color: var(--teal);
-    color: var(--teal-dark);
-    font-weight: 600;
+    color: var(--teal);
 }
-
-.ic-reaction-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 .ic-post-delete {
     font-size: 12px;
@@ -628,146 +944,6 @@ a:hover { text-decoration: underline; }
 }
 
 .ic-post-delete:hover { color: var(--coral); }
-
-/* Post Intent Selector */
-.ic-intent-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 6px;
-}
-.ic-intent-pills {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-}
-.ic-intent-pill {
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    background: var(--surface);
-    cursor: pointer;
-    transition: all var(--transition);
-}
-.ic-intent-pill:hover { border-color: var(--teal); color: var(--teal); }
-.ic-intent-pill.selected { background: var(--teal); color: #fff; border-color: var(--teal); }
-
-/* Leaderboard Panel */
-.ic-leaderboard {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-top: 24px;
-}
-.ic-leaderboard-title {
-    font-family: var(--font-display);
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.ic-lb-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-}
-.ic-lb-row:last-child { border-bottom: none; }
-.ic-lb-rank { font-weight: 700; color: var(--muted); width: 28px; text-align: center; flex-shrink: 0; }
-.ic-lb-rank.top1 { color: #F59E0B; }
-.ic-lb-rank.top2 { color: #9CA3AF; }
-.ic-lb-rank.top3 { color: #B45309; }
-.ic-lb-alias { flex: 1; color: var(--teal-dark); font-weight: 500; }
-.ic-lb-score { color: var(--muted); font-size: 13px; }
-
-/* Impi Bot Post */
-.ic-post.impi-post {
-    border-left: 3px solid var(--sun);
-    background: #FFFBEB;
-}
-.ic-post-author.impi { color: #0ea5e9; }
-.ic-impi-avatar-wrap {
-    position: relative;
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-}
-.ic-impi-avatar-wrap video,
-.ic-impi-avatar-wrap img {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    object-fit: cover;
-    display: block;
-    position: relative;
-    z-index: 1;
-}
-.ic-impi-avatar-ring {
-    position: absolute;
-    inset: -3px;
-    border-radius: 13px;
-    background: linear-gradient(135deg, #0ea5e9, #2563eb);
-    z-index: 0;
-    animation: impi-ring-pulse 2s ease-in-out infinite;
-    opacity: 0.7;
-}
-@keyframes impi-ring-pulse {
-    0%, 100% { opacity: 0.55; transform: scale(1); }
-    50%       { opacity: 0.9;  transform: scale(1.06); }
-}
-.ic-impi-author-block {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.ic-impi-label {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-.ic-impi-name {
-    font-size: 13px;
-    font-weight: 700;
-    color: #0ea5e9;
-    line-height: 1.2;
-}
-.ic-impi-tag {
-    font-size: 10px;
-    font-weight: 600;
-    color: #fff;
-    background: linear-gradient(125deg, #2563eb, #0ea5e9);
-    border-radius: 6px;
-    padding: 1px 5px;
-    line-height: 1.4;
-    letter-spacing: 0.3px;
-}
-
-/* Impi Boost — heti kiemelt poszt */
-.ic-post.impi-boost-post {
-    border: 2px solid #F59E0B;
-    background: linear-gradient(135deg, #FFFBEB 0%, #fff 100%);
-    box-shadow: 0 2px 10px rgba(245,158,11,.15);
-}
-.ic-impi-pick-label {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #D97706;
-    background: #FEF3C7;
-    border-radius: 4px;
-    padding: 2px 7px;
-    margin-left: 8px;
-    white-space: nowrap;
-}
 
 .ic-pinned-label {
     font-size: 11px;
@@ -847,25 +1023,6 @@ a:hover { text-decoration: underline; }
 .ic-back:hover { color: var(--teal); text-decoration: none; }
 
 /* ================================================================
-   Invite landing overlay
-   ================================================================ */
-.ic-invite-landing {
-    max-width: 440px;
-    margin: 48px auto;
-    text-align: center;
-    padding: 32px 24px;
-    background: var(--card-bg, #fff);
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,.08);
-}
-.ic-invite-icon   { font-size: 48px; margin-bottom: 12px; }
-.ic-invite-title  { font-size: 20px; font-weight: 700; margin: 0 0 6px; color: var(--text); }
-.ic-invite-circle { font-size: 16px; font-weight: 600; color: var(--teal); margin: 0 0 8px; }
-.ic-invite-meta   { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
-.ic-invite-desc   { font-size: 14px; color: var(--text); margin: 0 0 24px; }
-.ic-invite-join-btn { width: 100%; font-size: 16px; padding: 14px; }
-
-/* ================================================================
    No-auth prompt
    ================================================================ */
 .ic-auth-prompt {
@@ -875,6 +1032,126 @@ a:hover { text-decoration: underline; }
     font-size: 14px;
     color: #92400E;
     margin-bottom: 16px;
+}
+
+.ic-feed-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 24px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(13, 148, 136, .18);
+    border-radius: 24px;
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #f0fdfa 100%);
+    color: #f8fffe;
+    box-shadow: 0 16px 40px rgba(15, 118, 110, .18);
+}
+
+.ic-feed-hero::after {
+    content: '';
+    position: absolute;
+    inset: auto -40px -50px auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .14);
+}
+
+.ic-feed-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    margin-bottom: 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .22);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.ic-feed-hero-title {
+    font-family: var(--font-display);
+    font-size: 30px;
+    line-height: 1.05;
+    margin-bottom: 10px;
+    max-width: 12ch;
+}
+
+.ic-feed-hero-sub {
+    max-width: 58ch;
+    font-size: 15px;
+    color: rgba(248, 255, 254, .92);
+    margin-bottom: 18px;
+}
+
+.ic-feed-glance {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.ic-feed-glance-card {
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .22);
+}
+
+.ic-feed-glance-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: rgba(248, 255, 254, .78);
+    margin-bottom: 4px;
+}
+
+.ic-feed-glance-value {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1;
+}
+
+.ic-feed-glance-note {
+    display: block;
+    font-size: 12px;
+    color: rgba(248, 255, 254, .84);
+    margin-top: 4px;
+}
+
+.ic-feed-empty {
+    padding: 28px;
+    border-radius: 24px;
+    border: 1px solid #c7f9f1;
+    background:
+        radial-gradient(circle at top left, rgba(20, 184, 166, .18), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #f4fffd 100%);
+    box-shadow: 0 18px 40px rgba(13, 148, 136, .08);
+}
+
+.ic-feed-empty .ic-empty-icon {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 14px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #ccfbf1, #fef3c7);
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+}
+
+.ic-feed-empty .ic-empty-text {
+    font-family: var(--font-display);
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.ic-feed-empty .ic-empty-sub {
+    max-width: 48ch;
+    margin: 0 auto 18px;
 }
 
 /* ================================================================
@@ -907,108 +1184,20 @@ a:hover { text-decoration: underline; }
         gap: 8px;
         align-items: flex-start;
     }
+    .ic-feed-hero {
+        padding: 20px;
+        border-radius: 20px;
+    }
+    .ic-feed-hero-title {
+        font-size: 24px;
+    }
+    .ic-feed-glance {
+        grid-template-columns: 1fr;
+    }
+    .ic-view-meta {
+        grid-template-columns: 1fr;
+    }
 }
-
-/* === Tombola & Aukció === */
-.ic-tombola-section, .ic-auction-section {
-    margin: 18px 0;
-}
-.ic-tombola-section h3, .ic-auction-section h3 {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    margin: 0 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.ic-campaign-card {
-    background: #fff;
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    padding: 16px 18px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
-}
-.ic-campaign-card.drawn, .ic-campaign-card.closed {
-    opacity: .75;
-}
-.ic-campaign-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0 0 4px;
-    color: var(--text);
-}
-.ic-campaign-desc {
-    font-size: 13px;
-    color: var(--muted);
-    margin: 0 0 10px;
-    line-height: 1.5;
-}
-.ic-campaign-meta {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 12px;
-}
-.ic-campaign-meta strong {
-    color: var(--text);
-}
-.ic-ticket-row, .ic-bid-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.ic-ticket-input, .ic-bid-input {
-    width: 70px;
-    padding: 6px 10px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    text-align: center;
-}
-.ic-campaign-winner {
-    background: linear-gradient(135deg, #fffbea 0%, #fff3c4 100%);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 13px;
-    color: var(--text);
-    margin-top: 8px;
-}
-.ic-campaign-leader {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 8px;
-}
-.ic-campaign-leader strong {
-    color: var(--teal);
-}
-.ic-bid-history {
-    margin-top: 10px;
-    font-size: 12px;
-    color: var(--muted);
-}
-.ic-bid-history-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 2px 0;
-    border-bottom: 1px solid var(--border);
-}
-/* §10 Sprint panel */
-.ic-sprint-panel { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; margin: 16px 0; }
-.ic-sprint-title { font-weight: 700; font-size: 16px; color: #15803d; margin-bottom: 6px; }
-.ic-sprint-meta  { font-size: 13px; color: #166534; }
-.ic-sprint-lb    { margin-top: 12px; }
-.ic-sprint-lb-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
-/* §12 Settlement / health */
-.ic-settlement-panel { background: #fefce8; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin: 16px 0; }
-.ic-settlement-title { font-weight: 700; font-size: 16px; color: #92400e; margin-bottom: 8px; }
-.ic-health-label { font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 4px; }
-.ic-health-bar-wrap { background: #e5e7eb; border-radius: 999px; height: 10px; overflow: hidden; }
-.ic-health-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -1023,8 +1212,10 @@ a:hover { text-decoration: underline; }
             <span>Hatás Körök</span>
         </div>
         <nav class="ic-nav">
-            <button class="ic-nav-btn active" data-nav="circles">Körök</button>
-            <button class="ic-nav-btn" data-nav="mine">Saját köreim</button>
+            <button class="ic-nav-btn" data-nav="circles"><span class="ic-nav-icon">🧭</span><span>Körök</span></button>
+            <button class="ic-nav-btn" data-nav="mine"><span class="ic-nav-icon">🌱</span><span>Saját köreim</span></button>
+            <button class="ic-nav-btn active" data-nav="feed"><span class="ic-nav-icon">✨</span><span>Folyam</span></button>
+            <a class="ic-nav-btn" href="<?php echo esc_url($ngo_admin_public_url); ?>"><span class="ic-nav-icon">🛠️</span><span>NGO admin (teszt)</span></a>
         </nav>
     </div>
 </header>
@@ -1049,41 +1240,121 @@ a:hover { text-decoration: underline; }
     /* --- Config ---------------------------------------------------- */
     const API = <?php echo wp_json_encode(esc_url_raw($api_url)); ?>;
     let NONCE = <?php echo wp_json_encode($nonce); ?>;
-    const HAS_PSEUDO = <?php echo $pseudo ? 'true' : 'false'; ?>;
-    const TEST_MODE = <?php echo !empty($test_mode) ? 'true' : 'false'; ?>;
-    const CURRENT_PSEUDO = <?php echo wp_json_encode((string) ($pseudo ?? '')); ?>;
-    const CURRENT_NGO_SLUG = <?php echo wp_json_encode((string) ($test_ngo_slug ?? '')); ?>;
-    const NGO_ADMIN_URL = <?php echo wp_json_encode((string) ($ngo_admin_url ?? site_url('/impact-challenge/ngo-admin/'))); ?>;
+    let HAS_PSEUDO = <?php echo $pseudo ? 'true' : 'false'; ?>;
+    let PSEUDO_HASH_HINT = '';
     const MAX_BODY = <?php echo IC_MAX_BODY_LENGTH; ?>;
 
     const $content = document.getElementById('ic-content');
     const $status  = document.getElementById('ic-status');
 
     /* --- State ------------------------------------------------------ */
+    function votedStorageKey() {
+        return 'ic_voted:' + (PSEUDO_HASH_HINT || 'anon');
+    }
+
+    function loadVotedPosts() {
+        try {
+            const raw = localStorage.getItem(votedStorageKey()) || '[]';
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) {
+                return new Set();
+            }
+            return new Set(parsed.map((v) => String(v)));
+        } catch (_) {
+            return new Set();
+        }
+    }
+
+    function saveVotedPosts() {
+        try {
+            localStorage.setItem(votedStorageKey(), JSON.stringify([...state.votedPosts]));
+        } catch (_) {
+            // Local storage errors should not break voting UX.
+        }
+    }
+
     let state = {
-        view: 'circles',        // 'circles' | 'mine' | 'circle'
+        view: 'feed',           // 'circles' | 'mine' | 'feed' | 'circle'
         circleId: null,
         circles: [],
         myCircles: [],
+        feedItems: [],
         posts: [],
         circle: null,
         filter: '',             // '' | 'ngo' | 'settlement'
+        feedType: '',           // '' | 'ngo' | 'settlement'
+        feedCircleId: 0,
         search: '',
         page: 1,
         totalCircles: 0,
-        perPage: 30,
+        feedPage: 1,
+        totalFeed: 0,
+        feedUnreadCount: 0,
+        feedHasMore: false,
+        feedError: '',
+        feedLoadingMore: false,
         postPage: 1,
         totalPosts: 0,
-        votedPosts: new Set(JSON.parse(localStorage.getItem('ic_voted') || '[]')), // legacy compat
-        myReactions: JSON.parse(localStorage.getItem('ic_reactions') || '{}'),
+        votedPosts: loadVotedPosts(),
     };
+
+    async function ensureCircleAlias(circleId) {
+        const numericId = Number(circleId) || 0;
+        if (!numericId) return '';
+
+        const existing = state.myCircles.find((circle) => Number(circle.id) === numericId);
+        if (existing && existing.my_alias) {
+            return String(existing.my_alias);
+        }
+
+        try {
+            const data = await api(`/circles/${numericId}`);
+            const alias = String((data && data.circle && data.circle.my_alias) || '');
+            if (!alias) {
+                return '';
+            }
+            state.myCircles = state.myCircles.map((circle) => (
+                Number(circle.id) === numericId ? {...circle, my_alias: alias} : circle
+            ));
+            return alias;
+        } catch (_) {
+            return '';
+        }
+    }
+
+    async function refreshAuthState() {
+        try {
+            const authResp = await fetch(API.replace(/\/$/, '') + '/auth/status', {
+                credentials: 'same-origin',
+            });
+            if (!authResp.ok) {
+                return;
+            }
+            const auth = await authResp.json();
+            if (auth && auth.nonce) {
+                NONCE = auth.nonce;
+            }
+            const nextHasPseudo = !!(auth && auth.authenticated);
+            const nextHint = String((auth && auth.pid_hash) || '').replace(/\.\.\.$/, '') || '';
+            const identityChanged = nextHint !== PSEUDO_HASH_HINT;
+            HAS_PSEUDO = nextHasPseudo;
+            PSEUDO_HASH_HINT = nextHint;
+            if (identityChanged) {
+                state.votedPosts = loadVotedPosts();
+            }
+        } catch (_) {
+            // Best effort only; initial server-rendered auth state is the fallback.
+        }
+    }
 
     /* --- API helper ------------------------------------------------- */
     async function api(path, opts = {}) {
         const url = API.replace(/\/$/, '') + path;
+        const method = String(opts.method || 'GET').toUpperCase();
+        const sendNonce = method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
         const headers = {
             'Content-Type': 'application/json',
-            'X-WP-Nonce': NONCE,
+            ...(sendNonce ? {'X-WP-Nonce': NONCE} : {}),
         };
         try {
             const resp = await fetch(url, {
@@ -1093,18 +1364,22 @@ a:hover { text-decoration: underline; }
             });
 
             // Nonce may expire — refresh and retry once on 403
+            if (resp.status === 401 && !opts._retried) {
+                await refreshAuthState();
+                const retryHeaders = {
+                    'Content-Type': 'application/json',
+                    ...(sendNonce ? {'X-WP-Nonce': NONCE} : {}),
+                };
+                return api(path, { ...opts, _retried: true, headers: retryHeaders });
+            }
+
             if (resp.status === 403 && !opts._retried) {
-                const authResp = await fetch(API.replace(/\/$/, '') + '/auth/status', {
-                    credentials: 'same-origin',
-                });
-                if (authResp.ok) {
-                    const auth = await authResp.json();
-                    if (auth.nonce) {
-                        NONCE = auth.nonce;
-                        headers['X-WP-Nonce'] = NONCE;
-                        return api(path, { ...opts, _retried: true });
-                    }
-                }
+                await refreshAuthState();
+                const retryHeaders = {
+                    'Content-Type': 'application/json',
+                    ...(sendNonce ? {'X-WP-Nonce': NONCE} : {}),
+                };
+                return api(path, { ...opts, _retried: true, headers: retryHeaders });
             }
 
             const data = await resp.json();
@@ -1126,82 +1401,38 @@ a:hover { text-decoration: underline; }
         }
     }
 
+    function trackFeedEvent(name, payload = {}) {
+        if (!name) return;
+        const detail = {
+            event: name,
+            ts: new Date().toISOString(),
+            view: state.view,
+            ...payload,
+        };
+        try {
+            window.dispatchEvent(new CustomEvent('impact_feed_event', {detail}));
+        } catch (_) {
+            // Telemetry should never break UX.
+        }
+    }
+
     /* --- Render engine ---------------------------------------------- */
     function render() {
         switch (state.view) {
             case 'circles': renderCircles(state.circles, false); break;
             case 'mine':    renderCircles(state.myCircles, true); break;
+            case 'feed':    renderFeed(); break;
             case 'circle':  renderCircleDetail(); break;
-        }
-        if (TEST_MODE) {
-            renderTestPanel();
         }
         updateNav();
     }
 
-    function renderTestPanel() {
-        const panel = html('div', {className: 'ic-test-panel'});
-        panel.appendChild(html('div', {className: 'ic-test-panel-title'}, 'Teszt uzem aktiv'));
-        panel.appendChild(html('p', {className: 'ic-test-panel-sub'},
-            'Pseudo ID-val szabadon valthatsz identitast, tagsag nelkul posztolhatsz, es NGO admin nezetet is nyithatsz.'));
-
-        const grid = html('div', {className: 'ic-test-grid'});
-
-        const pseudoField = html('div', {className: 'ic-test-field'});
-        pseudoField.appendChild(html('label', {for: 'ic-test-pseudo'}, 'Pseudo ID'));
-        pseudoField.appendChild(html('input', {
-            id: 'ic-test-pseudo',
-            type: 'text',
-            value: CURRENT_PSEUDO,
-            placeholder: 'TESTUSER01',
-        }));
-        grid.appendChild(pseudoField);
-
-        const ngoField = html('div', {className: 'ic-test-field'});
-        ngoField.appendChild(html('label', {for: 'ic-test-ngo'}, 'NGO slug'));
-        ngoField.appendChild(html('input', {
-            id: 'ic-test-ngo',
-            type: 'text',
-            value: CURRENT_NGO_SLUG,
-            placeholder: 'bator-tabor-alapitvany',
-        }));
-        grid.appendChild(ngoField);
-
-        panel.appendChild(grid);
-
-        const actions = html('div', {className: 'ic-test-actions'});
-        actions.appendChild(html('button', {
-            className: 'ic-btn ic-btn-primary',
-            onClick: () => applyTestIdentity(false),
-        }, 'Teszt identity csere'));
-        actions.appendChild(html('button', {
-            className: 'ic-btn ic-btn-outline',
-            onClick: () => applyTestIdentity(true),
-        }, 'NGO admin megnyitasa'));
-        panel.appendChild(actions);
-        $content.prepend(panel);
-    }
-
-    function applyTestIdentity(openNgoAdmin) {
-        const pseudoInput = document.getElementById('ic-test-pseudo');
-        const ngoInput = document.getElementById('ic-test-ngo');
-        const pseudo = (pseudoInput?.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
-        const ngo = (ngoInput?.value || '').trim().toLowerCase();
-        const next = new URL(openNgoAdmin ? NGO_ADMIN_URL : window.location.href, window.location.origin);
-        next.searchParams.set('ic_test_mode', '1');
-        if (pseudo) next.searchParams.set('impact_pseudo_id', pseudo);
-        else next.searchParams.delete('impact_pseudo_id');
-        if (ngo) next.searchParams.set('impact_ngo_slug', ngo);
-        else next.searchParams.delete('impact_ngo_slug');
-        if (openNgoAdmin) {
-            window.open(next.toString(), '_blank', 'noopener');
-            return;
-        }
-        window.location.href = next.toString();
-    }
-
     function updateNav() {
         document.querySelectorAll('.ic-nav-btn').forEach(btn => {
+            if (!btn.dataset.nav) {
+                btn.classList.remove('active');
+                return;
+            }
             btn.classList.toggle('active', btn.dataset.nav === state.view);
         });
     }
@@ -1212,7 +1443,16 @@ a:hover { text-decoration: underline; }
             if (k === 'className') el.className = v;
             else if (k === 'innerHTML') el.innerHTML = v;
             else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
-            else el.setAttribute(k, v);
+            else if (typeof v === 'boolean') {
+                if (v) {
+                    el.setAttribute(k, '');
+                    try { el[k] = true; } catch (_) {}
+                } else {
+                    el.removeAttribute(k);
+                    try { el[k] = false; } catch (_) {}
+                }
+            }
+            else if (v !== null && v !== undefined) el.setAttribute(k, v);
         }
         for (const child of children) {
             if (typeof child === 'string') el.appendChild(document.createTextNode(child));
@@ -1225,13 +1465,37 @@ a:hover { text-decoration: underline; }
     function renderCircles(circles, isMine) {
         $content.innerHTML = '';
 
-        const header = html('div', {});
+        const filtered = state.search
+            ? circles.filter(c => c.name.toLowerCase().includes(state.search.toLowerCase()))
+            : circles;
+        const totalPosts = circles.reduce((sum, circle) => sum + Number(circle.post_count || 0), 0);
+
+        const header = html('section', {className: 'ic-view-hero'});
+        header.appendChild(html('div', {className: 'ic-view-kicker'}, isMine ? 'SAJÁT TÉRKÉP' : 'KÖZÖSSÉGI TÉRKÉP'));
         header.appendChild(html('h1', {className: 'ic-section-title'},
-            isMine ? 'Saját köreim' : 'Hatás Körök'));
+            isMine ? 'Saját köreid gyorsnézete' : 'Fedezd fel a Hatás Körök hálózatát'));
         header.appendChild(html('p', {className: 'ic-section-sub'},
             isMine
-                ? 'A körök ahol aktívan jelen vagy'
-                : 'Csatlakozz NGO vagy települési közösségekhez, posztolj és szavazz'));
+                ? 'Itt látod egyben azokat a köröket, ahol már jelen vagy, és innen léphetsz tovább a közös folyamra vagy a részletekre.'
+                : 'Civil és települési közösségek egy közös vizuális rendszerben. Válassz kört, csatlakozz, majd kövesd a közös folyamot.'));
+
+        const meta = html('div', {className: 'ic-view-meta'});
+        meta.appendChild(html('div', {className: 'ic-view-meta-card'},
+            html('span', {className: 'ic-view-meta-label'}, isMine ? 'Aktív tagság' : 'Látható körök'),
+            html('span', {className: 'ic-view-meta-value'}, String(filtered.length || 0)),
+            html('span', {className: 'ic-view-meta-note'}, isMine ? 'A személyes közösségi hálód.' : 'NGO és települési közösségek vegyesen.')
+        ));
+        meta.appendChild(html('div', {className: 'ic-view-meta-card'},
+            html('span', {className: 'ic-view-meta-label'}, 'Összes poszt'),
+            html('span', {className: 'ic-view-meta-value'}, String(totalPosts || 0)),
+            html('span', {className: 'ic-view-meta-note'}, 'A körkártyák élő aktivitási képpel indulnak.')
+        ));
+        meta.appendChild(html('div', {className: 'ic-view-meta-card'},
+            html('span', {className: 'ic-view-meta-label'}, 'Következő lépés'),
+            html('span', {className: 'ic-view-meta-value'}, isMine ? 'Folyam' : 'Csatlakozás'),
+            html('span', {className: 'ic-view-meta-note'}, isMine ? 'Nyisd meg a közös folyamot egyetlen kattintással.' : 'Lépj be a részletekbe, és csatlakozz a kiválasztott körhöz.')
+        ));
+        header.appendChild(meta);
         $content.appendChild(header);
 
         if (!isMine) {
@@ -1257,10 +1521,6 @@ a:hover { text-decoration: underline; }
             bar.appendChild(search);
             $content.appendChild(bar);
         }
-
-        const filtered = state.search
-            ? circles.filter(c => c.name.toLowerCase().includes(state.search.toLowerCase()))
-            : circles;
 
         if (filtered.length === 0) {
             const empty = html('div', {className: 'ic-empty'});
@@ -1310,8 +1570,8 @@ a:hover { text-decoration: underline; }
         $content.appendChild(grid);
 
         // Pagination
-        if (!isMine && state.totalCircles > state.perPage) {
-            const pages = Math.ceil(state.totalCircles / state.perPage);
+        if (!isMine && state.totalCircles > 30) {
+            const pages = Math.ceil(state.totalCircles / 30);
             const pag = html('div', {className: 'ic-pagination'});
             for (let i = 1; i <= Math.min(pages, 10); i++) {
                 pag.appendChild(html('button', {
@@ -1324,14 +1584,253 @@ a:hover { text-decoration: underline; }
     }
 
     function filterAndRender() {
-        const wasFocused = document.activeElement &&
-            document.activeElement.classList.contains('ic-search');
         const list = state.view === 'mine' ? state.myCircles : state.circles;
         renderCircles(list, state.view === 'mine');
-        if (wasFocused) {
-            const inp = $content.querySelector('.ic-search');
-            if (inp) { inp.focus(); const l = inp.value.length; inp.setSelectionRange(l, l); }
+    }
+
+    function renderFeed() {
+        $content.innerHTML = '';
+
+        const header = html('section', {className: 'ic-feed-hero'});
+        header.appendChild(html('div', {className: 'ic-feed-kicker'}, 'ÚJ KEZDŐFELÜLET', '•', 'KÖZÖS FOLYAM'));
+        header.appendChild(html('h1', {className: 'ic-feed-hero-title'}, 'Minden köröd egyetlen, áttekinthető folyamban.'));
+        header.appendChild(html('p', {className: 'ic-feed-hero-sub'},
+            'Innen indul a Hatás Körök. A friss posztok, a közösségi színek és a kör-címkék mostantól a folyamon kapnak elsőbbséget.'));
+
+        const glance = html('div', {className: 'ic-feed-glance'});
+        glance.appendChild(html('div', {className: 'ic-feed-glance-card'},
+            html('span', {className: 'ic-feed-glance-label'}, 'Aktív körök'),
+            html('span', {className: 'ic-feed-glance-value'}, String(state.myCircles.length || 0)),
+            html('span', {className: 'ic-feed-glance-note'}, 'Innen szűrheted őket egy kattintással.')
+        ));
+        glance.appendChild(html('div', {className: 'ic-feed-glance-card'},
+            html('span', {className: 'ic-feed-glance-label'}, 'Látható posztok'),
+            html('span', {className: 'ic-feed-glance-value'}, String(state.feedItems.length || 0)),
+            html('span', {className: 'ic-feed-glance-note'}, 'A közös folyam azonnal kör-címkével renderel.')
+        ));
+        glance.appendChild(html('div', {className: 'ic-feed-glance-card'},
+            html('span', {className: 'ic-feed-glance-label'}, 'Új elemek'),
+            html('span', {className: 'ic-feed-glance-value'}, String(state.feedUnreadCount || 0)),
+            html('span', {className: 'ic-feed-glance-note'}, 'Az unread contract már aktív a feed válaszban.')
+        ));
+        header.appendChild(glance);
+        $content.appendChild(header);
+
+        const bar = html('div', {className: 'ic-feed-toolbar'});
+        [
+            {value: '', label: 'Mind'},
+            {value: 'ngo', label: 'NGO'},
+            {value: 'settlement', label: 'Település'},
+        ].forEach(item => {
+            bar.appendChild(html('button', {
+                className: 'ic-filter-btn' + (state.feedType === item.value ? ' active' : ''),
+                onClick: () => {
+                    state.feedType = item.value;
+                    state.feedPage = 1;
+                    trackFeedEvent('feed_filter_changed', {
+                        filter_type: state.feedType || 'all',
+                        circle_id: state.feedCircleId || 0,
+                    });
+                    loadFeedMine(true);
+                },
+            }, item.label));
+        });
+        $content.appendChild(bar);
+
+        if (state.myCircles.length > 0) {
+            const circleBar = html('div', {className: 'ic-feed-toolbar'});
+            circleBar.appendChild(html('button', {
+                className: 'ic-chip' + (state.feedCircleId === 0 ? ' active' : ''),
+                onClick: () => {
+                    state.feedCircleId = 0;
+                    state.feedPage = 1;
+                    trackFeedEvent('feed_filter_changed', {
+                        filter_type: state.feedType || 'all',
+                        circle_id: 0,
+                    });
+                    loadFeedMine(true);
+                },
+            }, 'Minden kör'));
+
+            state.myCircles.forEach(c => {
+                circleBar.appendChild(html('button', {
+                    className: 'ic-chip' + (state.feedCircleId === Number(c.id) ? ' active' : ''),
+                    onClick: () => {
+                        state.feedCircleId = Number(c.id) || 0;
+                        state.feedPage = 1;
+                        trackFeedEvent('feed_filter_changed', {
+                            filter_type: state.feedType || 'all',
+                            circle_id: state.feedCircleId || 0,
+                        });
+                        loadFeedMine(true);
+                    },
+                }, c.name));
+            });
+
+            $content.appendChild(circleBar);
         }
+
+        const composerBox = renderFeedComposer();
+        if (composerBox) {
+            $content.appendChild(composerBox);
+        }
+
+        if (state.feedError) {
+            const errBox = html('div', {className: 'ic-empty'});
+            errBox.appendChild(html('div', {className: 'ic-empty-icon'}, '⚠️'));
+            errBox.appendChild(html('p', {className: 'ic-empty-text'}, 'Nem sikerült betölteni a folyamot.'));
+            errBox.appendChild(html('p', {className: 'ic-empty-sub'}, state.feedError));
+            errBox.appendChild(html('button', {
+                className: 'ic-btn ic-btn-primary',
+                onClick: () => loadFeedMine(true),
+            }, 'Újrapróbálom'));
+            $content.appendChild(errBox);
+            return;
+        }
+
+        if (state.feedItems.length === 0) {
+            const empty = html('div', {className: 'ic-empty ic-feed-empty'});
+            empty.appendChild(html('div', {className: 'ic-empty-icon'}, '🧭'));
+            empty.appendChild(html('p', {className: 'ic-empty-text'}, 'A közös folyam készen áll az induláshoz.'));
+            empty.appendChild(html('p', {className: 'ic-empty-sub'}, 'Most már nem a Körök lista a kezdőnézet, hanem ez a közös nyitófelület. Amint érkezik új poszt vagy csatlakozol több körhöz, itt jelenik meg minden egy helyen.'));
+            empty.appendChild(html('div', {className: 'ic-card-actions'},
+                html('button', {
+                    className: 'ic-btn ic-btn-outline',
+                    onClick: () => navigate('mine'),
+                }, 'Saját köreim'),
+                html('button', {
+                    className: 'ic-btn ic-btn-primary',
+                    onClick: () => navigate('circles'),
+                }, 'Körök felfedezése')
+            ));
+            $content.appendChild(empty);
+            return;
+        }
+
+        $content.appendChild(html('p', {className: 'ic-section-sub'},
+            `Betöltve: ${state.feedItems.length} / ${state.totalFeed || state.feedItems.length}` +
+            (state.feedUnreadCount > 0 ? ` • Új: ${state.feedUnreadCount}` : '')));
+
+        state.feedItems.forEach(p => {
+            $content.appendChild(renderPost(p, {showCircleMeta: true}));
+        });
+
+        if (state.feedHasMore) {
+            const more = html('div', {style: 'text-align:center;margin:20px 0'});
+            more.appendChild(html('button', {
+                className: 'ic-btn ic-btn-outline',
+                disabled: state.feedLoadingMore,
+                onClick: () => {
+                    trackFeedEvent('feed_load_more', {
+                        page: state.feedPage + 1,
+                        filter_type: state.feedType || 'all',
+                        circle_id: state.feedCircleId || 0,
+                    });
+                    loadFeedMine(false);
+                },
+            }, state.feedLoadingMore ? 'Betöltés...' : 'További folyambejegyzések...'));
+            $content.appendChild(more);
+        } else if (state.totalFeed > 0) {
+            $content.appendChild(html('p', {
+                className: 'ic-section-sub',
+                style: 'text-align:center;margin:14px 0 4px',
+            }, 'Nincs több folyambejegyzés.'));
+        }
+    }
+
+    function renderFeedComposer() {
+        if (!HAS_PSEUDO) {
+            const box = html('div', {className: 'ic-composer'});
+            box.appendChild(html('div', {className: 'ic-composer-label'}, 'A posztoláshoz szükség van pseudo azonosítóra.'));
+            box.appendChild(html('p', {className: 'ic-empty-sub'}, 'Frissítsd az oldalt egyszer, vagy nyiss meg egy másik ImpactShop oldalt, majd térj vissza ide.'));
+            return box;
+        }
+
+        if (state.myCircles.length === 0) {
+            return null;
+        }
+
+        const wrap = html('div', {className: 'ic-composer'});
+        wrap.appendChild(html('div', {className: 'ic-composer-eyebrow'}, 'Folyam', '•', 'Gyors posztolas'));
+        const head = html('div', {className: 'ic-composer-head'});
+        const titleWrap = html('div');
+        titleWrap.appendChild(html('div', {className: 'ic-composer-label'}, 'Gyors poszt a folyambol'));
+        titleWrap.appendChild(html('div', {className: 'ic-composer-sub'}, 'A kivalasztott korben azonnal a sajat alneved alatt jelenik meg.'));
+        head.appendChild(titleWrap);
+        const aliasBadge = html('div', {className: 'ic-composer-alias', id: 'ic-feed-alias-badge'}, '🌿 Alnev betoltese...');
+        head.appendChild(aliasBadge);
+        wrap.appendChild(head);
+
+        const selector = html('select', {id: 'ic-feed-post-circle', className: 'ic-search', style: 'margin-bottom:10px'});
+        state.myCircles.forEach((circle) => {
+            const opt = document.createElement('option');
+            opt.value = String(circle.id);
+            opt.textContent = circle.name;
+            selector.appendChild(opt);
+        });
+        const syncAlias = async () => {
+            const selectedCircle = state.myCircles.find((circle) => String(circle.id) === String(selector.value));
+            if (selectedCircle && selectedCircle.my_alias) {
+                aliasBadge.textContent = `🌿 ${selectedCircle.my_alias}`;
+                return;
+            }
+            aliasBadge.textContent = '🌿 Alnev betoltese...';
+            const resolvedAlias = await ensureCircleAlias(selector.value);
+            aliasBadge.textContent = resolvedAlias ? `🌿 ${resolvedAlias}` : '🌿 Alnev jelenleg nem elerheto';
+        };
+        selector.addEventListener('change', syncAlias);
+        wrap.appendChild(selector);
+
+        const ta = html('textarea', {
+            placeholder: 'Mi ujsag a korodben? Irhatsz emojikat is, peldaul: 🌿💚🙌',
+            maxlength: MAX_BODY,
+            id: 'ic-feed-post-body',
+        });
+        wrap.appendChild(ta);
+        wrap.appendChild(html('div', {className: 'ic-composer-hint'}, 'Az uzeneted barmilyen emojit elbir. Billentyuzettel is beirhatod, vagy hasznald a gyors gombokat.'));
+
+        const tools = html('div', {className: 'ic-composer-tools'});
+        tools.appendChild(html('span', {className: 'ic-composer-tools-label'}, 'Gyors emoji:'));
+        const emojiRow = html('div', {className: 'ic-emoji-row'});
+        ['🌿', '💚', '🙌', '👏', '🔥', '🙏', '✨', '💧'].forEach((emoji) => {
+            emojiRow.appendChild(html('button', {
+                type: 'button',
+                className: 'ic-emoji-btn',
+                title: `Emoji beszurasa: ${emoji}`,
+                onClick: () => insertEmoji(ta, emoji),
+            }, emoji));
+        });
+        tools.appendChild(emojiRow);
+        wrap.appendChild(tools);
+
+        const footer = html('div', {className: 'ic-composer-footer'});
+        const count = html('span', {className: 'ic-char-count', id: 'ic-feed-post-count'}, `0 / ${MAX_BODY}`);
+        ta.addEventListener('input', () => {
+            count.textContent = `${ta.value.length} / ${MAX_BODY}`;
+        });
+        footer.appendChild(count);
+        footer.appendChild(html('button', {
+            type: 'button',
+            className: 'ic-btn ic-btn-primary',
+            onClick: async () => {
+                const selectedCircle = Number(selector.value || 0);
+                await createPost(selectedCircle, {
+                    bodyEl: ta,
+                    buttonEl: null,
+                    onSuccess: async () => {
+                        ta.value = '';
+                        count.textContent = `0 / ${MAX_BODY}`;
+                        await primeMyCirclesForFeed();
+                        await loadFeedMine(true);
+                    },
+                });
+            },
+        }, '📝 Poszt küldése'));
+        wrap.appendChild(footer);
+
+        void syncAlias();
+
+        return wrap;
     }
 
     /* --- Circle detail view ----------------------------------------- */
@@ -1353,7 +1852,8 @@ a:hover { text-decoration: underline; }
         $content.appendChild(back);
 
         // Circle header
-        const hdr = html('div', {className: 'ic-circle-header'});
+        const hdr = html('div', {className: 'ic-circle-header ic-circle-header-hero'});
+        hdr.appendChild(html('div', {className: 'ic-view-kicker'}, c.type === 'ngo' ? 'NGO KÖR' : 'TELEPÜLÉSI KÖR'));
 
         const top = html('div', {className: 'ic-circle-top'});
         top.appendChild(html('h1', {className: 'ic-circle-name'}, c.name));
@@ -1379,25 +1879,12 @@ a:hover { text-decoration: underline; }
         if (!HAS_PSEUDO) {
             actions.appendChild(html('span', {className: 'ic-auth-prompt'},
                 'Böngéssz még az oldalon, hogy csatlakozhass! 🌱'));
-        } else if (TEST_MODE && !c.is_member) {
-            actions.appendChild(html('span', {className: 'ic-test-hint'},
-                'Teszt módban tagság nélkül is posztolhatsz és szavazhatsz.'));
-            actions.appendChild(html('button', {
-                className: 'ic-btn ic-btn-outline',
-                onClick: () => joinCircle(c.id),
-            }, '✋ Csatlakozom'));
         } else if (c.is_member) {
             const leaveBtn = html('button', {
                 className: 'ic-btn ic-btn-danger',
                 onClick: () => leaveCircle(c.id),
             }, '🚪 Kilépés');
             actions.appendChild(leaveBtn);
-
-            const inviteBtn = html('button', {
-                className: 'ic-btn ic-btn-outline',
-                onClick: () => shareInvite(c.id),
-            }, '📨 Meghívó');
-            actions.appendChild(inviteBtn);
         } else {
             const joinBtn = html('button', {
                 className: 'ic-btn ic-btn-primary',
@@ -1409,32 +1896,9 @@ a:hover { text-decoration: underline; }
         $content.appendChild(hdr);
 
         // Composer (only if member)
-        if ((c.is_member || TEST_MODE) && HAS_PSEUDO) {
+        if (c.is_member && HAS_PSEUDO) {
             const composer = html('div', {className: 'ic-composer'});
-            const composerAlias = c.my_alias || 'teszt identitásként';
-            composer.appendChild(html('div', {className: 'ic-composer-label'}, `Írj posztot ${composerAlias} néven:`));
-
-            // Intent selector pills
-            const intentLabel = html('div', {className: 'ic-intent-label'}, 'Mit szeretnél megosztani?');
-            const intentPills = html('div', {className: 'ic-intent-pills'});
-            const intents = [
-                {value: 'help',  label: '🙋 Segítséget kérek'},
-                {value: 'info',  label: '📢 Megosztok valamit'},
-                {value: 'proof', label: '✅ Hatást igazolok'},
-                {value: 'ask',   label: '❓ Kérdést teszek fel'},
-            ];
-            intents.forEach(({value, label}) => {
-                const pill = html('button', {className: 'ic-intent-pill'});
-                pill.dataset.intent = value;
-                pill.textContent = label;
-                pill.addEventListener('click', () => {
-                    intentPills.querySelectorAll('.ic-intent-pill').forEach(p => p.classList.remove('selected'));
-                    pill.classList.add('selected');
-                });
-                intentPills.appendChild(pill);
-            });
-            composer.appendChild(intentLabel);
-            composer.appendChild(intentPills);
+            composer.appendChild(html('div', {className: 'ic-composer-label'}, `Írj posztot ${c.my_alias} néven:`));
 
             const ta = html('textarea', {
                 placeholder: 'Oszd meg gondolataidat a körrel... (max ' + MAX_BODY + ' karakter)',
@@ -1486,150 +1950,26 @@ a:hover { text-decoration: underline; }
                 $content.appendChild(more);
             }
         }
+    }
 
-        // Tombola & Auction panels (before leaderboard)
-        const tombolaContainer = html('div', {id: 'ic-tombola-panel'});
-        $content.appendChild(tombolaContainer);
-        loadTombolas(c.id);
+    function renderPost(p, opts = {}) {
+        const post = html('div', {className: 'ic-post' + (p.is_pinned ? ' pinned' : '')});
 
-        const auctionContainer = html('div', {id: 'ic-auction-panel'});
-        $content.appendChild(auctionContainer);
-        loadAuctions(c.id);
-
-        // §10 Sprint panel (NGO circles only)
-        if (c.type === 'ngo') {
-            const sprintContainer = html('div', {id: 'ic-sprint-panel'});
-            $content.appendChild(sprintContainer);
-            loadSprintPanel(c.ref_slug);
+        if (opts.showCircleMeta && p.circle_name) {
+            const type = p.circle_type === 'settlement' ? 'settlement' : 'ngo';
+            const token = sanitizeColorToken(p.circle_color_token);
+            post.style.borderLeft = '4px solid ' + circleTokenColor(token);
+            const row = html('div', {className: 'ic-post-circle'});
+            const chip = html('span', {className: `ic-chip type-${type} color-${token}`});
+            chip.appendChild(html('span', {className: 'ic-chip-dot'}));
+            const label = `${circleTypeLabel(type)} · ${p.circle_name}`;
+            chip.appendChild(document.createTextNode(label));
+            row.appendChild(chip);
+            post.appendChild(row);
         }
-
-        // §12 Settlement rivalry panel
-        if (c.type === 'settlement') {
-            const rivalContainer = html('div', {id: 'ic-settlement-panel'});
-            $content.appendChild(rivalContainer);
-            loadSettlementPanel(c.id);
-        }
-
-        // Leaderboard panel
-        const lbContainer = html('div', {id: 'ic-leaderboard-panel'});
-        $content.appendChild(lbContainer);
-        loadLeaderboard(c.id);
-    }
-
-    async function loadLeaderboard(circleId) {
-        const panel = document.getElementById('ic-leaderboard-panel');
-        if (!panel) return;
-        try {
-            const data = await api(`/circles/${circleId}/leaderboard`);
-            if (!data.leaderboard || data.leaderboard.length === 0) return;
-            panel.innerHTML = '';
-            const lb = html('div', {className: 'ic-leaderboard'});
-            lb.appendChild(html('div', {className: 'ic-leaderboard-title'}, '🏆 Körünk legjobb tagjai'));
-            const rankEmojis = ['🥇', '🥈', '🥉'];
-            data.leaderboard.forEach(entry => {
-                const row = html('div', {className: 'ic-lb-row'});
-                const rankClass = entry.rank <= 3 ? `top${entry.rank}` : '';
-                const rankLabel = entry.rank <= 3 ? rankEmojis[entry.rank - 1] : String(entry.rank);
-                row.appendChild(html('span', {className: `ic-lb-rank ${rankClass}`}, rankLabel));
-                row.appendChild(html('span', {className: 'ic-lb-alias'}, entry.alias));
-                if (entry.badge_count > 0) {
-                    row.appendChild(html('span', {}, '🏅'.repeat(Math.min(entry.badge_count, 3))));
-                }
-                row.appendChild(html('span', {className: 'ic-lb-score'}, `${entry.score} pont`));
-                lb.appendChild(row);
-            });
-            panel.appendChild(lb);
-        } catch (_) {
-            // Leaderboard is optional — fail silently
-        }
-    }
-
-    async function loadSprintPanel(ngoSlug) {
-        const panel = document.getElementById('ic-sprint-panel');
-        if (!panel) return;
-        try {
-            const data = await api(`/sprints/current?ngo_slug=${encodeURIComponent(ngoSlug)}`);
-            panel.innerHTML = '';
-            if (!data.active) return;
-
-            const box = html('div', {className: 'ic-sprint-panel'});
-            box.appendChild(html('div', {className: 'ic-sprint-title'}, '🚀 NGO Sprint'));
-            const daysLeft = data.days_left ?? 0;
-            box.appendChild(html('div', {className: 'ic-sprint-meta'},
-                `${daysLeft} nap maradt · Körünk: ${data.ngo_credits ?? 0} kredit (${data.ngo_rank ? data.ngo_rank + '. helyezés' : 'nincs még élet'})`
-            ));
-
-            // Leaderboard button
-            const lbBtn = html('button', {
-                className: 'ic-btn ic-btn-outline',
-                style: 'margin-top:8px;font-size:13px',
-                onClick: () => loadSprintLeaderboard(box),
-            }, '📊 Rangsor megtekintése');
-            box.appendChild(lbBtn);
-            panel.appendChild(box);
-        } catch (_) { /* optional */ }
-    }
-
-    async function loadSprintLeaderboard(container) {
-        try {
-            const data = await api('/sprints/current/leaderboard');
-            if (!data.active || !data.leaderboard?.length) return;
-            const existing = container.querySelector('.ic-sprint-lb');
-            if (existing) { existing.remove(); return; } // toggle off
-            const lb = html('div', {className: 'ic-sprint-lb'});
-            lb.appendChild(html('div', {className: 'ic-sprint-lb-title'}, '🏅 Sprint top 10'));
-            const medals = ['🥇','🥈','🥉'];
-            data.leaderboard.forEach((row, i) => {
-                const r = html('div', {className: 'ic-lb-row'});
-                r.appendChild(html('span', {className: 'ic-lb-rank'}, medals[i] || String(i + 1)));
-                r.appendChild(html('span', {className: 'ic-lb-alias'}, row.ngo_name));
-                r.appendChild(html('span', {className: 'ic-lb-score'}, `${row.credits} kredit`));
-                lb.appendChild(r);
-            });
-            container.appendChild(lb);
-        } catch (_) { /* optional */ }
-    }
-
-    async function loadSettlementPanel(circleId) {
-        const panel = document.getElementById('ic-settlement-panel');
-        if (!panel) return;
-        try {
-            const data = await api(`/circles/${circleId}/health`);
-            if (data.error) return;
-            const box = html('div', {className: 'ic-settlement-panel'});
-            box.appendChild(html('div', {className: 'ic-settlement-title'}, '⚔️ Körünk havi hangulatjelző'));
-            const bar = html('div', {className: 'ic-health-bar-wrap'});
-            const fill = html('div', {className: 'ic-health-bar-fill'});
-            const score = Math.max(0, Math.min(100, data.health_score ?? 0));
-            fill.style.width = `${score}%`;
-            fill.style.background = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
-            bar.appendChild(fill);
-            box.appendChild(html('div', {className: 'ic-health-label'},
-                `Körégészség: ${score}/100`
-            ));
-            box.appendChild(bar);
-            if (data.community_bonus && data.community_bonus > 1.0) {
-                box.appendChild(html('div', {
-                    className: 'ic-card-badge settlement',
-                    style: 'margin-top:8px',
-                }, `🏆 +${Math.round((data.community_bonus - 1) * 100)}% pontbónusz aktív!`));
-            }
-            panel.appendChild(box);
-        } catch (_) { /* optional */ }
-    }
-
-    function renderPost(p) {
-        const isImpi  = p.author_type === 'impi';
-        const isBoost = !isImpi && !!p.impi_boost;
-        const post = html('div', {className:
-            'ic-post' +
-            (p.is_pinned  ? ' pinned'          : '') +
-            (isImpi       ? ' impi-post'        : '') +
-            (isBoost      ? ' impi-boost-post'  : '')
-        });
 
         const head = html('div', {className: 'ic-post-head'});
-        if (isImpi) {
+        if (p.author_type === 'impi') {
             const block = html('div', {className: 'ic-impi-author-block'});
             const wrap = html('div', {className: 'ic-impi-avatar-wrap'});
             const ring = html('div', {className: 'ic-impi-avatar-ring'});
@@ -1652,11 +1992,9 @@ a:hover { text-decoration: underline; }
             block.appendChild(lbl);
             head.appendChild(block);
         } else {
+            const authorClass = p.author_type === 'ngo' ? 'ic-post-author' : 'ic-post-author';
             const authorPrefix = p.author_type === 'ngo' ? '🏢 ' : '';
-            head.appendChild(html('span', {className: 'ic-post-author'}, authorPrefix + p.author_alias));
-            if (isBoost) {
-                head.appendChild(html('span', {className: 'ic-impi-pick-label'}, '🦡 Heti Impi-pick!'));
-            }
+            head.appendChild(html('span', {className: authorClass}, authorPrefix + p.author_alias));
         }
 
         const timeRow = html('span', {className: 'ic-post-time'});
@@ -1671,34 +2009,64 @@ a:hover { text-decoration: underline; }
 
         const footer = html('div', {className: 'ic-post-footer'});
 
-        const myReaction = state.myReactions[p.id] || p.my_reaction || null;
-
-        if (!p.is_own && !isImpi) {
-            const reactionDefs = [
-                {type: 'thanks',  emoji: '🙏', label: 'Köszi'},
-                {type: 'useful',  emoji: '💡', label: 'Hasznos'},
-                {type: 'support', emoji: '🤝', label: 'Támogatlak'},
-                {type: 'done',    emoji: '✅', label: 'Megcsináltam'},
-            ];
-            const reactionsWrap = html('div', {className: 'ic-reactions'});
-            reactionDefs.forEach(({type, emoji, label}) => {
-                const count = (p.reactions && p.reactions[type]) || 0;
-                const isReacted = myReaction === type;
-                const alreadyReacted = myReaction !== null;
-                const btn = html('button', {
-                    className: 'ic-reaction-btn' + (isReacted ? ' reacted' : ''),
-                    disabled: !HAS_PSEUDO || alreadyReacted,
-                    title: label,
-                });
-                btn.innerHTML = `${emoji} <span class="ic-reaction-count-${type}">${count > 0 ? count : ''}</span>`;
-                btn.addEventListener('click', () => reactPost(p.circle_id, p.id, type, btn));
-                reactionsWrap.appendChild(btn);
+        const voted = state.votedPosts.has(String(p.id));
+        const blockedReason = !HAS_PSEUDO
+            ? 'A reakciohoz azonositas szukseges.'
+            : p.is_own
+                ? 'A sajat posztodra nem tudsz reagalni.'
+                : voted
+                    ? 'Erre a posztra mar reagaltal.'
+                    : '';
+        const reactions = html('div', {className: 'ic-post-reactions'});
+        const reactionSet = [
+            {emoji: '🙏', label: 'Köszi'},
+            {emoji: '💚', label: 'Veled vagyok'},
+            {emoji: '👏', label: 'Szép munka'},
+            {emoji: '🔥', label: 'Erős poszt'},
+        ];
+        reactionSet.forEach((reaction, index) => {
+            const btn = html('button', {
+                type: 'button',
+                className: 'ic-reaction-icon-btn' + (voted && index === 0 ? ' voted' : '') + (blockedReason ? ' blocked' : ''),
+                disabled: !HAS_PSEUDO,
+                title: blockedReason || reaction.label,
+                onClick: (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    votePost(p, btn, reactions);
+                },
             });
-            footer.appendChild(reactionsWrap);
-        } else if (p.vote_count > 0) {
-            const totalEl = html('span', {style: 'font-size:13px;color:var(--muted)'});
-            totalEl.textContent = `${p.vote_count} reakció`;
-            footer.appendChild(totalEl);
+            btn.innerHTML = `${reaction.emoji}${index === 0 ? ` <span class="ic-reaction-count">${p.vote_count}</span>` : ''}`;
+            reactions.appendChild(btn);
+        });
+        footer.appendChild(reactions);
+        if (blockedReason) {
+            footer.appendChild(html('span', {className: 'ic-reaction-note'}, blockedReason));
+        }
+
+        if (opts.showCircleMeta) {
+            const actions = html('div', {className: 'ic-feed-actions'});
+            actions.appendChild(html('button', {
+                className: 'ic-btn ic-btn-outline',
+                onClick: () => {
+                    trackFeedEvent('feed_post_open_circle', {
+                        post_id: Number(p.id) || 0,
+                        circle_id: Number(p.circle_id) || 0,
+                    });
+                    navigateCircle(p.circle_id);
+                },
+            }, 'Megnyitás körben'));
+            actions.appendChild(html('button', {
+                className: 'ic-btn ic-btn-outline',
+                onClick: () => {
+                    trackFeedEvent('feed_report_click', {
+                        post_id: Number(p.id) || 0,
+                        circle_id: Number(p.circle_id) || 0,
+                    });
+                    reportPost(p.circle_id, p.id);
+                },
+            }, '🚩 Jelentés'));
+            footer.appendChild(actions);
         }
 
         if (p.is_own) {
@@ -1713,35 +2081,6 @@ a:hover { text-decoration: underline; }
         return post;
     }
 
-    async function reactPost(circleId, postId, reactionType, btn) {
-        if (state.myReactions[postId]) return;
-        try {
-            const data = await api(`/circles/${circleId}/posts/${postId}/react`, {
-                method: 'POST',
-                body: JSON.stringify({reaction_type: reactionType}),
-            });
-            state.myReactions[postId] = reactionType;
-            localStorage.setItem('ic_reactions', JSON.stringify(state.myReactions));
-
-            // Update UI: disable all reaction buttons for this post, mark the pressed one
-            const postEl = btn.closest('.ic-post');
-            if (postEl) {
-                postEl.querySelectorAll('.ic-reaction-btn').forEach(b => {
-                    b.disabled = true;
-                    if (b === btn) {
-                        b.classList.add('reacted');
-                        const countEl = b.querySelector(`.ic-reaction-count-${reactionType}`);
-                        if (countEl && data.reactions) {
-                            countEl.textContent = data.reactions[reactionType] || '';
-                        }
-                    }
-                });
-            }
-        } catch (err) {
-            showStatus(err.message, 'error');
-        }
-    }
-
     /* --- Navigation ------------------------------------------------- */
     function navigate(view) {
         state.view = view;
@@ -1749,9 +2088,29 @@ a:hover { text-decoration: underline; }
         state.circle = null;
         state.posts = [];
         state.search = '';
-        window.location.hash = view === 'mine' ? '#mine' : '#circles';
+        state.feedPage = 1;
+        window.location.hash = view === 'mine' ? '#mine' : view === 'feed' ? '#feed' : '#circles';
         if (view === 'circles') loadCircles();
         else if (view === 'mine') loadMyCircles();
+        else if (view === 'feed') {
+            trackFeedEvent('feed_opened', {source: 'navigate'});
+            if (state.myCircles.length === 0) {
+                primeMyCirclesForFeed();
+            }
+            loadFeedMine(true);
+        }
+    }
+
+    async function primeMyCirclesForFeed() {
+        try {
+            const data = await api('/circles/mine');
+            state.myCircles = Array.isArray(data.circles) ? data.circles : [];
+            if (state.view === 'feed') {
+                render();
+            }
+        } catch {
+            // Feed remains usable even if member-circle prefetch fails.
+        }
     }
 
     function navigateCircle(id) {
@@ -1766,13 +2125,11 @@ a:hover { text-decoration: underline; }
     async function loadCircles() {
         $content.innerHTML = '<div class="ic-loading"><div class="ic-spinner"></div></div>';
         try {
-            let path = `/circles?page=${state.page}&per_page=300`;
+            let path = `/circles?page=${state.page}`;
             if (state.filter) path += `&type=${state.filter}`;
-            if (state.search) path += `&search=${encodeURIComponent(state.search)}`;
             const data = await api(path);
             state.circles = data.circles;
             state.totalCircles = data.total;
-            state.perPage = data.per_page;
             render();
         } catch (err) {
             showStatus('Hiba a körök betöltésekor: ' + err.message, 'error');
@@ -1787,6 +2144,48 @@ a:hover { text-decoration: underline; }
             render();
         } catch (err) {
             showStatus('Hiba: ' + err.message, 'error');
+        }
+    }
+
+    async function loadFeedMine(reset = true) {
+        if (reset) {
+            state.feedError = '';
+            state.feedHasMore = false;
+            $content.innerHTML = '<div class="ic-loading"><div class="ic-spinner"></div></div>';
+        } else {
+            state.feedLoadingMore = true;
+            render();
+        }
+        try {
+            const page = reset ? 1 : (state.feedPage + 1);
+            let path = `/feed/mine?page=${page}&per_page=20`;
+            if (state.feedType) {
+                path += `&type=${state.feedType}`;
+            }
+            if (state.feedCircleId > 0) {
+                path += `&circle_id=${state.feedCircleId}`;
+            }
+            const data = await api(path);
+            const items = Array.isArray(data.items) ? data.items : [];
+            state.feedPage = data.page || page;
+            state.totalFeed = data.total || 0;
+            state.feedUnreadCount = Number(data.unread_count || 0);
+            if (reset) {
+                state.feedItems = items;
+            } else {
+                state.feedItems = state.feedItems.concat(items);
+            }
+            state.feedHasMore = Boolean(data.has_more) || state.feedItems.length < state.totalFeed;
+            state.feedError = '';
+            render();
+        } catch (err) {
+            state.feedError = err.message || 'Ismeretlen hiba';
+            showStatus('Hiba a feed betoltese kozben: ' + err.message, 'error');
+            if (state.view === 'feed') {
+                render();
+            }
+        } finally {
+            state.feedLoadingMore = false;
         }
     }
 
@@ -1818,80 +2217,6 @@ a:hover { text-decoration: underline; }
     }
 
     /* --- Actions ---------------------------------------------------- */
-    async function shareInvite(circleId) {
-        try {
-            const data = await api(`/circles/${circleId}/invite`, {method: 'POST'});
-            const url = data.share_url || '';
-            if (!url) {
-                showStatus('Nem sikerült meghívót létrehozni.', 'error');
-                return;
-            }
-            if (navigator.share) {
-                await navigator.share({ title: 'Hatás Körök meghívó', url });
-            } else if (navigator.clipboard) {
-                await navigator.clipboard.writeText(url);
-                showStatus('Meghívó link másolva! 📋', 'success');
-            } else {
-                prompt('Másold ki a meghívó linket:', url);
-            }
-        } catch (err) {
-            showStatus(err.message || 'Hiba a meghívó létrehozásakor.', 'error');
-        }
-    }
-
-    async function openInviteLanding(refCode) {
-        try {
-            const data = await api(`/invite/${refCode}`);
-            const circle = data.circle || {};
-            const inviter = data.inviter_alias || 'egy tag';
-
-            // Render invite landing overlay
-            $content.innerHTML = '';
-            const wrap = html('div', {className: 'ic-invite-landing'});
-            wrap.appendChild(html('div', {className: 'ic-invite-icon'}, '🌱'));
-            wrap.appendChild(html('h1', {className: 'ic-invite-title'}, `${inviter} meghívott a körbe`));
-            wrap.appendChild(html('h2', {className: 'ic-invite-circle'}, circle.name || ''));
-            wrap.appendChild(html('p', {className: 'ic-invite-meta'}, `${circle.member_count || 0} tag · ${circle.type === 'ngo' ? 'NGO kör' : 'Települési kör'}`));
-            wrap.appendChild(html('p', {className: 'ic-invite-desc'},
-                'Csatlakozz ehhez a közösséghez, és +30 pontot kapsz induláshoz!'));
-
-            if (!HAS_PSEUDO) {
-                wrap.appendChild(html('p', {className: 'ic-auth-prompt'},
-                    'Böngéssz még egy kicsit az oldalon, hogy aktívan részt vehess a körben! 🌱'));
-            } else {
-                const joinBtn = html('button', {
-                    className: 'ic-btn ic-btn-primary ic-invite-join-btn',
-                    onClick: async () => {
-                        try {
-                            const res = await api(`/circles/${circle.id}/join`, {
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({ref_code: refCode}),
-                            });
-                            showStatus(`Csatlakoztál! Az álneved: ${res.alias || ''}`, 'success');
-                            navigate('circle');
-                            navigateCircle(circle.id);
-                        } catch (err) {
-                            showStatus(err.message, 'error');
-                        }
-                    },
-                }, '✋ Csatlakozom a körhöz');
-                wrap.appendChild(joinBtn);
-            }
-
-            const backLink = html('a', {
-                className: 'ic-back',
-                href: '#circles',
-                onClick: e => { e.preventDefault(); navigate('circles'); },
-            }, '← Vagy nézd meg az összes kört');
-            wrap.appendChild(backLink);
-            $content.appendChild(wrap);
-        } catch (err) {
-            showStatus('Érvénytelen meghívó link.', 'error');
-            navigate('circles');
-        }
-    }
-
     async function joinCircle(id) {
         try {
             const data = await api(`/circles/${id}/join`, {method: 'POST'});
@@ -1917,8 +2242,12 @@ a:hover { text-decoration: underline; }
         }
     }
 
-    async function createPost(circleId) {
-        const ta = document.getElementById('ic-post-body');
+    async function createPost(circleId, opts = {}) {
+        const ta = opts.bodyEl || document.getElementById('ic-post-body');
+        if (!ta) {
+            showStatus('A poszt mező nem található.', 'error');
+            return;
+        }
         const body = ta.value.trim();
         if (!body) {
             showStatus('Írd be a poszt szövegét!', 'error');
@@ -1929,31 +2258,142 @@ a:hover { text-decoration: underline; }
             return;
         }
 
-        const btn = document.getElementById('ic-post-send');
-        btn.disabled = true;
-        btn.textContent = '⏳ Küldés...';
-
-        // Collect selected intent from pills
-        const selectedPill = document.querySelector('.ic-intent-pill.selected');
-        const intent = selectedPill ? selectedPill.dataset.intent : null;
+        const btn = opts.buttonEl || document.getElementById('ic-post-send');
+        const originalText = btn ? btn.textContent : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '⏳ Küldés...';
+        }
 
         try {
             await api(`/circles/${circleId}/posts`, {
                 method: 'POST',
-                body: JSON.stringify({
-                    body: body,
-                    meta: intent ? {intent: intent} : null,
-                }),
+                body: JSON.stringify({body: body}),
             });
             ta.value = '';
-            // Reset intent pills
-            document.querySelectorAll('.ic-intent-pill').forEach(p => p.classList.remove('selected'));
             showStatus('Poszt elküldve! 🎉', 'success');
-            loadCircleDetail(circleId);
+            if (typeof opts.onSuccess === 'function') {
+                await opts.onSuccess();
+            } else {
+                loadCircleDetail(circleId);
+            }
         } catch (err) {
             showStatus(err.message, 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = originalText || '📝 Küldés';
+            }
+            return;
+        }
+
+        if (btn) {
             btn.disabled = false;
-            btn.textContent = '📝 Küldés';
+            btn.textContent = originalText || '📝 Küldés';
+        }
+    }
+
+    function insertEmoji(textarea, emoji) {
+        const el = textarea;
+        if (!el) return;
+        const start = Number(el.selectionStart || 0);
+        const end = Number(el.selectionEnd || 0);
+        const value = el.value || '';
+        const spacer = start > 0 && !/\s$/.test(value.slice(0, start)) ? ' ' : '';
+        const nextValue = value.slice(0, start) + spacer + emoji + value.slice(end);
+        el.value = nextValue;
+        const caret = start + spacer.length + emoji.length;
+        el.focus();
+        el.setSelectionRange(caret, caret);
+        el.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+
+    async function votePost(post, btn, reactionsWrap = null) {
+        const circleId = Number(post.circle_id) || 0;
+        const postId = Number(post.id) || 0;
+        if (!HAS_PSEUDO) {
+            showStatus('A reakciohoz azonositas szukseges.', 'error');
+            return;
+        }
+        if (post.is_own) {
+            showStatus('A sajat posztodra nem tudsz reakciot kuldeni.', 'info');
+            return;
+        }
+        if (state.votedPosts.has(String(postId))) {
+            showStatus('Erre a posztra mar reagaltal.', 'info');
+            return;
+        }
+
+        const previousText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '⏳';
+        }
+        try {
+            const data = await api(`/circles/${circleId}/posts/${postId}/vote`, {method: 'POST'});
+            state.votedPosts.add(String(postId));
+            saveVotedPosts();
+            if (reactionsWrap) {
+                reactionsWrap.querySelectorAll('.ic-reaction-icon-btn').forEach((reactionBtn) => {
+                    reactionBtn.disabled = true;
+                    reactionBtn.classList.remove('voted');
+                });
+            }
+            btn.classList.add('voted');
+            const countEl = (reactionsWrap || document).querySelector('.ic-reaction-count');
+            if (countEl) {
+                countEl.textContent = String(data.vote_count || 0);
+            }
+            btn.disabled = true;
+            showStatus('Reakcio rogzitve. Koszonjuk! 💚', 'success');
+            if (state.view === 'feed') {
+                trackFeedEvent('feed_vote', {
+                    post_id: Number(postId) || 0,
+                    circle_id: Number(circleId) || 0,
+                });
+            }
+        } catch (err) {
+            showStatus(err.message, 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = previousText;
+            }
+        }
+    }
+
+    async function reportPost(circleId, postId) {
+        if (!HAS_PSEUDO) {
+            showStatus('A jelentéshez azonosítás szükséges.', 'error');
+            return;
+        }
+
+        const reasonRaw = window.prompt('Miért szeretnéd jelenteni ezt a posztot? (pl. sértő, félrevezető, spam)', 'sértő tartalom');
+        if (reasonRaw === null) {
+            return;
+        }
+
+        const reason = String(reasonRaw).trim();
+        if (!reason) {
+            showStatus('Kérlek, adj meg rövid indokot a jelentéshez.', 'error');
+            return;
+        }
+
+        try {
+            await api(`/circles/${circleId}/posts/${postId}/report`, {
+                method: 'POST',
+                body: JSON.stringify({reason}),
+            });
+            showStatus('Köszönjük, a jelentést rögzítettük. 🛡️', 'success');
+        } catch (err) {
+            const msg = (err && err.message) ? String(err.message) : 'Ismeretlen hiba';
+            const missingRoute = /404|No route|nem található/i.test(msg);
+            if (missingRoute) {
+                const subject = encodeURIComponent(`Hatás Körök jelentés (kör: ${circleId}, poszt: ${postId})`);
+                const body = encodeURIComponent(`Poszt azonosító: ${postId}\nKör azonosító: ${circleId}\nIndok: ${reason}\n\nKérem az ellenőrzést.`);
+                window.location.href = `mailto:office@sharity.hu?subject=${subject}&body=${body}`;
+                showStatus('A jelentés e-mail fallbackkel indult el.', 'info');
+                return;
+            }
+            showStatus('A jelentés nem sikerült: ' + msg, 'error');
         }
     }
 
@@ -1976,10 +2416,14 @@ a:hover { text-decoration: underline; }
 
     /* --- Router (hash-based) ---------------------------------------- */
     function handleHash() {
-        const hash = window.location.hash || '#circles';
+        const hash = window.location.hash || '#feed';
         if (hash === '#mine') {
             state.view = 'mine';
             loadMyCircles();
+        } else if (hash === '#feed') {
+            state.view = 'feed';
+            trackFeedEvent('feed_opened', {source: 'hash'});
+            loadFeedMine(true);
         } else if (hash.startsWith('#circle/')) {
             const id = parseInt(hash.split('/')[1], 10);
             if (id) {
@@ -1989,840 +2433,55 @@ a:hover { text-decoration: underline; }
                 navigate('circles');
             }
         } else {
-            state.view = 'circles';
-            loadCircles();
+            state.view = 'feed';
+            trackFeedEvent('feed_opened', {source: 'default'});
+            if (state.myCircles.length === 0) {
+                primeMyCirclesForFeed();
+            }
+            loadFeedMine(true);
         }
     }
 
     /* --- Nav click handlers ----------------------------------------- */
     document.querySelectorAll('.ic-nav-btn').forEach(btn => {
+        if (!btn.dataset.nav) return;
         btn.addEventListener('click', () => navigate(btn.dataset.nav));
     });
 
+    function sanitizeColorToken(token) {
+        const allowed = ['lagoon', 'mint', 'cobalt', 'amber', 'coral', 'slate', 'moss', 'rose', 'indigo', 'ember'];
+        return allowed.includes(token) ? token : 'slate';
+    }
+
+    function circleTokenColor(token) {
+        const palette = {
+            lagoon: '#0ea5a3',
+            mint: '#10b981',
+            cobalt: '#2563eb',
+            amber: '#f59e0b',
+            coral: '#f43f5e',
+            slate: '#64748b',
+            moss: '#4d7c0f',
+            rose: '#e11d48',
+            indigo: '#4f46e5',
+            ember: '#ea580c',
+        };
+        const safe = sanitizeColorToken(token);
+        return palette[safe] || palette.slate;
+    }
+
+    function circleTypeLabel(type) {
+        return type === 'settlement' ? 'Telepules' : 'NGO';
+    }
+
     /* --- Init ------------------------------------------------------- */
     window.addEventListener('hashchange', handleHash);
-    handleHash();
+    refreshAuthState().finally(handleHash);
 
     /* --- Public API for shortcode ----------------------------------- */
-    window.ImpactCommunity = { init: handleHash, openInviteLanding };
-
-    /* ================================================================
-       §9 Tombola & Aukció — panel loaders & actions
-       ================================================================ */
-
-    async function loadTombolas(circleId) {
-        const panel = document.getElementById('ic-tombola-panel');
-        if (!panel) return;
-        try {
-            const data = await api(`/circles/${circleId}/tombolas`);
-            const tombolas = data.tombolas || [];
-            if (!tombolas.length) return;
-            panel.innerHTML = '';
-            const section = html('div', {className: 'ic-tombola-section'});
-            section.appendChild(html('h3', {}, '🎟️ Tombola'));
-            tombolas.forEach(t => section.appendChild(renderTombolaCard(t)));
-            panel.appendChild(section);
-        } catch (_) { /* optional panel */ }
-    }
-
-    function renderTombolaCard(t) {
-        const card = html('div', {className: 'ic-campaign-card ' + t.status});
-        card.appendChild(html('div', {className: 'ic-campaign-title'}, t.title));
-        if (t.description) {
-            card.appendChild(html('div', {className: 'ic-campaign-desc'}, t.description));
-        }
-        const prizeName = (t.prize_json && t.prize_json.name) ? t.prize_json.name : '';
-        const meta = html('div', {className: 'ic-campaign-meta'});
-        if (prizeName) meta.appendChild(html('span', {innerHTML: `🏆 Díj: <strong>${esc(prizeName)}</strong>`}));
-        meta.appendChild(html('span', {innerHTML: `🎫 Eladt: <strong>${t.tickets_sold}</strong>${t.max_tickets ? ' / ' + t.max_tickets : ''}`}));
-        if (t.status === 'active') {
-            const secsLeft = t.ends_at_ts - Math.floor(Date.now() / 1000);
-            meta.appendChild(html('span', {innerHTML: `⏰ Hátralévő: <strong>${formatCountdown(secsLeft)}</strong>`}));
-        }
-        card.appendChild(meta);
-
-        if (t.status === 'drawn') {
-            const win = html('div', {className: 'ic-campaign-winner'});
-            win.innerHTML = `🎉 Nyertes: <strong>${esc(t.winner_alias || 'Nemér')}</strong>`;
-            card.appendChild(win);
-        } else if (t.status === 'active' && HAS_PSEUDO) {
-            const row = html('div', {className: 'ic-ticket-row'});
-            const countInput = html('input', {
-                type: 'number', min: '1', max: String(t.max_per_user - t.my_tickets),
-                value: '1', className: 'ic-ticket-input',
-            });
-            const cost = (int) => t.ticket_cost > 0 ? ` (${int * t.ticket_cost} pont)` : ' (ingyenes)';
-            const btn = html('button', {
-                className: 'ic-btn ic-btn-primary',
-                style: 'font-size:13px',
-            }, 'Jegy vásárlása');
-            btn.textContent = 'Jegy vásárlása' + cost(1);
-            countInput.addEventListener('input', () => {
-                btn.textContent = 'Jegy vásárlása' + cost(parseInt(countInput.value) || 1);
-            });
-            btn.addEventListener('click', async () => {
-                await buyTicket(t.id, parseInt(countInput.value) || 1, btn);
-            });
-            if (t.my_tickets > 0) {
-                row.appendChild(html('span', {style: 'font-size:13px;color:var(--teal)'}, `✓ ${t.my_tickets} jegyem van`));
-            }
-            if (t.my_tickets < t.max_per_user) {
-                row.appendChild(countInput);
-                row.appendChild(btn);
-            }
-            card.appendChild(row);
-        }
-        return card;
-    }
-
-    async function buyTicket(tombolaId, count, btn) {
-        btn.disabled = true;
-        try {
-            const data = await api(`/tombolas/${tombolaId}/buy`, {
-                method: 'POST',
-                body: JSON.stringify({count}),
-            });
-            showStatus(`🎫 ${data.my_tickets} jegy megvásárolva! 🍀`, 'success');
-            // Reload tombola panel
-            const c = state.circle;
-            if (c) loadTombolas(c.id);
-        } catch (err) {
-            showStatus(err.message, 'error');
-            btn.disabled = false;
-        }
-    }
-
-    async function loadAuctions(circleId) {
-        const panel = document.getElementById('ic-auction-panel');
-        if (!panel) return;
-        try {
-            const data = await api(`/circles/${circleId}/auctions`);
-            const auctions = data.auctions || [];
-            if (!auctions.length) return;
-            panel.innerHTML = '';
-            const section = html('div', {className: 'ic-auction-section'});
-            section.appendChild(html('h3', {}, '🔨 Aukció'));
-            auctions.forEach(a => section.appendChild(renderAuctionCard(a)));
-            panel.appendChild(section);
-        } catch (_) { /* optional */ }
-    }
-
-    function renderAuctionCard(a) {
-        const card = html('div', {className: 'ic-campaign-card ' + a.status});
-        card.appendChild(html('div', {className: 'ic-campaign-title'}, a.title));
-        if (a.description) {
-            card.appendChild(html('div', {className: 'ic-campaign-desc'}, a.description));
-        }
-        const meta = html('div', {className: 'ic-campaign-meta'});
-        meta.appendChild(html('span', {innerHTML: `💰 Induló licit: <strong>${a.starting_bid} pont</strong>`}));
-        meta.appendChild(html('span', {innerHTML: `📊 Liciték száma: <strong>${a.bid_count}</strong>`}));
-        if (a.status === 'active') {
-            const effectiveEnd = a.extended_to_ts || a.ends_at_ts;
-            const secsLeft = effectiveEnd - Math.floor(Date.now() / 1000);
-            meta.appendChild(html('span', {innerHTML: `⏰ Hátralévő: <strong>${formatCountdown(secsLeft)}</strong>`}));
-        }
-        card.appendChild(meta);
-
-        if (a.current_bid > 0 && a.leader_alias) {
-            const leader = html('div', {className: 'ic-campaign-leader'});
-            if (a.is_my_bid) {
-                leader.innerHTML = `🏆 Te vezeted az aukciót: <strong>${a.current_bid} pont</strong>`;
-            } else {
-                leader.innerHTML = `⬆️ Jelenlegi vezető: <strong>${esc(a.leader_alias)}</strong> (${a.current_bid} pont)`;
-            }
-            card.appendChild(leader);
-        }
-
-        if (a.status === 'closed') {
-            const win = html('div', {className: 'ic-campaign-winner'});
-            win.innerHTML = `🎉 Nyertes: <strong>${esc(a.winner_alias || '?')}</strong> — ${a.current_bid} pont`;
-            card.appendChild(win);
-        } else if (a.status === 'active' && HAS_PSEUDO && !a.is_my_bid) {
-            const minBid = Math.max(a.starting_bid, a.current_bid + 10);
-            const row = html('div', {className: 'ic-bid-row'});
-            const bidInput = html('input', {
-                type: 'number', min: String(minBid), step: '10',
-                value: String(minBid), className: 'ic-bid-input',
-                placeholder: `min ${minBid}`,
-            });
-            const bidBtn = html('button', {
-                className: 'ic-btn ic-btn-primary',
-                style: 'font-size:13px',
-            }, `Licit leadása`);
-            bidBtn.addEventListener('click', async () => {
-                await placeBid(a.id, parseInt(bidInput.value) || minBid, bidBtn);
-            });
-            row.appendChild(bidInput);
-            row.appendChild(bidBtn);
-            card.appendChild(row);
-        }
-
-        // Bid history toggle
-        if (a.bid_count > 0) {
-            const histBtn = html('button', {
-                className: 'ic-btn ic-btn-outline',
-                style: 'font-size:12px;margin-top:8px',
-            }, 'Licit történet');
-            const histDiv = html('div', {className: 'ic-bid-history', style: 'display:none'});
-            histBtn.addEventListener('click', async () => {
-                if (histDiv.style.display === 'none') {
-                    histDiv.style.display = 'block';
-                    histDiv.innerHTML = '…';
-                    try {
-                        const hd = await api(`/auctions/${a.id}/bids`);
-                        histDiv.innerHTML = '';
-                        (hd.bids || []).slice(0, 5).forEach(b => {
-                            const row2 = html('div', {className: 'ic-bid-history-row'});
-                            row2.appendChild(html('span', {}, esc(b.alias)));
-                            row2.appendChild(html('span', {style: 'font-weight:700'}, b.bid_amount + ' pont'));
-                            histDiv.appendChild(row2);
-                        });
-                    } catch (_) { histDiv.textContent = 'Nem érhető el.'; }
-                } else {
-                    histDiv.style.display = 'none';
-                }
-            });
-            card.appendChild(histBtn);
-            card.appendChild(histDiv);
-        }
-        return card;
-    }
-
-    async function placeBid(auctionId, amount, btn) {
-        btn.disabled = true;
-        try {
-            const data = await api(`/auctions/${auctionId}/bid`, {
-                method: 'POST',
-                body: JSON.stringify({amount}),
-            });
-            showStatus(`🔨 Licit leadva: ${data.new_bid} pont! ${data.extended_to ? 'Az aukció meghosszabbítva.' : ''}`, 'success');
-            const c = state.circle;
-            if (c) loadAuctions(c.id);
-        } catch (err) {
-            showStatus(err.message, 'error');
-            btn.disabled = false;
-        }
-    }
-
-    function formatCountdown(secs) {
-        if (secs <= 0) return 'lejárt';
-        const d = Math.floor(secs / 86400);
-        const h = Math.floor((secs % 86400) / 3600);
-        const m = Math.floor((secs % 3600) / 60);
-        if (d > 0) return `${d} nap ${h} óra`;
-        if (h > 0) return `${h} óra ${m} perc`;
-        return `${m} perc`;
-    }
-
-    function esc(str) {
-        const d = document.createElement('div');
-        d.textContent = String(str);
-        return d.innerHTML;
-    }
+    window.ImpactCommunity = { init: handleHash };
 
 })();
 </script>
 </body>
 </html>
-<?php
-/* ===========================================================================
- * §13  NGO Admin Panel — [impact_community_ngo_admin]
- * Standalone SPA shortcode for NGO admins: login, circle stats, advisor quotas
- * =========================================================================*/
-if (!function_exists('ic_render_ngo_admin')) {
-add_shortcode( 'impact_community_ngo_admin', 'ic_render_ngo_admin' );
-function ic_render_ngo_admin(): string {
-    $api = esc_js( trailingslashit( get_rest_url() ) . 'ic/v1' );
-    $test_mode = function_exists('ic_test_mode_enabled') ? ic_test_mode_enabled() : false;
-    $test_pseudo = $test_mode && function_exists('ic_get_pseudo_id') ? ic_get_pseudo_id() : '';
-    $test_ngo_slug = $test_mode && function_exists('ic_test_mode_requested_ngo_slug') ? ic_test_mode_requested_ngo_slug() : '';
-    ob_start();
-    ?>
-<!DOCTYPE html>
-<html class="ic-ngo-root" lang="hu">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NGO Admin &mdash; ImpactShop</title>
-<style>
-:root{--ic-primary:#2563eb;--ic-danger:#dc2626;--ic-ok:#16a34a;--ic-bg:#f8fafc;--ic-card:#fff;--ic-border:#e2e8f0;--ic-text:#1e293b;--ic-muted:#64748b}
-*,*::before,*::after{box-sizing:border-box}
-body{margin:0;font-family:system-ui,sans-serif;background:var(--ic-bg);color:var(--ic-text);font-size:15px}
-.ica-wrap{max-width:720px;margin:0 auto;padding:24px 16px}
-.ica-card{background:var(--ic-card);border:1px solid var(--ic-border);border-radius:12px;padding:24px;margin-bottom:20px}
-.ica-card h2{margin:0 0 16px;font-size:18px;font-weight:700}
-.ica-form label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;margin-top:12px}
-.ica-form input{width:100%;padding:8px 12px;border:1px solid var(--ic-border);border-radius:8px;font-size:14px}
-.ica-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:var(--ic-primary);color:#fff;transition:opacity .15s}
-.ica-btn:disabled{opacity:.5;cursor:default}
-.ica-btn.secondary{background:var(--ic-bg);color:var(--ic-primary);border:1px solid var(--ic-primary)}
-.ica-btn.danger{background:var(--ic-danger)}
-.ica-error{color:var(--ic-danger);font-size:13px;margin-top:8px}
-.ica-stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
-.ica-stat-box{background:var(--ic-bg);border:1px solid var(--ic-border);border-radius:10px;padding:14px;text-align:center}
-.ica-stat-box .val{font-size:26px;font-weight:800;color:var(--ic-primary)}
-.ica-stat-box .lbl{font-size:11px;color:var(--ic-muted);margin-top:4px}
-.ica-quota-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.ica-quota-card{background:var(--ic-bg);border:1px solid var(--ic-border);border-radius:10px;padding:16px}
-.ica-quota-card h4{margin:0 0 10px;font-size:14px;font-weight:700;text-transform:capitalize}
-.ica-quota-bar-wrap{background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden;margin-bottom:8px}
-.ica-quota-bar{height:100%;border-radius:6px;background:var(--ic-primary);transition:width .4s}
-.ica-quota-bar.low{background:var(--ic-danger)}
-.ica-quota-meta{font-size:12px;color:var(--ic-muted)}
-.ica-ask-btn{margin-top:10px;width:100%;padding:7px;font-size:12px;font-weight:600;border:1px solid var(--ic-primary);border-radius:7px;background:#fff;color:var(--ic-primary);cursor:pointer}
-.ica-ask-btn:disabled{opacity:.4;cursor:default}
-/* Impi üzenetek kártya */
-.ica-impi-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-.ica-impi-table th{text-align:left;padding:6px 10px;border-bottom:2px solid var(--ic-border);color:var(--ic-muted);font-weight:600;font-size:12px}
-.ica-impi-table td{padding:7px 10px;border-bottom:1px solid var(--ic-border);vertical-align:top}
-.ica-impi-table tr:last-child td{border-bottom:none}
-.ica-impi-body{max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ica-impi-del-btn{font-size:12px;padding:3px 10px;border:1px solid var(--ic-danger);border-radius:6px;background:#fff;color:var(--ic-danger);cursor:pointer}
-.ica-impi-del-btn:disabled{opacity:.4;cursor:default}
-.ica-impi-empty{text-align:center;color:var(--ic-muted);padding:18px 0;font-size:13px}
-.ica-sprint-grid{display:flex;flex-direction:column;gap:10px}
-.ica-sprint-row{display:flex;align-items:baseline;gap:8px;font-size:14px}
-.ica-sprint-lbl{min-width:130px;color:var(--ic-muted);font-size:13px}
-.ica-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center}
-.ica-modal-bg.open{display:flex}
-.ica-modal{background:#fff;border-radius:14px;padding:28px;max-width:460px;width:100%;margin:16px}
-.ica-modal h3{margin:0 0 14px}
-.ica-modal textarea{width:100%;padding:10px;border:1px solid var(--ic-border);border-radius:8px;font-size:14px;min-height:100px;resize:vertical}
-.ica-modal-actions{display:flex;gap:10px;margin-top:14px;justify-content:flex-end}
-.ica-notice{padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:16px}
-.ica-notice.ok{background:#dcfce7;color:#14532d}
-.ica-notice.err{background:#fee2e2;color:#7f1d1d}
-#ica-logout-btn{float:right;margin-top:-4px}
-</style>
-</head>
-<body>
-<div class="ica-wrap" id="ica-app">
-  <div id="ica-screen-login" style="display:none">
-    <div class="ica-card">
-      <h2>NGO Admin belépés</h2>
-      <div class="ica-form">
-        <label for="ica-email">E-mail cím</label>
-        <input id="ica-email" type="email" autocomplete="username" placeholder="ngo@example.com">
-        <label for="ica-pw">Jelszó</label>
-        <input id="ica-pw" type="password" autocomplete="current-password">
-        <div id="ica-login-err" class="ica-error" style="display:none"></div>
-        <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
-          <button class="ica-btn" id="ica-login-btn">Belépés</button>
-          <a href="#" id="ica-reset-link" style="font-size:13px;color:var(--ic-primary)">Elfelejtett jelszó</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="ica-screen-reset" style="display:none">
-    <div class="ica-card">
-      <h2>Jelszó visszaállítás</h2>
-      <div class="ica-form">
-        <label for="ica-reset-email">E-mail cím</label>
-        <input id="ica-reset-email" type="email" placeholder="ngo@example.com">
-        <div id="ica-reset-msg" class="ica-error" style="display:none"></div>
-        <div style="margin-top:16px;display:flex;gap:10px">
-          <button class="ica-btn" id="ica-reset-send-btn">Link küldése</button>
-          <button class="ica-btn secondary" id="ica-reset-back-btn">Vissza</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="ica-screen-dashboard" style="display:none">
-    <div class="ica-card">
-      <h2>
-        Körös áttekintő
-        <button class="ica-btn danger" id="ica-logout-btn" style="font-size:12px;padding:5px 12px">Kilépés</button>
-      </h2>
-      <div id="ica-notice" class="ica-notice" style="display:none"></div>
-      <div class="ica-stats-grid" id="ica-stats"></div>
-    </div>
-
-    <div class="ica-card">
-      <h2>Email blast</h2>
-      <div id="ica-blast-locked" style="display:none;color:var(--ic-muted);font-size:14px">
-        Ebben a hónapban már küldtél kampánylevelet.
-      </div>
-      <div id="ica-blast-form">
-        <div class="ica-form">
-          <label for="ica-blast-subj">Tárgy</label>
-          <input id="ica-blast-subj" type="text" placeholder="Havi hír a körtől">
-          <label for="ica-blast-body">Üzenet (szöveg)</label>
-          <textarea id="ica-blast-body" style="width:100%;padding:8px 12px;border:1px solid var(--ic-border);border-radius:8px;font-size:14px;min-height:90px;resize:vertical;margin-top:4px" placeholder="Kedves tagunk…"></textarea>
-          <div id="ica-blast-err" class="ica-error" style="display:none"></div>
-          <div style="margin-top:12px">
-            <button class="ica-btn" id="ica-blast-btn">Küldés</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="ica-card">
-      <h2>Impi NGO Copilot — havi keretek</h2>
-      <div class="ica-quota-grid" id="ica-quota"></div>
-    </div>
-
-    <div class="ica-card">
-      <h2>🦡 Impi üzenetek <span id="ica-impi-count"></span></h2>
-      <div id="ica-impi-posts"><p style="color:var(--ic-muted);font-size:13px">Betöltés…</p></div>
-    </div>
-
-    <div class="ica-card">
-      <h2>🏃 Sprint állapot</h2>
-      <div id="ica-sprint-info"><p style="color:var(--ic-muted);font-size:13px">Betöltés…</p></div>
-    </div>
-  </div>
-</div>
-
-<!-- Ask Impi modal -->
-<div class="ica-modal-bg" id="ica-ask-modal">
-  <div class="ica-modal">
-    <h3 id="ica-modal-title">Kérdés küldése</h3>
-    <textarea id="ica-modal-q" placeholder="Írd le a kérdésed (min. 10 karakter)…"></textarea>
-    <div id="ica-modal-err" class="ica-error" style="display:none"></div>
-    <div class="ica-modal-actions">
-      <button class="ica-btn secondary" id="ica-modal-cancel">Mégse</button>
-      <button class="ica-btn" id="ica-modal-send">Küldés</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(function () {
-    'use strict';
-    const API = '<?php echo $api; ?>';
-    const SK  = 'ic_ngo_token';
-    const SL  = 'ic_ngo_slug';
-    const TEST_MODE = <?php echo $test_mode ? 'true' : 'false'; ?>;
-    const TEST_PSEUDO = <?php echo wp_json_encode((string) $test_pseudo); ?>;
-    const TEST_NGO_SLUG = <?php echo wp_json_encode((string) $test_ngo_slug); ?>;
-
-    let state = { token: sessionStorage.getItem(SK), slug: sessionStorage.getItem(SL), channel: null };
-    let disableTestAutologin = false;
-
-    /* ── helpers ─────────────────────────────────────────────────────────── */
-    function show(id)  { document.getElementById(id).style.display = ''; }
-    function hide(id)  { document.getElementById(id).style.display = 'none'; }
-    function text(id, t){ document.getElementById(id).textContent = t; }
-    function esc(s)    { const d=document.createElement('div');d.textContent=String(s);return d.innerHTML; }
-
-    async function api(method, path, body, token) {
-        const opts = { method, headers: { 'Content-Type': 'application/json' } };
-        if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-        if (body)  opts.body = JSON.stringify(body);
-        const r = await fetch(API + path, opts);
-        const j = await r.json().catch(() => ({}));
-        return { ok: r.ok, status: r.status, data: j };
-    }
-
-    function notice(msg, type) {
-        const el = document.getElementById('ica-notice');
-        el.textContent = msg;
-        el.className = 'ica-notice ' + type;
-        el.style.display = '';
-        setTimeout(() => { el.style.display = 'none'; }, 5000);
-    }
-
-    /* ── routing ─────────────────────────────────────────────────────────── */
-    async function maybeTestLogin() {
-        if (!TEST_MODE || disableTestAutologin) {
-            return false;
-        }
-
-        const params = new URLSearchParams(window.location.search);
-        const pseudo = (params.get('impact_pseudo_id') || TEST_PSEUDO || '').trim();
-        const ngoSlug = (params.get('impact_ngo_slug') || TEST_NGO_SLUG || '').trim();
-        if (!pseudo || !ngoSlug) {
-            return false;
-        }
-
-        const r = await api('POST', '/ngo/login', { pseudo_id: pseudo, ngo_slug: ngoSlug });
-        if (!r.ok) {
-            return false;
-        }
-        state.token = r.data.token;
-        state.slug  = r.data.ngo_slug;
-        sessionStorage.setItem(SK, state.token);
-        sessionStorage.setItem(SL, state.slug);
-        return true;
-    }
-
-    async function route() {
-        hide('ica-screen-login');
-        hide('ica-screen-reset');
-        hide('ica-screen-dashboard');
-        if (state.token) {
-            show('ica-screen-dashboard');
-            loadDashboard();
-        } else if (await maybeTestLogin()) {
-            show('ica-screen-dashboard');
-            loadDashboard();
-        } else {
-            show('ica-screen-login');
-        }
-    }
-
-    /* ── login ───────────────────────────────────────────────────────────── */
-    document.getElementById('ica-login-btn').addEventListener('click', async () => {
-        const email = document.getElementById('ica-email').value.trim();
-        const pw    = document.getElementById('ica-pw').value;
-        const errEl = document.getElementById('ica-login-err');
-        errEl.style.display = 'none';
-        if (!email || !pw) { errEl.textContent='Töltsd ki mindkét mezőt.'; errEl.style.display=''; return; }
-        const btn = document.getElementById('ica-login-btn');
-        btn.disabled = true;
-        const r = await api('POST', '/ngo/login', { email, password: pw });
-        btn.disabled = false;
-        if (r.ok) {
-            state.token = r.data.token;
-            state.slug  = r.data.ngo_slug;
-            sessionStorage.setItem(SK, state.token);
-            sessionStorage.setItem(SL, state.slug);
-            route();
-        } else {
-            errEl.textContent = r.data.error === 'invalid_credentials'
-                ? 'Hibás e-mail vagy jelszó.' : 'Bejelentkezési hiba.';
-            errEl.style.display = '';
-        }
-    });
-
-    /* ── reset password ──────────────────────────────────────────────────── */
-    document.getElementById('ica-reset-link').addEventListener('click', e => {
-        e.preventDefault();
-        hide('ica-screen-login');
-        show('ica-screen-reset');
-    });
-    document.getElementById('ica-reset-back-btn').addEventListener('click', () => {
-        hide('ica-screen-reset');
-        show('ica-screen-login');
-    });
-    document.getElementById('ica-reset-send-btn').addEventListener('click', async () => {
-        const email = document.getElementById('ica-reset-email').value.trim();
-        const msgEl = document.getElementById('ica-reset-msg');
-        if (!email) { msgEl.textContent='Add meg az e-mail cím!'; msgEl.style.display=''; return; }
-        const btn = document.getElementById('ica-reset-send-btn');
-        btn.disabled = true;
-        await api('POST', '/ngo/reset-password', { email });
-        btn.disabled = false;
-        msgEl.textContent = 'Ha az e-mail regisztrált, hamarosan megérkezik a link.';
-        msgEl.style.color = 'var(--ic-ok)';
-        msgEl.style.display = '';
-    });
-
-    /* ── logout ──────────────────────────────────────────────────────────── */
-    document.getElementById('ica-logout-btn').addEventListener('click', () => {
-        disableTestAutologin = true;
-        state.token = null; state.slug = null;
-        sessionStorage.removeItem(SK); sessionStorage.removeItem(SL);
-        route();
-    });
-
-    /* ── dashboard ───────────────────────────────────────────────────────── */
-    async function loadDashboard() {
-        const r = await api('GET', '/ngo/circle', null, state.token);
-        if (!r.ok) {
-            if (r.status === 401) { state.token=null; sessionStorage.removeItem(SK); route(); }
-            return;
-        }
-        renderStats(r.data);
-        renderQuota(r.data.advisor);
-        loadImpiPosts();
-        loadSprintDash();
-        if (r.data.blast_locked) {
-            show('ica-blast-locked');
-            hide('ica-blast-form');
-        } else {
-            hide('ica-blast-locked');
-            show('ica-blast-form');
-        }
-    }
-
-    function renderStats(data) {
-        const c = data.circle || {};
-        const items = [
-            { val: c.active_members ?? 0,  lbl: 'Aktív tag' },
-            { val: c.monthly_posts  ?? 0,  lbl: 'Havi hozzászólás' },
-            { val: c.total_votes    ?? 0,  lbl: 'Szavazatok' },
-            { val: (parseFloat(c.health_score) || 0).toFixed(1), lbl: 'Egészség %' },
-            { val: c.community_bonus ? (parseFloat(c.community_bonus)*100-100).toFixed(0)+'%' : '—', lbl: 'Közösségi bónusz' },
-        ];
-        document.getElementById('ica-stats').innerHTML = items
-            .map(i => `<div class="ica-stat-box"><div class="val">${esc(i.val)}</div><div class="lbl">${esc(i.lbl)}</div></div>`)
-            .join('');
-    }
-
-    function renderQuota(advisor) {
-        const labels = { legal: '⚖️ Jogi', finance: '💰 Pénzügyi', marketing: '📣 Marketing' };
-        document.getElementById('ica-quota').innerHTML = Object.entries(advisor || {}).map(([ch, q]) => {
-            const pct   = q.cap > 0 ? Math.min(100, Math.round(q.used / q.cap * 100)) : 0;
-            const low   = q.remaining === 0 ? ' low' : '';
-            return `<div class="ica-quota-card">
-              <h4>${labels[ch] || ch}</h4>
-              <div class="ica-quota-bar-wrap"><div class="ica-quota-bar${low}" style="width:${pct}%"></div></div>
-              <div class="ica-quota-meta">${q.used} / ${q.cap} felhasználva · <strong>${q.remaining} maradt</strong></div>
-              <button class="ica-ask-btn" data-channel="${ch}" ${q.remaining === 0 ? 'disabled' : ''}>
-                Kérdés Impinek →
-              </button>
-            </div>`;
-        }).join('');
-
-        document.querySelectorAll('.ica-ask-btn').forEach(btn => {
-            btn.addEventListener('click', () => openAskModal(btn.dataset.channel));
-        });
-    }
-
-    /* ── Impi üzenetek ───────────────────────────────────────────────────── */
-    async function loadImpiPosts() {
-        const el = document.getElementById('ica-impi-posts');
-        const countEl = document.getElementById('ica-impi-count');
-        if (!el) return;
-        const r = await api('GET', '/ngo/impi-posts', null, state.token);
-        if (!r.ok) { el.innerHTML = '<p class="ica-impi-empty">Nem sikerült betölteni.</p>'; return; }
-        const posts = r.data || [];
-        countEl.textContent = posts.length ? `(${posts.length} db)` : '';
-        if (!posts.length) { el.innerHTML = '<p class="ica-impi-empty">Még nincs Impi üzenet ebben a körben.</p>'; return; }
-        el.innerHTML = `<table class="ica-impi-table">
-            <thead><tr>
-                <th>Üzenet</th>
-                <th style="white-space:nowrap">Időpont</th>
-                <th></th>
-            </tr></thead>
-            <tbody id="ica-impi-tbody"></tbody>
-        </table>`;
-        const tbody = document.getElementById('ica-impi-tbody');
-        posts.forEach(p => {
-            const tr = document.createElement('tr');
-            tr.dataset.pid = p.id;
-            const dt = new Date(p.created_at).toLocaleString('hu-HU', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-            tr.innerHTML = `
-                <td><div class="ica-impi-body" title="${esc(p.body)}">${esc(p.body)}</div></td>
-                <td style="white-space:nowrap;color:var(--ic-muted)">${dt}</td>
-                <td><button class="ica-impi-del-btn" data-pid="${p.id}">Törlés</button></td>`;
-            tbody.appendChild(tr);
-        });
-        tbody.querySelectorAll('.ica-impi-del-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if (!confirm('Biztosan törlöd ezt az Impi üzenetet?')) return;
-                btn.disabled = true;
-                const dr = await api('DELETE', '/ngo/impi-posts/' + btn.dataset.pid, null, state.token);
-                if (dr.ok) {
-                    btn.closest('tr').remove();
-                    const remaining = tbody.querySelectorAll('tr').length;
-                    countEl.textContent = remaining ? `(${remaining} db)` : '';
-                    if (!remaining) el.innerHTML = '<p class="ica-impi-empty">Még nincs Impi üzenet ebben a körben.</p>';
-                } else {
-                    btn.disabled = false;
-                    alert('Törlés sikertelen.');
-                }
-            });
-        });
-    }
-
-    /* ── sprint státusz (NGO admin) ──────────────────────────────────────── */
-    async function loadSprintDash() {
-        const el = document.getElementById('ica-sprint-info');
-        if (!el || !state.slug) return;
-        const r = await api('GET', '/sprints/current?ngo_slug=' + encodeURIComponent(state.slug), null, state.token);
-        if (!r.ok) {
-            el.innerHTML = '<p style="color:var(--ic-muted);font-size:13px">Sprint adat nem érhető el.</p>';
-            return;
-        }
-        const d = r.data;
-        if (!d || !d.sprint_id) {
-            el.innerHTML = '<p style="color:var(--ic-muted);font-size:13px">Jelenleg nincs aktív sprint.</p>';
-            return;
-        }
-        const ends   = d.ends_at ? new Date(d.ends_at).toLocaleDateString('hu-HU',{month:'short',day:'numeric'}) : '—';
-        const days   = d.ends_at ? Math.max(0, Math.ceil((new Date(d.ends_at)-Date.now())/86400000)) : 0;
-        const cred   = d.ngo_credits != null ? d.ngo_credits : (d.validated_count != null ? d.validated_count * 25 : 0);
-        const rank   = d.ngo_rank  != null ? `${d.ngo_rank}.` : '—';
-        const pend   = d.ngo_pending != null ? d.ngo_pending : 0;
-        const pct    = Math.min(100, Math.round(cred / 2000 * 100));
-        const low    = pct >= 90 ? ' low' : '';
-        el.innerHTML = `
-          <div class="ica-sprint-grid">
-            <div class="ica-sprint-row"><span class="ica-sprint-lbl">Vége</span><strong>${esc(ends)}</strong> <span style="color:var(--ic-muted)">(${days} nap)</span></div>
-            <div class="ica-sprint-row"><span class="ica-sprint-lbl">Kreditek</span>
-              <strong>${cred}</strong> / 2000
-              <div class="ica-quota-bar-wrap" style="margin-top:4px"><div class="ica-quota-bar${low}" style="width:${pct}%"></div></div>
-            </div>
-            <div class="ica-sprint-row"><span class="ica-sprint-lbl">Helyezés</span><strong>${esc(rank)}</strong></div>
-            ${pend > 0 ? `<div class="ica-sprint-row"><span class="ica-sprint-lbl">Jóváhagyásra vár</span><strong style="color:var(--ic-danger)">${pend}</strong></div>` : ''}
-          </div>`;
-    }
-
-    /* ── blast ───────────────────────────────────────────────────────────── */
-    document.getElementById('ica-blast-btn').addEventListener('click', async () => {
-        const subj = document.getElementById('ica-blast-subj').value.trim();
-        const body = document.getElementById('ica-blast-body').value.trim();
-        const errEl = document.getElementById('ica-blast-err');
-        errEl.style.display = 'none';
-        if (!subj || !body) { errEl.textContent='Tárgy és üzenet kötelező.'; errEl.style.display=''; return; }
-        const btn = document.getElementById('ica-blast-btn');
-        btn.disabled = true;
-        const r = await api('POST', '/ngo/circle/blast', { subject: subj, body }, state.token);
-        btn.disabled = false;
-        if (r.ok) {
-            notice(`Kampánylevél elküldve ${r.data.sent} tagnak!`, 'ok');
-            loadDashboard();
-        } else {
-            const msgs = { already_blasted_this_month: 'Ebben a hónapban már küldtél levelet.', missing_subject_or_body: 'Tárgy és üzenet kötelező.' };
-            errEl.textContent = msgs[r.data.error] || 'Hiba a küldés során.';
-            errEl.style.display = '';
-        }
-    });
-
-    /* ── ask modal ───────────────────────────────────────────────────────── */
-    function openAskModal(channel) {
-        const titles = { legal: '⚖️ Jogi kérdés', finance: '💰 Pénzügyi kérdés', marketing: '📣 Marketing kérdés' };
-        state.channel = channel;
-        text('ica-modal-title', titles[channel] || 'Kérdés küldése');
-        document.getElementById('ica-modal-q').value = '';
-        document.getElementById('ica-modal-err').style.display = 'none';
-        document.getElementById('ica-ask-modal').classList.add('open');
-    }
-
-    document.getElementById('ica-modal-cancel').addEventListener('click', () => {
-        document.getElementById('ica-ask-modal').classList.remove('open');
-    });
-
-    document.getElementById('ica-modal-send').addEventListener('click', async () => {
-        const q     = document.getElementById('ica-modal-q').value.trim();
-        const errEl = document.getElementById('ica-modal-err');
-        errEl.style.display = 'none';
-        if (q.length < 10) { errEl.textContent='Min. 10 karakter szükséges.'; errEl.style.display=''; return; }
-        const btn = document.getElementById('ica-modal-send');
-        btn.disabled = true;
-        const r = await api('POST', '/ngo/advisor/ask', { channel: state.channel, question: q }, state.token);
-        btn.disabled = false;
-        if (r.ok) {
-            document.getElementById('ica-ask-modal').classList.remove('open');
-            notice(r.data.message || 'Kérdés elküldve!', 'ok');
-            loadDashboard();
-        } else {
-            const msgs = { quota_exceeded:'Elfogyott a havi keret.', question_too_short:'Min. 10 karakter szükséges.' };
-            errEl.textContent = msgs[r.data.error] || 'Hiba a küldéskor.';
-            errEl.style.display = '';
-        }
-    });
-
-    /* ── init ────────────────────────────────────────────────────────────── */
-    route();
-})();
-</script>
-</body>
-</html>
-    <?php
-    return ob_get_clean();
-}
-}
-
-/* =========================================================================
-   §16 — Platform Admin Dashboard — [impact_community_admin_dashboard]
-   Requires manage_options. Shows all circles with health, stats and bonus.
-   ========================================================================= */
-
-if (!function_exists('ic_render_admin_dashboard')) {
-add_shortcode( 'impact_community_admin_dashboard', 'ic_render_admin_dashboard' );
-function ic_render_admin_dashboard(): string {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        return '<p>Nincs hozzáférésed ehhez az oldalhoz.</p>';
-    }
-
-    ob_start();
-    $rest_url = esc_url( rest_url( 'ic/v1/admin/circles' ) );
-    $nonce    = wp_create_nonce( 'wp_rest' );
-    ?>
-<div id="ic-admin-dash" style="font-family:system-ui,sans-serif;max-width:1200px;margin:0 auto;padding:20px">
-<h2 style="color:#1b5e20;margin-bottom:16px">🌿 Hatás Körök — Admin Dashboard</h2>
-<div id="ic-adm-status" style="color:#666;margin-bottom:12px">Betöltés…</div>
-<div id="ic-adm-summary" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
-<div style="overflow-x:auto">
-<table id="ic-adm-table" style="width:100%;border-collapse:collapse;font-size:14px">
-<thead>
-<tr style="background:#1b5e20;color:#fff">
-  <th style="padding:8px 10px;text-align:left">Slug</th>
-  <th style="padding:8px 10px;text-align:left">Név</th>
-  <th style="padding:8px 10px;text-align:left">Típus</th>
-  <th style="padding:8px 10px;text-align:right">Tagok</th>
-  <th style="padding:8px 10px;text-align:right">Havi posztok</th>
-  <th style="padding:8px 10px;text-align:right">Szavazatok</th>
-  <th style="padding:8px 10px;text-align:right">Egészség %</th>
-  <th style="padding:8px 10px;text-align:right">Bónusz×</th>
-  <th style="padding:8px 10px;text-align:left">Utolsó blast</th>
-</tr>
-</thead>
-<tbody id="ic-adm-tbody"></tbody>
-</table>
-</div>
-</div>
-<style>
-#ic-adm-tbody tr:nth-child(even){background:#f1f8e9}
-#ic-adm-tbody tr:hover{background:#dcedc8}
-.ic-health-pill{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;font-size:12px}
-.ic-health-high{background:#c8e6c9;color:#1b5e20}
-.ic-health-mid{background:#fff9c4;color:#f57f17}
-.ic-health-low{background:#ffcdd2;color:#b71c1c}
-.ic-bonus-active{color:#e65100;font-weight:700}
-#ic-adm-summary .ic-stat-box{background:#e8f5e9;border-radius:8px;padding:12px 20px;min-width:130px;text-align:center}
-#ic-adm-summary .ic-stat-box strong{display:block;font-size:22px;color:#1b5e20}
-#ic-adm-summary .ic-stat-box span{font-size:12px;color:#555}
-</style>
-<script>
-(async () => {
-    const res = await fetch(<?php echo wp_json_encode( $rest_url ); ?>, {
-        headers: {'X-WP-Nonce': <?php echo wp_json_encode( $nonce ); ?>}
-    });
-    const statusEl = document.getElementById('ic-adm-status');
-    if (!res.ok) { statusEl.textContent = 'API hiba: ' + res.status; return; }
-    const rows = await res.json();
-    statusEl.textContent = rows.length + ' aktív kör — ' + new Date().toLocaleString('hu-HU');
-
-    // Summary cards
-    const summary = document.getElementById('ic-adm-summary');
-    const totalMembers  = rows.reduce((s,r) => s + r.member_count, 0);
-    const totalPosts    = rows.reduce((s,r) => s + r.monthly_posts, 0);
-    const avgHealth     = rows.length ? Math.round(rows.reduce((s,r) => s + r.health_score, 0) / rows.length) : 0;
-    const bonusCircles  = rows.filter(r => r.community_bonus > 1).length;
-    [
-        [totalMembers, 'Összes tag'],
-        [totalPosts,   'Havi posztok'],
-        [avgHealth + '%', 'Átl. egészség'],
-        [bonusCircles, 'Bónuszos kör'],
-    ].forEach(([val, lbl]) => {
-        summary.insertAdjacentHTML('beforeend',
-            `<div class="ic-stat-box"><strong>${val}</strong><span>${lbl}</span></div>`);
-    });
-
-    // Table rows
-    const tbody = document.getElementById('ic-adm-tbody');
-    rows.forEach(r => {
-        const hClass = r.health_score >= 70 ? 'ic-health-high'
-                     : r.health_score >= 40 ? 'ic-health-mid' : 'ic-health-low';
-        const bonusText = r.community_bonus > 1
-            ? '<span class="ic-bonus-active">×' + r.community_bonus.toFixed(2) + '</span>'
-            : '×1.00';
-        const blast = r.last_blast_at
-            ? new Date(r.last_blast_at).toLocaleDateString('hu-HU')
-            : '—';
-        tbody.insertAdjacentHTML('beforeend', `<tr>
-            <td style="padding:7px 10px;font-family:monospace">${r.ref_slug}</td>
-            <td style="padding:7px 10px">${r.name || '—'}</td>
-            <td style="padding:7px 10px">${r.type}</td>
-            <td style="padding:7px 10px;text-align:right">${r.member_count}</td>
-            <td style="padding:7px 10px;text-align:right">${r.monthly_posts}</td>
-            <td style="padding:7px 10px;text-align:right">${r.votes_generated}</td>
-            <td style="padding:7px 10px;text-align:right">
-                <span class="ic-health-pill ${hClass}">${r.health_score}</span>
-            </td>
-            <td style="padding:7px 10px;text-align:right">${bonusText}</td>
-            <td style="padding:7px 10px">${blast}</td>
-        </tr>`);
-    });
-})();
-</script>
-    <?php
-    return ob_get_clean();
-}
-}

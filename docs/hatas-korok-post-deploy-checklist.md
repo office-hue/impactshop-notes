@@ -38,6 +38,12 @@ Egyedi hosttal:
 - Nyisd meg böngészőben a `/hatas-korok` oldalt.
 - Kattints be legalább egy kör detail nézetébe.
 - Ha van Impi poszt a listában, ellenőrizd hogy az avatar videó/fallback kép megjelenik, a kék ring látszik, és a fejlécben az `AI` badge is megjelenik.
+- Ha feed/composer változott, ellenőrizd hogy a gyors composer az aktuális álnévvel jelenik meg, és az emoji gombok beszúrnak karaktert a textarea-ba.
+- Ha reakció/vote logika változott, ellenőrizd hogy egy nem saját posztra a reakciógomb kattintható, a számláló frissül, és a második reakció már blokkolt állapotot mutat.
+- Ha report logika változott, küldj egy teszt jelentést, majd ellenőrizd:
+  - van új rekord a `wp_ic_reports` táblában,
+  - a debug logban megjelent `ic_post_report_mail_result` sor,
+  - ha a cél az inbox kézbesítés is, a teszt e-mail kézhezvétele is megtörtént.
 - Nézd meg a `wp-content/debug.log` végét, nincs-e új `impact-community` fatál vagy warning.
 
 ## Mikor kell több, mint read-only smoke
