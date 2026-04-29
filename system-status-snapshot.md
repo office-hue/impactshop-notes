@@ -1,3 +1,12 @@
+## 2026-04-29T10:25:00+0200 - JVK auction scaffold canonicalized + staging payment guard verified
+- Uj additiv aukcios MU runtime kerult a repo truthba:
+  - `wp-content/mu-plugins/impactshop-event-auction-widget.php`
+  - `wp-content/mu-plugins/impactshop-event-auction-widget-jovonkvize-1.0.0.js`
+- A public read lane, session-tokenes bidder regisztracio es tranzakcios bid lane stagingen verifikalt.
+- A close + winner-payment backend direkt staging smoke-kal igazolt; a route-szintu admin REST smoke-ot jelenleg staging capability drift blokkolja.
+- Payment integrity fix: a success redirect mar csak ellenorzott Stripe session-status alapjan teljesit, igy callback oldalrol nem lehet tevesen `paid` allapotot irni.
+- Staging safety fix: `home_url=https://app.sharity.hu/impactshop-staging/`, `stripe_mode=live`, `is_staging_runtime=true` mellett a winner-payment checkout letrehozas `null`, tehat stagingbol elo Stripe checkout mar nem nyithato.
+
 ## 2026-04-28T12:25:00+0200 - jovonkvize widget ticket-mix parity + cache-proof dev/live split
 - `impactshop-event-donation-widget.php`: schema `1.3.0`, runtime `1.5.5`; separate `regular_ticket_count` / `supporter_ticket_count` storage, Stripe metadata, stats and buyer/admin email breakdown added.
 - Schema hardening added for older prod/staging tables via explicit missing-column backfill, plus helper `function_exists` guards for MU double-load tolerance.
