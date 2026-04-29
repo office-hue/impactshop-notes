@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.0.3";
+  var WIDGET_VERSION = "1.0.6";
   var SCRIPT_ATTR = "data-impact-auction-widget";
   var STYLE_ID = "impact-event-auction-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-auctions";
@@ -147,10 +147,10 @@
       '<span class="impact-auction-widget__eyebrow">Gála aukció widget</span>' +
       '<h3 class="impact-auction-widget__title" data-role="title">Jövőnk Vize gála aukció</h3>' +
       '<p class="impact-auction-widget__subtitle" data-role="subtitle">Miele műtárgyak és felajánlások</p>' +
-      '<p class="impact-auction-widget__desc" data-role="description">Additív frontend lane a Jövőnk Vize aukciós flow-hoz.</p>' +
+      '<p class="impact-auction-widget__desc" data-role="description">Jótékonysági aukció a Jövőnk Vize gálán.</p>' +
       '<div class="impact-auction-widget__stats">' +
       '<div class="impact-auction-widget__stat"><div class="impact-auction-widget__stat-label">Kampány teljes összeg</div><div class="impact-auction-widget__stat-value" data-role="stat-combined">0 Ft</div></div>' +
-      '<div class="impact-auction-widget__stat"><div class="impact-auction-widget__stat-label">Aukcio paid total</div><div class="impact-auction-widget__stat-value" data-role="stat-auction-paid">0 Ft</div></div>' +
+      '<div class="impact-auction-widget__stat"><div class="impact-auction-widget__stat-label">Aukció befolyt összeg</div><div class="impact-auction-widget__stat-value" data-role="stat-auction-paid">0 Ft</div></div>' +
       '<div class="impact-auction-widget__stat"><div class="impact-auction-widget__stat-label">Lezárt lotok</div><div class="impact-auction-widget__stat-value" data-role="stat-closed-lots">0</div></div>' +
       '<div class="impact-auction-widget__stat"><div class="impact-auction-widget__stat-label">Tételszám</div><div class="impact-auction-widget__stat-value" data-role="stat-lots">0</div></div>' +
       '</div>' +
@@ -160,7 +160,7 @@
       '<div class="impact-auction-widget__drawer" data-role="drawer">' +
       '<div class="impact-auction-widget__panel">' +
       '<div class="impact-auction-widget__panel-head">' +
-      '<div><span class="impact-auction-widget__badge" data-role="detail-badge">Scaffold</span></div>' +
+      '<div><span class="impact-auction-widget__badge" data-role="detail-badge">Tétel</span></div>' +
       '<button type="button" class="impact-auction-widget__close" data-role="close">Bezárás</button>' +
       '</div>' +
       '<div class="impact-auction-widget__detail-image" data-role="detail-image"></div>' +
@@ -183,7 +183,7 @@
       '<input class="impact-auction-widget__input" data-role="bid-phone" type="text" placeholder="Telefonszám (opcionális)">' +
       '</div>' +
       '<input class="impact-auction-widget__input" data-role="bid-name" type="text" placeholder="Név (opcionális)">' +
-      '<div class="impact-auction-widget__note">Az e-mail kötelező. Az SMS lane külön disclosure és későbbi backend-bekötés után aktiválható.</div>' +
+      '<div class="impact-auction-widget__note">Az e-mail cím megadása kötelező. A telefonszám megadása nem kötelező.</div>' +
       '<button class="impact-auction-widget__submit" type="submit">Licit megerősítése</button>' +
       '<div class="impact-auction-widget__status" data-role="detail-status" aria-live="polite"></div>' +
       '</form>' +
@@ -336,7 +336,7 @@
       renderPresets(lot);
       els.bidAmount.value = String((lot.display_amount || lot.starting_bid || 0) + (lot.min_increment || 0));
       attachImageFallbacks(els.detailImage);
-      setStatus(els.detailStatus, "A bidder regisztráció és a licit submit lane aktív. A winner-payment backend kész, de a triggerelő admin UI külön fázisban jön.", "");
+      setStatus(els.detailStatus, "", "");
       els.drawer.classList.add("is-open");
     }
 
@@ -370,7 +370,7 @@
           '<span class="impact-auction-widget__artist">' + escapeHtml(lot.artist_name || "") + '</span>' +
           '<h4 class="impact-auction-widget__lot-title">' + escapeHtml(lot.item_title || "") + '</h4>' +
           '<span class="impact-auction-widget__badge">' + escapeHtml((lot.status || "draft").toUpperCase()) + '</span>' +
-          '<span class="impact-auction-widget__price-label">' + escapeHtml(lot.display_label || "Ar") + '</span>' +
+          '<span class="impact-auction-widget__price-label">' + escapeHtml(lot.display_label || "Ár") + '</span>' +
           '<span class="impact-auction-widget__price">' + escapeHtml(lot.display_amount_formatted || formatAmount(lot.starting_bid || 0, "HUF")) + '</span>' +
           '</div>' +
           '</button>'
@@ -404,13 +404,13 @@
       els.statLots.textContent = String((payload.stats && payload.stats.auction_lots_count) || (payload.lots || []).length || 0);
       renderLots(payload);
       setStatus(els.status, payload.security && payload.security.write_enabled
-        ? "A read API és az alap bidder/bid write lane aktív. A winner-payment backend kész, de frontend/admin trigger UI még nincs."
-        : "A read API aktív, de ezen az originen a write lane nincs engedélyezve.", (payload.security && payload.security.write_enabled) ? "success" : "");
+        ? ""
+        : "", (payload.security && payload.security.write_enabled) ? "success" : "");
     }
 
     function loadPublic() {
       return requestJson(apiBase + "/" + encodeURIComponent(campaign) + "/public").then(renderPayload).catch(function (error) {
-        setStatus(els.status, "A public scaffold payload nem tölthető be: " + error.message, "error");
+        setStatus(els.status, "Az aukció adatai nem tölthetők be: " + error.message, "error");
       });
     }
 
@@ -428,12 +428,12 @@
         return;
       }
       if (!els.bidEmail.value.trim()) {
-        setStatus(els.detailStatus, "Az e-mail cím kötelező a scaffold szerinti bidder flowban.", "error");
+        setStatus(els.detailStatus, "Az e-mail cím megadása kötelező.", "error");
         return;
       }
 
       if (!state.sessionToken) {
-        setStatus(els.detailStatus, "Ezen az originen nincs write session token. A licitküldés nem engedélyezett.", "error");
+        setStatus(els.detailStatus, "A licitküldés jelenleg nem engedélyezett.", "error");
         return;
       }
 
@@ -446,7 +446,7 @@
         display_name: els.bidName.value.trim()
       };
 
-      setStatus(els.detailStatus, "Bidder regisztráció folyamatban...", "");
+      setStatus(els.detailStatus, "Regisztráció folyamatban...", "");
 
       requestJson(registerUrl, {
         method: "POST",
@@ -484,7 +484,7 @@
       }).catch(function (error) {
         var payload = error && error.payload ? error.payload : {};
         if (payload.minimum_required_formatted) {
-          setStatus(els.detailStatus, "A licit tul alacsony. Minimum: " + payload.minimum_required_formatted, "error");
+          setStatus(els.detailStatus, "A licit túl alacsony. Minimum: " + payload.minimum_required_formatted, "error");
           els.bidAmount.value = String(payload.minimum_required || "");
           return;
         }
