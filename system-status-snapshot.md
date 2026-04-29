@@ -636,3 +636,9 @@ PHP lint ok for identity/gamification modules
 
 - `impactshop-ngo-guides.php` v1.1.4: `befektetoknek` bejegyzés visszakerült `page_meta()`-ba, `resolve_file($lang)` bekötve `template_redirect()`-be.
 - Rollback: `backups/ngo-guides-fix-20260410/rollback.sh` (MD5-el ellenőrzött v1.1.3 backup, git commit `9b7ab942`).
+
+## 2026-04-29 06:35 CEST - ngo-workspace Impi shelved + hamarosan Aukcio/Tombola
+
+- `impact-community-app.php`: Impi Agent rossz profil-link eltavolitve, floating chat widget visszakotese folyamatban
+- Impi / Kep+marketing / Aukcio / Tombola gombok: disabled + "hamarosan" felirat
+- Prod+staging deployolva: rollback_20260429T063204Z.sh

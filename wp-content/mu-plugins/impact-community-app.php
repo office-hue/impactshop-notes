@@ -18,6 +18,8 @@ if (defined('IMPACTSHOP_NGO_ADMIN_PUBLIC_TOKEN') && IMPACTSHOP_NGO_ADMIN_PUBLIC_
         $ngo_admin_public_url
     );
 }
+$identity_panel_url = apply_filters('impactshop_identity_panel_url', site_url('/profil'));
+$identity_restore_url = apply_filters('impactshop_identity_restore_url', site_url('/profil') . '#impactshop-restore-title');
 ?><!DOCTYPE html>
 <html lang="hu">
 <head>
@@ -666,6 +668,26 @@ a:hover { text-decoration: underline; }
     box-shadow: 0 0 0 4px rgba(20, 184, 166, .12);
 }
 
+.ic-input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid rgba(13, 148, 136, .18);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    background: rgba(255, 255, 255, .92);
+    color: var(--text);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.ic-input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, .12);
+}
+
 .ic-composer-footer {
     display: flex;
     justify-content: space-between;
@@ -1215,7 +1237,7 @@ a:hover { text-decoration: underline; }
             <button class="ic-nav-btn" data-nav="circles"><span class="ic-nav-icon">🧭</span><span>Körök</span></button>
             <button class="ic-nav-btn" data-nav="mine"><span class="ic-nav-icon">🌱</span><span>Saját köreim</span></button>
             <button class="ic-nav-btn active" data-nav="feed"><span class="ic-nav-icon">✨</span><span>Folyam</span></button>
-            <a class="ic-nav-btn" href="<?php echo esc_url($ngo_admin_public_url); ?>"><span class="ic-nav-icon">🛠️</span><span>NGO admin (teszt)</span></a>
+            <button class="ic-nav-btn" data-nav="ngo-admin"><span class="ic-nav-icon">🛠️</span><span>NGO admin</span></button>
         </nav>
     </div>
 </header>
@@ -1239,6 +1261,9 @@ a:hover { text-decoration: underline; }
 
     /* --- Config ---------------------------------------------------- */
     const API = <?php echo wp_json_encode(esc_url_raw($api_url)); ?>;
+    const NGO_ADMIN_PUBLIC_URL = <?php echo wp_json_encode(esc_url_raw($ngo_admin_public_url)); ?>;
+    const IDENTITY_PANEL_URL = <?php echo wp_json_encode(esc_url_raw($identity_panel_url)); ?>;
+    const IDENTITY_RESTORE_URL = <?php echo wp_json_encode(esc_url_raw($identity_restore_url)); ?>;
     let NONCE = <?php echo wp_json_encode($nonce); ?>;
     let HAS_PSEUDO = <?php echo $pseudo ? 'true' : 'false'; ?>;
     let PSEUDO_HASH_HINT = '';
@@ -1274,7 +1299,7 @@ a:hover { text-decoration: underline; }
     }
 
     let state = {
-        view: 'feed',           // 'circles' | 'mine' | 'feed' | 'circle'
+        view: 'feed',           // 'circles' | 'mine' | 'feed' | 'circle' | 'ngo-admin'
         circleId: null,
         circles: [],
         myCircles: [],
@@ -1286,6 +1311,7 @@ a:hover { text-decoration: underline; }
         feedCircleId: 0,
         search: '',
         page: 1,
+        circlesPerPage: 30,
         totalCircles: 0,
         feedPage: 1,
         totalFeed: 0,
@@ -1295,8 +1321,118 @@ a:hover { text-decoration: underline; }
         feedLoadingMore: false,
         postPage: 1,
         totalPosts: 0,
+        ngoAdminAccess: [],
+        ngoCompanyResults: [],
+        ngoCompanySearchLoading: false,
+        ngoSelectedCompany: null,
+        ngoLastSearchQuery: '',
+        ngoLastSearchTax: '',
+        ngoAdminFocusCircleId: null,
+        ngoWorkspaceSlug: '',
         votedPosts: loadVotedPosts(),
     };
+
+    function getNgoAccessForCircle(circleId) {
+        const id = Number(circleId) || 0;
+        if (!id) return null;
+        return state.ngoAdminAccess.find((item) => Number(item.circle_id) === id) || null;
+    }
+
+    function canPostAsNgo(circleId) {
+        const item = getNgoAccessForCircle(circleId);
+        return !!(item && item.is_registered && item.can_post_as_ngo);
+    }
+
+    async function loadNgoAdminAccess() {
+        if (!HAS_PSEUDO) {
+            state.ngoAdminAccess = [];
+            return;
+        }
+        try {
+            const data = await api('/ngo/admin/mine');
+            state.ngoAdminAccess = Array.isArray(data.ngo_admin) ? data.ngo_admin : [];
+        } catch (_) {
+            state.ngoAdminAccess = [];
+        }
+    }
+
+    async function searchNgoCompanies(query, taxNumber = '') {
+        const cleanQuery = String(query || '').trim();
+        const cleanTax = String(taxNumber || '').trim();
+        state.ngoLastSearchQuery = cleanQuery;
+        state.ngoLastSearchTax = cleanTax;
+        if (cleanQuery.length < 3 && cleanTax.length < 8) {
+            state.ngoCompanyResults = [];
+            state.ngoSelectedCompany = null;
+            return;
+        }
+
+        state.ngoCompanySearchLoading = true;
+        try {
+            const data = await api('/ngo/admin/company-search', {
+                method: 'POST',
+                body: JSON.stringify({
+                    query: cleanQuery,
+                    tax_number: cleanTax,
+                    limit: 8,
+                }),
+            });
+            state.ngoCompanyResults = Array.isArray(data.items) ? data.items : [];
+            state.ngoSelectedCompany = null;
+        } catch (err) {
+            state.ngoCompanyResults = [];
+            state.ngoSelectedCompany = null;
+            showStatus('A Cegjelzo kereses sikertelen: ' + (err.message || 'Ismeretlen hiba'), 'error');
+        } finally {
+            state.ngoCompanySearchLoading = false;
+        }
+    }
+
+    async function registerNgoAdminAccess(circleId, options = {}) {
+        const numericId = Number(circleId) || 0;
+        const selectedCompany = options && typeof options.selectedCompany === 'object' ? options.selectedCompany : null;
+
+        if (!numericId && !selectedCompany) {
+            showStatus('Valassz NGO szervezetet, vagy add meg a korazonositot.', 'error');
+            return;
+        }
+
+        let contactEmail = String(options.contactEmail || '').trim();
+        let displayName = String(options.displayName || '').trim();
+
+        if (!options || Object.keys(options).length === 0) {
+            const emailRaw = window.prompt('Kapcsolattartó e-mail (opcionális):', '');
+            if (emailRaw === null) {
+                return;
+            }
+            contactEmail = String(emailRaw || '').trim();
+        }
+
+        try {
+            const payload = {
+                contact_email: contactEmail,
+                display_name: displayName,
+            };
+            if (numericId > 0) {
+                payload.circle_id = numericId;
+            }
+            if (selectedCompany) {
+                payload.selected_company = selectedCompany;
+            }
+
+            await api('/ngo/admin/register', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+            await loadNgoAdminAccess();
+            showStatus('NGO regisztráció kész. Most már posztolhatsz NGO név alatt is.', 'success');
+            if (state.view === 'ngo-admin') {
+                renderNgoAdmin();
+            }
+        } catch (err) {
+            showStatus('Az NGO admin regisztráció nem sikerült: ' + (err.message || 'Ismeretlen hiba'), 'error');
+        }
+    }
 
     async function ensureCircleAlias(circleId) {
         const numericId = Number(circleId) || 0;
@@ -1423,8 +1559,858 @@ a:hover { text-decoration: underline; }
             case 'mine':    renderCircles(state.myCircles, true); break;
             case 'feed':    renderFeed(); break;
             case 'circle':  renderCircleDetail(); break;
+            case 'ngo-admin': renderNgoAdmin(); break;
+            case 'ngo-workspace': renderNgoWorkspace(); break;
         }
         updateNav();
+    }
+
+    function renderNgoAdmin() {
+        $content.innerHTML = '';
+
+        const head = html('section', {className: 'ic-view-hero'});
+        head.appendChild(html('div', {className: 'ic-view-kicker'}, 'NGO ADMIN', '•', 'JOGKEZELÉS'));
+        head.appendChild(html('h1', {className: 'ic-section-title'}, 'NGO admin felület'));
+        head.appendChild(html('p', {className: 'ic-section-sub'}, 'Sima regisztracios urláp Cegjelzo keresessel: nevre szurve listat kapsz, vagy adoszammal gyorsan megtalalod a szervezetet. Kivalasztas utan minden elerheto cegadat mezonkent betoltodik.'));
+        head.appendChild(html('div', {className: 'ic-card-actions'},
+            html('button', {
+                className: 'ic-btn ic-btn-primary',
+                onClick: () => navigate('circles'),
+            }, 'NGO körök')
+        ));
+        $content.appendChild(head);
+
+        const pseudoWidget = renderPseudoIdWidget();
+        if (pseudoWidget) {
+            $content.appendChild(pseudoWidget);
+        }
+
+        if (!HAS_PSEUDO) {
+            const empty = html('div', {className: 'ic-empty'});
+            empty.appendChild(html('div', {className: 'ic-empty-icon'}, '🔐'));
+            empty.appendChild(html('p', {className: 'ic-empty-text'}, 'A használathoz pseudo azonosítás szükséges.'));
+            empty.appendChild(html('p', {className: 'ic-empty-sub'}, 'Belepes utan a Cegjelzo-alapu regisztracios urláp jelenik meg.'));
+            empty.appendChild(html('div', {className: 'ic-card-actions'},
+                html('button', {
+                    className: 'ic-btn ic-btn-primary',
+                    onClick: async () => {
+                        await refreshAuthState();
+                        await loadNgoAdminAccess();
+                        renderNgoAdmin();
+                    },
+                }, 'Állapot frissítése')
+            ));
+            $content.appendChild(empty);
+            return;
+        }
+
+        const registerWrap = html('div', {className: 'ic-card'});
+        registerWrap.appendChild(html('div', {className: 'ic-card-name'}, 'Szimpla NGO regisztráció'));
+        registerWrap.appendChild(html('p', {className: 'ic-card-desc'}, '1) Keress nev vagy adoszam alapjan. 2) Valaszd ki a sajat NGO-t. 3) Ellenorizd az automatikusan letoltott cegadatokat. 4) Aktivald a regisztraciot.'));
+
+        const form = html('form', {className: 'ic-card-actions', style: 'display:grid;gap:10px'});
+        const queryInput = html('input', {
+            type: 'text',
+            className: 'ic-input',
+            id: 'ic-ngo-search-name',
+            placeholder: 'NGO neve (minimum 3 karakter)',
+            maxLength: 180,
+        });
+        const taxInput = html('input', {
+            type: 'text',
+            className: 'ic-input',
+            id: 'ic-ngo-search-tax',
+            placeholder: 'Adoszam (pl. 19329006-1-17)',
+            maxLength: 32,
+        });
+
+        const searchActions = html('div', {className: 'ic-card-actions'});
+        const triggerCompanySearch = async () => {
+            await searchNgoCompanies(queryInput.value, taxInput.value);
+            renderNgoAdmin();
+        };
+
+        const handleSearchInputKeydown = async (event) => {
+            if (event.key !== 'Enter') {
+                return;
+            }
+            event.preventDefault();
+            await triggerCompanySearch();
+        };
+
+        queryInput.addEventListener('keydown', handleSearchInputKeydown);
+        taxInput.addEventListener('keydown', handleSearchInputKeydown);
+
+        searchActions.appendChild(html('button', {
+            type: 'button',
+            className: 'ic-btn ic-btn-outline',
+            onClick: triggerCompanySearch,
+        }, 'Keresés Cégjelzőben'));
+        searchActions.appendChild(html('button', {
+            type: 'button',
+            className: 'ic-btn ic-btn-outline',
+            onClick: () => {
+                queryInput.value = '';
+                taxInput.value = '';
+                state.ngoCompanyResults = [];
+                state.ngoSelectedCompany = null;
+                state.ngoLastSearchQuery = '';
+                state.ngoLastSearchTax = '';
+                renderNgoAdmin();
+            },
+        }, 'Találatok törlése'));
+
+        const emailInput = html('input', {
+            type: 'email',
+            className: 'ic-input',
+            id: 'ic-ngo-register-email',
+            placeholder: 'Kapcsolattartó e-mail (opcionális)',
+        });
+        const nameInput = html('input', {
+            type: 'text',
+            className: 'ic-input',
+            id: 'ic-ngo-register-name',
+            placeholder: 'Megjelenített név (opcionális)',
+            maxLength: 120,
+        });
+
+        form.appendChild(queryInput);
+        form.appendChild(taxInput);
+        form.appendChild(searchActions);
+
+        if (state.ngoCompanySearchLoading) {
+            form.appendChild(html('p', {className: 'ic-card-desc'}, 'Cegjelzo kereses folyamatban...'));
+        }
+
+        const hasSearchIntent = String(state.ngoLastSearchQuery || '').trim().length >= 3 || String(state.ngoLastSearchTax || '').replace(/\D+/g, '').length >= 8;
+        if (!state.ngoCompanySearchLoading && hasSearchIntent && (state.ngoCompanyResults || []).length === 0) {
+            form.appendChild(html('p', {className: 'ic-card-desc'}, 'Nincs talalat erre a keresesre. Probald teljesebb nevvel vagy ellenorizd az adoszam formatumat.'));
+
+            const manualWrap = html('div', {className: 'ic-card'});
+            manualWrap.appendChild(html('div', {className: 'ic-card-name'}, 'Nem listazta? Rogzitsuk manualisan'));
+            manualWrap.appendChild(html('p', {className: 'ic-card-desc'}, 'Ha biztosan letezik a szervezet, folytathatod kezi rogzitessel is.'));
+            manualWrap.appendChild(html('div', {className: 'ic-card-actions'},
+                html('button', {
+                    type: 'button',
+                    className: 'ic-btn ic-btn-outline',
+                    onClick: () => {
+                        const manualName = String(queryInput.value || '').trim();
+                        const manualTax = String(taxInput.value || '').trim();
+                        if (manualName.length < 3) {
+                            showStatus('A manualis rogziteshez legalabb 3 karakteres szervezetnevet adj meg.', 'error');
+                            return;
+                        }
+                        state.ngoSelectedCompany = {
+                            display_name: manualName,
+                            official_name: manualName,
+                            short_name: manualName,
+                            tax_number: manualTax,
+                            registration_number: '',
+                            org_type: 'manual',
+                            status_label: 'manual_entry',
+                            representatives: [],
+                            proceedings: [],
+                            raw: {
+                                source: 'manual_fallback',
+                                query: manualName,
+                                tax_number: manualTax,
+                            },
+                        };
+                        showStatus('Manualis NGO kivalasztas beallitva. Folytasd a regisztracio aktivalasaval.', 'info');
+                        renderNgoAdmin();
+                    },
+                }, 'Szervezet manualis kivalasztasa')
+            ));
+            form.appendChild(manualWrap);
+        }
+
+        if ((state.ngoCompanyResults || []).length > 0) {
+            const resultsWrap = html('div', {className: 'ic-grid', style: 'margin-top:4px'});
+            state.ngoCompanyResults.forEach((company) => {
+                const item = html('div', {className: 'ic-card'});
+                item.appendChild(html('div', {className: 'ic-card-name'}, company.display_name || company.official_name || company.short_name || 'Ismeretlen NGO'));
+                const queryNorm = String(state.ngoLastSearchQuery || '').trim().toLowerCase();
+                const nameNorm = String(company.display_name || company.official_name || company.short_name || '').trim().toLowerCase();
+                const queryExact = queryNorm !== '' && nameNorm === queryNorm;
+                const queryPrefix = queryNorm !== '' && !queryExact && nameNorm.startsWith(queryNorm);
+                const taxNorm = String(state.ngoLastSearchTax || '').replace(/\D+/g, '');
+                const companyTaxNorm = String(company.tax_number || '').replace(/\D+/g, '');
+                const taxExact = taxNorm !== '' && companyTaxNorm !== '' && taxNorm === companyTaxNorm;
+
+                const matchBadges = [];
+                if (taxExact) matchBadges.push('Pontos adoszam-egyezes');
+                if (queryExact) matchBadges.push('Pontos nev-egyezes');
+                else if (queryPrefix) matchBadges.push('Nev eleji egyezes');
+                if (matchBadges.length > 0) {
+                    item.appendChild(html('p', {className: 'ic-card-desc'}, matchBadges.join(' · ')));
+                }
+                const parts = [
+                    company.tax_number ? `Adoszam: ${company.tax_number}` : '',
+                    company.registration_number ? `Nyilv. szam: ${company.registration_number}` : '',
+                    company.status_label ? `Statusz: ${company.status_label}` : '',
+                ].filter(Boolean);
+                if (parts.length > 0) {
+                    item.appendChild(html('p', {className: 'ic-card-desc'}, parts.join(' · ')));
+                }
+                const itemActions = html('div', {className: 'ic-card-actions'});
+                itemActions.appendChild(html('button', {
+                    type: 'button',
+                    className: 'ic-btn ' + (state.ngoSelectedCompany === company ? 'ic-btn-primary' : 'ic-btn-outline'),
+                    onClick: () => {
+                        state.ngoSelectedCompany = company;
+                        renderNgoAdmin();
+                    },
+                }, state.ngoSelectedCompany === company ? 'Kiválasztva' : 'Kiválasztom'));
+                item.appendChild(itemActions);
+                resultsWrap.appendChild(item);
+            });
+            form.appendChild(resultsWrap);
+        }
+
+        if (state.ngoSelectedCompany) {
+            const selectedHead = html('div', {className: 'ic-card', style: 'margin-top:8px'});
+            selectedHead.appendChild(html('span', {className: 'ic-card-badge ngo'}, 'Kivalasztott NGO'));
+            selectedHead.appendChild(html('div', {className: 'ic-card-name'}, state.ngoSelectedCompany.official_name || state.ngoSelectedCompany.display_name || state.ngoSelectedCompany.short_name || 'Ismeretlen NGO'));
+            selectedHead.appendChild(html('p', {className: 'ic-card-desc'}, [
+                state.ngoSelectedCompany.status_label ? `Statusz: ${state.ngoSelectedCompany.status_label}` : '',
+                state.ngoSelectedCompany.tax_number ? `Adoszam: ${state.ngoSelectedCompany.tax_number}` : '',
+                state.ngoSelectedCompany.registration_number ? `Nyilv. szam: ${state.ngoSelectedCompany.registration_number}` : '',
+            ].filter(Boolean).join(' · ')));
+            form.appendChild(selectedHead);
+
+            const detailWrap = html('div', {className: 'ic-grid', style: 'margin-top:8px'});
+            const detailFields = [
+                ['Hivatalos név', state.ngoSelectedCompany.official_name || ''],
+                ['Rövid név', state.ngoSelectedCompany.short_name || ''],
+                ['Adószám', state.ngoSelectedCompany.tax_number || ''],
+                ['Nyilvántartási szám', state.ngoSelectedCompany.registration_number || ''],
+                ['Szervezet típus', state.ngoSelectedCompany.org_type || ''],
+                ['Állapot', state.ngoSelectedCompany.status_label || ''],
+                ['Státusz kód', state.ngoSelectedCompany.status_code === null || state.ngoSelectedCompany.status_code === undefined ? '' : String(state.ngoSelectedCompany.status_code)],
+                ['Közhasznúsági szint', state.ngoSelectedCompany.level_of_charity || ''],
+                ['Székhely cím', state.ngoSelectedCompany.address || ''],
+                ['NAV cím', state.ngoSelectedCompany.nav_address || ''],
+                ['Tevékenység', state.ngoSelectedCompany.activity || ''],
+                ['Leírás', state.ngoSelectedCompany.description || ''],
+                ['Képviselők', JSON.stringify(state.ngoSelectedCompany.representatives || [])],
+                ['Eljárások', JSON.stringify(state.ngoSelectedCompany.proceedings || [])],
+            ];
+
+            detailFields.forEach(([label, value]) => {
+                const row = html('div', {className: 'ic-card'});
+                row.appendChild(html('div', {className: 'ic-card-badge ngo'}, label));
+                row.appendChild(html('div', {className: 'ic-card-desc'}, value || '—'));
+                detailWrap.appendChild(row);
+            });
+
+            form.appendChild(detailWrap);
+        }
+
+        form.appendChild(emailInput);
+        form.appendChild(nameInput);
+        form.appendChild(html('button', {type: 'submit', className: 'ic-btn ic-btn-primary'}, 'Regisztráció aktiválása'));
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!state.ngoSelectedCompany) {
+                showStatus('Valaszd ki a sajat NGO szervezetedet a Cegjelzo talalatok kozul.', 'error');
+                return;
+            }
+            await registerNgoAdminAccess(0, {
+                contactEmail: emailInput.value,
+                displayName: nameInput.value,
+                selectedCompany: state.ngoSelectedCompany,
+            });
+        });
+
+        registerWrap.appendChild(form);
+        $content.appendChild(registerWrap);
+
+        if (state.ngoAdminAccess.length === 0) {
+            const empty = html('div', {className: 'ic-empty'});
+            empty.appendChild(html('div', {className: 'ic-empty-icon'}, '🏢'));
+            empty.appendChild(html('p', {className: 'ic-empty-text'}, 'Még nincs aktív NGO admin jogosultságod.'));
+            empty.appendChild(html('p', {className: 'ic-empty-sub'}, 'A fenti Cegjelzo urláppal azonnal letrehozhato a regisztracio, nem csak az elore felvitt listabol.'));
+            $content.appendChild(empty);
+            return;
+        }
+
+        const grid = html('div', {className: 'ic-grid'});
+        const focusCircleId = Number(state.ngoAdminFocusCircleId) || 0;
+        const ngoAdminItems = focusCircleId > 0
+            ? state.ngoAdminAccess.filter((entry) => Number(entry.circle_id) === focusCircleId)
+            : state.ngoAdminAccess;
+
+        if (focusCircleId > 0) {
+            const focusInfo = html('div', {className: 'ic-card', style: 'margin-bottom:10px'});
+            if (ngoAdminItems.length > 0) {
+                focusInfo.appendChild(html('div', {className: 'ic-card-name'}, 'Kijelolt NGO admin rekord'));
+                focusInfo.appendChild(html('p', {className: 'ic-card-desc'}, `Kor ID: ${focusCircleId} • Az adott NGO admin kartyat mutatjuk.`));
+            } else {
+                focusInfo.appendChild(html('div', {className: 'ic-card-name'}, 'A kijelolt NGO admin rekord nem talalhato'));
+                focusInfo.appendChild(html('p', {className: 'ic-card-desc'}, `Kor ID: ${focusCircleId} • Lehet, hogy nincs aktiv regisztracio ehhez a korhoz.`));
+            }
+            focusInfo.appendChild(html('div', {className: 'ic-card-actions'},
+                html('button', {
+                    className: 'ic-btn ic-btn-outline',
+                    onClick: () => {
+                        state.ngoAdminFocusCircleId = null;
+                        window.location.hash = '#ngo-admin';
+                        renderNgoAdmin();
+                    },
+                }, 'Osszes NGO admin rekord mutatasa')
+            ));
+            $content.appendChild(focusInfo);
+        }
+
+        ngoAdminItems.forEach((item) => {
+            const card = html('div', {className: 'ic-card'});
+            if (focusCircleId > 0) {
+                card.style.borderColor = '#0ea5a3';
+                card.style.boxShadow = '0 0 0 2px rgba(14,165,163,.15)';
+            }
+            card.appendChild(html('span', {className: 'ic-card-badge ngo'}, 'NGO'));
+            card.appendChild(html('div', {className: 'ic-card-name'}, item.circle_name || `NGO #${item.circle_id}`));
+
+            const statusText = item.can_post_as_ngo
+                ? 'Aktív: posztolhatsz NGO név alatt.'
+                : item.is_registered
+                    ? 'Regisztrálva, de még nincs aktív NGO-neves posztjog.'
+                    : 'Még nincs NGO admin regisztráció ehhez a körhöz.';
+            card.appendChild(html('p', {className: 'ic-card-desc'}, statusText));
+
+            const actions = html('div', {className: 'ic-card-actions'});
+            if (!item.can_post_as_ngo) {
+                actions.appendChild(html('button', {
+                    className: 'ic-btn ic-btn-primary',
+                    onClick: () => registerNgoAdminAccess(item.circle_id),
+                }, 'Jog aktiválása'));
+            }
+
+            const ngoWorkspaceUrl = buildNgoWorkspaceUrl(item);
+            if (ngoWorkspaceUrl) {
+                actions.appendChild(html('a', {
+                    className: 'ic-btn ic-btn-outline',
+                    href: ngoWorkspaceUrl,
+                    target: '_blank',
+                    rel: 'noopener',
+                }, 'NGO Munkater (kulon oldal)'));
+            } else {
+                actions.appendChild(html('button', {
+                    className: 'ic-btn ic-btn-outline',
+                    type: 'button',
+                    onClick: () => showStatus('Nem talalhato NGO admin URL ehhez a rekordhoz.', 'error'),
+                }, 'NGO Munkater nem elerheto'));
+            }
+
+            actions.appendChild(html('button', {
+                className: 'ic-btn ic-btn-outline',
+                onClick: () => navigateNgoAdmin(item.circle_id),
+            }, 'NGO admin nezet (itt)'));
+
+            const companyMeta = [
+                item.official_name ? `Hivatalos nev: ${item.official_name}` : '',
+                item.tax_number ? `Adoszam: ${item.tax_number}` : '',
+                item.registration_number ? `Nyilv. szam: ${item.registration_number}` : '',
+            ].filter(Boolean);
+            if (companyMeta.length > 0) {
+                card.appendChild(html('p', {className: 'ic-card-desc'}, companyMeta.join(' · ')));
+            }
+
+            card.appendChild(actions);
+            grid.appendChild(card);
+        });
+
+        if (focusCircleId > 0) {
+            requestAnimationFrame(() => {
+                const firstCard = grid.querySelector('.ic-card');
+                if (firstCard && firstCard.scrollIntoView) {
+                    firstCard.scrollIntoView({behavior: 'smooth', block: 'start'});
+                }
+            });
+        }
+        $content.appendChild(grid);
+    }
+
+    function isNgoCompanyDataSparse(item) {
+        if (!item || typeof item !== 'object') {
+            return true;
+        }
+
+        const coreValues = [
+            item.official_name,
+            item.short_name,
+            item.tax_number,
+            item.registration_number,
+            item.org_type,
+            item.address,
+            item.activity,
+            item.status_label,
+        ];
+        return !coreValues.some((value) => String(value || '').trim() !== '');
+    }
+
+    function pickNgoCompanySearchQuery(item) {
+        const candidates = [
+            item.official_name,
+            item.display_name,
+            item.circle_name,
+            item.short_name,
+        ];
+        for (const candidate of candidates) {
+            const clean = String(candidate || '').trim();
+            if (clean.length >= 3) {
+                return clean;
+            }
+        }
+        return '';
+    }
+
+    function mergeNgoCompanyData(baseItem, company) {
+        if (!company || typeof company !== 'object') {
+            return baseItem;
+        }
+        return {
+            ...baseItem,
+            registry_id: company.registry_id || baseItem.registry_id || '',
+            official_name: company.official_name || baseItem.official_name || '',
+            short_name: company.short_name || baseItem.short_name || '',
+            display_name: company.display_name || baseItem.display_name || '',
+            tax_number: company.tax_number || baseItem.tax_number || '',
+            registration_number: company.registration_number || baseItem.registration_number || '',
+            org_type: company.org_type || baseItem.org_type || '',
+            address: company.address || baseItem.address || '',
+            nav_address: company.nav_address || baseItem.nav_address || '',
+            activity: company.activity || baseItem.activity || '',
+            description: company.description || baseItem.description || '',
+            status_label: company.status_label || baseItem.status_label || '',
+            status_code: company.status_code === null || company.status_code === undefined
+                ? (baseItem.status_code === null || baseItem.status_code === undefined ? null : baseItem.status_code)
+                : company.status_code,
+            level_of_charity: company.level_of_charity || baseItem.level_of_charity || '',
+            representatives: Array.isArray(company.representatives) ? company.representatives : (baseItem.representatives || []),
+            proceedings: Array.isArray(company.proceedings) ? company.proceedings : (baseItem.proceedings || []),
+        };
+    }
+
+    async function findNgoCompanyBackfill(item) {
+        const query = pickNgoCompanySearchQuery(item);
+        if (query === '') {
+            return null;
+        }
+
+        try {
+            const data = await api('/ngo/admin/company-search', {
+                method: 'POST',
+                body: JSON.stringify({
+                    query,
+                    tax_number: String(item.tax_number || '').trim(),
+                    limit: 8,
+                }),
+            });
+            const items = Array.isArray(data.items) ? data.items : [];
+            if (items.length === 0) {
+                return null;
+            }
+
+            const normCircle = String(item.circle_name || '').trim().toLowerCase();
+            const normOfficial = String(item.official_name || '').trim().toLowerCase();
+            const taxDigits = String(item.tax_number || '').replace(/\D+/g, '');
+
+            const scored = items
+                .map((entry) => {
+                    const name = String(entry.display_name || entry.official_name || entry.short_name || '').trim().toLowerCase();
+                    const official = String(entry.official_name || '').trim().toLowerCase();
+                    const entryTaxDigits = String(entry.tax_number || '').replace(/\D+/g, '');
+                    let score = 0;
+                    if (taxDigits && entryTaxDigits && taxDigits === entryTaxDigits) score += 12;
+                    if (normOfficial && official === normOfficial) score += 9;
+                    if (normCircle && name === normCircle) score += 7;
+                    if (normCircle && name.startsWith(normCircle)) score += 4;
+                    if (normOfficial && official.startsWith(normOfficial)) score += 3;
+                    if (name && name === query.toLowerCase()) score += 2;
+                    return {entry, score};
+                })
+                .sort((a, b) => b.score - a.score);
+
+            return scored[0]?.entry || items[0] || null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function renderNgoWorkspace() {
+        $content.innerHTML = '';
+        const slug = normalizeNgoSlug(state.ngoWorkspaceSlug || '');
+        const item = findNgoWorkspaceItem(slug);
+        let resolvedItem = item;
+        let recoveredCompany = null;
+
+        const head = html('section', {className: 'ic-view-hero'});
+        head.appendChild(html('div', {className: 'ic-view-kicker'}, 'NGO MUNKATER', '•', (slug || 'n/a').toUpperCase()));
+        head.appendChild(html('h1', {className: 'ic-section-title'}, item ? (item.circle_name || 'NGO munkater') : 'NGO munkater'));
+        head.appendChild(html('p', {className: 'ic-section-sub'}, 'Kulon NGO oldal: Cegjelzo adatok, media feltoltes, Impi Agent, aukcio es tombola inditas.'));
+        head.appendChild(html('div', {className: 'ic-card-actions'},
+            html('button', {
+                className: 'ic-btn ic-btn-outline',
+                onClick: () => navigate('ngo-admin'),
+            }, 'Vissza NGO adminhoz')
+        ));
+        $content.appendChild(head);
+
+        if (!item) {
+            const empty = html('div', {className: 'ic-empty'});
+            empty.appendChild(html('div', {className: 'ic-empty-icon'}, '⚠️'));
+            empty.appendChild(html('p', {className: 'ic-empty-text'}, 'Ehhez a slughoz nem talaltam NGO admin rekordot.'));
+            empty.appendChild(html('p', {className: 'ic-empty-sub'}, 'Ellenorizd a jogosultsagot vagy nyisd meg az NGO admin listat.'));
+            $content.appendChild(empty);
+            return;
+        }
+
+        if (isNgoCompanyDataSparse(item)) {
+            recoveredCompany = await findNgoCompanyBackfill(item);
+            if (recoveredCompany) {
+                resolvedItem = mergeNgoCompanyData(item, recoveredCompany);
+            }
+        }
+
+        const details = html('div', {className: 'ic-card'});
+        details.appendChild(html('div', {className: 'ic-card-name'}, 'Cegjelzo es NGO adatok'));
+        if (recoveredCompany) {
+            details.appendChild(html('p', {className: 'ic-card-desc'}, 'Ideiglenes Cegjelzo visszatoltes aktiv: a hianyzo mezok megjelentek. Tartos menteshez kattints a gombra.'));
+            details.appendChild(html('div', {className: 'ic-card-actions'},
+                html('button', {
+                    className: 'ic-btn ic-btn-primary',
+                    type: 'button',
+                    onClick: async () => {
+                        await registerNgoAdminAccess(Number(item.circle_id) || 0, {
+                            selectedCompany: recoveredCompany,
+                            contactEmail: item.contact_email || '',
+                            displayName: item.display_name || '',
+                        });
+                        state.ngoWorkspaceSlug = slug;
+                        await loadNgoAdminAccess();
+                        await renderNgoWorkspace();
+                    },
+                }, 'Cegjelzo adatok mentese ebbe az NGO rekordba')
+            ));
+        }
+        const detailGrid = html('div', {className: 'ic-grid', style: 'margin-top:10px'});
+        const detailFields = [
+            ['Kor', resolvedItem.circle_name || ''],
+            ['Kor slug', resolvedItem.circle_slug || ''],
+            ['Kor ID', resolvedItem.circle_id === undefined || resolvedItem.circle_id === null ? '' : String(resolvedItem.circle_id)],
+            ['Regisztracio allapot', resolvedItem.is_registered ? 'Igen' : 'Nem'],
+            ['Fiok statusz', resolvedItem.account_status || ''],
+            ['NGO neven posztolhat', resolvedItem.can_post_as_ngo ? 'Igen' : 'Nem'],
+            ['Kapcsolattarto email', resolvedItem.contact_email || ''],
+            ['Megjelenitett nev', resolvedItem.display_name || ''],
+            ['Regisztracio datuma', resolvedItem.registered_at || ''],
+            ['Registry ID', resolvedItem.registry_id || ''],
+            ['Hivatalos nev', resolvedItem.official_name || ''],
+            ['Rovid nev', resolvedItem.short_name || ''],
+            ['Adoszam', resolvedItem.tax_number || ''],
+            ['Nyilvantartasi szam', resolvedItem.registration_number || ''],
+            ['Szervezet tipusa', resolvedItem.org_type || ''],
+            ['Szekhely cim', resolvedItem.address || ''],
+            ['NAV cim', resolvedItem.nav_address || ''],
+            ['Tevekenyseg', resolvedItem.activity || ''],
+            ['Leiras', resolvedItem.description || ''],
+            ['Statusz cimke', resolvedItem.status_label || ''],
+            ['Statusz kod', resolvedItem.status_code === undefined || resolvedItem.status_code === null ? '' : String(resolvedItem.status_code)],
+            ['Kozhasznusagi szint', resolvedItem.level_of_charity || ''],
+            ['Utolso Cegjelzo ellenorzes', resolvedItem.company_last_checked_at || ''],
+        ];
+
+        detailFields.forEach(([label, value]) => {
+            const row = html('div', {className: 'ic-card'});
+            row.appendChild(html('div', {className: 'ic-card-badge ngo'}, label));
+            row.appendChild(html('div', {className: 'ic-card-desc'}, String(value || '—')));
+            detailGrid.appendChild(row);
+        });
+
+        const renderStructuredList = (title, values) => {
+            const row = html('div', {className: 'ic-card'});
+            row.appendChild(html('div', {className: 'ic-card-badge ngo'}, title));
+
+            const list = Array.isArray(values) ? values : [];
+            if (list.length === 0) {
+                row.appendChild(html('div', {className: 'ic-card-desc'}, 'Nincs adat.'));
+                detailGrid.appendChild(row);
+                return;
+            }
+
+            const ul = html('ul', {style: 'margin:0;padding-left:18px;display:grid;gap:8px;'});
+            list.forEach((entry) => {
+                if (!entry || typeof entry !== 'object') {
+                    ul.appendChild(html('li', {className: 'ic-card-desc'}, String(entry || '—')));
+                    return;
+                }
+
+                const pairs = Object.entries(entry)
+                    .filter(([, value]) => value !== null && value !== undefined && value !== '' && typeof value !== 'object')
+                    .map(([key, value]) => `${key}: ${String(value)}`);
+
+                const li = html('li', {className: 'ic-card-desc'});
+                if (pairs.length > 0) {
+                    li.textContent = pairs.join(' · ');
+                } else {
+                    li.textContent = JSON.stringify(entry);
+                }
+                ul.appendChild(li);
+            });
+
+            row.appendChild(ul);
+            detailGrid.appendChild(row);
+        };
+
+        renderStructuredList('Kepviselok', resolvedItem.representatives || []);
+        renderStructuredList('Eljarasok', resolvedItem.proceedings || []);
+
+        details.appendChild(detailGrid);
+        $content.appendChild(details);
+
+        const mediaCard = html('div', {className: 'ic-card'});
+        mediaCard.appendChild(html('div', {className: 'ic-card-name'}, 'Logo es kepek feltoltese'));
+        mediaCard.appendChild(html('p', {className: 'ic-card-desc'}, 'WP Media tarba tolti fel a kepfajlokat.'));
+        const mediaActions = html('div', {className: 'ic-card-actions'});
+        const fileInput = html('input', {
+            type: 'file',
+            accept: 'image/*',
+            multiple: true,
+            className: 'ic-input',
+            style: 'max-width:360px;'
+        });
+        mediaActions.appendChild(fileInput);
+        mediaActions.appendChild(html('button', {
+            className: 'ic-btn ic-btn-primary',
+            onClick: async () => {
+                try {
+                    await uploadNgoWorkspaceImages(fileInput.files);
+                    showStatus('Kepfeltoltes sikeres.', 'success');
+                } catch (err) {
+                    showStatus('Kepfeltoltes hiba: ' + (err.message || 'ismeretlen hiba'), 'error');
+                }
+            },
+        }, 'Kepek feltoltese'));
+        mediaCard.appendChild(mediaActions);
+        $content.appendChild(mediaCard);
+
+        const impiCard = html('div', {className: 'ic-card'});
+        impiCard.appendChild(html('div', {className: 'ic-card-name'}, 'Impi Agent'));
+        impiCard.appendChild(html('p', {className: 'ic-card-desc'}, 'Kulon Impi chat ablak visszakotese folyamatban. Addig ez a modul hamarosan erheto el.'));
+        impiCard.appendChild(html('div', {className: 'ic-card-actions'},
+            html('button', {
+                className: 'ic-btn ic-btn-outline',
+                disabled: true,
+                title: 'Hamarosan',
+            }, 'Impi chat - hamarosan'),
+            html('button', {
+                className: 'ic-btn ic-btn-outline',
+                disabled: true,
+                title: 'Hamarosan',
+            }, 'Kep + marketing - hamarosan')
+        ));
+        $content.appendChild(impiCard);
+
+        const launchCard = html('div', {className: 'ic-card'});
+        launchCard.appendChild(html('div', {className: 'ic-card-name'}, 'Aukcio es tombola inditas'));
+        launchCard.appendChild(html('p', {className: 'ic-card-desc'}, 'Aukcio es tombola modul hamarosan.'));
+        launchCard.appendChild(html('div', {className: 'ic-card-actions'},
+            html('button', {
+                className: 'ic-btn ic-btn-outline',
+                disabled: true,
+                title: 'Hamarosan',
+            }, 'Aukcio - hamarosan'),
+            html('button', {
+                className: 'ic-btn ic-btn-outline',
+                disabled: true,
+                title: 'Hamarosan',
+            }, 'Tombola - hamarosan')
+        ));
+        $content.appendChild(launchCard);
+    }
+
+    function getPseudoIdFromCookie() {
+        const match = document.cookie.match(/(?:^|;\s*)impactshop_pseudo_id=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function getPseudoIdFromQuery() {
+        try {
+            const qp = new URLSearchParams(window.location.search || '');
+            return String(qp.get('impact_pseudo_id') || '').trim();
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function appendReturnParamToUrl(rawUrl) {
+        const base = String(rawUrl || '').trim();
+        if (!base) {
+            return '';
+        }
+
+        try {
+            const currentUrl = new URL(window.location.href);
+            if (!/sharity\.hu$/i.test(currentUrl.hostname)) {
+                return base;
+            }
+
+            const nextUrl = new URL(base, window.location.origin);
+            nextUrl.searchParams.set('return', currentUrl.toString());
+            return nextUrl.toString();
+        } catch (_) {
+            return base;
+        }
+    }
+
+    function normalizeNgoSlug(raw) {
+        const value = String(raw || '')
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s_-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        return value;
+    }
+
+    function getNgoSlugFromAccessItem(item) {
+        if (!item || typeof item !== 'object') {
+            return '';
+        }
+        const direct = [
+            item.ngo_slug,
+            item.slug,
+            item.circle_slug,
+            item.organization_slug,
+            item.card_slug,
+        ];
+        for (const value of direct) {
+            const slug = normalizeNgoSlug(value);
+            if (slug) {
+                return slug;
+            }
+        }
+        return normalizeNgoSlug(item.circle_name);
+    }
+
+    function buildNgoWorkspaceUrl(item) {
+        const slug = getNgoSlugFromAccessItem(item);
+        if (!slug) {
+            return '';
+        }
+        try {
+            const current = new URL(window.location.href);
+            current.hash = '#ngo-workspace/' + slug;
+            return current.toString();
+        } catch (_) {
+            return '#ngo-workspace/' + slug;
+        }
+    }
+
+    function findNgoWorkspaceItem(slug) {
+        const wanted = normalizeNgoSlug(slug);
+        if (!wanted) {
+            return null;
+        }
+        return state.ngoAdminAccess.find((item) => getNgoSlugFromAccessItem(item) === wanted) || null;
+    }
+
+    async function uploadNgoWorkspaceImages(files) {
+        const list = Array.from(files || []).filter((file) => file && /^image\//i.test(file.type));
+        if (list.length === 0) {
+            showStatus('Valassz legalabb 1 kepfajlt.', 'error');
+            return;
+        }
+        for (const file of list) {
+            const fd = new FormData();
+            fd.append('file', file, file.name || 'ngo-image.jpg');
+            const resp = await fetch(window.location.origin + '/wp-json/wp/v2/media', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'X-WP-Nonce': NONCE,
+                    'Content-Disposition': `attachment; filename="${encodeURIComponent(file.name || 'ngo-image.jpg')}"`,
+                },
+                body: fd,
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+                throw new Error(data && data.message ? String(data.message) : 'Media upload hiba');
+            }
+        }
+    }
+
+    async function copyPseudoIdValue(value) {
+        const text = String(value || '').trim();
+        if (!text) {
+            throw new Error('Nincs pseudo azonosito');
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            return;
+        }
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', 'readonly');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+
+    function renderPseudoIdWidget() {
+        const pseudoId = getPseudoIdFromCookie() || getPseudoIdFromQuery();
+        if (!pseudoId) {
+            return null;
+        }
+
+        const wrap = html('section', {className: 'ic-card', style: 'margin-bottom:16px'});
+        wrap.appendChild(html('div', {className: 'ic-card-name'}, 'Fiokom pseudo azonosito'));
+        wrap.appendChild(html('p', {className: 'ic-card-desc'}, 'Ha uj bongeszoben vagy uj eszkozrol nyitod meg az oldalt, ezzel az azonositoval tudod visszakotni a fiokodat.'));
+
+        const row = html('div', {className: 'ic-card-actions'});
+        row.appendChild(html('code', {
+            style: 'display:inline-flex;align-items:center;padding:10px 12px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;font-weight:700;letter-spacing:.02em;min-height:42px;'
+        }, pseudoId));
+
+        row.appendChild(html('button', {
+            type: 'button',
+            className: 'ic-btn ic-btn-primary',
+            onClick: async () => {
+                try {
+                    await copyPseudoIdValue(pseudoId);
+                    showStatus('Pseudo azonosito masolva.', 'success');
+                } catch (err) {
+                    showStatus('A masolas nem sikerult: ' + (err.message || 'ismeretlen hiba'), 'error');
+                }
+            },
+        }, 'Masolas'));
+
+        const manageUrl = String(IDENTITY_PANEL_URL || '').trim();
+        const restoreUrl = String(IDENTITY_RESTORE_URL || '').trim();
+        if (manageUrl) {
+            row.appendChild(html('a', {
+                className: 'ic-btn ic-btn-outline',
+                href: manageUrl.indexOf('#') === -1 ? (manageUrl + '#impactshop-account-top') : manageUrl,
+                target: '_blank',
+                rel: 'noopener',
+            }, 'A fiokom kezelese'));
+        }
+        if (restoreUrl) {
+            row.appendChild(html('a', {
+                className: 'ic-btn ic-btn-outline',
+                href: appendReturnParamToUrl(restoreUrl),
+                target: '_blank',
+                rel: 'noopener',
+            }, 'Ez nem az en fiokom'));
+        }
+
+        wrap.appendChild(row);
+        return wrap;
     }
 
     function updateNav() {
@@ -1465,9 +2451,11 @@ a:hover { text-decoration: underline; }
     function renderCircles(circles, isMine) {
         $content.innerHTML = '';
 
-        const filtered = state.search
-            ? circles.filter(c => c.name.toLowerCase().includes(state.search.toLowerCase()))
-            : circles;
+        let filtered = Array.isArray(circles) ? [...circles] : [];
+        if (isMine && state.search) {
+            const needle = String(state.search || '').toLowerCase();
+            filtered = filtered.filter((circle) => String(circle.name || '').toLowerCase().includes(needle));
+        }
         const totalPosts = circles.reduce((sum, circle) => sum + Number(circle.post_count || 0), 0);
 
         const header = html('section', {className: 'ic-view-hero'});
@@ -1500,26 +2488,44 @@ a:hover { text-decoration: underline; }
 
         if (!isMine) {
             const bar = html('div', {className: 'ic-filter-bar'});
-            ['', 'ngo', 'settlement'].forEach(f => {
+            ['', 'ngo', 'settlement'].forEach((f) => {
                 const label = f === '' ? 'Mind' : f === 'ngo' ? '🏢 NGO' : '🏘️ Település';
                 const btn = html('button', {
                     className: 'ic-filter-btn' + (state.filter === f ? ' active' : ''),
-                    onClick: () => { state.filter = f; state.page = 1; loadCircles(); },
+                    onClick: () => {
+                        state.filter = f;
+                        state.page = 1;
+                        loadCircles();
+                    },
                 }, label);
                 bar.appendChild(btn);
             });
             const search = html('input', {
                 className: 'ic-search',
                 type: 'text',
-                placeholder: 'Keresés...',
+                placeholder: 'Körök keresese...',
                 value: state.search,
             });
-            search.addEventListener('input', debounce(e => {
+            search.addEventListener('input', debounce((e) => {
                 state.search = e.target.value;
-                filterAndRender();
+                state.page = 1;
+                loadCircles();
             }, 250));
             bar.appendChild(search);
             $content.appendChild(bar);
+        }
+
+        if (isMine) {
+            const joinCta = html('div', {className: 'ic-card', style: 'margin-bottom:12px;'});
+            joinCta.appendChild(html('div', {className: 'ic-card-name'}, 'Uj körökhöz csatlakozas'));
+            joinCta.appendChild(html('p', {className: 'ic-card-desc'}, 'Itt a sajat köreidet latod. Uj NGO vagy telepules körhöz a Körök listaban tudsz csatlakozni.'));
+            joinCta.appendChild(html('div', {className: 'ic-card-actions'},
+                html('button', {
+                    className: 'ic-btn ic-btn-primary',
+                    onClick: () => navigate('circles'),
+                }, 'Uj körök böngeszese es csatlakozas')
+            ));
+            $content.appendChild(joinCta);
         }
 
         if (filtered.length === 0) {
@@ -1565,22 +2571,53 @@ a:hover { text-decoration: underline; }
                 card.appendChild(html('span', {className: 'ic-card-member-badge'}, '✓ Tag'));
             }
 
+            if (!isMine && HAS_PSEUDO && !c.is_member) {
+                const quickJoin = html('div', {className: 'ic-card-actions', style: 'margin-top:10px;'});
+                quickJoin.appendChild(html('button', {
+                    className: 'ic-btn ic-btn-primary',
+                    onClick: async (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        await joinCircle(c.id);
+                    },
+                }, '✋ Csatlakozom'));
+                card.appendChild(quickJoin);
+            }
+
             grid.appendChild(card);
         });
         $content.appendChild(grid);
 
-        // Pagination
-        if (!isMine && state.totalCircles > 30) {
-            const pages = Math.ceil(state.totalCircles / 30);
+        if (!isMine && state.totalCircles > state.circlesPerPage) {
+            const pages = Math.max(1, Math.ceil(state.totalCircles / state.circlesPerPage));
             const pag = html('div', {className: 'ic-pagination'});
-            for (let i = 1; i <= Math.min(pages, 10); i++) {
+            const start = Math.max(1, state.page - 2);
+            const end = Math.min(pages, state.page + 2);
+
+            if (state.page > 1) {
+                pag.appendChild(html('button', {
+                    className: 'ic-btn ic-btn-outline',
+                    onClick: () => { state.page = state.page - 1; loadCircles(); },
+                }, '← Előző'));
+            }
+
+            for (let i = start; i <= end; i++) {
                 pag.appendChild(html('button', {
                     className: 'ic-btn ' + (state.page === i ? 'ic-btn-primary' : 'ic-btn-outline'),
                     onClick: () => { state.page = i; loadCircles(); },
                 }, String(i)));
             }
+
+            if (state.page < pages) {
+                pag.appendChild(html('button', {
+                    className: 'ic-btn ic-btn-outline',
+                    onClick: () => { state.page = state.page + 1; loadCircles(); },
+                }, 'Következő →'));
+            }
+
             $content.appendChild(pag);
         }
+
     }
 
     function filterAndRender() {
@@ -1755,7 +2792,7 @@ a:hover { text-decoration: underline; }
         const head = html('div', {className: 'ic-composer-head'});
         const titleWrap = html('div');
         titleWrap.appendChild(html('div', {className: 'ic-composer-label'}, 'Gyors poszt a folyambol'));
-        titleWrap.appendChild(html('div', {className: 'ic-composer-sub'}, 'A kivalasztott korben azonnal a sajat alneved alatt jelenik meg.'));
+        titleWrap.appendChild(html('div', {className: 'ic-composer-sub'}, 'A kiválasztott körben saját álnéven vagy NGO név alatt is megjelenhet a poszt.'));
         head.appendChild(titleWrap);
         const aliasBadge = html('div', {className: 'ic-composer-alias', id: 'ic-feed-alias-badge'}, '🌿 Alnev betoltese...');
         head.appendChild(aliasBadge);
@@ -1768,8 +2805,29 @@ a:hover { text-decoration: underline; }
             opt.textContent = circle.name;
             selector.appendChild(opt);
         });
+        wrap.appendChild(selector);
+
+        const ngoModeWrap = html('div', {className: 'ic-composer-hint', style: 'display:none;margin-top:0;margin-bottom:10px;'});
+        const ngoMode = html('input', {type: 'checkbox', id: 'ic-feed-post-as-ngo'});
+        const ngoModeLabel = html('label', {for: 'ic-feed-post-as-ngo', style: 'margin-left:8px;cursor:pointer;'}, '🏢 NGO nevében posztolok');
+        ngoModeWrap.appendChild(ngoMode);
+        ngoModeWrap.appendChild(ngoModeLabel);
+        wrap.appendChild(ngoModeWrap);
+
         const syncAlias = async () => {
             const selectedCircle = state.myCircles.find((circle) => String(circle.id) === String(selector.value));
+            const selectedId = Number(selector.value || 0);
+            const hasNgoAccess = !!(selectedCircle && selectedCircle.type === 'ngo' && canPostAsNgo(selectedId));
+            ngoModeWrap.style.display = hasNgoAccess ? 'block' : 'none';
+            if (!hasNgoAccess) {
+                ngoMode.checked = false;
+            }
+
+            if (ngoMode.checked && selectedCircle) {
+                aliasBadge.textContent = `🏢 ${selectedCircle.name}`;
+                return;
+            }
+
             if (selectedCircle && selectedCircle.my_alias) {
                 aliasBadge.textContent = `🌿 ${selectedCircle.my_alias}`;
                 return;
@@ -1779,7 +2837,7 @@ a:hover { text-decoration: underline; }
             aliasBadge.textContent = resolvedAlias ? `🌿 ${resolvedAlias}` : '🌿 Alnev jelenleg nem elerheto';
         };
         selector.addEventListener('change', syncAlias);
-        wrap.appendChild(selector);
+        ngoMode.addEventListener('change', syncAlias);
 
         const ta = html('textarea', {
             placeholder: 'Mi ujsag a korodben? Irhatsz emojikat is, peldaul: 🌿💚🙌',
@@ -1817,6 +2875,7 @@ a:hover { text-decoration: underline; }
                 await createPost(selectedCircle, {
                     bodyEl: ta,
                     buttonEl: null,
+                    asNgo: ngoMode.checked,
                     onSuccess: async () => {
                         ta.value = '';
                         count.textContent = `0 / ${MAX_BODY}`;
@@ -1900,6 +2959,30 @@ a:hover { text-decoration: underline; }
             const composer = html('div', {className: 'ic-composer'});
             composer.appendChild(html('div', {className: 'ic-composer-label'}, `Írj posztot ${c.my_alias} néven:`));
 
+            let ngoCheckbox = null;
+            if (c.type === 'ngo') {
+                if (canPostAsNgo(c.id)) {
+                    const ngoLine = html('div', {className: 'ic-composer-hint', style: 'margin-top:0;margin-bottom:10px;'});
+                    ngoCheckbox = html('input', {type: 'checkbox', id: 'ic-circle-post-as-ngo'});
+                    ngoLine.appendChild(ngoCheckbox);
+                    ngoLine.appendChild(html('label', {for: 'ic-circle-post-as-ngo', style: 'margin-left:8px;cursor:pointer;'}, `🏢 Posztolás NGO név alatt (${c.name})`));
+                    composer.appendChild(ngoLine);
+                } else {
+                    const ngoLine = html('div', {className: 'ic-composer-hint'});
+                    ngoLine.appendChild(html('span', {}, 'Ehhez a körhöz még nincs NGO-neves posztjogod.'));
+                    ngoLine.appendChild(html('button', {
+                        className: 'ic-btn ic-btn-outline',
+                        style: 'margin-left:10px',
+                        onClick: async () => {
+                            await registerNgoAdminAccess(c.id);
+                            await loadNgoAdminAccess();
+                            await loadCircleDetail(c.id);
+                        },
+                    }, 'NGO jog aktiválása'));
+                    composer.appendChild(ngoLine);
+                }
+            }
+
             const ta = html('textarea', {
                 placeholder: 'Oszd meg gondolataidat a körrel... (max ' + MAX_BODY + ' karakter)',
                 maxlength: MAX_BODY,
@@ -1920,7 +3003,7 @@ a:hover { text-decoration: underline; }
             footer.appendChild(html('button', {
                 className: 'ic-btn ic-btn-primary',
                 id: 'ic-post-send',
-                onClick: () => createPost(c.id),
+                onClick: () => createPost(c.id, {asNgo: !!(ngoCheckbox && ngoCheckbox.checked)}),
             }, '📝 Küldés'));
             composer.appendChild(footer);
             $content.appendChild(composer);
@@ -2088,10 +3171,18 @@ a:hover { text-decoration: underline; }
         state.circle = null;
         state.posts = [];
         state.search = '';
+        if (view === 'circles') {
+            state.filter = '';
+            state.page = 1;
+        }
         state.feedPage = 1;
-        window.location.hash = view === 'mine' ? '#mine' : view === 'feed' ? '#feed' : '#circles';
+        state.ngoWorkspaceSlug = '';
+        window.location.hash = view === 'mine' ? '#mine' : view === 'feed' ? '#feed' : view === 'ngo-admin' ? '#ngo-admin' : '#circles';
         if (view === 'circles') loadCircles();
         else if (view === 'mine') loadMyCircles();
+        else if (view === 'ngo-admin') {
+            loadNgoAdminAccess().then(renderNgoAdmin);
+        }
         else if (view === 'feed') {
             trackFeedEvent('feed_opened', {source: 'navigate'});
             if (state.myCircles.length === 0) {
@@ -2105,6 +3196,7 @@ a:hover { text-decoration: underline; }
         try {
             const data = await api('/circles/mine');
             state.myCircles = Array.isArray(data.circles) ? data.circles : [];
+            await loadNgoAdminAccess();
             if (state.view === 'feed') {
                 render();
             }
@@ -2121,15 +3213,29 @@ a:hover { text-decoration: underline; }
         loadCircleDetail(id);
     }
 
+    function navigateNgoAdmin(circleId = 0) {
+        const id = Number(circleId) || 0;
+        state.view = 'ngo-admin';
+        state.circleId = null;
+        state.circle = null;
+        state.posts = [];
+        state.search = '';
+        state.ngoAdminFocusCircleId = id > 0 ? id : null;
+        window.location.hash = id > 0 ? ('#ngo-admin/' + id) : '#ngo-admin';
+        loadNgoAdminAccess().then(renderNgoAdmin);
+    }
+
     /* --- API Loaders ------------------------------------------------ */
     async function loadCircles() {
         $content.innerHTML = '<div class="ic-loading"><div class="ic-spinner"></div></div>';
         try {
-            let path = `/circles?page=${state.page}`;
+            let path = `/circles?page=${state.page}&per_page=${state.circlesPerPage}`;
             if (state.filter) path += `&type=${state.filter}`;
+            if (state.search) path += `&search=${encodeURIComponent(state.search)}`;
             const data = await api(path);
             state.circles = data.circles;
             state.totalCircles = data.total;
+            state.circlesPerPage = Number(data.per_page || state.circlesPerPage || 30);
             render();
         } catch (err) {
             showStatus('Hiba a körök betöltésekor: ' + err.message, 'error');
@@ -2141,6 +3247,7 @@ a:hover { text-decoration: underline; }
         try {
             const data = await api('/circles/mine');
             state.myCircles = data.circles;
+            await loadNgoAdminAccess();
             render();
         } catch (err) {
             showStatus('Hiba: ' + err.message, 'error');
@@ -2192,6 +3299,7 @@ a:hover { text-decoration: underline; }
     async function loadCircleDetail(id) {
         $content.innerHTML = '<div class="ic-loading"><div class="ic-spinner"></div></div>';
         try {
+            await loadNgoAdminAccess();
             const data = await api(`/circles/${id}`);
             state.circle = data.circle;
 
@@ -2268,7 +3376,10 @@ a:hover { text-decoration: underline; }
         try {
             await api(`/circles/${circleId}/posts`, {
                 method: 'POST',
-                body: JSON.stringify({body: body}),
+                body: JSON.stringify({
+                    body: body,
+                    as_ngo: !!opts.asNgo,
+                }),
             });
             ta.value = '';
             showStatus('Poszt elküldve! 🎉', 'success');
@@ -2420,6 +3531,16 @@ a:hover { text-decoration: underline; }
         if (hash === '#mine') {
             state.view = 'mine';
             loadMyCircles();
+        } else if (hash.startsWith('#ngo-workspace/')) {
+            const slug = normalizeNgoSlug(hash.split('/')[1] || '');
+            state.view = 'ngo-workspace';
+            state.ngoWorkspaceSlug = slug;
+            loadNgoAdminAccess().then(renderNgoWorkspace);
+        } else if (hash === '#ngo-admin' || hash.startsWith('#ngo-admin/')) {
+            const focusedId = hash.startsWith('#ngo-admin/') ? parseInt(hash.split('/')[1], 10) : 0;
+            state.view = 'ngo-admin';
+            state.ngoAdminFocusCircleId = Number.isFinite(focusedId) && focusedId > 0 ? focusedId : null;
+            loadNgoAdminAccess().then(renderNgoAdmin);
         } else if (hash === '#feed') {
             state.view = 'feed';
             trackFeedEvent('feed_opened', {source: 'hash'});
