@@ -43,3 +43,11 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 - A route-szintu admin REST smoke stagingen jelenleg kornyezeti okbol blokkolt, mert a lekert staging usereknel nem latszik `manage_options` kepesseg.
 - A success redirect teljesites most mar csak Stripe session-status ellenorzessel fut le, igy a callback onmagaban nem irhat tevesen `paid` allapotot.
 - A staging runtime most blokkolja az elo Stripe checkout session letrehozasat; tenyleges payment completion smoke csak teszt kulcsokra valtott staging konfiggal javasolt.
+
+## 2026-04-29 UI polish follow-up
+
+- A frontend magyar feliratai ékezetesítve lettek.
+- A galéria vízszintes, görgethető kártyasáv lett, hogy több tételnél se nőjön túl magasra az embed.
+- A jelenlegi 404-es kép URL-ek miatt a widget fallback vizuális placeholdert mutat a gallery és detail nézetben, ahelyett hogy üres vagy törött képkonténert rajzolna.
+- A lot árak és részletnézeti értékek kontrasztja javítva lett.
+- Teszt körhöz minden scaffold lot kezdőár és minimum licitlépcső `500 Ft`.

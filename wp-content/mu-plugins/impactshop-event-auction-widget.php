@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: ImpactShop Event Auction Widget
- * Description: Embeddable auction widget scaffold for the Jovonk Vize x Miele gala flow.
+ * Description: Embeddable auction widget scaffold for the Jövőnk Vize x Miele gála flow.
  * Version: 0.1.0
  * Author: Sharity
  */
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.2.0');
+define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.2.1');
 define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.2.0');
 define('IMPACTSHOP_EVENT_AUCTION_SESSION_TTL', 30 * MINUTE_IN_SECONDS);
 define('IMPACTSHOP_EVENT_AUCTION_BIDDER_TTL', 4 * HOUR_IN_SECONDS);
@@ -61,10 +61,10 @@ function impactshop_event_auction_campaigns(): array
         'jovonkvize-2026' => [
             'slug' => 'jovonkvize-2026',
             'auction_slug' => 'jovonkvize-miele-gala-2026',
-            'title' => 'Jovonk Vize gala aukcio',
-            'subtitle' => 'Miele mutargyak es kulonleges felajanlasok',
-            'beneficiary_name' => 'Sharity Adomanyszervezo Alapitvany',
-            'description' => 'Additiv auction modul a Jovonk Vize x Miele gala lane-hez. A bidder regisztracio, a licit write lane, az admin close es a winner-payment backend mar bekotve, az admin UI es a kommunikacios lane kulon fazisban kotodik be.',
+            'title' => 'Jövőnk Vize gála aukció',
+            'subtitle' => 'Miele műtárgyak és különleges felajánlások',
+            'beneficiary_name' => 'Sharity Adományszervező Alapítvány',
+            'description' => 'Additív aukciós modul a Jövőnk Vize x Miele gála lane-hez. A bidder regisztráció, a licit write lane, az admin close és a winner-payment backend már bekötve, az admin UI és a kommunikációs lane külön fázisban kötődik be.',
             'currency' => 'huf',
             'goal_amount' => 15000000,
             'share_url' => 'https://jovonkvize.hu',
@@ -87,14 +87,14 @@ function impactshop_event_auction_default_lots(): array
             'item_slug' => 'szentpeteri-toth-marta-forgiveness',
             'lot_number' => 1,
             'category' => 'artwork',
-            'artist_name' => 'Szentpeteri Toth Marta',
+            'artist_name' => 'Szentpéteri Tóth Márta',
             'item_title' => 'Forgiveness',
-            'description_short' => 'Akril festmeny, 70x100 cm.',
-            'description_long' => 'Scaffold lot. A vegleges publikus leiras, muvesz-bemutatas es asset mapping kulon tartalomkorben veglegesitendo.',
+            'description_short' => 'Akril festmény, 70x100 cm.',
+            'description_long' => 'Scaffold lot. A végleges publikus leírás, művész-bemutatás és asset mapping külön tartalomkörben véglegesítendő.',
             'dimensions' => '70x100 cm',
             'medium' => 'Akril',
-            'starting_bid' => 150000,
-            'min_increment' => 10000,
+            'starting_bid' => 500,
+            'min_increment' => 500,
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
@@ -105,13 +105,13 @@ function impactshop_event_auction_default_lots(): array
             'lot_number' => 2,
             'category' => 'artwork',
             'artist_name' => 'Simon M. Veronika',
-            'item_title' => 'Kek sugarzas',
-            'description_short' => 'Festmeny, 70x50 cm.',
-            'description_long' => 'Scaffold lot. A vegleges publikus leiras es a kep asset ellenorzese kulon korben veglegesitendo.',
+            'item_title' => 'Kék sugárzás',
+            'description_short' => 'Festmény, 70x50 cm.',
+            'description_long' => 'Scaffold lot. A végleges publikus leírás és a kép asset ellenőrzése külön körben véglegesítendő.',
             'dimensions' => '70x50 cm',
-            'medium' => 'Festmeny',
-            'starting_bid' => 185000,
-            'min_increment' => 10000,
+            'medium' => 'Festmény',
+            'starting_bid' => 500,
+            'min_increment' => 500,
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
@@ -121,14 +121,14 @@ function impactshop_event_auction_default_lots(): array
             'item_slug' => 'tarcsi-daniel-part-iii',
             'lot_number' => 3,
             'category' => 'artwork',
-            'artist_name' => 'Tarcsi Daniel',
+            'artist_name' => 'Tarcsi Dániel',
             'item_title' => 'Part III.',
-            'description_short' => 'Festmeny, 30x100 cm.',
-            'description_long' => 'Scaffold lot. A lot status es a licitlepcso logika vegleges validacioja a backend implementacios fazisban kotendo be.',
+            'description_short' => 'Festmény, 30x100 cm.',
+            'description_long' => 'Scaffold lot. A lot státusz és a licitlépcső logika végleges validációja a backend implementációs fázisban kötendő be.',
             'dimensions' => '30x100 cm',
-            'medium' => 'Festmeny',
-            'starting_bid' => 450000,
-            'min_increment' => 25000,
+            'medium' => 'Festmény',
+            'starting_bid' => 500,
+            'min_increment' => 500,
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
@@ -138,14 +138,14 @@ function impactshop_event_auction_default_lots(): array
             'item_slug' => 'ghyczy-gyorgy-elindulok-a-csillagokhoz',
             'lot_number' => 4,
             'category' => 'artwork',
-            'artist_name' => 'Ghyczy Gyorgy',
+            'artist_name' => 'Ghyczy György',
             'item_title' => 'Elindulok a csillagokhoz',
-            'description_short' => 'Festmeny, 90x90 cm.',
-            'description_long' => 'Scaffold lot. A vegleges leiras es az asset filename-normalizalas kulon tartalmi korben keszul el.',
+            'description_short' => 'Festmény, 90x90 cm.',
+            'description_long' => 'Scaffold lot. A végleges leírás és az asset filename-normalizálás külön tartalmi körben készül el.',
             'dimensions' => '90x90 cm',
-            'medium' => 'Festmeny',
-            'starting_bid' => 200000,
-            'min_increment' => 10000,
+            'medium' => 'Festmény',
+            'starting_bid' => 500,
+            'min_increment' => 500,
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
@@ -157,12 +157,12 @@ function impactshop_event_auction_default_lots(): array
             'category' => 'artwork',
             'artist_name' => 'Szabo Anna',
             'item_title' => 'Cseresznye',
-            'description_short' => 'Festmeny, 50x40 cm.',
-            'description_long' => 'Scaffold lot. A vegleges publikus szoveg es kepvaltozat kulon veglegesitendo.',
+            'description_short' => 'Festmény, 50x40 cm.',
+            'description_long' => 'Scaffold lot. A végleges publikus szöveg és képváltozat külön véglegesítendő.',
             'dimensions' => '50x40 cm',
-            'medium' => 'Festmeny',
-            'starting_bid' => 60000,
-            'min_increment' => 10000,
+            'medium' => 'Festmény',
+            'starting_bid' => 500,
+            'min_increment' => 500,
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
@@ -173,13 +173,13 @@ function impactshop_event_auction_default_lots(): array
             'lot_number' => 6,
             'category' => 'artwork',
             'artist_name' => 'Szabo Anna',
-            'item_title' => 'A no turkizben',
-            'description_short' => 'Festmeny, 50x70 cm.',
-            'description_long' => 'Scaffold lot. A vegleges publikus szoveg es kepforras veglegesitendo.',
+            'item_title' => 'A nő türkizben',
+            'description_short' => 'Festmény, 50x70 cm.',
+            'description_long' => 'Scaffold lot. A végleges publikus szöveg és képforrás véglegesítendő.',
             'dimensions' => '50x70 cm',
-            'medium' => 'Festmeny',
-            'starting_bid' => 80000,
-            'min_increment' => 10000,
+            'medium' => 'Festmény',
+            'starting_bid' => 500,
+            'min_increment' => 500,
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
@@ -189,14 +189,14 @@ function impactshop_event_auction_default_lots(): array
             'item_slug' => 'dimenzio-ingatlan-sirocco-elmenyvitorlazas',
             'lot_number' => 7,
             'category' => 'experience',
-            'artist_name' => 'Dimenzio Ingatlan Kft.',
-            'item_title' => 'Sirocco elmenyvitorlazas 10 fore',
-            'description_short' => 'Kulonleges elmenyajanlat 10 fore.',
-            'description_long' => 'Scaffold lot. A beváltási feltetelek, datumok es kommunikacios szoveg veglegesitese kulon uzleti korben szukseges.',
+            'artist_name' => 'Dimenzió Ingatlan Kft.',
+            'item_title' => 'Sirocco élményvitorlázás 10 főre',
+            'description_short' => 'Különleges élményajánlat 10 főre.',
+            'description_long' => 'Scaffold lot. A beváltási feltételek, dátumok és kommunikációs szöveg véglegesítése külön üzleti körben szükséges.',
             'dimensions' => '',
-            'medium' => 'Elmenyajanlat',
-            'starting_bid' => 150000,
-            'min_increment' => 10000,
+            'medium' => 'Élményajánlat',
+            'starting_bid' => 500,
+            'min_increment' => 500,
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
@@ -1002,11 +1002,11 @@ function impactshop_event_auction_embed_page_dispatch(): void
         return;
     }
 
-    $slug = sanitize_title((string) ($_GET['campaign'] ?? 'jovonkvize-2026'));
+    $slug = sanitize_title((string) ($_GET['campaign'] ?? ($_GET['slug'] ?? 'jovonkvize-2026')));
     $campaign = impactshop_event_auction_get_campaign($slug);
     if (!$campaign) {
         status_header(404);
-        echo 'Unknown auction campaign';
+        echo 'Ismeretlen aukciós kampány';
         exit;
     }
 
@@ -1021,7 +1021,7 @@ function impactshop_event_auction_embed_page_dispatch(): void
     $campaignAttr = esc_attr($slug);
 
     echo '<!doctype html><html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-    echo '<title>Jovonk Vize aukcio widget</title>';
+    echo '<title>Jövőnk Vize aukció widget</title>';
     echo '<style>html,body{margin:0;padding:0;background:transparent}#impact-event-auction-embed-root{padding:0}</style>';
     echo '</head><body>';
     echo '<div id="impact-event-auction-embed-root"></div>';
