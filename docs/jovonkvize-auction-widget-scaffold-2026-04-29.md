@@ -33,6 +33,18 @@ Erintett uj modulok:
 
 Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az admin close es a Stripe winner-payment backend mar aktiv, de kulon admin UI, kommunikacios lane es release checklist meg szukseges.
 
+## 2026-04-29 Public embed copy cleanup
+
+- A publikus embed write-enabled alapallapotban mar nem jelenit meg technikai scaffold status-szoveget.
+- Statusuzenet csak hiba vagy write-disabled helyzetben marad lathato.
+- A cache-busting query string ehhez a korhez `0.2.4`-re emelve.
+
+## 2026-04-29 Detail drawer copy cleanup
+
+- A detail drawer publikus szovegei mar nem tartalmaznak technikai scaffold/lane/admin UI kifejezeseket.
+- A licitform note, gombfelirat, kezdo instrukcio es betoltesi hiba copy felhasznaloi nyelvre lett irva.
+- A cache-busting query string ehhez a korhez `0.2.5`-re emelve.
+
 ## Staging smoke allapot
 
 - A ket runtime fajl stagingre ki lett deployolva az `app-staging` peldanyra.
@@ -43,44 +55,8 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 - A route-szintu admin REST smoke stagingen jelenleg kornyezeti okbol blokkolt, mert a lekert staging usereknel nem latszik `manage_options` kepesseg.
 - A success redirect teljesites most mar csak Stripe session-status ellenorzessel fut le, igy a callback onmagaban nem irhat tevesen `paid` allapotot.
 - A staging runtime most blokkolja az elo Stripe checkout session letrehozasat; tenyleges payment completion smoke csak teszt kulcsokra valtott staging konfiggal javasolt.
+## 2026-04-29 — v1.0.6 JS + v0.2.6 PHP deploy
 
-## 2026-04-29 UI polish follow-up
-
-- A frontend magyar feliratai ékezetesítve lettek.
-- A galéria vízszintes, görgethető kártyasáv lett, hogy több tételnél se nőjön túl magasra az embed.
-- A jelenlegi 404-es kép URL-ek miatt a widget fallback vizuális placeholdert mutat a gallery és detail nézetben, ahelyett hogy üres vagy törött képkonténert rajzolna.
-- A lot árak és részletnézeti értékek kontrasztja javítva lett.
-- Teszt körhöz minden scaffold lot kezdőár és minimum licitlépcső `500 Ft`.
-
-## 2026-04-29 Képfallback + auto-scroll follow-up
-
-- A scaffold lotok most már nem üres képkonténert kapnak, ha a végleges JPEG asset nincs feltöltve: a backend lot-specifikus, szerveroldalon generált SVG képet ad vissza működő `image_url`-ként.
-- A galéria automatikus vízszintes scrollt kapott, ami addig fut, amíg a felhasználó hozzá nem nyúl pointerrel, touch-csal, görgővel vagy billentyűvel.
-- Ha a valódi `uploads/jovonkvize-auction/2026/...` fájlok később felkerülnek, a backend automatikusan azokat fogja preferálni a generált képek helyett, kódmódosítás nélkül.
-
-## 2026-04-29 Végleges képfeltöltési checklist + scroll finomhangolás
-
-- Az auto-scroll most lassabb, indulás előtt rövid késleltetést kap, és körbeérésnél egy rövid megállással indul újra; az első user interakciónál továbbra is végleg leáll.
-- A detail drawer megnyitása is user interakciónak számít, ezért onnan már nem indul vissza automatikusan a galéria.
-
-### Végleges képfeltöltési checklist
-
-- Célmappa a production/staging uploadban: `wp-content/uploads/jovonkvize-auction/2026/`
-- Elvárt fájlnevek:
-	- `toth-marta.jpg`
-	- `kek-sugarzas.jpg`
-	- `part-iii.jpg`
-	- `elindulok-a-csillagokhoz.jpg`
-	- `szabo-anna-cseresznye.jpg`
-	- `szabo-anna-no-turkizben.jpg`
-	- `sirocco-elmenyvitorlazas.jpg`
-- Feltöltés után ellenőrzés:
-	- `curl -I https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/<fajlnev>` minden képre `200`-at adjon
-	- a public payload első lotján az `image_url` már ne `data:image/svg+xml` prefixszel kezdődjön
-	- az embed oldalon hard refresh után a generált poster helyett a végleges kép látszódjon
-- Ha a fájlnevek eltérnek, nem kell kódot módosítani, csak az aukciós lotok `image_path` mezőit kell a kanonikus repo-forrásban átírni, majd újra deployolni.
-
-## 2026-04-29 Embed cache-busting paritás
-
-- A PHP runtime verzió `0.2.3`-ra emelve, hogy az embed HTML a finomhangolt JS buildhez illeszkedő `?v=0.2.3` query stringet szolgálja.
-- Ez a kör nem módosította újra a galéria logikát; csak a verziózott script URL és a production cache-busting lett konzisztens.
+### Változások
+- **JS v1.0.6**: scroll visszaállítva (1.0.3 PR-merged bázison), HU ékezetek, scaffold szövegek eltávolítva
+- **PHP v0.2.6**: wp_mail értesítő minden licitnél + nyertes lezárásnál → office@sharity.hu + koncz.veronika@mielemed.hu

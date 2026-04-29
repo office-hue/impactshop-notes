@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.2.3');
+define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.2.6');
 define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.2.0');
 define('IMPACTSHOP_EVENT_AUCTION_SESSION_TTL', 30 * MINUTE_IN_SECONDS);
 define('IMPACTSHOP_EVENT_AUCTION_BIDDER_TTL', 4 * HOUR_IN_SECONDS);
@@ -1555,6 +1555,27 @@ function impactshop_event_auction_bid(WP_REST_Request $request): WP_REST_Respons
         'idempotency_key' => $idempotencyKey,
     ]);
 
+    // Email értesítő: új licit
+    $bidderInfo = impactshop_event_auction_get_bidder($bidderUuid);
+    $bidderName  = $bidderInfo ? sanitize_text_field((string) ($bidderInfo['display_name'] ?? '')) : '(ismeretlen)';
+    $bidderEmail = $bidderInfo ? sanitize_email((string) ($bidderInfo['email'] ?? '')) : '';
+    $bidderPhone = $bidderInfo ? sanitize_text_field((string) ($bidderInfo['phone'] ?? '')) : '';
+    $lotTitle    = sanitize_text_field((string) ($lot['item_title'] ?? $itemSlug));
+    $amountFmt   = impactshop_event_auction_format_amount($bidAmount, 'huf');
+    $notifyTo    = ['office@sharity.hu', 'koncz.veronika@mielemed.hu'];
+    $notifySubject = '[JVK Aukció] Új licit: ' . $lotTitle . ' — ' . $amountFmt;
+    $notifyBody  = "Új licit érkezett a Jövőnk Vize Gála aukción.\n\n"
+        . "Tétel: {$lotTitle}\n"
+        . "Licit összege: {$amountFmt}\n"
+        . "Licitáló neve: {$bidderName}\n"
+        . "Licitáló e-mail: {$bidderEmail}\n"
+        . "Licitáló telefon: {$bidderPhone}\n"
+        . "Licit UUID: {$bidUuid}\n"
+        . "Időpont (UTC): " . current_time('mysql', true) . "\n";
+    foreach ($notifyTo as $addr) {
+        wp_mail($addr, $notifySubject, $notifyBody);
+    }
+
     return new WP_REST_Response([
         'bid_uuid' => $bidUuid,
         'bid_amount' => $bidAmount,
@@ -1647,6 +1668,28 @@ function impactshop_event_auction_admin_close(WP_REST_Request $request): WP_REST
         'bidder_uuid' => (string) ($current['bidder_uuid'] ?? ''),
         'bid_amount' => (int) ($current['bid_amount'] ?? 0),
     ]);
+
+    // Email értesítő: nyertes lezárás
+    $winnerBidderInfo = impactshop_event_auction_get_bidder((string) ($current['bidder_uuid'] ?? ''));
+    $winnerName  = $winnerBidderInfo ? sanitize_text_field((string) ($winnerBidderInfo['display_name'] ?? '')) : '(ismeretlen)';
+    $winnerEmail = $winnerBidderInfo ? sanitize_email((string) ($winnerBidderInfo['email'] ?? '')) : '';
+    $winnerPhone = $winnerBidderInfo ? sanitize_text_field((string) ($winnerBidderInfo['phone'] ?? '')) : '';
+    $closedLotTitle = sanitize_text_field((string) ($lot['item_title'] ?? $itemSlug));
+    $closedAmtFmt   = impactshop_event_auction_format_amount((int) ($current['bid_amount'] ?? 0), 'huf');
+    $closeNotifyTo  = ['office@sharity.hu', 'koncz.veronika@mielemed.hu'];
+    $closeSubject   = '[JVK Aukció] Tétel lezárva — nyertes: ' . $closedLotTitle . ' (' . $closedAmtFmt . ')';
+    $closeBody      = "Aukciós tétel lezárásra került.\n\n"
+        . "Tétel: {$closedLotTitle}\n"
+        . "Nyertes licit összege: {$closedAmtFmt}\n"
+        . "Nyertes neve: {$winnerName}\n"
+        . "Nyertes e-mail: {$winnerEmail}\n"
+        . "Nyertes telefon: {$winnerPhone}\n"
+        . "Licit UUID: " . (string) ($current['bid_uuid'] ?? '') . "\n"
+        . "Lezárás időpontja (UTC): {$closedAt}\n"
+        . "Lezárta: {$actorId}\n";
+    foreach ($closeNotifyTo as $addr) {
+        wp_mail($addr, $closeSubject, $closeBody);
+    }
 
     return new WP_REST_Response([
         'bid_uuid' => (string) ($current['bid_uuid'] ?? ''),

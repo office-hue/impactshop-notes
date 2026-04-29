@@ -1,10 +1,3 @@
-## 2026-04-29T11:25:00+0200 - JVK auction widget UI polish + test-bid calibration
-- A publikus aukciós widget szövegezése UTF-8/ékezetes magyar feliratokra frissült PHP és JS oldalon is.
-- A lot-galéria vízszintes, görgethető cardsávvá alakult, így több tétel esetén sem nő kontrollálatlanul a widget magassága.
-- A 404-es lot-képek miatt a frontend fallback vizuális placeholdert ad a gallery és detail nézetben; a később felkerülő valódi asseteket ugyanazon URL-eken automatikusan átveszi.
-- A price UI kontrasztja javítva lett: a lot ár és a részletnézeti értékek explicit világos/accent színt kaptak.
-- Teszteléshez minden scaffold lot kezdőára és minimum licitlépcsője `500 Ft` lett.
-
 ## 2026-04-29T10:25:00+0200 - JVK auction scaffold canonicalized + staging payment guard verified
 - Uj additiv aukcios MU runtime kerult a repo truthba:
   - `wp-content/mu-plugins/impactshop-event-auction-widget.php`
@@ -653,23 +646,19 @@ PHP lint ok for identity/gamification modules
 - `impactshop-ngo-guides.php` v1.1.4: `befektetoknek` bejegyzés visszakerült `page_meta()`-ba, `resolve_file($lang)` bekötve `template_redirect()`-be.
 - Rollback: `backups/ngo-guides-fix-20260410/rollback.sh` (MD5-el ellenőrzött v1.1.3 backup, git commit `9b7ab942`).
 
-## 2026-04-29 06:35 CEST - ngo-workspace Impi shelved + hamarosan Aukcio/Tombola
+## 2026-04-29T12:48:00+0200 - JVK public embed status label removed
 
-- `impact-community-app.php`: Impi Agent rossz profil-link eltavolitve, floating chat widget visszakotese folyamatban
-- Impi / Kep+marketing / Aukcio / Tombola gombok: disabled + "hamarosan" felirat
-- Prod+staging deployolva: rollback_20260429T063204Z.sh
+- `impactshop-event-auction-widget-jovonkvize-1.0.0.js`: write-enabled alapallapotban a fo status-mezo ures marad, nem jelenik meg technikai scaffold copy.
+- A write-disabled es error uzenetek megmaradtak.
+- `impactshop-event-auction-widget.php` asset verzio `0.2.4`, frontend widget belso verzio `1.0.4` a biztos cache-bustinghoz.
 
-## 2026-04-29 11:55 CEST - JVK aukció képfallback + automatikus galéria-scroll
+## 2026-04-29T15:12:00+0200 - JVK public detail drawer copy normalized
 
-- `impactshop-event-auction-widget.php` v0.2.2: a hiányzó JVK lot assetekre szerveroldali SVG fallback kép készül, így a public payload minden tételhez működő `image_url` értéket ad.
-- `impactshop-event-auction-widget-jovonkvize-1.0.0.js` v1.0.2: a görgethető lot-galéria automatikusan scrollozik, de az első felhasználói interakciónál végleg leáll.
-- A változás továbbra is csak az additív aukciós modulra korlátozódik; a protected donation widget lane érintetlen maradt.
+- A publikus detail drawer es licitform technikai szovegezese felhasznaloi nyelvre cserelve.
+- Eltunt a scaffold/lane/admin UI jellegu copy a drawer alol; csak ertelmezheto felhasznaloi instrukcio maradt.
+- `impactshop-event-auction-widget.php` asset verzio `0.2.5`, frontend widget belso verzio `1.0.5`.
 
-## 2026-04-29 12:15 CEST - JVK scroll tuning + végleges kép upload checklist
-
-- `impactshop-event-auction-widget-jovonkvize-1.0.0.js` v1.0.3: lassabb auto-scroll, rövid indulási késleltetés, loop végi rövid szünet, és detail drawer nyitáskor is végleges leállás.
-- A JVK scaffold dokumentáció kiegészült a végleges hét képfájl kanonikus upload célútvonalával és ellenőrzési checklistjével.
-
-## 2026-04-29 12:22 CEST - JVK PHP version bump cache-busting parity
-
-- `impactshop-event-auction-widget.php` v0.2.3: az embed script query string most már `?v=0.2.3`, így a production embed oldal biztosan a legfrissebb galéria-scroll buildre cache-bustingol.
+## 2026-04-29 jvk-auction
+- JS v1.0.6: scroll restore, HU copy, no scaffold
+- PHP v0.2.6: wp_mail notify bid + admin_close
+- Deployed: app.sharity.hu/wp-content/mu-plugins
