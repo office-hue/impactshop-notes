@@ -79,3 +79,8 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 	- a public payload első lotján az `image_url` már ne `data:image/svg+xml` prefixszel kezdődjön
 	- az embed oldalon hard refresh után a generált poster helyett a végleges kép látszódjon
 - Ha a fájlnevek eltérnek, nem kell kódot módosítani, csak az aukciós lotok `image_path` mezőit kell a kanonikus repo-forrásban átírni, majd újra deployolni.
+
+## 2026-04-29 Embed cache-busting paritás
+
+- A PHP runtime verzió `0.2.3`-ra emelve, hogy az embed HTML a finomhangolt JS buildhez illeszkedő `?v=0.2.3` query stringet szolgálja.
+- Ez a kör nem módosította újra a galéria logikát; csak a verziózott script URL és a production cache-busting lett konzisztens.
