@@ -1,11 +1,3 @@
-## 2026-04-29 11:25 CEST - Jövőnk Vize aukció widget UI polish + tesztár kör
-- A publikus JVK aukciós widget follow-up fixet kapott az első production rollout után.
-- Minden publikus magyar szöveg ékezetesítve lett a PHP payloadban és a frontend JS-ben, így a widget már nem ASCII fallback szövegekkel jelenik meg.
-- A galéria görgethető vízszintes kártyasorrá alakult, ezért sok tétel esetén sem nyúlik kezelhetetlenül magasra.
-- A jelenlegi 404-es kép URL-ek miatt a kártyák és a detail nézet kulturált vizuális placeholdert kapnak; ha a végleges képek később felkerülnek ugyanarra az URL-re, a widget azokat automatikusan betölti.
-- Árkontraszt fix: a tételárak és részletnézeti értékek explicit világos/accent színt kaptak, hogy minden háttéren olvashatók maradjanak.
-- Tesztüzemhez minden lot `starting_bid=500` és `min_increment=500` értékre lett állítva.
-
 ## 2026-04-29 09:50 CEST - Jovonk Vize aukcio staging deploy + smoke eredmeny
 - Audit utani fix: a success redirect ág most mar csak ellenorzott Stripe sessionnel teljesit, es a staging runtime blokkolja az elo Stripe checkout session letrehozasat.
 - Utolagos staging smoke bizonyitek: `home_url=https://app.sharity.hu/impactshop-staging/`, `stripe_mode=live`, `is_staging_runtime=true`, es a szintetikus winner-payment session-letrehozas eredmenye `null`, tehat a live Stripe guard aktiv.
@@ -6676,21 +6668,17 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - **Result:** warn (warnings=1, errors=0, duration=2s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
 
-### 2026-04-29 – NGO workspace Impi shelved + hamarosan Aukcio/Tombola
-- Impi Agent rossz profil-link kivezetese, floating chat widget visszakotese folyamatban
-- Aukcio / Tombola / Kep+marketing: disabled + "hamarosan"
-- Rollback: rollback_20260429T063204Z.sh
+## 2026-04-29 12:48 CEST - JVK public widget status copy cleanup
+- A publikus aukcios widget write-enabled alapallapotban mar nem mutat technikai scaffold status feliratot a galeria alatt.
+- A write-disabled es hibaallapotok statusuzenete megmaradt, tehat a diagnosztikai visszajelzes nem veszett el.
+- Cache-busting miatt az aukcios PHP asset verzio `0.2.4`, a frontend belso widget-verzio `1.0.4`.
 
-### 2026-04-29 11:55 CEST - JVK aukció képfallback + auto-scroll follow-up
-- A Jövőnk Vize aukciós widget most már nem 404-es upload URL-ekre támaszkodik: ha a `wp-content/uploads/jovonkvize-auction/2026/*` kép hiányzik, a backend lotonként generált SVG poster képet ad vissza, így a galériában minden tételhez stabil vizuális kép jelenik meg.
-- A frontend galéria kapott automatikus vízszintes scrollt; ez addig fut, amíg a felhasználó pointerrel, touch-csal, görgővel vagy billentyűvel hozzá nem nyúl.
-- A viselkedés additive maradt: a protected donation widgethez továbbra sem kellett hozzányúlni, csak az aukciós runtime fájlok változtak.
+## 2026-04-29 15:12 CEST - JVK public copy cleanup a detail drawerben
+- A detail drawer es a licitform technikai scaffold szovegei publikus, felhasznaloi nyelvre cserelve.
+- Javult a fo leiras, az email/telefon note, a gombfelirat, a kezdo detail-status es a hiba copy is.
+- Cache-busting miatt az aukcios PHP asset verzio `0.2.5`, a frontend belso widget-verzio `1.0.5`.
 
-### 2026-04-29 12:22 CEST - JVK embed cache-busting parity fix
-- Az aukciós PHP runtime verziója `0.2.3`-ra emelve, hogy az embed oldal is a finomhangolt galéria-JS-hez illeszkedő `?v=0.2.3` script URL-t adja vissza.
-- Ez funkcionális logikát nem változtat, csak a cache-busting query stringet hozza szinkronba a már kint lévő scroll tuning builddel.
-
-### 2026-04-29 12:15 CEST - JVK végleges kép-checklist + finomabb auto-scroll
-- A galéria auto-scroll sebessége lassabb lett, indulás előtt rövid késleltetést kap, és loop végén röviden megáll, így kevésbé hat agresszívnak beágyazott környezetben.
-- A detail drawer megnyitása is leállítja az auto-scrollt, így a fókuszban lévő tétel megtekintése közben nincs háttérmozgás.
-- A JVK modul dokumentációja most már tartalmaz konkrét production upload checklistet a hét végleges képfájlhoz és a hozzájuk tartozó ellenőrzési lépéseket.
+### 2026-04-29 JVK aukció widget v1.0.6/v0.2.6
+- Scroll regresszió javítva (v1.0.3 bázison)
+- Email értesítő: office@sharity.hu + koncz.veronika@mielemed.hu
+- PHP v0.2.6 deployolva, JS v1.0.6 deployolva
