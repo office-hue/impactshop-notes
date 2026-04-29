@@ -6642,3 +6642,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ## 2026-04-07 14:33:39 CEST - impactall auto log
 - **Result:** warn (warnings=1, errors=0, duration=2s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
+
+### 2026-04-29 – NGO workspace Impi shelved + hamarosan Aukcio/Tombola
+- Impi Agent rossz profil-link kivezetese, floating chat widget visszakotese folyamatban
+- Aukcio / Tombola / Kep+marketing: disabled + "hamarosan"
+- Rollback: rollback_20260429T063204Z.sh

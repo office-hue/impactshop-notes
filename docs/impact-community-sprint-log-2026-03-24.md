@@ -30,3 +30,9 @@
 | ic_circle_leaderboard | `snapshot_date` | `updated_at` |
 
 PHP lint: OK. SQL injection védelem: minden `$wpdb->prepare()`. XSS: `esc_html()`.
+
+## 2026-04-29 — Impi shelved + hamarosan gombok
+
+- Impi Agent card: rossz profil-link kivezetese (floating widget, nem profil oldal)
+- Impi, Kep+marketing, Aukcio, Tombola: disabled + "hamarosan" felirat
+- Prod+staging mar live; rollback: rollback_20260429T063204Z.sh
