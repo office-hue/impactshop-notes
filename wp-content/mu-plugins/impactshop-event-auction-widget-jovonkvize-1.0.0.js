@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.0.1";
+  var WIDGET_VERSION = "1.0.2";
   var SCRIPT_ATTR = "data-impact-auction-widget";
   var STYLE_ID = "impact-event-auction-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-auctions";
@@ -112,6 +112,10 @@
     return "bid_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
   }
 
+  function shouldAutoScrollGallery(gallery, lots) {
+    return !!gallery && Array.isArray(lots) && lots.length > 1 && gallery.scrollWidth > gallery.clientWidth + 24 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
   function renderImageMarkup(lot, className) {
     var hasImage = !!lot.image_url;
     return (
@@ -206,7 +210,7 @@
     var apiBase = (config.apiBase || DEFAULT_API_BASE).replace(/\/$/, "");
     var campaign = config.campaign || "jovonkvize-2026";
     var pollMs = Math.max(15000, Number(config.pollMs) || 30000);
-    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "" };
+    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "", autoScrollFrame: 0, autoScrollPausedByUser: false, autoScrollLastTs: 0 };
 
     mountEl.innerHTML = createMarkup();
     var root = mountEl.querySelector(".impact-auction-widget");
@@ -239,6 +243,66 @@
       presets: root.querySelector('[data-role="presets"]'),
       detailStatus: root.querySelector('[data-role="detail-status"]')
     };
+
+    function stopAutoScroll(permanent) {
+      if (state.autoScrollFrame) {
+        window.cancelAnimationFrame(state.autoScrollFrame);
+        state.autoScrollFrame = 0;
+      }
+      state.autoScrollLastTs = 0;
+      if (permanent) {
+        state.autoScrollPausedByUser = true;
+      }
+    }
+
+    function startAutoScroll() {
+      if (!shouldAutoScrollGallery(els.gallery, state.payload && state.payload.lots) || state.autoScrollPausedByUser) {
+        stopAutoScroll(false);
+        return;
+      }
+
+      stopAutoScroll(false);
+
+      var maxScroll = Math.max(0, els.gallery.scrollWidth - els.gallery.clientWidth);
+      if (!maxScroll) {
+        return;
+      }
+
+      function step(ts) {
+        if (!shouldAutoScrollGallery(els.gallery, state.payload && state.payload.lots) || state.autoScrollPausedByUser) {
+          stopAutoScroll(false);
+          return;
+        }
+
+        if (!state.autoScrollLastTs) {
+          state.autoScrollLastTs = ts;
+        }
+
+        var delta = ts - state.autoScrollLastTs;
+        state.autoScrollLastTs = ts;
+        var nextLeft = els.gallery.scrollLeft + delta * 0.035;
+
+        if (nextLeft >= maxScroll - 1) {
+          els.gallery.scrollLeft = 0;
+        } else {
+          els.gallery.scrollLeft = nextLeft;
+        }
+
+        state.autoScrollFrame = window.requestAnimationFrame(step);
+      }
+
+      state.autoScrollFrame = window.requestAnimationFrame(step);
+    }
+
+    function bindAutoScrollGuards() {
+      ["pointerdown", "wheel", "touchstart", "keydown", "focusin"].forEach(function (eventName) {
+        els.gallery.addEventListener(eventName, function () {
+          stopAutoScroll(true);
+        }, { passive: true });
+      });
+    }
+
+    bindAutoScrollGuards();
 
     function detailOpen(lot) {
       state.activeLot = lot;
@@ -307,6 +371,7 @@
         });
       });
       attachImageFallbacks(els.gallery);
+      startAutoScroll();
     }
 
     function renderPayload(payload) {
