@@ -664,3 +664,8 @@ PHP lint ok for identity/gamification modules
 - `impactshop-event-auction-widget.php` v0.2.2: a hiányzó JVK lot assetekre szerveroldali SVG fallback kép készül, így a public payload minden tételhez működő `image_url` értéket ad.
 - `impactshop-event-auction-widget-jovonkvize-1.0.0.js` v1.0.2: a görgethető lot-galéria automatikusan scrollozik, de az első felhasználói interakciónál végleg leáll.
 - A változás továbbra is csak az additív aukciós modulra korlátozódik; a protected donation widget lane érintetlen maradt.
+
+## 2026-04-29 12:15 CEST - JVK scroll tuning + végleges kép upload checklist
+
+- `impactshop-event-auction-widget-jovonkvize-1.0.0.js` v1.0.3: lassabb auto-scroll, rövid indulási késleltetés, loop végi rövid szünet, és detail drawer nyitáskor is végleges leállás.
+- A JVK scaffold dokumentáció kiegészült a végleges hét képfájl kanonikus upload célútvonalával és ellenőrzési checklistjével.
