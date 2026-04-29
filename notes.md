@@ -1,3 +1,11 @@
+## 2026-04-29 11:25 CEST - Jövőnk Vize aukció widget UI polish + tesztár kör
+- A publikus JVK aukciós widget follow-up fixet kapott az első production rollout után.
+- Minden publikus magyar szöveg ékezetesítve lett a PHP payloadban és a frontend JS-ben, így a widget már nem ASCII fallback szövegekkel jelenik meg.
+- A galéria görgethető vízszintes kártyasorrá alakult, ezért sok tétel esetén sem nyúlik kezelhetetlenül magasra.
+- A jelenlegi 404-es kép URL-ek miatt a kártyák és a detail nézet kulturált vizuális placeholdert kapnak; ha a végleges képek később felkerülnek ugyanarra az URL-re, a widget azokat automatikusan betölti.
+- Árkontraszt fix: a tételárak és részletnézeti értékek explicit világos/accent színt kaptak, hogy minden háttéren olvashatók maradjanak.
+- Tesztüzemhez minden lot `starting_bid=500` és `min_increment=500` értékre lett állítva.
+
 ## 2026-04-29 09:50 CEST - Jovonk Vize aukcio staging deploy + smoke eredmeny
 - Audit utani fix: a success redirect ág most mar csak ellenorzott Stripe sessionnel teljesit, es a staging runtime blokkolja az elo Stripe checkout session letrehozasat.
 - Utolagos staging smoke bizonyitek: `home_url=https://app.sharity.hu/impactshop-staging/`, `stripe_mode=live`, `is_staging_runtime=true`, es a szintetikus winner-payment session-letrehozas eredmenye `null`, tehat a live Stripe guard aktiv.

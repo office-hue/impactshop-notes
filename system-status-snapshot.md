@@ -1,3 +1,10 @@
+## 2026-04-29T11:25:00+0200 - JVK auction widget UI polish + test-bid calibration
+- A publikus aukciós widget szövegezése UTF-8/ékezetes magyar feliratokra frissült PHP és JS oldalon is.
+- A lot-galéria vízszintes, görgethető cardsávvá alakult, így több tétel esetén sem nő kontrollálatlanul a widget magassága.
+- A 404-es lot-képek miatt a frontend fallback vizuális placeholdert ad a gallery és detail nézetben; a később felkerülő valódi asseteket ugyanazon URL-eken automatikusan átveszi.
+- A price UI kontrasztja javítva lett: a lot ár és a részletnézeti értékek explicit világos/accent színt kaptak.
+- Teszteléshez minden scaffold lot kezdőára és minimum licitlépcsője `500 Ft` lett.
+
 ## 2026-04-29T10:25:00+0200 - JVK auction scaffold canonicalized + staging payment guard verified
 - Uj additiv aukcios MU runtime kerult a repo truthba:
   - `wp-content/mu-plugins/impactshop-event-auction-widget.php`
