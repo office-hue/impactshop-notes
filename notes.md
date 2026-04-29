@@ -6680,3 +6680,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Impi Agent rossz profil-link kivezetese, floating chat widget visszakotese folyamatban
 - Aukcio / Tombola / Kep+marketing: disabled + "hamarosan"
 - Rollback: rollback_20260429T063204Z.sh
+
+### 2026-04-29 11:55 CEST - JVK aukció képfallback + auto-scroll follow-up
+- A Jövőnk Vize aukciós widget most már nem 404-es upload URL-ekre támaszkodik: ha a `wp-content/uploads/jovonkvize-auction/2026/*` kép hiányzik, a backend lotonként generált SVG poster képet ad vissza, így a galériában minden tételhez stabil vizuális kép jelenik meg.
+- A frontend galéria kapott automatikus vízszintes scrollt; ez addig fut, amíg a felhasználó pointerrel, touch-csal, görgővel vagy billentyűvel hozzá nem nyúl.
+- A viselkedés additive maradt: a protected donation widgethez továbbra sem kellett hozzányúlni, csak az aukciós runtime fájlok változtak.

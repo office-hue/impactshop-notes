@@ -658,3 +658,9 @@ PHP lint ok for identity/gamification modules
 - `impact-community-app.php`: Impi Agent rossz profil-link eltavolitve, floating chat widget visszakotese folyamatban
 - Impi / Kep+marketing / Aukcio / Tombola gombok: disabled + "hamarosan" felirat
 - Prod+staging deployolva: rollback_20260429T063204Z.sh
+
+## 2026-04-29 11:55 CEST - JVK aukció képfallback + automatikus galéria-scroll
+
+- `impactshop-event-auction-widget.php` v0.2.2: a hiányzó JVK lot assetekre szerveroldali SVG fallback kép készül, így a public payload minden tételhez működő `image_url` értéket ad.
+- `impactshop-event-auction-widget-jovonkvize-1.0.0.js` v1.0.2: a görgethető lot-galéria automatikusan scrollozik, de az első felhasználói interakciónál végleg leáll.
+- A változás továbbra is csak az additív aukciós modulra korlátozódik; a protected donation widget lane érintetlen maradt.

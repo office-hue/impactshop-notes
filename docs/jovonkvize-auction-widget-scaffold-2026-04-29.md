@@ -51,3 +51,9 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 - A jelenlegi 404-es kép URL-ek miatt a widget fallback vizuális placeholdert mutat a gallery és detail nézetben, ahelyett hogy üres vagy törött képkonténert rajzolna.
 - A lot árak és részletnézeti értékek kontrasztja javítva lett.
 - Teszt körhöz minden scaffold lot kezdőár és minimum licitlépcső `500 Ft`.
+
+## 2026-04-29 Képfallback + auto-scroll follow-up
+
+- A scaffold lotok most már nem üres képkonténert kapnak, ha a végleges JPEG asset nincs feltöltve: a backend lot-specifikus, szerveroldalon generált SVG képet ad vissza működő `image_url`-ként.
+- A galéria automatikus vízszintes scrollt kapott, ami addig fut, amíg a felhasználó hozzá nem nyúl pointerrel, touch-csal, görgővel vagy billentyűvel.
+- Ha a valódi `uploads/jovonkvize-auction/2026/...` fájlok később felkerülnek, a backend automatikusan azokat fogja preferálni a generált képek helyett, kódmódosítás nélkül.

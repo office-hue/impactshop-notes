@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.2.1');
+define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.2.2');
 define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.2.0');
 define('IMPACTSHOP_EVENT_AUCTION_SESSION_TTL', 30 * MINUTE_IN_SECONDS);
 define('IMPACTSHOP_EVENT_AUCTION_BIDDER_TTL', 4 * HOUR_IN_SECONDS);
@@ -80,9 +80,64 @@ function impactshop_event_auction_campaigns(): array
     return apply_filters('impactshop_event_auction_campaigns', $campaigns);
 }
 
+function impactshop_event_auction_upload_image_url(string $relativePath): string
+{
+    $relativePath = ltrim($relativePath, '/');
+    if ($relativePath === '') {
+        return '';
+    }
+
+    $uploads = wp_upload_dir();
+    $baseDir = isset($uploads['basedir']) ? (string) $uploads['basedir'] : '';
+    $baseUrl = isset($uploads['baseurl']) ? (string) $uploads['baseurl'] : '';
+
+    if ($baseDir === '' || $baseUrl === '') {
+        return '';
+    }
+
+    $candidate = wp_normalize_path($baseDir . '/' . $relativePath);
+    if (!file_exists($candidate)) {
+        return '';
+    }
+
+    return trailingslashit($baseUrl) . str_replace('%2F', '/', rawurlencode($relativePath));
+}
+
+function impactshop_event_auction_placeholder_image_url(array $lot): string
+{
+    $title = trim((string) ($lot['item_title'] ?? 'Aukciós tétel'));
+    $artist = trim((string) ($lot['artist_name'] ?? 'Jövőnk Vize'));
+    $medium = trim((string) ($lot['medium'] ?? 'Műtárgy'));
+    $dimensions = trim((string) ($lot['dimensions'] ?? ''));
+    $lotNumber = (int) ($lot['lot_number'] ?? 0);
+    $lotLabel = $lotNumber > 0 ? 'LOT ' . $lotNumber : 'JÖVŐNK VIZE';
+
+    $svg = sprintf(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="%s"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%%" stop-color="#08122f"/><stop offset="100%%" stop-color="#0d2f77"/></linearGradient><linearGradient id="glow" x1="0" y1="0" x2="1" y2="1"><stop offset="0%%" stop-color="#f4ddae" stop-opacity="0.28"/><stop offset="100%%" stop-color="#c69a5f" stop-opacity="0.05"/></linearGradient></defs><rect width="800" height="1000" fill="url(#bg)"/><circle cx="640" cy="160" r="220" fill="url(#glow)"/><rect x="56" y="56" width="688" height="888" rx="34" fill="none" stroke="rgba(244,221,174,.42)" stroke-width="2"/><text x="72" y="120" fill="#f4ddae" font-family="Arial, sans-serif" font-size="32" font-weight="700" letter-spacing="3">%s</text><text x="72" y="210" fill="#f8f4ea" font-family="Georgia, serif" font-size="68" font-weight="700">%s</text><text x="72" y="280" fill="#dfe6f5" font-family="Arial, sans-serif" font-size="36">%s</text><text x="72" y="832" fill="#f4ddae" font-family="Arial, sans-serif" font-size="28" letter-spacing="2">%s</text><text x="72" y="878" fill="#f8f4ea" font-family="Arial, sans-serif" font-size="26">%s</text><text x="72" y="920" fill="#dfe6f5" font-family="Arial, sans-serif" font-size="22">Képforrás feltöltés alatt</text></svg>',
+        esc_attr($artist . ' - ' . $title),
+        esc_html($lotLabel),
+        esc_html($title),
+        esc_html($artist),
+        esc_html($medium),
+        esc_html($dimensions !== '' ? $dimensions : 'JVK aukciós tétel')
+    );
+
+    return 'data:image/svg+xml;charset=UTF-8,' . rawurlencode($svg);
+}
+
+function impactshop_event_auction_resolve_lot_image(array $lot, string $relativePath): array
+{
+    $resolvedUrl = impactshop_event_auction_upload_image_url($relativePath);
+    $lot['image_url'] = $resolvedUrl !== '' ? $resolvedUrl : impactshop_event_auction_placeholder_image_url($lot);
+    $lot['image_is_placeholder'] = $resolvedUrl === '';
+    $lot['image_path'] = $relativePath;
+
+    return $lot;
+}
+
 function impactshop_event_auction_default_lots(): array
 {
-    return [
+    $lots = [
         [
             'item_slug' => 'szentpeteri-toth-marta-forgiveness',
             'lot_number' => 1,
@@ -98,7 +153,7 @@ function impactshop_event_auction_default_lots(): array
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
-            'image_url' => 'https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/toth-marta.jpg',
+            'image_path' => 'jovonkvize-auction/2026/toth-marta.jpg',
         ],
         [
             'item_slug' => 'simon-m-veronika-kek-sugarzas',
@@ -115,7 +170,7 @@ function impactshop_event_auction_default_lots(): array
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
-            'image_url' => 'https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/kek-sugarzas.jpg',
+            'image_path' => 'jovonkvize-auction/2026/kek-sugarzas.jpg',
         ],
         [
             'item_slug' => 'tarcsi-daniel-part-iii',
@@ -132,7 +187,7 @@ function impactshop_event_auction_default_lots(): array
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
-            'image_url' => 'https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/part-iii.jpg',
+            'image_path' => 'jovonkvize-auction/2026/part-iii.jpg',
         ],
         [
             'item_slug' => 'ghyczy-gyorgy-elindulok-a-csillagokhoz',
@@ -149,7 +204,7 @@ function impactshop_event_auction_default_lots(): array
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
-            'image_url' => 'https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/elindulok-a-csillagokhoz.jpg',
+            'image_path' => 'jovonkvize-auction/2026/elindulok-a-csillagokhoz.jpg',
         ],
         [
             'item_slug' => 'szabo-anna-cseresznye',
@@ -166,7 +221,7 @@ function impactshop_event_auction_default_lots(): array
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
-            'image_url' => 'https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/szabo-anna-cseresznye.jpg',
+            'image_path' => 'jovonkvize-auction/2026/szabo-anna-cseresznye.jpg',
         ],
         [
             'item_slug' => 'szabo-anna-a-no-turkizben',
@@ -183,7 +238,7 @@ function impactshop_event_auction_default_lots(): array
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
-            'image_url' => 'https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/szabo-anna-no-turkizben.jpg',
+            'image_path' => 'jovonkvize-auction/2026/szabo-anna-no-turkizben.jpg',
         ],
         [
             'item_slug' => 'dimenzio-ingatlan-sirocco-elmenyvitorlazas',
@@ -200,9 +255,15 @@ function impactshop_event_auction_default_lots(): array
             'current_bid' => null,
             'current_winner_bidder_id' => null,
             'status' => 'live',
-            'image_url' => 'https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/sirocco-elmenyvitorlazas.jpg',
+            'image_path' => 'jovonkvize-auction/2026/sirocco-elmenyvitorlazas.jpg',
         ],
     ];
+
+    foreach ($lots as $index => $lot) {
+        $lots[$index] = impactshop_event_auction_resolve_lot_image($lot, (string) ($lot['image_path'] ?? ''));
+    }
+
+    return $lots;
 }
 
 function impactshop_event_auction_get_campaign(string $slug): ?array
