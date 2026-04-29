@@ -669,3 +669,7 @@ PHP lint ok for identity/gamification modules
 
 - `impactshop-event-auction-widget-jovonkvize-1.0.0.js` v1.0.3: lassabb auto-scroll, rövid indulási késleltetés, loop végi rövid szünet, és detail drawer nyitáskor is végleges leállás.
 - A JVK scaffold dokumentáció kiegészült a végleges hét képfájl kanonikus upload célútvonalával és ellenőrzési checklistjével.
+
+## 2026-04-29 12:22 CEST - JVK PHP version bump cache-busting parity
+
+- `impactshop-event-auction-widget.php` v0.2.3: az embed script query string most már `?v=0.2.3`, így a production embed oldal biztosan a legfrissebb galéria-scroll buildre cache-bustingol.

@@ -6686,6 +6686,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A frontend galéria kapott automatikus vízszintes scrollt; ez addig fut, amíg a felhasználó pointerrel, touch-csal, görgővel vagy billentyűvel hozzá nem nyúl.
 - A viselkedés additive maradt: a protected donation widgethez továbbra sem kellett hozzányúlni, csak az aukciós runtime fájlok változtak.
 
+### 2026-04-29 12:22 CEST - JVK embed cache-busting parity fix
+- Az aukciós PHP runtime verziója `0.2.3`-ra emelve, hogy az embed oldal is a finomhangolt galéria-JS-hez illeszkedő `?v=0.2.3` script URL-t adja vissza.
+- Ez funkcionális logikát nem változtat, csak a cache-busting query stringet hozza szinkronba a már kint lévő scroll tuning builddel.
+
 ### 2026-04-29 12:15 CEST - JVK végleges kép-checklist + finomabb auto-scroll
 - A galéria auto-scroll sebessége lassabb lett, indulás előtt rövid késleltetést kap, és loop végén röviden megáll, így kevésbé hat agresszívnak beágyazott környezetben.
 - A detail drawer megnyitása is leállítja az auto-scrollt, így a fókuszban lévő tétel megtekintése közben nincs háttérmozgás.
