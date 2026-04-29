@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.0.2";
+  var WIDGET_VERSION = "1.0.3";
   var SCRIPT_ATTR = "data-impact-auction-widget";
   var STYLE_ID = "impact-event-auction-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-auctions";
@@ -210,7 +210,7 @@
     var apiBase = (config.apiBase || DEFAULT_API_BASE).replace(/\/$/, "");
     var campaign = config.campaign || "jovonkvize-2026";
     var pollMs = Math.max(15000, Number(config.pollMs) || 30000);
-    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "", autoScrollFrame: 0, autoScrollPausedByUser: false, autoScrollLastTs: 0 };
+    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "", autoScrollFrame: 0, autoScrollPausedByUser: false, autoScrollLastTs: 0, autoScrollStartAt: 0, autoScrollLoopPauseUntil: 0 };
 
     mountEl.innerHTML = createMarkup();
     var root = mountEl.querySelector(".impact-auction-widget");
@@ -250,6 +250,8 @@
         state.autoScrollFrame = 0;
       }
       state.autoScrollLastTs = 0;
+      state.autoScrollStartAt = 0;
+      state.autoScrollLoopPauseUntil = 0;
       if (permanent) {
         state.autoScrollPausedByUser = true;
       }
@@ -268,9 +270,21 @@
         return;
       }
 
+      state.autoScrollStartAt = window.performance.now() + 1800;
+
       function step(ts) {
         if (!shouldAutoScrollGallery(els.gallery, state.payload && state.payload.lots) || state.autoScrollPausedByUser) {
           stopAutoScroll(false);
+          return;
+        }
+
+        if (state.autoScrollStartAt && ts < state.autoScrollStartAt) {
+          state.autoScrollFrame = window.requestAnimationFrame(step);
+          return;
+        }
+
+        if (state.autoScrollLoopPauseUntil && ts < state.autoScrollLoopPauseUntil) {
+          state.autoScrollFrame = window.requestAnimationFrame(step);
           return;
         }
 
@@ -280,12 +294,15 @@
 
         var delta = ts - state.autoScrollLastTs;
         state.autoScrollLastTs = ts;
-        var nextLeft = els.gallery.scrollLeft + delta * 0.035;
+        var nextLeft = els.gallery.scrollLeft + delta * 0.022;
 
         if (nextLeft >= maxScroll - 1) {
           els.gallery.scrollLeft = 0;
+          state.autoScrollLastTs = 0;
+          state.autoScrollLoopPauseUntil = ts + 1200;
         } else {
           els.gallery.scrollLeft = nextLeft;
+          state.autoScrollLoopPauseUntil = 0;
         }
 
         state.autoScrollFrame = window.requestAnimationFrame(step);
@@ -305,6 +322,7 @@
     bindAutoScrollGuards();
 
     function detailOpen(lot) {
+      stopAutoScroll(true);
       state.activeLot = lot;
       els.detailBadge.textContent = (lot.status || "draft").toUpperCase();
       els.detailArtist.textContent = lot.artist_name || "";

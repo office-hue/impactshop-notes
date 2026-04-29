@@ -57,3 +57,25 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 - A scaffold lotok most már nem üres képkonténert kapnak, ha a végleges JPEG asset nincs feltöltve: a backend lot-specifikus, szerveroldalon generált SVG képet ad vissza működő `image_url`-ként.
 - A galéria automatikus vízszintes scrollt kapott, ami addig fut, amíg a felhasználó hozzá nem nyúl pointerrel, touch-csal, görgővel vagy billentyűvel.
 - Ha a valódi `uploads/jovonkvize-auction/2026/...` fájlok később felkerülnek, a backend automatikusan azokat fogja preferálni a generált képek helyett, kódmódosítás nélkül.
+
+## 2026-04-29 Végleges képfeltöltési checklist + scroll finomhangolás
+
+- Az auto-scroll most lassabb, indulás előtt rövid késleltetést kap, és körbeérésnél egy rövid megállással indul újra; az első user interakciónál továbbra is végleg leáll.
+- A detail drawer megnyitása is user interakciónak számít, ezért onnan már nem indul vissza automatikusan a galéria.
+
+### Végleges képfeltöltési checklist
+
+- Célmappa a production/staging uploadban: `wp-content/uploads/jovonkvize-auction/2026/`
+- Elvárt fájlnevek:
+	- `toth-marta.jpg`
+	- `kek-sugarzas.jpg`
+	- `part-iii.jpg`
+	- `elindulok-a-csillagokhoz.jpg`
+	- `szabo-anna-cseresznye.jpg`
+	- `szabo-anna-no-turkizben.jpg`
+	- `sirocco-elmenyvitorlazas.jpg`
+- Feltöltés után ellenőrzés:
+	- `curl -I https://app.sharity.hu/wp-content/uploads/jovonkvize-auction/2026/<fajlnev>` minden képre `200`-at adjon
+	- a public payload első lotján az `image_url` már ne `data:image/svg+xml` prefixszel kezdődjön
+	- az embed oldalon hard refresh után a generált poster helyett a végleges kép látszódjon
+- Ha a fájlnevek eltérnek, nem kell kódot módosítani, csak az aukciós lotok `image_path` mezőit kell a kanonikus repo-forrásban átírni, majd újra deployolni.
