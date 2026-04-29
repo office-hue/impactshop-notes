@@ -1,3 +1,28 @@
+## 2026-04-29 09:50 CEST - Jovonk Vize aukcio staging deploy + smoke eredmeny
+- Audit utani fix: a success redirect ág most mar csak ellenorzott Stripe sessionnel teljesit, es a staging runtime blokkolja az elo Stripe checkout session letrehozasat.
+- Utolagos staging smoke bizonyitek: `home_url=https://app.sharity.hu/impactshop-staging/`, `stripe_mode=live`, `is_staging_runtime=true`, es a szintetikus winner-payment session-letrehozas eredmenye `null`, tehat a live Stripe guard aktiv.
+- A ket uj aukcios runtime fajl celzott staging sync-kel kiment az `app-staging` peldanyra, majd a read-only jogosultsag vissza lett zarva:
+  - `wp-content/mu-plugins/impactshop-event-auction-widget.php`
+  - `wp-content/mu-plugins/impactshop-event-auction-widget-jovonkvize-1.0.0.js`
+- A staging public read lane elerheto; a kampany payload visszaadja a `security.write_enabled: true` es `session_token` mezoket.
+- A public write lane gyokeroka nem token-persistence hiba: a szerveren kiadott session token ugyanazzal az Origin + User-Agent contexttel valid (`get_transient(...)` tombot ad vissza, `impactshop_event_auction_verify_session_token(...) === true`).
+- A staging `register-bidder` HTTP POST csak a kanonikus `https://app.sharity.hu/impactshop-staging` hoston mukodik. A `https://www.sharity.hu/impactshop-staging` utvonal POST esetben 302-vel atiranyit az `app.sharity.hu` hostra, ezert a korabbi `invalid_session_token` smoke valojaban host-canonicalization mellekhatas volt.
+- Direkt public smoke az `app.sharity.hu` hoston sikeres volt: `register-bidder` HTTP 200, ervenyes `bidder_token` visszajott.
+- Direkt backend staging smoke WP-CLI-bol sikeres volt: `bid` 200, `close` 200, `payment` 200; a lot allapota `live -> closed -> payment_pending` lett, Stripe Checkout URL letrejott.
+- A protected admin REST smoke stagingen jelenleg kornyezeti okbol blokkolt: a lekert staging userek mind ures `roles` tombbel jonnek vissza, es egyiknel sem igaz a `manage_options`, igy a route-szintu admin permission callback jogosan ad 403-at.
+- Fontos kockazat: a staging winner-payment smoke `cs_live_...` Stripe sessiont adott vissza, tehat a staging jelen allapotban elo Stripe kulcsot hasznal. Emiatt tenyleges fizetesi completion smoke-ot nem futtattam tovabb.
+
+## 2026-04-29 14:30 CEST - Jovonk Vize aukcio widget additiv scaffold letrehozva
+- Uj, additiv auction scaffold modul keszult a JVK repo-ban kulon PHP es kulon verziozott frontend JS fajlkent:
+  - `wp-content/mu-plugins/impactshop-event-auction-widget.php`
+  - `wp-content/mu-plugins/impactshop-event-auction-widget-jovonkvize-1.0.0.js`
+- A scaffold szandekosan nem nyul a meglevo protected donation widget legacy fajlokhoz; uj kod lane-en hozza be az `event-auctions` olvaso REST surface-et es a gallery/detail/bid skeleton UI-t.
+- A `register-bidder` es `bid` write lane most mar aktiv alapimplementaciot kapott: session token, bidder token, rate limit, idempotency key es tranzakcios update lane kerult be.
+- Az `admin close` lane most mar WP admin + nonce kapuval zarhato, a `winner payment` lane pedig Stripe Checkout sessiont, webhook completiont es success/cancel reconcile endpointet kapott.
+- Tovabbra sincs admin trigger UI es automatikus winner-e-mail lane; ezek kovetkezo fazisba maradtak.
+- Read fallback csak olvaso vegpontokra kerult be; `bid` query fallback nincs.
+- Deploy nem tortent; protected legacy touch nem tortent ebben a change setben.
+
 ## 2026-04-28 12:25 CEST - Jövőnk Vize widget ticket-mix parity + live/dev szétválasztás lezárva
 - A Jövőnk Vize widget backend most külön menti és továbbítja az `regular_ticket_count` és `supporter_ticket_count` mezőket; a buyer/admin e-mailek és a stats payload is külön bontást kapott.
 - A sémafrissítés explicit hiányzó-oszlop backfillt kapott, így production és staging alatt a régebbi táblák is felhozhatók a szükséges ticket mezőkre.
