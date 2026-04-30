@@ -60,3 +60,11 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 ### Változások
 - **JS v1.0.6**: scroll visszaállítva (1.0.3 PR-merged bázison), HU ékezetek, scaffold szövegek eltávolítva
 - **PHP v0.2.6**: wp_mail értesítő minden licitnél + nyertes lezárásnál → office@sharity.hu + koncz.veronika@mielemed.hu
+
+## 2026-04-30 — v0.3.6 PHP + JS deploy
+
+### Változások
+- **Aukció zárás**: `auction_end_time = 2026-05-16T20:00:00Z` (máj. 16. 22:00 Budapest CEST)
+- **Snipe protection**: `snipe_window_seconds=120`, `snipe_extend_seconds=120`; per-lot WP option override, `place_bid`-ben automatikus extend + `snipe_extension` log event
+- **Visszaszámláló JS**: `formatCountdown()` helper, card-countdown span (live lotok), detail-countdown panel, `setInterval` 1s tick, urgency pulse ≤120s
+- **Bidder localStorage autofill**: sikeres licit után email/telefon/név mentés `iaw_bidder` kulcsra; `detailOpen()`-kor automatikus visszatöltés

@@ -662,3 +662,8 @@ PHP lint ok for identity/gamification modules
 - JS v1.0.6: scroll restore, HU copy, no scaffold
 - PHP v0.2.6: wp_mail notify bid + admin_close
 - Deployed: app.sharity.hu/wp-content/mu-plugins
+
+## 2026-04-30 jvk-auction v0.3.6
+- PHP v0.3.6: auction_end_time=2026-05-16T20:00:00Z (máj.16 22:00 Budapest), snipe_window/extend=120s, lot_end_time helper, snipe extension place_bid-ben
+- JS v0.3.6: countdown CSS + formatCountdown() + card/detail countdown, setInterval 1s tick, bidder localStorage autofill
+- Deployed: app.sharity.hu/wp-content/mu-plugins
