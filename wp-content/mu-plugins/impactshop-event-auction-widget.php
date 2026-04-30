@@ -10,8 +10,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.2.6');
-define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.2.0');
+define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.3.6');
+define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.3.0');
 define('IMPACTSHOP_EVENT_AUCTION_SESSION_TTL', 30 * MINUTE_IN_SECONDS);
 define('IMPACTSHOP_EVENT_AUCTION_BIDDER_TTL', 4 * HOUR_IN_SECONDS);
 
@@ -74,6 +74,12 @@ function impactshop_event_auction_campaigns(): array
             'allowed_origins' => $allowedOrigins,
             'theme' => $theme,
             'lots' => impactshop_event_auction_default_lots(),
+        // Aukció zárásának UTC időpontja (ISO 8601). Admin_close manuálisan is lezárhatja.
+        // TODO: pontos gálanaphoz igazítani!
+        'auction_end_time' => '2026-05-16T20:00:00Z', // 2026-05-16 22:00 Budapest (CEST = UTC+2)
+        // Snipe protection: ha az utolsó N másodpercben érkezik licit → meghosszabbítás M másodperccel
+        'snipe_window_seconds' => 120,
+        'snipe_extend_seconds' => 120,
         ],
     ];
 
@@ -932,6 +938,19 @@ function impactshop_event_auction_ensure_schema(): void
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
+
+    // Migration: add Stripe card-on-file columns to bidders table (0.3.0)
+    $biddersColCheck = $wpdb->get_results("SHOW COLUMNS FROM {$biddersTable} LIKE 'stripe_customer_id'");
+    if (empty($biddersColCheck)) {
+        $wpdb->query("ALTER TABLE {$biddersTable} ADD COLUMN stripe_customer_id varchar(128) DEFAULT NULL, ADD COLUMN stripe_payment_method_id varchar(128) DEFAULT NULL");
+    }
+
+    // Migration: add stripe_auth_amount column to bids table (0.3.0)
+    $bidsColCheck = $wpdb->get_results("SHOW COLUMNS FROM {$bidsTable} LIKE 'stripe_auth_amount'");
+    if (empty($bidsColCheck)) {
+        $wpdb->query("ALTER TABLE {$bidsTable} ADD COLUMN stripe_auth_amount bigint unsigned DEFAULT NULL");
+    }
+
     update_option('impactshop_event_auction_schema_version', IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION, false);
 }
 
@@ -958,6 +977,24 @@ function impactshop_event_auction_register_routes(): void
     register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/register-bidder', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'impactshop_event_auction_register_bidder',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/setup-payment', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'impactshop_event_auction_setup_payment',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/confirm-card-setup', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'impactshop_event_auction_confirm_card_setup',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/confirm-card-setup', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'impactshop_event_auction_confirm_card_setup',
         'permission_callback' => '__return_true',
     ]);
 
@@ -1165,6 +1202,20 @@ function impactshop_event_auction_lot_summaries(array $campaign): array
     return $lots;
 }
 
+/**
+ * Visszaadja egy lot tényleges zárási időpontját (ISO 8601 UTC).
+ * Ha snipe protection miatt meghosszabbítottuk, a WP option értéke az elsődleges.
+ */
+function impactshop_event_auction_lot_end_time(string $campaignSlug, string $itemSlug, array $campaign): string
+{
+    $optionKey = 'impactshop_ea_lot_end_' . $campaignSlug . '_' . $itemSlug;
+    $extended  = (string) get_option($optionKey, '');
+    if ($extended !== '') {
+        return $extended;
+    }
+    return (string) ($campaign['auction_end_time'] ?? '');
+}
+
 function impactshop_event_auction_normalize_lot(array $lot): array
 {
     $startingBid = (int) ($lot['starting_bid'] ?? 0);
@@ -1197,6 +1248,11 @@ function impactshop_event_auction_normalize_lot(array $lot): array
         'current_winner_bidder_id' => $bidState['bidder_uuid'] ?? '',
         'status' => $effectiveStatus,
         'image_url' => esc_url_raw((string) ($lot['image_url'] ?? '')),
+        'end_time' => impactshop_event_auction_lot_end_time(
+            $campaignSlug,
+            sanitize_title((string) ($lot['item_slug'] ?? '')),
+            impactshop_event_auction_get_campaign($campaignSlug) ?? []
+        ),
     ];
 }
 
@@ -1530,14 +1586,14 @@ function impactshop_event_auction_bid(WP_REST_Request $request): WP_REST_Respons
     $inserted = $wpdb->insert(
         $table,
         [
-            'bid_uuid' => $bidUuid,
-            'campaign_slug' => $campaignSlug,
-            'item_slug' => $itemSlug,
-            'bidder_uuid' => $bidderUuid,
-            'bid_amount' => $bidAmount,
-            'status' => 'winning',
+            'bid_uuid'        => $bidUuid,
+            'campaign_slug'   => $campaignSlug,
+            'item_slug'       => $itemSlug,
+            'bidder_uuid'     => $bidderUuid,
+            'bid_amount'      => $bidAmount,
+            'status'          => 'winning',
             'idempotency_key' => $idempotencyKey,
-            'created_at' => current_time('mysql', true),
+            'created_at'      => current_time('mysql', true),
         ],
         ['%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s']
     );
@@ -1549,31 +1605,137 @@ function impactshop_event_auction_bid(WP_REST_Request $request): WP_REST_Respons
 
     $wpdb->query('COMMIT');
 
+    // ── Authorize-and-capture: befoglalás az új licithez ─────────────────────
+    $currency    = strtolower((string) ($campaign['currency'] ?? 'huf'));
+    $amountMinor = impactshop_event_auction_to_minor((float) $bidAmount, $currency);
+    $bidderFull  = impactshop_event_auction_get_bidder($bidderUuid);
+    $custId      = (string) ($bidderFull['stripe_customer_id'] ?? '');
+    $pmId        = (string) ($bidderFull['stripe_payment_method_id'] ?? '');
+
+    if ($custId !== '' && $pmId !== '') {
+        $pi = impactshop_event_auction_create_bid_authorization([
+            'campaign_slug'    => $campaignSlug,
+            'item_slug'        => $itemSlug,
+            'currency'         => $currency,
+            'amount_minor'     => $amountMinor,
+            'customer_id'      => $custId,
+            'payment_method_id'=> $pmId,
+            'bid_uuid'         => $bidUuid,
+        ]);
+        if ($pi && !empty($pi['id'])) {
+            $wpdb->update(
+                $table,
+                [
+                    'stripe_payment_intent' => (string) $pi['id'],
+                    'stripe_auth_amount'    => $amountMinor,
+                ],
+                ['bid_uuid' => $bidUuid],
+                ['%s', '%d'],
+                ['%s']
+            );
+            impactshop_event_auction_log_event($campaignSlug, $itemSlug, 'bid_authorized', $bidderUuid, [
+                'bid_uuid'             => $bidUuid,
+                'stripe_payment_intent'=> (string) $pi['id'],
+                'amount_minor'         => $amountMinor,
+            ]);
+        } else {
+            error_log('[impactshop-event-auction] WARNING: PI auth failed for bid ' . $bidUuid . ' — bid recorded without hold');
+        }
+    }
+
+    // ── Felszabadítjuk az előző nyertes befoglalását ──────────────────────────
+    if ($current && !empty($current['stripe_payment_intent'])) {
+        impactshop_event_auction_cancel_payment_intent((string) $current['stripe_payment_intent']);
+        impactshop_event_auction_log_event($campaignSlug, $itemSlug, 'bid_auth_released', (string) ($current['bidder_uuid'] ?? ''), [
+            'bid_uuid'             => (string) ($current['bid_uuid'] ?? ''),
+            'stripe_payment_intent'=> (string) $current['stripe_payment_intent'],
+        ]);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     impactshop_event_auction_log_event($campaignSlug, $itemSlug, 'bid_created', $bidderUuid, [
         'bid_uuid' => $bidUuid,
         'bid_amount' => $bidAmount,
         'idempotency_key' => $idempotencyKey,
     ]);
 
-    // Email értesítő: új licit
+    // ── Snipe protection ─────────────────────────────────────────────────────
+    $snipeWindow  = (int) ($campaign['snipe_window_seconds'] ?? 120);
+    $snipeExtend  = (int) ($campaign['snipe_extend_seconds'] ?? 120);
+    $currentEndTs = (string) impactshop_event_auction_lot_end_time($campaignSlug, $itemSlug, $campaign);
+    if ($currentEndTs !== '' && $snipeWindow > 0 && $snipeExtend > 0) {
+        $endTimestamp = strtotime($currentEndTs);
+        if ($endTimestamp !== false && $endTimestamp > 0) {
+            $secondsRemaining = $endTimestamp - time();
+            if ($secondsRemaining > 0 && $secondsRemaining <= $snipeWindow) {
+                $newEndTimestamp = $endTimestamp + $snipeExtend;
+                $newEndIso       = gmdate('Y-m-d\TH:i:s\Z', $newEndTimestamp);
+                $optionKey = 'impactshop_ea_lot_end_' . $campaignSlug . '_' . $itemSlug;
+                update_option($optionKey, $newEndIso, false);
+                impactshop_event_auction_log_event($campaignSlug, $itemSlug, 'snipe_extension', $bidderUuid, [
+                    'bid_uuid'     => $bidUuid,
+                    'prev_end'     => $currentEndTs,
+                    'new_end'      => $newEndIso,
+                    'extend_secs'  => $snipeExtend,
+                ]);
+            }
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Email + SMS értesítők: új licit (admin) + felülicitált (előző nyertes)
     $bidderInfo = impactshop_event_auction_get_bidder($bidderUuid);
     $bidderName  = $bidderInfo ? sanitize_text_field((string) ($bidderInfo['display_name'] ?? '')) : '(ismeretlen)';
     $bidderEmail = $bidderInfo ? sanitize_email((string) ($bidderInfo['email'] ?? '')) : '';
     $bidderPhone = $bidderInfo ? sanitize_text_field((string) ($bidderInfo['phone'] ?? '')) : '';
     $lotTitle    = sanitize_text_field((string) ($lot['item_title'] ?? $itemSlug));
     $amountFmt   = impactshop_event_auction_format_amount($bidAmount, 'huf');
-    $notifyTo    = ['office@sharity.hu', 'koncz.veronika@mielemed.hu'];
-    $notifySubject = '[JVK Aukció] Új licit: ' . $lotTitle . ' — ' . $amountFmt;
-    $notifyBody  = "Új licit érkezett a Jövőnk Vize Gála aukción.\n\n"
+    $lotUrl      = esc_url(trailingslashit((string) ($campaign['hero_url'] ?? 'https://jovonkvize.hu')) . '?lot=' . $itemSlug);
+    $timestamp   = current_time('mysql', true);
+
+    // ── Admin értesítő: új licit ───────────────────────────────────────────
+    $notifyTo      = ['office@sharity.hu', 'koncz.veronika@mielemed.hu'];
+    $notifySubject = '[JVK Aukció] Új licit — ' . $lotTitle . ': ' . $amountFmt;
+    $notifyBody    = "Új licit érkezett a Jövőnk Vize Gála aukción.\n\n"
         . "Tétel: {$lotTitle}\n"
         . "Licit összege: {$amountFmt}\n"
         . "Licitáló neve: {$bidderName}\n"
         . "Licitáló e-mail: {$bidderEmail}\n"
         . "Licitáló telefon: {$bidderPhone}\n"
-        . "Licit UUID: {$bidUuid}\n"
-        . "Időpont (UTC): " . current_time('mysql', true) . "\n";
-    foreach ($notifyTo as $addr) {
-        wp_mail($addr, $notifySubject, $notifyBody);
+        . "Időpont (UTC): {$timestamp}\n\n"
+        . "Tétel megtekintése:\n{$lotUrl}\n\n"
+        . "Licit UUID: {$bidUuid}";
+    impactshop_event_auction_send_email($notifyTo, $notifySubject, $notifyBody);
+    impactshop_event_auction_notify_sms(
+        'Sharity JVK: Új licit — ' . $lotTitle . ' | ' . $amountFmt . ' | ' . $bidderName . ' | ' . $lotUrl
+    );
+
+    // ── Outbid értesítő: az előző nyertes licitálónak ─────────────────────
+    if ($current && !empty($current['bidder_uuid'])) {
+        $prevInfo  = impactshop_event_auction_get_bidder((string) $current['bidder_uuid']);
+        $prevEmail = $prevInfo ? sanitize_email((string) ($prevInfo['email'] ?? '')) : '';
+        $prevName  = $prevInfo ? sanitize_text_field((string) ($prevInfo['display_name'] ?? '')) : '';
+        $prevPhone = $prevInfo ? sanitize_text_field((string) ($prevInfo['phone'] ?? '')) : '';
+        $prevAmtFmt = impactshop_event_auction_format_amount((int) ($current['bid_amount'] ?? 0), 'huf');
+        if ($prevEmail !== '') {
+            $outbidSubject = 'Felülicitáltak — ' . $lotTitle . ' | Sharity JVK Aukció';
+            $outbidBody    = "Kedves {$prevName}!\n\n"
+                . "Valaki magasabb összeggel licitált rád a Jövőnk Vize Gála aukción.\n\n"
+                . "Tétel: {$lotTitle}\n"
+                . "Jelenlegi legmagasabb licit: {$amountFmt}\n"
+                . "A te licited volt: {$prevAmtFmt}\n\n"
+                . "Szeretnéd visszaszerezni a vezető pozíciót? Licitálj újra egy kattintással:\n"
+                . "{$lotUrl}\n\n"
+                . "Az esetlegesen lefoglalt kártyaösszeged feloldásra kerül.\n\n"
+                . "Sharity – JVK Aukció csapata";
+            impactshop_event_auction_send_email([$prevEmail], $outbidSubject, $outbidBody);
+        }
+        if ($prevPhone !== '') {
+            impactshop_event_auction_send_sms(
+                $prevPhone,
+                'Sharity JVK: Felülicitáltak! ' . $lotTitle . ' — új licit: ' . $amountFmt . '. Licitálj újra: ' . $lotUrl
+            );
+        }
     }
 
     return new WP_REST_Response([
@@ -1669,27 +1831,34 @@ function impactshop_event_auction_admin_close(WP_REST_Request $request): WP_REST
         'bid_amount' => (int) ($current['bid_amount'] ?? 0),
     ]);
 
-    // Email értesítő: nyertes lezárás
+    // Email + SMS értesítő: nyertes lezárás (admin) + nyertes licitáló
     $winnerBidderInfo = impactshop_event_auction_get_bidder((string) ($current['bidder_uuid'] ?? ''));
     $winnerName  = $winnerBidderInfo ? sanitize_text_field((string) ($winnerBidderInfo['display_name'] ?? '')) : '(ismeretlen)';
     $winnerEmail = $winnerBidderInfo ? sanitize_email((string) ($winnerBidderInfo['email'] ?? '')) : '';
     $winnerPhone = $winnerBidderInfo ? sanitize_text_field((string) ($winnerBidderInfo['phone'] ?? '')) : '';
     $closedLotTitle = sanitize_text_field((string) ($lot['item_title'] ?? $itemSlug));
     $closedAmtFmt   = impactshop_event_auction_format_amount((int) ($current['bid_amount'] ?? 0), 'huf');
+    $closedLotUrl   = esc_url(trailingslashit((string) ($campaign['hero_url'] ?? 'https://jovonkvize.hu')) . '?lot=' . $itemSlug);
     $closeNotifyTo  = ['office@sharity.hu', 'koncz.veronika@mielemed.hu'];
-    $closeSubject   = '[JVK Aukció] Tétel lezárva — nyertes: ' . $closedLotTitle . ' (' . $closedAmtFmt . ')';
+    $closeSubject   = '[JVK Aukció] LEZÁRVA — ' . $closedLotTitle . ': nyertes ' . $winnerName . ' (' . $closedAmtFmt . ')';
     $closeBody      = "Aukciós tétel lezárásra került.\n\n"
         . "Tétel: {$closedLotTitle}\n"
-        . "Nyertes licit összege: {$closedAmtFmt}\n"
         . "Nyertes neve: {$winnerName}\n"
+        . "Nyertes licit összege: {$closedAmtFmt}\n"
         . "Nyertes e-mail: {$winnerEmail}\n"
         . "Nyertes telefon: {$winnerPhone}\n"
-        . "Licit UUID: " . (string) ($current['bid_uuid'] ?? '') . "\n"
-        . "Lezárás időpontja (UTC): {$closedAt}\n"
-        . "Lezárta: {$actorId}\n";
-    foreach ($closeNotifyTo as $addr) {
-        wp_mail($addr, $closeSubject, $closeBody);
-    }
+        . "Lezárás (UTC): {$closedAt}\n"
+        . "Lezárta: {$actorId}\n\n"
+        . "Tétel oldal:\n{$closedLotUrl}\n\n"
+        . "Licit UUID: " . (string) ($current['bid_uuid'] ?? '');
+    impactshop_event_auction_send_email($closeNotifyTo, $closeSubject, $closeBody);
+    impactshop_event_auction_notify_sms(
+        'Sharity JVK: LEZÁRVA — ' . $closedLotTitle . ' | Nyertes: ' . $winnerName . ' | ' . $closedAmtFmt . ' | ' . $closedLotUrl
+    );
+
+    // ── Authorize-and-capture: capture winner's pre-authorized PI if present ──
+    impactshop_event_auction_maybe_capture_winner($current);
+    // ─────────────────────────────────────────────────────────────────────────
 
     return new WP_REST_Response([
         'bid_uuid' => (string) ($current['bid_uuid'] ?? ''),
@@ -1699,11 +1868,457 @@ function impactshop_event_auction_admin_close(WP_REST_Request $request): WP_REST
     ], 200);
 }
 
-function impactshop_event_auction_request_winner_payment(WP_REST_Request $request): WP_REST_Response
+/**
+ * After admin_close marks the bid 'closed', attempt to capture the winner's
+ * PaymentIntent if one exists (authorize-and-capture flow).
+ * Falls back gracefully — the existing request_winner_payment flow stays intact.
+ */
+function impactshop_event_auction_maybe_capture_winner(array $bid): void
+{
+    $piId = sanitize_text_field((string) ($bid['stripe_payment_intent'] ?? ''));
+    if ($piId === '') {
+        return; // No pre-authorized PI — winner will pay via checkout link (legacy)
+    }
+
+    $bidUuid     = sanitize_text_field((string) ($bid['bid_uuid'] ?? ''));
+    $campaignSlug = sanitize_title((string) ($bid['campaign_slug'] ?? ''));
+    $itemSlug    = sanitize_title((string) ($bid['item_slug'] ?? ''));
+    $bidderUuid  = sanitize_text_field((string) ($bid['bidder_uuid'] ?? ''));
+
+    $captured = impactshop_event_auction_capture_payment_intent($piId);
+
+    if ($captured) {
+        global $wpdb;
+        $wpdb->update(
+            impactshop_event_auction_bids_table_name(),
+            [
+                'status'               => 'paid',
+                'payment_completed_at' => current_time('mysql', true),
+            ],
+            ['bid_uuid' => $bidUuid],
+            ['%s', '%s'],
+            ['%s']
+        );
+        impactshop_event_auction_log_event($campaignSlug, $itemSlug, 'bid_captured', $bidderUuid, [
+            'bid_uuid'             => $bidUuid,
+            'stripe_payment_intent'=> $piId,
+        ]);
+    } else {
+        error_log('[impactshop-event-auction] PI capture failed for bid ' . $bidUuid . ' — admin must use request_winner_payment as fallback');
+        impactshop_event_auction_log_event($campaignSlug, $itemSlug, 'bid_capture_failed', $bidderUuid, [
+            'bid_uuid'             => $bidUuid,
+            'stripe_payment_intent'=> $piId,
+        ]);
+    }
+}
+
+
+/**
+ * REST handler: returns a Stripe Checkout Session (mode=setup) URL so the
+ * bidder can save a card. Called once after register-bidder, before first bid.
+ */
+function impactshop_event_auction_setup_payment(WP_REST_Request $request): WP_REST_Response
 {
     if (!impactshop_event_auction_is_configured()) {
         return new WP_REST_Response(['error' => 'not_configured'], 503);
     }
+
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_auction_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    impactshop_event_auction_send_cors_headers($campaign);
+
+    if (!impactshop_event_auction_origin_allowed($campaign)) {
+        return new WP_REST_Response(['error' => 'origin_not_allowed'], 403);
+    }
+
+    $payload = impactshop_event_auction_extract_payload($request);
+
+    $sessionToken = sanitize_text_field((string) ($payload['session_token'] ?? ''));
+    if (!impactshop_event_auction_verify_session_token($sessionToken, $campaign)) {
+        return new WP_REST_Response(['error' => 'invalid_session_token'], 403);
+    }
+
+    $bidderToken = sanitize_text_field((string) ($payload['bidder_token'] ?? ''));
+    $bidderPayload = impactshop_event_auction_verify_bidder_token($bidderToken, $campaign);
+    if (!$bidderPayload) {
+        return new WP_REST_Response(['error' => 'invalid_bidder_token'], 403);
+    }
+
+    $bidderUuid = (string) ($bidderPayload['bidder_uuid'] ?? '');
+    $bidder = impactshop_event_auction_get_bidder($bidderUuid);
+    if (!$bidder) {
+        return new WP_REST_Response(['error' => 'bidder_not_found'], 404);
+    }
+
+    // Already has a saved card — idempotent
+    if (!empty($bidder['stripe_customer_id']) && !empty($bidder['stripe_payment_method_id'])) {
+        return new WP_REST_Response([
+            'status'      => 'already_setup',
+            'bidder_uuid' => $bidderUuid,
+        ], 200);
+    }
+
+    $returnUrl = esc_url_raw((string) ($payload['return_url'] ?? ($campaign['hero_url'] ?? home_url('/'))));
+    if ($returnUrl === '') {
+        $returnUrl = home_url('/');
+    }
+
+    $session = impactshop_event_auction_create_card_setup_session([
+        'campaign'   => $campaign,
+        'bidder'     => $bidder,
+        'return_url' => $returnUrl,
+    ]);
+
+    if (!$session || empty($session['id']) || empty($session['url'])) {
+        return new WP_REST_Response(['error' => 'stripe_failed'], 502);
+    }
+
+    return new WP_REST_Response([
+        'status'           => 'setup_required',
+        'setup_url'        => (string) $session['url'],
+        'setup_session_id' => (string) $session['id'],
+    ], 200);
+}
+
+/**
+ * Called by the JS after Stripe redirects back to the page with ?ea_card_setup=success&session_id=...
+ * Fetches the Checkout Session from Stripe and fulfills card setup inline (no webhook dependency).
+ */
+function impactshop_event_auction_confirm_card_setup(WP_REST_Request $request): WP_REST_Response
+{
+    if (!impactshop_event_auction_is_configured()) {
+        return new WP_REST_Response(['error' => 'not_configured'], 503);
+    }
+
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_auction_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    impactshop_event_auction_send_cors_headers($campaign);
+
+    if (!impactshop_event_auction_origin_allowed($campaign)) {
+        return new WP_REST_Response(['error' => 'origin_not_allowed'], 403);
+    }
+
+    $payload    = impactshop_event_auction_extract_payload($request);
+    $sessionId  = sanitize_text_field((string) ($payload['session_id'] ?? ''));
+    $bidderUuid = sanitize_text_field((string) ($payload['bidder_uuid'] ?? ''));
+
+    if ($sessionId === '' || $bidderUuid === '') {
+        return new WP_REST_Response(['error' => 'missing_params'], 400);
+    }
+
+    // Idempotency: if card already saved, return early
+    $bidder = impactshop_event_auction_get_bidder($bidderUuid);
+    if ($bidder && !empty($bidder['stripe_customer_id']) && !empty($bidder['stripe_payment_method_id'])) {
+        return new WP_REST_Response(['status' => 'already_done'], 200);
+    }
+
+    // Fetch checkout session from Stripe
+    $response = wp_remote_get(
+        'https://api.stripe.com/v1/checkout/sessions/' . rawurlencode($sessionId),
+        [
+            'headers' => ['Authorization' => 'Bearer ' . IMPACT_STRIPE_SECRET_KEY],
+            'timeout' => 15,
+        ]
+    );
+
+    if (is_wp_error($response)) {
+        error_log('[impactshop-event-auction] confirm_card_setup: Stripe fetch error: ' . $response->get_error_message());
+        return new WP_REST_Response(['error' => 'stripe_error'], 502);
+    }
+
+    $code = (int) wp_remote_retrieve_response_code($response);
+    $body = (string) wp_remote_retrieve_body($response);
+    if ($code < 200 || $code >= 300) {
+        error_log('[impactshop-event-auction] confirm_card_setup: Stripe error code=' . $code);
+        return new WP_REST_Response(['error' => 'stripe_error'], 502);
+    }
+
+    $session = json_decode($body, true);
+    if (!is_array($session)) {
+        return new WP_REST_Response(['error' => 'stripe_response_invalid'], 502);
+    }
+
+    // Security: validate bidder_uuid matches session metadata
+    $metadata       = (array) ($session['metadata'] ?? []);
+    $metaBidderUuid = sanitize_text_field((string) ($metadata['bidder_uuid'] ?? ''));
+    if (!hash_equals($metaBidderUuid, $bidderUuid)) {
+        return new WP_REST_Response(['error' => 'bidder_mismatch'], 403);
+    }
+
+    impactshop_event_auction_fulfill_card_setup($session);
+
+    return new WP_REST_Response(['status' => 'ok'], 200);
+}
+
+/**
+ * Create a Stripe Checkout Session with mode=setup to save a payment method.
+ */
+function impactshop_event_auction_create_card_setup_session(array $params): ?array
+{
+    $campaign     = (array) ($params['campaign'] ?? []);
+    $bidder       = (array) ($params['bidder'] ?? []);
+    $campaignSlug = sanitize_title((string) ($campaign['slug'] ?? ''));
+    $bidderUuid   = sanitize_text_field((string) ($bidder['bidder_uuid'] ?? ''));
+
+    if ($campaignSlug === '' || $bidderUuid === '') {
+        return null;
+    }
+
+    if (impactshop_event_auction_is_staging_runtime() && impactshop_event_auction_stripe_mode() === 'live') {
+        error_log('[impactshop-event-auction] Refusing to create live Stripe setup session on staging.');
+        return null;
+    }
+
+    $returnUrl  = esc_url_raw((string) ($params['return_url'] ?? home_url('/')));
+    if ($returnUrl === '') {
+        $returnUrl = home_url('/');
+    }
+    $successUrl = add_query_arg(
+        ['ea_card_setup' => 'success', 'bidder_uuid' => $bidderUuid, 'campaign_slug' => $campaignSlug],
+        $returnUrl
+    ) . '&session_id={CHECKOUT_SESSION_ID}';
+    $cancelUrl  = add_query_arg(
+        ['ea_card_setup' => 'cancelled'],
+        $returnUrl
+    );
+
+    $payload = [
+        'mode'                        => 'setup',
+        'payment_method_types[0]'     => 'card',
+        'customer_creation'           => 'always',
+        'success_url'                 => $successUrl,
+        'cancel_url'                  => $cancelUrl,
+        'metadata[flow]'              => 'event_auction_card_setup',
+        'metadata[campaign_slug]'     => $campaignSlug,
+        'metadata[bidder_uuid]'       => $bidderUuid,
+    ];
+
+    $email = sanitize_email((string) ($bidder['email'] ?? ''));
+    if ($email !== '') {
+        $payload['customer_email'] = $email;
+    }
+
+    $response = wp_remote_post('https://api.stripe.com/v1/checkout/sessions', [
+        'headers' => ['Authorization' => 'Bearer ' . IMPACT_STRIPE_SECRET_KEY],
+        'body'    => http_build_query($payload, '', '&', PHP_QUERY_RFC3986),
+        'timeout' => 20,
+    ]);
+
+    if (is_wp_error($response)) {
+        error_log('[impactshop-event-auction] Stripe setup session failed: ' . $response->get_error_message());
+        return null;
+    }
+
+    $code = (int) wp_remote_retrieve_response_code($response);
+    $body = (string) wp_remote_retrieve_body($response);
+    if ($code < 200 || $code >= 300) {
+        error_log('[impactshop-event-auction] Stripe setup session error: code=' . $code . ' body=' . substr($body, 0, 400));
+        return null;
+    }
+
+    $data = json_decode($body, true);
+    if (!is_array($data) || empty($data['id']) || empty($data['url'])) {
+        return null;
+    }
+
+    return ['id' => (string) $data['id'], 'url' => (string) $data['url']];
+}
+
+/**
+ * Called from the webhook when a setup-mode Checkout Session completes.
+ * Saves stripe_customer_id + stripe_payment_method_id to the bidder row.
+ */
+function impactshop_event_auction_fulfill_card_setup(array $session): void
+{
+    $metadata   = (array) ($session['metadata'] ?? []);
+    $bidderUuid = sanitize_text_field((string) ($metadata['bidder_uuid'] ?? ''));
+    $customerId = sanitize_text_field((string) ($session['customer'] ?? ''));
+
+    if ($bidderUuid === '' || $customerId === '') {
+        error_log('[impactshop-event-auction] fulfill_card_setup: missing bidder_uuid or customer');
+        return;
+    }
+
+    // Fetch SetupIntent to get the confirmed PaymentMethod ID
+    $setupIntentId   = sanitize_text_field((string) ($session['setup_intent'] ?? ''));
+    $paymentMethodId = '';
+    if ($setupIntentId !== '') {
+        $siResponse = wp_remote_get(
+            'https://api.stripe.com/v1/setup_intents/' . rawurlencode($setupIntentId),
+            [
+                'headers' => ['Authorization' => 'Bearer ' . IMPACT_STRIPE_SECRET_KEY],
+                'timeout' => 15,
+            ]
+        );
+        if (!is_wp_error($siResponse)) {
+            $siData = json_decode((string) wp_remote_retrieve_body($siResponse), true);
+            if (is_array($siData) && !empty($siData['payment_method'])) {
+                $paymentMethodId = sanitize_text_field((string) $siData['payment_method']);
+            }
+        }
+    }
+
+    if ($paymentMethodId === '') {
+        error_log('[impactshop-event-auction] fulfill_card_setup: could not resolve payment_method for ' . $bidderUuid);
+        return;
+    }
+
+    global $wpdb;
+    $wpdb->update(
+        impactshop_event_auction_bidders_table_name(),
+        [
+            'stripe_customer_id'       => $customerId,
+            'stripe_payment_method_id' => $paymentMethodId,
+        ],
+        ['bidder_uuid' => $bidderUuid],
+        ['%s', '%s'],
+        ['%s']
+    );
+
+    impactshop_event_auction_log_event(
+        sanitize_title((string) ($metadata['campaign_slug'] ?? '')),
+        '',
+        'card_setup_completed',
+        $bidderUuid,
+        [
+            'stripe_customer_id'       => $customerId,
+            'stripe_payment_method_id' => $paymentMethodId,
+        ]
+    );
+}
+
+/**
+ * Create an off-session PaymentIntent with capture_method=manual.
+ * Authorizes (holds) the card for the bid amount without charging it.
+ */
+function impactshop_event_auction_create_bid_authorization(array $params): ?array
+{
+    $campaignSlug    = sanitize_title((string) ($params['campaign_slug'] ?? ''));
+    $itemSlug        = sanitize_title((string) ($params['item_slug'] ?? ''));
+    $currency        = strtolower((string) ($params['currency'] ?? 'huf'));
+    $amountMinor     = (int) ($params['amount_minor'] ?? 0);
+    $customerId      = sanitize_text_field((string) ($params['customer_id'] ?? ''));
+    $paymentMethodId = sanitize_text_field((string) ($params['payment_method_id'] ?? ''));
+    $bidUuid         = sanitize_text_field((string) ($params['bid_uuid'] ?? ''));
+
+    if ($campaignSlug === '' || $amountMinor <= 0 || $customerId === '' || $paymentMethodId === '' || $bidUuid === '') {
+        return null;
+    }
+
+    if (impactshop_event_auction_is_staging_runtime() && impactshop_event_auction_stripe_mode() === 'live') {
+        error_log('[impactshop-event-auction] Refusing to create live PI auth on staging.');
+        return null;
+    }
+
+    $piPayload = [
+        'amount'                  => $amountMinor,
+        'currency'                => $currency,
+        'customer'                => $customerId,
+        'payment_method'          => $paymentMethodId,
+        'capture_method'          => 'manual',
+        'confirm'                 => 'true',
+        'off_session'             => 'true',
+        'metadata[flow]'          => 'event_auction_bid_auth',
+        'metadata[bid_uuid]'      => $bidUuid,
+        'metadata[campaign_slug]' => $campaignSlug,
+        'metadata[item_slug]'     => $itemSlug,
+    ];
+
+    $response = wp_remote_post('https://api.stripe.com/v1/payment_intents', [
+        'headers' => ['Authorization' => 'Bearer ' . IMPACT_STRIPE_SECRET_KEY],
+        'body'    => http_build_query($piPayload, '', '&', PHP_QUERY_RFC3986),
+        'timeout' => 20,
+    ]);
+
+    if (is_wp_error($response)) {
+        error_log('[impactshop-event-auction] PI auth request failed: ' . $response->get_error_message());
+        return null;
+    }
+
+    $code = (int) wp_remote_retrieve_response_code($response);
+    $body = (string) wp_remote_retrieve_body($response);
+    if ($code < 200 || $code >= 300) {
+        error_log('[impactshop-event-auction] PI auth error: code=' . $code . ' body=' . substr($body, 0, 400));
+        return null;
+    }
+
+    $data = json_decode($body, true);
+    if (!is_array($data) || empty($data['id'])) {
+        return null;
+    }
+
+    return $data;
+}
+
+/**
+ * Cancel a PaymentIntent — releases the card hold for an outbid bidder.
+ */
+function impactshop_event_auction_cancel_payment_intent(string $piId): void
+{
+    if ($piId === '') {
+        return;
+    }
+
+    $response = wp_remote_post(
+        'https://api.stripe.com/v1/payment_intents/' . rawurlencode($piId) . '/cancel',
+        [
+            'headers' => ['Authorization' => 'Bearer ' . IMPACT_STRIPE_SECRET_KEY],
+            'body'    => '',
+            'timeout' => 15,
+        ]
+    );
+
+    if (is_wp_error($response)) {
+        error_log('[impactshop-event-auction] PI cancel failed for ' . $piId . ': ' . $response->get_error_message());
+    } elseif ((int) wp_remote_retrieve_response_code($response) >= 300) {
+        error_log('[impactshop-event-auction] PI cancel non-2xx: code=' . wp_remote_retrieve_response_code($response) . ' pi=' . $piId);
+    }
+}
+
+/**
+ * Capture a PaymentIntent — charges the winner's held card.
+ */
+function impactshop_event_auction_capture_payment_intent(string $piId): bool
+{
+    if ($piId === '') {
+        return false;
+    }
+
+    $response = wp_remote_post(
+        'https://api.stripe.com/v1/payment_intents/' . rawurlencode($piId) . '/capture',
+        [
+            'headers' => ['Authorization' => 'Bearer ' . IMPACT_STRIPE_SECRET_KEY],
+            'body'    => '',
+            'timeout' => 20,
+        ]
+    );
+
+    if (is_wp_error($response)) {
+        error_log('[impactshop-event-auction] PI capture failed for ' . $piId . ': ' . $response->get_error_message());
+        return false;
+    }
+
+    $code = (int) wp_remote_retrieve_response_code($response);
+    if ($code < 200 || $code >= 300) {
+        error_log('[impactshop-event-auction] PI capture error: code=' . $code . ' pi=' . $piId . ' body=' . substr((string) wp_remote_retrieve_body($response), 0, 400));
+        return false;
+    }
+
+    return true;
+}
+
+// ── End authorize-and-capture helpers ────────────────────────────────────────
+
+function impactshop_event_auction_request_winner_payment(WP_REST_Request $request): WP_REST_Response
+{
 
     $payload = impactshop_event_auction_extract_payload($request);
     $campaignSlug = sanitize_title((string) ($payload['campaign_slug'] ?? ''));
@@ -1793,6 +2408,45 @@ function impactshop_event_auction_request_winner_payment(WP_REST_Request $reques
         'stripe_session_id' => (string) $session['id'],
         'bid_amount' => (int) ($current['bid_amount'] ?? 0),
     ]);
+
+    // ── Email + SMS: fizetési link a nyertesnek ────────────────────────────
+    $wpLotTitle    = sanitize_text_field((string) ($lot['item_title'] ?? $itemSlug));
+    $wpAmtFmt      = impactshop_event_auction_format_amount((int) ($current['bid_amount'] ?? 0), $currency ?? 'huf');
+    $wpLotUrl      = esc_url(trailingslashit((string) ($campaign['hero_url'] ?? 'https://jovonkvize.hu')) . '?lot=' . $itemSlug);
+    $wpCheckoutUrl = (string) $session['url'];
+    $wpWinnerName  = sanitize_text_field((string) ($bidder['display_name'] ?? ''));
+    $wpWinnerEmail = sanitize_email((string) ($bidder['email'] ?? ''));
+    $wpWinnerPhone = sanitize_text_field((string) ($bidder['phone'] ?? ''));
+    if ($wpWinnerEmail !== '') {
+        $wpSubject = 'Gratulálunk! Nyertél a JVK Aukción — ' . $wpLotTitle . ': fizetési link';
+        $wpBody    = "Kedves {$wpWinnerName}!\n\n"
+            . "Gratulálunk, te nyerted a Jövőnk Vize Gála aukcióját!\n\n"
+            . "Tétel: {$wpLotTitle}\n"
+            . "Nyertes licitösszeg: {$wpAmtFmt}\n\n"
+            . "A tétel véglegesítéséhez kattints az alábbi fizetési linkre:\n"
+            . "{$wpCheckoutUrl}\n\n"
+            . "Ha kérdésed van, írj nekünk: office@sharity.hu\n\n"
+            . "Sharity – JVK Aukció csapata\n"
+            . "{$wpLotUrl}";
+        impactshop_event_auction_send_email([$wpWinnerEmail], $wpSubject, $wpBody);
+    }
+    if ($wpWinnerPhone !== '') {
+        impactshop_event_auction_send_sms(
+            $wpWinnerPhone,
+            'Sharity JVK: Gratulálunk, nyertél! ' . $wpLotTitle . ' — ' . $wpAmtFmt . '. Fizess itt: ' . $wpCheckoutUrl
+        );
+    }
+    // ── Admin értesítő: fizetési link kiküldve ────────────────────────────
+    impactshop_event_auction_send_email(
+        ['office@sharity.hu'],
+        '[JVK Aukció] Fizetési link kiküldve — ' . $wpLotTitle . ' (' . $wpWinnerName . ')',
+        "Fizetési link kiküldve a nyertesnek.\n\n"
+            . "Tétel: {$wpLotTitle}\n"
+            . "Nyertes: {$wpWinnerName} ({$wpWinnerEmail})\n"
+            . "Összeg: {$wpAmtFmt}\n"
+            . "Stripe checkout URL:\n{$wpCheckoutUrl}\n\n"
+            . "Tétel oldal:\n{$wpLotUrl}"
+    );
 
     return new WP_REST_Response([
         'bid_uuid' => (string) ($current['bid_uuid'] ?? ''),
@@ -1927,6 +2581,35 @@ function impactshop_event_auction_mark_payment_expired(array $session): void
             'stripe_session_id' => sanitize_text_field((string) ($session['id'] ?? '')),
         ]
     );
+
+    // ── Admin értesítő: fizetési link lejárt ──────────────────────────────
+    $expCampaignSlug = sanitize_title((string) ($row['campaign_slug'] ?? ''));
+    $expItemSlug     = sanitize_title((string) ($row['item_slug'] ?? ''));
+    $expCampaign     = impactshop_event_auction_get_campaign($expCampaignSlug);
+    $expLot          = $expCampaign ? impactshop_event_auction_find_lot($expCampaign, $expItemSlug) : null;
+    $expLotTitle     = $expLot ? sanitize_text_field((string) ($expLot['item_title'] ?? $expItemSlug)) : $expItemSlug;
+    $expAmtFmt       = impactshop_event_auction_format_amount((int) ($row['bid_amount'] ?? 0), 'huf');
+    $expLotUrl       = $expCampaign
+        ? esc_url(trailingslashit((string) ($expCampaign['hero_url'] ?? 'https://jovonkvize.hu')) . '?lot=' . $expItemSlug)
+        : 'https://jovonkvize.hu';
+    $expWinnerInfo   = impactshop_event_auction_get_bidder((string) ($row['bidder_uuid'] ?? ''));
+    $expWinnerName   = $expWinnerInfo ? sanitize_text_field((string) ($expWinnerInfo['display_name'] ?? '')) : '(ismeretlen)';
+    $expWinnerEmail  = $expWinnerInfo ? sanitize_email((string) ($expWinnerInfo['email'] ?? '')) : '';
+    impactshop_event_auction_send_email(
+        ['office@sharity.hu'],
+        '[JVK Aukció] FIGYELEM — Fizetési link lejárt: ' . $expLotTitle . ' (' . $expWinnerName . ')',
+        "A nyertes fizetési linkje lejárt — újraküldés szükséges!\n\n"
+            . "Tétel: {$expLotTitle}\n"
+            . "Nyertes neve: {$expWinnerName}\n"
+            . "Nyertes e-mail: {$expWinnerEmail}\n"
+            . "Összeg: {$expAmtFmt}\n"
+            . "Licit UUID: {$bidUuid}\n\n"
+            . "Teendő: Küldj új fizetési linket a request-winner-payment végponton keresztül.\n\n"
+            . "Tétel oldal:\n{$expLotUrl}"
+    );
+    impactshop_event_auction_notify_sms(
+        'Sharity JVK ADMIN: Fizetési link lejárt! ' . $expLotTitle . ' — ' . $expWinnerName . '. Újraküldés szükséges.'
+    );
 }
 
 function impactshop_event_auction_fulfill_payment(string $bidUuid, array $stripeData = []): void
@@ -1989,6 +2672,57 @@ function impactshop_event_auction_fulfill_payment(string $bidUuid, array $stripe
             'stripe_payment_intent' => sanitize_text_field((string) ($stripeData['stripe_payment_intent'] ?? '')),
         ]
     );
+
+    // ── Email + SMS: fizetés sikeres — nyertes + admin ─────────────────────
+    $fcCampaignSlug = sanitize_title((string) ($row['campaign_slug'] ?? ''));
+    $fcItemSlug     = sanitize_title((string) ($row['item_slug'] ?? ''));
+    $fcCampaign     = impactshop_event_auction_get_campaign($fcCampaignSlug);
+    $fcLot          = $fcCampaign ? impactshop_event_auction_find_lot($fcCampaign, $fcItemSlug) : null;
+    $fcLotTitle     = $fcLot ? sanitize_text_field((string) ($fcLot['item_title'] ?? $fcItemSlug)) : $fcItemSlug;
+    $fcAmtFmt       = impactshop_event_auction_format_amount((int) ($row['bid_amount'] ?? 0), 'huf');
+    $fcLotUrl       = $fcCampaign
+        ? esc_url(trailingslashit((string) ($fcCampaign['hero_url'] ?? 'https://jovonkvize.hu')) . '?lot=' . $fcItemSlug)
+        : 'https://jovonkvize.hu';
+    $fcWinnerInfo   = impactshop_event_auction_get_bidder((string) ($row['bidder_uuid'] ?? ''));
+    $fcWinnerName   = $fcWinnerInfo ? sanitize_text_field((string) ($fcWinnerInfo['display_name'] ?? '')) : '';
+    $fcWinnerEmail  = $fcWinnerInfo ? sanitize_email((string) ($fcWinnerInfo['email'] ?? '')) : '';
+    $fcWinnerPhone  = $fcWinnerInfo ? sanitize_text_field((string) ($fcWinnerInfo['phone'] ?? '')) : '';
+    $fcTimestamp    = current_time('mysql', true);
+    if ($fcWinnerEmail !== '') {
+        impactshop_event_auction_send_email(
+            [$fcWinnerEmail],
+            'Fizetés sikeres — ' . $fcLotTitle . ' | Sharity JVK Aukció',
+            "Kedves {$fcWinnerName}!\n\n"
+                . "Fizetésed sikeresen megérkezett. Gratulálunk a vásárláshoz!\n\n"
+                . "Tétel: {$fcLotTitle}\n"
+                . "Fizetett összeg: {$fcAmtFmt}\n\n"
+                . "Hamarosan felvesszük veled a kapcsolatot a tétel átadásával kapcsolatban.\n\n"
+                . "Köszönjük, hogy részt vettél a Jövőnk Vize Gála aukción!\n\n"
+                . "Sharity – JVK Aukció csapata\n"
+                . $fcLotUrl
+        );
+    }
+    if ($fcWinnerPhone !== '') {
+        impactshop_event_auction_send_sms(
+            $fcWinnerPhone,
+            'Sharity JVK: Fizetés OK! ' . $fcLotTitle . ' — ' . $fcAmtFmt . '. Hamarosan jelentkezünk az átadás részleteivel.'
+        );
+    }
+    impactshop_event_auction_send_email(
+        ['office@sharity.hu', 'koncz.veronika@mielemed.hu'],
+        '[JVK Aukció] FIZETVE — ' . $fcLotTitle . ': ' . $fcWinnerName . ' (' . $fcAmtFmt . ')',
+        "Nyertes fizetése beérkezett!\n\n"
+            . "Tétel: {$fcLotTitle}\n"
+            . "Nyertes: {$fcWinnerName}\n"
+            . "Nyertes e-mail: {$fcWinnerEmail}\n"
+            . "Összeg: {$fcAmtFmt}\n"
+            . "Időpont (UTC): {$fcTimestamp}\n\n"
+            . "Tétel megtekintése:\n{$fcLotUrl}\n\n"
+            . "Licit UUID: {$bidUuid}"
+    );
+    impactshop_event_auction_notify_sms(
+        'Sharity JVK ADMIN: FIZETVE — ' . $fcLotTitle . ' | ' . $fcWinnerName . ' | ' . $fcAmtFmt
+    );
 }
 
 function impactshop_event_auction_maybe_fulfill_from_session(array $session): void
@@ -2031,7 +2765,12 @@ function impactshop_event_auction_webhook(): WP_REST_Response
     $object = (array) (($event['data']['object'] ?? []) ?: []);
 
     if ($eventType === 'checkout.session.completed') {
-        impactshop_event_auction_maybe_fulfill_from_session($object);
+        $mode = sanitize_key((string) ($object['mode'] ?? ''));
+        if ($mode === 'setup') {
+            impactshop_event_auction_fulfill_card_setup($object);
+        } else {
+            impactshop_event_auction_maybe_fulfill_from_session($object);
+        }
     } elseif ($eventType === 'checkout.session.expired') {
         impactshop_event_auction_mark_payment_expired($object);
     }
@@ -2108,3 +2847,139 @@ function impactshop_event_auction_format_amount(float $amount, string $currency)
 
     return number_format($amount, 2, ',', ' ') . ' ' . strtoupper($currency);
 }
+
+// ── Brevo Transactional API + Vonage SMS értesítők ───────────────────────────
+//
+// Szükséges konstansok (wp-config.php-ban):
+//   IMPACTSHOP_EA_BREVO_API_KEY     — Brevo API key (xkeysib-...)
+//   IMPACTSHOP_EA_MAIL_FROM         — feladó email (pl. aukcio@sharity.hu)
+//   IMPACTSHOP_EA_MAIL_FROM_NAME    — feladó neve (pl. JVK Aukció)
+//   IMPACTSHOP_EA_VONAGE_API_KEY    — Vonage API key
+//   IMPACTSHOP_EA_VONAGE_API_SECRET — Vonage API secret
+//   IMPACTSHOP_EA_VONAGE_FROM       — SMS feladó azonosító (max 11 kar.)
+//   IMPACTSHOP_EA_NOTIFY_SMS_PHONES — vesszővel elválasztott tel. számok
+
+/**
+ * Email küldés Brevo Transactional API-n keresztül (fallback: wp_mail).
+ *
+ * @param string[] $to
+ */
+function impactshop_event_auction_send_email(array $to, string $subject, string $body): void
+{
+    if (defined('IMPACTSHOP_EA_BREVO_API_KEY') && IMPACTSHOP_EA_BREVO_API_KEY) {
+        $sender = [
+            'email' => defined('IMPACTSHOP_EA_MAIL_FROM') ? IMPACTSHOP_EA_MAIL_FROM : 'aukcio@sharity.hu',
+            'name'  => defined('IMPACTSHOP_EA_MAIL_FROM_NAME') ? IMPACTSHOP_EA_MAIL_FROM_NAME : 'JVK Aukció',
+        ];
+        $toList = [];
+        foreach ($to as $addr) {
+            $clean = sanitize_email((string) $addr);
+            if ($clean) {
+                $toList[] = ['email' => $clean];
+            }
+        }
+        if (empty($toList)) {
+            return;
+        }
+        $response = wp_remote_post('https://api.brevo.com/v3/smtp/email', [
+            'timeout' => 10,
+            'headers' => [
+                'api-key'      => IMPACTSHOP_EA_BREVO_API_KEY,
+                'Content-Type' => 'application/json',
+                'Accept'       => 'application/json',
+            ],
+            'body' => wp_json_encode([
+                'sender'      => $sender,
+                'to'          => $toList,
+                'subject'     => $subject,
+                'textContent' => $body,
+            ]),
+        ]);
+        if (is_wp_error($response)) {
+            error_log('[impactshop-event-auction] Brevo email error: ' . $response->get_error_message());
+            return;
+        }
+        $code = (int) wp_remote_retrieve_response_code($response);
+        if ($code < 200 || $code >= 300) {
+            error_log('[impactshop-event-auction] Brevo email HTTP ' . $code . ': ' . wp_remote_retrieve_body($response));
+        }
+        return;
+    }
+
+    // Fallback: natív wp_mail
+    $headers = ['Content-Type: text/plain; charset=UTF-8'];
+    foreach ($to as $addr) {
+        $addr = sanitize_email((string) $addr);
+        if ($addr) {
+            wp_mail($addr, $subject, $body, $headers);
+        }
+    }
+}
+
+/**
+ * SMS küldés Vonage REST API-n keresztül.
+ *
+ * @param string $to   E.164 formátum (pl. +36301234567)
+ * @param string $text SMS szövege
+ */
+function impactshop_event_auction_send_sms(string $to, string $text): bool
+{
+    $apiKey    = defined('IMPACTSHOP_EA_VONAGE_API_KEY')    ? IMPACTSHOP_EA_VONAGE_API_KEY    : '';
+    $apiSecret = defined('IMPACTSHOP_EA_VONAGE_API_SECRET') ? IMPACTSHOP_EA_VONAGE_API_SECRET : '';
+    $from      = defined('IMPACTSHOP_EA_VONAGE_FROM')       ? IMPACTSHOP_EA_VONAGE_FROM       : 'JVKAukcio';
+
+    if (!$apiKey || !$apiSecret) {
+        error_log('[impactshop-event-auction] Vonage SMS skip: API credentials not configured');
+        return false;
+    }
+
+    $response = wp_remote_post('https://rest.nexmo.com/sms/json', [
+        'timeout'    => 10,
+        'user-agent' => 'ImpactShop-EA/' . IMPACTSHOP_EVENT_AUCTION_VERSION,
+        'body'       => [
+            'api_key'    => $apiKey,
+            'api_secret' => $apiSecret,
+            'from'       => $from,
+            'to'         => preg_replace('/\s+/', '', $to),
+            'text'       => $text,
+        ],
+    ]);
+
+    if (is_wp_error($response)) {
+        error_log('[impactshop-event-auction] Vonage SMS wp_error: ' . $response->get_error_message());
+        return false;
+    }
+
+    $data   = json_decode(wp_remote_retrieve_body($response), true);
+    $status = (string) ($data['messages'][0]['status'] ?? '');
+    if ($status !== '0') {
+        $errText = (string) ($data['messages'][0]['error-text'] ?? 'unknown');
+        error_log('[impactshop-event-auction] Vonage SMS failed to ' . $to . ': ' . $errText);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * SMS küldés az összes konfigurált értesítési számra.nt-auction] Vonage SMS failed to ' . $to . ': ' . $errText);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * SMS küldés az összes konfigurált értesítési számra.
+ */
+function impactshop_event_auction_notify_sms(string $text): void
+{
+    if (!defined('IMPACTSHOP_EA_NOTIFY_SMS_PHONES') || !IMPACTSHOP_EA_NOTIFY_SMS_PHONES) {
+        return;
+    }
+    $phones = array_filter(array_map('trim', explode(',', (string) IMPACTSHOP_EA_NOTIFY_SMS_PHONES)));
+    foreach ($phones as $phone) {
+        impactshop_event_auction_send_sms($phone, $text);
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────

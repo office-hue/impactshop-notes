@@ -48,6 +48,7 @@
       ".impact-auction-widget__status{min-height:18px;font-size:12px;color:var(--iaw-muted)}" +
       ".impact-auction-widget__status.is-error{color:#ffb4b4}" +
       ".impact-auction-widget__status.is-success{color:#9cffd6}" +
+      ".impact-auction-widget__status.is-info{color:#93d5ff}"  +
       ".impact-auction-widget__drawer{position:fixed;inset:0;display:none;z-index:999999;background:rgba(4,9,22,.56);padding:18px}" +
       ".impact-auction-widget__drawer.is-open{display:flex;justify-content:flex-end}" +
       ".impact-auction-widget__panel{width:min(520px,100%);height:100%;overflow:auto;border-radius:24px;padding:20px;background:linear-gradient(180deg,rgba(6,13,42,.98),rgba(13,47,119,.96));border:1px solid rgba(255,255,255,.12);box-shadow:0 28px 50px rgba(0,0,0,.36)}" +
@@ -69,7 +70,14 @@
       ".impact-auction-widget__submit{appearance:none;border:none;border-radius:14px;padding:12px 14px;background:linear-gradient(110deg,var(--iaw-accent),#b88142 62%,var(--iaw-accent2));color:#111a2f;font-weight:800;letter-spacing:.03em;cursor:pointer;text-transform:uppercase}" +
       ".impact-auction-widget__note{font-size:12px;color:var(--iaw-muted)}" +
       "@media (max-width:900px){.impact-auction-widget__stats{grid-template-columns:repeat(2,minmax(0,1fr))}.impact-auction-widget__gallery{grid-auto-columns:minmax(220px,260px)}}" +
-      "@media (max-width:640px){.impact-auction-widget{padding:18px;border-radius:24px}.impact-auction-widget__title{font-size:32px}.impact-auction-widget__stats{grid-template-columns:1fr}.impact-auction-widget__gallery{grid-auto-columns:minmax(78vw,78vw)}.impact-auction-widget__row,.impact-auction-widget__detail-grid,.impact-auction-widget__presets{grid-template-columns:1fr}.impact-auction-widget__drawer{padding:0}.impact-auction-widget__panel{width:100%;height:100%;border-radius:0}}";
+      "@media (max-width:640px){.impact-auction-widget{padding:18px;border-radius:24px}.impact-auction-widget__title{font-size:32px}.impact-auction-widget__stats{grid-template-columns:1fr}.impact-auction-widget__gallery{grid-auto-columns:minmax(78vw,78vw)}.impact-auction-widget__row,.impact-auction-widget__detail-grid,.impact-auction-widget__presets{grid-template-columns:1fr}.impact-auction-widget__drawer{padding:0}.impact-auction-widget__panel{width:100%;height:100%;border-radius:0}}" +
+      ".impact-auction-widget__countdown{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:rgba(198,154,95,.13);border:1px solid rgba(198,154,95,.28);font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--iaw-accent2);white-space:nowrap;margin-top:4px}" +
+      ".impact-auction-widget__countdown.is-urgent{background:rgba(255,80,80,.15);border-color:rgba(255,100,100,.45);color:#ff9898;animation:iaw-pulse 1s ease-in-out infinite}" +
+      ".impact-auction-widget__countdown.is-expired{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:var(--iaw-muted)}" +
+      ".impact-auction-widget__detail-countdown{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:14px;background:rgba(198,154,95,.1);border:1px solid rgba(198,154,95,.28);margin-bottom:14px;font-size:14px;font-weight:700;color:var(--iaw-accent2)}" +
+      ".impact-auction-widget__detail-countdown.is-urgent{background:rgba(255,60,60,.13);border-color:rgba(255,80,80,.45);color:#ffaaaa;animation:iaw-pulse 1s ease-in-out infinite}" +
+      ".impact-auction-widget__detail-countdown.is-expired,.impact-auction-widget__countdown.is-expired{display:none}" +
+      "@keyframes iaw-pulse{0%,100%{opacity:1}50%{opacity:.6}}";
     document.head.appendChild(style);
   }
 
@@ -163,6 +171,7 @@
       '<div><span class="impact-auction-widget__badge" data-role="detail-badge">Tétel</span></div>' +
       '<button type="button" class="impact-auction-widget__close" data-role="close">Bezárás</button>' +
       '</div>' +
+      '<div class="impact-auction-widget__detail-countdown" data-role="detail-countdown" style="display:none"></div>' +
       '<div class="impact-auction-widget__detail-image" data-role="detail-image"></div>' +
       '<div class="impact-auction-widget__detail-block">' +
       '<div class="impact-auction-widget__artist" data-role="detail-artist"></div>' +
@@ -198,12 +207,26 @@
       return;
     }
     el.textContent = message || "";
-    el.classList.remove("is-error", "is-success");
+    el.classList.remove("is-error", "is-success", "is-info");
     if (type === "error") {
       el.classList.add("is-error");
     } else if (type === "success") {
       el.classList.add("is-success");
+    } else if (type === "info") {
+      el.classList.add("is-info");
     }
+  }
+
+  function formatCountdown(endTimeIso) {
+    if (!endTimeIso) { return null; }
+    var diff = new Date(endTimeIso).getTime() - Date.now();
+    if (diff <= 0) { return { text: "Lejárt", urgent: false, expired: true }; }
+    var totalSec = Math.floor(diff / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    var text = (h > 0 ? h + " ó " : "") + (h > 0 || m > 0 ? m + " p " : "") + s + " mp";
+    return { text: text, urgent: totalSec <= 120, expired: false };
   }
 
   function mountWidget(mountEl, config) {
@@ -241,7 +264,8 @@
       bidPhone: root.querySelector('[data-role="bid-phone"]'),
       bidName: root.querySelector('[data-role="bid-name"]'),
       presets: root.querySelector('[data-role="presets"]'),
-      detailStatus: root.querySelector('[data-role="detail-status"]')
+      detailStatus: root.querySelector('[data-role="detail-status"]'),
+      detailCountdown: root.querySelector('[data-role="detail-countdown"]')
     };
 
     function stopAutoScroll(permanent) {
@@ -335,8 +359,30 @@
       els.detailImage.innerHTML = renderImageMarkup(lot, 'impact-auction-widget__detail-image');
       renderPresets(lot);
       els.bidAmount.value = String((lot.display_amount || lot.starting_bid || 0) + (lot.min_increment || 0));
+      try {
+        var savedBidder = JSON.parse(localStorage.getItem("iaw_bidder") || "null");
+        if (savedBidder) {
+          if (savedBidder.email) els.bidEmail.value = savedBidder.email;
+          if (savedBidder.phone) els.bidPhone.value = savedBidder.phone;
+          if (savedBidder.name) els.bidName.value = savedBidder.name;
+        }
+      } catch (e) {}
       attachImageFallbacks(els.detailImage);
       setStatus(els.detailStatus, "", "");
+      if (els.detailCountdown) {
+        if (lot.end_time && lot.status === "live") {
+          els.detailCountdown.setAttribute("data-end-time", lot.end_time);
+          els.detailCountdown.style.display = "";
+          var cd = formatCountdown(lot.end_time);
+          if (cd) {
+            els.detailCountdown.textContent = "⏱ " + cd.text;
+            els.detailCountdown.className = "impact-auction-widget__detail-countdown" + (cd.urgent ? " is-urgent" : "") + (cd.expired ? " is-expired" : "");
+          }
+        } else {
+          els.detailCountdown.style.display = "none";
+          els.detailCountdown.removeAttribute("data-end-time");
+        }
+      }
       els.drawer.classList.add("is-open");
     }
 
@@ -372,6 +418,7 @@
           '<span class="impact-auction-widget__badge">' + escapeHtml((lot.status || "draft").toUpperCase()) + '</span>' +
           '<span class="impact-auction-widget__price-label">' + escapeHtml(lot.display_label || "Ár") + '</span>' +
           '<span class="impact-auction-widget__price">' + escapeHtml(lot.display_amount_formatted || formatAmount(lot.starting_bid || 0, "HUF")) + '</span>' +
+          (lot.end_time && lot.status === "live" ? '<span class="impact-auction-widget__countdown" data-role="card-countdown" data-end-time="' + escapeHtml(lot.end_time) + '">...</span>' : '') +
           '</div>' +
           '</button>'
         );
@@ -448,6 +495,8 @@
 
       setStatus(els.detailStatus, "Regisztráció folyamatban...", "");
 
+      var setupUrl = apiBase + "/" + encodeURIComponent(campaign) + "/setup-payment";
+
       requestJson(registerUrl, {
         method: "POST",
         credentials: "omit",
@@ -455,6 +504,24 @@
         body: JSON.stringify(payload)
       }).then(function (registerResponse) {
         state.bidderToken = registerResponse.bidder_token || "";
+        setStatus(els.detailStatus, "Bankkártya ellenőrzése...", "");
+
+        return requestJson(setupUrl, {
+          method: "POST",
+          credentials: "omit",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_token: state.sessionToken,
+            bidder_token: state.bidderToken,
+            return_url: window.location.href
+          })
+        });
+      }).then(function (setupResponse) {
+        if (setupResponse.status === "setup_required" && setupResponse.setup_url) {
+          window.open(setupResponse.setup_url, "_blank", "noopener,noreferrer");
+          setStatus(els.detailStatus, "A bankkártya beállításához egy új lap nyílt meg. Miután elvégezte, kattintson újra a Licitálás gombra.", "info");
+          return Promise.reject({ _redirect: true });
+        }
         setStatus(els.detailStatus, "Licit rögzítése folyamatban...", "");
 
         return requestJson(bidUrl, {
@@ -469,6 +536,13 @@
           })
         });
       }).then(function (bidResponse) {
+        try {
+          localStorage.setItem("iaw_bidder", JSON.stringify({
+            email: els.bidEmail.value.trim(),
+            phone: els.bidPhone.value.trim(),
+            name: els.bidName.value.trim()
+          }));
+        } catch (e) {}
         setStatus(els.detailStatus, "Licit rögzítve: " + (bidResponse.bid_amount_formatted || ""), "success");
         return loadPublic().then(function () {
           if (!state.payload || !Array.isArray(state.payload.lots)) {
@@ -482,6 +556,9 @@
           }
         });
       }).catch(function (error) {
+        if (error && error._redirect) {
+          return; // redirect in progress, suppress error display
+        }
         var payload = error && error.payload ? error.payload : {};
         if (payload.minimum_required_formatted) {
           setStatus(els.detailStatus, "A licit túl alacsony. Minimum: " + payload.minimum_required_formatted, "error");
@@ -492,7 +569,80 @@
       });
     });
 
-    loadPublic();
+    // ── Countdown tick: minden másodpercben frissíti a visszaszámlálókat ─────────────────
+    window.setInterval(function () {
+      // Kártyák: gallery-ban lévő countdown spanek
+      Array.prototype.forEach.call(
+        root.querySelectorAll('[data-role="card-countdown"][data-end-time]'),
+        function (el) {
+          var cd = formatCountdown(el.getAttribute("data-end-time"));
+          if (!cd) { return; }
+          el.textContent = cd.text;
+          el.className = "impact-auction-widget__countdown" +
+            (cd.urgent ? " is-urgent" : "") +
+            (cd.expired ? " is-expired" : "");
+        }
+      );
+      // Detail panel countdown
+      if (els.detailCountdown && els.detailCountdown.getAttribute("data-end-time")) {
+        var cd2 = formatCountdown(els.detailCountdown.getAttribute("data-end-time"));
+        if (cd2) {
+          els.detailCountdown.textContent = "⏱ " + cd2.text;
+          els.detailCountdown.className = "impact-auction-widget__detail-countdown" +
+            (cd2.urgent ? " is-urgent" : "") +
+            (cd2.expired ? " is-expired" : "");
+        }
+      }
+    }, 1000);
+    // ────────────────────────────────────────────────────────────────────────
+
+    loadPublic().then(function () {
+      var urlParams      = new URLSearchParams(window.location.search);
+      var cardSetupParam = urlParams.get("ea_card_setup");
+      var urlSessionId   = urlParams.get("session_id");
+      var urlBidderUuid  = urlParams.get("bidder_uuid");
+      var urlCampaignSlug = urlParams.get("campaign_slug");
+
+      function cleanCardSetupUrl() {
+        urlParams.delete("ea_card_setup");
+        urlParams.delete("session_id");
+        urlParams.delete("bidder_uuid");
+        urlParams.delete("campaign_slug");
+        var qs = urlParams.toString();
+        history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : "") + window.location.hash);
+      }
+
+      if (cardSetupParam === "success" && urlSessionId && urlBidderUuid && urlCampaignSlug === campaign) {
+        setStatus(els.status, "Bankkártya megerősítése folyamatban...", "info");
+        var confirmUrl = apiBase + "/" + encodeURIComponent(campaign) + "/confirm-card-setup";
+        requestJson(confirmUrl, {
+          method: "POST",
+          credentials: "omit",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: urlSessionId, bidder_uuid: urlBidderUuid })
+        }).then(function () {
+          cleanCardSetupUrl();
+          setStatus(els.status, "Bankkártya sikeresen rögzítve! Adja meg az adatait és licitáljon.", "success");
+        }).catch(function () {
+          cleanCardSetupUrl();
+          setStatus(els.status, "Bankkártya megerősítés sikertelen. Kérjük, töltse ki újra az adatait.", "error");
+        });
+      } else if (cardSetupParam === "cancelled") {
+        cleanCardSetupUrl();
+        setStatus(els.status, "Bankkártya rögzítés megszakítva.", "error");
+      }
+
+      // Deep link: ?lot=<item_slug> — auto-opens the given lot's detail view
+      var lotParam = urlParams.get("lot");
+      if (lotParam && state.payload && Array.isArray(state.payload.lots)) {
+        var deepLinkedLot = state.payload.lots.find(function (item) {
+          return item.item_slug === lotParam;
+        });
+        if (deepLinkedLot) {
+          detailOpen(deepLinkedLot);
+        }
+      }
+    });
     window.setInterval(loadPublic, pollMs);
   }
 

@@ -6682,3 +6682,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Scroll regresszió javítva (v1.0.3 bázison)
 - Email értesítő: office@sharity.hu + koncz.veronika@mielemed.hu
 - PHP v0.2.6 deployolva, JS v1.0.6 deployolva
+
+### 2026-04-30 JVK aukció widget v0.3.6
+- Visszaszámláló: főoldal kártyákon + detail panelen, urgency pulse ≤120s
+- Snipe protection: 120s window + 120s extend, WP option per-lot override
+- Aukció zárás: 2026-05-16T20:00:00Z (máj. 16 22:00 Budapest)
+- Bidder adatok localStorage autofill: email, telefon, név — sikeres licit után mentés, következő lotnyitáskor visszatöltés
+- PHP v0.3.6 + JS v0.3.6 deployolva app.sharity.hu-ra
