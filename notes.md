@@ -6743,3 +6743,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 ### 2026-05-04 JVK aukció widget v0.3.7
 - Képlevágás javítva: object-fit:contain + letterboxing, kártya + detail kép teljes mű látható
 - PHP v0.3.7 + JS v0.3.7 deployolva app.sharity.hu-ra
+
+### 2026-05-04 — v0.3.8 deploy (height/phone/sms)
+- Height growth fix: `min-height:100%` törölve a card CSS-ből (Chrome grid layout bug)
+- Telefon country code selector: select+input kombináció, 8 ország, +36 default
+- Vonage SMS unicode: `'type' => 'unicode'` → ékezetes char-ok helyes küldése
+- PHP 0.3.8 + JS 1.0.7 — prod deploy OK

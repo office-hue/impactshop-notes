@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.0.6";
+  var WIDGET_VERSION = "1.0.7";
   var SCRIPT_ATTR = "data-impact-auction-widget";
   var STYLE_ID = "impact-event-auction-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-auctions";
@@ -29,7 +29,7 @@
       ".impact-auction-widget__gallery{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,280px);gap:12px;overflow-x:auto;overflow-y:hidden;padding-bottom:8px;scroll-snap-type:x proximity;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}" +
       ".impact-auction-widget__gallery::-webkit-scrollbar{height:10px}" +
       ".impact-auction-widget__gallery::-webkit-scrollbar-thumb{background:rgba(244,221,174,.28);border-radius:999px}" +
-      ".impact-auction-widget__card{display:grid;gap:10px;padding:12px;border-radius:18px;border:1px solid rgba(255,255,255,.11);background:rgba(9,19,55,.62);cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease;color:var(--iaw-text);scroll-snap-align:start;text-align:left;min-height:100%}" +
+      ".impact-auction-widget__card{display:grid;gap:10px;padding:12px;border-radius:18px;border:1px solid rgba(255,255,255,.11);background:rgba(9,19,55,.62);cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease;color:var(--iaw-text);scroll-snap-align:start;text-align:left}" +
       ".impact-auction-widget__card:hover,.impact-auction-widget__card:focus-visible{transform:translateY(-2px);border-color:rgba(244,221,174,.42);background:rgba(10,21,59,.84);outline:none}" +
       ".impact-auction-widget__image{aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(244,221,174,.12));position:relative;display:flex;align-items:center;justify-content:center}" +
       ".impact-auction-widget__image img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}" +
@@ -65,6 +65,9 @@
       ".impact-auction-widget__input{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(5,15,47,.58);color:var(--iaw-text);font-size:14px;padding:11px 12px;box-sizing:border-box}" +
       ".impact-auction-widget__input:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
       ".impact-auction-widget__row{display:grid;grid-template-columns:1fr 1fr;gap:8px}" +
+      ".impact-auction-widget__phone-row{display:grid;grid-template-columns:84px 1fr;gap:6px}" +
+      ".impact-auction-widget__phone-cc{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(5,15,47,.58);color:var(--iaw-text);font-size:13px;padding:11px 8px;box-sizing:border-box;cursor:pointer}" +
+      ".impact-auction-widget__phone-cc:focus{outline:none;border-color:rgba(244,221,174,.72);box-shadow:0 0 0 3px rgba(244,221,174,.18)}" +
       ".impact-auction-widget__presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}" +
       ".impact-auction-widget__preset{appearance:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--iaw-accent2);border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}" +
       ".impact-auction-widget__submit{appearance:none;border:none;border-radius:14px;padding:12px 14px;background:linear-gradient(110deg,var(--iaw-accent),#b88142 62%,var(--iaw-accent2));color:#111a2f;font-weight:800;letter-spacing:.03em;cursor:pointer;text-transform:uppercase}" +
@@ -189,7 +192,19 @@
       '<input class="impact-auction-widget__input" data-role="bid-amount" type="text" inputmode="numeric" placeholder="Licitár (Ft)">' +
       '<div class="impact-auction-widget__row">' +
       '<input class="impact-auction-widget__input" data-role="bid-email" type="email" placeholder="E-mail cím" required>' +
-      '<input class="impact-auction-widget__input" data-role="bid-phone" type="text" placeholder="Telefonszám (opcionális)">' +
+      '<div class="impact-auction-widget__phone-row">' +
+      '<select class="impact-auction-widget__phone-cc" data-role="bid-phone-cc" aria-label="Előhívószám">' +
+      '<option value="+36">🇭🇺 +36</option>' +
+      '<option value="+43">🇦🇹 +43</option>' +
+      '<option value="+49">🇩🇪 +49</option>' +
+      '<option value="+40">🇷🇴 +40</option>' +
+      '<option value="+421">🇸🇰 +421</option>' +
+      '<option value="+420">🇨🇿 +420</option>' +
+      '<option value="+44">🇬🇧 +44</option>' +
+      '<option value="+1">🇺🇸 +1</option>' +
+      '</select>' +
+      '<input class="impact-auction-widget__input" data-role="bid-phone-number" type="text" inputmode="tel" placeholder="Telefonszám (opcionális)">' +
+      '</div>' +
       '</div>' +
       '<input class="impact-auction-widget__input" data-role="bid-name" type="text" placeholder="Név (opcionális)">' +
       '<div class="impact-auction-widget__note">Az e-mail cím megadása kötelező. A telefonszám megadása nem kötelező.</div>' +
@@ -261,7 +276,8 @@
       bidForm: root.querySelector('[data-role="bid-form"]'),
       bidAmount: root.querySelector('[data-role="bid-amount"]'),
       bidEmail: root.querySelector('[data-role="bid-email"]'),
-      bidPhone: root.querySelector('[data-role="bid-phone"]'),
+      bidPhoneCc: root.querySelector('[data-role="bid-phone-cc"]'),
+      bidPhoneNumber: root.querySelector('[data-role="bid-phone-number"]'),
       bidName: root.querySelector('[data-role="bid-name"]'),
       presets: root.querySelector('[data-role="presets"]'),
       detailStatus: root.querySelector('[data-role="detail-status"]'),
@@ -363,7 +379,16 @@
         var savedBidder = JSON.parse(localStorage.getItem("iaw_bidder") || "null");
         if (savedBidder) {
           if (savedBidder.email) els.bidEmail.value = savedBidder.email;
-          if (savedBidder.phone) els.bidPhone.value = savedBidder.phone;
+          if (savedBidder.phone) {
+            var ccOpts = ['+421','+420','+44','+49','+43','+40','+36','+1'];
+            var matchedCc = ccOpts.find(function(cc) { return savedBidder.phone.startsWith(cc); });
+            if (matchedCc) {
+              els.bidPhoneCc.value = matchedCc;
+              els.bidPhoneNumber.value = savedBidder.phone.slice(matchedCc.length);
+            } else {
+              els.bidPhoneNumber.value = savedBidder.phone;
+            }
+          }
           if (savedBidder.name) els.bidName.value = savedBidder.name;
         }
       } catch (e) {}
@@ -489,7 +514,7 @@
       var payload = {
         session_token: state.sessionToken,
         email: els.bidEmail.value.trim(),
-        phone: els.bidPhone.value.trim(),
+        phone: (function() { var n = els.bidPhoneNumber.value.trim().replace(/^0+/, ''); return n ? (els.bidPhoneCc.value + n) : ''; })(),
         display_name: els.bidName.value.trim()
       };
 
@@ -539,7 +564,7 @@
         try {
           localStorage.setItem("iaw_bidder", JSON.stringify({
             email: els.bidEmail.value.trim(),
-            phone: els.bidPhone.value.trim(),
+            phone: (function() { var n = els.bidPhoneNumber.value.trim().replace(/^0+/, ''); return n ? (els.bidPhoneCc.value + n) : ''; })(),
             name: els.bidName.value.trim()
           }));
         } catch (e) {}
