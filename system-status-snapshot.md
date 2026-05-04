@@ -727,3 +727,4 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 - JS: height growth fix (min-height:100% removed), country code selector, WIDGET_VERSION=1.0.7
 - PHP: Vonage unicode type fix, version=0.3.8
 - Prod deploy: OK (wp-cli verified 0.3.8)
+## JVK Dashboard Merge (2026-05-04)
