@@ -1,3 +1,46 @@
+## 2026-05-04T15:20:00+0200 - hatas-korok: Citation Verifier Integration befejezt (P2 phase)
+- Az `ic_impi_run_legal_review()` fuggveny dynamic release gate logicot kapta.
+- Runtime response-bol kinyerest tortennek: `citation_check` es `hallucination_guard` objektumok.
+- Release decision: csak akkor engedelyezett ha citation PASS + hallucination PASS.
+- Audit trail bovitett: full gate_results snapshot rogzitesre kerul az audit payloaddal.
+- Szintaxis validacio: PHP-l OK, VS Code error scan OK.
+- Dokumentacio frissitett: risk/coherence/security assessment MD es notes.md.
+- Statusz: Gate infrastruktura keszult, release meg BLOKKOLT az ai-agent legal_ask endpont citation_verifier output megvalositasaig.
+- **Next phase**: ai-agent legal_ask modositasa a citation_check details biztositasaert.
+
+## 2026-05-04T14:40:00+0200 - hatas-korok: legal source reachability smoke refreshed
+- Local tooling frissites: `npx playwright install chromium` sikeres, a korabbi browser-hiany megszunt.
+- Direkt source smoke eredmenyek:
+  - `https://njt.hu/` -> HTTP 200
+  - `https://kuria-birosag.hu/` -> HTTP 200
+  - `https://alkotmanybirosag.hu/` -> HTTP 200
+- Statusz: forras-elerhetoseg jelenleg rendben; release gate tovabbra is citation/hallucination enforce-hoz kotott.
+
+## 2026-05-04T14:25:00+0200 - hatas-korok: detailed Impi risk/coherence/security assessment documented
+- Uj reszletes dokumentum: `docs/impi-ngo-workspace-detailed-plan-risk-coherence-security-2026-05-04.md`.
+- A report dev legal memoria es legal tool evidence alapjan keszult (legal_memory, legal_ask, hallucination_guard, legal_fact_claim_check).
+- Fo statusz: belso review-only/fail-closed uzemmod koherens, de production release tovabbra is blokkolt citation/hallucination enforce es runtime auth hardening teljesiteseig.
+- Operacios megjegyzes: `source_health` lokalis futtatasa Playwright browser hiany miatt nem volt vegrehajthato.
+
+## 2026-05-04T13:55:00+0200 - hatas-korok: Impi workspace onboarding and external runtime hooks extended
+- `impact-community-app.php`: az NGO workspace Impi panel most mar access-reason alapon vezet tovabb; ha hianyzik az NGO admin jog, a workspacebol ujraaktiválható vagy ujraellenorizheto.
+- A frontend response box mar a runtime allapotot is mutatja (`configured`, `connected`, `review_only`), igy a review-only es fail-closed allapotok azonnal lathatok.
+- `impact-community.php`: az `image_generation` es `marketing_copy` mod most mar kulon runtime adapterrel futtathato, de tovabbra is review-only / release-blocked mintaval.
+- Legal connectivity ellenorzes: `https://sharity-legal-production.up.railway.app/healthz` elerheto, de a `POST /api/ai/query` tovabbra is auth-gated, ezert service token nelkul teljes smoke nem futott.
+
+## 2026-05-04T13:25:00+0200 - hatas-korok: Impi NGO-admin authz and durable review storage enabled
+- `impact-community.php`: az Impi route-ok jogosultsaga most mar NGO admin account allapotra epul, nem csak sima circle membershipre.
+- Uj `wp_ic_ngo_accounts`, `wp_ic_impi_jobs`, `wp_ic_impi_audit_events` tablak kerültek a migracios lane-be, igy az NGO admin allapot es az Impi audit/job rekordok tartosan megmaradnak.
+- Uj NGO admin REST endpointok: `/wp-json/impact/v1/ngo/admin/mine`, `/ngo/admin/company-search`, `/ngo/admin/register`.
+- A `legal_finance` Impi mod review-only adapteren keresztul tud kapcsolodni konfiguralt ai-agent legal runtime-hoz; sikeres runtime utan is `release_blocked=true` marad, tehat production release tovabbra is tiltott.
+- Biztonsagi erosites: `/impi/jobs/{job_id}` es `/impi/audit/{audit_id}` mar csak az eredeti pseudo identityvel olvashato vissza.
+
+## 2026-05-04T12:55:00+0200 - hatas-korok: Impi foundation orchestrator shell started
+- `impact-community.php`: új foundation REST surface az NGO workspace Impi modulhoz (`/wp-json/impact/v1/impi/capabilities`, `/impi/orchestrate`, `/impi/jobs/{job_id}`, `/impi/audit/{audit_id}`).
+- `impact-community-app.php`: az NGO workspace Impi placeholder helyén most már foundation UI jelenik meg, amely capability állapotot kérdez le és safe, gate-first foundation kérést tud indítani három módra.
+- A jelenlegi increment nem ad ki release-ready AI választ vagy assetet; a legal/compliance/moderation gate-ek továbbra is blokkoló státuszban maradnak.
+- Szintaxis verifikáció: mindkét módosított MU fájl `php -l` ellenőrzésen zöld.
+
 ## 2026-04-29T10:25:00+0200 - JVK auction scaffold canonicalized + staging payment guard verified
 - Uj additiv aukcios MU runtime kerult a repo truthba:
   - `wp-content/mu-plugins/impactshop-event-auction-widget.php`
@@ -667,3 +710,13 @@ PHP lint ok for identity/gamification modules
 - PHP v0.3.6: auction_end_time=2026-05-16T20:00:00Z (máj.16 22:00 Budapest), snipe_window/extend=120s, lot_end_time helper, snipe extension place_bid-ben
 - JS v0.3.6: countdown CSS + formatCountdown() + card/detail countdown, setInterval 1s tick, bidder localStorage autofill
 - Deployed: app.sharity.hu/wp-content/mu-plugins
+
+## 2026-04-30 jvk-auction v0.3.6
+- PHP v0.3.6: auction_end_time=2026-05-16T20:00:00Z (máj.16 22:00 Budapest), snipe_window/extend=120s, lot_end_time helper, snipe extension place_bid-ben
+- JS v0.3.6: countdown CSS + formatCountdown() + card/detail countdown, setInterval 1s tick, bidder localStorage autofill
+- Deployed: app.sharity.hu/wp-content/mu-plugins
+
+## 2026-05-04 jvk-auction v0.3.7
+- Képlevágás fix: object-fit:cover → object-fit:contain, letterboxing card + detail
+- Kártya + detail panel kép: teljes mű látható, arány megtartva
+- Deployed: app.sharity.hu ✅
