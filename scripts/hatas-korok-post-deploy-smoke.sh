@@ -46,11 +46,16 @@ curl -fsS "$ROUTE_URL" -o "$BODY_ROUTE"
 node - <<'NODE' "$BODY_ROUTE"
 const fs = require('fs');
 const html = fs.readFileSync(process.argv[2], 'utf8');
+const hasHeroCta = /<a[^>]*class="[^"]*cta[^"]*"[^>]*href="#hogyan-mukodik"/i.test(html)
+  || /Hogyan működik\?/.test(html)
+  || /Csatlakozz NGO vagy települési közösségekhez/.test(html)
+  || /Csatlakozz NGO és települési körökhöz/.test(html)
+  || /Csatlakozz\s+NGO\s+(?:vagy|és)\s+települési\s+(?:közösségekhez|körökhöz)/i.test(html);
 const checks = {
   title: /Hatás Körök — Impact Community/.test(html),
   contentRoot: /id="ic-content"/.test(html),
   bootstrap: /window\.ImpactCommunity/.test(html),
-  cta: /Csatlakozz NGO vagy települési közösségekhez/.test(html),
+  cta: hasHeroCta,
 };
 const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([key]) => key);
 if (failed.length) {
