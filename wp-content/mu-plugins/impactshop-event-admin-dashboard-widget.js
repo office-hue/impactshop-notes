@@ -38,6 +38,25 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
+  function paymentStatusClass(status) {
+    switch (status) {
+      case "completed":
+      case "paid":
+        return "ok";
+      case "pending":
+      case "payment_pending":
+      case "expired":
+        return "warn";
+      case "failed":
+      case "cancelled":
+      case "refunded":
+      case "outbid":
+        return "bad";
+      default:
+        return "";
+    }
+  }
+
   function mount(root) {
     var campaign = root.getAttribute("data-campaign") || "jovonkvize-2026";
     var apiRoot = (root.getAttribute("data-api-root") || "").replace(/\/$/, "");
@@ -88,7 +107,7 @@
       '<button type="button" data-role="don-refresh">Frissites</button>' +
       '</div>' +
       '<div style="overflow:auto"><table><thead><tr>' +
-      '<th>ID</th><th>Datum</th><th>Nev / ceg</th><th>Email</th><th>Osszeg</th><th>Csomag / jegyek</th><th>Cert</th><th>Muveletek</th>' +
+      '<th>ID</th><th>Datum</th><th>Fizetesi statusz</th><th>Nev / ceg</th><th>Email</th><th>Osszeg</th><th>Csomag / jegyek</th><th>Cert</th><th>Muveletek</th>' +
       '</tr></thead><tbody data-role="don-body"></tbody></table></div>' +
       '</div>' +
       '<div data-panel="auc" class="hidden">' +
@@ -157,12 +176,14 @@
 
     function renderDonations(items) {
       if (!items || !items.length) {
-        els.don.body.innerHTML = '<tr><td colspan="8" class="muted">Nincs talalat.</td></tr>';
+        els.don.body.innerHTML = '<tr><td colspan="9" class="muted">Nincs talalat.</td></tr>';
         return;
       }
 
       els.don.body.innerHTML = items.map(function (it) {
         var cert = esc(it.donation_cert_status || "none");
+        var paymentStatus = String(it.status || "-");
+        var paymentStatusBadge = '<span class="pill ' + paymentStatusClass(paymentStatus) + '">' + esc(paymentStatus) + '</span>';
         var manual = it.cert_manual_confirmed ? '<span class="pill ok">manual: igen</span>' : '<span class="pill warn">manual: nem</span>';
         var certMeta = [
           cert,
@@ -179,6 +200,7 @@
         return '<tr>' +
           '<td><code>' + esc(it.donation_id) + '</code></td>' +
           '<td>' + esc(fmtDate(it.completed_at || it.created_at)) + '</td>' +
+          '<td>' + paymentStatusBadge + '</td>' +
           '<td>' + esc(who) + '</td>' +
           '<td>' + esc(it.email || '-') + '</td>' +
           '<td>' + esc(it.amount_formatted || '-') + '</td>' +
