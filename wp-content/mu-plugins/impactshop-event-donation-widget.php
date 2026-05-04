@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.5');
-define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.3.0');
+define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.4.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
 add_action('init', 'impactshop_event_donation_ensure_schema', 5);
@@ -25,6 +25,7 @@ add_filter('allowed_http_origins', 'impactshop_event_donation_allowed_http_origi
 add_filter('allowed_redirect_hosts', 'impactshop_event_donation_allowed_redirect_hosts');
 add_action('wp_enqueue_scripts', 'impactshop_event_donation_maybe_enqueue_runtime');
 add_shortcode('impact_event_donation_widget', 'impactshop_event_donation_shortcode');
+add_shortcode('impact_event_admin_dashboard', 'impactshop_event_admin_dashboard_shortcode');
 
 function impactshop_event_donation_is_configured(): bool
 {
@@ -423,12 +424,33 @@ function impactshop_event_donation_ensure_ticket_mix_columns(string $table): voi
     }
 }
 
+function impactshop_event_donation_ensure_admin_cert_columns(string $table): void
+{
+    global $wpdb;
+
+    $columns = [
+        'cert_manual_confirmed' => "ADD COLUMN cert_manual_confirmed TINYINT(1) NOT NULL DEFAULT 0 AFTER donation_cert_sent_at",
+        'cert_manual_confirmed_by' => "ADD COLUMN cert_manual_confirmed_by VARCHAR(120) DEFAULT NULL AFTER cert_manual_confirmed",
+        'cert_manual_confirmed_at' => "ADD COLUMN cert_manual_confirmed_at DATETIME DEFAULT NULL AFTER cert_manual_confirmed_by",
+    ];
+
+    foreach ($columns as $column => $alterSql) {
+        $exists = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $column));
+        if ($exists === $column) {
+            continue;
+        }
+
+        $wpdb->query("ALTER TABLE {$table} {$alterSql}");
+    }
+}
+
 function impactshop_event_donation_ensure_schema(): void
 {
     $current = (string) get_option('impactshop_event_donation_schema_version', '');
     $table = impactshop_event_donation_table_name();
     if ($current === IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION) {
         impactshop_event_donation_ensure_ticket_mix_columns($table);
+        impactshop_event_donation_ensure_admin_cert_columns($table);
         return;
     }
 
@@ -459,6 +481,9 @@ function impactshop_event_donation_ensure_schema(): void
         donation_cert_id VARCHAR(40) DEFAULT NULL,
         donation_cert_status ENUM('none','pending','sent','failed') NOT NULL DEFAULT 'none',
         donation_cert_sent_at DATETIME DEFAULT NULL,
+        cert_manual_confirmed TINYINT(1) NOT NULL DEFAULT 0,
+        cert_manual_confirmed_by VARCHAR(120) DEFAULT NULL,
+        cert_manual_confirmed_at DATETIME DEFAULT NULL,
         stripe_session_id VARCHAR(128) DEFAULT NULL,
         stripe_payment_intent VARCHAR(128) DEFAULT NULL,
         stripe_charge_id VARCHAR(128) DEFAULT NULL,
@@ -480,8 +505,30 @@ function impactshop_event_donation_ensure_schema(): void
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
     impactshop_event_donation_ensure_ticket_mix_columns($table);
+    impactshop_event_donation_ensure_admin_cert_columns($table);
 
     update_option('impactshop_event_donation_schema_version', IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION, false);
+}
+
+function impactshop_event_donation_admin_permission(WP_REST_Request $request)
+{
+    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+        return new WP_Error('forbidden', 'Admin jogosultsag szukseges.', ['status' => 403]);
+    }
+
+    $nonce = (string) $request->get_header('X-WP-Nonce');
+    if ($nonce === '') {
+        $nonce = (string) $request->get_header('x-wp-nonce');
+    }
+    if ($nonce === '') {
+        $nonce = (string) $request->get_param('_wpnonce');
+    }
+
+    if ($nonce === '' || !wp_verify_nonce($nonce, 'wp_rest')) {
+        return new WP_Error('invalid_nonce', 'Ervenytelen nonce.', ['status' => 403]);
+    }
+
+    return true;
 }
 
 function impactshop_event_donation_register_routes(): void
@@ -567,6 +614,30 @@ if (!function_exists('impactshop_event_donation_append_ticket_mix_lines')) {
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'impactshop_event_donation_status',
         'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/transactions', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'impactshop_event_donation_admin_transactions',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
+    ]);
+
+    register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/resend', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'impactshop_event_donation_admin_certificate_resend',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
+    ]);
+
+    register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/confirm', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'impactshop_event_donation_admin_certificate_confirm',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
+    ]);
+
+    register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/download', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'impactshop_event_donation_admin_certificate_download',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/(?P<slug>[a-z0-9\-]+)/checkout', [
@@ -880,6 +951,345 @@ function impactshop_event_donation_status(WP_REST_Request $request): WP_REST_Res
         'amount_formatted' => impactshop_event_donation_format_amount((float) ($row['amount_display'] ?? 0), (string) ($row['currency'] ?? 'huf')),
         'donation_certificate_status' => (string) ($row['donation_cert_status'] ?? 'none'),
         'completed_at' => (string) ($row['completed_at'] ?? ''),
+    ], 200);
+}
+
+function impactshop_event_donation_admin_transactions(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_donation_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    $page = max(1, (int) $request->get_param('page'));
+    $perPage = (int) $request->get_param('per_page');
+    if ($perPage <= 0) {
+        $perPage = 50;
+    }
+    $perPage = min(200, $perPage);
+    $offset = ($page - 1) * $perPage;
+
+    $certStatus = sanitize_key((string) $request->get_param('cert_status'));
+    $allowedCertStatuses = ['none', 'pending', 'sent', 'failed'];
+    if (!in_array($certStatus, $allowedCertStatuses, true)) {
+        $certStatus = '';
+    }
+
+    $status = sanitize_key((string) $request->get_param('status'));
+    $allowedStatuses = ['pending', 'completed', 'failed', 'cancelled', 'expired', 'refunded'];
+    if (!in_array($status, $allowedStatuses, true)) {
+        $status = '';
+    }
+
+    $onlyCompany = filter_var($request->get_param('only_company'), FILTER_VALIDATE_BOOLEAN);
+    $search = trim((string) $request->get_param('search'));
+
+    $where = ['campaign_slug = %s'];
+    $queryArgs = [$slug];
+
+    if ($status !== '') {
+        $where[] = 'status = %s';
+        $queryArgs[] = $status;
+    }
+
+    if ($certStatus !== '') {
+        $where[] = 'donation_cert_status = %s';
+        $queryArgs[] = $certStatus;
+    }
+
+    if ($onlyCompany) {
+        $where[] = 'is_company = 1';
+    }
+
+    if ($search !== '') {
+        $where[] = '(donation_id LIKE %s OR email LIKE %s OR donor_name LIKE %s OR company_name LIKE %s)';
+        $like = '%' . $search . '%';
+        $queryArgs[] = $like;
+        $queryArgs[] = $like;
+        $queryArgs[] = $like;
+        $queryArgs[] = $like;
+    }
+
+    global $wpdb;
+    $table = impactshop_event_donation_table_name();
+    $whereSql = implode(' AND ', $where);
+
+    $countSql = "SELECT COUNT(*) FROM {$table} WHERE {$whereSql}";
+    $total = (int) $wpdb->get_var($wpdb->prepare($countSql, ...$queryArgs));
+
+    $rowsSql = "SELECT
+            donation_id,
+            status,
+            amount_display,
+            currency,
+            donor_name,
+            email,
+            is_company,
+            company_name,
+            company_tax_id,
+            company_address,
+            request_certificate,
+            selected_package,
+            ticket_count,
+            regular_ticket_count,
+            supporter_ticket_count,
+            donation_cert_id,
+            donation_cert_status,
+            donation_cert_sent_at,
+            cert_manual_confirmed,
+            cert_manual_confirmed_by,
+            cert_manual_confirmed_at,
+            completed_at,
+            created_at
+        FROM {$table}
+        WHERE {$whereSql}
+        ORDER BY COALESCE(completed_at, created_at) DESC
+        LIMIT %d OFFSET %d";
+
+    $rowsArgs = $queryArgs;
+    $rowsArgs[] = $perPage;
+    $rowsArgs[] = $offset;
+
+    $rows = $wpdb->get_results($wpdb->prepare($rowsSql, ...$rowsArgs), ARRAY_A);
+    if (!is_array($rows)) {
+        $rows = [];
+    }
+
+    $items = [];
+    foreach ($rows as $row) {
+        $items[] = [
+            'donation_id' => (string) ($row['donation_id'] ?? ''),
+            'status' => (string) ($row['status'] ?? ''),
+            'amount' => (float) ($row['amount_display'] ?? 0),
+            'currency' => strtolower((string) ($row['currency'] ?? 'huf')),
+            'amount_formatted' => impactshop_event_donation_format_amount((float) ($row['amount_display'] ?? 0), (string) ($row['currency'] ?? 'huf')),
+            'donor_name' => (string) ($row['donor_name'] ?? ''),
+            'email' => (string) ($row['email'] ?? ''),
+            'is_company' => ((int) ($row['is_company'] ?? 0)) === 1,
+            'company_name' => (string) ($row['company_name'] ?? ''),
+            'company_tax_id' => (string) ($row['company_tax_id'] ?? ''),
+            'company_address' => (string) ($row['company_address'] ?? ''),
+            'request_certificate' => ((int) ($row['request_certificate'] ?? 0)) === 1,
+            'selected_package' => (string) ($row['selected_package'] ?? ''),
+            'ticket_count' => (int) ($row['ticket_count'] ?? 0),
+            'regular_ticket_count' => (int) ($row['regular_ticket_count'] ?? 0),
+            'supporter_ticket_count' => (int) ($row['supporter_ticket_count'] ?? 0),
+            'donation_cert_id' => (string) ($row['donation_cert_id'] ?? ''),
+            'donation_cert_status' => (string) ($row['donation_cert_status'] ?? 'none'),
+            'donation_cert_sent_at' => (string) ($row['donation_cert_sent_at'] ?? ''),
+            'cert_manual_confirmed' => ((int) ($row['cert_manual_confirmed'] ?? 0)) === 1,
+            'cert_manual_confirmed_by' => (string) ($row['cert_manual_confirmed_by'] ?? ''),
+            'cert_manual_confirmed_at' => (string) ($row['cert_manual_confirmed_at'] ?? ''),
+            'completed_at' => (string) ($row['completed_at'] ?? ''),
+            'created_at' => (string) ($row['created_at'] ?? ''),
+        ];
+    }
+
+    return new WP_REST_Response([
+        'items' => $items,
+        'pagination' => [
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => $perPage > 0 ? (int) ceil($total / $perPage) : 0,
+        ],
+    ], 200);
+}
+
+function impactshop_event_donation_admin_certificate_resend(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_donation_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    $payload = impactshop_event_donation_parse_checkout_payload($request);
+    $donationId = sanitize_text_field((string) ($payload['donation_id'] ?? $request->get_param('donation_id')));
+    if ($donationId === '') {
+        return new WP_REST_Response(['error' => 'missing_donation_id'], 400);
+    }
+
+    global $wpdb;
+    $table = impactshop_event_donation_table_name();
+    $row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT donation_id, campaign_slug, request_certificate, is_company, email FROM {$table} WHERE donation_id = %s LIMIT 1",
+            $donationId
+        ),
+        ARRAY_A
+    );
+
+    if (!$row || (string) ($row['campaign_slug'] ?? '') !== $slug) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    if ((int) ($row['is_company'] ?? 0) !== 1 || (int) ($row['request_certificate'] ?? 0) !== 1) {
+        return new WP_REST_Response(['error' => 'certificate_not_requested'], 409);
+    }
+
+    if (sanitize_email((string) ($row['email'] ?? '')) === '') {
+        return new WP_REST_Response(['error' => 'missing_email'], 409);
+    }
+
+    $force = filter_var($payload['force'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    if ($force) {
+        $wpdb->update(
+            $table,
+            ['donation_cert_status' => 'pending'],
+            ['donation_id' => $donationId],
+            ['%s'],
+            ['%s']
+        );
+    }
+
+    $ok = impactshop_event_donation_send_certificate_for_donation($donationId);
+    return new WP_REST_Response([
+        'donation_id' => $donationId,
+        'sent' => $ok,
+    ], $ok ? 200 : 500);
+}
+
+function impactshop_event_donation_admin_certificate_confirm(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_donation_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    $payload = impactshop_event_donation_parse_checkout_payload($request);
+    $donationId = sanitize_text_field((string) ($payload['donation_id'] ?? $request->get_param('donation_id')));
+    if ($donationId === '') {
+        return new WP_REST_Response(['error' => 'missing_donation_id'], 400);
+    }
+
+    $confirmed = array_key_exists('confirmed', $payload)
+        ? filter_var($payload['confirmed'], FILTER_VALIDATE_BOOLEAN)
+        : true;
+
+    $user = wp_get_current_user();
+    $confirmedBy = $user && !empty($user->user_login) ? (string) $user->user_login : 'unknown';
+    $confirmedAt = current_time('mysql', 1);
+
+    global $wpdb;
+    $table = impactshop_event_donation_table_name();
+    $row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT donation_id, campaign_slug FROM {$table} WHERE donation_id = %s LIMIT 1",
+            $donationId
+        ),
+        ARRAY_A
+    );
+
+    if (!$row || (string) ($row['campaign_slug'] ?? '') !== $slug) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    $update = $confirmed
+        ? [
+            'cert_manual_confirmed' => 1,
+            'cert_manual_confirmed_by' => $confirmedBy,
+            'cert_manual_confirmed_at' => $confirmedAt,
+        ]
+        : [
+            'cert_manual_confirmed' => 0,
+            'cert_manual_confirmed_by' => null,
+            'cert_manual_confirmed_at' => null,
+        ];
+
+    $wpdb->update(
+        $table,
+        $update,
+        ['donation_id' => $donationId],
+        ['%d', '%s', '%s'],
+        ['%s']
+    );
+
+    return new WP_REST_Response([
+        'donation_id' => $donationId,
+        'cert_manual_confirmed' => $confirmed,
+        'cert_manual_confirmed_by' => $confirmed ? $confirmedBy : '',
+        'cert_manual_confirmed_at' => $confirmed ? $confirmedAt : '',
+    ], 200);
+}
+
+function impactshop_event_donation_admin_certificate_download(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_donation_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    $donationId = sanitize_text_field((string) $request->get_param('donation_id'));
+    if ($donationId === '') {
+        return new WP_REST_Response(['error' => 'missing_donation_id'], 400);
+    }
+
+    global $wpdb;
+    $table = impactshop_event_donation_table_name();
+    $row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT donation_id, campaign_slug, status, is_company, request_certificate, company_name, company_tax_id, company_address, amount_display, currency, completed_at, donation_cert_id
+             FROM {$table}
+             WHERE donation_id = %s
+             LIMIT 1",
+            $donationId
+        ),
+        ARRAY_A
+    );
+
+    if (!$row || (string) ($row['campaign_slug'] ?? '') !== $slug) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    if ((string) ($row['status'] ?? '') !== 'completed') {
+        return new WP_REST_Response(['error' => 'payment_not_completed'], 409);
+    }
+
+    if ((int) ($row['is_company'] ?? 0) !== 1 || (int) ($row['request_certificate'] ?? 0) !== 1) {
+        return new WP_REST_Response(['error' => 'certificate_not_requested'], 409);
+    }
+
+    $certId = sanitize_text_field((string) ($row['donation_cert_id'] ?? impactshop_event_donation_generate_cert_id()));
+    $completedAt = (string) ($row['completed_at'] ?? current_time('mysql', 1));
+    $amount = (float) ($row['amount_display'] ?? 0);
+    $currency = strtolower((string) ($row['currency'] ?? 'huf'));
+    $amountFormatted = number_format($amount, 2, ',', ' ');
+    $amountWords = impactshop_event_donation_hu_number_to_words((int) round($amount, 0));
+    $currencyName = impactshop_event_donation_currency_name($currency);
+
+    $row['_signature_data_uri'] = impactshop_event_donation_signature_data_uri($campaign);
+    $html = impactshop_event_donation_certificate_html(
+        $row,
+        (string) ($campaign['title'] ?? 'Jótékonysági kampány'),
+        $certId,
+        $completedAt,
+        $amountFormatted,
+        $currency,
+        $amountWords,
+        $currencyName
+    );
+
+    $pdfAttachment = impactshop_event_donation_certificate_pdf_attachment($html, $certId);
+    if ($pdfAttachment === '' || !file_exists($pdfAttachment)) {
+        return new WP_REST_Response(['error' => 'pdf_generation_failed'], 500);
+    }
+
+    $binary = (string) file_get_contents($pdfAttachment);
+    @unlink($pdfAttachment);
+    if ($binary === '') {
+        return new WP_REST_Response(['error' => 'pdf_read_failed'], 500);
+    }
+
+    return new WP_REST_Response([
+        'donation_id' => $donationId,
+        'certificate_id' => $certId,
+        'filename' => $certId . '-adomanyigazolas.pdf',
+        'mime' => 'application/pdf',
+        'pdf_base64' => base64_encode($binary),
     ], 200);
 }
 
@@ -1860,6 +2270,14 @@ function impactshop_event_donation_maybe_enqueue_runtime(): void
         IMPACTSHOP_EVENT_DONATION_VERSION,
         true
     );
+
+    wp_register_script(
+        'impactshop-event-admin-dashboard-widget',
+        trailingslashit(WPMU_PLUGIN_URL) . 'impactshop-event-admin-dashboard-widget.js',
+        [],
+        IMPACTSHOP_EVENT_DONATION_VERSION,
+        true
+    );
 }
 
 function impactshop_event_donation_shortcode(array $atts = []): string
@@ -1890,6 +2308,39 @@ function impactshop_event_donation_shortcode(array $atts = []): string
         esc_attr($apiBase),
         esc_attr($fallbackApiBase),
         esc_attr($mode)
+    );
+}
+
+function impactshop_event_admin_dashboard_shortcode(array $atts = []): string
+{
+    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+        return '';
+    }
+
+    $atts = shortcode_atts([
+        'campaign' => 'jovonkvize-2026',
+        'title' => 'Privát adomány és licit dashboard',
+    ], $atts, 'impact_event_admin_dashboard');
+
+    $campaign = sanitize_title((string) $atts['campaign']);
+    if (!impactshop_event_donation_get_campaign($campaign)) {
+        return '';
+    }
+
+    wp_enqueue_script('impactshop-event-admin-dashboard-widget');
+
+    $id = 'impact-event-admin-dashboard-' . wp_generate_password(6, false, false);
+    $nonce = wp_create_nonce('wp_rest');
+    $apiRoot = rest_url('impact/v1');
+    $title = sanitize_text_field((string) $atts['title']);
+
+    return sprintf(
+        '<div id="%1$s" data-impact-event-admin-dashboard data-campaign="%2$s" data-api-root="%3$s" data-wp-nonce="%4$s" data-title="%5$s"></div>',
+        esc_attr($id),
+        esc_attr($campaign),
+        esc_attr($apiRoot),
+        esc_attr($nonce),
+        esc_attr($title)
     );
 }
 
