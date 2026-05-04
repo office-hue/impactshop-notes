@@ -76,3 +76,11 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 - Container `align-items:stretch;justify-content:stretch` → `align-items:center;justify-content:center` (letterboxing)
 - Img CSS: `width/height:100%` → `max-width/max-height:100%;width/height:auto`
 - Művészi alkotások teljes képe látható, arány megtartva, levágás megszűnt
+
+## 2026-05-04 — v0.3.8 JS + PHP deploy
+
+### Változások
+- **Height growth fix (JS v1.0.7)**: `.impact-auction-widget__card` CSS-ből eltávolítva a `min-height:100%` — Chrome/Android grid layout körköros függőség okozta a folyamatos magasság-növekedést
+- **Country code selector**: telefon mező `<select data-role="bid-phone-cc">` (8 ország, default 🇭🇺 +36) + `<input data-role="bid-phone-number">` kombinációra cserélve; submit/localStorage: `+36201234567` formátum, visszatöltésnél cc/number szétválasztás
+- **Vonage SMS unicode fix**: `'type' => 'unicode'` hozzáadva a Vonage REST API híváshoz — ékezetes karakterek (á, é, ő stb.) többé nem kérdőjelként érkeznek
+- **PHP v0.3.8 + JS v1.0.7**

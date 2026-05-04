@@ -720,3 +720,10 @@ PHP lint ok for identity/gamification modules
 - Képlevágás fix: object-fit:cover → object-fit:contain, letterboxing card + detail
 - Kártya + detail panel kép: teljes mű látható, arány megtartva
 - Deployed: app.sharity.hu ✅
+
+---
+_Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
+### v0.3.8 deploy summary
+- JS: height growth fix (min-height:100% removed), country code selector, WIDGET_VERSION=1.0.7
+- PHP: Vonage unicode type fix, version=0.3.8
+- Prod deploy: OK (wp-cli verified 0.3.8)

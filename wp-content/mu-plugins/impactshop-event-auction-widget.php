@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.3.7');
+define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.3.8');
 define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.3.0');
 define('IMPACTSHOP_EVENT_AUCTION_SESSION_TTL', 30 * MINUTE_IN_SECONDS);
 define('IMPACTSHOP_EVENT_AUCTION_BIDDER_TTL', 4 * HOUR_IN_SECONDS);
@@ -2942,6 +2942,7 @@ function impactshop_event_auction_send_sms(string $to, string $text): bool
             'from'       => $from,
             'to'         => preg_replace('/\s+/', '', $to),
             'text'       => $text,
+            'type'       => 'unicode',
         ],
     ]);
 
