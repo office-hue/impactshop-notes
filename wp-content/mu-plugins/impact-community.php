@@ -322,12 +322,14 @@ function ic_maybe_migrate_db() {
         id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         circle_id   INT UNSIGNED NOT NULL,
         pid_hash    VARCHAR(64) NOT NULL,
+        alias_string VARCHAR(40),
         auto_joined TINYINT(1) DEFAULT 0,
         joined_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
         left_at     DATETIME,
         is_active   TINYINT(1) DEFAULT 1,
         UNIQUE KEY uq_member (circle_id, pid_hash),
         KEY idx_pid (pid_hash),
+        KEY idx_alias (alias_string),
         KEY idx_circle (circle_id)
     ) $charset;");
 
@@ -642,16 +644,21 @@ function ic_rest_circles_list($req) {
 
     $circles = [];
     foreach ($rows as $r) {
+        $attached_ngo_ids = [];
+        if ($r->type === 'settlement' && !empty($r->attached_ngo_ids)) {
+            $attached_ngo_ids = json_decode($r->attached_ngo_ids, true) ?: [];
+        }
         $circles[] = [
-            'id'           => (int) $r->id,
-            'type'         => $r->type,
-            'ref_slug'     => $r->ref_slug,
-            'name'         => $r->name,
-            'description'  => $r->description ?? '',
-            'icon_url'     => $r->icon_url ?? '',
-            'member_count' => (int) $r->member_count,
-            'post_count'   => (int) $r->post_count,
-            'is_member'    => in_array((int) $r->id, $my_circles, true),
+            'id'                => (int) $r->id,
+            'type'              => $r->type,
+            'ref_slug'          => $r->ref_slug,
+            'name'              => $r->name,
+            'description'       => $r->description ?? '',
+            'icon_url'          => $r->icon_url ?? '',
+            'member_count'      => (int) $r->member_count,
+            'post_count'        => (int) $r->post_count,
+            'is_member'         => in_array((int) $r->id, $my_circles, true),
+            'attached_ngo_ids'  => $attached_ngo_ids,
         ];
     }
 
@@ -832,18 +839,24 @@ function ic_rest_circle_detail($req) {
         $post_list[] = ic_format_post($post, $id);
     }
 
+    $attached_ngo_ids = [];
+    if ($circle->type === 'settlement' && !empty($circle->attached_ngo_ids)) {
+        $attached_ngo_ids = json_decode($circle->attached_ngo_ids, true) ?: [];
+    }
+
     return ic_json_ok([
         'circle' => [
-            'id'           => (int) $circle->id,
-            'type'         => $circle->type,
-            'ref_slug'     => $circle->ref_slug,
-            'name'         => $circle->name,
-            'description'  => $circle->description ?? '',
-            'icon_url'     => $circle->icon_url ?? '',
-            'member_count' => (int) $circle->member_count,
-            'post_count'   => (int) $circle->post_count,
-            'is_member'    => $is_member,
-            'my_alias'     => $my_alias,
+            'id'                => (int) $circle->id,
+            'type'              => $circle->type,
+            'ref_slug'          => $circle->ref_slug,
+            'name'              => $circle->name,
+            'description'       => $circle->description ?? '',
+            'icon_url'          => $circle->icon_url ?? '',
+            'member_count'      => (int) $circle->member_count,
+            'post_count'        => (int) $circle->post_count,
+            'is_member'         => $is_member,
+            'my_alias'          => $my_alias,
+            'attached_ngo_ids'  => $attached_ngo_ids,
         ],
         'recent_posts' => $post_list,
     ]);
@@ -890,10 +903,13 @@ function ic_rest_circle_join($req) {
         return ic_json_ok(['already_member' => true, 'alias' => IC_Alias::generate($pid_hash, $id)]);
     }
 
+    $alias_string = IC_Alias::generate($pid_hash, $id);
+
     if ($existing) {
         // Re-join
         $result = $wpdb->update("{$p}ic_memberships", [
             'is_active' => 1,
+            'alias_string' => $alias_string,
             'left_at'   => null,
             'joined_at' => current_time('mysql'),
         ], ['id' => $existing->id]);
@@ -901,6 +917,7 @@ function ic_rest_circle_join($req) {
         $result = $wpdb->insert("{$p}ic_memberships", [
             'circle_id' => $id,
             'pid_hash'  => $pid_hash,
+            'alias_string' => $alias_string,
             'joined_at' => current_time('mysql'),
             'is_active' => 1,
         ]);
@@ -1498,6 +1515,25 @@ add_shortcode('impact_community_app', function () {
 
 add_action('template_redirect', 'ic_app_template_redirect', 4);
 
+function ic_hatas_korok_en_fallback_file(): ?string
+{
+    $lang = '';
+
+    if (function_exists('impactshop_intl_resolve_lang')) {
+        $lang = impactshop_intl_resolve_lang();
+    } elseif (isset($_GET['lang'])) {
+        $lang = sanitize_key((string) wp_unslash($_GET['lang']));
+    }
+
+    if ($lang !== 'en') {
+        return null;
+    }
+
+    $file = __DIR__ . '/impactshop-ngo-guides/hatas-korok-en.html';
+
+    return is_file($file) ? $file : null;
+}
+
 function ic_app_template_redirect() {
     $path = ic_request_path();
     $raw_uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
@@ -1511,6 +1547,19 @@ function ic_app_template_redirect() {
 
     if (!$is_hatas_route) {
         return;
+    }
+
+    $fallback_file = ic_hatas_korok_en_fallback_file();
+    if ($fallback_file !== null) {
+        global $wp_query;
+        if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
+            $wp_query->is_404 = false;
+        }
+        status_header(200);
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Cache-Control: public, max-age=3600');
+        readfile($fallback_file);
+        exit;
     }
 
     $api_url = rest_url('impact/v1');
