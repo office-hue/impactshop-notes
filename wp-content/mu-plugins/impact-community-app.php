@@ -404,6 +404,63 @@ a:hover { text-decoration: underline; }
     border-radius: 10px;
 }
 
+.ic-impi-review-box {
+    margin: 10px 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(20, 184, 166, .25);
+    border-radius: 10px;
+    background: rgba(240, 253, 250, .7);
+    color: #0f766e;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.ic-impi-review-box.is-blocked {
+    border-color: rgba(244, 63, 94, .35);
+    background: rgba(255, 241, 242, .75);
+    color: #9f1239;
+}
+
+.ic-impi-preview {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(232, 245, 233, .6);
+    border: 1px solid rgba(76, 175, 80, .25);
+}
+
+.ic-impi-preview img {
+    max-width: 100%;
+    max-height: 240px;
+    border-radius: 6px;
+    display: block;
+    margin: 0 auto;
+}
+
+.ic-impi-copy-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-top: 8px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.ic-impi-copy-btn:hover {
+    background: #059669;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, .3);
+}
+
+.ic-impi-copy-btn.copied {
+    background: #6ee7b7;
+}
+
 /* ================================================================
    Circle Detail View
    ================================================================ */
@@ -1329,6 +1386,7 @@ a:hover { text-decoration: underline; }
         ngoLastSearchTax: '',
         ngoAdminFocusCircleId: null,
         ngoWorkspaceSlug: '',
+        impiAnswerCache: {},
         votedPosts: loadVotedPosts(),
     };
 
@@ -2170,8 +2228,8 @@ a:hover { text-decoration: underline; }
         $content.appendChild(details);
 
         const mediaCard = html('div', {className: 'ic-card'});
-        mediaCard.appendChild(html('div', {className: 'ic-card-name'}, 'Logo es kepek feltoltese'));
-        mediaCard.appendChild(html('p', {className: 'ic-card-desc'}, 'WP Media tarba tolti fel a kepfajlokat.'));
+        mediaCard.appendChild(html('div', {className: 'ic-card-name'}, 'Logó és képek feltöltése'));
+        mediaCard.appendChild(html('p', {className: 'ic-card-desc'}, 'WP Média tárba tölti fel a képfájlokat.'));
         const mediaActions = html('div', {className: 'ic-card-actions'});
         const fileInput = html('input', {
             type: 'file',
@@ -2186,30 +2244,248 @@ a:hover { text-decoration: underline; }
             onClick: async () => {
                 try {
                     await uploadNgoWorkspaceImages(fileInput.files);
-                    showStatus('Kepfeltoltes sikeres.', 'success');
+                    showStatus('Képfeltöltés sikeres.', 'success');
                 } catch (err) {
-                    showStatus('Kepfeltoltes hiba: ' + (err.message || 'ismeretlen hiba'), 'error');
+                    showStatus('Képfeltöltés hiba: ' + (err.message || 'ismeretlen hiba'), 'error');
                 }
             },
-        }, 'Kepek feltoltese'));
+        }, 'Képek feltöltése'));
         mediaCard.appendChild(mediaActions);
         $content.appendChild(mediaCard);
 
         const impiCard = html('div', {className: 'ic-card'});
         impiCard.appendChild(html('div', {className: 'ic-card-name'}, 'Impi Agent'));
-        impiCard.appendChild(html('p', {className: 'ic-card-desc'}, 'Kulon Impi chat ablak visszakotese folyamatban. Addig ez a modul hamarosan erheto el.'));
-        impiCard.appendChild(html('div', {className: 'ic-card-actions'},
-            html('button', {
-                className: 'ic-btn ic-btn-outline',
-                disabled: true,
-                title: 'Hamarosan',
-            }, 'Impi chat - hamarosan'),
-            html('button', {
-                className: 'ic-btn ic-btn-outline',
-                disabled: true,
-                title: 'Hamarosan',
-            }, 'Kep + marketing - hamarosan')
-        ));
+        impiCard.appendChild(html('p', {className: 'ic-card-desc'}, 'Adj meg egy jogi kérdést, és az Impi Agent itt helyben válaszol.'));
+
+        const impiInput = html('textarea', {
+            className: 'ic-input',
+            rows: '3',
+            style: 'width:100%;max-width:780px;resize:vertical;',
+            placeholder: 'Pl.: Milyen dokumentum kell az NGO cégjelző adatok frissítéséhez?'
+        });
+        impiCard.appendChild(impiInput);
+
+        const impiMeta = html('div', {className: 'ic-impi-review-box', style: 'display:none;'});
+        impiCard.appendChild(impiMeta);
+
+        const impiResult = html('div', {
+            className: 'ic-card-desc',
+            style: 'margin-top:10px;white-space:pre-wrap;display:none;-webkit-line-clamp:unset;-webkit-box-orient:unset;display:block;overflow:visible;'
+        });
+        impiResult.style.display = 'none';
+        impiCard.appendChild(impiResult);
+
+        const impiPreview = html('div', {className: 'ic-impi-preview', style: 'display:none;'});
+        impiCard.appendChild(impiPreview);
+
+        const impiActions = html('div', {className: 'ic-card-actions'});
+        const impiAskBtn = html('button', { className: 'ic-btn ic-btn-primary' }, 'Kérdezd Impit');
+        const impiImageBtn = html('button', { className: 'ic-btn ic-btn-outline' }, 'Kép generálás');
+        const impiMarketingBtn = html('button', { className: 'ic-btn ic-btn-outline' }, 'Marketing szöveg');
+
+        const extractImpiAnswer = (data, mode) => {
+            const payload = (data && data.data) ? data.data : data;
+            if (!payload || typeof payload !== 'object') {
+                return '';
+            }
+            const directText = payload.answer || payload.output || payload.text || payload.copy || payload.marketing_copy || '';
+            if (directText) {
+                return String(directText).trim();
+            }
+            if (mode === 'image_generation') {
+                const imageUrl = payload.image_url
+                    || (payload.image && payload.image.url)
+                    || (Array.isArray(payload.images) && payload.images[0] && payload.images[0].url)
+                    || '';
+                if (imageUrl) {
+                    return 'Generált kép: ' + String(imageUrl);
+                }
+            }
+            return '';
+        };
+
+        const renderPreview = (answer, mode) => {
+            impiPreview.innerHTML = '';
+            impiPreview.style.display = 'none';
+            if (!answer || !mode) return;
+
+            if (mode === 'image_generation') {
+                const urlMatch = answer.match(/https?:\/\/[^\s\)\"]+/);
+                if (urlMatch) {
+                    const img = html('img', {
+                        src: urlMatch[0],
+                        alt: 'Generált kép',
+                        style: 'display:block;'
+                    });
+                    impiPreview.appendChild(img);
+                    impiPreview.style.display = 'block';
+                }
+            } else if (mode === 'marketing_copy') {
+                const container = html('div');
+                container.appendChild(html('p', {style: 'margin:0 0 8px 0;color:#666;font-size:12px;'}, 'Marketing szöveg'));
+                const textDiv = html('div', {style: 'background:white;padding:8px;border-radius:4px;margin-bottom:8px;'});
+                textDiv.textContent = answer;
+                container.appendChild(textDiv);
+
+                const copyBtn = html('button', {className: 'ic-impi-copy-btn'}, '📋 Másolás');
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(answer);
+                        copyBtn.textContent = '✓ Másolva';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.textContent = '📋 Másolás';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    } catch (e) {
+                        showStatus('Másolás hiba: ' + ((e && e.message) || 'ismeretlen'), 'error');
+                    }
+                });
+                container.appendChild(copyBtn);
+                impiPreview.appendChild(container);
+                impiPreview.style.display = 'block';
+            }
+        };
+
+        const runImpiRequest = async (mode, busyText) => {
+            const query = String(impiInput.value || '').trim();
+            if (!query) {
+                showStatus('Adj meg egy kérést az Impi Agentnek.', 'error');
+                impiInput.focus();
+                return;
+            }
+
+            const cacheKey = `${mode}::${query.toLowerCase()}`;
+            const cached = state.impiAnswerCache ? state.impiAnswerCache[cacheKey] : null;
+            if (cached && typeof cached.answer === 'string' && (Date.now() - Number(cached.ts || 0)) < (5 * 60 * 1000)) {
+                impiMeta.className = String(cached.metaClass || 'ic-impi-review-box');
+                impiMeta.textContent = String(cached.metaText || '');
+                impiMeta.style.display = cached.metaText ? 'block' : 'none';
+                impiResult.textContent = String(cached.answer);
+                impiResult.style.display = 'block';
+                showStatus('Impi válasz cache-ből betöltve.', 'info');
+                return;
+            }
+
+            const originalAskLabel = impiAskBtn.textContent;
+            const originalImageLabel = impiImageBtn.textContent;
+            const originalMarketingLabel = impiMarketingBtn.textContent;
+            impiAskBtn.disabled = true;
+            impiImageBtn.disabled = true;
+            impiMarketingBtn.disabled = true;
+            if (mode === 'ask') impiAskBtn.textContent = busyText;
+            if (mode === 'image_generation') impiImageBtn.textContent = busyText;
+            if (mode === 'marketing_copy') impiMarketingBtn.textContent = busyText;
+
+            impiMeta.style.display = 'none';
+            impiMeta.textContent = '';
+            impiResult.style.display = 'none';
+            impiResult.textContent = '';
+
+            try {
+                let data;
+                let degradedModeFallback = false;
+                try {
+                    data = await api('/ngo/admin/impi/review', {
+                        method: 'POST',
+                        body: JSON.stringify({ question: query, mode })
+                    });
+                } catch (primaryErr) {
+                    if (mode !== 'ask') {
+                        degradedModeFallback = true;
+                        const fallbackQuestion = mode === 'marketing_copy'
+                            ? `Készíts rövid, jól használható marketing szöveget a következő kérésből: ${query}`
+                            : `Adj képgeneráláshoz részletes, használható promptot a következő kérésből: ${query}`;
+                        data = await api('/ngo/admin/impi/review', {
+                            method: 'POST',
+                            body: JSON.stringify({ question: fallbackQuestion, mode: 'ask' })
+                        });
+                    } else {
+                        throw primaryErr;
+                    }
+                }
+
+                const answer = extractImpiAnswer(data, mode);
+                const citationCheck = (data && (data.citation_check || (data.data && data.data.citation_check))) || null;
+                const hallucinationGuard = (data && (data.hallucination_guard || (data.data && data.data.hallucination_guard))) || null;
+                const releaseBlocked = Boolean(data && (data.release_blocked || (data.data && data.data.release_blocked)));
+                const sources = (data && (data.sources || (data.data && data.data.sources))) || [];
+
+                if (!answer) {
+                    throw new Error('Az Impi nem adott megjeleníthető választ erre a kérésre.');
+                }
+
+                const metaLines = [];
+                if (degradedModeFallback) {
+                    metaLines.push('ℹ️ Fallback mód: a dedikált kép/marketing runtime nem volt elérhető, ask módban készült válasz.');
+                }
+                if (releaseBlocked) {
+                    metaLines.push('⚠️ Review szükséges: guard blokkolta a közvetlen felhasználást.');
+                }
+                if (citationCheck && typeof citationCheck === 'object' && Object.prototype.hasOwnProperty.call(citationCheck, 'blocked')) {
+                    metaLines.push(`Citation check: ${citationCheck.blocked ? 'BLOCKED' : 'OK'}`);
+                }
+                if (hallucinationGuard && typeof hallucinationGuard === 'object' && hallucinationGuard.overallConfidence) {
+                    metaLines.push(`Hallucination guard confidence: ${String(hallucinationGuard.overallConfidence)}`);
+                }
+                if (Array.isArray(sources)) {
+                    metaLines.push(`Források száma: ${sources.length}`);
+                }
+
+                const metaText = metaLines.join('\n');
+                if (metaText) {
+                    impiMeta.className = releaseBlocked ? 'ic-impi-review-box is-blocked' : 'ic-impi-review-box';
+                    impiMeta.textContent = metaText;
+                    impiMeta.style.display = 'block';
+                }
+
+                impiResult.textContent = answer;
+                impiResult.style.display = 'block';
+
+                renderPreview(answer, mode);
+
+                if (state.impiAnswerCache) {
+                    state.impiAnswerCache[cacheKey] = {
+                        answer,
+                        metaText,
+                        metaClass: impiMeta.className,
+                        ts: Date.now(),
+                    };
+                }
+
+                const okLabel = mode === 'ask'
+                    ? 'Impi válasz megérkezett.'
+                    : (mode === 'image_generation' ? 'Képgenerálás kész.' : 'Marketing szöveg elkészült.');
+                showStatus(
+                    releaseBlocked ? `${okLabel} Review szükséges.` : okLabel,
+                    releaseBlocked ? 'error' : 'success'
+                );
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : 'ismeretlen hiba';
+                impiMeta.className = 'ic-impi-review-box is-blocked';
+                impiMeta.textContent = '⚠️ Review szükséges: a válasz nem értelmezhető biztonságosan.';
+                impiMeta.style.display = 'block';
+                impiResult.textContent = 'Impi hiba: ' + msg;
+                impiResult.style.display = 'block';
+                showStatus('Impi hiba: ' + msg, 'error');
+            } finally {
+                impiAskBtn.disabled = false;
+                impiImageBtn.disabled = false;
+                impiMarketingBtn.disabled = false;
+                impiAskBtn.textContent = originalAskLabel;
+                impiImageBtn.textContent = originalImageLabel;
+                impiMarketingBtn.textContent = originalMarketingLabel;
+            }
+        };
+
+        impiAskBtn.addEventListener('click', () => runImpiRequest('ask', 'Impi válaszol...'));
+        impiImageBtn.addEventListener('click', () => runImpiRequest('image_generation', 'Generálás...'));
+        impiMarketingBtn.addEventListener('click', () => runImpiRequest('marketing_copy', 'Generálás...'));
+
+        impiActions.appendChild(impiAskBtn);
+        impiActions.appendChild(impiImageBtn);
+        impiActions.appendChild(impiMarketingBtn);
+        impiCard.appendChild(impiActions);
         $content.appendChild(impiCard);
 
         const launchCard = html('div', {className: 'ic-card'});
