@@ -68,3 +68,11 @@ Ez a scaffold tovabbra sem teljesen deploy-kesz. A publikus bidder/bid lane, az 
 - **Snipe protection**: `snipe_window_seconds=120`, `snipe_extend_seconds=120`; per-lot WP option override, `place_bid`-ben automatikus extend + `snipe_extension` log event
 - **Visszaszámláló JS**: `formatCountdown()` helper, card-countdown span (live lotok), detail-countdown panel, `setInterval` 1s tick, urgency pulse ≤120s
 - **Bidder localStorage autofill**: sikeres licit után email/telefon/név mentés `iaw_bidder` kulcsra; `detailOpen()`-kor automatikus visszatöltés
+
+## 2026-05-04 — v0.3.7 JS + PHP deploy
+
+### Változások
+- **Képlevágás fix**: `object-fit:cover` → `object-fit:contain` mind a card, mind a detail képnél
+- Container `align-items:stretch;justify-content:stretch` → `align-items:center;justify-content:center` (letterboxing)
+- Img CSS: `width/height:100%` → `max-width/max-height:100%;width/height:auto`
+- Művészi alkotások teljes képe látható, arány megtartva, levágás megszűnt

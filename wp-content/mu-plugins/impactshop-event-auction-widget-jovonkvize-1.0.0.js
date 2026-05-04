@@ -31,8 +31,8 @@
       ".impact-auction-widget__gallery::-webkit-scrollbar-thumb{background:rgba(244,221,174,.28);border-radius:999px}" +
       ".impact-auction-widget__card{display:grid;gap:10px;padding:12px;border-radius:18px;border:1px solid rgba(255,255,255,.11);background:rgba(9,19,55,.62);cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease;color:var(--iaw-text);scroll-snap-align:start;text-align:left;min-height:100%}" +
       ".impact-auction-widget__card:hover,.impact-auction-widget__card:focus-visible{transform:translateY(-2px);border-color:rgba(244,221,174,.42);background:rgba(10,21,59,.84);outline:none}" +
-      ".impact-auction-widget__image{aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(244,221,174,.12));position:relative;display:flex;align-items:stretch;justify-content:stretch}" +
-      ".impact-auction-widget__image img{display:block;width:100%;height:100%;object-fit:cover}" +
+      ".impact-auction-widget__image{aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(244,221,174,.12));position:relative;display:flex;align-items:center;justify-content:center}" +
+      ".impact-auction-widget__image img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}" +
       ".impact-auction-widget__image.is-fallback img{display:none}" +
       ".impact-auction-widget__image-fallback{display:none;position:absolute;inset:0;padding:16px;background:linear-gradient(180deg,rgba(6,13,42,.78),rgba(13,47,119,.88));align-content:end}" +
       ".impact-auction-widget__image.is-fallback .impact-auction-widget__image-fallback{display:grid}" +
@@ -54,8 +54,8 @@
       ".impact-auction-widget__panel{width:min(520px,100%);height:100%;overflow:auto;border-radius:24px;padding:20px;background:linear-gradient(180deg,rgba(6,13,42,.98),rgba(13,47,119,.96));border:1px solid rgba(255,255,255,.12);box-shadow:0 28px 50px rgba(0,0,0,.36)}" +
       ".impact-auction-widget__panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}" +
       ".impact-auction-widget__close{appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--iaw-text);border-radius:12px;padding:10px 12px;cursor:pointer}" +
-      ".impact-auction-widget__detail-image{aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.08);margin-bottom:14px}" +
-      ".impact-auction-widget__detail-image img{display:block;width:100%;height:100%;object-fit:cover}" +
+      ".impact-auction-widget__detail-image{aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.08);margin-bottom:14px;display:flex;align-items:center;justify-content:center}" +
+      ".impact-auction-widget__detail-image img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}" +
       ".impact-auction-widget__detail-block{display:grid;gap:6px;margin-bottom:16px}" +
       ".impact-auction-widget__detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}" +
       ".impact-auction-widget__detail-item{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);color:var(--iaw-text)}" +
