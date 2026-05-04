@@ -6749,3 +6749,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Telefon country code selector: select+input kombináció, 8 ország, +36 default
 - Vonage SMS unicode: `'type' => 'unicode'` → ékezetes char-ok helyes küldése
 - PHP 0.3.8 + JS 1.0.7 — prod deploy OK
+
+### 2026-05-04 — private admin dashboard widget (tickets + bids + cert)
+- Új admin endpointok: donation transactions list, cert resend/confirm/download; auction bids list.
+- Donation DB migration bővítés: `cert_manual_confirmed`, `cert_manual_confirmed_by`, `cert_manual_confirmed_at`.
+- Új shortcode: `[impact_event_admin_dashboard campaign="jovonkvize-2026"]`.
+- Új beilleszthető JS: `wp-content/mu-plugins/impactshop-event-admin-dashboard-widget.js`.
+- Lint: `php -l` PASS (donation+auction plugin), `node --check` PASS (dashboard js).
