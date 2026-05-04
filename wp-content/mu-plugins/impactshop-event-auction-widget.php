@@ -992,12 +992,6 @@ function impactshop_event_auction_register_routes(): void
         'permission_callback' => '__return_true',
     ]);
 
-    register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/confirm-card-setup', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'impactshop_event_auction_confirm_card_setup',
-        'permission_callback' => '__return_true',
-    ]);
-
     register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/lots/(?P<item_slug>[a-z0-9\-]+)/bid', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'impactshop_event_auction_bid',
@@ -1013,6 +1007,12 @@ function impactshop_event_auction_register_routes(): void
     register_rest_route('impact/v1', '/event-auctions/admin/lots/(?P<item_slug>[a-z0-9\-]+)/request-winner-payment', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'impactshop_event_auction_request_winner_payment',
+        'permission_callback' => 'impactshop_event_auction_admin_permission',
+    ]);
+
+    register_rest_route('impact/v1', '/event-auctions/admin/(?P<slug>[a-z0-9\-]+)/bids', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'impactshop_event_auction_admin_bids',
         'permission_callback' => 'impactshop_event_auction_admin_permission',
     ]);
 
@@ -1350,6 +1350,112 @@ function impactshop_event_auction_stats(WP_REST_Request $request): WP_REST_Respo
     impactshop_event_auction_send_cors_headers($campaign);
 
     return new WP_REST_Response(impactshop_event_auction_stats_payload($campaign), 200);
+}
+
+function impactshop_event_auction_admin_bids(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_auction_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    $page = max(1, (int) $request->get_param('page'));
+    $perPage = (int) $request->get_param('per_page');
+    if ($perPage <= 0) {
+        $perPage = 50;
+    }
+    $perPage = min(200, $perPage);
+    $offset = ($page - 1) * $perPage;
+
+    $itemSlug = sanitize_title((string) $request->get_param('item_slug'));
+    $status = sanitize_key((string) $request->get_param('status'));
+    $allowedStatuses = ['pending', 'winning', 'outbid', 'closed', 'payment_pending', 'paid', 'cancelled'];
+    if (!in_array($status, $allowedStatuses, true)) {
+        $status = '';
+    }
+
+    global $wpdb;
+    $bidsTable = impactshop_event_auction_bids_table_name();
+    $biddersTable = impactshop_event_auction_bidders_table_name();
+
+    $where = ['b.campaign_slug = %s'];
+    $queryArgs = [$slug];
+
+    if ($itemSlug !== '') {
+        $where[] = 'b.item_slug = %s';
+        $queryArgs[] = $itemSlug;
+    }
+
+    if ($status !== '') {
+        $where[] = 'b.status = %s';
+        $queryArgs[] = $status;
+    }
+
+    $whereSql = implode(' AND ', $where);
+
+    $countSql = "SELECT COUNT(*) FROM {$bidsTable} b WHERE {$whereSql}";
+    $total = (int) $wpdb->get_var($wpdb->prepare($countSql, ...$queryArgs));
+
+    $rowsSql = "SELECT
+            b.bid_uuid,
+            b.item_slug,
+            b.bidder_uuid,
+            b.bid_amount,
+            b.status,
+            b.stripe_session_id,
+            b.stripe_payment_intent,
+            b.created_at,
+            b.closed_at,
+            b.payment_requested_at,
+            b.payment_completed_at,
+            d.email AS bidder_email,
+            d.phone AS bidder_phone,
+            d.display_name AS bidder_name
+        FROM {$bidsTable} b
+        LEFT JOIN {$biddersTable} d ON d.bidder_uuid = b.bidder_uuid
+        WHERE {$whereSql}
+        ORDER BY b.id DESC
+        LIMIT %d OFFSET %d";
+
+    $rowsArgs = $queryArgs;
+    $rowsArgs[] = $perPage;
+    $rowsArgs[] = $offset;
+    $rows = $wpdb->get_results($wpdb->prepare($rowsSql, ...$rowsArgs), ARRAY_A);
+    if (!is_array($rows)) {
+        $rows = [];
+    }
+
+    $items = [];
+    foreach ($rows as $row) {
+        $items[] = [
+            'bid_uuid' => (string) ($row['bid_uuid'] ?? ''),
+            'item_slug' => (string) ($row['item_slug'] ?? ''),
+            'bidder_uuid' => (string) ($row['bidder_uuid'] ?? ''),
+            'bid_amount' => (int) ($row['bid_amount'] ?? 0),
+            'bid_amount_formatted' => impactshop_event_auction_format_amount((int) ($row['bid_amount'] ?? 0), 'huf'),
+            'status' => (string) ($row['status'] ?? ''),
+            'created_at' => (string) ($row['created_at'] ?? ''),
+            'closed_at' => (string) ($row['closed_at'] ?? ''),
+            'payment_requested_at' => (string) ($row['payment_requested_at'] ?? ''),
+            'payment_completed_at' => (string) ($row['payment_completed_at'] ?? ''),
+            'bidder_name' => (string) ($row['bidder_name'] ?? ''),
+            'bidder_email' => (string) ($row['bidder_email'] ?? ''),
+            'bidder_phone' => (string) ($row['bidder_phone'] ?? ''),
+            'stripe_session_id' => (string) ($row['stripe_session_id'] ?? ''),
+            'stripe_payment_intent' => (string) ($row['stripe_payment_intent'] ?? ''),
+        ];
+    }
+
+    return new WP_REST_Response([
+        'items' => $items,
+        'pagination' => [
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'total_pages' => $perPage > 0 ? (int) ceil($total / $perPage) : 0,
+        ],
+    ], 200);
 }
 
 function impactshop_event_auction_register_bidder(WP_REST_Request $request): WP_REST_Response
