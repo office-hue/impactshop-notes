@@ -12,6 +12,7 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 ## Deploy policy (gyors, kötelező minimum)
 - **Deploy parancs**: mindig `bin/impactshop-guard-deploy.sh` (runbook szerint).
 - **Legacy entrypoint**: `bin/deploy.sh` deprekált wrapper, ami már csak a guardolt deployra delegál.
+- **Impact-community regresszió guard**: a `bin/impactshop-guard-deploy.sh` entrypoint kötelezően futtatja a `scripts/guarded-remote-write.sh --dry-run` prechecket (required cégjelző symbol + anti-shrink védelem), és blokkol ha regressziógyanús a lokális fájl.
 - **Uncommitted changes**: **block**. Kivétel csak külön engedéllyel.
 - **Target útvonalak**: `.deploy.staging.env` + `.deploy.production.env` az igazság.
 - **Protected Impact Challenge files**: deploy előtt célzott backup kötelező, deploy után fizikai read-only visszazárás kötelező.
@@ -70,3 +71,4 @@ bin/impactshop-guard-rollback.sh deploy-YYYYMMDD-HHMMSS
 - MP4/asset fájlok ne kerüljenek deployba, ha nem része a mappingnek.
 - Kézi utóellenőrzéshez továbbra is használható: `bin/post-deploy-checklist.sh`, ami már tartalmazza a Hatás Körök smoke-ot is.
 - A kézi restore nem válik kanonikussá attól, hogy sikeres volt; ha guard hiba miatt incidensúton kellett kimenni, azt külön dokumentálni kell és külön helyre kell hozni a guard deploy infrastruktúrát.
+- A regresszió guard bypass csak vészhelyzetben mehet: `IMPACTSHOP_SKIP_COMMUNITY_GUARD=1` (eseményt kötelező dokumentálni).

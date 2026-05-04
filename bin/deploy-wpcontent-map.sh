@@ -57,6 +57,100 @@ run_hatas_korok_post_deploy_smoke() {
   fi
 }
 
+run_impact_community_guard() {
+  local guard_script="${ROOT_DIR}/scripts/guarded-remote-write.sh"
+  local local_file="${ROOT_DIR}/wp-content/mu-plugins/impact-community.php"
+  local remote_file="${REMOTE_WP_CONTENT}/mu-plugins/impact-community.php"
+
+  if [[ "${IMPACTSHOP_SKIP_COMMUNITY_GUARD:-0}" == "1" ]]; then
+    echo "⚠️ impact-community guard kihagyva (IMPACTSHOP_SKIP_COMMUNITY_GUARD=1)"
+    return 0
+  fi
+
+  if [[ ! -x "$guard_script" ]]; then
+    echo "❌ impact-community guard script hiányzik vagy nem futtatható: $guard_script" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$local_file" ]]; then
+    echo "❌ impact-community guard: hiányzik a lokális fájl: $local_file" >&2
+    exit 1
+  fi
+
+  echo "🛡️ impact-community regresszió guard ellenőrzés…"
+  "$guard_script" --local "$local_file" --remote "$remote_file" --dry-run
+}
+
+verify_remote_bastion_manifest() {
+  local remote_root="$1"
+  local check_result=""
+
+  check_result="$(ssh -o BatchMode=yes "$SSH_HOST" "python3 - <<'PY'
+import json
+from pathlib import Path
+
+root = Path('${remote_root}')
+if not root.exists() or not root.is_dir():
+    print('missing_root')
+    raise SystemExit(0)
+
+if not (root / 'wp-config.php').exists():
+    print('missing_wp_config')
+    raise SystemExit(0)
+
+if not (root / 'wp-content').exists():
+    print('missing_wp_content')
+    raise SystemExit(0)
+
+candidates = [
+    root / '.codex' / 'bastion-manifest.json',
+    root / '.bastion-manifest.json',
+    root / 'wp-content' / '.bastion-manifest.json',
+]
+
+for cand in candidates:
+    if cand.exists():
+        try:
+            json.loads(cand.read_text(encoding='utf-8'))
+        except Exception:
+            print(f'invalid_manifest:{cand}')
+            raise SystemExit(0)
+        print(f'ok_manifest:{cand}')
+        raise SystemExit(0)
+
+print('ok_no_manifest')
+PY" < /dev/null)"
+
+  case "$check_result" in
+    ok_manifest:*)
+      echo "✅ Bastion manifest ellenőrzés OK: ${check_result#ok_manifest:}"
+      ;;
+    ok_no_manifest)
+      echo "⚠️ Bastion manifest nem található a remote root alatt (folytatás engedélyezett)."
+      ;;
+    missing_root)
+      echo "❌ Bastion ellenőrzés: hiányzó remote root: $remote_root" >&2
+      exit 1
+      ;;
+    missing_wp_config)
+      echo "❌ Bastion ellenőrzés: wp-config.php hiányzik a remote root alatt: $remote_root" >&2
+      exit 1
+      ;;
+    missing_wp_content)
+      echo "❌ Bastion ellenőrzés: wp-content hiányzik a remote root alatt: $remote_root" >&2
+      exit 1
+      ;;
+    invalid_manifest:*)
+      echo "❌ Bastion manifest hibás JSON: ${check_result#invalid_manifest:}" >&2
+      exit 1
+      ;;
+    *)
+      echo "❌ Bastion ellenőrzés ismeretlen válasz: $check_result" >&2
+      exit 1
+      ;;
+  esac
+}
+
 verify_production_origin_alignment() {
   [[ $IS_STAGING -eq 0 ]] || return 0
   [[ "${REMOTE_WP_PATH:-}" == "/home/sharityh/app" ]] || return 0
@@ -121,6 +215,7 @@ echo "🎯 Cél: $SSH_HOST:$REMOTE_WP_CONTENT"
 ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
 verify_remote_bastion_manifest "$(dirname "${REMOTE_WP_CONTENT}")"
 verify_production_origin_alignment
+run_impact_community_guard
 
 # Szelídített rsync opciók (régi verziókhoz is)
 RSYNC_OPTS_SAFE="${RSYNC_OPTS:-}"

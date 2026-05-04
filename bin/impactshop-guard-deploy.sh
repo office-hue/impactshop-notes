@@ -291,6 +291,86 @@ if [[ -z "$SNAPSHOT_DIR" ]]; then
   SNAPSHOT_DIR="$SNAPSHOT_DIR_DEFAULT"
 fi
 
+run_impact_community_guard_predeploy() {
+  local guard_script="${ROOT_DIR}/scripts/guarded-remote-write.sh"
+  local local_file="${ROOT_DIR}/wp-content/mu-plugins/impact-community.php"
+  local env_file=".deploy.staging.env"
+  local ssh_host=""
+  local remote_wp_content=""
+  local remote_user=""
+  local remote_host=""
+  local arg
+
+  if [[ "${IMPACTSHOP_SKIP_COMMUNITY_GUARD:-0}" == "1" ]]; then
+    echo "⚠️ impact-community predeploy guard kihagyva (IMPACTSHOP_SKIP_COMMUNITY_GUARD=1)"
+    return 0
+  fi
+
+  for arg in "${ARGS[@]:-}"; do
+    case "$arg" in
+      --production|-p)
+        env_file=".deploy.production.env"
+        ;;
+      --staging|-s)
+        env_file=".deploy.staging.env"
+        ;;
+      --env=*)
+        env_file="${arg#--env=}"
+        ;;
+      -* )
+        ;;
+      * )
+        env_file="$arg"
+        ;;
+    esac
+  done
+
+  if [[ "$env_file" != /* ]]; then
+    env_file="${ROOT_DIR}/${env_file}"
+  fi
+
+  if [[ ! -x "$guard_script" ]]; then
+    echo "❌ impact-community predeploy guard script hiányzik: $guard_script" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$local_file" ]]; then
+    echo "❌ impact-community predeploy guard: lokális fájl hiányzik: $local_file" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "$env_file" ]]; then
+    echo "❌ impact-community predeploy guard: env file hiányzik: $env_file" >&2
+    exit 1
+  fi
+
+  # shellcheck disable=SC1090
+  source "$env_file"
+  ssh_host="${SSH_HOST:-}"
+  remote_wp_content="${REMOTE_WP_CONTENT:-}"
+
+  if [[ -z "$ssh_host" || -z "$remote_wp_content" ]]; then
+    echo "❌ impact-community predeploy guard: hiányzó SSH_HOST/REMOTE_WP_CONTENT az env file-ban" >&2
+    exit 1
+  fi
+
+  if [[ "$ssh_host" == *"@"* ]]; then
+    remote_user="${ssh_host%@*}"
+    remote_host="${ssh_host#*@}"
+  else
+    remote_user="${GUARDED_REMOTE_USER:-sharityh}"
+    remote_host="$ssh_host"
+  fi
+
+  echo "🛡️ impact-community predeploy regresszió guard…"
+  "$guard_script" \
+    --local "$local_file" \
+    --remote "${remote_wp_content}/mu-plugins/impact-community.php" \
+    --host "$remote_host" \
+    --remote-user "$remote_user" \
+    --dry-run
+}
+
 mkdir -p "$SNAPSHOT_DIR"
 
 timestamp="$(date -u +%Y%m%d-%H%M%S)"
@@ -772,6 +852,7 @@ PY
 fi
 
 if [[ "${goto_finalize:-0}" -eq 0 ]]; then
+  run_impact_community_guard_predeploy
   if [[ "$changed_count" -gt 0 ]]; then
     export IMPACTSHOP_PROTECTED_DEPLOY="${IMPACTSHOP_PROTECTED_DEPLOY:-1}"
     export IMPACTSHOP_POST_DEPLOY_UI_SMOKE="${IMPACTSHOP_POST_DEPLOY_UI_SMOKE:-1}"
