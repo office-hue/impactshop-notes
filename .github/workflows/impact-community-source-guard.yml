@@ -10,6 +10,7 @@ on:
 jobs:
   canonical-source-guard:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,7 +61,7 @@ jobs:
           cp "$CANONICAL" "$MUTATED"
           printf '\n// ci mutation\n' >> "$MUTATED"
 
-          if CANONICAL_IMPACT_COMMUNITY_SOURCE="$CANONICAL" VALIDATE_ONLY=1 "$SCRIPT" "$MUTATED"; then
+          if CANONICAL_IMPACT_COMMUNITY_SOURCE="$CANONICAL" REMOTE_LINES_OVERRIDE=1 VALIDATE_ONLY=1 "$SCRIPT" "$MUTATED"; then
             echo "❌ Non-canonical file unexpectedly passed guard." >&2
             exit 1
           fi
