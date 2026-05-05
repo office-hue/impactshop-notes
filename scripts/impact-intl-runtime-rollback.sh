@@ -143,6 +143,9 @@ fi
 
 TARGET_DIR="${BACKUP_BASE}/${BACKUP_ID}"
 MANIFEST_PATH="${TARGET_DIR}/manifest.txt"
+ATTEMPTED_COUNT=0
+RESTORED_COUNT=0
+FAILURE_COUNT=0
 
 if [[ ! -f "$MANIFEST_PATH" ]]; then
   echo "Manifest not found: ${MANIFEST_PATH}" >&2
@@ -166,7 +169,8 @@ while IFS= read -r line; do
 
   IFS=$'\t' read -r kind expected_hash relative_path <<< "$line"
   if [[ "$kind" != "FILE" || -z "$relative_path" || -z "$expected_hash" ]]; then
-    echo "skip malformed manifest entry" >&2
+    echo "FAIL: malformed manifest entry" >&2
+    FAILURE_COUNT=$((FAILURE_COUNT + 1))
     continue
   fi
 
@@ -180,21 +184,36 @@ while IFS= read -r line; do
     continue
   fi
 
+  ATTEMPTED_COUNT=$((ATTEMPTED_COUNT + 1))
+
   source_path="${TARGET_DIR}/${relative_path}"
   destination_path="${ROOT_DIR}/${relative_path}"
 
   if [[ ! -f "$source_path" ]]; then
-    echo "skip missing backup file: ${relative_path}" >&2
+    echo "FAIL: missing backup file: ${relative_path}" >&2
+    FAILURE_COUNT=$((FAILURE_COUNT + 1))
     continue
   fi
 
   actual_hash="$(hash_file "$source_path")"
   if [[ "$actual_hash" != "$expected_hash" ]]; then
-    echo "skip hash mismatch: ${relative_path}" >&2
+    echo "FAIL: hash mismatch: ${relative_path}" >&2
+    FAILURE_COUNT=$((FAILURE_COUNT + 1))
     continue
   fi
 
   restore_cmd "$source_path" "$destination_path"
+  RESTORED_COUNT=$((RESTORED_COUNT + 1))
 done < "$MANIFEST_PATH"
+
+if [[ "$ATTEMPTED_COUNT" -eq 0 ]]; then
+  echo "FAIL: no restorable files processed from manifest: ${MANIFEST_PATH}" >&2
+  exit 1
+fi
+
+if [[ "$FAILURE_COUNT" -gt 0 ]]; then
+  echo "FAIL: rollback incomplete (${FAILURE_COUNT} failure(s), ${RESTORED_COUNT}/${ATTEMPTED_COUNT} restored)." >&2
+  exit 1
+fi
 
 echo "rollback applied from: ${TARGET_DIR}"

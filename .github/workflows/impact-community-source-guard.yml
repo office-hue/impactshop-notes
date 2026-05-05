@@ -14,7 +14,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enforce canonical source guard in deploy script
+      - name: Validate canonical file passes guard locally
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SCRIPT="scripts/guarded-remote-write.sh"
+          CANONICAL="$(pwd)/wp-content/mu-plugins/impact-community.php"
+          REMOTE_LINES="$(wc -l < "$CANONICAL")"
+
+          chmod +x "$SCRIPT"
+          CANONICAL_IMPACT_COMMUNITY_SOURCE="$CANONICAL" \
+          REMOTE_LINES_OVERRIDE="$REMOTE_LINES" \
+          VALIDATE_ONLY=1 \
+          "$SCRIPT" "$CANONICAL"
+
+      - name: Validate anti-shrink override is honored
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SCRIPT="scripts/guarded-remote-write.sh"
+          TMP_FILE="$(mktemp /tmp/guarded-write-XXXXXX.php)"
+          trap 'rm -f "$TMP_FILE"' EXIT
+          printf '%s\n' '<?php' 'echo "ok";' > "$TMP_FILE"
+
+          REMOTE_LINES_OVERRIDE=1000 \
+          VALIDATE_ONLY=1 \
+          "$SCRIPT" "$TMP_FILE" --allow-shrink
+
+      - name: Validate non-canonical file is rejected
         shell: bash
         run: |
           set -euo pipefail
@@ -25,10 +54,15 @@ jobs:
             exit 1
           fi
 
-          # Canonical source path and hash checks must remain present.
-          grep -q 'CANONICAL_IMPACT_COMMUNITY_SOURCE' "$SCRIPT"
-          grep -q 'ALLOW_NONCANONICAL_COMMUNITY_SOURCE' "$SCRIPT"
-          grep -q 'Non-canonical impact-community deploy source detected' "$SCRIPT"
-          grep -q 'canonical sha256' "$SCRIPT"
+          CANONICAL="$(pwd)/wp-content/mu-plugins/impact-community.php"
+          MUTATED="$(mktemp /tmp/impact-community-mutated-XXXXXX.php)"
+          trap 'rm -f "$MUTATED"' EXIT
+          cp "$CANONICAL" "$MUTATED"
+          printf '\n// ci mutation\n' >> "$MUTATED"
 
-          echo "✅ Canonical impact-community source/hash guard present."
+          if CANONICAL_IMPACT_COMMUNITY_SOURCE="$CANONICAL" VALIDATE_ONLY=1 "$SCRIPT" "$MUTATED"; then
+            echo "❌ Non-canonical file unexpectedly passed guard." >&2
+            exit 1
+          fi
+
+          echo "✅ Local/CI guard parity verified." 
