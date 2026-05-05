@@ -6776,3 +6776,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - 🔍 Audit findings implemented: fail-closed defaults, nonce coherence, security sanitization
 - 🛡️ Guard compliance: protected-change-records created
 - 📤 Status: ready to push and create independent PR
+
+### 2026-05-05 — JVK auction close UX + auto-close hardening
+- Lejaratkor a widget azonnal `CLOSED` allapotot mutat (poll elotti kliens oldali fallback), nem marad rovid ideig `live`.
+- Lejart/lezart tetelnel a licit UI azonnal inaktiv: submit gomb + presetek + osszeg input disabled.
+- Dashboard JS nonce-header kuldes csak akkor megy, ha nonce tenylegesen elerheto (public oldalnal nincs ures `X-WP-Nonce`).
+- Szerver oldali auto-close path frissitve: nyertes nelkuli lejart tetel `closed_unsold` status.

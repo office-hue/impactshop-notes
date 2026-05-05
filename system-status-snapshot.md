@@ -755,3 +755,8 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 - Security audit: sanitized reason messages, nonce coherence fixed (GET now sends nonce)
 - Protected-Change: impi-step3-admin-hardening
 - Status: ✅ Guard-compliant, ready for independent PR review
+
+## 2026-05-05 JVK auction close UX + auto-close parity
+- Auction widget lejaratkor azonnal CLOSED UI allapotot alkalmaz, majd gyors refresh-sel backend statusra szinkronizal.
+- Lejart tetelnel licit UI fail-safe modban inaktiv (submit + preset + amount disabled), kattintasra mar nem csak API hiba latszik.
+- Public dashboard nonce-kezelese javitva: ures nonce fejlec kuldese megszunt.
