@@ -755,3 +755,15 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 - Security audit: sanitized reason messages, nonce coherence fixed (GET now sends nonce)
 - Protected-Change: impi-step3-admin-hardening
 - Status: ✅ Guard-compliant, ready for independent PR review
+
+---
+_Auto update: 2026-05-05 14:16:13_
+
+### Health check summary
+
+```
+staging: HTTP 200 (5499 ms, ok) – https://sharity.hu/impactshop-staging (redirected_to:app.sharity.hu)
+production: HTTP 200 (1129 ms, ok) – https://app.sharity.hu/wp-json/
+```
+
+**Baseline referencia:** impactshop-baseline-2026-03-03.md

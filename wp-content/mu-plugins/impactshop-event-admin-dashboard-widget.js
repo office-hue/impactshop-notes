@@ -62,13 +62,19 @@
     var apiRoot = (root.getAttribute("data-api-root") || "").replace(/\/$/, "");
     var nonce = root.getAttribute("data-wp-nonce") || "";
     var title = root.getAttribute("data-title") || "Privat dashboard";
+    var isPublic = root.hasAttribute("data-public");
 
     if (!apiRoot || !nonce) {
       root.textContent = "Hianyzo API root vagy nonce.";
       return;
     }
 
-    var donationBase = apiRoot + "/event-campaigns/admin/" + encodeURIComponent(campaign);
+    var donationBase = isPublic
+      ? apiRoot + "/event-campaigns/" + encodeURIComponent(campaign)
+      : apiRoot + "/event-campaigns/admin/" + encodeURIComponent(campaign);
+    var donationTxUrl = isPublic
+      ? donationBase + "/transactions/public"
+      : donationBase + "/transactions";
     var auctionBase = apiRoot + "/event-auctions/admin/" + encodeURIComponent(campaign);
 
     root.innerHTML =
@@ -94,10 +100,11 @@
       '<h3>' + esc(title) + '</h3>' +
       '<div class="row tabs">' +
       '<button type="button" data-tab="don" class="active">Jegyek es adomanyok</button>' +
-      '<button type="button" data-tab="auc">Licit es nyertesek</button>' +
+      (isPublic ? '' : '<button type="button" data-tab="auc">Licit es nyertesek</button>') +
       '<span class="muted" data-role="status">Betoltes...</span>' +
       '</div>' +
       '<div data-role="error" class="err"></div>' +
+      '<div data-role="auc-error" class="err"></div>' +
       '<div data-panel="don">' +
       '<div class="row">' +
       '<select data-role="don-status"><option value="">Minden statusz</option><option value="completed">completed</option><option value="pending">pending</option><option value="failed">failed</option><option value="cancelled">cancelled</option><option value="expired">expired</option><option value="refunded">refunded</option></select>' +
@@ -125,6 +132,7 @@
     var els = {
       status: qs(root, '[data-role="status"]'),
       error: qs(root, '[data-role="error"]'),
+      aucError: qs(root, '[data-role="auc-error"]'),
       tabs: root.querySelectorAll('[data-tab]'),
       panels: {
         don: qs(root, '[data-panel="don"]'),
@@ -148,6 +156,10 @@
 
     function setError(msg) {
       els.error.textContent = msg || "";
+    }
+
+    function setAucError(msg) {
+      els.aucError.textContent = msg || "";
     }
 
     function setStatus(msg) {
@@ -200,7 +212,7 @@
         return '<tr>' +
           '<td><code>' + esc(it.donation_id) + '</code></td>' +
           '<td>' + esc(fmtDate(it.completed_at || it.created_at)) + '</td>' +
-          '<td>' + paymentStatusBadge + '</td>' +
+          '<td>' + paymentStatusBadge + (it.payment_method === 'bank_transfer' ? ' <span class="pill warn" title="Utalásos fizetés">🏦 utalás</span>' : '') + '</td>' +
           '<td>' + esc(who) + '</td>' +
           '<td>' + esc(it.email || '-') + '</td>' +
           '<td>' + esc(it.amount_formatted || '-') + '</td>' +
@@ -211,6 +223,8 @@
               '<button type="button" class="alt" data-act="download" data-id="' + esc(it.donation_id) + '">PDF</button>' +
               '<button type="button" class="alt" data-act="resend" data-id="' + esc(it.donation_id) + '">Ujrakuldes</button>' +
               '<button type="button" class="alt" data-act="confirm" data-id="' + esc(it.donation_id) + '" data-val="' + (it.cert_manual_confirmed ? '0' : '1') + '">' + (it.cert_manual_confirmed ? 'Visszavon' : 'Megerosit') + '</button>' +
+              (it.payment_method === 'bank_transfer' && it.status === 'pending' && !isPublic ?
+                '<button type="button" style="background:#0f7240;border-color:#0f7240" data-act="confirm-transfer" data-id="' + esc(it.donation_id) + '">🏦 Utalás megerősítése</button>' : '') +
             '</div>' +
           '</td>' +
         '</tr>';
@@ -246,7 +260,7 @@
       if (els.don.search.value.trim()) p.set("search", els.don.search.value.trim());
       p.set("per_page", "100");
 
-      return api(donationBase + "/transactions?" + p.toString())
+      return api(donationTxUrl + "?" + p.toString())
         .then(function (json) {
           renderDonations(json.items || []);
           setStatus("Adomanyok: " + String((json.pagination && json.pagination.total) || 0) + " db");
@@ -271,7 +285,7 @@
           setStatus("Licitek: " + String((json.pagination && json.pagination.total) || 0) + " db");
         })
         .catch(function (err) {
-          setError("Licitek hiba: " + err.message);
+          setAucError("Licitek hiba: " + err.message);
           setStatus("Hiba");
         });
     }
@@ -342,9 +356,26 @@
             setStatus("Hiba");
           });
       }
+
+      if (action === "confirm-transfer") {
+        if (!window.confirm('Megerősíted az utalást a következő megrendelésnél: ' + id + '?\nEz a megerősítő e-mailt is kiküldeni fogja a vásárlónak.')) {
+          setStatus("");
+          return;
+        }
+        api(donationBase + "/confirm-transfer", "POST", { donation_id: id })
+          .then(function (json) {
+            setStatus('Utalás megerősítve: ' + id + ' (' + (json.confirmed_at || '') + ')');
+            return loadDonations();
+          })
+          .catch(function (err) {
+            setError('Utalás megerősítési hiba: ' + err.message);
+            setStatus('Hiba');
+          });
+      }
     });
 
-    Promise.all([loadDonations(), loadAuctions()]).then(function () {
+    var initialLoads = isPublic ? [loadDonations()] : [loadDonations(), loadAuctions()];
+    Promise.all(initialLoads).then(function () {
       setStatus("Kesz");
     });
   }
