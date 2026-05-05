@@ -734,3 +734,8 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 - `scripts/impact-intl-runtime-backup.sh` es `scripts/impact-intl-runtime-rollback.sh`: duplikalt legacy blokk eltavolitva, egyetlen kanonikus implementacio maradt.
 - Community backup/rollback csak explicit `--include-community --ack-include-community` eseten engedelyezett.
 - CI kiegeszites: `.github/workflows/impact-community-source-guard.yml` ellenorzi a canonical guard jelenletet.
+
+## 2026-05-05 impact-community source guard hardening (review-fix)
+- `guarded-remote-write.sh`: anti-shrink override aktiv (`--allow-shrink`) es hash-elsodleges canonical check, worktree-kompatibilis elfogadassal.
+- `impact-intl-runtime-rollback.sh`: partial rollback mar nem jelent sikeres lefutast, hibara fail-closed kimenet van.
+- `impact-community-source-guard.yml`: marker-grep helyett futtathato parity check lepesei validaljak a guard viselkedest.

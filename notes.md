@@ -6762,3 +6762,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Intl lane backup/rollback scriptek deduplikalva (`scripts/impact-intl-runtime-backup.sh`, `scripts/impact-intl-runtime-rollback.sh`).
 - Community file kezeles defaultban tiltott; csak explicit `--include-community --ack-include-community` mellett fut.
 - CI check hozzaadva: `.github/workflows/impact-community-source-guard.yml`.
+
+### 2026-05-05 — PR129 review-fix iteration
+- Javitas: `--allow-shrink` flag tenylegesen mukodik a `guarded-remote-write.sh` anti-shrink gate-ben.
+- Javitas: canonical guard hash alapon elfogadja a worktree pathot is, de nem-kanonikus tartalmat tovabbra is blokkol.
+- Javitas: rollback lane hash mismatch / missing backup file eseten fail-closed.
+- CI parity-check workflow frissitve, mar nem csak marker stringeket keres.

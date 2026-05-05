@@ -20,3 +20,8 @@
 
 ## Megjegyzes
 - A hajnali regresszio mintazatahoz igazodva a veletlen nem-kanonikus forrasbol torteno deploy lane immar fail-closed.
+
+## Review-fix update (2026-05-05)
+- `scripts/guarded-remote-write.sh`: a canonical check hash-elsodleges, worktree-kompatibilis; `--allow-shrink` most tenylegesen mukodik.
+- `scripts/impact-intl-runtime-rollback.sh`: hash mismatch / missing file mar fail-closed (nem csendes skip success).
+- `.github/workflows/impact-community-source-guard.yml`: grep helyett futtathato viselkedes parity-check (pass canonical, pass allow-shrink, reject mutated non-canonical).
