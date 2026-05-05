@@ -728,3 +728,21 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 - PHP: Vonage unicode type fix, version=0.3.8
 - Prod deploy: OK (wp-cli verified 0.3.8)
 ## JVK Dashboard Merge (2026-05-04)
+
+## 2026-05-05 impact-community source guard hardening
+- `scripts/guarded-remote-write.sh`: canonical path + sha256 ellenorzes kotelezo `impact-community.php` deploy elott.
+- `scripts/impact-intl-runtime-backup.sh` es `scripts/impact-intl-runtime-rollback.sh`: duplikalt legacy blokk eltavolitva, egyetlen kanonikus implementacio maradt.
+- Community backup/rollback csak explicit `--include-community --ack-include-community` eseten engedelyezett.
+- CI kiegeszites: `.github/workflows/impact-community-source-guard.yml` ellenorzi a canonical guard jelenletet.
+
+## 2026-05-05 impact-community source guard hardening (review-fix)
+- `guarded-remote-write.sh`: anti-shrink override aktiv (`--allow-shrink`) es hash-elsodleges canonical check, worktree-kompatibilis elfogadassal.
+- `impact-intl-runtime-rollback.sh`: partial rollback mar nem jelent sikeres lefutast, hibara fail-closed kimenet van.
+- `impact-community-source-guard.yml`: marker-grep helyett futtathato parity check lepesei validaljak a guard viselkedest.
+
+## 2026-05-05 impact-community source guard hardening (workflow stabilizalas)
+- `impact-community-source-guard.yml` workflow job timeout 5 percre allitva.
+- A non-canonical rejection parity lepesben `REMOTE_LINES_OVERRIDE=1` hasznalat, hogy semmilyen halozati mellekhatas ne akassza meg a CI futast.
+
+## 2026-05-05 impact-community source guard hardening (workflow parity path fix)
+- A non-canonical CI teszt mutalt fajlja most `impact-community.php` neven jon letre ideiglenes mappaban, hogy biztosan a guard relevans kodag fusson.

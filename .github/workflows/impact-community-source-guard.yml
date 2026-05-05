@@ -1,0 +1,70 @@
+name: impact-community-source-guard
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  canonical-source-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate canonical file passes guard locally
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SCRIPT="scripts/guarded-remote-write.sh"
+          CANONICAL="$(pwd)/wp-content/mu-plugins/impact-community.php"
+          REMOTE_LINES="$(wc -l < "$CANONICAL")"
+
+          chmod +x "$SCRIPT"
+          CANONICAL_IMPACT_COMMUNITY_SOURCE="$CANONICAL" \
+          REMOTE_LINES_OVERRIDE="$REMOTE_LINES" \
+          VALIDATE_ONLY=1 \
+          "$SCRIPT" "$CANONICAL"
+
+      - name: Validate anti-shrink override is honored
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SCRIPT="scripts/guarded-remote-write.sh"
+          TMP_FILE="$(mktemp /tmp/guarded-write-XXXXXX.php)"
+          trap 'rm -f "$TMP_FILE"' EXIT
+          printf '%s\n' '<?php' 'echo "ok";' > "$TMP_FILE"
+
+          REMOTE_LINES_OVERRIDE=1000 \
+          VALIDATE_ONLY=1 \
+          "$SCRIPT" "$TMP_FILE" --allow-shrink
+
+      - name: Validate non-canonical file is rejected
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SCRIPT="scripts/guarded-remote-write.sh"
+          if [[ ! -f "$SCRIPT" ]]; then
+            echo "❌ Missing required deploy guard script: $SCRIPT" >&2
+            exit 1
+          fi
+
+          CANONICAL="$(pwd)/wp-content/mu-plugins/impact-community.php"
+          MUTATED_DIR="$(mktemp -d /tmp/impact-community-mutated-XXXXXX)"
+          MUTATED="$MUTATED_DIR/impact-community.php"
+          trap 'rm -rf "$MUTATED_DIR"' EXIT
+          cp "$CANONICAL" "$MUTATED"
+          printf '\n// ci mutation\n' >> "$MUTATED"
+
+          if CANONICAL_IMPACT_COMMUNITY_SOURCE="$CANONICAL" REMOTE_LINES_OVERRIDE=1 VALIDATE_ONLY=1 "$SCRIPT" "$MUTATED"; then
+            echo "❌ Non-canonical file unexpectedly passed guard." >&2
+            exit 1
+          fi
+
+          echo "✅ Local/CI guard parity verified." 
