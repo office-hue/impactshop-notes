@@ -739,3 +739,7 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 - `guarded-remote-write.sh`: anti-shrink override aktiv (`--allow-shrink`) es hash-elsodleges canonical check, worktree-kompatibilis elfogadassal.
 - `impact-intl-runtime-rollback.sh`: partial rollback mar nem jelent sikeres lefutast, hibara fail-closed kimenet van.
 - `impact-community-source-guard.yml`: marker-grep helyett futtathato parity check lepesei validaljak a guard viselkedest.
+
+## 2026-05-05 impact-community source guard hardening (workflow stabilizalas)
+- `impact-community-source-guard.yml` workflow job timeout 5 percre allitva.
+- A non-canonical rejection parity lepesben `REMOTE_LINES_OVERRIDE=1` hasznalat, hogy semmilyen halozati mellekhatas ne akassza meg a CI futast.
