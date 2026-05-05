@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.5');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.10');
 define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.4.0');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
@@ -619,25 +619,25 @@ if (!function_exists('impactshop_event_donation_append_ticket_mix_lines')) {
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/transactions', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'impactshop_event_donation_admin_transactions',
-        'permission_callback' => 'impactshop_event_donation_admin_permission',
+        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/resend', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'impactshop_event_donation_admin_certificate_resend',
-        'permission_callback' => 'impactshop_event_donation_admin_permission',
+        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/confirm', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'impactshop_event_donation_admin_certificate_confirm',
-        'permission_callback' => 'impactshop_event_donation_admin_permission',
+        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/download', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'impactshop_event_donation_admin_certificate_download',
-        'permission_callback' => 'impactshop_event_donation_admin_permission',
+        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/(?P<slug>[a-z0-9\-]+)/checkout', [
@@ -2313,13 +2313,9 @@ function impactshop_event_donation_shortcode(array $atts = []): string
 
 function impactshop_event_admin_dashboard_shortcode(array $atts = []): string
 {
-    if (!is_user_logged_in() || !current_user_can('manage_options')) {
-        return '';
-    }
-
     $atts = shortcode_atts([
         'campaign' => 'jovonkvize-2026',
-        'title' => 'Privát adomány és licit dashboard',
+        'title' => 'Jövőnk Vize - Nyilvános dashboard',
     ], $atts, 'impact_event_admin_dashboard');
 
     $campaign = sanitize_title((string) $atts['campaign']);
@@ -2330,7 +2326,7 @@ function impactshop_event_admin_dashboard_shortcode(array $atts = []): string
     wp_enqueue_script('impactshop-event-admin-dashboard-widget');
 
     $id = 'impact-event-admin-dashboard-' . wp_generate_password(6, false, false);
-    $nonce = wp_create_nonce('wp_rest');
+    $nonce = is_user_logged_in() ? wp_create_nonce('wp_rest') : '';
     $apiRoot = rest_url('impact/v1');
     $title = sanitize_text_field((string) $atts['title']);
 
