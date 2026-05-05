@@ -404,6 +404,110 @@ a:hover { text-decoration: underline; }
     border-radius: 10px;
 }
 
+.ic-impi-review-box {
+    margin: 10px 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(20, 184, 166, .25);
+    border-radius: 10px;
+    background: rgba(240, 253, 250, .7);
+    color: #0f766e;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.ic-impi-review-box.is-blocked {
+    border-color: rgba(244, 63, 94, .35);
+    background: rgba(255, 241, 242, .75);
+    color: #9f1239;
+}
+
+.ic-impi-preview {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(232, 245, 233, .6);
+    border: 1px solid rgba(76, 175, 80, .25);
+}
+
+.ic-impi-preview img {
+    max-width: 100%;
+    max-height: 240px;
+    border-radius: 6px;
+    display: block;
+    margin: 0 auto;
+}
+
+.ic-impi-copy-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-top: 8px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.ic-impi-copy-btn:hover {
+    background: #059669;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, .3);
+}
+
+.ic-impi-copy-btn.copied {
+    background: #6ee7b7;
+}
+
+.ic-impi-history {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.ic-impi-history-item {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(241, 245, 249, .95);
+    border: 1px solid rgba(148, 163, 184, .25);
+    color: #0f172a;
+}
+
+.ic-impi-history-item.is-user {
+    background: rgba(219, 234, 254, .95);
+    border-color: rgba(59, 130, 246, .25);
+}
+
+.ic-impi-history-item.is-assistant {
+    background: rgba(236, 253, 245, .95);
+    border-color: rgba(16, 185, 129, .25);
+}
+
+.ic-impi-history-role {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #475569;
+}
+
+.ic-impi-history-text {
+    white-space: pre-wrap;
+    line-height: 1.55;
+}
+
+.ic-impi-history-meta {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #64748b;
+    white-space: pre-wrap;
+}
+
 /* ================================================================
    Circle Detail View
    ================================================================ */
@@ -1329,6 +1433,14 @@ a:hover { text-decoration: underline; }
         ngoLastSearchTax: '',
         ngoAdminFocusCircleId: null,
         ngoWorkspaceSlug: '',
+        impiAnswerCache: {},
+        impiHistory: [],
+        impiCapabilities: {
+            ask: { supported: false, reason: 'Capability ellenőrzés folyamatban.' },
+            image_generation: { supported: false, reason: 'Capability ellenőrzés folyamatban.' },
+            marketing_copy: { supported: false, reason: 'Capability ellenőrzés folyamatban.' },
+        },
+        impiCapabilitiesLoaded: false,
         votedPosts: loadVotedPosts(),
     };
 
@@ -1487,7 +1599,7 @@ a:hover { text-decoration: underline; }
     async function api(path, opts = {}) {
         const url = API.replace(/\/$/, '') + path;
         const method = String(opts.method || 'GET').toUpperCase();
-        const sendNonce = method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
+        const sendNonce = method !== 'OPTIONS';
         const headers = {
             'Content-Type': 'application/json',
             ...(sendNonce ? {'X-WP-Nonce': NONCE} : {}),
@@ -2170,8 +2282,8 @@ a:hover { text-decoration: underline; }
         $content.appendChild(details);
 
         const mediaCard = html('div', {className: 'ic-card'});
-        mediaCard.appendChild(html('div', {className: 'ic-card-name'}, 'Logo es kepek feltoltese'));
-        mediaCard.appendChild(html('p', {className: 'ic-card-desc'}, 'WP Media tarba tolti fel a kepfajlokat.'));
+        mediaCard.appendChild(html('div', {className: 'ic-card-name'}, 'Logó és képek feltöltése'));
+        mediaCard.appendChild(html('p', {className: 'ic-card-desc'}, 'WP Média tárba tölti fel a képfájlokat.'));
         const mediaActions = html('div', {className: 'ic-card-actions'});
         const fileInput = html('input', {
             type: 'file',
@@ -2186,30 +2298,396 @@ a:hover { text-decoration: underline; }
             onClick: async () => {
                 try {
                     await uploadNgoWorkspaceImages(fileInput.files);
-                    showStatus('Kepfeltoltes sikeres.', 'success');
+                    showStatus('Képfeltöltés sikeres.', 'success');
                 } catch (err) {
-                    showStatus('Kepfeltoltes hiba: ' + (err.message || 'ismeretlen hiba'), 'error');
+                    showStatus('Képfeltöltés hiba: ' + (err.message || 'ismeretlen hiba'), 'error');
                 }
             },
-        }, 'Kepek feltoltese'));
+        }, 'Képek feltöltése'));
         mediaCard.appendChild(mediaActions);
         $content.appendChild(mediaCard);
 
         const impiCard = html('div', {className: 'ic-card'});
         impiCard.appendChild(html('div', {className: 'ic-card-name'}, 'Impi Agent'));
-        impiCard.appendChild(html('p', {className: 'ic-card-desc'}, 'Kulon Impi chat ablak visszakotese folyamatban. Addig ez a modul hamarosan erheto el.'));
-        impiCard.appendChild(html('div', {className: 'ic-card-actions'},
-            html('button', {
-                className: 'ic-btn ic-btn-outline',
-                disabled: true,
-                title: 'Hamarosan',
-            }, 'Impi chat - hamarosan'),
-            html('button', {
-                className: 'ic-btn ic-btn-outline',
-                disabled: true,
-                title: 'Hamarosan',
-            }, 'Kep + marketing - hamarosan')
-        ));
+        impiCard.appendChild(html('p', {className: 'ic-card-desc'}, 'Adj meg egy jogi kérdést, és az Impi Agent itt helyben válaszol.'));
+
+        const impiInput = html('textarea', {
+            className: 'ic-input',
+            rows: '3',
+            style: 'width:100%;max-width:780px;resize:vertical;',
+            placeholder: 'Pl.: Milyen dokumentum kell az NGO cégjelző adatok frissítéséhez?'
+        });
+        impiCard.appendChild(impiInput);
+
+        const impiHistoryHeader = html('div', {
+            className: 'ic-card-actions',
+            style: 'justify-content:space-between;align-items:center;margin-top:10px;display:none;'
+        },
+            html('div', {className: 'ic-card-desc', style: 'margin:0;font-weight:600;'}, 'Impi előzmények')
+        );
+        const impiClearBtn = html('button', {
+            className: 'ic-btn ic-btn-outline',
+            type: 'button',
+            style: 'display:none;'
+        }, 'Előzmények törlése');
+        impiHistoryHeader.appendChild(impiClearBtn);
+        impiCard.appendChild(impiHistoryHeader);
+
+        const impiHistory = html('div', {
+            className: 'ic-impi-history',
+            style: 'display:none;',
+            'data-impi-history': '1'
+        });
+        impiCard.appendChild(impiHistory);
+
+        const impiMeta = html('div', {className: 'ic-impi-review-box', style: 'display:none;'});
+        impiCard.appendChild(impiMeta);
+
+        const impiResult = html('div', {
+            className: 'ic-card-desc',
+            style: 'margin-top:10px;white-space:pre-wrap;display:none;-webkit-line-clamp:unset;-webkit-box-orient:unset;display:block;overflow:visible;'
+        });
+        impiResult.style.display = 'none';
+        impiCard.appendChild(impiResult);
+
+        const impiPreview = html('div', {className: 'ic-impi-preview', style: 'display:none;'});
+        impiCard.appendChild(impiPreview);
+
+        const impiActions = html('div', {className: 'ic-card-actions'});
+        const impiAskBtn = html('button', { className: 'ic-btn ic-btn-primary', type: 'button', 'data-impi-submit': '1' }, 'Kérdezd Impit');
+        const impiImageBtn = html('button', { className: 'ic-btn ic-btn-outline', type: 'button' }, 'Kép generálás');
+        const impiMarketingBtn = html('button', { className: 'ic-btn ic-btn-outline', type: 'button' }, 'Marketing szöveg');
+        let impiRequestBusy = false;
+
+        const setImpiCapability = (mode, supported, reason = '') => {
+            if (!state.impiCapabilities || typeof state.impiCapabilities !== 'object') {
+                state.impiCapabilities = {};
+            }
+            state.impiCapabilities[mode] = {
+                supported: !!supported,
+                reason: String(reason || '').trim(),
+            };
+        };
+
+        const modeReason = (mode) => {
+            const cap = state.impiCapabilities && state.impiCapabilities[mode];
+            if (!cap || cap.supported) return '';
+            return String(cap.reason || 'Ez a mód jelenleg nem elérhető.').trim();
+        };
+
+        const modeSupported = (mode) => {
+            const cap = state.impiCapabilities && state.impiCapabilities[mode];
+            if (!cap) {
+                return false;
+            }
+            return cap.supported === true;
+        };
+
+        const applyImpiCapabilityUi = () => {
+            const askSupported = modeSupported('ask');
+            const imageSupported = modeSupported('image_generation');
+            const marketingSupported = modeSupported('marketing_copy');
+
+            impiAskBtn.disabled = impiRequestBusy || !askSupported;
+            impiImageBtn.disabled = impiRequestBusy || !imageSupported;
+            impiMarketingBtn.disabled = impiRequestBusy || !marketingSupported;
+
+            impiAskBtn.title = askSupported ? '' : modeReason('ask');
+            impiImageBtn.title = imageSupported ? '' : modeReason('image_generation');
+            impiMarketingBtn.title = marketingSupported ? '' : modeReason('marketing_copy');
+        };
+
+        const loadImpiCapabilities = async () => {
+            try {
+                const data = await api('/ngo/admin/impi/capabilities', { method: 'GET' });
+                const caps = data && typeof data.capabilities === 'object' ? data.capabilities : {};
+
+                const ask = caps.ask && typeof caps.ask === 'object'
+                    ? caps.ask
+                    : { supported: false, reason: 'ask mód nincs jelezve a backendben.' };
+                const image = caps.image_generation && typeof caps.image_generation === 'object'
+                    ? caps.image_generation
+                    : { supported: false, reason: 'image_generation nincs jelezve a backendben.' };
+                const marketing = caps.marketing_copy && typeof caps.marketing_copy === 'object'
+                    ? caps.marketing_copy
+                    : { supported: false, reason: 'marketing_copy nincs jelezve a backendben.' };
+
+                setImpiCapability('ask', ask.supported !== false, ask.reason || '');
+                setImpiCapability('image_generation', image.supported === true, image.reason || '');
+                setImpiCapability('marketing_copy', marketing.supported === true, marketing.reason || '');
+                state.impiCapabilitiesLoaded = true;
+                applyImpiCapabilityUi();
+            } catch (_) {
+                setImpiCapability('ask', false, 'Capability endpoint nem elérhető.');
+                setImpiCapability('image_generation', false, 'Capability endpoint nem elérhető.');
+                setImpiCapability('marketing_copy', false, 'Capability endpoint nem elérhető.');
+                state.impiCapabilitiesLoaded = false;
+                applyImpiCapabilityUi();
+            }
+        };
+
+        applyImpiCapabilityUi();
+        loadImpiCapabilities();
+
+        const syncImpiHistoryUi = () => {
+            const items = Array.isArray(state.impiHistory) ? state.impiHistory : [];
+            impiHistory.innerHTML = '';
+            if (!items.length) {
+                impiHistory.style.display = 'none';
+                impiHistoryHeader.style.display = 'none';
+                impiClearBtn.style.display = 'none';
+                return;
+            }
+
+            items.forEach((entry) => {
+                const role = entry && entry.role === 'assistant' ? 'assistant' : 'user';
+                const bubble = html('div', {
+                    className: `ic-impi-history-item ${role === 'assistant' ? 'is-assistant' : 'is-user'}`
+                });
+                bubble.appendChild(html('span', {className: 'ic-impi-history-role'}, role === 'assistant' ? 'Impi Agent' : 'Kérés'));
+                bubble.appendChild(html('div', {className: 'ic-impi-history-text'}, String((entry && entry.text) || '')));
+                if (entry && entry.meta) {
+                    bubble.appendChild(html('div', {className: 'ic-impi-history-meta'}, String(entry.meta)));
+                }
+                impiHistory.appendChild(bubble);
+            });
+
+            impiHistoryHeader.style.display = 'flex';
+            impiClearBtn.style.display = 'inline-flex';
+            impiHistory.style.display = 'flex';
+        };
+
+        const pushImpiHistory = (role, text, meta) => {
+            const nextItems = Array.isArray(state.impiHistory) ? state.impiHistory.slice() : [];
+            nextItems.push({
+                role: role === 'assistant' ? 'assistant' : 'user',
+                text: String(text || '').trim(),
+                meta: String(meta || '').trim(),
+            });
+            state.impiHistory = nextItems.filter((item) => item.text !== '').slice(-12);
+            syncImpiHistoryUi();
+        };
+
+        impiClearBtn.addEventListener('click', () => {
+            state.impiHistory = [];
+            syncImpiHistoryUi();
+            showStatus('Impi előzmények törölve.', 'info');
+        });
+
+        syncImpiHistoryUi();
+
+        const extractImpiAnswer = (data, mode) => {
+            const payload = (data && data.data) ? data.data : data;
+            if (!payload || typeof payload !== 'object') {
+                return '';
+            }
+            const directText = payload.answer || payload.output || payload.text || payload.copy || payload.marketing_copy || '';
+            if (directText) {
+                return String(directText).trim();
+            }
+            if (mode === 'image_generation') {
+                const imageUrl = payload.image_url
+                    || (payload.image && payload.image.url)
+                    || (Array.isArray(payload.images) && payload.images[0] && payload.images[0].url)
+                    || '';
+                if (imageUrl) {
+                    return 'Generált kép: ' + String(imageUrl);
+                }
+            }
+            return '';
+        };
+
+        const renderPreview = (answer, mode) => {
+            impiPreview.innerHTML = '';
+            impiPreview.style.display = 'none';
+            if (!answer || !mode) return;
+
+            if (mode === 'image_generation') {
+                const urlMatch = answer.match(/https?:\/\/[^\s\)\"]+/);
+                if (urlMatch) {
+                    const img = html('img', {
+                        src: urlMatch[0],
+                        alt: 'Generált kép',
+                        style: 'display:block;'
+                    });
+                    impiPreview.appendChild(img);
+                    impiPreview.style.display = 'block';
+                }
+            } else if (mode === 'marketing_copy') {
+                const container = html('div');
+                container.appendChild(html('p', {style: 'margin:0 0 8px 0;color:#666;font-size:12px;'}, 'Marketing szöveg'));
+                const textDiv = html('div', {style: 'background:white;padding:8px;border-radius:4px;margin-bottom:8px;'});
+                textDiv.textContent = answer;
+                container.appendChild(textDiv);
+
+                const copyBtn = html('button', {className: 'ic-impi-copy-btn'}, '📋 Másolás');
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(answer);
+                        copyBtn.textContent = '✓ Másolva';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.textContent = '📋 Másolás';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    } catch (e) {
+                        showStatus('Másolás hiba: ' + ((e && e.message) || 'ismeretlen'), 'error');
+                    }
+                });
+                container.appendChild(copyBtn);
+                impiPreview.appendChild(container);
+                impiPreview.style.display = 'block';
+            }
+        };
+
+        const runImpiRequest = async (mode, busyText) => {
+            if (!modeSupported(mode)) {
+                showStatus(modeReason(mode) || 'Ez az Impi mód jelenleg nem elérhető.', 'info');
+                return;
+            }
+
+            const query = String(impiInput.value || '').trim();
+            if (!query) {
+                showStatus('Adj meg egy kérést az Impi Agentnek.', 'error');
+                impiInput.focus();
+                return;
+            }
+
+            pushImpiHistory('user', query);
+
+            const cacheKey = `${mode}::${query.toLowerCase()}`;
+            const cached = state.impiAnswerCache ? state.impiAnswerCache[cacheKey] : null;
+            if (cached && typeof cached.answer === 'string' && (Date.now() - Number(cached.ts || 0)) < (5 * 60 * 1000)) {
+                impiMeta.className = String(cached.metaClass || 'ic-impi-review-box');
+                impiMeta.textContent = String(cached.metaText || '');
+                impiMeta.style.display = cached.metaText ? 'block' : 'none';
+                impiResult.textContent = String(cached.answer);
+                impiResult.style.display = 'block';
+                renderPreview(String(cached.answer), mode);
+                pushImpiHistory('assistant', cached.answer, cached.metaText || '');
+                showStatus('Impi válasz cache-ből betöltve.', 'info');
+                return;
+            }
+
+            const originalAskLabel = impiAskBtn.textContent;
+            const originalImageLabel = impiImageBtn.textContent;
+            const originalMarketingLabel = impiMarketingBtn.textContent;
+            impiRequestBusy = true;
+            applyImpiCapabilityUi();
+            if (mode === 'ask') impiAskBtn.textContent = busyText;
+            if (mode === 'image_generation') impiImageBtn.textContent = busyText;
+            if (mode === 'marketing_copy') impiMarketingBtn.textContent = busyText;
+
+            impiMeta.style.display = 'none';
+            impiMeta.textContent = '';
+            impiResult.style.display = 'none';
+            impiResult.textContent = '';
+
+            try {
+                let data;
+                let degradedModeFallback = false;
+                try {
+                    data = await api('/ngo/admin/impi/review', {
+                        method: 'POST',
+                        body: JSON.stringify({ question: query, mode })
+                    });
+                } catch (primaryErr) {
+                    if (mode !== 'ask') {
+                        degradedModeFallback = true;
+                        const fallbackQuestion = mode === 'marketing_copy'
+                            ? `Készíts rövid, jól használható marketing szöveget a következő kérésből: ${query}`
+                            : `Adj képgeneráláshoz részletes, használható promptot a következő kérésből: ${query}`;
+                        data = await api('/ngo/admin/impi/review', {
+                            method: 'POST',
+                            body: JSON.stringify({ question: fallbackQuestion, mode: 'ask' })
+                        });
+                    } else {
+                        throw primaryErr;
+                    }
+                }
+
+                const answer = extractImpiAnswer(data, mode);
+                const citationCheck = (data && (data.citation_check || (data.data && data.data.citation_check))) || null;
+                const hallucinationGuard = (data && (data.hallucination_guard || (data.data && data.data.hallucination_guard))) || null;
+                const releaseBlocked = Boolean(data && (data.release_blocked || (data.data && data.data.release_blocked)));
+                const sources = (data && (data.sources || (data.data && data.data.sources))) || [];
+
+                if (!answer) {
+                    throw new Error('Az Impi nem adott megjeleníthető választ erre a kérésre.');
+                }
+
+                const metaLines = [];
+                if (degradedModeFallback) {
+                    metaLines.push('ℹ️ Fallback mód: a dedikált kép/marketing runtime nem volt elérhető, ask módban készült válasz.');
+                }
+                if (releaseBlocked) {
+                    metaLines.push('⚠️ Review szükséges: guard blokkolta a közvetlen felhasználást.');
+                }
+                if (citationCheck && typeof citationCheck === 'object' && Object.prototype.hasOwnProperty.call(citationCheck, 'blocked')) {
+                    metaLines.push(`Citation check: ${citationCheck.blocked ? 'BLOCKED' : 'OK'}`);
+                }
+                if (hallucinationGuard && typeof hallucinationGuard === 'object' && hallucinationGuard.overallConfidence) {
+                    metaLines.push(`Hallucination guard confidence: ${String(hallucinationGuard.overallConfidence)}`);
+                }
+                if (Array.isArray(sources)) {
+                    metaLines.push(`Források száma: ${sources.length}`);
+                }
+
+                const metaText = metaLines.join('\n');
+                if (metaText) {
+                    impiMeta.className = releaseBlocked ? 'ic-impi-review-box is-blocked' : 'ic-impi-review-box';
+                    impiMeta.textContent = metaText;
+                    impiMeta.style.display = 'block';
+                }
+
+                impiResult.textContent = answer;
+                impiResult.style.display = 'block';
+
+                renderPreview(answer, mode);
+                pushImpiHistory('assistant', answer, metaText);
+
+                if (state.impiAnswerCache) {
+                    state.impiAnswerCache[cacheKey] = {
+                        answer,
+                        metaText,
+                        metaClass: impiMeta.className,
+                        ts: Date.now(),
+                    };
+                }
+
+                const okLabel = mode === 'ask'
+                    ? 'Impi válasz megérkezett.'
+                    : (mode === 'image_generation' ? 'Képgenerálás kész.' : 'Marketing szöveg elkészült.');
+                showStatus(
+                    releaseBlocked ? `${okLabel} Review szükséges.` : okLabel,
+                    releaseBlocked ? 'error' : 'success'
+                );
+            } catch (err) {
+                const msg = (err && err.message) ? err.message : 'ismeretlen hiba';
+                impiMeta.className = 'ic-impi-review-box is-blocked';
+                impiMeta.textContent = '⚠️ Review szükséges: a válasz nem értelmezhető biztonságosan.';
+                impiMeta.style.display = 'block';
+                impiResult.textContent = 'Impi hiba: ' + msg;
+                impiResult.style.display = 'block';
+                pushImpiHistory('assistant', 'Impi hiba: ' + msg, impiMeta.textContent);
+                showStatus('Impi hiba: ' + msg, 'error');
+            } finally {
+                impiRequestBusy = false;
+                applyImpiCapabilityUi();
+                impiAskBtn.textContent = originalAskLabel;
+                impiImageBtn.textContent = originalImageLabel;
+                impiMarketingBtn.textContent = originalMarketingLabel;
+            }
+        };
+
+        impiAskBtn.addEventListener('click', () => runImpiRequest('ask', 'Impi válaszol...'));
+        impiImageBtn.addEventListener('click', () => runImpiRequest('image_generation', 'Generálás...'));
+        impiMarketingBtn.addEventListener('click', () => runImpiRequest('marketing_copy', 'Generálás...'));
+
+        impiActions.appendChild(impiAskBtn);
+        impiActions.appendChild(impiImageBtn);
+        impiActions.appendChild(impiMarketingBtn);
+        impiCard.appendChild(impiActions);
         $content.appendChild(impiCard);
 
         const launchCard = html('div', {className: 'ic-card'});
