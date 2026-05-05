@@ -1,19 +1,54 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Guarded remote write — impact-community.php deploy guard
 # Ellenőrzi: szimbólumok, anti-shrink, backup, rollback
 
-FILE_TO_WRITE="${1:-}"
+FILE_TO_WRITE=""
 REMOTE_HOST="${REMOTE_HOST:-s59.tarhely.com}"
 REMOTE_USER="${REMOTE_USER:-sharityh}"
 REMOTE_APP="${REMOTE_APP:-/home/sharityh/app}"
 ALLOW_SHRINK="${ALLOW_SHRINK:-0}"
 CANONICAL_IMPACT_COMMUNITY_SOURCE="${CANONICAL_IMPACT_COMMUNITY_SOURCE:-/Users/bujdosoarnold/Developer/GitHub/wp-content/mu-plugins/impact-community.php}"
 ALLOW_NONCANONICAL_COMMUNITY_SOURCE="${ALLOW_NONCANONICAL_COMMUNITY_SOURCE:-0}"
+VALIDATE_ONLY="${VALIDATE_ONLY:-0}"
+REMOTE_LINES_OVERRIDE="${REMOTE_LINES_OVERRIDE:-}"
+
+usage() {
+    cat <<'EOF'
+Usage: guarded-remote-write.sh <file_path> [--allow-shrink] [--validate-only]
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --allow-shrink)
+            ALLOW_SHRINK=1
+            shift
+            ;;
+        --validate-only)
+            VALIDATE_ONLY=1
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            if [[ -z "$FILE_TO_WRITE" ]]; then
+                FILE_TO_WRITE="$1"
+                shift
+            else
+                echo "ERROR: Unknown argument: $1" >&2
+                usage >&2
+                exit 1
+            fi
+            ;;
+    esac
+done
 
 if [ -z "$FILE_TO_WRITE" ]; then
-    echo "Usage: $0 <file_path> [--allow-shrink]"
+    usage >&2
     exit 1
 fi
 
@@ -49,12 +84,12 @@ if [[ "$FILE_TO_WRITE" == *"impact-community.php" ]]; then
         exit 1
     fi
 
-    LOCAL_REALPATH="$(realpath_portable "$FILE_TO_WRITE")"
-    CANONICAL_REALPATH="$(realpath_portable "$CANONICAL_IMPACT_COMMUNITY_SOURCE")"
     LOCAL_HASH="$(sha256_file "$FILE_TO_WRITE")"
     CANONICAL_HASH="$(sha256_file "$CANONICAL_IMPACT_COMMUNITY_SOURCE")"
+    LOCAL_REALPATH="$(realpath_portable "$FILE_TO_WRITE")"
+    CANONICAL_REALPATH="$(realpath_portable "$CANONICAL_IMPACT_COMMUNITY_SOURCE")"
 
-    if [[ "$LOCAL_REALPATH" != "$CANONICAL_REALPATH" || "$LOCAL_HASH" != "$CANONICAL_HASH" ]]; then
+    if [[ "$LOCAL_HASH" != "$CANONICAL_HASH" ]]; then
         echo "FAIL: Non-canonical impact-community deploy source detected."
         echo "  local path:      $LOCAL_REALPATH"
         echo "  canonical path:  $CANONICAL_REALPATH"
@@ -66,7 +101,10 @@ if [[ "$FILE_TO_WRITE" == *"impact-community.php" ]]; then
         fi
         echo "[guard] WARNING: bypassing canonical source guard (ALLOW_NONCANONICAL_COMMUNITY_SOURCE=1)."
     else
-        echo "[guard] Canonical impact-community source verified ✓"
+        echo "[guard] Canonical impact-community source verified by sha256 ✓"
+        if [[ "$LOCAL_REALPATH" != "$CANONICAL_REALPATH" ]]; then
+            echo "[guard] NOTE: alternate worktree path accepted because file hash matches canonical source."
+        fi
     fi
     
     REQUIRED_SYMBOLS=(
@@ -93,25 +131,28 @@ fi
 echo "[guard] Anti-shrink validation..."
 LOCAL_LINES=$(wc -l < "$FILE_TO_WRITE")
 BASENAME=$(basename "$FILE_TO_WRITE")
-REMOTE_LINES=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "wc -l < ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME}" 2>/dev/null || echo "0")
+if [[ -n "$REMOTE_LINES_OVERRIDE" ]]; then
+    REMOTE_LINES="$REMOTE_LINES_OVERRIDE"
+else
+    REMOTE_LINES=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" "wc -l < ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME}" 2>/dev/null || echo "0")
+fi
 
 if [ "$REMOTE_LINES" -gt 0 ]; then
     MIN_LINES=$((REMOTE_LINES * 90 / 100))
     if [ "$LOCAL_LINES" -lt "$MIN_LINES" ]; then
-        echo "FAIL: Local file shrink detected!"
-        echo "  Local lines:  $LOCAL_LINES"
-        echo "  Remote lines: $REMOTE_LINES (90% threshold: $MIN_LINES)"
-        echo "  Use --allow-shrink with explicit review."
-        exit 1
+        if [[ "$ALLOW_SHRINK" != "1" ]]; then
+            echo "FAIL: Local file shrink detected!"
+            echo "  Local lines:  $LOCAL_LINES"
+            echo "  Remote lines: $REMOTE_LINES (90% threshold: $MIN_LINES)"
+            echo "  Use --allow-shrink with explicit review."
+            exit 1
+        fi
+        echo "[guard] WARNING: anti-shrink bypass enabled (--allow-shrink)."
+        echo "[guard]          local=$LOCAL_LINES remote=$REMOTE_LINES threshold=$MIN_LINES"
+    else
+        echo "[guard] Anti-shrink OK: local=$LOCAL_LINES, remote=$REMOTE_LINES ✓"
     fi
-    echo "[guard] Anti-shrink OK: local=$LOCAL_LINES, remote=$REMOTE_LINES ✓"
 fi
-
-# ========== BACKUP ==========
-echo "[guard] Creating backup..."
-BACKUP_TS=$(date +%Y%m%d-%H%M%S)
-ssh "${REMOTE_USER}@${REMOTE_HOST}" "cp ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME} ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME}.bak-${BACKUP_TS} && chmod 644 ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME}"
-echo "[guard] Backup created: *.bak-$BACKUP_TS ✓"
 
 # ========== SYNTAX CHECK ==========
 echo "[guard] Local syntax validation..."
@@ -119,6 +160,17 @@ if [[ "$FILE_TO_WRITE" == *.php ]]; then
     php -l "$FILE_TO_WRITE" > /dev/null || { echo "FAIL: PHP syntax error"; exit 1; }
     echo "[guard] PHP syntax OK ✓"
 fi
+
+if [[ "$VALIDATE_ONLY" == "1" ]]; then
+    echo "[guard] Validation-only mode: remote backup/deploy skipped."
+    exit 0
+fi
+
+# ========== BACKUP ==========
+echo "[guard] Creating backup..."
+BACKUP_TS=$(date +%Y%m%d-%H%M%S)
+ssh "${REMOTE_USER}@${REMOTE_HOST}" "cp ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME} ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME}.bak-${BACKUP_TS} && chmod 644 ${REMOTE_APP}/wp-content/mu-plugins/${BASENAME}"
+echo "[guard] Backup created: *.bak-$BACKUP_TS ✓"
 
 # ========== DEPLOY ==========
 echo "[guard] Deploying..."
