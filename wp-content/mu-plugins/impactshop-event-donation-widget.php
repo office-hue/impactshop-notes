@@ -10,8 +10,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.5.10');
-define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.4.0');
+define('IMPACTSHOP_EVENT_DONATION_VERSION', '1.6.2');
+define('IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION', '1.5.0');
+define('IMPACTSHOP_EVENT_DONATION_BANK_NAME', 'Sharity Adományszervező Alapítvány');
+define('IMPACTSHOP_EVENT_DONATION_BANK_IBAN', 'HU23 1040 8155 5052 7068 8149 1000');
+define('IMPACTSHOP_EVENT_DONATION_BANK_BANK', 'K&H Bank');
+define('IMPACTSHOP_EVENT_DONATION_NOTIFY_ARNOLD', 'bujdoso.arnold@bujdosoiroda.com');
 define('IMPACTSHOP_EVENT_DONATION_CRON_HOOK', 'impactshop_event_donation_cert_cron');
 
 add_action('init', 'impactshop_event_donation_ensure_schema', 5);
@@ -24,8 +28,10 @@ add_filter('cron_schedules', 'impactshop_event_donation_cron_schedules');
 add_filter('allowed_http_origins', 'impactshop_event_donation_allowed_http_origins');
 add_filter('allowed_redirect_hosts', 'impactshop_event_donation_allowed_redirect_hosts');
 add_action('wp_enqueue_scripts', 'impactshop_event_donation_maybe_enqueue_runtime');
-add_shortcode('impact_event_donation_widget', 'impactshop_event_donation_shortcode');
+add_action('admin_menu', 'impactshop_event_donation_register_admin_page');
+add_action('admin_enqueue_scripts', 'impactshop_event_donation_admin_enqueue');
 add_shortcode('impact_event_admin_dashboard', 'impactshop_event_admin_dashboard_shortcode');
+add_shortcode('impact_event_donation_widget', 'impactshop_event_donation_shortcode');
 
 function impactshop_event_donation_is_configured(): bool
 {
@@ -444,6 +450,25 @@ function impactshop_event_donation_ensure_admin_cert_columns(string $table): voi
     }
 }
 
+function impactshop_event_donation_ensure_bank_transfer_columns(string $table): void
+{
+    global $wpdb;
+
+    $columns = [
+        'payment_method' => "ADD COLUMN payment_method ENUM('card','bank_transfer') NOT NULL DEFAULT 'card' AFTER status",
+        'transfer_confirmed_by' => "ADD COLUMN transfer_confirmed_by VARCHAR(120) DEFAULT NULL AFTER payment_method",
+        'transfer_confirmed_at' => "ADD COLUMN transfer_confirmed_at DATETIME DEFAULT NULL AFTER transfer_confirmed_by",
+    ];
+
+    foreach ($columns as $column => $alterSql) {
+        $exists = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $column));
+        if ($exists === $column) {
+            continue;
+        }
+        $wpdb->query("ALTER TABLE {$table} {$alterSql}");
+    }
+}
+
 function impactshop_event_donation_ensure_schema(): void
 {
     $current = (string) get_option('impactshop_event_donation_schema_version', '');
@@ -451,6 +476,7 @@ function impactshop_event_donation_ensure_schema(): void
     if ($current === IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION) {
         impactshop_event_donation_ensure_ticket_mix_columns($table);
         impactshop_event_donation_ensure_admin_cert_columns($table);
+        impactshop_event_donation_ensure_bank_transfer_columns($table);
         return;
     }
 
@@ -484,6 +510,9 @@ function impactshop_event_donation_ensure_schema(): void
         cert_manual_confirmed TINYINT(1) NOT NULL DEFAULT 0,
         cert_manual_confirmed_by VARCHAR(120) DEFAULT NULL,
         cert_manual_confirmed_at DATETIME DEFAULT NULL,
+        payment_method ENUM('card','bank_transfer') NOT NULL DEFAULT 'card',
+        transfer_confirmed_by VARCHAR(120) DEFAULT NULL,
+        transfer_confirmed_at DATETIME DEFAULT NULL,
         stripe_session_id VARCHAR(128) DEFAULT NULL,
         stripe_payment_intent VARCHAR(128) DEFAULT NULL,
         stripe_charge_id VARCHAR(128) DEFAULT NULL,
@@ -506,6 +535,7 @@ function impactshop_event_donation_ensure_schema(): void
     dbDelta($sql);
     impactshop_event_donation_ensure_ticket_mix_columns($table);
     impactshop_event_donation_ensure_admin_cert_columns($table);
+    impactshop_event_donation_ensure_bank_transfer_columns($table);
 
     update_option('impactshop_event_donation_schema_version', IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION, false);
 }
@@ -619,25 +649,37 @@ if (!function_exists('impactshop_event_donation_append_ticket_mix_lines')) {
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/transactions', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'impactshop_event_donation_admin_transactions',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
+    ]);
+
+    register_rest_route('impact/v1', '/event-campaigns/(?P<slug>[a-z0-9\-]+)/transactions/public', [
+        'methods' => WP_REST_Server::READABLE,
+        'callback' => 'impactshop_event_donation_public_transactions',
         'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/resend', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'impactshop_event_donation_admin_certificate_resend',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/confirm', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'impactshop_event_donation_admin_certificate_confirm',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/certificate/download', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'impactshop_event_donation_admin_certificate_download',
-        'permission_callback' => '__return_true',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
+    ]);
+
+    register_rest_route('impact/v1', '/event-campaigns/admin/(?P<slug>[a-z0-9\-]+)/confirm-transfer', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'impactshop_event_donation_admin_confirm_transfer',
+        'permission_callback' => 'impactshop_event_donation_admin_permission',
     ]);
 
     register_rest_route('impact/v1', '/event-campaigns/(?P<slug>[a-z0-9\-]+)/checkout', [
@@ -954,6 +996,87 @@ function impactshop_event_donation_status(WP_REST_Request $request): WP_REST_Res
     ], 200);
 }
 
+function impactshop_event_donation_public_transactions(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $campaign = impactshop_event_donation_get_campaign($slug);
+    if (!$campaign) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    $page = max(1, (int) $request->get_param('page'));
+    $perPage = min(200, max(1, (int) ($request->get_param('per_page') ?: 50)));
+    $offset = ($page - 1) * $perPage;
+
+    global $wpdb;
+    $table = impactshop_event_donation_table_name();
+
+    $total = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$table} WHERE campaign_slug = %s",
+        $slug
+    ));
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT donation_id, status, amount_display, currency, donor_name, email,
+                is_company, company_name, company_tax_id, company_address,
+                request_certificate, selected_package, ticket_count,
+                regular_ticket_count, supporter_ticket_count,
+                donation_cert_id, donation_cert_status, donation_cert_sent_at,
+                cert_manual_confirmed, cert_manual_confirmed_by, cert_manual_confirmed_at,
+                payment_method, completed_at, created_at
+         FROM {$table}
+         WHERE campaign_slug = %s
+         ORDER BY COALESCE(completed_at, created_at) DESC
+         LIMIT %d OFFSET %d",
+        $slug, $perPage, $offset
+    ), ARRAY_A);
+
+    if (!is_array($rows)) {
+        $rows = [];
+    }
+
+    $items = [];
+    foreach ($rows as $row) {
+        $items[] = [
+            'donation_id'              => (string) ($row['donation_id'] ?? ''),
+            'status'                   => (string) ($row['status'] ?? ''),
+            'amount'                   => (float) ($row['amount_display'] ?? 0),
+            'currency'                 => strtolower((string) ($row['currency'] ?? 'huf')),
+            'amount_formatted'         => impactshop_event_donation_format_amount((float) ($row['amount_display'] ?? 0), (string) ($row['currency'] ?? 'huf')),
+            'donor_name'               => (string) ($row['donor_name'] ?? ''),
+            'email'                    => (string) ($row['email'] ?? ''),
+            'is_company'               => ((int) ($row['is_company'] ?? 0)) === 1,
+            'company_name'             => (string) ($row['company_name'] ?? ''),
+            'company_tax_id'           => (string) ($row['company_tax_id'] ?? ''),
+            'company_address'          => (string) ($row['company_address'] ?? ''),
+            'request_certificate'      => ((int) ($row['request_certificate'] ?? 0)) === 1,
+            'selected_package'         => (string) ($row['selected_package'] ?? ''),
+            'ticket_count'             => (int) ($row['ticket_count'] ?? 0),
+            'regular_ticket_count'     => (int) ($row['regular_ticket_count'] ?? 0),
+            'supporter_ticket_count'   => (int) ($row['supporter_ticket_count'] ?? 0),
+            'donation_cert_id'         => (string) ($row['donation_cert_id'] ?? ''),
+            'donation_cert_status'     => (string) ($row['donation_cert_status'] ?? 'none'),
+            'donation_cert_sent_at'    => (string) ($row['donation_cert_sent_at'] ?? ''),
+            'cert_manual_confirmed'    => ((int) ($row['cert_manual_confirmed'] ?? 0)) === 1,
+            'cert_manual_confirmed_by' => (string) ($row['cert_manual_confirmed_by'] ?? ''),
+            'cert_manual_confirmed_at' => (string) ($row['cert_manual_confirmed_at'] ?? ''),
+            'payment_method'           => (string) ($row['payment_method'] ?? 'card'),
+            'completed_at'             => (string) ($row['completed_at'] ?? ''),
+            'created_at'               => (string) ($row['created_at'] ?? ''),
+        ];
+    }
+
+    return new WP_REST_Response([
+        'items'      => $items,
+        'pagination' => [
+            'page'        => $page,
+            'per_page'    => $perPage,
+            'total'       => $total,
+            'total_pages' => $perPage > 0 ? (int) ceil($total / $perPage) : 0,
+        ],
+    ], 200);
+}
+
 function impactshop_event_donation_admin_transactions(WP_REST_Request $request): WP_REST_Response
 {
     $slug = sanitize_title((string) $request->get_param('slug'));
@@ -1040,6 +1163,7 @@ function impactshop_event_donation_admin_transactions(WP_REST_Request $request):
             cert_manual_confirmed,
             cert_manual_confirmed_by,
             cert_manual_confirmed_at,
+            payment_method,
             completed_at,
             created_at
         FROM {$table}
@@ -1081,6 +1205,7 @@ function impactshop_event_donation_admin_transactions(WP_REST_Request $request):
             'cert_manual_confirmed' => ((int) ($row['cert_manual_confirmed'] ?? 0)) === 1,
             'cert_manual_confirmed_by' => (string) ($row['cert_manual_confirmed_by'] ?? ''),
             'cert_manual_confirmed_at' => (string) ($row['cert_manual_confirmed_at'] ?? ''),
+            'payment_method' => (string) ($row['payment_method'] ?? 'card'),
             'completed_at' => (string) ($row['completed_at'] ?? ''),
             'created_at' => (string) ($row['created_at'] ?? ''),
         ];
@@ -1177,7 +1302,7 @@ function impactshop_event_donation_admin_certificate_confirm(WP_REST_Request $re
     $table = impactshop_event_donation_table_name();
     $row = $wpdb->get_row(
         $wpdb->prepare(
-            "SELECT donation_id, campaign_slug FROM {$table} WHERE donation_id = %s LIMIT 1",
+            "SELECT donation_id, campaign_slug, is_company, request_certificate, email, donation_cert_status FROM {$table} WHERE donation_id = %s LIMIT 1",
             $donationId
         ),
         ARRAY_A
@@ -1207,11 +1332,31 @@ function impactshop_event_donation_admin_certificate_confirm(WP_REST_Request $re
         ['%s']
     );
 
+    $certSent = false;
+    if ($confirmed
+        && (int) ($row['is_company'] ?? 0) === 1
+        && (int) ($row['request_certificate'] ?? 0) === 1
+        && sanitize_email((string) ($row['email'] ?? '')) !== ''
+    ) {
+        // Ha még nem ment ki, reset → pending, majd küldés
+        if ((string) ($row['donation_cert_status'] ?? '') !== 'sent') {
+            $wpdb->update(
+                $table,
+                ['donation_cert_status' => 'pending'],
+                ['donation_id' => $donationId],
+                ['%s'],
+                ['%s']
+            );
+        }
+        $certSent = impactshop_event_donation_send_certificate_for_donation($donationId);
+    }
+
     return new WP_REST_Response([
         'donation_id' => $donationId,
         'cert_manual_confirmed' => $confirmed,
         'cert_manual_confirmed_by' => $confirmed ? $confirmedBy : '',
         'cert_manual_confirmed_at' => $confirmed ? $confirmedAt : '',
+        'cert_sent' => $certSent,
     ], 200);
 }
 
@@ -1390,12 +1535,18 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
 
     global $wpdb;
     $table = impactshop_event_donation_table_name();
+    $paymentMethod = sanitize_key((string) ($params['payment_method'] ?? 'card'));
+    if (!in_array($paymentMethod, ['card', 'bank_transfer'], true)) {
+        $paymentMethod = 'card';
+    }
+
     $inserted = $wpdb->insert(
         $table,
         [
             'donation_id' => $donationId,
             'campaign_slug' => $slug,
             'status' => 'pending',
+            'payment_method' => $paymentMethod,
             'amount_minor' => $amountMinor,
             'amount_display' => $amountInput,
             'currency' => $currency,
@@ -1416,12 +1567,38 @@ function impactshop_event_donation_checkout(WP_REST_Request $request): WP_REST_R
             'ip_address' => impactshop_event_donation_client_ip(),
             'user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 512),
         ],
-        ['%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%d','%d','%d','%s','%s','%s','%s','%s']
+        ['%s','%s','%s','%s','%d','%f','%s','%s','%s','%d','%s','%s','%s','%d','%d','%d','%d','%d','%s','%s','%s','%s','%s']
     );
 
     if ($inserted === false) {
         error_log('[impactshop-event-donation] DB insert failed: ' . $wpdb->last_error);
         return new WP_REST_Response(['error' => 'db_error'], 500);
+    }
+
+    // Bank transfer path: skip Stripe, send pending notification emails.
+    if ($paymentMethod === 'bank_transfer') {
+        $newRow = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$table} WHERE donation_id = %s LIMIT 1", $donationId),
+            ARRAY_A
+        );
+        if (is_array($newRow)) {
+            impactshop_event_donation_send_bank_transfer_buyer_notification($newRow);
+            impactshop_event_donation_send_bank_transfer_admin_notification($newRow);
+        }
+        $response = new WP_REST_Response([
+            'donation_id' => $donationId,
+            'payment_method' => 'bank_transfer',
+            'bank_name' => IMPACTSHOP_EVENT_DONATION_BANK_NAME,
+            'iban' => IMPACTSHOP_EVENT_DONATION_BANK_IBAN,
+            'bank' => IMPACTSHOP_EVENT_DONATION_BANK_BANK,
+            'amount_display' => $amountInput,
+            'currency' => strtoupper($currency),
+            'reference' => $donationId,
+        ], 200);
+        foreach (impactshop_event_donation_rate_headers($rate) as $header => $value) {
+            $response->header($header, $value);
+        }
+        return $response;
     }
 
     $session = impactshop_event_donation_create_checkout_session([
@@ -2257,6 +2434,299 @@ function impactshop_event_donation_send_transaction_notification(array $row): vo
     wp_mail($emails, $subject, $body, $headers);
 }
 
+// -------------------------------------------------------------------------
+// Bank transfer email helpers
+// -------------------------------------------------------------------------
+
+function impactshop_event_donation_bank_transfer_details_block(string $donationId, float $amount, string $currency): string
+{
+    $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
+    return "--- Utalási adatok ---\n"
+        . "Kedvezményezett: " . IMPACTSHOP_EVENT_DONATION_BANK_NAME . "\n"
+        . "IBAN: " . IMPACTSHOP_EVENT_DONATION_BANK_IBAN . "\n"
+        . "Bank: " . IMPACTSHOP_EVENT_DONATION_BANK_BANK . "\n"
+        . "Összeg: {$amountFormatted}\n"
+        . "Közlemény (kötelező!): {$donationId}\n"
+        . "----------------------\n";
+}
+
+function impactshop_event_donation_send_bank_transfer_buyer_notification(array $row): void
+{
+    $email = sanitize_email((string) ($row['email'] ?? ''));
+    if ($email === '') {
+        return;
+    }
+
+    $donorName   = (string) ($row['donor_name'] ?? '');
+    $donationId  = (string) ($row['donation_id'] ?? '');
+    $amount      = (float)  ($row['amount_display'] ?? 0);
+    $currency    = strtolower((string) ($row['currency'] ?? 'huf'));
+    $campaignSlug = (string) ($row['campaign_slug'] ?? '');
+    $campaign    = impactshop_event_donation_get_campaign($campaignSlug);
+    $campaignTitle = (string) ($campaign['title'] ?? 'Jótékonysági kampány');
+    $ticketMix   = impactshop_event_donation_ticket_mix_summary($row);
+    $ticketCount = (int) $ticketMix['ticket_count'];
+    $selectedPkg = (string) ($row['selected_package'] ?? '');
+    $pkgNames    = ['silver' => 'Ezüst', 'gold' => 'Arany', 'platinum' => 'Platina'];
+
+    $greeting = $donorName !== '' ? "Kedves {$donorName}!" : 'Kedves Támogató!';
+
+    $subject = 'Megrendelés rögzítve – várjuk az utalást! – ' . $campaignTitle;
+    $body = "{$greeting}\n\n"
+        . "Köszönjük, hogy a \"{$campaignTitle}\" kampányhoz választottad az utalásos fizetési módot!\n\n"
+        . "Megrendelésed rögzítettük. Az utalás beérkezésének ellenőrzése után "
+        . "hamarosan küldjük a végleges visszaigazolást.\n\n"
+        . "--- Mit kell tenned? ---\n"
+        . "1. Utald el az alábbi adatokra a megrendelésnek megfelelő összeget.\n"
+        . "2. A közleménybe KÖTELEZŐ feltüntetni a megrendelési azonosítót, "
+        . "hogy az utalást azonosítani tudjuk.\n"
+        . "3. Az utalás beérkezése után visszaigazolást küldünk, és jegyeidet aktiváljuk.\n\n"
+        . impactshop_event_donation_bank_transfer_details_block($donationId, $amount, $currency) . "\n";
+
+    if ($selectedPkg !== '') {
+        $body .= "Csomag: " . ($pkgNames[$selectedPkg] ?? $selectedPkg) . "\n";
+    }
+
+    if ($ticketCount > 0) {
+        $body .= "\n--- Megrendelt jegyek ({$ticketCount} db) ---\n";
+        $body = impactshop_event_donation_append_ticket_mix_lines($body, $ticketMix);
+    }
+
+    $body .= "\nMegrendelési azonosító: {$donationId}\n\n"
+        . "Ha kérdésed van, keress minket az office@sharity.hu címen.\n\n"
+        . "Köszönettel,\n"
+        . "Sharity Adományszervező Alapítvány\n"
+        . "https://sharity.hu\n";
+
+    $headers = [
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: Sharity Impact <office@sharity.hu>',
+        'Reply-To: Sharity Impact <office@sharity.hu>',
+    ];
+
+    wp_mail([$email], $subject, $body, $headers);
+}
+
+function impactshop_event_donation_send_bank_transfer_admin_notification(array $row): void
+{
+    $donorName   = (string) ($row['donor_name'] ?? '');
+    $email       = (string) ($row['email'] ?? '');
+    $donationId  = (string) ($row['donation_id'] ?? '');
+    $amount      = (float)  ($row['amount_display'] ?? 0);
+    $currency    = strtolower((string) ($row['currency'] ?? 'huf'));
+    $campaignSlug = (string) ($row['campaign_slug'] ?? '');
+    $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
+    $ticketMix   = impactshop_event_donation_ticket_mix_summary($row);
+    $ticketCount = (int) $ticketMix['ticket_count'];
+    $isCompany   = (int) ($row['is_company'] ?? 0) === 1;
+    $requestCert = (int) ($row['request_certificate'] ?? 0) === 1;
+
+    $adminUrl = admin_url('admin.php?page=impact-event-admin&campaign=' . rawurlencode($campaignSlug));
+
+    $subject = '[Sharity] ÚJ UTALÁSOS MEGRENDELÉS: ' . $amountFormatted . ' – ' . ($donorName ?: $email);
+    $body = "Új utalásos megrendelés érkezett – az utalás megérkezésekor kérem erősítsd meg!\n\n"
+        . "Összeg: {$amountFormatted}\n"
+        . "Adományozó neve: " . ($donorName ?: '(nem megadott)') . "\n"
+        . "E-mail cím: {$email}\n"
+        . "Kampány: {$campaignSlug}\n"
+        . "Megrendelési azonosító: {$donationId}\n"
+        . "Státusz: PENDING (utalásra vár)\n"
+        . "Admin dashboard: {$adminUrl}\n";
+
+    if ($ticketCount > 0) {
+        $body .= "\n--- Jegyek ({$ticketCount} db) ---\n";
+        $body = impactshop_event_donation_append_ticket_mix_lines($body, $ticketMix);
+    }
+
+    if ($isCompany && $requestCert) {
+        $body .= "\n--- Adományigazolás adatok (cég) ---\n"
+            . "Cégnév: " . (string) ($row['company_name'] ?? '') . "\n"
+            . "Adószám: " . (string) ($row['company_tax_id'] ?? '') . "\n"
+            . "Székhely: " . (string) ($row['company_address'] ?? '') . "\n";
+    }
+
+    $body .= "\n--- Megerősítés ---\n"
+        . "Az utalás beérkezése után a dashboardon a \"Utalás megerősítése\" gombbal "
+        . "aktiválható a megrendelés.\n";
+
+    $headers = [
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: Sharity Impact <office@sharity.hu>',
+    ];
+
+    wp_mail([IMPACTSHOP_EVENT_DONATION_NOTIFY_ARNOLD], $subject, $body, $headers);
+}
+
+function impactshop_event_donation_send_transfer_confirmed_buyer(array $row): void
+{
+    $email = sanitize_email((string) ($row['email'] ?? ''));
+    if ($email === '') {
+        return;
+    }
+
+    $donorName   = (string) ($row['donor_name'] ?? '');
+    $donationId  = (string) ($row['donation_id'] ?? '');
+    $amount      = (float)  ($row['amount_display'] ?? 0);
+    $currency    = strtolower((string) ($row['currency'] ?? 'huf'));
+    $campaignSlug = (string) ($row['campaign_slug'] ?? '');
+    $completedAt = (string) ($row['completed_at'] ?? current_time('mysql', 1));
+    $campaign    = impactshop_event_donation_get_campaign($campaignSlug);
+    $campaignTitle = (string) ($campaign['title'] ?? 'Jótékonysági kampány');
+    $ticketMix   = impactshop_event_donation_ticket_mix_summary($row);
+    $ticketCount = (int) $ticketMix['ticket_count'];
+    $ticketSerials = (array) ($row['_ticket_serials'] ?? []);
+    if (empty($ticketSerials) && !empty($row['ticket_serials'])) {
+        $ticketSerials = (array) json_decode((string) $row['ticket_serials'], true);
+    }
+    $selectedPkg = (string) ($row['selected_package'] ?? '');
+    $pkgNames    = ['silver' => 'Ezüst', 'gold' => 'Arany', 'platinum' => 'Platina'];
+    $amountFormatted = impactshop_event_donation_format_amount($amount, $currency);
+
+    $greeting = $donorName !== '' ? "Kedves {$donorName}!" : 'Kedves Támogató!';
+
+    $subject = 'Utalás megérkezett – visszaigazolás – ' . $campaignTitle;
+    $body = "{$greeting}\n\n"
+        . "Köszönjük! Utalásod megérkezett és megrendelésed aktiválva lett.\n\n"
+        . "--- Összesítő ---\n"
+        . "Kampány: {$campaignTitle}\n"
+        . "Összeg: {$amountFormatted}\n"
+        . "Megrendelési azonosító: {$donationId}\n"
+        . "Teljesítés dátuma: {$completedAt}\n";
+
+    if ($selectedPkg !== '') {
+        $body .= "Csomag: " . ($pkgNames[$selectedPkg] ?? $selectedPkg) . "\n";
+    }
+
+    if ($ticketCount > 0) {
+        $body .= "\n--- Jegyeid ({$ticketCount} db) ---\n";
+        $body = impactshop_event_donation_append_ticket_mix_lines($body, $ticketMix);
+        foreach ($ticketSerials as $idx => $serial) {
+            $body .= ($idx + 1) . ". jegy: {$serial}\n";
+        }
+        $body .= "\nKérjük, mutasd be ezt az e-mailt vagy a jegy sorszámot a rendezvény helyszínén.\n";
+    }
+
+    $body .= "\n"
+        . "Amennyiben kérdésed van, keress minket az office@sharity.hu címen.\n\n"
+        . "Köszönettel,\n"
+        . "Sharity Adományszervező Alapítvány\n"
+        . "https://sharity.hu\n";
+
+    $headers = [
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: Sharity Impact <office@sharity.hu>',
+        'Reply-To: Sharity Impact <office@sharity.hu>',
+        'Cc: office@sharity.hu, koncz.veronika@mielemed.hu',
+    ];
+
+    wp_mail([$email], $subject, $body, $headers);
+}
+
+// -------------------------------------------------------------------------
+// Admin: confirm bank transfer
+// -------------------------------------------------------------------------
+
+function impactshop_event_donation_admin_confirm_transfer(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = sanitize_title((string) $request->get_param('slug'));
+    $donationId = sanitize_text_field((string) $request->get_json_params()['donation_id'] ?? '');
+    if ($donationId === '') {
+        $donationId = sanitize_text_field((string) $request->get_param('donation_id'));
+    }
+
+    if ($donationId === '') {
+        return new WP_REST_Response(['error' => 'missing_donation_id'], 400);
+    }
+
+    global $wpdb;
+    $table = impactshop_event_donation_table_name();
+
+    $row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM {$table} WHERE donation_id = %s AND campaign_slug = %s LIMIT 1",
+            $donationId,
+            $slug
+        ),
+        ARRAY_A
+    );
+
+    if (!$row) {
+        return new WP_REST_Response(['error' => 'not_found'], 404);
+    }
+
+    if ((string) ($row['payment_method'] ?? 'card') !== 'bank_transfer') {
+        return new WP_REST_Response(['error' => 'not_bank_transfer'], 400);
+    }
+
+    if ((string) ($row['status'] ?? '') === 'completed') {
+        return new WP_REST_Response(['error' => 'already_confirmed'], 409);
+    }
+
+    $confirmedBy = sanitize_text_field((string) (wp_get_current_user()->user_email ?: 'admin'));
+    $confirmedAt = current_time('mysql', 1);
+
+    $updated = $wpdb->update(
+        $table,
+        [
+            'status'                => 'completed',
+            'completed_at'          => $confirmedAt,
+            'transfer_confirmed_by' => $confirmedBy,
+            'transfer_confirmed_at' => $confirmedAt,
+        ],
+        ['donation_id' => $donationId],
+        ['%s', '%s', '%s', '%s'],
+        ['%s']
+    );
+
+    if ($updated === false) {
+        return new WP_REST_Response(['error' => 'db_error'], 500);
+    }
+
+    // Re-fetch updated row and generate ticket serials if needed.
+    $mergedRow = $wpdb->get_row(
+        $wpdb->prepare("SELECT * FROM {$table} WHERE donation_id = %s LIMIT 1", $donationId),
+        ARRAY_A
+    );
+    if (!is_array($mergedRow)) {
+        return new WP_REST_Response(['error' => 'refetch_failed'], 500);
+    }
+
+    $ticketCount = (int) ($mergedRow['ticket_count'] ?? 0);
+    $ticketSerials = [];
+    if ($ticketCount > 0 && empty($mergedRow['ticket_serials'])) {
+        for ($i = 0; $i < $ticketCount; $i++) {
+            $ticketSerials[] = impactshop_event_donation_generate_ticket_serial($donationId, $i);
+        }
+        $wpdb->update(
+            $table,
+            ['ticket_serials' => wp_json_encode($ticketSerials)],
+            ['donation_id' => $donationId],
+            ['%s'],
+            ['%s']
+        );
+    } elseif (!empty($mergedRow['ticket_serials'])) {
+        $ticketSerials = (array) json_decode((string) $mergedRow['ticket_serials'], true);
+    }
+    $mergedRow['_ticket_serials'] = $ticketSerials;
+
+    // Send confirmation email to buyer (with CC to office + Veronika).
+    if (!empty($mergedRow['email'])) {
+        impactshop_event_donation_send_transfer_confirmed_buyer($mergedRow);
+    }
+
+    // Send certificate if requested (only now, not before confirmation).
+    if ((int) ($mergedRow['request_certificate'] ?? 0) === 1 && !empty($mergedRow['email'])) {
+        impactshop_event_donation_send_certificate_for_donation($donationId);
+    }
+
+    return new WP_REST_Response([
+        'ok'           => true,
+        'donation_id'  => $donationId,
+        'confirmed_at' => $confirmedAt,
+        'confirmed_by' => $confirmedBy,
+    ], 200);
+}
+
 function impactshop_event_donation_maybe_enqueue_runtime(): void
 {
     if (is_admin()) {
@@ -2311,12 +2781,72 @@ function impactshop_event_donation_shortcode(array $atts = []): string
     );
 }
 
+function impactshop_event_donation_admin_enqueue(string $hook): void
+{
+    if ($hook !== 'toplevel_page_impact-event-admin') {
+        return;
+    }
+    wp_register_script(
+        'impactshop-event-admin-dashboard-widget',
+        trailingslashit(WPMU_PLUGIN_URL) . 'impactshop-event-admin-dashboard-widget.js',
+        [],
+        IMPACTSHOP_EVENT_DONATION_VERSION,
+        true
+    );
+    wp_enqueue_script('impactshop-event-admin-dashboard-widget');
+}
+
+function impactshop_event_donation_register_admin_page(): void
+{
+    add_menu_page(
+        'Event Donation Admin',
+        'Event Donation',
+        'manage_options',
+        'impact-event-admin',
+        'impactshop_event_donation_admin_page_render',
+        'dashicons-heart',
+        56
+    );
+}
+
+function impactshop_event_donation_admin_page_render(): void
+{
+    if (!current_user_can('manage_options')) {
+        wp_die(__('Nincs jogosultságod.'));
+    }
+
+    $campaign = isset($_GET['campaign']) ? sanitize_title((string) $_GET['campaign']) : 'jovonkvize-2026';
+
+    wp_enqueue_script('impactshop-event-admin-dashboard-widget');
+
+    $id = 'impact-event-admin-dashboard-main';
+    $nonce = wp_create_nonce('wp_rest');
+    $apiRoot = rest_url('impact/v1');
+
+    echo '<div class="wrap">';
+    printf(
+        '<div id="%1$s" data-impact-event-admin-dashboard data-campaign="%2$s" data-api-root="%3$s" data-wp-nonce="%4$s" data-title="Adomány dashboard"></div>',
+        esc_attr($id),
+        esc_attr($campaign),
+        esc_attr($apiRoot),
+        esc_attr($nonce)
+    );
+    echo '</div>';
+}
+
 function impactshop_event_admin_dashboard_shortcode(array $atts = []): string
 {
     $atts = shortcode_atts([
         'campaign' => 'jovonkvize-2026',
-        'title' => 'Jövőnk Vize - Nyilvános dashboard',
+        'title' => 'Privát adomány és licit dashboard',
+        'public' => 'no',
     ], $atts, 'impact_event_admin_dashboard');
+
+    $isPublic = (strtolower(trim((string) $atts['public'])) === 'yes');
+
+    if (!$isPublic && (!is_user_logged_in() || !current_user_can('manage_options'))) {
+        return '';
+    }
 
     $campaign = sanitize_title((string) $atts['campaign']);
     if (!impactshop_event_donation_get_campaign($campaign)) {
@@ -2326,9 +2856,20 @@ function impactshop_event_admin_dashboard_shortcode(array $atts = []): string
     wp_enqueue_script('impactshop-event-admin-dashboard-widget');
 
     $id = 'impact-event-admin-dashboard-' . wp_generate_password(6, false, false);
-    $nonce = is_user_logged_in() ? wp_create_nonce('wp_rest') : '';
+    $nonce = wp_create_nonce('wp_rest');
     $apiRoot = rest_url('impact/v1');
     $title = sanitize_text_field((string) $atts['title']);
+
+    if ($isPublic) {
+        return sprintf(
+            '<div id="%1$s" data-impact-event-admin-dashboard data-campaign="%2$s" data-api-root="%3$s" data-wp-nonce="%4$s" data-title="%5$s" data-public="1"></div>',
+            esc_attr($id),
+            esc_attr($campaign),
+            esc_attr($apiRoot),
+            esc_attr($nonce),
+            esc_attr($title)
+        );
+    }
 
     return sprintf(
         '<div id="%1$s" data-impact-event-admin-dashboard data-campaign="%2$s" data-api-root="%3$s" data-wp-nonce="%4$s" data-title="%5$s"></div>',

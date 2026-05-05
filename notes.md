@@ -1,3 +1,15 @@
+## 2026-05-05 19:20 CEST - JVK public dashboard fix (impactshop-event-donation-widget v1.6.2)
+- PHP: public REST route `/transactions/public` hozzáadva (no auth), `impactshop_event_donation_public_transactions()` callback
+- PHP: shortcode `public="yes"` attribútum támogatás, `data-public="1"` az HTML-ben
+- PHP: cert auto-send bekapcsolva `utalas_megerosites` confirm-nél (cég + request_certificate=1 esetén)
+- PHP: verziószám 1.6.1 → 1.6.2 (JS cache-bust)
+- JS: `isPublic` flag, Licit tab elrejtve public módban
+- JS: `donationTxUrl` → public endpoint public módban, admin endpoint admin módban
+- JS: külön `aucError` div, nem írja felül az adomány hibát
+- JS: `loadAuctions()` kihagyva public módban (admin 403 elkerülés)
+- WP page 19133 shortcode frissítve `public="yes"`-re via SSH wp post update
+- Deploy: prod + staging, 2026-05-05T17:09Z–17:20Z
+
 ## 2026-05-04 15:20 CEST - Citation Verifier Integration (Impact Challenge P2 phase)
 - Az `ic_impi_run_legal_review()` függvényt módosítottam, hogy a runtime response-ból kinyerje a `citation_check` és `hallucination_guard` objektumokat.
 - Gate logic frissítve: `release_blocked` most dinamikus. Az output csak akkor kerülhet release-re ha `citation_passed=true` ÉS `hallucination_passed=true`.
@@ -6777,8 +6789,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - 🛡️ Guard compliance: protected-change-records created
 - 📤 Status: ready to push and create independent PR
 
-### 2026-05-05 — JVK auction close UX + auto-close hardening
-- Lejaratkor a widget azonnal `CLOSED` allapotot mutat (poll elotti kliens oldali fallback), nem marad rovid ideig `live`.
-- Lejart/lezart tetelnel a licit UI azonnal inaktiv: submit gomb + presetek + osszeg input disabled.
-- Dashboard JS nonce-header kuldes csak akkor megy, ha nonce tenylegesen elerheto (public oldalnal nincs ures `X-WP-Nonce`).
-- Szerver oldali auto-close path frissitve: nyertes nelkuli lejart tetel `closed_unsold` status.
+### 2026-05-05 — adomany-automata portal redirect deploy
+- Celzott MU-plugin deploy: `wp-content/mu-plugins/impactshop-ngo-guides.php` guarded single-file lane-n (`scripts/guarded-remote-write.sh`).
+- Uj 301 redirect aktiv: `/adomany-automata-portal-1` es `/adomany-automata-portal-2` -> `/rolunk/?lang=en`.
+- Deploy utani ellenorzes: mindket URL `301` helyes celra, vegpont `200`.
+- Remote backup keszult: `impactshop-ngo-guides.php.bak-20260505-135334` (rollback parancs a deploy outputban rogzitve).
