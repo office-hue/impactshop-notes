@@ -743,3 +743,6 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 ## 2026-05-05 impact-community source guard hardening (workflow stabilizalas)
 - `impact-community-source-guard.yml` workflow job timeout 5 percre allitva.
 - A non-canonical rejection parity lepesben `REMOTE_LINES_OVERRIDE=1` hasznalat, hogy semmilyen halozati mellekhatas ne akassza meg a CI futast.
+
+## 2026-05-05 impact-community source guard hardening (workflow parity path fix)
+- A non-canonical CI teszt mutalt fajlja most `impact-community.php` neven jon letre ideiglenes mappaban, hogy biztosan a guard relevans kodag fusson.

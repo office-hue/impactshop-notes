@@ -56,8 +56,9 @@ jobs:
           fi
 
           CANONICAL="$(pwd)/wp-content/mu-plugins/impact-community.php"
-          MUTATED="$(mktemp /tmp/impact-community-mutated-XXXXXX.php)"
-          trap 'rm -f "$MUTATED"' EXIT
+          MUTATED_DIR="$(mktemp -d /tmp/impact-community-mutated-XXXXXX)"
+          MUTATED="$MUTATED_DIR/impact-community.php"
+          trap 'rm -rf "$MUTATED_DIR"' EXIT
           cp "$CANONICAL" "$MUTATED"
           printf '\n// ci mutation\n' >> "$MUTATED"
 
