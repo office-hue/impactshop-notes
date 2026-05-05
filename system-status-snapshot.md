@@ -746,3 +746,12 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 
 ## 2026-05-05 impact-community source guard hardening (workflow parity path fix)
 - A non-canonical CI teszt mutalt fajlja most `impact-community.php` neven jon letre ideiglenes mappaban, hogy biztosan a guard relevans kodag fusson.
+
+## 2026-05-05 Impi Step 3: Admin Capability Gating (impi-step3-scoped branch)
+
+- Extracted clean Impi Step 3 implementation to separate scoped branch
+- Feature: authoritative capability gating for ask/image_generation/marketing_copy modes
+- Fail-closed defaults: all modes disabled until capability endpoint responds
+- Security audit: sanitized reason messages, nonce coherence fixed (GET now sends nonce)
+- Protected-Change: impi-step3-admin-hardening
+- Status: ✅ Guard-compliant, ready for independent PR review

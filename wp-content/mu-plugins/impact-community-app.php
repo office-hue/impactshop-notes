@@ -461,6 +461,53 @@ a:hover { text-decoration: underline; }
     background: #6ee7b7;
 }
 
+.ic-impi-history {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.ic-impi-history-item {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(241, 245, 249, .95);
+    border: 1px solid rgba(148, 163, 184, .25);
+    color: #0f172a;
+}
+
+.ic-impi-history-item.is-user {
+    background: rgba(219, 234, 254, .95);
+    border-color: rgba(59, 130, 246, .25);
+}
+
+.ic-impi-history-item.is-assistant {
+    background: rgba(236, 253, 245, .95);
+    border-color: rgba(16, 185, 129, .25);
+}
+
+.ic-impi-history-role {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #475569;
+}
+
+.ic-impi-history-text {
+    white-space: pre-wrap;
+    line-height: 1.55;
+}
+
+.ic-impi-history-meta {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #64748b;
+    white-space: pre-wrap;
+}
+
 /* ================================================================
    Circle Detail View
    ================================================================ */
@@ -1387,6 +1434,13 @@ a:hover { text-decoration: underline; }
         ngoAdminFocusCircleId: null,
         ngoWorkspaceSlug: '',
         impiAnswerCache: {},
+        impiHistory: [],
+        impiCapabilities: {
+            ask: { supported: false, reason: 'Capability ellenőrzés folyamatban.' },
+            image_generation: { supported: false, reason: 'Capability ellenőrzés folyamatban.' },
+            marketing_copy: { supported: false, reason: 'Capability ellenőrzés folyamatban.' },
+        },
+        impiCapabilitiesLoaded: false,
         votedPosts: loadVotedPosts(),
     };
 
@@ -1545,7 +1599,7 @@ a:hover { text-decoration: underline; }
     async function api(path, opts = {}) {
         const url = API.replace(/\/$/, '') + path;
         const method = String(opts.method || 'GET').toUpperCase();
-        const sendNonce = method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS';
+        const sendNonce = method !== 'OPTIONS';
         const headers = {
             'Content-Type': 'application/json',
             ...(sendNonce ? {'X-WP-Nonce': NONCE} : {}),
@@ -2265,6 +2319,27 @@ a:hover { text-decoration: underline; }
         });
         impiCard.appendChild(impiInput);
 
+        const impiHistoryHeader = html('div', {
+            className: 'ic-card-actions',
+            style: 'justify-content:space-between;align-items:center;margin-top:10px;display:none;'
+        },
+            html('div', {className: 'ic-card-desc', style: 'margin:0;font-weight:600;'}, 'Impi előzmények')
+        );
+        const impiClearBtn = html('button', {
+            className: 'ic-btn ic-btn-outline',
+            type: 'button',
+            style: 'display:none;'
+        }, 'Előzmények törlése');
+        impiHistoryHeader.appendChild(impiClearBtn);
+        impiCard.appendChild(impiHistoryHeader);
+
+        const impiHistory = html('div', {
+            className: 'ic-impi-history',
+            style: 'display:none;',
+            'data-impi-history': '1'
+        });
+        impiCard.appendChild(impiHistory);
+
         const impiMeta = html('div', {className: 'ic-impi-review-box', style: 'display:none;'});
         impiCard.appendChild(impiMeta);
 
@@ -2279,9 +2354,127 @@ a:hover { text-decoration: underline; }
         impiCard.appendChild(impiPreview);
 
         const impiActions = html('div', {className: 'ic-card-actions'});
-        const impiAskBtn = html('button', { className: 'ic-btn ic-btn-primary' }, 'Kérdezd Impit');
-        const impiImageBtn = html('button', { className: 'ic-btn ic-btn-outline' }, 'Kép generálás');
-        const impiMarketingBtn = html('button', { className: 'ic-btn ic-btn-outline' }, 'Marketing szöveg');
+        const impiAskBtn = html('button', { className: 'ic-btn ic-btn-primary', type: 'button', 'data-impi-submit': '1' }, 'Kérdezd Impit');
+        const impiImageBtn = html('button', { className: 'ic-btn ic-btn-outline', type: 'button' }, 'Kép generálás');
+        const impiMarketingBtn = html('button', { className: 'ic-btn ic-btn-outline', type: 'button' }, 'Marketing szöveg');
+        let impiRequestBusy = false;
+
+        const setImpiCapability = (mode, supported, reason = '') => {
+            if (!state.impiCapabilities || typeof state.impiCapabilities !== 'object') {
+                state.impiCapabilities = {};
+            }
+            state.impiCapabilities[mode] = {
+                supported: !!supported,
+                reason: String(reason || '').trim(),
+            };
+        };
+
+        const modeReason = (mode) => {
+            const cap = state.impiCapabilities && state.impiCapabilities[mode];
+            if (!cap || cap.supported) return '';
+            return String(cap.reason || 'Ez a mód jelenleg nem elérhető.').trim();
+        };
+
+        const modeSupported = (mode) => {
+            const cap = state.impiCapabilities && state.impiCapabilities[mode];
+            if (!cap) {
+                return false;
+            }
+            return cap.supported === true;
+        };
+
+        const applyImpiCapabilityUi = () => {
+            const askSupported = modeSupported('ask');
+            const imageSupported = modeSupported('image_generation');
+            const marketingSupported = modeSupported('marketing_copy');
+
+            impiAskBtn.disabled = impiRequestBusy || !askSupported;
+            impiImageBtn.disabled = impiRequestBusy || !imageSupported;
+            impiMarketingBtn.disabled = impiRequestBusy || !marketingSupported;
+
+            impiAskBtn.title = askSupported ? '' : modeReason('ask');
+            impiImageBtn.title = imageSupported ? '' : modeReason('image_generation');
+            impiMarketingBtn.title = marketingSupported ? '' : modeReason('marketing_copy');
+        };
+
+        const loadImpiCapabilities = async () => {
+            try {
+                const data = await api('/ngo/admin/impi/capabilities', { method: 'GET' });
+                const caps = data && typeof data.capabilities === 'object' ? data.capabilities : {};
+
+                const ask = caps.ask && typeof caps.ask === 'object'
+                    ? caps.ask
+                    : { supported: false, reason: 'ask mód nincs jelezve a backendben.' };
+                const image = caps.image_generation && typeof caps.image_generation === 'object'
+                    ? caps.image_generation
+                    : { supported: false, reason: 'image_generation nincs jelezve a backendben.' };
+                const marketing = caps.marketing_copy && typeof caps.marketing_copy === 'object'
+                    ? caps.marketing_copy
+                    : { supported: false, reason: 'marketing_copy nincs jelezve a backendben.' };
+
+                setImpiCapability('ask', ask.supported !== false, ask.reason || '');
+                setImpiCapability('image_generation', image.supported === true, image.reason || '');
+                setImpiCapability('marketing_copy', marketing.supported === true, marketing.reason || '');
+                state.impiCapabilitiesLoaded = true;
+                applyImpiCapabilityUi();
+            } catch (_) {
+                setImpiCapability('ask', false, 'Capability endpoint nem elérhető.');
+                setImpiCapability('image_generation', false, 'Capability endpoint nem elérhető.');
+                setImpiCapability('marketing_copy', false, 'Capability endpoint nem elérhető.');
+                state.impiCapabilitiesLoaded = false;
+                applyImpiCapabilityUi();
+            }
+        };
+
+        applyImpiCapabilityUi();
+        loadImpiCapabilities();
+
+        const syncImpiHistoryUi = () => {
+            const items = Array.isArray(state.impiHistory) ? state.impiHistory : [];
+            impiHistory.innerHTML = '';
+            if (!items.length) {
+                impiHistory.style.display = 'none';
+                impiHistoryHeader.style.display = 'none';
+                impiClearBtn.style.display = 'none';
+                return;
+            }
+
+            items.forEach((entry) => {
+                const role = entry && entry.role === 'assistant' ? 'assistant' : 'user';
+                const bubble = html('div', {
+                    className: `ic-impi-history-item ${role === 'assistant' ? 'is-assistant' : 'is-user'}`
+                });
+                bubble.appendChild(html('span', {className: 'ic-impi-history-role'}, role === 'assistant' ? 'Impi Agent' : 'Kérés'));
+                bubble.appendChild(html('div', {className: 'ic-impi-history-text'}, String((entry && entry.text) || '')));
+                if (entry && entry.meta) {
+                    bubble.appendChild(html('div', {className: 'ic-impi-history-meta'}, String(entry.meta)));
+                }
+                impiHistory.appendChild(bubble);
+            });
+
+            impiHistoryHeader.style.display = 'flex';
+            impiClearBtn.style.display = 'inline-flex';
+            impiHistory.style.display = 'flex';
+        };
+
+        const pushImpiHistory = (role, text, meta) => {
+            const nextItems = Array.isArray(state.impiHistory) ? state.impiHistory.slice() : [];
+            nextItems.push({
+                role: role === 'assistant' ? 'assistant' : 'user',
+                text: String(text || '').trim(),
+                meta: String(meta || '').trim(),
+            });
+            state.impiHistory = nextItems.filter((item) => item.text !== '').slice(-12);
+            syncImpiHistoryUi();
+        };
+
+        impiClearBtn.addEventListener('click', () => {
+            state.impiHistory = [];
+            syncImpiHistoryUi();
+            showStatus('Impi előzmények törölve.', 'info');
+        });
+
+        syncImpiHistoryUi();
 
         const extractImpiAnswer = (data, mode) => {
             const payload = (data && data.data) ? data.data : data;
@@ -2348,12 +2541,19 @@ a:hover { text-decoration: underline; }
         };
 
         const runImpiRequest = async (mode, busyText) => {
+            if (!modeSupported(mode)) {
+                showStatus(modeReason(mode) || 'Ez az Impi mód jelenleg nem elérhető.', 'info');
+                return;
+            }
+
             const query = String(impiInput.value || '').trim();
             if (!query) {
                 showStatus('Adj meg egy kérést az Impi Agentnek.', 'error');
                 impiInput.focus();
                 return;
             }
+
+            pushImpiHistory('user', query);
 
             const cacheKey = `${mode}::${query.toLowerCase()}`;
             const cached = state.impiAnswerCache ? state.impiAnswerCache[cacheKey] : null;
@@ -2363,6 +2563,8 @@ a:hover { text-decoration: underline; }
                 impiMeta.style.display = cached.metaText ? 'block' : 'none';
                 impiResult.textContent = String(cached.answer);
                 impiResult.style.display = 'block';
+                renderPreview(String(cached.answer), mode);
+                pushImpiHistory('assistant', cached.answer, cached.metaText || '');
                 showStatus('Impi válasz cache-ből betöltve.', 'info');
                 return;
             }
@@ -2370,9 +2572,8 @@ a:hover { text-decoration: underline; }
             const originalAskLabel = impiAskBtn.textContent;
             const originalImageLabel = impiImageBtn.textContent;
             const originalMarketingLabel = impiMarketingBtn.textContent;
-            impiAskBtn.disabled = true;
-            impiImageBtn.disabled = true;
-            impiMarketingBtn.disabled = true;
+            impiRequestBusy = true;
+            applyImpiCapabilityUi();
             if (mode === 'ask') impiAskBtn.textContent = busyText;
             if (mode === 'image_generation') impiImageBtn.textContent = busyText;
             if (mode === 'marketing_copy') impiMarketingBtn.textContent = busyText;
@@ -2443,6 +2644,7 @@ a:hover { text-decoration: underline; }
                 impiResult.style.display = 'block';
 
                 renderPreview(answer, mode);
+                pushImpiHistory('assistant', answer, metaText);
 
                 if (state.impiAnswerCache) {
                     state.impiAnswerCache[cacheKey] = {
@@ -2467,11 +2669,11 @@ a:hover { text-decoration: underline; }
                 impiMeta.style.display = 'block';
                 impiResult.textContent = 'Impi hiba: ' + msg;
                 impiResult.style.display = 'block';
+                pushImpiHistory('assistant', 'Impi hiba: ' + msg, impiMeta.textContent);
                 showStatus('Impi hiba: ' + msg, 'error');
             } finally {
-                impiAskBtn.disabled = false;
-                impiImageBtn.disabled = false;
-                impiMarketingBtn.disabled = false;
+                impiRequestBusy = false;
+                applyImpiCapabilityUi();
                 impiAskBtn.textContent = originalAskLabel;
                 impiImageBtn.textContent = originalImageLabel;
                 impiMarketingBtn.textContent = originalMarketingLabel;

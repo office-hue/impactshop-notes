@@ -6768,3 +6768,11 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Javitas: canonical guard hash alapon elfogadja a worktree pathot is, de nem-kanonikus tartalmat tovabbra is blokkol.
 - Javitas: rollback lane hash mismatch / missing backup file eseten fail-closed.
 - CI parity-check workflow frissitve, mar nem csak marker stringeket keres.
+
+### 2026-05-05 — Impi Step 3 Clean Extraction (13:50)
+
+- 🎯 Extracted clean Impi Step 3 commit to separate branch `impi-step3-scoped`
+- 📋 Commit: fix(ngo-admin): harden Impi capabilities gating fail-closed
+- 🔍 Audit findings implemented: fail-closed defaults, nonce coherence, security sanitization
+- 🛡️ Guard compliance: protected-change-records created
+- 📤 Status: ready to push and create independent PR
