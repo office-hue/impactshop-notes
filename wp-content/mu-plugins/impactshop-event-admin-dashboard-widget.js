@@ -63,8 +63,8 @@
     var nonce = root.getAttribute("data-wp-nonce") || "";
     var title = root.getAttribute("data-title") || "Privat dashboard";
 
-    if (!apiRoot || !nonce) {
-      root.textContent = "Hianyzo API root vagy nonce.";
+    if (!apiRoot) {
+      root.textContent = "Hianyzo API root.";
       return;
     }
 
@@ -155,13 +155,17 @@
     }
 
     function api(url, method, bodyObj) {
+      var headers = {
+        "Content-Type": "application/json"
+      };
+      if (nonce) {
+        headers["X-WP-Nonce"] = nonce;
+      }
+
       return fetch(url, {
         method: method || "GET",
         credentials: "include",
-        headers: {
-          "X-WP-Nonce": nonce,
-          "Content-Type": "application/json"
-        },
+        headers: headers,
         body: bodyObj ? JSON.stringify(bodyObj) : undefined
       }).then(function (res) {
         return res.json().then(function (json) {
