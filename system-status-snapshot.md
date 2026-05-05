@@ -728,3 +728,9 @@ _Auto update: $(date '+%Y-%m-%d %H:%M:%S')_
 - PHP: Vonage unicode type fix, version=0.3.8
 - Prod deploy: OK (wp-cli verified 0.3.8)
 ## JVK Dashboard Merge (2026-05-04)
+
+## 2026-05-05 impact-community source guard hardening
+- `scripts/guarded-remote-write.sh`: canonical path + sha256 ellenorzes kotelezo `impact-community.php` deploy elott.
+- `scripts/impact-intl-runtime-backup.sh` es `scripts/impact-intl-runtime-rollback.sh`: duplikalt legacy blokk eltavolitva, egyetlen kanonikus implementacio maradt.
+- Community backup/rollback csak explicit `--include-community --ack-include-community` eseten engedelyezett.
+- CI kiegeszites: `.github/workflows/impact-community-source-guard.yml` ellenorzi a canonical guard jelenletet.
