@@ -248,7 +248,7 @@
     var apiBase = (config.apiBase || DEFAULT_API_BASE).replace(/\/$/, "");
     var campaign = config.campaign || "jovonkvize-2026";
     var pollMs = Math.max(15000, Number(config.pollMs) || 30000);
-    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "", autoScrollFrame: 0, autoScrollPausedByUser: false, autoScrollLastTs: 0, autoScrollStartAt: 0, autoScrollLoopPauseUntil: 0 };
+    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "", autoScrollFrame: 0, autoScrollPausedByUser: false, autoScrollLastTs: 0, autoScrollStartAt: 0, autoScrollLoopPauseUntil: 0, lastExpiryRefreshAt: 0 };
 
     mountEl.innerHTML = createMarkup();
     var root = mountEl.querySelector(".impact-auction-widget");
@@ -281,8 +281,47 @@
       bidName: root.querySelector('[data-role="bid-name"]'),
       presets: root.querySelector('[data-role="presets"]'),
       detailStatus: root.querySelector('[data-role="detail-status"]'),
-      detailCountdown: root.querySelector('[data-role="detail-countdown"]')
+      detailCountdown: root.querySelector('[data-role="detail-countdown"]'),
+      bidSubmit: root.querySelector('.impact-auction-widget__submit')
     };
+
+    function lotUiStatus(lot) {
+      var status = (lot && lot.status) || "draft";
+      if (status === "live" && lot && lot.end_time) {
+        var endTs = new Date(lot.end_time).getTime();
+        if (!Number.isNaN(endTs) && endTs <= Date.now()) {
+          return "closed";
+        }
+      }
+      return status;
+    }
+
+    function lotIsBiddable(lot) {
+      return lotUiStatus(lot) === "live";
+    }
+
+    function applyBidFormState(lot) {
+      var canBid = !!lot && lotIsBiddable(lot) && !!state.sessionToken;
+      var lockReason = lot && !lotIsBiddable(lot)
+        ? "A licit erre a tételre lezárult."
+        : "A licitküldés jelenleg nem engedélyezett.";
+
+      if (els.bidAmount) {
+        els.bidAmount.disabled = !canBid;
+      }
+      if (els.bidSubmit) {
+        els.bidSubmit.disabled = !canBid;
+      }
+      if (els.presets) {
+        Array.prototype.forEach.call(els.presets.querySelectorAll('button'), function (button) {
+          button.disabled = !canBid;
+        });
+      }
+
+      if (!canBid) {
+        setStatus(els.detailStatus, lockReason, "info");
+      }
+    }
 
     function stopAutoScroll(permanent) {
       if (state.autoScrollFrame) {
@@ -364,7 +403,8 @@
     function detailOpen(lot) {
       stopAutoScroll(true);
       state.activeLot = lot;
-      els.detailBadge.textContent = (lot.status || "draft").toUpperCase();
+      var uiStatus = lotUiStatus(lot);
+      els.detailBadge.textContent = uiStatus.toUpperCase();
       els.detailArtist.textContent = lot.artist_name || "";
       els.detailTitle.textContent = lot.item_title || "";
       els.detailDesc.textContent = lot.description_long || lot.description_short || "";
@@ -394,8 +434,9 @@
       } catch (e) {}
       attachImageFallbacks(els.detailImage);
       setStatus(els.detailStatus, "", "");
+      applyBidFormState(lot);
       if (els.detailCountdown) {
-        if (lot.end_time && lot.status === "live") {
+        if (lot.end_time && uiStatus === "live") {
           els.detailCountdown.setAttribute("data-end-time", lot.end_time);
           els.detailCountdown.style.display = "";
           var cd = formatCountdown(lot.end_time);
@@ -434,16 +475,17 @@
     function renderLots(payload) {
       var lots = Array.isArray(payload.lots) ? payload.lots : [];
       els.gallery.innerHTML = lots.map(function (lot) {
+        var uiStatus = lotUiStatus(lot);
         return (
           '<button type="button" class="impact-auction-widget__card" data-lot="' + escapeHtml(lot.item_slug || "") + '">' +
           renderImageMarkup(lot, 'impact-auction-widget__image') +
           '<div class="impact-auction-widget__meta">' +
           '<span class="impact-auction-widget__artist">' + escapeHtml(lot.artist_name || "") + '</span>' +
           '<h4 class="impact-auction-widget__lot-title">' + escapeHtml(lot.item_title || "") + '</h4>' +
-          '<span class="impact-auction-widget__badge">' + escapeHtml((lot.status || "draft").toUpperCase()) + '</span>' +
+          '<span class="impact-auction-widget__badge">' + escapeHtml((uiStatus || "draft").toUpperCase()) + '</span>' +
           '<span class="impact-auction-widget__price-label">' + escapeHtml(lot.display_label || "Ár") + '</span>' +
           '<span class="impact-auction-widget__price">' + escapeHtml(lot.display_amount_formatted || formatAmount(lot.starting_bid || 0, "HUF")) + '</span>' +
-          (lot.end_time && lot.status === "live" ? '<span class="impact-auction-widget__countdown" data-role="card-countdown" data-end-time="' + escapeHtml(lot.end_time) + '">...</span>' : '') +
+          (lot.end_time && uiStatus === "live" ? '<span class="impact-auction-widget__countdown" data-role="card-countdown" data-end-time="' + escapeHtml(lot.end_time) + '">...</span>' : '') +
           '</div>' +
           '</button>'
         );
@@ -497,6 +539,10 @@
       event.preventDefault();
       if (!state.activeLot) {
         setStatus(els.detailStatus, "Nincs aktív tétel kiválasztva.", "error");
+        return;
+      }
+      if (!lotIsBiddable(state.activeLot)) {
+        applyBidFormState(state.activeLot);
         return;
       }
       if (!els.bidEmail.value.trim()) {
@@ -596,6 +642,7 @@
 
     // ── Countdown tick: minden másodpercben frissíti a visszaszámlálókat ─────────────────
     window.setInterval(function () {
+      var sawExpired = false;
       // Kártyák: gallery-ban lévő countdown spanek
       Array.prototype.forEach.call(
         root.querySelectorAll('[data-role="card-countdown"][data-end-time]'),
@@ -606,6 +653,16 @@
           el.className = "impact-auction-widget__countdown" +
             (cd.urgent ? " is-urgent" : "") +
             (cd.expired ? " is-expired" : "");
+          if (cd.expired) {
+            sawExpired = true;
+            var card = el.closest('.impact-auction-widget__card');
+            if (card) {
+              var badge = card.querySelector('.impact-auction-widget__badge');
+              if (badge) {
+                badge.textContent = 'CLOSED';
+              }
+            }
+          }
         }
       );
       // Detail panel countdown
@@ -616,7 +673,18 @@
           els.detailCountdown.className = "impact-auction-widget__detail-countdown" +
             (cd2.urgent ? " is-urgent" : "") +
             (cd2.expired ? " is-expired" : "");
+          if (cd2.expired && state.activeLot && lotUiStatus(state.activeLot) === "closed") {
+            state.activeLot.status = 'closed';
+            els.detailBadge.textContent = 'CLOSED';
+            applyBidFormState(state.activeLot);
+            sawExpired = true;
+          }
         }
+      }
+
+      if (sawExpired && Date.now() - state.lastExpiryRefreshAt > 4000) {
+        state.lastExpiryRefreshAt = Date.now();
+        loadPublic();
       }
     }, 1000);
     // ────────────────────────────────────────────────────────────────────────

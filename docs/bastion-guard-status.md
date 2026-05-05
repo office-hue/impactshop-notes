@@ -60,3 +60,4 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 - impact-community.php + impact-community-app.php restored to 10c9930d canonical state
 - /ngo-admin/ route és guard refactor revertelve
 - ngo_admin_url → /impact-shop_ngo/ (kanonikus)
+| 2026-05-05 | JVK auction close UX hardening | Lejarat utani azonnali CLOSED vizualis allapot + bid controls azonnali inaktivacio + public nonce-header fail-safe. Auto-close kimenet: nyertes nelkul `closed_unsold`. | `wp-content/mu-plugins/impactshop-event-auction-widget-jovonkvize-1.0.0.js`, `wp-content/mu-plugins/impactshop-event-auction-widget.php`, `wp-content/mu-plugins/impactshop-event-admin-dashboard-widget.js`, `wp-content/mu-plugins/impactshop-event-donation-widget.php` |
