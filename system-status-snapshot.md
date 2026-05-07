@@ -1,3 +1,9 @@
+## 2026-05-07T10:40:00+0200 - impactshop intl runtime canonicalized for clean PR
+- Kesz a tiszta release-branch a live-on validalt EN shop + EN challenge runtime allapothoz.
+- Uj additiv overlay assetek bekerultek: `impactshop-ads-watch-intl-overlay.js`, `impactshop-identity-panel-intl-overlay.js`.
+- Protected runtime frissitesek: `impactshop-ads-watch.php`, `impactshop-ads-watch.js`, `impactshop-identity-panel.php`.
+- Guard-admin evidencia: kulon protected change record, rollback terv es smoke scope rogzitve a PR lane-hez.
+
 ## 2026-05-04T15:20:00+0200 - hatas-korok: Citation Verifier Integration befejezt (P2 phase)
 - Az `ic_impi_run_legal_review()` fuggveny dynamic release gate logicot kapta.
 - Runtime response-bol kinyerest tortennek: `citation_check` es `hallucination_guard` objektumok.
