@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var WIDGET_VERSION = "1.0.7";
+  var WIDGET_VERSION = "1.0.12";
   var SCRIPT_ATTR = "data-impact-auction-widget";
   var STYLE_ID = "impact-event-auction-widget-style-jvk";
   var DEFAULT_API_BASE = "https://app.sharity.hu/wp-json/impact/v1/event-auctions";
@@ -54,6 +54,8 @@
       ".impact-auction-widget__panel{width:min(520px,100%);height:100%;overflow:auto;border-radius:24px;padding:20px;background:linear-gradient(180deg,rgba(6,13,42,.98),rgba(13,47,119,.96));border:1px solid rgba(255,255,255,.12);box-shadow:0 28px 50px rgba(0,0,0,.36)}" +
       ".impact-auction-widget__panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}" +
       ".impact-auction-widget__close{appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:var(--iaw-text);border-radius:12px;padding:10px 12px;cursor:pointer}" +
+      ".impact-auction-widget__share{appearance:none;border:1px solid rgba(198,154,95,.35);background:rgba(198,154,95,.12);color:var(--iaw-accent2);border-radius:12px;padding:10px 12px;cursor:pointer;font-size:13px;font-weight:600}" +
+      ".impact-auction-widget__share:hover{background:rgba(198,154,95,.22)}" +
       ".impact-auction-widget__detail-image{aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.08);margin-bottom:14px;display:flex;align-items:center;justify-content:center}" +
       ".impact-auction-widget__detail-image img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}" +
       ".impact-auction-widget__detail-block{display:grid;gap:6px;margin-bottom:16px}" +
@@ -173,6 +175,7 @@
       '<div class="impact-auction-widget__panel-head">' +
       '<div><span class="impact-auction-widget__badge" data-role="detail-badge">Tétel</span></div>' +
       '<button type="button" class="impact-auction-widget__close" data-role="close">Bezárás</button>' +
+      '<button type="button" class="impact-auction-widget__share" data-role="share">🔗 Link másolása</button>' +
       '</div>' +
       '<div class="impact-auction-widget__detail-countdown" data-role="detail-countdown" style="display:none"></div>' +
       '<div class="impact-auction-widget__detail-image" data-role="detail-image"></div>' +
@@ -248,7 +251,7 @@
     var apiBase = (config.apiBase || DEFAULT_API_BASE).replace(/\/$/, "");
     var campaign = config.campaign || "jovonkvize-2026";
     var pollMs = Math.max(15000, Number(config.pollMs) || 30000);
-    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "", autoScrollFrame: 0, autoScrollPausedByUser: false, autoScrollLastTs: 0, autoScrollStartAt: 0, autoScrollLoopPauseUntil: 0, lastExpiryRefreshAt: 0 };
+    var state = { payload: null, activeLot: null, sessionToken: "", bidderToken: "", autoScrollFrame: 0, autoScrollPausedByUser: false, autoScrollLastTs: 0, autoScrollStartAt: 0, autoScrollLoopPauseUntil: 0, lastExpiryRefreshAt: 0, analytics: { sessionId: "", pageViewTracked: false, lastEngagementAt: 0 } };
 
     mountEl.innerHTML = createMarkup();
     var root = mountEl.querySelector(".impact-auction-widget");
@@ -282,8 +285,105 @@
       presets: root.querySelector('[data-role="presets"]'),
       detailStatus: root.querySelector('[data-role="detail-status"]'),
       detailCountdown: root.querySelector('[data-role="detail-countdown"]'),
-      bidSubmit: root.querySelector('.impact-auction-widget__submit')
+      bidSubmit: root.querySelector('.impact-auction-widget__submit'),
+      share: root.querySelector('[data-role="share"]')
     };
+
+    function getVisitorSessionId() {
+      var key = "iaw_visitor_session_" + campaign;
+      try {
+        var existing = window.sessionStorage.getItem(key);
+        if (existing) {
+          return existing;
+        }
+        var created = "iaw_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+        window.sessionStorage.setItem(key, created);
+        return created;
+      } catch (error) {
+        return "iaw_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+      }
+    }
+
+    function collectTrackingBase() {
+      var qs = new URLSearchParams(window.location.search);
+      return {
+        visitor_session_id: state.analytics.sessionId,
+        page_url: window.location.href,
+        page_path: window.location.pathname,
+        page_query: window.location.search || "",
+        referrer: document.referrer || "",
+        referrer_host: document.referrer || "",
+        utm_source: qs.get("utm_source") || "",
+        utm_medium: qs.get("utm_medium") || "",
+        utm_campaign: qs.get("utm_campaign") || "",
+        utm_content: qs.get("utm_content") || "",
+        utm_term: qs.get("utm_term") || "",
+        screen: String(window.screen && window.screen.width ? window.screen.width : 0) + "x" + String(window.screen && window.screen.height ? window.screen.height : 0),
+        viewport: String(window.innerWidth || 0) + "x" + String(window.innerHeight || 0),
+        locale: navigator.language || ""
+      };
+    }
+
+    function postTracking(payload, useBeacon) {
+      if (!state.sessionToken || !state.analytics.sessionId) {
+        return Promise.resolve(null);
+      }
+
+      var url = apiBase + "/" + encodeURIComponent(campaign) + "/analytics/event";
+      var body = JSON.stringify(payload);
+
+      if (useBeacon && navigator.sendBeacon) {
+        try {
+          navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+          return Promise.resolve({ queued: true });
+        } catch (error) {
+        }
+      }
+
+      return fetch(url, {
+        method: "POST",
+        credentials: "omit",
+        keepalive: !!useBeacon,
+        headers: { "Content-Type": "application/json" },
+        body: body
+      }).catch(function () {
+        return null;
+      });
+    }
+
+    function trackEvent(eventType, extra, useBeacon) {
+      var payload = collectTrackingBase();
+      payload.session_token = state.sessionToken;
+      payload.event_type = eventType;
+      if (extra) {
+        Object.keys(extra).forEach(function (key) {
+          payload[key] = extra[key];
+        });
+      }
+      return postTracking(payload, !!useBeacon);
+    }
+
+    function flushEngagement(useBeacon) {
+      if (!state.analytics.pageViewTracked || document.visibilityState !== "visible" && !useBeacon) {
+        return;
+      }
+      var now = Date.now();
+      if (!state.analytics.lastEngagementAt) {
+        state.analytics.lastEngagementAt = now;
+        return;
+      }
+      var delta = now - state.analytics.lastEngagementAt;
+      if (delta < 5000) {
+        return;
+      }
+      state.analytics.lastEngagementAt = now;
+      trackEvent("engagement", {
+        item_slug: state.activeLot ? state.activeLot.item_slug : "",
+        engaged_ms: Math.min(delta, 60000)
+      }, useBeacon);
+    }
+
+    state.analytics.sessionId = getVisitorSessionId();
 
     function lotUiStatus(lot) {
       var status = (lot && lot.status) || "draft";
@@ -400,7 +500,8 @@
 
     bindAutoScrollGuards();
 
-    function detailOpen(lot) {
+    function detailOpen(lot, options) {
+      var openOptions = options || {};
       stopAutoScroll(true);
       state.activeLot = lot;
       var uiStatus = lotUiStatus(lot);
@@ -450,11 +551,26 @@
         }
       }
       els.drawer.classList.add("is-open");
+      if (openOptions.track !== false) {
+        trackEvent(openOptions.source === "deeplink" ? "deep_link_open" : "lot_open", {
+          item_slug: lot.item_slug,
+          source: openOptions.source || "gallery"
+        }, false);
+      }
+      // Deeplink: URL frissítés — csak a ?lot= paramot állítjuk be, a többi param megmarad
+      var dpOpen = new URLSearchParams(window.location.search);
+      dpOpen.set("lot", lot.item_slug);
+      history.replaceState(null, "", window.location.pathname + "?" + dpOpen.toString() + window.location.hash);
     }
 
     function detailClose() {
       els.drawer.classList.remove("is-open");
       state.activeLot = null;
+      // Deeplink: csak a ?lot= param törlése, a többi param megmarad
+      var dpClose = new URLSearchParams(window.location.search);
+      dpClose.delete("lot");
+      var dpQs = dpClose.toString();
+      history.replaceState(null, "", window.location.pathname + (dpQs ? "?" + dpQs : "") + window.location.hash);
     }
 
     function renderPresets(lot) {
@@ -468,6 +584,10 @@
       Array.prototype.forEach.call(els.presets.querySelectorAll("button"), function (button) {
         button.addEventListener("click", function () {
           els.bidAmount.value = button.getAttribute("data-amount") || "";
+          trackEvent("preset_click", {
+            item_slug: lot.item_slug,
+            bid_amount: button.getAttribute("data-amount") || "0"
+          }, false);
         });
       });
     }
@@ -509,6 +629,14 @@
     function renderPayload(payload) {
       state.payload = payload;
       state.sessionToken = (payload.security && payload.security.session_token) || "";
+      if (!state.analytics.pageViewTracked && state.sessionToken) {
+        state.analytics.pageViewTracked = true;
+        state.analytics.lastEngagementAt = Date.now();
+        trackEvent("page_view", {
+          item_slug: "",
+          source: "embed"
+        }, false);
+      }
       els.title.textContent = payload.title || "Jövőnk Vize gála aukció";
       els.subtitle.textContent = payload.subtitle || "";
       els.description.textContent = payload.description || "";
@@ -529,6 +657,35 @@
     }
 
     els.close.addEventListener("click", detailClose);
+    els.share.addEventListener("click", function () {
+      if (!state.activeLot) { return; }
+      var shareParams = new URLSearchParams(window.location.search);
+      shareParams.set("lot", state.activeLot.item_slug);
+      var shareUrl = window.location.origin + window.location.pathname + "?" + shareParams.toString();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(function () {
+          trackEvent("share_click", {
+            item_slug: state.activeLot.item_slug,
+            source: "clipboard"
+          }, false);
+          var orig = els.share.textContent;
+          els.share.textContent = "✓ Másolva!";
+          setTimeout(function () { els.share.textContent = orig; }, 2000);
+        }).catch(function () {
+          trackEvent("share_click", {
+            item_slug: state.activeLot.item_slug,
+            source: "prompt_fallback"
+          }, false);
+          prompt("Másold ki a linket:", shareUrl);
+        });
+      } else {
+        trackEvent("share_click", {
+          item_slug: state.activeLot.item_slug,
+          source: "prompt_fallback"
+        }, false);
+        prompt("Másold ki a linket:", shareUrl);
+      }
+    });
     els.drawer.addEventListener("click", function (event) {
       if (event.target === els.drawer) {
         detailClose();
@@ -565,6 +722,10 @@
       };
 
       setStatus(els.detailStatus, "Regisztráció folyamatban...", "");
+      trackEvent("bid_submit", {
+        item_slug: state.activeLot.item_slug,
+        bid_amount: els.bidAmount.value
+      }, false);
 
       var setupUrl = apiBase + "/" + encodeURIComponent(campaign) + "/setup-payment";
 
@@ -623,7 +784,7 @@
             return item.item_slug === state.activeLot.item_slug;
           });
           if (refreshedLot) {
-            detailOpen(refreshedLot);
+            detailOpen(refreshedLot, { track: false });
           }
         });
       }).catch(function (error) {
@@ -689,6 +850,24 @@
     }, 1000);
     // ────────────────────────────────────────────────────────────────────────
 
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") {
+        flushEngagement(true);
+      } else {
+        state.analytics.lastEngagementAt = Date.now();
+      }
+    });
+
+    window.addEventListener("pagehide", function () {
+      flushEngagement(true);
+    });
+
+    window.setInterval(function () {
+      if (document.visibilityState === "visible") {
+        flushEngagement(false);
+      }
+    }, 15000);
+
     loadPublic().then(function () {
       var urlParams      = new URLSearchParams(window.location.search);
       var cardSetupParam = urlParams.get("ea_card_setup");
@@ -732,7 +911,7 @@
           return item.item_slug === lotParam;
         });
         if (deepLinkedLot) {
-          detailOpen(deepLinkedLot);
+          detailOpen(deepLinkedLot, { source: "deeplink" });
         }
       }
     });

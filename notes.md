@@ -1,3 +1,11 @@
+## 2026-05-07 16:00 CEST - JVK aukció analytics + publikus dashboard tabs lezárva
+- `impactshop-event-auction-widget.php`: az éles JVK kampányadatok véglegesítve a publikus embedhez. Javítva lettek a lot 1-7 kikiáltási árai és licitlépcsői, a globális aukciózárás `2026-05-17T20:00:00Z` értékre került, és új publikus analytics REST route-ok kerültek be (`/analytics/public`, `/analytics/event`).
+- `impactshop-event-auction-widget-jovonkvize-1.0.0.js`: deeplink/share UX véglegesítve, kliensoldali analytics eseményküldés bekötve (`page_view`, `lot_open`, `deep_link_open`, `preset_click`, `share_click`, `bid_submit`, `engagement`).
+- `impactshop-event-admin-dashboard-widget.js`: a publikus dashboard három külön fülre lett rendezve: `Jegyek es adomanyok`, `Aukció tételek`, `Aukció statok`. Az aukciós publikus tétellista és a realtime analytics panel külön refresh útvonalat kapott.
+- `impactshop-event-donation-widget.php`: cache-bust verzió `1.6.4`, hogy a publikus dashboard oldal a friss JS assetet kérje le.
+- Prod verifikáció megtörtént: publikus aukció API 9 élő lotot adott vissza helyes kikiáltási árakkal és zárási idővel; az analytics track smoke helyes `Referer` mellett sikeres volt; a publikus dashboard HTML a végén már a `impactshop-event-admin-dashboard-widget.js?ver=1.6.4` assetet referálta.
+- Deploy: célzott hotfix sync lefutott, Cloudflare purge megtörtént az érintett JS assetekre.
+
 ## 2026-05-05 19:20 CEST - JVK public dashboard fix (impactshop-event-donation-widget v1.6.2)
 - PHP: public REST route `/transactions/public` hozzáadva (no auth), `impactshop_event_donation_public_transactions()` callback
 - PHP: shortcode `public="yes"` attribútum támogatás, `data-public="1"` az HTML-ben
