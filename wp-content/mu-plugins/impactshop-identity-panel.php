@@ -426,12 +426,30 @@ function impactshop_identity_id_shortcode(): string
  */
 function impactshop_identity_panel_register_assets(): void
 {
+    $php_asset_version = @filemtime(__FILE__);
+    $panel_script_version = max((int) (@filemtime(__DIR__ . '/impactshop-identity-panel.js') ?: 0), (int) ($php_asset_version ?: 0));
+    $intl_overlay_version = max((int) (@filemtime(__DIR__ . '/impactshop-identity-panel-intl-overlay.js') ?: 0), (int) ($php_asset_version ?: 0));
+
+    if (!$panel_script_version) {
+        $panel_script_version = '1.0.6';
+    }
+    if (!$intl_overlay_version) {
+        $intl_overlay_version = '1.0.2';
+    }
+
     wp_register_style('impactshop-identity-panel', false);
     wp_register_script(
         'impactshop-identity-panel',
         plugins_url('impactshop-identity-panel.js', __FILE__),
         [],
-        '1.0.5',
+        (string) $panel_script_version,
+        true
+    );
+    wp_register_script(
+        'impactshop-identity-panel-intl-overlay',
+        plugins_url('impactshop-identity-panel-intl-overlay.js', __FILE__),
+        ['impactshop-identity-panel'],
+        (string) $intl_overlay_version,
         true
     );
 
@@ -517,6 +535,7 @@ function impactshop_identity_panel_enqueue_assets(): void
 
     wp_enqueue_style('impactshop-identity-panel');
     wp_enqueue_script('impactshop-identity-panel');
+    wp_enqueue_script('impactshop-identity-panel-intl-overlay');
     $enqueued = true;
 }
 
