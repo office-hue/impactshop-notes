@@ -59,6 +59,10 @@ define('IMPACTSHOP_ADS_DEBUG_ENDPOINT_ENABLED', false);
 define('IMPACTSHOP_ADS_DEBUG_RATE_LIMIT_PER_MIN', 10);
 define('IMPACTSHOP_ADS_ALWAYS_REWARD_DEFAULT', false);
 
+if (!defined('IMPACTSHOP_FX_DISPLAY_FAILSAFE_USD_HUF')) {
+    define('IMPACTSHOP_FX_DISPLAY_FAILSAFE_USD_HUF', 311.28);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,9 +161,41 @@ function impactshop_ads_watch_is_always_reward_enabled(): bool
     );
 }
 
+function impactshop_ads_watch_request_path(): string
+{
+    $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+    $path = parse_url($uri, PHP_URL_PATH);
+
+    if (!is_string($path) || $path === '') {
+        $path = '/';
+    }
+
+    $base_path = wp_parse_url(home_url('/'), PHP_URL_PATH);
+    if (is_string($base_path) && $base_path !== '' && $base_path !== '/' && str_starts_with($path, $base_path)) {
+        $path = substr($path, strlen($base_path));
+        if ($path === '') {
+            $path = '/';
+        }
+    }
+
+    if (str_starts_with($path, '/impactshop-staging/')) {
+        $path = substr($path, strlen('/impactshop-staging'));
+        if ($path === '') {
+            $path = '/';
+        }
+    }
+
+    return $path;
+}
+
+function impactshop_ads_watch_matches_route(string $slug): bool
+{
+    return (bool) preg_match('~^/' . preg_quote($slug, '~') . '/?$~', impactshop_ads_watch_request_path());
+}
+
 function impactshop_ads_watch_is_dev_clone_request(): bool
 {
-    return is_page(IMPACTSHOP_ADS_DEV_CLONE_SLUG);
+    return impactshop_ads_watch_matches_route(IMPACTSHOP_ADS_DEV_CLONE_SLUG) || is_page(IMPACTSHOP_ADS_DEV_CLONE_SLUG);
 }
 
 function impactshop_ads_watch_is_dev_clone_authorized(): bool
@@ -4079,6 +4115,10 @@ function impactshop_ads_watch_is_page_request(): bool
         return false;
     }
 
+    if (impactshop_ads_watch_matches_route('impact-challenge')) {
+        return true;
+    }
+
     if (impactshop_ads_watch_is_dev_clone_request()) {
         return impactshop_ads_watch_is_dev_clone_authorized();
     }
@@ -4099,11 +4139,50 @@ function impactshop_ads_watch_is_page_request(): bool
     return has_shortcode((string) $post->post_content, 'impactshop_ads_watch');
 }
 
+function impactshop_ads_watch_template_redirect(): void
+{
+    $is_public_route = impactshop_ads_watch_matches_route('impact-challenge');
+    $is_dev_route = impactshop_ads_watch_matches_route(IMPACTSHOP_ADS_DEV_CLONE_SLUG);
+
+    if (!$is_public_route && !$is_dev_route) {
+        return;
+    }
+
+    if ($is_dev_route && !impactshop_ads_watch_is_dev_clone_authorized()) {
+        return;
+    }
+
+    global $wp_query;
+    if (isset($wp_query) && method_exists($wp_query, 'is_404')) {
+        $wp_query->is_404 = false;
+    }
+
+    status_header(200);
+    header('Content-Type: text/html; charset=UTF-8');
+
+    ?><!DOCTYPE html>
+<html lang="<?php echo esc_attr(impactshop_ads_watch_resolve_lang()); ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo esc_html(impactshop_ads_watch_resolve_lang() === 'en' ? 'Impact Challenge | Sharity' : 'Impact Challenge | Sharity'); ?></title>
+    <?php wp_head(); ?>
+</head>
+<body class="impactshop-ads-watch-route-shell">
+    <?php echo do_shortcode('[impactshop_ads_watch]'); ?>
+    <?php wp_footer(); ?>
+</body>
+</html>
+<?php
+    exit;
+}
+
 function impactshop_ads_watch_guard_dev_clone_access(): void
 {
     if (!impactshop_ads_watch_is_dev_clone_request()) {
         return;
     }
+add_action('template_redirect', 'impactshop_ads_watch_template_redirect', 4);
     if (impactshop_ads_watch_is_dev_clone_authorized()) {
         return;
     }
@@ -4141,6 +4220,54 @@ function impactshop_ads_watch_send_nocache_headers(): void
     header('X-ImpactShop-AdsWatch-Version: ' . IMPACTSHOP_ADS_WATCH_VERSION, false);
 }
 
+function impactshop_ads_watch_resolve_lang(): string
+{
+    $lang = isset($_GET['lang']) ? sanitize_key((string) wp_unslash($_GET['lang'])) : '';
+
+    return $lang === 'en' ? 'en' : 'hu';
+}
+
+function impactshop_ads_watch_resolve_country(): string
+{
+    $country = isset($_GET['country']) ? sanitize_key((string) wp_unslash($_GET['country'])) : '';
+
+    return $country === 'us' ? 'us' : 'hu';
+}
+
+function impactshop_ads_watch_get_usd_rate_huf(): float
+{
+    $resolved_rate = (float) apply_filters('impactshop_fx_resolve_rate', null, 'USD');
+    if ($resolved_rate > 0) {
+        return $resolved_rate;
+    }
+
+    if (function_exists('impactshop_get_huf_rate')) {
+        $helper_rate = (float) impactshop_get_huf_rate();
+        if ($helper_rate > 0) {
+            return $helper_rate;
+        }
+    }
+
+    if (defined('IMPACTSHOP_USD_RATE_HUF') && (float) IMPACTSHOP_USD_RATE_HUF > 0) {
+        return (float) IMPACTSHOP_USD_RATE_HUF;
+    }
+
+    return IMPACTSHOP_FX_DISPLAY_FAILSAFE_USD_HUF;
+}
+
+function impactshop_ads_watch_format_display_amount(float $amount_huf, ?string $country = null): string
+{
+    $resolved_country = $country ?: impactshop_ads_watch_resolve_country();
+    if ($resolved_country === 'us') {
+        $usd_rate_huf = max(0.01, impactshop_ads_watch_get_usd_rate_huf());
+        $usd_amount = $amount_huf / $usd_rate_huf;
+
+        return '$' . number_format($usd_amount, 2, '.', ',');
+    }
+
+    return number_format($amount_huf, 0, ',', ' ') . ' Ft';
+}
+
 function impactshop_ads_watch_shortcode(array $atts = []): string
 {
     $atts = shortcode_atts([
@@ -4158,11 +4285,29 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         }
     }
 
+    $ads_watch_js_version = max(
+        (int) (@filemtime(__DIR__ . '/impactshop-ads-watch.js') ?: 0),
+        (int) IMPACTSHOP_ADS_WATCH_VERSION
+    );
+
     wp_enqueue_script(
         'impactshop-ads-watch',
         plugins_url('impactshop-ads-watch.js', __FILE__),
         ['jquery'],
-        IMPACTSHOP_ADS_WATCH_VERSION,
+        (string) $ads_watch_js_version,
+        true
+    );
+
+    $ads_watch_intl_overlay_version = max(
+        (int) (@filemtime(__DIR__ . '/impactshop-ads-watch-intl-overlay.js') ?: 0),
+        (int) IMPACTSHOP_ADS_WATCH_VERSION
+    );
+
+    wp_enqueue_script(
+        'impactshop-ads-watch-intl-overlay',
+        plugins_url('impactshop-ads-watch-intl-overlay.js', __FILE__),
+        ['impactshop-ads-watch'],
+        (string) $ads_watch_intl_overlay_version,
         true
     );
 
@@ -4173,11 +4318,14 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         IMPACTSHOP_ADS_WATCH_VERSION
     );
 
+    $vote_purchase_js_version = @filemtime(__DIR__ . '/impactshop-vote-purchase.js') ?: (defined('IMPACTSHOP_VOTE_PURCHASE_VERSION') ? IMPACTSHOP_VOTE_PURCHASE_VERSION : IMPACTSHOP_ADS_WATCH_VERSION);
+    $vote_purchase_css_version = @filemtime(__DIR__ . '/impactshop-vote-purchase.css') ?: (defined('IMPACTSHOP_VOTE_PURCHASE_VERSION') ? IMPACTSHOP_VOTE_PURCHASE_VERSION : IMPACTSHOP_ADS_WATCH_VERSION);
+
     wp_enqueue_script(
         'impactshop-vote-purchase',
         plugins_url('impactshop-vote-purchase.js', __FILE__),
         ['impactshop-ads-watch'],
-        defined('IMPACTSHOP_VOTE_PURCHASE_VERSION') ? IMPACTSHOP_VOTE_PURCHASE_VERSION : IMPACTSHOP_ADS_WATCH_VERSION,
+        (string) $vote_purchase_js_version,
         true
     );
 
@@ -4185,14 +4333,137 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
         'impactshop-vote-purchase',
         plugins_url('impactshop-vote-purchase.css', __FILE__),
         [],
-        defined('IMPACTSHOP_VOTE_PURCHASE_VERSION') ? IMPACTSHOP_VOTE_PURCHASE_VERSION : IMPACTSHOP_ADS_WATCH_VERSION
+        (string) $vote_purchase_css_version
+    );
+
+    wp_add_inline_style(
+        'impactshop-ads-watch',
+        '@media (max-width:768px){'
+        . 'body.impactshop-mobile-tools-ready #impactshop-mobile-utility,body.impactshop-mobile-tools-ready #sharity-slc-btn{display:none !important;}'
+        . 'body.impactshop-mobile-locale-open #impactshop-mobile-ads-tools{opacity:0;pointer-events:none;}'
+        . '#impactshop-mobile-ads-tools{position:fixed;right:12px;bottom:calc(var(--sharity-action-bar-height, 116px) + env(safe-area-inset-bottom,0px) + 10px);z-index:2147483644;display:flex;flex-direction:row-reverse;align-items:flex-end;gap:8px;max-width:calc(100vw - 24px);}'
+        . '#impactshop-mobile-ads-tools[hidden]{display:none !important;}'
+        . '#impactshop-mobile-ads-tools .impactshop-mobile-ads-tools__toggle{display:inline-flex;align-items:center;justify-content:center;min-width:64px;height:44px;padding:0 14px;border:0;border-radius:999px;background:rgba(15,23,42,.94);color:#fff;font-size:13px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 16px 34px rgba(15,23,42,.25);-webkit-tap-highlight-color:transparent;}'
+        . '#impactshop-mobile-ads-tools .impactshop-mobile-ads-tools__panel{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:18px;background:rgba(15,23,42,.94);box-shadow:0 16px 34px rgba(15,23,42,.25);backdrop-filter:blur(10px);max-width:min(300px,calc(100vw - 96px));overflow-x:auto;}'
+        . '#impactshop-mobile-ads-tools[data-state="collapsed"] .impactshop-mobile-ads-tools__panel{display:none;}'
+        . '#impactshop-mobile-ads-tools .impactshop-mobile-ads-tools__button{display:inline-flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;padding:0;border:0;border-radius:14px;background:rgba(30,41,59,.92);color:#fff;font-size:13px;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer;box-shadow:none;-webkit-tap-highlight-color:transparent;flex:0 0 auto;}'
+        . '#impactshop-mobile-ads-tools .impactshop-mobile-ads-tools__icon{display:block;width:20px;height:20px;color:currentColor;pointer-events:none;}'
+        . '#impactshop-mobile-ads-tools .impactshop-mobile-ads-tools__icon svg{display:block;width:100%;height:100%;}'
+        . '#impactshop-mobile-ads-tools .impactshop-mobile-ads-tools__button:active,#impactshop-mobile-ads-tools .impactshop-mobile-ads-tools__toggle:active{background:rgba(51,65,85,.96);}'
+        . '#sharity-slc-backdrop{z-index:2147483645 !important;}'
+        . '#sharity-slc-sheet{z-index:2147483646 !important;}'
+        . '.sharity-slc__header-row{position:relative;}'
+        . '.sharity-slc__close{position:absolute;top:10px;right:12px;width:34px;height:34px;border:0;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-size:22px;line-height:1;cursor:pointer;}'
+        . '.sharity-slc__close:active{background:rgba(255,255,255,.14);}'
+        . '}'
     );
 
     $quarter_window = impactshop_ads_get_active_quarter_window();
+    $current_lang = impactshop_ads_watch_resolve_lang();
+    $current_country = impactshop_ads_watch_resolve_country();
+    $is_english = $current_lang === 'en';
+    $display_currency = $current_country === 'us' ? 'usd' : 'huf';
+    $usd_rate_huf = impactshop_ads_watch_get_usd_rate_huf();
+    $ads_watch_i18n = [
+        'selectNgo' => $is_english ? 'Choose an NGO' : 'Válassz NGO-t',
+        'watching' => $is_english ? 'Playing ad...' : 'Reklám lejátszása...',
+        'pointsEarned' => $is_english ? '+%d points' : '+%d pont',
+        'votesCast' => $is_english ? '+%d votes' : '+%d szavazat',
+        'thankYou' => $is_english ? 'Thank you!' : 'Köszönjük!',
+        'error' => $is_english ? 'Something went wrong' : 'Hiba történt',
+        'noNgoSelected' => $is_english ? 'Choose an NGO first.' : 'Először válassz egy NGO-t!',
+        'noIdentity' => $is_english ? 'An identity is required to collect rewards.' : 'Azonosító szükséges a pontgyűjtéshez.',
+        'loadingAd' => $is_english ? 'Loading ad...' : 'Reklám betöltése...',
+        'adError' => $is_english ? 'The ad could not be loaded.' : 'Nem sikerült betölteni a reklámot',
+        'sponsorVideo' => $is_english ? 'Sponsored video' : 'Szponzori videó',
+        'headerTitle' => $is_english ? 'Activity = Donation' : 'Aktivitás = Adomány',
+        'subtitle' => $is_english ? '🎬 Watch videos – every completed view gives you points and votes.' : '🎬 Nézz videókat – minden megtekintés után pontot és szavazatot kapsz.',
+        'infoPopoverHtml' => $is_english
+            ? '<strong>How does it work?</strong><br><br><span id="ads-watch-info-primary">🎬 <strong>Watch videos</strong> – every completed view gives you points and votes</span><br><br>📈 <strong>Level up</strong> – your points increase your level and vote weight<br><br>🗳️ <strong>Vote</strong> – allocate your votes to the organisation you choose<br><br>💰 <strong>Support</strong> – organisations share the donation pool in proportion to votes'
+            : '<strong>Hogyan működik?</strong><br><br><span id="ads-watch-info-primary">🎬 <strong>Nézz videókat</strong> – minden megtekintés után pontot és szavazatot kapsz</span><br><br>📈 <strong>Emelkedj szintet</strong> – a pontjaid növelik a szinted és a szavazati erőd<br><br>🗳️ <strong>Szavazz</strong> – add le szavazataidat egy általad választott szervezetre<br><br>💰 <strong>Támogass</strong> – a szervezetek a szavazatok arányában részesülnek az adományalapból',
+        'donationPoolLabel' => $is_english ? 'Donation pool:' : 'Adományalap:',
+        'tabVideo' => $is_english ? '🎬 Video' : '🎬 Videó',
+        'tabTasks' => $is_english ? '🎁 Tasks' : '🎁 Feladatok',
+        'tabDonate' => $is_english ? '❤️ Donate' : '❤️ Adományozok',
+        'actionBarLabel' => $is_english ? 'Quick actions' : 'Gyors műveletek',
+        'actionBarVideo' => $is_english ? 'Video' : 'Videó',
+        'actionBarTasks' => $is_english ? 'Tasks' : 'Feladatok',
+        'actionBarDonate' => $is_english ? 'Donate' : 'Adományozok',
+        'actionBarProfile' => $is_english ? 'Profile' : 'Profil',
+        'actionBarNgo' => 'NGO',
+        'actionBarMessages' => $is_english ? 'Messages' : 'Üzenetek',
+        'actionBarPoints' => $is_english ? 'Points' : 'Pontok',
+        'ctaOverlayText' => $is_english ? 'Tap the video!' : 'Kattints a videóra!',
+        'ctaLinkText' => $is_english ? 'Tap here!' : 'Kattints ide!',
+        'presenceTitle' => $is_english ? 'Are you still here?' : 'Még itt vagy?',
+        'presenceSubtitle' => $is_english ? 'Tap continue to keep receiving rewards.' : 'Kattints a folytatáshoz, hogy tovább kapd a jutalmakat.',
+        'presenceConfirm' => $is_english ? 'Yes, continue' : 'Igen, folytatom',
+        'watchAd' => $is_english ? 'Watch ad' : 'Reklám megtekintése',
+        'progressRequired' => $is_english ? 'Watching the video is required before voting.' : 'Videó megtekintése szükséges a szavazathoz.',
+        'progressWhyLabel' => $is_english ? 'Why do I need to finish it?' : 'Miért kell végignézni?',
+        'progressWhyBubble' => $is_english ? 'Reward validation only succeeds after a completed video view.' : 'A szavazás hitelesítése miatt csak a végignézett videó után jár a jutalom.',
+        'skipVideo' => $is_english ? 'Skip video' : 'Videó kihagyása',
+        'resume' => $is_english ? '▶ Continue' : '▶ Folytatás',
+        'watchReward' => $is_english ? '👀 View reward:' : '👀 Megnézésért:',
+        'clickReward' => $is_english ? '👆 Click reward:' : '👆 Kattintásért:',
+        'liveBalanceTitle' => $is_english ? 'Current balance' : 'Aktuális egyenleg',
+        'pointsLabel' => $is_english ? 'Points' : 'Pontok',
+        'votesLabel' => $is_english ? 'Votes' : 'Szavazatok',
+        'autoBannerCta' => $is_english ? 'View offer' : 'Megnézem',
+        'autoBannerHint' => $is_english ? 'Automatic recommendation – refreshes after 15 sec.' : 'Automatikus ajánló – 15 mp után frissül.',
+        'statusPoints' => $is_english ? 'Your points:' : 'Pontjaid:',
+        'statusLevel' => $is_english ? 'Your level:' : 'Szinted:',
+        'statusVoteWeight' => $is_english ? 'Vote weight:' : 'Szavazat súly:',
+        'statusDonationBonus' => $is_english ? 'Donation bonus:' : 'Adomány bónusz:',
+        'statusVotes' => $is_english ? 'Your votes:' : 'Szavazataid:',
+        'statusStreak' => $is_english ? '🔥 Streak:' : '🔥 Streak:',
+        'statusCountdown' => $is_english ? '⏳ Countdown:' : '⏳ Visszaszámláló:',
+        'stepVideo' => $is_english ? '1. Video' : '1. Videó',
+        'stepNgo' => $is_english ? '2. Organisation' : '2. Szervezet',
+        'stepVote' => $is_english ? '3. Voting' : '3. Szavazás',
+        'quickInfo' => $is_english ? 'Quick info' : 'Gyors infók',
+        'liveActivity' => $is_english ? '🔥 Live activity' : '🔥 Élő aktivitás',
+        'lastFiveVotes' => $is_english ? 'Votes from the last 5 minutes.' : 'Utóbbi 5 perc szavazatai.',
+        'campaignMessage' => $is_english ? '💬 Campaign message' : '💬 Kampány üzenet',
+        'chanceSoon' => $is_english ? 'Coming soon' : 'hamarosan',
+        'messageSoon' => $is_english ? 'Message coming soon...' : 'Üzenet hamarosan...',
+        'newsHint' => $is_english ? 'Fresh updates appear here.' : 'Itt jelennek meg a friss hírek.',
+        'chanceTitle' => $is_english ? '🎁 Your prize chance' : '🎁 Nyeremény esélyed',
+        'chanceHint' => $is_english ? 'It increases with your votes.' : 'A szavazataid arányában nő.',
+        'selectNgoTitle' => $is_english ? 'Choose the NGO you want to support:' : 'Válaszd ki az NGO-t, amelyet támogatni szeretnél:',
+        'noNgoSelectedText' => $is_english ? 'You have not chosen an NGO yet' : 'Még nem választottál NGO-t',
+        'changeNgo' => $is_english ? 'Choose / change NGO' : 'NGO kiválasztása / módosítása',
+        'purchaseToggle' => $is_english ? 'Donate and vote' : 'Adományozz és szavazz',
+        'purchaseCurrency' => $is_english ? 'Currency' : 'Pénznem',
+        'purchaseCompany' => $is_english ? 'Donate as a company' : 'Cégként adományozol',
+        'purchaseConsent' => $is_english ? 'I accept the Terms and Conditions and the Privacy Notice' : 'Elfogadom az ÁSZF-et és az adatvédelmi tájékoztatót',
+        'purchaseSubmit' => $is_english ? 'Donate now' : 'Adományozom',
+        'voteAmountLabel' => $is_english ? 'How many votes would you like to allocate?' : 'Hány szavazatot szeretnél leadni?',
+        'availableVotes' => $is_english ? 'Available:' : 'Elérhető:',
+        'votesSuffix' => $is_english ? 'votes' : 'szavazat',
+        'voteQuickAll' => $is_english ? 'All' : 'Mind',
+        'voteQuickHalf' => $is_english ? 'Half' : 'Fele',
+        'voteNow' => $is_english ? 'Vote now' : 'Szavazok most',
+        'voteHint' => $is_english ? 'Collect votes by watching videos, then allocate them to the organisations you choose.' : 'Gyűjts szavazatokat videók megtekintésével, majd add le őket tetszőleges szervezet(ek)re.',
+        'autoVote' => $is_english ? 'Automatic voting (every new vote goes to the selected NGO immediately)' : 'Automatikus szavazás (minden új szavazat azonnal a kiválasztott NGO-ra megy)',
+        'topNgo' => $is_english ? 'Top 10 NGOs' : 'Top 10 NGO',
+        'totalVotes' => $is_english ? 'Total votes:' : 'Összes szavazat:',
+        'loading' => $is_english ? 'Loading...' : 'Betöltés...',
+        'showMore' => $is_english ? 'Show more ▼' : 'Mutass többet ▼',
+        'showFullList' => $is_english ? 'View full list' : 'Teljes lista megtekintése',
+        'ngoModalTitle' => $is_english ? 'Choose NGO' : 'NGO kiválasztása',
+        'searchPlaceholder' => $is_english ? 'Search...' : 'Keresés...',
+        'fullListTitle' => $is_english ? 'All NGO vote results' : 'Összes NGO szavazati eredménye',
+        'fullListSearchPlaceholder' => $is_english ? 'Search NGO name...' : 'Keresés NGO névre...'
+    ];
 
     wp_localize_script('impactshop-ads-watch', 'impactshopAdsWatch', [
         'restUrl'        => rest_url('impact/v1/ads-watch'),
         'restNonce'      => wp_create_nonce('wp_rest'),
+        'lang'           => $current_lang,
+        'toggles'        => [
+            'currentFeatureEnabled' => $is_english,
+        ],
         'writeMode'      => impactshop_ads_watch_get_frontend_write_mode(),
         'devClone'       => [
             'enabled' => impactshop_ads_watch_is_dev_clone_request(),
@@ -4213,19 +4484,10 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
             'endTs' => $quarter_window['end_ts'] ?? 0,
             'nowTs' => time(),
         ],
-        'i18n'           => [
-            'selectNgo'     => 'Válassz NGO-t',
-            'watching'      => 'Reklám lejátszása...',
-            'pointsEarned'  => '+%d pont',
-            'votesCast'     => '+%d szavazat',
-            'thankYou'      => 'Köszönjük!',
-            'error'         => 'Hiba történt',
-            'noNgoSelected' => 'Először válassz egy NGO-t!',
-            'noIdentity'    => 'Azonosító szükséges a pontgyűjtéshez.',
-            'loadingAd'     => 'Reklám betöltése...',
-            'adError'       => 'Nem sikerült betölteni a reklámot',
-            'sponsorVideo'  => 'Szponzori videó',
-        ],
+        'currentCountry' => $current_country,
+        'displayCurrency' => $display_currency,
+        'usdRateHuf' => $usd_rate_huf,
+        'i18n'           => $ads_watch_i18n,
     ]);
 
     $vote_purchase_config = function_exists('impactshop_vote_purchase_get_public_config')
@@ -4235,12 +4497,624 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
     wp_localize_script('impactshop-vote-purchase', 'impactshopVotePurchase', [
         'enabled' => (bool) ($vote_purchase_config['enabled'] ?? false),
         'currency' => $vote_purchase_config['currency'] ?? 'huf',
+        'currentCountry' => $current_country,
+        'preferredCurrency' => $display_currency,
         'packages' => $vote_purchase_config['packages'] ?? [],
         'publicKey' => $vote_purchase_config['publicKey'] ?? '',
         'restBase' => rest_url('impact/v1'),
         'restNonce' => wp_create_nonce('wp_rest'),
         'pseudoId' => isset($_COOKIE['impactshop_pseudo_id']) ? sanitize_text_field((string) $_COOKIE['impactshop_pseudo_id']) : '',
     ]);
+
+        wp_add_inline_script(
+                'impactshop-ads-watch-intl-overlay',
+                <<<'JS'
+(function(){
+    'use strict';
+
+    if (window.__impactshopAdsWatchLocaleBridgeInit) {
+        return;
+    }
+    window.__impactshopAdsWatchLocaleBridgeInit = true;
+
+    function ready(callback) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', callback, { once: true });
+            return;
+        }
+        callback();
+    }
+
+    ready(function(){
+        var root = document.getElementById('impactshop-ads-watch');
+        var btn = document.getElementById('sharity-slc-btn');
+        var sheet = document.getElementById('sharity-slc-sheet');
+        var backdrop = document.getElementById('sharity-slc-backdrop');
+        var config = window.impactshopAdsWatch || {};
+        var currentLang = String(config.lang || 'hu').toLowerCase() === 'en' ? 'en' : 'hu';
+        var currentCountry = String(config.currentCountry || 'hu').toLowerCase() === 'us' ? 'us' : 'hu';
+        var placeholders = currentLang === 'en'
+            ? { chanceSoon: 'Coming soon', messageSoon: 'Message coming soon...' }
+            : { chanceSoon: 'hamarosan', messageSoon: 'Uzenet hamarosan...' };
+        var labels = currentLang === 'en'
+            ? { menu: 'Close', menuClosed: 'Menu', locale: 'Language', install: 'Install', a11y: 'A11y', close: 'Close' }
+            : { menu: 'Bezar', menuClosed: 'Menu', locale: 'Nyelv', install: 'Letoltes', a11y: 'A11y', close: 'Bezar' };
+        if (!root || !btn || !sheet || !backdrop) {
+            return;
+        }
+
+        function isMobileViewport() {
+            return !!(window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+        }
+
+        function isIOS() {
+            return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+        }
+
+        function isSafari() {
+            var ua = navigator.userAgent || '';
+            return /safari/i.test(ua) && !/crios|chrome|edg/i.test(ua);
+        }
+
+        function isFirefox() {
+            return /firefox/i.test(navigator.userAgent || '');
+        }
+
+        function getInstallGuide() {
+            if (currentLang === 'en') {
+                if (isIOS()) {
+                    return 'iPhone/iPad: tap Share, then Add to Home Screen.';
+                }
+                if (isSafari()) {
+                    return 'Safari: File, then Add to Dock.';
+                }
+                if (isFirefox()) {
+                    return 'Firefox: open the browser menu, then choose Install or Add to Home Screen.';
+                }
+                return 'Use your browser menu to install or add this app to your home screen.';
+            }
+
+            if (isIOS()) {
+                return 'iPhone/iPad: Megosztas, majd Hozzaadas a Fokepernyohoz.';
+            }
+            if (isSafari()) {
+                return 'Safari: Fajl, majd Hozzaadas a Dockhoz.';
+            }
+            if (isFirefox()) {
+                return 'Firefox: nyisd meg a bongeszo menut, majd valaszd a Telepites vagy Hozzaadas a Fokepernyohoz lehetoseget.';
+            }
+            return 'Hasznald a bongeszo menujet az alkalmazas telepitesehez vagy a fokepernyore helyezesehez.';
+        }
+
+        var deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', function(event) {
+            deferredInstallPrompt = event;
+        });
+
+        function mobileTools() {
+            return document.getElementById('impactshop-mobile-ads-tools');
+        }
+
+        function triggerInstallAction() {
+            if (deferredInstallPrompt && typeof deferredInstallPrompt.prompt === 'function') {
+                deferredInstallPrompt.prompt();
+                if (deferredInstallPrompt.userChoice && typeof deferredInstallPrompt.userChoice.finally === 'function') {
+                    deferredInstallPrompt.userChoice.finally(function() {
+                        deferredInstallPrompt = null;
+                    });
+                } else {
+                    deferredInstallPrompt = null;
+                }
+                return;
+            }
+
+            window.alert(getInstallGuide());
+        }
+
+        function dispatchSyntheticClick(node) {
+            if (!node) {
+                return false;
+            }
+
+            var events = ['pointerdown', 'mousedown', 'mouseup', 'click'];
+            for (var index = 0; index < events.length; index += 1) {
+                try {
+                    node.dispatchEvent(new MouseEvent(events[index], {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    }));
+                } catch (error) {
+                }
+            }
+
+            if (typeof node.click === 'function') {
+                try {
+                    node.click();
+                    return true;
+                } catch (error) {
+                }
+            }
+
+            return false;
+        }
+
+        function revealLauncherForActivation(node) {
+            if (!node || !node.style) {
+                return function() {};
+            }
+
+            var backup = node.getAttribute('style') || '';
+            node.style.setProperty('position', 'fixed', 'important');
+            node.style.setProperty('right', '12px', 'important');
+            node.style.setProperty('bottom', '180px', 'important');
+            node.style.setProperty('left', 'auto', 'important');
+            node.style.setProperty('top', 'auto', 'important');
+            node.style.setProperty('opacity', '0.01', 'important');
+            node.style.setProperty('visibility', 'visible', 'important');
+            node.style.setProperty('pointer-events', 'auto', 'important');
+            node.style.setProperty('z-index', '2147483647', 'important');
+
+            return function() {
+                if (backup) {
+                    node.setAttribute('style', backup);
+                    return;
+                }
+                node.removeAttribute('style');
+            };
+        }
+
+        function triggerElementorA11yAction() {
+            try {
+                if (window.elementorFrontend && window.elementorFrontend.utils && window.elementorFrontend.utils.urlActions && typeof window.elementorFrontend.utils.urlActions.runAction === 'function') {
+                    window.elementorFrontend.utils.urlActions.runAction('allyWidget:open');
+                    return true;
+                }
+            } catch (error) {
+            }
+            return false;
+        }
+
+        function hasNativeA11yLauncher() {
+            var selectors = [
+                'button[aria-label="Show Accessibility Preferences"]',
+                'button[title="Show Accessibility Preferences"]',
+                '[aria-label="Show Accessibility Preferences"]',
+                '#aioa-floating-btn',
+                '.aioa-addon-floating-icon',
+                '.aioseo-accessibility-widget',
+                '#accessibility_settings_toggle'
+            ];
+
+            for (var index = 0; index < selectors.length; index += 1) {
+                if (document.querySelector(selectors[index])) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function clickNativeA11yLauncher() {
+            var selectors = [
+                'button[aria-label="Show Accessibility Preferences"]',
+                'button[title="Show Accessibility Preferences"]',
+                '[aria-label="Show Accessibility Preferences"]',
+                '#aioa-floating-btn',
+                '.aioa-addon-floating-icon',
+                '.aioseo-accessibility-widget',
+                '#accessibility_settings_toggle'
+            ];
+            for (var index = 0; index < selectors.length; index += 1) {
+                var node = document.querySelector(selectors[index]);
+                if (!node) {
+                    continue;
+                }
+
+                var restore = revealLauncherForActivation(node);
+                var activator = node.closest ? (node.closest('button,a,[role="button"]') || node) : node;
+                if (dispatchSyntheticClick(activator)) {
+                    window.setTimeout(restore, 500);
+                    return true;
+                }
+                window.setTimeout(restore, 500);
+            }
+            return false;
+        }
+
+        function hasA11yRuntimeHook() {
+            return !!(window.ea11yWidget && window.ea11yWidget.widget && typeof window.ea11yWidget.widget.open === 'function') || hasNativeA11yLauncher();
+        }
+
+        function showA11yUnavailableMessage() {
+            window.alert(currentLang === 'en'
+                ? 'Accessibility options are not available on this page right now.'
+                : 'Az akadalymentesitesi beallitasok ezen az oldalon most nem erhetoek el.');
+        }
+
+        function toggleA11yWidget(attempt) {
+            var tries = typeof attempt === 'number' ? attempt : 0;
+            if (clickNativeA11yLauncher()) {
+                return true;
+            }
+
+            if (tries === 0 && !hasA11yRuntimeHook()) {
+                showA11yUnavailableMessage();
+                return false;
+            }
+
+            if (window.ea11yWidget && window.ea11yWidget.widget && typeof window.ea11yWidget.widget.open === 'function') {
+                try {
+                    return window.ea11yWidget.widget.isOpen() ? window.ea11yWidget.widget.close() : window.ea11yWidget.widget.open();
+                } catch (error) {
+                }
+            }
+
+            try {
+                var actions = window.elementorFrontend && window.elementorFrontend.utils && window.elementorFrontend.utils.urlActions && window.elementorFrontend.utils.urlActions.actions;
+                if (actions && typeof actions['allyWidget:open'] === 'function') {
+                    actions['allyWidget:open']();
+                    return true;
+                }
+            } catch (error) {
+            }
+
+            if (triggerElementorA11yAction()) {
+                return true;
+            }
+
+            if (tries < 30) {
+                window.setTimeout(function() {
+                    toggleA11yWidget(tries + 1);
+                }, 150);
+                return false;
+            }
+
+            window.alert(currentLang === 'en'
+                ? 'Accessibility settings could not be opened right now. Please refresh the page and try again.'
+                : 'Az akadalymentesitesi beallitasok most nem nyithatok meg. Frissitsd az oldalt, majd probald ujra.');
+            return false;
+        }
+
+        function ensureText(button, text) {
+            if (!button) {
+                return;
+            }
+            button.textContent = text;
+        }
+
+        function syncLocalizedPlaceholders() {
+            var chanceValue = document.getElementById('chance-value');
+            if (chanceValue) {
+                var chanceText = String(chanceValue.textContent || '').trim().toLowerCase();
+                if (chanceText === '' || chanceText === 'hamarosan') {
+                    chanceValue.textContent = placeholders.chanceSoon;
+                }
+            }
+
+            var messageValue = root.querySelector('[data-role="ads-watch-message-text"]');
+            if (messageValue) {
+                var messageText = String(messageValue.textContent || '').trim().toLowerCase();
+                if (messageText === 'uzenet hamarosan...' || messageText === 'üzenet hamarosan...') {
+                    messageValue.textContent = placeholders.messageSoon;
+                }
+            }
+        }
+
+        function preserveGuideContext() {
+            var selectors = [
+                'a[href*="/ngo-guides/"]',
+                'a[href*="/rolunk"]',
+                'a[href*="/cegeknek"]',
+                'a[href*="/befektetoknek"]',
+                'a[href*="/hatas-korok"]'
+            ];
+            var links = document.querySelectorAll(selectors.join(','));
+
+            function shouldDecorate(pathname) {
+                return /^\/ngo-guides(\/|$)/.test(pathname)
+                    || /^\/rolunk\/?$/.test(pathname)
+                    || /^\/cegeknek\/?$/.test(pathname)
+                    || /^\/befektetoknek\/?$/.test(pathname)
+                    || /^\/hatas-korok\/?$/.test(pathname);
+            }
+
+            for (var i = 0; i < links.length; i += 1) {
+                var href = links[i].getAttribute('href');
+                if (!href || href.charAt(0) === '#') {
+                    continue;
+                }
+
+                try {
+                    var url = new URL(href, window.location.origin);
+                    if (url.origin !== window.location.origin || !shouldDecorate(url.pathname)) {
+                        continue;
+                    }
+
+                    if (currentLang === 'en') {
+                        url.searchParams.set('lang', 'en');
+                    } else {
+                        url.searchParams.delete('lang');
+                    }
+
+                    if (currentCountry === 'us') {
+                        url.searchParams.set('country', 'us');
+                    } else {
+                        url.searchParams.delete('country');
+                    }
+
+                    links[i].setAttribute('href', url.pathname + url.search + url.hash);
+                } catch (error) {
+                }
+            }
+        }
+
+        function iconMarkup(type) {
+            if (type === 'locale') {
+                return '<span class="impactshop-mobile-ads-tools__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18"></path><path d="M12 3a14 14 0 0 0 0 18"></path></svg></span>';
+            }
+            if (type === 'install') {
+                return '<span class="impactshop-mobile-ads-tools__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"></path><path d="m8 10 4 4 4-4"></path><path d="M5 18h14"></path></svg></span>';
+            }
+            if (type === 'a11y') {
+                return '<span class="impactshop-mobile-ads-tools__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.5"></circle><path d="M6 8h12"></path><path d="M12 8v5"></path><path d="m12 13-4 7"></path><path d="m12 13 4 7"></path><path d="m9 8-2 4"></path><path d="m15 8 2 4"></path></svg></span>';
+            }
+            return '';
+        }
+
+        function setButtonIcon(button, type) {
+            if (!button) {
+                return;
+            }
+            button.innerHTML = iconMarkup(type);
+        }
+
+        function ensureCloseButton() {
+            var existing = document.getElementById('sharity-slc-close');
+            if (existing) {
+                existing.setAttribute('aria-label', labels.close);
+                return existing;
+            }
+
+            var header = sheet.querySelector('.sharity-slc__header');
+            if (!header || !header.parentNode) {
+                return null;
+            }
+
+            header.parentNode.classList.add('sharity-slc__header-row');
+            var closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.id = 'sharity-slc-close';
+            closeBtn.className = 'sharity-slc__close';
+            closeBtn.setAttribute('aria-label', labels.close);
+            closeBtn.textContent = '×';
+            header.parentNode.appendChild(closeBtn);
+            return closeBtn;
+        }
+
+        function ensureMobileTools() {
+            var existing = mobileTools();
+            if (existing) {
+                return existing;
+            }
+
+            var container = document.createElement('div');
+            container.id = 'impactshop-mobile-ads-tools';
+            container.dataset.state = 'open';
+
+            var toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'impactshop-mobile-ads-tools__toggle';
+            toggle.setAttribute('data-role', 'impactshop-mobile-tools-toggle');
+            ensureText(toggle, labels.menu);
+
+            var panel = document.createElement('div');
+            panel.className = 'impactshop-mobile-ads-tools__panel';
+
+            var localeButton = document.createElement('button');
+            localeButton.type = 'button';
+            localeButton.className = 'impactshop-mobile-ads-tools__button';
+            localeButton.setAttribute('data-role', 'impactshop-mobile-tools-locale');
+            localeButton.setAttribute('aria-label', labels.locale);
+            setButtonIcon(localeButton, 'locale');
+
+            var installButton = document.createElement('button');
+            installButton.type = 'button';
+            installButton.className = 'impactshop-mobile-ads-tools__button';
+            installButton.setAttribute('data-role', 'pwa-mobile-install');
+            installButton.setAttribute('aria-label', labels.install);
+            setButtonIcon(installButton, 'install');
+
+            var a11yButton = document.createElement('button');
+            a11yButton.type = 'button';
+            a11yButton.className = 'impactshop-mobile-ads-tools__button';
+            a11yButton.setAttribute('data-role', 'pwa-mobile-a11y');
+            a11yButton.setAttribute('aria-label', labels.a11y);
+            setButtonIcon(a11yButton, 'a11y');
+
+            panel.appendChild(localeButton);
+            panel.appendChild(installButton);
+            panel.appendChild(a11yButton);
+            container.appendChild(toggle);
+            container.appendChild(panel);
+            document.body.appendChild(container);
+            return container;
+        }
+
+        function syncExpandedState(open, trigger) {
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+            sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
+            backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+            document.body.classList.toggle('impactshop-mobile-locale-open', !!open && isMobileViewport());
+        }
+
+        function syncToolsState() {
+            var container = mobileTools();
+            if (!container) {
+                return;
+            }
+            var toggle = container.querySelector('[data-role="impactshop-mobile-tools-toggle"]');
+            var open = container.dataset.state !== 'collapsed';
+            ensureText(toggle, open ? labels.menu : labels.menuClosed);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        function isOpen() {
+            return sheet.classList.contains('is-open');
+        }
+
+        function openSheet(trigger) {
+            sheet.classList.add('is-open');
+            backdrop.classList.add('is-open');
+            syncExpandedState(true, trigger);
+        }
+
+        function closeSheet(trigger) {
+            sheet.classList.remove('is-open');
+            backdrop.classList.remove('is-open');
+            syncExpandedState(false, trigger);
+        }
+
+        function toggleSheet(trigger) {
+            if (isOpen()) {
+                closeSheet(trigger);
+                return;
+            }
+            openSheet(trigger);
+        }
+
+        function attachCloseButtonHandler() {
+            var closeBtn = ensureCloseButton();
+            if (!closeBtn || closeBtn.dataset.bridgeBound === '1') {
+                return;
+            }
+            closeBtn.dataset.bridgeBound = '1';
+            closeBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                closeSheet();
+            }, true);
+        }
+
+        function attachToolHandlers() {
+            var container = ensureMobileTools();
+            if (!container) {
+                return;
+            }
+            var toggle = container.querySelector('[data-role="impactshop-mobile-tools-toggle"]');
+            var locale = container.querySelector('[data-role="impactshop-mobile-tools-locale"]');
+            var install = container.querySelector('[data-role="pwa-mobile-install"]');
+            var a11y = container.querySelector('[data-role="pwa-mobile-a11y"]');
+
+            if (toggle && toggle.dataset.bridgeBound !== '1') {
+                toggle.dataset.bridgeBound = '1';
+                toggle.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    container.dataset.state = container.dataset.state === 'collapsed' ? 'open' : 'collapsed';
+                    syncToolsState();
+                }, true);
+            }
+
+            if (locale && locale.dataset.bridgeBound !== '1') {
+                locale.dataset.bridgeBound = '1';
+                locale.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    openSheet(locale);
+                }, true);
+            }
+
+            if (install && install.dataset.bridgeBound !== '1') {
+                install.dataset.bridgeBound = '1';
+                install.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    triggerInstallAction();
+                }, true);
+            }
+
+            if (a11y && a11y.dataset.bridgeBound !== '1') {
+                a11y.dataset.bridgeBound = '1';
+                a11y.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    toggleA11yWidget();
+                }, true);
+            }
+
+            syncToolsState();
+        }
+
+        backdrop.addEventListener('click', function(event) {
+            event.preventDefault();
+            closeSheet();
+        }, true);
+
+        sheet.addEventListener('click', function(event) {
+            var row = event.target && event.target.closest ? event.target.closest('.sharity-slc__row') : null;
+            if (row) {
+                closeSheet();
+            }
+        }, true);
+
+        document.addEventListener('click', function(event) {
+            if (!isOpen()) {
+                return;
+            }
+            if (sheet.contains(event.target) || btn.contains(event.target)) {
+                return;
+            }
+            closeSheet();
+        }, true);
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeSheet();
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            var container = mobileTools();
+            if (container) {
+                container.hidden = !isMobileViewport();
+            }
+            attachCloseButtonHandler();
+            if (!isMobileViewport()) {
+                document.body.classList.remove('impactshop-mobile-locale-open');
+            }
+        });
+
+        var tools = ensureMobileTools();
+        if (tools) {
+            tools.hidden = !isMobileViewport();
+        }
+        document.body.classList.add('impactshop-mobile-tools-ready');
+        attachToolHandlers();
+        syncExpandedState(false, null);
+        attachCloseButtonHandler();
+        preserveGuideContext();
+        syncLocalizedPlaceholders();
+
+        var localizedPlaceholderObserverScheduled = false;
+        var localizedPlaceholderObserver = new MutationObserver(function() {
+            if (localizedPlaceholderObserverScheduled) {
+                return;
+            }
+
+            localizedPlaceholderObserverScheduled = true;
+            requestAnimationFrame(function() {
+                localizedPlaceholderObserverScheduled = false;
+                syncLocalizedPlaceholders();
+            });
+        });
+        localizedPlaceholderObserver.observe(root, { childList: true, subtree: true, characterData: true });
+    });
+})();
+JS,
+                'after'
+        );
 
     ob_start();
     ?>
@@ -4260,7 +5134,7 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
             </div>
             <div class="donation-pool-display">
                 <span class="pool-label">Adományalap:</span>
-                <span class="pool-amount"><?php echo number_format(impactshop_ads_get_active_pool(), 0, ',', ' '); ?> Ft</span>
+                <span class="pool-amount"><?php echo esc_html(impactshop_ads_watch_format_display_amount((float) impactshop_ads_get_active_pool(), $current_country)); ?></span>
             </div>
         </div>
 
@@ -4436,17 +5310,13 @@ function impactshop_ads_watch_shortcode(array $atts = []): string
                 </button>
             </div>
             <div class="purchase-info-panel" data-role="purchase-info-panel" hidden>
-                Szavazatokat kapsz, pontot nem — a szintlépéshez aktivitás kell.
+                <?php echo $is_english ? 'You get votes, not points — activity is needed to level up.' : 'Szavazatokat kapsz, pontot nem — a szintlépéshez aktivitás kell.'; ?>
                 <br>
-                Az adomány 50%-a a közös adományalapba kerül, 50%-a a Sharity üzemeltetését támogatja.
-                <br>⚡ Impact Amplifier: a szavazatok nem csak a saját 50%-os pool‑részből adnak, hanem a teljes közös alap arányát növelik. Példa: 10 000 Ft Legend csomag után a kedvenc NGO részesedése ~10%‑ról ~21,7%‑ra nőhet, így a kapott összeg akár ~12× is lehet a sima befizetéshez képest.
+                <?php echo $is_english ? '50% of the donation goes to the shared pool, 50% supports Sharity operations.' : 'Az adomány 50%-a a közös adományalapba kerül, 50%-a a Sharity üzemeltetését támogatja.'; ?>
+                <br><?php echo $is_english ? '⚡ Impact Amplifier: votes boost not just from your own 50% pool share, but increase your NGO\'s share of the total pool. Example: after a 10,000 HUF Legend package, your NGO\'s share can grow from ~10% to ~21.7%, so the amount received can be ~12× a direct payment.' : '⚡ Impact Amplifier: a szavazatok nem csak a saját 50%-os pool‑részből adnak, hanem a teljes közös alap arányát növelik. Példa: 10 000 Ft Legend csomag után a kedvenc NGO részesedése ~10%‑ról ~21,7%‑ra nőhet, így a kapott összeg akár ~12× is lehet a sima befizetéshez képest.'; ?>
             </div>
             <div class="purchase-body" data-role="purchase-body" hidden>
                 <div class="purchase-packages" data-role="purchase-packages"></div>
-                <div class="purchase-row">
-                    <label for="purchase-currency">Pénznem</label>
-                    <select id="purchase-currency" data-role="purchase-currency"></select>
-                </div>
                 <div class="purchase-row">
                     <label>
                         <input type="checkbox" data-role="purchase-company"> Cégként adományozol

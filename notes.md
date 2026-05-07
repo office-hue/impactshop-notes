@@ -1,3 +1,9 @@
+## 2026-05-07 10:40 CEST - Impact Shop / Challenge EN runtime canonicalization
+- Tiszta release-worktree-ben szetvalasztott canonical commit-sor keszult a live-on validalt intl runtime allapothoz.
+- Uj additiv overlay assetek: `impactshop-ads-watch-intl-overlay.js`, `impactshop-identity-panel-intl-overlay.js`.
+- Protected runtime commit: `impactshop-ads-watch.php`, `impactshop-ads-watch.js`, `impactshop-identity-panel.php`, plusz kulon protected change record.
+- Guard evidence: PHP lint OK, JS syntax check OK, `git-health-check` OK; strict push audit dokumentacios folytonossag miatt notes/snapshot/bastion naplo is frissitve.
+
 ## 2026-05-05 19:20 CEST - JVK public dashboard fix (impactshop-event-donation-widget v1.6.2)
 - PHP: public REST route `/transactions/public` hozzáadva (no auth), `impactshop_event_donation_public_transactions()` callback
 - PHP: shortcode `public="yes"` attribútum támogatás, `data-public="1"` az HTML-ben

@@ -10,11 +10,23 @@
 (function ($) {
     'use strict';
 
+    const USD_RATE_HUF_DISPLAY_FAILSAFE = 311.28;
+
     const config = window.impactshopAdsWatch || {};
     const restUrl = config.restUrl || '/wp-json/impact/v1/ads-watch';
     const impactShopBaseUrl = config.impactShopBaseUrl || 'https://app.sharity.hu/impactshop/';
     const restNonce = config.restNonce || '';
     const writeMode = (config.writeMode === 'sandbox' || config.writeMode === 'production') ? config.writeMode : 'production';
+    const currentCountry = (function() {
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            const value = String(config.currentCountry || params.get('country') || 'hu').toLowerCase();
+            return value === 'us' ? 'us' : 'hu';
+        } catch (error) {
+            return String(config.currentCountry || 'hu').toLowerCase() === 'us' ? 'us' : 'hu';
+        }
+    })();
+    const usdRateHuf = Number(config.usdRateHuf || USD_RATE_HUF_DISPLAY_FAILSAFE);
     // No fallback test/sample ad tags - production tags come from config
     const fallbackAdTagBase = '';
     const i18n = config.i18n || {};
@@ -1226,6 +1238,7 @@
         const VISIBLE_COUNT = 3;
 
         const totalVotes = data.total_votes || 0;
+        $('.pool-amount').text(formatDisplayAmount(data.donation_pool || 0));
         
         $('#total-votes-display').text(formatNumber(totalVotes));
         
@@ -1236,8 +1249,8 @@
             : 0;
         $('#live-activity-value').text(`${formatNumber(liveActivityBase)} szavazat`);
         
-        // Nyeremény esély: egyelőre statikus üzenet
-        $('#chance-value').text('hamarosan');
+        // Nyeremény esély: locale-aware placeholder, amíg nincs számolt érték.
+        $('#chance-value').text(i18n.chanceSoon || 'hamarosan');
 
         if (tally.length === 0) {
             $list.html('<div class="tally-empty">Még nincs szavazat.</div>');
@@ -1254,7 +1267,7 @@
                     <img src="${item.ngo_logo || '/wp-content/uploads/impactshop/ngo-card-default.jpg'}" alt="" class="tally-logo">
                     <div class="tally-name">${escapeHtml(item.ngo_name)}</div>
                     <div class="tally-votes">${formatNumber(item.votes)} szavazat<br><small>${item.percentage}%</small></div>
-                    <div class="tally-amount">${formatNumber(item.amount)} Ft</div>
+                    <div class="tally-amount">${formatDisplayAmount(item.amount)}</div>
                 </div>
             `;
         });
@@ -1349,7 +1362,7 @@
                     <img src="${item.ngo_logo || '/wp-content/uploads/impactshop/ngo-card-default.jpg'}" alt="" class="tally-logo">
                     <div class="tally-name">${escapeHtml(item.ngo_name)}</div>
                     <div class="tally-votes">${formatNumber(item.votes)}<br><small>${item.percentage}%</small></div>
-                    <div class="tally-amount">${formatNumber(item.amount)} Ft</div>
+                    <div class="tally-amount">${formatDisplayAmount(item.amount)}</div>
                 </div>
             `;
         });
@@ -4761,7 +4774,7 @@
 
     function updateCampaignMessage(text) {
         if (!$messageText.length) return;
-        const placeholder = 'Üzenet hamarosan...';
+        const placeholder = i18n.messageSoon || 'Üzenet hamarosan...';
         const safeText = (text && String(text).trim()) ? String(text) : placeholder;
         $messageText.text(safeText);
         if ($messageCard.length) {
@@ -4793,6 +4806,21 @@
 
     function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    function formatDisplayAmount(amountHuf) {
+        const amount = Number(amountHuf || 0);
+        if (currentCountry === 'us') {
+            const safeRate = usdRateHuf > 0 ? usdRateHuf : USD_RATE_HUF_DISPLAY_FAILSAFE;
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount / safeRate);
+        }
+
+        return `${formatNumber(Math.round(amount))} Ft`;
     }
 
     function formatCountdown(seconds) {
