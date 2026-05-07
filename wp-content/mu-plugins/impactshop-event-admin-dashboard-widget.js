@@ -21,6 +21,17 @@
     return d.toLocaleString("hu-HU", { hour12: false });
   }
 
+  function fmtNum(v) {
+    return Number(v || 0).toLocaleString("hu-HU");
+  }
+
+  function fmtDuration(seconds) {
+    var total = Math.max(0, Number(seconds || 0));
+    if (total < 60) return fmtNum(total) + " mp";
+    if (total < 3600) return fmtNum((total / 60).toFixed(1)) + " perc";
+    return fmtNum((total / 3600).toFixed(1)) + " ó";
+  }
+
   function downloadBase64Pdf(fileName, b64) {
     var bin = atob(b64 || "");
     var len = bin.length;
@@ -76,6 +87,8 @@
       ? donationBase + "/transactions/public"
       : donationBase + "/transactions";
     var auctionBase = apiRoot + "/event-auctions/admin/" + encodeURIComponent(campaign);
+    var auctionPublicUrl = apiRoot + "/event-auctions/" + encodeURIComponent(campaign) + "/public";
+    var auctionAnalyticsUrl = apiRoot + "/event-auctions/" + encodeURIComponent(campaign) + "/analytics/public";
 
     root.innerHTML =
       '<style>' +
@@ -94,12 +107,19 @@
       '.ied .tabs button.active{background:#1d4ed8;border-color:#1d4ed8}' +
       '.ied .hidden{display:none}' +
       '.ied .err{color:#fca5a5;margin:6px 0}' +
+      '.ied .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}' +
+      '.ied .card{padding:12px;border-radius:12px;background:#0f172a;border:1px solid #243244}' +
+      '.ied .card .label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em}' +
+      '.ied .card .value{font-size:20px;font-weight:800;margin-top:4px}' +
       '@media (max-width:960px){.ied table{font-size:11px}}' +
+      '@media (max-width:960px){.ied .cards{grid-template-columns:1fr}}' +
       '</style>' +
       '<div class="ied">' +
       '<h3>' + esc(title) + '</h3>' +
       '<div class="row tabs">' +
       '<button type="button" data-tab="don" class="active">Jegyek es adomanyok</button>' +
+      '<button type="button" data-tab="auction">Aukció tételek</button>' +
+      '<button type="button" data-tab="analytics">Aukció statok</button>' +
       (isPublic ? '' : '<button type="button" data-tab="auc">Licit es nyertesek</button>') +
       '<span class="muted" data-role="status">Betoltes...</span>' +
       '</div>' +
@@ -117,6 +137,16 @@
       '<th>ID</th><th>Datum</th><th>Fizetesi statusz</th><th>Nev / ceg</th><th>Email</th><th>Osszeg</th><th>Csomag / jegyek</th><th>Cert</th><th>Muveletek</th>' +
       '</tr></thead><tbody data-role="don-body"></tbody></table></div>' +
       '</div>' +
+      '<div data-panel="auction" class="hidden">' +
+      '<div class="row">' +
+      '<span class="muted">Publikus aukciós tétellista, aktuális állapotokkal.</span>' +
+      '<button type="button" data-role="auction-refresh">Frissites</button>' +
+      '</div>' +
+      '<div class="cards" data-role="auction-cards"></div>' +
+      '<div style="overflow:auto"><table><thead><tr>' +
+      '<th>Lot</th><th>Művész / tétel</th><th>Státusz</th><th>Aktuális ár</th><th>Zárás</th>' +
+      '</tr></thead><tbody data-role="auction-body"></tbody></table></div>' +
+      '</div>' +
       '<div data-panel="auc" class="hidden">' +
       '<div class="row">' +
       '<input type="text" data-role="auc-item" placeholder="item_slug szuro" />' +
@@ -127,6 +157,20 @@
       '<th>Licit UUID</th><th>Targy</th><th>Licit osszeg</th><th>Statusz</th><th>Licitelo</th><th>Email / telefon</th><th>Ido</th>' +
       '</tr></thead><tbody data-role="auc-body"></tbody></table></div>' +
       '</div>' +
+      '<div data-panel="analytics" class="hidden">' +
+      '<div class="row">' +
+      '<span class="muted">Realtime aukcióoldal statok</span>' +
+      '<button type="button" data-role="analytics-refresh">Frissites</button>' +
+      '</div>' +
+      '<div class="cards" data-role="analytics-cards"></div>' +
+      '<div class="row" style="align-items:flex-start">' +
+      '<div style="flex:1;min-width:280px"><h4>Top tételek</h4><div style="overflow:auto"><table><thead><tr><th>Tétel</th><th>Megnyitás</th><th>Megosztás</th></tr></thead><tbody data-role="analytics-lots"></tbody></table></div></div>' +
+      '<div style="flex:1;min-width:280px"><h4>Érkezési források</h4><div style="overflow:auto"><table><thead><tr><th>Forrás</th><th>Session</th></tr></thead><tbody data-role="analytics-sources"></tbody></table></div></div>' +
+      '</div>' +
+      '<div class="row" style="align-items:flex-start">' +
+      '<div style="flex:1;min-width:280px"><h4>Referrer hostok</h4><div style="overflow:auto"><table><thead><tr><th>Host</th><th>Session</th></tr></thead><tbody data-role="analytics-referrers"></tbody></table></div></div>' +
+      '<div style="flex:1;min-width:280px"><h4>Legutóbbi aktivitás</h4><div style="overflow:auto"><table><thead><tr><th>Idő</th><th>Esemény</th><th>Tétel / forrás</th></tr></thead><tbody data-role="analytics-recent"></tbody></table></div></div>' +
+      '</div>' +
       '</div>';
 
     var els = {
@@ -136,6 +180,8 @@
       tabs: root.querySelectorAll('[data-tab]'),
       panels: {
         don: qs(root, '[data-panel="don"]'),
+        auction: qs(root, '[data-panel="auction"]'),
+        analytics: qs(root, '[data-panel="analytics"]'),
         auc: qs(root, '[data-panel="auc"]')
       },
       don: {
@@ -146,11 +192,24 @@
         search: qs(root, '[data-role="don-search"]'),
         refresh: qs(root, '[data-role="don-refresh"]')
       },
+      auction: {
+        cards: qs(root, '[data-role="auction-cards"]'),
+        body: qs(root, '[data-role="auction-body"]'),
+        refresh: qs(root, '[data-role="auction-refresh"]')
+      },
       auc: {
         body: qs(root, '[data-role="auc-body"]'),
         item: qs(root, '[data-role="auc-item"]'),
         status: qs(root, '[data-role="auc-status"]'),
         refresh: qs(root, '[data-role="auc-refresh"]')
+      },
+      analytics: {
+        cards: qs(root, '[data-role="analytics-cards"]'),
+        lots: qs(root, '[data-role="analytics-lots"]'),
+        sources: qs(root, '[data-role="analytics-sources"]'),
+        referrers: qs(root, '[data-role="analytics-referrers"]'),
+        recent: qs(root, '[data-role="analytics-recent"]'),
+        refresh: qs(root, '[data-role="analytics-refresh"]')
       }
     };
 
@@ -254,6 +313,71 @@
       }).join('');
     }
 
+    function renderAuctionPublic(data) {
+      var lots = data && data.lots ? data.lots : [];
+      var stats = data && data.stats ? data.stats : {};
+
+      els.auction.cards.innerHTML = [
+        { label: 'Tételek', value: fmtNum(stats.auction_lots_count || lots.length || 0) },
+        { label: 'Lezárt lotok', value: fmtNum(stats.closed_lots_count || 0) },
+        { label: 'Aktuális vezető összeg', value: stats.auction_leading_total_amount_formatted || '0 Ft' },
+        { label: 'Kifizetett aukciós összeg', value: stats.auction_paid_total_amount_formatted || '0 Ft' }
+      ].map(function (item) {
+        return '<div class="card"><div class="label">' + esc(item.label) + '</div><div class="value">' + esc(item.value) + '</div></div>';
+      }).join('');
+
+      els.auction.body.innerHTML = lots.length
+        ? lots.map(function (lot) {
+          return '<tr>' +
+            '<td>#' + esc(fmtNum(lot.lot_number || 0)) + '</td>' +
+            '<td><strong>' + esc(lot.item_title || '-') + '</strong><div class="muted">' + esc((lot.artist_name || '') + (lot.item_slug ? ' · ' + lot.item_slug : '')) + '</div></td>' +
+            '<td><span class="pill">' + esc(lot.status || '-') + '</span></td>' +
+            '<td>' + esc(lot.display_amount_formatted || lot.starting_bid_formatted || '-') + '</td>' +
+            '<td>' + esc(fmtDate(lot.end_time || '')) + '</td>' +
+          '</tr>';
+        }).join('')
+        : '<tr><td colspan="5" class="muted">Nincs aukciós adat.</td></tr>';
+    }
+
+    function renderAnalytics(data) {
+      var summary = data && data.summary ? data.summary : {};
+      els.analytics.cards.innerHTML = [
+        { label: 'Aktív látogató (' + String((data && data.recent_minutes) || 5) + 'p)', value: fmtNum(summary.active_visitors) },
+        { label: 'Összes látogató', value: fmtNum(summary.visitors) },
+        { label: 'Oldalmegtekintés', value: fmtNum(summary.page_views) },
+        { label: 'Átl. engaged idő', value: fmtDuration(summary.avg_engaged_seconds) },
+        { label: 'Megosztás kattintás', value: fmtNum(summary.share_clicks) },
+        { label: 'Licit indítás', value: fmtNum(summary.bid_submits) }
+      ].map(function (item) {
+        return '<div class="card"><div class="label">' + esc(item.label) + '</div><div class="value">' + esc(item.value) + '</div></div>';
+      }).join('');
+
+      els.analytics.lots.innerHTML = (data.top_lots || []).length
+        ? data.top_lots.map(function (row) {
+          return '<tr><td>' + esc(row.item_title || row.item_slug || '-') + '</td><td>' + esc(fmtNum(row.opens)) + '</td><td>' + esc(fmtNum(row.shares)) + '</td></tr>';
+        }).join('')
+        : '<tr><td colspan="3" class="muted">Még nincs tétel-aktivitás.</td></tr>';
+
+      els.analytics.sources.innerHTML = (data.top_sources || []).length
+        ? data.top_sources.map(function (row) {
+          return '<tr><td>' + esc(row.label || '-') + '</td><td>' + esc(fmtNum(row.sessions)) + '</td></tr>';
+        }).join('')
+        : '<tr><td colspan="2" class="muted">Még nincs forrásadat.</td></tr>';
+
+      els.analytics.referrers.innerHTML = (data.top_referrers || []).length
+        ? data.top_referrers.map(function (row) {
+          return '<tr><td>' + esc(row.host || '-') + '</td><td>' + esc(fmtNum(row.sessions)) + '</td></tr>';
+        }).join('')
+        : '<tr><td colspan="2" class="muted">Még nincs referrer adat.</td></tr>';
+
+      els.analytics.recent.innerHTML = (data.recent_events || []).length
+        ? data.recent_events.map(function (row) {
+          var meta = row.item_title || row.source || '-';
+          return '<tr><td>' + esc(fmtDate(row.created_at)) + '</td><td>' + esc(row.event_type || '-') + '</td><td>' + esc(meta) + '</td></tr>';
+        }).join('')
+        : '<tr><td colspan="3" class="muted">Még nincs aktivitás.</td></tr>';
+    }
+
     function loadDonations() {
       setError("");
       setStatus("Adomanyok betoltese...");
@@ -294,6 +418,32 @@
         });
     }
 
+    function loadAnalytics() {
+      setStatus('Aukció statok betöltése...');
+      return api(auctionAnalyticsUrl + '?t=' + Date.now())
+        .then(function (json) {
+          renderAnalytics(json || {});
+          setStatus('Aukció statok: ' + fmtNum(json && json.summary ? json.summary.visitors : 0) + ' látogató');
+        })
+        .catch(function (err) {
+          setAucError('Aukció stat hiba: ' + err.message);
+          setStatus('Hiba');
+        });
+    }
+
+    function loadAuctionPublic() {
+      setStatus('Aukció tételek betöltése...');
+      return api(auctionPublicUrl + '?t=' + Date.now())
+        .then(function (json) {
+          renderAuctionPublic(json || {});
+          setStatus('Aukció tételek: ' + fmtNum((json && json.lots ? json.lots.length : 0)) + ' db');
+        })
+        .catch(function (err) {
+          setAucError('Aukció tétellista hiba: ' + err.message);
+          setStatus('Hiba');
+        });
+    }
+
     els.tabs.forEach(function (btn) {
       btn.addEventListener("click", function () {
         var tab = btn.getAttribute("data-tab");
@@ -310,7 +460,9 @@
     });
 
     els.don.refresh.addEventListener("click", loadDonations);
+    els.auction.refresh.addEventListener("click", loadAuctionPublic);
     els.auc.refresh.addEventListener("click", loadAuctions);
+    els.analytics.refresh.addEventListener("click", loadAnalytics);
 
     els.don.body.addEventListener("click", function (ev) {
       var btn = ev.target && ev.target.closest("button[data-act]");
@@ -378,7 +530,7 @@
       }
     });
 
-    var initialLoads = isPublic ? [loadDonations()] : [loadDonations(), loadAuctions()];
+    var initialLoads = isPublic ? [loadDonations(), loadAuctionPublic(), loadAnalytics()] : [loadDonations(), loadAuctionPublic(), loadAuctions(), loadAnalytics()];
     Promise.all(initialLoads).then(function () {
       setStatus("Kesz");
     });
