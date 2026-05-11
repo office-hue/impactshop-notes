@@ -1,3 +1,10 @@
+## 2026-05-11T14:40:00+0200 - JVK bank transfer confirm hotfix deployed + recovery audit clean
+- A `wp-content/mu-plugins/impactshop-event-donation-widget.php` bank transfer confirm ága javítva lett: a hibás `impactshop_event_donation_generate_ticket_serial()` hívás az elérhető `impactshop_event_donation_generate_ticket_serials(...)` helperre lett cserélve.
+- Bastion-approved hotfix deploy lefutott productionre és stagingre; a sync cache flush-sal zárult.
+- A korábban félbemaradt production rekord `ED-20260507190704-CKqNJM` célzott recoveryt kapott: a hiányzó `ticket_serials` backfill megtörtént, a buyer confirm ág újra lett triggerelve, és a certificate státusz `sent` lett (`donation_cert_id=SHA-ADOMANY-2026-0008`).
+- Recovery utáni production adat-audit: a `completed + bank_transfer` rekordok száma `2`, a maradék `ticket_serials` / `donation_cert_status` alapú anomália-sorok száma `0`.
+- Célzott post-check futott a recovery utáni logablakra is; külön app-log sor nem keletkezett, ezért ennél az incidensnél a primer verifikáció a DB végállapot.
+
 ## 2026-05-07T10:40:00+0200 - impactshop intl runtime canonicalized for clean PR
 - Kesz a tiszta release-branch a live-on validalt EN shop + EN challenge runtime allapothoz.
 - Uj additiv overlay assetek bekerultek: `impactshop-ads-watch-intl-overlay.js`, `impactshop-identity-panel-intl-overlay.js`.
