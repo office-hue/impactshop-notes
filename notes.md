@@ -1,3 +1,11 @@
+## 2026-05-11 14:40 CEST - JVK bank transfer confirm hotfix + historical recovery lezárva
+- `impactshop-event-donation-widget.php`: a bank transfer admin confirm flow gyökérok javítva. A hibás, nem létező `impactshop_event_donation_generate_ticket_serial()` hívás az elérhető batch helperre lett cserélve: `impactshop_event_donation_generate_ticket_serials(...)`.
+- Deploy: a fix bastion-approved hotfix sync-kel ment ki productionre és stagingre. A deploy cache flush-sal zárult.
+- Production incidens: a `ED-20260507190704-CKqNJM` rekord a korábbi fatál miatt félbemaradt `status=completed`, de hiányzó `ticket_serials` és `donation_cert_status=none` állapottal.
+- Célzott recovery lefutott productionben: a két ticket serial backfill megtörtént (`JOVONKVIZE-2026-2026-00001`, `JOVONKVIZE-2026-2026-00002`), a buyer confirm ág újra lett triggerelve, a certificate státusz `sent` lett, a `donation_cert_id` pedig `SHA-ADOMANY-2026-0008`.
+- Recovery utáni production audit: a `completed + bank_transfer` rekordok száma `2`, és a maradék anomália-sorok száma `0` a `ticket_serials` / `donation_cert_status` feltételek mentén.
+- Post-check: a `debug.log` célzott 12:36-12:39 ablakában nem volt külön donation/certificate szintű app-log sor, ezért a recovery bizonyítéka ennél az incidensnél a DB végállapot.
+
 ## 2026-05-07 16:00 CEST - JVK aukció analytics + publikus dashboard tabs lezárva
 - `impactshop-event-auction-widget.php`: az éles JVK kampányadatok véglegesítve a publikus embedhez. Javítva lettek a lot 1-7 kikiáltási árai és licitlépcsői, a globális aukciózárás `2026-05-17T20:00:00Z` értékre került, és új publikus analytics REST route-ok kerültek be (`/analytics/public`, `/analytics/event`).
 - `impactshop-event-auction-widget-jovonkvize-1.0.0.js`: deeplink/share UX véglegesítve, kliensoldali analytics eseményküldés bekötve (`page_view`, `lot_open`, `deep_link_open`, `preset_click`, `share_click`, `bid_submit`, `engagement`).

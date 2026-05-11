@@ -2694,9 +2694,10 @@ function impactshop_event_donation_admin_confirm_transfer(WP_REST_Request $reque
     $ticketCount = (int) ($mergedRow['ticket_count'] ?? 0);
     $ticketSerials = [];
     if ($ticketCount > 0 && empty($mergedRow['ticket_serials'])) {
-        for ($i = 0; $i < $ticketCount; $i++) {
-            $ticketSerials[] = impactshop_event_donation_generate_ticket_serial($donationId, $i);
-        }
+        $ticketSerials = impactshop_event_donation_generate_ticket_serials(
+            (string) ($mergedRow['campaign_slug'] ?? ''),
+            $ticketCount
+        );
         $wpdb->update(
             $table,
             ['ticket_serials' => wp_json_encode($ticketSerials)],
