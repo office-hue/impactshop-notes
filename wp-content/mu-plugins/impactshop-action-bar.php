@@ -71,6 +71,26 @@ function impactshop_action_bar_render(): void
     $shop_attr = $shop_current ? ' aria-current="page"' : '';
     $donate_attr = '';
 
+    // Lang + country selector
+    $current_lang    = sanitize_key( (string)( $_GET['lang']    ?? '' ) );
+    $current_country = sanitize_key( (string)( $_GET['country'] ?? '' ) );
+    if ( ! in_array( $current_lang,    ['hu', 'en'], true ) ) { $current_lang   = 'hu'; }
+    if ( ! in_array( $current_country, ['hu', 'us'], true ) ) { $current_country = 'hu'; }
+    $slc_langs = [
+        'hu' => [ 'flag' => '🇭🇺', 'name' => 'Magyar' ],
+        'en' => [ 'flag' => '🇬🇧', 'name' => 'English' ],
+    ];
+    $slc_countries = [
+        'hu' => [ 'flag' => '🇭🇺', 'name' => 'Magyarország' ],
+        'us' => [ 'flag' => '🇺🇸', 'name' => 'USA' ],
+    ];
+    $slc_lang_flag    = $slc_langs[$current_lang]['flag'];
+    $slc_country_flag = $slc_countries[$current_country]['flag'];
+    $slc_pill_label   = $slc_lang_flag . "\u{00A0}" . strtoupper($current_lang);
+    if ( $slc_country_flag !== $slc_lang_flag ) {
+        $slc_pill_label .= "\u{00A0}·\u{00A0}" . $slc_country_flag;
+    }
+
     ?>
     <style>
         :root {
@@ -166,6 +186,125 @@ function impactshop_action_bar_render(): void
                 padding-bottom: 0;
             }
         }
+
+        /* --- Lang/country selector pill --- */
+        .sharity-slc {
+            position: fixed;
+            right: 12px;
+            bottom: calc(var(--sharity-action-bar-height) + env(safe-area-inset-bottom) + 8px);
+            z-index: 10006;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(26, 26, 46, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            padding: 5px 12px 5px 9px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            letter-spacing: 0.02em;
+            user-select: none;
+            outline: none;
+        }
+        .sharity-slc:active { opacity: 0.75; transform: scale(0.96); }
+        .sharity-slc__globe { font-size: 14px; line-height: 1; }
+        .sharity-slc__label { line-height: 1; }
+
+        @media (min-width: 769px) {
+            .sharity-slc { bottom: calc(var(--sharity-action-bar-height-tablet) + 14px + 8px); }
+        }
+        @media (min-width: 1101px) {
+            .sharity-slc { bottom: calc(var(--sharity-action-bar-height-desktop) + 14px + 8px); }
+        }
+        @media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
+            .sharity-slc { display: none; }
+        }
+
+        /* --- Backdrop --- */
+        .sharity-slc__backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10007;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            animation: slc-fade-in 0.18s ease;
+        }
+        .sharity-slc__backdrop.is-open { display: block; }
+
+        /* --- Bottom sheet --- */
+        .sharity-slc__sheet {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 10008;
+            background: #1a1a2e;
+            border-top: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px 20px 0 0;
+            padding: 0 0 calc(env(safe-area-inset-bottom) + 16px);
+            transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.32,0.72,0,1);
+            will-change: transform;
+            max-height: 80vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .sharity-slc__sheet.is-open { transform: translateY(0); }
+
+        .sharity-slc__handle {
+            width: 40px; height: 4px;
+            background: rgba(255,255,255,0.22);
+            border-radius: 99px;
+            margin: 12px auto 4px;
+        }
+        .sharity-slc__header {
+            text-align: center;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 10px 16px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sharity-slc__section-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            padding: 16px 20px 6px;
+        }
+        .sharity-slc__rows { padding: 0 12px 4px; }
+        .sharity-slc__row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 10px;
+            border-radius: 12px;
+            color: rgba(255,255,255,0.75);
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.12s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sharity-slc__row:active { background: rgba(255,255,255,0.06); }
+        .sharity-slc__row--active { color: #fff; font-weight: 700; }
+        .sharity-slc__row--active .sharity-slc__row-name { color: #60a5fa; }
+        .sharity-slc__row-flag { font-size: 22px; line-height: 1; flex-shrink: 0; }
+        .sharity-slc__row-name { flex: 1; }
+        .sharity-slc__row-check { color: #60a5fa; font-size: 16px; margin-left: auto; }
+
+        @keyframes slc-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
         .sharity-action-bar {
             position: fixed;
@@ -497,6 +636,72 @@ function impactshop_action_bar_render(): void
             <span>Pontok</span>
         </a>
     </nav>
+
+    <button class="sharity-slc" id="sharity-slc-btn" type="button" aria-label="Nyelv és ország választó" aria-haspopup="dialog">
+        <span class="sharity-slc__globe">🌐</span>
+        <span class="sharity-slc__label"><?php echo wp_kses_post( $slc_pill_label ); ?></span>
+    </button>
+
+    <div class="sharity-slc__backdrop" id="sharity-slc-backdrop" aria-hidden="true"></div>
+
+    <div class="sharity-slc__sheet" id="sharity-slc-sheet" role="dialog" aria-modal="true" aria-label="Nyelv és ország választó">
+        <div class="sharity-slc__handle"></div>
+        <div class="sharity-slc__header">🌍 Nyelv és ország</div>
+
+        <div class="sharity-slc__section-title"><?php echo $current_lang === 'hu' ? 'Nyelv' : 'Language'; ?></div>
+        <div class="sharity-slc__rows">
+            <?php foreach ( $slc_langs as $lcode => $linfo ) :
+                $lurl = $lcode === 'hu'
+                    ? remove_query_arg('lang')
+                    : add_query_arg( 'lang', $lcode, remove_query_arg('lang') );
+                $lactive = $lcode === $current_lang;
+            ?>
+            <a href="<?php echo esc_url( $lurl ); ?>" class="sharity-slc__row<?php echo $lactive ? ' sharity-slc__row--active' : ''; ?>">
+                <span class="sharity-slc__row-flag"><?php echo esc_html( $linfo['flag'] ); ?></span>
+                <span class="sharity-slc__row-name"><?php echo esc_html( $linfo['name'] ); ?></span>
+                <?php if ( $lactive ) : ?><span class="sharity-slc__row-check" aria-label="aktív">✓</span><?php endif; ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="sharity-slc__section-title"><?php echo $current_lang === 'hu' ? 'Ország' : 'Country'; ?></div>
+        <div class="sharity-slc__rows">
+            <?php foreach ( $slc_countries as $ccode => $cinfo ) :
+                $curl = $ccode === 'hu'
+                    ? remove_query_arg('country')
+                    : add_query_arg( 'country', $ccode, remove_query_arg('country') );
+                $cactive = $ccode === $current_country;
+            ?>
+            <a href="<?php echo esc_url( $curl ); ?>" class="sharity-slc__row<?php echo $cactive ? ' sharity-slc__row--active' : ''; ?>">
+                <span class="sharity-slc__row-flag"><?php echo esc_html( $cinfo['flag'] ); ?></span>
+                <span class="sharity-slc__row-name"><?php echo esc_html( $cinfo['name'] ); ?></span>
+                <?php if ( $cactive ) : ?><span class="sharity-slc__row-check" aria-label="aktív">✓</span><?php endif; ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        var btn      = document.getElementById('sharity-slc-btn');
+        var sheet    = document.getElementById('sharity-slc-sheet');
+        var backdrop = document.getElementById('sharity-slc-backdrop');
+        if (!btn || !sheet || !backdrop) return;
+
+        function openSheet() {
+            sheet.classList.add('is-open');
+            backdrop.classList.add('is-open');
+        }
+        function closeSheet() {
+            sheet.classList.remove('is-open');
+            backdrop.classList.remove('is-open');
+        }
+
+        btn.addEventListener('click', function(e) { e.stopPropagation(); openSheet(); });
+        backdrop.addEventListener('click', closeSheet);
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSheet(); });
+    })();
+    </script>
 
     <script>
         (function() {
