@@ -565,6 +565,11 @@ Doc continuity checks remain strict for committed changes
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
 
+## 2026-05-12 impactshop selector restore hotfix
+- `wp-content/mu-plugins/impactshop-action-bar.php`: visszaallitva a nyelv/orszag selector UI blokk (`sharity-slc`) a kanonikus main/prod lane-ben.
+- Ok: selector csak nemzetkozi worktree-ben volt jelen, a kanonikus branch/prod allapotbol kimaradt.
+- Hotfix branch: `fix/impactshop-selector-restore`, commit: `fix(intl): restore language-country selector on impactshop`.
+
 ---
 _Auto update: 2026-03-05 10:12:00 CET_
 

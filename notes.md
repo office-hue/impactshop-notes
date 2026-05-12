@@ -6816,3 +6816,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Uj 301 redirect aktiv: `/adomany-automata-portal-1` es `/adomany-automata-portal-2` -> `/rolunk/?lang=en`.
 - Deploy utani ellenorzes: mindket URL `301` helyes celra, vegpont `200`.
 - Remote backup keszult: `impactshop-ngo-guides.php.bak-20260505-135334` (rollback parancs a deploy outputban rogzitve).
+
+### 2026-05-12 — impactshop nyelv/orszag selector hotfix
+- Ok: a `sharity-slc` selector a nemzetkozi worktree-ben megvolt, de a kanonikus main/prod action-bar valtozatban nem szerepelt.
+- Javitas: `wp-content/mu-plugins/impactshop-action-bar.php` celzott visszaallitas a selector blokkra.
+- Branch: `fix/impactshop-selector-restore`.
