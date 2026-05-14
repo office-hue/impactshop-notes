@@ -1,3 +1,9 @@
+## 2026-05-14T09:35:00+0200 - adomany-automata portal redirects fixed (JVK embed)
+- Redirect korrekció: `/adomany-automata-portal-1` és `/adomany-automata-portal-2` → `https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026`
+- Root cause: hotfix (2026-05-05) szerverre írva, nem commitolva. Deploy (`--delete` rsync) felülírta.
+- Fix: PHP code-ba commitolva a feature branchre. Backup szerveren: `~/impactshop-ngo-guides.php.bak-20260514`
+- Live verify: mindkét URL 301 → embed → 200
+
 ## 2026-05-11T14:40:00+0200 - JVK bank transfer confirm hotfix deployed + recovery audit clean
 - A `wp-content/mu-plugins/impactshop-event-donation-widget.php` bank transfer confirm ága javítva lett: a hibás `impactshop_event_donation_generate_ticket_serial()` hívás az elérhető `impactshop_event_donation_generate_ticket_serials(...)` helperre lett cserélve.
 - Bastion-approved hotfix deploy lefutott productionre és stagingre; a sync cache flush-sal zárult.

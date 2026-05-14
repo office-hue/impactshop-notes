@@ -70,3 +70,21 @@ bin/impactshop-guard-rollback.sh deploy-YYYYMMDD-HHMMSS
 - MP4/asset fájlok ne kerüljenek deployba, ha nem része a mappingnek.
 - Kézi utóellenőrzéshez továbbra is használható: `bin/post-deploy-checklist.sh`, ami már tartalmazza a Hatás Körök smoke-ot is.
 - A kézi restore nem válik kanonikussá attól, hogy sikeres volt; ha guard hiba miatt incidensúton kellett kimenni, azt külön dokumentálni kell és külön helyre kell hozni a guard deploy infrastruktúrát.
+
+## 2026-05-14 - adomany-automata redirect protected change record
+
+### Protected files touched
+- wp-content/mu-plugins/impactshop-ngo-guides.php
+
+### Rollback
+- `git revert 15de3677` ezen a branchen, vagy szerveren backup restore:
+  `cp ~/impactshop-ngo-guides.php.bak-20260514 ~/app/wp-content/mu-plugins/impactshop-ngo-guides.php`
+
+### Smoke
+- `route:jysk-riport`
+- `route:ngo-guides`
+- `flow:guide-route-render`
+- `flow:guide-print-mode`
+- `flow:guide-data-json`
+- `deploy:guard-preflight`
+- `deploy:checksum-verify`

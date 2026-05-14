@@ -390,6 +390,14 @@ function impactshop_ngo_guides_page_meta(string $page): ?array
  */
 function impactshop_ngo_guides_template_redirect(): void
 {
+    $requestPath = wp_parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    $normalizedPath = is_string($requestPath) ? untrailingslashit($requestPath) : '';
+
+    if (in_array($normalizedPath, ['/adomany-automata-portal-1', '/adomany-automata-portal-2'], true)) {
+        wp_safe_redirect('https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026', 301);
+        exit;
+    }
+
     $page = get_query_var('ngo_guide_page', '');
     $lang = impactshop_ngo_guides_current_lang();
     
