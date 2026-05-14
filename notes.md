@@ -6821,3 +6821,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Ok: a `sharity-slc` selector a nemzetkozi worktree-ben megvolt, de a kanonikus main/prod action-bar valtozatban nem szerepelt.
 - Javitas: `wp-content/mu-plugins/impactshop-action-bar.php` celzott visszaallitas a selector blokkra.
 - Branch: `fix/impactshop-selector-restore`.
+
+### 2026-05-14 — adomany-automata portal redirect tartositas
+- A `/adomany-automata-portal-1` es `/adomany-automata-portal-2` route-ra korai `template_redirect` 301 kerult a JVK embed celra:
+  `https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026`.
+- Gyokerok: a redirect korabban hotfixkent szerverre kerult, de nem volt tartosan repo commitban, igy a teljes `wp-content/mu-plugins` mapping deploy vissza tudta irni.
+- Tartos fix: commit a canonical branch lane-ben (`15de3677`), plusz guard-kompatibilis docs/snapshot/notes folytonossag.
