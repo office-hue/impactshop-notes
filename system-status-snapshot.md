@@ -803,3 +803,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+## 2026-05-15T16:30:00Z - JVK Tarcsi lot dimensions follow-up
+- `wp-content/mu-plugins/impactshop-event-auction-widget.php` lot 3 (`tarcsi-daniel-part-iii`) metadata corrected to final delivered artwork data.
+- Updated fields only: `description_short`, `dimensions`, `medium`.
+- Follow-up required because PR #140 completed canonical flow but did not alter the canonical Tarcsi lines in `origin/main`; PR #141 carries the effective runtime correction.
