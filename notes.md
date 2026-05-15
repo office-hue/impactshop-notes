@@ -6827,3 +6827,4 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   `https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026`.
 - Gyokerok: a redirect korabban hotfixkent szerverre kerult, de nem volt tartosan repo commitban, igy a teljes `wp-content/mu-plugins` mapping deploy vissza tudta irni.
 - Tartos fix: commit a canonical branch lane-ben (`15de3677`), plusz guard-kompatibilis docs/snapshot/notes folytonossag.
+- 2026-05-15: JVK aukció follow-up. A Tarcsi Dániel / Part III. tételnél a végleges átadott méret és technika került visszajavításra a kanonikus runtime source-ban: `description_short`, `dimensions`, `medium` -> `Akril, vásznon`, `33x88 cm`, `32x102x3 cm` keretezett méret. PR: #141.
