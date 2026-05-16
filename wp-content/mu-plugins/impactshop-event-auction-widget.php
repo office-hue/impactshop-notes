@@ -17,9 +17,11 @@ define('IMPACTSHOP_EVENT_AUCTION_BIDDER_TTL', 4 * HOUR_IN_SECONDS);
 
 add_action('init', 'impactshop_event_auction_ensure_schema', 5);
 add_action('init', 'impactshop_event_auction_cron_schedule', 10);
+add_action('init', 'impactshop_event_auction_validate_runtime_integrity', 20);
 add_action('rest_api_init', 'impactshop_event_auction_register_routes');
 add_action('template_redirect', 'impactshop_event_auction_query_api_dispatch', 0);
 add_action('template_redirect', 'impactshop_event_auction_embed_page_dispatch', 1);
+add_action('admin_notices', 'impactshop_event_auction_admin_integrity_notice');
 add_filter('allowed_http_origins', 'impactshop_event_auction_allowed_http_origins');
 add_filter('allowed_redirect_hosts', 'impactshop_event_auction_allowed_redirect_hosts');
 add_shortcode('impact_event_auction_widget', 'impactshop_event_auction_shortcode');
@@ -341,6 +343,154 @@ function impactshop_event_auction_default_lots(): array
     }
 
     return $lots;
+}
+
+function impactshop_event_auction_required_lot_index(): array
+{
+    return [
+        1 => 'szentpeteri-toth-marta-forgiveness',
+        2 => 'simon-m-veronika-kek-sugarzas',
+        3 => 'tarcsi-daniel-part-iii',
+        4 => 'ghyczy-gyorgy-elindulok-a-csillagokhoz',
+        5 => 'szabo-anna-cseresznye',
+        6 => 'szabo-anna-a-no-turkizben',
+        7 => 'dimenzio-ingatlan-sirocco-elmenyvitorlazas',
+        8 => 'n28-wine-kitchen-uzleti-ebed',
+        9 => 'dedikalt-meccslabda-magyarorszag-argentina-2005',
+        10 => 'balla-gemma-ecoprint-selyemsal-nyaklac',
+        11 => 'kocsis-katica-weiler-peter-dedikalt-konyv',
+    ];
+}
+
+function impactshop_event_auction_lot_integrity_report(array $lots): array
+{
+    $expected = impactshop_event_auction_required_lot_index();
+    $seen = [];
+    $duplicateSlugs = [];
+    $duplicateNumbers = [];
+    $missing = [];
+    $mismatched = [];
+
+    foreach ($lots as $lot) {
+        $slug = sanitize_title((string) ($lot['item_slug'] ?? ''));
+        $number = (int) ($lot['lot_number'] ?? 0);
+
+        if ($slug !== '') {
+            if (isset($seen['slug'][$slug])) {
+                $duplicateSlugs[] = $slug;
+            }
+            $seen['slug'][$slug] = true;
+        }
+
+        if ($number > 0) {
+            if (isset($seen['number'][$number])) {
+                $duplicateNumbers[] = $number;
+            }
+            $seen['number'][$number] = $slug;
+        }
+    }
+
+    foreach ($expected as $number => $slug) {
+        if (!isset($seen['number'][$number])) {
+            $missing[] = sprintf('lot %d (%s)', $number, $slug);
+            continue;
+        }
+
+        if ($seen['number'][$number] !== $slug) {
+            $mismatched[] = sprintf(
+                'lot %d expected %s but found %s',
+                $number,
+                $slug,
+                $seen['number'][$number] !== '' ? $seen['number'][$number] : '(empty)'
+            );
+        }
+    }
+
+    return [
+        'ok' => count($lots) >= count($expected)
+            && $missing === []
+            && $mismatched === []
+            && $duplicateSlugs === []
+            && $duplicateNumbers === [],
+        'expected_count' => count($expected),
+        'actual_count' => count($lots),
+        'missing' => $missing,
+        'mismatched' => $mismatched,
+        'duplicate_slugs' => array_values(array_unique($duplicateSlugs)),
+        'duplicate_numbers' => array_values(array_unique($duplicateNumbers)),
+    ];
+}
+
+function impactshop_event_auction_runtime_lot_integrity_report(): array
+{
+    static $report = null;
+    if (is_array($report)) {
+        return $report;
+    }
+
+    $campaign = impactshop_event_auction_get_campaign('jovonkvize-2026');
+    $lots = is_array($campaign) ? (array) ($campaign['lots'] ?? []) : [];
+    $report = impactshop_event_auction_lot_integrity_report($lots);
+
+    return $report;
+}
+
+function impactshop_event_auction_validate_runtime_integrity(): void
+{
+    $report = impactshop_event_auction_runtime_lot_integrity_report();
+    if (!empty($report['ok'])) {
+        return;
+    }
+
+    $transientKey = 'impactshop_ea_jvk_lot_guard_alert';
+    if (get_transient($transientKey)) {
+        return;
+    }
+
+    set_transient($transientKey, '1', 10 * MINUTE_IN_SECONDS);
+
+    error_log('[impactshop-event-auction] JVK lot integrity guard failed: ' . wp_json_encode([
+        'actual_count' => (int) ($report['actual_count'] ?? 0),
+        'expected_count' => (int) ($report['expected_count'] ?? 0),
+        'missing' => array_values((array) ($report['missing'] ?? [])),
+        'mismatched' => array_values((array) ($report['mismatched'] ?? [])),
+        'duplicate_slugs' => array_values((array) ($report['duplicate_slugs'] ?? [])),
+        'duplicate_numbers' => array_values((array) ($report['duplicate_numbers'] ?? [])),
+    ]));
+}
+
+function impactshop_event_auction_admin_integrity_notice(): void
+{
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    $report = impactshop_event_auction_runtime_lot_integrity_report();
+    if (!empty($report['ok'])) {
+        return;
+    }
+
+    $issues = array_merge(
+        (array) ($report['missing'] ?? []),
+        (array) ($report['mismatched'] ?? []),
+        array_map(
+            static fn($slug) => 'duplicate slug: ' . $slug,
+            (array) ($report['duplicate_slugs'] ?? [])
+        ),
+        array_map(
+            static fn($number) => 'duplicate lot number: ' . (int) $number,
+            (array) ($report['duplicate_numbers'] ?? [])
+        )
+    );
+
+    echo '<div class="notice notice-error"><p><strong>JVK aukció lot guard hiba:</strong> ';
+    echo esc_html(sprintf(
+        'A widget %d helyett %d kötelező tételt lát. %s',
+        (int) ($report['expected_count'] ?? 0),
+        (int) ($report['actual_count'] ?? 0),
+        implode(' | ', $issues)
+    ));
+    echo '</p></div>';
 }
 
 function impactshop_event_auction_get_campaign(string $slug): ?array
