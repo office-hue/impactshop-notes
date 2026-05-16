@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: ImpactShop Event Auction Widget
- * Description: Embeddable auction widget scaffold for the Jövőnk Vize x Mielemed gála flow.
+ * Description: Embeddable auction widget scaffold for the Jövőnk Vize x Miele gála flow.
  * Version: 0.1.0
  * Author: Sharity
  */
@@ -10,8 +10,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.5.0');
-define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.4.0');
+define('IMPACTSHOP_EVENT_AUCTION_VERSION', '0.4.1');
+define('IMPACTSHOP_EVENT_AUCTION_SCHEMA_VERSION', '0.3.0');
 define('IMPACTSHOP_EVENT_AUCTION_SESSION_TTL', 30 * MINUTE_IN_SECONDS);
 define('IMPACTSHOP_EVENT_AUCTION_BIDDER_TTL', 4 * HOUR_IN_SECONDS);
 
@@ -65,9 +65,9 @@ function impactshop_event_auction_campaigns(): array
             'slug' => 'jovonkvize-2026',
             'auction_slug' => 'jovonkvize-miele-gala-2026',
             'title' => 'Jövőnk Vize gála aukció',
-            'subtitle' => 'Licitálj a gálaest tárgyaira',
+            'subtitle' => 'Miele műtárgyak és különleges felajánlások',
             'beneficiary_name' => 'Sharity Adományszervező Alapítvány',
-            'description' => 'Válassz egy tételt, add meg a licitösszeget és a nevedet — a legmagasabb licit nyer. Ha valaki felüllicitál, e-mailben értesítünk. Ha megadod a telefonszámodat, SMS-ben is kapsz értesítést a felüllicitálásról és az aukció eredményéről.',
+            'description' => 'Additív aukciós modul a Jövőnk Vize x Miele gála lane-hez. A bidder regisztráció, a licit write lane, az admin close és a winner-payment backend már bekötve, az admin UI és a kommunikációs lane külön fázisban kötődik be.',
             'currency' => 'huf',
             'goal_amount' => 15000000,
             'share_url' => 'https://jovonkvize.hu',
@@ -79,7 +79,7 @@ function impactshop_event_auction_campaigns(): array
             'lots' => impactshop_event_auction_default_lots(),
         // Aukció zárásának UTC időpontja (ISO 8601). Admin_close manuálisan is lezárhatja.
         // TODO: pontos gálanaphoz igazítani!
-        'auction_end_time' => '2026-05-17T20:00:00Z', // 2026-05-17 22:00 Budapest (CEST = UTC+2)
+        'auction_end_time' => '2026-05-05T11:30:00Z', // 2026-05-05 13:30 Budapest (CEST = UTC+2) — TEST CLOSE
         // Snipe protection: ha az utolsó N másodpercben érkezik licit → meghosszabbítás M másodperccel
         'snipe_window_seconds' => 120,
         'snipe_extend_seconds' => 120,
@@ -299,6 +299,40 @@ function impactshop_event_auction_default_lots(): array
             'current_winner_bidder_id' => null,
             'status' => 'live',
             'image_path' => 'jovonkvize-auction/2026/meccslabda-magyarorszag-argentina-2005.jpg',
+        ],
+        [
+            'item_slug' => 'balla-gemma-ecoprint-selyemsal-nyaklac',
+            'lot_number' => 10,
+            'category' => 'handcraft',
+            'artist_name' => 'Balla Gemma',
+            'item_title' => 'Ecoprint selyemsál és selyemgubós nyaklánc',
+            'description_short' => '45×180 cm ecoprint selyemsál és selyemgubós nyaklánc – kézzel készített, egyedi természetes alkotás.',
+            'description_long' => 'Balla Gemma alkotóként és kézműves oktatóként hosszú évek óta a kreativitás, az igényes kézzel készült tárgyak és a hagyományos értékek elkötelezett képviselője. Munkáiban a természetközeliség, az egyediség és a játékosság harmonikusan találkozik, miközben fontos számára az alkotás örömének továbbadása is. Számos közösségi és művészeti kezdeményezés aktív résztvevője, ahol inspiráló személyiségével és nyitottságával is hozzájárul az élményekhez. Az aukció támogatására felajánlott tárgyával most ő is egy jó ügy mellé állt. A tételcsomag tartalmaz egy 45×180 cm méretű ecoprint selyemsálat és egy selyemgubós nyakláncot – mindkettő egyedi, kézzel készített darab.',
+            'dimensions' => '45×180 cm (sál)',
+            'medium' => 'Ecoprint selyem, selyemgubó',
+            'starting_bid' => 25000,
+            'min_increment' => 5000,
+            'current_bid' => null,
+            'current_winner_bidder_id' => null,
+            'status' => 'live',
+            'image_path' => 'jovonkvize-auction/2026/balla-gemma-ecoprint-selyemsal.jpg',
+        ],
+        [
+            'item_slug' => 'kocsis-katica-weiler-peter-dedikalt-konyv',
+            'lot_number' => 11,
+            'category' => 'collectible',
+            'artist_name' => 'Kocsis Katica / Weiler Péter',
+            'item_title' => 'Kocsis Katica: Weiler Péter – dedikált könyv',
+            'description_short' => 'Dedikált könyv – Weiler Péter Kocsis Katicától, személyesen Weiler Péter által dedikálva.',
+            'description_long' => 'A „Jövőnk Vize" jótékonysági gála aukciójára egy igazán különleges, személyes értéket képviselő licittárgy érkezik: Kocsis Katica Weiler Péter című kötete, amelyet személyesen Weiler Péter dedikált. A kedves licitáló egy olyan különleges könyvet tarthat majd a kezében, amely egyszerre őszinte életrajz, személyes vallomás és művészeti lenyomat. Kocsis Katica higgadt, érzékeny és mélyre ásó könyve a Weiler-univerzum belső világába enged betekintést: egyszerre életút, monográfia, album és inspiráló történet. A kötet különlegessége, hogy nem kíván klasszikus műfaji keretek közé illeszkedni – ahogyan maga Weiler Péter sem. Képzőművész és üzletember, aki bátor döntésekkel, merész fordulatokkal és inspiráló élethelyzetekkel teli pályát járt be. A sorokból egyszerre árad mértékletesség, őszinteség és az alkotói szabadság. Ezt a példányt személyesen Weiler Péter dedikálta a gála számára, így nemcsak egy értékes kulturális kötet, hanem egyedi, gyűjtői darab is. A licittel ráadásul a vendégek egy nemes ügyet támogatnak: hozzájárulnak ahhoz, hogy gyermekintézmények biztonságos, tiszta ivóvízhez jussanak.',
+            'dimensions' => '',
+            'medium' => 'Könyv',
+            'starting_bid' => 20000,
+            'min_increment' => 5000,
+            'current_bid' => null,
+            'current_winner_bidder_id' => null,
+            'status' => 'live',
+            'image_path' => 'jovonkvize-auction/2026/kocsis-katica-weiler-peter-konyv.jpg',
         ],
     ];
 
@@ -581,256 +615,6 @@ function impactshop_event_auction_log_event(string $campaignSlug, string $itemSl
         ],
         ['%s', '%s', '%s', '%s', '%s', '%s', '%s']
     );
-}
-
-function impactshop_event_auction_allowed_analytics_events(): array
-{
-    return [
-        'page_view',
-        'lot_open',
-        'deep_link_open',
-        'share_click',
-        'preset_click',
-        'bid_submit',
-        'engagement',
-    ];
-}
-
-function impactshop_event_auction_parse_host(string $value): string
-{
-    $value = trim($value);
-    if ($value === '') {
-        return '';
-    }
-
-    if (strpos($value, '://') === false) {
-        $value = 'https://' . ltrim($value, '/');
-    }
-
-    $host = (string) parse_url($value, PHP_URL_HOST);
-    $host = strtolower(trim($host));
-    return sanitize_text_field($host);
-}
-
-function impactshop_event_auction_sanitize_analytics_payload(array $campaign, array $payload): array
-{
-    $eventType = sanitize_key((string) ($payload['event_type'] ?? ''));
-    if (!in_array($eventType, impactshop_event_auction_allowed_analytics_events(), true)) {
-        return [];
-    }
-
-    $visitorSessionId = preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($payload['visitor_session_id'] ?? ''));
-    $visitorSessionId = substr((string) $visitorSessionId, 0, 64);
-    if ($visitorSessionId === '') {
-        return [];
-    }
-
-    $itemSlug = sanitize_title((string) ($payload['item_slug'] ?? ''));
-    if ($itemSlug !== '' && !impactshop_event_auction_find_lot($campaign, $itemSlug)) {
-        $itemSlug = '';
-    }
-
-    $engagedMs = max(0, min(300000, (int) ($payload['engaged_ms'] ?? 0)));
-    $bidAmount = impactshop_event_auction_parse_amount($payload['bid_amount'] ?? 0);
-
-    return [
-        'event_type' => $eventType,
-        'visitor_session_id' => $visitorSessionId,
-        'item_slug' => $itemSlug,
-        'page_url' => esc_url_raw((string) ($payload['page_url'] ?? '')),
-        'page_path' => sanitize_text_field((string) ($payload['page_path'] ?? '')),
-        'page_query' => sanitize_text_field((string) ($payload['page_query'] ?? '')),
-        'referrer' => esc_url_raw((string) ($payload['referrer'] ?? '')),
-        'referrer_host' => impactshop_event_auction_parse_host((string) ($payload['referrer_host'] ?? ($payload['referrer'] ?? ''))),
-        'utm_source' => sanitize_text_field((string) ($payload['utm_source'] ?? '')),
-        'utm_medium' => sanitize_text_field((string) ($payload['utm_medium'] ?? '')),
-        'utm_campaign' => sanitize_text_field((string) ($payload['utm_campaign'] ?? '')),
-        'utm_content' => sanitize_text_field((string) ($payload['utm_content'] ?? '')),
-        'utm_term' => sanitize_text_field((string) ($payload['utm_term'] ?? '')),
-        'source' => sanitize_key((string) ($payload['source'] ?? '')),
-        'engaged_ms' => $engagedMs,
-        'bid_amount' => $bidAmount,
-        'screen' => sanitize_text_field((string) ($payload['screen'] ?? '')),
-        'viewport' => sanitize_text_field((string) ($payload['viewport'] ?? '')),
-        'locale' => sanitize_text_field((string) ($payload['locale'] ?? '')),
-    ];
-}
-
-function impactshop_event_auction_analytics_label(array $payload): string
-{
-    $utmSource = trim((string) ($payload['utm_source'] ?? ''));
-    $utmMedium = trim((string) ($payload['utm_medium'] ?? ''));
-    if ($utmSource !== '') {
-        return $utmSource . ($utmMedium !== '' ? ' / ' . $utmMedium : '');
-    }
-
-    $refHost = trim((string) ($payload['referrer_host'] ?? ''));
-    if ($refHost !== '') {
-        return $refHost;
-    }
-
-    return '(közvetlen)';
-}
-
-function impactshop_event_auction_analytics_rows(string $campaignSlug, int $days = 7): array
-{
-    global $wpdb;
-    $table = impactshop_event_auction_events_table_name();
-    $since = gmdate('Y-m-d H:i:s', time() - max(1, $days) * DAY_IN_SECONDS);
-
-    return $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT item_slug, event_type, actor, origin, payload_json, created_at
-             FROM {$table}
-             WHERE campaign_slug = %s
-               AND event_type LIKE 'analytics_%'
-               AND created_at >= %s
-             ORDER BY id DESC
-             LIMIT 5000",
-            $campaignSlug,
-            $since
-        ),
-        ARRAY_A
-    ) ?: [];
-}
-
-function impactshop_event_auction_analytics_payload(array $campaign, int $days = 7, int $recentMinutes = 5): array
-{
-    $rows = impactshop_event_auction_analytics_rows((string) ($campaign['slug'] ?? ''), $days);
-    $now = time();
-    $recentCutoff = $now - max(1, $recentMinutes) * MINUTE_IN_SECONDS;
-    $sessions = [];
-    $activeSessions = [];
-    $pageViews = 0;
-    $shareClicks = 0;
-    $bidSubmits = 0;
-    $totalEngagedMs = 0;
-    $lotOpenMap = [];
-    $lotShareMap = [];
-    $sourceMap = [];
-    $referrerMap = [];
-    $recentEvents = [];
-    $lotTitleBySlug = [];
-
-    foreach ((array) ($campaign['lots'] ?? []) as $lot) {
-        $lotTitleBySlug[sanitize_title((string) ($lot['item_slug'] ?? ''))] = sanitize_text_field((string) ($lot['item_title'] ?? ''));
-    }
-
-    foreach ($rows as $row) {
-        $eventType = (string) ($row['event_type'] ?? '');
-        $actor = (string) ($row['actor'] ?? '');
-        $itemSlug = sanitize_title((string) ($row['item_slug'] ?? ''));
-        $createdAtRaw = (string) ($row['created_at'] ?? '');
-        $createdTs = strtotime($createdAtRaw . ' UTC');
-        $payload = json_decode((string) ($row['payload_json'] ?? ''), true);
-        if (!is_array($payload)) {
-            $payload = [];
-        }
-
-        if ($actor !== '') {
-            $sessions[$actor] = true;
-            if ($createdTs !== false && $createdTs >= $recentCutoff) {
-                $activeSessions[$actor] = true;
-            }
-        }
-
-        if ($eventType === 'analytics_page_view') {
-            $pageViews++;
-            $sourceLabel = impactshop_event_auction_analytics_label($payload);
-            $sourceMap[$sourceLabel] = ($sourceMap[$sourceLabel] ?? 0) + 1;
-
-            $referrerHost = trim((string) ($payload['referrer_host'] ?? ''));
-            $referrerLabel = $referrerHost !== '' ? $referrerHost : '(közvetlen)';
-            $referrerMap[$referrerLabel] = ($referrerMap[$referrerLabel] ?? 0) + 1;
-        } elseif ($eventType === 'analytics_share_click') {
-            $shareClicks++;
-            if ($itemSlug !== '') {
-                $lotShareMap[$itemSlug] = ($lotShareMap[$itemSlug] ?? 0) + 1;
-            }
-        } elseif ($eventType === 'analytics_bid_submit') {
-            $bidSubmits++;
-        } elseif ($eventType === 'analytics_engagement') {
-            $totalEngagedMs += max(0, (int) ($payload['engaged_ms'] ?? 0));
-        }
-
-        if (in_array($eventType, ['analytics_lot_open', 'analytics_deep_link_open'], true) && $itemSlug !== '') {
-            $lotOpenMap[$itemSlug] = ($lotOpenMap[$itemSlug] ?? 0) + 1;
-        }
-
-        if (count($recentEvents) < 20) {
-            $recentEvents[] = [
-                'event_type' => str_replace('analytics_', '', $eventType),
-                'item_slug' => $itemSlug,
-                'item_title' => $itemSlug !== '' ? ($lotTitleBySlug[$itemSlug] ?? $itemSlug) : '',
-                'source' => impactshop_event_auction_analytics_label($payload),
-                'engaged_ms' => max(0, (int) ($payload['engaged_ms'] ?? 0)),
-                'created_at' => gmdate('c', $createdTs !== false ? $createdTs : $now),
-            ];
-        }
-    }
-
-    arsort($lotOpenMap);
-    arsort($lotShareMap);
-    arsort($sourceMap);
-    arsort($referrerMap);
-
-    $topLots = [];
-    foreach ($lotTitleBySlug as $slug => $title) {
-        $opens = (int) ($lotOpenMap[$slug] ?? 0);
-        $shares = (int) ($lotShareMap[$slug] ?? 0);
-        if ($opens === 0 && $shares === 0) {
-            continue;
-        }
-
-        $topLots[] = [
-            'item_slug' => $slug,
-            'item_title' => $title,
-            'opens' => $opens,
-            'shares' => $shares,
-        ];
-    }
-
-    usort($topLots, static function (array $a, array $b): int {
-        return ($b['opens'] <=> $a['opens']) ?: ($b['shares'] <=> $a['shares']);
-    });
-
-    $topSources = [];
-    foreach (array_slice($sourceMap, 0, 8, true) as $label => $count) {
-        $topSources[] = [
-            'label' => $label,
-            'sessions' => (int) $count,
-        ];
-    }
-
-    $topReferrers = [];
-    foreach (array_slice($referrerMap, 0, 8, true) as $label => $count) {
-        $topReferrers[] = [
-            'host' => $label,
-            'sessions' => (int) $count,
-        ];
-    }
-
-    $visitorCount = count($sessions);
-
-    return [
-        'campaign_slug' => (string) ($campaign['slug'] ?? ''),
-        'period_days' => $days,
-        'recent_minutes' => $recentMinutes,
-        'summary' => [
-            'visitors' => $visitorCount,
-            'active_visitors' => count($activeSessions),
-            'page_views' => $pageViews,
-            'share_clicks' => $shareClicks,
-            'bid_submits' => $bidSubmits,
-            'engaged_minutes' => round($totalEngagedMs / 60000, 1),
-            'avg_engaged_seconds' => $visitorCount > 0 ? round(($totalEngagedMs / 1000) / $visitorCount, 1) : 0,
-        ],
-        'top_lots' => array_slice($topLots, 0, 9),
-        'top_sources' => $topSources,
-        'top_referrers' => $topReferrers,
-        'recent_events' => $recentEvents,
-        'updated_at' => gmdate('c'),
-    ];
 }
 
 function impactshop_event_auction_parse_amount($value): int
@@ -1241,9 +1025,7 @@ function impactshop_event_auction_ensure_schema(): void
         created_at datetime NOT NULL,
         PRIMARY KEY  (id),
         KEY campaign_item (campaign_slug, item_slug),
-        KEY event_type (event_type),
-        KEY campaign_created (campaign_slug, created_at),
-        KEY actor_created (actor, created_at)
+        KEY event_type (event_type)
     ) {$charsetCollate};";
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -1281,18 +1063,6 @@ function impactshop_event_auction_register_routes(): void
     register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/stats', [
         'methods' => WP_REST_Server::READABLE,
         'callback' => 'impactshop_event_auction_stats',
-        'permission_callback' => '__return_true',
-    ]);
-
-    register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/analytics/public', [
-        'methods' => WP_REST_Server::READABLE,
-        'callback' => 'impactshop_event_auction_analytics_public',
-        'permission_callback' => '__return_true',
-    ]);
-
-    register_rest_route('impact/v1', '/event-auctions/(?P<slug>[a-z0-9\-]+)/analytics/event', [
-        'methods' => WP_REST_Server::CREATABLE,
-        'callback' => 'impactshop_event_auction_analytics_track',
         'permission_callback' => '__return_true',
     ]);
 
@@ -1678,63 +1448,6 @@ function impactshop_event_auction_stats(WP_REST_Request $request): WP_REST_Respo
     impactshop_event_auction_send_cors_headers($campaign);
 
     return new WP_REST_Response(impactshop_event_auction_stats_payload($campaign), 200);
-}
-
-function impactshop_event_auction_analytics_public(WP_REST_Request $request): WP_REST_Response
-{
-    $slug = sanitize_title((string) $request->get_param('slug'));
-    $campaign = impactshop_event_auction_get_campaign($slug);
-    if (!$campaign) {
-        return new WP_REST_Response(['error' => 'not_found'], 404);
-    }
-
-    impactshop_event_auction_send_cors_headers($campaign);
-
-    $days = max(1, min(30, (int) $request->get_param('days') ?: 7));
-    $recentMinutes = max(1, min(120, (int) $request->get_param('recent_minutes') ?: 5));
-
-    return new WP_REST_Response(impactshop_event_auction_analytics_payload($campaign, $days, $recentMinutes), 200);
-}
-
-function impactshop_event_auction_analytics_track(WP_REST_Request $request): WP_REST_Response
-{
-    $slug = sanitize_title((string) $request->get_param('slug'));
-    $campaign = impactshop_event_auction_get_campaign($slug);
-    if (!$campaign) {
-        return new WP_REST_Response(['error' => 'not_found'], 404);
-    }
-
-    impactshop_event_auction_send_cors_headers($campaign);
-
-    $rate = impactshop_event_auction_rate_limit('analytics_track', 90, MINUTE_IN_SECONDS);
-    if (!$rate['allowed']) {
-        return new WP_REST_Response(['error' => 'rate_limited'], 429);
-    }
-
-    $payload = impactshop_event_auction_extract_payload($request);
-    $sessionToken = sanitize_text_field((string) ($payload['session_token'] ?? ''));
-    if (!impactshop_event_auction_verify_session_token($sessionToken, $campaign)) {
-        return new WP_REST_Response(['error' => 'invalid_session'], 403);
-    }
-
-    $analytics = impactshop_event_auction_sanitize_analytics_payload($campaign, $payload);
-    if (!$analytics) {
-        return new WP_REST_Response(['error' => 'invalid_payload'], 400);
-    }
-
-    impactshop_event_auction_log_event(
-        (string) ($campaign['slug'] ?? ''),
-        (string) ($analytics['item_slug'] ?? ''),
-        'analytics_' . $analytics['event_type'],
-        (string) $analytics['visitor_session_id'],
-        $analytics
-    );
-
-    return new WP_REST_Response([
-        'ok' => true,
-        'logged' => 'analytics_' . $analytics['event_type'],
-        'updated_at' => gmdate('c'),
-    ], 200);
 }
 
 function impactshop_event_auction_admin_bids(WP_REST_Request $request): WP_REST_Response
