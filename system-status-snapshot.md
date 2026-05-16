@@ -807,3 +807,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - `wp-content/mu-plugins/impactshop-event-auction-widget.php` lot 3 (`tarcsi-daniel-part-iii`) metadata corrected to final delivered artwork data.
 - Updated fields only: `description_short`, `dimensions`, `medium`.
 - Follow-up required because PR #140 completed canonical flow but did not alter the canonical Tarcsi lines in `origin/main`; PR #141 carries the effective runtime correction.
+## 2026-05-16T16:20:00Z - JVK auction 11-lot emergency restore
+- A kanonikus `origin/main` és az élő JVK public payload 9 tételes regresszióban volt.
+- A dedikált aukciós memória és a `0734ba80` history alapján visszaállítva a lot 10 (`Balla Gemma`) és lot 11 (`Kocsis Katica / Weiler Péter`) tételek a kanonikus runtime source-ba.
+- A helyreállító change set a `wp-content/mu-plugins/impactshop-event-auction-widget.php` fájlra koncentrál, a 11 tételes állapotot állítja vissza.
