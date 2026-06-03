@@ -17,6 +17,7 @@
   const restBase = config.restBase || "/wp-json/impact/v1";
   const restNonce = config.restNonce || "";
   const defaultCurrency = (config.currency || "huf").toLowerCase();
+  const preferredCurrency = (config.preferredCurrency || defaultCurrency).toLowerCase();
   const pseudoId = config.pseudoId || "";
 
   const pkgWrap = root.querySelector("[data-role=purchase-packages]");
@@ -32,6 +33,27 @@
   const statusEl = root.querySelector("[data-role=purchase-status]");
 
   let selectedPackage = packageList[0] || "";
+  
+  // Compute effective currency: fallback to preferredCurrency if currencySelect is missing or has no value
+  function getEffectiveCurrency() {
+    if (currencySelect && currencySelect.value) {
+      return currencySelect.value.toLowerCase();
+    }
+    // Fallback: prefer server-side per-user preferredCurrency (e.g. "usd" for US users)
+    // then check it exists in packages, else fall back to defaultCurrency, then first available
+    const availableCurrencies = new Set();
+    Object.values(packages).forEach((pkg) => {
+      Object.keys(pkg.prices || {}).forEach((cur) => availableCurrencies.add(cur.toLowerCase()));
+    });
+    if (availableCurrencies.has(preferredCurrency)) {
+      return preferredCurrency;
+    }
+    if (availableCurrencies.has(defaultCurrency)) {
+      return defaultCurrency;
+    }
+    // If neither available, pick first available currency from packages
+    return Array.from(availableCurrencies)[0] || "huf";
+  }
 
   function setStatus(message, isError) {
     if (!statusEl) return;
@@ -69,18 +91,19 @@
 
   function renderPackages() {
     if (!pkgWrap) return;
+    const effectiveCurrency = getEffectiveCurrency();
     pkgWrap.innerHTML = "";
     packageList.forEach((id) => {
       const pkg = packages[id];
       const totalVotes = (pkg.votes || 0) + (pkg.bonus_votes || 0);
-      const price = pkg.prices ? pkg.prices[currencySelect.value] : null;
+      const price = pkg.prices ? pkg.prices[effectiveCurrency] : null;
       const card = document.createElement("button");
       card.type = "button";
       card.className = "purchase-card" + (id === selectedPackage ? " is-active" : "");
       card.dataset.packageId = id;
       card.innerHTML = `
         <div class="purchase-card__title">${pkg.emoji || ""} ${pkg.label || id}</div>
-        <div class="purchase-card__price">${formatAmount(price, currencySelect.value)}</div>
+        <div class="purchase-card__price">${formatAmount(price, effectiveCurrency)}</div>
         <div class="purchase-card__votes">${totalVotes.toLocaleString("hu-HU")} szavazat</div>
         ${id === selectedPackage ? '<div class="purchase-card__selected">Kiválasztva</div>' : ''}
         ${pkg.badge ? `<span class="purchase-card__badge">${pkg.badge}</span>` : ""}
@@ -104,7 +127,7 @@
       const opt = document.createElement("option");
       opt.value = cur;
       opt.textContent = cur.toUpperCase();
-      if (cur === defaultCurrency) {
+      if (cur === preferredCurrency) {
         opt.selected = true;
       }
       currencySelect.appendChild(opt);
@@ -139,7 +162,7 @@
   }
 
   function toggleCompanyFields() {
-    if (!companyFields) return;
+    if (!companyFields || !companyToggle) return;
     companyFields.hidden = !companyToggle.checked;
   }
 
@@ -165,7 +188,7 @@
     const payload = {
       pseudo_id: pseudoId,
       package_id: selectedPackage,
-      currency: currencySelect ? currencySelect.value : defaultCurrency,
+      currency: getEffectiveCurrency(),
       is_company: isCompany,
       company_name: companyName ? companyName.value.trim() : "",
       company_tax_id: companyTax ? companyTax.value.trim() : "",
@@ -178,7 +201,7 @@
     };
 
     setStatus("Fizetési oldal előkészítése...");
-    submitBtn.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
     try {
       const res = await fetch(restBase + "/vote-purchase/start", {
         method: "POST",
@@ -202,7 +225,7 @@
       setStatus("Fizetési oldal új lapon megnyitva. A fizetés után térj vissza ide.");
     } catch (e) {
       setStatus("Nem sikerült elindítani a fizetést.", true);
-      submitBtn.disabled = false;
+      if (submitBtn) submitBtn.disabled = false;
     }
   }
 

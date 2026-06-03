@@ -1,3 +1,8 @@
+## 2026-06-03T08:00:00+0200 - vote-purchase JS null-safe currency fallback fix
+- `impactshop-vote-purchase.js`: `getEffectiveCurrency()` fallback hozzáadva — `currencySelect` null esetén `preferredCurrency`/`defaultCurrency` sorrendben esik vissza
+- Root cause: `currencySelect.value` TypeError → Adományozom gomb néma
+- Fix: 3 commit (`c073391f`, `abcee270`, `649732f0`) — null-safe init + coherence hardening + preferredCurrency QA fix
+
 ## 2026-05-14T09:35:00+0200 - adomany-automata portal redirects fixed (JVK embed)
 - Redirect korrekció: `/adomany-automata-portal-1` és `/adomany-automata-portal-2` → `https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026`
 - Root cause: hotfix (2026-05-05) szerverre írva, nem commitolva. Deploy (`--delete` rsync) felülírta.

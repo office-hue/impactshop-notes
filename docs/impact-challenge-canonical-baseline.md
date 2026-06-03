@@ -125,3 +125,11 @@ Az alábbiak bármelyike regressziónak számít:
 ## Kanonikus hivatkozás
 
 Ez a fájl az Impact Challenge teljes rendszerére vonatkozó elsődleges baseline-hivatkozás. Későbbi policy, PR, deploy és handover szöveg ennek rendelődik alá.
+
+## 2026-06-03 — vote-purchase JS currency fallback fix
+
+- **Branch:** `fix/vote-purchase-currency-fallback`
+- **Root cause:** `currencySelect.value` TypeError (`Cannot read properties of null`) → Adományozom gomb néma
+- **Fix:** `getEffectiveCurrency()` fallback hozzáadva; `preferredCurrency` (pl. `usd` US usernek) pre-select; `submitBtn`/`companyToggle` null guard
+- **Commits:** `c073391f`, `abcee270`, `649732f0`
+- **Rollback:** live backup `~/.worktrees/impactshop-notes-fix-vote-purchase-20260603/.codex/reports/hotfix-sync/impactshop-vote-purchase.js.live-backup-20260603T075514Z.js`
