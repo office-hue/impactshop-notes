@@ -17,6 +17,7 @@
   const restBase = config.restBase || "/wp-json/impact/v1";
   const restNonce = config.restNonce || "";
   const defaultCurrency = (config.currency || "huf").toLowerCase();
+  const preferredCurrency = (config.preferredCurrency || defaultCurrency).toLowerCase();
   const pseudoId = config.pseudoId || "";
 
   const pkgWrap = root.querySelector("[data-role=purchase-packages]");
@@ -33,20 +34,24 @@
 
   let selectedPackage = packageList[0] || "";
   
-  // Compute effective currency: fallback to defaultCurrency if currencySelect is missing or has no value
+  // Compute effective currency: fallback to preferredCurrency if currencySelect is missing or has no value
   function getEffectiveCurrency() {
     if (currencySelect && currencySelect.value) {
       return currencySelect.value.toLowerCase();
     }
-    // Fallback: find first available currency from packages, or use defaultCurrency
+    // Fallback: prefer server-side per-user preferredCurrency (e.g. "usd" for US users)
+    // then check it exists in packages, else fall back to defaultCurrency, then first available
     const availableCurrencies = new Set();
     Object.values(packages).forEach((pkg) => {
       Object.keys(pkg.prices || {}).forEach((cur) => availableCurrencies.add(cur.toLowerCase()));
     });
+    if (availableCurrencies.has(preferredCurrency)) {
+      return preferredCurrency;
+    }
     if (availableCurrencies.has(defaultCurrency)) {
       return defaultCurrency;
     }
-    // If defaultCurrency not available, pick first available
+    // If neither available, pick first available currency from packages
     return Array.from(availableCurrencies)[0] || "huf";
   }
 
@@ -122,7 +127,7 @@
       const opt = document.createElement("option");
       opt.value = cur;
       opt.textContent = cur.toUpperCase();
-      if (cur === defaultCurrency) {
+      if (cur === preferredCurrency) {
         opt.selected = true;
       }
       currencySelect.appendChild(opt);
