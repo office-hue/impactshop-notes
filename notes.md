@@ -1,3 +1,7 @@
+## 2026-06-03 09:55 CEST - vote-purchase JS null-safe currency fix
+- `impactshop-vote-purchase.js`: `getEffectiveCurrency()` fallback, `preferredCurrency` pre-select, `submitBtn`/`companyToggle` null guard
+- Root cause: `currencySelect` null → TypeError → Adományozom gomb néma. 3 commit: `c073391f`, `abcee270`, `649732f0`
+
 ## 2026-05-11 14:40 CEST - JVK bank transfer confirm hotfix + historical recovery lezárva
 - `impactshop-event-donation-widget.php`: a bank transfer admin confirm flow gyökérok javítva. A hibás, nem létező `impactshop_event_donation_generate_ticket_serial()` hívás az elérhető batch helperre lett cserélve: `impactshop_event_donation_generate_ticket_serials(...)`.
 - Deploy: a fix bastion-approved hotfix sync-kel ment ki productionre és stagingre. A deploy cache flush-sal zárult.
