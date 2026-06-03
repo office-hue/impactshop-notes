@@ -157,7 +157,7 @@
   }
 
   function toggleCompanyFields() {
-    if (!companyFields) return;
+    if (!companyFields || !companyToggle) return;
     companyFields.hidden = !companyToggle.checked;
   }
 
@@ -196,7 +196,7 @@
     };
 
     setStatus("Fizetési oldal előkészítése...");
-    submitBtn.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
     try {
       const res = await fetch(restBase + "/vote-purchase/start", {
         method: "POST",
@@ -220,7 +220,7 @@
       setStatus("Fizetési oldal új lapon megnyitva. A fizetés után térj vissza ide.");
     } catch (e) {
       setStatus("Nem sikerült elindítani a fizetést.", true);
-      submitBtn.disabled = false;
+      if (submitBtn) submitBtn.disabled = false;
     }
   }
 
