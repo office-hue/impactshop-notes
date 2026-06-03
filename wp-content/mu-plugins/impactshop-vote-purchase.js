@@ -32,6 +32,23 @@
   const statusEl = root.querySelector("[data-role=purchase-status]");
 
   let selectedPackage = packageList[0] || "";
+  
+  // Compute effective currency: fallback to defaultCurrency if currencySelect is missing or has no value
+  function getEffectiveCurrency() {
+    if (currencySelect && currencySelect.value) {
+      return currencySelect.value.toLowerCase();
+    }
+    // Fallback: find first available currency from packages, or use defaultCurrency
+    const availableCurrencies = new Set();
+    Object.values(packages).forEach((pkg) => {
+      Object.keys(pkg.prices || {}).forEach((cur) => availableCurrencies.add(cur.toLowerCase()));
+    });
+    if (availableCurrencies.has(defaultCurrency)) {
+      return defaultCurrency;
+    }
+    // If defaultCurrency not available, pick first available
+    return Array.from(availableCurrencies)[0] || "huf";
+  }
 
   function setStatus(message, isError) {
     if (!statusEl) return;
@@ -69,18 +86,19 @@
 
   function renderPackages() {
     if (!pkgWrap) return;
+    const effectiveCurrency = getEffectiveCurrency();
     pkgWrap.innerHTML = "";
     packageList.forEach((id) => {
       const pkg = packages[id];
       const totalVotes = (pkg.votes || 0) + (pkg.bonus_votes || 0);
-      const price = pkg.prices ? pkg.prices[currencySelect.value] : null;
+      const price = pkg.prices ? pkg.prices[effectiveCurrency] : null;
       const card = document.createElement("button");
       card.type = "button";
       card.className = "purchase-card" + (id === selectedPackage ? " is-active" : "");
       card.dataset.packageId = id;
       card.innerHTML = `
         <div class="purchase-card__title">${pkg.emoji || ""} ${pkg.label || id}</div>
-        <div class="purchase-card__price">${formatAmount(price, currencySelect.value)}</div>
+        <div class="purchase-card__price">${formatAmount(price, effectiveCurrency)}</div>
         <div class="purchase-card__votes">${totalVotes.toLocaleString("hu-HU")} szavazat</div>
         ${id === selectedPackage ? '<div class="purchase-card__selected">Kiválasztva</div>' : ''}
         ${pkg.badge ? `<span class="purchase-card__badge">${pkg.badge}</span>` : ""}
@@ -165,7 +183,7 @@
     const payload = {
       pseudo_id: pseudoId,
       package_id: selectedPackage,
-      currency: currencySelect ? currencySelect.value : defaultCurrency,
+      currency: getEffectiveCurrency(),
       is_company: isCompany,
       company_name: companyName ? companyName.value.trim() : "",
       company_tax_id: companyTax ? companyTax.value.trim() : "",
