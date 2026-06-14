@@ -170,6 +170,12 @@
       "owner_branch": "main"
     },
     {
+      "path": "wp-content/mu-plugins/impactshop-factlens-identity-bridge.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
       "path": "wp-content/mu-plugins/impactshop-vote-jysk.php",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
