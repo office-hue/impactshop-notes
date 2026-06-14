@@ -2,6 +2,12 @@
 - `impactshop-vote-purchase.js`: `getEffectiveCurrency()` fallback, `preferredCurrency` pre-select, `submitBtn`/`companyToggle` null guard
 - Root cause: `currencySelect` null → TypeError → Adományozom gomb néma. 3 commit: `c073391f`, `abcee270`, `649732f0`
 
+## 2026-06-14 08:20 UTC - VB2026 profile-return session carry kanonizalva
+- A Sharity source-side `impactshop-factlens-identity-bridge.php` vegleges shipping mintaja mar nem csak lane-map redirectet ad, hanem a sikeres profile save/restore utan a FactLens `GET /api/vb2026/profile-return/complete` route-jara kuld vissza alairt `pseudo_id + return_to + ui_target + ts + sig` payloadot.
+- A ket CTA kulon deep-link szerzodese rogzitve: `Sharity profil megnyitasa` -> `/profil/?bridge_target=account#impactshop-account-top`, `Ez nem az en fiokom` -> `/profil/?bridge_target=restore#impactshop-restore-title`.
+- A source-side protected runtime coupling most mar kifejezetten egy lane-kent kezelendo: `impactshop-factlens-identity-bridge.php` + `impactshop-identity-panel.php` + `impactshop-identity-panel.js`.
+- Live evidence: a completion route a FactLens hoston `303` + `__Host-factlens_vb_session` cookie-t ad, es a visszaerkezes utani `auth/session` probe `connected_session` + maszkolt pseudo allapotot mutat.
+
 ## 2026-05-11 14:40 CEST - JVK bank transfer confirm hotfix + historical recovery lezárva
 - `impactshop-event-donation-widget.php`: a bank transfer admin confirm flow gyökérok javítva. A hibás, nem létező `impactshop_event_donation_generate_ticket_serial()` hívás az elérhető batch helperre lett cserélve: `impactshop_event_donation_generate_ticket_serials(...)`.
 - Deploy: a fix bastion-approved hotfix sync-kel ment ki productionre és stagingre. A deploy cache flush-sal zárult.

@@ -102,6 +102,33 @@
       }
     }
 
+    function getBridgeTarget() {
+      try {
+        const current = new URL(window.location.href);
+        const raw = String(current.searchParams.get("bridge_target") || "").toLowerCase();
+        if (raw === "restore") return "restore";
+        if (raw === "account") return "account";
+        return "";
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function buildBridgeCompletionUrl(targetName) {
+      const target = targetName === "restore" ? "restore" : (targetName === "account" ? "account" : "");
+      if (!target) return "";
+      try {
+        const current = new URL(window.location.href);
+        current.hash = "";
+        current.searchParams.delete("return");
+        current.searchParams.set("bridge_target", target);
+        current.searchParams.set("impactshop_profile_return_complete", "1");
+        return current.toString();
+      } catch (e) {
+        return "";
+      }
+    }
+
     function attachReturnParamToRestoreLinks() {
       const links = root.querySelectorAll("[data-role=identity-restore-link]");
       if (!links.length) return;
@@ -125,6 +152,27 @@
           // ignore
         }
       });
+    }
+
+    function getBridgeCompletionUrl(preferredTarget) {
+      const activeTarget = preferredTarget || getBridgeTarget();
+      if (!activeTarget) return "";
+      return buildBridgeCompletionUrl(activeTarget);
+    }
+
+    function navigateAfterIdentityAction(targetUrl, fallbackUrl) {
+      const destination = targetUrl || fallbackUrl || "";
+      if (!destination) {
+        window.location.reload();
+        return;
+      }
+
+      if (typeof window.location.replace === "function") {
+        window.location.replace(destination);
+        return;
+      }
+
+      window.location.href = destination;
     }
 
     function refreshPseudo() {
@@ -1222,7 +1270,7 @@
       }
       syncSaveFields(pseudo, recovery);
       if (saveReturn) {
-        saveReturn.value = window.location.href;
+        saveReturn.value = getBridgeCompletionUrl("account") || window.location.href;
       }
       if (!saveForm) {
         setStatus("A mentés ezen a nézeten nem érhető el.", true);
@@ -1230,8 +1278,18 @@
       }
       tryCredentialStore(pseudo, recovery);
       triggerPasswordManagerSave(pseudo, recovery);
-      setStatus("Jelszókezelő mentés indítva.");
+      const bridgeCompletionUrl = getBridgeCompletionUrl("account");
+      if (bridgeCompletionUrl) {
+        setStatus("Jelszókezelő mentés indítva. Visszaléptetünk…");
+      } else {
+        setStatus("Jelszókezelő mentés indítva.");
+      }
       awardCredentialsSave(pseudo);
+      if (bridgeCompletionUrl) {
+        setTimeout(function(){
+          navigateAfterIdentityAction(bridgeCompletionUrl, "");
+        }, 900);
+      }
     }
     if (saveForm) {
       saveForm.addEventListener("submit", handleSavePassword);
@@ -1286,12 +1344,19 @@
           if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva.";
           emitIdentityReady(pseudo);
           fetchProfile().then(refreshPointsSection);
+          const bridgeCompletionUrl = getBridgeCompletionUrl("restore");
           const returnUrl = getSafeReturnUrl();
-          if (returnUrl) {
+          if (bridgeCompletionUrl) {
             setStatus("Azonosító helyreállítva. Visszaléptetünk…");
             if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva. Visszaléptetünk…";
             setTimeout(function(){
-              window.location.href = returnUrl;
+              navigateAfterIdentityAction(bridgeCompletionUrl, returnUrl);
+            }, 900);
+          } else if (returnUrl) {
+            setStatus("Azonosító helyreállítva. Visszaléptetünk…");
+            if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva. Visszaléptetünk…";
+            setTimeout(function(){
+              navigateAfterIdentityAction("", returnUrl);
             }, 900);
           } else {
             setTimeout(function(){

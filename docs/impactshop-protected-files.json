@@ -33,6 +33,7 @@
     "wp-content/mu-plugins/impactshop-ayet-offerwall.php",
     "wp-content/mu-plugins/impactshop-full-leaderboard.php",
     "wp-content/mu-plugins/impactshop-rest-totals.php",
+    "wp-content/mu-plugins/impactshop-factlens-identity-bridge.php",
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
     "wp-content/mu-plugins/impactshop-ngo-selector.php",
@@ -106,11 +107,14 @@
       "browser:mobile"
     ],
     "identity_and_points": [
+      "route:factlens-vb-prod",
       "route:impact-challenge",
       "route:profil",
       "flow:message-popup",
       "flow:points-jump",
-      "flow:legacy-pool-visibility"
+      "flow:legacy-pool-visibility",
+      "flow:profile-return-account",
+      "flow:profile-return-restore"
     ],
     "mobile_shell_runtime": [
       "route:impact-challenge",
@@ -175,6 +179,7 @@
       "sw.js"
     ],
     "identity_and_points": [
+      "wp-content/mu-plugins/impactshop-factlens-identity-bridge.php",
       "wp-content/mu-plugins/impactshop-identity-panel.php",
       "wp-content/mu-plugins/impactshop-identity-panel.js",
       "wp-content/mu-plugins/impactshop-rest-totals.php",

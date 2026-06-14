@@ -97,6 +97,7 @@ add_shortcode('impactshop_identity_id', 'impactshop_identity_id_shortcode');
 add_action('wp_enqueue_scripts', 'impactshop_identity_panel_register_assets');
 add_action('admin_init', 'impactshop_identity_register_broadcast_setting');
 add_action('init', 'impactshop_identity_handle_password_manager_save');
+add_action('template_redirect', 'impactshop_identity_maybe_complete_profile_return', 1);
 
 function impactshop_identity_register_broadcast_setting(): void
 {
@@ -696,9 +697,92 @@ function impactshop_identity_profile_valid_pseudo(string $pseudo_id): bool
 }
 
 /**
+ * Resolve requested bridge target from current request.
+ *
+ * @return string
+ */
+function impactshop_identity_requested_bridge_target(): string
+{
+    $value = isset($_REQUEST['bridge_target']) ? sanitize_text_field((string) wp_unslash($_REQUEST['bridge_target'])) : '';
+    if ($value === 'restore') {
+        return 'impactshop_restore';
+    }
+    if ($value === 'account') {
+        return 'impactshop_account';
+    }
+    return '';
+}
+
+/**
+ * Build native fallback profile URL for the given UI target.
+ *
+ * @param string $ui_target Bridge UI target.
+ * @return string
+ */
+function impactshop_identity_profile_native_fallback(string $ui_target): string
+{
+    $base = home_url('/profil/');
+    if ($ui_target === 'impactshop_restore') {
+        return $base . '#impactshop-restore-title';
+    }
+    return $base;
+}
+
+/**
+ * Complete profile-return redirect after a successful client-side action.
+ *
+ * @return void
+ */
+function impactshop_identity_maybe_complete_profile_return(): void
+{
+    if (is_admin()) {
+        return;
+    }
+
+    if (empty($_GET['impactshop_profile_return_complete'])) {
+        return;
+    }
+
+    $ui_target = impactshop_identity_requested_bridge_target();
+    if ($ui_target === '' || !function_exists('impactshop_factlens_profile_return_target')) {
+        return;
+    }
+
+    $target = impactshop_factlens_profile_return_target($ui_target, impactshop_identity_profile_native_fallback($ui_target));
+    if (!is_string($target) || $target === '') {
+        return;
+    }
+
+    $home_host = (string) wp_parse_url(home_url('/'), PHP_URL_HOST);
+    $target_host = (string) wp_parse_url($target, PHP_URL_HOST);
+    if ($target_host !== '' && $home_host !== '' && !hash_equals($home_host, $target_host)) {
+        wp_redirect($target, 303);
+        exit;
+    }
+
+    wp_safe_redirect($target, 303);
+    exit;
+}
+
+/**
  * Validate nickname format.
  *
  * @param string $nickname Nickname to validate.
+
+    $ui_target = impactshop_identity_requested_bridge_target();
+    if ($ui_target !== '' && function_exists('impactshop_factlens_profile_return_target')) {
+        $resolved = impactshop_factlens_profile_return_target($ui_target, impactshop_identity_profile_native_fallback($ui_target));
+        if (is_string($resolved) && $resolved !== '') {
+            $target_host = (string) wp_parse_url($resolved, PHP_URL_HOST);
+            $home_host = (string) wp_parse_url(home_url('/'), PHP_URL_HOST);
+            if ($target_host !== '' && $home_host !== '' && !hash_equals($home_host, $target_host)) {
+                wp_redirect($resolved, 303);
+                exit;
+            }
+            wp_safe_redirect($resolved, 303);
+            exit;
+        }
+    }
  * @return bool
  */
 function impactshop_identity_profile_valid_nickname(string $nickname): bool
