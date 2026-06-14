@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-04-29 09:50 CEST
+Last updated: 2026-06-14 08:20 UTC
 
 ## 2026-03-26 19:45 — impact-community.php URL fix
 - `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
@@ -16,6 +16,7 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-06-14 | `impactshop-identity-panel.php`, `impactshop-identity-panel.js`, `docs/impactshop-guard-config.json`, `docs/impactshop-protected-files.json` | VB2026 profile-return source canonicalization: a protected identity runtime most mar kulon account-top es restore-fragment deeplinkkel dolgozik, es save/restore utan a FactLens `profile-return/complete` session-helyreallito hopjara ad vissza. A bridge source plugin a guard inventoryben explicit protected lane lett, az identity-panel runtime pedig ezzel egyutt kezelendo bastion-coupled felulet. | `docs/protected-change-records/2026-06-14-vb2026-profile-return-session-carry.md`, `notes.md`, `system-status-snapshot.md` |
 | 2026-05-12 | `impactshop-action-bar.php` | Celozott hotfix: visszaallitva a nyelv/orszag selector (`sharity-slc`) a kanonikus main/prod lane-ben. Protected touch override alatt ment, dedikalt change record + rollback + smoke scope mellett. | `docs/protected-change-records/2026-05-12-impactshop-selector-restore-hotfix.md`, `notes.md`, `system-status-snapshot.md` |
 | 2026-05-07 | `impactshop-ads-watch-intl-overlay.js`, `impactshop-identity-panel-intl-overlay.js`, `impactshop-ads-watch.php`, `impactshop-ads-watch.js`, `impactshop-identity-panel.php` | Tiszta release-worktree-ben kanonizalt intl runtime csomag a mar live-on validalt EN shop es EN challenge allapothoz. Az uj overlay assetek additiv `app-content` lane-ben kerultek be, a protected runtime touch kulon commitban ment at explicit change record + rollback + smoke scope mellett. | `docs/protected-change-records/2026-05-07-impactshop-intl-runtime-canonicalize.md`, `notes.md`, `system-status-snapshot.md` |
 | 2026-04-29 | `impactshop-event-auction-widget.php`, `impactshop-event-auction-widget-jovonkvize-1.0.0.js` | Additiv uj modul a Jovonk Vize aukcios lane-hez. Protected legacy donation widget fajlokhoz ez a change set nem nyult. A ket runtime fajl celzott staging sync-kel kiment az `app-staging` peldanyra, a read-only vedelem visszazarva; public read lane, session-tokenes bidder regisztracio, tranzakcios bid lane, direkt backend admin close es Stripe winner-payment backend staging smoke-kal igazolt. A route-szintu admin REST smoke-ot jelenleg a staging capability-drift blokkolja (`manage_options` nem latszik egy usernel sem), a payment completion pedig elo Stripe kulcs miatt nem futott tovabb. | `wp-content/mu-plugins/impactshop-event-auction-widget.php`, `wp-content/mu-plugins/impactshop-event-auction-widget-jovonkvize-1.0.0.js`, `docs/jovonkvize-auction-widget-scaffold-2026-04-29.md`, `notes.md` |
