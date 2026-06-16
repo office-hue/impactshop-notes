@@ -4,6 +4,7 @@
 - Workspace global policy: `/Users/bujdosoarnold/AGENTS.md`
 - Shared assistant policy: `/Users/bujdosoarnold/Developer/GitHub/ai-agent/docs/ai-assistant-canonical-policy.md`
 - Local assistant policy: `docs/ai-assistant-canonical-policy.md`
+- Local governance hub / system plan: `docs/impactshop-governance-system-plan-2026-06-16.md`
 - Impact Challenge canonical baseline: `docs/impact-challenge-canonical-baseline.md`
 - PR / merge / deploy policy: `docs/pr-policy.md`
 

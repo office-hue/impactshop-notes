@@ -1,3 +1,13 @@
+## 2026-06-16T10:20:00+0200 - local governance system plan hub added
+- Uj rovid, repo-helyi governance entrypoint keszult: `docs/impactshop-governance-system-plan-2026-06-16.md`.
+- A dokumentum nem uj policy-t vezet be, hanem a mar ervenyes helyi anchorokat rendezi egybe: `AGENTS.md`, `docs/pr-policy.md`, `PR-EXIT-CHECKLIST.md`, `system-status-snapshot.md`, `notes.md`, `docs/bastion-guard-status.md`.
+- Bekotes megtortent a gyors helyi belpeshez: `AGENTS.md` canonical sources lista, `README.md` start-here blokk es a `docs/ai-fejlesztes-veglegesitett-masterterv-2026-03-04.md` kanonikus tervreferencia.
+
+## 2026-06-16T10:55:00+0200 - governance hub coherence audit added
+- Uj rovid audit rogzitve: `docs/impactshop-governance-hub-coherence-audit-2026-06-16.md`.
+- Az audit explicit modon visszaellenorzi, hogy a helyi governance-hub csak valos anchorokra mutat, docs-only maradt, es nem lazitotta a protected/perimeter szabalyokat.
+- A masterplan referenciaretege frissult, hogy a hub mellett az audit is kanonikus helyi referenciakent elerheto legyen.
+
 ## 2026-06-14T08:20:00+0000 - VB2026 profile-return session carry canonicalized
 - A Sharity source-side profile-return lane kulon account-top es restore-fragment deeplink contractot kapott: `Sharity profil megnyitasa` -> `/profil/?bridge_target=account#impactshop-account-top`, `Ez nem az en fiokom` -> `/profil/?bridge_target=restore#impactshop-restore-title`.
 - A sikeres save/restore mar nem kozvetlen `vb-prod` redirecttel zar, hanem a FactLens `GET /api/vb2026/profile-return/complete` route-jara kuld vissza alairt payloadot, hogy a target host `__Host-factlens_vb_session` cookie-t issue-zon a vegso visszateres elott.

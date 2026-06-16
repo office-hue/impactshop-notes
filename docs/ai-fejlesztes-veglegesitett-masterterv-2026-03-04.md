@@ -11,6 +11,16 @@
 3. Kanonikus issue script: `impactshop-notes/scripts/create-ai-issues.sh`.
 4. CI/workflow csak repókon belül számít kanonikusnak.
 5. Top-level duplikátumok read-only referenciának tekintendők.
+6. A repo-helyi governance entrypoint: `docs/impactshop-governance-system-plan-2026-06-16.md`.
+
+## 1.1) Helyi governance hub
+
+Az `impactshop-notes` repo helyi governance, review es continuity belepesi pontja:
+
+- `docs/impactshop-governance-system-plan-2026-06-16.md`
+- `docs/impactshop-governance-hub-coherence-audit-2026-06-16.md`
+
+Ez a hub nem valtja ki a kanonikus policy-dokumentumokat, hanem rovid belso rendszerterv/reference pontkent osszefogja a repo sajat anchorjait.
 
 ## 2) Válasz a kiemelt kérdésre (Phase 1–28 legal)
 
@@ -66,4 +76,3 @@ Indok:
 1. Implementáció előtt mindig a kanonikus forrás számít.
 2. Top-level nem használható „kész” állítás igazolására.
 3. A script csak jóváhagyott scope-pal futhat issue-nyitásra.
-
