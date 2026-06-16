@@ -1,3 +1,13 @@
+## 2026-06-16 10:20 CEST - local governance hub/system-plan
+- Docs-only governance szeletkent letrejott a rovid helyi belepesi pont: `docs/impactshop-governance-system-plan-2026-06-16.md`.
+- A cel nem uj policy bevezetese volt, hanem a mar elo helyi anchorok egyberendezese: `AGENTS.md`, `docs/pr-policy.md`, `PR-EXIT-CHECKLIST.md`, `system-status-snapshot.md`, `notes.md`, `docs/bastion-guard-status.md`.
+- Bekotes megtortent azonnali helyi megtalalhatosaghoz a `README.md`, az `AGENTS.md` canonical source listaja es a `docs/ai-fejlesztes-veglegesitett-masterterv-2026-03-04.md` felol.
+
+## 2026-06-16 10:55 CEST - governance hub coherence audit
+- A hub kovetkezo legkisebb folytatasakent rovid helyi audit keszult: `docs/impactshop-governance-hub-coherence-audit-2026-06-16.md`.
+- Az audit kimondja, hogy a hub valos local anchorokra mutat, docs-only/additiv maradt, es a protected-lane fail-closed szemleletet nem gyengitette.
+- A `docs/ai-fejlesztes-veglegesitett-masterterv-2026-03-04.md` most mar a hub mellett ezt az auditot is referenciakent hordozza.
+
 ## 2026-06-03 09:55 CEST - vote-purchase JS null-safe currency fix
 - `impactshop-vote-purchase.js`: `getEffectiveCurrency()` fallback, `preferredCurrency` pre-select, `submitBtn`/`companyToggle` null guard
 - Root cause: `currencySelect` null → TypeError → Adományozom gomb néma. 3 commit: `c073391f`, `abcee270`, `649732f0`
