@@ -57,6 +57,8 @@ Nem erinti:
 
 1. A hub nem helyettesiti a reszletes protected-file change checklistet vagy a baseline dokumentumokat.
 2. A kovetkezo nem-docs szeletnel tovabbra is kulon koherencia- es kockazatvizsgalat kell, ha protected lane erintett.
+3. A friss szemű QA kulon rovid doksiban is rogzitve lett:
+   - `docs/impactshop-governance-hub-qa-2026-06-16.md`
 
 ## Risk / Coherence / Security Note
 
@@ -70,6 +72,7 @@ Nem erinti:
 2. A hub hivatkozasai letezo helyi fajlokra mutatnak.
 3. A bekotesek a `README.md`, `AGENTS.md` es a masterplan referenciartegben is ellenorizve lettek.
 4. `git diff --check` zold a docs-szeleten.
+5. A focused validation / negative validation / rollback minimum a hubban expliciten visszaellenorizheto.
 
 ## Next Smallest Safe Slice
 
@@ -77,5 +80,6 @@ Innen a kovetkezo biztonsagos szelet mar lehet:
 
 1. egy konkret helyi rollout-/review-sablon finomitasa a hubra tamaszkodva, vagy
 2. egy kulon protected-lane elokeszito audit, ha valos runtime/deploy munka kovetkezik
+3. vagy egy szuk docs-only QA update, ha a hub szerkezete tovabb modosul
 
 De a governance-hub szintjen kulon ujratervezes mar nem szukseges.

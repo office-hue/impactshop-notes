@@ -19,6 +19,7 @@ Az `impactshop-notes` repo helyi governance, review es continuity belepesi pontj
 
 - `docs/impactshop-governance-system-plan-2026-06-16.md`
 - `docs/impactshop-governance-hub-coherence-audit-2026-06-16.md`
+- `docs/impactshop-governance-hub-qa-2026-06-16.md`
 
 Ez a hub nem valtja ki a kanonikus policy-dokumentumokat, hanem rovid belso rendszerterv/reference pontkent osszefogja a repo sajat anchorjait.
 
