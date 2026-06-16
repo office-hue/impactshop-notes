@@ -77,6 +77,32 @@ Valos repo-allapot valtozasnal legalabb ezeket kell egyben nezni:
 3. `notes.md` vagy `conversation-summaries/*`
 4. `docs/bastion-guard-status.md`, ha uj vedett/perimeter-modul vagy uj guard-szabaly jelenik meg
 
+## Focused Validation Minimum
+
+Az elso erdemi edit utan a legszukebb jo validaciot kell lefuttatni.
+
+Minimum elvaras:
+
+1. docs-only szeletnel `git diff --check --` az erintett fajlokra
+2. celzott readback, hogy a hivatkozott anchorok tenylegesen leteznek
+3. ha a szelet governance-belépőt vagy checklistet modosIt, akkor az olvasasi sorrend es continuity nyom is visszaellenorizendo
+
+## Negative Validation Minimum
+
+Ha a szelet gate-et, protected lane-t vagy governance-belépőt erint, kulon ellenorizni kell, hogy a valtozas:
+
+1. nem allitja-e magarol, hogy felulirja a meglevo policykat
+2. nem lazitja-e a protected/perimeter szabalyokat
+3. nem keveri-e ossze a docs-only allapotot runtime garanciaval
+
+## Rollback Clarity Minimum
+
+Kockazatosabb vagy tobb fajlos szeletnel mar a docs-only korben is legyen lathato a visszaut:
+
+1. melyik uj fajl torolheto vagy revertelheto kulon
+2. melyik reference-link vagy continuity bejegyzes vonhato vissza kulon
+3. protected/runtime szeletnel hol van a backup vagy restore ut dokumentalva
+
 ## Scope Boundary
 
 Ez a hub az `impactshop-notes` sajat helyi governance-rendjet fogja ossze. Nem valtja ki:
@@ -94,3 +120,4 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 - PR/review elott
 - protected lane erintese elott
 - continuity ellenorzeshez
+- friss szemű QA-check futtatasa elott

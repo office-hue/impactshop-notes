@@ -1,3 +1,9 @@
+## 2026-06-16T11:20:00+0200 - governance hub QA + validation minimum completed
+- A helyi governance-hub docs-only packet explicit validation/rollback reteggel bovult.
+- A `docs/impactshop-governance-system-plan-2026-06-16.md` mar kulon focused validation, negative validation es rollback clarity minimumot is tartalmaz.
+- Uj QA referencia: `docs/impactshop-governance-hub-qa-2026-06-16.md`.
+- A coherence audit es a helyi masterplan referencia frissult, igy a repo-helyi governance packet teljes lancban elerheto: hub -> audit -> QA -> continuity.
+
 ## 2026-06-16T10:20:00+0200 - local governance system plan hub added
 - Uj rovid, repo-helyi governance entrypoint keszult: `docs/impactshop-governance-system-plan-2026-06-16.md`.
 - A dokumentum nem uj policy-t vezet be, hanem a mar ervenyes helyi anchorokat rendezi egybe: `AGENTS.md`, `docs/pr-policy.md`, `PR-EXIT-CHECKLIST.md`, `system-status-snapshot.md`, `notes.md`, `docs/bastion-guard-status.md`.
