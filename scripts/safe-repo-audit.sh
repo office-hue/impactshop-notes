@@ -110,6 +110,8 @@ SNAPSHOT_HITS="$TMP_DIR/snapshot-hits.txt"
 NOTES_OR_CONV_HITS="$TMP_DIR/notes-or-conv-hits.txt"
 NEW_MODULE_FILES="$TMP_DIR/new-module-files.txt"
 BASTION_GUARD_HITS="$TMP_DIR/bastion-guard-hits.txt"
+GOVERNANCE_LANE_HITS="$TMP_DIR/governance-lane-hits.txt"
+GOVERNANCE_PLAN_HITS="$TMP_DIR/governance-plan-hits.txt"
 PROTECTED_TOUCH_OUTPUT="$TMP_DIR/protected-touch-output.txt"
 COMMIT_LANE_OUTPUT="$TMP_DIR/commit-lane-output.txt"
 REMOTE_WRITE_HITS="$TMP_DIR/remote-write-hits.txt"
@@ -289,6 +291,24 @@ if [[ -s "$MODULE_CHANGE_HITS" ]]; then
     if [[ ! -s "$NOTES_OR_CONV_HITS" ]]; then
       register_warning "module change without notes.md vagy conversation-summaries/* frissítés."
     fi
+  fi
+fi
+
+# 4b) Canonical local governance hub sync check.
+grep -E -- \
+  '^(scripts/(safe-repo-audit|git-health-check|install-hooks|guarded-push)[^[:space:]]*|docs/(pr-policy|impactshop-governance-system-plan-2026-06-16|bastion-guard-status)[^[:space:]]*\.md|AGENTS\.md$)' \
+  "$FILTERED_CHANGED_LIST" > "$GOVERNANCE_LANE_HITS" || true
+
+if [[ -s "$GOVERNANCE_LANE_HITS" ]]; then
+  grep -E -- \
+    '^docs/impactshop-governance-system-plan-2026-06-16\.md$' \
+    "$FILTERED_CHANGED_LIST" > "$GOVERNANCE_PLAN_HITS" || true
+
+  if [[ ! -s "$GOVERNANCE_PLAN_HITS" ]]; then
+    echo "INFO: governance lane changes detected (first 40):"
+    sed -n '1,40p' "$GOVERNANCE_LANE_HITS"
+    echo
+    register_warning "governance/guard lane changed without local governance system-plan sync."
   fi
 fi
 

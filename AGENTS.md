@@ -82,4 +82,6 @@ find .codex/backups -mindepth 1 -maxdepth 1 -type d -mtime +2 -print -exec rm -r
   - `system-status-snapshot.md`
   - `notes.md` or `conversation-summaries/*`
   - at least one `docs/*.md`
+- Governance lane hardening:
+  - guard, policy vagy governance-hub lane valtozas nem tolható fel a local governance system plan syncje nelkul: `docs/impactshop-governance-system-plan-2026-06-16.md`
 - New module files must include bastion/guard extension evidence in `docs/bastion-guard-status.md`.
