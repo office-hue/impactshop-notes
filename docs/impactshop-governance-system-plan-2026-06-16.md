@@ -49,6 +49,11 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
 4. Continuity by default
    - valos allapotvaltozas eseten a docs + `system-status-snapshot.md` + `notes.md` folyamatosan egyutt frissuljon
 
+## Push Gate
+
+1. a governance, guard es policy lane valtozasai push elott fail-closed local system-plan sync gate alatt allnak;
+2. ez azt jelenti, hogy a `docs/impactshop-governance-system-plan-2026-06-16.md` frissitese nem utolagos adminisztracio, hanem a helyi DEV folyamat resze.
+
 ## Decision Rules
 
 ### Docs-only slice

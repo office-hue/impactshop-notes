@@ -831,3 +831,4 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A kanonikus `origin/main` és az élő JVK public payload 9 tételes regresszióban volt.
 - A dedikált aukciós memória és a `0734ba80` history alapján visszaállítva a lot 10 (`Balla Gemma`) és lot 11 (`Kocsis Katica / Weiler Péter`) tételek a kanonikus runtime source-ba.
 - A helyreállító change set a `wp-content/mu-plugins/impactshop-event-auction-widget.php` fájlra koncentrál, a 11 tételes állapotot állítja vissza.
+2026-06-16T18:20:00Z | feat(dev-guard/local-governance-sync-enforcement): a local pre-push audit most mar fail-closed modon megkoveteli, hogy a guard/governance/policy lane valtozasai a helyi governance system plan frissitesevel egyutt menjenek ki. Erintett fajlok: `scripts/safe-repo-audit.sh`, `scripts/git-health-check.sh`, `AGENTS.md`, `docs/impactshop-governance-system-plan-2026-06-16.md`.
