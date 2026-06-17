@@ -26,6 +26,8 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
    - session-szintu folyamatos dontes-, kockazat- es teendolog
 8. `docs/bastion-guard-status.md`
    - protected/perimeter es guard-bovitesek idobelyeges evidencianaploja
+9. `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`
+   - a local env/auth/runtime guard adapter konkret helyi szerzodese
 
 ## Recommended Reading Order
 
@@ -48,11 +50,14 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
    - protected vagy bastion-csatolt feluletnel a default nem a gyors modositas, hanem az explicit koherencia, kockazat es rollback
 4. Continuity by default
    - valos allapotvaltozas eseten a docs + `system-status-snapshot.md` + `notes.md` folyamatosan egyutt frissuljon
+5. Env/auth/runtime adapter discipline
+   - protected env, bridge es profile-return lane csak a helyi adapter-szerzodes szerint tekintheto `allowed` allapotunak
 
 ## Push Gate
 
 1. a governance, guard es policy lane valtozasai push elott fail-closed local system-plan sync gate alatt allnak;
 2. ez azt jelenti, hogy a `docs/impactshop-governance-system-plan-2026-06-16.md` frissitese nem utolagos adminisztracio, hanem a helyi DEV folyamat resze.
+3. env/auth/runtime lane valtozasnal a `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md` is kotelezo continuity anchor.
 
 ## Decision Rules
 
@@ -99,3 +104,4 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 - PR/review elott
 - protected lane erintese elott
 - continuity ellenorzeshez
+- env/auth/runtime vagy bridge drift vizsgalatakor
