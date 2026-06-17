@@ -1,3 +1,8 @@
+## 2026-06-17 12:20 CEST - env/auth/runtime local adapter minimum
+- Az `impactshop-notes` repo kulon helyi env/auth/runtime adapter anchorat is megkapta: `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`.
+- A dokumentum a meglevo protected truthra kot: `docs/impactshop-guard-config.json`, `docs/impactshop-protected-files.json`, `scripts/git-health-check.sh`, `scripts/safe-repo-audit.sh`, `bin/impactshop-guard-deploy.sh`, valamint a profile-return/bridge protected MU-plugin lane.
+- A local governance hub most mar explicit entrypointot ad env/auth/runtime, bridge vagy protected env drift kerdesekhez is.
+
 ## 2026-06-16 10:20 CEST - local governance hub/system-plan
 - Docs-only governance szeletkent letrejott a rovid helyi belepesi pont: `docs/impactshop-governance-system-plan-2026-06-16.md`.
 - A cel nem uj policy bevezetese volt, hanem a mar elo helyi anchorok egyberendezese: `AGENTS.md`, `docs/pr-policy.md`, `PR-EXIT-CHECKLIST.md`, `system-status-snapshot.md`, `notes.md`, `docs/bastion-guard-status.md`.

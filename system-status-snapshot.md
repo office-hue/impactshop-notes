@@ -1,3 +1,8 @@
+## 2026-06-17T12:20:00+0200 - env/auth/runtime local adapter added
+- Uj helyi adapter anchor keszult: `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`.
+- A dokumentum konkretan a protected inventory, a deploy env parok es a profile-return / FactLens bridge runtime lane-ek helyi guard szerzodeset fogja ossze.
+- A local governance system plan mar erre is hivatkozik, igy az env/auth/runtime drift kulon repo-helyi entrypointot kapott.
+
 ## 2026-06-16T10:20:00+0200 - local governance system plan hub added
 - Uj rovid, repo-helyi governance entrypoint keszult: `docs/impactshop-governance-system-plan-2026-06-16.md`.
 - A dokumentum nem uj policy-t vezet be, hanem a mar ervenyes helyi anchorokat rendezi egybe: `AGENTS.md`, `docs/pr-policy.md`, `PR-EXIT-CHECKLIST.md`, `system-status-snapshot.md`, `notes.md`, `docs/bastion-guard-status.md`.
