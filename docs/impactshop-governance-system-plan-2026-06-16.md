@@ -15,6 +15,7 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
 
 ## Canonical Anchors
 
+1. `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
 1. `AGENTS.md`
    - a repo-szintu munkaszabalyok, canonical policy-sorrend, continuity es protected-file minimumok
 2. `docs/pr-policy.md`
@@ -37,11 +38,12 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
 ## Recommended Reading Order
 
 1. `AGENTS.md`
-2. `docs/pr-policy.md`
-3. `PR-EXIT-CHECKLIST.md`
-4. az aktualis feladathoz kapcsolodo protected vagy baseline dokumentum
-5. `system-status-snapshot.md`
-6. `notes.md`
+2. `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
+3. `docs/pr-policy.md`
+4. `PR-EXIT-CHECKLIST.md`
+5. az aktualis feladathoz kapcsolodo protected vagy baseline dokumentum
+6. `system-status-snapshot.md`
+7. `notes.md`
 
 ## Operating Model
 
