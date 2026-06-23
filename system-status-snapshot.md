@@ -828,6 +828,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+<<<<<<< HEAD
 ## 2026-05-15T16:30:00Z - JVK Tarcsi lot dimensions follow-up
 - `wp-content/mu-plugins/impactshop-event-auction-widget.php` lot 3 (`tarcsi-daniel-part-iii`) metadata corrected to final delivered artwork data.
 - Updated fields only: `description_short`, `dimensions`, `medium`.
@@ -837,3 +838,108 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A dedikált aukciós memória és a `0734ba80` history alapján visszaállítva a lot 10 (`Balla Gemma`) és lot 11 (`Kocsis Katica / Weiler Péter`) tételek a kanonikus runtime source-ba.
 - A helyreállító change set a `wp-content/mu-plugins/impactshop-event-auction-widget.php` fájlra koncentrál, a 11 tételes állapotot állítja vissza.
 2026-06-16T18:20:00Z | feat(dev-guard/local-governance-sync-enforcement): a local pre-push audit most mar fail-closed modon megkoveteli, hogy a guard/governance/policy lane valtozasai a helyi governance system plan frissitesevel egyutt menjenek ki. Erintett fajlok: `scripts/safe-repo-audit.sh`, `scripts/git-health-check.sh`, `AGENTS.md`, `docs/impactshop-governance-system-plan-2026-06-16.md`.
+
+## 2026-06-23T09:55:00+0200 - VB2026 NGO catalog and selection plan canonicalized
+- New canonical planning document added: `docs/VB2026-SHARITY-NGO-CATALOG-AND-SELECTION-PLAN-2026-06-23.md`.
+- Scope:
+  - full Sharity NGO catalog model
+  - VB2026 featured Top 10 campaign layer
+  - user-level NGO selection truth
+- `vb-prod` to Sharity domain connection model
+- No runtime or deploy change in this slice; documentation and product architecture only.
+
+## 2026-06-23T10:35:00+0200 - VB2026 NGO catalog plan raised to implementation-ready baseline
+- The canonical NGO plan now includes:
+  - implementation-ready route and endpoint contracts
+  - storage/migration design
+  - source field mapping from the Sharity CSV export
+  - selection intent and selection state machine rules
+  - fallback/cache/publish-safe rules
+  - formal audit and QA findings with corrections
+- No runtime change in this slice; documentation baseline only.
+
+## 2026-06-23T11:05:00+0200 - VB2026 NGO catalog plan fresh QA pass completed
+- Additional documentation QA corrections applied:
+  - API `county` vs UI `Megye` naming contract explicitly fixed
+  - open slug decision narrowed to source-side canonical slug availability only
+- No runtime change in this slice; planning baseline tightened further.
+
+## 2026-06-23T11:20:00+0200 - VB2026 NGO catalog plan QA tightened phase and fallback contract
+- Additional plan-level QA corrections applied:
+  - MVP launch vs Phase 1/2 relationship explicitly fixed
+  - API `ngo_id` now explicitly tied to canonical `sharity_ngo_id`
+  - snapshot optionality separated from mandatory last-good fallback
+- No runtime change in this slice; documentation baseline only.
+
+## 2026-06-23T11:35:00+0200 - VB2026 NGO catalog plan QA tightened intent and campaign publish rules
+- Additional plan-level QA corrections applied:
+  - pre-auth selection intent storage model added
+  - featured publish gate tied to active/public-listable/active-campaign records
+  - inactive campaign-state cannot remain selectable in the given campaign scope
+  - publish-safe ingest now explicitly protects against suspiciously low active-record publish
+- No runtime change in this slice; documentation baseline only.
+
+## 2026-06-23T11:50:00+0200 - VB2026 NGO catalog plan QA hardened lock, audit and token rules
+- Additional plan-level QA corrections applied:
+  - `selection_lock_state` enum and overwrite rules explicitly fixed
+  - dedicated NGO selection audit-log storage added
+  - pre-auth selection intent token storage tightened to hashed-at-rest model
+  - public catalog default active-only behavior explicitly fixed
+  - `allow_public_listing` separated from prior user selection validity
+- No runtime change in this slice; documentation baseline only.
+
+## 2026-06-23T12:10:00+0200 - VB2026 NGO catalog plan aligned to canonical slug and widget roadmap
+- Plan baseline updated:
+  - canonical NGO slug now explicitly follows the existing Impact Shop / NGO Card slug truth
+  - raw CSV media links are no longer treated as final public image truth
+  - widget/embed and VB2026 donation-routing phase added to the roadmap
+- No runtime change in this slice; documentation baseline only.
+
+## 2026-06-23T12:18:00+0200 - VB2026 NGO catalog plan wired to canonical NGO share view
+- Plan baseline updated:
+  - NGO cards and planned widget flow now include a dedicated Share action
+  - canonical target is the existing NGO share route: `/ngo/{slug}/share/`
+- No runtime change in this slice; documentation baseline only.
+
+## 2026-06-23T12:35:00+0200 - VB2026 NGO catalog Phase 1 implementation pack added
+- New implementation packet added:
+  - `docs/VB2026-SHARITY-NGO-CATALOG-PHASE1-IMPLEMENTATION-PACK-2026-06-23.md`
+- Scope:
+  - Repo A source-side NGO catalog and selection lane
+  - Repo B `vb-prod` compact NGO bridge
+- No runtime change in this slice; implementation planning baseline only.
+
+## 2026-06-23T12:48:00+0200 - VB2026 NGO catalog Phase 1 packet QA tightened cross-repo gates
+- Additional plan-level QA corrections applied:
+  - source truth decisions elevated to hard blocker gate
+  - `my-ngo-selection` minimum state contract made explicit
+  - target-side URL building forbidden in favor of source-provided URL truth
+  - cross-domain pseudo/session consistency added to acceptance
+- No runtime change in this slice; implementation planning baseline only.
+
+## 2026-06-23T14:20:00+0200 - VB2026 NGO catalog Phase 1 source runtime scaffold implemented
+- New source-side MU-plugin added:
+  - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+- Current runtime scope:
+  - catalog sync from the Sharity NGO CSV
+  - canonical slug/share/details/media merge from the NGO-card lane
+  - `/szervezetek/` public catalog page
+  - featured Top 10 read lane
+  - own NGO selection read lane
+  - direct selection write lane
+  - pre-auth selection-intent storage and completion lane
+- Validation on this slice:
+  - `php -l wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` PASS
+  - `git diff --check` PASS
+- This is not yet a live deploy claim; current status is implementation-in-worktree with source/runtime contract documented.
+
+## 2026-06-23T14:42:00+0200 - VB2026 NGO Phase I source/target audit hardening applied
+- Public catalog publish contract tightened:
+  - `ngo-catalog` now enforces `allow_public_listing = 1`
+  - `ngo-catalog` now enforces `campaign_state = 'active'`
+- Sync contract tightened:
+  - suspiciously low active-row CSV input no longer overwrites the source catalog truth
+- Selection contract tightened:
+  - `selection-intent` creation now blocks non-selectable NGOs the same way as final `select-ngo`
+- UX/read-state tightened:
+  - own NGO banner now distinguishes auth-required vs unavailable vs empty-selection states

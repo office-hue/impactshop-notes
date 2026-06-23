@@ -6852,6 +6852,140 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   `https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026`.
 - Gyokerok: a redirect korabban hotfixkent szerverre kerult, de nem volt tartosan repo commitban, igy a teljes `wp-content/mu-plugins` mapping deploy vissza tudta irni.
 - Tartos fix: commit a canonical branch lane-ben (`15de3677`), plusz guard-kompatibilis docs/snapshot/notes folytonossag.
+<<<<<<< HEAD
 - 2026-05-15: JVK aukció follow-up. A Tarcsi Dániel / Part III. tételnél a végleges átadott méret és technika került visszajavításra a kanonikus runtime source-ban: `description_short`, `dimensions`, `medium` -> `Akril, vásznon`, `33x88 cm`, `32x102x3 cm` keretezett méret. PR: #141.
 - 2026-05-16: JVK aukció sürgős helyreállítás. A kanonikus `origin/main` és az élő payload 9 tételes állapotban volt, miközben a dedikált aukciós memória és a `0734ba80` commit szerint a lot 10 (Balla Gemma) és lot 11 (Kocsis Katica / Weiler Péter) már korábban live állapotban szerepelt. A helyreállító lane a `wp-content/mu-plugins/impactshop-event-auction-widget.php` fájlban visszaépíti a lot 8-11 blokkot és a 11 tételes állapotot.
 [2026-06-16T18:20:00Z] | feat(dev-guard/local-governance-sync-enforcement): a local governance/guard lane-re bekerult a fail-closed masterplan-sync enforcement. A `scripts/safe-repo-audit.sh` most mar elbukik, ha guard/policy/governance-hub valtozas tortenik a helyi `docs/impactshop-governance-system-plan-2026-06-16.md` syncje nelkul. A `scripts/git-health-check.sh` mar ellenorzi a safe-audit bekoteset, az `AGENTS.md` es a local system plan pedig explicit policykent is kimondja ugyanezt.
+
+## 2026-06-23T09:55:00+0200 - VB2026 NGO catalog + selection canonical plan started
+- Uj kanonikus Sharity oldali tervdoksi keszult: `docs/VB2026-SHARITY-NGO-CATALOG-AND-SELECTION-PLAN-2026-06-23.md`.
+- A terv kulonvalasztja a teljes Sharity NGO-katalogust, a VB2026 kiemelt Top 10 mezonyt, valamint a user sajat NGO-valasztasi truthjat.
+- A terv rogzitette, hogy a `vb-prod` betting oldalon csak kompakt NGO-bridge marad, a reszletes NGO-valasztasi es verseny UX pedig a Sharity nezet/domain alatt el.
+- A `docs/ngo-guides/README.md` frissult, hogy ez a terv ott is visszakeresheto legyen mint kanonikus NGO-szerkezeti referencia.
+
+## 2026-06-23T10:35:00+0200 - VB2026 NGO catalog plan implemented to implementation-ready depth + audit + QA
+- A kanonikus tervdoksi implementacio-kesz reszletezest kapott:
+  - route-topologia
+  - source field mapping
+  - javasolt tablák
+  - migration sorrend
+  - endpoint contractok
+  - UI blokkok
+  - selection state machine
+  - sync/cache/fallback szabalyok
+  - `vb-prod` integracios contract
+- Koherencia/kockazat/biztonsagi audit findingok rogzitve es visszajavitva a tervbe:
+  - featured lista vs user truth szetvalasztasa
+  - erzekeny CSV mezok tiltasa
+  - `megye` szuro csak stabil mapping mellett
+  - last-good snapshot/fallback
+  - source-side write truth vedelme
+  - inactive/tiltott NGO kivalaszthatatlansaga
+- Friss szemű QA utan tovabbi tervjavitasok bekerultek:
+  - bejelentkezes elotti `selection intent` flow
+  - idempotens selection write szabaly
+  - operatori featured seed modell
+  - `vb-prod` tiltott scope rogzites
+
+## 2026-06-23T11:05:00+0200 - VB2026 NGO catalog plan fresh QA pass tightened contract wording
+- Ujabb friss szemű QA-kor utan tovabbi koherenciajavitasok kerultek a kanonikus tervbe.
+- Pontositva lett a `county` API-mezo es a `Megye` UI-copy kozos nevezektani szabalyzata, hogy a backend/frontend contract ne csuszhasson szet.
+- A slug-tema nyitott pontja leszűkült: a deterministic fallback slug mar rogzitett tervszabaly, kulon nyitott dontesi pontkent mar csak a source-side kanonikus slug-elerhetoseg maradt.
+
+## 2026-06-23T11:20:00+0200 - VB2026 NGO catalog plan fresh QA pass resolved MVP/phase and ID/fallback ambiguities
+- A friss QA ujabb harom tenyleges tervkockazatot zart le:
+  - az MVP launch es a Phase 1/2 fazisolas reszben ellentmondott egymasnak
+  - az API `ngo_id` contract nem volt eleg explicit a `sharity_ngo_id` viszonyahoz
+  - a snapshot optionalitasa mellett nem volt eleg kemenyen kimondva a kotelezo last-good fallback
+- A kanonikus terv most mar egyertelmuen rogziti:
+  - az MVP launch a Phase 1 + kotelezo Phase 2 szeletek egyuttese
+  - MVP-ben az API `ngo_id` a kanonikus `sharity_ngo_id`
+  - snapshot kesobbre tolhato, de fail-soft last-good fallback nem
+
+## 2026-06-23T11:35:00+0200 - VB2026 NGO catalog plan fresh QA pass closed intent and campaign gates
+- A friss QA-korben tovabbi implementacios resek lettek lezarva:
+  - a pre-auth `selection-intent` flow mar nem csak endpoint-szinten, hanem storage-szinten is rogzitett
+  - a featured lista publikalasi gate-je most mar explicit: csak aktiv, publikusan listazhato, featured es aktiv campaign-state rekord jelenhet meg
+  - a `campaign_state` mar nem lebego mezo: inaktiv campaign-state alatt NGO nem valaszthato az adott scope-ban
+  - a publish-safe ingest minimum gate-je most mar kimondja a gyanusan alacsony aktiv rekordszam fail-closed viselkedeset
+
+## 2026-06-23T11:50:00+0200 - VB2026 NGO catalog plan fresh QA pass hardened token, lock and audit semantics
+- Ujabb friss QA findingok lettek visszajavitva a tervbe:
+  - a `selection_lock_state` minimum enumja es felulirasi szabalyai most mar explicitak
+  - az NGO selection write trailhez kulon audit-log tabla kerult a storage tervbe
+  - a pre-auth `selection-intent` token mar hash-elt tarolasi modellel szerepel
+  - a publikus katalogus `active_only=1` defaultja egyertelmuen rogzult
+  - az `allow_public_listing` immar nem keverheto ossze a user korabbi valasztasanak ervenyessegevel
+
+## 2026-06-23T12:10:00+0200 - VB2026 NGO catalog plan aligned to canonical slug and widget/donation phase
+- A terv most mar nem lebegteti a slug-forrast: a meglévő Impact Shop / NGO Card kanonikus NGO slug az elsődleges truth.
+- A nyers CSV `Logo` / `Kép` linkek nem közvetlen publikus render-truthként, hanem nyers media inputként szerepelnek.
+- Kártyaszinten javítva lett a fő CTA copy: `Támogatom ezt az ügyet`.
+- A `kampányok száma` kikerült a kártyatervből.
+- Külön II. ütemes szelet került a tervbe:
+  - `HTML-kód generálása` gomb
+  - NGO widget embed-flow
+  - Impact Amplifierre vezető `Adományozok` ág
+  - VB2026-specifikus 90% / 5% / 5% adományelosztási szabály
+  - adományért járó, VB2026-ben leszavazható szavazatok
+
+## 2026-06-23T12:18:00+0200 - VB2026 NGO catalog plan got canonical share-route wiring
+- Az NGO-kártyákhoz és a widget-logikához külön `Megosztás` ág került a tervbe.
+- A kanonikus cél minden esetben az adott NGO share nézete:
+  - `https://app.sharity.hu/ngo/{slug}/share/`
+- A share route nem külön VB2026-specifikus ágként, hanem a meglévő Sharity NGO share felületként van tervezve.
+
+## 2026-06-23T12:35:00+0200 - VB2026 NGO catalog Phase 1 implementation pack prepared
+- Elkészült a külön I. ütemes implementációs csomag:
+  - `docs/VB2026-SHARITY-NGO-CATALOG-PHASE1-IMPLEMENTATION-PACK-2026-06-23.md`
+- A csomag explicit kétrepo-s bontásban rögzíti:
+  - Repo A: Impact Shop / Sharity source oldal
+  - Repo B: `ai-agent` / `vb-prod` bridge
+- A packet tartalmazza:
+  - scope-határt
+  - kötelező táblákat
+  - endpoint-csomagot
+  - fájlszintű érintettségi térképet
+  - fejlesztési sorrendet
+  - cross-repo contractot
+  - acceptance checklistet
+
+## 2026-06-23T12:48:00+0200 - VB2026 NGO catalog Phase 1 packet fresh QA tightened source and target contracts
+- Friss QA után az I. ütemes packetben további fontos kivitelezési rések lettek lezárva:
+  - a slug/logó/cover/Top10 source döntések most már hard blocker gate-ként vannak rögzítve
+  - a `my-ngo-selection` minimális állapotkészlete explicit lett: `has_selection=false`, `has_selection=true`, `needs_attention=true`
+  - a target oldali URL-truth most már egyértelműen source-payloadból jön, nem target oldali string-összerakásból
+  - a cross-domain pseudo/session koherencia külön acceptance pont lett
+
+## 2026-06-23T14:20:00+0200 - VB2026 NGO catalog Phase 1 source-side implementation started
+- Elkészült az új source-oldali MU-plugin:
+  - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+- A plugin jelenlegi implementált köre:
+  - Phase I táblák migrációja:
+    - `wp_sharity_ngo_catalog`
+    - `wp_sharity_ngo_campaign_flags`
+    - `wp_vb2026_user_ngo_selection`
+    - `wp_vb2026_selection_intents`
+    - `wp_vb2026_ngo_selection_audit_log`
+  - Sharity oldali publikus NGO-katalógus route:
+    - `/szervezetek/`
+  - REST lane-ek:
+    - `GET /wp-json/impact/v1/ngo-catalog`
+    - `GET /wp-json/impact/v1/vb2026/featured-ngos`
+    - `GET /wp-json/impact/v1/vb2026/my-ngo-selection`
+    - `POST /wp-json/impact/v1/vb2026/select-ngo`
+    - `POST /wp-json/impact/v1/vb2026/selection-intent`
+    - `POST /wp-json/impact/v1/vb2026/selection-intent/complete`
+- A source ingest a teljes Sharity NGO CSV-t a meglévő `ImpactShop_NGO_Card_API` kanonikus slug/share/details/media truth rétegével merge-eli.
+- A featured Top 10 seed Phase I-ben a meglévő NGO-card rank truth alapján indul.
+- A browser write lane same-origin ellenőrzést kapott, a service read/write lane pedig a bridge service tokenen keresztül autholható.
+
+## 2026-06-23T14:42:00+0200 - VB2026 NGO Phase I audit javítások
+- Koherencia- és biztonsági audit után három konkrét hibát zártam le a source/target lane-ben:
+  - a publikus NGO-katalógus most már csak `allow_public_listing=1` és `campaign_state='active'` rekordokat listázhat
+  - a source ingest publish-safe gate-et kapott: gyanúsan alacsony aktív CSV-bejövő állapotnál nem írja felül a jelenlegi source truthot
+  - a `selection-intent` létrehozás ugyanazt a választhatósági szabályt érvényesíti, mint a végső `select-ngo`
+- UX oldalon a Sharity katalogus saját `A te ügyed` sávja külön kezeli:
+  - bejelentkezés szükséges
+  - ideiglenesen nem olvasható személyes állapot
+  - ténylegesen még nincs kiválasztott NGO

@@ -9,6 +9,15 @@ Ez a mappa tartalmazza az NGO-k számára készült tájékoztató dokumentumoka
 | [Impact Activity útmutató](./impact-activity-guide.md) | Videónézésből adomány – szavazatok, rangsor, adományalap |
 | [Impact Shop útmutató](./impact-shop-guide.md) | Vásárlásból adomány – affiliate rendszer, webshopok |
 | [NGO Card útmutató](./ngo-card-guide.md) | Beágyazható widget – élő adomány kijelzés |
+| [VB2026 Sharity NGO katalogus es valasztasi terv](../VB2026-SHARITY-NGO-CATALOG-AND-SELECTION-PLAN-2026-06-23.md) | Kanonikus terv a teljes NGO-katalogus, kiemelt VB2026 lista es user NGO-valasztas osszekotesere |
+| [VB2026 Sharity NGO katalogus Phase 1 implementacios pack](../VB2026-SHARITY-NGO-CATALOG-PHASE1-IMPLEMENTATION-PACK-2026-06-23.md) | Ketrepo-s kivitelezesi csomag az I. utemhez: source-side NGO katalogus + target oldali vb-prod bridge |
+
+## VB2026 aktualis allapot
+
+- A Phase I source-oldali implementacio a Sharity worktree-ben elindult.
+- Az NGO-katalogus es NGO-valasztasi runtime scaffold jelenlegi fo belepoje:
+  - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+- Ez a lane a `/szervezetek/` katalogus oldalt, a featured Top 10 read lane-t, a sajat NGO-allapot visszaolvasasat es a pre-auth selection-intent flow alapjat is tartalmazza.
 
 ## 🎯 Célközönség
 
