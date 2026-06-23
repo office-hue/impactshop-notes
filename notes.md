@@ -6990,3 +6990,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   - ideiglenesen nem olvasható személyes állapot
   - ténylegesen még nincs kiválasztott NGO
 [2026-06-23T15:40:00Z] | docs(doc-sync/local-canonical-map): az `impactshop-notes` repo megkapta a sajat contract-kompatibilis local canonical doc-sync mapjet: `docs/impactshop-notes-doc-sync-map-2026-06-23.md`. A map egy helyen oldja fel a local governance control plane-t, az env/auth/runtime adaptert, a protected bridge/profile-return lane-t, a VB2026 NGO catalog source lane-t, valamint a public baseline es partner dokumentacios reteget. A gyors belepesi pontok (`README.md`, `docs/README.md`, `docs/impactshop-governance-system-plan-2026-06-16.md`) mar erre is visszamutatnak.
+## 2026-06-23 17:40 CEST - guard config checksum hotfix
+- A VB2026 phantom bridge inventory cleanup utan a canonical `main` guard deploy meg mindig a config-checksum gate-nel allt meg.
+- Root cause: a `docs/impactshop-guard-config.json` mar az uj, phantom-file nelkuli allapotot hordozta, de a parjaul szolgalo `docs/impactshop-guard-config.sha256` a regi hash-en maradt.
+- A checksum vissza lett igazítva a tenyleges config tartalomhoz, hogy a `impactshop-guard-deploy.sh` preflight ujra tovabb tudjon lepni a valos deploy gate-ekre.
