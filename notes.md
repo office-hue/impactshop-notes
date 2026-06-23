@@ -6852,7 +6852,6 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   `https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026`.
 - Gyokerok: a redirect korabban hotfixkent szerverre kerult, de nem volt tartosan repo commitban, igy a teljes `wp-content/mu-plugins` mapping deploy vissza tudta irni.
 - Tartos fix: commit a canonical branch lane-ben (`15de3677`), plusz guard-kompatibilis docs/snapshot/notes folytonossag.
-<<<<<<< HEAD
 - 2026-05-15: JVK aukció follow-up. A Tarcsi Dániel / Part III. tételnél a végleges átadott méret és technika került visszajavításra a kanonikus runtime source-ban: `description_short`, `dimensions`, `medium` -> `Akril, vásznon`, `33x88 cm`, `32x102x3 cm` keretezett méret. PR: #141.
 - 2026-05-16: JVK aukció sürgős helyreállítás. A kanonikus `origin/main` és az élő payload 9 tételes állapotban volt, miközben a dedikált aukciós memória és a `0734ba80` commit szerint a lot 10 (Balla Gemma) és lot 11 (Kocsis Katica / Weiler Péter) már korábban live állapotban szerepelt. A helyreállító lane a `wp-content/mu-plugins/impactshop-event-auction-widget.php` fájlban visszaépíti a lot 8-11 blokkot és a 11 tételes állapotot.
 [2026-06-16T18:20:00Z] | feat(dev-guard/local-governance-sync-enforcement): a local governance/guard lane-re bekerult a fail-closed masterplan-sync enforcement. A `scripts/safe-repo-audit.sh` most mar elbukik, ha guard/policy/governance-hub valtozas tortenik a helyi `docs/impactshop-governance-system-plan-2026-06-16.md` syncje nelkul. A `scripts/git-health-check.sh` mar ellenorzi a safe-audit bekoteset, az `AGENTS.md` es a local system plan pedig explicit policykent is kimondja ugyanezt.
@@ -7003,3 +7002,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   - `GET /wp-json/impact/v1/vb2026/featured-ngos?campaign=vb2026`
   - `GET /szervezetek/?campaign=vb2026`
 - Ez egy szuk, kanonikus prod-helyreallito hotfix; a guard-hash ujrageneralasi mellekhatasok nem reszei ennek a commit-szeletnek.
+
+## 2026-06-23T21:05:00+0200 - VB2026 NGO return-flow closure
+- A source oldali NGO-katalogus es profilpanel most mar kanonikus VB2026 visszateresi lancot kap.
+- A `GET /wp-json/impact/v1/vb2026/my-ngo-selection` `selection_urls` mezoibe bekerult a `return_to=vb-prod` cel, igy a target shell nem vak katalogus-linket hasznal.
+- A katalogusoldali sikeres `select-ngo` valasz mar `redirect_url` mezot is ad, es `return_to=vb-prod` esetben azonnal vissza tud iranyitani a `https://factlens.eu/factlens/vb-prod/` shellre.
+- A Sharity profil oldali identity panel felismeri a `selection_intent` query tokent, meghivja a `POST /wp-json/impact/v1/vb2026/selection-intent/complete` lane-t, majd a source altal visszaadott `redirect_url` alapjan tovabblep.
+- Ezzel a pre-auth NGO-valasztasi flow mar nem csak endpoint-szinten letezik, hanem tenyleges browser-journeykent is vegigzarhato.
