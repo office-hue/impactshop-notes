@@ -1979,6 +1979,55 @@ Megmarado tudatos nyitott pontok:
 
 Ezek mar nem tervezesi hianyok, hanem implementacios termekdontesi kapcsolopontok.
 
+## 26.21. Aktualis megvalosulasi allapot — 2026-06-23
+
+Az I. utem implementacioja mar tenylegesen elindult, es a jelenlegi ketrepo-s worktree-allapotban mar nem csak terv szinten letezik.
+
+Mar megvalosult source oldalon:
+
+1. uj MU-plugin keszult:
+   - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+2. letrejott a Phase 1 storage scaffold:
+   - `wp_sharity_ngo_catalog`
+   - `wp_sharity_ngo_campaign_flags`
+   - `wp_vb2026_user_ngo_selection`
+   - `wp_vb2026_selection_intents`
+   - `wp_vb2026_ngo_selection_audit_log`
+3. elkeszult a source oldali publikus es autholt REST lane:
+   - `GET /wp-json/impact/v1/ngo-catalog`
+   - `GET /wp-json/impact/v1/vb2026/featured-ngos`
+   - `GET /wp-json/impact/v1/vb2026/my-ngo-selection`
+   - `POST /wp-json/impact/v1/vb2026/select-ngo`
+   - `POST /wp-json/impact/v1/vb2026/selection-intent`
+   - `POST /wp-json/impact/v1/vb2026/selection-intent/complete`
+4. elkeszult a Sharity oldali katalogusoldal:
+   - `/szervezetek/`
+5. a CSV ingest mar a kanonikus NGO-card slug/share/details/media truth reteggel merge-el
+
+Mar megvalosult target oldalon:
+
+1. a `vb-prod` NGO-bridge mar source-backed olvasast hasznal
+2. a `game/profile` payload mar kulon `ngo_selection` truthot ad vissza
+3. a kompakt profil-bridge mar kezeli:
+   - nincs kapcsolt fiok
+   - nincs kivalasztott NGO
+   - van kivalasztott NGO
+   - figyelmet igenylo NGO-allapot
+
+Az eddigi implementacios korokben mar le lett zarva nehany fontos audit- es QA-finding is:
+
+1. publikus katalogus csak `allow_public_listing=1` es aktiv campaign-state rekordot listazhat
+2. a source sync fail-closed gate-et kapott gyanusan alacsony aktiv CSV-bejovetel ellen
+3. a `selection-intent` es a vegso `select-ngo` ugyanazt a valaszthatosagi truthot hasznalja
+4. a target oldali featured lista last-good fallbacket kapott source read hiba eseten
+5. a sajat NGO-allapot UX mar kulon kezeli az auth-required es az unavailable allapotot
+
+Mi nincs meg teljesen:
+
+1. ez meg nem live deploy-allitás
+2. nincs meg commit/PR/merge lezárás erre a teljes NGO Phase 1 szeletre
+3. a fo tervdoksi, az implementation pack, a notes es a system-status mar frissul, de a vegleges closeout meg kulon kor lesz
+
 ---
 
 ## 27. Fazisolas

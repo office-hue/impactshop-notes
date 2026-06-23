@@ -6949,3 +6949,43 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   - fejlesztési sorrendet
   - cross-repo contractot
   - acceptance checklistet
+
+## 2026-06-23T12:48:00+0200 - VB2026 NGO catalog Phase 1 packet fresh QA tightened source and target contracts
+- Friss QA után az I. ütemes packetben további fontos kivitelezési rések lettek lezárva:
+  - a slug/logó/cover/Top10 source döntések most már hard blocker gate-ként vannak rögzítve
+  - a `my-ngo-selection` minimális állapotkészlete explicit lett: `has_selection=false`, `has_selection=true`, `needs_attention=true`
+  - a target oldali URL-truth most már egyértelműen source-payloadból jön, nem target oldali string-összerakásból
+  - a cross-domain pseudo/session koherencia külön acceptance pont lett
+
+## 2026-06-23T14:20:00+0200 - VB2026 NGO catalog Phase 1 source-side implementation started
+- Elkészült az új source-oldali MU-plugin:
+  - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+- A plugin jelenlegi implementált köre:
+  - Phase I táblák migrációja:
+    - `wp_sharity_ngo_catalog`
+    - `wp_sharity_ngo_campaign_flags`
+    - `wp_vb2026_user_ngo_selection`
+    - `wp_vb2026_selection_intents`
+    - `wp_vb2026_ngo_selection_audit_log`
+  - Sharity oldali publikus NGO-katalógus route:
+    - `/szervezetek/`
+  - REST lane-ek:
+    - `GET /wp-json/impact/v1/ngo-catalog`
+    - `GET /wp-json/impact/v1/vb2026/featured-ngos`
+    - `GET /wp-json/impact/v1/vb2026/my-ngo-selection`
+    - `POST /wp-json/impact/v1/vb2026/select-ngo`
+    - `POST /wp-json/impact/v1/vb2026/selection-intent`
+    - `POST /wp-json/impact/v1/vb2026/selection-intent/complete`
+- A source ingest a teljes Sharity NGO CSV-t a meglévő `ImpactShop_NGO_Card_API` kanonikus slug/share/details/media truth rétegével merge-eli.
+- A featured Top 10 seed Phase I-ben a meglévő NGO-card rank truth alapján indul.
+- A browser write lane same-origin ellenőrzést kapott, a service read/write lane pedig a bridge service tokenen keresztül autholható.
+
+## 2026-06-23T14:42:00+0200 - VB2026 NGO Phase I audit javítások
+- Koherencia- és biztonsági audit után három konkrét hibát zártam le a source/target lane-ben:
+  - a publikus NGO-katalógus most már csak `allow_public_listing=1` és `campaign_state='active'` rekordokat listázhat
+  - a source ingest publish-safe gate-et kapott: gyanúsan alacsony aktív CSV-bejövő állapotnál nem írja felül a jelenlegi source truthot
+  - a `selection-intent` létrehozás ugyanazt a választhatósági szabályt érvényesíti, mint a végső `select-ngo`
+- UX oldalon a Sharity katalogus saját `A te ügyed` sávja külön kezeli:
+  - bejelentkezés szükséges
+  - ideiglenesen nem olvasható személyes állapot
+  - ténylegesen még nincs kiválasztott NGO

@@ -117,6 +117,14 @@ Le kell zárni implementáció előtt:
 3. mi a kanonikus cover image forrás
 4. mi a featured Top 10 kezdeti seed listája
 
+Hard blocker szabály:
+
+1. amíg a fenti 4 döntésből bármelyik nincs tényleges source truthként kijelölve, az implementáció nem mehet túl a scaffolding és migration előkészítés szintjén
+2. különösen:
+   - nincs saját, új slug-logika
+   - nincs ad hoc Top 10 lista
+   - nincs közvetlen nyers CSV-media render
+
 ## 5.3. Storage acceptance
 
 Elfogadási feltétel:
@@ -180,6 +188,10 @@ Kell:
 2. `featured-ngos` csak aktív, publikusan listázható, featured és aktív campaign-state rekordot adhat
 3. `select-ngo` csak autholt, same-origin vagy nonce-védett write lehet
 4. `selection-intent` raw tokent csak kliensnek ad vissza, DB-ben hash marad
+5. `my-ngo-selection` explicit tudja a három minimális állapotot:
+   - `has_selection=false`
+   - `has_selection=true`
+   - `needs_attention=true`
 
 ---
 
@@ -243,6 +255,15 @@ Csak egy kompakt bridge jelenjen meg:
 4. `selected_ngo_is_active`
 5. `selection_urls.select`
 6. `selection_urls.manage`
+7. `has_selection`
+8. `needs_attention`
+9. `attention_message`
+
+URL-truth szabály:
+
+1. Repo B nem építhet saját NGO URL-eket string-összerakással
+2. a cél-URL-ek kanonikus forrása Repo A payloadja
+3. a target oldal csak a source oldaltól kapott `selection_urls` és kapcsolódó URL-eket használhatja
 
 ## 9.3. `vb-prod` UI acceptance
 
@@ -302,6 +323,10 @@ Az ajánlott kanonikus sorrend:
 8. `vb-prod` kompakt render Repo B oldalon
 9. végső cross-repo smoke
 
+Köztes gate:
+
+1. Repo B implementáció nem indulhat el érdemben addig, amíg Repo A payload contractjai nem stabilak legalább lokális/staging smoke szinten
+
 ---
 
 ## 13. Cross-repo contract
@@ -347,6 +372,10 @@ Az I. ütem akkor tekinthető késznek, ha:
 8. `vb-prod` ugyanazt a kiválasztott NGO-t mutatja
 9. `Megosztás` az adott NGO `/ngo/{slug}/share/` nézetére visz
 10. nincs target-oldali duplikált truth
+11. `vb-prod` a source oldali `selection_urls` alapján navigál, nem saját URL-összerakással
+12. a `my-ngo-selection` `has_selection=false` állapota is kulturáltan renderelődik
+13. a `needs_attention=true` invalidált állapot is kulturáltan renderelődik
+14. a cross-domain identity/session lane ugyanahhoz a pseudo truthhoz kötődik source és target oldalon
 
 ---
 
@@ -379,3 +408,44 @@ Repo B oldalon:
 2. `docs/VB2026-TIPP-ELEMZO-IMPLEMENTATION-PLAN-2026-06-11.md`
 3. `notes.md`
 4. `system-status-snapshot.md`
+
+---
+
+## 17. Megvalósulási állapot — 2026-06-23
+
+Az I. ütem implementációja elindult, és a jelenlegi worktree-ben már futóképes source-oldali alapréteg áll.
+
+Elkészült source oldalon:
+
+1. új MU-plugin:
+   - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+2. migrációs scaffold:
+   - `wp_sharity_ngo_catalog`
+   - `wp_sharity_ngo_campaign_flags`
+   - `wp_vb2026_user_ngo_selection`
+   - `wp_vb2026_selection_intents`
+   - `wp_vb2026_ngo_selection_audit_log`
+3. publikus és autholt REST endpointok:
+   - `GET /wp-json/impact/v1/ngo-catalog`
+   - `GET /wp-json/impact/v1/vb2026/featured-ngos`
+   - `GET /wp-json/impact/v1/vb2026/my-ngo-selection`
+   - `POST /wp-json/impact/v1/vb2026/select-ngo`
+   - `POST /wp-json/impact/v1/vb2026/selection-intent`
+   - `POST /wp-json/impact/v1/vb2026/selection-intent/complete`
+4. Sharity oldali Phase I katalógus route:
+   - `/szervezetek/`
+5. source ingest merge-logika:
+   - CSV input + NGO-card slug/media/share/details truth összefűzés
+
+Jelenlegi validáció:
+
+1. `php -l wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` PASS
+2. `git diff --check` PASS
+
+Még külön lezárandó a target oldali `vb-prod` bridge teljes QA-ja és az esetleges cross-repo finomítások.
+
+Friss audit-hardening ugyanebben a körben:
+
+1. a publikus source-katalógus immár nem listázhat `allow_public_listing=0` vagy inaktív campaign-state rekordot
+2. a source sync gyanúsan alacsony aktív CSV-állapotnál fail-closed módon megáll
+3. a `selection-intent` és a `select-ngo` lane ugyanarra a választhatósági truthra igazodik

@@ -908,3 +908,38 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   - Repo A source-side NGO catalog and selection lane
   - Repo B `vb-prod` compact NGO bridge
 - No runtime change in this slice; implementation planning baseline only.
+
+## 2026-06-23T12:48:00+0200 - VB2026 NGO catalog Phase 1 packet QA tightened cross-repo gates
+- Additional plan-level QA corrections applied:
+  - source truth decisions elevated to hard blocker gate
+  - `my-ngo-selection` minimum state contract made explicit
+  - target-side URL building forbidden in favor of source-provided URL truth
+  - cross-domain pseudo/session consistency added to acceptance
+- No runtime change in this slice; implementation planning baseline only.
+
+## 2026-06-23T14:20:00+0200 - VB2026 NGO catalog Phase 1 source runtime scaffold implemented
+- New source-side MU-plugin added:
+  - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+- Current runtime scope:
+  - catalog sync from the Sharity NGO CSV
+  - canonical slug/share/details/media merge from the NGO-card lane
+  - `/szervezetek/` public catalog page
+  - featured Top 10 read lane
+  - own NGO selection read lane
+  - direct selection write lane
+  - pre-auth selection-intent storage and completion lane
+- Validation on this slice:
+  - `php -l wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` PASS
+  - `git diff --check` PASS
+- This is not yet a live deploy claim; current status is implementation-in-worktree with source/runtime contract documented.
+
+## 2026-06-23T14:42:00+0200 - VB2026 NGO Phase I source/target audit hardening applied
+- Public catalog publish contract tightened:
+  - `ngo-catalog` now enforces `allow_public_listing = 1`
+  - `ngo-catalog` now enforces `campaign_state = 'active'`
+- Sync contract tightened:
+  - suspiciously low active-row CSV input no longer overwrites the source catalog truth
+- Selection contract tightened:
+  - `selection-intent` creation now blocks non-selectable NGOs the same way as final `select-ngo`
+- UX/read-state tightened:
+  - own NGO banner now distinguishes auth-required vs unavailable vs empty-selection states
