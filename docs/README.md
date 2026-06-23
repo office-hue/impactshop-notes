@@ -1,5 +1,11 @@
 # Docs index
 
+## Governance Entry Point
+- `impactshop-notes-doc-sync-map-2026-06-23.md`
+- `impactshop-governance-system-plan-2026-06-16.md`
+- `impactshop-governance-hub-coherence-audit-2026-06-16.md`
+- `impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`
+
 ## Partner integráció
 - `docs/non-affiliate-integration-plan.md`
 - `docs/partner-summary.md`
