@@ -23,7 +23,7 @@ add_action('init', 'impactshop_vb2026_ngo_catalog_register_routes');
 add_action('init', 'impactshop_vb2026_ngo_catalog_register_rewrite');
 add_action('rest_api_init', 'impactshop_vb2026_ngo_catalog_register_rest');
 add_filter('query_vars', 'impactshop_vb2026_ngo_catalog_query_vars');
-add_action('template_redirect', 'impactshop_vb2026_ngo_catalog_template_redirect');
+add_action('template_redirect', 'impactshop_vb2026_catalog_template_redirect');
 
 function impactshop_vb2026_ngo_catalog_maybe_migrate(): void
 {
