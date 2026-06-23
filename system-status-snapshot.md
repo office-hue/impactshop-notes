@@ -1,6 +1,6 @@
 ## 2026-06-17T12:20:00+0200 - env/auth/runtime local adapter added
 - Uj helyi adapter anchor keszult: `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`.
-- A dokumentum konkretan a protected inventory, a deploy env parok es a profile-return / FactLens bridge runtime lane-ek helyi guard szerzodeset fogja ossze.
+- A dokumentum konkretan a protected inventory, a deploy env parok es a profile-return runtime lane-ek helyi guard szerzodeset fogja ossze.
 - A local governance system plan mar erre is hivatkozik, igy az env/auth/runtime drift kulon repo-helyi entrypointot kapott.
 
 ## 2026-06-16T10:20:00+0200 - local governance system plan hub added
@@ -16,7 +16,7 @@
 ## 2026-06-14T08:20:00+0000 - VB2026 profile-return session carry canonicalized
 - A Sharity source-side profile-return lane kulon account-top es restore-fragment deeplink contractot kapott: `Sharity profil megnyitasa` -> `/profil/?bridge_target=account#impactshop-account-top`, `Ez nem az en fiokom` -> `/profil/?bridge_target=restore#impactshop-restore-title`.
 - A sikeres save/restore mar nem kozvetlen `vb-prod` redirecttel zar, hanem a FactLens `GET /api/vb2026/profile-return/complete` route-jara kuld vissza alairt payloadot, hogy a target host `__Host-factlens_vb_session` cookie-t issue-zon a vegso visszateres elott.
-- A source-side protected runtime coupling explicit lett: `impactshop-identity-panel.php`, `impactshop-identity-panel.js` es a guard inventoryben nyilvantartott `impactshop-factlens-identity-bridge.php` egy kozos VB2026 profile-return lane-kent kezelendo.
+- A source-side protected runtime coupling explicit lett: `impactshop-identity-panel.php` es `impactshop-identity-panel.js` egy kozos VB2026 profile-return lane-kent kezelendo.
 
 ## 2026-06-03T08:00:00+0200 - vote-purchase JS null-safe currency fallback fix
 - `impactshop-vote-purchase.js`: `getEffectiveCurrency()` fallback hozzáadva — `currencySelect` null esetén `preferredCurrency`/`defaultCurrency` sorrendben esik vissza
