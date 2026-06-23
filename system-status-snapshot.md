@@ -945,3 +945,12 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   - own NGO banner now distinguishes auth-required vs unavailable vs empty-selection states
 [2026-06-23T15:40:00Z] | docs(doc-sync/local-canonical-map): az `impactshop-notes` repo megkapta a sajat contract-kompatibilis local canonical doc-sync mapjet (`docs/impactshop-notes-doc-sync-map-2026-06-23.md`). A helyi map most mar egy helyen oldja fel a governance, env/auth/runtime, protected bridge/profile-return, VB2026 NGO catalog es core public baseline doku-truthokat, es a `README.md`, `docs/README.md`, valamint a helyi governance hub felol is elerheto.
 - A `docs/impactshop-guard-config.json` es a `docs/impactshop-guard-config.sha256` paritasa helyreallt; a canonical guard deploy mar nem checksum-drift miatt all meg, hanem a kovetkezo valos runtime/deploy gate-re tud tovabblepni.
+
+## 2026-06-23T18:20:00+0200 - VB2026 NGO source lane prod callback hotfix applied
+- Prod source-lane outage oka: a `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` `template_redirect` hookja elirt callbacket hasznalt.
+- A hook most mar a tenyleges `impactshop_vb2026_catalog_template_redirect` handlert hivja.
+- Ennek hatasara a prod Sharity source lane ujra helyesen szolgaltatja:
+  - `GET /wp-json/impact/v1/ngo-catalog`
+  - `GET /wp-json/impact/v1/vb2026/featured-ngos?campaign=vb2026`
+  - `GET /szervezetek/?campaign=vb2026`
+- Ez a statusz mar tenyleges prod-helyreallitas, nem csak worktree-implementacios allapot.

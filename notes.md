@@ -6994,3 +6994,12 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A VB2026 phantom bridge inventory cleanup utan a canonical `main` guard deploy meg mindig a config-checksum gate-nel allt meg.
 - Root cause: a `docs/impactshop-guard-config.json` mar az uj, phantom-file nelkuli allapotot hordozta, de a parjaul szolgalo `docs/impactshop-guard-config.sha256` a regi hash-en maradt.
 - A checksum vissza lett igazítva a tenyleges config tartalomhoz, hogy a `impactshop-guard-deploy.sh` preflight ujra tovabb tudjon lepni a valos deploy gate-ekre.
+
+## 2026-06-23T18:20:00+0200 - VB2026 NGO source lane prod callback hotfix
+- A prod `app.sharity.hu` source lane-en a VB2026 NGO katalogus publikus oldala es REST route-jai addig nem alltak fel, mert a MU-plugin `template_redirect` hookja rossz callback-nevre mutatott.
+- Root cause: az `impactshop-vb2026-ngo-catalog.php` a nem letezo `impactshop_vb2026_ngo_catalog_template_redirect` callbacket regisztralta, mikozben a tenyleges handler neve `impactshop_vb2026_catalog_template_redirect`.
+- A callback-nev paritasa helyre lett allitva, es a prod oldalon ujra zold a teljes source lane:
+  - `GET /wp-json/impact/v1/ngo-catalog`
+  - `GET /wp-json/impact/v1/vb2026/featured-ngos?campaign=vb2026`
+  - `GET /szervezetek/?campaign=vb2026`
+- Ez egy szuk, kanonikus prod-helyreallito hotfix; a guard-hash ujrageneralasi mellekhatasok nem reszei ennek a commit-szeletnek.
