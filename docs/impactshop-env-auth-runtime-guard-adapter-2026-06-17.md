@@ -8,7 +8,7 @@ Scope: a kanonikus env/auth/runtime guard helyi, `impactshop-notes` protected/ru
 
 Ez a dokumentum nem uj protected policyt vezet be.
 
-A celja az, hogy az `impactshop-notes` sajat protected-file, deploy-env es profile-return/bridge runtime lane-jeire konkretizalja a kozos guard minimumot:
+A celja az, hogy az `impactshop-notes` sajat protected-file, deploy-env es profile-return runtime lane-jeire konkretizalja a kozos guard minimumot:
 
 1. local inventory scope
 2. local managed env/auth target
@@ -29,7 +29,6 @@ Az adapter a kovetkezo helyi truthra es lane-ekre epul:
 6. `bin/impactshop-guard-deploy.sh`
 7. `wp-content/mu-plugins/impactshop-identity-panel.php`
 8. `wp-content/mu-plugins/impactshop-identity-panel.js`
-9. `wp-content/mu-plugins/impactshop-factlens-identity-bridge.php`
 
 Allowed repo scope:
 

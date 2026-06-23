@@ -33,7 +33,6 @@
     "wp-content/mu-plugins/impactshop-ayet-offerwall.php",
     "wp-content/mu-plugins/impactshop-full-leaderboard.php",
     "wp-content/mu-plugins/impactshop-rest-totals.php",
-    "wp-content/mu-plugins/impactshop-factlens-identity-bridge.php",
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
     "wp-content/mu-plugins/impactshop-ngo-selector.php",
@@ -179,7 +178,6 @@
       "sw.js"
     ],
     "identity_and_points": [
-      "wp-content/mu-plugins/impactshop-factlens-identity-bridge.php",
       "wp-content/mu-plugins/impactshop-identity-panel.php",
       "wp-content/mu-plugins/impactshop-identity-panel.js",
       "wp-content/mu-plugins/impactshop-rest-totals.php",
