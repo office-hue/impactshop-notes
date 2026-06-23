@@ -114,6 +114,15 @@
       }
     }
 
+    function getSelectionIntentToken() {
+      try {
+        const current = new URL(window.location.href);
+        return (current.searchParams.get("selection_intent") || "").trim();
+      } catch (e) {
+        return "";
+      }
+    }
+
     function buildBridgeCompletionUrl(targetName) {
       const target = targetName === "restore" ? "restore" : (targetName === "account" ? "account" : "");
       if (!target) return "";
@@ -127,6 +136,53 @@
       } catch (e) {
         return "";
       }
+    }
+
+    async function maybeCompleteSelectionIntent() {
+      const token = getSelectionIntentToken();
+      if (!token) return null;
+      if (sharedState.selectionIntentCompleted === token) {
+        return sharedState.selectionIntentResult || null;
+      }
+      if (sharedState.selectionIntentPromise) {
+        return sharedState.selectionIntentPromise;
+      }
+      setStatus("A kiválasztott civil ügy aktiválása folyamatban…");
+      sharedState.selectionIntentPromise = postWithNonce(
+        restBase + "/vb2026/selection-intent/complete",
+        { intent_token: token },
+        "include"
+      )
+        .then(async function(res){
+          const data = (res._data !== undefined) ? res._data : await res.json().catch(function(){ return {}; });
+          if (!res.ok) {
+            const message = (data && data.error && data.error.message) ? data.error.message :
+              ((data && data.message) ? data.message : "A civil ügy véglegesítése nem sikerült.");
+            setStatus(message, true);
+            return null;
+          }
+          sharedState.selectionIntentCompleted = token;
+          sharedState.selectionIntentResult = data || null;
+          const redirectUrl = data && data.redirect_url ? String(data.redirect_url) : "";
+          const message = (data && data.selection_message) ? String(data.selection_message) : "A civil ügyed sikeresen aktiválva lett.";
+          if (redirectUrl) {
+            setStatus(message + " Visszaléptetünk…");
+            setTimeout(function(){
+              window.location.href = redirectUrl;
+            }, 700);
+          } else {
+            setStatus(message);
+          }
+          return data || null;
+        })
+        .catch(function(){
+          setStatus("A civil ügy aktiválása most nem sikerült.", true);
+          return null;
+        })
+        .finally(function(){
+          sharedState.selectionIntentPromise = null;
+        });
+      return sharedState.selectionIntentPromise;
     }
 
     function attachReturnParamToRestoreLinks() {
@@ -1514,6 +1570,9 @@
     refreshPseudo();
     initPush();
     fetchProfile()
+      .then(function(){
+        return maybeCompleteSelectionIntent();
+      })
       .then(function(){
         return Promise.all([fetchTotal(), fetchMessages(), refreshPointsSection()]);
       })

@@ -275,6 +275,10 @@ function impactshop_vb2026_rest_my_ngo_selection(WP_REST_Request $request): WP_R
     }
 
     $contestScope = sanitize_key((string) ($request->get_param('contest_scope') ?: IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY));
+    $returnTo = sanitize_key((string) ($request->get_param('return_to') ?: 'vb-prod'));
+    if (!impactshop_vb2026_is_allowed_return_to($returnTo)) {
+        $returnTo = 'vb-prod';
+    }
     $selection = impactshop_vb2026_get_selection_by_pseudo($resolution['pseudo_id'], $contestScope);
 
     return new WP_REST_Response([
@@ -282,7 +286,7 @@ function impactshop_vb2026_rest_my_ngo_selection(WP_REST_Request $request): WP_R
         'contest_scope' => $contestScope,
         'source_status' => 'ready',
         'pseudo_id_masked' => impactshop_vb2026_mask_pseudo($resolution['pseudo_id']),
-    ] + impactshop_vb2026_selection_response_payload($selection), 200);
+    ] + impactshop_vb2026_selection_response_payload($selection, $returnTo), 200);
 }
 
 function impactshop_vb2026_rest_select_ngo(WP_REST_Request $request): WP_REST_Response
@@ -300,6 +304,10 @@ function impactshop_vb2026_rest_select_ngo(WP_REST_Request $request): WP_REST_Re
     $contestScope = sanitize_key((string) ($payload['contest_scope'] ?? IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY));
     $ngoId = absint($payload['selected_sharity_ngo_id'] ?? 0);
     $sourceContext = sanitize_key((string) ($payload['source_context'] ?? ($resolution['service_auth'] ? 'vb_prod_bridge' : 'sharity_catalog')));
+    $returnTo = sanitize_key((string) ($payload['return_to'] ?? 'catalog'));
+    if (!impactshop_vb2026_is_allowed_return_to($returnTo)) {
+        $returnTo = 'catalog';
+    }
     if ($ngoId <= 0) {
         return impactshop_vb2026_error_response('NGO_NOT_FOUND', 'Hiányzik a kiválasztott NGO azonosítója.', 400);
     }
@@ -314,6 +322,8 @@ function impactshop_vb2026_rest_select_ngo(WP_REST_Request $request): WP_REST_Re
         'selected_ngo' => $result['selected_ngo'],
         'effective_from' => $result['effective_from'],
         'selection_message' => 'Mostantól ezt a civil ügyet támogatod a VB2026 játékban.',
+        'return_to' => $returnTo,
+        'redirect_url' => impactshop_vb2026_resolve_return_destination($returnTo),
     ], 200);
 }
 
@@ -442,6 +452,8 @@ function impactshop_vb2026_rest_selection_intent_complete(WP_REST_Request $reque
         'selected_ngo' => $result['selected_ngo'],
         'effective_from' => $result['effective_from'],
         'selection_message' => 'A civil ügy kiválasztása sikeresen befejeződött.',
+        'return_to' => (string) ($row['return_to'] ?: 'vb-prod'),
+        'redirect_url' => impactshop_vb2026_resolve_return_destination((string) ($row['return_to'] ?: 'vb-prod')),
     ], 200);
 }
 
@@ -740,6 +752,24 @@ function impactshop_vb2026_catalog_render_page(): string
         catalog: [],
       };
 
+      function getCurrentReturnTarget() {
+        try {
+          const url = new URL(window.location.href);
+          const raw = (url.searchParams.get('return_to') || 'catalog').trim();
+          return ['vb-prod', 'catalog', 'sharity'].includes(raw) ? raw : 'catalog';
+        } catch {
+          return 'catalog';
+        }
+      }
+
+      function resolveReturnUrl(target) {
+        if (target === 'vb-prod') return 'https://factlens.eu/factlens/vb-prod/?view=sharity';
+        if (target === 'sharity') return 'https://app.sharity.hu/profil/#impactshop-account-top';
+        return `https://app.sharity.hu/szervezetek/?campaign=${encodeURIComponent(campaign)}&return_to=catalog`;
+      }
+
+      const currentReturnTarget = getCurrentReturnTarget();
+
       function escapeHtml(value) {
         return String(value ?? '')
           .replaceAll('&', '&amp;')
@@ -876,7 +906,7 @@ function impactshop_vb2026_catalog_render_page(): string
 
       async function loadSelection() {
         try {
-          state.selection = await fetchJson(`${restBase}/vb2026/my-ngo-selection?contest_scope=${encodeURIComponent(campaign)}`);
+          state.selection = await fetchJson(`${restBase}/vb2026/my-ngo-selection?contest_scope=${encodeURIComponent(campaign)}&return_to=${encodeURIComponent(currentReturnTarget)}`);
           state.selectionState = 'ready';
         } catch (error) {
           state.selection = null;
@@ -900,14 +930,19 @@ function impactshop_vb2026_catalog_render_page(): string
 
       async function selectNgo(ngoId) {
         try {
-          await fetchJson(`${restBase}/vb2026/select-ngo`, {
+          const payload = await fetchJson(`${restBase}/vb2026/select-ngo`, {
             method: 'POST',
             body: JSON.stringify({
               selected_sharity_ngo_id: Number(ngoId),
               contest_scope: campaign,
               source_context: 'sharity_catalog',
+              return_to: currentReturnTarget,
             }),
           });
+          if (currentReturnTarget !== 'catalog') {
+            window.location.assign(payload?.redirect_url || resolveReturnUrl(currentReturnTarget));
+            return;
+          }
           await loadSelection();
           await loadCatalog();
           await loadFeatured();
@@ -918,7 +953,7 @@ function impactshop_vb2026_catalog_render_page(): string
               body: JSON.stringify({
                 selected_sharity_ngo_id: Number(ngoId),
                 contest_scope: campaign,
-                return_to: 'catalog',
+                return_to: currentReturnTarget,
               }),
             });
             if (payload?.auth_url) {
@@ -1098,6 +1133,19 @@ function impactshop_vb2026_browser_write_allowed(WP_REST_Request $request): bool
 function impactshop_vb2026_is_allowed_return_to(string $returnTo): bool
 {
     return in_array($returnTo, ['vb-prod', 'catalog', 'sharity'], true);
+}
+
+function impactshop_vb2026_resolve_return_destination(string $returnTo): string
+{
+    switch ($returnTo) {
+        case 'catalog':
+            return home_url('/szervezetek/?campaign=' . rawurlencode(IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY) . '&return_to=catalog');
+        case 'sharity':
+            return home_url('/profil/#impactshop-account-top');
+        case 'vb-prod':
+        default:
+            return 'https://factlens.eu/factlens/vb-prod/?view=sharity';
+    }
 }
 
 function impactshop_vb2026_name_key(string $value): string
@@ -1418,10 +1466,13 @@ function impactshop_vb2026_catalog_query(array $filters, int $page, int $perPage
     global $wpdb;
     $catalog = $wpdb->prefix . 'sharity_ngo_catalog';
     $flags = $wpdb->prefix . 'sharity_ngo_campaign_flags';
-    $selectionPayload = impactshop_vb2026_selection_response_payload(impactshop_vb2026_get_selection_by_pseudo(
-        impactshop_vb2026_get_pseudo_id(),
-        (string) $filters['campaign']
-    ));
+    $selectionPayload = impactshop_vb2026_selection_response_payload(
+        impactshop_vb2026_get_selection_by_pseudo(
+            impactshop_vb2026_get_pseudo_id(),
+            (string) $filters['campaign']
+        ),
+        'catalog'
+    );
     $selectedNgoId = !empty($selectionPayload['selected_ngo']['ngo_id']) ? (int) $selectionPayload['selected_ngo']['ngo_id'] : 0;
 
     $where = ["cf.campaign_key = %s"];
@@ -1597,10 +1648,20 @@ function impactshop_vb2026_get_selection_by_pseudo(string $pseudoId, string $con
     return is_array($row) ? $row : null;
 }
 
-function impactshop_vb2026_selection_response_payload(?array $selection): array
+function impactshop_vb2026_selection_response_payload(?array $selection, string $returnTo = 'vb-prod'): array
 {
-    $manageUrl = '/szervezetek/?campaign=' . rawurlencode(IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY) . '&view=my-choice';
-    $browseUrl = '/szervezetek/?campaign=' . rawurlencode(IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY);
+    if (!impactshop_vb2026_is_allowed_return_to($returnTo)) {
+        $returnTo = 'vb-prod';
+    }
+    $browseUrl = add_query_arg([
+        'campaign' => IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY,
+        'return_to' => $returnTo,
+    ], '/szervezetek/');
+    $manageUrl = add_query_arg([
+        'campaign' => IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY,
+        'view' => 'my-choice',
+        'return_to' => $returnTo,
+    ], '/szervezetek/');
     if (!$selection) {
         return [
         'has_selection' => false,

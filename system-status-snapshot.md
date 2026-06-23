@@ -828,7 +828,6 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
-<<<<<<< HEAD
 ## 2026-05-15T16:30:00Z - JVK Tarcsi lot dimensions follow-up
 - `wp-content/mu-plugins/impactshop-event-auction-widget.php` lot 3 (`tarcsi-daniel-part-iii`) metadata corrected to final delivered artwork data.
 - Updated fields only: `description_short`, `dimensions`, `medium`.
@@ -954,3 +953,4 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   - `GET /wp-json/impact/v1/vb2026/featured-ngos?campaign=vb2026`
   - `GET /szervezetek/?campaign=vb2026`
 - Ez a statusz mar tenyleges prod-helyreallitas, nem csak worktree-implementacios allapot.
+- [2026-06-23T21:05:00Z] NGO return-flow closure: a source oldali `selection_urls` es a katalogus/profil JS mar explicit `return_to=vb-prod` celt es `redirect_url` alapu visszalepest hasznal. A `selection-intent` completion vegre valos browser-flowban is le tud zarulni, nem csak tavolrol hivhato endpoint marad.
