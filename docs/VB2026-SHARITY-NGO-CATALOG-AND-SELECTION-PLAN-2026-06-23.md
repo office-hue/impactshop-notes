@@ -1596,6 +1596,7 @@ Javasolt shape:
 2. ezt allowlistes return targetkent kell kezelni
 3. mentes utan a user visszakuldheto a `vb-prod`-ra
 4. a selection truth ettol fuggetlenul source-side-ban marad
+5. ha a user NGO-valasztasi `selection_intent` tokennel erkezik a Sharity profiloldalra, a source oldali profilpanelnek be kell fejeznie a valasztast, majd a `return_to` szerint vissza kell lepnie
 
 ---
 
