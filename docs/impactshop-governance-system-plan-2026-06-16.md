@@ -9,6 +9,12 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 - A VB2026 NGO katalogus Phase I source lane (`impactshop-vb2026-ngo-catalog.php`) additiv, de mivel uj MU-plugin es uj publikus/selection REST perem, a docs continuity minimum itt nem all meg a feature-plan es a bastion naplo frissitesenel.
 - Ha a Phase I source lanehez tartozo guard/governance evidence valtozik, a `docs/bastion-guard-status.md` es ez a helyi governance hub egyutt frissitendo, hogy a local push gate ugyanazt a truthot lassa, mint a reviewer.
 
+## 2026-06-24 Runtime starter note
+
+- A repo megkapta a helyi runtime starter minimumot is: `scripts/worktree-task-start.sh` es `scripts/worktree-readiness-check.sh`.
+- Ez tudatosan N1 szelet: marker + readiness + local starter reuse, de meg nem teljes drift/coordination enforcement.
+- A helyi governance truth innentol nem csak docs entrypointot, hanem egy rovid, repo-helyi worktree-start belépőt is tartalmaz.
+
 ## Cel
 
 Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubkent osszefogja azokat a mar ervenyes kanonikus anchorokat, amelyek menten az `impactshop-notes` repo-ban a munka, review, continuity es protected-lane valtozas tortenik.

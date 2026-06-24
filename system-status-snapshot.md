@@ -954,3 +954,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   - `GET /szervezetek/?campaign=vb2026`
 - Ez a statusz mar tenyleges prod-helyreallitas, nem csak worktree-implementacios allapot.
 - [2026-06-23T21:05:00Z] NGO return-flow closure: a source oldali `selection_urls` es a katalogus/profil JS mar explicit `return_to=vb-prod` celt es `redirect_url` alapu visszalepest hasznal. A `selection-intent` completion vegre valos browser-flowban is le tud zarulni, nem csak tavolrol hivhato endpoint marad.
+## 2026-06-24T10:05:00+0200 - local worktree runtime starter minimum added
+- Uj helyi runtime starter minimum kerult be a repo-ba: `scripts/worktree-task-start.sh` es `scripts/worktree-readiness-check.sh`.
+- A lane a mar meglevo `scripts/start-feature-worktree.sh` belépőre epul, es ehhez ad marker + readiness szerzodest a helyi governance/doc-sync truth korul.
+- A helyi canonical doc-sync map (`docs/impactshop-notes-doc-sync-map-2026-06-23.md`) `RegistryStatus: partial` allapotra valtott, mert a runtime minimum mar bent van, de a magasabb szintu drift/coordination/reporting retegek meg nem.
