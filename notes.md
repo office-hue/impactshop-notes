@@ -7009,3 +7009,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A katalogusoldali sikeres `select-ngo` valasz mar `redirect_url` mezot is ad, es `return_to=vb-prod` esetben azonnal vissza tud iranyitani a `https://factlens.eu/factlens/vb-prod/` shellre.
 - A Sharity profil oldali identity panel felismeri a `selection_intent` query tokent, meghivja a `POST /wp-json/impact/v1/vb2026/selection-intent/complete` lane-t, majd a source altal visszaadott `redirect_url` alapjan tovabblep.
 - Ezzel a pre-auth NGO-valasztasi flow mar nem csak endpoint-szinten letezik, hanem tenyleges browser-journeykent is vegigzarhato.
+## 2026-06-24 10:05 CEST - worktree runtime starter minimum
+- Az `impactshop-notes` repo megkapta a helyi N1 runtime starter minimumot: `scripts/worktree-task-start.sh` es `scripts/worktree-readiness-check.sh`.
+- A szelet szandekosan szuk maradt: markerfajl a worktree git metadatajaba, `--resume` reuse, es rovid readiness contract a helyi doc-sync/governance anchorokra.
+- A teljes drift/coordination/reporting enforcement nincs ebben a korben behozva; a docs map ezt most mar explicit `partial` allapotkent jeloli.

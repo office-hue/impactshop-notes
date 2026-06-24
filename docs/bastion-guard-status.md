@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-06-14 08:20 UTC
+Last updated: 2026-06-24 10:05 CEST
 
 ## 2026-03-26 19:45 — impact-community.php URL fix
 - `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
@@ -16,6 +16,7 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-06-24 | `scripts/worktree-task-start.sh`, `scripts/worktree-readiness-check.sh` | Uj helyi runtime starter minimum az `impactshop-notes` repoban. A ket script a worktree-inditas canonical local belepojet adja: marker a git metadata alatt, `--resume` reuse, es explicit readiness contract a helyi doc-sync/governance anchorokra. Tudatosan N1 szelet, teljes drift/coordination enforcement nelkul. | `docs/impactshop-notes-doc-sync-map-2026-06-23.md`, `docs/impactshop-governance-system-plan-2026-06-16.md`, `notes.md`, `system-status-snapshot.md` |
 | 2026-06-23 | `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` | Új, additív VB2026 NGO-katalógus source lane a Sharity oldalon. A modul csak olvasási célú, publikus katalógus és pseudo-azonosítóhoz kötött NGO-választási REST felületet ad, explicit slug-normalizálással, cache-elt CSV ingesttel és védett selection mentési peremmel; a VB2026 bridge oldalon ez a kanonikus Phase I forrás. | `docs/VB2026-SHARITY-NGO-CATALOG-AND-SELECTION-PLAN-2026-06-23.md`, `docs/VB2026-SHARITY-NGO-CATALOG-PHASE1-IMPLEMENTATION-PACK-2026-06-23.md`, `notes.md`, `system-status-snapshot.md` |
 | 2026-06-14 | `impactshop-identity-panel.php`, `impactshop-identity-panel.js`, `docs/impactshop-guard-config.json`, `docs/impactshop-protected-files.json` | VB2026 profile-return source canonicalization: a protected identity runtime most mar kulon account-top es restore-fragment deeplinkkel dolgozik, es save/restore utan a FactLens `profile-return/complete` session-helyreallito hopjara ad vissza. A bridge source plugin a guard inventoryben explicit protected lane lett, az identity-panel runtime pedig ezzel egyutt kezelendo bastion-coupled felulet. | `docs/protected-change-records/2026-06-14-vb2026-profile-return-session-carry.md`, `notes.md`, `system-status-snapshot.md` |
 | 2026-05-12 | `impactshop-action-bar.php` | Celozott hotfix: visszaallitva a nyelv/orszag selector (`sharity-slc`) a kanonikus main/prod lane-ben. Protected touch override alatt ment, dedikalt change record + rollback + smoke scope mellett. | `docs/protected-change-records/2026-05-12-impactshop-selector-restore-hotfix.md`, `notes.md`, `system-status-snapshot.md` |

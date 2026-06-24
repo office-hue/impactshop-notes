@@ -6,8 +6,8 @@ RepoId: `impactshop-notes`
 CanonicalMapPath: `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
 RootHubPath: `../ai-agent/DOC-SYNC-HUB.md`
 OwnerRepo: `ai-agent`
-LastVerifiedAt: `2026-06-23T15:40:00Z`
-RegistryStatus: `docs-only`
+LastVerifiedAt: `2026-06-24T10:05:00Z`
+RegistryStatus: `partial`
 
 ## Cel
 
@@ -48,7 +48,7 @@ Ez a helyi map a kozos minimum statuszokat hasznalja:
 
 | Topic | Master doc | Implementation truth | QA / audit truth | Runtime / guard evidence | Continuity target | Status | Notes |
 |---|---|---|---|---|---|---|---|
-| Local governance control plane | `docs/impactshop-governance-system-plan-2026-06-16.md` | `AGENTS.md`, `docs/pr-policy.md`, `PR-EXIT-CHECKLIST.md`, `docs/ai-assistant-canonical-policy.md` | `docs/impactshop-governance-hub-coherence-audit-2026-06-16.md` | `scripts/safe-repo-audit.sh --strict --mode push`, `scripts/git-health-check.sh` | `notes.md`, `system-status-snapshot.md` | `merged` | A helyi governance hub mar megvolt; ez a doc-sync map most contract-kompatibilis local truthot ad hozza. |
+| Local governance control plane | `docs/impactshop-governance-system-plan-2026-06-16.md` | `AGENTS.md`, `docs/pr-policy.md`, `PR-EXIT-CHECKLIST.md`, `docs/ai-assistant-canonical-policy.md`, `scripts/worktree-task-start.sh`, `scripts/worktree-readiness-check.sh` | `docs/impactshop-governance-hub-coherence-audit-2026-06-16.md` | `scripts/safe-repo-audit.sh --strict --mode push`, `scripts/git-health-check.sh`, `bash scripts/worktree-readiness-check.sh --json` | `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `partial` | A helyi governance hub mar megvolt; most mar minimalis runtime starter lane is tartozik hozza, de a teljes drift/coordination enforcement meg kesobbi fazis. |
 | Env / auth / runtime protected adapter | `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md` | `docs/impactshop-guard-config.json`, `docs/impactshop-protected-files.json`, `bin/impactshop-guard-deploy.sh` | protected change recordok a `docs/protected-change-records/` alatt | `scripts/safe-repo-audit.sh --strict --mode push`, protected inventory jelenlet | `notes.md`, `system-status-snapshot.md` | `merged` | A repo egyik legerzekenyebb lane-je; fail-closed truth mar kulon adapteren all. |
 | Protected bridge / profile-return lane | `docs/protected-change-records/2026-06-14-vb2026-profile-return-session-carry.md` | `wp-content/mu-plugins/impactshop-identity-panel.php`, `wp-content/mu-plugins/impactshop-identity-panel.js`, `wp-content/mu-plugins/impactshop-factlens-identity-bridge.php` | protected change recordok es local guard config | protected inventory + deploy-path evidence | `notes.md`, `system-status-snapshot.md` | `partial` | Kulonosen drift-erzekeny lane, mert a docs truth, a WP runtime es a protected inventory kulon tud szetcsuszni. |
 | VB2026 NGO catalog source lane | `docs/VB2026-SHARITY-NGO-CATALOG-AND-SELECTION-PLAN-2026-06-23.md` | `impactshop-vb2026-ngo-catalog.php`, a kapcsolodo source selection REST lane-ek | `docs/VB2026-SHARITY-NGO-CATALOG-PHASE1-IMPLEMENTATION-PACK-2026-06-23.md` | local protected/runtime evidence a source lane-re | `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `partial` | Friss lane, amelynel a docs continuity minimum mar ki lett mondva a governance hubban is. |
@@ -77,6 +77,6 @@ Felteteles continuity target:
 
 Innen a kovetkezo legkisebb hasznos szelet:
 
-1. az `impactshop-notes` bekerulese a kozponti registry `merged` statuszaba az `ai-agent` oldalon;
-2. kulon local child map a protected bridge/VB2026 lane-re, ha a drift-guard mar gepi topic-level feloldast is kap;
-3. kesobb a partner/integration lane sajat canonical child mapje, ha a partner docs tovabb no.
+1. a local runtime starter lane kovetkezo szuk bovitese: doc-sync/path presetek vagy topic-level filterek;
+2. a task-start evidence bekotese magasabb szintu drift/coordination riportba;
+3. kulon local child map a protected bridge/VB2026 lane-re, ha a drift-guard mar gepi topic-level feloldast is kap.
