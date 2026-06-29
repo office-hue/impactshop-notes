@@ -80,6 +80,7 @@ require_file "docs/impactshop-governance-system-plan-2026-06-16.md" "missing-loc
 require_file "scripts/safe-repo-audit.sh" "missing-safe-repo-audit"
 require_file "scripts/git-health-check.sh" "missing-git-health-check"
 require_file "scripts/start-feature-worktree.sh" "missing-start-feature-worktree"
+require_file "scripts/worktree-coordination-sync.sh" "missing-worktree-coordination-sync"
 require_file "notes.md" "missing-notes"
 require_file "system-status-snapshot.md" "missing-system-status-snapshot"
 
