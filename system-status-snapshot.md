@@ -1,3 +1,8 @@
+## 2026-06-29T18:10:00+0200 - VB2026 featured truth source disentangled from NGO-card dataset
+- A `featured` / `TOP 10` truth a VB2026 NGO-katalogusban mar nem az NGO-card dataset `rank` mezőjétől függ.
+- A kanonikus rangforras most a challenge tally slug+rangsor lane; a kartya-dataset csak display-adatot ad hozza, ha elerheto.
+- Ezzel a `featured-ngos` endpoint nem esik vissza 5 elemre akkor sem, ha a kartya-dataset egyes top szervezeteket nem tartalmaz vagy `rank=0`-val hoz.
+
 ## 2026-06-17T12:20:00+0200 - env/auth/runtime local adapter added
 - Uj helyi adapter anchor keszult: `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`.
 - A dokumentum konkretan a protected inventory, a deploy env parok es a profile-return runtime lane-ek helyi guard szerzodeset fogja ossze.
