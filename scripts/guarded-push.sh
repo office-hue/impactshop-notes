@@ -7,6 +7,7 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 LANE_GUARD="${REPO_ROOT}/scripts/check-commit-lane.sh"
 PROTECTED_GUARD="${REPO_ROOT}/scripts/check-protected-file-touch.sh"
 SAFE_AUDIT="${REPO_ROOT}/scripts/safe-repo-audit.sh"
+WORKTREE_CONTINUITY_GUARD="${REPO_ROOT}/scripts/worktree-continuity-guard.sh"
 
 resolve_push_base_ref() {
   local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
@@ -82,6 +83,10 @@ if [[ -x "${PROTECTED_GUARD}" ]]; then
   PUSH_BASE_REF="${PUSH_BASE_REF:-$(resolve_push_base_ref)}"
   PUSH_RANGE="${PUSH_RANGE:-$(resolve_push_range "${PUSH_BASE_REF}")}"
   "${PROTECTED_GUARD}" --mode push --push-range "${PUSH_RANGE}"
+fi
+
+if [[ -x "${WORKTREE_CONTINUITY_GUARD}" ]]; then
+  "${WORKTREE_CONTINUITY_GUARD}" --mode push
 fi
 
 if [[ -x "${SAFE_AUDIT}" ]]; then

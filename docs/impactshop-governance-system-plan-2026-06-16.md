@@ -21,6 +21,12 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 - A starter lane a marker + readiness + task-start guard utan frissiti a koordinacios snapshotot, igy a per-worktree `worktree-task-start-decision.json` artifact nem csak letrejön, hanem a workspace-szintu riportba is visszaemelkedik.
 - Ez meg mindig nem teljes hook-level continuity enforcement, de mar reviewer-visible evidence-et ad a doc-sync label/repo/path scope-rol es a blocked/degraded/allowed dontesrol.
 
+## 2026-06-29 Runtime N4 note
+
+- A helyi continuity/guard reteg is bekapcsolt: `scripts/worktree-continuity-guard.sh`.
+- A pre-push hook es a `git wpush` wrapper most mar nem csak altalanos auditot futtat, hanem explicit ellenorzi a marker + decision artifact + koordinacios snapshot paritast is.
+- Ezzel a local truth mar nem allhat meg az N3 snapshot lathatosagnal; push elott kotelezo continuity evidence lett belole.
+
 ## Cel
 
 Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubkent osszefogja azokat a mar ervenyes kanonikus anchorokat, amelyek menten az `impactshop-notes` repo-ban a munka, review, continuity es protected-lane valtozas tortenik.
@@ -77,6 +83,7 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
 1. a governance, guard es policy lane valtozasai push elott fail-closed local system-plan sync gate alatt allnak;
 2. ez azt jelenti, hogy a `docs/impactshop-governance-system-plan-2026-06-16.md` frissitese nem utolagos adminisztracio, hanem a helyi DEV folyamat resze.
 3. env/auth/runtime lane valtozasnal a `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md` is kotelezo continuity anchor.
+4. a runtime worktree-start lane-nel a marker + decision + coordination snapshot paritast a local continuity guard kotelezoen ervenyesiti.
 
 ## Decision Rules
 
