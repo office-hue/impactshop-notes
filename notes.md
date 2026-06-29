@@ -7013,3 +7013,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Az `impactshop-notes` repo megkapta a helyi N1 runtime starter minimumot: `scripts/worktree-task-start.sh` es `scripts/worktree-readiness-check.sh`.
 - A szelet szandekosan szuk maradt: markerfajl a worktree git metadatajaba, `--resume` reuse, es rovid readiness contract a helyi doc-sync/governance anchorokra.
 - A teljes drift/coordination/reporting enforcement nincs ebben a korben behozva; a docs map ezt most mar explicit `partial` allapotkent jeloli.
+## 2026-06-29 17:05 CEST - local worktree coordination snapshot minimum
+- Az `impactshop-notes` helyi runtime starter lane most mar kulon koordinacios snapshot helperrel is rendelkezik: `scripts/worktree-coordination-sync.sh`.
+- A `scripts/worktree-task-start.sh` marker bootstrap utan kotelezoen meghivja ezt a helper-t, igy a workspace `.worktrees/ACTIVE_WORKTREE.md` es `.worktrees/ACTIVE_WORKTREES.md` frissul.
+- A snapshot mar toleralja a `git worktree list`-ben maradt stale/prunable sibling worktree-ket: `invalid_worktree: yes` jelzest ir, es `summary_invalid_worktrees` osszesitest ad, de nem bukik el miattuk a fresh starter lane.

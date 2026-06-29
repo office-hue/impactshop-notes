@@ -958,3 +958,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - Uj helyi runtime starter minimum kerult be a repo-ba: `scripts/worktree-task-start.sh` es `scripts/worktree-readiness-check.sh`.
 - A lane a mar meglevo `scripts/start-feature-worktree.sh` belépőre epul, es ehhez ad marker + readiness szerzodest a helyi governance/doc-sync truth korul.
 - A helyi canonical doc-sync map (`docs/impactshop-notes-doc-sync-map-2026-06-23.md`) `RegistryStatus: partial` allapotra valtott, mert a runtime minimum mar bent van, de a magasabb szintu drift/coordination/reporting retegek meg nem.
+## 2026-06-29T15:05:00Z - worktree coordination snapshot minimum
+- A helyi `impactshop-notes` runtime starter lane mar nem csak marker bootstrapot, hanem kulon koordinacios snapshot frissitest is tartalmaz.
+- Uj helper: `scripts/worktree-coordination-sync.sh`.
+- A helper a workspace `.worktrees/ACTIVE_WORKTREE.md` es `.worktrees/ACTIVE_WORKTREES.md` snapshotot frissiti, es a stale/prunable sibling worktree-ket `invalid_worktree: yes` jelzessel skipeli ahelyett, hogy a teljes starter lane-t eldobna.
