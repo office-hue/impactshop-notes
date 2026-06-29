@@ -962,3 +962,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A helyi `impactshop-notes` runtime starter lane mar nem csak marker bootstrapot, hanem kulon koordinacios snapshot frissitest is tartalmaz.
 - Uj helper: `scripts/worktree-coordination-sync.sh`.
 - A helper a workspace `.worktrees/ACTIVE_WORKTREE.md` es `.worktrees/ACTIVE_WORKTREES.md` snapshotot frissiti, es a stale/prunable sibling worktree-ket `invalid_worktree: yes` jelzessel skipeli ahelyett, hogy a teljes starter lane-t eldobna.
+## 2026-06-29T17:25:00+0200 - VB2026 NGO catalog full-filter hydration truth applied
+- A `szervezetek/` source-oldali katalogus mar nem csak az elso `per_page=48` oldalbol epiti a szuro-opciokat es a latszo kartyalistat.
+- A jelenlegi JS a teljes paginalt aktiv katalogust tolti be, igy a `Minden település` dropdown nem hamis, reszhalmazos varoslistat mutat.
+- Ugyanebben a korben rogzitve lett a display truth is: a `Top 10` target/shell oldalon nem csonkithato tovabb 5 elemre.

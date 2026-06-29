@@ -1099,6 +1099,7 @@ Default szabaly:
 1. publikus usernezetben `active_only=1` az alapertelmezett
 2. `featured_only=0` az alapertelmezett
 3. inaktiv rekord csak explicit archiv/diagnosztikai nezetben jelenhet meg
+4. a katalogusoldali `település`, `kategória` es `jogállás` filterek opciohalmaza nem kepezheto csak az elso `per_page` oldal reszhalmazabol; a UI truth szerint ezt a teljes aktiv, publikusan listazhato kampanyhalmazbol kell osszeallitani
 
 Response:
 
@@ -1176,6 +1177,7 @@ Publikalasi szabaly:
 
 1. csak olyan NGO jelenhet meg itt, amely:
    - `is_active=1`
+2. a `Top 10` megjelenites a source lane-en legfeljebb 10 elemet adhat vissza, es a target oldali UI ezt nem csonkithatja tovabb kisebb hard limittel
    - `allow_public_listing=1`
    - `is_featured=1`
    - `campaign_state='active'`

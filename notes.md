@@ -1,3 +1,8 @@
+## 2026-06-29 17:35 CEST - VB2026 NGO catalog full filter hydration + top10 truth
+- A `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` source lane mar nem csak az elso `per_page=48` oldalbol epiti a `település`, `kategória` es `jogállás` szuro-opciokat, hanem a teljes aktiv, publikus VB2026 katalogushalmazt behidralja.
+- Ezzel a `Minden település` dropdown es a katalogusracs ugyanabból a teljes NGO-truthból el, nem hamis, elso-oldalas reszhalmazbol.
+- Rogzitve lett az is, hogy a `Top 10` source truthot a target oldal nem csonkithatja tovabb 5 elemre.
+
 ## 2026-06-17 12:20 CEST - env/auth/runtime local adapter minimum
 - Az `impactshop-notes` repo kulon helyi env/auth/runtime adapter anchorat is megkapta: `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`.
 - A dokumentum a meglevo protected truthra kot: `docs/impactshop-guard-config.json`, `docs/impactshop-protected-files.json`, `scripts/git-health-check.sh`, `scripts/safe-repo-audit.sh`, `bin/impactshop-guard-deploy.sh`, valamint a profile-return/bridge protected MU-plugin lane.
