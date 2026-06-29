@@ -57,3 +57,13 @@ Reviewer-visible minimum mezok:
 3. `task_start_decision_path`
 4. `task_start_decision_doc_sync_*`
 5. blokkolo okok vagy warningok, ha vannak
+
+## Kapcsolat a continuity guarddal
+
+A koordinacios snapshot most mar nem csak informacios output.
+
+Az N4 continuity/guard szeletben a `scripts/worktree-continuity-guard.sh` push elott explicit azt is ellenorzi, hogy:
+
+1. az aktiv snapshot a jelenlegi branch/path truthot mutassa;
+2. a decision evidence valoban bekerult a workspace riportokba;
+3. a task-start dontes ne maradjon csak lokalis JSON-sziget.

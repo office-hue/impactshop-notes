@@ -183,6 +183,7 @@ fi
 SAFE_AUDIT_SCRIPT=""
 PROTECTED_TOUCH_SCRIPT=""
 COMMIT_LANE_SCRIPT=""
+WORKTREE_CONTINUITY_GUARD=""
 search_dir="\$REPO_ROOT"
 for _ in 1 2 3 4 5 6; do
   candidate="\$search_dir/scripts/safe-repo-audit.sh"
@@ -197,7 +198,11 @@ for _ in 1 2 3 4 5 6; do
   if [[ -x "\$commit_lane_candidate" ]]; then
     COMMIT_LANE_SCRIPT="\$commit_lane_candidate"
   fi
-  if [[ -n "\$SAFE_AUDIT_SCRIPT" && -n "\$PROTECTED_TOUCH_SCRIPT" && -n "\$COMMIT_LANE_SCRIPT" ]]; then
+  continuity_candidate="\$search_dir/scripts/worktree-continuity-guard.sh"
+  if [[ -x "\$continuity_candidate" ]]; then
+    WORKTREE_CONTINUITY_GUARD="\$continuity_candidate"
+  fi
+  if [[ -n "\$SAFE_AUDIT_SCRIPT" && -n "\$PROTECTED_TOUCH_SCRIPT" && -n "\$COMMIT_LANE_SCRIPT" && -n "\$WORKTREE_CONTINUITY_GUARD" ]]; then
     break
   fi
   parent="\$(cd "\$search_dir/.." && pwd)"
@@ -218,6 +223,10 @@ fi
 
 if [[ -n "\$COMMIT_LANE_SCRIPT" ]]; then
   "\${COMMIT_LANE_SCRIPT}" --mode push
+fi
+
+if [[ -n "\$WORKTREE_CONTINUITY_GUARD" ]]; then
+  "\${WORKTREE_CONTINUITY_GUARD}" --mode push
 fi
 
 AI_AGENT_REPO="\$(resolve_ai_agent_repo "\$REPO_ROOT" 2>/dev/null || true)"
