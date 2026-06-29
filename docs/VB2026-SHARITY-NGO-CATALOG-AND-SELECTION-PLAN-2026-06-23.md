@@ -4,6 +4,17 @@ Statusz: kanonikus tervdoksi
 Scope: a `sharity.hu` domainen megjeleno NGO-katalogus, a VB2026-hoz kapcsolodo NGO-valasztasi modell, a kiemelt NGO-lista, a felhasznaloi sajat NGO-allapot, valamint a `vb-prod` es a Sharity source oldal kozotti kapcsolat.  
 Implementacios hatar: terv, UX, adatmodell, sync- es integracios szabalyok. Cegjelzo-enrichment ebben a verzoban tudatosan nincs reszletezve.
 
+## 0.1. Implementacios megjegyzes — featured truth source
+
+A VB2026 `kiemelt` / `TOP 10` truth implementacios szinten kulonvalt az NGO-card dataset display-rank logikajatol.
+
+Kanonikus szabaly:
+1. a `featured` rangforras a challenge tally slug+rangsor truth
+2. a katalogus-kartya display adatai johetnek az NGO-card datasetbol vagy a CSV-bol
+3. a featured lista nem veszhet el attol, hogy az NGO-card dataset egy adott NGO-t nem tartalmaz vagy `rank=0`-val hoz
+
+Ez azert lett explicit rogzitve, mert a valos runtime-ban eloallt az az eset, hogy a challenge top 10 source 10 NGO-t tartalmazott, mikozben a katalogus featured endpoint csak 5-ot adott vissza a kartya-dataset partial driftje miatt.
+
 Kapcsolodo forrasok:
 - `https://app.sharity.hu/impact-challenge/`
 - `https://app.sharity.hu/ngo-guides/impact-challenge/`

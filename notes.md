@@ -1,3 +1,11 @@
+## 2026-06-29 18:10 CEST - VB2026 NGO featured truth leválasztva az NGO-card rankről
+- A `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` featured lane-jében a `TOP 10` truth mar nem az NGO-card dataset `rank` mezőjéből származik, hanem közvetlenül az Impact Challenge tally slug+rangsor forrásából.
+- Ennek oka, hogy az NGO-card datasetben tobb valós Top 10-es NGO vagy teljesen hianyzott, vagy `rank=0` maradt, mikozben a challenge tallyban helyesen benne volt.
+- A katalogus sync most mar kulon kezeli:
+  - `featured truth` = challenge tally top 10
+  - `card/display truth` = NGO-card dataset vagy CSV sor
+- Ezzel a `featured-ngos` endpoint es a VB2026 Sharity nezet mar nem veszít el kiemelt NGO-kat csak azert, mert a kartya-dataset hiányos.
+
 ## 2026-06-29 17:35 CEST - VB2026 NGO catalog full filter hydration + top10 truth
 - A `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` source lane mar nem csak az elso `per_page=48` oldalbol epiti a `település`, `kategória` es `jogállás` szuro-opciokat, hanem a teljes aktiv, publikus VB2026 katalogushalmazt behidralja.
 - Ezzel a `Minden település` dropdown es a katalogusracs ugyanabból a teljes NGO-truthból el, nem hamis, elso-oldalas reszhalmazbol.
