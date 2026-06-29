@@ -82,6 +82,7 @@ require_file "scripts/git-health-check.sh" "missing-git-health-check"
 require_file "scripts/start-feature-worktree.sh" "missing-start-feature-worktree"
 require_file "scripts/worktree-task-start-guard.sh" "missing-worktree-task-start-guard"
 require_file "scripts/worktree-coordination-sync.sh" "missing-worktree-coordination-sync"
+require_file "scripts/worktree-continuity-guard.sh" "missing-worktree-continuity-guard"
 require_file "notes.md" "missing-notes"
 require_file "system-status-snapshot.md" "missing-system-status-snapshot"
 
@@ -98,6 +99,12 @@ fi
 warn_if_missing "${HOOK_PRE_PUSH:-}" "missing-pre-push-hook"
 warn_if_missing "${HOOK_PRE_COMMIT:-}" "missing-pre-commit-hook"
 warn_cmd "rg" "missing-rg"
+
+if [[ -f "${HOOK_PRE_PUSH:-/nonexistent}" ]] && command -v rg >/dev/null 2>&1; then
+  if ! rg -q -- 'worktree-continuity-guard\.sh|WORKTREE_CONTINUITY_GUARD' "${HOOK_PRE_PUSH}"; then
+    WARNINGS+=("missing-worktree-continuity-pre-push-binding")
+  fi
+fi
 
 if ((${#REASONS[@]})); then
   STATUS="blocked"
