@@ -1212,6 +1212,73 @@ function impactshop_vb2026_parse_campaign_count(string $value): int
     return 0;
 }
 
+function impactshop_vb2026_collect_featured_truth(): array
+{
+    $quarterKey = function_exists('impactshop_ads_get_active_quarter')
+        ? sanitize_text_field((string) impactshop_ads_get_active_quarter())
+        : '';
+
+    if (function_exists('impactshop_ads_calculate_tally_with_info')) {
+        $rows = impactshop_ads_calculate_tally_with_info($quarterKey !== '' ? $quarterKey : null);
+    } elseif (function_exists('impactshop_ads_calculate_tally')) {
+        $rows = impactshop_ads_calculate_tally($quarterKey !== '' ? $quarterKey : null);
+    } else {
+        $rows = [];
+    }
+
+    if (!is_array($rows) || $rows === []) {
+        return ['by_slug' => [], 'by_name' => []];
+    }
+
+    $bySlug = [];
+    $byName = [];
+    $rank = 1;
+
+    foreach ($rows as $row) {
+        $votes = (int) ($row['votes'] ?? 0);
+        if ($votes <= 0) {
+            continue;
+        }
+
+        $slug = sanitize_title((string) ($row['ngo_slug'] ?? ''));
+        if ($slug === '') {
+            continue;
+        }
+        if (function_exists('impactshop_canonical_ngo_slug')) {
+            $slug = sanitize_title((string) impactshop_canonical_ngo_slug($slug));
+        }
+        if ($slug === '') {
+            continue;
+        }
+
+        $name = trim((string) ($row['ngo_name'] ?? $row['ngo_slug'] ?? ''));
+        $entry = [
+            'slug' => $slug,
+            'rank' => $rank,
+            'name' => $name,
+        ];
+
+        if (!isset($bySlug[$slug])) {
+            $bySlug[$slug] = $entry;
+        }
+
+        $nameKey = impactshop_vb2026_name_key($name);
+        if ($nameKey !== '' && !isset($byName[$nameKey])) {
+            $byName[$nameKey] = $entry;
+        }
+
+        $rank += 1;
+        if ($rank > 10) {
+            break;
+        }
+    }
+
+    return [
+        'by_slug' => $bySlug,
+        'by_name' => $byName,
+    ];
+}
+
 function impactshop_vb2026_truncate(?string $value, int $limit = 320): ?string
 {
     $value = trim((string) $value);
@@ -1333,16 +1400,25 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems)
     $now = current_time('mysql', true);
 
     $cardsByName = [];
+    $cardsBySlug = [];
     foreach ($datasetItems as $slug => $item) {
         if (!is_array($item)) {
             continue;
         }
         $item['slug'] = $item['slug'] ?? $slug;
+        $slugKey = sanitize_title((string) ($item['slug'] ?? $slug));
+        if ($slugKey !== '' && !isset($cardsBySlug[$slugKey])) {
+            $cardsBySlug[$slugKey] = $item;
+        }
         $key = impactshop_vb2026_name_key((string) ($item['name'] ?? $slug));
         if ($key !== '' && !isset($cardsByName[$key])) {
             $cardsByName[$key] = $item;
         }
     }
+
+    $featuredTruth = impactshop_vb2026_collect_featured_truth();
+    $featuredBySlug = is_array($featuredTruth['by_slug'] ?? null) ? $featuredTruth['by_slug'] : [];
+    $featuredByName = is_array($featuredTruth['by_name'] ?? null) ? $featuredTruth['by_name'] : [];
 
     foreach ($rows as $row) {
         $ngoId = absint($row['Azonosító'] ?? 0);
@@ -1351,8 +1427,25 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems)
             continue;
         }
 
-        $card = $cardsByName[impactshop_vb2026_name_key($name)] ?? null;
-        $slug = sanitize_title((string) ($card['slug'] ?? $name));
+        $nameKey = impactshop_vb2026_name_key($name);
+        $card = $cardsByName[$nameKey] ?? null;
+        $featuredEntry = $featuredByName[$nameKey] ?? null;
+
+        if (!$featuredEntry && is_array($card)) {
+            $cardSlug = sanitize_title((string) ($card['slug'] ?? ''));
+            if ($cardSlug !== '' && isset($featuredBySlug[$cardSlug])) {
+                $featuredEntry = $featuredBySlug[$cardSlug];
+            }
+        }
+
+        if (!is_array($card) && is_array($featuredEntry)) {
+            $featuredSlug = sanitize_title((string) ($featuredEntry['slug'] ?? ''));
+            if ($featuredSlug !== '' && isset($cardsBySlug[$featuredSlug])) {
+                $card = $cardsBySlug[$featuredSlug];
+            }
+        }
+
+        $slug = sanitize_title((string) ($featuredEntry['slug'] ?? ($card['slug'] ?? $name)));
         if ($slug === '') {
             continue;
         }
@@ -1364,7 +1457,9 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems)
         $coverUrl = impactshop_vb2026_safe_url($card['og_image'] ?? '') ?: impactshop_vb2026_safe_url($row['Kép'] ?? '');
         $shareUrl = impactshop_vb2026_safe_url($card['share_url'] ?? '');
         $detailsUrl = impactshop_vb2026_safe_url($card['cta_url'] ?? '') ?: impactshop_vb2026_safe_url($row['Adomany.sharity.hu link'] ?? '');
-        $slugSource = is_array($card) ? 'ngo_card' : 'fallback_name';
+        $slugSource = is_array($featuredEntry)
+            ? 'vb2026_featured_truth'
+            : (is_array($card) ? 'ngo_card' : 'fallback_name');
         $createdAt = impactshop_vb2026_parse_hu_datetime((string) ($row['Létrehozás dátuma'] ?? ''));
         $hash = hash('sha256', wp_json_encode([
             'ngo_id' => $ngoId,
@@ -1435,8 +1530,9 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems)
             }
         }
 
-        $featured = is_array($card) && isset($card['rank']) && (int) $card['rank'] > 0 && (int) $card['rank'] <= 10 ? 1 : 0;
-        $priority = $featured ? max(1, (int) ($card['rank'] ?? 1000)) : 1000 + $ngoId;
+        $featuredRank = is_array($featuredEntry) ? (int) ($featuredEntry['rank'] ?? 0) : 0;
+        $featured = ($featuredRank > 0 && $featuredRank <= 10) ? 1 : 0;
+        $priority = $featured ? max(1, $featuredRank) : 1000 + $ngoId;
         $badge = $featured ? 'TOP 10' : null;
         $flagExists = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$flagsTable} WHERE campaign_key = %s AND sharity_ngo_id = %d LIMIT 1",
