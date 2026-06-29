@@ -752,6 +752,21 @@ function impactshop_vb2026_catalog_render_page(): string
         catalog: [],
       };
 
+      function mergeCatalogItems(pages) {
+        const ordered = [];
+        const seen = new Set();
+        pages.forEach((items) => {
+          (Array.isArray(items) ? items : []).forEach((item) => {
+            const ngoId = Number(item?.ngo_id || 0);
+            const key = ngoId > 0 ? `ngo:${ngoId}` : `slug:${item?.slug || ''}:${item?.name || ''}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            ordered.push(item);
+          });
+        });
+        return ordered;
+      }
+
       function getCurrentReturnTarget() {
         try {
           const url = new URL(window.location.href);
@@ -921,9 +936,31 @@ function impactshop_vb2026_catalog_render_page(): string
         renderFeatured();
       }
 
+      async function loadCatalogPage(page) {
+        return fetchJson(`${restBase}/ngo-catalog?campaign=${encodeURIComponent(campaign)}&active_only=1&per_page=48&page=${encodeURIComponent(page)}`);
+      }
+
       async function loadCatalog() {
-        const payload = await fetchJson(`${restBase}/ngo-catalog?campaign=${encodeURIComponent(campaign)}&active_only=1&per_page=48`);
-        state.catalog = Array.isArray(payload.results) ? payload.results : [];
+        const firstPayload = await loadCatalogPage(1);
+        const firstPageItems = Array.isArray(firstPayload.results) ? firstPayload.results : [];
+        const totalPages = Math.max(1, Number(firstPayload?.pagination?.total_pages || 1));
+
+        state.catalog = firstPageItems;
+        hydrateFilterOptions(state.catalog);
+        renderCatalog();
+
+        if (totalPages <= 1) {
+          return;
+        }
+
+        const laterPayloads = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) => loadCatalogPage(index + 2)),
+        );
+        const allItems = mergeCatalogItems([
+          firstPageItems,
+          ...laterPayloads.map((payload) => (Array.isArray(payload.results) ? payload.results : [])),
+        ]);
+        state.catalog = allItems;
         hydrateFilterOptions(state.catalog);
         renderCatalog();
       }
