@@ -18,7 +18,7 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 ## 2026-06-29 Runtime N2 note
 
 - A helyi runtime starter lane most mar kulon task-start decision/helper reteget is kapott: `scripts/worktree-task-start-guard.sh`.
-- A starter lane a marker + coordination + readiness utan ezt automatikusan lefuttatja, es per-worktree `worktree-task-start-decision.json` artifactot ir a git metadata ala.
+- A starter lane a marker + readiness + task-start guard utan frissiti a koordinacios snapshotot, igy a per-worktree `worktree-task-start-decision.json` artifact nem csak letrejön, hanem a workspace-szintu riportba is visszaemelkedik.
 - Ez meg mindig nem teljes hook-level continuity enforcement, de mar reviewer-visible evidence-et ad a doc-sync label/repo/path scope-rol es a blocked/degraded/allowed dontesrol.
 
 ## Cel
