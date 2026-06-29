@@ -15,6 +15,12 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 - Ez tudatosan N1 szelet: marker + readiness + local starter reuse, de meg nem teljes drift/coordination enforcement.
 - A helyi governance truth innentol nem csak docs entrypointot, hanem egy rovid, repo-helyi worktree-start belépőt is tartalmaz.
 
+## 2026-06-29 Runtime N2 note
+
+- A helyi runtime starter lane most mar kulon task-start decision/helper reteget is kapott: `scripts/worktree-task-start-guard.sh`.
+- A starter lane a marker + coordination + readiness utan ezt automatikusan lefuttatja, es per-worktree `worktree-task-start-decision.json` artifactot ir a git metadata ala.
+- Ez meg mindig nem teljes hook-level continuity enforcement, de mar reviewer-visible evidence-et ad a doc-sync label/repo/path scope-rol es a blocked/degraded/allowed dontesrol.
+
 ## Cel
 
 Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubkent osszefogja azokat a mar ervenyes kanonikus anchorokat, amelyek menten az `impactshop-notes` repo-ban a munka, review, continuity es protected-lane valtozas tortenik.
