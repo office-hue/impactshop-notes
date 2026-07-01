@@ -1,3 +1,8 @@
+## 2026-07-01 22:36 CEST - repo-root doc-sync hub + local canonical map alignment
+- A repo gyokerebol is elerheto canonical hub most mar kulon fajlban el: `DOC-SYNC-HUB.md`.
+- A helyi canonical doc-sync map vissza lett kotve ehhez a root hubhoz, igy a governance / worktree / continuity entrypointok nem csak docs-listaban, hanem rootrol is feloldhatoak.
+- Ez a szelet docs-only, additiv es nem nyult protected runtimehoz.
+
 ## 2026-07-01 07:25 CEST - Impact Challenge ideiglenes pause-lock + fagyasztott vegeredmeny
 - A `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` most mar nem csak a floating tab tiltast es fallback action bart hordozza, hanem celzott maintenance lockot is az ujraaktivodott challenge fail-closed visszafogasara.
 - A publikus route designos pause bannert kapott, kattinthato `https://factlens.eu/vb2026/` atvezetessel, mikozben a helyben vegezheto aktivitasi es szavazasi akciok befagyasztva maradnak.

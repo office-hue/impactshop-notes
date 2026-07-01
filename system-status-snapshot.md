@@ -1,3 +1,8 @@
+## 2026-07-01T22:36:00+0200 - repo-root doc-sync hub added
+- A repo gyokerbol is elerheto canonical doc-sync hub most mar kulon fajlban el: `DOC-SYNC-HUB.md`.
+- A local canonical map vissza lett kotve ehhez a root hubhoz, igy a governance / worktree / continuity entrypointok rootbol is feloldhatoak.
+- Ez a rendezés docs-only, additiv szelet volt; protected runtime vagy inventory nem valtozott.
+
 ## 2026-07-01T07:25:00+0200 - Impact Challenge pause-lock + frozen final standings
 - A `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` protected runtime ideiglenes maintenance/pause-lock funkcionalitast kapott az ujraaktivodott Impact Challenge fail-closed visszafogasara.
 - A publikus `/impact-challenge/` route most designos maintenance bannert injektal, kattinthato `https://factlens.eu/vb2026/` atvezetessel, mikozben az aktivitasi gombok es kapcsolodo CTA-k vizualisan es technikailag is fagyasztottak.

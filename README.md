@@ -4,6 +4,7 @@ Cél: ImpactShop/WordPress integráció, akciós termékek linkjeinek javítása
 
 ## Governance Start Here
 
+- Repo root canonical doc-sync hub: `DOC-SYNC-HUB.md`
 - Helyi canonical doc-sync map: `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
 - Helyi kanonikus governance-hub: `docs/impactshop-governance-system-plan-2026-06-16.md`
 - Repo munkaszabályok: `AGENTS.md`

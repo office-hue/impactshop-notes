@@ -4,8 +4,9 @@ Datum: 2026-06-23
 Statusz: canonical local doc-sync map
 RepoId: `impactshop-notes`
 CanonicalMapPath: `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
-RootHubPath: `../ai-agent/DOC-SYNC-HUB.md`
-OwnerRepo: `ai-agent`
+RootHubPath: `DOC-SYNC-HUB.md`
+CrossRepoHubPath: `../ai-agent/DOC-SYNC-HUB.md`
+OwnerRepo: `impactshop-notes`
 LastVerifiedAt: `2026-07-01T05:25:00Z`
 RegistryStatus: `partial`
 
@@ -19,7 +20,8 @@ A celja, hogy egy helyrol lehessen feloldani:
 2. a VB2026 / bridge / profile-return lane doku-truthjat;
 3. a helyi env/auth/runtime adaptert;
 4. a core public baseline es deploy-path anchorokat;
-5. a kotelezo continuity celpontokat.
+5. a kotelezo continuity celpontokat;
+6. a repo-root doc-sync hubot, ha valaki gyokerbol indulna.
 
 ## Repo Scope
 
@@ -78,6 +80,7 @@ Felteteles continuity target:
 
 Innen a kovetkezo legkisebb hasznos szelet:
 
-1. a merge utani kozponti `ai-agent` writeback (`N5`), hogy az N4 continuity truth is bekeruljon az all-repo rollout matrixba;
-2. kulon local child map a protected bridge/VB2026 lane-re, ha a drift-guard mar gepi topic-level feloldast is kap;
-3. magasabb continuity/default-activation follow-up, ha a coordination riportalas mar stabil.
+1. a repo-root `DOC-SYNC-HUB.md` karbantartasa, ha uj local map vagy helper jelenik meg;
+2. a merge utani kozponti `ai-agent` writeback (`N5`), hogy az N4 continuity truth is bekeruljon az all-repo rollout matrixba;
+3. kulon local child map a protected bridge/VB2026 lane-re, ha a drift-guard mar gepi topic-level feloldast is kap;
+4. magasabb continuity/default-activation follow-up, ha a coordination riportalas mar stabil.
