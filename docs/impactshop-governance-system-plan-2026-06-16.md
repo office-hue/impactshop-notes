@@ -9,6 +9,11 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 - A VB2026 NGO katalogus Phase I source lane (`impactshop-vb2026-ngo-catalog.php`) additiv, de mivel uj MU-plugin es uj publikus/selection REST perem, a docs continuity minimum itt nem all meg a feature-plan es a bastion naplo frissitesenel.
 - Ha a Phase I source lanehez tartozo guard/governance evidence valtozik, a `docs/bastion-guard-status.md` es ez a helyi governance hub egyutt frissitendo, hogy a local push gate ugyanazt a truthot lassa, mint a reviewer.
 
+## 2026-07-01 Root doc-sync hub note
+
+- A repo most mar kapott egy gyokerbol is elerheto canonical hubot: `DOC-SYNC-HUB.md`.
+- Ez a hub a helyi doc-sync mapet, a worktree/continuity minimumot es a governance entrypointokat egy helyre rendezi, hogy a rootbol indulva is feloldhato legyen az aktualis temaallapot.
+
 ## 2026-06-24 Runtime starter note
 
 - A repo megkapta a helyi runtime starter minimumot is: `scripts/worktree-task-start.sh` es `scripts/worktree-readiness-check.sh`.
@@ -39,35 +44,37 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
 
 ## Canonical Anchors
 
-1. `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
-1. `AGENTS.md`
+1. `DOC-SYNC-HUB.md`
+2. `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
+3. `AGENTS.md`
    - a repo-szintu munkaszabalyok, canonical policy-sorrend, continuity es protected-file minimumok
-2. `docs/pr-policy.md`
+4. `docs/pr-policy.md`
    - branch/worktree fegyelem, PR/merge/deploy kapuk, protected-file es review szabalyok
-3. `PR-EXIT-CHECKLIST.md`
+5. `PR-EXIT-CHECKLIST.md`
    - merge elotti kotelezo exit-feltetelek rovid ellenorzolistaja
-4. `docs/ai-assistant-canonical-policy.md`
+6. `docs/ai-assistant-canonical-policy.md`
    - a helyi AI-asszisztens es protected/perimeter policy reszletesebb referenciapontja
-5. `docs/impact-challenge-canonical-baseline.md`
+7. `docs/impact-challenge-canonical-baseline.md`
    - az Impact Challenge protected es regresszio-ervenyes referenciaallapota
-6. `system-status-snapshot.md`
+8. `system-status-snapshot.md`
    - a repo aktualis mukodesi/allapotvaltozasi naploja
-7. `notes.md`
+9. `notes.md`
    - session-szintu folyamatos dontes-, kockazat- es teendolog
-8. `docs/bastion-guard-status.md`
+10. `docs/bastion-guard-status.md`
    - protected/perimeter es guard-bovitesek idobelyeges evidencianaploja
-9. `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`
+11. `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md`
    - a local env/auth/runtime guard adapter konkret helyi szerzodese
 
 ## Recommended Reading Order
 
-1. `AGENTS.md`
-2. `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
-3. `docs/pr-policy.md`
-4. `PR-EXIT-CHECKLIST.md`
-5. az aktualis feladathoz kapcsolodo protected vagy baseline dokumentum
-6. `system-status-snapshot.md`
-7. `notes.md`
+1. `DOC-SYNC-HUB.md`
+2. `AGENTS.md`
+3. `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
+4. `docs/pr-policy.md`
+5. `PR-EXIT-CHECKLIST.md`
+6. az aktualis feladathoz kapcsolodo protected vagy baseline dokumentum
+7. `system-status-snapshot.md`
+8. `notes.md`
 
 ## Operating Model
 

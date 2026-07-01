@@ -1,6 +1,7 @@
 # Docs index
 
 ## Governance Entry Point
+- `DOC-SYNC-HUB.md`
 - `impactshop-notes-doc-sync-map-2026-06-23.md`
 - `impactshop-governance-system-plan-2026-06-16.md`
 - `impactshop-governance-hub-coherence-audit-2026-06-16.md`
