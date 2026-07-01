@@ -6,7 +6,7 @@ RepoId: `impactshop-notes`
 CanonicalMapPath: `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
 RootHubPath: `../ai-agent/DOC-SYNC-HUB.md`
 OwnerRepo: `ai-agent`
-LastVerifiedAt: `2026-06-29T20:10:00Z`
+LastVerifiedAt: `2026-07-01T05:25:00Z`
 RegistryStatus: `partial`
 
 ## Cel
@@ -52,7 +52,7 @@ Ez a helyi map a kozos minimum statuszokat hasznalja:
 | Env / auth / runtime protected adapter | `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md` | `docs/impactshop-guard-config.json`, `docs/impactshop-protected-files.json`, `bin/impactshop-guard-deploy.sh` | protected change recordok a `docs/protected-change-records/` alatt | `scripts/safe-repo-audit.sh --strict --mode push`, protected inventory jelenlet | `notes.md`, `system-status-snapshot.md` | `merged` | A repo egyik legerzekenyebb lane-je; fail-closed truth mar kulon adapteren all. |
 | Protected bridge / profile-return lane | `docs/protected-change-records/2026-06-14-vb2026-profile-return-session-carry.md` | `wp-content/mu-plugins/impactshop-identity-panel.php`, `wp-content/mu-plugins/impactshop-identity-panel.js`, `wp-content/mu-plugins/impactshop-factlens-identity-bridge.php` | protected change recordok es local guard config | protected inventory + deploy-path evidence | `notes.md`, `system-status-snapshot.md` | `partial` | Kulonosen drift-erzekeny lane, mert a docs truth, a WP runtime es a protected inventory kulon tud szetcsuszni. |
 | VB2026 NGO catalog source lane | `docs/VB2026-SHARITY-NGO-CATALOG-AND-SELECTION-PLAN-2026-06-23.md` | `impactshop-vb2026-ngo-catalog.php`, a kapcsolodo source selection REST lane-ek | `docs/VB2026-SHARITY-NGO-CATALOG-PHASE1-IMPLEMENTATION-PACK-2026-06-23.md` | local protected/runtime evidence a source lane-re | `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `partial` | Friss lane, amelynel a docs continuity minimum mar ki lett mondva a governance hubban is. |
-| Core public baseline / challenge lane | `docs/public-pages-canonical-baseline.md` | public page templatek, deploy path, guarded public files | `docs/impactshop-production-deploy-path-audit-2026-04-20.md`, `docs/impact-challenge-canonical-baseline.md` | deploy-path audit + protected inventory evidence | `notes.md`, `system-status-snapshot.md` | `partial` | A public baseline es a protected deploy path egyutt ad helyi runtime truthot. |
+| Core public baseline / challenge lane | `docs/public-pages-canonical-baseline.md` | public page templatek, deploy path, guarded public files, `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` maintenance override lane | `docs/impactshop-production-deploy-path-audit-2026-04-20.md`, `docs/impact-challenge-canonical-baseline.md`, `docs/protected-change-records/2026-07-01-impact-challenge-pause-lock.md` | deploy-path audit + protected inventory evidence + live hotfix rollback artefaktok | `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `partial` | A public baseline es a protected deploy path egyutt ad helyi runtime truthot; 2026-07-01-tol ide tartozik az atmeneti Impact Challenge pause-lock/frozen-standings lane is, amely a publikus routeot fail-closed maintenance allapottal zarja vissza. |
 | Partner / integration documentation lane | `docs/partner-master-checklist.md` ha letezik, kulonben `docs/README.md` partner szekcio | partner-specifikus docs, `tools/partner-*`, `docs/api/README.md` | partner release / security / webhook checklist dokumentumok | partner QA tooling es release checklist | `notes.md` | `docs-only` | Nagy doku-tomb, de jelenleg nincs kulon egyhelyes local index a canonical mapen kivul. |
 
 ## Continuity Targets
@@ -72,6 +72,7 @@ Felteteles continuity target:
 2. A helyi governance hub mar rendezett belepesi pont volt, de a konkret tematerek tovabbra is tobb dokumentum kozt voltak szetosztva.
 3. A cross-repo root hub az `ai-agent` oldalon el, ezert a helyi mapnek explicit modon vissza kell mutatnia arra.
 4. A partner/integration doku nagy mennyisegu, de jelenleg inkabb docs-tomb, mint egyhelyes canonical truth.
+5. A protected Challenge maintenance override kulonosen drift-erzekeny, mert a publikus route-copy, a REST freeze truth, a donation-pool quarter feloldas es a live rollback evidencia egyutt ad koherens allapotot.
 
 ## Natural Next Step
 

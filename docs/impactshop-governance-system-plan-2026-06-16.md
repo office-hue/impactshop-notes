@@ -27,6 +27,12 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 - A pre-push hook es a `git wpush` wrapper most mar nem csak altalanos auditot futtat, hanem explicit ellenorzi a marker + decision artifact + koordinacios snapshot paritast is.
 - Ezzel a local truth mar nem allhat meg az N3 snapshot lathatosagnal; push elott kotelezo continuity evidence lett belole.
 
+## 2026-07-01 Impact Challenge pause-lock note
+
+- A protected `impact-challenge` publikus runtime atmeneti pause-lock maintenance allapotot kapott a `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` lane-ben.
+- Ennél a helyi governance truth nem allhat meg a protected change recordnal: a publikus route-copy, a REST freeze truth, a donation-pool quarter feloldas, a rollback artefaktok es a local doc-sync map ugyanabban a change sorban kovetendo.
+- Emiatt az ilyen maintenance override szeleteknel a minimum continuity anchor keszlet: `docs/protected-change-records/*.md`, `docs/impactshop-notes-doc-sync-map-2026-06-23.md`, `docs/bastion-guard-status.md`, `system-status-snapshot.md`, `notes.md`.
+
 ## Cel
 
 Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubkent osszefogja azokat a mar ervenyes kanonikus anchorokat, amelyek menten az `impactshop-notes` repo-ban a munka, review, continuity es protected-lane valtozas tortenik.

@@ -1,3 +1,11 @@
+## 2026-07-01 07:25 CEST - Impact Challenge ideiglenes pause-lock + fagyasztott vegeredmeny
+- A `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` most mar nem csak a floating tab tiltast es fallback action bart hordozza, hanem celzott maintenance lockot is az ujraaktivodott challenge fail-closed visszafogasara.
+- A publikus route designos pause bannert kapott, kattinthato `https://factlens.eu/vb2026/` atvezetessel, mikozben a helyben vegezheto aktivitasi es szavazasi akciok befagyasztva maradnak.
+- A napi szavazati truth publikus oldalon es REST statuszban `0`-ra van allitva.
+- A publikus rangsor es adomanyelosztasi truth a `2026-06-30 23:59:59` cutoff szerinti vegallast mutatja, nem az azota ujranyilt allapotot.
+- A follow-up fix kulon fontos volt: a donation pool es a tally quarter truth mar a cutoffbol levezetett quarter keyre (`2026Q1`) szamol, igy productionon a publikus vegeredmeny `donation_pool=503000` es `total_votes=22097761`.
+- Live deploy mar kiment; rollback artefaktok: `.codex/reports/hotfix-sync/rollback_20260701T051021Z.sh`, `.codex/reports/hotfix-sync/rollback_20260701T051354Z.sh`.
+
 ## 2026-06-29 18:10 CEST - VB2026 NGO featured truth leválasztva az NGO-card rankről
 - A `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php` featured lane-jében a `TOP 10` truth mar nem az NGO-card dataset `rank` mezőjéből származik, hanem közvetlenül az Impact Challenge tally slug+rangsor forrásából.
 - Ennek oka, hogy az NGO-card datasetben tobb valós Top 10-es NGO vagy teljesen hianyzott, vagy `rank=0` maradt, mikozben a challenge tallyban helyesen benne volt.
