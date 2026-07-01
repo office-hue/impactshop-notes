@@ -1,3 +1,10 @@
+## 2026-07-01T07:25:00+0200 - Impact Challenge pause-lock + frozen final standings
+- A `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` protected runtime ideiglenes maintenance/pause-lock funkcionalitast kapott az ujraaktivodott Impact Challenge fail-closed visszafogasara.
+- A publikus `/impact-challenge/` route most designos maintenance bannert injektal, kattinthato `https://factlens.eu/vb2026/` atvezetessel, mikozben az aktivitasi gombok es kapcsolodo CTA-k vizualisan es technikailag is fagyasztottak.
+- A REST `status` lane napi truthja nullazva lett (`today_views=0`, `available_votes=0`, `auto_vote_enabled=false`), a `tally` lane pedig a `2026-06-30 23:59:59` cutoff szerinti publikus vegallast adja vissza.
+- Follow-up gyokerok-fix is kiment: a frozen tally quarter truthja mar nem az aktualis quarter keyt olvassa, hanem a cutoff timestampbol levezetett quarter keyt. Ennek eredmenye productionon `quarter_key=2026Q1`, `donation_pool=503000`, `total_votes=22097761`.
+- Live deploy es parity evidence: rollback artefaktok `.codex/reports/hotfix-sync/rollback_20260701T051021Z.sh` es `.codex/reports/hotfix-sync/rollback_20260701T051354Z.sh`; local/prod/staging checksum parity igazolt a celzott MU-pluginon.
+
 ## 2026-06-29T18:10:00+0200 - VB2026 featured truth source disentangled from NGO-card dataset
 - A `featured` / `TOP 10` truth a VB2026 NGO-katalogusban mar nem az NGO-card dataset `rank` mezőjétől függ.
 - A kanonikus rangforras most a challenge tally slug+rangsor lane; a kartya-dataset csak display-adatot ad hozza, ha elerheto.
