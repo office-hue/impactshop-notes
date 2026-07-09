@@ -10,7 +10,7 @@ Scope is intentionally narrow:
 - preserve existing totals REST contract
 - fall through to the already-used canonical `raw-transactions/filter`-based conversion fetch path
 
-## Files touched
+## Protected files touched
 
 - `wp-content/mu-plugins/impactshop-rest-totals.php`
 
@@ -70,7 +70,7 @@ Scope is intentionally narrow:
 - file-level: restore previous `wp-content/mu-plugins/impactshop-rest-totals.php`
 - operational note: rollback would re-enable the invalid endpoint probing and is therefore not recommended unless paired with a corrected API implementation
 
-## Required verification
+## Smoke checklist
 
 ### Before deploy
 
