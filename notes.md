@@ -1,3 +1,13 @@
+## 2026-07-09 09:10 CEST - Dognet totals fallback runtime hotfix productionre kitéve
+- A korábbi endpoint-burst containment után kiderült, hogy a `impactshop-rest-totals.php` route a `dognet_api_list_conversions_all(...)` fallback külső definíciójára támaszkodott, de ez a production runtime-ban nem volt ténylegesen betöltve.
+- Emiatt a `/wp-json/impactshop/v1/totals` illetve `?rest_route=/impactshop/v1/totals` kérés a `dognet_page_api_disabled` hibát adta vissza `502` státusszal, noha a hibás `conversions/search` probing már le volt tiltva.
+- Javítás: a szükséges `raw-transactions/filter` alapú fallback helper-ek (`dognet__status_map`, `dognet_api_list_conversions_batch`, `dognet_api_list_conversions_all`) közvetlenül a `wp-content/mu-plugins/impactshop-rest-totals.php` fájlba kerültek, így a totals route többé nem függ külső, esetleg hiányzó helper betöltésétől.
+- Production deploy célzott unlock-write-relock hotfixkörrel ment ki. Backup: `impactshop-rest-totals.php.bak-20260709-090656`.
+- Verifikáció:
+  - direct origin: `https://app.sharity.hu/?rest_route=/impactshop/v1/totals` már `200` JSON válasz
+  - public Cloudflare út: szintén `200`
+  - minta payloadban legalább egy sor visszajött (`Árukereső`, 2 rendelés, commission `0.26`)
+
 ## 2026-07-09 11:35 CEST - Dognet invalid conversions endpoint burst hotfix prepared
 - Root cause azonosítva a live MU runtime-ban: `wp-content/mu-plugins/impactshop-rest-totals.php` a Dognet által jelzett nem létező endpointokat próbálta oldalazott conversions lekérdezésre:
   - `POST /publisher/conversions/search`

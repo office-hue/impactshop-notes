@@ -1,3 +1,8 @@
+## 2026-07-09T09:10:00+0200 - Dognet totals fallback localized into runtime
+- A `wp-content/mu-plugins/impactshop-rest-totals.php` most már nem csak letiltja a hibás `conversions/search` probingot, hanem a canonical `raw-transactions/filter` fetch fallback helperjeit is saját scope-ban hordozza.
+- Ezzel a `/impactshop/v1/totals` route többé nem külső, runtime-ban esetleg hiányzó `dognet_api_list_conversions_all(...)` definícióra támaszkodik.
+- Production verifikáció: a publikus totals route újra `200` JSON választ ad, az origin és a Cloudflare útvonalon is.
+
 ## 2026-07-09T11:35:00+0200 - Dognet invalid conversions endpoint probing disabled
 - `wp-content/mu-plugins/impactshop-rest-totals.php` page-level Dognet conversions lane-je fail-closed tiltást kapott.
 - A korábbi runtime a Dognet által jelzett nem létező `conversions/search` és kapcsolódó endpointokat próbálta, ami 404/405 burst zajt generált.
