@@ -149,75 +149,13 @@ if (!function_exists('impactshop_totals_accumulate_row')) {
 if (!function_exists('dognet_api_list_conversions_page')) {
     function dognet_api_list_conversions_page(array $params, int $page = 1, int $perPage = 100)
     {
-        $page = max(1, $page);
-        $perPage = max(1, min(200, $perPage));
-        $payload = ['page' => $page, 'per_page' => $perPage];
-
-        if (!empty($params['date_from'])) {
-            $payload['date_from'] = $params['date_from'];
-        }
-        if (!empty($params['date_to'])) {
-            $payload['date_to'] = $params['date_to'];
-        }
-        if (!empty($params['campaign_id'])) {
-            $payload['campaign_id'] = (int)$params['campaign_id'];
-        }
-        if (!empty($params['status']) && $params['status'] !== 'all') {
-            $payload['status'] = $params['status'];
-        }
-
-        $candidates = [
-            ['POST', '/publisher/conversions/search'],
-            ['POST', '/conversions/search'],
-            ['GET', '/publisher/conversions'],
-            ['GET', '/conversions'],
-        ];
-
-        $lastErr = null;
-        foreach ($candidates as $cand) {
-            [$method, $path] = $cand;
-            if ($method === 'GET') {
-                $qs = [];
-                foreach (['page', 'per_page', 'date_from', 'date_to', 'status', 'campaign_id'] as $key) {
-                    if (isset($payload[$key]) && $payload[$key] !== '' && $payload[$key] !== null) {
-                        $qs[$key] = $payload[$key];
-                    }
-                }
-                $resp = dognet_api_request('GET', $path . ($qs ? ('?' . http_build_query($qs)) : ''));
-            } else {
-                $resp = dognet_api_request('POST', $path, $payload);
-            }
-
-            if (is_wp_error($resp)) {
-                $lastErr = $resp;
-                continue;
-            }
-
-            $raw = $resp;
-            $items = [];
-            $lastPage = $page;
-
-            if (isset($raw['data']['data']) && is_array($raw['data']['data'])) {
-                $items = $raw['data']['data'];
-                $lastPage = (int)($raw['data']['last_page'] ?? $page);
-                return ['items' => $items, 'last_page' => $lastPage, 'source' => $path . ' ' . $method];
-            }
-            if (isset($raw['data']) && is_array($raw['data']) && isset($raw['meta'])) {
-                $items = $raw['data'];
-                $lastPage = (int)($raw['meta']['last_page'] ?? $page);
-                return ['items' => $items, 'last_page' => $lastPage, 'source' => $path . ' ' . $method];
-            }
-            if (isset($raw['data']) && is_array($raw['data'])) {
-                $items = $raw['data'];
-                return ['items' => $items, 'last_page' => $lastPage, 'source' => $path . ' ' . $method];
-            }
-            if (isset($raw['items']) && is_array($raw['items'])) {
-                $items = $raw['items'];
-                return ['items' => $items, 'last_page' => $lastPage, 'source' => $path . ' ' . $method];
-            }
-        }
-
-        return is_wp_error($lastErr) ? $lastErr : new WP_Error('dognet_empty', 'Üres Dognet válasz');
+        // 2026-07-09: Dognet jelezte, hogy a legacy conversions/search probing
+        // hibás és tömeges 404/405 hibát okoz. Ezt a lane-t fail-closed letiltjuk,
+        // hogy a totals route az egyszeri, ismert raw-transactions fallbackre váltson.
+        return new WP_Error(
+            'dognet_page_api_disabled',
+            'A Dognet page API probing le van tiltva; a rendszer a canonical raw-transactions fallbacket használja.'
+        );
     }
 }
 
