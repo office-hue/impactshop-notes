@@ -36,6 +36,20 @@ Instead:
 - totals aggregation falls through to the existing `dognet_api_list_conversions_all(...)` fallback
 - the canonical data path remains the already-used `POST /raw-transactions/filter` transaction lane
 
+## Follow-up fix
+
+After the first production containment deploy, the totals route still returned `502` because the runtime expected `dognet_api_list_conversions_all(...)` to exist, but that helper was not actually defined in the loaded production MU runtime set.
+
+The second-phase fix was:
+
+- embed `dognet__status_map(...)`
+- embed `dognet_api_list_conversions_batch(...)`
+- embed `dognet_api_list_conversions_all(...)`
+
+directly into [wp-content/mu-plugins/impactshop-rest-totals.php](/Users/bujdosoarnold/Developer/GitHub/.worktrees/impactshop-notes-deploy-dognet-hotfix-20260709/wp-content/mu-plugins/impactshop-rest-totals.php:1)
+
+This made the totals route self-sufficient again while still keeping the invalid page-oriented endpoint probing disabled.
+
 ## Why this is the safest fix
 
 - Stops the exact invalid endpoint pattern Dognet reported
@@ -55,3 +69,4 @@ Instead:
 - runtime smoke against the affected totals route
 - post-deploy log check: invalid `conversions/search` requests stop
 - optionally confirm with Dognet after deploy that the burst ended
+- public + origin totals route returns `200` JSON after the fallback helper localization
