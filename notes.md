@@ -7,6 +7,7 @@
 - A `dognet_api_list_conversions_page(...)` lane most fail-closed le van tiltva, így a totals route nem próbál többé invalid endpoint probingot.
 - A totals gyűjtés ettől kezdve az első hibán az egyszeri, már használt `dognet_api_list_conversions_all(...)` fallbackre vált, amely a meglévő `raw-transactions/filter` alapú canonical úton dolgozik.
 - Cél: azonnal megállítani a Dognet felé menő 404/405 zajt anélkül, hogy új, bizonytalan Dognet endpoint-variációkat vezetnénk be.
+- Protected change evidence csomag elkészült: külön incident doksi, protected change record és bastion guard naplófrissítés.
 - Nyitott operatív lépés: deploy után kérni kell Dognettől vagy logból ellenőrizni, hogy a hibás kérésminta tényleg megszűnt.
 
 ## 2026-05-11 14:40 CEST - JVK bank transfer confirm hotfix + historical recovery lezárva
