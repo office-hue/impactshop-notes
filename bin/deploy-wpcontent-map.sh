@@ -57,6 +57,115 @@ run_hatas_korok_post_deploy_smoke() {
   fi
 }
 
+require_safe_remote_path() {
+  local remote_path="${1:-}"
+  local label="${2:-remote path}"
+
+  if [[ ! "$remote_path" =~ ^/[A-Za-z0-9._/-]+$ ]] || [[ "$remote_path" == *".."* ]]; then
+    echo "❌ Nem biztonságos ${label}: $remote_path" >&2
+    exit 1
+  fi
+}
+
+verify_remote_bastion_manifest() {
+  local remote_root="${1:-}"
+  local check_result=""
+
+  require_safe_remote_path "$remote_root" "remote root"
+
+  if ! check_result="$(ssh -o BatchMode=yes "$SSH_HOST" "python3 - '$remote_root'" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+if not root.exists() or not root.is_dir():
+    print("missing_root")
+    raise SystemExit(0)
+if not (root / "wp-config.php").is_file():
+    print("missing_wp_config")
+    raise SystemExit(0)
+if not (root / "wp-content").is_dir():
+    print("missing_wp_content")
+    raise SystemExit(0)
+
+candidates = [
+    root / ".bastion" / "protected-hashes.json",
+    root / ".codex" / "bastion-manifest.json",
+    root / ".bastion-manifest.json",
+    root / "wp-content" / ".bastion-manifest.json",
+]
+manifest = next((candidate for candidate in candidates if candidate.exists()), None)
+if manifest is None:
+    print("missing_manifest")
+    raise SystemExit(0)
+if manifest.is_symlink() or not manifest.is_file():
+    print(f"unsafe_manifest:{manifest}")
+    raise SystemExit(0)
+if manifest.stat().st_size > 4 * 1024 * 1024:
+    print(f"oversized_manifest:{manifest}")
+    raise SystemExit(0)
+
+try:
+    data = json.loads(manifest.read_text(encoding="utf-8"))
+except Exception:
+    print(f"invalid_manifest:{manifest}")
+    raise SystemExit(0)
+
+hashes = data.get("hashes") if isinstance(data, dict) else None
+protected = data.get("protected_files") if isinstance(data, dict) else None
+if not isinstance(hashes, dict) or not hashes or not isinstance(protected, list) or not protected:
+    print(f"invalid_schema:{manifest}")
+    raise SystemExit(0)
+
+digest_pattern = re.compile(r"^[a-f0-9]{64}$")
+for rel, digest in hashes.items():
+    if not isinstance(rel, str) or not rel or Path(rel).is_absolute() or ".." in Path(rel).parts:
+        print(f"unsafe_entry:{manifest}")
+        raise SystemExit(0)
+    if not isinstance(digest, str) or not digest_pattern.fullmatch(digest):
+        print(f"invalid_hash:{manifest}")
+        raise SystemExit(0)
+
+print(f"ok_manifest:{manifest}:{len(hashes)}")
+PY
+)"; then
+    echo "❌ Bastion manifest ellenőrzés: SSH/Python hiba." >&2
+    exit 1
+  fi
+
+  case "$check_result" in
+    ok_manifest:*)
+      echo "✅ Bastion manifest ellenőrzés OK: ${check_result#ok_manifest:}"
+      ;;
+    missing_root)
+      echo "❌ Bastion ellenőrzés: hiányzó remote root: $remote_root" >&2
+      exit 1
+      ;;
+    missing_wp_config)
+      echo "❌ Bastion ellenőrzés: wp-config.php hiányzik: $remote_root" >&2
+      exit 1
+      ;;
+    missing_wp_content)
+      echo "❌ Bastion ellenőrzés: wp-content hiányzik: $remote_root" >&2
+      exit 1
+      ;;
+    missing_manifest)
+      echo "❌ Bastion manifest hiányzik: $remote_root" >&2
+      exit 1
+      ;;
+    unsafe_manifest:*|oversized_manifest:*|invalid_manifest:*|invalid_schema:*|unsafe_entry:*|invalid_hash:*)
+      echo "❌ Bastion manifest elutasítva: $check_result" >&2
+      exit 1
+      ;;
+    *)
+      echo "❌ Bastion ellenőrzés ismeretlen válasz: $check_result" >&2
+      exit 1
+      ;;
+  esac
+}
+
 verify_production_origin_alignment() {
   [[ $IS_STAGING -eq 0 ]] || return 0
   [[ "${REMOTE_WP_PATH:-}" == "/home/sharityh/app" ]] || return 0
@@ -88,9 +197,11 @@ PY" < /dev/null)"
   esac
 }
 
+DRY_RUN_MODE=0
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  DRY_RUN_MODE=1
   echo "🛡️ DRY-RUN MODE ENABLED — rsync nem ír a távoli szerverre."
-  RSYNC_OPTS="${RSYNC_OPTS:-} -n"
+  RSYNC_OPTS="${RSYNC_OPTS:-} -n --itemize-changes"
 fi
 
 ENV_PATH="$ENV_FILE"
@@ -118,7 +229,16 @@ else
 fi
 
 echo "🎯 Cél: $SSH_HOST:$REMOTE_WP_CONTENT"
-ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
+require_safe_remote_path "$REMOTE_WP_CONTENT" "remote wp-content"
+if [[ $DRY_RUN_MODE -eq 1 ]]; then
+  if ! ssh -o BatchMode=yes "$SSH_HOST" "test -d '$REMOTE_WP_CONTENT'" < /dev/null; then
+    echo "❌ DRY-RUN: a remote wp-content cél nem létezik: $REMOTE_WP_CONTENT" >&2
+    exit 1
+  fi
+  echo "🔎 DRY-RUN: remote cél létezik; könyvtárlétrehozás kihagyva."
+else
+  ssh -o BatchMode=yes "$SSH_HOST" "[ -d '$REMOTE_WP_CONTENT' ] || mkdir -p '$REMOTE_WP_CONTENT'/{plugins,mu-plugins,themes,uploads}" < /dev/null
+fi
 verify_remote_bastion_manifest "$(dirname "${REMOTE_WP_CONTENT}")"
 verify_production_origin_alignment
 
@@ -146,7 +266,15 @@ while IFS= read -r LINE; do
   fi
 
   remote_dir="$REMOTE_WP_CONTENT/$DST"
-  ssh -o BatchMode=yes "$SSH_HOST" "mkdir -p '$remote_dir'" < /dev/null
+  require_safe_remote_path "$remote_dir" "mapping destination"
+  if [[ $DRY_RUN_MODE -eq 1 ]]; then
+    if ! ssh -o BatchMode=yes "$SSH_HOST" "test -d '$remote_dir'" < /dev/null; then
+      echo "❌ DRY-RUN: hiányzó mapping cél, létrehozás tiltva: $remote_dir" >&2
+      exit 1
+    fi
+  else
+    ssh -o BatchMode=yes "$SSH_HOST" "mkdir -p '$remote_dir'" < /dev/null
+  fi
 
   echo "📦 SYNC: $SRC → $DST"
   if ! rsync $RSYNC_OPTS_SAFE "$SRC"/ "$SSH_HOST:$remote_dir/" < /dev/null; then
@@ -163,11 +291,15 @@ echo "📊 SUMMARY"
 echo "✅ Synced : $sync_count"
 echo "⏭️ Skipped: $skip_count"
 
-echo "🧹 WP maintenance…"
-ssh -o BatchMode=yes "$SSH_HOST" "wp --path='$REMOTE_WP_PATH' cache flush 2>/dev/null || true; \
-                                   wp --path='$REMOTE_WP_PATH' cron event run --due-now 2>/dev/null || true; \
-                                   wp --path='$REMOTE_WP_PATH' rewrite flush --hard 2>/dev/null || true" < /dev/null
+if [[ $DRY_RUN_MODE -eq 1 ]]; then
+  echo "🔎 DRY-RUN: WP maintenance és post-deploy smoke kihagyva."
+else
+  echo "🧹 WP maintenance…"
+  ssh -o BatchMode=yes "$SSH_HOST" "wp --path='$REMOTE_WP_PATH' cache flush 2>/dev/null || true; \
+                                     wp --path='$REMOTE_WP_PATH' cron event run --due-now 2>/dev/null || true; \
+                                     wp --path='$REMOTE_WP_PATH' rewrite flush --hard 2>/dev/null || true" < /dev/null
 
-run_hatas_korok_post_deploy_smoke
+  run_hatas_korok_post_deploy_smoke
+fi
 
 echo "🎉 Done."

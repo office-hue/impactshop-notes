@@ -41,6 +41,27 @@ IMPACT_ENV=staging IMPACTSHOP_ALLOW_FULL_SCAN=1 \
   bin/impactshop-guard-deploy.sh --staging --non-interactive --auto-approve --reason="<ok>"
 ```
 
+## Valódi dry-run szerződés
+
+```bash
+DRY_RUN=1 IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \
+  bin/impactshop-guard-deploy.sh --production --non-interactive --auto-approve --reason="<ok>"
+```
+
+`DRY_RUN=1` esetén a wrapper HTTP/SSH read-only preflightot és tételes rsync
+szimulációt futtat. Nem hozhat létre távoli könyvtárat, nem futtathat `wp`
+cache/cron/rewrite karbantartást, és nem indíthat post-deploy smoke-ot. A már
+létező remote célkönyvtárak hiánya fail-closed eredmény; a dry-run nem készíti
+elő őket.
+
+A mapping minden rsync előtt ellenőrzi a remote WordPress rootot és a bástya
+manifestet. Elsődleges manifest:
+`<remote-app-root>/.bastion/protected-hashes.json`. Csak normál, nem symlinkelt,
+méretkorlátos, érvényes JSON fogadható el nem üres protected fájl- és SHA-256
+térképpel. Hiányzó vagy hibás manifestnél staging és production is blokkol.
+Az ellenőrzés a korábbi live baseline szerkezetét validálja; nem írja át a
+manifestet, és nem tekinti automatikusan jóváhagyottnak a live-main driftet.
+
 ## Production deploy (guard + mapping)
 ```bash
 IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \

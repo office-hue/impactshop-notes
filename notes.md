@@ -6856,3 +6856,13 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Guard baseline: 27 pre-existing stale digest csak tiszta, `HEAD`-del egyező protected source-on lett újrahorgonyozva; 145/145 hash parity és checksum PASS.
 - CJ tudatosan fail-closed; feed, callback, reward, points, votes, donation és settlement writer nem változott.
 - A feature default-off. Következő kötelező egység: ai-agent central watchdog regisztráció külön tiszta VPS worktree-ben, majd két merge után guarded deploy és egy emberi Árukereső canary.
+
+## 2026-08-19 17:50 CEST - Deploy guard helyreállítás
+
+- A kanonikus mapping script undefined remote-manifest függvénye és a részben
+  író dry-run együtt okozott release blokkot.
+- A javítás fail-closed manifest sémát és tényleges no-write dry-runt ad,
+  külön fake SSH/rsync regressziós teszttel.
+- Staging továbbra is 404. Productionön a preflight zöld, de a protected
+  identity-panel PHP/JS live-main drift miatt valós deploy nem engedhető.
+- Affiliate runtime/option/cron továbbra sem került élesbe és nem aktív.

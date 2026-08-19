@@ -821,3 +821,16 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - Daily retention cron: `impactshop_sharity_affiliate_retention_cleanup`; a központi watchdog bekötése külön ai-agent checkpointban következik.
 - A digest guard 27 korábbi stale hashát csak olyan fájlokra frissítette, amelyek a worktree `HEAD`-hez képest tiszták voltak; a teljes 145 fájlos manifest és mindkét checksum zöld.
 - Állapot: lokális checkpoint készül, feature option `0`, deploy és production aktiválás még nem történt.
+
+## 2026-08-19T17:50:00+0200 - Deploy bastion manifest guard
+
+- A merged-main deploy dry-runban feltárt undefined
+  `verify_remote_bastion_manifest` kontroll helyreállt fail-closed remote
+  manifest validációval.
+- `DRY_RUN=1` alatt minden remote `mkdir`, WP cache/cron/rewrite maintenance és
+  post-deploy smoke tiltott; az rsync mindig `-n --itemize-changes`.
+- Mockolt SSH/rsync integrációs teszt védi az érvényes, hibás manifest és hiányzó
+  remote cél ágakat.
+- Production állapot változatlan: affiliate runtime fájl nincs fenn, option
+  unset, cleanup cron nincs. Staging preflight 404; két identity-panel fájl
+  live-main driftje miatt real deploy külön döntésig blokkolt.
