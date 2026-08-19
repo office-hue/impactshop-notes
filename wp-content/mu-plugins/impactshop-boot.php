@@ -662,13 +662,20 @@ function isb_handle_go($is_deal){
     }
   }
   if (!$row) {
-    error_log(sprintf(
-      'ISB-GO-ERROR: shop=%s referer=%s pseudo=%s ip=%s',
-      esc_html($shop),
-      esc_url_raw($_SERVER['HTTP_REFERER'] ?? ''),
-      sanitize_text_field($_COOKIE['impactshop_pseudo_id'] ?? ''),
-      $_SERVER['REMOTE_ADDR'] ?? ''
-    ));
+    if ($src === 'shopping-assistant') {
+      error_log(sprintf(
+        'ISB-GO-ERROR: shop=%s source=shopping-assistant',
+        esc_html($shop)
+      ));
+    } else {
+      error_log(sprintf(
+        'ISB-GO-ERROR: shop=%s referer=%s pseudo=%s ip=%s',
+        esc_html($shop),
+        esc_url_raw($_SERVER['HTTP_REFERER'] ?? ''),
+        sanitize_text_field($_COOKIE['impactshop_pseudo_id'] ?? ''),
+        $_SERVER['REMOTE_ADDR'] ?? ''
+      ));
+    }
     isb_error('Ismeretlen shop: '.esc_html($shop));
   }
 
@@ -704,41 +711,72 @@ function isb_handle_go($is_deal){
 
   $final = null;
   $sidForLog = '';
+  $isCj = (stripos($shop, 'cj-') === 0) || (($row['network_source'] ?? '') === 'cj');
+  $affiliateNgo = $ngo;
+  $affiliatePseudo = $pseudo;
+  $affiliateActivationId = '';
+  $sharityAffiliateRuntime = false;
+
+  if ($src === 'shopping-assistant') {
+    $prepared = apply_filters('impactshop_sharity_affiliate_prepare', null, [
+      'shop' => $shop,
+      'ngo' => $ngo,
+      'pseudo' => $pseudo,
+      'provider' => $isCj ? 'cj' : 'dognet',
+      'source' => $src,
+    ]);
+    if (
+      is_wp_error($prepared)
+      || !is_array($prepared)
+      || ($prepared['authorized'] ?? false) !== true
+      || ($prepared['provider_key'] ?? '') !== ($isCj ? 'cj' : 'dognet')
+      || !preg_match('/^act1_[a-f0-9]{32}$/', (string) ($prepared['activation_id'] ?? ''))
+      || !preg_match('/^sat1_[A-Za-z0-9_-]{43}$/', (string) ($prepared['provider_token'] ?? ''))
+    ) {
+      isb_error('A Sharity affiliate aktiválás most nem érhető el.');
+    }
+    $affiliateNgo = $prepared['provider_token'];
+    $affiliatePseudo = '';
+    $affiliateActivationId = $prepared['activation_id'];
+    $sharityAffiliateRuntime = true;
+  }
 
   // Ha a targetUrl már egy Dognet affiliate link, ne csomagoljuk újra —
   // a Dognet API elutasítja a go.dognet.com host-ot ("Custom URL host does not match").
   if ($targetUrl && preg_match('~(^|\.)dognet\.(com|sk|hu)$~i', parse_url($targetUrl, PHP_URL_HOST) ?: '')) {
+    if ($sharityAffiliateRuntime) {
+      isb_error('Már becsomagolt partnerlink nem használható a Sharity aktiválásban.');
+    }
     $sep = (strpos($targetUrl, '?') === false) ? '?' : '&';
     $extra = [];
-    if ($ngo) $extra['d1'] = $ngo;
-    if ($pseudo) $extra['data5'] = $pseudo;
+    if ($affiliateNgo) $extra['d1'] = $affiliateNgo;
+    if ($affiliatePseudo) $extra['data5'] = $affiliatePseudo;
     $final = $extra ? $targetUrl . $sep . http_build_query($extra) : $targetUrl;
   }
 
-  $isCj = (stripos($shop, 'cj-') === 0) || (($row['network_source'] ?? '') === 'cj');
   if (!$final) {
     if ($isCj) {
-      $final = isb_cj_generate_click_url($shop, $ngo, $pseudo, $targetUrl, $sidForLog);
+      $final = isb_cj_generate_click_url($shop, $affiliateNgo, $affiliatePseudo, $targetUrl, $sidForLog);
       if (!$final && !empty($row['product_url'])) {
         $final = $row['product_url'];
       }
     } else {
       $cid = isb_dognet_extract_campaign_id_from_base($row['dognet_base'] ?? '');
       if ($cid){
-        $api = isb_dognet_api_generate_link($cid, $targetUrl, $ngo, '', $pseudo);
+        $api = isb_dognet_api_generate_link($cid, $targetUrl, $affiliateNgo, '', $affiliatePseudo);
         if(!is_wp_error($api) && $api) $final = $api;
       }
       if(!$final){
         $base = $row['dognet_base'] ?? '';
         if($base){
-          $params = ['d1'=>$ngo];
+          $params = ['d1'=>$affiliateNgo];
           if(!empty($targetUrl)){
             $dlParam = !empty($row['deeplink_param']) ? $row['deeplink_param'] : 'url';
             // DOGNET elvárás: a kampány URL-t normál (URL-encoded) formában adjuk át, NEM base64-ben.
             $params[$dlParam] = $targetUrl;
           }
-          if ($pseudo) {
-            $params['data5'] = $pseudo;
+          if ($affiliatePseudo) {
+            $params['data5'] = $affiliatePseudo;
           }
           $final = $base . ((strpos($base,'?')===false)?'?':'&') . http_build_query($params);
         }
@@ -746,12 +784,18 @@ function isb_handle_go($is_deal){
     }
   }
   if(!$final) isb_error('Nem sikerült a partner linket előállítani.');
+  if (
+    $sharityAffiliateRuntime
+    && apply_filters('impactshop_sharity_affiliate_mark_redirected', false, $affiliateActivationId) !== true
+  ) {
+    isb_error('A Sharity affiliate aktiválás nem véglegesíthető.');
+  }
   isb_log_go_click([
     'shop' => $shop,
     'ngo' => $ngo,
-    'sid' => $sidForLog,
+    'sid' => $sharityAffiliateRuntime ? '' : $sidForLog,
     'is_cj' => $isCj,
-    'pseudo' => $pseudo,
+    'pseudo' => $sharityAffiliateRuntime ? '' : $pseudo,
     'target_host' => parse_url($final, PHP_URL_HOST) ?? '',
   ]);
   isb_redirect_with_propagation($final,$amb,$src);

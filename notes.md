@@ -6849,3 +6849,10 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   `https://app.sharity.hu/?impact_event_auction_embed=1&slug=jovonkvize-2026`.
 - Gyokerok: a redirect korabban hotfixkent szerverre kerult, de nem volt tartosan repo commitban, igy a teljes `wp-content/mu-plugins` mapping deploy vissza tudta irni.
 - Tartos fix: commit a canonical branch lane-ben (`15de3677`), plusz guard-kompatibilis docs/snapshot/notes folytonossag.
+## 2026-08-19 12:45 CEST - Sharity affiliate runtime WordPress package
+- A `feat/sharity-affiliate-runtime-wp-sol-20260819` dedikált worktree-ben elkészült a Shopping Assistant → ImpactShop `/go` opaque attribúciós lánc.
+- Dognet új út: `sat1` token az attribúcióban; raw pseudo és NGO slug nem jut ki. A WordPress táblában token hash, HMAC subject és NGO mapping marad, gazdasági truth nélkül.
+- Lifecycle: 15 perc ready TTL, idempotens kiadás, egyszeri redirected transition, 45 nap retention, napi purge.
+- Guard baseline: 27 pre-existing stale digest csak tiszta, `HEAD`-del egyező protected source-on lett újrahorgonyozva; 145/145 hash parity és checksum PASS.
+- CJ tudatosan fail-closed; feed, callback, reward, points, votes, donation és settlement writer nem változott.
+- A feature default-off. Következő kötelező egység: ai-agent central watchdog regisztráció külön tiszta VPS worktree-ben, majd két merge után guarded deploy és egy emberi Árukereső canary.

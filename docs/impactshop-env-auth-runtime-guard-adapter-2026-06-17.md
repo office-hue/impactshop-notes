@@ -4,6 +4,25 @@ Datum: 2026-06-17
 Statusz: local adapter minimum
 Scope: a kanonikus env/auth/runtime guard helyi, `impactshop-notes` protected/runtime lane-jeire konkretizalt adaptere
 
+## 2026-08-19 affiliate runtime extension
+
+Az adapter helyi protected runtime scope-ja kiterjed a
+`wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php` modulra és a
+`wp-content/mu-plugins/impactshop-boot.php` exact Shopping Assistant
+delegációjára.
+
+Az `allowed` állapot további feltételei ennél a lane-nél:
+
+1. az aktivációs option default értéke `0` és csak exact `1` engedélyez;
+2. a Dognet felé csak opaque `sat1` kerülhet, raw pseudo/NGO/URL nem;
+3. a 15 perces intent és 45 napos retention cleanup cron regisztrált;
+4. a külön ai-agent central watchdog checkpoint merge-elt és zöld;
+5. a protected digest, rollback, célzott életciklus- és mutációs teszt zöld;
+6. production aktiválás csak guarded deploy után, emberi canaryval történik.
+
+Ezek hiányában a release státusz `blocked`; a repo-checkpoint önmagában csak
+default-off, deployolatlan állapotot igazol.
+
 ## Cel
 
 Ez a dokumentum nem uj protected policyt vezet be.

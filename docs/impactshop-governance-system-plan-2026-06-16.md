@@ -4,6 +4,21 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-08-19 Sharity affiliate runtime note
+
+- A Shopping Assistant affiliate aktiválás új, default-off WordPress runtimeja
+  csak az exact `src=shopping-assistant` lane-ben delegál a védett `/go`
+  tulajdonosból.
+- A providerhez kizárólag opaque `sat1` korreláció kerül; a raw pseudo, URL és
+  gazdasági állítás tárolása tiltott. Az NGO és a HMAC subject mapping 45 napos
+  retention alatt marad helyben.
+- A runtime, a minimális boot adapter és a bástya guard együtt alkot új
+  max-védett egységet. Aktiválás csak a külön ai-agent watchdog checkpoint,
+  merge és guarded deploy után engedett.
+- Kanonikus feature truth:
+  `docs/sharity-affiliate-runtime-wp-sol-plan-2026-08-19.md` és
+  `docs/sharity-affiliate-runtime-wp-sol-handover-2026-08-19.md`.
+
 ## 2026-06-23 Phase I sync note
 
 - A VB2026 NGO katalogus Phase I source lane (`impactshop-vb2026-ngo-catalog.php`) additiv, de mivel uj MU-plugin es uj publikus/selection REST perem, a docs continuity minimum itt nem all meg a feature-plan es a bastion naplo frissitesenel.
