@@ -19,6 +19,22 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
   `docs/sharity-affiliate-runtime-wp-sol-plan-2026-08-19.md` és
   `docs/sharity-affiliate-runtime-wp-sol-handover-2026-08-19.md`.
 
+## 2026-08-19 Deploy bastion manifest guard note
+
+- A mapping deploy kontrollsík maga is max-védett lane: az undefined remote
+  manifest check vagy egy részben író dry-run nem kerülhető meg kézi
+  `scp`/`rsync` használatával.
+- A kanonikus szerződés merged-main-only guard wrapper, fail-closed remote
+  manifest admission és valóban no-write, itemizált `DRY_RUN=1`.
+- A runtime digest manifest nem önmagát és nem a deploy kontrollsíkot védi;
+  ezek truthja a protected model, protected-touch, CI parity, change record és
+  strict audit együttese.
+- A dry-run által feltárt live-main protected drift külön operátori döntésig
+  blokkolja a valós deployt; a dry-run nem tekinthető drift-jóváhagyásnak.
+- Kanonikus csomag:
+  `docs/impactshop-deploy-bastion-manifest-sol-plan-2026-08-19.md` és
+  `docs/protected-change-records/2026-08-19-deploy-bastion-manifest-guard.md`.
+
 ## 2026-06-23 Phase I sync note
 
 - A VB2026 NGO katalogus Phase I source lane (`impactshop-vb2026-ngo-catalog.php`) additiv, de mivel uj MU-plugin es uj publikus/selection REST perem, a docs continuity minimum itt nem all meg a feature-plan es a bastion naplo frissitesenel.
