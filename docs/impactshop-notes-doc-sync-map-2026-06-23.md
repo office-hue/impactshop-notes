@@ -7,7 +7,7 @@ CanonicalMapPath: `docs/impactshop-notes-doc-sync-map-2026-06-23.md`
 RootHubPath: `DOC-SYNC-HUB.md`
 CrossRepoHubPath: `../ai-agent/DOC-SYNC-HUB.md`
 OwnerRepo: `impactshop-notes`
-LastVerifiedAt: `2026-07-01T05:25:00Z`
+LastVerifiedAt: `2026-08-19T10:45:00Z`
 RegistryStatus: `partial`
 
 ## Cel
@@ -56,6 +56,7 @@ Ez a helyi map a kozos minimum statuszokat hasznalja:
 | VB2026 NGO catalog source lane | `docs/VB2026-SHARITY-NGO-CATALOG-AND-SELECTION-PLAN-2026-06-23.md` | `impactshop-vb2026-ngo-catalog.php`, a kapcsolodo source selection REST lane-ek | `docs/VB2026-SHARITY-NGO-CATALOG-PHASE1-IMPLEMENTATION-PACK-2026-06-23.md` | local protected/runtime evidence a source lane-re | `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `partial` | Friss lane, amelynel a docs continuity minimum mar ki lett mondva a governance hubban is. |
 | Core public baseline / challenge lane | `docs/public-pages-canonical-baseline.md` | public page templatek, deploy path, guarded public files, `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` maintenance override lane | `docs/impactshop-production-deploy-path-audit-2026-04-20.md`, `docs/impact-challenge-canonical-baseline.md`, `docs/protected-change-records/2026-07-01-impact-challenge-pause-lock.md` | deploy-path audit + protected inventory evidence + live hotfix rollback artefaktok | `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `partial` | A public baseline es a protected deploy path egyutt ad helyi runtime truthot; 2026-07-01-tol ide tartozik az atmeneti Impact Challenge pause-lock/frozen-standings lane is, amely a publikus routeot fail-closed maintenance allapottal zarja vissza. |
 | Partner / integration documentation lane | `docs/partner-master-checklist.md` ha letezik, kulonben `docs/README.md` partner szekcio | partner-specifikus docs, `tools/partner-*`, `docs/api/README.md` | partner release / security / webhook checklist dokumentumok | partner QA tooling es release checklist | `notes.md` | `docs-only` | Nagy doku-tomb, de jelenleg nincs kulon egyhelyes local index a canonical mapen kivul. |
+| Sharity affiliate correlation runtime | `docs/sharity-affiliate-runtime-wp-sol-plan-2026-08-19.md` | `wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php`, `wp-content/mu-plugins/impactshop-boot.php` | `tests/sharity-affiliate-runtime-test.php`, `tests/sharity-affiliate-runtime-bastion.test.sh`, `docs/protected-change-records/2026-08-19-sharity-affiliate-runtime.md` | `scripts/sharity-affiliate-runtime-bastion-guard.sh`, protected inventory/digest, `impactshop_sharity_affiliate_retention_cleanup` és a külön ai-agent central watchdog checkpoint | `docs/sharity-affiliate-runtime-wp-sol-handover-2026-08-19.md`, `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `partial` | A repo checkpoint default-off és deployolatlan; a `merged` státuszhoz mindkét repo merge, guarded deploy, cron/watchdog evidencia és egy emberi Árukereső canary szükséges. |
 
 ## Continuity Targets
 

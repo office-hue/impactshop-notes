@@ -814,3 +814,10 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 ```
 
 **Baseline referencia:** impactshop-baseline-2026-03-03.md
+## 2026-08-19T12:45:00+0200 - Sharity affiliate runtime WordPress checkpoint
+- Elkészült a default-off, Dognet-only Shopping Assistant attribúciós runtime; a providerhez csak opaque `sat1` kerül, a raw pseudo és URL nem.
+- A helyi mapping a kiválasztott NGO-t és HMAC-pseudonimizált subjectet tartja meg, 15 perces intent TTL-lel és 45 napos retentionnel.
+- A védett `/go` tulajdonos csak exact `src=shopping-assistant` esetén delegál; legacy `/go`, `/go-deal`, CJ, pont, reward, vote és settlement truth változatlan.
+- Daily retention cron: `impactshop_sharity_affiliate_retention_cleanup`; a központi watchdog bekötése külön ai-agent checkpointban következik.
+- A digest guard 27 korábbi stale hashát csak olyan fájlokra frissítette, amelyek a worktree `HEAD`-hez képest tiszták voltak; a teljes 145 fájlos manifest és mindkét checksum zöld.
+- Állapot: lokális checkpoint készül, feature option `0`, deploy és production aktiválás még nem történt.
