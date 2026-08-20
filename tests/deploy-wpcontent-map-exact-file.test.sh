@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
-REPO_TMP_DIR="$(mktemp -d "$ROOT_DIR/.codex/exact-file-test.XXXXXX")"
+REPO_TMP_DIR="$(mktemp -d "$ROOT_DIR/tests/.exact-file-test.XXXXXX")"
 REPO_TMP_REL="${REPO_TMP_DIR#"$ROOT_DIR/"}"
 trap 'rm -rf "$TMP_DIR" "$REPO_TMP_DIR"' EXIT
 
