@@ -2,7 +2,7 @@
 
 Date: 2026-08-20
 
-Status: implementation complete; production release retry pending merged parent-relock closure
+Status: production deployed default-off; activation not authorized
 
 Operator approval: Arnold repeatedly approved the next coherent SOL Impact Shop
 package and requested safe production readiness with minimum push/PR/merge
@@ -177,3 +177,18 @@ the owner-write bit for the bounded apply or rollback window. Every exit path
 restores and verifies the exact original directory mode. The target remains
 `0444`, broad/recursive chmod and sibling writes remain forbidden, and the
 filesystem suite proves `0555` after deploy, rollback and a racing failure.
+
+## Verified production result
+
+- merged release commit: `856a5fa1f61a20f7ab70920720565b9462bfda9f`
+- release ID: `20260820T094433Z-87fe5d3ac628-98513d73`
+- deployed SHA-256:
+  `4347dded2ad009b5fe793836b57bbb163f3ffe94e55c0ed6dedeff93e0ef4859`
+- manifest `deployed`, target `0444`, exact parent restored to `0555`
+- remote PHP lint PASS; five baseline endpoints PASS; Shopping Assistant 200
+- activation option missing; cleanup cron absent; affiliate table absent
+- no sibling, feed, redirect policy, reward, vote, points or settlement change
+
+Canonical first-install rollback remains the release-ID + deployed-SHA command
+documented above. It was inspected but not executed because the release is
+healthy and default-off.

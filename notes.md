@@ -6946,3 +6946,12 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   bitet nyitja meg, majd minden ágon az eredeti parent módra zár vissza.
 - A teszt `0555` parent mellett bizonyít apply + `0444` target + rollback + race
   után is `0555` állapotot. Aktiválás és Cronos/watchdog változatlanul külön csomag.
+
+## 2026-08-20 12:20 CEST - Default-off production release kész
+
+- Release `20260820T094433Z-87fe5d3ac628-98513d73` sikeresen `deployed`.
+- Live SHA pontos, target `0444`, parent `0555`, PHP lint és rollback inspect zöld.
+- Option missing, cleanup cron absent, affiliate table absent: nincs aktiválás
+  és nincs új attribúciós/elszámolási írás.
+- Öt publikus baseline és a Vásárlási Segéd HTTP 200. Következő csomag: central
+  watchdog + operátori aktiválás + emberi Árukereső canary.

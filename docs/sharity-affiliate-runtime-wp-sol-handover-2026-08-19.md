@@ -4,7 +4,7 @@ Date: 2026-08-19
 
 Package: ImpactShop WordPress checkpoint
 
-Release posture: default-off, not deployed, not activated
+Release posture: production deployed, default-off, not activated
 
 ## What is implemented
 
@@ -34,19 +34,25 @@ bypass the opaque attribution contract; users should submit the merchant URL.
 The internal correlator returns mapping metadata only. It cannot confirm a
 purchase, commission or settlement, and it writes no financial state.
 
-## Safe release order
+## Completed release evidence
 
-1. Merge this ImpactShop checkpoint.
-2. Merge the separate ai-agent central-watchdog checkpoint.
-3. Run the guarded staging deploy with option `0`.
-4. Verify schema, cron registration, health evidence and legacy redirect smoke.
-5. Run the guarded production deploy with option `0`.
-6. Verify central watchdog, then change the option to exact string `1`.
-7. Perform one human Árukereső click and compare the opaque Dognet echo with
+- production release: `20260820T094433Z-87fe5d3ac628-98513d73`
+- deployed SHA-256:
+  `4347dded2ad009b5fe793836b57bbb163f3ffe94e55c0ed6dedeff93e0ef4859`
+- target mode `0444`; max-protected parent restored to `0555`
+- activation option missing, cleanup cron absent, affiliate table absent
+- PHP lint, five public Impact endpoints and Shopping Assistant HTTP 200 green
+
+## Remaining safe activation order
+
+1. Merge the separate ai-agent central-watchdog checkpoint.
+2. Approve and set the activation option to exact string `1`.
+3. Verify schema creation, cron registration, watchdog freshness and legacy
+   redirect smoke.
+4. Perform one human Árukereső click and compare the opaque Dognet echo with
    the local correlation mapping.
 
-Do not deploy from this feature worktree and do not automate the affiliate
-click.
+Do not automate the affiliate click.
 
 ## Rollback
 
@@ -54,6 +60,12 @@ Disable the option first. Restore the protected boot adapter through the
 guarded snapshot/revert lane if necessary, but retain cleanup until every
 stored mapping reaches retention expiry. Never drop the table as the first
 rollback action.
+
+Before activation, the exact first-install rollback is:
+
+```text
+bin/impactshop-guard-rollback.sh --production --apply --release-id=20260820T094433Z-87fe5d3ac628-98513d73 --expected-deployed-sha=4347dded2ad009b5fe793836b57bbb163f3ffe94e55c0ed6dedeff93e0ef4859
+```
 
 ## Next package
 

@@ -915,3 +915,13 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   bitjét nyitja, majd deploy/rollback/hiba után az eredeti `0555` módot ellenőrzi.
 - A max-protected parent round trip és race teszt zöld; broad/recursive chmod,
   sibling write, aktiválás és watchdog továbbra sincs ebben a csomagban.
+
+## 2026-08-20T12:20:00+0200 - Affiliate runtime production default-off
+
+- Exact release `20260820T094433Z-87fe5d3ac628-98513d73` deployed a merged
+  `856a5fa1` állapotból; live SHA `4347dded...e0ef4859`, target `0444`.
+- A `mu-plugins` parent visszazárt `0555`; release inspect és PHP lint zöld.
+- Aktiválási option hiányzik, cleanup cron és affiliate tábla absent, tehát az
+  új runtime jelen van, de nem ír attribúciós vagy pénzügyi állapotot.
+- Öt Impact baseline endpoint zöld, a Vásárlási Segéd HTTP 200. Cronos/watchdog
+  az aktiválás előtt, külön ai-agent csomagban kötelező.
