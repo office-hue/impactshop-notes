@@ -219,3 +219,6 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   és deployed SHA együtt adhat; a két namespace nem aliasolható.
 - A guard checksum labelje repository-relatív; abszolút host/worktree path nem
   válhat kanonikus vagy commitolt governance truth részévé.
+- A production release-engine toolchain truth Python 3.6.8 + standard library;
+  az engine-nek ezen a nyelvtanon kell futnia, távoli interpreter-frissítés nem
+  része az exact release-nek. A kompatibilitást külön AST/API guard védi.

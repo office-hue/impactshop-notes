@@ -104,6 +104,9 @@ Frissítésnél az `absent` helyett az előre read-only ellenőrzött 64 karakte
 live SHA-256 kötelező. A release engine lock alatt távoli manifestet és ellenőrzött
 backupot készít, feltöltés után ismét CAS-t futtat, PHP lint után atomikusan cserél,
 majd SHA/PHP/`0444` állapotot ellenőriz. Széles production írás továbbra is tiltott.
+Az engine kanonikus production kompatibilitási minimuma Python 3.6.8 és csak
+standard libraryt használ. Ezt CI-ben Python 3.6 grammar/API guard védi; a deploy
+nem telepít és nem frissít távoli Python runtimeot.
 
 ## Production deploy (guard + mapping)
 ```bash

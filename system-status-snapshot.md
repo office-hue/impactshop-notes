@@ -892,3 +892,14 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   wrapper régi snapshot-ID rollback szövegét feltárta. Éles írás nem indult; a
   follow-up a local source snapshotot elválasztja a release-ID + SHA runtime
   rollbacktól.
+
+## 2026-08-20T11:50:00+0200 - Exact release Python 3.6 compatibility closure
+
+- Az első explicit exact apply minden preflight után, de még a remote `prepare`
+  végrehajtása előtt Python syntax hibával leállt; a VPS csak Python 3.6.8-at ad.
+- Read-only ellenőrzés szerint a runtime target és a sikertelen release-ID
+  könyvtára absent maradt, ezért részleges éles állapot és rollback-igény nincs.
+- A remote engine állapotgépe változatlan, de a typing és subprocess szintaxis
+  Python 3.6-kompatibilis; külön AST/API regressziós guard védi ezt a minimumot.
+- Feature option továbbra is unset/`0`, cleanup cron nincs. Default-off exact
+  release után sem kell Cronos; watchdog csak az aktiválási csomagban kötelező.
