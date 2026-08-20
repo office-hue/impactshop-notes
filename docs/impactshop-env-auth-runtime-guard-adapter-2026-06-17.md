@@ -177,3 +177,13 @@ backup és nem runtime rollback.
 A védett hash-checksum fájlcímkéje kizárólag repository-relatív lehet; az
 abszolút gép- vagy worktree-útvonal env/runtime driftnek és adatfolyásnak
 minősül, ezért fail-closed teszt védi.
+## 2026-08-20 exact release adapter
+
+Az auth/runtime guard adapter production írási pereme most két külön igazságot
+tart fenn: a lokális protected source approvalt és az exact remote release
+manifestet. Az utóbbi csak kanonikus `.deploy.production.env`, clean named
+`main` vagy detached `HEAD == origin/main`, explicit expected-before state és
+egy repo-owned fájl mellett jön létre.
+Az engine sem env secretet, sem user/NGO/affiliate adatot nem ír a manifestbe;
+csak relatív cél, release ID, state, SHA-256, mode és phase tárolható. Runtime
+aktiválás és cron/watchdog továbbra is külön adaptercsomag.

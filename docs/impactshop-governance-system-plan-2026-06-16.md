@@ -199,5 +199,20 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   entrypoint mellett jelenhet meg.
 - A fallback üzenetnek fail-closed módon rögzítenie kell a hiányzó remote
   rollbackot és a fennmaradó production write blokkot; ezt CI guard védi.
+
+## 2026-08-20 exact production release admission
+
+- A broad production mapping továbbra is fail-closed; valós írás csak egy exact
+  fájlra, clean named `main` vagy detached `HEAD == origin/main` worktree és
+  kanonikus production profil mellett mehet. Named feature/stale detached tiltott.
+- A remote release truth privát, sémázott manifest: explicit eredeti
+  absent/SHA/mode, intended SHA, phase és release ID.
+- Prepare után az apply ismét CAS-t végez, staged PHP lintet futtat, atomikusan
+  cserél és SHA + `0444` relockot ellenőriz.
+- A rollback read-only alapállású és csak release ID + deployed SHA + explicit
+  production apply mellett állít vissza; live drift esetén nem ír.
+- Kanonikus terv és evidencia:
+  `docs/impactshop-exact-release-admission-sol-plan-2026-08-20.md`,
+  `docs/protected-change-records/2026-08-20-exact-release-admission.md`.
 - A guard checksum labelje repository-relatív; abszolút host/worktree path nem
   válhat kanonikus vagy commitolt governance truth részévé.

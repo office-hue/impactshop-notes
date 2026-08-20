@@ -50,6 +50,36 @@ require_safe_relative_path() {
   fi
 }
 
+require_sha256_or_absent() {
+  local value="${1:-}"
+  local label="${2:-SHA-256}"
+
+  if [[ "$value" != "absent" && ! "$value" =~ ^[a-f0-9]{64}$ ]]; then
+    echo "❌ ${label} csak 'absent' vagy 64 karakteres kisbetűs SHA-256 lehet." >&2
+    exit 1
+  fi
+}
+
+require_safe_release_id() {
+  local value="${1:-}"
+  if [[ ! "$value" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{7,96}$ ]]; then
+    echo "❌ Nem biztonságos exact release ID: $value" >&2
+    exit 1
+  fi
+}
+
+sha256_file() {
+  local path="$1"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$path" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$path" | awk '{print $1}'
+  else
+    echo "❌ Helyi SHA-256 eszköz hiányzik." >&2
+    exit 1
+  fi
+}
+
 case "${DEPLOY_ENVIRONMENT:-}" in
   staging)
     IS_STAGING=1
@@ -183,13 +213,56 @@ if [[ -n "${IMPACTSHOP_DEPLOY_FILE:-}" ]]; then
   require_safe_relative_path "$SCOPED_DST" "exact mapping destination"
 fi
 
+EXACT_RELEASE_MODE=0
+EXACT_RELEASE_EXPECTED_BEFORE=""
+EXACT_RELEASE_ID=""
+EXACT_RELEASE_LOCAL_SHA=""
+EXACT_RELEASE_ENGINE="${ROOT_DIR}/scripts/impactshop-exact-release-remote.py"
 if [[ $IS_PRODUCTION -eq 1 && $DRY_RUN_MODE -eq 0 ]]; then
   if [[ $SCOPED_DEPLOY -eq 0 ]]; then
     echo "❌ Valós production deploy csak IMPACTSHOP_DEPLOY_FILE exact scope-pal készíthető elő." >&2
-  else
-    echo "❌ Valós exact-file production írás még tiltott: remote backup/CAS/rollback admission hiányzik." >&2
+    exit 1
   fi
-  exit 1
+  if [[ "${IMPACTSHOP_EXACT_RELEASE:-0}" != "1" ]]; then
+    echo "❌ Valós exact-file production íráshoz IMPACTSHOP_EXACT_RELEASE=1 szükséges." >&2
+    exit 1
+  fi
+  EXACT_RELEASE_EXPECTED_BEFORE="${IMPACTSHOP_EXPECT_REMOTE_SHA256:-}"
+  require_sha256_or_absent "$EXACT_RELEASE_EXPECTED_BEFORE" "IMPACTSHOP_EXPECT_REMOTE_SHA256"
+  if [[ "$ENV_FILE" != "$ROOT_DIR/.deploy.production.env" ]] || \
+     [[ "${REMOTE_WP_PATH:-}" != "/home/sharityh/app" ]] || \
+     [[ "${REMOTE_WP_CONTENT:-}" != "/home/sharityh/app/wp-content" ]]; then
+    echo "❌ Valós exact-file production release csak a kanonikus production profilból és /home/sharityh/app rootra futtatható." >&2
+    exit 1
+  fi
+  if [[ ! -f "$EXACT_RELEASE_ENGINE" || -L "$EXACT_RELEASE_ENGINE" ]]; then
+    echo "❌ Hiányzó vagy nem biztonságos exact release engine: scripts/impactshop-exact-release-remote.py" >&2
+    exit 1
+  fi
+  if [[ -n "$(git status --porcelain=v1 --untracked-files=normal)" ]]; then
+    echo "❌ Valós exact-file production release csak tiszta worktree-ből futtatható." >&2
+    exit 1
+  fi
+  exact_release_head="$(git rev-parse HEAD)"
+  exact_release_origin_main="$(git rev-parse --verify refs/remotes/origin/main 2>/dev/null || true)"
+  exact_release_branch="$(git rev-parse --abbrev-ref HEAD)"
+  if [[ "$exact_release_branch" != "main" && "$exact_release_branch" != "HEAD" ]]; then
+    echo "❌ Valós exact-file production release csak main vagy detached origin/main állapotból futtatható." >&2
+    exit 1
+  fi
+  if [[ -z "$exact_release_origin_main" || "$exact_release_head" != "$exact_release_origin_main" ]]; then
+    echo "❌ Valós exact-file production release HEAD-je nem egyezik az origin/main állapottal." >&2
+    exit 1
+  fi
+  EXACT_RELEASE_LOCAL_SHA="$(sha256_file "$SCOPED_SRC")"
+  if [[ -n "${IMPACTSHOP_RELEASE_ID:-}" ]]; then
+    EXACT_RELEASE_ID="$IMPACTSHOP_RELEASE_ID"
+  else
+    exact_release_nonce="$(python3 -c 'import secrets; print(secrets.token_hex(4))')"
+    EXACT_RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short=12 HEAD)-${exact_release_nonce}"
+  fi
+  require_safe_release_id "$EXACT_RELEASE_ID"
+  EXACT_RELEASE_MODE=1
 fi
 
 if [[ $IS_STAGING -eq 1 ]]; then
@@ -430,11 +503,95 @@ if [[ $SCOPED_DEPLOY -eq 1 ]]; then
   fi
 
   echo "🎯 EXACT FILE: $SCOPED_SRC → $SCOPED_DST"
-  if ! rsync $RSYNC_OPTS_SAFE "$SCOPED_SRC" "$SSH_HOST:$remote_file" < /dev/null; then
-    echo "   ❌ Exact-file rsync hiba; deploy megszakítva." >&2
-    exit 1
+  if [[ $EXACT_RELEASE_MODE -eq 1 ]]; then
+    remote_root="$(dirname "$REMOTE_WP_CONTENT")"
+    require_safe_remote_path "$remote_root" "exact release remote root"
+    remote_release_dir="$remote_root/.bastion/exact-file-releases/$EXACT_RELEASE_ID"
+    require_safe_remote_path "$remote_release_dir" "exact release directory"
+
+    if ! ssh -o BatchMode=yes "$SSH_HOST" \
+      "command -v python3 >/dev/null 2>&1 && command -v php >/dev/null 2>&1" < /dev/null; then
+      echo "❌ A remote exact release futtatási előfeltételei hiányoznak." >&2
+      exit 1
+    fi
+
+    echo "🔐 Exact release előkészítés: $EXACT_RELEASE_ID"
+    if ! release_prepare_output="$(ssh -o BatchMode=yes "$SSH_HOST" \
+      python3 - prepare \
+      --root "$remote_root" \
+      --release-id "$EXACT_RELEASE_ID" \
+      --target-relative "wp-content/$SCOPED_DST" \
+      --expected-before "$EXACT_RELEASE_EXPECTED_BEFORE" \
+      --intended-sha "$EXACT_RELEASE_LOCAL_SHA" \
+      < "$EXACT_RELEASE_ENGINE")"; then
+      echo "❌ Exact release prepare hiba." >&2
+      exit 1
+    fi
+    if ! python3 - "$release_prepare_output" "$EXACT_RELEASE_ID" "$EXACT_RELEASE_LOCAL_SHA" <<'PY'
+import json
+import sys
+
+try:
+    result = json.loads(sys.argv[1])
+except Exception:
+    raise SystemExit(1)
+if not (
+    result.get("ok") is True
+    and result.get("action") == "prepare"
+    and result.get("phase") == "prepared"
+    and result.get("releaseId") == sys.argv[2]
+    and result.get("intendedSha256") == sys.argv[3]
+):
+    raise SystemExit(1)
+PY
+    then
+      echo "❌ Exact release prepare válasz elutasítva." >&2
+      exit 1
+    fi
+
+    if ! rsync $RSYNC_OPTS_SAFE "$SCOPED_SRC" "$SSH_HOST:$remote_release_dir/payload.bin" < /dev/null; then
+      echo "❌ Exact release payload feltöltési hiba; a live cél változatlan." >&2
+      exit 1
+    fi
+
+    echo "🔁 Exact release CAS apply: $EXACT_RELEASE_ID"
+    if ! release_apply_output="$(ssh -o BatchMode=yes "$SSH_HOST" \
+      python3 - apply --root "$remote_root" --release-id "$EXACT_RELEASE_ID" \
+      < "$EXACT_RELEASE_ENGINE")"; then
+      echo "❌ Exact release apply hiba; ellenőrizd a release manifestet." >&2
+      exit 1
+    fi
+    if ! python3 - "$release_apply_output" "$EXACT_RELEASE_ID" "$EXACT_RELEASE_LOCAL_SHA" <<'PY'
+import json
+import sys
+
+try:
+    result = json.loads(sys.argv[1])
+except Exception:
+    raise SystemExit(1)
+if not (
+    result.get("ok") is True
+    and result.get("action") == "apply"
+    and result.get("phase") == "deployed"
+    and result.get("releaseId") == sys.argv[2]
+    and result.get("sha256") == sys.argv[3]
+    and result.get("mode") == "0444"
+):
+    raise SystemExit(1)
+PY
+    then
+      echo "❌ Exact release apply válasz elutasítva." >&2
+      exit 1
+    fi
+    echo "✅ Exact release deployed: id=$EXACT_RELEASE_ID sha256=$EXACT_RELEASE_LOCAL_SHA mode=0444"
+    echo "↩️ Rollback: bin/impactshop-guard-rollback.sh --production --apply --release-id=$EXACT_RELEASE_ID --expected-deployed-sha=$EXACT_RELEASE_LOCAL_SHA"
+  else
+    if ! rsync $RSYNC_OPTS_SAFE "$SCOPED_SRC" "$SSH_HOST:$remote_file" < /dev/null; then
+      echo "   ❌ Exact-file rsync hiba; deploy megszakítva." >&2
+      exit 1
+    fi
+    echo "   ✅ Success"
   fi
-  echo "   ✅ Success"
   ((sync_count += 1))
   echo
 else

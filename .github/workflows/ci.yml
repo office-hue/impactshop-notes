@@ -21,10 +21,16 @@ jobs:
       - name: Deploy control-plane bastion tests
         run: |
           set -euo pipefail
+          python3 -m py_compile scripts/impactshop-exact-release-remote.py
           bash -n bin/deploy-wpcontent-map.sh
+          bash -n bin/impactshop-guard-rollback.sh
+          bash -n tests/impactshop-exact-release-remote.test.sh
+          bash -n tests/impactshop-guard-preflight-detached.test.sh
           bash -n tests/deploy-wpcontent-map-bastion.test.sh
           bash -n tests/deploy-wpcontent-map-exact-file.test.sh
           bash -n tests/impactshop-guard-rollback-truth.test.sh
+          bash tests/impactshop-exact-release-remote.test.sh
+          bash tests/impactshop-guard-preflight-detached.test.sh
           bash tests/deploy-wpcontent-map-bastion.test.sh
           bash tests/deploy-wpcontent-map-exact-file.test.sh
           bash tests/impactshop-guard-rollback-truth.test.sh

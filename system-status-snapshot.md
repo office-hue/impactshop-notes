@@ -872,3 +872,19 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A checksum writer repository-relatív címkét használ; a teszt tiltja a nyers
   `hash_path` kiírást, a manifest pedig a végleges wrapper digestjére van zárva.
 - Production állapot változatlan: runtime absent, option unset, cron absent.
+
+## 2026-08-20T16:40:00+0200 - Exact production release admission
+
+- Elkészült a privát remote release manifest + lock + verified backup/absent
+  truth + apply CAS + staged PHP lint + atomikus replace + SHA/`0444` relock.
+- A `bin/impactshop-guard-rollback.sh` inspect-only alapállásból explicit
+  production/apply/release-ID/deployed-SHA kapuval állít vissza vagy töröl.
+- A broad production mapping és minden `--delete*` exact írás továbbra is
+  tiltott; real exact release csak clean named `main` vagy detached
+  `HEAD == origin/main`, kanonikus profil és explicit expected-before state
+  mellett lehetséges.
+- A temporary-filesystem és fake SSH/rsync/git regressziók zöldek. Production
+  még nem változott: runtime absent, option unset, cron/watchdog absent.
+- A dirty primary `main` érintése nélkül tiszta detached release worktree is
+  használható, de csak exact opt-in és `HEAD == origin/main` esetén; ezt külön
+  feature/stale negatív preflight teszt védi.
