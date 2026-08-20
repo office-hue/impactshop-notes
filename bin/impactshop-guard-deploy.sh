@@ -821,7 +821,13 @@ PY
 
 latest_snap="$(ls -1 "$SNAPSHOT_DIR" 2>/dev/null | tail -n 1 || true)"
 if [[ -n "$latest_snap" ]]; then
-  echo "🧰 Gyors visszaállítás: bin/impactshop-guard-rollback.sh ${latest_snap}"
+  rollback_script="${ROOT_DIR}/bin/impactshop-guard-rollback.sh"
+  if [[ -x "$rollback_script" ]]; then
+    echo "🧰 Gyors visszaállítás: bin/impactshop-guard-rollback.sh ${latest_snap}"
+  else
+    echo "📦 Lokális source snapshot elkészült: ${latest_snap}"
+    echo "🛑 Remote runtime rollback nem elérhető; valós production írás továbbra is tiltott."
+  fi
 fi
 
 exit "${deploy_status:-0}"

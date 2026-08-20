@@ -190,3 +190,12 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 - protected lane erintese elott
 - continuity ellenorzeshez
 - env/auth/runtime vagy bridge drift vizsgalatakor
+
+## 2026-08-20 deploy rollback-truth kiterjesztés
+
+- A deploy guard lokális source snapshotja nem nevezhető remote runtime
+  rollbacknak.
+- Gyors visszaállítási parancs csak ténylegesen létező és futtatható rollback
+  entrypoint mellett jelenhet meg.
+- A fallback üzenetnek fail-closed módon rögzítenie kell a hiányzó remote
+  rollbackot és a fennmaradó production write blokkot; ezt CI guard védi.
