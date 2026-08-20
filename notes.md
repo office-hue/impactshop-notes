@@ -6897,3 +6897,11 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   executable hiányában csak lokális source snapshotot közöl.
 - A production write kapu továbbra is zárt; ez a follow-up nem deploy és nem
   aktiválás.
+
+## 2026-08-20 10:22 CEST - Guard hash/checksum portability
+
+- A rollback-truth merge utáni dry-run lokálisan újrahorgonyozta a guard
+  wrapper hashét, de a checksum sorba abszolút worktree path került.
+- A writer most repo-relatív `docs/impactshop-guard-hashes.json` címkét ír, ezt
+  a guard teszt védi; a végleges wrapper digest és checksum együtt frissült.
+- Távoli írás vagy aktiválás nem történt.

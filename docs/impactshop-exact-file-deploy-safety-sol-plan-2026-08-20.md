@@ -298,17 +298,23 @@ git diff --check
 - Terra re-entry trigger: the merged-main production dry-run succeeded and
   proved exact one-file/no-delete scope, but the wrapper still printed a quick
   rollback command for the absent `bin/impactshop-guard-rollback.sh`.
+- Second merged-main finding: the protected-wrapper approval correctly
+  refreshed its local digest, but wrote the machine-specific absolute worktree
+  path into `impactshop-guard-hashes.sha256`. The checksum contract must remain
+  repository-relative and portable before the new protected hash is accepted.
 - Risk decision: this is a control-plane truth defect, not authorization to
   implement remote rollback or open production writes. The safe additive fix
   is to advertise quick rollback only when the executable exists; otherwise
   identify the artifact as a local source snapshot and retain the production
   write block.
-- Files and interfaces: `bin/impactshop-guard-deploy.sh`, a deterministic
-  rollback-message guard test, CI, protected change record and continuity docs.
+- Files and interfaces: `bin/impactshop-guard-deploy.sh`, the protected hash
+  manifest/checksum, a deterministic rollback/checksum-truth guard test, CI,
+  protected change record and continuity docs.
 - Validation: shell syntax, focused rollback-truth test, both deploy-control
   tests, affiliate bastion regression, CI, strict audit and `git diff --check`.
 - Done when: no successful guard run can claim an unavailable executable
-  rollback path, while real production writes and activation remain blocked.
+  rollback path or persist a host-specific checksum label, while real
+  production writes and activation remain blocked.
 
 ## 9. Handoff decision
 

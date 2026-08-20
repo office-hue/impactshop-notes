@@ -199,3 +199,5 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   entrypoint mellett jelenhet meg.
 - A fallback üzenetnek fail-closed módon rögzítenie kell a hiányzó remote
   rollbackot és a fennmaradó production write blokkot; ezt CI guard védi.
+- A guard checksum labelje repository-relatív; abszolút host/worktree path nem
+  válhat kanonikus vagy commitolt governance truth részévé.

@@ -174,3 +174,6 @@ forrásmásolat. A wrapper csak akkor adhat gyors rollback parancsot, ha a
 megnevezett entrypoint végrehajtható. Enélkül a production write `blocked`, és
 a kimenetnek ezt explicit módon kell közölnie; a snapshot önmagában nem távoli
 backup és nem runtime rollback.
+A védett hash-checksum fájlcímkéje kizárólag repository-relatív lehet; az
+abszolút gép- vagy worktree-útvonal env/runtime driftnek és adatfolyásnak
+minősül, ezért fail-closed teszt védi.
