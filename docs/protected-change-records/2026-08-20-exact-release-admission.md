@@ -132,3 +132,16 @@ Automated evidence:
    feature remains default-off.
 7. Do not set the activation option or install cleanup cron/watchdog in this
    package.
+
+## Post-merge dry-run truth closure
+
+The first merged-main detached dry-run was no-write and correctly itemized one
+new affiliate runtime only. It also exposed an outer-wrapper handover defect:
+the now executable exact rollback script caused the local source snapshot ID to
+be printed as an unsupported positional runtime rollback command. No production
+write was attempted.
+
+The wrapper now always labels its artifact as a local source snapshot. Only a
+successful real exact apply may print the remote rollback command, and that
+command must contain both release ID and deployed SHA. The regression guard
+forbids any `rollback.sh` command built from `latest_snap`.

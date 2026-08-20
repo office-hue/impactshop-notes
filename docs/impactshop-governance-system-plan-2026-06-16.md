@@ -214,5 +214,8 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 - Kanonikus terv és evidencia:
   `docs/impactshop-exact-release-admission-sol-plan-2026-08-20.md`,
   `docs/protected-change-records/2026-08-20-exact-release-admission.md`.
+- A guard wrapper `deploy-*` azonosítója kizárólag lokális source snapshot.
+  Remote rollback authorityt csak sikeres exact apply által kiadott release ID
+  és deployed SHA együtt adhat; a két namespace nem aliasolható.
 - A guard checksum labelje repository-relatív; abszolút host/worktree path nem
   válhat kanonikus vagy commitolt governance truth részévé.

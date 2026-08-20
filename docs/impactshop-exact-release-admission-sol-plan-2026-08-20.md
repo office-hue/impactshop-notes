@@ -370,6 +370,31 @@ public default-off health/read-only canary
 - Done when: a clean dedicated post-merge detached worktree can run the
   canonical guarded release without touching the dirty primary worktree.
 
+### Chunk 6 — post-merge snapshot/rollback handover truth
+
+- Terra/SOL re-entry trigger: merged-main exact dry-run passed every remote
+  admission and showed one no-delete addition, but the outer guard interpreted
+  the newly executable exact rollback script as a legacy local-snapshot restore
+  command and printed an unsupported positional snapshot ID.
+- Risk decision: local source snapshots and remote release manifests are
+  different truth domains and must never share an identifier or command. The
+  mapping release already prints the exact release-ID + deployed-SHA rollback
+  only after verified real apply; the outer wrapper must always label its own
+  artifact as local source snapshot evidence.
+- Files/interfaces: `bin/impactshop-guard-deploy.sh`,
+  `tests/impactshop-guard-rollback-truth.test.sh`, protected hash/checksum and
+  continuity docs.
+- Exact change: remove the executable-presence shortcut and unsupported
+  positional rollback suggestion. Always print local source snapshot truth and
+  state that runtime rollback is available only from a successful exact release
+  output with release ID and deployed SHA.
+- Validation: the old snapshot-ID command is statically forbidden; dry-run
+  output contains local snapshot wording and no runtime rollback command; real
+  exact mapping tests continue to require the valid two-argument rollback form.
+- Done when: no guard path can present a local snapshot ID as a remote runtime
+  rollback credential, and production remains unwritten until the follow-up
+  merge is green.
+
 ## 9. Handoff decision
 
 The release format, state machine, path and hash trust boundaries, apply and

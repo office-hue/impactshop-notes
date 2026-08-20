@@ -227,7 +227,7 @@
     "wp-content/mu-plugins/impact-banners-fillout-rewriter.php": "bfe26476827ab1adc95a8ac8fae252fac6858167029d025d48e352e21281a458",
     "wp-content/mu-plugins/impact-arukereso-hardguard.php": "4f9185ec3a6b67074c5bebb93a49205f72c70c2851932a4ca6d0bf757c2a5a46",
     "wp-content/mu-plugins/impact-cid-arukereso-fix.php": "246b9faf3cd9c9c4324031b815cafcf9c7c742ad5da7803ab90960222e0177e1",
-    "bin/impactshop-guard-deploy.sh": "211d3beac0d4dd6a066dff46f8cb84e1a3a79938e7b4a3d84f9d5164acb13fcd",
+    "bin/impactshop-guard-deploy.sh": "ec7972f696e1a411550c92bd29b638c1e77d51b1b4dc93f586c23e2a373be194",
     "bin/impactshop-guard-preflight.sh": "360abe38eab321ab9ad72759397c3ec470d8fc39a630fe5e60602485a39bc17e",
     "docs/bastion-protection-extension-plan.md": "c138cf6f1a18fcb8f36c666fd554bc3a1cee9cb3de9c340eecadf30bc2309361",
     "docs/impactshop-guard-config.sha256": "4f044c925ccb17d84a243c7d9abe65210d7a54d4466e05c680cecfc38fd43a5b",
@@ -309,9 +309,9 @@
     "scripts/impactshop-exact-release-remote.py": "c127f75d497fc8a4a95d25de8c032d7eaf4cf33dab164069c67cf085693e5fe8",
     "tests/impactshop-exact-release-remote.test.sh": "f67b1d2d7f95fa050a92847b91aa3faffd329ad30a5cdcffb322608896970805",
     "tests/deploy-wpcontent-map-exact-file.test.sh": "cb92d0ce33ad05235cc8a7ac2612c71cdc94618cc4daef49a2dfcd924560178f",
-    "tests/impactshop-guard-rollback-truth.test.sh": "092f9f8e22e1ca123009c415a474b4decd1e32fbbc482f5e76803c74dcc2866c",
+    "tests/impactshop-guard-rollback-truth.test.sh": "c2c7f0d2009c34a632e59609db5f8bc713e40c350152a5ae2bcb4af39c659822",
     ".github/workflows/ci.yml": "5be6f96191c34536597080613b3ffb9bc028b6bc5f71fd76a3afb3dea2a12c11",
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208"
   },
-  "generated_at": "2026-08-20T09:23:47.610617+00:00"
+  "generated_at": "2026-08-20T09:32:00.498164+00:00"
 }
