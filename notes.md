@@ -6888,3 +6888,12 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   viselkedés nem változott.
 - A célzott deploy- és affiliate-bástyatesztek ismét zöldek, production írás
   továbbra sem történt és nincs engedélyezve.
+
+## 2026-08-20 10:14 CEST - Rollback truth closure
+
+- A PR #170 merge utáni production dry-run sikeres volt: egyetlen új affiliate
+  runtime fájl, törlés és írás nélkül; az éles runtime/option/cron változatlan.
+- A dry-run végén látható nem létező rollback-parancsot a guard lezárta:
+  executable hiányában csak lokális source snapshotot közöl.
+- A production write kapu továbbra is zárt; ez a follow-up nem deploy és nem
+  aktiválás.

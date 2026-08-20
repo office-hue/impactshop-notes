@@ -89,6 +89,13 @@ increment. This avoids the zero-valued arithmetic exit status terminating the
 Ubuntu/Bash 5 `set -e` job, while preserving the same deploy counts and control
 flow on the local Bash runtime.
 
+Post-merge truth closure: the successful production dry-run exposed that the
+wrapper still advertised the absent rollback executable. The handover message
+now emits a quick-restore command only behind an executable-file gate; the
+fallback identifies the artifact as a local source snapshot and keeps remote
+runtime rollback and production writes explicitly unavailable. CI runs a
+deterministic marker/order guard for this contract.
+
 ## Rollback
 
 Source rollback is a normal PR revert of this package. No production rollback

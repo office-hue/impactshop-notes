@@ -112,6 +112,9 @@ runtime backupot, és a korábban hivatkozott `bin/impactshop-guard-rollback.sh`
 nem létezik. Emiatt production írás nem nyitható meg pusztán a lokális snapshot
 azonosítójával. Valós deployhoz előre rögzített remote backup, eredeti SHA-256,
 jogosultság és ténylegesen futtatható rollback útvonal szükséges.
+Amíg ez a script nem futtatható, a guard csak a lokális source snapshotot írja
+ki, és külön jelzi, hogy remote runtime rollback nincs; gyors visszaállítási
+parancsot nem állíthat rendelkezésre állónak.
 
 ## Megjegyzések
 - SSH host/user a `.deploy.*.env` fájlokban. A távoli parancsoknál szükség esetén `ssh -t` használható.

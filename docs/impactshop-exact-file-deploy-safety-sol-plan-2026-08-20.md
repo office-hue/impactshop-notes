@@ -226,6 +226,7 @@ bash -n tests/deploy-wpcontent-map-bastion.test.sh
 bash -n tests/deploy-wpcontent-map-exact-file.test.sh
 bash tests/deploy-wpcontent-map-bastion.test.sh
 bash tests/deploy-wpcontent-map-exact-file.test.sh
+bash tests/impactshop-guard-rollback-truth.test.sh
 php -l wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php
 php -l wp-content/mu-plugins/impactshop-boot.php
 php tests/sharity-affiliate-runtime-test.php
@@ -291,6 +292,23 @@ git diff --check
   merged SHA and a dry-run containing only the affiliate runtime addition.
 - Done when: the exact-file capability is merged and production-characterized
   with no remote state change.
+
+### Chunk 4 — post-merge rollback-message truth closure
+
+- Terra re-entry trigger: the merged-main production dry-run succeeded and
+  proved exact one-file/no-delete scope, but the wrapper still printed a quick
+  rollback command for the absent `bin/impactshop-guard-rollback.sh`.
+- Risk decision: this is a control-plane truth defect, not authorization to
+  implement remote rollback or open production writes. The safe additive fix
+  is to advertise quick rollback only when the executable exists; otherwise
+  identify the artifact as a local source snapshot and retain the production
+  write block.
+- Files and interfaces: `bin/impactshop-guard-deploy.sh`, a deterministic
+  rollback-message guard test, CI, protected change record and continuity docs.
+- Validation: shell syntax, focused rollback-truth test, both deploy-control
+  tests, affiliate bastion regression, CI, strict audit and `git diff --check`.
+- Done when: no successful guard run can claim an unavailable executable
+  rollback path, while real production writes and activation remain blocked.
 
 ## 9. Handoff decision
 

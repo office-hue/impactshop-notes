@@ -166,3 +166,11 @@ rg -n "owner_repo.*ai-agent|owner_repo.*impact_hub" docs/impactshop-protected-fi
 ```
 
 A negative ellenorzes helyes eredmenye itt az ures talalat.
+
+## Deploy snapshot / rollback truth
+
+Az env/auth/runtime adapterben a guard snapshot alapértelmezésben lokális
+forrásmásolat. A wrapper csak akkor adhat gyors rollback parancsot, ha a
+megnevezett entrypoint végrehajtható. Enélkül a production write `blocked`, és
+a kimenetnek ezt explicit módon kell közölnie; a snapshot önmagában nem távoli
+backup és nem runtime rollback.

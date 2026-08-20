@@ -856,3 +856,11 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   scope, távoli cél, attribúció és production állapot nem változott.
 - A két deploy-control regressziós teszt és a kapcsolódó affiliate bástyateszt
   helyben zöld; valós production írás továbbra is tiltott.
+
+## 2026-08-20T10:14:00+0200 - Rollback handover truth guard
+
+- A merged-main production dry-run pontosan egy affiliate fájlt jelzett,
+  no-delete/checksum/no-write módban; runtime, option és cron továbbra sincs.
+- A guard többé nem ajánl nem létező rollback parancsot. Futtatható script
+  hiányában lokális source snapshotot és fennmaradó production write blokkot ír.
+- Új determinisztikus CI-teszt védi az executable gate és a fallback sorrendjét.
