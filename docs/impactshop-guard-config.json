@@ -422,6 +422,54 @@
       "owner_branch": "main"
     },
     {
+      "path": "bin/deploy-wpcontent-map.sh",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "bin/impactshop-guard-rollback.sh",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "scripts/impactshop-exact-release-remote.py",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "tests/impactshop-exact-release-remote.test.sh",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "tests/impactshop-guard-preflight-detached.test.sh",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "tests/deploy-wpcontent-map-exact-file.test.sh",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "tests/impactshop-guard-rollback-truth.test.sh",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
       "path": "docs/bastion-protection-extension-plan.md",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",

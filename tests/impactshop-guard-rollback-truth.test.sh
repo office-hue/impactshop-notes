@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GUARD_SCRIPT="$ROOT_DIR/bin/impactshop-guard-deploy.sh"
+ROLLBACK_SCRIPT="$ROOT_DIR/bin/impactshop-guard-rollback.sh"
 
 python3 - "$GUARD_SCRIPT" <<'PY'
 import sys
@@ -44,5 +45,50 @@ PY
 if [[ ! -x "$ROOT_DIR/bin/impactshop-guard-rollback.sh" ]]; then
   grep -Fq 'Remote runtime rollback nem elérhető; valós production írás továbbra is tiltott.' "$GUARD_SCRIPT"
 fi
+
+test -x "$ROLLBACK_SCRIPT"
+grep -Fq '[[ $APPLY_MODE -eq 0 ]]' "$ROLLBACK_SCRIPT"
+grep -Fq 'if [[ $PRODUCTION_CONFIRMED -ne 1 ]]' "$ROLLBACK_SCRIPT"
+grep -Fq 'EXPECTED_DEPLOYED_SHA' "$ROLLBACK_SCRIPT"
+grep -Fq 'python3 - rollback' "$ROLLBACK_SCRIPT"
+
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+mkdir -p "$TMP_DIR/bin"
+SSH_LOG="$TMP_DIR/ssh.log"
+: > "$SSH_LOG"
+cat > "$TMP_DIR/bin/ssh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >> "$FAKE_SSH_LOG"
+while IFS= read -r _line; do :; done
+printf '%s\n' '{"ok":true}'
+SH
+chmod +x "$TMP_DIR/bin/ssh"
+
+run_rollback() {
+  env PATH="$TMP_DIR/bin:$PATH" FAKE_SSH_LOG="$SSH_LOG" bash "$ROLLBACK_SCRIPT" "$@"
+}
+
+if run_rollback --release-id=release-test-20260820 --apply --expected-deployed-sha="$(printf 'a%.0s' {1..64})" >/dev/null 2>&1; then
+  echo "rollback truth guard: mutating rollback accepted without --production" >&2
+  exit 1
+fi
+test ! -s "$SSH_LOG"
+
+if run_rollback --production --apply --release-id=release-test-20260820 >/dev/null 2>&1; then
+  echo "rollback truth guard: mutating rollback accepted without expected SHA" >&2
+  exit 1
+fi
+test ! -s "$SSH_LOG"
+
+run_rollback --release-id=release-test-20260820 >/dev/null
+grep -Fq 'python3 - inspect --root /home/sharityh/app --release-id release-test-20260820' "$SSH_LOG"
+
+: > "$SSH_LOG"
+EXPECTED_SHA="$(printf 'b%.0s' {1..64})"
+run_rollback --production --apply --release-id=release-test-20260820 \
+  --expected-deployed-sha="$EXPECTED_SHA" >/dev/null
+grep -Fq "python3 - rollback --root /home/sharityh/app --release-id release-test-20260820 --expected-deployed-sha $EXPECTED_SHA" "$SSH_LOG"
 
 echo "impactshop guard rollback truth test: PASS"

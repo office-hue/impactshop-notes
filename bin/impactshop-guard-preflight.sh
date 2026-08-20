@@ -38,6 +38,8 @@ def git_output(*args: str) -> str:
 
 current_remote = git_output("remote", "get-url", "origin")
 current_branch = git_output("rev-parse", "--abbrev-ref", "HEAD")
+current_head = git_output("rev-parse", "HEAD")
+origin_branch = git_output("rev-parse", "--verify", f"refs/remotes/origin/{repo_branch}")
 common_dir_raw = git_output("rev-parse", "--git-common-dir")
 current_common_dir = os.path.realpath(os.path.join(root, common_dir_raw)) if common_dir_raw else ""
 expected_common_dir = os.path.realpath(os.path.join(repo_root, ".git"))
@@ -55,7 +57,13 @@ if not (same_repo_root or same_common_dir):
 if current_remote != repo_remote:
     print(f"❌ Guard preflight: remote mismatch. current={current_remote} expected={repo_remote}")
     sys.exit(1)
-if current_branch != repo_branch:
+detached_exact_release = (
+    current_branch == "HEAD"
+    and os.environ.get("IMPACTSHOP_EXACT_RELEASE", "") == "1"
+    and bool(current_head)
+    and current_head == origin_branch
+)
+if current_branch != repo_branch and not detached_exact_release:
     print(f"❌ Guard preflight: branch mismatch. current={current_branch} expected={repo_branch}")
     sys.exit(1)
 
@@ -107,5 +115,8 @@ if missing:
         print(f"  - {p}")
     sys.exit(1)
 
-print("✅ Guard preflight OK")
+if detached_exact_release:
+    print(f"✅ Guard preflight OK (detached exact release at origin/{repo_branch})")
+else:
+    print("✅ Guard preflight OK")
 PY

@@ -6905,3 +6905,18 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A writer most repo-relatív `docs/impactshop-guard-hashes.json` címkét ír, ezt
   a guard teszt védi; a végleges wrapper digest és checksum együtt frissült.
 - Távoli írás vagy aktiválás nem történt.
+
+## 2026-08-20 16:40 CEST - Exact release admission + executable rollback
+
+- Az exact production ág már nem kézi rsync: kanonikus production profil,
+  clean merged-main, explicit expected remote state és egyetlen repo fájl kell.
+- A VPS engine lockolt, sémázott release manifestet ír, meglévő fájlt hashsel
+  ment, absent truthot külön rögzít, payloadot PHP lintel, CAS után atomikusan
+  cserél és `0444`-re zár.
+- A rollback read-only inspecttel indul; íráshoz production/apply/release ID és
+  deployed SHA kell. Harmadik live állapotot nem ír felül.
+- A célzott motor-, deploy-, bastion- és rollback-tesztek helyben zöldek. Éles
+  release és aktiválás még nem történt; cron/watchdog ezért még nem aktuális.
+- A felhasználói dirty primary `main` worktree érintetlen marad: post-merge
+  release külön clean detached worktree-ből mehet, kizárólag exact opt-in és
+  `HEAD == origin/main` egyezés mellett.

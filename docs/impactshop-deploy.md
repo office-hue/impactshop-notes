@@ -85,9 +85,25 @@ repógyökér alatt lévő fájl lehet. Pontosan egy mapping roothoz kell tartoz
 Az exact ág minden `--delete*` rsync opciót eltávolít, `--checksum` ellenőrzést
 ad, nem hoz létre távoli könyvtárat, és nem érinti a sibling fájlokat.
 
-Valós production futás jelenleg exact scope-pal is blokkol. A kapu csak külön
-védett csomagban nyitható meg remote backup, compare-and-swap/hash ellenőrzés,
-post-write `0444` visszazárás és végrehajtható rollback után.
+Valós production futás csak exact scope-pal, a kanonikus production profilból,
+clean merged `main` vagy clean detached `HEAD == origin/main` worktree-ből és
+két explicit admission értékkel engedélyezett. A detached mód kizárólag az exact
+release opt-innal fogadható el; named feature branch és stale detached commit
+blokkolt.
+
+```bash
+IMPACTSHOP_EXACT_RELEASE=1 \
+IMPACTSHOP_EXPECT_REMOTE_SHA256=absent \
+IMPACTSHOP_DEPLOY_FILE="wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php" \
+IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \
+  bin/impactshop-guard-deploy.sh --production --non-interactive --auto-approve \
+  --reason="approved exact default-off release"
+```
+
+Frissítésnél az `absent` helyett az előre read-only ellenőrzött 64 karakteres
+live SHA-256 kötelező. A release engine lock alatt távoli manifestet és ellenőrzött
+backupot készít, feltöltés után ismét CAS-t futtat, PHP lint után atomikusan cserél,
+majd SHA/PHP/`0444` állapotot ellenőriz. Széles production írás továbbra is tiltott.
 
 ## Production deploy (guard + mapping)
 ```bash
@@ -107,17 +123,19 @@ Production mapping deploy után a `bin/deploy-wpcontent-map.sh` automatikusan le
 
 ## Rollback truth
 
-A guard deploy snapshot jelenleg lokális forrás-snapshot. Nem bizonyít távoli
-runtime backupot, és a korábban hivatkozott `bin/impactshop-guard-rollback.sh`
-nem létezik. Emiatt production írás nem nyitható meg pusztán a lokális snapshot
-azonosítójával. Valós deployhoz előre rögzített remote backup, eredeti SHA-256,
-jogosultság és ténylegesen futtatható rollback útvonal szükséges.
-Amíg ez a script nem futtatható, a guard csak a lokális source snapshotot írja
-ki, és külön jelzi, hogy remote runtime rollback nincs; gyors visszaállítási
-parancsot nem állíthat rendelkezésre állónak.
+A guard deploy általános snapshotja továbbra is lokális forrás-snapshot, nem
+remote runtime backup. Exact release esetén viszont a távoli, release-ID-hez
+kötött manifest az eredeti state/SHA/mode és a deployed SHA kanonikus rollback
+igazsága. A `bin/impactshop-guard-rollback.sh` read-only inspecttel indul;
+mutációhoz `--production --apply`, pontos release ID és deployed SHA szükséges.
+Eltérő live SHA, sérült backup/manifest vagy már visszaállított release blokkol.
 A guard hash-checksum sora repository-relatív fájlnevet tartalmazhat; abszolút
 gép- vagy worktree-útvonal tárolása tiltott, mert nem hordozható continuity
 truth és lokális környezeti adatot szivárogtatna a repóba.
+
+Az exact rollback parancsot a sikeres deploy írja ki. Első telepítésnél csak a
+változatlan deployed SHA törölhető; meglévő fájlnál csak az ellenőrzött backup
+állítható vissza az eredeti móddal.
 
 ## Megjegyzések
 - SSH host/user a `.deploy.*.env` fájlokban. A távoli parancsoknál szükség esetén `ssh -t` használható.
