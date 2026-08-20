@@ -24,8 +24,10 @@ jobs:
           bash -n bin/deploy-wpcontent-map.sh
           bash -n tests/deploy-wpcontent-map-bastion.test.sh
           bash -n tests/deploy-wpcontent-map-exact-file.test.sh
+          bash -n tests/impactshop-guard-rollback-truth.test.sh
           bash tests/deploy-wpcontent-map-bastion.test.sh
           bash tests/deploy-wpcontent-map-exact-file.test.sh
+          bash tests/impactshop-guard-rollback-truth.test.sh
 
       - name: Validation Gate (staging, read-only; SSH timeout tolerated)
         continue-on-error: true
