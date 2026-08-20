@@ -35,6 +35,21 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
   `docs/impactshop-deploy-bastion-manifest-sol-plan-2026-08-19.md` és
   `docs/protected-change-records/2026-08-19-deploy-bastion-manifest-guard.md`.
 
+## 2026-08-20 Exact-file production preview note
+
+- A production `mu-plugins` könyvtár nem tekinthető egyetlen repo által birtokolt
+  deploy egységnek: 20 live-only bejegyzés és 6 közös content drift bizonyított.
+- A teljes mapping profil minden hálózati művelet előtt fail-closed validálódik;
+  a páros env explicit staging/production identitást hordoz.
+- Valós production mapping minden scope-ban tiltott, amíg nincs remote backup,
+  CAS/hash admission, `0444` visszazárás és futtatható rollback.
+- Az exact-file dry-run egyetlen repo-owned fájlra szűkít, minden `--delete*`
+  opciót eltávolít, checksumot kényszerít, és a két deploy bastion teszt CI-ben
+  is fut.
+- Kanonikus csomag:
+  `docs/impactshop-exact-file-deploy-safety-sol-plan-2026-08-20.md` és
+  `docs/protected-change-records/2026-08-20-exact-file-deploy-safety.md`.
+
 ## 2026-06-23 Phase I sync note
 
 - A VB2026 NGO katalogus Phase I source lane (`impactshop-vb2026-ngo-catalog.php`) additiv, de mivel uj MU-plugin es uj publikus/selection REST perem, a docs continuity minimum itt nem all meg a feature-plan es a bastion naplo frissitesenel.

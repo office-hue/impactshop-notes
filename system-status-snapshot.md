@@ -834,3 +834,25 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - Production állapot változatlan: affiliate runtime fájl nincs fenn, option
   unset, cleanup cron nincs. Staging preflight 404; két identity-panel fájl
   live-main driftje miatt real deploy külön döntésig blokkolt.
+
+## 2026-08-20T09:50:28+0200 - Exact-file production release preview
+
+- A read-only production inventory 20 live-only MU-plugin bejegyzést és hat
+  közös, SHA-256 szerint eltérő fájlt bizonyított; a széles `--delete` mapping
+  ezért nem tekinthető biztonságos production deploynak.
+- A mapping profil most hálózat előtt validálódik. Unsafe/space/traversal,
+  duplicate, symlink és repo-rooton kívüli source fail-closed leáll.
+- `IMPACTSHOP_DEPLOY_FILE` mellett a production dry-run pontosan egy fájlt old
+  fel, minden `--delete*` opciót eltávolít és `--checksum` módot kényszerít.
+- Minden valós production írás továbbra is tiltott, mert a távoli backup/CAS és
+  futtatható rollback még nincs implementálva. Runtime/option/cron nem változott.
+- Cronos/watchdog változás nem kell: ez deploy-control, nem scheduler; az
+  affiliate watchdog csak a későbbi aktiválási lane-ben válik operatívvá.
+
+## 2026-08-20T10:12:00+0200 - Exact-file CI shell parity
+
+- A deploy dry-run számlálói Bash 3/5 kompatibilis `+= 1` műveletet használnak.
+- A változás kizárólag a fail-closed CI futás hordozhatóságát javítja; deploy
+  scope, távoli cél, attribúció és production állapot nem változott.
+- A két deploy-control regressziós teszt és a kapcsolódó affiliate bástyateszt
+  helyben zöld; valós production írás továbbra is tiltott.

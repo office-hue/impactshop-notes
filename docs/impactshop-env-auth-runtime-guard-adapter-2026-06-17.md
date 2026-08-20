@@ -23,6 +23,24 @@ Az `allowed` állapot további feltételei ennél a lane-nél:
 Ezek hiányában a release státusz `blocked`; a repo-checkpoint önmagában csak
 default-off, deployolatlan állapotot igazol.
 
+## 2026-08-20 exact-file deploy env extension
+
+A paired deploy env lane most explicit `DEPLOY_ENVIRONMENT=staging|production`
+identitást hordoz. A két profil együtt változik, és egyik sem fogadhat el
+whitespace-, traversal- vagy abszolút mapping source/destination értéket.
+
+Production állapot csak `DRY_RUN=1` mellett érheti el a mapping végrehajtási
+ágat. `IMPACTSHOP_DEPLOY_FILE` esetén pontosan egy normál, nem symlinkelt,
+fizikailag a repo alatt maradó fájl oldható fel pontosan egy remote célra;
+minden `--delete*` opció eltűnik és checksum kötelező. Valós production írás
+remote backup/CAS/executable rollback admission nélkül `blocked`.
+
+Kanonikus evidencia:
+
+- `docs/impactshop-exact-file-deploy-safety-sol-plan-2026-08-20.md`;
+- `tests/deploy-wpcontent-map-exact-file.test.sh`;
+- `docs/protected-change-records/2026-08-20-exact-file-deploy-safety.md`.
+
 ## Cel
 
 Ez a dokumentum nem uj protected policyt vezet be.

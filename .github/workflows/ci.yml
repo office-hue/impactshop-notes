@@ -18,6 +18,15 @@ jobs:
       - name: Validation script syntax
         run: bash -n scripts/validate-deploy-profile.sh
 
+      - name: Deploy control-plane bastion tests
+        run: |
+          set -euo pipefail
+          bash -n bin/deploy-wpcontent-map.sh
+          bash -n tests/deploy-wpcontent-map-bastion.test.sh
+          bash -n tests/deploy-wpcontent-map-exact-file.test.sh
+          bash tests/deploy-wpcontent-map-bastion.test.sh
+          bash tests/deploy-wpcontent-map-exact-file.test.sh
+
       - name: Validation Gate (staging, read-only; SSH timeout tolerated)
         continue-on-error: true
         env:
