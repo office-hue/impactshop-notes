@@ -6880,3 +6880,11 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   backup, CAS/hash-ellenőrzés, `0444` visszazárás és végrehajtható rollback.
 - A korábbi runbookban hivatkozott `bin/impactshop-guard-rollback.sh` nem létezik;
   a dokumentáció ezt többé nem állítja működő runtime rollbacknek.
+
+## 2026-08-20 10:12 CEST - Exact-file CI shell parity follow-up
+
+- A GitHub Ubuntu/Bash 5 validáció a nulláról induló postfix számlálón állt le.
+- A három deploy számláló hordozható `+= 1` alakra váltott; üzleti vagy remote
+  viselkedés nem változott.
+- A célzott deploy- és affiliate-bástyatesztek ismét zöldek, production írás
+  továbbra sem történt és nincs engedélyezve.

@@ -848,3 +848,11 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   futtatható rollback még nincs implementálva. Runtime/option/cron nem változott.
 - Cronos/watchdog változás nem kell: ez deploy-control, nem scheduler; az
   affiliate watchdog csak a későbbi aktiválási lane-ben válik operatívvá.
+
+## 2026-08-20T10:12:00+0200 - Exact-file CI shell parity
+
+- A deploy dry-run számlálói Bash 3/5 kompatibilis `+= 1` műveletet használnak.
+- A változás kizárólag a fail-closed CI futás hordozhatóságát javítja; deploy
+  scope, távoli cél, attribúció és production állapot nem változott.
+- A két deploy-control regressziós teszt és a kapcsolódó affiliate bástyateszt
+  helyben zöld; valós production írás továbbra is tiltott.

@@ -444,7 +444,7 @@ else
 
     if [ ! -e "$SRC" ]; then
       echo "⏭️ SKIP: $SRC (nincs a helyi gépen)"
-      ((skip_count++)); continue
+      ((skip_count += 1)); continue
     fi
 
     remote_dir="$REMOTE_WP_CONTENT/$DST"
@@ -461,10 +461,10 @@ else
     echo "📦 SYNC: $SRC → $DST"
     if ! rsync $RSYNC_OPTS_SAFE "$SRC"/ "$SSH_HOST:$remote_dir/" < /dev/null; then
       echo "   ❌ rsync hiba ezen a mappingon (tovább lépek)"
-      ((skip_count++))
+      ((skip_count += 1))
     else
       echo "   ✅ Success"
-      ((sync_count++))
+      ((sync_count += 1))
     fi
     echo
   done

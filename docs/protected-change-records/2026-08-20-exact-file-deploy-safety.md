@@ -84,6 +84,11 @@ Automated checks:
 - protected-touch, worktree continuity and strict safe audit;
 - `git diff --check`.
 
+CI parity follow-up: the broad dry-run counters use `+= 1` instead of postfix
+increment. This avoids the zero-valued arithmetic exit status terminating the
+Ubuntu/Bash 5 `set -e` job, while preserving the same deploy counts and control
+flow on the local Bash runtime.
+
 ## Rollback
 
 Source rollback is a normal PR revert of this package. No production rollback
