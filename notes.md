@@ -6924,3 +6924,14 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   ID-t régi rollback argumentumként írta ki. A real deploy ezért megállt. A
   javítás után csak sikeres exact apply adhat release ID + deployed SHA runtime
   rollback parancsot.
+
+## 2026-08-20 11:50 CEST - Production Python compatibility checkpoint
+
+- Az engedélyezett exact apply a távoli engine indulásakor állt meg: a VPS
+  Python 3.6.8 nem ismeri az annotációs future importot. A `prepare` nem futott.
+- Utóellenőrzés: target absent, failed release directory absent; éles fájl,
+  option, cron, attribúció vagy pénzügyi truth nem változott.
+- Az engine Python 3.6-kompatibilis typing/subprocess alakot kapott, a változatlan
+  CAS/rollback állapotgépet AST grammar és teljes filesystem teszt védi.
+- Következő biztonságos lépés egyetlen merge után clean detached dry-run és
+  default-off exact release; Cronos/watchdog csak aktiváláskor szükséges.

@@ -6,6 +6,24 @@ ENGINE="$ROOT_DIR/scripts/impactshop-exact-release-remote.py"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
+python3 - "$ENGINE" <<'PY'
+import ast
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+ast.parse(source, filename=sys.argv[1], feature_version=(3, 6))
+for forbidden in (
+    "from __future__ import annotations",
+    "dict[",
+    "tuple[",
+    " | None",
+    "text=True",
+):
+    if forbidden in source:
+        raise SystemExit("Python 3.6 compatibility regression: " + forbidden)
+PY
+
 APP_ROOT="$TMP_DIR/app"
 TARGET_REL="wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php"
 TARGET="$APP_ROOT/$TARGET_REL"

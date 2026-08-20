@@ -395,6 +395,30 @@ public default-off health/read-only canary
   rollback credential, and production remains unwritten until the follow-up
   merge is green.
 
+### Chunk 7 — production Python 3.6 compatibility closure
+
+- Terra/SOL re-entry trigger: the post-merge real release passed HTTP, bastion,
+  origin and exact-scope admission, then the remote interpreter rejected
+  `from __future__ import annotations` before executing `prepare`. Read-only
+  verification found Python 3.6.8 only; target and release directory remained
+  absent.
+- Risk decision: do not install or replace machine-level Python during an
+  affiliate release. Keep the standard-library engine behavior unchanged and
+  lower only its syntax/API floor to the production-owned Python 3.6 runtime.
+- Files/interfaces: `scripts/impactshop-exact-release-remote.py`, its focused
+  test, protected hash/checksum and continuity docs.
+- Exact change: remove postponed annotations, PEP 585 built-in generics and PEP
+  604 unions; use `typing` aliases or unannotated instance fields; replace
+  `subprocess.run(text=True)` with the Python 3.6-compatible
+  `universal_newlines=True` form.
+- Validation: parse the engine with `ast.parse(..., feature_version=(3, 6))`,
+  forbid the incompatible markers, rerun the complete filesystem state-machine
+  suite and existing deploy/rollback CI. After merge, repeat absent prestate,
+  dry-run and exact apply from detached origin/main.
+- Done when: production Python parses and executes `prepare`, or fails with a
+  structured release invariant rather than syntax error; no target write occurs
+  before successful prepare/apply.
+
 ## 9. Handoff decision
 
 The release format, state machine, path and hash trust boundaries, apply and

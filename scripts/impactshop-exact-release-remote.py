@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Fail-closed exact-file release transaction for the ImpactShop VPS."""
 
-from __future__ import annotations
-
 import argparse
 import fcntl
 import hashlib
@@ -16,7 +14,7 @@ import stat
 import subprocess
 import sys
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Dict, Optional, Tuple
 
 
 SCHEMA_VERSION = 1
@@ -40,7 +38,7 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def emit(payload: dict[str, Any]) -> None:
+def emit(payload: Dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":")))
 
 
@@ -97,7 +95,7 @@ def require_private_directory(path: Path) -> None:
         raise ReleaseError(f"unsafe_directory_mode:{path.name}")
 
 
-def resolve_target(root: Path, target_relative: str) -> tuple[PurePosixPath, Path]:
+def resolve_target(root: Path, target_relative: str) -> Tuple[PurePosixPath, Path]:
     rel = require_relative(target_relative)
     cursor = root
     for part in rel.parts[:-1]:
@@ -125,7 +123,7 @@ def sha256_path(path: Path) -> str:
     return digest.hexdigest()
 
 
-def regular_state(path: Path) -> dict[str, Any]:
+def regular_state(path: Path) -> Dict[str, Any]:
     if not os.path.lexists(path):
         return {"state": "absent", "sha256": None, "mode": None}
     info = path.lstat()
@@ -185,7 +183,7 @@ def atomic_copy(source: Path, target: Path, mode: int) -> None:
             temporary.unlink()
 
 
-def atomic_json(path: Path, payload: dict[str, Any]) -> None:
+def atomic_json(path: Path, payload: Dict[str, Any]) -> None:
     temporary = path.parent / f".{path.name}.{secrets.token_hex(8)}.tmp"
     encoded = (json.dumps(payload, ensure_ascii=True, sort_keys=True, indent=2) + "\n").encode()
     nofollow = getattr(os, "O_NOFOLLOW", 0)
@@ -206,7 +204,7 @@ def atomic_json(path: Path, payload: dict[str, Any]) -> None:
     fsync_directory(path.parent)
 
 
-def release_paths(root: Path, release_id: str, *, create_parent: bool) -> tuple[Path, Path, Path, Path]:
+def release_paths(root: Path, release_id: str, *, create_parent: bool) -> Tuple[Path, Path, Path, Path]:
     bastion = root / ".bastion"
     require_private_directory(bastion)
     releases = bastion / "exact-file-releases"
@@ -219,7 +217,7 @@ def release_paths(root: Path, release_id: str, *, create_parent: bool) -> tuple[
 class LockedRoot:
     def __init__(self, root: Path) -> None:
         self.root = root
-        self.descriptor: int | None = None
+        self.descriptor = None
 
     def __enter__(self) -> "LockedRoot":
         bastion = self.root / ".bastion"
@@ -241,7 +239,7 @@ class LockedRoot:
             self.descriptor = None
 
 
-def validate_manifest(raw: Any, release_id: str) -> dict[str, Any]:
+def validate_manifest(raw: Any, release_id: str) -> Dict[str, Any]:
     if not isinstance(raw, dict) or raw.get("schemaVersion") != SCHEMA_VERSION:
         raise ReleaseError("invalid_manifest_schema")
     if raw.get("releaseId") != release_id:
@@ -263,7 +261,7 @@ def validate_manifest(raw: Any, release_id: str) -> dict[str, Any]:
     return raw
 
 
-def read_manifest(path: Path, release_id: str) -> dict[str, Any]:
+def read_manifest(path: Path, release_id: str) -> Dict[str, Any]:
     if not os.path.lexists(path):
         raise ReleaseError("missing_manifest")
     info = path.lstat()
@@ -278,14 +276,16 @@ def read_manifest(path: Path, release_id: str) -> dict[str, Any]:
     return validate_manifest(raw, release_id)
 
 
-def require_state_matches(current: dict[str, Any], expected_state: str, expected_sha: str | None) -> None:
+def require_state_matches(
+    current: Dict[str, Any], expected_state: str, expected_sha: Optional[str]
+) -> None:
     if current["state"] != expected_state:
         raise ReleaseError("compare_and_swap_state_mismatch")
     if expected_state == "present" and current["sha256"] != expected_sha:
         raise ReleaseError("compare_and_swap_hash_mismatch")
 
 
-def verify_php(path: Path, *, required: bool | None = None) -> None:
+def verify_php(path: Path, *, required: Optional[bool] = None) -> None:
     if required is None:
         required = path.suffix.lower() == ".php"
     if not required:
@@ -295,14 +295,14 @@ def verify_php(path: Path, *, required: bool | None = None) -> None:
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True,
+        universal_newlines=True,
         check=False,
     )
     if result.returncode != 0:
         raise ReleaseError("php_lint_failed")
 
 
-def prepare(args: argparse.Namespace) -> dict[str, Any]:
+def prepare(args: argparse.Namespace) -> Dict[str, Any]:
     root = validate_root(args.root)
     intended = require_sha256(args.intended_sha, "intended_sha256")
     expected = args.expected_before
@@ -351,7 +351,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def restore_original(target: Path, backup: Path, manifest: dict[str, Any]) -> None:
+def restore_original(target: Path, backup: Path, manifest: Dict[str, Any]) -> None:
     if manifest["originalState"] == "absent":
         if os.path.lexists(target):
             target.unlink()
@@ -368,7 +368,7 @@ def restore_original(target: Path, backup: Path, manifest: dict[str, Any]) -> No
         raise ReleaseError("restored_mode_mismatch")
 
 
-def apply_release(args: argparse.Namespace) -> dict[str, Any]:
+def apply_release(args: argparse.Namespace) -> Dict[str, Any]:
     root = validate_root(args.root)
     with LockedRoot(root):
         release_dir, manifest_path, backup_path, payload_path = release_paths(root, args.release_id, create_parent=False)
@@ -426,7 +426,7 @@ def apply_release(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def rollback(args: argparse.Namespace) -> dict[str, Any]:
+def rollback(args: argparse.Namespace) -> Dict[str, Any]:
     root = validate_root(args.root)
     expected_deployed = require_sha256(args.expected_deployed_sha, "expected_deployed_sha256")
     with LockedRoot(root):
@@ -458,7 +458,7 @@ def rollback(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def inspect(args: argparse.Namespace) -> dict[str, Any]:
+def inspect(args: argparse.Namespace) -> Dict[str, Any]:
     root = validate_root(args.root)
     with LockedRoot(root):
         release_dir, manifest_path, _, _ = release_paths(root, args.release_id, create_parent=False)

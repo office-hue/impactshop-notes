@@ -2,7 +2,7 @@
 
 Date: 2026-08-20
 
-Status: implemented locally; production release not yet executed
+Status: implementation complete; production release retry pending merged compatibility closure
 
 Operator approval: Arnold repeatedly approved the next coherent SOL Impact Shop
 package and requested safe production readiness with minimum push/PR/merge
@@ -109,7 +109,8 @@ SHA. A stale, repeated, corrupt or racing rollback fails closed.
 
 Automated evidence:
 
-- Python compile and real temporary-filesystem prepare/apply/rollback suite;
+- Python 3.6 grammar/API compatibility guard, local compile and real
+  temporary-filesystem prepare/apply/rollback suite;
 - absent and existing origin round trips;
 - pre-apply and pre-rollback drift rejection;
 - corrupt payload, PHP, manifest and backup rejection;
@@ -145,3 +146,18 @@ The wrapper now always labels its artifact as a local source snapshot. Only a
 successful real exact apply may print the remote rollback command, and that
 command must contain both release ID and deployed SHA. The regression guard
 forbids any `rollback.sh` command built from `latest_snap`.
+
+## Production Python compatibility closure
+
+The first authorized exact apply reached the remote engine after every deploy,
+origin and bastion preflight had passed, but the VPS Python 3.6.8 interpreter
+rejected `from __future__ import annotations` before `prepare` could execute.
+Read-only follow-up confirmed that the target remained absent and the failed
+release directory was absent, so no partial production state or rollback was
+created. Release ID: `20260820T093515Z-c271619feda5-23b45a90`.
+
+The engine now keeps the same manifest, lock, CAS, lint, atomic replace and
+rollback state machine while using Python 3.6-compatible typing and subprocess
+syntax. A Python 3.6 AST grammar guard plus forbidden-modern-syntax assertions
+run before the filesystem transaction suite. Installing or upgrading the VPS
+Python runtime is explicitly outside this release.
