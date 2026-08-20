@@ -6935,3 +6935,14 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   CAS/rollback állapotgépet AST grammar és teljes filesystem teszt védi.
 - Következő biztonságos lépés egyetlen merge után clean detached dry-run és
   default-off exact release; Cronos/watchdog csak aktiváláskor szükséges.
+
+## 2026-08-20 12:05 CEST - Max-protected parent admission
+
+- A második éles próba `prepare` állapotig jutott, majd strukturált
+  `PermissionError`-ral leállt, mert a production `mu-plugins` könyvtár `0555`.
+- Inspect és külön VPS ellenőrzés: target absent, release `prepared`, payload SHA
+  pontos, PHP lint zöld. Nem kell rollback és nincs részleges éles runtime.
+- A motor most a saját lockja alatt, inode/owner ellenőrzéssel csak az owner-write
+  bitet nyitja meg, majd minden ágon az eredeti parent módra zár vissza.
+- A teszt `0555` parent mellett bizonyít apply + `0444` target + rollback + race
+  után is `0555` állapotot. Aktiválás és Cronos/watchdog változatlanul külön csomag.

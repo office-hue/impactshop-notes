@@ -239,6 +239,93 @@ class LockedRoot:
             self.descriptor = None
 
 
+class WritableParent:
+    """Open the exact parent inode, add owner-write briefly, then restore it."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self.descriptor = None
+        self.device = None
+        self.inode = None
+        self.original_mode = None
+
+    def _assert_bound(self) -> None:
+        if self.descriptor is None:
+            raise ReleaseError("target_parent_not_open")
+        descriptor_info = os.fstat(self.descriptor)
+        try:
+            path_info = self.path.lstat()
+        except OSError as exc:
+            raise ReleaseError("target_parent_drift") from exc
+        if (
+            not stat.S_ISDIR(descriptor_info.st_mode)
+            or stat.S_ISLNK(path_info.st_mode)
+            or not stat.S_ISDIR(path_info.st_mode)
+            or descriptor_info.st_dev != self.device
+            or descriptor_info.st_ino != self.inode
+            or path_info.st_dev != self.device
+            or path_info.st_ino != self.inode
+        ):
+            raise ReleaseError("target_parent_drift")
+
+    def __enter__(self) -> "WritableParent":
+        flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(self.path, flags)
+        self.descriptor = descriptor
+        try:
+            info = os.fstat(descriptor)
+            if not stat.S_ISDIR(info.st_mode):
+                raise ReleaseError("unsafe_target_parent")
+            if info.st_uid != os.geteuid():
+                raise ReleaseError("foreign_target_parent")
+            mode = stat.S_IMODE(info.st_mode)
+            if mode & (stat.S_IWGRP | stat.S_IWOTH):
+                raise ReleaseError("unsafe_target_parent_mode")
+            self.device = info.st_dev
+            self.inode = info.st_ino
+            self.original_mode = mode
+            self._assert_bound()
+            writable_mode = mode | stat.S_IWUSR
+            if writable_mode != mode:
+                os.fchmod(descriptor, writable_mode)
+                if stat.S_IMODE(os.fstat(descriptor).st_mode) != writable_mode:
+                    raise ReleaseError("target_parent_unlock_failed")
+            self._assert_bound()
+            return self
+        except Exception:
+            if self.original_mode is not None:
+                try:
+                    os.fchmod(descriptor, self.original_mode)
+                except OSError:
+                    pass
+            os.close(descriptor)
+            self.descriptor = None
+            raise
+
+    def assert_bound(self) -> None:
+        self._assert_bound()
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+        if self.descriptor is None or self.original_mode is None:
+            raise ReleaseError("target_parent_not_open")
+        restoration_error = None
+        try:
+            os.fchmod(self.descriptor, self.original_mode)
+            if stat.S_IMODE(os.fstat(self.descriptor).st_mode) != self.original_mode:
+                restoration_error = ReleaseError("target_parent_relock_failed")
+            else:
+                self._assert_bound()
+        except Exception as restore_exc:
+            restoration_error = restore_exc
+        finally:
+            os.close(self.descriptor)
+            self.descriptor = None
+        if restoration_error is not None:
+            if isinstance(restoration_error, ReleaseError):
+                raise restoration_error
+            raise ReleaseError("target_parent_relock_failed") from restoration_error
+
+
 def validate_manifest(raw: Any, release_id: str) -> Dict[str, Any]:
     if not isinstance(raw, dict) or raw.get("schemaVersion") != SCHEMA_VERSION:
         raise ReleaseError("invalid_manifest_schema")
@@ -382,30 +469,46 @@ def apply_release(args: argparse.Namespace) -> Dict[str, Any]:
         verify_php(payload_path, required=manifest["targetRelative"].lower().endswith(".php"))
         current = regular_state(target)
         require_state_matches(current, manifest["originalState"], manifest["originalSha256"])
-        atomic_copy(payload_path, target, 0o444)
         try:
-            deployed = regular_state(target)
-            require_state_matches(deployed, "present", manifest["intendedSha256"])
-            if deployed["mode"] != 0o444:
-                raise ReleaseError("deployed_mode_mismatch")
-            verify_php(target)
-        except Exception as exc:
-            live = regular_state(target)
-            if live["state"] == "present" and live["sha256"] == manifest["intendedSha256"]:
+            with WritableParent(target.parent) as parent_window:
+                parent_window.assert_bound()
                 try:
-                    restore_original(target, backup_path, manifest)
+                    atomic_copy(payload_path, target, 0o444)
+                    deployed = regular_state(target)
+                    require_state_matches(deployed, "present", manifest["intendedSha256"])
+                    if deployed["mode"] != 0o444:
+                        raise ReleaseError("deployed_mode_mismatch")
+                    verify_php(target)
+                except Exception as exc:
+                    live = regular_state(target)
+                    if live["state"] == "present" and live["sha256"] == manifest["intendedSha256"]:
+                        try:
+                            parent_window.assert_bound()
+                            restore_original(target, backup_path, manifest)
+                            manifest["phase"] = "failed_recovered"
+                            manifest["failure"] = str(exc)
+                            manifest["failedAt"] = utc_now()
+                            atomic_json(manifest_path, manifest)
+                        except Exception as recovery_exc:
+                            manifest["phase"] = "failed_unrecovered"
+                            manifest["failure"] = str(exc)
+                            manifest["recoveryFailure"] = str(recovery_exc)
+                            manifest["failedAt"] = utc_now()
+                            atomic_json(manifest_path, manifest)
+                    else:
+                        manifest["phase"] = "failed_unrecovered"
+                        manifest["failure"] = str(exc)
+                        manifest["failedAt"] = utc_now()
+                        atomic_json(manifest_path, manifest)
+                    raise
+        except Exception as exc:
+            if manifest["phase"] == "prepared":
+                live = regular_state(target)
+                try:
+                    require_state_matches(live, manifest["originalState"], manifest["originalSha256"])
                     manifest["phase"] = "failed_recovered"
-                    manifest["failure"] = str(exc)
-                    manifest["failedAt"] = utc_now()
-                    atomic_json(manifest_path, manifest)
-                except Exception as recovery_exc:
+                except ReleaseError:
                     manifest["phase"] = "failed_unrecovered"
-                    manifest["failure"] = str(exc)
-                    manifest["recoveryFailure"] = str(recovery_exc)
-                    manifest["failedAt"] = utc_now()
-                    atomic_json(manifest_path, manifest)
-            else:
-                manifest["phase"] = "failed_unrecovered"
                 manifest["failure"] = str(exc)
                 manifest["failedAt"] = utc_now()
                 atomic_json(manifest_path, manifest)
@@ -440,7 +543,9 @@ def rollback(args: argparse.Namespace) -> Dict[str, Any]:
         _, target = resolve_target(root, manifest["targetRelative"])
         current = regular_state(target)
         require_state_matches(current, "present", expected_deployed)
-        restore_original(target, backup_path, manifest)
+        with WritableParent(target.parent) as parent_window:
+            parent_window.assert_bound()
+            restore_original(target, backup_path, manifest)
         final_state = regular_state(target)
         require_state_matches(final_state, manifest["originalState"], manifest["originalSha256"])
         manifest["phase"] = "rolled_back"

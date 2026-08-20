@@ -419,6 +419,36 @@ public default-off health/read-only canary
   structured release invariant rather than syntax error; no target write occurs
   before successful prepare/apply.
 
+### Chunk 8 — max-protected parent write/relock transaction
+
+- Terra/SOL re-entry trigger: the Python 3.6-compatible remote engine completed
+  `prepare`, verified the uploaded payload and PHP syntax, then returned a
+  structured `PermissionError` during apply. Read-only evidence shows the exact
+  target remains absent, the release remains `prepared`, and the canonical
+  `wp-content/mu-plugins` parent is intentionally max-protected at mode `0555`.
+- Risk decision: do not weaken the persistent bastion mode and do not use broad
+  rsync or recursive chmod. Under the existing remote release lock, open and
+  validate only the exact real parent directory, temporarily add owner-write
+  when required, retain that admission through deploy verification/recovery,
+  and restore plus verify the exact original parent mode on every exit path.
+- Files/interfaces: `scripts/impactshop-exact-release-remote.py`, its focused
+  real-filesystem suite, protected hash/checksum and continuity evidence.
+- Exact change: introduce a Python 3.6-compatible parent write-window context
+  bound to the directory inode/owner. It may add only `S_IWUSR`, rejects
+  symlinks/non-directories/foreign ownership and drift, and fail-closes if the
+  original mode cannot be restored. The target CAS, payload SHA, PHP lint,
+  atomic copy, `0444` target relock and rollback state machine stay unchanged.
+- Validation: execute absent and existing round trips with parent mode `0555`;
+  assert `0555` after deploy, rollback and a failing/racing apply; keep all
+  Python 3.6, manifest corruption, sibling isolation, deploy and rollback truth
+  regressions green. Post-merge, inspect the existing prepared release, run a
+  new dry-run, then apply the same prepared release only through the canonical
+  exact engine and verify parent `0555`, target SHA/`0444`, PHP lint and manifest
+  phase `deployed`.
+- Done when: the exact file is present default-off, the parent is back at its
+  pre-release max-protected mode, rollback inspection is executable and no
+  option, cron, watchdog, feed, attribution or financial truth changed.
+
 ## 9. Handoff decision
 
 The release format, state machine, path and hash trust boundaries, apply and

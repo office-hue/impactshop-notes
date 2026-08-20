@@ -903,3 +903,15 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   Python 3.6-kompatibilis; külön AST/API regressziós guard védi ezt a minimumot.
 - Feature option továbbra is unset/`0`, cleanup cron nincs. Default-off exact
   release után sem kell Cronos; watchdog csak az aktiválási csomagban kötelező.
+
+## 2026-08-20T12:05:00+0200 - Max-protected parent release closure
+
+- A Python 3.6-kompatibilis retry már létrehozta a `prepared` manifestet és
+  ellenőrizte a payloadot, de a target létrehozása `PermissionError` miatt
+  fail-closed maradt: a production `mu-plugins` kanonikusan `0555`.
+- Read-only inspect: target absent, release prepared, payload hash és PHP lint
+  helyes; partial runtime, option-, cron- vagy üzleti truth írás nincs.
+- Az exact engine a lock alatt csak az owner-owned, inode-azonos parent owner-write
+  bitjét nyitja, majd deploy/rollback/hiba után az eredeti `0555` módot ellenőrzi.
+- A max-protected parent round trip és race teszt zöld; broad/recursive chmod,
+  sibling write, aktiválás és watchdog továbbra sincs ebben a csomagban.

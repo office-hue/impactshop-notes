@@ -107,6 +107,10 @@ majd SHA/PHP/`0444` állapotot ellenőriz. Széles production írás továbbra i
 Az engine kanonikus production kompatibilitási minimuma Python 3.6.8 és csak
 standard libraryt használ. Ezt CI-ben Python 3.6 grammar/API guard védi; a deploy
 nem telepít és nem frissít távoli Python runtimeot.
+Ha az exact szülő bástyavédelmi módja `0555`, a motor a remote lock alatt csak
+azonosított owner-owned inode-on, kizárólag az owner-write bitet nyitja meg az
+atomikus apply/rollback idejére. Sikeres és hibás ágon is az eredeti módot
+állítja vissza és ellenőrzi; rekurzív chmod vagy tartós parent-unlock tiltott.
 
 ## Production deploy (guard + mapping)
 ```bash
