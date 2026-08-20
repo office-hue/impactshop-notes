@@ -136,6 +136,8 @@ truth és lokális környezeti adatot szivárogtatna a repóba.
 Az exact rollback parancsot a sikeres deploy írja ki. Első telepítésnél csak a
 változatlan deployed SHA törölhető; meglévő fájlnál csak az ellenőrzött backup
 állítható vissza az eredeti móddal.
+A guard wrapper általános `deploy-*` snapshot ID-ja soha nem adható át az exact
+rollback scriptnek: az lokális source evidencia, nem remote release ID.
 
 ## Megjegyzések
 - SSH host/user a `.deploy.*.env` fájlokban. A távoli parancsoknál szükség esetén `ssh -t` használható.

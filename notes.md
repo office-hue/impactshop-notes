@@ -6920,3 +6920,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A felhasználói dirty primary `main` worktree érintetlen marad: post-merge
   release külön clean detached worktree-ből mehet, kizárólag exact opt-in és
   `HEAD == origin/main` egyezés mellett.
+- A merge utáni dry-run no-write és exact volt, de a wrapper a lokális snapshot
+  ID-t régi rollback argumentumként írta ki. A real deploy ezért megállt. A
+  javítás után csak sikeres exact apply adhat release ID + deployed SHA runtime
+  rollback parancsot.

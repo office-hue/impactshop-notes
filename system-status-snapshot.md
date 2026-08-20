@@ -888,3 +888,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A dirty primary `main` érintése nélkül tiszta detached release worktree is
   használható, de csak exact opt-in és `HEAD == origin/main` esetén; ezt külön
   feature/stale negatív preflight teszt védi.
+- A merged-main dry-run egyetlen no-delete runtime additiont mutatott, de a
+  wrapper régi snapshot-ID rollback szövegét feltárta. Éles írás nem indult; a
+  follow-up a local source snapshotot elválasztja a release-ID + SHA runtime
+  rollbacktól.
