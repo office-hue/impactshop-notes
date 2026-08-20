@@ -6,12 +6,10 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 FAKE_BIN="$TMP_DIR/bin"
-SOURCE_DIR="$TMP_DIR/source"
 ENV_FILE="$TMP_DIR/deploy.env"
 SSH_LOG="$TMP_DIR/ssh.log"
 RSYNC_LOG="$TMP_DIR/rsync.log"
-mkdir -p "$FAKE_BIN" "$SOURCE_DIR"
-: > "$SOURCE_DIR/runtime.php"
+mkdir -p "$FAKE_BIN"
 : > "$SSH_LOG"
 : > "$RSYNC_LOG"
 
@@ -49,20 +47,24 @@ cat > "$ENV_FILE" <<EOF
 SSH_HOST=fake.example
 REMOTE_WP_CONTENT=/remote/site/wp-content
 REMOTE_WP_PATH=/remote/site
+DEPLOY_ENVIRONMENT=production
 RSYNC_OPTS="-az --delete"
-MAPPINGS="$SOURCE_DIR -> mu-plugins"
+MAPPINGS="tests -> mu-plugins"
 EOF
 
 run_dry() {
-  env \
-    PATH="$FAKE_BIN:$PATH" \
-    FAKE_SSH_LOG="$SSH_LOG" \
-    FAKE_RSYNC_LOG="$RSYNC_LOG" \
-    FAKE_MANIFEST_STATUS="${FAKE_MANIFEST_STATUS:-}" \
-    FAKE_MISSING_TARGET="${FAKE_MISSING_TARGET:-0}" \
-    DRY_RUN=1 \
-    SKIP_PREFLIGHT=1 \
-    bash "$ROOT_DIR/bin/deploy-wpcontent-map.sh" "--env=$ENV_FILE"
+  (
+    cd "$ROOT_DIR"
+    env \
+      PATH="$FAKE_BIN:$PATH" \
+      FAKE_SSH_LOG="$SSH_LOG" \
+      FAKE_RSYNC_LOG="$RSYNC_LOG" \
+      FAKE_MANIFEST_STATUS="${FAKE_MANIFEST_STATUS:-}" \
+      FAKE_MISSING_TARGET="${FAKE_MISSING_TARGET:-0}" \
+      DRY_RUN=1 \
+      SKIP_PREFLIGHT=1 \
+      bash "$ROOT_DIR/bin/deploy-wpcontent-map.sh" "--env=$ENV_FILE"
+  )
 }
 
 success_output="$(FAKE_MANIFEST_STATUS="ok_manifest:/remote/site/.bastion/protected-hashes.json:142" run_dry)"

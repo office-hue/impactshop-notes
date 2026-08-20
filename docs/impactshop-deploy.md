@@ -24,6 +24,8 @@ Biztonságos, ismételhető staging + production deploy a bástyavédelem mellet
 - **Protected-file change review**: deploy előtt kötelező a koherencia vizsgálat, kockázatelemzés, érintett funkciólista és a kézi UI checklist megléte.
 - **CI/local parity**: protected lane csak akkor tekinthető lezártnak, ha a lokális guard és a GitHub oldali guard ugyanazt a protected modellt értelmezi.
 - **Paired env continuity**: ha protected runtime env pár változik, a deploy scope-nak a staging és production env fájlt együtt kell tartalmaznia.
+- **Mapping prevalidation**: a teljes mapping profil még HTTP/SSH előtt validálódik; csak repo-relatív, whitespace- és traversal-mentes, egyértelmű source/destination fogadható el.
+- **Production write lock**: a széles production mapping és az exact-file production írás is fail-closed tiltott, amíg nincs remote backup + CAS/hash + végrehajtható rollback admission.
 - **Review-fix recheck**: review-javítás után deploy vagy merge előtt kötelező egy új teljes guard/check kör és a nyitott review threadek rendezése.
 - **Empty-cache hardening**: harmadik fél inventory/cache integrációnál tartós üres cache csak külön indokkal maradhat; alapértelmezésként forced refresh, retry vagy rövid TTL szükséges.
 
@@ -62,6 +64,31 @@ térképpel. Hiányzó vagy hibás manifestnél staging és production is blokko
 Az ellenőrzés a korábbi live baseline szerkezetét validálja; nem írja át a
 manifestet, és nem tekinti automatikusan jóváhagyottnak a live-main driftet.
 
+## Exact-file production release preview
+
+A production runtime egyetlen repó által birtokolt könyvtárnak sem tekinthető:
+a 2026-08-20-i read-only audit 20 live-only MU-plugin fájlt és hat közös,
+tartalmilag eltérő fájlt talált. Ezért valós széles production mapping tiltott.
+
+Egyetlen fájl írásmentes feloldása és rsync-előnézete:
+
+```bash
+DRY_RUN=1 \
+IMPACTSHOP_DEPLOY_FILE="wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php" \
+IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \
+  bin/impactshop-guard-deploy.sh --production --non-interactive --auto-approve \
+  --reason="<jóváhagyott exact-file dry-run>"
+```
+
+Az exact scope pontosan egy normál, nem symlinkelt, fizikailag is az aktív
+repógyökér alatt lévő fájl lehet. Pontosan egy mapping roothoz kell tartoznia.
+Az exact ág minden `--delete*` rsync opciót eltávolít, `--checksum` ellenőrzést
+ad, nem hoz létre távoli könyvtárat, és nem érinti a sibling fájlokat.
+
+Valós production futás jelenleg exact scope-pal is blokkol. A kapu csak külön
+védett csomagban nyitható meg remote backup, compare-and-swap/hash ellenőrzés,
+post-write `0444` visszazárás és végrehajtható rollback után.
+
 ## Production deploy (guard + mapping)
 ```bash
 IMPACT_ENV=production IMPACTSHOP_ALLOW_FULL_SCAN=1 \
@@ -78,11 +105,13 @@ Production mapping deploy után a `bin/deploy-wpcontent-map.sh` automatikusan le
 - Protected-file deploy csak akkor mehet, ha előre rögzített, hogy mely funkciókat kell utána ellenőrizni, és a felhasználónak külön UI checklist készül.
 - Protected-file deploy vagy review-fix után kötelező ellenőrizni, hogy a GitHub oldali guard és a lokális guard ugyanarra a lane-re ugyanazt mondja.
 
-## Quick rollback (guard snapshot)
-A deploy kimenetében megjelenik a snapshot azonosító. Visszaállítás:
-```bash
-bin/impactshop-guard-rollback.sh deploy-YYYYMMDD-HHMMSS
-```
+## Rollback truth
+
+A guard deploy snapshot jelenleg lokális forrás-snapshot. Nem bizonyít távoli
+runtime backupot, és a korábban hivatkozott `bin/impactshop-guard-rollback.sh`
+nem létezik. Emiatt production írás nem nyitható meg pusztán a lokális snapshot
+azonosítójával. Valós deployhoz előre rögzített remote backup, eredeti SHA-256,
+jogosultság és ténylegesen futtatható rollback útvonal szükséges.
 
 ## Megjegyzések
 - SSH host/user a `.deploy.*.env` fájlokban. A távoli parancsoknál szükség esetén `ssh -t` használható.

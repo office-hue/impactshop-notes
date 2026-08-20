@@ -6866,3 +6866,17 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Staging továbbra is 404. Productionön a preflight zöld, de a protected
   identity-panel PHP/JS live-main drift miatt valós deploy nem engedhető.
 - Affiliate runtime/option/cron továbbra sem került élesbe és nem aktív.
+
+## 2026-08-20 09:50 CEST - Production exact-file safety
+
+- A production MU-plugin inventory nem repo-owned könyvtár: 20 live-only fájl
+  és 6 közös content drift van. A korábbi teljes `mu-plugins --delete` deploy
+  titok-, vote-, fund-, pledge-, identity- és más védett runtimeot veszélyeztet.
+- A páros envből kikerült a hibás `impact-short codes-legacy` mapping, és explicit
+  staging/production identitást kaptak.
+- A deploy mapping minden sort HTTP/SSH előtt validál. Az exact-file dry-run egy
+  normál repo fájlt egyetlen remote célra old fel, delete nélkül, checksummal.
+- Valós production írás exact scope-pal is fail-closed, amíg nincs remote
+  backup, CAS/hash-ellenőrzés, `0444` visszazárás és végrehajtható rollback.
+- A korábbi runbookban hivatkozott `bin/impactshop-guard-rollback.sh` nem létezik;
+  a dokumentáció ezt többé nem állítja működő runtime rollbacknek.
