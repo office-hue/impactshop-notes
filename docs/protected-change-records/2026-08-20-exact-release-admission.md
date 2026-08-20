@@ -2,7 +2,7 @@
 
 Date: 2026-08-20
 
-Status: implementation complete; production release retry pending merged compatibility closure
+Status: implementation complete; production release retry pending merged parent-relock closure
 
 Operator approval: Arnold repeatedly approved the next coherent SOL Impact Shop
 package and requested safe production readiness with minimum push/PR/merge
@@ -161,3 +161,19 @@ rollback state machine while using Python 3.6-compatible typing and subprocess
 syntax. A Python 3.6 AST grammar guard plus forbidden-modern-syntax assertions
 run before the filesystem transaction suite. Installing or upgrading the VPS
 Python runtime is explicitly outside this release.
+
+## Max-protected parent write/relock closure
+
+The compatibility-correct retry completed `prepare`, verified the uploaded
+payload hash and PHP syntax, then failed closed with `PermissionError` before
+creating the target. Read-only evidence showed release phase `prepared`, target
+`absent`, release directory `0700`, exact payload SHA, and the production
+`mu-plugins` parent intentionally locked to `0555`.
+
+The engine now opens and validates that exact parent directory inode under the
+existing release lock. It rejects symlink, non-directory, foreign-owner,
+group-writable, world-writable and inode-drift states; only when needed it adds
+the owner-write bit for the bounded apply or rollback window. Every exit path
+restores and verifies the exact original directory mode. The target remains
+`0444`, broad/recursive chmod and sibling writes remain forbidden, and the
+filesystem suite proves `0555` after deploy, rollback and a racing failure.

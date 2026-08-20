@@ -4,7 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENGINE="$ROOT_DIR/scripts/impactshop-exact-release-remote.py"
 TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+cleanup() {
+  chmod -R u+w "$TMP_DIR" 2>/dev/null || true
+  rm -rf "$TMP_DIR"
+}
+trap cleanup EXIT
 
 python3 - "$ENGINE" <<'PY'
 import ast
@@ -53,6 +57,38 @@ SHA_TWO="$(sha256_of "$PAYLOAD_TWO")"
 run_engine() {
   python3 "$ENGINE" "$@"
 }
+
+LOCKED_ROOT="$TMP_DIR/locked-app"
+LOCKED_TARGET="$LOCKED_ROOT/$TARGET_REL"
+LOCKED_PARENT="$(dirname "$LOCKED_TARGET")"
+mkdir -p "$LOCKED_ROOT/.bastion" "$LOCKED_PARENT"
+chmod 700 "$LOCKED_ROOT/.bastion"
+chmod 555 "$LOCKED_PARENT"
+LOCKED_RELEASE="release-locked-parent-20260820"
+run_engine prepare --root "$LOCKED_ROOT" --release-id "$LOCKED_RELEASE" \
+  --target-relative "$TARGET_REL" --expected-before absent --intended-sha "$SHA_ONE" >/dev/null
+cp "$PAYLOAD_ONE" "$LOCKED_ROOT/.bastion/exact-file-releases/$LOCKED_RELEASE/payload.bin"
+run_engine apply --root "$LOCKED_ROOT" --release-id "$LOCKED_RELEASE" >/dev/null
+test "$(sha256_of "$LOCKED_TARGET")" = "$SHA_ONE"
+test "$(file_mode "$LOCKED_TARGET")" = "444"
+test "$(file_mode "$LOCKED_PARENT")" = "555"
+run_engine rollback --root "$LOCKED_ROOT" --release-id "$LOCKED_RELEASE" \
+  --expected-deployed-sha "$SHA_ONE" >/dev/null
+test ! -e "$LOCKED_TARGET"
+test "$(file_mode "$LOCKED_PARENT")" = "555"
+
+LOCKED_RACE="release-locked-race-20260820"
+run_engine prepare --root "$LOCKED_ROOT" --release-id "$LOCKED_RACE" \
+  --target-relative "$TARGET_REL" --expected-before absent --intended-sha "$SHA_ONE" >/dev/null
+cp "$PAYLOAD_ONE" "$LOCKED_ROOT/.bastion/exact-file-releases/$LOCKED_RACE/payload.bin"
+chmod 755 "$LOCKED_PARENT"
+printf '%s\n' '<?php // locked parent race' > "$LOCKED_TARGET"
+chmod 555 "$LOCKED_PARENT"
+if run_engine apply --root "$LOCKED_ROOT" --release-id "$LOCKED_RACE" >/dev/null 2>&1; then
+  echo "locked-parent apply ignored a compare-and-swap race" >&2
+  exit 1
+fi
+test "$(file_mode "$LOCKED_PARENT")" = "555"
 
 RELEASE_ABSENT="release-absent-20260820"
 run_engine prepare --root "$APP_ROOT" --release-id "$RELEASE_ABSENT" \

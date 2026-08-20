@@ -222,3 +222,6 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 - A production release-engine toolchain truth Python 3.6.8 + standard library;
   az engine-nek ezen a nyelvtanon kell futnia, távoli interpreter-frissítés nem
   része az exact release-nek. A kompatibilitást külön AST/API guard védi.
+- A max-protected exact parent tartós módja nem lazítható. A remote lockon belüli
+  owner-write ablak csak inode/owner validációval, az egyetlen exact műveletre
+  nyílhat, majd minden kimeneten az eredeti módra kell visszazárni és ellenőrizni.
