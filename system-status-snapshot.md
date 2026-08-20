@@ -864,3 +864,11 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A guard többé nem ajánl nem létező rollback parancsot. Futtatható script
   hiányában lokális source snapshotot és fennmaradó production write blokkot ír.
 - Új determinisztikus CI-teszt védi az executable gate és a fallback sorrendjét.
+
+## 2026-08-20T10:22:00+0200 - Guard checksum portability closure
+
+- A merged-main dry-run lokálisan frissítette a megváltozott guard wrapper
+  digestjét, és feltárta az abszolút worktree-pathot író checksum hibát.
+- A checksum writer repository-relatív címkét használ; a teszt tiltja a nyers
+  `hash_path` kiírást, a manifest pedig a végleges wrapper digestjére van zárva.
+- Production állapot változatlan: runtime absent, option unset, cron absent.

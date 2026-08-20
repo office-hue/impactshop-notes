@@ -221,7 +221,7 @@
     "wp-content/mu-plugins/impact-banners-fillout-rewriter.php": "bfe26476827ab1adc95a8ac8fae252fac6858167029d025d48e352e21281a458",
     "wp-content/mu-plugins/impact-arukereso-hardguard.php": "4f9185ec3a6b67074c5bebb93a49205f72c70c2851932a4ca6d0bf757c2a5a46",
     "wp-content/mu-plugins/impact-cid-arukereso-fix.php": "246b9faf3cd9c9c4324031b815cafcf9c7c742ad5da7803ab90960222e0177e1",
-    "bin/impactshop-guard-deploy.sh": "48c6135297cbeb4a59c9aefdfde1b8b6373ef07cc74859e4518e9d0ac4d22479",
+    "bin/impactshop-guard-deploy.sh": "211d3beac0d4dd6a066dff46f8cb84e1a3a79938e7b4a3d84f9d5164acb13fcd",
     "bin/impactshop-guard-preflight.sh": "b4cce35ed68362ffc5b73b16967947788582e0e1a05451e506867fc7e5d405fa",
     "docs/bastion-protection-extension-plan.md": "c138cf6f1a18fcb8f36c666fd554bc3a1cee9cb3de9c340eecadf30bc2309361",
     "docs/impactshop-guard-config.sha256": "91a6c75246a9d066f44e7dc7d9c061399af4358744e38944354d0056e48be30b",
@@ -299,5 +299,5 @@
     "wp-content/mu-plugins/impactshop-action-bar.php": "4fdb8cf8ff8c62eb97d429af7e01d1e012586c8f3f41400bf699f5bf222ef40b",
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php": "6b158e29ba3c46be171b81610c2965b3b0371695249b1dbd1d5e66a87c485d5d"
   },
-  "generated_at": "2026-08-19T10:55:00+00:00"
+  "generated_at": "2026-08-20T08:22:00+00:00"
 }

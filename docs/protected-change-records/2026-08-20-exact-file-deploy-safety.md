@@ -96,6 +96,12 @@ fallback identifies the artifact as a local source snapshot and keeps remote
 runtime rollback and production writes explicitly unavailable. CI runs a
 deterministic marker/order guard for this contract.
 
+The same merged-main guard run refreshed the wrapper digest and revealed a
+portability defect in its checksum writer: it serialized the absolute worktree
+path. The writer now derives a repository-relative label, the protected wrapper
+digest is re-anchored to the reviewed source, and the companion checksum again
+contains only `docs/impactshop-guard-hashes.json`.
+
 ## Rollback
 
 Source rollback is a normal PR revert of this package. No production rollback

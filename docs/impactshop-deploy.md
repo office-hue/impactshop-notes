@@ -115,6 +115,9 @@ jogosultság és ténylegesen futtatható rollback útvonal szükséges.
 Amíg ez a script nem futtatható, a guard csak a lokális source snapshotot írja
 ki, és külön jelzi, hogy remote runtime rollback nincs; gyors visszaállítási
 parancsot nem állíthat rendelkezésre állónak.
+A guard hash-checksum sora repository-relatív fájlnevet tartalmazhat; abszolút
+gép- vagy worktree-útvonal tárolása tiltott, mert nem hordozható continuity
+truth és lokális környezeti adatot szivárogtatna a repóba.
 
 ## Megjegyzések
 - SSH host/user a `.deploy.*.env` fájlokban. A távoli parancsoknál szükség esetén `ssh -t` használható.
