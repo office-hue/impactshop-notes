@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-07-09 11:55 CEST
+Last updated: 2026-08-20 09:50 CEST
 
 ## 2026-03-26 19:45 — impact-community.php URL fix
 - `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
@@ -16,6 +16,7 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-08-20 | `bin/deploy-wpcontent-map.sh`, paired deploy env | A teljes mapping profil hálózat előtt fail-closed validálódik. A production real-write ág teljesen zárt; az exact-file dry-run egyetlen repo-owned, nem symlinkelt fájlt old fel, minden `--delete*` opciót eltávolít, checksumot kényszerít és sibling izolációt bizonyít. | `tests/deploy-wpcontent-map-exact-file.test.sh`, `tests/deploy-wpcontent-map-bastion.test.sh`, `docs/protected-change-records/2026-08-20-exact-file-deploy-safety.md`, `docs/impactshop-exact-file-deploy-safety-sol-plan-2026-08-20.md` |
 | 2026-08-19 | `bin/deploy-wpcontent-map.sh` | A hiányzó remote bastion manifest admission helyreállt fail-closed séma-, path- és SHA-256 validációval. A `DRY_RUN=1` most távoli írásmentes: nem hoz létre könyvtárat, nem futtat WP maintenance-et, és minden rsyncet no-write itemizálással végez. Mockolt SSH/rsync teszt védi az admission és no-mutation szerződést. | `tests/deploy-wpcontent-map-bastion.test.sh`, `docs/protected-change-records/2026-08-19-deploy-bastion-manifest-guard.md`, `docs/impactshop-deploy-bastion-manifest-sol-plan-2026-08-19.md` |
 | 2026-08-19 | `impactshop-sharity-affiliate-runtime.php`, `impactshop-boot.php` | A default-off Sharity affiliate korrelációs lane maximális bástyavédelmet kapott: exact source gate, HMAC/hash-only séma, egyutas redirect transition, no-economic-writer tiltás, forrásguard és három negatív mutációs próba. A runtime és a minimális boot adapter bekerült a protected inventoryba és digest lockba; aktiválás külön merge/deploy/watchdog kapuhoz kötött. | `scripts/sharity-affiliate-runtime-bastion-guard.sh`, `tests/sharity-affiliate-runtime-bastion.test.sh`, `docs/protected-change-records/2026-08-19-sharity-affiliate-runtime.md`, `docs/sharity-affiliate-runtime-wp-sol-handover-2026-08-19.md` |
 | 2026-07-09 | `wp-content/mu-plugins/impactshop-rest-totals.php` | Incident containment legacy touch a Dognet partner-facing invalid endpoint burst leállítására. A page-level conversions probing fail-closed tiltást kapott, a totals lane pedig a meglévő canonical `raw-transactions/filter` fallbackre esik vissza. Scope szűk maradt: response contract és aggregációs szemantika változatlan. | `docs/protected-change-records/2026-07-09-dognet-invalid-conversions-probing-disable.md`, `docs/dognet-invalid-endpoint-hotfix-2026-07-09.md`, `notes.md`, `system-status-snapshot.md` |
