@@ -47,7 +47,7 @@ info "Legacy app route cutover check: $ROUTE_URL"
 curl -fsS -D "$HDR_ROUTE" -o "$BODY_ROUTE" "$ROUTE_URL"
 ROUTE_STATUS="$(awk 'toupper($1) ~ /^HTTP/ { code=$2 } END { print code }' "$HDR_ROUTE")"
 [[ "$ROUTE_STATUS" == "302" ]] || fail "Expected HTTP 302 from $ROUTE_URL, got ${ROUTE_STATUS:-unknown}"
-ROUTE_LOCATION="$(awk 'BEGIN { IGNORECASE=1 } /^Location:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); value=$0 } END { print value }' "$HDR_ROUTE")"
+ROUTE_LOCATION="$(awk 'tolower(substr($0, 1, 9)) == "location:" { line=$0; sub(/^[^:]+:[[:space:]]*/, "", line); sub(/\r$/, "", line); value=line } END { print value }' "$HDR_ROUTE")"
 [[ "$ROUTE_LOCATION" == "$EXPECTED_LOCATION" ]] || fail "Unexpected Location from $ROUTE_URL: ${ROUTE_LOCATION:-missing}"
 pass "Legacy app route returns exact query-free Human Touch redirect"
 

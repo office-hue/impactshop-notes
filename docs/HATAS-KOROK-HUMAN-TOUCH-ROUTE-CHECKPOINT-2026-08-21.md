@@ -52,3 +52,17 @@ A commit-lane policy miatt a read-only post-deploy smoke és annak futásidejű
 határtesztje külön checkpoint commitban követi a védett route-kódot. A smoke
 nem módosít adatot: a redirect, a Human Touch marker, a két dev-route és a két
 community read API szerződését ellenőrzi.
+
+## Post-deploy smoke parser checkpoint
+
+A production route helyes kisbetűs `location:` HTTP/2 fejlécet adott. A smoke
+korábbi `awk IGNORECASE` használata GNU-specifikus volt, ezért macOS/BSD awk
+alatt nem találta meg a fejlécet. A parser most POSIX `tolower(...)` alapú;
+az exact célérték ellenőrzése változatlanul fail-closed.
+
+A javított production smoke teljesen zöld: redirect, Human Touch marker,
+dev/staging-dev, auth-shape és 3387 körből 30 elemű első oldal. A kanonikus
+`https://factlens.eu/factlens/vb-prod/?view=sharity` route `200`. A 390×844
+mobil böngészős ellenőrzésen a Human Touch hero, közösségkártyák, szűrők és az
+alsó lebegősáv megjelent; a két névtelen privát endpoint várt `401` válaszát a
+felület biztonságos belépési CTA-vá alakította.

@@ -6969,3 +6969,9 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - A commit-lane guard kérésére a post-deploy smoke és a 6 esetes route-teszt
   külön ops commitba került; ugyanazon az egyetlen feature ágon és PR-ben marad.
 - A smoke kizárólag read-only GET/HEAD ellenőrzéseket végez, írót nem aktivál.
+# 2026-08-21 — Hatás Körök post-deploy smoke portability fix
+
+- A live route helyes exact `302` választ adott, de a helyi macOS/BSD awk nem
+  támogatja a smoke által használt GNU `IGNORECASE` változót.
+- A Location parser POSIX `tolower(...)` alapú lett; runtime/production fájlhoz
+  ez a follow-up nem nyúl.

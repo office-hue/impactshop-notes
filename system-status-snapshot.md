@@ -937,3 +937,8 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A route cutover post-deploy smoke szerződése exact `302` + query-mentes
   `Location`, Human Touch target marker, dev-route és community read API check.
 - A kapcsolódó statikus és PHP-stub futásidejű teszt 6/6 zöld; write smoke nincs.
+# 2026-08-21 — Hatás Körök post-deploy smoke portability fix
+
+- A production Human Touch redirect él és exact; a post-deploy smoke parser
+  macOS/BSD awk kompatibilitási javítást kapott (`tolower`, nincs `IGNORECASE`).
+- A változás kizárólag ellenőrző tooling, éles runtime-ot nem módosít.
