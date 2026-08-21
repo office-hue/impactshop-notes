@@ -45,3 +45,10 @@ Az élesítés kizárólag a GitHubon összeolvasztott, friss `origin/main` pont
 fájlos release-ével történhet. Deploy után kötelező a read-only Hatás Körök
 smoke, az exact `Location` ellenőrzés, a dev-route és community API regressziós
 ellenőrzés, valamint a VB2026 publikus route változatlanságának bizonyítása.
+
+## Ops-lane checkpoint
+
+A commit-lane policy miatt a read-only post-deploy smoke és annak futásidejű
+határtesztje külön checkpoint commitban követi a védett route-kódot. A smoke
+nem módosít adatot: a redirect, a Human Touch marker, a két dev-route és a két
+community read API szerződését ellenőrzi.

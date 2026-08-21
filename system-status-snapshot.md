@@ -932,3 +932,8 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   új runtime jelen van, de nem ír attribúciós vagy pénzügyi állapotot.
 - Öt Impact baseline endpoint zöld, a Vásárlási Segéd HTTP 200. Cronos/watchdog
   az aktiválás előtt, külön ai-agent csomagban kötelező.
+# 2026-08-21 — Hatás Körök Human Touch smoke ops checkpoint
+
+- A route cutover post-deploy smoke szerződése exact `302` + query-mentes
+  `Location`, Human Touch target marker, dev-route és community read API check.
+- A kapcsolódó statikus és PHP-stub futásidejű teszt 6/6 zöld; write smoke nincs.

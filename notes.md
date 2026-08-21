@@ -6964,3 +6964,8 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   és nincs új attribúciós/elszámolási írás.
 - Öt publikus baseline és a Vásárlási Segéd HTTP 200. Következő csomag: central
   watchdog + operátori aktiválás + emberi Árukereső canary.
+# 2026-08-21 — Hatás Körök Human Touch smoke ops checkpoint
+
+- A commit-lane guard kérésére a post-deploy smoke és a 6 esetes route-teszt
+  külön ops commitba került; ugyanazon az egyetlen feature ágon és PR-ben marad.
+- A smoke kizárólag read-only GET/HEAD ellenőrzéseket végez, írót nem aktivál.
