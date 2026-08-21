@@ -125,6 +125,10 @@ echo 'NO_REDIRECT';
         ):
             self.assertIn(marker, self.smoke)
 
+    def test_smoke_location_parser_is_posix_awk_compatible(self) -> None:
+        self.assertIn("tolower(substr($0, 1, 9))", self.smoke)
+        self.assertNotIn("IGNORECASE", self.smoke)
+
 
 if __name__ == "__main__":
     unittest.main()
