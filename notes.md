@@ -1,3 +1,12 @@
+## 2026-08-21T13:00:00+0200 - Hatás Körök Human Touch route cutover
+
+- Az app production Hatás Körök route régi HTML-shelljének oka külön WordPress
+  runtime volt; a Vercel deploy ezért önmagában nem cserélhette le.
+- Additív MU-plugin készül exact 302-vel az új Sharity felületre. Query/identity
+  nem továbbítódik; dev, REST, profil, VB2026 és writerek változatlanok.
+- A csomag exact guarded release, rollback ID, 0444 relock és frissített
+  read-only route/API smoke után zárható.
+
 ## 2026-07-09 09:10 CEST - Dognet totals fallback runtime hotfix productionre kitéve
 - A korábbi endpoint-burst containment után kiderült, hogy a `impactshop-rest-totals.php` route a `dognet_api_list_conversions_all(...)` fallback külső definíciójára támaszkodott, de ez a production runtime-ban nem volt ténylegesen betöltve.
 - Emiatt a `/wp-json/impactshop/v1/totals` illetve `?rest_route=/impactshop/v1/totals` kérés a `dognet_page_api_disabled` hibát adta vissza `502` státusszal, noha a hibás `conversions/search` probing már le volt tiltva.

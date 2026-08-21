@@ -4,6 +4,19 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-08-21 Hatás Körök Human Touch route note
+
+- Az `app.sharity.hu/hatas-korok` publikus dokumentumút Human Touch cutoverje
+  additív, pontos host/path/method szűrésű MU-pluginon keresztül történik.
+- A rögzített `302` cél query-mentes; admin, AJAX, REST, dev/staging útvonal,
+  identity/profile-return, Offerwall és VB2026 nem része a változásnak.
+- Az új route tulajdonos a protected inventory, digest, `community_route` smoke
+  csoport és protected change record együttese alatt max-védett.
+- Kanonikus csomag:
+  `docs/HATAS-KOROK-HUMAN-TOUCH-ROUTE-TERRA-PLAN-2026-08-21.md`,
+  `docs/HATAS-KOROK-HUMAN-TOUCH-ROUTE-CHECKPOINT-2026-08-21.md` és
+  `docs/protected-change-records/2026-08-21-hatas-korok-human-touch-route.md`.
+
 ## 2026-08-19 Sharity affiliate runtime note
 
 - A Shopping Assistant affiliate aktiválás új, default-off WordPress runtimeja

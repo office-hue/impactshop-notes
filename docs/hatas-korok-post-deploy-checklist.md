@@ -2,7 +2,9 @@
 
 ## Cél
 
-Gyors, read-only ellenőrzés deploy után, hogy a `/hatas-korok` route és az alap community API-k életben vannak.
+Gyors, read-only ellenőrzés deploy után, hogy a legacy app belépőpont az új
+Sharity Human Touch felületre vezet, miközben az alap community API-k és a dev
+route-ok változatlanok.
 
 ## Automata smoke
 
@@ -20,11 +22,13 @@ Egyedi hosttal:
 
 ## Mit ellenőriz a script
 
-- `GET /hatas-korok` → `HTTP 200`
-- a HTML shell tartalmazza a bootstrap markereket:
-  - `Hatás Körök — Impact Community`
-  - `id="ic-content"`
-  - `window.ImpactCommunity`
+- `GET /hatas-korok/?hk_route_probe=1` → `HTTP 302`
+- `Location` pontosan `https://sharity.hu/hatas-korok`, query nélkül
+- a Human Touch céloldal → `HTTP 200`, és tartalmazza:
+  - `Hatás Körök — Közösségek, nem követők`
+  - `safe-area-inset-bottom`
+- névtelen `/hatas-korok-dev` → `HTTP 404`
+- `/impactshop-staging/hatas-korok-dev` → `HTTP 200`
 - `GET /wp-json/impact/v1/auth/status`
   - van `authenticated`
   - van `nonce`
@@ -35,16 +39,12 @@ Egyedi hosttal:
 
 ## Kézi utóellenőrzés
 
-- Nyisd meg böngészőben a `/hatas-korok` oldalt.
-- Kattints be legalább egy kör detail nézetébe.
-- Ha van Impi poszt a listában, ellenőrizd hogy az avatar videó/fallback kép megjelenik, a kék ring látszik, és a fejlécben az `AI` badge is megjelenik.
-- Ha feed/composer változott, ellenőrizd hogy a gyors composer az aktuális álnévvel jelenik meg, és az emoji gombok beszúrnak karaktert a textarea-ba.
-- Ha reakció/vote logika változott, ellenőrizd hogy egy nem saját posztra a reakciógomb kattintható, a számláló frissül, és a második reakció már blokkolt állapotot mutat.
-- Ha report logika változott, küldj egy teszt jelentést, majd ellenőrizd:
-  - van új rekord a `wp_ic_reports` táblában,
-  - a debug logban megjelent `ic_post_report_mail_result` sor,
-  - ha a cél az inbox kézbesítés is, a teszt e-mail kézhezvétele is megtörtént.
-- Nézd meg a `wp-content/debug.log` végét, nincs-e új `impact-community` fatál vagy warning.
+- Nyisd meg mobilon és desktopon az `https://app.sharity.hu/hatas-korok/` címet.
+- A böngésző címe váltson `https://sharity.hu/hatas-korok` értékre.
+- A Human Touch fejlécet, közösségkártyákat, szűrőket és lebegő mobil sávot kell látnod.
+- Bejelentkezve a „Köreim” panelt; kijelentkezve a biztonságos belépési CTA-t ellenőrizd.
+- Nyisd meg külön a FactLens VB2026 oldalt, és ellenőrizd, hogy a profil-visszatérési út változatlanul működik.
+- Regressziójel: legacy lila Impact Community shell, redirect loop, továbbított teszt/query paraméter vagy eltűnő mobil alsó sáv.
 
 ## Mikor kell több, mint read-only smoke
 
@@ -56,4 +56,6 @@ Csak akkor futtass write smoke-ot (`join`, `post`, `vote`, `delete`, `leave`), h
 
 ## Megjegyzés
 
-Ez a script direkt read-only alapértelmezésű. A célja, hogy deploy után gyorsan jelezze a route-, bootstrap- vagy alap API regressziót anélkül, hogy production állapotot módosítana.
+Ez a script direkt read-only alapértelmezésű. A célja, hogy deploy után gyorsan
+jelezze a route-cutover, Human Touch target, dev-route vagy alap API regressziót
+anélkül, hogy production állapotot módosítana.

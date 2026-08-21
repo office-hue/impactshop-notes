@@ -1,3 +1,10 @@
+## 2026-08-21T13:00:00+0200 - Hatás Körök Human Touch route cutover prepared
+
+- New additive MU-plugin owns only `app.sharity.hu/hatas-korok[/]` GET/HEAD and
+  returns a hardcoded query-free 302 to `https://sharity.hu/hatas-korok`.
+- Legacy community/API/dev, identity/profile-return, Offerwall, VB2026 and all
+  economic writers remain unchanged. No cron/watchdog addition is needed.
+
 ## 2026-07-09T09:10:00+0200 - Dognet totals fallback localized into runtime
 - A `wp-content/mu-plugins/impactshop-rest-totals.php` most már nem csak letiltja a hibás `conversions/search` probingot, hanem a canonical `raw-transactions/filter` fetch fallback helperjeit is saját scope-ban hordozza.
 - Ezzel a `/impactshop/v1/totals` route többé nem külső, runtime-ban esetleg hiányzó `dognet_api_list_conversions_all(...)` definícióra támaszkodik.
