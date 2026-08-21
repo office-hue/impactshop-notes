@@ -942,3 +942,19 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - A production Human Touch redirect él és exact; a post-deploy smoke parser
   macOS/BSD awk kompatibilitási javítást kapott (`tolower`, nincs `IGNORECASE`).
 - A változás kizárólag ellenőrző tooling, éles runtime-ot nem módosít.
+
+## 2026-08-21T16:55:00+0200 - Sharity Shopping opaque sat1 cutover live
+
+- Production boot legacy SHA `cccc3f41...13b56f` exact Git blobhoz lett kötve;
+  a merged main eltérés kizárólag a review-zott Shopping affiliate adapter.
+- Exact release `20260821T145250Z-1716e6fc2761-6892b1d3` egyetlen
+  `impactshop-boot.php` fájlt telepített. Live SHA
+  `e05a538f...45ba06`, target `0444`, parent `0555`, PHP lint és rollback
+  inspect zöld.
+- A central watchdog a megőrzött régi branch után új exact-main runtime branchre
+  állt; rollback crontab: `central-watchdog.20260821T144748Z.crontab`.
+- Release előtti és utáni affiliate postactivation admission `ADMITTED`; az
+  option/schema/table/egyetlen cleanup hook/next run és freshness zöld. A global
+  watchdog idegen hibák miatt `FAIL`, de affiliate-retention blocker nincs.
+- Öt Impact endpoint és a Vásárlási Segéd HTTP 200. Emberi Árukereső
+  `sat1 -> last_click_data1` canary még kötelező; automatizált kattintás nem volt.

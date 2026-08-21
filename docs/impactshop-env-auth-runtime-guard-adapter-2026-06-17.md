@@ -23,6 +23,25 @@ Az `allowed` állapot további feltételei ennél a lane-nél:
 Ezek hiányában a release státusz `blocked`; a repo-checkpoint önmagában csak
 default-off, deployolatlan állapotot igazol.
 
+## 2026-08-21 affiliate runtime production admission
+
+Az affiliate runtime és a hozzá tartozó exact Shopping boot adapter production
+állapota most `allowed`, mert az aktivációs option, schema/table, egyetlen
+cleanup hook, friss central watchdog, protected digest/mutációs teszt és az
+egyfájlos CAS release/rollback evidence együtt zöld. A provider-bound mező
+opaque `sat1`; raw pseudo és `data5` nem mehet ki.
+
+Az `allowed` itt csak technikai redirect/correlation admission. Nem igazol
+vásárlást, jutalékot, adományt vagy elszámolást. Az emberi Árukereső
+`last_click_data1` echo és belső NGO/HMAC correlation ellenőrzés még nyitott;
+automatizált affiliate kattintás továbbra is tiltott.
+
+Kanonikus evidencia:
+
+- `docs/sharity-shopping-opaque-sat1-production-cutover-sol-plan-2026-08-21.md`;
+- `docs/protected-change-records/2026-08-21-sharity-shopping-opaque-sat1-production-cutover.md`;
+- release `20260821T145250Z-1716e6fc2761-6892b1d3`.
+
 ## 2026-08-20 exact-file deploy env extension
 
 A paired deploy env lane most explicit `DEPLOY_ENVIRONMENT=staging|production`

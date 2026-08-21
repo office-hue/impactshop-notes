@@ -32,6 +32,24 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
   `docs/sharity-affiliate-runtime-wp-sol-plan-2026-08-19.md` és
   `docs/sharity-affiliate-runtime-wp-sol-handover-2026-08-19.md`.
 
+## 2026-08-21 Sharity Shopping opaque production cutover note
+
+- Az affiliate runtime, séma, retention cleanup és central watchdog aktív;
+  az exact `src=shopping-assistant` boot adapter merged-main fájlként került
+  productionre az egyfájlos CAS release lane-en.
+- A provider felé csak opaque `sat1` mehet `d1` értékként, a raw pseudo és
+  `data5` tiltott. A helyi correlation továbbra sem vásárlási, jutalék- vagy
+  elszámolási truth.
+- A max-védett állapotot a protected inventory/digest, a mutációs bástyateszt,
+  a release manifest/rollback inspect és a central postactivation admission
+  együtt igazolja; új cron/watchdog tuple nem keletkezett.
+- Egy emberi Árukereső echo/correlation canary még kötelező, automatizált
+  affiliate kattintás tiltott.
+- Kanonikus release truth:
+  `docs/sharity-shopping-opaque-sat1-production-cutover-sol-plan-2026-08-21.md`
+  és
+  `docs/protected-change-records/2026-08-21-sharity-shopping-opaque-sat1-production-cutover.md`.
+
 ## 2026-08-19 Deploy bastion manifest guard note
 
 - A mapping deploy kontrollsík maga is max-védett lane: az undefined remote

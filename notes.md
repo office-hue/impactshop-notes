@@ -6975,3 +6975,24 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
   támogatja a smoke által használt GNU `IGNORECASE` változót.
 - A Location parser POSIX `tolower(...)` alapú lett; runtime/production fájlhoz
   ez a follow-up nem nyúl.
+
+## 2026-08-21 16:55 CEST - Sharity Shopping opaque sat1 production cutover
+
+- Az éles `impactshop-boot.php` még a legacy NGO `d1` + pseudo `data5` Shopping
+  ágat tartalmazta, miközben a privacy-safe runtime már aktív volt. A live blob
+  repo-historyhoz kötése után a teljes diff csak a három review-zott adapter hunk.
+- Guardolt exact-file release:
+  `20260821T145250Z-1716e6fc2761-6892b1d3`; pontosan egy fájl, backup/CAS/PHP
+  lint/atomikus apply, SHA `e05a538f...45ba06`, target `0444`, parent `0555`.
+- A central watchdog régi branch/headje megmaradt; az exact-main runtime branch
+  és cron backup `central-watchdog.20260821T144748Z.crontab` rögzített.
+- Affiliate postactivation admission release előtt és után `ADMITTED`; public
+  5 Impact endpoint + Vásárlási Segéd 200. A global watchdog idegen hibái
+  warningként megmaradtak, affiliate-retention jel nincs.
+- Helyi worktree readiness és continuity `allowed`; a központi ai-agent
+  docsync-registry csak a saját 2026-08-05-i `impactshop-notes` metadata-dátuma
+  miatt `degraded` warningot ad, blocker nélkül. A helyi canonical map
+  `LastVerifiedAt` értéke frissült, cross-repo registry write nem történt.
+- Következő emberi lépés: egy Árukereső terméklink kattintás és friss Dognet
+  riportban `last_click_data1=sat1_…` + belső NGO/HMAC correlation ellenőrzés.
+  A kattintás nem bizonyít vásárlást, adományt vagy jutalékot.

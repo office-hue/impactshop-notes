@@ -4,7 +4,8 @@ Date: 2026-08-19
 
 Package: ImpactShop WordPress checkpoint
 
-Release posture: production deployed, default-off, not activated
+Release posture: runtime and opaque boot adapter active in production; human
+Dognet echo canary pending
 
 ## What is implemented
 
@@ -43,14 +44,36 @@ purchase, commission or settlement, and it writes no financial state.
 - activation option missing, cleanup cron absent, affiliate table absent
 - PHP lint, five public Impact endpoints and Shopping Assistant HTTP 200 green
 
-## Remaining safe activation order
+## 2026-08-21 opaque boot-adapter cutover
 
-1. Merge the separate ai-agent central-watchdog checkpoint.
-2. Approve and set the activation option to exact string `1`.
-3. Verify schema creation, cron registration, watchdog freshness and legacy
-   redirect smoke.
-4. Perform one human Árukereső click and compare the opaque Dognet echo with
-   the local correlation mapping.
+- The production boot was still legacy SHA-256
+  `cccc3f4147c0d849a4d53bf1567150c94e1493afda88686b6709d89f2136b56f`
+  even though the runtime, schema and cleanup were active. That blob matched
+  historical commit `3fa415ae`; the complete main diff was only the reviewed
+  three-hunk Shopping adapter.
+- Exact release `20260821T145250Z-1716e6fc2761-6892b1d3` installed merged-main
+  boot SHA-256
+  `e05a538fe4fdc5ca7af4220e03e3924cd4090f0d2ca5adf7c2f355cad545ba06`.
+  Remote backup/CAS, PHP lint, target `0444`, parent `0555` and rollback inspect
+  all passed.
+- The central watchdog runtime now preserves the prior branch and runs exact
+  ai-agent main from
+  `ops/vb2026-transition-runtime-sharity-shopping-sat1-20260821`; rollback
+  crontab is `central-watchdog.20260821T144748Z.crontab`.
+- Postactivation admission returned `ADMITTED` before and after release. The
+  global watchdog still has unrelated non-Shopping failures, exposed as a
+  warning; the affiliate retention lane has no blocker.
+- Five public Impact endpoints and the Shopping Assistant returned HTTP 200.
+  No automated affiliate click was performed.
+
+## Remaining safe validation order
+
+1. Perform one human Árukereső product click from the Shopping Assistant.
+2. Verify `last_click_data1` has `sat1_` shape and no raw pseudo/data5 is
+   exposed.
+3. Resolve that exact token through the internal correlator and verify the
+   selected NGO plus HMAC subject only; keep every economic flag false.
+4. Run one ordinary legacy `/go-deal` smoke in Chrome and Safari/WebKit.
 
 Do not automate the affiliate click.
 
@@ -61,15 +84,15 @@ guarded snapshot/revert lane if necessary, but retain cleanup until every
 stored mapping reaches retention expiry. Never drop the table as the first
 rollback action.
 
-Before activation, the exact first-install rollback is:
+The current boot-adapter rollback is:
 
 ```text
-bin/impactshop-guard-rollback.sh --production --apply --release-id=20260820T094433Z-87fe5d3ac628-98513d73 --expected-deployed-sha=4347dded2ad009b5fe793836b57bbb163f3ffe94e55c0ed6dedeff93e0ef4859
+bin/impactshop-guard-rollback.sh --production --apply --release-id=20260821T145250Z-1716e6fc2761-6892b1d3 --expected-deployed-sha=e05a538fe4fdc5ca7af4220e03e3924cd4090f0d2ca5adf7c2f355cad545ba06
 ```
 
 ## Next package
 
-The immediate next checkpoint belongs to the isolated ai-agent VPS worktree:
-register the exact WP-Cron hook in the central automation watchdog, add its
-focused tamper guard and update ai-agent continuity. After both repositories
-are merged, production activation is an operator-controlled release package.
+After the human Árukereső echo proves the opaque path, activate one newly
+admitted Dognet partner through the same exact provider-neutral adapter. That
+package must bind one reviewed program/deeplink tuple and keep CJ as a separate
+proof/admission lane; it must not reopen raw pseudo/data5 attribution.
