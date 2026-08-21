@@ -38,6 +38,7 @@
     "wp-content/mu-plugins/impactshop-rest-totals.php",
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
+    "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
     "wp-content/mu-plugins/impactshop-ngo-selector.php",
     "wp-content/mu-plugins/impactshop-ngo-card.php",
     "wp-content/mu-plugins/impactshop-vote-purchase.php",
@@ -83,6 +84,7 @@
     "/impact-challenge/",
     "/impactad-2/",
     "/impactshop/",
+    "/hatas-korok/",
     "/profil",
     "/jysk-riport/",
     "/jysk-riport/?print=1",
@@ -150,6 +152,15 @@
       "browser:webkit",
       "browser:chrome"
     ],
+    "community_route": [
+      "route:hatas-korok-human-touch",
+      "route:hatas-korok-dev",
+      "api:community-auth-status",
+      "api:community-circles",
+      "route:factlens-vb-prod",
+      "browser:mobile",
+      "browser:chrome"
+    ],
     "guide_runtime": [
       "route:jysk-riport",
       "route:ngo-guides",
@@ -196,6 +207,10 @@
       "wp-content/mu-plugins/impact-gamification.php",
       "wp-content/mu-plugins/sharity-points*.php",
       "wp-content/mu-plugins/sharity-level-manager.php"
+    ],
+    "community_route": [
+      "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
+      "scripts/hatas-korok-post-deploy-smoke.sh"
     ],
     "impact_shop_surface": [
       "wp-content/mu-plugins/impactshop-saved-offers.php",

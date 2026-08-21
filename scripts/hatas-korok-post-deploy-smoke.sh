@@ -3,7 +3,11 @@ set -euo pipefail
 
 HOST="${1:-https://app.sharity.hu}"
 BASE_URL="${HOST%/}"
-ROUTE_URL="${BASE_URL}/hatas-korok"
+ROUTE_URL="${BASE_URL}/hatas-korok/?hk_route_probe=1"
+EXPECTED_LOCATION="https://sharity.hu/hatas-korok"
+TARGET_URL="$EXPECTED_LOCATION"
+DEV_URL="${BASE_URL}/hatas-korok-dev"
+STAGING_DEV_URL="${BASE_URL}/impactshop-staging/hatas-korok-dev"
 AUTH_URL="${BASE_URL}/wp-json/impact/v1/auth/status"
 CIRCLES_URL="${BASE_URL}/wp-json/impact/v1/circles?page=1"
 
@@ -12,6 +16,8 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 HDR_ROUTE="$TMP_DIR/route-headers.txt"
 BODY_ROUTE="$TMP_DIR/route-body.html"
+HDR_TARGET="$TMP_DIR/target-headers.txt"
+BODY_TARGET="$TMP_DIR/target-body.html"
 BODY_AUTH="$TMP_DIR/auth.json"
 BODY_CIRCLES="$TMP_DIR/circles.json"
 
@@ -37,20 +43,23 @@ check_http_200() {
   [[ "$status" == "200" ]] || fail "Expected HTTP 200 from $url, got ${status:-unknown}"
 }
 
-info "Route header check: $ROUTE_URL"
-check_http_200 "$ROUTE_URL" "$HDR_ROUTE"
-pass "Route returns HTTP 200"
+info "Legacy app route cutover check: $ROUTE_URL"
+curl -fsS -D "$HDR_ROUTE" -o "$BODY_ROUTE" "$ROUTE_URL"
+ROUTE_STATUS="$(awk 'toupper($1) ~ /^HTTP/ { code=$2 } END { print code }' "$HDR_ROUTE")"
+[[ "$ROUTE_STATUS" == "302" ]] || fail "Expected HTTP 302 from $ROUTE_URL, got ${ROUTE_STATUS:-unknown}"
+ROUTE_LOCATION="$(awk 'BEGIN { IGNORECASE=1 } /^Location:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); value=$0 } END { print value }' "$HDR_ROUTE")"
+[[ "$ROUTE_LOCATION" == "$EXPECTED_LOCATION" ]] || fail "Unexpected Location from $ROUTE_URL: ${ROUTE_LOCATION:-missing}"
+pass "Legacy app route returns exact query-free Human Touch redirect"
 
-info "Route HTML shell check"
-curl -fsS "$ROUTE_URL" -o "$BODY_ROUTE"
-node - <<'NODE' "$BODY_ROUTE"
+info "Human Touch target check: $TARGET_URL"
+check_http_200 "$TARGET_URL" "$HDR_TARGET"
+curl -fsS "$TARGET_URL" -o "$BODY_TARGET"
+node - <<'NODE' "$BODY_TARGET"
 const fs = require('fs');
 const html = fs.readFileSync(process.argv[2], 'utf8');
 const checks = {
-  title: /Hatás Körök — Impact Community/.test(html),
-  contentRoot: /id="ic-content"/.test(html),
-  bootstrap: /window\.ImpactCommunity/.test(html),
-  cta: /Csatlakozz NGO vagy települési közösségekhez/.test(html),
+  title: /Hatás Körök — Közösségek, nem követők/.test(html),
+  humanTouch: /safe-area-inset-bottom/.test(html),
 };
 const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([key]) => key);
 if (failed.length) {
@@ -59,7 +68,14 @@ if (failed.length) {
 }
 console.log(JSON.stringify({ ok: true, checks }, null, 2));
 NODE
-pass "Route HTML shell contains expected bootstrap markers"
+pass "Human Touch target contains expected markers"
+
+info "Legacy dev routes remain outside the cutover"
+DEV_STATUS="$(curl -sS -D - -o /dev/null "$DEV_URL" | awk 'toupper($1) ~ /^HTTP/ { code=$2 } END { print code }')"
+[[ "$DEV_STATUS" == "404" ]] || fail "Expected anonymous HTTP 404 from $DEV_URL, got ${DEV_STATUS:-unknown}"
+STAGING_DEV_STATUS="$(curl -sS -D - -o /dev/null "$STAGING_DEV_URL" | awk 'toupper($1) ~ /^HTTP/ { code=$2 } END { print code }')"
+[[ "$STAGING_DEV_STATUS" == "200" ]] || fail "Expected HTTP 200 from $STAGING_DEV_URL, got ${STAGING_DEV_STATUS:-unknown}"
+pass "Legacy dev and staging-dev contracts are unchanged"
 
 info "Auth status API check: $AUTH_URL"
 curl -fsS "$AUTH_URL" -o "$BODY_AUTH"
