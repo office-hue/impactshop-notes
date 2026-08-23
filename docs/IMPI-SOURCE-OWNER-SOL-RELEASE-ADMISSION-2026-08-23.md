@@ -82,7 +82,9 @@ the existing source checkpoint plus this admission document.
 
 - `docs/IMPI-SOURCE-OWNER-SOL-RELEASE-ADMISSION-2026-08-23.md`: exact source
   base/candidate, security boundary, tests, PR/merge admission and rollback.
-- `notes.md`: concise source-release continuity entry before the single push.
+- `notes.md` and `docs/impactshop-governance-system-plan-2026-06-16.md`:
+  source-release continuity and the repo-local guard contract before the single
+  push.
 - GitHub branch/PR: one guarded push, one PR, one squash merge after exact-head
   and required-check verification.
 - Canonical main: read-only post-merge ancestry/status verification only.

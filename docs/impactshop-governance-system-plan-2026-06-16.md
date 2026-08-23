@@ -256,3 +256,22 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 - A max-protected exact parent tartós módja nem lazítható. A remote lockon belüli
   owner-write ablak csak inode/owner validációval, az egyetlen exact műveletre
   nyílhat, majd minden kimeneten az eredeti módra kell visszazárni és ellenőrizni.
+
+## 2026-08-23 Impi source-owner perimeter
+
+- Az `impact-community-impi-source.php` additív, default-off, kizárólag GET
+  projekció. Külön legalább 64 karakteres Impi credential, explicit circle-ID
+  allowlist, 24 aktivitásos/4 kB-os felső korlát és forrásoldali PII-redakció
+  tartozik hozzá.
+- A forrás nem kaphat publication route-ot, SQL writert, browser-session
+  fallbackot, legacy Impi/profile credentialet, cron/Cronos vagy második
+  watchdog tulajdont. Identity, profile-return, points, votes, rewards, money,
+  Offerwall és VB2026 változatlan protected perem.
+- A plugin exact SHA-ja a nem titkos authority policyben lockolt; a külön
+  `impact-impi-source-bastion-audit.py` fail-closed ellenőrzi a writer-,
+  credential-, public-permission- és publication-driftet. A guard, policy,
+  `docs/bastion-guard-status.md` és protected change record ugyanazon source
+  release continuity-lánc része.
+- A source merge nem runtime aktiválás. Secret, numerikus pilot ID, WordPress
+  deploy és flag csak külön, operátori SOL admissionben jelenhet meg. A 30 nap
+  maximum retention, nem kötelező várakozási idő.
