@@ -979,3 +979,14 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   commission correlation, without asserting purchase or settlement.
 - Schema, retention cron, provider gate and all economic writers are unchanged.
 - Protected runtime, boot, bastion and tamper tests pass in the clean VPS worktree.
+
+## 2026-08-23 — VB2026 autobanner affiliate production closure
+
+- PR #182 merged at `4ab348480ead`; exact-file releases deployed the affiliate
+  runtime and boot adapter with private backup, double CAS, PHP lint and atomic
+  replacement.
+- Live SHA values are `0c49b041...d92e4` and `845d284f...c67a`; both targets
+  are `0444`, their parent is `0555`, and both rollback inspections are green.
+- The existing retention watchdog tuple is unchanged and postactivation
+  admission is `ADMITTED`; no new cron, schema or economic writer was added.
+- Human affiliate canary remains pending; no automated click occurred.

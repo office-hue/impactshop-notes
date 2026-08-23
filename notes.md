@@ -7030,3 +7030,14 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Provider sees opaque SAT1 only; local correlation keeps NGO/source.
 - CJ remains blocked by the current Dognet-only live provider gate.
 - Existing retention cleanup/watchdog remains sufficient; no cron was added.
+
+## 2026-08-23 — VB2026 autobanner live affiliate closure
+
+- Source merge: `4ab348480ead`; exact runtime release
+  `20260823T092444Z-4ab348480ead-17e8ae00`; exact boot release
+  `20260823T092538Z-4ab348480ead-13d6733f`.
+- Backup/CAS/PHP-lint/atomic apply, `0444` targets, `0555` parent and both
+  read-only rollback inspections passed.
+- Central watchdog runtime was refreshed without adding a cron or tuple;
+  affiliate postactivation admission returned `ADMITTED`.
+- Human product-link/SAT1/NGO canary is the only remaining affiliate step.

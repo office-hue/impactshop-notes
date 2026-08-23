@@ -10,6 +10,8 @@ The operator explicitly approved cross-repository/worktree work and requested th
 - `wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php`: context validation and exact source persistence.
 - `scripts/sharity-affiliate-runtime-bastion-guard.sh`: maximum source-gate invariants.
 - `tests/sharity-affiliate-runtime-bastion.test.sh`: tamper proof for broad source admission.
+- `docs/bastion-guard-status.md`: release-only bastion evidence and deployed
+  checksums; no runtime policy change.
 
 The exact VB source uses existing prepare, mark-redirected, Dognet generation, click log redaction, correlation and retention functions. Shopping Assistant and every non-admitted legacy source remain behaviorally unchanged.
 
@@ -46,3 +48,27 @@ Rollback order:
 - Confirm the frozen `/factlens/vb/` surface and autobanner upstream were not changed.
 
 Automated tests must not generate live affiliate clicks.
+
+## Production release evidence
+
+- Source PR `#182` merged as `4ab348480ead24a6a3cbbd2136bee7b08a179bae`.
+- Runtime release `20260823T092444Z-4ab348480ead-17e8ae00` changed exact
+  before SHA `4347dded2ad009b5fe793836b57bbb163f3ffe94e55c0ed6dedeff93e0ef4859`
+  to deployed SHA `0c49b041cc81865cc0190807cf62180863c0a82818d0ef4f4fac7c4e713d92e4`.
+- Boot release `20260823T092538Z-4ab348480ead-13d6733f` changed exact before
+  SHA `e05a538fe4fdc5ca7af4220e03e3924cd4090f0d2ca5adf7c2f355cad545ba06`
+  to deployed SHA `845d284f8869eb18b131de935e21a27702f8cf324299d519004dc1090f44c67a`.
+- Both release manifests report phase `deployed`, exact current SHA and
+  executable rollback truth. Both PHP targets are owned by `sharityh`, mode
+  `0444`; the `mu-plugins` parent is `0555`; remote PHP lint passed.
+- The existing central watchdog was rebound, with crontab backup, to a clean
+  exact-main runtime. Postactivation admission is `ADMITTED`: option/schema,
+  table, one cleanup hook, next-run and affiliate watchdog signal are coherent.
+  Global unrelated watchdog findings remain visible warnings.
+- No automated affiliate click was made. The final product-deeplink/SAT1/NGO
+  correlation remains one explicit human canary.
+
+Rollback remains disable-first. Runtime rollback uses release
+`20260823T092444Z-4ab348480ead-17e8ae00` plus deployed SHA `0c49b041...d92e4`;
+boot rollback uses release `20260823T092538Z-4ab348480ead-13d6733f` plus
+deployed SHA `845d284f...c67a`.
