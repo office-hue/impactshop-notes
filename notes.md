@@ -7011,3 +7011,13 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Remaining gate: exact source SHA review, runtime secret provisioning and a
   separate controlled shadow activation admission. Publication is not in this
   checkpoint.
+
+## 2026-08-23 - Impi source-owner SOL release admission
+
+- Exact source candidate remains clean and zero commits behind
+  `origin/main@bf439f121fa020243f0f04fcae1e7b0dea4b738a` after fetch.
+- The next bounded package admits one guarded feature push, one PR and one
+  green-only squash merge. No force/direct-main write is allowed.
+- Source merge is deliberately separated from live WordPress deploy, secret
+  provisioning, pilot-ID configuration and runtime activation. No Cronos or
+  watchdog change is applicable in this source-only package.
