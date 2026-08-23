@@ -275,3 +275,13 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 - A source merge nem runtime aktiválás. Secret, numerikus pilot ID, WordPress
   deploy és flag csak külön, operátori SOL admissionben jelenhet meg. A 30 nap
   maximum retention, nem kötelező várakozási idő.
+
+## 2026-08-23 VB2026 autobanner exact affiliate source
+
+- Affiliate source admission is an exact allowlist governance boundary.
+- The only admitted values are shopping-assistant and vb2026-autobanner; a
+  broad match or third value must fail the maximum bastion.
+- Source placement, NGO mapping and HMAC subject are local correlation truth;
+  provider-facing attribution remains opaque SAT1.
+- The source extension cannot widen provider, identity, reward, vote, money or
+  settlement authority and does not create a scheduler.

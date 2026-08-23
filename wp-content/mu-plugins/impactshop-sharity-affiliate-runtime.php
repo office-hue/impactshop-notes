@@ -74,12 +74,13 @@ function impactshop_sharity_affiliate_validate_context($value)
     $ngo = sanitize_title((string) $value['ngo']);
     $pseudo = strtoupper(preg_replace('~[^A-Za-z0-9]~', '', (string) $value['pseudo']));
     $provider = (string) $value['provider'];
+    $source = (string) $value['source'];
     if (
         $shop === '' || $ngo === '' || strlen($shop) > 128 || strlen($ngo) > 128
         || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $shop)
         || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $ngo)
         || !preg_match('/^[A-Z0-9]{6,12}$/', $pseudo)
-        || $value['source'] !== 'shopping-assistant'
+        || !in_array($source, ['shopping-assistant', 'vb2026-autobanner'], true)
         || $provider !== 'dognet'
     ) {
         return new WP_Error('unsupported_context', 'Unsupported affiliate context.');
@@ -89,7 +90,7 @@ function impactshop_sharity_affiliate_validate_context($value)
         'ngo' => $ngo,
         'pseudo' => substr($pseudo, 0, 12),
         'provider' => $provider,
-        'source' => 'shopping-assistant',
+        'source' => $source,
     ];
 }
 

@@ -44,6 +44,8 @@ for needle, label in [
     ("hash_hmac('sha256', \"provider-token-v1\\0\"", "domain-separated provider token"),
     ("'provider' => $provider", "provider-neutral stored contract"),
     ("$provider !== 'dognet'", "Dognet-only live provider gate"),
+    ("!in_array($source, ['shopping-assistant', 'vb2026-autobanner'], true)", "exact two-source runtime gate"),
+    ("'source' => $source", "exact admitted source persistence"),
     ("'purchase_confirmed' => false", "non-economic purchase result"),
     ("'commission_confirmed' => false", "non-economic commission result"),
     ("'settlement_authorized' => false", "non-economic settlement result"),
@@ -84,12 +86,12 @@ for required_column in {
         raise SystemExit(f"[sharity-affiliate-bastion] missing stored column: {required_column}")
 
 for needle, label in [
-    ("if ($src === 'shopping-assistant')", "exact Shopping Assistant gate"),
+    ("$sharityAffiliateSource = in_array($src, ['shopping-assistant', 'vb2026-autobanner'], true);", "exact two-source boot gate"),
     ("apply_filters('impactshop_sharity_affiliate_prepare'", "prepare delegation"),
     ("apply_filters('impactshop_sharity_affiliate_mark_redirected'", "one-time transition"),
     ("$affiliateNgo = $prepared['provider_token'];", "opaque provider attribution"),
     ("$affiliatePseudo = '';", "raw pseudo suppression"),
-    ("'ISB-GO-ERROR: shop=%s source=shopping-assistant'", "unknown-shop log redaction"),
+    ("'ISB-GO-ERROR: shop=%s source=%s'", "unknown-shop log redaction"),
     ("if ($sharityAffiliateRuntime) {\n      isb_error('Már becsomagolt partnerlink", "wrapped-link rejection"),
     ("'sid' => $sharityAffiliateRuntime ? '' : $sidForLog", "new-path SID log redaction"),
     ("'pseudo' => $sharityAffiliateRuntime ? '' : $pseudo", "new-path pseudo log redaction"),
@@ -119,7 +121,7 @@ if mark_pos < 0 or log_pos < 0 or mark_pos > log_pos:
 unknown_start = boot.find("if (!$row) {")
 unknown_end = boot.find("isb_error('Ismeretlen shop:", unknown_start)
 unknown_block = boot[unknown_start:unknown_end]
-redacted_pos = unknown_block.find("if ($src === 'shopping-assistant')")
+redacted_pos = unknown_block.find("if ($sharityAffiliateSource)")
 legacy_pos = unknown_block.find("referer=%s pseudo=%s ip=%s")
 if redacted_pos < 0 or legacy_pos < 0 or redacted_pos > legacy_pos:
     raise SystemExit("[sharity-affiliate-bastion] unknown-shop privacy branch is not fail-closed")

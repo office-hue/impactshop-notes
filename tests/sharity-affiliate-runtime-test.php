@@ -221,6 +221,15 @@ foreach ([
 assert_true(IMPACTSHOP_SHARITY_AFFILIATE_TTL === 900, '15 minute TTL');
 assert_true(IMPACTSHOP_SHARITY_AFFILIATE_RETENTION === 3888000, '45 day retention');
 assert_true(IMPACTSHOP_SHARITY_AFFILIATE_CRON === 'impactshop_sharity_affiliate_retention_cleanup', 'cron identity');
+$validVb = impactshop_sharity_affiliate_validate_context([
+    'shop' => 'arukereso',
+    'ngo' => 'gyoztesek-egyesulete',
+    'pseudo' => 'ABC123XYZ789',
+    'provider' => 'dognet',
+    'source' => 'vb2026-autobanner',
+]);
+assert_true(!is_wp_error($validVb), 'valid VB2026 Dognet context');
+assert_true($validVb['source'] === 'vb2026-autobanner', 'VB2026 source preserved exactly');
 
 $impactshopTestOptions['impactshop_sharity_affiliate_runtime_enabled'] = '1';
 $impactshopTestOptions['impactshop_sharity_affiliate_schema_version'] = '1';
@@ -262,6 +271,7 @@ assert_true((bool) preg_match('/^hmac-sha256:[a-f0-9]{64}$/', $correlated['subje
 assert_true($correlated['purchase_confirmed'] === false, 'click does not prove purchase');
 assert_true($correlated['commission_confirmed'] === false, 'click does not prove commission');
 assert_true($correlated['settlement_authorized'] === false, 'correlation cannot authorize settlement');
+assert_true($stored['source_placement'] === 'shopping-assistant', 'Shopping source placement stored exactly');
 assert_true(is_wp_error(impactshop_sharity_affiliate_prepare(null, $context)), 'redirected intent cannot replay');
 
 $wpdb->rows[$issued['activation_id']]['delete_after'] = '2000-01-01 00:00:00';
@@ -274,5 +284,31 @@ assert_true(
     is_wp_error(impactshop_sharity_affiliate_prepare(null, $context)),
     'disabled runtime fails closed'
 );
+
+$impactshopTestOptions['impactshop_sharity_affiliate_runtime_enabled'] = '1';
+$vbContext = [
+    'shop' => 'arukereso',
+    'ngo' => 'gyoztesek-egyesulete',
+    'pseudo' => 'VB2026ABC999',
+    'provider' => 'dognet',
+    'source' => 'vb2026-autobanner',
+];
+$vbIssued = impactshop_sharity_affiliate_prepare(null, $vbContext);
+assert_true(!is_wp_error($vbIssued) && $vbIssued['authorized'] === true, 'VB2026 intent issue');
+$vbStored = reset($wpdb->rows);
+assert_true($vbStored['source_placement'] === 'vb2026-autobanner', 'VB2026 source placement stored exactly');
+assert_true($vbStored['ngo_ref'] === 'gyoztesek-egyesulete', 'VB2026 selected NGO stored locally');
+assert_true(strpos(json_encode($vbStored), 'VB2026ABC999') === false, 'VB2026 raw pseudo not stored');
+assert_true(
+    impactshop_sharity_affiliate_mark_redirected(null, $vbIssued['activation_id']) === true,
+    'VB2026 redirect transition'
+);
+$vbCorrelated = impactshop_sharity_affiliate_correlate($vbIssued['provider_token']);
+assert_true(is_array($vbCorrelated), 'VB2026 token correlates');
+assert_true($vbCorrelated['source_placement'] === 'vb2026-autobanner', 'VB2026 correlation preserves source');
+assert_true($vbCorrelated['ngo_ref'] === 'gyoztesek-egyesulete', 'VB2026 correlation preserves selected NGO');
+assert_true($vbCorrelated['purchase_confirmed'] === false, 'VB2026 click is not purchase proof');
+assert_true($vbCorrelated['commission_confirmed'] === false, 'VB2026 click is not commission proof');
+assert_true($vbCorrelated['settlement_authorized'] === false, 'VB2026 click cannot authorize settlement');
 
 echo "sharity affiliate runtime test: PASS\n";

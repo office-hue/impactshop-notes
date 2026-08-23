@@ -616,6 +616,7 @@ function isb_handle_go($is_deal){
   if(!$ngo){ $ngo = isb_q('ngo'); }
   $u=isb_q('u');
   $amb  = isb_q('amb'); $src=isb_q('src')?:'impactshop';
+  $sharityAffiliateSource = in_array($src, ['shopping-assistant', 'vb2026-autobanner'], true);
   if(!$shop){
     $shop = isb_shop_from_referer();
   }
@@ -662,10 +663,11 @@ function isb_handle_go($is_deal){
     }
   }
   if (!$row) {
-    if ($src === 'shopping-assistant') {
+    if ($sharityAffiliateSource) {
       error_log(sprintf(
-        'ISB-GO-ERROR: shop=%s source=shopping-assistant',
-        esc_html($shop)
+        'ISB-GO-ERROR: shop=%s source=%s',
+        esc_html($shop),
+        esc_html($src)
       ));
     } else {
       error_log(sprintf(
@@ -717,7 +719,7 @@ function isb_handle_go($is_deal){
   $affiliateActivationId = '';
   $sharityAffiliateRuntime = false;
 
-  if ($src === 'shopping-assistant') {
+  if ($sharityAffiliateSource) {
     $prepared = apply_filters('impactshop_sharity_affiliate_prepare', null, [
       'shop' => $shop,
       'ngo' => $ngo,
