@@ -958,3 +958,14 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   watchdog idegen hibák miatt `FAIL`, de affiliate-retention blocker nincs.
 - Öt Impact endpoint és a Vásárlási Segéd HTTP 200. Emberi Árukereső
   `sat1 -> last_click_data1` canary még kötelező; automatizált kattintás nem volt.
+## 2026-08-23T00:00:00+0200 - Impi source-owner context projection
+
+- New additive MU-plugin is default-off and read-only. It serves a bounded,
+  redacted circle context only to the Impi shadow service with a dedicated
+  credential and request ID; browser/session routes and all protected identity,
+  points, votes, rewards, money, Offerwall and VB2026 writers are unchanged.
+- Tests and maximum-bastion audit are green. No secret or numeric pilot ID is
+  stored in the repository. No cron/watchdog/provider/deploy mutation occurred.
+- Next gate is a separate operator-controlled shadow activation after exact
+  source SHA review and runtime-only key provisioning; 30-day retention is the
+  maximum deletion window, not a waiting period.
