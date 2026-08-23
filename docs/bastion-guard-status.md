@@ -2,6 +2,25 @@
 
 Last updated: 2026-08-21 16:55 CEST
 
+## 2026-08-23 — Impi source-owner context projection
+
+- The additive `impact-community-impi-source.php` MU-plugin and its non-secret
+  authority policy are now maximum-bastion protected. The route is exact
+  GET-only, default-off, pilot-allowlisted and requires a separate 64-character
+  Impi credential plus bounded request ID.
+- The response is a strict circle-only projection: 24 redacted activities at
+  most, 4,000 bytes per body, no author/session/membership/profile/economic
+  data, and no raw metadata. The source contains no SQL writer, publication
+  route, browser fallback, provider mutation or cron/watchdog hook.
+- PHP contract/redaction fixtures and the Python adversarial audit pass. The
+  policy records Tamási and Győztesek Egyesülete as approved pilot names while
+  numeric IDs and the secret remain runtime-only. Thirty days is a maximum
+  retention bound, not an activation wait. Live activation remains a separate
+  release admission after secret provisioning and exact source SHA review.
+- Evidence: `docs/IMPI-SOURCE-OWNER-CONTEXT-2026-08-23.md`,
+  `tests/impact-impi-source-context.test.php`,
+  `scripts/impact-impi-source-bastion-audit.py`.
+
 ## 2026-03-26 19:45 — impact-community.php URL fix
 - `ngo_admin_url` és `reset_url` dedikált `/ngo-admin/` route-ra állítva; a legacy `/impact-shop_ngo/` oldal többé nem kanonikus NGO admin belépési pont.
 - Production nem érintett, PR #83 még nem merge-elt.
