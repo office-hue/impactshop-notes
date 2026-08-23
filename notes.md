@@ -7021,3 +7021,12 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Source merge is deliberately separated from live WordPress deploy, secret
   provisioning, pilot-ID configuration and runtime activation. No Cronos or
   watchdog change is applicable in this source-only package.
+
+## 2026-08-23 — VB2026 autobanner canonical affiliate handoff
+
+- Added one exact SAT1 source: vb2026-autobanner.
+- Existing VB selection supplies NGO; this repo does not render or write a chooser.
+- Existing go-deal owner preserves product deeplinks and owns Dognet construction.
+- Provider sees opaque SAT1 only; local correlation keeps NGO/source.
+- CJ remains blocked by the current Dognet-only live provider gate.
+- Existing retention cleanup/watchdog remains sufficient; no cron was added.

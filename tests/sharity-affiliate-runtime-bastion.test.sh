@@ -23,7 +23,7 @@ python3 - "$TMP_DIR/boot.php" <<'PY'
 import sys
 p = sys.argv[1]
 s = open(p, encoding="utf-8").read()
-s = s.replace("if ($src === 'shopping-assistant')", "if ($src !== 'shopping-assistant')", 1)
+s = s.replace("in_array($src, ['shopping-assistant', 'vb2026-autobanner'], true)", "in_array($src, ['shopping-assistant', 'vb2026-autobanner', 'offerwall'], true)", 1)
 open(p, "w", encoding="utf-8").write(s)
 PY
 if run_guard; then
@@ -32,6 +32,18 @@ if run_guard; then
 fi
 
 cp "$BOOT" "$TMP_DIR/boot.php"
+python3 - "$TMP_DIR/runtime.php" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+s = s.replace("['shopping-assistant', 'vb2026-autobanner']", "['shopping-assistant', 'vb2026-autobanner', 'offerwall']", 1)
+open(p, "w", encoding="utf-8").write(s)
+PY
+if run_guard; then
+  echo "FAIL: third runtime source escaped bastion" >&2
+  exit 1
+fi
+
 python3 - "$TMP_DIR/runtime.php" <<'PY'
 import sys
 p = sys.argv[1]

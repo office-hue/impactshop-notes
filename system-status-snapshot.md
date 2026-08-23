@@ -969,3 +969,13 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - Next gate is a separate operator-controlled shadow activation after exact
   source SHA review and runtime-only key provisioning; 30-day retention is the
   maximum deletion window, not a waiting period.
+
+## 2026-08-23 — VB2026 autobanner SAT1 source admission
+
+- Exact new source vb2026-autobanner uses the existing opaque affiliate runtime.
+- Shopping Assistant remains unchanged; unknown and broad sources are rejected.
+- Dognet Data 1 receives SAT1 and raw pseudo/data5 remain suppressed.
+- Local intent retains selected NGO and exact source placement for later
+  commission correlation, without asserting purchase or settlement.
+- Schema, retention cron, provider gate and all economic writers are unchanged.
+- Protected runtime, boot, bastion and tamper tests pass in the clean VPS worktree.
