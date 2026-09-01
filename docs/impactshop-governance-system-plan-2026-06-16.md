@@ -272,6 +272,10 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   credential-, public-permission- és publication-driftet. A guard, policy,
   `docs/bastion-guard-status.md` és protected change record ugyanazon source
   release continuity-lánc része.
+- Az internal route létezése is védett információ: hiányzó vagy hibás service
+  auth/request-ID esetén mind a permission, mind a callback ág kizárólag
+  `404 context_not_found` választ adhat. A maximum bastion ezt külön számlált
+  forrásmarkerrel és hermetikus teszttel védi.
 - A source merge nem runtime aktiválás. Secret, numerikus pilot ID, WordPress
   deploy és flag csak külön, operátori SOL admissionben jelenhet meg. A 30 nap
   maximum retention, nem kötelező várakozási idő.
