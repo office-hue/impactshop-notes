@@ -52,6 +52,8 @@ def main() -> int:
     for marker in required:
         if marker not in source:
             fail(f"missing marker: {marker}")
+    if source.count("ic_impi_source_error('context_not_found', 404)") < 3:
+        fail("anonymous source disclosure must remain hidden behind 404")
     forbidden = [
         r"\$wpdb->(?:insert|update|delete)\s*\(",
         r"wp_remote_",

@@ -21,6 +21,9 @@ maximum raw-context retention bound; it is not a 30-day activation delay.
   accepted.
 - `X-Sharity-Impi-Request-Id` is required and bounded. No token, body, query,
   actor, membership or profile value is logged.
+- Missing or invalid service authorization and request IDs return the same
+  `404 context_not_found` response as an unavailable context. Anonymous callers
+  therefore cannot distinguish whether the internal route exists.
 - The response contains only active circle name/description, shadow mode,
   empty topic allowlist, up to 24 redacted activities and a deterministic
   summary. Author hashes, memberships, points, badges, votes, rewards,
@@ -44,3 +47,12 @@ Rollback is a guarded removal of this new MU-plugin and its policy/test/docs
 files only. Existing `impact-community.php`, identity/profile, points, votes,
 reward, donation, Offerwall and VB2026 surfaces are not part of the rollback.
 No live secret provisioning or deploy occurred in this checkpoint.
+
+## Production anonymous-disclosure closure — 2026-09-01
+
+The first guarded production activation proved authenticated `200` responses
+for pilot circles 276 and 278, but also exposed that unauthenticated requests
+returned `401`. The live authority requires anonymous `404`, so the two
+authorization failure branches now fail closed as `context_not_found`/`404`.
+The route remains GET-only and the token, response schema, pilot allowlist,
+redaction, retention and no-writer contracts are unchanged.

@@ -1,6 +1,6 @@
 {
   "schema": "impact-impi-source-authority-v1",
-  "plugin_sha256": "b86c28139796528b19bc17b43c28c283180c3013b493313d127c358eed8e4029",
+  "plugin_sha256": "4d290b3c810fd35431b657e7d81fe1100f411b34033c1b7faab1a04d91b71080",
   "enabled_by_default": false,
   "route": "GET /impact/v1/internal/impi/circles/{circle_id}/context",
   "credential": "IMPACT_IMPI_COMMUNITY_SOURCE_TOKEN",

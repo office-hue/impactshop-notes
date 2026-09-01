@@ -179,7 +179,7 @@ function ic_impi_source_context($circle_id) {
 
 function ic_impi_source_permission(WP_REST_Request $request) {
     if (!ic_impi_source_authorization($request) || !ic_impi_source_request_id($request)) {
-        return ic_impi_source_error('unauthorized', 401);
+        return ic_impi_source_error('context_not_found', 404);
     }
 
     return true;
@@ -187,7 +187,7 @@ function ic_impi_source_permission(WP_REST_Request $request) {
 
 function ic_impi_source_context_route(WP_REST_Request $request) {
     if (!ic_impi_source_authorization($request) || !ic_impi_source_request_id($request)) {
-        return ic_impi_source_error('unauthorized', 401);
+        return ic_impi_source_error('context_not_found', 404);
     }
 
     return ic_impi_source_context($request->get_param('circle_id'));

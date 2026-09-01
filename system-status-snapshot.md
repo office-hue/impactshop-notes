@@ -1,3 +1,10 @@
+## 2026-09-01T16:55:00+0200 - Impi source hidden-route contract
+
+- The protected GET-only Impi source returns anonymous `404` and authenticated
+  strict pilot context only; no writer or publication authority was added.
+- Focused PHP and maximum-bastion tests cover both permission and callback
+  authorization paths before exact production redeploy.
+
 ## 2026-08-21T13:00:00+0200 - Hatás Körök Human Touch route cutover prepared
 
 - New additive MU-plugin owns only `app.sharity.hu/hatas-korok[/]` GET/HEAD and

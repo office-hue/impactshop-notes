@@ -42,3 +42,19 @@ Runtime activation remains off until a separate operator-controlled admission.
   no deploy or feature activation occurred.
 - No cron or watchdog change is expected; the existing ai-agent receipt guard
   remains the sole supervision owner.
+
+## 2026-09-01 protected production correction
+
+- Coherence finding: live policy requires anonymous `404`, while the initial
+  source implementation returned `401` after the route was enabled.
+- Exact protected touch: only the two authorization-failure returns changed to
+  `context_not_found`/`404`; authenticated reads and all database queries are
+  unchanged.
+- Risk control: hermetic tests now assert both permission and callback paths;
+  maximum bastion requires all three hidden-404 branches.
+- Affected functions: `ic_impi_source_permission()` and
+  `ic_impi_source_context_route()` only.
+- Rollback: use the exact production release receipt/CAS rollback; if rolled
+  back, disable the runtime constants so the route becomes absent again.
+- Manual verification: anonymous 404, authenticated 200 for circles 276 and
+  278, unrelated Hatás Körök/public APIs unchanged.

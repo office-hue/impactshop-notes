@@ -110,3 +110,11 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 - [x] Unknown-shop logging remains privacy-redacted for both admitted sources.
 - [x] No scheduler change; existing retention watchdog remains canonical.
 - [x] Protected change and rollback checklist is recorded for exact-main release.
+## 2026-09-01 — Impi source anonymous 404 maximum bastion
+
+- The already protected `impact-community-impi-source.php` now hides both
+  authorization-failure paths behind `404 context_not_found`.
+- The hermetic contract test exercises both paths and the source bastion audit
+  rejects any loss of the three required hidden-404 branches.
+- Authenticated read schema, redaction, pilot allowlist, no-writer boundary and
+  central ai-agent watchdog ownership remain unchanged.
