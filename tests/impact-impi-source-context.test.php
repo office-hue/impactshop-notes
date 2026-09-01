@@ -58,6 +58,15 @@ function add_action($hook, $callback) {}
 function register_rest_route($namespace, $route, $args) {}
 require_once $plugin;
 
+$anonymousPermission = ic_impi_source_permission(new WP_REST_Request());
+assert($anonymousPermission instanceof WP_Error);
+assert($anonymousPermission->code === 'context_not_found');
+assert($anonymousPermission->data['status'] === 404);
+$anonymousRoute = ic_impi_source_context_route(new WP_REST_Request());
+assert($anonymousRoute instanceof WP_Error);
+assert($anonymousRoute->code === 'context_not_found');
+assert($anonymousRoute->data['status'] === 404);
+
 $redacted = ic_impi_source_redact_text('Írj az anna@example.com címre, IBAN HU42117730161111111111111111, token=abc123456789.');
 assert(str_contains($redacted, 'anna@example.com') === false);
 assert(str_contains($redacted, 'HU42117730161111111111111111111') === false);

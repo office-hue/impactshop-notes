@@ -1,3 +1,12 @@
+## 2026-09-01T16:55:00+0200 - Impi source anonymous route disclosure closed
+
+- Production activation revealed anonymous `401` on the internal Impi source
+  route, conflicting with the canonical live-shadow `404` contract.
+- Both authorization-failure branches now return indistinguishable
+  `context_not_found`/`404`; authenticated pilot reads remain unchanged.
+- Scope excludes community writers, identity/profile, economic, VB2026,
+  Offerwall, cron and watchdog surfaces.
+
 ## 2026-08-21T13:00:00+0200 - Hatás Körök Human Touch route cutover
 
 - Az app production Hatás Körök route régi HTML-shelljének oka külön WordPress
