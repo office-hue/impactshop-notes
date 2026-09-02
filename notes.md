@@ -7050,3 +7050,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Central watchdog runtime was refreshed without adding a cron or tuple;
   affiliate postactivation admission returned `ADMITTED`.
 - Human product-link/SAT1/NGO canary is the only remaining affiliate step.
+# 2026-09-02 DEV upgrade
+Added a fail-closed repo-local context policy guard and existing-CI wiring. No
+product, deploy, VPS, Cronos, watchdog or provider change. Target branch is
+governance-only until final QA.

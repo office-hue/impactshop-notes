@@ -85,3 +85,15 @@ find .codex/backups -mindepth 1 -maxdepth 1 -type d -mtime +2 -print -exec rm -r
 - Governance lane hardening:
   - guard, policy vagy governance-hub lane valtozas nem tolható fel a local governance system plan syncje nelkul: `docs/impactshop-governance-system-plan-2026-06-16.md`
 - New module files must include bastion/guard extension evidence in `docs/bastion-guard-status.md`.
+
+<!-- BEGIN REPO-LOCAL DEV UPGRADE CONTRACT -->
+The repo-local authority is stronger than any global prompt or memory. Every
+task uses one clean dedicated worktree with a recorded branch/base/head/tree
+and checkpoint; unknown, dirty or detached state blocks. Terra plans and QA,
+Luna bounded implementation, and Sol cross-system or release decisions are
+distinct. Required closeout is targeted/full necessary tests plus `git diff
+--check`, docsync/continuity evidence and one checkpoint commit. Vercel builds,
+push/PR/merge and main reconciliation stay at the safe minimum; no manual
+build or retry. Protected WordPress, deploy, remote-write and data paths require
+operator review. No global waiver can replace this local policy.
+<!-- END REPO-LOCAL DEV UPGRADE CONTRACT -->

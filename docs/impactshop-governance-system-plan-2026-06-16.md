@@ -293,3 +293,5 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   `docs/protected-change-records/2026-08-23-vb2026-autobanner-canonical-affiliate-bind.md`;
   `docs/bastion-guard-status.md` may contain only the matching exact-file
   release IDs, deployed checksums and rollback/admission evidence.
+# DEV upgrade (2026-09-02): repository-local policy guard is authoritative over
+# global prompts; governance-only changes reuse existing CI/affected filters.
