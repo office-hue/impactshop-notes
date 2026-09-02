@@ -998,3 +998,4 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   admission is `ADMITTED`; no new cron, schema or economic writer was added.
 - Human affiliate canary remains pending; no automated click occurred.
 # 2026-09-02 DEV governance adapter: source-ready, not merged or deployed.
+# 2026-09-02 DEV governance: repo-adapted and docsync-registered; not a product deploy.
