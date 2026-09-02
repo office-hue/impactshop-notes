@@ -88,6 +88,12 @@ Innen a kovetkezo legkisebb hasznos szelet:
 3. kulon local child map a protected bridge/VB2026 lane-re, ha a drift-guard mar gepi topic-level feloldast is kap;
 4. magasabb continuity/default-activation follow-up, ha a coordination riportalas mar stabil.
 
+## 2026-09-02 DEV context policy rollout
+
+`AGENTS.md`, `scripts/dev-context-policy-guard.sh`, its fixture, readiness,
+existing CI wiring, governance plan, bastion status, `notes.md` and the system
+snapshot form one docsync unit. Global prompt or memory cannot waive it.
+
 ## 2026-08-23 VB2026 autobanner affiliate continuity
 
 Canonical evidence: docs/protected-change-records/2026-08-23-vb2026-autobanner-canonical-affiliate-bind.md. Runtime/boot, lifecycle tests, maximum bastion, notes, status and bastion status move together. Source placement is exact vb2026-autobanner; NGO selection remains owned by VB2026 and no economic truth is inferred.

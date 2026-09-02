@@ -7054,3 +7054,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 Added a fail-closed repo-local context policy guard and existing-CI wiring. No
 product, deploy, VPS, Cronos, watchdog or provider change. Target branch is
 governance-only until final QA.
+# 2026-09-02 DEV rollout completion
+
+The repo-local policy guard is now registered in the canonical docsync map.
+No product, deploy, provider, VPS, Cronos or watchdog change occurred.
