@@ -118,3 +118,5 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
   rejects any loss of the three required hidden-404 branches.
 - Authenticated read schema, redaction, pilot allowlist, no-writer boundary and
   central ai-agent watchdog ownership remain unchanged.
+# 2026-09-02: dev-context-policy-guard is maximum-bastion governed; protected
+# and unknown paths fail closed and require operator review.

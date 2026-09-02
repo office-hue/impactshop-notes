@@ -85,6 +85,7 @@ require_file "scripts/worktree-coordination-sync.sh" "missing-worktree-coordinat
 require_file "scripts/worktree-continuity-guard.sh" "missing-worktree-continuity-guard"
 require_file "notes.md" "missing-notes"
 require_file "system-status-snapshot.md" "missing-system-status-snapshot"
+require_file "scripts/dev-context-policy-guard.sh" "missing-dev-context-policy-guard"
 
 HOOK_PRE_PUSH="$(git rev-parse --git-path hooks/pre-push 2>/dev/null || true)"
 HOOK_PRE_COMMIT="$(git rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
@@ -103,6 +104,12 @@ warn_cmd "rg" "missing-rg"
 if [[ -f "${HOOK_PRE_PUSH:-/nonexistent}" ]] && command -v rg >/dev/null 2>&1; then
   if ! rg -q -- 'worktree-continuity-guard\.sh|WORKTREE_CONTINUITY_GUARD' "${HOOK_PRE_PUSH}"; then
     WARNINGS+=("missing-worktree-continuity-pre-push-binding")
+  fi
+fi
+
+if [[ -x scripts/dev-context-policy-guard.sh ]]; then
+  if ! bash scripts/dev-context-policy-guard.sh --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
+    REASONS+=("dev-context-policy-blocked")
   fi
 fi
 
