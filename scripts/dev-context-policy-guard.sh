@@ -12,12 +12,13 @@ while (($#)); do
 done
 [[ -n "$repo_root" && ( -d "$repo_root/.git" || -f "$repo_root/.git" ) ]] || { echo "not a git worktree" >&2; exit 1; }
 python3 - "$repo_root" "$json" <<'PY'
-import json, subprocess, sys
+import json, os, re, subprocess, sys
 from pathlib import Path
 root = Path(sys.argv[1]).resolve(); as_json = sys.argv[2] == '1'
 reasons=[]
 def git(*args):
-    return subprocess.run(['git','-C',str(root),*args], text=True, capture_output=True, check=False).stdout.strip()
+    result=subprocess.run(['git','-C',str(root),*args], text=True, capture_output=True, check=False)
+    return result.stdout.strip() if result.returncode == 0 else ''
 agents = root/'AGENTS.md'; marker='<!-- BEGIN REPO-LOCAL DEV UPGRADE CONTRACT -->'; end='<!-- END REPO-LOCAL DEV UPGRADE CONTRACT -->'
 required=['repo-local authority','global prompt','Luna','Terra','Sol','worktree','checkpoint','git diff','--check','Vercel']
 if not agents.is_file(): reasons.append('missing-local-agents')
@@ -29,6 +30,9 @@ else:
         for token in required:
             if token not in block: reasons.append('local-policy-missing:'+token)
 branch=git('branch','--show-current'); base=git('rev-parse','origin/main') or None; head=git('rev-parse','HEAD') or None; tree=git('show','-s','--format=%T','HEAD') or None
+if not branch and os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_SHA') == head and re.fullmatch(r'[A-Za-z0-9._/-]+', os.environ.get('GITHUB_HEAD_REF','')):
+    branch=os.environ['GITHUB_HEAD_REF']; event_path=Path(os.environ.get('GITHUB_EVENT_PATH',''))
+    if event_path.is_file(): base=json.loads(event_path.read_text()).get('pull_request',{}).get('base',{}).get('sha') or base
 if not branch: reasons.append('detached-head')
 changed=[]
 if base and head and base != head: changed=[x for x in git('diff','--name-only',f'{base}..{head}').splitlines() if x]
