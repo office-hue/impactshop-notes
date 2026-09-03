@@ -120,3 +120,4 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
   central ai-agent watchdog ownership remain unchanged.
 # 2026-09-02: dev-context-policy-guard is maximum-bastion governed; protected
 # and unknown paths fail closed and require operator review.
+| 2026-09-03 | `impactshop-sharity-affiliate-runtime.php` UNice CJ canary | The existing opaque intent runtime adds one separately default-off, dual-auth UNice CJ adapter. Maximum source/mutation bastions pin the canonical session subject, trusted NGO, 256-bit one-use handoff, fixed Max Click path and sole opaque `sid`. Dognet boot/redirect and all economic writers remain unchanged; no scheduler was added. | `docs/protected-change-records/2026-09-03-impact-shopping-unice-cj-adapter.md` |

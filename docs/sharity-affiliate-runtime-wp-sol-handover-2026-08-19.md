@@ -96,3 +96,18 @@ After the human Árukereső echo proves the opaque path, activate one newly
 admitted Dognet partner through the same exact provider-neutral adapter. That
 package must bind one reviewed program/deeplink tuple and keep CJ as a separate
 proof/admission lane; it must not reopen raw pseudo/data5 attribution.
+## 2026-09-03 UNice CJ canary extension
+
+The runtime schema advances to v2 with nullable one-use handoff hash, authority
+snapshot and disclosure columns. Existing Dognet issuance and redirect marking
+remain unchanged. One separately gated CJ adapter reads the existing canonical
+web-session table under dual authentication, stores its HMAC subject and the
+trusted Győztesek Egyesülete mapping, and creates a 256-bit one-use Sharity
+handoff. The handoff redirects only to the pinned UNice CJ Max Click path with
+one opaque `sid`.
+
+The new option `impactshop_sharity_affiliate_cj_canary_enabled` defaults to
+`0`; production enablement and postactivation admission are separate. No new
+cron, provider poll, financial writer or NGO Card projection is introduced.
+Canonical evidence:
+`docs/protected-change-records/2026-09-03-impact-shopping-unice-cj-adapter.md`.

@@ -49,11 +49,22 @@ for needle, label in [
     ("'purchase_confirmed' => false", "non-economic purchase result"),
     ("'commission_confirmed' => false", "non-economic commission result"),
     ("'settlement_authorized' => false", "non-economic settlement result"),
+    ("IMPACTSHOP_SHARITY_AFFILIATE_CJ_PARTNER = 'unice'", "single CJ partner"),
+    ("IMPACTSHOP_SHARITY_AFFILIATE_CJ_PROGRAM = 'cj-5824323-15487360'", "reviewed CJ program"),
+    ("IMPACTSHOP_SHARITY_AFFILIATE_CJ_LINK = 'https://www.tkqlhce.com/click-101302202-15487360'", "reviewed CJ link"),
+    ("impactshop_sharity_affiliate_cj_canary_enabled", "default-off CJ option"),
+    ("x-sharity-service-authorization", "server-to-server credential boundary"),
+    ("impact_sharity_web_sessions", "canonical web session authority"),
+    ("SELECT subject_ref, status, expires_at_utc", "session privacy projection"),
+    ("'status' => 'ready_to_redirect'", "one-use handoff initial state"),
+    ("handoff_token_hash = %s FOR UPDATE", "locked handoff consumption"),
+    ("array_keys($query) !== ['sid']", "sole CJ query parameter"),
+    ("register_rest_route('sharity/v1', '/shopping/cj-intent'", "exact CJ intent route"),
+    ("/shopping/cj-handoff/(?P<handoffToken>shp1_[A-Za-z0-9_-]{43})", "bounded CJ handoff route"),
 ]:
     require(runtime, needle, label)
 
 for needle, label in [
-    ("register_rest_route", "public REST endpoint"),
     ("go.dognet.", "provider redirect ownership in correlation runtime"),
     ("wp_remote_", "outbound network request in correlation runtime"),
     ("update_user_meta", "profile writer"),
@@ -80,10 +91,22 @@ for forbidden_column in {
 for required_column in {
     "activation_id", "provider_token_hash", "request_key_hash", "subject_ref",
     "ngo_ref", "partner_key", "provider_key", "source_placement", "status",
-    "intent_expires_at", "delete_after",
+    "intent_expires_at", "delete_after", "handoff_token_hash",
+    "authority_snapshot_ref", "disclosure_version",
 }:
     if required_column not in columns:
         raise SystemExit(f"[sharity-affiliate-bastion] missing stored column: {required_column}")
+
+cj_start = runtime.find("function impactshop_sharity_affiliate_cj_redirect_url")
+cj_end = runtime.find("function impactshop_sharity_affiliate_cj_handoff", cj_start)
+if cj_start < 0 or cj_end < 0:
+    raise SystemExit("[sharity-affiliate-bastion] CJ redirect builder region not found")
+cj_builder = runtime[cj_start:cj_end]
+for forbidden in ["destination", "target", "urlencode($request", "wp_remote_", "a_aid", "utm_"]:
+    if forbidden in cj_builder:
+        raise SystemExit(f"[sharity-affiliate-bastion] forbidden dynamic CJ redirect input: {forbidden}")
+if cj_builder.count("?sid=") != 1:
+    raise SystemExit("[sharity-affiliate-bastion] CJ redirect must contain exactly one sid construction")
 
 for needle, label in [
     ("$sharityAffiliateSource = in_array($src, ['shopping-assistant', 'vb2026-autobanner'], true);", "exact two-source boot gate"),

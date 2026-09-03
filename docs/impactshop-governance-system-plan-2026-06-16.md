@@ -295,3 +295,23 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   release IDs, deployed checksums and rollback/admission evidence.
 # DEV upgrade (2026-09-02): repository-local policy guard is authoritative over
 # global prompts; governance-only changes reuse existing CI/affected filters.
+
+## 2026-09-03 UNice CJ canary protected runtime
+
+- The existing affiliate runtime may expose one separately gated CJ canary only:
+  partner `unice`, program `cj-5824323-15487360`, fixed landing-only Max Click
+  target and trusted NGO `gyoztesek-egyesulete`.
+- Browser input cannot choose provider, program, destination or outbound query.
+  The server-to-server intent requires the canonical active Sharity session and
+  service credential, then returns only a random single-use Sharity handoff.
+- The outbound CJ URL is built only after transactional handoff consumption and
+  contains exactly one opaque `sid=sat1_...` parameter. Raw pseudo/session data,
+  click-as-support claims and every financial or NGO Card writer remain outside
+  this perimeter.
+- The CJ flag is default-off; rollout and rollback use the exact-file protected
+  release path. Existing Dognet behavior and the existing retention scheduler
+  remain unchanged, and no additional cron or watchdog owner may be created.
+- Canonical evidence is
+  `docs/protected-change-records/2026-09-03-impact-shopping-unice-cj-adapter.md`;
+  the runtime, source/mutation bastion, hash registry, status snapshot, notes and
+  local doc-sync map form one required continuity unit.
