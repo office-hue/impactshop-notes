@@ -315,3 +315,17 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   `docs/protected-change-records/2026-09-03-impact-shopping-unice-cj-adapter.md`;
   the runtime, source/mutation bastion, hash registry, status snapshot, notes and
   local doc-sync map form one required continuity unit.
+
+## 2026-09-03 protected clean-main hash reconciliation
+
+- A protected hash may be reconciled only to exact bytes already present on
+  clean `origin/main`, with the introducing reviewed commit identified and
+  explicit operator approval recorded.
+- This admission is limited to `impactshop-boot.php@da343a6a` and
+  `.github/workflows/ci.yml@c20f9c5f`; bulk guard initialization or unrelated
+  baseline changes remain forbidden.
+- Provenance, exact two-entry diff, mutation detection and clean-main release
+  preflight are mandatory. The reconciliation does not authorize deployment of
+  either artifact and does not weaken exact-file release CAS/backup controls.
+- Canonical evidence is
+  `docs/protected-change-records/2026-09-03-protected-main-hash-reconciliation.md`.
