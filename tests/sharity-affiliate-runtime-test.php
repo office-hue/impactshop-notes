@@ -4,6 +4,7 @@ define('ABSPATH', __DIR__ . '/');
 define('ARRAY_A', 'ARRAY_A');
 
 $impactshopTestOptions = [];
+$impactshopTestRoutes = [];
 
 class WP_Error
 {
@@ -62,6 +63,84 @@ function add_action()
 {
 }
 
+function dbDelta()
+{
+    return true;
+}
+
+function register_rest_route($namespace, $route, $definition)
+{
+    global $impactshopTestRoutes;
+    $impactshopTestRoutes[$namespace . $route] = $definition;
+}
+
+function home_url($path = '')
+{
+    return 'https://app.sharity.hu' . $path;
+}
+
+class WP_REST_Response
+{
+    private $data;
+    private $status;
+    private $headers = [];
+
+    public function __construct($data, $status)
+    {
+        $this->data = $data;
+        $this->status = $status;
+    }
+
+    public function header($name, $value)
+    {
+        $this->headers[strtolower($name)] = $value;
+    }
+
+    public function get_data()
+    {
+        return $this->data;
+    }
+
+    public function get_status()
+    {
+        return $this->status;
+    }
+
+    public function get_headers()
+    {
+        return $this->headers;
+    }
+}
+
+class ImpactshopAffiliateFakeRequest
+{
+    private $headers;
+    private $params;
+    private $payload;
+
+    public function __construct($headers = [], $params = [], $payload = [])
+    {
+        $this->headers = array_change_key_case($headers, CASE_LOWER);
+        $this->params = $params;
+        $this->payload = $payload;
+    }
+
+    public function get_header($name)
+    {
+        return $this->headers[strtolower($name)] ?? '';
+    }
+
+    public function get_param($name)
+    {
+        return $this->params[$name] ?? null;
+    }
+
+    public function get_json_params()
+    {
+        return $this->payload;
+    }
+}
+
 function assert_true($condition, $message)
 {
     if (!$condition) {
@@ -74,6 +153,8 @@ class ImpactshopAffiliateFakeWpdb
 {
     public $prefix = 'wp_';
     public $rows = [];
+    public $sessions = [];
+    public $missingSchemaColumn = '';
 
     public function get_charset_collate()
     {
@@ -87,6 +168,10 @@ class ImpactshopAffiliateFakeWpdb
 
     public function get_var($prepared)
     {
+        if (strpos($prepared['query'], 'SHOW COLUMNS') !== false) {
+            $column = $prepared['args'][0] ?? '';
+            return $column === $this->missingSchemaColumn ? null : $column;
+        }
         return $prepared['args'][0] ?? null;
     }
 
@@ -97,6 +182,8 @@ class ImpactshopAffiliateFakeWpdb
                 $row['activation_id'] === $data['activation_id']
                 || $row['provider_token_hash'] === $data['provider_token_hash']
                 || $row['request_key_hash'] === $data['request_key_hash']
+                || (!empty($row['handoff_token_hash']) && !empty($data['handoff_token_hash'])
+                    && $row['handoff_token_hash'] === $data['handoff_token_hash'])
             ) {
                 return false;
             }
@@ -109,6 +196,9 @@ class ImpactshopAffiliateFakeWpdb
     {
         $query = $prepared['query'];
         $needle = $prepared['args'][0] ?? '';
+        if (strpos($query, 'impact_sharity_web_sessions') !== false) {
+            return $this->sessions[$needle] ?? null;
+        }
         foreach ($this->rows as $row) {
             if (strpos($query, 'request_key_hash = %s') !== false && $row['request_key_hash'] === $needle) {
                 return [
@@ -116,6 +206,15 @@ class ImpactshopAffiliateFakeWpdb
                     'status' => $row['status'],
                     'intent_expires_at' => $row['intent_expires_at'],
                 ];
+            }
+            if (
+                strpos($query, 'handoff_token_hash = %s') !== false
+                && ($row['handoff_token_hash'] ?? '') === $needle
+            ) {
+                return array_intersect_key($row, array_flip([
+                    'activation_id', 'status', 'intent_expires_at', 'partner_key',
+                    'provider_key', 'provider_program_ref',
+                ]));
             }
             if (
                 strpos($query, 'provider_token_hash = %s') !== false
@@ -140,11 +239,18 @@ class ImpactshopAffiliateFakeWpdb
         $query = $prepared['query'];
         $args = $prepared['args'];
         if (strpos($query, "SET status = 'redirected'") !== false) {
-            [$redirectedAt, $deleteAfter, $activationId, $now] = $args;
+            $cjHandoff = strpos($query, 'handoff_token_hash = %s') !== false;
+            if ($cjHandoff) {
+                [$redirectedAt, $deleteAfter, $activationId, $handoffHash, $now] = $args;
+            } else {
+                [$redirectedAt, $deleteAfter, $activationId, $now] = $args;
+                $handoffHash = null;
+            }
             if (
                 !isset($this->rows[$activationId])
                 || $this->rows[$activationId]['status'] !== 'ready_to_redirect'
                 || $this->rows[$activationId]['intent_expires_at'] <= $now
+                || ($cjHandoff && ($this->rows[$activationId]['handoff_token_hash'] ?? '') !== $handoffHash)
             ) {
                 return 0;
             }
@@ -233,6 +339,12 @@ assert_true($validVb['source'] === 'vb2026-autobanner', 'VB2026 source preserved
 
 $impactshopTestOptions['impactshop_sharity_affiliate_runtime_enabled'] = '1';
 $impactshopTestOptions['impactshop_sharity_affiliate_schema_version'] = '1';
+$wpdb->missingSchemaColumn = 'handoff_token_hash';
+assert_true(impactshop_sharity_affiliate_install_schema() === false, 'missing v2 column fails closed');
+assert_true($impactshopTestOptions['impactshop_sharity_affiliate_schema_version'] === '1', 'failed migration is not marked complete');
+$wpdb->missingSchemaColumn = '';
+assert_true(impactshop_sharity_affiliate_install_schema() === true, 'complete v2 schema accepted');
+assert_true($impactshopTestOptions['impactshop_sharity_affiliate_schema_version'] === '2', 'verified migration marked complete');
 $context = [
     'shop' => 'arukereso',
     'ngo' => 'gyoztesek-egyesulete',
@@ -310,5 +422,95 @@ assert_true($vbCorrelated['ngo_ref'] === 'gyoztesek-egyesulete', 'VB2026 correla
 assert_true($vbCorrelated['purchase_confirmed'] === false, 'VB2026 click is not purchase proof');
 assert_true($vbCorrelated['commission_confirmed'] === false, 'VB2026 click is not commission proof');
 assert_true($vbCorrelated['settlement_authorized'] === false, 'VB2026 click cannot authorize settlement');
+
+impactshop_sharity_affiliate_register_routes();
+assert_true(isset($impactshopTestRoutes['sharity/v1/shopping/cj-intent']), 'CJ intent route registered');
+assert_true(
+    isset($impactshopTestRoutes['sharity/v1/shopping/cj-handoff/(?P<handoffToken>shp1_[A-Za-z0-9_-]{43})']),
+    'CJ handoff route registered'
+);
+
+$impactshopTestOptions['impactshop_sharity_affiliate_cj_canary_enabled'] = '1';
+$impactshopTestOptions['impactshop_sharity_web_session_service_token'] = str_repeat('K', 43);
+$sessionToken = 'sw_session_' . str_repeat('S', 43);
+$canonicalSubject = 'hmac-sha256:' . str_repeat('b', 64);
+$wpdb->sessions[hash('sha256', $sessionToken)] = [
+    'subject_ref' => $canonicalSubject,
+    'status' => 'active',
+    'expires_at_utc' => gmdate('Y-m-d H:i:s', time() + 600),
+];
+$cjPayload = [
+    'authoritySnapshotId' => 'sharity-shopping-production-v2-20260903-01',
+    'disclosureVersion' => 'shopping-affiliate-v1',
+    'ngoSlug' => 'gyoztesek-egyesulete',
+    'partnerKey' => 'unice',
+    'programRef' => 'cj-5824323-15487360',
+    'providerKey' => 'cj',
+];
+$cjRequest = new ImpactshopAffiliateFakeRequest([
+    'authorization' => 'Bearer ' . $sessionToken,
+    'x-sharity-service-authorization' => 'Bearer ' . str_repeat('K', 43),
+], [], $cjPayload);
+$cjIssued = impactshop_sharity_affiliate_cj_issue($cjRequest);
+assert_true($cjIssued->get_status() === 201, 'CJ intent issue status');
+$cjIssueData = $cjIssued->get_data();
+$handoffUrl = $cjIssueData['data']['handoff_url'] ?? '';
+assert_true((bool) preg_match('~^https://app\.sharity\.hu/wp-json/sharity/v1/shopping/cj-handoff/shp1_[A-Za-z0-9_-]{43}$~', $handoffUrl), 'opaque Sharity handoff URL');
+assert_true(strpos(json_encode($cjIssueData), 'sat1_') === false, 'CJ issue response excludes provider token');
+assert_true(strpos(json_encode($cjIssueData), $sessionToken) === false, 'CJ issue response excludes session token');
+
+$cjStored = null;
+foreach ($wpdb->rows as $row) {
+    if (($row['provider_key'] ?? '') === 'cj') {
+        $cjStored = $row;
+        break;
+    }
+}
+assert_true(is_array($cjStored), 'CJ intent stored');
+assert_true($cjStored['subject_ref'] === $canonicalSubject, 'canonical session subject stored');
+assert_true($cjStored['ngo_ref'] === 'gyoztesek-egyesulete', 'trusted CJ NGO stored');
+assert_true($cjStored['provider_program_ref'] === 'cj-5824323-15487360', 'fixed CJ program stored');
+assert_true($cjStored['authority_snapshot_ref'] === 'sharity-shopping-production-v2-20260903-01', 'v2 snapshot stored');
+assert_true(strpos(json_encode($cjStored), $sessionToken) === false, 'stored CJ row excludes session token');
+
+$handoffToken = basename(parse_url($handoffUrl, PHP_URL_PATH));
+$handoffRequest = new ImpactshopAffiliateFakeRequest([], ['handoffToken' => $handoffToken]);
+$cjRedirect = impactshop_sharity_affiliate_cj_handoff($handoffRequest);
+assert_true($cjRedirect->get_status() === 303, 'CJ handoff redirects');
+$cjLocation = $cjRedirect->get_headers()['location'] ?? '';
+$cjLocationParts = parse_url($cjLocation);
+parse_str($cjLocationParts['query'] ?? '', $cjLocationQuery);
+assert_true(($cjLocationParts['scheme'] ?? '') === 'https', 'CJ redirect uses HTTPS');
+assert_true(($cjLocationParts['host'] ?? '') === 'www.tkqlhce.com', 'CJ redirect host fixed');
+assert_true(($cjLocationParts['path'] ?? '') === '/click-101302202-15487360', 'CJ PID/link path fixed');
+assert_true(array_keys($cjLocationQuery) === ['sid'], 'CJ redirect carries only sid');
+assert_true((bool) preg_match('/^sat1_[A-Za-z0-9_-]{43}$/', $cjLocationQuery['sid'] ?? ''), 'CJ sid is opaque sat1');
+assert_true(($cjRedirect->get_headers()['referrer-policy'] ?? '') === 'no-referrer', 'CJ redirect suppresses referrer');
+$cjCorrelation = impactshop_sharity_affiliate_correlate($cjLocationQuery['sid']);
+assert_true(is_array($cjCorrelation), 'CJ sid correlates after redirect');
+assert_true($cjCorrelation['subject_ref'] === $canonicalSubject, 'CJ correlation returns canonical HMAC subject');
+assert_true($cjCorrelation['purchase_confirmed'] === false, 'CJ click is not purchase proof');
+assert_true(impactshop_sharity_affiliate_cj_handoff($handoffRequest)->get_status() === 409, 'CJ handoff replay rejected');
+
+$badService = new ImpactshopAffiliateFakeRequest([
+    'authorization' => 'Bearer ' . $sessionToken,
+    'x-sharity-service-authorization' => 'Bearer ' . str_repeat('X', 43),
+], [], $cjPayload);
+assert_true(impactshop_sharity_affiliate_cj_issue($badService)->get_status() === 401, 'bad service auth rejected');
+$badSession = new ImpactshopAffiliateFakeRequest([
+    'authorization' => 'Bearer sw_session_' . str_repeat('Z', 43),
+    'x-sharity-service-authorization' => 'Bearer ' . str_repeat('K', 43),
+], [], $cjPayload);
+assert_true(impactshop_sharity_affiliate_cj_issue($badSession)->get_status() === 401, 'unknown session rejected');
+$badPayload = $cjPayload;
+$badPayload['programRef'] = 'cj-5824323-99999999';
+$badProgram = new ImpactshopAffiliateFakeRequest([
+    'authorization' => 'Bearer ' . $sessionToken,
+    'x-sharity-service-authorization' => 'Bearer ' . str_repeat('K', 43),
+], [], $badPayload);
+assert_true(impactshop_sharity_affiliate_cj_issue($badProgram)->get_status() === 400, 'wrong CJ program rejected');
+
+$impactshopTestOptions['impactshop_sharity_affiliate_cj_canary_enabled'] = '0';
+assert_true(impactshop_sharity_affiliate_cj_issue($cjRequest)->get_status() === 403, 'CJ canary defaults fail-closed');
 
 echo "sharity affiliate runtime test: PASS\n";

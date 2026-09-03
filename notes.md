@@ -7058,3 +7058,9 @@ governance-only until final QA.
 
 The repo-local policy guard is now registered in the canonical docsync map.
 No product, deploy, provider, VPS, Cronos or watchdog change occurred.
+- 2026-09-03: Impact Shopping UNice CJ adapter source-ready. The existing
+  Dognet runtime is unchanged; a separate default-off route pair uses the
+  canonical active Sharity session subject, trusted Győztesek Egyesülete NGO,
+  hashed 256-bit one-use handoff and fixed CJ Max Click link with only `sid`.
+  No click, purchase, commission or NGO Card claim is created. Production
+  exact-file deploy and option enablement remain receipt-gated.

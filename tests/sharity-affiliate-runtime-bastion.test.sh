@@ -69,4 +69,44 @@ if run_guard; then
   exit 1
 fi
 
+cp "$RUNTIME" "$TMP_DIR/runtime.php"
+cp "$BOOT" "$TMP_DIR/boot.php"
+python3 - "$TMP_DIR/runtime.php" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+s = s.replace("click-101302202-15487360'", "click-999999999-99999999'", 1)
+open(p, "w", encoding="utf-8").write(s)
+PY
+if run_guard; then
+  echo "FAIL: changed CJ link escaped bastion" >&2
+  exit 1
+fi
+
+cp "$RUNTIME" "$TMP_DIR/runtime.php"
+python3 - "$TMP_DIR/runtime.php" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+s = s.replace("x-sharity-service-authorization", "x-optional-auth", 1)
+open(p, "w", encoding="utf-8").write(s)
+PY
+if run_guard; then
+  echo "FAIL: removed service-auth boundary escaped bastion" >&2
+  exit 1
+fi
+
+cp "$RUNTIME" "$TMP_DIR/runtime.php"
+python3 - "$TMP_DIR/runtime.php" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+s = s.replace("array_keys($query) !== ['sid']", "false", 1)
+open(p, "w", encoding="utf-8").write(s)
+PY
+if run_guard; then
+  echo "FAIL: loosened sole-sid validation escaped bastion" >&2
+  exit 1
+fi
+
 echo "sharity affiliate runtime bastion tamper test: PASS"

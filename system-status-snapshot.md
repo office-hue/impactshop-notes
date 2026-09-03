@@ -999,3 +999,12 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - Human affiliate canary remains pending; no automated click occurred.
 # 2026-09-02 DEV governance adapter: source-ready, not merged or deployed.
 # 2026-09-02 DEV governance: repo-adapted and docsync-registered; not a product deploy.
+## 2026-09-03 — Impact Shopping UNice CJ adapter
+
+- Source-ready in a clean exact-main worktree; not yet deployed or enabled.
+- Affiliate schema v2 adds only handoff/snapshot/disclosure metadata.
+- CJ intent requires canonical active session plus service auth; browser sees
+  only a random one-use Sharity handoff.
+- CJ redirect is pinned to `101302202-15487360` with sole opaque `sid`.
+- Dognet, VB2026, identity writers, rewards, financial ledger and NGO Card are
+  unchanged. Existing retention cron is reused.
