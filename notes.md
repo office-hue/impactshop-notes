@@ -7064,3 +7064,8 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   hashed 256-bit one-use handoff and fixed CJ Max Click link with only `sid`.
   No click, purchase, commission or NGO Card claim is created. Production
   exact-file deploy and option enablement remain receipt-gated.
+- 2026-09-03: The exact release preflight found stale protected hashes for two
+  previously reviewed main artifacts and performed no remote write. Arnold
+  approved a narrow reconciliation of `impactshop-boot.php@da343a6a` and
+  `.github/workflows/ci.yml@c20f9c5f`; no source behavior or broader registry
+  baseline is changed.

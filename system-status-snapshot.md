@@ -1008,3 +1008,12 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 - CJ redirect is pinned to `101302202-15487360` with sole opaque `sid`.
 - Dognet, VB2026, identity writers, rewards, financial ledger and NGO Card are
   unchanged. Existing retention cron is reused.
+
+## 2026-09-03 — Protected main hash reconciliation
+
+- The UNice release preflight correctly blocked before remote writes on two
+  stale guard hashes.
+- Operator approval now permits pinning only the already-merged VB2026 boot
+  artifact (`da343a6a`) and CI policy workflow artifact (`c20f9c5f`).
+- No product/runtime/workflow bytes change; the guard registry remains
+  fail-closed and the next exact-file release must start from clean main.
