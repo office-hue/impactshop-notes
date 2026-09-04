@@ -399,12 +399,25 @@ try:
             raise ValueError('private-evidence-state-invalid')
         frozen = json.loads(candidate_record.read_text())
         candidate = frozen.get('candidateTreeSha')
+        identity = {
+            'baseSha': base,
+            'headSha': head,
+            'treeSha': tree,
+            'contractSha256': digest,
+        }
+        if any(frozen.get(key) != value for key, value in identity.items()) or frozen.get('sourceMergeAdmission') is not True:
+            raise ValueError('candidate-evidence-identity-mismatch')
         if candidate != git('write-tree'):
             raise ValueError('candidate-index-tree-mismatch')
         if candidate != tree:
             raise ValueError('checkpoint-tree-mismatch')
         payload['candidateTreeSha'] = candidate
         payload['checkpointTreeMatchesCandidate'] = True
+        payload['sourceMergeAdmission'] = True
+        payload['fullValidationEvidence'] = frozen.get('fullValidationEvidence') is True
+        for key in ('protectedChangeRecord', 'planRef', 'operatorApprovalRef'):
+            if key in frozen:
+                payload[key] = frozen[key]
 
     print(json.dumps(payload, sort_keys=True) if as_json == '1' else '[dev-delivery-v2] decision=' + payload['decision'])
     if cmd == 'full-validate':

@@ -150,6 +150,9 @@ payload="$(adapter_payload "$repo" full-validate)"
 assert_payload "$payload" "p['decision']=='operator-review' and p['fullValidationEvidence'] is True and p['sourceMergeAdmission'] is False"
 payload="$(adapter_payload "$repo" bastion)"
 assert_payload "$payload" "p['decision']=='operator-review' and p['bastionDecision']=='pass' and p['sourceMergeAdmission'] is True"
+adapter_payload "$repo" freeze >/dev/null
+payload="$(adapter_payload "$repo" verify)"
+assert_payload "$payload" "p['checkpointTreeMatchesCandidate'] is True and p['sourceMergeAdmission'] is True and p['fullValidationEvidence'] is True"
 
 repo="$(new_repo deploy-never-admitted)"
 printf '%s\n' 'name: hostile' 'jobs:' '  deploy:' '    runs-on: ubuntu-latest' '    steps:' '      - run: provider-deploy production' > "$repo/.github/workflows/locked.yml"
