@@ -1017,3 +1017,38 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   artifact (`da343a6a`) and CI policy workflow artifact (`c20f9c5f`).
 - No product/runtime/workflow bytes change; the guard registry remains
   fail-closed and the next exact-file release must start from clean main.
+
+## 2026-09-04 DEV delivery v2 target adapter
+
+Source-only candidate; provider and product deployment authority are absent.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+Source-ready governance correction: both guards require exact resolvable
+40-hex base/head commit objects, a valid HEAD tree and a successful exact
+base-to-head diff. `CI / validate` retains its job identity and now explicitly
+fetches/verifies the PR base before guard binding. Missing/non-SHA base and
+non-governance content fixtures block. No release-engine, runtime, provider or
+deployment state changed.
+
+## 2026-09-04 DEV delivery v2 protected-admission correction
+
+- Source governance candidate only; no merge, deploy, provider, VPS or runtime
+  action has occurred.
+- Script/workflow/config/guard and protected-inventory changes require the
+  repo-local full-validation chain. The private evidence binds exact base, HEAD
+  and candidate tree; CI independently checks those values at checkout.
+- Bastion records classifier `decision` separately from `bastionDecision` and
+  cannot grant provider deployment authority. Negative tamper fixtures are
+  green; legacy PHP release engine unchanged.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+- Source-only, not merged or deployed. Both rename/copy endpoints are now
+  classified, and executable content scanning is limited to changed script and
+  workflow surfaces.
+- Full validation is exact base/HEAD/tree evidence only. Protected admission
+  requires exact canonical change-record, plan and operator-reference coverage;
+  deploy admission is always false.
+- Local/CI assertions keep policy-integrity PASS, operator-review and source
+  admission as separate states.

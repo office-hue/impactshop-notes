@@ -98,3 +98,35 @@ snapshot form one docsync unit. Global prompt or memory cannot waive it.
 
 Canonical evidence: docs/protected-change-records/2026-08-23-vb2026-autobanner-canonical-affiliate-bind.md. Runtime/boot, lifecycle tests, maximum bastion, notes, status and bastion status move together. Source placement is exact vb2026-autobanner; NGO selection remains owned by VB2026 and no economic truth is inferred.
 | Impact Shopping UNice CJ canary | `docs/protected-change-records/2026-09-03-impact-shopping-unice-cj-adapter.md` | `wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php` | `tests/sharity-affiliate-runtime-test.php`, `tests/sharity-affiliate-runtime-bastion.test.sh` | `scripts/sharity-affiliate-runtime-bastion-guard.sh`, existing retention cron, ai-agent central watchdog | `docs/sharity-affiliate-runtime-wp-sol-handover-2026-08-19.md`, `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `source-ready-default-off` | One exact UNice/CJ program, canonical session subject, trusted NGO and one-use opaque handoff; production deploy/enable evidence pending. |
+
+## 2026-09-04 DEV delivery v2 target admission
+
+The contract snapshot, maximum-bastion adapter, fixture and existing `CI /
+validate` job form one local governance docsync unit. Candidate evidence is
+private worktree Git metadata; no provider or product deploy authority exists.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+The same docsync unit now includes exact 40-hex/rev-object base, head and tree
+admission plus a successful exact base-to-head diff. CI fetches and verifies
+the PR base before injecting it into both local guards; missing/ref-invalid
+state is blocked rather than classified as an empty governance diff. Fixtures
+cover missing base, a non-SHA supplied base and a non-governance changed path.
+
+## 2026-09-04 DEV delivery v2 protected-admission correction
+
+The local governance docsync unit additionally includes the protected change
+record, existing commit-lane/protected-touch admission chain, private exact
+base/HEAD/tree full-validation evidence and CI candidate binding. Workflow,
+script, deploy/config/guard and protected-inventory changes are never
+governance-only; executable provider-deploy or remote-write content is deploy.
+The separate bastion result does not overwrite `operator-review`, and automatic
+provider/product deployment remains unavailable.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+The adapter, context guard, CI assertions, exact protected change-record
+manifest, governance plan, bastion status, tests, notes and status snapshot are
+one docsync unit. Rename/copy evaluates both endpoints. Full validation is only
+evidence; protected source admission additionally requires exact record/plan/
+operator-reference coverage, while deploy-class admission remains false.

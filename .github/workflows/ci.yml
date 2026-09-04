@@ -14,12 +14,66 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
+      - name: Bind pull-request base commit
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags --depth=1 origin "$PR_BASE_SHA"
+          [[ "$(git rev-parse --verify "$PR_BASE_SHA^{commit}")" == "$PR_BASE_SHA" ]]
 
       - name: Validation script syntax
         run: bash -n scripts/validate-deploy-profile.sh
 
       - name: DEV context policy guard
-        run: bash scripts/dev-context-policy-guard.sh --json
+        env:
+          DEV_DELIVERY_V2_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          policy="$(bash scripts/dev-context-policy-guard.sh --json || true)"
+          python3 - "$policy" <<'PY'
+          import json, sys
+          payload=json.loads(sys.argv[1])
+          assert payload['decision'] in ('allowed', 'operator-review')
+          assert payload['changedPathClass'] != 'unknown'
+          assert payload['providerBuildDecision'] == 'not-configured' if payload['decision'] == 'allowed' else True
+          PY
+
+      - name: DEV delivery v2 maximum bastion
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            export DEV_DELIVERY_V2_BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          fi
+          validation="$(bash scripts/dev-delivery-v2-adapter.sh full-validate --json)"
+          python3 - "$validation" <<'PY'
+          import json, sys
+          payload=json.loads(sys.argv[1])
+          assert payload['fullValidationEvidence'] is True
+          assert payload['sourceMergeAdmission'] is False
+          assert payload['decision'] in ('allowed', 'operator-review')
+          PY
+          payload="$(bash scripts/dev-delivery-v2-adapter.sh bastion --json)"
+          python3 - "$payload" <<'PY'
+          import json, subprocess, sys
+          payload=json.loads(sys.argv[1])
+          head=subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip()
+          tree=subprocess.check_output(['git','show','-s','--format=%T','HEAD'], text=True).strip()
+          assert payload['headSha'] == head and payload['treeSha'] == tree
+          assert payload['candidateTreeSha'] == tree
+          expected_base=__import__('os').environ.get('DEV_DELIVERY_V2_BASE_SHA', payload['baseSha'])
+          assert payload['baseSha'] == expected_base
+          assert payload['bastionDecision'] == 'pass'
+          assert payload['sourceMergeAdmission'] is True
+          assert payload['decision'] == 'operator-review' if payload['changedPathClass'] == 'protected' else True
+          assert payload['changedPathClass'] != 'deploy'
+          assert payload['providerBuildDecision'] != 'provider' + '-deploy'
+          PY
+          bash tests/dev-delivery-v2-adapter.test.sh
 
       - name: Deploy control-plane bastion tests
         run: |

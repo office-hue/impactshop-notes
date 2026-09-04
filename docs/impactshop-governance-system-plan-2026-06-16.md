@@ -329,3 +329,55 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   either artifact and does not weaken exact-file release CAS/backup controls.
 - Canonical evidence is
   `docs/protected-change-records/2026-09-03-protected-main-hash-reconciliation.md`.
+
+## 2026-09-04 DEV delivery v2 target adapter
+
+The local adapter snapshots the audited target contract, verifies its digest,
+classifies impact fail-closed and keeps candidate evidence in active-worktree
+Git metadata only. It cannot deploy or invoke a provider.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+Both local guards now require an exact lowercase 40-hex base and HEAD that
+resolve to commit objects, an exact HEAD tree object, and a successful
+`base..HEAD` name-only diff before they classify a candidate. A missing,
+non-SHA, unresolved base or failed diff is blocking and cannot become an empty
+governance-only candidate. The existing `CI / validate` job keeps its name,
+fetches full history, fetches and verifies the exact PR base SHA, then binds
+that SHA to both guards through `DEV_DELIVERY_V2_BASE_SHA`.
+
+Scope is guard/CI evidence only: no WordPress route, product runtime, provider,
+remote write, scheduler, watchdog or legacy PHP exact-release engine changed.
+Primary risk is a checkout without the referenced commit; it now fails closed.
+Parity evidence is the two guard fixtures covering missing base, non-SHA base
+and a non-governance changed path.
+
+## 2026-09-04 DEV delivery v2 protected-admission correction
+
+`scripts/**`, `.github/workflows/**`, deploy/config/guard paths and every path
+listed by either protected-file inventory are now protected at minimum; unknown
+paths remain blocked. Executable candidate content that requests provider deploy
+or remote write is classified as deploy even when its pathname looks like
+governance. `bastion` preserves the classifier decision and reports a separate
+`bastionDecision`; it can pass a protected/deploy source candidate only after
+the adapter itself has created exact base/HEAD/tree-bound private evidence by
+running the existing commit-lane and protected-touch checks. Provider deploy is
+always false. CI verifies the checked-out head/tree against that evidence.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+Operator approval reference:
+`operator-approval:dev-delivery-v2-p0-fix3-20260904`.
+
+- A name-status osztályozás rename/copy esetén a régi és az új pathot is
+  értékeli, így protected fájl dokumentációs helyre mozgatása sem válhat
+  governance-only változássá.
+- A full validation kizárólag base/HEAD/tree-kötött evidence; nem írja át az
+  `operator-review` döntést és önmagában nem ad source admissiont.
+- Protected, nem-deploy source admission csak a changed recordban lévő exact,
+  géppel olvasható teljes protected path-lista, feloldható tervhivatkozás,
+  operátori approval ref és egyező privát validációs evidencia együttállásakor
+  lehetséges. Deploy osztályban mindig tiltott.
+- A tartalmi remote-write keresés kizárólag changed script/bin/deploy vagy CI
+  workflow végrehajtható surface-en fut; docs és tests fixture szöveg nem
+  minősíti át a változást deploynak.

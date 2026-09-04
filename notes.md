@@ -7069,3 +7069,49 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   approved a narrow reconciliation of `impactshop-boot.php@da343a6a` and
   `.github/workflows/ci.yml@c20f9c5f`; no source behavior or broader registry
   baseline is changed.
+
+## 2026-09-04 DEV delivery v2 target adapter
+
+- Exact-origin/main source-only candidate; target-contract digest pinned.
+- No provider/product deploy, WordPress, VPS, Cronos or watchdog action.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+- Terra QA finding closed in the local governance lane: missing/unresolved or
+  non-40-hex base, invalid HEAD/tree and a failed `base..HEAD` diff now block
+  both guards instead of producing an empty governance-only classification.
+- `CI / validate` remains the existing job; it has full checkout history and
+  fetches/verifies the exact PR base SHA before passing the binding to both
+  guards. Fixtures cover missing base, non-SHA base and a non-governance path.
+- Coherence/risk: only local guard/CI admission changes; provider, product,
+  WordPress, remote-write, scheduler/watchdog and legacy PHP release engine
+  remain untouched. The intentionally unavailable local memory loader failed
+  before loading because its `tsx` package is absent.
+
+## 2026-09-04 DEV delivery v2 protected-admission correction
+
+- Terra QA blocker: `scripts/**` and workflow changes no longer inherit a
+  governance-only exception. Protected inventory, deploy/config paths and
+  executable provider-deploy/remote-write content are fail-closed.
+- The maximum bastion no longer replaces `operator-review` with `pass`.
+  Repo-local full validation runs the existing commit-lane and protected-touch
+  chain, writes private exact base/HEAD/tree evidence, and is rechecked by CI.
+  This admits source review only; automatic provider/product deploy remains
+  false.
+- Negative fixtures cover malicious workflow deploy, script remote write,
+  protected WordPress file, unknown path and forged evidence. No legacy PHP
+  exact-release engine changed.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+- Rename/copy path handling now retains both old and new endpoints in the
+  adapter and context guard; protected-to-docs rename remains protected.
+- Full-validation PASS is evidence only and cannot rewrite operator review.
+  Deploy candidates stay source-blocked even with exact evidence.
+- Protected non-deploy admission requires one changed machine-readable record
+  with exact protected endpoint coverage, a resolvable plan anchor and an
+  operator approval reference recorded in that plan.
+- Fixture coverage includes docs/test token false positives, malicious
+  workflow, remote-write script, protected WP, rename, missing/forged/partial
+  record and wrong base/tree evidence. Memory guard-load remained unavailable
+  because the canonical ai-agent worktree lacks its local `tsx` dependency.
