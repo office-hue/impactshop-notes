@@ -38,7 +38,7 @@ changed=[]
 if base and head and base != head: changed=[x for x in git('diff','--name-only',f'{base}..{head}').splitlines() if x]
 governance={'AGENTS.md','notes.md','system-status-snapshot.md','scripts/dev-context-policy-guard.sh','tests/dev-context-policy-guard.test.sh','docs/impactshop-governance-system-plan-2026-06-16.md','docs/impactshop-notes-doc-sync-map-2026-06-23.md'}
 if not changed: path_class='governance-only'
-elif all(p in governance or p.startswith(('docs/','scripts/','tests/','.github/workflows/')) for p in changed): path_class='governance-only'
+elif all(p in governance or p.startswith(('docs/','scripts/','tests/','.github/workflows/','config/dev-delivery-v2-')) for p in changed): path_class='governance-only'
 elif any(p.startswith(('wp-content/','bin/','impactctl','deploy')) for p in changed): path_class='protected-or-deploy'
 else: path_class='unknown'
 if path_class == 'governance-only': provider='not-configured'; decision='allowed'
