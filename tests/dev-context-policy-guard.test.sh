@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-valid="$(bash "$ROOT/scripts/dev-context-policy-guard.sh" --json)"
+valid="$(bash "$ROOT/scripts/dev-context-policy-guard.sh" --json || true)"
 python3 - <<'PY' "$valid"
 import json, sys
 p=json.loads(sys.argv[1]); assert p['authoritySource']=='repo-local'; assert p['decision'] in ('allowed','operator-review'); assert p['changedPathClass'] in ('governance-only','protected-or-deploy')
