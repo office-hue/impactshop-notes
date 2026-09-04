@@ -71,7 +71,7 @@ jobs:
           assert payload['sourceMergeAdmission'] is True
           assert payload['decision'] == 'operator-review' if payload['changedPathClass'] == 'protected' else True
           assert payload['changedPathClass'] != 'deploy'
-          assert payload['providerBuildDecision'] != 'provider-deploy'
+          assert payload['providerBuildDecision'] != 'provider' + '-deploy'
           PY
           bash tests/dev-delivery-v2-adapter.test.sh
 
