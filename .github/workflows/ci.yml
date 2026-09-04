@@ -14,16 +14,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
+      - name: Bind pull-request base commit
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags --depth=1 origin "$PR_BASE_SHA"
+          [[ "$(git rev-parse --verify "$PR_BASE_SHA^{commit}")" == "$PR_BASE_SHA" ]]
 
       - name: Validation script syntax
         run: bash -n scripts/validate-deploy-profile.sh
 
       - name: DEV context policy guard
+        env:
+          DEV_DELIVERY_V2_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: bash scripts/dev-context-policy-guard.sh --json
 
       - name: DEV delivery v2 maximum bastion
         run: |
           set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            export DEV_DELIVERY_V2_BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          fi
           bash scripts/dev-delivery-v2-adapter.sh bastion --json
           bash tests/dev-delivery-v2-adapter.test.sh
 

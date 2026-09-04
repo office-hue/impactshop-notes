@@ -8,6 +8,15 @@ The audited target-contract snapshot is digest-pinned. The maximum bastion
 allows only exact-current-root inspection and private Git metadata evidence;
 offline fixtures are explicitly read-only. No provider or deploy authority.
 
+## 2026-09-04 — DEV delivery v2 base-binding correction
+
+The adapter and DEV-context guard fail closed unless the base and HEAD are
+exact 40-hex commit objects, HEAD has an exact tree object and the base-to-HEAD
+diff succeeds. The existing CI validation job explicitly fetches and verifies
+the PR base before passing it to both guards. Missing origin/main, non-SHA
+input and non-governance content are negative-fixture blockers; no legacy PHP
+release-engine bytes changed.
+
 ## 2026-08-23 — Impi source-owner context projection
 
 - The additive `impact-community-impi-source.php` MU-plugin and its non-secret
