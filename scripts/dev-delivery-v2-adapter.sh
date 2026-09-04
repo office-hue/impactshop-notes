@@ -214,7 +214,7 @@ try:
     tree = git('show', '-s', '--format=%T', 'HEAD')
     if not re.fullmatch(r'[0-9a-f]{40}', tree or '') or not has_object(tree + '^{tree}'):
         raise ValueError('unresolved-head-tree')
-    diff = run_git('diff', '--no-ext-diff', '--name-status', '-M', '-C', f'{base}..{head}')
+    diff = run_git('diff', '--no-ext-diff', '--name-status', '-M', '-C', '--find-copies-harder', f'{base}..{head}')
     if diff.returncode != 0:
         raise ValueError('base-head-diff-failed')
     changes = parse_changes(diff.stdout)

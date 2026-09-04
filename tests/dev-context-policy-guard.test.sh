@@ -98,6 +98,18 @@ commit_all "$repo" rename
 payload="$(reject_guard "$repo" protected-to-docs-rename)"
 assert_payload "$payload" "p['changedPathClass']=='protected-or-deploy' and 'wp-content/mu-plugins/locked.php' in p['changedPaths'] and 'docs/archive/locked.php' in p['changedPaths']"
 
+repo="$(new_repo copy)"
+printf '%s\n' '<?php // protected unchanged blob' > "$repo/wp-content/mu-plugins/locked.php"
+commit_all "$repo" protected-base
+git -C "$repo" update-ref refs/remotes/origin/main HEAD
+mkdir -p "$repo/docs/archive"
+cp "$repo/wp-content/mu-plugins/locked.php" "$repo/docs/archive/locked-copy.php"
+commit_all "$repo" copy
+copy_status="$(git -C "$repo" diff --name-status -M -C --find-copies-harder refs/remotes/origin/main..HEAD)"
+[[ "$copy_status" == $'C100\twp-content/mu-plugins/locked.php\tdocs/archive/locked-copy.php' ]] || { echo "C100 fixture was not created" >&2; exit 1; }
+payload="$(reject_guard "$repo" protected-to-docs-copy)"
+assert_payload "$payload" "p['changedPathClass']=='protected-or-deploy' and 'wp-content/mu-plugins/locked.php' in p['changedPaths'] and 'docs/archive/locked-copy.php' in p['changedPaths']"
+
 repo="$(new_repo unknown)"
 printf '%s\n' 'runtime change' > "$repo/runtime.txt"
 commit_all "$repo" unknown

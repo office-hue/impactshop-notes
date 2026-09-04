@@ -63,7 +63,7 @@ if not branch: reasons.append('detached-head')
 changed=[]
 current=[]
 if base and head:
-    diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-status','-M','-C',f'{base}..{head}'], text=True, capture_output=True)
+    diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-status','-M','-C','--find-copies-harder',f'{base}..{head}'], text=True, capture_output=True)
     if diff.returncode != 0:
         reasons.append('base-head-diff-failed')
     else:
