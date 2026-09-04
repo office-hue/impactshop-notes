@@ -7101,3 +7101,17 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - Negative fixtures cover malicious workflow deploy, script remote write,
   protected WordPress file, unknown path and forged evidence. No legacy PHP
   exact-release engine changed.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+- Rename/copy path handling now retains both old and new endpoints in the
+  adapter and context guard; protected-to-docs rename remains protected.
+- Full-validation PASS is evidence only and cannot rewrite operator review.
+  Deploy candidates stay source-blocked even with exact evidence.
+- Protected non-deploy admission requires one changed machine-readable record
+  with exact protected endpoint coverage, a resolvable plan anchor and an
+  operator approval reference recorded in that plan.
+- Fixture coverage includes docs/test token false positives, malicious
+  workflow, remote-write script, protected WP, rename, missing/forged/partial
+  record and wrong base/tree evidence. Memory guard-load remained unavailable
+  because the canonical ai-agent worktree lacks its local `tsx` dependency.

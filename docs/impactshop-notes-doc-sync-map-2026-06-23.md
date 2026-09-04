@@ -122,3 +122,11 @@ script, deploy/config/guard and protected-inventory changes are never
 governance-only; executable provider-deploy or remote-write content is deploy.
 The separate bastion result does not overwrite `operator-review`, and automatic
 provider/product deployment remains unavailable.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+The adapter, context guard, CI assertions, exact protected change-record
+manifest, governance plan, bastion status, tests, notes and status snapshot are
+one docsync unit. Rename/copy evaluates both endpoints. Full validation is only
+evidence; protected source admission additionally requires exact record/plan/
+operator-reference coverage, while deploy-class admission remains false.

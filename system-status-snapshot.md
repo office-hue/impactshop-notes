@@ -1041,3 +1041,14 @@ deployment state changed.
 - Bastion records classifier `decision` separately from `bastionDecision` and
   cannot grant provider deployment authority. Negative tamper fixtures are
   green; legacy PHP release engine unchanged.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+- Source-only, not merged or deployed. Both rename/copy endpoints are now
+  classified, and executable content scanning is limited to changed script and
+  workflow surfaces.
+- Full validation is exact base/HEAD/tree evidence only. Protected admission
+  requires exact canonical change-record, plan and operator-reference coverage;
+  deploy admission is always false.
+- Local/CI assertions keep policy-integrity PASS, operator-review and source
+  admission as separate states.

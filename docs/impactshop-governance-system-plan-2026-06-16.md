@@ -363,3 +363,21 @@ governance. `bastion` preserves the classifier decision and reports a separate
 the adapter itself has created exact base/HEAD/tree-bound private evidence by
 running the existing commit-lane and protected-touch checks. Provider deploy is
 always false. CI verifies the checked-out head/tree against that evidence.
+
+## 2026-09-04 DEV delivery v2 P0 convergence
+
+Operator approval reference:
+`operator-approval:dev-delivery-v2-p0-fix3-20260904`.
+
+- A name-status osztályozás rename/copy esetén a régi és az új pathot is
+  értékeli, így protected fájl dokumentációs helyre mozgatása sem válhat
+  governance-only változássá.
+- A full validation kizárólag base/HEAD/tree-kötött evidence; nem írja át az
+  `operator-review` döntést és önmagában nem ad source admissiont.
+- Protected, nem-deploy source admission csak a changed recordban lévő exact,
+  géppel olvasható teljes protected path-lista, feloldható tervhivatkozás,
+  operátori approval ref és egyező privát validációs evidencia együttállásakor
+  lehetséges. Deploy osztályban mindig tiltott.
+- A tartalmi remote-write keresés kizárólag changed script/bin/deploy vagy CI
+  workflow végrehajtható surface-en fut; docs és tests fixture szöveg nem
+  minősíti át a változást deploynak.

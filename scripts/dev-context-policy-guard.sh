@@ -61,17 +61,29 @@ if not branch and os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get(
     branch=os.environ['GITHUB_HEAD_REF']
 if not branch: reasons.append('detached-head')
 changed=[]
-changes=[]
+current=[]
 if base and head:
-    diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-status',f'{base}..{head}'], text=True, capture_output=True)
+    diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-status','-M','-C',f'{base}..{head}'], text=True, capture_output=True)
     if diff.returncode != 0:
         reasons.append('base-head-diff-failed')
     else:
         for line in diff.stdout.splitlines():
             fields=line.split('\t')
             if len(fields) >= 2:
-                changes.append((fields[0], fields[-1]))
-        changed=[path for _, path in changes]
+                status=fields[0]
+                kind=status[:1]
+                if kind in ('R','C'):
+                    if len(fields) < 3:
+                        reasons.append('malformed-rename-copy-status')
+                        continue
+                    changed.extend((fields[1],fields[2]))
+                    current.append(fields[2])
+                else:
+                    changed.append(fields[1])
+                    if kind != 'D':
+                        current.append(fields[1])
+        changed=sorted(set(changed))
+        current=sorted(set(current))
 def git_file(ref, path):
     result=subprocess.run(['git','-C',str(root),'show',ref+':'+path], text=True, capture_output=True, check=False)
     return result.stdout if result.returncode == 0 else ''
@@ -83,9 +95,18 @@ except (OSError,json.JSONDecodeError):
     reasons.append('protected-policy-unreadable')
 def listed_protected(path): return any(fnmatch.fnmatch(path, pattern) for pattern in protected_globs+protected_list)
 executable=('.sh','.py','.js','.mjs','.ts','.yml','.yaml')
-provider_terms=('ver'+'cel','rail'+'way')
-remote_write=re.compile(r'\b(git\s+push|gh\s+pr|ssh\s+|scp\s+|rsync\s+|curl\s+|wget\s+|'+ '|'.join(provider_terms) + r'|provider[ _-]?deploy|remote[ _-]?write|deploy\s*(?:-|_|:|\())', re.I)
-content_deploy=any(path.endswith(executable) and remote_write.search(git_file(head,path)) for status,path in changes if not status.startswith('D'))
+remote_write=re.compile(
+    r'\b(git\s+push|gh\s+pr\s+(?:create|merge)|ssh(?:\s|$)|scp(?:\s|$)|'
+    r'rsync(?:\s|$)|curl(?:\s|$)|wget(?:\s|$)|provider[ _-]?deploy|'
+    r'remote[ _-]?write|vercel\s+(?:deploy|--prod)|railway\s+(?:up|deploy))',
+    re.I,
+)
+def executable_surface(path):
+    return path.endswith(executable) and (
+        path.startswith(('scripts/','bin/','deploy/'))
+        or (path.startswith('.github/workflows/') and path.endswith(('.yml','.yaml')))
+    )
+content_deploy=any(executable_surface(path) and remote_write.search(git_file(head,path)) for path in current)
 governance={'AGENTS.md','notes.md','system-status-snapshot.md','docs/impactshop-governance-system-plan-2026-06-16.md','docs/impactshop-notes-doc-sync-map-2026-06-23.md'}
 if not changed: path_class='governance-only'
 elif content_deploy or any(p.startswith(('bin/','deploy/','.deploy.')) for p in changed): path_class='protected-or-deploy'
@@ -96,7 +117,7 @@ if path_class == 'governance-only': provider='not-configured'; decision='allowed
 elif path_class == 'protected-or-deploy': provider='operator-review'; decision='operator-review'; reasons.append('protected-or-deploy-path')
 else: provider='operator-review'; decision='blocked'; reasons.append('unknown-path-class')
 if reasons and decision == 'allowed': decision='blocked'
-payload={'schemaVersion':1,'repo':'impactshop-notes','authoritySource':'repo-local','branch':branch,'baseSha':base,'headSha':head,'treeSha':tree,'changedPathClass':path_class,'providerBuildDecision':provider,'evidenceReuseAllowed':not bool(reasons),'decision':decision,'blockingReasons':reasons}
+payload={'schemaVersion':1,'repo':'impactshop-notes','authoritySource':'repo-local','branch':branch,'baseSha':base,'headSha':head,'treeSha':tree,'changedPathClass':path_class,'changedPaths':changed,'providerBuildDecision':provider,'evidenceReuseAllowed':not bool(reasons),'decision':decision,'blockingReasons':reasons}
 print(json.dumps(payload, sort_keys=True) if as_json else f'[dev-context-policy] decision={decision} class={path_class}')
 sys.exit(0 if decision == 'allowed' else 1)
 PY
