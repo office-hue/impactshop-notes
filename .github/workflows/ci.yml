@@ -32,7 +32,16 @@ jobs:
       - name: DEV context policy guard
         env:
           DEV_DELIVERY_V2_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: bash scripts/dev-context-policy-guard.sh --json
+        run: |
+          set -euo pipefail
+          policy="$(bash scripts/dev-context-policy-guard.sh --json || true)"
+          python3 - "$policy" <<'PY'
+          import json, sys
+          payload=json.loads(sys.argv[1])
+          assert payload['decision'] in ('allowed', 'operator-review')
+          assert payload['changedPathClass'] != 'unknown'
+          assert payload['providerBuildDecision'] == 'not-configured' if payload['decision'] == 'allowed' else True
+          PY
 
       - name: DEV delivery v2 maximum bastion
         run: |
@@ -40,7 +49,21 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             export DEV_DELIVERY_V2_BASE_SHA="${{ github.event.pull_request.base.sha }}"
           fi
-          bash scripts/dev-delivery-v2-adapter.sh bastion --json
+          bash scripts/dev-delivery-v2-adapter.sh full-validate --json
+          payload="$(bash scripts/dev-delivery-v2-adapter.sh bastion --json)"
+          python3 - "$payload" <<'PY'
+          import json, subprocess, sys
+          payload=json.loads(sys.argv[1])
+          head=subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip()
+          tree=subprocess.check_output(['git','show','-s','--format=%T','HEAD'], text=True).strip()
+          assert payload['headSha'] == head and payload['treeSha'] == tree
+          assert payload['candidateTreeSha'] == tree
+          expected_base=__import__('os').environ.get('DEV_DELIVERY_V2_BASE_SHA', payload['baseSha'])
+          assert payload['baseSha'] == expected_base
+          assert payload['bastionDecision'] == 'pass'
+          assert payload['sourceMergeAdmission'] is True
+          assert payload['providerBuildDecision'] != 'provider-deploy'
+          PY
           bash tests/dev-delivery-v2-adapter.test.sh
 
       - name: Deploy control-plane bastion tests
