@@ -119,6 +119,6 @@ try:
   if candidate!=git('write-tree'): raise ValueError('candidate-index-tree-mismatch')
   if candidate!=tree: raise ValueError('checkpoint-tree-mismatch')
   payload['candidateTreeSha']=candidate; payload['checkpointTreeMatchesCandidate']=True
- print(json.dumps(payload,sort_keys=True) if as_json=='1' else '[dev-delivery-v2] decision='+payload['decision']); sys.exit(0 if (cmd=='bastion' and payload.get('bastionDecision')=='pass') or (cmd=='full-validate' and payload.get('sourceMergeAdmission')) or payload['decision']=='allowed' else 1)
+ print(json.dumps(payload,sort_keys=True) if as_json=='1' else '[dev-delivery-v2] decision='+payload['decision']); sys.exit(0 if (cmd=='bastion' and payload.get('bastionDecision')=='pass') or (cmd=='full-validate' and payload.get('sourceMergeAdmission')) or (cmd=='verify' and payload.get('checkpointTreeMatchesCandidate')) or payload['decision']=='allowed' else 1)
 except Exception as e: print('[dev-delivery-v2] BLOCKED '+str(e),file=sys.stderr); sys.exit(1)
 PY
