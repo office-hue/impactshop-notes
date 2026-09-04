@@ -103,7 +103,14 @@ try:
     else: payload['fullValidationEvidence']=True; payload['sourceMergeAdmission']=not reasons
   if not reasons and decision in ('allowed','operator-review'): payload['bastionDecision']='pass'
  if cmd=='freeze':
-  if decision!='allowed': raise ValueError('candidate-not-admissible')
+  if decision!='allowed':
+   record=validation_record()
+   if not record.is_file(): raise ValueError('candidate-not-admissible')
+   frozen=json.loads(record.read_text())
+   expected={'baseSha':base,'headSha':head,'treeSha':tree,'changedPathClass':impact,'contractSha256':digest,'fullValidation':'repo-local-protected-touch-and-commit-lane','providerDeployAllowed':False}
+   if any(frozen.get(k)!=v for k,v in expected.items()): raise ValueError('candidate-full-validation-evidence-mismatch')
+   payload['fullValidationEvidence']=True; payload['sourceMergeAdmission']=not reasons
+  if not payload['sourceMergeAdmission'] and decision!='allowed': raise ValueError('candidate-not-admissible')
   state=private_state(); state.mkdir(mode=0o700,parents=True,exist_ok=True); os.chmod(state,0o700); payload['candidateTreeSha']=git('write-tree'); record=state/'candidate.json'; record.write_text(json.dumps(payload,sort_keys=True)+'\n'); os.chmod(record,0o600)
  if cmd=='verify':
   state=private_state(); record=state/'candidate.json'
