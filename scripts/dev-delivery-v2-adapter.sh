@@ -240,9 +240,9 @@ try:
     executable_extensions = ('.sh', '.py', '.js', '.mjs', '.ts', '.yml', '.yaml')
     provider_cli = '(?:' + 'ver' + 'cel' + r'\s+(?:deploy|--prod)|' + 'rail' + 'way' + r'\s+(?:up|deploy))'
     remote_write = re.compile(
-        r'\b(git\s+push|gh\s+pr\s+(?:create|merge)|ssh(?:\s|$)|scp(?:\s|$)|'
-        r'rsync(?:\s|$)|curl(?:\s|$)|wget(?:\s|$)|provider[ _-]?deploy|'
-        r'remote[ _-]?write|' + provider_cli + ')',
+        r'\b(git\s+push|gh\s+pr\s+(?:create|merge)|ssh\s+(?:-[a-z]|[^\s"\x27]+@)|scp\s+|'
+        r'rsync(?:\s|$)|curl(?:\s|$)|wget(?:\s|$)|provider[ -]deploy|'
+        r'remote[ -]write|' + provider_cli + ')',
         re.I,
     )
     def executable_surface(path):

@@ -96,9 +96,9 @@ except (OSError,json.JSONDecodeError):
 def listed_protected(path): return any(fnmatch.fnmatch(path, pattern) for pattern in protected_globs+protected_list)
 executable=('.sh','.py','.js','.mjs','.ts','.yml','.yaml')
 remote_write=re.compile(
-    r'\b(git\s+push|gh\s+pr\s+(?:create|merge)|ssh(?:\s|$)|scp(?:\s|$)|'
-    r'rsync(?:\s|$)|curl(?:\s|$)|wget(?:\s|$)|provider[ _-]?deploy|'
-    r'remote[ _-]?write|vercel\s+(?:deploy|--prod)|railway\s+(?:up|deploy))',
+    r'\b(git\s+push|gh\s+pr\s+(?:create|merge)|ssh\s+(?:-[a-z]|[^\s"\x27]+@)|scp\s+|'
+    r'rsync(?:\s|$)|curl(?:\s|$)|wget(?:\s|$)|provider[ -]deploy|'
+    r'remote[ -]write|vercel\s+(?:deploy|--prod)|railway\s+(?:up|deploy))',
     re.I,
 )
 def executable_surface(path):
