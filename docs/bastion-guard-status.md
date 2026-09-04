@@ -2,6 +2,12 @@
 
 Last updated: 2026-08-23 11:35 CEST
 
+## 2026-09-04 — DEV delivery v2 target adapter
+
+The audited target-contract snapshot is digest-pinned. The maximum bastion
+allows only exact-current-root inspection and private Git metadata evidence;
+offline fixtures are explicitly read-only. No provider or deploy authority.
+
 ## 2026-08-23 — Impi source-owner context projection
 
 - The additive `impact-community-impi-source.php` MU-plugin and its non-secret

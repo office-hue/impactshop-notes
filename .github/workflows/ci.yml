@@ -21,6 +21,12 @@ jobs:
       - name: DEV context policy guard
         run: bash scripts/dev-context-policy-guard.sh --json
 
+      - name: DEV delivery v2 maximum bastion
+        run: |
+          set -euo pipefail
+          bash scripts/dev-delivery-v2-adapter.sh bastion --json
+          bash tests/dev-delivery-v2-adapter.test.sh
+
       - name: Deploy control-plane bastion tests
         run: |
           set -euo pipefail
