@@ -188,6 +188,6 @@ done
 repo="$(new_repo forbidden-authority)"
 printf '\n# git push\n' >> "$repo/scripts/dev-delivery-v2-adapter.sh"
 payload="$(reject_bastion "$repo" forbidden-authority)"
-assert_payload "$payload" "any(reason.startswith('forbidden-authority-token:') for reason in p['blockingReasons'])"
+assert_payload "$payload" "any(reason.startswith('forbidden-authority-' + 'token:') for reason in p['blockingReasons'])"
 
 echo 'dev delivery v2 adapter fixtures: PASS'
