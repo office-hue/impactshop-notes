@@ -1,6 +1,6 @@
 # Bastion Guard Status
 
-Last updated: 2026-08-23 11:35 CEST
+Last updated: 2026-09-04 21:01 CEST
 
 ## 2026-09-04 — DEV delivery v2 target adapter
 
@@ -16,6 +16,16 @@ diff succeeds. The existing CI validation job explicitly fetches and verifies
 the PR base before passing it to both guards. Missing origin/main, non-SHA
 input and non-governance content are negative-fixture blockers; no legacy PHP
 release-engine bytes changed.
+
+## 2026-09-04 — DEV delivery v2 P0 convergence
+
+Rename/copy classification now evaluates both path endpoints. Full validation
+is kept separate from source admission, and deploy-class changes remain
+operator-review/source-blocked after successful evidence generation. Protected
+non-deploy admission requires one changed, exact machine-readable change record
+covering every protected endpoint plus a resolvable plan and operator approval
+reference. Executable-content scanning is limited to script and workflow
+surfaces so docs/tests fixtures cannot create deploy false positives.
 
 ## 2026-08-23 — Impi source-owner context projection
 

@@ -49,7 +49,14 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             export DEV_DELIVERY_V2_BASE_SHA="${{ github.event.pull_request.base.sha }}"
           fi
-          bash scripts/dev-delivery-v2-adapter.sh full-validate --json
+          validation="$(bash scripts/dev-delivery-v2-adapter.sh full-validate --json)"
+          python3 - "$validation" <<'PY'
+          import json, sys
+          payload=json.loads(sys.argv[1])
+          assert payload['fullValidationEvidence'] is True
+          assert payload['sourceMergeAdmission'] is False
+          assert payload['decision'] in ('allowed', 'operator-review')
+          PY
           payload="$(bash scripts/dev-delivery-v2-adapter.sh bastion --json)"
           python3 - "$payload" <<'PY'
           import json, subprocess, sys
@@ -62,6 +69,8 @@ jobs:
           assert payload['baseSha'] == expected_base
           assert payload['bastionDecision'] == 'pass'
           assert payload['sourceMergeAdmission'] is True
+          assert payload['decision'] == 'operator-review' if payload['changedPathClass'] == 'protected' else True
+          assert payload['changedPathClass'] != 'deploy'
           assert payload['providerBuildDecision'] != 'provider-deploy'
           PY
           bash tests/dev-delivery-v2-adapter.test.sh
