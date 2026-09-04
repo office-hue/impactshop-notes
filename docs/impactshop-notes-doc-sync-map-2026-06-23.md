@@ -98,3 +98,9 @@ snapshot form one docsync unit. Global prompt or memory cannot waive it.
 
 Canonical evidence: docs/protected-change-records/2026-08-23-vb2026-autobanner-canonical-affiliate-bind.md. Runtime/boot, lifecycle tests, maximum bastion, notes, status and bastion status move together. Source placement is exact vb2026-autobanner; NGO selection remains owned by VB2026 and no economic truth is inferred.
 | Impact Shopping UNice CJ canary | `docs/protected-change-records/2026-09-03-impact-shopping-unice-cj-adapter.md` | `wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php` | `tests/sharity-affiliate-runtime-test.php`, `tests/sharity-affiliate-runtime-bastion.test.sh` | `scripts/sharity-affiliate-runtime-bastion-guard.sh`, existing retention cron, ai-agent central watchdog | `docs/sharity-affiliate-runtime-wp-sol-handover-2026-08-19.md`, `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md` | `source-ready-default-off` | One exact UNice/CJ program, canonical session subject, trusted NGO and one-use opaque handoff; production deploy/enable evidence pending. |
+
+## 2026-09-04 DEV delivery v2 target admission
+
+The contract snapshot, maximum-bastion adapter, fixture and existing `CI /
+validate` job form one local governance docsync unit. Candidate evidence is
+private worktree Git metadata; no provider or product deploy authority exists.

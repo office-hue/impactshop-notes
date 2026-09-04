@@ -329,3 +329,9 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
   either artifact and does not weaken exact-file release CAS/backup controls.
 - Canonical evidence is
   `docs/protected-change-records/2026-09-03-protected-main-hash-reconciliation.md`.
+
+## 2026-09-04 DEV delivery v2 target adapter
+
+The local adapter snapshots the audited target contract, verifies its digest,
+classifies impact fail-closed and keeps candidate evidence in active-worktree
+Git metadata only. It cannot deploy or invoke a provider.

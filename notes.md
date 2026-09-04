@@ -7069,3 +7069,8 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   approved a narrow reconciliation of `impactshop-boot.php@da343a6a` and
   `.github/workflows/ci.yml@c20f9c5f`; no source behavior or broader registry
   baseline is changed.
+
+## 2026-09-04 DEV delivery v2 target adapter
+
+- Exact-origin/main source-only candidate; target-contract digest pinned.
+- No provider/product deploy, WordPress, VPS, Cronos or watchdog action.

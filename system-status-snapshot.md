@@ -1017,3 +1017,7 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
   artifact (`da343a6a`) and CI policy workflow artifact (`c20f9c5f`).
 - No product/runtime/workflow bytes change; the guard registry remains
   fail-closed and the next exact-file release must start from clean main.
+
+## 2026-09-04 DEV delivery v2 target adapter
+
+Source-only candidate; provider and product deployment authority are absent.

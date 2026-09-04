@@ -97,3 +97,10 @@ push/PR/merge and main reconciliation stay at the safe minimum; no manual
 build or retry. Protected WordPress, deploy, remote-write and data paths require
 operator review. No global waiver can replace this local policy.
 <!-- END REPO-LOCAL DEV UPGRADE CONTRACT -->
+
+## DEV delivery v2 local admission
+
+The pinned repo-local target-contract digest is
+`989dd16dd30bdebb07403c1b0f88ad9a182ea0dd167fc37674438b4bc8ef0194`.
+The maximum-bastion adapter has no network, provider, or product-deploy
+authority; candidate evidence is private Git metadata (`0700`/`0600`).
