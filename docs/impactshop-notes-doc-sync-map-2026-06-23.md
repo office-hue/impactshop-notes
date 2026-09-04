@@ -104,3 +104,11 @@ Canonical evidence: docs/protected-change-records/2026-08-23-vb2026-autobanner-c
 The contract snapshot, maximum-bastion adapter, fixture and existing `CI /
 validate` job form one local governance docsync unit. Candidate evidence is
 private worktree Git metadata; no provider or product deploy authority exists.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+The same docsync unit now includes exact 40-hex/rev-object base, head and tree
+admission plus a successful exact base-to-head diff. CI fetches and verifies
+the PR base before injecting it into both local guards; missing/ref-invalid
+state is blocked rather than classified as an empty governance diff. Fixtures
+cover missing base, a non-SHA supplied base and a non-governance changed path.

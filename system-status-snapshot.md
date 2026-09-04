@@ -1021,3 +1021,12 @@ production: HTTP 200 (1468 ms, ok) – https://app.sharity.hu/wp-json/
 ## 2026-09-04 DEV delivery v2 target adapter
 
 Source-only candidate; provider and product deployment authority are absent.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+Source-ready governance correction: both guards require exact resolvable
+40-hex base/head commit objects, a valid HEAD tree and a successful exact
+base-to-head diff. `CI / validate` retains its job identity and now explicitly
+fetches/verifies the PR base before guard binding. Missing/non-SHA base and
+non-governance content fixtures block. No release-engine, runtime, provider or
+deployment state changed.

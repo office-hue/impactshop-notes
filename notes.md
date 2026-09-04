@@ -7074,3 +7074,16 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 
 - Exact-origin/main source-only candidate; target-contract digest pinned.
 - No provider/product deploy, WordPress, VPS, Cronos or watchdog action.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+- Terra QA finding closed in the local governance lane: missing/unresolved or
+  non-40-hex base, invalid HEAD/tree and a failed `base..HEAD` diff now block
+  both guards instead of producing an empty governance-only classification.
+- `CI / validate` remains the existing job; it has full checkout history and
+  fetches/verifies the exact PR base SHA before passing the binding to both
+  guards. Fixtures cover missing base, non-SHA base and a non-governance path.
+- Coherence/risk: only local guard/CI admission changes; provider, product,
+  WordPress, remote-write, scheduler/watchdog and legacy PHP release engine
+  remain untouched. The intentionally unavailable local memory loader failed
+  before loading because its `tsx` package is absent.

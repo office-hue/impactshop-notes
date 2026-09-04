@@ -335,3 +335,19 @@ A dokumentum celja, hogy barmely kovetkezo helyi szeletnel legyen egy rovid, rep
 The local adapter snapshots the audited target contract, verifies its digest,
 classifies impact fail-closed and keeps candidate evidence in active-worktree
 Git metadata only. It cannot deploy or invoke a provider.
+
+## 2026-09-04 DEV delivery v2 base-binding correction
+
+Both local guards now require an exact lowercase 40-hex base and HEAD that
+resolve to commit objects, an exact HEAD tree object, and a successful
+`base..HEAD` name-only diff before they classify a candidate. A missing,
+non-SHA, unresolved base or failed diff is blocking and cannot become an empty
+governance-only candidate. The existing `CI / validate` job keeps its name,
+fetches full history, fetches and verifies the exact PR base SHA, then binds
+that SHA to both guards through `DEV_DELIVERY_V2_BASE_SHA`.
+
+Scope is guard/CI evidence only: no WordPress route, product runtime, provider,
+remote write, scheduler, watchdog or legacy PHP exact-release engine changed.
+Primary risk is a checkout without the referenced commit; it now fails closed.
+Parity evidence is the two guard fixtures covering missing base, non-SHA base
+and a non-governance changed path.

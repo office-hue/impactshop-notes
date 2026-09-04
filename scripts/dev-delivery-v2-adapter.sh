@@ -7,11 +7,27 @@ case "$cmd" in inspect|freeze|verify|bastion) ;; *) exit 2;; esac
 script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 if [[ -n "$fixture" ]]; then root="$(cd "$fixture" && pwd -P)"; else root="$(git -C "$script_root" rev-parse --show-toplevel)"; [[ "$root" == "$script_root" ]] || { echo exact-current-worktree-root-required >&2; exit 1; }; fi
 python3 - "$cmd" "$root" "$fixture" "$json" <<'PY'
-import hashlib,json,os,stat,subprocess,sys
+import hashlib,json,os,re,stat,subprocess,sys
 from pathlib import Path
 cmd,root_raw,fixture_raw,as_json=sys.argv[1:5]; root=Path(root_raw).resolve(); fixture=bool(fixture_raw); reasons=[]
 def git(*a):
- r=subprocess.run(['git','-C',str(root),*a],text=True,capture_output=True); return r.stdout.strip()
+ r=subprocess.run(['git','-C',str(root),*a],text=True,capture_output=True); return r.stdout.strip() if r.returncode==0 else ''
+def has_object(spec):
+ return subprocess.run(['git','-C',str(root),'cat-file','-e',spec],text=True,capture_output=True).returncode==0
+def require_commit(ref,label):
+ if not re.fullmatch(r'[0-9a-f]{40}',ref or ''): raise ValueError('invalid-'+label+'-sha')
+ resolved=git('rev-parse','--verify',ref+'^{commit}')
+ if resolved!=ref: raise ValueError('unresolved-'+label+'-commit')
+ return resolved
+def resolve_base():
+ explicit=os.environ.get('DEV_DELIVERY_V2_BASE_SHA')
+ if explicit is not None and explicit!='': return require_commit(explicit,'base')
+ event_path=Path(os.environ.get('GITHUB_EVENT_PATH',''))
+ if event_path.is_file():
+  try: event_base=json.loads(event_path.read_text()).get('pull_request',{}).get('base',{}).get('sha')
+  except (OSError,json.JSONDecodeError): raise ValueError('invalid-github-event-base')
+  if event_base: return require_commit(event_base,'base')
+ return require_commit(git('rev-parse','--verify','origin/main^{commit}'),'base')
 def file(p):
  x=(root/p).resolve()
  if root not in x.parents or not x.is_file() or x.is_symlink(): raise ValueError('unsafe-or-missing:'+str(p))
@@ -26,8 +42,11 @@ try:
  source=file(Path('scripts/dev-delivery-v2-adapter.sh')).read_text()
  for token in policy['forbiddenAuthorityTokens']:
   if token in source: reasons+=['forbidden-authority-token:'+token.strip()]
- branch=git('branch','--show-current'); base=git('rev-parse','origin/main'); head=git('rev-parse','HEAD'); tree=git('show','-s','--format=%T','HEAD')
- paths=(git('diff','--name-only',f'{base}..{head}') if base!=head else git('diff','--name-only','HEAD')).splitlines()
+ branch=git('branch','--show-current'); base=resolve_base(); head=require_commit(git('rev-parse','--verify','HEAD^{commit}'),'head'); tree=git('show','-s','--format=%T','HEAD')
+ if not re.fullmatch(r'[0-9a-f]{40}',tree or '') or not has_object(tree+'^{tree}'): raise ValueError('unresolved-head-tree')
+ diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-only',f'{base}..{head}'],text=True,capture_output=True)
+ if diff.returncode!=0: raise ValueError('base-head-diff-failed')
+ paths=[p for p in diff.stdout.splitlines() if p]
  def anyprefix(prefixes): return any(p.startswith(prefixes) for p in paths)
  if not paths: impact='governance-only'
  elif anyprefix(('wp-content/','docs/impactshop-protected','docs/impactshop-guard-')): impact='protected'

@@ -19,6 +19,31 @@ reasons=[]
 def git(*args):
     result=subprocess.run(['git','-C',str(root),*args], text=True, capture_output=True, check=False)
     return result.stdout.strip() if result.returncode == 0 else ''
+def has_object(spec):
+    return subprocess.run(['git','-C',str(root),'cat-file','-e',spec], text=True, capture_output=True, check=False).returncode == 0
+def require_commit(ref, label):
+    if not re.fullmatch(r'[0-9a-f]{40}', ref or ''):
+        reasons.append('invalid-'+label+'-sha')
+        return None
+    resolved=git('rev-parse','--verify',ref+'^{commit}')
+    if resolved != ref:
+        reasons.append('unresolved-'+label+'-commit')
+        return None
+    return resolved
+def resolve_base():
+    explicit=os.environ.get('DEV_DELIVERY_V2_BASE_SHA')
+    if explicit is not None and explicit != '':
+        return require_commit(explicit, 'base')
+    event_path=Path(os.environ.get('GITHUB_EVENT_PATH',''))
+    if event_path.is_file():
+        try:
+            event_base=json.loads(event_path.read_text()).get('pull_request',{}).get('base',{}).get('sha')
+        except (OSError, json.JSONDecodeError):
+            reasons.append('invalid-github-event-base')
+            return None
+        if event_base:
+            return require_commit(event_base, 'base')
+    return require_commit(git('rev-parse','--verify','origin/main^{commit}'), 'base')
 agents = root/'AGENTS.md'; marker='<!-- BEGIN REPO-LOCAL DEV UPGRADE CONTRACT -->'; end='<!-- END REPO-LOCAL DEV UPGRADE CONTRACT -->'
 required=['repo-local authority','global prompt','Luna','Terra','Sol','worktree','checkpoint','git diff','--check','Vercel']
 if not agents.is_file(): reasons.append('missing-local-agents')
@@ -29,13 +54,19 @@ else:
         block=text[text.index(marker):text.index(end)+len(end)]
         for token in required:
             if token not in block: reasons.append('local-policy-missing:'+token)
-branch=git('branch','--show-current'); base=git('rev-parse','origin/main') or None; head=git('rev-parse','HEAD') or None; tree=git('show','-s','--format=%T','HEAD') or None
+branch=git('branch','--show-current'); base=resolve_base(); head=require_commit(git('rev-parse','--verify','HEAD^{commit}'), 'head'); tree=git('show','-s','--format=%T','HEAD') or None
+if not re.fullmatch(r'[0-9a-f]{40}', tree or '') or not has_object(tree+'^{tree}'):
+    reasons.append('unresolved-head-tree')
 if not branch and os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_SHA') == head and re.fullmatch(r'[A-Za-z0-9._/-]+', os.environ.get('GITHUB_HEAD_REF','')):
-    branch=os.environ['GITHUB_HEAD_REF']; event_path=Path(os.environ.get('GITHUB_EVENT_PATH',''))
-    if event_path.is_file(): base=json.loads(event_path.read_text()).get('pull_request',{}).get('base',{}).get('sha') or base
+    branch=os.environ['GITHUB_HEAD_REF']
 if not branch: reasons.append('detached-head')
 changed=[]
-if base and head and base != head: changed=[x for x in git('diff','--name-only',f'{base}..{head}').splitlines() if x]
+if base and head:
+    diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-only',f'{base}..{head}'], text=True, capture_output=True)
+    if diff.returncode != 0:
+        reasons.append('base-head-diff-failed')
+    else:
+        changed=[x for x in diff.stdout.splitlines() if x]
 governance={'AGENTS.md','notes.md','system-status-snapshot.md','scripts/dev-context-policy-guard.sh','tests/dev-context-policy-guard.test.sh','docs/impactshop-governance-system-plan-2026-06-16.md','docs/impactshop-notes-doc-sync-map-2026-06-23.md'}
 if not changed: path_class='governance-only'
 elif all(p in governance or p.startswith(('docs/','scripts/','tests/','.github/workflows/','config/dev-delivery-v2-')) for p in changed): path_class='governance-only'
