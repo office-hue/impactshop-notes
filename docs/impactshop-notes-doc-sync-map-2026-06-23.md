@@ -112,3 +112,13 @@ admission plus a successful exact base-to-head diff. CI fetches and verifies
 the PR base before injecting it into both local guards; missing/ref-invalid
 state is blocked rather than classified as an empty governance diff. Fixtures
 cover missing base, a non-SHA supplied base and a non-governance changed path.
+
+## 2026-09-04 DEV delivery v2 protected-admission correction
+
+The local governance docsync unit additionally includes the protected change
+record, existing commit-lane/protected-touch admission chain, private exact
+base/HEAD/tree full-validation evidence and CI candidate binding. Workflow,
+script, deploy/config/guard and protected-inventory changes are never
+governance-only; executable provider-deploy or remote-write content is deploy.
+The separate bastion result does not overwrite `operator-review`, and automatic
+provider/product deployment remains unavailable.

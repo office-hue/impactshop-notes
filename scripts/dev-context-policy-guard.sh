@@ -12,7 +12,7 @@ while (($#)); do
 done
 [[ -n "$repo_root" && ( -d "$repo_root/.git" || -f "$repo_root/.git" ) ]] || { echo "not a git worktree" >&2; exit 1; }
 python3 - "$repo_root" "$json" <<'PY'
-import json, os, re, subprocess, sys
+import fnmatch, json, os, re, subprocess, sys
 from pathlib import Path
 root = Path(sys.argv[1]).resolve(); as_json = sys.argv[2] == '1'
 reasons=[]
@@ -61,16 +61,36 @@ if not branch and os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get(
     branch=os.environ['GITHUB_HEAD_REF']
 if not branch: reasons.append('detached-head')
 changed=[]
+changes=[]
 if base and head:
-    diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-only',f'{base}..{head}'], text=True, capture_output=True)
+    diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-status',f'{base}..{head}'], text=True, capture_output=True)
     if diff.returncode != 0:
         reasons.append('base-head-diff-failed')
     else:
-        changed=[x for x in diff.stdout.splitlines() if x]
-governance={'AGENTS.md','notes.md','system-status-snapshot.md','scripts/dev-context-policy-guard.sh','tests/dev-context-policy-guard.test.sh','docs/impactshop-governance-system-plan-2026-06-16.md','docs/impactshop-notes-doc-sync-map-2026-06-23.md'}
+        for line in diff.stdout.splitlines():
+            fields=line.split('\t')
+            if len(fields) >= 2:
+                changes.append((fields[0], fields[-1]))
+        changed=[path for _, path in changes]
+def git_file(ref, path):
+    result=subprocess.run(['git','-C',str(root),'show',ref+':'+path], text=True, capture_output=True, check=False)
+    return result.stdout if result.returncode == 0 else ''
+protected_globs=[]; protected_list=[]
+try:
+    protected_globs=json.loads((root/'docs/impactshop-protected-files.json').read_text(encoding='utf-8')).get('protected_globs',[])
+    protected_list=[line.strip() for line in (root/'.github/protected-files.txt').read_text(encoding='utf-8').splitlines() if line.strip() and not line.lstrip().startswith('#')]
+except (OSError,json.JSONDecodeError):
+    reasons.append('protected-policy-unreadable')
+def listed_protected(path): return any(fnmatch.fnmatch(path, pattern) for pattern in protected_globs+protected_list)
+executable=('.sh','.py','.js','.mjs','.ts','.yml','.yaml')
+provider_terms=('ver'+'cel','rail'+'way')
+remote_write=re.compile(r'\b(git\s+push|gh\s+pr|ssh\s+|scp\s+|rsync\s+|curl\s+|wget\s+|'+ '|'.join(provider_terms) + r'|provider[ _-]?deploy|remote[ _-]?write|deploy\s*(?:-|_|:|\())', re.I)
+content_deploy=any(path.endswith(executable) and remote_write.search(git_file(head,path)) for status,path in changes if not status.startswith('D'))
+governance={'AGENTS.md','notes.md','system-status-snapshot.md','docs/impactshop-governance-system-plan-2026-06-16.md','docs/impactshop-notes-doc-sync-map-2026-06-23.md'}
 if not changed: path_class='governance-only'
-elif all(p in governance or p.startswith(('docs/','scripts/','tests/','.github/workflows/','config/dev-delivery-v2-')) for p in changed): path_class='governance-only'
-elif any(p.startswith(('wp-content/','bin/','impactctl','deploy')) for p in changed): path_class='protected-or-deploy'
+elif content_deploy or any(p.startswith(('bin/','deploy/','.deploy.')) for p in changed): path_class='protected-or-deploy'
+elif any(listed_protected(p) or p.startswith(('wp-content/','scripts/','.github/workflows/','config/')) for p in changed): path_class='protected-or-deploy'
+elif all(p in governance or p.startswith(('docs/','tests/')) for p in changed): path_class='governance-only'
 else: path_class='unknown'
 if path_class == 'governance-only': provider='not-configured'; decision='allowed'
 elif path_class == 'protected-or-deploy': provider='operator-review'; decision='operator-review'; reasons.append('protected-or-deploy-path')

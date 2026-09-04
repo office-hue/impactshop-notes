@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cmd="${1:-}"; shift || true; json=0; fixture=""
-while (($#)); do case "$1" in --json) json=1; shift;; --offline-fixture) fixture="${2:-}"; shift 2;; *) echo "usage: adapter <inspect|freeze|verify|bastion> [--json] [--offline-fixture ROOT]" >&2; exit 2;; esac; done
-case "$cmd" in inspect|freeze|verify|bastion) ;; *) exit 2;; esac
+while (($#)); do case "$1" in --json) json=1; shift;; --offline-fixture) fixture="${2:-}"; shift 2;; *) echo "usage: adapter <inspect|freeze|verify|full-validate|bastion> [--json] [--offline-fixture ROOT]" >&2; exit 2;; esac; done
+case "$cmd" in inspect|freeze|verify|full-validate|bastion) ;; *) exit 2;; esac
 [[ -z "$fixture" || "$cmd" == inspect || "$cmd" == bastion ]] || { echo "offline fixture mode is read-only" >&2; exit 1; }
 script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 if [[ -n "$fixture" ]]; then root="$(cd "$fixture" && pwd -P)"; else root="$(git -C "$script_root" rev-parse --show-toplevel)"; [[ "$root" == "$script_root" ]] || { echo exact-current-worktree-root-required >&2; exit 1; }; fi
 python3 - "$cmd" "$root" "$fixture" "$json" <<'PY'
-import hashlib,json,os,re,stat,subprocess,sys
+import fnmatch,hashlib,json,os,re,stat,subprocess,sys
 from pathlib import Path
 cmd,root_raw,fixture_raw,as_json=sys.argv[1:5]; root=Path(root_raw).resolve(); fixture=bool(fixture_raw); reasons=[]
 def git(*a):
@@ -32,6 +32,13 @@ def file(p):
  x=(root/p).resolve()
  if root not in x.parents or not x.is_file() or x.is_symlink(): raise ValueError('unsafe-or-missing:'+str(p))
  return x
+def git_file(ref,p):
+ r=subprocess.run(['git','-C',str(root),'show',ref+':'+p],text=True,capture_output=True)
+ return r.stdout if r.returncode==0 else ''
+def private_state():
+ state=Path(git('rev-parse','--git-path',policy['privateState']['gitPath']))
+ return state if state.is_absolute() else root/state
+def validation_record(): return private_state()/'full-validation.json'
 try:
  contract=file(Path('config/dev-delivery-v2-target-contract.json')); policy=json.loads(file(Path('config/dev-delivery-v2-impact-policy.json')).read_text()); digest=hashlib.sha256(contract.read_bytes()).hexdigest()
  if digest!=policy['contractSha256']: reasons+=['target-contract-digest-mismatch']
@@ -44,30 +51,67 @@ try:
   if token in source: reasons+=['forbidden-authority-token:'+token.strip()]
  branch=git('branch','--show-current'); base=resolve_base(); head=require_commit(git('rev-parse','--verify','HEAD^{commit}'),'head'); tree=git('show','-s','--format=%T','HEAD')
  if not re.fullmatch(r'[0-9a-f]{40}',tree or '') or not has_object(tree+'^{tree}'): raise ValueError('unresolved-head-tree')
- diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-only',f'{base}..{head}'],text=True,capture_output=True)
+ diff=subprocess.run(['git','-C',str(root),'diff','--no-ext-diff','--name-status',f'{base}..{head}'],text=True,capture_output=True)
  if diff.returncode!=0: raise ValueError('base-head-diff-failed')
- paths=[p for p in diff.stdout.splitlines() if p]
+ changes=[]
+ for line in diff.stdout.splitlines():
+  fields=line.split('\t')
+  if len(fields)>=2:
+   changes.append((fields[0],fields[-1]))
+ paths=[p for _,p in changes]
  def anyprefix(prefixes): return any(p.startswith(prefixes) for p in paths)
+ protected_model=json.loads(file(Path('docs/impactshop-protected-files.json')).read_text())
+ protected_globs=protected_model.get('protected_globs',[])
+ protected_list=file(Path('.github/protected-files.txt')).read_text().splitlines()
+ protected_list=[p.strip() for p in protected_list if p.strip() and not p.lstrip().startswith('#')]
+ def listed_protected(p): return any(fnmatch.fnmatch(p,pat) for pat in protected_globs+protected_list)
+ executable=('.sh','.py','.js','.mjs','.ts','.yml','.yaml')
+ provider_terms=('ver'+'cel','rail'+'way')
+ remote_write=re.compile(r'\b(git\s+push|gh\s+pr|ssh\s+|scp\s+|rsync\s+|curl\s+|wget\s+|'+ '|'.join(provider_terms) + r'|provider[ _-]?deploy|remote[ _-]?write|deploy\s*(?:-|_|:|\())',re.I)
+ content_deploy=any(p.endswith(executable) and remote_write.search(git_file(head,p)) for status,p in changes if not status.startswith('D'))
  if not paths: impact='governance-only'
- elif anyprefix(('wp-content/','docs/impactshop-protected','docs/impactshop-guard-')): impact='protected'
- elif anyprefix(('bin/','deploy/','.deploy.')): impact='deploy'
- elif all(p.startswith(('docs/','tests/','scripts/','.github/workflows/','config/')) or p in ('AGENTS.md','notes.md','system-status-snapshot.md','DOC-SYNC-HUB.md') for p in paths): impact='governance-only'
+ elif content_deploy or anyprefix(('bin/','deploy/','.deploy.')): impact='deploy'
+ elif any(listed_protected(p) for p in paths) or anyprefix(('wp-content/','scripts/','.github/workflows/','config/','docs/impactshop-protected','docs/impactshop-guard-')): impact='protected'
+ elif all(p.startswith(('docs/','tests/')) or p in ('AGENTS.md','notes.md','system-status-snapshot.md','DOC-SYNC-HUB.md') for p in paths): impact='governance-only'
  else: impact='unknown'
  decision='allowed' if impact=='governance-only' else ('operator-review' if impact in ('protected','deploy') else 'blocked')
  if impact=='unknown': reasons+=['unknown-path-class']
  if reasons and decision=='allowed': decision='blocked'
  payload={'schemaVersion':2,'repo':'impactshop-notes','authoritySource':'repo-local','branch':branch or None,'baseSha':base or None,'headSha':head or None,'treeSha':tree or None,'changedPathClass':impact,'providerBuildDecision':policy['provider'].get(impact,'operator-review'),'evidenceReuseAllowed':not reasons,'decision':decision,'blockingReasons':reasons,'contractSha256':digest,'fixtureMode':fixture}
- if cmd=='bastion': payload['decision']='pass' if not reasons else 'blocked'; payload['protectionLevel']='maximum'
+ payload['candidateTreeSha']=tree
+ payload['sourceMergeAdmission']=False
+ if cmd=='full-validate':
+  if fixture: raise ValueError('fixture-full-validation-forbidden')
+  if git('diff','--quiet') or git('diff','--cached','--quiet'): raise ValueError('dirty-worktree-evidence-forbidden')
+  record_path='docs/protected-change-records/2026-09-04-dev-delivery-v2-admission-hardening.md'
+  env=dict(os.environ,BASTION_OVERRIDE='1',BASTION_CHANGE_RECORD=record_path,BASTION_ROLLBACK_NOTE='revert the exact candidate commit before any source merge',BASTION_SMOKE_TAGS='deploy:guard-preflight,deploy:checksum-verify')
+  for command in (['bash','scripts/check-commit-lane.sh','--mode','push','--push-range',base+'..'+head],['bash','scripts/check-protected-file-touch.sh','--mode','push','--push-range',base+'..'+head]):
+   checked=subprocess.run(command,cwd=str(root),text=True,capture_output=True,env=env)
+   if checked.returncode: raise ValueError('full-validation-failed:'+command[1])
+  state=private_state(); state.mkdir(mode=0o700,parents=True,exist_ok=True); os.chmod(state,0o700)
+  evidence={'schemaVersion':1,'baseSha':base,'headSha':head,'treeSha':tree,'changedPathClass':impact,'contractSha256':digest,'fullValidation':'repo-local-protected-touch-and-commit-lane','providerDeployAllowed':False}
+  validation_record().write_text(json.dumps(evidence,sort_keys=True)+'\n'); os.chmod(validation_record(),0o600)
+  payload['fullValidationEvidence']=True; payload['sourceMergeAdmission']=impact in ('governance-only','protected','deploy') and not reasons
+ if cmd=='bastion':
+  payload['protectionLevel']='maximum'; payload['bastionDecision']='blocked'
+  record=validation_record()
+  if impact in ('protected','deploy') or decision=='operator-review':
+   if not record.is_file() or stat.S_IMODE(record.stat().st_mode)!=0o600 or stat.S_IMODE(private_state().stat().st_mode)!=0o700: reasons.append('full-validation-evidence-missing')
+   else:
+    frozen=json.loads(record.read_text())
+    if any(frozen.get(k)!=v for k,v in {'baseSha':base,'headSha':head,'treeSha':tree,'changedPathClass':impact,'contractSha256':digest,'fullValidation':'repo-local-protected-touch-and-commit-lane','providerDeployAllowed':False}.items()): reasons.append('full-validation-evidence-mismatch')
+    else: payload['fullValidationEvidence']=True; payload['sourceMergeAdmission']=not reasons
+  if not reasons and decision in ('allowed','operator-review'): payload['bastionDecision']='pass'
  if cmd=='freeze':
   if decision!='allowed': raise ValueError('candidate-not-admissible')
-  state=Path(git('rev-parse','--git-path',policy['privateState']['gitPath'])); state=state if state.is_absolute() else root/state; state.mkdir(mode=0o700,parents=True,exist_ok=True); os.chmod(state,0o700); payload['candidateTreeSha']=git('write-tree'); record=state/'candidate.json'; record.write_text(json.dumps(payload,sort_keys=True)+'\n'); os.chmod(record,0o600)
+  state=private_state(); state.mkdir(mode=0o700,parents=True,exist_ok=True); os.chmod(state,0o700); payload['candidateTreeSha']=git('write-tree'); record=state/'candidate.json'; record.write_text(json.dumps(payload,sort_keys=True)+'\n'); os.chmod(record,0o600)
  if cmd=='verify':
-  state=Path(git('rev-parse','--git-path',policy['privateState']['gitPath'])); state=state if state.is_absolute() else root/state; record=state/'candidate.json'
+  state=private_state(); record=state/'candidate.json'
   if not record.is_file() or stat.S_IMODE(record.stat().st_mode)!=0o600 or stat.S_IMODE(state.stat().st_mode)!=0o700: raise ValueError('private-evidence-state-invalid')
   frozen=json.loads(record.read_text()); candidate=frozen.get('candidateTreeSha')
   if candidate!=git('write-tree'): raise ValueError('candidate-index-tree-mismatch')
   if candidate!=tree: raise ValueError('checkpoint-tree-mismatch')
   payload['candidateTreeSha']=candidate; payload['checkpointTreeMatchesCandidate']=True
- print(json.dumps(payload,sort_keys=True) if as_json=='1' else '[dev-delivery-v2] decision='+payload['decision']); sys.exit(0 if payload['decision'] in ('allowed','pass') else 1)
+ print(json.dumps(payload,sort_keys=True) if as_json=='1' else '[dev-delivery-v2] decision='+payload['decision']); sys.exit(0 if (cmd=='bastion' and payload.get('bastionDecision')=='pass') or (cmd=='full-validate' and payload.get('sourceMergeAdmission')) or payload['decision']=='allowed' else 1)
 except Exception as e: print('[dev-delivery-v2] BLOCKED '+str(e),file=sys.stderr); sys.exit(1)
 PY

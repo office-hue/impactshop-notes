@@ -7087,3 +7087,17 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   WordPress, remote-write, scheduler/watchdog and legacy PHP release engine
   remain untouched. The intentionally unavailable local memory loader failed
   before loading because its `tsx` package is absent.
+
+## 2026-09-04 DEV delivery v2 protected-admission correction
+
+- Terra QA blocker: `scripts/**` and workflow changes no longer inherit a
+  governance-only exception. Protected inventory, deploy/config paths and
+  executable provider-deploy/remote-write content are fail-closed.
+- The maximum bastion no longer replaces `operator-review` with `pass`.
+  Repo-local full validation runs the existing commit-lane and protected-touch
+  chain, writes private exact base/HEAD/tree evidence, and is rechecked by CI.
+  This admits source review only; automatic provider/product deploy remains
+  false.
+- Negative fixtures cover malicious workflow deploy, script remote write,
+  protected WordPress file, unknown path and forged evidence. No legacy PHP
+  exact-release engine changed.

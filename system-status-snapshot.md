@@ -1030,3 +1030,14 @@ base-to-head diff. `CI / validate` retains its job identity and now explicitly
 fetches/verifies the PR base before guard binding. Missing/non-SHA base and
 non-governance content fixtures block. No release-engine, runtime, provider or
 deployment state changed.
+
+## 2026-09-04 DEV delivery v2 protected-admission correction
+
+- Source governance candidate only; no merge, deploy, provider, VPS or runtime
+  action has occurred.
+- Script/workflow/config/guard and protected-inventory changes require the
+  repo-local full-validation chain. The private evidence binds exact base, HEAD
+  and candidate tree; CI independently checks those values at checkout.
+- Bastion records classifier `decision` separately from `bastionDecision` and
+  cannot grant provider deployment authority. Negative tamper fixtures are
+  green; legacy PHP release engine unchanged.
