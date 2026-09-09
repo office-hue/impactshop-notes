@@ -1,3 +1,27 @@
+## 2026-09-09 — Sharity Profile SP1 source candidate
+
+- Persistent device ownership, explicit portable-code issuance/reveal, legacy
+  code migration, generic sign-in errors and account-switch revocation are
+  source-reviewed on the dedicated feature branch.
+- `/profil` copy distinguishes automatic email-free account creation from
+  existing-account sign-in; the profile subtree excludes AdSense injection.
+- Static identity contract, JS syntax, VPS PHP lint, Terra security re-review,
+  deploy-guard fixtures, continuity and strict audit are green.
+- Not merged or deployed. Live schema activation, browser/DB E2E and other
+  pseudo-cookie mutator migration remain release blockers. No cron/watchdog.
+- Fresh `origin/main@a6f83e3` was integrated as an `Already up to date` no-op;
+  the branch remains seven commits ahead and zero behind.
+- The `ai-agent`-only `check --node-only` is `not-applicable` here. No sibling
+  worktree or shared dependency tree is used. Repo-local task-start is allowed;
+  protected-source admission is bound to the exact Sharity plan/change record
+  and final private base/HEAD/tree validation. No remote write was performed.
+- Checkpoint `fcf770d` / tree `bd2b675` has repo-local full-validation,
+  maximum-bastion and frozen-candidate verification PASS. The later `87f4567`
+  blocker conclusion was too broad: the operator confirmed DEV-v3 and its
+  handbook are already active. The `ai-agent` dependency path remains
+  `not-applicable`; publication uses only the explicit `impactshop-notes`
+  task-start, continuity, audit and DEV-v2 admission evidence.
+
 ## 2026-09-01T16:55:00+0200 - Impi source hidden-route contract
 
 - The protected GET-only Impi source returns anonymous `404` and authenticated

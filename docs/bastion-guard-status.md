@@ -1,6 +1,20 @@
 # Bastion Guard Status
 
-Last updated: 2026-09-04 21:01 CEST
+Last updated: 2026-09-09 14:45 CEST
+
+## 2026-09-09 — Sharity Profile SP1 owner grant
+
+The existing identity PHP/JS surfaces remain maximum protected. Their candidate
+digests and the `/profil` AdSense exclusion digest are pinned without expanding
+the protected inventory or granting deploy authority. Profile mutation and code
+issuance require the bound Secure/HttpOnly owner grant; account switching
+revokes the prior grant before replacement. Focused static tests and the Terra
+security re-review are green. Production remains blocked pending clean-main
+exact-file release, live schema/browser verification and central protection of
+the remaining pseudo-cookie mutation routes. Source admission is limited to the
+repo-local exact protected-path manifest plus private base/HEAD/tree evidence;
+the `ai-agent` node-only dependency check is not applicable and no sibling
+worktree is used. No cron/watchdog was added.
 
 ## 2026-09-04 — DEV delivery v2 target adapter
 

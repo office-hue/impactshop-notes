@@ -1,3 +1,26 @@
+## 2026-09-09 — Sharity Profile SP1
+
+- A profil most source szinten explicit eszköztulajdonosi granthez köti a
+  módosítást és a hordozható belépési kód kiadását; a pseudo cookie önmagában nem
+  jogosultság.
+- A belépési kód csak külön kérésre, egyszer látható `no-store` oldalon jelenik
+  meg; legacy kód sikeres belépéskor v2 hashre migrál és grantet ad.
+- Fiókváltáskor a régi grant előbb visszavonódik. A `/profil` AdSense-mentes, a
+  helyreállítási szöveg pedig meglévő fiókba való belépésként jelenik meg.
+- Állapot: source-reviewed, még nincs merge/deploy vagy live DB/browser E2E.
+  Más pseudo-cookie alapú writerek központi levédése külön csomag marad.
+- Az `origin/main@a6f83e3` integráció `Already up to date` volt. Ebben a repóban
+  az `ai-agent`-only `check --node-only` nem alkalmazható; sibling worktree és
+  shared dependency használata tilos. A source-only protected admissiont a
+  repo-local adapter, az exact change record és a privát HEAD/tree evidencia
+  zárja, távoli vagy runtime jogosultság nélkül.
+- A `fcf770d` checkpoint repo-local full-validation/bástya/freeze/verify lánca
+  zöld és `sourceMergeAdmission=true`. Az ezt követő `87f4567` checkpoint tévesen
+  kötötte a DEV-v3 érvényességét egy új repo-commithoz; az operátor megerősítette,
+  hogy az új szabály és handbook már aktív. Az `ai-agent` dependency út itt
+  továbbra is `not-applicable`; a source publikáció kizárólag az explicit
+  `impactshop-notes` guard- és admission-evidenciára támaszkodik.
+
 ## 2026-09-01T16:55:00+0200 - Impi source anonymous route disclosure closed
 
 - Production activation revealed anonymous `401` on the internal Impi source

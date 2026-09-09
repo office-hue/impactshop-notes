@@ -829,7 +829,7 @@
     }
 
     function applyProfileData(data) {
-      if (!data || !data.pseudo_id || !data.recovery_code) {
+      if (!data || !data.pseudo_id) {
         setStatus("Nem sikerült azonosítót kérni. Próbáld újra.", true);
         return;
       }
@@ -846,12 +846,6 @@
         sharedState.lastPseudo = pseudo;
       }
       renderGreeting(data.nickname || "");
-      if (recoveryDisplay) {
-        recoveryDisplay.textContent = data.recovery_code ? data.recovery_code : "—";
-      }
-      if (savePassword) {
-        savePassword.value = data.recovery_code ? data.recovery_code : "";
-      }
       if (nicknameInput && data.nickname && !nicknameInput.value) {
         nicknameInput.value = data.nickname;
       }
@@ -1179,9 +1173,37 @@
         }
         try {
           await navigator.clipboard.writeText(recovery);
-          setStatus("Helyreállító kód másolva.");
+          setStatus("Belépési kód másolva.");
         } catch (e) {
           setStatus("Másolás sikertelen.", true);
+        }
+      });
+    }
+
+    const generateCodeBtn = root.querySelector("[data-role=generate-code]");
+    if (generateCodeBtn) {
+      generateCodeBtn.addEventListener("click", async function(){
+        generateCodeBtn.disabled = true;
+        const originalLabel = generateCodeBtn.textContent;
+        generateCodeBtn.textContent = "Kód készítése…";
+        try {
+          const res = await postWithNonce(restBase + "/identity/code/generate", {}, "include");
+          const data = (res._data !== undefined) ? res._data : await res.json().catch(function(){ return {}; });
+          if (!res.ok || !data || !data.reveal_url) {
+            setStatus((data && data.message) ? data.message : "A belépési kód létrehozása nem sikerült.", true);
+            return;
+          }
+          const revealWindow = window.open(data.reveal_url, "_blank", "noopener,noreferrer");
+          if (!revealWindow) {
+            window.location.href = data.reveal_url;
+            return;
+          }
+          setStatus("A biztonságos kódoldal megnyílt.");
+        } catch (e) {
+          setStatus("A belépési kód létrehozása nem sikerült.", true);
+        } finally {
+          generateCodeBtn.disabled = false;
+          generateCodeBtn.textContent = originalLabel;
         }
       });
     }
@@ -1321,7 +1343,10 @@
         if (e && typeof e.preventDefault === "function") {
           e.preventDefault();
         }
-        setStatus("Nincs aktív azonosító vagy kód.", true);
+        setStatus("A mentéshez előbb nyisd meg a biztonságos belépési kódoldalt.", true);
+        if (generateCodeBtn) {
+          generateCodeBtn.click();
+        }
         return;
       }
       syncSaveFields(pseudo, recovery);
@@ -1367,15 +1392,15 @@
           return;
         }
         if (!/^[A-Z0-9]{12}$/.test(recovery)) {
-          setStatus("Érvénytelen helyreállító kód formátum.", true);
-          if (restoreStatus) restoreStatus.textContent = "Érvénytelen helyreállító kód formátum.";
+          setStatus("Érvénytelen belépési kód formátum.", true);
+          if (restoreStatus) restoreStatus.textContent = "Érvénytelen belépési kód formátum.";
           return;
         }
-        setStatus("Helyreállítás folyamatban…");
-        if (restoreStatus) restoreStatus.textContent = "Helyreállítás folyamatban…";
+        setStatus("Belépés folyamatban…");
+        if (restoreStatus) restoreStatus.textContent = "Belépés folyamatban…";
         restoreSubmit.disabled = true;
         const originalLabel = restoreSubmit.textContent;
-        restoreSubmit.textContent = "Helyreállítás…";
+        restoreSubmit.textContent = "Belépés…";
         try {
           const res = await postWithNonce(
             restBase + "/identity/restore",
@@ -1384,7 +1409,7 @@
           );
           const data = (res._data !== undefined) ? res._data : await res.json();
           if (!res.ok) {
-            const message = (data && data.message) ? data.message : "Helyreállítás sikertelen.";
+            const message = (data && data.message) ? data.message : "Belépés sikertelen.";
             setStatus(message, true);
             if (restoreStatus) restoreStatus.textContent = message;
             return;
@@ -1396,21 +1421,21 @@
           if (saveUsername) {
             saveUsername.value = pseudo;
           }
-          setStatus("Azonosító helyreállítva.");
-          if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva.";
+        setStatus("Belépés sikeres.");
+          if (restoreStatus) restoreStatus.textContent = "Belépés sikeres.";
           emitIdentityReady(pseudo);
           fetchProfile().then(refreshPointsSection);
           const bridgeCompletionUrl = getBridgeCompletionUrl("restore");
           const returnUrl = getSafeReturnUrl();
           if (bridgeCompletionUrl) {
-            setStatus("Azonosító helyreállítva. Visszaléptetünk…");
-            if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva. Visszaléptetünk…";
+            setStatus("Belépés sikeres. Visszaléptetünk…");
+            if (restoreStatus) restoreStatus.textContent = "Belépés sikeres. Visszaléptetünk…";
             setTimeout(function(){
               navigateAfterIdentityAction(bridgeCompletionUrl, returnUrl);
             }, 900);
           } else if (returnUrl) {
-            setStatus("Azonosító helyreállítva. Visszaléptetünk…");
-            if (restoreStatus) restoreStatus.textContent = "Azonosító helyreállítva. Visszaléptetünk…";
+            setStatus("Belépés sikeres. Visszaléptetünk…");
+            if (restoreStatus) restoreStatus.textContent = "Belépés sikeres. Visszaléptetünk…";
             setTimeout(function(){
               navigateAfterIdentityAction("", returnUrl);
             }, 900);
@@ -1420,8 +1445,8 @@
             }, 800);
           }
         } catch (e) {
-          setStatus("Helyreállítás hiba.", true);
-          if (restoreStatus) restoreStatus.textContent = "Helyreállítás hiba.";
+          setStatus("Belépési hiba.", true);
+          if (restoreStatus) restoreStatus.textContent = "Belépési hiba.";
         } finally {
           restoreSubmit.disabled = false;
           restoreSubmit.textContent = originalLabel;

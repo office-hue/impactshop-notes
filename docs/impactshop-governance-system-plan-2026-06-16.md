@@ -381,3 +381,20 @@ Operator approval reference:
 - A tartalmi remote-write keresés kizárólag changed script/bin/deploy vagy CI
   workflow végrehajtható surface-en fut; docs és tests fixture szöveg nem
   minősíti át a változást deploynak.
+# 2026-09-09 Sharity Profile SP1 evidence sync
+
+The Sharity Profile SP1 package changes no governance executable or admission
+semantics. Its `docs/bastion-guard-status.md` update records the existing
+maximum-protection model applied to the already inventoried identity PHP/JS
+surfaces, while candidate runtime hashes are pinned in the existing manifest.
+Source publication remains guarded feature-branch only; staging/production
+authority, shared hooks and deploy policy are unchanged. The canonical topic
+map, status snapshot, notes, protected change record and package continuity are
+synchronized in the same reviewed range.
+
+The package stays entirely inside its dedicated `impactshop-notes` worktree.
+The `ai-agent`-only `worktree-shared-deps.sh check --node-only` is explicitly
+`not-applicable`; no sibling worktree or shared dependency repair is an
+admission input. Protected source eligibility comes only from the repo-local
+DEV-v2 adapter, its exact six-path manifest, the recorded source-only operator
+approval and private base/HEAD/tree-bound full-validation evidence.
