@@ -1,0 +1,150 @@
+# Sharity NGO preference Package B — source authority Sol decision
+
+Status: `architecture-review-complete`; Terra QA and implementation plan pending.
+
+Plan/session ID: `sharity-ngo-preference-source-authority-20260909`
+
+Identity: `impactshop-notes`, branch
+`feat/sharity-ngo-preference-source-authority-terra-20260909`, exact base
+`origin/main@073f2854d4e4bc01ad928636125b7a18dc43efa0`.
+
+## Scope
+
+Package B may add a default-off WordPress source adapter that owns authenticated
+subject derivation, opaque web sessions, profile/context NGO preferences, current
+catalog validation, compare-and-set updates, and audit records. It must provide the
+private source endpoints required by the later `ai-agent` BFF package.
+
+This decision grants no push, PR, merge, staging, production, database migration,
+secret provisioning, provider, cron, or watchdog authority. Shopping, Offerwall,
+Commitments, VB2026 activity writers, and UI integration remain later packages.
+
+## Existing authority and protected perimeter
+
+- `impactshop_identity_owner_authorized()` is the only admitted browser profile
+  ownership proof. `impactshop_pseudo_id` and WordPress nonces are not identity.
+- The `__Host-impactshop_owner` cookie is host-only and cannot be forwarded to a
+  different Sharity host. The later BFF therefore needs an authorization-code
+  exchange; browser-supplied profile IDs are forbidden.
+- `sharity_ngo_catalog.sharity_ngo_id` is the numeric NGO identifier. Active and
+  campaign-selectable state must be checked at every preference write and resolve.
+- VB2026 selection, the legacy slug selector, votes, points/rewards/fund state, NGO
+  Card, and Hatás Körök remain separate truth sources.
+- Existing protected runtime files are not edited. The implementation must be an
+  additive disabled module plus tests and mandatory protected/bastion records.
+
+## Authentication decision
+
+The source adapter uses an OAuth-style, first-party authorization-code bridge:
+
+1. A browser navigates to a source-origin authorization endpoint with an exact
+   allowlisted `client_id`, `redirect_uri`, opaque `state`, and PKCE challenge.
+2. The source validates HTTPS, the current pseudo cookie, the bound unrevoked owner
+   grant, same-origin intent, and a purpose-bound CSRF token.
+3. The source stores only a hash of a 256-bit one-time code, bound to the owner-grant
+   hash, subject key version, client, redirect URI, PKCE challenge, and a maximum
+   60-second expiry. It redirects only to the exact registered BFF callback.
+4. The BFF exchanges the code server-to-server using its confidential client secret
+   and PKCE verifier. The exchange is atomic and single-use.
+5. Only the BFF receives a 256-bit opaque bearer token. The browser receives it only
+   as the BFF's Secure, HttpOnly, SameSite cookie; source redirects and JavaScript
+   never contain the bearer.
+6. Bearer sessions expire after 15 minutes, have no refresh token in v1, and are
+   revoked when their linked owner grant is revoked or no longer matches.
+
+Authorization codes may appear only in the single callback request. Source/BFF logs
+must redact query strings and request bodies on these routes. State is verified by
+the BFF; code replay, redirect mismatch, PKCE mismatch, or client mismatch returns an
+indistinguishable denial and consumes no session.
+
+## Subject and key decision
+
+The preference subject is `v1:` plus a base64url HMAC-SHA-256 of the normalized
+pseudo ID using a dedicated source-held key. It is not the owner-grant hash salt and
+is never derived in the browser or BFF. Raw pseudo/profile identifiers are forbidden
+in new preference/session/audit tables, responses, public health, and logs.
+
+Missing keys fail closed. Key provisioning and rotation are separate Sol operations.
+A future rotation must use explicit dual-read/single-write key versions and a
+measured migration; silently changing the key is forbidden.
+
+## Data authority
+
+The additive module owns four logical tables:
+
+- web authorization codes: hashed code, owner-grant hash, subject, client/redirect,
+  PKCE challenge, expiry and consumed timestamp;
+- web sessions: hashed bearer, subject, owner-grant hash, scope, issued/expiry and
+  revoked timestamps;
+- NGO preferences: `(subject, scope_key)` unique, numeric NGO ID, catalog revision,
+  monotonic version and timestamps, where `scope_key` is `profile_default` or one
+  of `impact_shopping`, `offerwall`, `commitments`, `vb2026`;
+- append-only preference audit: operation ID, subject, scope, before/after numeric
+  NGO/version/revision, outcome, timestamp and non-sensitive actor class.
+
+No raw token, authorization code, client secret, pseudo ID, slug, provider ID,
+financial value, vote, point, or reward is stored in these tables.
+
+Every mutation requires an idempotency key and expected version. The source performs
+catalog validation and compare-and-set in one transaction; conflict returns `409`
+with the current non-sensitive version. Preference changes are prospective only.
+Activity owners must persist immutable `(ngo_id, catalog_revision)` snapshots; this
+service never rewrites historical attribution.
+
+## Catalog revision
+
+The source catalog revision is a versioned SHA-256 digest of the sorted normalized
+selection fields: numeric NGO ID, active flag, campaign allow-selection flag, and
+campaign state. The digest algorithm/version is fixed in code and recorded with the
+preference. A write must supply the current revision and fail with `409` if stale.
+Inactive, deleted, or unselectable choices return `selection_required`; no fallback,
+legacy slug promotion, or VB2026 implicit promotion is allowed.
+
+## Source endpoints
+
+All routes are under `/wp-json/sharity/v1` and return `Cache-Control: private,
+no-store`. Error bodies never distinguish unknown subject, invalid token, revoked
+grant, or expired session beyond a common authorization failure.
+
+- authorization-code issue and token exchange endpoints as defined above;
+- `GET /identity/web-session/summary` — bearer-only minimal subject state;
+- `POST /identity/web-session/revoke` — bearer or authenticated BFF client;
+- `GET /ngo-preferences` — bearer-only default, overrides, effective states and
+  current catalog revision;
+- `PUT /ngo-preferences/{scope_key}` — bearer-only CAS mutation with numeric NGO ID,
+  current revision, expected version, and idempotency key.
+
+CORS is not an authentication mechanism. Token exchange and preference APIs are
+server-to-server/BFF paths; browser-origin mutation is rejected.
+
+## Fail-closed rollout and rollback
+
+The first implementation is `impactshop-sharity-ngo-preference-source.php.off`.
+It may contain schema and route code but WordPress cannot load it. Tests must prove
+the `.off` state, exact route/auth contracts, no provider calls, no legacy writer
+reuse, and no protected-file changes. Enabling, schema execution, secret injection,
+staging, or production requires a later Sol release decision with backup/restore and
+browser/database E2E evidence.
+
+Rollback before activation is file removal/revert. After any schema or v1 subject is
+written, rollback may disable routes but must retain tables, verifier, audit, subject
+key version, and data; destructive schema rollback is forbidden.
+
+## Required implementation evidence
+
+1. Static and PHP syntax tests for the disabled additive module.
+2. Tests for owner-grant mismatch/revocation, exact redirect allowlist, PKCE, code
+   replay/expiry, bearer expiry/revocation, and response/log redaction.
+3. Tests for exact scopes, numeric ID, active/selectable catalog state, revision
+   mismatch, CAS conflict, idempotent retry, audit append, and no fallback.
+4. Protected inventory/digest parity proving no existing protected runtime file
+   changed; update `docs/bastion-guard-status.md` and a protected change record for
+   the new perimeter module.
+5. Repo-local full validation, continuity, `git diff --check`, and a clean checkpoint.
+
+## Handoff
+
+Next model: `gpt-5.6-terra`, high reasoning. Terra must independently audit this
+security/data design against the existing owner-grant and catalog source, define the
+exact file allowlist and test matrix, and approve Luna only if no protected-file edit
+or unresolved key/session decision remains.

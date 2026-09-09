@@ -1,3 +1,16 @@
+## 2026-09-09 — Sharity NGO preference Package B source authority
+
+- Sol source-only architecture decision added on exact `origin/main@073f2854`.
+- The proposed browser/BFF bridge uses the existing owner grant only to mint a
+  one-time authorization code; only the confidential BFF exchange receives the
+  short-lived opaque bearer.
+- Preference authority is a versioned HMAC subject plus numeric current-catalog
+  validation, revision-bound CAS, idempotency and append-only audit.
+- Planned implementation is an additive `.php.off` module. Existing protected
+  identity, selector and VB2026 files remain unchanged.
+- No push, PR, merge, provider, VPS, secret, schema execution, deploy, cron or
+  watchdog action occurred. Next gate: Terra/high independent plan QA.
+
 ## 2026-09-09 — Sharity Profile SP1
 
 - A profil most source szinten explicit eszköztulajdonosi granthez köti a
