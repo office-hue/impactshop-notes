@@ -1,6 +1,7 @@
 # Sharity Profile SP1 — Sol release gate
 
-Status: **blocked_operator_review; source checkpoint only**.
+Status: **source-reviewed; repo-local admission bound to checkpoint validation;
+publication and live acceptance pending**.
 
 ## Frozen identity
 
@@ -119,10 +120,18 @@ missing DocSync anchor was added without changing any executable guard or
 release policy. Commit-lane and protected-touch had already passed.
 
 The second guarded-push invocation also performed no push. Commit-lane,
-protected-touch and strict audit passed, then the mandatory central memory gate
-failed because the protected `ai-agent` checkout cannot resolve `tsx` and has no
-root dependency symlink. A read-only shared-deps check confirmed that root and
-web dependency links, `.venv` and `tmp/state` are missing; its shared memory
-SQLite is present. The `IMPACT_POLICY_SKIP_MEMORY_GATE` bypass was not used and
-the shared dependency tree was not modified. The remote feature branch is still
-absent.
+protected-touch and strict audit passed, then the old wrapper attempted a
+cross-repository central memory check. The current DEV-v3 handbook makes
+`worktree-shared-deps.sh check --node-only` an `ai-agent`-only command; it is
+`not-applicable` in `impactshop-notes` and no sibling worktree may be used to
+satisfy it. No bypass, install, shared-tree repair or third push attempt was
+made. The remote feature branch is still absent.
+
+One subsequent `origin/main` refresh remained at `a6f83e3`; integrating it was
+an `Already up to date` no-op with no conflict or tree change. The applicable
+local checks are `worktree-task-start-guard.sh`,
+`worktree-readiness-check.sh` and `dev-delivery-v2-adapter.sh`. Task start is
+allowed; readiness exposes protected-source operator review rather than a
+dependency failure. The exact machine-readable admission record now covers all
+six protected base-to-HEAD paths and points to the source-only operator approval
+in the owner-grant decision. This creates no remote or runtime authority.

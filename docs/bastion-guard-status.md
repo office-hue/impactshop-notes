@@ -11,7 +11,10 @@ issuance require the bound Secure/HttpOnly owner grant; account switching
 revokes the prior grant before replacement. Focused static tests and the Terra
 security re-review are green. Production remains blocked pending clean-main
 exact-file release, live schema/browser verification and central protection of
-the remaining pseudo-cookie mutation routes. No cron/watchdog was added.
+the remaining pseudo-cookie mutation routes. Source admission is limited to the
+repo-local exact protected-path manifest plus private base/HEAD/tree evidence;
+the `ai-agent` node-only dependency check is not applicable and no sibling
+worktree is used. No cron/watchdog was added.
 
 ## 2026-09-04 — DEV delivery v2 target adapter
 

@@ -1,10 +1,23 @@
 # Sharity profile SP1 — owner-grant security decision
 
-Status: mandatory correction before push, staging, migration, or release.
+Status: source-reviewed; repo-local protected-source admission approved;
+publication and live acceptance pending.
 
 Plan/session identity: `sharity-profile-sp1-20260909`; reviewed historical
 checkpoint: `e577270`; publication source commit with identical runtime bytes:
 `6f7aa97`.
+
+## Source-continuation approval
+
+Operator approval reference:
+`operator-approval:sharity-profile-sp1-source-continuation-20260909`.
+
+This approval is limited to exact-identity, source-only continuation in the
+dedicated `impactshop-notes` Sharity Profile worktree and to the repository's
+own protected-source admission lane. It does not authorize provider, VPS,
+database, staging, production, push, PR or merge effects. The `ai-agent`-only
+`worktree-shared-deps.sh check --node-only` command is not applicable here and
+must not be run from any sibling repository or worktree.
 
 ## Decision
 

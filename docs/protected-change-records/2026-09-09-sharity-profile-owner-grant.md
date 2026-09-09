@@ -17,13 +17,14 @@ legacy touch.
 
 - `wp-content/mu-plugins/impactshop-identity-panel.php`
 - `wp-content/mu-plugins/impactshop-identity-panel.js`
+- `wp-content/mu-plugins/impactshop-adsense-head.php`
 - `docs/impactshop-guard-hashes.json`
 - `docs/impactshop-guard-hashes.sha256`
 - `docs/bastion-guard-status.md`
 
-The related non-protected runtime touch is
-`wp-content/mu-plugins/impactshop-adsense-head.php`, limited to suppressing the
-existing AdSense head injection on the `/profil` subtree.
+The AdSense runtime touch is limited to suppressing the existing head injection
+on the `/profil` subtree. Repository policy classifies every `wp-content/` path
+as protected, so it is included in the exact protected-source admission scope.
 
 ## Coherence and affected functions
 
@@ -94,3 +95,37 @@ layout movement or AdSense. Also verify the listed profile-return, points,
 message, legacy-pool, Impact Challenge and FactLens routes for regressions.
 
 No staging browser/DB smoke or production deploy has run yet.
+
+## Protected source admission
+
+This source-only manifest covers every protected endpoint in the exact
+`origin/main..HEAD` candidate. The approval is recorded in the linked Sharity
+plan. Full validation remains private base/HEAD/tree-bound evidence and grants
+no provider, VPS, staging, database or production authority.
+
+<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+{
+  "operatorApprovalRef": "operator-approval:sharity-profile-sp1-source-continuation-20260909",
+  "planRef": "docs/sharity-profile-sp1-owner-grant-sol-decision-2026-09-09.md#sharity-profile-sp1-owner-grant-security-decision",
+  "protectedPaths": [
+    "docs/bastion-guard-status.md",
+    "docs/impactshop-guard-hashes.json",
+    "docs/impactshop-guard-hashes.sha256",
+    "wp-content/mu-plugins/impactshop-adsense-head.php",
+    "wp-content/mu-plugins/impactshop-identity-panel.js",
+    "wp-content/mu-plugins/impactshop-identity-panel.php"
+  ],
+  "rollbackNote": "revert the exact Sharity Profile candidate commits and discard private candidate evidence before any source merge",
+  "schemaVersion": 1,
+  "smokeTags": [
+    "route:profil",
+    "flow:profile-return-account",
+    "flow:profile-return-restore",
+    "flow:points-jump",
+    "flow:message-popup",
+    "flow:legacy-pool-visibility",
+    "route:impact-challenge",
+    "route:factlens-vb-prod"
+  ]
+}
+<!-- END PROTECTED SOURCE ADMISSION -->

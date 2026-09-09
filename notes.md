@@ -9,6 +9,11 @@
   helyreállítási szöveg pedig meglévő fiókba való belépésként jelenik meg.
 - Állapot: source-reviewed, még nincs merge/deploy vagy live DB/browser E2E.
   Más pseudo-cookie alapú writerek központi levédése külön csomag marad.
+- Az `origin/main@a6f83e3` integráció `Already up to date` volt. Ebben a repóban
+  az `ai-agent`-only `check --node-only` nem alkalmazható; sibling worktree és
+  shared dependency használata tilos. A source-only protected admissiont a
+  repo-local adapter, az exact change record és a privát HEAD/tree evidencia
+  zárja, távoli vagy runtime jogosultság nélkül.
 
 ## 2026-09-01T16:55:00+0200 - Impi source anonymous route disclosure closed
 
