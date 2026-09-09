@@ -1,3 +1,15 @@
+## 2026-09-09 — Sharity Profile SP1
+
+- A profil most source szinten explicit eszköztulajdonosi granthez köti a
+  módosítást és a hordozható belépési kód kiadását; a pseudo cookie önmagában nem
+  jogosultság.
+- A belépési kód csak külön kérésre, egyszer látható `no-store` oldalon jelenik
+  meg; legacy kód sikeres belépéskor v2 hashre migrál és grantet ad.
+- Fiókváltáskor a régi grant előbb visszavonódik. A `/profil` AdSense-mentes, a
+  helyreállítási szöveg pedig meglévő fiókba való belépésként jelenik meg.
+- Állapot: source-reviewed, még nincs merge/deploy vagy live DB/browser E2E.
+  Más pseudo-cookie alapú writerek központi levédése külön csomag marad.
+
 ## 2026-09-01T16:55:00+0200 - Impi source anonymous route disclosure closed
 
 - Production activation revealed anonymous `401` on the internal Impi source

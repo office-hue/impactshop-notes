@@ -1,3 +1,15 @@
+## 2026-09-09 — Sharity Profile SP1 source candidate
+
+- Persistent device ownership, explicit portable-code issuance/reveal, legacy
+  code migration, generic sign-in errors and account-switch revocation are
+  source-reviewed on the dedicated feature branch.
+- `/profil` copy distinguishes automatic email-free account creation from
+  existing-account sign-in; the profile subtree excludes AdSense injection.
+- Static identity contract, JS syntax, VPS PHP lint, Terra security re-review,
+  deploy-guard fixtures, continuity and strict audit are green.
+- Not merged or deployed. Live schema activation, browser/DB E2E and other
+  pseudo-cookie mutator migration remain release blockers. No cron/watchdog.
+
 ## 2026-09-01T16:55:00+0200 - Impi source hidden-route contract
 
 - The protected GET-only Impi source returns anonymous `404` and authenticated
