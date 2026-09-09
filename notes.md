@@ -1,3 +1,16 @@
+## 2026-09-09 — Sharity staging CAS admission control
+
+- Külön, `origin/main@073f285` alapú worktree-ben elkészült az egyszeri
+  `deploy-control-source:sharity-staging-cas-v1` source-admission profil.
+- Csak a parkolt CAS branch pontos hét protected és hat support fájlos diffjét
+  fogadja el; mind a hét protected blobot contract-pinned HEAD SHA-256, a
+  production companion változatlanságát review-zott SHA-256 köti. Minden
+  same-path mutáció, subset/superset, extra runtime/workflow/remote fájl,
+  rename/copy/delete, ref/hash/evidence drift és self-admission fail-closed.
+- Provider deploy végig tiltott. Az admission control saját fájljai maximum
+  protected deploy-guard körbe kerültek. Nem történt push, merge, VPS/provider
+  művelet; cron/watchdog nem szükséges.
+
 ## 2026-09-09 — Sharity Profile SP1
 
 - A profil most source szinten explicit eszköztulajdonosi granthez köti a

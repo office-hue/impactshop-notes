@@ -1,3 +1,18 @@
+## 2026-09-09 — Sharity staging CAS source-admission bootstrap
+
+- Dedicated worktree/branch: `sharity-profile-deploy-control-source-bootstrap-20260909` /
+  `ops/sharity-profile-deploy-control-source-bootstrap-20260909`, base
+  `origin/main@073f2854d4e4bc01ad928636125b7a18dc43efa0`.
+- The exact seven protected CAS blobs are bound by contract-pinned HEAD SHA-256;
+  same-path content drift is source-blocked before any deploy authority exists.
+- Source-only capability: one exact staging CAS profile with schema-v2 record,
+  exact seven protected plus six support paths, unchanged production companion
+  digest, fixed plan/approval and provider deploy denial.
+- Control-plane files are maximum protected; self-admission and all tested
+  scope/ref/hash/evidence/provider drift fail closed.
+- No push, PR, merge, provider build, VPS write, runtime activation, cron or
+  watchdog belongs to this checkpoint. Next gate is independent Terra/high QA.
+
 ## 2026-09-09 — Sharity Profile SP1 source candidate
 
 - Persistent device ownership, explicit portable-code issuance/reveal, legacy

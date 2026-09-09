@@ -43,6 +43,29 @@ source_reasons = []
 ADMISSION_BEGIN = '<!-- BEGIN PROTECTED SOURCE ADMISSION -->'
 ADMISSION_END = '<!-- END PROTECTED SOURCE ADMISSION -->'
 FULL_VALIDATION_KIND = 'repo-local-protected-touch-and-commit-lane'
+PROFILE_ID = 'deploy-control-source:sharity-staging-cas-v1'
+PROFILE_PATHS = [
+    '.deploy.staging.env',
+    'bin/deploy-wpcontent-map.sh',
+    'bin/impactshop-guard-rollback.sh',
+    'docs/impactshop-guard-hashes.json',
+    'docs/impactshop-guard-hashes.sha256',
+    'tests/deploy-wpcontent-map-exact-file.test.sh',
+    'tests/impactshop-guard-rollback-truth.test.sh',
+]
+PROFILE_UNCHANGED_PATHS = ['.deploy.production.env']
+PROFILE_SUPPORT_PATHS = [
+    'docs/impactshop-notes-doc-sync-map-2026-06-23.md',
+    'docs/protected-change-records/2026-09-09-sharity-profile-staging-cas.md',
+    'docs/sharity-profile-sp1-luna-continuity-2026-09-09.md',
+    'docs/sharity-profile-sp1-sol-release-gate-2026-09-09.md',
+    'notes.md',
+    'system-status-snapshot.md',
+]
+PROFILE_RECORD_PATH = 'docs/protected-change-records/2026-09-09-sharity-profile-staging-cas.md'
+PROFILE_PLAN_REF = 'docs/sharity-profile-sp1-sol-release-gate-2026-09-09.md#canonical-staging-cas-implementation'
+PROFILE_APPROVAL_REF = 'operator-approval:sharity-profile-staging-cas-20260909'
+PROFILE_REQUIRED_HEAD_SHA256 = {}
 
 def run_git(*args):
     return subprocess.run(
@@ -88,6 +111,13 @@ def git_file(ref, path):
     result = run_git('show', ref + ':' + path)
     return result.stdout if result.returncode == 0 else ''
 
+def git_file_bytes(ref, path):
+    result = subprocess.run(
+        ['git', '-C', str(root), 'show', ref + ':' + path],
+        capture_output=True, check=False,
+    )
+    return result.stdout if result.returncode == 0 else None
+
 def private_state():
     state = Path(git('rev-parse', '--git-path', policy['privateState']['gitPath']))
     return state if state.is_absolute() else root / state
@@ -130,16 +160,45 @@ def parse_admission_manifest(record_path, protected_paths):
         manifest = json.loads(raw)
     except json.JSONDecodeError:
         return None, 'protected-change-record-manifest-invalid:' + record_path
-    required = {
+    required_v1 = {
         'schemaVersion', 'planRef', 'operatorApprovalRef', 'protectedPaths',
         'rollbackNote', 'smokeTags'
     }
-    if set(manifest) != required or manifest.get('schemaVersion') != 1:
+    schema = manifest.get('schemaVersion')
+    if schema == 1:
+        if set(manifest) != required_v1:
+            return None, 'protected-change-record-schema-invalid:' + record_path
+    elif schema == 2:
+        required_v2 = required_v1 | {
+            'admissionProfile', 'reviewedHeadSha256', 'reviewedUnchangedPaths'
+        }
+        if set(manifest) != required_v2:
+            return None, 'protected-change-record-schema-invalid:' + record_path
+        if manifest.get('admissionProfile') != PROFILE_ID:
+            return None, 'protected-change-record-profile-invalid:' + record_path
+        reviewed = manifest.get('reviewedUnchangedPaths')
+        if (
+            not isinstance(reviewed, dict)
+            or set(reviewed) != set(PROFILE_UNCHANGED_PATHS)
+            or any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{64}', value) for value in reviewed.values())
+        ):
+            return None, 'protected-change-record-unchanged-paths-invalid:' + record_path
+        if manifest.get('protectedPaths') != PROFILE_PATHS:
+            return None, 'protected-change-record-path-coverage-mismatch:' + record_path
+        if manifest.get('reviewedHeadSha256') != PROFILE_REQUIRED_HEAD_SHA256:
+            return None, 'protected-change-record-reviewed-head-invalid:' + record_path
+        if set(protected_paths) != set(PROFILE_PATHS):
+            return None, 'protected-change-record-path-coverage-mismatch:' + record_path
+        if manifest.get('planRef') != PROFILE_PLAN_REF:
+            return None, 'protected-change-record-plan-ref-invalid:' + record_path
+        if manifest.get('operatorApprovalRef') != PROFILE_APPROVAL_REF:
+            return None, 'protected-change-record-approval-ref-invalid:' + record_path
+    else:
         return None, 'protected-change-record-schema-invalid:' + record_path
     recorded_paths = manifest.get('protectedPaths')
     if not isinstance(recorded_paths, list) or len(recorded_paths) != len(set(recorded_paths)):
         return None, 'protected-change-record-paths-invalid:' + record_path
-    if set(recorded_paths) != set(protected_paths):
+    if schema == 1 and set(recorded_paths) != set(protected_paths):
         return None, 'protected-change-record-path-coverage-mismatch:' + record_path
     plan_ref = manifest.get('planRef')
     approval_ref = manifest.get('operatorApprovalRef')
@@ -165,11 +224,10 @@ def parse_admission_manifest(record_path, protected_paths):
     if not isinstance(tags, list) or not tags or any(not isinstance(tag, str) or not tag.strip() for tag in tags):
         return None, 'protected-change-record-smoke-invalid:' + record_path
     manifest['recordPath'] = record_path
+    manifest['profileExact'] = schema == 2
     return manifest, None
 
 def resolve_admission_manifest(protected_paths):
-    if not protected_paths:
-        return None, []
     candidates = sorted({
         path
         for change in changes
@@ -178,17 +236,21 @@ def resolve_admission_manifest(protected_paths):
     })
     valid = []
     invalid = []
+    profile_attempted = False
     for record_path in candidates:
+        raw = git_file(head, record_path)
+        if '"admissionProfile"' in raw or '"schemaVersion": 2' in raw:
+            profile_attempted = True
         manifest, error = parse_admission_manifest(record_path, protected_paths)
         if manifest:
             valid.append(manifest)
         elif ADMISSION_BEGIN in git_file(head, record_path):
             invalid.append(error)
     if len(valid) == 1:
-        return valid[0], []
+        return valid[0], [], profile_attempted
     if len(valid) > 1:
-        return None, ['protected-change-record-manifest-ambiguous']
-    return None, invalid or ['protected-change-record-exact-admission-missing']
+        return None, ['protected-change-record-manifest-ambiguous'], profile_attempted
+    return None, invalid or ['protected-change-record-exact-admission-missing'], profile_attempted
 
 try:
     contract = file(Path('config/dev-delivery-v2-target-contract.json'))
@@ -201,8 +263,42 @@ try:
         reasons.append('target-contract-invalid')
     if contract_data.get('repoRoot', {}).get('production') != 'exact-current-worktree-root-only' or contract_data.get('provider', {}).get('automaticProductDeployAuthority') is not False:
         reasons.append('target-contract-policy-drift')
+    profiles = contract_data.get('sourceAdmissionProfiles')
+    profile = profiles.get(PROFILE_ID) if isinstance(profiles, dict) else None
+    expected_profile = {
+        'schemaVersion': 2,
+        'protectedPaths': PROFILE_PATHS,
+        'requiredUnchangedPaths': PROFILE_UNCHANGED_PATHS,
+        'requiredChangedSupportPaths': PROFILE_SUPPORT_PATHS,
+        'planRef': PROFILE_PLAN_REF,
+        'operatorApprovalRef': PROFILE_APPROVAL_REF,
+        'providerDeployAllowed': False,
+    }
+    profile_head_sha256 = profile.get('requiredHeadSha256') if isinstance(profile, dict) else None
+    profile_without_hashes = {
+        key: value for key, value in profile.items() if key != 'requiredHeadSha256'
+    } if isinstance(profile, dict) else None
+    valid_profile_hashes = (
+        isinstance(profile_head_sha256, dict)
+        and set(profile_head_sha256) == set(PROFILE_PATHS)
+        and all(
+            isinstance(value, str) and re.fullmatch(r'[0-9a-f]{64}', value)
+            for value in profile_head_sha256.values()
+        )
+    )
+    if (
+        not isinstance(profiles, dict)
+        or set(profiles) != {PROFILE_ID}
+        or profile_without_hashes != expected_profile
+        or not valid_profile_hashes
+    ):
+        reasons.append('source-admission-profile-invalid')
+    else:
+        PROFILE_REQUIRED_HEAD_SHA256.update(profile_head_sha256)
     if policy.get('protectionLevel') != 'maximum':
         reasons.append('maximum-bastion-required')
+    if policy.get('providerDeployAllowed') is not False or policy.get('provider', {}).get('automaticProductDeployAuthority') is not False:
+        reasons.append('policy-provider-authority-drift')
     source = file(Path('scripts/dev-delivery-v2-adapter.sh')).read_text()
     for token in policy['forbiddenAuthorityTokens']:
         if token in source:
@@ -261,23 +357,66 @@ try:
     governance_paths = ('docs/', 'tests/')
     governance_files = {'AGENTS.md', 'notes.md', 'system-status-snapshot.md', 'DOC-SYNC-HUB.md'}
     if not paths:
-        impact = 'governance-only'
+        ordinary_impact = 'governance-only'
     elif content_deploy or deploy_path:
-        impact = 'deploy'
+        ordinary_impact = 'deploy'
     elif protected_paths:
-        impact = 'protected'
+        ordinary_impact = 'protected'
     elif all(path.startswith(governance_paths) or path in governance_files for path in paths):
-        impact = 'governance-only'
+        ordinary_impact = 'governance-only'
     else:
-        impact = 'unknown'
+        ordinary_impact = 'unknown'
 
+    manifest, manifest_reasons, profile_attempted = resolve_admission_manifest(protected_paths)
+    profile_reasons = []
+    profile_exact = False
+    if manifest and manifest.get('profileExact'):
+        by_path = {path: change for change in changes for path in change['endpoints']}
+        expected_paths = set(PROFILE_PATHS + PROFILE_SUPPORT_PATHS)
+        if set(paths) != expected_paths:
+            profile_reasons.append('source-admission-profile-paths-not-exact')
+        if manifest['recordPath'] != PROFILE_RECORD_PATH or manifest['recordPath'] not in paths:
+            profile_reasons.append('source-admission-profile-record-missing')
+        if any(change['status'][:1] in ('D', 'R', 'C') for change in changes):
+            profile_reasons.append('source-admission-profile-rename-copy-delete-forbidden')
+        if any(path not in by_path or by_path[path]['status'] != 'M' for path in PROFILE_PATHS):
+            profile_reasons.append('source-admission-profile-non-modification-forbidden')
+        if any(
+            path != PROFILE_RECORD_PATH
+            and (path not in by_path or by_path[path]['status'] != 'M')
+            for path in PROFILE_SUPPORT_PATHS
+        ):
+            profile_reasons.append('source-admission-profile-support-non-modification-forbidden')
+        if by_path.get(PROFILE_RECORD_PATH, {}).get('status') != 'A':
+            profile_reasons.append('source-admission-profile-record-addition-required')
+        for protected_path, expected_digest in PROFILE_REQUIRED_HEAD_SHA256.items():
+            content = git_file_bytes(head, protected_path)
+            if content is None or hashlib.sha256(content).hexdigest() != expected_digest:
+                profile_reasons.append('source-admission-profile-head-digest-mismatch:' + protected_path)
+        for unchanged_path in PROFILE_UNCHANGED_PATHS:
+            before = git_file_bytes(base, unchanged_path)
+            after = git_file_bytes(head, unchanged_path)
+            if before is None or after is None or before != after:
+                profile_reasons.append('source-admission-profile-unchanged-companion-mismatch:' + unchanged_path)
+                continue
+            reviewed_digest = manifest['reviewedUnchangedPaths'][unchanged_path]
+            if hashlib.sha256(after).hexdigest() != reviewed_digest:
+                profile_reasons.append('source-admission-profile-reviewed-digest-mismatch:' + unchanged_path)
+        extra = sorted(set(paths) - expected_paths)
+        if extra:
+            profile_reasons.append('source-admission-profile-extra-path:' + extra[0])
+        profile_exact = not profile_reasons
+    elif profile_attempted:
+        profile_reasons.extend(manifest_reasons)
+
+    impact = 'protected' if profile_exact else ordinary_impact
+    if profile_attempted and not profile_exact:
+        impact = 'deploy'
     decision = 'allowed' if impact == 'governance-only' else ('operator-review' if impact in ('protected', 'deploy') else 'blocked')
     if impact == 'unknown':
         reasons.append('unknown-path-class')
     if reasons and decision == 'allowed':
         decision = 'blocked'
-    manifest, manifest_reasons = resolve_admission_manifest(protected_paths)
-
     payload = {
         'schemaVersion': 2,
         'repo': 'impactshop-notes',
@@ -291,6 +430,8 @@ try:
         'changedPaths': paths,
         'protectedChangedPaths': protected_paths,
         'providerBuildDecision': policy['provider'].get(impact, 'operator-review'),
+        'providerDeployAllowed': False,
+        'sourceAdmissionProfile': PROFILE_ID if profile_exact else None,
         'evidenceReuseAllowed': not reasons,
         'decision': decision,
         'blockingReasons': reasons,
@@ -308,6 +449,7 @@ try:
         'contractSha256': digest,
         'fullValidation': FULL_VALIDATION_KIND,
         'providerDeployAllowed': False,
+        'sourceAdmissionProfile': PROFILE_ID if profile_exact else None,
         'protectedChangeRecord': manifest.get('recordPath') if manifest else None,
         'planRef': manifest.get('planRef') if manifest else None,
         'operatorApprovalRef': manifest.get('operatorApprovalRef') if manifest else None,
@@ -375,6 +517,8 @@ try:
                 payload['operatorApprovalRef'] = manifest['operatorApprovalRef']
         elif impact == 'deploy':
             source_reasons.extend(validate_evidence())
+            source_reasons.extend(manifest_reasons)
+            source_reasons.extend(profile_reasons)
             source_reasons.append('deploy-source-admission-forbidden')
         elif impact == 'unknown':
             source_reasons.append('unknown-source-admission-forbidden')
@@ -404,6 +548,8 @@ try:
             'headSha': head,
             'treeSha': tree,
             'contractSha256': digest,
+            'providerDeployAllowed': False,
+            'sourceAdmissionProfile': PROFILE_ID if profile_exact else None,
         }
         if any(frozen.get(key) != value for key, value in identity.items()) or frozen.get('sourceMergeAdmission') is not True:
             raise ValueError('candidate-evidence-identity-mismatch')
