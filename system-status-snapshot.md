@@ -9,6 +9,10 @@
   deploy-guard fixtures, continuity and strict audit are green.
 - Not merged or deployed. Live schema activation, browser/DB E2E and other
   pseudo-cookie mutator migration remain release blockers. No cron/watchdog.
+- Source publication is currently blocked before GitHub push by the mandatory
+  central memory gate: the protected `ai-agent` checkout lacks its shared
+  dependency links and cannot resolve `tsx`. Repo-local publication guards are
+  green; no memory bypass or shared-dependency repair was performed.
 
 ## 2026-09-01T16:55:00+0200 - Impi source hidden-route contract
 

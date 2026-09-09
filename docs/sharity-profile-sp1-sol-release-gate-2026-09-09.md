@@ -117,3 +117,12 @@ The first guarded-push invocation performed no push: its strict audit required
 the bástya status change to be mirrored in the governance system-plan. That
 missing DocSync anchor was added without changing any executable guard or
 release policy. Commit-lane and protected-touch had already passed.
+
+The second guarded-push invocation also performed no push. Commit-lane,
+protected-touch and strict audit passed, then the mandatory central memory gate
+failed because the protected `ai-agent` checkout cannot resolve `tsx` and has no
+root dependency symlink. A read-only shared-deps check confirmed that root and
+web dependency links, `.venv` and `tmp/state` are missing; its shared memory
+SQLite is present. The `IMPACT_POLICY_SKIP_MEMORY_GATE` bypass was not used and
+the shared dependency tree was not modified. The remote feature branch is still
+absent.
