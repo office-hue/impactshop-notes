@@ -135,3 +135,12 @@ allowed; readiness exposes protected-source operator review rather than a
 dependency failure. The exact machine-readable admission record now covers all
 six protected base-to-HEAD paths and points to the source-only operator approval
 in the owner-grant decision. This creates no remote or runtime authority.
+
+Checkpoint `fcf770d` / tree `bd2b675` subsequently passed the repository-local
+full-validation, maximum-bastion and freeze/verify sequence with
+`sourceMergeAdmission=true`. Publication nevertheless cannot start safely:
+`docs/pr-policy.md` still requires the pre-push memory gate, while the unchanged
+repo wrapper and installed pre-push hook invoke or resolve an `ai-agent`
+worktree. The current operator boundary forbids that cross-repository path and
+permits only `impactshop-notes` readiness/dependency guards. No direct push,
+`--no-verify`, hook mutation or local DEV-policy patch was attempted.
