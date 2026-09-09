@@ -106,3 +106,9 @@ not started. The guard must not be bypassed and this identity-bound attempt must
 not be retried. Staging dry-run can resume only after the reviewed source is
 published through the separate source-publication gate and the resulting clean
 `main == origin/main` identity is frozen.
+
+Source-publication preparation subsequently split the never-pushed mixed
+commit into guard-compliant lanes, registered the protected change record and
+pinned the three candidate runtime digests. The refreshed remote base remained
+`a6f83e3`; local tests, checksum and PR-body validation passed before the single
+guarded push attempt.
