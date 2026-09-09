@@ -112,3 +112,8 @@ commit into guard-compliant lanes, registered the protected change record and
 pinned the three candidate runtime digests. The refreshed remote base remained
 `a6f83e3`; local tests, checksum and PR-body validation passed before the single
 guarded push attempt.
+
+The first guarded-push invocation performed no push: its strict audit required
+the bástya status change to be mirrored in the governance system-plan. That
+missing DocSync anchor was added without changing any executable guard or
+release policy. Commit-lane and protected-touch had already passed.
