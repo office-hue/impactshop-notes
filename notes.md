@@ -15,10 +15,11 @@
   repo-local adapter, az exact change record és a privát HEAD/tree evidencia
   zárja, távoli vagy runtime jogosultság nélkül.
 - A `fcf770d` checkpoint repo-local full-validation/bástya/freeze/verify lánca
-  zöld és `sourceMergeAdmission=true`. Push mégsem indult: a kötelező repo
-  pre-push memory gate jelenleg `ai-agent` worktree-t hívna, amit az aktív
-  operátori határ tilt. Nem volt `--no-verify`, hook-módosítás vagy helyi
-  DEV-policy javítás; a publikációs policy-konfliktus külön jóváhagyást igényel.
+  zöld és `sourceMergeAdmission=true`. Az ezt követő `87f4567` checkpoint tévesen
+  kötötte a DEV-v3 érvényességét egy új repo-commithoz; az operátor megerősítette,
+  hogy az új szabály és handbook már aktív. Az `ai-agent` dependency út itt
+  továbbra is `not-applicable`; a source publikáció kizárólag az explicit
+  `impactshop-notes` guard- és admission-evidenciára támaszkodik.
 
 ## 2026-09-01T16:55:00+0200 - Impi source anonymous route disclosure closed
 

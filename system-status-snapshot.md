@@ -16,10 +16,11 @@
   protected-source admission is bound to the exact Sharity plan/change record
   and final private base/HEAD/tree validation. No remote write was performed.
 - Checkpoint `fcf770d` / tree `bd2b675` has repo-local full-validation,
-  maximum-bastion and frozen-candidate verification PASS. Source publication is
-  still blocked because the repo-required push memory gate currently invokes an
-  `ai-agent` worktree, which the active operator boundary forbids. No push,
-  no hook bypass and no repo-local DEV-policy repair was attempted.
+  maximum-bastion and frozen-candidate verification PASS. The later `87f4567`
+  blocker conclusion was too broad: the operator confirmed DEV-v3 and its
+  handbook are already active. The `ai-agent` dependency path remains
+  `not-applicable`; publication uses only the explicit `impactshop-notes`
+  task-start, continuity, audit and DEV-v2 admission evidence.
 
 ## 2026-09-01T16:55:00+0200 - Impi source hidden-route contract
 

@@ -138,9 +138,11 @@ in the owner-grant decision. This creates no remote or runtime authority.
 
 Checkpoint `fcf770d` / tree `bd2b675` subsequently passed the repository-local
 full-validation, maximum-bastion and freeze/verify sequence with
-`sourceMergeAdmission=true`. Publication nevertheless cannot start safely:
-`docs/pr-policy.md` still requires the pre-push memory gate, while the unchanged
-repo wrapper and installed pre-push hook invoke or resolve an `ai-agent`
-worktree. The current operator boundary forbids that cross-repository path and
-permits only `impactshop-notes` readiness/dependency guards. No direct push,
-`--no-verify`, hook mutation or local DEV-policy patch was attempted.
+`sourceMergeAdmission=true`. No push was attempted from that identity.
+Checkpoint `87f4567` then overinterpreted the lack of a newer repository commit
+as absence of DEV-v3. The operator corrected that conclusion: the new global
+DEV rule and handbook are already installed, and the `ai-agent` node/dependency
+path is `not-applicable` for this repository. The source-only publication lane
+therefore uses the explicitly executed `impactshop-notes` task-start,
+continuity, strict audit and DEV-v2 admission evidence without entering a
+sibling worktree or repairing shared dependencies.
