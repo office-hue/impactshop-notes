@@ -441,6 +441,25 @@ function impactshop_identity_expire_binding_cookies(string $pseudo_id, string $o
     return $owner_ok && $pseudo_ok;
 }
 
+/** Restore the previous pseudo binding, or remove a newly created one. */
+function impactshop_identity_restore_or_expire_pseudo_cookie(string $prior_pseudo_id, string $new_pseudo_id): bool
+{
+    if (headers_sent()) {
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    $prior_pseudo_id = strtolower(trim($prior_pseudo_id));
+    if ($prior_pseudo_id !== '' && impactshop_identity_profile_valid_pseudo($prior_pseudo_id)) {
+        $restored = impactshop_identity_profile_set_cookie($prior_pseudo_id);
+    } else {
+        $restored = impactshop_identity_profile_set_cookie($new_pseudo_id, impactshop_identity_utc_now() - 3600);
+    }
+    if (!$restored) {
+        impactshop_identity_mark_safe_disabled();
+    }
+    return $restored;
+}
+
 function impactshop_identity_queue_binding_cookies(string $pseudo_id, string $owner_token, int $expires): bool
 {
     if (headers_sent() || $owner_token === '' || !preg_match('/^[a-f0-9]{64}$/i', $owner_token)) {
@@ -1047,6 +1066,7 @@ function impactshop_identity_profile_resolve(): array
             if ($owner_issued) {
                 impactshop_identity_owner_compensate_pending();
             }
+            impactshop_identity_restore_or_expire_pseudo_cookie('', $pseudo_id);
             $pseudo_id = '';
         }
     }
@@ -1482,6 +1502,7 @@ function impactshop_identity_profile_get(): WP_REST_Response
             if ($owner_issued) {
                 impactshop_identity_owner_compensate_pending();
             }
+            impactshop_identity_restore_or_expire_pseudo_cookie('', $pseudo_id);
             $response = new WP_REST_Response([
                 'pseudo_id'         => '',
                 'nickname'          => null,
@@ -1612,6 +1633,7 @@ function impactshop_identity_profile_restore(WP_REST_Request $request): WP_REST_
         return new WP_REST_Response(['message' => 'A kérés forrása nem engedélyezett.'], 403);
     }
     $params = (array)$request->get_json_params();
+    $prior_pseudo_id = impactshop_identity_profile_cookie();
     $pseudo_id = isset($params['pseudo_id']) ? strtolower((string)$params['pseudo_id']) : '';
     $recovery_code = isset($params['recovery_code']) ? (string)$params['recovery_code'] : '';
 
@@ -1634,6 +1656,7 @@ function impactshop_identity_profile_restore(WP_REST_Request $request): WP_REST_
     $owner_cookie_set = $pseudo_cookie_set && impactshop_identity_owner_set_pending_cookie();
     if (!$pseudo_cookie_set || !$owner_cookie_set) {
         impactshop_identity_owner_compensate_pending();
+        impactshop_identity_restore_or_expire_pseudo_cookie($prior_pseudo_id, $pseudo_id);
         return new WP_REST_Response(['message' => 'A fiók biztonságos összekapcsolása most nem sikerült.'], 503);
     }
     $response = new WP_REST_Response(['status' => 'ok', 'pseudo_id' => $pseudo_id], 200);

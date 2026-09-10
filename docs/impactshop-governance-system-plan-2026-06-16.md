@@ -18,6 +18,19 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
   `docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md` és
   `docs/protected-change-records/2026-09-10-sharity-profile-summary-checkpoint-a.md`.
 
+## 2026-09-10 Sharity owner-policy Terra follow-up
+
+- A conditional ads-watch debug route is absent-safe only while
+  `impactshop_ads_watch_debug_enabled()` is false; a registered route still
+  receives exact method/callback self-test coverage.
+- Profile UI pseudo mutations are active-state-only, including vacation,
+  last-NGO reset, push refresh/click and credential-save award. Failed initial
+  or restore owner-cookie issuance restores the prior valid pseudo or expires
+  the new one, with safe-disable on header restoration failure.
+- VB2026 service admission uses the validated Bearer
+  `x-sharity-pseudo-id` as the sole target principal. Invalid/partial bearer
+  headers never fall back to a browser cookie, preserving native controls.
+
 ## 2026-09-10 Sharity public portal redirects note
 
 - A két nyugdíjazott `adomany-automata-portal` út additív, production-only

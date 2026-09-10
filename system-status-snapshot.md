@@ -9,6 +9,10 @@
 - Focused lint/static/inventory/JS checks and `git diff --check` PASS. Staging
   schema/browser/E2E, live DB, provider, push, PR, merge and deploy remain out
   of scope.
+- Terra follow-up closes conditional debug-route admission, active-only profile
+  UI pseudo mutation guards, pseudo-cookie restoration/expiry compensation and
+  VB2026 mixed-principal Bearer/cookie fallback. Targeted tests remain source
+  evidence only; live browser/DB acceptance is still pending.
 
 - A profil summary A fölött a v2 owner-grant lifecycle és a first-loaded,
   gépi owner-policy registry forrásban elkészült. A pending grant 10 perces,

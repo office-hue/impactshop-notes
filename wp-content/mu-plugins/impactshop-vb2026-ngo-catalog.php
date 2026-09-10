@@ -1149,39 +1149,39 @@ function impactshop_vb2026_owner_or_service_authorized(WP_REST_Request $request)
 
 function impactshop_vb2026_resolve_request_pseudo(WP_REST_Request $request, bool $allowServiceAuth): array
 {
-    $pseudo = impactshop_vb2026_get_pseudo_id();
-    if ($pseudo !== '') {
+    $header = trim((string) $request->get_header('authorization'));
+    if ($header !== '') {
+        // Any Authorization header opts into the service principal path. A
+        // malformed/invalid bearer must not fall back to a browser cookie.
+        if (!$allowServiceAuth || !preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
+            return ['pseudo_id' => '', 'service_auth' => false];
+        }
+        $provided = trim((string) ($matches[1] ?? ''));
+        $expected = impactshop_vb2026_resolve_service_token();
+        if ($provided === '' || $expected === '' || !hash_equals($expected, $provided)) {
+            return ['pseudo_id' => '', 'service_auth' => false];
+        }
+
+        $headerPseudo = strtolower(sanitize_text_field((string) $request->get_header('x-sharity-pseudo-id')));
+        if ($headerPseudo === '') {
+            return ['pseudo_id' => '', 'service_auth' => false];
+        }
+        if (function_exists('impactshop_identity_profile_valid_pseudo') && !impactshop_identity_profile_valid_pseudo($headerPseudo)) {
+            return ['pseudo_id' => '', 'service_auth' => false];
+        }
+
+        // The validated service header is the sole target principal, even if
+        // a browser cookie for another pseudo is also present.
         return [
-            'pseudo_id' => $pseudo,
-            'service_auth' => false,
+            'pseudo_id' => $headerPseudo,
+            'service_auth' => true,
         ];
     }
 
-    if (!$allowServiceAuth) {
-        return ['pseudo_id' => '', 'service_auth' => false];
-    }
-
-    $header = trim((string) $request->get_header('authorization'));
-    if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
-        return ['pseudo_id' => '', 'service_auth' => false];
-    }
-    $provided = trim((string) ($matches[1] ?? ''));
-    $expected = impactshop_vb2026_resolve_service_token();
-    if ($provided === '' || $expected === '' || !hash_equals($expected, $provided)) {
-        return ['pseudo_id' => '', 'service_auth' => false];
-    }
-
-    $headerPseudo = sanitize_text_field((string) $request->get_header('x-sharity-pseudo-id'));
-    if ($headerPseudo === '') {
-        return ['pseudo_id' => '', 'service_auth' => false];
-    }
-    if (function_exists('impactshop_identity_profile_valid_pseudo') && !impactshop_identity_profile_valid_pseudo($headerPseudo)) {
-        return ['pseudo_id' => '', 'service_auth' => false];
-    }
-
+    $pseudo = impactshop_vb2026_get_pseudo_id();
     return [
-        'pseudo_id' => strtolower($headerPseudo),
-        'service_auth' => true,
+        'pseudo_id' => $pseudo,
+        'service_auth' => false,
     ];
 }
 

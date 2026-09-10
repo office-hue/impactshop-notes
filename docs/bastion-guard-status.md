@@ -18,6 +18,13 @@ cache authority and invalidates profile state after restore. Guard hashes and
 the protected inventory include the changed VB2026 source. No provider,
 database, staging, production, push, PR, cron or watchdog operation occurred.
 
+The follow-up keeps the debug-rotation registry entry absent-safe only when
+`impactshop_ads_watch_debug_enabled()` is false, while registered debug routes
+still require exact method/callback identity. Profile UI pseudo mutations are
+active-state-only, failed pseudo-cookie binding restores/clears the correct
+cookie with safe-disable on header failure, and VB2026 service bearer requests
+use the validated header pseudo as their sole target principal.
+
 The protected profile lane now includes the first-loaded
 `000-impactshop-owner-policy.php` registry, the v2 pending/active grant
 lifecycle and the environment-aware action-bar profile target. The registry

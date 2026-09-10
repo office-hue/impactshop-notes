@@ -297,6 +297,15 @@ function impactshop_owner_policy_callback_matches($callback, string $expected): 
     return false;
 }
 
+function impactshop_owner_policy_runtime_condition_enabled(string $pattern): bool
+{
+    if ($pattern !== 'GET /impact/v1/ads-watch/debug-rotation') {
+        return true;
+    }
+    return function_exists('impactshop_ads_watch_debug_enabled')
+        && impactshop_ads_watch_debug_enabled();
+}
+
 /** Runtime inventory snapshot consumed by the release self-test. */
 function impactshop_owner_policy_runtime_inventory(): array
 {
@@ -431,6 +440,13 @@ function impactshop_owner_policy_runtime_self_test(): bool
     $routes = (array) $wp_rest_server->get_routes();
     foreach (impactshop_owner_policy_registry() as $pattern => $entry) {
         [, $route] = explode(' ', $pattern, 2);
+        $condition_enabled = impactshop_owner_policy_runtime_condition_enabled($pattern);
+        // The debug endpoint is deliberately absent in normal runtime. If it
+        // is registered while disabled, still validate its exact tuple; only
+        // an absent disabled endpoint is exempt from safe-disable.
+        if (!$condition_enabled && !isset($routes[$route])) {
+            continue;
+        }
         if (!isset($routes[$route])) {
             impactshop_owner_policy_safe_disable_set(true);
             return false;

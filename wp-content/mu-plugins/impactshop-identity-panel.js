@@ -296,6 +296,16 @@
       ].forEach(function(control){
         if (control) control.disabled = !mutationAllowed;
       });
+      if (pushToggle) {
+        pushToggle.disabled = !mutationAllowed;
+      }
+      if (!mutationAllowed && pushSection) {
+        pushSection.hidden = true;
+      }
+    }
+
+    function isIdentityActive() {
+      return identityState === "active";
     }
 
     function formatShortDate(value) {
@@ -577,7 +587,12 @@
         const btn = document.createElement("button");
         btn.type = "button";
         btn.textContent = "Másikat választok";
+        btn.disabled = !isIdentityActive();
         btn.addEventListener("click", async function(){
+          if (!isIdentityActive()) {
+            setStatus("A módosításhoz előbb biztonságosan kapcsolódj a fiókodhoz.", true);
+            return;
+          }
           await fetch(pointsBase + "/pseudo/last-ngo", {
             method: "POST",
             credentials: "include",
@@ -595,13 +610,18 @@
 
     async function fetchVacationStatus() {
       if (!vacationStatus || !vacationToggle) return;
+      if (!isIdentityActive()) {
+        vacationToggle.disabled = true;
+        vacationStatus.textContent = "A vakáció módosításához biztonságos kapcsolódás szükséges.";
+        return;
+      }
       try {
         const res = await fetch(pointsBase + "/pseudo/vacation?ts=" + Date.now(), {
           credentials: "include",
           cache: "no-store"
         });
         if (!res.ok) {
-          vacationToggle.disabled = false;
+          vacationToggle.disabled = !isIdentityActive();
           return;
         }
         const data = await res.json();
@@ -614,9 +634,9 @@
           vacationToggle.textContent = "Bekapcsolás";
           vacationToggle.dataset.mode = "start";
         }
-        vacationToggle.disabled = false;
+        vacationToggle.disabled = !isIdentityActive();
       } catch (e) {
-        vacationToggle.disabled = false;
+        vacationToggle.disabled = !isIdentityActive();
       }
     }
 
@@ -848,7 +868,7 @@
     }
 
     function awardCredentialsSave(pseudo) {
-      if (!pseudo || pseudo === "—") return;
+      if (!isIdentityActive() || !pseudo || pseudo === "—") return;
       const payload = {
         points: 10,
         type: "profile_complete",
@@ -1085,6 +1105,11 @@
 
     async function initPush() {
       if (!pushSection || !pushToggle) return;
+      if (!isIdentityActive()) {
+        pushSection.hidden = true;
+        pushToggle.disabled = true;
+        return;
+      }
       if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         pushSection.hidden = true;
         return;
@@ -1115,13 +1140,18 @@
 
       let subscription = await registration.pushManager.getSubscription().catch(function(){ return null; });
       function refreshButton() {
+        if (!isIdentityActive()) {
+          pushSection.hidden = true;
+          pushToggle.disabled = true;
+          return;
+        }
         if (Notification.permission === "denied") {
           pushToggle.textContent = "Értesítések tiltva";
           pushToggle.disabled = true;
           setPushStatus("A böngészőben le vannak tiltva az értesítések.", true);
           return;
         }
-        pushToggle.disabled = false;
+        pushToggle.disabled = !isIdentityActive();
         pushToggle.textContent = subscription ? "Értesítések kikapcsolása" : "Értesítések bekapcsolása";
         if (subscription) {
           setPushStatus("Push értesítések aktívak.");
@@ -1137,6 +1167,11 @@
       pushToggle.dataset.bound = "1";
 
       pushToggle.addEventListener("click", async function(){
+        if (!isIdentityActive()) {
+          setPushStatus("A push módosításához biztonságos kapcsolódás szükséges.", true);
+          refreshButton();
+          return;
+        }
         pushToggle.disabled = true;
         try {
           if (subscription) {
@@ -1275,7 +1310,7 @@
         } catch (e) {
           setStatus("A belépési kód létrehozása nem sikerült.", true);
         } finally {
-          generateCodeBtn.disabled = false;
+          generateCodeBtn.disabled = !isIdentityActive();
           generateCodeBtn.textContent = originalLabel;
         }
       });
@@ -1410,6 +1445,10 @@
       if (e && typeof e.preventDefault === "function") {
         e.preventDefault();
       }
+      if (!isIdentityActive()) {
+        setStatus("A mentéshez előbb biztonságosan kapcsolódj a fiókodhoz.", true);
+        return;
+      }
       const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim() : "";
       const recovery = recoveryDisplay ? recoveryDisplay.textContent.trim() : "";
       if (!pseudo || pseudo === "—" || !recovery || recovery === "—") {
@@ -1488,15 +1527,8 @@
             return;
           }
           invalidateProfileCache();
-          if (pseudoDisplay) {
-            pseudoDisplay.textContent = pseudo;
-          }
-          if (saveUsername) {
-            saveUsername.value = pseudo;
-          }
-        setStatus("Belépés sikeres.");
+          setStatus("Belépés sikeres.");
           if (restoreStatus) restoreStatus.textContent = "Belépés sikeres.";
-          emitIdentityReady(pseudo);
           fetchProfile().then(refreshPointsSection);
           const bridgeCompletionUrl = getBridgeCompletionUrl("restore");
           const returnUrl = getSafeReturnUrl();
@@ -1588,7 +1620,7 @@
           setStatus("Becenév mentése hiba.", true);
           if (nicknameStatus) nicknameStatus.textContent = "Hiba történt.";
         } finally {
-          saveNicknameBtn.disabled = false;
+          saveNicknameBtn.disabled = !isIdentityActive();
           if (saveNicknameBtn.textContent === "Mentés…") {
             saveNicknameBtn.textContent = originalLabel;
           }
@@ -1597,8 +1629,13 @@
     }
 
     if (vacationToggle) {
-      vacationToggle.disabled = false;
+      vacationToggle.disabled = !isIdentityActive();
       vacationToggle.addEventListener("click", async function(){
+        if (!isIdentityActive()) {
+          setStatus("A módosításhoz előbb biztonságosan kapcsolódj a fiókodhoz.", true);
+          vacationToggle.disabled = true;
+          return;
+        }
         const mode = vacationToggle.dataset.mode || "start";
         vacationToggle.disabled = true;
         try {
@@ -1633,7 +1670,7 @@
         } catch (e) {
           setStatus("Vakáció mód hiba. Próbáld újra.", true);
         } finally {
-          vacationToggle.disabled = false;
+          vacationToggle.disabled = !isIdentityActive();
         }
       });
     }
@@ -1672,8 +1709,10 @@
       fetchPointsHistory();
     });
 
-    initPush();
     fetchProfile()
+      .then(function(){
+        return isIdentityActive() ? initPush() : null;
+      })
       .then(function(){
         return maybeCompleteSelectionIntent();
       })

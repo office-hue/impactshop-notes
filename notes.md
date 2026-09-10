@@ -1,5 +1,15 @@
 ## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
 
+- Terra follow-up: runtime self-test permits an absent ads-watch
+  debug-rotation route only when `impactshop_ads_watch_debug_enabled()` is
+  false, but exact-checks it whenever registered. Profile UI pseudo mutations
+  (vacation, last-NGO reset, push and credential-save award) remain disabled
+  unless `identityState === 'active'`.
+- Initial/restore pseudo-cookie compensation restores the prior valid pseudo or
+  expires a newly created pseudo, safe-disabling on restoration header failure.
+  VB2026 valid service Bearer requests use the validated header pseudo as sole
+  principal; mixed cookie A/B and invalid-bearer fallback are denied.
+
 - A remediation kör lezárja a Sol `2e0aa501-788f-4e33-8183-30361081557f`
   és Terra blokkolók által jelzett ordering hibákat: friss owner-token nem
   kerül `$_COOKIE`-ba, ugyanazon kérésben `binding_pending` marad; restore nem

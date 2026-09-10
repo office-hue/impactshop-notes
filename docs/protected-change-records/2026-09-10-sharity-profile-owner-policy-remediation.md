@@ -9,7 +9,10 @@ Status: source-only checkpoint; staging schema/browser acceptance pending
 This bounded Luna remediation closes the Sol scan `2e0aa501-788f-4e33-8183-30361081557f`
 and Terra blockers for owner-grant lifecycle ordering, duplicate registry
 precedence, VB2026 policy modes, exact callback bastion checks and transactional
-grant storage. No remote, provider, database, OPcache or deployment authority
+grant storage. This follow-up also closes conditional debug-route admission,
+active-only profile UI mutation gates, cookie restoration compensation and
+VB2026 service-principal mismatch. No remote, provider, database, OPcache or
+deployment authority
 is included.
 
 ## Protected files touched
@@ -19,7 +22,9 @@ is included.
 - `wp-content/mu-plugins/impactshop-identity-panel.js`
 - `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
 - `docs/impactshop-guard-config.json`
+- `docs/impactshop-guard-config.sha256`
 - `docs/impactshop-guard-hashes.json`
+- `docs/impactshop-guard-hashes.sha256`
 - `docs/impactshop-protected-files.json`
 - `docs/bastion-guard-status.md`
 
@@ -44,10 +49,20 @@ is included.
   is required.
 - Binding-pending and unavailable responses expose no profile values; a
   revoked/invalid binding exposes only its pseudo ID and status.
+- The debug-rotation route is absent-safe only when its debug feature flag is
+  false; a registered route always requires exact method/callback identity.
+- Profile UI pseudo mutations are active-state-only, including vacation,
+  last-NGO reset, push subscription changes and credential-save point award.
+- Failed initial/restore owner-cookie issuance restores the prior valid pseudo
+  cookie or expires a new one; restoration header failure safe-disables.
+- A valid VB2026 service bearer selects its validated header pseudo as the sole
+  target; invalid/partial bearer headers never fall back to a browser cookie.
 
 ## Evidence
 
-- `php -l` for the three changed PHP MU modules: PASS.
+- `php -l` for the three changed PHP MU modules and two PHP behavior fixtures: PASS.
+- `php tests/impactshop-owner-policy-runtime.test.php`: PASS.
+- `php tests/impactshop-vb2026-principal-binding.test.php`: PASS.
 - `node --check wp-content/mu-plugins/impactshop-identity-panel.js`: PASS.
 - `python3 tests/impactshop-owner-policy-inventory.test.py`: PASS.
 - `python3 tests/impactshop-identity-profile-v2-static.test.py`: PASS.
@@ -58,7 +73,9 @@ is included.
 
 Residual prerequisite: staging must prove InnoDB engine/schema readback,
 two-request cookie activation, failure compensation, browser cache invalidation,
-native VB2026 Bearer/browser/pre-auth cases and IDOR denial before any live
+native VB2026 Bearer/browser/pre-auth cases including mixed-principal and invalid
+bearer denial, conditional debug-route registration, active-only UI behavior and
+IDOR denial before any live
 acceptance. No push, PR, merge or deploy occurred.
 
 <!-- BEGIN PROTECTED CHECKPOINT EVIDENCE -->

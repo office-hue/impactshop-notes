@@ -46,15 +46,36 @@ assert "'POST /impact/v1/vb2026/selection-intent' => ['policy' => 'pre_auth_inte
 assert "'POST /impact/v1/vb2026/selection-intent/complete' => ['policy' => 'owner_or_service_auth'" in POLICY
 assert "impactshop_owner_policy_callback_manifest" in POLICY
 assert "impactshop_owner_policy_callback_matches" in POLICY
+assert "impactshop_owner_policy_runtime_condition_enabled" in POLICY
+assert "impactshop_ads_watch_debug_enabled" in POLICY
 assert "foreach (impactshop_owner_policy_registry() as $pattern => $entry)" in POLICY
 
 assert "function impactshop_vb2026_service_request_authorized" in VB
 assert "hash_equals($expected, $provided)" in VB
 assert "function impactshop_vb2026_owner_or_service_authorized" in VB
 assert "impactshop_vb2026_browser_write_allowed" in VB
+assert "The validated service header is the sole target principal" in VB
+assert "if ($header !== '')" in VB
+assert "malformed/invalid bearer must not fall back to a browser cookie" in VB
+resolve_pseudo = section(VB, "function impactshop_vb2026_resolve_request_pseudo", "function impactshop_vb2026_browser_write_allowed")
+assert resolve_pseudo.index("if ($header !== '')") < resolve_pseudo.index("$pseudo = impactshop_vb2026_get_pseudo_id()")
+assert "if (!$allowServiceAuth || !preg_match" in resolve_pseudo
+assert "'pseudo_id' => $headerPseudo" in resolve_pseudo
+assert resolve_pseudo.count("'service_auth' => false") >= 2
+assert "function isIdentityActive" in JS
+assert 'if (!isIdentityActive())' in JS
+assert 'btn.disabled = !isIdentityActive();' in JS
+assert 'awardCredentialsSave' in JS and 'if (!isIdentityActive() || !pseudo' in JS
+assert 'vacationToggle.disabled = !isIdentityActive();' in JS
+assert 'pushSection.hidden = true;' in JS
+assert 'impactshop_identity_restore_or_expire_pseudo_cookie' in IDENTITY
+assert IDENTITY.count('impactshop_identity_restore_or_expire_pseudo_cookie') >= 3
 assert "document.cookie = \"impactshop_pseudo_id" not in JS
 assert "invalidateProfileCache" in JS
 assert "    refreshPseudo();" not in JS
+restore_handler = JS[JS.index('restBase + "/identity/restore"'):JS.index('const saveNicknameBtn')]
+assert "pseudoDisplay.textContent = pseudo" not in restore_handler
+assert "emitIdentityReady(pseudo)" not in restore_handler
 assert "['active', 'legacy_read_only', 'invalid_or_revoked']" in IDENTITY
 assert "['active', 'legacy_read_only']" in IDENTITY
 

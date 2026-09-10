@@ -2,6 +2,20 @@
 
 ## Checkpoint B — owner-grant and policy closure
 
+### Terra blocker follow-up — conditional debug and active UI principal
+
+The runtime registry treats `GET /impact/v1/ads-watch/debug-rotation` as
+conditional: an absent route is permitted only while
+`impactshop_ads_watch_debug_enabled()` is false; if registered, its exact
+method/callback tuple is still required. Profile UI pseudo mutations remain
+disabled unless `identityState === 'active'`, including vacation
+status/setup/finally, last-NGO reset, push refresh/click and credential-save
+award. Failed initial/restore owner-cookie issuance restores the prior valid
+pseudo cookie or expires a new one, with safe-disable on header restoration
+failure. VB2026 service requests bind the validated `x-sharity-pseudo-id` as
+the sole principal; mixed cookie A/B and invalid-bearer requests cannot fall
+back to the browser cookie.
+
 The same clean worktree/branch continued to checkpoint B. The grant table is
 an idempotent v2 `dbDelta` migration with an explicit InnoDB requirement and
 `pending|active` state,
@@ -35,8 +49,8 @@ checks compare scheme, host and effective port against `home_url`; forwarded
 host headers and cross-host Sharity aliases are not trusted.
 
 Checkpoint B remediation evidence: PHP lint, JS syntax, A static contracts,
-owner-policy inventory, Luna owner remediation contracts and `git diff --check`
-PASS. No provider, SSH, database execution,
+owner-policy inventory, conditional runtime and mixed-principal behavior fixtures,
+Luna owner remediation contracts and `git diff --check` PASS. No provider, SSH, database execution,
 OPcache, deployment, push, PR or merge was performed. Remaining gates are
 staging backup/schema/browser/API E2E and runtime/provider worker proof.
 

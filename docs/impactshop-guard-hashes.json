@@ -190,9 +190,9 @@
     "wp-content/mu-plugins/impactshop-ngo-card.js": "5c3cc8161f32766f579d7b06a56b9a214b05a99678a26327aec9b8b4d2bb34c1",
     "wp-content/mu-plugins/impactshop-go-bridge.php": "ff6e33eba855848aa0b50f25c66d4caafbe08f3884a43c5ed0958f5ec4b8b572",
     "wp-content/mu-plugins/impactshop-sum-pack.php": "6361a433bd74fe14ae8f67d2e49dea65ba9ebe529ae808fc31f7866d239a8085",
-    "wp-content/mu-plugins/impactshop-identity-panel.php": "bf87ee5c4d5469afe8d637579e784decda71b3b6553aab357ab01614f3abdebc",
-    "wp-content/mu-plugins/impactshop-identity-panel.js": "1f1638430ce4a622be3b5e15829fc5cfd7ae2ad2672a489a8022322512548932",
-    "wp-content/mu-plugins/000-impactshop-owner-policy.php": "e66f6fb629071d0c9280bbf3991b9bbbe71a3dffd8d165821ed62e0e64ff8920",
+    "wp-content/mu-plugins/impactshop-identity-panel.php": "54f21494d8e2e08afde2e7d02269002629a57b3ce21d922bf634d0285ae92e67",
+    "wp-content/mu-plugins/impactshop-identity-panel.js": "cda132eac43fa8fc4d4bfde2576aa683f0f234a674eea6e41161fef9225dbd6e",
+    "wp-content/mu-plugins/000-impactshop-owner-policy.php": "208daacdd60126dc0a7bf2354f075af8a08a3f68085f533e657e288ca8be112b",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php": "433f26fd21af69aa84c75535c5f5228af4ca661be39335e180bf616f872461e0",
     "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php": "b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9",
     "wp-content/mu-plugins/impactshop-vote-jysk.php": "40ef3e7243f232449da0f69f06a86aa6a325be3d7ecf49b2c35c518694304d9d",
@@ -319,7 +319,7 @@
     "tests/impactshop-guard-rollback-truth.test.sh": "c2c7f0d2009c34a632e59609db5f8bc713e40c350152a5ae2bcb4af39c659822",
     ".github/workflows/ci.yml": "4033833c90a90b54d32b5a80eb6232eafa32adb1793208eeb8bbce5d45deebe9",
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208",
-    "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "5553b4da45eb217a4922724852632d7a3a7f11fb4b08c1a4311d8dd9b31fbc6c"
+    "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "55198b339d2ababb0fb84cf46bf2c4dda28d43741fb0c0643b4bc34050e96d8c"
   },
-  "generated_at": "2026-09-10T18:55:00Z"
+  "generated_at": "2026-09-10T18:40:23Z"
 }

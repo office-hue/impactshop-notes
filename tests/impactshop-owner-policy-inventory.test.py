@@ -24,6 +24,11 @@ assert "owner_or_service_auth" in POLICY
 assert "pre_auth_intent" in POLICY
 assert "impactshop_owner_policy_callback_manifest" in POLICY
 assert "impactshop_owner_policy_callback_matches" in POLICY
+assert "impactshop_owner_policy_runtime_condition_enabled" in POLICY
+assert "impactshop_ads_watch_debug_enabled" in POLICY
+runtime_self_test = POLICY[POLICY.index("function impactshop_owner_policy_runtime_self_test"):]
+assert "if (!$condition_enabled && !isset($routes[$route]))" in runtime_self_test
+assert "impactshop_owner_policy_callback_matches" in runtime_self_test
 assert "registered_callbacks" in (ROOT / "scripts/impactshop-owner-policy-inventory.php").read_text()
 assert "callback_mismatches" in (ROOT / "scripts/impactshop-owner-policy-inventory.php").read_text()
 assert "POST /impact/v1/identity/restore' => ['policy' => 'access_code_exchange'" in POLICY
