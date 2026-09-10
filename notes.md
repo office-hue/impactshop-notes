@@ -1,3 +1,20 @@
+## 2026-09-10 — Sharity public portal redirects
+
+- Read-only diagnosis proved that both portal URLs are real WordPress pages but
+  an early protected guide handler sends them by `301` to the retired Jövőnk
+  Vize auction embed.
+- A dedicated clean `origin/main@67d066a` worktree now carries an additive
+  production-only MU-plugin with exact host/path/method boundaries and a fixed,
+  query-free `302` destination: `https://sharity.hu/`.
+- The existing `impactshop-ngo-guides.php` remains unchanged. The new module is
+  added to maximum bastion inventory/digest and a dedicated smoke group.
+- The mandatory Impact Challenge memory loader was degraded by shared
+  `better-sqlite3` ABI drift (cache ABI 127, active Node ABI 147); no shared
+  dependency repair was attempted and repo-local canonical docs supplied the
+  bounded fallback.
+- Source publication and live exact-file CAS release remain pending. No cron,
+  Cronos or watchdog is required for a stateless request redirect.
+
 ## 2026-09-09 — Sharity staging CAS admission control
 
 - Külön, `origin/main@073f285` alapú worktree-ben elkészült az egyszeri

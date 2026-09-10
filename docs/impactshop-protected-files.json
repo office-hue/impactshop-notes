@@ -39,6 +39,7 @@
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
+    "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php",
     "wp-content/mu-plugins/impactshop-ngo-selector.php",
     "wp-content/mu-plugins/impactshop-ngo-card.php",
     "wp-content/mu-plugins/impactshop-vote-purchase.php",
@@ -165,6 +166,15 @@
       "browser:mobile",
       "browser:chrome"
     ],
+    "public_portal_redirects": [
+      "route:adomany-automata-portal-1",
+      "route:adomany-automata-portal-2",
+      "destination:sharity-public-home",
+      "route:ngo-guides",
+      "route:jysk-riport",
+      "route:impact-challenge",
+      "route:profil"
+    ],
     "guide_runtime": [
       "route:jysk-riport",
       "route:ngo-guides",
@@ -215,6 +225,9 @@
     "community_route": [
       "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
       "scripts/hatas-korok-post-deploy-smoke.sh"
+    ],
+    "public_portal_redirects": [
+      "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php"
     ],
     "impact_shop_surface": [
       "wp-content/mu-plugins/impactshop-saved-offers.php",
