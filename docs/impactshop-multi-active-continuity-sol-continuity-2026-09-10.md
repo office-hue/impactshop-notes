@@ -54,5 +54,10 @@ The live workspace registration also created only the `impactshop-notes`
 common-Git-dir evidence and left both legacy workspace files at their original
 SHA-256 values. The DEV-v2 adapter fixture is PASS on the changed source.
 
-Next use `gpt-5.6-terra`, high, for independent QA of this remediation checkpoint.
-Provider, VPS and runtime activation remain separate Sol/high gates.
+Independent Terra/high QA is complete: `763a21a` is `source-reviewed`, with a
+complete six-script security diff review and 0 reportable findings. The source
+is ready only for a separately authorized bounded publication package; provider,
+VPS and runtime activation remain separate Sol/high gates.
+
+Next use `gpt-5.6-luna`, medium, only if the operator explicitly authorizes
+source publication. Otherwise no further action is required in this worktree.

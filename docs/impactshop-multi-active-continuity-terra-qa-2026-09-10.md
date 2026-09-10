@@ -78,3 +78,26 @@ byte-identical and separate repositories receive separate pointer, snapshot and
 lock locations. This does not retroactively change the QA verdict for reviewed
 checkpoint `4eced811`; the new remediation checkpoint requires fresh Terra/high
 QA before publication.
+
+## Independent QA — remediation checkpoint
+
+Reviewed checkpoint: `763a21a4e26225d327f88ba5b7f4209296655726`.
+
+Verdict: `source-reviewed`. The common-Git-dir namespace closes the observed
+cross-repository collision without writing or deleting either workspace-global
+legacy file. Same-repository legacy adoption is constrained by exact common Git
+directory membership; foreign or invalid legacy primaries are ignored. The
+continuity guard rejects namespace, generation, primary, branch, full-HEAD,
+clean-state and decision-evidence drift.
+
+The independent terminal Codex Security diff scan covered all six changed
+executable surfaces and returned 0 reportable findings with complete coverage.
+The Daybreak advisory was `not_granted`; this affects protected-output display,
+not the completed local scan. Prior hermetic multi-repository continuity,
+DEV-v2 adapter, post-commit continuity, full-validation, bastion/freeze/verify,
+protected-touch, strict-audit and diff-check PASS evidence is reused because the
+reviewed executable checkpoint and local environment identity match.
+
+This review authorizes no push, PR, merge, provider, VPS, runtime, cron or
+watchdog action. A bounded source-publication action remains a separate,
+explicitly authorized `gpt-5.6-luna`, medium package.

@@ -1200,3 +1200,12 @@ deployment state changed.
 - The two-repository hermetic contract PASS. No sibling worktree, shared
   dependency, push, PR, merge, provider, VPS, runtime, cron or watchdog changed.
 - Status: `source-candidate`; fresh Terra/high QA is required before publication.
+
+## 2026-09-10 — Multi-active worktree continuity Terra QA closure
+
+- Checkpoint `763a21a` is `source-reviewed`: the independent six-script security
+  diff review completed with 0 reportable findings and complete coverage.
+- Prior exact-tree tests and DEV-v2/bastion/continuity/audit evidence remain
+  valid; no provider, VPS, runtime, push, PR, merge, cron or watchdog changed.
+- A separately authorized Luna/medium source-publication package is the only
+  remaining source-delivery step. Runtime and production remain separate gates.
