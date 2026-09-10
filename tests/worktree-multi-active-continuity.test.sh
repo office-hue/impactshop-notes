@@ -80,11 +80,71 @@ PY
 write_evidence "$PRIMARY" feat/primary
 write_evidence "$SECONDARY" feat/secondary
 
+FOREIGN="$TMP_ROOT/ai-agent"
+mkdir -p "$FOREIGN/scripts"
+git -C "$FOREIGN" init -q
+git -C "$FOREIGN" config user.email test@example.invalid
+git -C "$FOREIGN" config user.name test
+cp "$ROOT/scripts/worktree-coordination-sync.sh" "$FOREIGN/scripts/"
+git -C "$FOREIGN" add .
+git -C "$FOREIGN" commit -qm base
+
+LEGACY_ACTIVE_FILE="$TMP_ROOT/.worktrees/ACTIVE_WORKTREE.md"
+LEGACY_SNAP_FILE="$TMP_ROOT/.worktrees/ACTIVE_WORKTREES.md"
+cat > "$LEGACY_ACTIVE_FILE" <<EOF
+# ACTIVE WORKTREE
+
+path: $FOREIGN
+repo: $FOREIGN
+branch: main
+EOF
+cat > "$LEGACY_SNAP_FILE" <<EOF
+# ACTIVE WORKTREES SNAPSHOT
+
+repo: $FOREIGN
+primary_path: $FOREIGN
+EOF
+legacy_active_before="$(shasum -a 256 "$LEGACY_ACTIVE_FILE" | awk '{print $1}')"
+legacy_snap_before="$(shasum -a 256 "$LEGACY_SNAP_FILE" | awk '{print $1}')"
+
+bash "$SECONDARY/scripts/worktree-coordination-sync.sh" --repo-root "$SECONDARY" --register "$SECONDARY" >/dev/null
+
+COMMON_GIT_DIR="$(git -C "$REPO" rev-parse --absolute-git-dir)"
+COORD_DIR="$COMMON_GIT_DIR/office-hue-worktree-coordination"
+ACTIVE_FILE="$COORD_DIR/ACTIVE_WORKTREE.md"
+SNAP_FILE="$COORD_DIR/ACTIVE_WORKTREES.md"
+mode_of() {
+  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+}
+rg -q --fixed-strings "path: $SECONDARY" "$ACTIVE_FILE"
+rg -q --fixed-strings 'coordination_namespace: common-git-dir-v1' "$ACTIVE_FILE"
+rg -q --fixed-strings 'migration_source: foreign-or-invalid-legacy-ignored' "$ACTIVE_FILE"
+[[ "$(mode_of "$COORD_DIR")" == "700" ]]
+[[ "$(mode_of "$ACTIVE_FILE")" == "600" ]]
+[[ "$(mode_of "$SNAP_FILE")" == "600" ]]
+
+mode_of() {
+  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+}
+
+[[ "$(mode_of "$COORD_DIR")" == "700" ]]
+[[ "$(mode_of "$ACTIVE_FILE")" == "600" ]]
+[[ "$(mode_of "$SNAP_FILE")" == "600" ]]
+[[ "$(shasum -a 256 "$LEGACY_ACTIVE_FILE" | awk '{print $1}')" == "$legacy_active_before" ]]
+[[ "$(shasum -a 256 "$LEGACY_SNAP_FILE" | awk '{print $1}')" == "$legacy_snap_before" ]]
+
+bash "$FOREIGN/scripts/worktree-coordination-sync.sh" --repo-root "$FOREIGN" --register "$FOREIGN" >/dev/null
+FOREIGN_COMMON_GIT_DIR="$(git -C "$FOREIGN" rev-parse --absolute-git-dir)"
+FOREIGN_COORD_DIR="$FOREIGN_COMMON_GIT_DIR/office-hue-worktree-coordination"
+[[ "$FOREIGN_COORD_DIR" != "$COORD_DIR" ]]
+rg -q --fixed-strings "path: $FOREIGN" "$FOREIGN_COORD_DIR/ACTIVE_WORKTREE.md"
+rg -q --fixed-strings 'migration_source: same-repo-legacy' "$FOREIGN_COORD_DIR/ACTIVE_WORKTREE.md"
+[[ "$(shasum -a 256 "$LEGACY_ACTIVE_FILE" | awk '{print $1}')" == "$legacy_active_before" ]]
+[[ "$(shasum -a 256 "$LEGACY_SNAP_FILE" | awk '{print $1}')" == "$legacy_snap_before" ]]
+
 bash "$PRIMARY/scripts/worktree-coordination-sync.sh" --repo-root "$PRIMARY" --primary "$PRIMARY" >/dev/null
 bash "$SECONDARY/scripts/worktree-coordination-sync.sh" --repo-root "$SECONDARY" --register "$SECONDARY" >/dev/null
 
-ACTIVE_FILE="$TMP_ROOT/.worktrees/ACTIVE_WORKTREE.md"
-SNAP_FILE="$TMP_ROOT/.worktrees/ACTIVE_WORKTREES.md"
 rg -q --fixed-strings "path: $PRIMARY" "$ACTIVE_FILE"
 rg -q --fixed-strings "primary_path: $PRIMARY" "$SNAP_FILE"
 rg -q --fixed-strings "## $SECONDARY" "$SNAP_FILE"
@@ -148,17 +208,14 @@ assert 'current-worktree-dirty' in p['blockingReasons'], p
 PY
 git -C "$SECONDARY" restore notes.md
 
-mkdir "$TMP_ROOT/.worktrees/.impactshop-notes-coordination.lock"
+mkdir "$COORD_DIR/.lock"
 set +e
 bash "$SECONDARY/scripts/worktree-coordination-sync.sh" --repo-root "$SECONDARY" --register "$SECONDARY" >/dev/null 2>&1
 lock_rc=$?
 set -e
 [[ "$lock_rc" -ne 0 ]]
-rmdir "$TMP_ROOT/.worktrees/.impactshop-notes-coordination.lock"
+rmdir "$COORD_DIR/.lock"
 
-FOREIGN="$TMP_ROOT/foreign"
-mkdir -p "$FOREIGN"
-git -C "$FOREIGN" init -q
 set +e
 bash "$SECONDARY/scripts/worktree-coordination-sync.sh" \
   --repo-root "$SECONDARY" --register "$FOREIGN" >/dev/null 2>&1

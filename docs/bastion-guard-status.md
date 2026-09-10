@@ -51,9 +51,12 @@ and `docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md`.
 
 Concurrent `impactshop-notes` worktrees now have a repo-local publication
 contract. Registration preserves an explicit primary, writes both coordination
-files under a lock with one generation ID, and binds each publisher to its
-exact full HEAD, clean state and task-start evidence. Non-primary publication
-is a visible degraded state; stale HEAD, dirty tree, generation drift, missing
+files under a repo-specific common-Git-dir lock with one generation ID, and
+binds each publisher to its exact full HEAD, clean state and task-start evidence.
+Legacy workspace files are read-only migration evidence; foreign-repo pointers
+are ignored without mutation. The private directory/files use `0700`/`0600`.
+Non-primary publication is a visible degraded state; stale HEAD, dirty tree,
+generation drift, missing
 evidence and lock contention fail closed. Worktree starters, guarded push and
 generated hooks no longer discover or call sibling `ai-agent` memory/dependency
 commands. The full control plane and its hermetic test are maximum-protected in
@@ -167,7 +170,7 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
-| 2026-09-10 | Multi-active worktree coordination and continuity control plane | Explicit primary preservation, lock + atomic generation-bound snapshots, exact publisher branch/full-HEAD/clean evidence, fail-closed stale/dirty/generation/lock checks and repo-local hook/start/push boundary. The touched control-plane scripts, CI contract and hermetic test are maximum protected. | `tests/worktree-multi-active-continuity.test.sh`, `docs/impactshop-multi-active-continuity-sol-plan-2026-09-10.md`, `docs/protected-change-records/2026-09-10-impactshop-multi-active-continuity.md` |
+| 2026-09-10 | Multi-active worktree coordination and continuity control plane | Explicit primary preservation, common-Git-dir namespace, `0700`/`0600` private evidence, read-only same-repo legacy migration, foreign legacy isolation, lock + atomic generation-bound snapshots, exact publisher branch/full-HEAD/clean evidence, fail-closed stale/dirty/generation/lock checks and repo-local hook/start/push boundary. The touched control-plane scripts, CI contract and two-repository hermetic test are maximum protected. | `tests/worktree-multi-active-continuity.test.sh`, `docs/impactshop-multi-active-continuity-sol-plan-2026-09-10.md`, `docs/protected-change-records/2026-09-10-impactshop-multi-active-continuity.md` |
 | 2026-09-10 | `impactshop-sharity-public-portal-redirects.php` | Additív production-only redirect a két exact adomány-automata útvonalról a Sharity public főoldalra. Fix query-mentes 302, host/path/method allowlist, admin/REST/AJAX kizárás; protected inventory, SHA-lock és külön smoke group. | `tests/sharity-public-portal-redirects.test.py`, `docs/sharity-public-portal-redirects-sol-plan-2026-09-10.md`, `docs/protected-change-records/2026-09-10-sharity-public-portal-redirects.md` |
 | 2026-09-09 | DEV-v2 Sharity staging CAS source profile | Egyetlen exact 13-path staging CAS csomagot protected source-ként ismer fel; schema-v2 record, production companion SHA-256, fix terv/approval, provider-denial és self-admission blokk kötelező. A control-plane fájlok a deploy-guard maximum-védett készletébe kerültek. | `tests/dev-delivery-v2-adapter.test.sh`, `docs/sharity-profile-deploy-control-source-bootstrap-sol-plan-2026-09-09.md`, `docs/protected-change-records/2026-09-09-sharity-profile-deploy-control-source-bootstrap.md` |
 | 2026-09-04 | DEV delivery v2 source admission | The maximum-bastion adapter now treats scripts, workflows, deploy/config/guard and protected-inventory paths as protected; executable provider-deploy/remote-write content is deploy. It preserves classifier decisions and accepts protected/deploy source review only after exact base/HEAD/tree-bound repo-local commit-lane plus protected-touch evidence. Provider deploy remains false. | `scripts/dev-delivery-v2-adapter.sh`, `scripts/dev-context-policy-guard.sh`, `tests/dev-delivery-v2-adapter.test.sh`, `tests/dev-context-policy-guard.test.sh`, `docs/protected-change-records/2026-09-04-dev-delivery-v2-admission-hardening.md` |

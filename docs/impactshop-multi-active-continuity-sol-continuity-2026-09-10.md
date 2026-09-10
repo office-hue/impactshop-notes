@@ -46,7 +46,13 @@ reportable source security issue in the exact code checkpoint, but live
 continuity remains blocked: an `ai-agent` worktree can occupy the same
 workspace-global coordination filename. No shared pointer was overwritten.
 
-Use `gpt-5.6-sol`, high, for a fresh architecture package that separates
-coordination snapshots by common Git directory and supplies a safe migration
-from the legacy workspace-global file names. Provider, VPS and runtime
-activation remain separate Sol/high gates.
+The Sol/high remediation now isolates pointer, snapshot and lock below the
+repository common Git directory. A valid same-repo legacy primary is adopted
+once; foreign/invalid legacy evidence is ignored, and all workspace-global
+legacy files remain unchanged. The hermetic two-repository contract is PASS.
+The live workspace registration also created only the `impactshop-notes`
+common-Git-dir evidence and left both legacy workspace files at their original
+SHA-256 values. The DEV-v2 adapter fixture is PASS on the changed source.
+
+Next use `gpt-5.6-terra`, high, for independent QA of this remediation checkpoint.
+Provider, VPS and runtime activation remain separate Sol/high gates.

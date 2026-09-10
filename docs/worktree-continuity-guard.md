@@ -13,8 +13,9 @@ Minimum contract:
 1. legyen jelen a `worktree-active.json` marker;
 2. legyen jelen a `worktree-task-start-decision.json` artifact;
 3. a marker es az artifact a jelenlegi branchre es worktree pathra mutasson;
-4. a workspace `.worktrees/ACTIVE_WORKTREE.md` es `.worktrees/ACTIVE_WORKTREES.md`
-   snapshotok azonos generaciot es konzisztens primary truthot hordozzanak;
+4. a common Git directory privat `office-hue-worktree-coordination` nevtereben
+   levo pointer es snapshot azonos generaciot, `common-git-dir-v1` namespace-et
+   es konzisztens primary truthot hordozzon;
 5. a jelenlegi worktree snapshotja exact branch/full-HEAD/clean truthot es
    decision evidence-et tartalmazzon;
 6. a continuity lane ne engedjen tovabb, ha a task-start decision eleve `blocked`.
@@ -49,7 +50,7 @@ Tipikus blokkolo okok:
 
 1. hianyzo marker vagy hianyzo decision artifact
 2. branch/path mismatch a markerben vagy az artifactban
-3. hianyzo decision evidence a workspace snapshotban
+3. hianyzo decision evidence a repo-szintu snapshotban
 4. `task-start-decision-blocked`
 5. stale vagy eltero full HEAD, dirty worktree
 6. hianyzo/eltero generation vagy primary pointer
@@ -81,5 +82,6 @@ publikacios continuity authority ebben a repoban.
 
 `bash tests/worktree-multi-active-continuity.test.sh` hermetikus tobb-worktree
 fixturaval ellenorzi a primary-megorzest, a non-primary atengedest, a stale HEAD,
-dirty tree, generation drift es lock contention blokkolasat, valamint a generalt
-hookok repo-hatarat.
+dirty tree, generation drift es lock contention blokkolasat, a generalt hookok
+repo-hatarat, valamint ket kulon repo nevter-szeparaciojat es a workspace-szintu
+legacy pointer byte-pontos megorzeset.

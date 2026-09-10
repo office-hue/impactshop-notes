@@ -1189,3 +1189,14 @@ deployment state changed.
 - Complete six-script security diff review `2dcbf725-2ab9-4fb0-9657-11ab5b62ef6e`
   found 0 reportable findings. Its scope is local source control-plane behavior;
   it grants no remote or runtime authority.
+
+## 2026-09-10 — Multi-active worktree continuity Sol namespace remediation
+
+- Pointer, snapshot and lock now live in the `impactshop-notes` common Git
+  directory, isolated from every sibling repository sharing the workspace.
+- Legacy workspace-global files are read-only migration evidence: a same-repo
+  primary may be adopted once; foreign or invalid evidence is ignored and left
+  byte-identical.
+- The two-repository hermetic contract PASS. No sibling worktree, shared
+  dependency, push, PR, merge, provider, VPS, runtime, cron or watchdog changed.
+- Status: `source-candidate`; fresh Terra/high QA is required before publication.

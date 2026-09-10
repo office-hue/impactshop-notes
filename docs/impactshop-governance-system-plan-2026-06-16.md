@@ -242,7 +242,11 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
 3. env/auth/runtime lane valtozasnal a `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md` is kotelezo continuity anchor.
 4. a runtime worktree-start lane-nel a marker + decision + generation-bound
    coordination snapshot paritast, valamint a publikalo worktree exact
-   full-HEAD/clean truthjat a local continuity guard kotelezoen ervenyesiti.
+   full-HEAD/clean truthjat a local continuity guard kotelezoen ervenyesiti;
+5. a coordination pointer, snapshot es lock kizarolag az adott repository common
+   Git directoryjanak privat nevtereben authoritative. A workspace-global regi
+   fajlok csak read-only, same-repo migracios forrasok, mas repository pointere
+   nem blokkolhatja es nem irhatja felul az `impactshop-notes` truthot.
 
 ## Decision Rules
 

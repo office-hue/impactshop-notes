@@ -30,6 +30,12 @@ silently stealing one shared active pointer and without crossing into a sibling
   valid nominated primary; primary transfer requires explicit `--primary`.
 - Active pointer and all-worktree snapshot are written under one lock, through
   temporary files, with a shared generation ID.
+- Pointer, snapshot and lock are isolated below this repository's common Git
+  directory. Legacy workspace-global evidence is read-only migration input and
+  is adopted only when its primary belongs to the same common Git directory.
+- A foreign or invalid legacy primary is ignored without mutation; the first
+  registered local worktree initializes the repository-specific authority.
+- The private coordination directory is `0700` and generated files are `0600`.
 - Push admission requires exact branch, full HEAD, zero dirty paths and current
   task-start decision evidence for the publishing worktree.
 - A valid non-primary worktree may continue with an explicit degraded warning;
@@ -43,17 +49,19 @@ silently stealing one shared active pointer and without crossing into a sibling
 
 ### Verification and rollback
 
-The hermetic test creates one repository plus two linked worktrees and verifies
-primary preservation, concurrent registration, non-primary degraded admission,
+The hermetic test creates two repositories plus two linked worktrees in the
+target repository and verifies namespace separation, byte-stable legacy
+evidence, safe same-repo migration, foreign-legacy rejection, primary
+preservation, concurrent registration, non-primary degraded admission,
 stale-HEAD/dirty/generation/lock denial and generated-hook repo isolation.
 Closure also requires shell syntax, protected-touch/commit-lane admission,
 DEV-v2 validation, DocSync continuity, strict audit, `git diff --check`, a clean
 tree and one checkpoint commit.
 
-Rollback is the exact revert of the checkpoint commit. The shared coordination
-snapshot is ephemeral evidence and can be regenerated from a chosen valid
-primary with `--primary`; no provider, VPS, database or product state requires
-rollback.
+Rollback is the exact revert of the checkpoint commit. The repo-specific
+coordination snapshot is ephemeral Git metadata and can be regenerated from a
+chosen valid primary with `--primary`; legacy workspace evidence remains
+unchanged, and no provider, VPS, database or product state requires rollback.
 
 ### Follow-up boundary
 

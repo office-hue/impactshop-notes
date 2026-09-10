@@ -45,8 +45,12 @@ fi
 
 PRIMARY_REPO_ROOT="$(cd "$COMMON_GIT_DIR/.." && pwd -P)"
 WORKSPACE_DIR="$(cd "$PRIMARY_REPO_ROOT/.." && pwd -P)"
-WT_BASE="$WORKSPACE_DIR/.worktrees"
-mkdir -p "$WT_BASE"
+LEGACY_WT_BASE="$WORKSPACE_DIR/.worktrees"
+LEGACY_ACTIVE_FILE="$LEGACY_WT_BASE/ACTIVE_WORKTREE.md"
+COORD_DIR="$COMMON_GIT_DIR/office-hue-worktree-coordination"
+umask 077
+mkdir -p "$COORD_DIR"
+chmod 700 "$COORD_DIR"
 
 if [[ -n "$REGISTER_WT" && -n "$PRIMARY_WT" ]]; then
   echo "ERROR: --register and --primary/--active are mutually exclusive" >&2
@@ -55,8 +59,9 @@ fi
 
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 GENERATION="${NOW}-$$"
-ACTIVE_FILE="$WT_BASE/ACTIVE_WORKTREE.md"
-SNAP_FILE="$WT_BASE/ACTIVE_WORKTREES.md"
+ACTIVE_FILE="$COORD_DIR/ACTIVE_WORKTREE.md"
+SNAP_FILE="$COORD_DIR/ACTIVE_WORKTREES.md"
+MIGRATION_SOURCE="namespaced"
 
 safe_git_text() {
   local cwd="$1"
@@ -95,6 +100,20 @@ if [[ -z "$REGISTER_WT" && -z "$PRIMARY_WT" ]]; then
   REGISTER_WT="$REPO_ROOT"
 fi
 
+LOCK_DIR="$COORD_DIR/.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo "ERROR: coordination sync already running: $LOCK_DIR" >&2
+  exit 1
+fi
+ACTIVE_TMP=""
+SNAP_TMP=""
+cleanup() {
+  [[ -z "$ACTIVE_TMP" ]] || rm -f "$ACTIVE_TMP"
+  [[ -z "$SNAP_TMP" ]] || rm -f "$SNAP_TMP"
+  rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+trap cleanup EXIT
+
 if [[ -n "$REGISTER_WT" ]]; then
   worktree_belongs_to_repo "$REGISTER_WT" || {
     echo "ERROR: register target is not an accessible worktree of this repo: $REGISTER_WT" >&2
@@ -106,28 +125,29 @@ if [[ -n "$REGISTER_WT" ]]; then
       echo "ERROR: existing primary snapshot is invalid; explicit --primary required" >&2
       exit 1
     fi
+  elif [[ -f "$LEGACY_ACTIVE_FILE" ]]; then
+    LEGACY_PRIMARY_WT="$(sed -n 's/^path: //p' "$LEGACY_ACTIVE_FILE" | head -1)"
+    if [[ -n "$LEGACY_PRIMARY_WT" ]] && worktree_belongs_to_repo "$LEGACY_PRIMARY_WT"; then
+      PRIMARY_WT="$LEGACY_PRIMARY_WT"
+      MIGRATION_SOURCE="same-repo-legacy"
+    else
+      PRIMARY_WT="$REGISTER_WT"
+      MIGRATION_SOURCE="foreign-or-invalid-legacy-ignored"
+    fi
   else
     PRIMARY_WT="$REGISTER_WT"
+    MIGRATION_SOURCE="none"
   fi
 else
   worktree_belongs_to_repo "$PRIMARY_WT" || {
     echo "ERROR: primary target is not an accessible worktree of this repo: $PRIMARY_WT" >&2
     exit 1
   }
+  MIGRATION_SOURCE="explicit-primary"
 fi
 
-LOCK_DIR="$WT_BASE/.impactshop-notes-coordination.lock"
-if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-  echo "ERROR: coordination sync already running: $LOCK_DIR" >&2
-  exit 1
-fi
-ACTIVE_TMP="$(mktemp "$WT_BASE/.ACTIVE_WORKTREE.md.XXXXXX")"
-SNAP_TMP="$(mktemp "$WT_BASE/.ACTIVE_WORKTREES.md.XXXXXX")"
-cleanup() {
-  rm -f "$ACTIVE_TMP" "$SNAP_TMP"
-  rmdir "$LOCK_DIR" 2>/dev/null || true
-}
-trap cleanup EXIT
+ACTIVE_TMP="$(mktemp "$COORD_DIR/.ACTIVE_WORKTREE.md.XXXXXX")"
+SNAP_TMP="$(mktemp "$COORD_DIR/.ACTIVE_WORKTREES.md.XXXXXX")"
 
 emit_task_start_evidence() {
   local cwd="$1"
@@ -230,6 +250,8 @@ cat > "$ACTIVE_TMP" <<EOF
 
 updated_utc: ${NOW}
 generation: ${GENERATION}
+coordination_namespace: common-git-dir-v1
+migration_source: ${MIGRATION_SOURCE}
 path: ${PRIMARY_WT}
 repo: ${PRIMARY_REPO_ROOT}
 branch: ${ACTIVE_BRANCH:-unknown}
@@ -250,6 +272,8 @@ done < <(git -C "$REPO_ROOT" worktree list --porcelain | awk '/^worktree /{print
   echo
   echo "updated_utc: $NOW"
   echo "generation: $GENERATION"
+  echo "coordination_namespace: common-git-dir-v1"
+  echo "migration_source: $MIGRATION_SOURCE"
   echo "repo: $PRIMARY_REPO_ROOT"
   echo "primary_path: $PRIMARY_WT"
   echo "count: ${#WT_PATHS[@]}"
@@ -302,6 +326,7 @@ done < <(git -C "$REPO_ROOT" worktree list --porcelain | awk '/^worktree /{print
 
 mv "$ACTIVE_TMP" "$ACTIVE_FILE"
 mv "$SNAP_TMP" "$SNAP_FILE"
+chmod 600 "$ACTIVE_FILE" "$SNAP_FILE"
 
 echo "[worktree-coordination-sync] wrote: $ACTIVE_FILE"
 echo "[worktree-coordination-sync] wrote: $SNAP_FILE"

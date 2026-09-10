@@ -7,6 +7,11 @@ continuity guards, guarded-push and hook installers, CI contract, protected
 inventory, hermetic test and bastion status. The change creates no provider,
 VPS, remote-write, deploy or runtime authority.
 
+The coordination authority is isolated under the repository common Git
+directory with private modes. Workspace-global legacy evidence is never written
+or deleted; only an accessible same-repo primary may be adopted during the first
+namespaced sync. Foreign or invalid legacy evidence is ignored.
+
 ## Rollback plan
 
 Revert the exact checkpoint commit, then regenerate the ephemeral coordination
@@ -17,7 +22,7 @@ or data rollback is required.
 
 - `deploy:guard-preflight`
 - `deploy:checksum-verify`
-- hermetic multi-worktree continuity contract
+- hermetic two-repository, multi-worktree continuity contract
 - protected-touch and commit-lane checks
 - DocSync/continuity and strict repository audit
 

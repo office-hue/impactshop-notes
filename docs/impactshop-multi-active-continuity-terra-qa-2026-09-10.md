@@ -68,3 +68,13 @@ Use `gpt-5.6-sol`, high, for a fresh architecture package that defines a
 per-common-Git-dir coordination namespace and a safe migration path from the
 legacy workspace-global files. Only after that package is independently QA
 approved can a bounded Luna source-publication step be considered.
+
+## Subsequent Sol remediation
+
+The follow-up Sol package implements the required per-common-Git-dir namespace,
+read-only same-repo legacy adoption and foreign/invalid legacy ignore path. Its
+two-repository hermetic contract proves that the legacy workspace files remain
+byte-identical and separate repositories receive separate pointer, snapshot and
+lock locations. This does not retroactively change the QA verdict for reviewed
+checkpoint `4eced811`; the new remediation checkpoint requires fresh Terra/high
+QA before publication.

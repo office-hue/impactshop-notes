@@ -7397,6 +7397,20 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - No push, PR, merge, provider, VPS, runtime, cron, watchdog or pointer rewrite
   occurred. Next gate is Sol/high namespace architecture and migration design.
 
+## 2026-09-10 — Multi-active worktree continuity Sol namespace remediation
+
+- The coordination pointer, snapshot and lock now live below the repository's
+  common Git directory with private `0700`/`0600` modes, so parallel repositories
+  cannot overwrite one another's continuity authority.
+- Workspace-global legacy files are read-only migration evidence. A valid
+  same-repo primary is adopted once; foreign or invalid legacy evidence is
+  ignored and remains byte-identical.
+- The two-repository hermetic contract and the DEV-v2 adapter fixture are PASS.
+  Live registration wrote only repo-specific Git metadata and preserved both
+  legacy workspace files at their original SHA-256 values.
+- No push, PR, merge, provider, VPS, runtime, cron or watchdog changed. Fresh
+  `gpt-5.6-terra`, high QA is required before source publication.
+
 ## 2026-09-10 — Sharity public portal redirects production closure
 
 - PR #192 delivered the additive exact-route plugin; PR #193 reconciled two

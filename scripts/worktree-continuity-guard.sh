@@ -56,11 +56,9 @@ COMMON_GIT_DIR="$(git rev-parse --git-common-dir 2>/dev/null || true)"
 if [[ -n "$COMMON_GIT_DIR" && "$COMMON_GIT_DIR" != /* ]]; then
   COMMON_GIT_DIR="$(cd "$REPO_ROOT/$COMMON_GIT_DIR" && pwd -P)"
 fi
-PRIMARY_REPO_ROOT="$(cd "$COMMON_GIT_DIR/.." && pwd -P)"
-WORKSPACE_DIR="$(cd "$PRIMARY_REPO_ROOT/.." && pwd -P)"
-WT_BASE="$WORKSPACE_DIR/.worktrees"
-ACTIVE_FILE="$WT_BASE/ACTIVE_WORKTREE.md"
-SNAP_FILE="$WT_BASE/ACTIVE_WORKTREES.md"
+COORD_DIR="$COMMON_GIT_DIR/office-hue-worktree-coordination"
+ACTIVE_FILE="$COORD_DIR/ACTIVE_WORKTREE.md"
+SNAP_FILE="$COORD_DIR/ACTIVE_WORKTREES.md"
 
 CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
 CURRENT_PATH="$REPO_ROOT"
@@ -190,11 +188,15 @@ active_head = field(active_text, "head")
 active_generation = field(active_text, "generation")
 snapshot_generation = field(snapshot_text, "generation")
 snapshot_primary = field(snapshot_text, "primary_path")
+active_namespace = field(active_text, "coordination_namespace")
+snapshot_namespace = field(snapshot_text, "coordination_namespace")
 
 if not active_generation or not snapshot_generation:
     blocking.append("coordination-generation-missing")
 elif active_generation != snapshot_generation:
     blocking.append("coordination-generation-mismatch")
+if active_namespace != "common-git-dir-v1" or snapshot_namespace != active_namespace:
+    blocking.append("coordination-namespace-mismatch")
 if not active_worktree or snapshot_primary != active_worktree:
     blocking.append("coordination-primary-mismatch")
 
@@ -352,7 +354,7 @@ else
   echo "[worktree-continuity-guard] marker: ${MARKER_FILE:-unavailable}"
   echo "[worktree-continuity-guard] artifact: ${ARTIFACT_FILE:-unavailable}"
   echo "[worktree-continuity-guard] active_snapshot: $ACTIVE_FILE"
-  echo "[worktree-continuity-guard] workspace_snapshot: $SNAP_FILE"
+  echo "[worktree-continuity-guard] coordination_snapshot: $SNAP_FILE"
   if ((${#BLOCKING_REASONS[@]})); then
     printf '[worktree-continuity-guard] blocking: %s\n' "${BLOCKING_REASONS[@]}"
   fi
