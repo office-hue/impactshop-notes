@@ -2,7 +2,7 @@
 
 Date: 2026-09-10
 
-Status: implementation-ready; source publication and live acceptance pending
+Status: production-accepted
 
 ## Approval and scope
 
@@ -69,6 +69,23 @@ Manual UI checklist:
 3. Confirm there is no intermediate auction/Jövőnk Vize screen.
 4. If a normal old tab still opens the auction embed, clear that site's cached
    redirect; the previous server response was a cacheable 301.
+
+## Production acceptance
+
+- Source: PR #192, merge `7e6f3c8094cc4060324b011e6e4f14d3323c6016`.
+- Guard-hash parity repair: PR #193, exact deployed main
+  `77e345ebfdcfb3331e443e3af31876b77699a123`.
+- Release ID: `sharity-portals-20260910-77e345eb`.
+- Deployed SHA-256:
+  `b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9`.
+- Remote release manifest reports `deployed` and mode `0444`; the MU-plugin
+  parent remains `0555`.
+- Both exact portal URLs return `302` with `Location: https://sharity.hu/` and
+  resolve to final `200`; a query input is discarded.
+- `/ngo-guides/`, `/jysk-riport/`, `/impact-challenge/` and `/profil/` each
+  remained `200` after release.
+- Rollback remains exact release-ID and deployed-SHA bound; no database or
+  shared runtime rollback is required.
 
 ## Protected source admission
 

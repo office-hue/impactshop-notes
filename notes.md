@@ -7168,3 +7168,16 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   workflow, remote-write script, protected WP, rename, missing/forged/partial
   record and wrong base/tree evidence. Memory guard-load remained unavailable
   because the canonical ai-agent worktree lacks its local `tsx` dependency.
+
+## 2026-09-10 — Sharity public portal redirects production closure
+
+- PR #192 delivered the additive exact-route plugin; PR #193 reconciled two
+  already merged guard-manifest digests found by the fail-closed dry-run.
+- Exact-main release `sharity-portals-20260910-77e345eb` deployed SHA
+  `b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9`
+  as `0444` under a `0555` parent.
+- Both requested URLs now return query-free `302` to `https://sharity.hu/`
+  and reach final `200`. NGO guides, JYSK report, Impact Challenge and profile
+  control routes remained `200`.
+- No database, cron, Cronos or watchdog change was needed. Rollback is bound to
+  the release ID and deployed SHA recorded above.

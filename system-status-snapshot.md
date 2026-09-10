@@ -9,8 +9,14 @@
   identity, points/votes/rewards and all data writers are outside scope.
 - Maximum bastion inventory/digest, protected record, focused runtime test,
   docsync and exact-file rollback contract are included in the same package.
-- Live state is unchanged until guarded source publication and exact-main CAS
-  release. No cron, Cronos or watchdog addition is applicable.
+- Source merged through PR #192; the guard-hash parity correction merged
+  through PR #193. Exact-main CAS release
+  `sharity-portals-20260910-77e345eb` is production-accepted.
+- Both portal routes return query-free `302` to `https://sharity.hu/`, which
+  resolves `200`. The deployed SHA is
+  `b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9`;
+  target mode is `0444`, parent mode `0555`. No cron, Cronos or watchdog was
+  added.
 
 ## 2026-09-09 — Sharity staging CAS source-admission bootstrap
 
