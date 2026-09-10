@@ -2,6 +2,51 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
+
+Remediation checkpoint: owner-grant issuance no longer mutates `$_COOKIE` in
+the same request, restore retains the current valid grant until a later
+two-cookie activation, and activation/renewal queue both cookie headers before
+transactional DB mutation. Exact InnoDB engine readback, replacement-cookie
+expiry compensation and safe-disable close the DB/browser ordering failure
+paths. The canonical owner-policy manifest now maps every registry route to
+method, effective policy, source and exact callback; runtime and token_get_all
+inventory checks fail closed on any duplicate, method or callback drift.
+VB2026 preserves pre-auth intent creation and the native exact Bearer service
+authorization for selection writes. The identity-panel JS is the sole client
+cache authority and invalidates profile state after restore. Guard hashes and
+the protected inventory include the changed VB2026 source. No provider,
+database, staging, production, push, PR, cron or watchdog operation occurred.
+
+The follow-up keeps the debug-rotation registry entry absent-safe only when
+`impactshop_ads_watch_debug_enabled()` is false, while registered debug routes
+still require exact method/callback identity. Profile UI pseudo mutations are
+active-state-only, failed pseudo-cookie binding restores/clears the correct
+cookie with safe-disable on header failure, and VB2026 service bearer requests
+use the validated header pseudo as their sole target principal.
+
+The protected profile lane now includes the first-loaded
+`000-impactshop-owner-policy.php` registry, the v2 pending/active grant
+lifecycle and the environment-aware action-bar profile target. The registry
+has exact owner-required, access-code-exchange, admin, service and explicit
+public/read-only classifications; token_get_all inventory and runtime
+route/method/callback self-test fail closed on drift. The protected inventory
+and guard hashes include the new module and updated identity/action-bar bytes.
+No provider, database, OPcache, staging, production, push, PR, cron or
+watchdog operation was performed.
+
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint A
+
+The existing maximum-protected identity and AdSense sources now carry the
+bounded profile-summary contract: additive `votes_available`/
+`identity_state`, current-cookie SELECT-only vote read, fail-closed pseudo
+bootstrap, shared `/profil` cache/privacy classifier and producer-level
+AdSense/Site Kit/Elementor suppression. The focused static contract, PHP/JS
+syntax and diff checks pass. No owner-policy registry migration, provider,
+staging, production, schema execution, cron or watchdog authority was added.
+See `docs/protected-change-records/2026-09-10-sharity-profile-summary-checkpoint-a.md`
+and `docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md`.
+
 ## 2026-09-10 — Sharity public portal redirects
 
 The two retired donation-portal routes receive a new additive, production-only

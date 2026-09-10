@@ -1,3 +1,80 @@
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
+
+- Terra follow-up: runtime self-test permits an absent ads-watch
+  debug-rotation route only when `impactshop_ads_watch_debug_enabled()` is
+  false, but exact-checks it whenever registered. Profile UI pseudo mutations
+  (vacation, last-NGO reset, push and credential-save award) remain disabled
+  unless `identityState === 'active'`.
+- Initial/restore pseudo-cookie compensation restores the prior valid pseudo or
+  expires a newly created pseudo, safe-disabling on restoration header failure.
+  VB2026 valid service Bearer requests use the validated header pseudo as sole
+  principal; mixed cookie A/B and invalid-bearer fallback are denied.
+- The VB2026 `my-ngo-selection` GET now shares the explicit
+  `owner_or_service_auth` central mode, preserving bearer-only service reads
+  and browser-owner reads without invalid-bearer fallback.
+
+- A remediation kör lezárja a Sol `2e0aa501-788f-4e33-8183-30361081557f`
+  és Terra blokkolók által jelzett ordering hibákat: friss owner-token nem
+  kerül `$_COOKIE`-ba, ugyanazon kérésben `binding_pending` marad; restore nem
+  revoke-olja előre a jelenlegi valid grantet, hanem `supersedes_grant_hash`
+  pending replacementet készít.
+- Aktiválás és stale renewal előtt mindkét cookie header queue/ellenőrzésre
+  kerül; InnoDB readback, lockolt pending/superseded sorok, közös pontos
+  365-napos expiry és transaction/readback/commit kompenzáció védi a DB-cookie
+  invariánsokat. Hiba esetén replacement cookie expire + safe-disable történik.
+- A registryben az identity total és NGO selector get egyszer, explicit
+  `owner_required`; VB2026 módok: pre-auth selection-intent, illetve
+  owner-or-existing-Bearer service select/complete. A canonical callback
+  manifest minden route method/policy/source/callback tuple-ját runtime is
+  exact módon ellenőrzi. A JS restore eltávolította a `document.cookie` rewrite-ot
+  és invalidálja a kétperces profile cache-t.
+- A statikus inventory most a tényleges route-callback párokat is összeveti a
+  manifesttel; külön tamper fixture bizonyítja a callback-drift és a duplikált
+  besorolás fail-closed blokkolását. Pending/unavailable állapot nem ad vissza
+  profilértéket, invalid/revoked csak pseudo ID-t.
+- Célzott lint/syntax/static/inventory és diff-check PASS; staging InnoDB,
+  két-request browser activation, failure compensation, VB2026 native
+  service/browser/pre-auth, IDOR és live acceptance továbbra is előfeltétel.
+
+- A Luna B checkpoint a profile summary A fölött lezárja az owner-grant v2
+  életciklust: pending/active, 10 perces aktiválási ablak, egyetlen UTC óra,
+  tranzakciós supersedes/revoke + readback, 365 napos coupled renewal és
+  fail-closed cookie/DB kompenzáció. Token csak `random_bytes(32)` után HMAC
+  hashként marad a szerveren.
+- A `000-impactshop-owner-policy.php` first-loaded MU modul központi,
+  gépi registryje a tényleges pseudo-backed mutátorokat és privát olvasásokat
+  owner granthez köti. Restore külön `access_code_exchange`: exact-origin,
+  nonce, callback-saját pseudo+kód proof, owner/grant body tiltás.
+- A token_get_all inventory a védett MU route tuple-kat a registryvel két
+  irányban, pontosan egyezteti; runtime self-test route/method/callback/policy
+  tuple-t ellenőriz és safe-disable esetén nem enged mutációt. A service,
+  webhook, admin és public/read-only felületek explicit kivételek.
+- Az action-bar fiók-linkje environment-aware `/profil/#impactshop-account-top`;
+  a régi `#impactshop-account` hash-resolver megmaradt. Exact-origin nem bízik
+  forwarded hostban; `sharity.hu` csak link-only marad.
+- B célzott lint/static/inventory és `git diff --check` PASS. Nincs push, PR,
+  merge, provider/runtime, DB migration execution, OPcache, cron vagy watchdog.
+
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint A
+
+- A teljes és kompakt profil most explicit becenevet vagy `Nincs becenév`
+  fallbacket, pseudo ID-t, pont/szint összefoglalót és elkölthető szavazat
+  állapotot jelenít meg. A profil REST válasza additívan tartalmazza a
+  `votes_available` és `identity_state` mezőket.
+- Az egyenleg kizárólag a jelenlegi pseudo cookie-hoz tartozó
+  `impactshop_ads_user_votes.available_votes` SELECT eredménye; hiányzó,
+  hibás vagy negatív érték 0, más pseudo nem kérdezhető le és sor nem készül.
+- A `/profil` teljes útvonalcsaládja private/no-store/no-cache + `Vary: Cookie`
+  védelmet kapott. A repo AdSense head, ismert Site Kit AdSense ágak és az exact
+  Elementor AdSense widgetek ezen a route-családon kikapcsolnak; kimeneti HTML
+  regex nincs.
+- A sikertelen grant- vagy pseudo-cookie kiadás nem jelenít meg új pseudo ID-t;
+  az állapot `unavailable`, a módosító UI fail-closed. A meglévő owner-grant
+  jogosultsági modellhez és a többi pseudo-mutátor központi registryjéhez ez a
+  checkpoint nem nyúlt.
+- Célzott static/lint/syntax tesztek és `git diff --check` PASS. Nincs push,
+  PR, merge, staging, production, adatbázis-migráció vagy provider-művelet.
+
 ## 2026-09-10 — Sharity NGO preference CI publication correction
 
 - A current-main reconciliation után a required CI hamisan blokkolt, mert a teljes

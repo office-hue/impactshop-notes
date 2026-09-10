@@ -35,6 +35,8 @@
     "wp-content/mu-plugins/impactshop-sum-pack.php",
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
+    "wp-content/mu-plugins/000-impactshop-owner-policy.php",
+    "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
     "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php",
     "wp-content/mu-plugins/impactshop-vote-jysk.php",
@@ -161,7 +163,7 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json"
   ],
   "hashes": {
-    "docs/impactshop-guard-config.json": "b588ba97aaee0ff50e18895dae073869064bd62dab6e64e360fe8692780587e6",
+    "docs/impactshop-guard-config.json": "438ae88072027300af4d6482b814bfe2dc4be02159c6d1be4aaeeceb28f96a1b",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "845d284f8869eb18b131de935e21a27702f8cf324299d519004dc1090f44c67a",
@@ -179,7 +181,7 @@
     "wp-content/mu-plugins/impactshop-cj.php": "fd44148a2c1c51320566b18dfdd3822e7a879337ff3e2e5b0413466c931382f7",
     "wp-content/mu-plugins/impactshop-auto-banner.php": "1032a0d3846fbee8b91d15f54dd4db6b938b5d50708f8fb190a3ee1bc7fd2a60",
     "wp-content/mu-plugins/impactshop-auto-banner-sync.php": "95a197f439544b273232327fcf28d84b8a481bce619409cb51203dade4d7cb7a",
-    "wp-content/mu-plugins/impactshop-adsense-head.php": "2f8b2d38afc5f5027b2c24961c1c75a0d2ce1f781927f47d66f44f8e10660367",
+    "wp-content/mu-plugins/impactshop-adsense-head.php": "dd626269495a0f9e98ac6a99fe973162d40eada58d4905029be3ad63163b4b34",
     "wp-content/mu-plugins/impactshop-netflix-shortcodes.php": "04117bac42c29c8b46fff1021a81c989e7b09e69883fd5f110629acfad3d791e",
     "wp-content/mu-plugins/impactshop-rest-totals.php": "e1135ecdd0bfd6ef6ab18944aa4b2ce47b099a9c4af89b2b9fe669d87ae65a21",
     "wp-content/mu-plugins/impactshop-rest-coupons.php": "d7a8ae294c9f6530fa7fae77c4ae1ce6c22154b582a1cb64d23a12181170b63f",
@@ -188,8 +190,9 @@
     "wp-content/mu-plugins/impactshop-ngo-card.js": "5c3cc8161f32766f579d7b06a56b9a214b05a99678a26327aec9b8b4d2bb34c1",
     "wp-content/mu-plugins/impactshop-go-bridge.php": "ff6e33eba855848aa0b50f25c66d4caafbe08f3884a43c5ed0958f5ec4b8b572",
     "wp-content/mu-plugins/impactshop-sum-pack.php": "6361a433bd74fe14ae8f67d2e49dea65ba9ebe529ae808fc31f7866d239a8085",
-    "wp-content/mu-plugins/impactshop-identity-panel.php": "339b570ee4c4b03a4f0556f194d6addb77cbb8ea4bb5f0c37e0dd3bb8f208be9",
-    "wp-content/mu-plugins/impactshop-identity-panel.js": "dd3ffa085194f3a6e1646bfe7c6e685beeb714f376eb56b4a80edf88e87856df",
+    "wp-content/mu-plugins/impactshop-identity-panel.php": "54f21494d8e2e08afde2e7d02269002629a57b3ce21d922bf634d0285ae92e67",
+    "wp-content/mu-plugins/impactshop-identity-panel.js": "cda132eac43fa8fc4d4bfde2576aa683f0f234a674eea6e41161fef9225dbd6e",
+    "wp-content/mu-plugins/000-impactshop-owner-policy.php": "aa9abb90b26e2eb2616346a7dbb37357b5abb3301b16200ef740ad755139d7d6",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php": "433f26fd21af69aa84c75535c5f5228af4ca661be39335e180bf616f872461e0",
     "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php": "b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9",
     "wp-content/mu-plugins/impactshop-vote-jysk.php": "40ef3e7243f232449da0f69f06a86aa6a325be3d7ecf49b2c35c518694304d9d",
@@ -234,7 +237,7 @@
     "bin/impactshop-guard-deploy.sh": "ec7972f696e1a411550c92bd29b638c1e77d51b1b4dc93f586c23e2a373be194",
     "bin/impactshop-guard-preflight.sh": "360abe38eab321ab9ad72759397c3ec470d8fc39a630fe5e60602485a39bc17e",
     "docs/bastion-protection-extension-plan.md": "c138cf6f1a18fcb8f36c666fd554bc3a1cee9cb3de9c340eecadf30bc2309361",
-    "docs/impactshop-guard-config.sha256": "8ead78b694bc72556333d60af9236f09121ef7c3db9ef8f65ef2c2e0c84be62c",
+    "docs/impactshop-guard-config.sha256": "711f8dd5e82ec976a48fa7be12c600853c283c4633679049901974ea76eb7f69",
     "wp-content/mu-plugins/impact-arukereso-guard.php": "6707993fde9f3a1c465289ae010c7447edf22010f07ccf802151ee76a7a4df9c",
     "wp-content/mu-plugins/impact-combat-pack.php": "50a1a6b9e22b3fd17035406d8ede87553d206c29252f8dccb63fd5ac1b4a7868",
     "wp-content/mu-plugins/impactshop-ngo-guides/assets/access-control-matrix.md": "08a4d4a5fafc20dd536a6e3925b6bc56a85e941ec6e2070b2391bb9c9a427c0f",
@@ -306,7 +309,7 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/rolunk.html": "9faf4ba7e37216310644703a3dd47b06095567757bd913f6d58812abfbd3dc1a",
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html": "10e152495dcae6fbdf1d67d41407d7e34e034bca99fb95472877c35350b6d67f",
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json": "9b916cecc57809c3954a669441f9a0565486aedd8bb42b09fa9d90e77cda4bbd",
-    "wp-content/mu-plugins/impactshop-action-bar.php": "4fdb8cf8ff8c62eb97d429af7e01d1e012586c8f3f41400bf699f5bf222ef40b",
+    "wp-content/mu-plugins/impactshop-action-bar.php": "b9fdb6227bdda7fa951c0026da10c7e0abca867d72268a5be9739b476038d442",
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php": "6b158e29ba3c46be171b81610c2965b3b0371695249b1dbd1d5e66a87c485d5d",
     "bin/deploy-wpcontent-map.sh": "7349de78c2b00e269565e1b6eaf05d1a64931d14c32f94f35e669d2f2efc5499",
     "bin/impactshop-guard-rollback.sh": "cb67319735d171ddab454a3c023d5c6799efab006d38809d9ff2374e8ec69836",
@@ -314,8 +317,9 @@
     "tests/impactshop-exact-release-remote.test.sh": "ca0c5b0ec0353839574ff5c943401d2ec9f98a907be98dd0dcc83dcd45dfa582",
     "tests/deploy-wpcontent-map-exact-file.test.sh": "cb92d0ce33ad05235cc8a7ac2612c71cdc94618cc4daef49a2dfcd924560178f",
     "tests/impactshop-guard-rollback-truth.test.sh": "c2c7f0d2009c34a632e59609db5f8bc713e40c350152a5ae2bcb4af39c659822",
-    ".github/workflows/ci.yml": "2865b8ea13a0eebbfb006a3a4db1fb31cd28bc515054f4891db5791395037c94",
-    "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208"
+    ".github/workflows/ci.yml": "4033833c90a90b54d32b5a80eb6232eafa32adb1793208eeb8bbce5d45deebe9",
+    "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208",
+    "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "55198b339d2ababb0fb84cf46bf2c4dda28d43741fb0c0643b4bc34050e96d8c"
   },
-  "generated_at": "2026-09-10T07:15:32Z"
+  "generated_at": "2026-09-10T18:40:23Z"
 }

@@ -1,3 +1,48 @@
+## 2026-09-10 — Sharity profile summary closure — checkpoint B
+## 2026-09-10 — Sharity profile owner-policy remediation — source-only
+
+- The Luna remediation closes same-request pending activation, restore
+  supersession ordering, cookie/header-before-commit renewal/activation,
+  duplicate registry precedence and exact route/method/policy/source/callback
+  runtime checks. VB2026 keeps pre-auth intent creation and native Bearer
+  service authorization; grant mutation requires InnoDB engine readback.
+- Focused lint/static/inventory/JS checks and `git diff --check` PASS. Staging
+  schema/browser/E2E, live DB, provider, push, PR, merge and deploy remain out
+  of scope.
+- Terra follow-up closes conditional debug-route admission, active-only profile
+  UI pseudo mutation guards, pseudo-cookie restoration/expiry compensation and
+  VB2026 mixed-principal Bearer/cookie fallback. Targeted tests remain source
+  evidence only; live browser/DB acceptance is still pending.
+- The `my-ngo-selection` GET central policy now explicitly admits the native
+  owner-or-service callback, with bearer-only, browser-owner and invalid-bearer
+  regression evidence.
+
+- A profil summary A fölött a v2 owner-grant lifecycle és a first-loaded,
+  gépi owner-policy registry forrásban elkészült. A pending grant 10 perces,
+  a következő mindkét cookie-s GET aktiválja; active renewal a két cookie-t és
+  DB expiry-t együtt 365 napra újítja. Transaction/readback/cookie-compensation
+  hiba fail-closed, safe-disable további védelmi réteg.
+- A route inventory token_get_all alapú és kétirányú exact registry/source
+  ellenőrzésű; runtime route/method/callback/policy self-test van. A restore
+  külön access-code exchange (exact-origin + nonce + callback pseudo/kód proof),
+  nem owner_required. Az action-bar account target canonical `/profil` anchor.
+- Forrásellenőrzések PASS; staging backup/schema/browser/API E2E, provider
+  worker-inventory és production acceptance még nincs végrehajtva. Nincs push,
+  PR, merge, DB activation, provider/runtime, OPcache, cron vagy watchdog.
+
+## 2026-09-10 — Sharity profile summary closure — checkpoint A
+
+- A dedikált `feat/sharity-profile-summary-live-closure-luna-20260910` branch
+  az `origin/main@d39349a3` alapból source-only checkpoint A-t készít: full/compact
+  profil summary, additive profile state/vote API, canonical account anchor,
+  `/profil` cache/privacy boundary és producer-szintű ad suppression.
+- A vote balance SELECT-only és current-cookie scoped; invalid/negative/missing
+  érték 0. Pseudo/grant/cookie hiba esetén nincs megjelenített új pseudo, és a
+  módosító UI `unavailable`/read-only módba kerül.
+- Targeted PHP lint, JS syntax, static contract és diff-check PASS. A teljes
+  owner-policy registry, v2 pending-grant migráció, live DB/browser E2E,
+  staging/production és consent CMP továbbra is későbbi kapu.
+
 ## 2026-09-10 — Sharity public portal redirects source package
 
 - Dedicated worktree/branch: `impactshop-notes-feat-redirect-donation-portals-20260910` /

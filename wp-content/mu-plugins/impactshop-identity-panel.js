@@ -11,6 +11,9 @@
     const pushToggle = root.querySelector("[data-role=push-toggle]");
     const pushStatus = root.querySelector("[data-role=push-status]");
     const pseudoDisplay = root.querySelector("[data-role=pseudo-display]");
+    const nicknameDisplays = root.querySelectorAll("[data-role=nickname-display]");
+    const votesAvailableDisplay = root.querySelector("[data-role=votes-available]");
+    const votesStateDisplay = root.querySelector("[data-role=votes-state]");
     const recoveryDisplay = root.querySelector("[data-role=recovery-display]");
     const nicknameInput = root.querySelector("[data-role=nickname-input]");
     const nicknameStatus = root.querySelector("[data-role=nickname-status]");
@@ -52,6 +55,7 @@
     const sharedState = window.__impactshopIdentityState || (window.__impactshopIdentityState = {});
     let lastPointsTotal = 0;
     let legacyPosition = null;
+    let identityState = "unavailable";
     const pointsBase = restBase
       ? restBase.replace(/\/impact\/v1\/?$/, "") + "/sharity/v1"
       : "/wp-json/sharity/v1";
@@ -245,6 +249,63 @@
     function formatPoints(value) {
       const num = typeof value === "number" ? value : Number(value || 0);
       return num.toLocaleString("hu-HU") + " pont";
+    }
+
+    function renderNickname(nickname) {
+      const label = nickname ? String(nickname) : "Nincs becenév";
+      nicknameDisplays.forEach(function(display){
+        display.textContent = label;
+      });
+    }
+
+    function renderIdentityState(data) {
+      const allowed = ["binding_pending", "active", "legacy_read_only", "invalid_or_revoked", "unavailable"];
+      identityState = data && allowed.indexOf(String(data.identity_state || "")) !== -1
+        ? String(data.identity_state)
+        : "unavailable";
+      if (votesAvailableDisplay) {
+        if (identityState === "active" && data && Number.isFinite(Number(data.votes_available))) {
+          const votes = Math.max(0, Math.round(Number(data.votes_available)));
+          votesAvailableDisplay.textContent = votes.toLocaleString("hu-HU");
+        } else if (identityState === "legacy_read_only") {
+          votesAvailableDisplay.textContent = "Belépés szükséges";
+        } else if (identityState === "invalid_or_revoked") {
+          votesAvailableDisplay.textContent = "Kapcsolat lejárt";
+        } else if (identityState === "binding_pending") {
+          votesAvailableDisplay.textContent = "Kapcsolás folyamatban…";
+        } else {
+          votesAvailableDisplay.textContent = "Átmenetileg nem elérhető";
+        }
+      }
+      if (votesStateDisplay) {
+        const states = {
+          active: "A jelenlegi, elkölthető egyenleged.",
+          legacy_read_only: "A szavazategyenleghez lépj be a meglévő fiókodba.",
+          invalid_or_revoked: "A biztonságos kapcsolat lejárt. Újbóli belépés szükséges.",
+          binding_pending: "A biztonságos eszközkapcsolás még folyamatban van.",
+          unavailable: "A profiladatok most nem érhetők el. Próbáld újra később."
+        };
+        votesStateDisplay.textContent = states[identityState] || states.unavailable;
+      }
+      const mutationAllowed = identityState === "active";
+      [
+        root.querySelector("[data-role=nickname-input]"),
+        root.querySelector("[data-role=save-nickname]"),
+        root.querySelector("[data-role=generate-code]"),
+        root.querySelector("[data-role=vacation-toggle]")
+      ].forEach(function(control){
+        if (control) control.disabled = !mutationAllowed;
+      });
+      if (pushToggle) {
+        pushToggle.disabled = !mutationAllowed;
+      }
+      if (!mutationAllowed && pushSection) {
+        pushSection.hidden = true;
+      }
+    }
+
+    function isIdentityActive() {
+      return identityState === "active";
     }
 
     function formatShortDate(value) {
@@ -526,7 +587,12 @@
         const btn = document.createElement("button");
         btn.type = "button";
         btn.textContent = "Másikat választok";
+        btn.disabled = !isIdentityActive();
         btn.addEventListener("click", async function(){
+          if (!isIdentityActive()) {
+            setStatus("A módosításhoz előbb biztonságosan kapcsolódj a fiókodhoz.", true);
+            return;
+          }
           await fetch(pointsBase + "/pseudo/last-ngo", {
             method: "POST",
             credentials: "include",
@@ -544,13 +610,18 @@
 
     async function fetchVacationStatus() {
       if (!vacationStatus || !vacationToggle) return;
+      if (!isIdentityActive()) {
+        vacationToggle.disabled = true;
+        vacationStatus.textContent = "A vakáció módosításához biztonságos kapcsolódás szükséges.";
+        return;
+      }
       try {
         const res = await fetch(pointsBase + "/pseudo/vacation?ts=" + Date.now(), {
           credentials: "include",
           cache: "no-store"
         });
         if (!res.ok) {
-          vacationToggle.disabled = false;
+          vacationToggle.disabled = !isIdentityActive();
           return;
         }
         const data = await res.json();
@@ -563,9 +634,9 @@
           vacationToggle.textContent = "Bekapcsolás";
           vacationToggle.dataset.mode = "start";
         }
-        vacationToggle.disabled = false;
+        vacationToggle.disabled = !isIdentityActive();
       } catch (e) {
-        vacationToggle.disabled = false;
+        vacationToggle.disabled = !isIdentityActive();
       }
     }
 
@@ -726,6 +797,11 @@
     }
 
     async function refreshPointsSection() {
+      if (["binding_pending", "invalid_or_revoked", "unavailable"].indexOf(identityState) !== -1) {
+        if (pointsSection) pointsSection.hidden = true;
+        if (pointsCompact) pointsCompact.hidden = true;
+        return;
+      }
       await Promise.all([
         fetchPointsSummary(),
         fetchPointsHistory(),
@@ -792,7 +868,7 @@
     }
 
     function awardCredentialsSave(pseudo) {
-      if (!pseudo || pseudo === "—") return;
+      if (!isIdentityActive() || !pseudo || pseudo === "—") return;
       const payload = {
         points: 10,
         type: "profile_complete",
@@ -819,6 +895,11 @@
       return sharedState.profileCache;
     }
 
+    function invalidateProfileCache() {
+      sharedState.profileCache = null;
+      sharedState.profileAt = 0;
+    }
+
     function renderGreeting(nickname) {
       if (!greetingEl) return;
       if (nickname) {
@@ -829,11 +910,19 @@
     }
 
     function applyProfileData(data) {
-      if (!data || !data.pseudo_id) {
+      if (!data) {
         setStatus("Nem sikerült azonosítót kérni. Próbáld újra.", true);
         return;
       }
       const pseudo = String(data.pseudo_id || "");
+      renderIdentityState(data);
+      renderNickname(data.nickname || "");
+      if (!pseudo) {
+        if (pseudoDisplay) pseudoDisplay.textContent = "—";
+        if (saveUsername) saveUsername.value = "";
+        setStatus("A profil most nem érhető el. Próbáld újra később.", true);
+        return;
+      }
       if (pseudo && sharedState.lastPseudo && sharedState.lastPseudo !== pseudo) {
         sharedState.pointsCache = null;
         window.__sharityPointsCache = null;
@@ -1016,6 +1105,11 @@
 
     async function initPush() {
       if (!pushSection || !pushToggle) return;
+      if (!isIdentityActive()) {
+        pushSection.hidden = true;
+        pushToggle.disabled = true;
+        return;
+      }
       if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         pushSection.hidden = true;
         return;
@@ -1046,13 +1140,18 @@
 
       let subscription = await registration.pushManager.getSubscription().catch(function(){ return null; });
       function refreshButton() {
+        if (!isIdentityActive()) {
+          pushSection.hidden = true;
+          pushToggle.disabled = true;
+          return;
+        }
         if (Notification.permission === "denied") {
           pushToggle.textContent = "Értesítések tiltva";
           pushToggle.disabled = true;
           setPushStatus("A böngészőben le vannak tiltva az értesítések.", true);
           return;
         }
-        pushToggle.disabled = false;
+        pushToggle.disabled = !isIdentityActive();
         pushToggle.textContent = subscription ? "Értesítések kikapcsolása" : "Értesítések bekapcsolása";
         if (subscription) {
           setPushStatus("Push értesítések aktívak.");
@@ -1068,6 +1167,11 @@
       pushToggle.dataset.bound = "1";
 
       pushToggle.addEventListener("click", async function(){
+        if (!isIdentityActive()) {
+          setPushStatus("A push módosításához biztonságos kapcsolódás szükséges.", true);
+          refreshButton();
+          return;
+        }
         pushToggle.disabled = true;
         try {
           if (subscription) {
@@ -1183,6 +1287,10 @@
     const generateCodeBtn = root.querySelector("[data-role=generate-code]");
     if (generateCodeBtn) {
       generateCodeBtn.addEventListener("click", async function(){
+        if (identityState !== "active") {
+          setStatus("A belépési kódhoz előbb biztonságosan kapcsolódj a fiókodhoz.", true);
+          return;
+        }
         generateCodeBtn.disabled = true;
         const originalLabel = generateCodeBtn.textContent;
         generateCodeBtn.textContent = "Kód készítése…";
@@ -1202,7 +1310,7 @@
         } catch (e) {
           setStatus("A belépési kód létrehozása nem sikerült.", true);
         } finally {
-          generateCodeBtn.disabled = false;
+          generateCodeBtn.disabled = !isIdentityActive();
           generateCodeBtn.textContent = originalLabel;
         }
       });
@@ -1337,6 +1445,10 @@
       if (e && typeof e.preventDefault === "function") {
         e.preventDefault();
       }
+      if (!isIdentityActive()) {
+        setStatus("A mentéshez előbb biztonságosan kapcsolódj a fiókodhoz.", true);
+        return;
+      }
       const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim() : "";
       const recovery = recoveryDisplay ? recoveryDisplay.textContent.trim() : "";
       if (!pseudo || pseudo === "—" || !recovery || recovery === "—") {
@@ -1414,16 +1526,9 @@
             if (restoreStatus) restoreStatus.textContent = message;
             return;
           }
-          document.cookie = "impactshop_pseudo_id=" + encodeURIComponent(pseudo) + "; path=/; samesite=Lax";
-          if (pseudoDisplay) {
-            pseudoDisplay.textContent = pseudo;
-          }
-          if (saveUsername) {
-            saveUsername.value = pseudo;
-          }
-        setStatus("Belépés sikeres.");
+          invalidateProfileCache();
+          setStatus("Belépés sikeres.");
           if (restoreStatus) restoreStatus.textContent = "Belépés sikeres.";
-          emitIdentityReady(pseudo);
           fetchProfile().then(refreshPointsSection);
           const bridgeCompletionUrl = getBridgeCompletionUrl("restore");
           const returnUrl = getSafeReturnUrl();
@@ -1457,6 +1562,11 @@
     const saveNicknameBtn = root.querySelector("[data-role=save-nickname]");
     if (saveNicknameBtn) {
       saveNicknameBtn.addEventListener("click", async function(){
+        if (identityState !== "active") {
+          setStatus("A becenév módosításához lépj be a meglévő fiókodba.", true);
+          if (nicknameStatus) nicknameStatus.textContent = "Belépés szükséges.";
+          return;
+        }
         const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim().toLowerCase() : "";
         const nickname = (nicknameInput.value || "").trim();
         if (!isPseudoValid(pseudo)) {
@@ -1491,7 +1601,9 @@
           sharedState.profileCache = {
             pseudo_id: pseudo,
             nickname: savedNickname,
-            recovery_code: currentRecovery
+            recovery_code: currentRecovery,
+            identity_state: identityState,
+            votes_available: votesAvailableDisplay ? Number(votesAvailableDisplay.textContent || 0) : null
           };
           sharedState.profileAt = Date.now();
           await refreshPointsSection();
@@ -1508,7 +1620,7 @@
           setStatus("Becenév mentése hiba.", true);
           if (nicknameStatus) nicknameStatus.textContent = "Hiba történt.";
         } finally {
-          saveNicknameBtn.disabled = false;
+          saveNicknameBtn.disabled = !isIdentityActive();
           if (saveNicknameBtn.textContent === "Mentés…") {
             saveNicknameBtn.textContent = originalLabel;
           }
@@ -1517,8 +1629,13 @@
     }
 
     if (vacationToggle) {
-      vacationToggle.disabled = false;
+      vacationToggle.disabled = !isIdentityActive();
       vacationToggle.addEventListener("click", async function(){
+        if (!isIdentityActive()) {
+          setStatus("A módosításhoz előbb biztonságosan kapcsolódj a fiókodhoz.", true);
+          vacationToggle.disabled = true;
+          return;
+        }
         const mode = vacationToggle.dataset.mode || "start";
         vacationToggle.disabled = true;
         try {
@@ -1553,7 +1670,7 @@
         } catch (e) {
           setStatus("Vakáció mód hiba. Próbáld újra.", true);
         } finally {
-          vacationToggle.disabled = false;
+          vacationToggle.disabled = !isIdentityActive();
         }
       });
     }
@@ -1592,9 +1709,10 @@
       fetchPointsHistory();
     });
 
-    refreshPseudo();
-    initPush();
     fetchProfile()
+      .then(function(){
+        return isIdentityActive() ? initPush() : null;
+      })
       .then(function(){
         return maybeCompleteSelectionIntent();
       })

@@ -10,10 +10,16 @@
 defined('ABSPATH') || exit;
 
 add_action('wp_head', function () {
-    $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
     // The profile and one-time code reveal pages must remain stable and
     // third-party-script free; other pages retain the existing AdSense setup.
-    if (untrailingslashit($path) === '/profil' || str_starts_with(untrailingslashit($path), '/profil/')) {
+    if (function_exists('impactshop_identity_is_profile_route')) {
+        $is_profile_route = impactshop_identity_is_profile_route();
+    } else {
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $is_profile_route = untrailingslashit($path) === '/profil'
+            || str_starts_with(untrailingslashit($path), '/profil/');
+    }
+    if ($is_profile_route) {
         return;
     }
     ?>

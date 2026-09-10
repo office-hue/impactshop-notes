@@ -62,7 +62,7 @@ function impactshop_action_bar_render(): void
     $tasks_url = home_url('/impact-challenge/') . '#impactshop-offerwall';
     $shop_url = home_url('/impactshop/');
     $donate_url = home_url('/impact-challenge/') . '#ads-watch-purchase';
-    $account_url = home_url('/impact-challenge/') . '#impactshop-account';
+    $account_url = home_url('/profil/#impactshop-account-top');
     $ngo_url = home_url('/impact-challenge/') . '#ads-watch-ngo';
     $message_url = home_url('/impact-challenge/') . '#ads-watch-message';
     $stats_url = home_url('/impact-challenge/') . '#impactshop-ads-watch';

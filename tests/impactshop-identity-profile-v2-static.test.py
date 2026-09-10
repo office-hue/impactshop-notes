@@ -25,13 +25,14 @@ assert "__Host-impactshop_owner" in PHP
 assert "impactshop_identity_owner_authorized" in PHP
 assert "impactshop_identity_owner_issue" in PHP
 assert "impactshop_identity_request_same_origin" in PHP
-assert "if (!is_ssl())" in PHP
+assert "is_ssl()" in PHP
 code_generate = section(PHP, "function impactshop_identity_code_generate", "function impactshop_identity_profile_cookie")
 assert "impactshop_identity_owner_authorized($pseudo_id)" in code_generate
 assert "impactshop_identity_request_same_origin()" in code_generate
 restore = section(PHP, "function impactshop_identity_profile_restore", "function impactshop_identity_code_generate")
-assert "impactshop_identity_owner_revoke_current();" in restore
-assert restore.index("impactshop_identity_owner_revoke_current();") < restore.index("impactshop_identity_owner_issue($pseudo_id)")
+assert "impactshop_identity_owner_revoke_current();" not in restore
+assert "supersedes_grant_hash" in restore
+assert restore.index("supersedes_grant_hash") < restore.index("impactshop_identity_owner_issue($pseudo_id")
 assert "script-src 'none'" in PHP
 assert "Cache-Control: private, no-store, max-age=0" in PHP
 assert "wp_hash_password('sharity-access-v2|" in PHP
@@ -41,6 +42,8 @@ assert "Belépés meglévő fiókba" in PHP
 assert 'data-role="generate-code"' in PHP
 assert 'data-role=generate-code' in JS
 assert "data.recovery_code" not in JS
+assert "document.cookie = \"impactshop_pseudo_id" not in JS
+assert "invalidateProfileCache" in JS
 assert "str_starts_with(untrailingslashit($path), '/profil/')" in ADS
 
 print("impactshop identity profile v2 static: PASS")
