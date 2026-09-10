@@ -70,16 +70,22 @@ and policy checks, and deploy a forward corrective immutable artifact.
   "rollbackNote": "pre-deploy revert the complete candidate range; post-deploy safe-disable mutations and use only a forward corrective v2/policy-v3 artifact",
   "schemaVersion": 1,
   "smokeTags": [
+    "browser:mobile",
     "deploy:checksum-verify",
     "deploy:guard-preflight",
+    "flow:consent-overlay",
     "route:profil",
     "route:factlens-vb-prod",
     "route:impact-challenge",
+    "route:home",
+    "route:impactshop",
     "flow:legacy-pool-visibility",
     "flow:message-popup",
+    "flow:mobile-shell-render",
     "flow:points-jump",
     "flow:profile-return-account",
     "flow:profile-return-restore",
+    "flow:pwa-install-entry",
     "flow:vb2026-selection-intent",
     "flow:owner-grant-two-request-activation"
   ]
