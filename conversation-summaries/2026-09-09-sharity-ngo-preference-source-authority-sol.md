@@ -67,3 +67,11 @@
   token key and the PHP lint/contract plus Python static checks pass. Source-only
   QA is approved for Sol source publication; the `.php.off` adapter remains
   disabled and no runtime/provider/deploy action is admitted.
+- Sol source-publication security gate (2026-09-10): Codex Security diff scan
+  `de2ebafd-073b-45b8-9e98-051f1759e2c5` reviewed immutable range
+  `073f2854d4e4bc01ad928636125b7a18dc43efa0..6cb815404d7e346732e64a43da5e970d023aca85`
+  with zero reportable findings. The workbench did not classify the intentional
+  `.php.off` suffix, so all three source-like files were reviewed manually and
+  the seven documentation-only files were accounted for. Result:
+  `sol-source-publication-approved`; activation, storage, secrets, provider,
+  VPS, deploy and production remain outside authority.

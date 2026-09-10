@@ -7246,3 +7246,10 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   kulcsot használ; PHP lint/contract és Python static tesztek PASS. Source-only QA
   Sol source publicationre jóváhagyva; a `.php.off` adapter disabled, runtime,
   provider és deploy változatlan.
+- Sol source-publication security gate (2026-09-10): a Codex Security
+  `de2ebafd-073b-45b8-9e98-051f1759e2c5` scan az exact
+  `073f2854d4e4bc01ad928636125b7a18dc43efa0..6cb815404d7e346732e64a43da5e970d023aca85`
+  range-en 0 reportolható findinggal zárt. A `.php.off` automatikus inventoryból
+  kimaradt, ezért a három source-like fájl teljes kézi review-t kapott; a hét
+  docs-only fájl elszámolva. Döntés: `sol-source-publication-approved`; activation,
+  storage, secret, provider, VPS, deploy és production továbbra sincs engedélyezve.
