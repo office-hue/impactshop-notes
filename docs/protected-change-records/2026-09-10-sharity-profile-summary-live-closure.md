@@ -43,8 +43,10 @@ and policy checks, and deploy a forward corrective immutable artifact.
     "docs/impactshop-guard-hashes.json",
     "docs/impactshop-guard-hashes.sha256",
     "docs/impactshop-protected-files.json",
+    "scripts/impactshop-owner-policy-inventory.php",
     "wp-content/mu-plugins/000-impactshop-owner-policy.php",
     "wp-content/mu-plugins/impactshop-action-bar.php",
+    "wp-content/mu-plugins/impactshop-adsense-head.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php"
