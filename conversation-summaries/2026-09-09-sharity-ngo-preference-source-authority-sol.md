@@ -55,3 +55,7 @@
   exact client/redirect registry; redemption lacks confidential-BFF admission;
   scope/selection are caller supplied; and schema/audit descriptors are incomplete.
   Another bounded Luna correction is required; no Sol decision is needed.
+- PHP capability closure (2026-09-10): Air now has approved keg-only
+  `/opt/homebrew/opt/php@8.4/bin/php` (8.4.25). Lint and the hermetic contract
+  test pass after correcting three test-fixture mismatches; the `.php.off` source
+  remains disabled and no runtime, schema, provider, or deploy state changed.

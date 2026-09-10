@@ -7234,3 +7234,7 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   workflow, remote-write script, protected WP, rename, missing/forged/partial
   record and wrong base/tree evidence. Memory guard-load remained unavailable
   because the canonical ai-agent worktree lacks its local `tsx` dependency.
+- PHP capability closure (2026-09-10): Air now has approved keg-only
+  `/opt/homebrew/opt/php@8.4/bin/php` (8.4.25). Lint and the hermetic contract
+  test pass after correcting three test-fixture mismatches; the `.php.off` source
+  remains disabled and no runtime, schema, provider, or deploy state changed.
