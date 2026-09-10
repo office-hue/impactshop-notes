@@ -38,7 +38,7 @@ PY
 
 test -x "$ROLLBACK_SCRIPT"
 grep -Fq '[[ $APPLY_MODE -eq 0 ]]' "$ROLLBACK_SCRIPT"
-grep -Fq 'if [[ $PRODUCTION_CONFIRMED -ne 1 ]]' "$ROLLBACK_SCRIPT"
+grep -Fq 'if [[ $TARGET_ENV_EXPLICIT -ne 1 ]]' "$ROLLBACK_SCRIPT"
 grep -Fq 'EXPECTED_DEPLOYED_SHA' "$ROLLBACK_SCRIPT"
 grep -Fq 'python3 - rollback' "$ROLLBACK_SCRIPT"
 
@@ -61,7 +61,7 @@ run_rollback() {
 }
 
 if run_rollback --release-id=release-test-20260820 --apply --expected-deployed-sha="$(printf 'a%.0s' {1..64})" >/dev/null 2>&1; then
-  echo "rollback truth guard: mutating rollback accepted without --production" >&2
+  echo "rollback truth guard: mutating rollback accepted without explicit environment" >&2
   exit 1
 fi
 test ! -s "$SSH_LOG"
@@ -80,5 +80,22 @@ EXPECTED_SHA="$(printf 'b%.0s' {1..64})"
 run_rollback --production --apply --release-id=release-test-20260820 \
   --expected-deployed-sha="$EXPECTED_SHA" >/dev/null
 grep -Fq "python3 - rollback --root /home/sharityh/app --release-id release-test-20260820 --expected-deployed-sha $EXPECTED_SHA" "$SSH_LOG"
+
+: > "$SSH_LOG"
+run_rollback --staging --release-id=release-staging-20260909 >/dev/null
+grep -Fq 'python3 - inspect --root /home/sharityh/app-staging --release-id release-staging-20260909' "$SSH_LOG"
+
+: > "$SSH_LOG"
+STAGING_EXPECTED_SHA="$(printf 'c%.0s' {1..64})"
+run_rollback --staging --apply --release-id=release-staging-20260909 \
+  --expected-deployed-sha="$STAGING_EXPECTED_SHA" >/dev/null
+grep -Fq "python3 - rollback --root /home/sharityh/app-staging --release-id release-staging-20260909 --expected-deployed-sha $STAGING_EXPECTED_SHA" "$SSH_LOG"
+
+: > "$SSH_LOG"
+if run_rollback --production --staging --release-id=release-test-20260820 >/dev/null 2>&1; then
+  echo "rollback truth guard: multiple environments unexpectedly accepted" >&2
+  exit 1
+fi
+test ! -s "$SSH_LOG"
 
 echo "impactshop guard rollback truth test: PASS"

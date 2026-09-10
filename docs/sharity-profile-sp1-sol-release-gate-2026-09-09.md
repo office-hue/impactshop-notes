@@ -146,3 +146,26 @@ path is `not-applicable` for this repository. The source-only publication lane
 therefore uses the explicitly executed `impactshop-notes` task-start,
 continuity, strict audit and DEV-v2 admission evidence without entering a
 sibling worktree or repairing shared dependencies.
+
+## Canonical staging CAS implementation
+
+Approval reference: `operator-approval:sharity-profile-staging-cas-20260909`.
+
+The bounded implementation routes actual scoped staging writes through the
+existing exact-release backup/compare-and-swap/apply engine. Both environments
+require explicit exact-release mode, expected remote SHA-256 (`absent` is
+allowed), a clean exact-main identity and their canonical remote roots. A
+mutating rollback requires one explicit environment and the expected deployed
+SHA-256. The staging preflight base is
+`https://app.sharity.hu/impactshop-staging`.
+
+The exact current-main manifest candidate uses deterministic
+`generated_at=2026-09-10T20:30:00+00:00`, no trailing newline, manifest SHA
+`a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` and
+companion SHA `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+
+Closure requires exact seven protected paths, exact six support paths, the
+unchanged production companion, targeted shell tests, schema-v2 adapter
+full-validation/bastion/freeze/verify, strict audit, DocSync/continuity,
+`git diff --check`, a clean tree and one checkpoint commit. No push, PR,
+deployment, SSH or shared-dependency repair is authorized by this record.

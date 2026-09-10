@@ -241,4 +241,55 @@ if grep -q "deploy-wpcontent-map-bastion.test.sh" "$RSYNC_LOG"; then
   exit 1
 fi
 
+grep -Fq 'PREFLIGHT_BASE_URL="https://app.sharity.hu/impactshop-staging"' \
+  "$ROOT_DIR/.deploy.staging.env"
+cat > "$RELEASE_REPO/.deploy.staging.env" <<'EOF'
+SSH_HOST=fake.example
+REMOTE_WP_CONTENT=/home/sharityh/app-staging/wp-content
+REMOTE_WP_PATH=/home/sharityh/app-staging
+DEPLOY_ENVIRONMENT=staging
+RSYNC_OPTS="-az --delete --delete-before --info=progress2"
+MAPPINGS='tests -> mu-plugins'
+EOF
+
+reset_logs
+if direct_staging_output="$(env \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_SSH_LOG="$SSH_LOG" \
+  FAKE_RSYNC_LOG="$RSYNC_LOG" \
+  SKIP_PREFLIGHT=1 \
+  IMPACTSHOP_DEPLOY_FILE=tests/release-source.php \
+  bash "$RELEASE_REPO/bin/deploy-wpcontent-map.sh" --staging 2>&1)"; then
+  echo "exact-file deploy test: direct staging rsync bypassed CAS" >&2
+  exit 1
+fi
+grep -q "exact-file staging íráshoz IMPACTSHOP_EXACT_RELEASE=1 szükséges" <<< "$direct_staging_output"
+assert_no_network
+
+reset_logs
+FAKE_RELEASE_ID="release-staging-test-20260909"
+staging_release_output="$(env \
+  PATH="$FAKE_BIN:$PATH" \
+  FAKE_SSH_LOG="$SSH_LOG" \
+  FAKE_RSYNC_LOG="$RSYNC_LOG" \
+  FAKE_RELEASE_ID="$FAKE_RELEASE_ID" \
+  FAKE_LOCAL_SHA="$FAKE_LOCAL_SHA" \
+  FAKE_GIT_BRANCH=HEAD \
+  SKIP_PREFLIGHT=1 \
+  IMPACTSHOP_EXACT_RELEASE=1 \
+  IMPACTSHOP_EXPECT_REMOTE_SHA256=absent \
+  IMPACTSHOP_RELEASE_ID="$FAKE_RELEASE_ID" \
+  IMPACTSHOP_DEPLOY_FILE=tests/release-source.php \
+  bash "$RELEASE_REPO/bin/deploy-wpcontent-map.sh" --staging)"
+
+grep -q "Exact release deployed: id=$FAKE_RELEASE_ID sha256=$FAKE_LOCAL_SHA mode=0444" <<< "$staging_release_output"
+grep -q -- "--staging --apply --release-id=$FAKE_RELEASE_ID --expected-deployed-sha=$FAKE_LOCAL_SHA" <<< "$staging_release_output"
+grep -q "python3 - prepare --root /home/sharityh/app-staging --release-id $FAKE_RELEASE_ID" "$SSH_LOG"
+grep -q "python3 - apply --root /home/sharityh/app-staging --release-id $FAKE_RELEASE_ID" "$SSH_LOG"
+grep -q "fake.example:/home/sharityh/app-staging/.bastion/exact-file-releases/$FAKE_RELEASE_ID/payload.bin" "$RSYNC_LOG"
+if grep -q -- "--delete" "$RSYNC_LOG"; then
+  echo "exact-file deploy test: delete option reached staging release payload upload" >&2
+  exit 1
+fi
+
 echo "deploy wp-content exact-file test: PASS"

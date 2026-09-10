@@ -217,41 +217,56 @@ EXACT_RELEASE_MODE=0
 EXACT_RELEASE_EXPECTED_BEFORE=""
 EXACT_RELEASE_ID=""
 EXACT_RELEASE_LOCAL_SHA=""
+EXACT_RELEASE_ROLLBACK_SCOPE=""
 EXACT_RELEASE_ENGINE="${ROOT_DIR}/scripts/impactshop-exact-release-remote.py"
-if [[ $IS_PRODUCTION -eq 1 && $DRY_RUN_MODE -eq 0 ]]; then
-  if [[ $SCOPED_DEPLOY -eq 0 ]]; then
+if [[ $DRY_RUN_MODE -eq 0 ]]; then
+  if [[ $IS_PRODUCTION -eq 1 && $SCOPED_DEPLOY -eq 0 ]]; then
     echo "❌ Valós production deploy csak IMPACTSHOP_DEPLOY_FILE exact scope-pal készíthető elő." >&2
     exit 1
   fi
-  if [[ "${IMPACTSHOP_EXACT_RELEASE:-0}" != "1" ]]; then
-    echo "❌ Valós exact-file production íráshoz IMPACTSHOP_EXACT_RELEASE=1 szükséges." >&2
+  if [[ $SCOPED_DEPLOY -eq 1 && "${IMPACTSHOP_EXACT_RELEASE:-0}" != "1" ]]; then
+    echo "❌ Valós exact-file ${DEPLOY_ENVIRONMENT} íráshoz IMPACTSHOP_EXACT_RELEASE=1 szükséges." >&2
     exit 1
   fi
+fi
+
+if [[ $DRY_RUN_MODE -eq 0 && $SCOPED_DEPLOY -eq 1 && "${IMPACTSHOP_EXACT_RELEASE:-0}" == "1" ]]; then
   EXACT_RELEASE_EXPECTED_BEFORE="${IMPACTSHOP_EXPECT_REMOTE_SHA256:-}"
   require_sha256_or_absent "$EXACT_RELEASE_EXPECTED_BEFORE" "IMPACTSHOP_EXPECT_REMOTE_SHA256"
-  if [[ "$ENV_FILE" != "$ROOT_DIR/.deploy.production.env" ]] || \
-     [[ "${REMOTE_WP_PATH:-}" != "/home/sharityh/app" ]] || \
-     [[ "${REMOTE_WP_CONTENT:-}" != "/home/sharityh/app/wp-content" ]]; then
-    echo "❌ Valós exact-file production release csak a kanonikus production profilból és /home/sharityh/app rootra futtatható." >&2
-    exit 1
+  if [[ $IS_PRODUCTION -eq 1 ]]; then
+    if [[ "$ENV_FILE" != "$ROOT_DIR/.deploy.production.env" ]] || \
+       [[ "${REMOTE_WP_PATH:-}" != "/home/sharityh/app" ]] || \
+       [[ "${REMOTE_WP_CONTENT:-}" != "/home/sharityh/app/wp-content" ]]; then
+      echo "❌ Valós exact-file production release csak a kanonikus production profilból és /home/sharityh/app rootra futtatható." >&2
+      exit 1
+    fi
+    EXACT_RELEASE_ROLLBACK_SCOPE="--production"
+  else
+    if [[ "$ENV_FILE" != "$ROOT_DIR/.deploy.staging.env" ]] || \
+       [[ "${REMOTE_WP_PATH:-}" != "/home/sharityh/app-staging" ]] || \
+       [[ "${REMOTE_WP_CONTENT:-}" != "/home/sharityh/app-staging/wp-content" ]]; then
+      echo "❌ Valós exact-file staging release csak a kanonikus staging profilból és /home/sharityh/app-staging rootra futtatható." >&2
+      exit 1
+    fi
+    EXACT_RELEASE_ROLLBACK_SCOPE="--staging"
   fi
   if [[ ! -f "$EXACT_RELEASE_ENGINE" || -L "$EXACT_RELEASE_ENGINE" ]]; then
     echo "❌ Hiányzó vagy nem biztonságos exact release engine: scripts/impactshop-exact-release-remote.py" >&2
     exit 1
   fi
   if [[ -n "$(git status --porcelain=v1 --untracked-files=normal)" ]]; then
-    echo "❌ Valós exact-file production release csak tiszta worktree-ből futtatható." >&2
+    echo "❌ Valós exact-file ${DEPLOY_ENVIRONMENT} release csak tiszta worktree-ből futtatható." >&2
     exit 1
   fi
   exact_release_head="$(git rev-parse HEAD)"
   exact_release_origin_main="$(git rev-parse --verify refs/remotes/origin/main 2>/dev/null || true)"
   exact_release_branch="$(git rev-parse --abbrev-ref HEAD)"
   if [[ "$exact_release_branch" != "main" && "$exact_release_branch" != "HEAD" ]]; then
-    echo "❌ Valós exact-file production release csak main vagy detached origin/main állapotból futtatható." >&2
+    echo "❌ Valós exact-file ${DEPLOY_ENVIRONMENT} release csak main vagy detached origin/main állapotból futtatható." >&2
     exit 1
   fi
   if [[ -z "$exact_release_origin_main" || "$exact_release_head" != "$exact_release_origin_main" ]]; then
-    echo "❌ Valós exact-file production release HEAD-je nem egyezik az origin/main állapottal." >&2
+    echo "❌ Valós exact-file ${DEPLOY_ENVIRONMENT} release HEAD-je nem egyezik az origin/main állapottal." >&2
     exit 1
   fi
   EXACT_RELEASE_LOCAL_SHA="$(sha256_file "$SCOPED_SRC")"
@@ -584,7 +599,7 @@ PY
       exit 1
     fi
     echo "✅ Exact release deployed: id=$EXACT_RELEASE_ID sha256=$EXACT_RELEASE_LOCAL_SHA mode=0444"
-    echo "↩️ Rollback: bin/impactshop-guard-rollback.sh --production --apply --release-id=$EXACT_RELEASE_ID --expected-deployed-sha=$EXACT_RELEASE_LOCAL_SHA"
+    echo "↩️ Rollback: bin/impactshop-guard-rollback.sh $EXACT_RELEASE_ROLLBACK_SCOPE --apply --release-id=$EXACT_RELEASE_ID --expected-deployed-sha=$EXACT_RELEASE_LOCAL_SHA"
   else
     if ! rsync $RSYNC_OPTS_SAFE "$SCOPED_SRC" "$SSH_HOST:$remote_file" < /dev/null; then
       echo "   ❌ Exact-file rsync hiba; deploy megszakítva." >&2

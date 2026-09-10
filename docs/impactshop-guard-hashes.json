@@ -311,15 +311,15 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json": "9b916cecc57809c3954a669441f9a0565486aedd8bb42b09fa9d90e77cda4bbd",
     "wp-content/mu-plugins/impactshop-action-bar.php": "b9fdb6227bdda7fa951c0026da10c7e0abca867d72268a5be9739b476038d442",
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php": "6b158e29ba3c46be171b81610c2965b3b0371695249b1dbd1d5e66a87c485d5d",
-    "bin/deploy-wpcontent-map.sh": "7349de78c2b00e269565e1b6eaf05d1a64931d14c32f94f35e669d2f2efc5499",
-    "bin/impactshop-guard-rollback.sh": "cb67319735d171ddab454a3c023d5c6799efab006d38809d9ff2374e8ec69836",
+    "bin/deploy-wpcontent-map.sh": "eaa6990de8c843cacd219859615e5f0d917aa7c6ee7309dab470a5ef9fa1fe8a",
+    "bin/impactshop-guard-rollback.sh": "225211c03db3e921b4c8538de6f3522f283f6caa22a52b049d311c1f3c864993",
     "scripts/impactshop-exact-release-remote.py": "03b1c1c022713cc753ea9041b17552ff7b27e1daa10c20cee28cc690d5c6c606",
     "tests/impactshop-exact-release-remote.test.sh": "ca0c5b0ec0353839574ff5c943401d2ec9f98a907be98dd0dcc83dcd45dfa582",
-    "tests/deploy-wpcontent-map-exact-file.test.sh": "cb92d0ce33ad05235cc8a7ac2612c71cdc94618cc4daef49a2dfcd924560178f",
-    "tests/impactshop-guard-rollback-truth.test.sh": "c2c7f0d2009c34a632e59609db5f8bc713e40c350152a5ae2bcb4af39c659822",
-    ".github/workflows/ci.yml": "4033833c90a90b54d32b5a80eb6232eafa32adb1793208eeb8bbce5d45deebe9",
+    "tests/deploy-wpcontent-map-exact-file.test.sh": "a64167d629f257a10ff759651ffbe06e6c9a4254bddb0efdab681054f23f150f",
+    "tests/impactshop-guard-rollback-truth.test.sh": "600e56326cf1b041786c90502aa0888ca89ad6f7b1fe8d00adc308a08cbb5756",
+    ".github/workflows/ci.yml": "ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015",
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208",
     "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "55198b339d2ababb0fb84cf46bf2c4dda28d43741fb0c0643b4bc34050e96d8c"
   },
-  "generated_at": "2026-09-10T18:40:23Z"
+  "generated_at": "2026-09-10T20:30:00+00:00"
 }

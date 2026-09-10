@@ -7449,3 +7449,10 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   using guard-writer JSON serialization with no trailing newline.
   This checkpoint is source metadata only; no S59, database, staging,
   production, provider, cron or watchdog mutation occurs.
+
+## 2026-09-10 — Sharity staging CAS exact schema-v2 source package
+
+- Dedicated current-main Luna worktree: `ops/sharity-profile-staging-cas-current-main-luna-20260910`, base `c0f450143f492b582a3db5a9fea4a741d32020f1`.
+- Applied exactly the reviewed seven protected CAS blobs and the six required support paths. The schema-v2 record binds `deploy-control-source:sharity-staging-cas-v1`, the exact reviewed hashes and unchanged production companion `ea894097c343148cb375c74148021ac684ef44ebb04dc56be766f8c86966885d`.
+- Manifest serialization is guard-writer compatible with no trailing newline: `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`; companion: `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+- Source-only checkpoint: no push, PR, deployment, SSH, shared-dependency, provider, database, runtime, cron or watchdog mutation. Targeted shell tests, adapter full-validation/bastion/freeze/verify, strict audit, DocSync/continuity, diff-check and clean-tree checkpoint remain the closeout gates.
