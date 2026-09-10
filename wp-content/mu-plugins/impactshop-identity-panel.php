@@ -534,14 +534,33 @@ function impactshop_identity_owner_activate_pending(string $pseudo_id): bool
     }
     $superseded = (string) ($row['supersedes_grant_hash'] ?? '');
     if ($superseded !== '') {
-        $revoked = $wpdb->query($wpdb->prepare(
-            "UPDATE {$table} SET revoked_at = %s, state = 'pending' WHERE grant_hash = %s AND revoked_at IS NULL",
-            impactshop_identity_utc_sql(),
+        // Lock the superseded grant in the same transaction as the pending
+        // activation. Issuance deliberately leaves it active until this
+        // point, so a failed binding cannot revoke the user's old device.
+        $superseded_row = $wpdb->get_row($wpdb->prepare(
+            "SELECT grant_hash, revoked_at FROM {$table} WHERE grant_hash = %s LIMIT 1 FOR UPDATE",
             $superseded
-        ));
-        if ($revoked === false || $wpdb->last_error !== '') {
+        ), ARRAY_A);
+        if ($wpdb->last_error !== '') {
             $wpdb->query('ROLLBACK');
+            impactshop_identity_mark_safe_disabled();
             return false;
+        }
+        if (is_array($superseded_row) && empty($superseded_row['revoked_at'])) {
+            $revoked = $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET revoked_at = %s, state = 'pending' WHERE grant_hash = %s AND revoked_at IS NULL",
+                impactshop_identity_utc_sql(),
+                $superseded
+            ));
+            $revoke_readback = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table} WHERE grant_hash = %s AND revoked_at IS NOT NULL",
+                $superseded
+            ));
+            if ($revoked === false || $wpdb->last_error !== '' || (int) $revoke_readback !== 1) {
+                $wpdb->query('ROLLBACK');
+                impactshop_identity_mark_safe_disabled();
+                return false;
+            }
         }
     }
     $updated = $wpdb->query($wpdb->prepare(
@@ -587,18 +606,6 @@ function impactshop_identity_owner_issue(string $pseudo_id, ?string $supersedes_
         impactshop_identity_mark_safe_disabled();
         return false;
     }
-    if ($supersedes_grant_hash !== null) {
-        $prior_revoked = $wpdb->query($wpdb->prepare(
-            "UPDATE {$table} SET revoked_at = %s, state = 'pending' WHERE grant_hash = %s AND revoked_at IS NULL",
-            $now,
-            $supersedes_grant_hash
-        ));
-        if ($prior_revoked === false || $wpdb->last_error !== '') {
-            $wpdb->query('ROLLBACK');
-            impactshop_identity_mark_safe_disabled();
-            return false;
-        }
-    }
     $inserted = $wpdb->insert(impactshop_identity_owner_grant_table(), [
         'grant_hash' => impactshop_identity_owner_hash($token),
         'pseudo_hash' => impactshop_identity_owner_pseudo_hash($pseudo_id),
@@ -612,6 +619,7 @@ function impactshop_identity_owner_issue(string $pseudo_id, ?string $supersedes_
     ], ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']);
     if ($inserted === false) {
         $wpdb->query('ROLLBACK');
+        impactshop_identity_mark_safe_disabled();
         return false;
     }
     $readback = $wpdb->get_var($wpdb->prepare(
@@ -621,6 +629,7 @@ function impactshop_identity_owner_issue(string $pseudo_id, ?string $supersedes_
     ));
     if ($wpdb->last_error !== '' || (int) $readback !== 1) {
         $wpdb->query('ROLLBACK');
+        impactshop_identity_mark_safe_disabled();
         return false;
     }
     if ($wpdb->query('COMMIT') === false) {

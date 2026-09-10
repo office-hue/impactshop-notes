@@ -66,6 +66,11 @@ assert "app.sharity.hu" not in IDENTITY
 activation = IDENTITY[IDENTITY.index("function impactshop_identity_owner_activate_pending"):IDENTITY.index("function impactshop_identity_owner_issue")]
 assert activation.index("START TRANSACTION") < activation.index("FOR UPDATE") < activation.index("COMMIT")
 assert "supersedes_grant_hash" in activation
+assert "SELECT grant_hash, revoked_at" in activation
+assert "revoke_readback" in activation
+issue = IDENTITY[IDENTITY.index("function impactshop_identity_owner_issue"):IDENTITY.index("function impactshop_identity_owner_set_pending_cookie")]
+assert "START TRANSACTION" in issue and "supersedes_grant_hash" in issue
+assert "UPDATE {$table} SET revoked_at" not in issue, "superseded grant must remain active until pending activation"
 assert "ROLLBACK" in activation
 assert "home_url('/profil/#impactshop-account-top')" in ACTION_BAR or "home_url('/profil/#impactshop-account-top')" in IDENTITY
 assert "#impactshop-account'" in ACTION_BAR  # legacy hash resolver remains
