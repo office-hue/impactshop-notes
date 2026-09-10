@@ -45,4 +45,3 @@ After merge, a fresh exact-main CAS checkpoint applies the already reviewed
 release code and runs the exact schema-v2 admission profile. Only its successful
 merge permits one staging release wave, followed by one production wave if all
 runtime and worker checks pass. No cron or watchdog is required.
-

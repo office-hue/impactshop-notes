@@ -28,4 +28,3 @@ exact-main CAS worktree. Apply the pinned seven protected bytes and exact six
 support paths, then run schema-v2 admission. Do not deploy from this metadata
 branch. Staging and production remain separate Sol release gates; reuse evidence
 only while source and environment identity remain unchanged.
-
