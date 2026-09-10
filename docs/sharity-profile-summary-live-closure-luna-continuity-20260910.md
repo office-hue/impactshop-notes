@@ -16,6 +16,11 @@ failure. VB2026 service requests bind the validated `x-sharity-pseudo-id` as
 the sole principal; mixed cookie A/B and invalid-bearer requests cannot fall
 back to the browser cookie.
 
+The read-side `GET /impact/v1/vb2026/my-ngo-selection` now uses the same
+explicit `owner_or_service_auth` central mode as its native callback, so a
+valid bearer-only service read is admitted while browser-owner, mixed-principal
+and invalid-bearer cases remain fail-closed.
+
 The same clean worktree/branch continued to checkpoint B. The grant table is
 an idempotent v2 `dbDelta` migration with an explicit InnoDB requirement and
 `pending|active` state,

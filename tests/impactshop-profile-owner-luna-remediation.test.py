@@ -44,6 +44,7 @@ assert "'GET /impact/v1/ngo-selector/get' => ['policy' => 'owner_required'" in P
 assert "'POST /impact/v1/vb2026/select-ngo' => ['policy' => 'owner_or_service_auth'" in POLICY
 assert "'POST /impact/v1/vb2026/selection-intent' => ['policy' => 'pre_auth_intent'" in POLICY
 assert "'POST /impact/v1/vb2026/selection-intent/complete' => ['policy' => 'owner_or_service_auth'" in POLICY
+assert "'GET /impact/v1/vb2026/my-ngo-selection' => ['policy' => 'owner_or_service_auth'" in POLICY
 assert "impactshop_owner_policy_callback_manifest" in POLICY
 assert "impactshop_owner_policy_callback_matches" in POLICY
 assert "impactshop_owner_policy_runtime_condition_enabled" in POLICY
@@ -62,6 +63,11 @@ assert resolve_pseudo.index("if ($header !== '')") < resolve_pseudo.index("$pseu
 assert "if (!$allowServiceAuth || !preg_match" in resolve_pseudo
 assert "'pseudo_id' => $headerPseudo" in resolve_pseudo
 assert resolve_pseudo.count("'service_auth' => false") >= 2
+my_selection = section(VB, "function impactshop_vb2026_rest_my_ngo_selection", "function impactshop_vb2026_rest_select_ngo")
+assert "impactshop_vb2026_resolve_request_pseudo($request, true)" in my_selection
+assert "'pseudo_id' => $headerPseudo" in resolve_pseudo
+assert "'pseudo_id' => $pseudo" in resolve_pseudo
+assert "hash_equals($expected, $provided)" in resolve_pseudo
 assert "function isIdentityActive" in JS
 assert 'if (!isIdentityActive())' in JS
 assert 'btn.disabled = !isIdentityActive();' in JS

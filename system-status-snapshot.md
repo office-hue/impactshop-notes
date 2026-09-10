@@ -13,6 +13,9 @@
   UI pseudo mutation guards, pseudo-cookie restoration/expiry compensation and
   VB2026 mixed-principal Bearer/cookie fallback. Targeted tests remain source
   evidence only; live browser/DB acceptance is still pending.
+- The `my-ngo-selection` GET central policy now explicitly admits the native
+  owner-or-service callback, with bearer-only, browser-owner and invalid-bearer
+  regression evidence.
 
 - A profil summary A fölött a v2 owner-grant lifecycle és a first-loaded,
   gépi owner-policy registry forrásban elkészült. A pending grant 10 perces,

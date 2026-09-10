@@ -57,6 +57,9 @@ is included.
   cookie or expires a new one; restoration header failure safe-disables.
 - A valid VB2026 service bearer selects its validated header pseudo as the sole
   target; invalid/partial bearer headers never fall back to a browser cookie.
+- `GET /impact/v1/vb2026/my-ngo-selection` uses explicit
+  `owner_or_service_auth`, matching its native bearer-capable callback while
+  preserving browser-owner and invalid-bearer denial.
 
 ## Evidence
 
@@ -108,6 +111,7 @@ acceptance. No push, PR, merge or deploy occurred.
     "flow:profile-return-account",
     "flow:profile-return-restore",
     "flow:vb2026-selection-intent",
+    "flow:vb2026-my-ngo-selection",
     "flow:owner-grant-two-request-activation"
   ]
 }

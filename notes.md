@@ -9,6 +9,9 @@
   expires a newly created pseudo, safe-disabling on restoration header failure.
   VB2026 valid service Bearer requests use the validated header pseudo as sole
   principal; mixed cookie A/B and invalid-bearer fallback are denied.
+- The VB2026 `my-ngo-selection` GET now shares the explicit
+  `owner_or_service_auth` central mode, preserving bearer-only service reads
+  and browser-owner reads without invalid-bearer fallback.
 
 - A remediation kör lezárja a Sol `2e0aa501-788f-4e33-8183-30361081557f`
   és Terra blokkolók által jelzett ordering hibákat: friss owner-token nem

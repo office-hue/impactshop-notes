@@ -60,7 +60,7 @@ function impactshop_owner_policy_registry(): array
         // Private reads are also owner-bound to avoid cross-device leakage.
         'GET /impact/v1/saved-offers' => ['policy' => 'owner_required', 'source' => 'impactshop-saved-offers.php'],
         'GET /impact/v1/saved-offers/open/(?P<id>\d+)' => ['policy' => 'owner_required', 'source' => 'impactshop-saved-offers.php'],
-        'GET /impact/v1/vb2026/my-ngo-selection' => ['policy' => 'owner_required', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
+        'GET /impact/v1/vb2026/my-ngo-selection' => ['policy' => 'owner_or_service_auth', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
         'GET /sharity/v1/pseudo/points' => ['policy' => 'owner_required', 'source' => 'sharity-points-api.php'],
         'GET /sharity/v1/pseudo/points/history' => ['policy' => 'owner_required', 'source' => 'sharity-points-api.php'],
         'GET /sharity/v1/pseudo/vacation' => ['policy' => 'owner_required', 'source' => 'sharity-points-api.php'],
