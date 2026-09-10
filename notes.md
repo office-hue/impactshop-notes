@@ -1,3 +1,11 @@
+## 2026-09-10 — Sharity NGO preference CI publication correction
+
+- A current-main reconciliation után a required CI hamisan blokkolt, mert a teljes
+  checkoutot egy redundáns `--depth=1` base-fetch sekélyítette vissza. A workflow
+  most csak ténylegesen hiányzó base commitot fetch-el, sekélyítés nélkül.
+- A PR merge-ref exact commit-lane ellenőrzése és a repo-local adapter fixture PASS;
+  required jobnév, termékkód, runtime, provider és deploy authority nem változott.
+
 ## 2026-09-10 — Sharity NGO preference Package B Terra re-QA after hardening
 
 - A code-issue registry binding, confidential-BFF admission, exact scope és

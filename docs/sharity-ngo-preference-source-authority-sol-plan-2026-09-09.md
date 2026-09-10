@@ -198,3 +198,12 @@ new global preference catalog policy independent of campaign flags. Terra must
 verify those decisions against the existing owner-grant and catalog source, define
 the exact file allowlist and test matrix, and approve Luna only if no protected-file
 edit or unresolved security/data decision remains.
+
+## Source-publication CI reconciliation
+
+The current-main reconciliation exposed a CI-only false block: after a full
+checkout the workflow fetched the already present PR base with `--depth=1`, which
+created a shallow boundary and made the commit-lane guard inspect unrelated old
+history. The bounded publication correction removes that shallow refetch and only
+fetches the exact base when the commit is genuinely absent. It changes no required
+job name, admission rule, runtime, provider or deploy authority.

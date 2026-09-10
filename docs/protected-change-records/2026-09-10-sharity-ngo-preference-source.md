@@ -61,12 +61,15 @@ no activation, staging, provider, VPS, database, secret or production authority.
   "operatorApprovalRef": "operator-approval:sharity-ngo-preference-source-publication-20260910",
   "planRef": "docs/sharity-ngo-preference-source-authority-sol-plan-2026-09-09.md#sharity-ngo-preference-package-b-source-authority-sol-decision",
   "protectedPaths": [
+    ".github/workflows/ci.yml",
     "docs/bastion-guard-status.md",
     "wp-content/mu-plugins/impactshop-sharity-ngo-preference-source.php.off"
   ],
   "rollbackNote": "revert the exact source-only candidate commits before activation; no live schema or data exists",
   "schemaVersion": 1,
   "smokeTags": [
+    "deploy:guard-preflight",
+    "deploy:checksum-verify",
     "sharity:ngo-preference-source-static",
     "sharity:ngo-preference-source-contract",
     "sharity:disabled-adapter"
