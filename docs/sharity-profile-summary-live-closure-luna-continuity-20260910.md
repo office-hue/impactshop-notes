@@ -85,10 +85,18 @@ acceptance are not performed.
 
 ## Checkpoint C — REST predicate and bounded pending-grant quota
 
-The follow-up on `9df5c126` keeps the runtime scope to the two identity MU
+The complete source-bearing candidate starts at
+`origin/main@dd0a19eecfdeb021ed312b5a836f14ff64af0a6e` and ends at
+`f3a5fb3e27e840de07c14c570eeef7bf789718b7` with tree
+`9505d904e68bb5c49ddaa1c5aa3e4a72a2c25fd5`; the governance-only follow-up
+`6cf300bb547da540e0107ada9d015fd11499520f` is separate. The follow-up keeps the runtime scope to the two identity MU
 plugins. The shared cookie-touch predicate rejects non-empty scalar
 `rest_route` query dispatch and pretty REST paths under subdirectories, while
 the earlier `impact_pseudo_id` query compatibility branch remains first.
+This rejection applies only to the shared init/HTML bootstrap. The public
+`GET /impact/v1/identity/profile` handler intentionally owns exactly one
+pending issuance when no cookie exists and uses the same common prune/quota
+issuer; REST is not a zero-issuance path.
 Common owner issuance now prunes only expired pending rows in the indexed
 state/expiry range, at most 64 per transaction. Automatic public issuance
 locks up to 257 eligible rows and refuses at 256, committing successful prune

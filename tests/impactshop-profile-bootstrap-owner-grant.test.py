@@ -65,6 +65,11 @@ assert "impactshop_identity_bootstrap_block_legacy" in resolve
 assert "impactshop_identity_bootstrap_block_legacy" in profile_get
 assert "'identity_state'    => 'unavailable'" in resolve
 assert "'identity_state'    => 'unavailable'" in profile_get
+# REST is excluded from the shared init/HTML cookie-touch bootstrap only. The
+# public profile GET handler intentionally owns one issuance path and uses the
+# same common prune/quota issuer; it must not be mistaken for zero REST issue.
+assert profile_get.count("impactshop_identity_owner_issue($pseudo_id)") == 1
+assert "impactshop_identity_owner_issue($pseudo_id, $supersedes_grant_hash, false)" not in profile_get
 
 # The legacy callback remains present as a compatibility fallback; with the
 # in-memory pseudo set above it cannot issue a duplicate first-request grant.

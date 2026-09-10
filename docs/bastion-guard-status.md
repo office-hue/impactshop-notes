@@ -6,9 +6,12 @@ Last updated: 2026-09-10
 
 The source-only Luna follow-up keeps the runtime scope to the two protected
 identity files: `impactshop-boot.php` and `impactshop-identity-panel.php`.
-The shared cookie-touch predicate now rejects scalar, non-empty `rest_route`
-queries and pretty `/wp-json` paths below a subdirectory while preserving the
-earlier `impact_pseudo_id` query override. The owner issuer prunes only expired
+The shared init/HTML cookie-touch predicate now rejects scalar, non-empty
+`rest_route` queries and pretty `/wp-json` paths below a subdirectory while
+preserving the earlier `impact_pseudo_id` query override. This does not disable
+the public `GET /impact/v1/identity/profile` handler: its no-cookie path
+intentionally owns exactly one pending issuance through the same common
+prune/quota issuer. The owner issuer prunes only expired
 pending rows with the indexed state/expiry predicate, at most 64 per issuance
 transaction, and locks a bounded 257-row eligible set before enforcing the
 256-row public automatic quota. Successful quota refusal commits pruning and

@@ -1,17 +1,25 @@
 # Sharity profile bootstrap/quota — protected change record
 
-Date: 2026-09-10
+Date: 2026-09-11
 
 Status: source-only Luna checkpoint; no publication or live activation
 
 ## Scope and candidate binding
 
-This narrow follow-up continues the clean candidate at
-`9df5c1269f9a6cc9f7ad9924518676bda064df32` on branch
+This publication candidate is the complete source-bearing range from
+`origin/main@dd0a19eecfdeb021ed312b5a836f14ff64af0a6e` through
+`f3a5fb3e27e840de07c14c570eeef7bf789718b7` on branch
 `fix/sharity-profile-bootstrap-owner-grant-luna-20260910`. The exact candidate
-base for this checkpoint is `9df5c1269f9a6cc9f7ad9924518676bda064df32` and the
-candidate head/tree are the resulting checkpoint commit metadata. No sibling
-worktree, shared dependency, provider, database, VPS or runtime state is used.
+base is `dd0a19eecfdeb021ed312b5a836f14ff64af0a6e`; the earlier remediation
+checkpoint within that range is `9df5c1269f9a6cc9f7ad9924518676bda064df32`.
+The exact source-bearing head/tree are `f3a5fb3e27e840de07c14c570eeef7bf789718b7` /
+`9505d904e68bb5c49ddaa1c5aa3e4a72a2c25fd5`. The earlier `9df5c126` source
+checkpoint is included in that full range. Governance-only follow-up commit
+`6cf300bb547da540e0107ada9d015fd11499520f` (tree
+`f1d89cdea782d58476be448e696d83905849e02f`) is identified separately; this
+record's correction is also governance-only and does not invent a
+self-referential final head. No sibling worktree, shared dependency, provider,
+database, VPS or runtime state is used.
 
 The runtime scope is exactly two protected files: `impactshop-boot.php` and
 `impactshop-identity-panel.php`. The guard-hash and bastion metadata paths below
@@ -28,8 +36,12 @@ are the required integrity companions for those two runtime files.
 ## Invariants and risk
 
 - Query REST (`rest_route`) and pretty REST under a subdirectory never trigger
-  automatic cookie touch; the earlier `impact_pseudo_id` query compatibility
-  branch remains first and unchanged in behavior.
+  the shared init/HTML automatic cookie-touch bootstrap; the earlier
+  `impact_pseudo_id` query compatibility branch remains first and unchanged in
+  behavior. This exclusion does not disable the public
+  `GET /impact/v1/identity/profile` handler: when that handler has no cookie,
+  it intentionally owns exactly one common owner issuance and therefore uses
+  the same prune/quota path as other public automatic issuers.
 - Each issuance transaction prunes only expired `state='pending'` rows,
   bounded to 64 and indexed by state/expiry. Active and nonexpired pending
   rows are preserved.

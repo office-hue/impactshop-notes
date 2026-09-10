@@ -7458,10 +7458,14 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - Source-only checkpoint: no push, PR, deployment, SSH, shared-dependency, provider, database, runtime, cron or watchdog mutation. Targeted shell tests, adapter full-validation/bastion/freeze/verify, strict audit, DocSync/continuity, diff-check and clean-tree checkpoint remain the closeout gates.
 ## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
 
-- On clean checkpoint `9df5c126`, the shared cookie-touch predicate now rejects
-  non-empty scalar `rest_route` query dispatch and pretty `/wp-json` paths under
-  subdirectories. The earlier `impact_pseudo_id` query compatibility branch
-  remains first and behavior-tested.
+- On the complete source-bearing range from origin/main `dd0a19eecfdeb021ed312b5a836f14ff64af0a6e`
+  through `f3a5fb3e27e840de07c14c570eeef7bf789718b7` (tree
+  `9505d904e68bb5c49ddaa1c5aa3e4a72a2c25fd5`), the shared init/HTML
+  cookie-touch predicate rejects non-empty scalar `rest_route` query dispatch
+  and pretty `/wp-json` paths under subdirectories. The earlier
+  `impact_pseudo_id` query compatibility branch remains first and
+  behavior-tested. The public profile REST GET handler intentionally owns one
+  no-cookie pending issuance through the same common prune/quota path.
 - Common owner issuance prunes only expired `state='pending'` rows with the
   indexed state/expiry predicate, at most 64 per transaction. Public automatic
   issuance locks a bounded eligible set and refuses at 256 rows, committing

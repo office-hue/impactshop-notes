@@ -2,8 +2,10 @@
 
 - Source-only checkpoint C keeps the runtime change to `impactshop-boot.php` and
   `impactshop-identity-panel.php`. Query REST and pretty REST under a
-  subdirectory are excluded from automatic cookie touch; `impact_pseudo_id`
-  query compatibility is preserved.
+  subdirectory are excluded from the shared init/HTML automatic cookie touch;
+  `impact_pseudo_id` query compatibility is preserved. The public profile REST
+  GET handler intentionally owns exactly one no-cookie pending issuance through
+  the common prune/quota path, so REST is not a zero-issuance path.
 - Owner issuance prunes expired pending rows in a bounded 64-row transaction,
   preserves active/nonexpired rows, and enforces a 256-row public pending quota
   before token/cookie/global-marker creation. The bounded locking read covers
