@@ -68,5 +68,9 @@ The Linux CI fixture also uses an explicit snapshot assertion helper so an
 early namespace or migration mismatch reports the exact expected field and
 bounded snapshot content instead of exiting silently.
 
+The permission assertion now tries GNU `stat -c` first and falls back to BSD
+`stat -f`, preventing GNU filesystem-stat output from contaminating the mode
+value while retaining the same required `0700`/`0600` contract.
+
 Next use `gpt-5.6-luna`, medium, only if the operator explicitly authorizes
 source publication. Otherwise no further action is required in this worktree.

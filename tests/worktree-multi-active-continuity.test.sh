@@ -114,7 +114,7 @@ COORD_DIR="$COMMON_GIT_DIR/office-hue-worktree-coordination"
 ACTIVE_FILE="$COORD_DIR/ACTIVE_WORKTREE.md"
 SNAP_FILE="$COORD_DIR/ACTIVE_WORKTREES.md"
 mode_of() {
-  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+  stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1"
 }
 assert_file_contains() {
   local needle="$1"
@@ -133,7 +133,7 @@ assert_file_contains 'migration_source: foreign-or-invalid-legacy-ignored' "$ACT
 [[ "$(mode_of "$SNAP_FILE")" == "600" ]]
 
 mode_of() {
-  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+  stat -c '%a' "$1" 2>/dev/null || stat -f '%Lp' "$1"
 }
 
 [[ "$(mode_of "$COORD_DIR")" == "700" ]]
