@@ -116,9 +116,9 @@ SNAP_FILE="$COORD_DIR/ACTIVE_WORKTREES.md"
 mode_of() {
   stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
 }
-rg -q --fixed-strings "path: $SECONDARY" "$ACTIVE_FILE"
-rg -q --fixed-strings 'coordination_namespace: common-git-dir-v1' "$ACTIVE_FILE"
-rg -q --fixed-strings 'migration_source: foreign-or-invalid-legacy-ignored' "$ACTIVE_FILE"
+grep -Fq "path: $SECONDARY" "$ACTIVE_FILE"
+grep -Fq 'coordination_namespace: common-git-dir-v1' "$ACTIVE_FILE"
+grep -Fq 'migration_source: foreign-or-invalid-legacy-ignored' "$ACTIVE_FILE"
 [[ "$(mode_of "$COORD_DIR")" == "700" ]]
 [[ "$(mode_of "$ACTIVE_FILE")" == "600" ]]
 [[ "$(mode_of "$SNAP_FILE")" == "600" ]]
@@ -137,17 +137,17 @@ bash "$FOREIGN/scripts/worktree-coordination-sync.sh" --repo-root "$FOREIGN" --r
 FOREIGN_COMMON_GIT_DIR="$(git -C "$FOREIGN" rev-parse --absolute-git-dir)"
 FOREIGN_COORD_DIR="$FOREIGN_COMMON_GIT_DIR/office-hue-worktree-coordination"
 [[ "$FOREIGN_COORD_DIR" != "$COORD_DIR" ]]
-rg -q --fixed-strings "path: $FOREIGN" "$FOREIGN_COORD_DIR/ACTIVE_WORKTREE.md"
-rg -q --fixed-strings 'migration_source: same-repo-legacy' "$FOREIGN_COORD_DIR/ACTIVE_WORKTREE.md"
+grep -Fq "path: $FOREIGN" "$FOREIGN_COORD_DIR/ACTIVE_WORKTREE.md"
+grep -Fq 'migration_source: same-repo-legacy' "$FOREIGN_COORD_DIR/ACTIVE_WORKTREE.md"
 [[ "$(shasum -a 256 "$LEGACY_ACTIVE_FILE" | awk '{print $1}')" == "$legacy_active_before" ]]
 [[ "$(shasum -a 256 "$LEGACY_SNAP_FILE" | awk '{print $1}')" == "$legacy_snap_before" ]]
 
 bash "$PRIMARY/scripts/worktree-coordination-sync.sh" --repo-root "$PRIMARY" --primary "$PRIMARY" >/dev/null
 bash "$SECONDARY/scripts/worktree-coordination-sync.sh" --repo-root "$SECONDARY" --register "$SECONDARY" >/dev/null
 
-rg -q --fixed-strings "path: $PRIMARY" "$ACTIVE_FILE"
-rg -q --fixed-strings "primary_path: $PRIMARY" "$SNAP_FILE"
-rg -q --fixed-strings "## $SECONDARY" "$SNAP_FILE"
+grep -Fq "path: $PRIMARY" "$ACTIVE_FILE"
+grep -Fq "primary_path: $PRIMARY" "$SNAP_FILE"
+grep -Fq "## $SECONDARY" "$SNAP_FILE"
 (cd "$PRIMARY" && bash scripts/worktree-continuity-guard.sh --mode push >/dev/null)
 
 payload="$(cd "$SECONDARY" && bash scripts/worktree-continuity-guard.sh --json --mode push)"
@@ -225,16 +225,16 @@ set -e
 
 bash "$SECONDARY/scripts/worktree-coordination-sync.sh" \
   --repo-root "$SECONDARY" --primary "$SECONDARY" >/dev/null
-rg -q --fixed-strings "path: $SECONDARY" "$ACTIVE_FILE"
+grep -Fq "path: $SECONDARY" "$ACTIVE_FILE"
 (cd "$SECONDARY" && bash scripts/worktree-continuity-guard.sh --mode push >/dev/null)
 
 (cd "$REPO" && bash scripts/install-hooks.sh >/dev/null)
 HOOK_DIR="$(git -C "$REPO" rev-parse --git-path hooks)"
 if [[ "$HOOK_DIR" != /* ]]; then HOOK_DIR="$REPO/$HOOK_DIR"; fi
-! rg -q 'resolve_ai_agent_repo|AI_AGENT_REPO|npm --prefix .*memory:' \
+! grep -REq 'resolve_ai_agent_repo|AI_AGENT_REPO|npm --prefix .*memory:' \
   "$ROOT/scripts/guarded-push.sh" "$ROOT/scripts/install-hooks.sh" \
   "$ROOT/scripts/start-feature-worktree.sh" "$HOOK_DIR"
-rg -q 'WORKTREE_COORDINATION_SYNC' "$HOOK_DIR/pre-push"
-rg -q -- '--register "\$REPO_ROOT"' "$HOOK_DIR/pre-push"
+grep -Eq 'WORKTREE_COORDINATION_SYNC' "$HOOK_DIR/pre-push"
+grep -Eq -- '--register "\$REPO_ROOT"' "$HOOK_DIR/pre-push"
 
 echo "worktree multi-active continuity: PASS"
