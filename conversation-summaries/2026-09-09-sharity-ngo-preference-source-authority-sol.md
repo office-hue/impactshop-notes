@@ -42,3 +42,7 @@
   redirect validation, PKCE-bound one-time code issue/redeem, route-auth metadata,
   response headers, five table contract, and CAS/idempotency/audit helpers. Python
   static evidence passes; PHP evidence remains blocked by the absent executable.
+- Terra re-QA (2026-09-10): the remediation is not yet functionally sufficient.
+  Raw CSRF storage, retryable invalid code redemption, ungated catalog revision and
+  selection, weak idempotency/audit, and missing schema/handler descriptors require
+  another bounded Luna correction. No Sol decision is required.

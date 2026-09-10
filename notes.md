@@ -1,3 +1,11 @@
+## 2026-09-10 — Sharity NGO preference Package B Terra re-QA after remediation
+
+- A remediation még nem zárható: raw CSRF token storage, retryolható hibás code
+  redemption, catalog revision/selection gate hiánya, gyenge idempotency/audit és
+  schema/handler descriptor hiány maradt.
+- A javítás a meglévő Luna allowlisten belül marad; új Sol döntés nem kell. PHP
+  lint/contract evidence továbbra is csak admittált PHP-képes környezetben lehet.
+
 ## 2026-09-10 — Sharity NGO preference Package B Terra re-QA
 
 - QA-B1 és QA-B2 architekturálisan lezárható: a source issuer origin exact és

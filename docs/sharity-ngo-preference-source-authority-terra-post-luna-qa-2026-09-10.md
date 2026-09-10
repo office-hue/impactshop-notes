@@ -59,3 +59,46 @@ activation, provider, deploy, or protected-file expansion is admitted. This is a
 bounded implementation correction, not a new Sol architecture decision. After the
 correction, PHP lint and the hermetic PHP test still require a PHP-capable admitted
 environment before Terra can give functional QA approval.
+
+## Terra re-QA of Luna remediation
+
+The remediation adds useful owner-grant, subject, PKCE, route metadata, table-name,
+and CAS helpers, but it does not close functional QA. Status remains
+`luna-remediation-required`.
+
+### QA-L3 — one-time and preference mutation integrity remains incomplete
+
+- CSRF records are keyed by the raw browser token rather than a token hash.
+- A live authorization code is consumed only after all client/redirect/PKCE checks
+  pass. An invalid verifier can therefore be retried against the same code; the
+  exchange is not atomic single-use on an attempted redemption. The issue helper
+  also accepts an arbitrary non-empty code rather than a bounded 256-bit code
+  representation.
+- CAS accepts any non-empty supplied revision and NGO ID. It does not require the
+  current catalog revision or a `selectable` result, so it cannot return the
+  required stale-revision or `selection_required` outcome.
+- Idempotency records only the key and storage key, so the same key with different
+  request material is treated as a replay. Audit records omit before/after NGO,
+  revision, and outcome fields required for an append-only decision trace.
+- The five names and route metadata are useful declarations, but there is still no
+  schema descriptor or fail-closed handler contract connecting auth, code/session,
+  and preference operations to those declared endpoints.
+
+### Required bounded Luna correction
+
+Within the existing allowlist, change the pure contracts and tests to prove:
+
+1. hashed CSRF storage, bounded code representation, and atomic consume-on-attempt
+   code redemption for wrong PKCE/client/redirect as well as replay/expiry;
+2. a catalog-aware write gate accepting the current revision and selection result,
+   returning `stale_revision` or `selection_required` before mutation;
+3. request-fingerprinted idempotency with a stable prior result only for an equal
+   request, plus append-only audit tuples containing before/after NGO, versions,
+   revisions, outcome, and time; and
+4. pure schema/endpoint descriptors that declare the five records and connect each
+   endpoint to a fail-closed handler contract without registering or activating any
+   WordPress route.
+
+The PHP execution blocker remains separate: no lint or hermetic PHP evidence can be
+claimed until a PHP-capable environment is explicitly admitted. No Sol decision is
+needed for these corrections.
