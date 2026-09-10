@@ -1,11 +1,11 @@
 # Sharity NGO preference Package B — Terra post-Luna QA
 
-Status: `luna-remediation-required`; not runtime-eligible.
+Status: `re-qa-approved-for-sol-source-publication`; not runtime-eligible.
 
 Reviewed identity: `impactshop-notes`, branch
 `feat/sharity-ngo-preference-source-authority-terra-20260909`, Luna source commit
-`b9c19461fe8d0bbf1e955c87dc327100f84ac5f0`, tree
-`65797bc51f6b15f87db1fe14ac45b000a0c394ac`.
+`cec223010c18e57aa38a19df78c99cb5ea2a78b8`, tree
+`cd941a34c088b09a75f59484a50372a954bde880`.
 
 ## Evidence reviewed
 
@@ -140,3 +140,18 @@ Within the existing allowlist, add and test:
 No activation, real client/secret, policy data, schema execution, provider, deploy,
 or protected runtime touch is permitted. PHP lint and hermetic execution remain a
 separate environment admission blocker.
+
+## Terra re-QA after PHP capability closure
+
+The approved Air PHP runtime executed the disabled module's syntax and hermetic
+contract checks at the reviewed checkpoint. Three fixture defects were corrected:
+an array literal was passed by reference, a consumed authorization code was later
+expected to redeem, and catalog-row fields were supplied where separate policy
+fields were required. The final fixture preserves the intended contracts: hashed
+CSRF records, consume-on-attempt code redemption, an independent successful
+redemption, catalog/policy selection, and request-fingerprint idempotency conflict.
+
+Result: `re-qa-approved-for-sol-source-publication`. The adapter remains `.off`;
+no WordPress route is registered and no schema, network, provider, secret, VPS or
+runtime mutation occurred. This is source-only QA approval, not staging, release or
+production acceptance.
