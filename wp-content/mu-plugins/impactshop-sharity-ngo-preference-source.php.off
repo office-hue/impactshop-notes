@@ -42,9 +42,39 @@ function sharity_ngo_pref_exact_origin(string $provided, string $canonical): boo
     return $left !== null && $right !== null && hash_equals($right, $left);
 }
 
+function sharity_ngo_pref_owner_grant_admitted(string $pseudo_id): bool
+{
+    return $pseudo_id !== ''
+        && function_exists('impactshop_identity_owner_authorized')
+        && impactshop_identity_owner_authorized($pseudo_id);
+}
+
+function sharity_ngo_pref_subject_key(string $pseudo_id, string $secret, string $version = SHARITY_NGO_PREF_SOURCE_VERSION): ?string
+{
+    $normalized = strtolower(trim($pseudo_id));
+    if ($normalized === '' || $secret === '' || $version !== SHARITY_NGO_PREF_SOURCE_VERSION) {
+        return null;
+    }
+    return $version . ':' . rtrim(strtr(base64_encode(hash_hmac('sha256', $normalized, $secret, true)), '+/', '-_'), '=');
+}
+
+function sharity_ngo_pref_redirect_uri_valid(string $redirect): bool
+{
+    $parts = parse_url($redirect);
+    if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || empty($parts['host'])) {
+        return false;
+    }
+    foreach (['user', 'pass', 'fragment'] as $forbidden) {
+        if (array_key_exists($forbidden, $parts)) {
+            return false;
+        }
+    }
+    return !str_contains($redirect, '*');
+}
+
 function sharity_ngo_pref_client_redirect_allowed(array $registry, string $client, string $redirect): bool
 {
-    if ($client === '' || $redirect === '' || str_contains($client, '*') || str_contains($redirect, '*')) {
+    if ($client === '' || !sharity_ngo_pref_redirect_uri_valid($redirect) || str_contains($client, '*')) {
         return false;
     }
     $registered = $registry[$client] ?? null;
@@ -57,6 +87,56 @@ function sharity_ngo_pref_client_redirect_allowed(array $registry, string $clien
         }
     }
     return false;
+}
+
+function sharity_ngo_pref_pkce_valid(string $verifier, string $challenge): bool
+{
+    if ($verifier === '' || $challenge === '') {
+        return false;
+    }
+    $digest = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+    return hash_equals($challenge, $digest);
+}
+
+function sharity_ngo_pref_issue_code(array &$codes, string $code, array $claims, int $now): bool
+{
+    if ($code === '' || empty($claims['owner_grant_hash']) || empty($claims['subject'])
+        || empty($claims['client_id']) || str_contains((string) $claims['client_id'], '*')
+        || !sharity_ngo_pref_redirect_uri_valid((string) ($claims['redirect_uri'] ?? ''))
+        || empty($claims['pkce_challenge'])) {
+        return false;
+    }
+    $digest = hash('sha256', $code);
+    if (isset($codes[$digest])) {
+        return false;
+    }
+    $codes[$digest] = [
+        'owner_grant_hash' => (string) $claims['owner_grant_hash'],
+        'subject' => (string) $claims['subject'],
+        'client_id' => (string) $claims['client_id'],
+        'redirect_uri' => (string) $claims['redirect_uri'],
+        'pkce_challenge' => (string) $claims['pkce_challenge'],
+        'expires_at' => $now + SHARITY_NGO_PREF_CODE_TTL,
+        'consumed_at' => null,
+    ];
+    return true;
+}
+
+function sharity_ngo_pref_redeem_code(array &$codes, string $code, string $owner_grant_hash, string $client, string $redirect, string $verifier, int $now): ?string
+{
+    $digest = hash('sha256', $code);
+    $entry = $codes[$digest] ?? null;
+    if (!is_array($entry) || $entry['consumed_at'] !== null || (int) $entry['expires_at'] < $now) {
+        return null;
+    }
+    if (!hash_equals((string) $entry['owner_grant_hash'], $owner_grant_hash)
+        || !hash_equals((string) $entry['client_id'], $client)
+        || !hash_equals((string) $entry['redirect_uri'], $redirect)
+        || !sharity_ngo_pref_pkce_valid($verifier, (string) $entry['pkce_challenge'])) {
+        return null;
+    }
+    $codes[$digest]['consumed_at'] = $now;
+    return (string) $entry['subject'];
 }
 
 function sharity_ngo_pref_csrf_digest(string $secret, string $owner_grant_hash, string $client, string $redirect, string $challenge, string $nonce): string
@@ -112,9 +192,45 @@ function sharity_ngo_pref_selection_status(array $master, ?array $policy, int $n
     return 'selectable';
 }
 
-function sharity_ngo_pref_origin_post_allowed(string $origin, string $canonical_origin, bool $csrf_valid): bool
+function sharity_ngo_pref_origin_post_allowed(?string $origin, string $canonical_origin, bool $csrf_valid): bool
 {
-    return sharity_ngo_pref_exact_origin($origin, $canonical_origin) && $csrf_valid;
+    return $origin !== null && $origin !== '' && sharity_ngo_pref_exact_origin($origin, $canonical_origin) && $csrf_valid;
+}
+
+function sharity_ngo_pref_response_headers(): array
+{
+    return ['Cache-Control' => SHARITY_NGO_PREF_CACHE_CONTROL];
+}
+
+function sharity_ngo_pref_table_names(): array
+{
+    return [
+        'authorization_codes',
+        'web_sessions',
+        'catalog_policy',
+        'preferences',
+        'preference_audit',
+    ];
+}
+
+function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, array &$audit, string $subject, string $scope, int $ngo_id, string $revision, int $expected_version, string $idempotency_key, int $now): string
+{
+    if ($subject === '' || $scope === '' || $ngo_id <= 0 || $revision === '' || $idempotency_key === '') {
+        return 'invalid';
+    }
+    if (array_key_exists($idempotency_key, $idempotency)) {
+        return 'idempotent_replay';
+    }
+    $key = $subject . ':' . $scope;
+    $current = $preferences[$key] ?? ['version' => 0];
+    if ((int) $current['version'] !== $expected_version) {
+        return 'conflict';
+    }
+    $next = $expected_version + 1;
+    $preferences[$key] = ['ngo_id' => $ngo_id, 'revision' => $revision, 'version' => $next, 'updated_at' => $now];
+    $idempotency[$idempotency_key] = $key;
+    $audit[] = ['operation_id' => $idempotency_key, 'subject' => $subject, 'scope' => $scope, 'version' => $next, 'at' => $now];
+    return 'updated';
 }
 
 /**
@@ -125,12 +241,12 @@ function sharity_ngo_pref_origin_post_allowed(string $origin, string $canonical_
 function sharity_ngo_pref_source_routes(): array
 {
     return [
-        'GET /identity/web-session/authorize',
-        'POST /identity/web-session/authorize',
-        'POST /identity/web-session/token',
-        'GET /identity/web-session/summary',
-        'POST /identity/web-session/revoke',
-        'GET /ngo-preferences',
-        'PUT /ngo-preferences/{scope_key}',
+        ['method' => 'GET', 'path' => '/identity/web-session/authorize', 'auth' => 'owner-grant-intent'],
+        ['method' => 'POST', 'path' => '/identity/web-session/authorize', 'auth' => 'exact-origin-csrf-owner-grant'],
+        ['method' => 'POST', 'path' => '/identity/web-session/token', 'auth' => 'confidential-bff-pkce'],
+        ['method' => 'GET', 'path' => '/identity/web-session/summary', 'auth' => 'bearer'],
+        ['method' => 'POST', 'path' => '/identity/web-session/revoke', 'auth' => 'bearer-or-bff'],
+        ['method' => 'GET', 'path' => '/ngo-preferences', 'auth' => 'bearer'],
+        ['method' => 'PUT', 'path' => '/ngo-preferences/{scope_key}', 'auth' => 'bearer-cas'],
     ];
 }

@@ -16,6 +16,11 @@ $registry = ['bff-prod' => ['https://bff.example/callback']];
 assert(sharity_ngo_pref_client_redirect_allowed($registry, 'bff-prod', 'https://bff.example/callback'));
 assert(!sharity_ngo_pref_client_redirect_allowed($registry, 'bff-prod', 'https://bff.example/callback.evil'));
 assert(!sharity_ngo_pref_client_redirect_allowed(['bff-*' => ['https://bff.example/callback']], 'bff-prod', 'https://bff.example/callback'));
+assert(sharity_ngo_pref_redirect_uri_valid('https://bff.example/callback'));
+assert(!sharity_ngo_pref_redirect_uri_valid('http://bff.example/callback'));
+assert(!sharity_ngo_pref_redirect_uri_valid('https://bff.example/callback#fragment'));
+assert(sharity_ngo_pref_subject_key('Profile-1', 'subject-secret') !== null);
+assert(sharity_ngo_pref_subject_key('', 'subject-secret') === null);
 
 $digest = sharity_ngo_pref_csrf_digest('secret', 'grant', 'bff-prod', 'https://bff.example/callback', 'pkce', 'nonce');
 $tokens = ['csrf' => ['digest' => $digest, 'expires_at' => 100, 'used' => false]];
@@ -26,7 +31,22 @@ assert(!sharity_ngo_pref_consume_csrf($tokens, 'missing', $digest, 99));
 assert(!sharity_ngo_pref_consume_csrf(['expired' => ['digest' => $digest, 'expires_at' => 1]], 'expired', $digest, 2));
 assert(sharity_ngo_pref_origin_post_allowed('https://sharity.hu', 'https://sharity.hu:443', true));
 assert(!sharity_ngo_pref_origin_post_allowed('https://app.sharity.hu', 'https://sharity.hu', true));
+assert(!sharity_ngo_pref_origin_post_allowed(null, 'https://sharity.hu', true));
 assert(!sharity_ngo_pref_origin_post_allowed('https://sharity.hu', 'https://sharity.hu', false));
+
+$codes = [];
+$claims = ['owner_grant_hash' => 'grant', 'subject' => 'v1:subject', 'client_id' => 'bff-prod', 'redirect_uri' => 'https://bff.example/callback', 'pkce_challenge' => rtrim(strtr(base64_encode(hash('sha256', 'verifier', true)), '+/', '-_'), '=')];
+assert(sharity_ngo_pref_issue_code($codes, 'one-time-code', $claims, 10));
+assert(sharity_ngo_pref_redeem_code($codes, 'one-time-code', 'grant', 'bff-prod', 'https://bff.example/callback', 'verifier', 20) === 'v1:subject');
+assert(sharity_ngo_pref_redeem_code($codes, 'one-time-code', 'grant', 'bff-prod', 'https://bff.example/callback', 'verifier', 20) === null);
+assert(sharity_ngo_pref_redeem_code($codes, 'missing', 'grant', 'bff-prod', 'https://bff.example/callback', 'verifier', 20) === null);
+assert(sharity_ngo_pref_response_headers()['Cache-Control'] === 'private, no-store');
+assert(count(sharity_ngo_pref_table_names()) === 5);
+$routes = sharity_ngo_pref_source_routes();
+assert($routes[0]['method'] === 'GET' && $routes[0]['auth'] === 'owner-grant-intent');
+assert($routes[1]['auth'] === 'exact-origin-csrf-owner-grant');
+assert($routes[2]['auth'] === 'confidential-bff-pkce');
+assert($routes[6]['method'] === 'PUT' && $routes[6]['auth'] === 'bearer-cas');
 
 $session = ['owner_grant_hash' => 'grant', 'expires_at' => 10, 'revoked_at' => null];
 assert(sharity_ngo_pref_bearer_active($session, 10, 'grant'));
@@ -48,5 +68,13 @@ assert(sharity_ngo_pref_selection_status($rows[0], $rows[0], 2) === 'selectable'
 assert(sharity_ngo_pref_selection_status($rows[0], null, 2) === 'selection_required');
 assert(sharity_ngo_pref_selection_status($rows[0], $rows[1], 2) === 'selection_required');
 assert(sharity_ngo_pref_selection_status($rows[0], $rows[0], 9) === 'selection_required');
+
+$preferences = [];
+$idempotency = [];
+$audit = [];
+assert(sharity_ngo_pref_cas_update($preferences, $idempotency, $audit, 'v1:subject', 'profile_default', 2, $revision, 0, 'op-1', 20) === 'updated');
+assert(sharity_ngo_pref_cas_update($preferences, $idempotency, $audit, 'v1:subject', 'profile_default', 1, $revision, 1, 'op-1', 21) === 'idempotent_replay');
+assert(sharity_ngo_pref_cas_update($preferences, $idempotency, $audit, 'v1:subject', 'profile_default', 1, $revision, 0, 'op-2', 21) === 'conflict');
+assert(count($audit) === 1);
 
 fwrite(STDOUT, "PASS sharity NGO preference source contract\n");

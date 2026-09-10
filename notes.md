@@ -26,6 +26,15 @@
   kell. A PHP lint/contract evidencia továbbra is blokkolt a hiányzó PHP executable
   miatt.
 
+## 2026-09-10 — Sharity NGO preference Package B Luna remediation
+
+- A source adapter kiegészült owner-grant gate, subject-HMAC, exact HTTPS redirect,
+  PKCE-s egyszer használatos code, route-auth metadata, response header, öt tábla,
+  CAS/idempotency/audit és fail-closed helper contractokkal.
+- Python static teszt PASS; PHP lint/contract továbbra is blokkolt, mert nincs
+  `php` executable. Runtime, activation, schema, provider, deploy és secret nem
+  történt.
+
 ## 2026-09-10 — Sharity NGO preference Package B Sol revision
 
 - A QA-B1 döntése: környezetenként egy exact HTTPS `home_url('/')` issuer origin;

@@ -38,3 +38,7 @@
   CAS/idempotency/audit, and response contracts. The bounded Luna allowlist remains
   sufficient for remediation; no Sol decision is needed. PHP evidence remains
   blocked until an admitted PHP-capable environment exists.
+- Luna remediation (2026-09-10): added owner-grant gate, subject-HMAC, secure exact
+  redirect validation, PKCE-bound one-time code issue/redeem, route-auth metadata,
+  response headers, five table contract, and CAS/idempotency/audit helpers. Python
+  static evidence passes; PHP evidence remains blocked by the absent executable.
