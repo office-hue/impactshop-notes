@@ -272,6 +272,21 @@ add_filter('rest_request_before_callbacks', 'impactshop_owner_policy_before_call
 
 function impactshop_owner_policy_registered_method($registered_methods, string $method): bool
 {
+    if (is_array($registered_methods)) {
+        // WP_REST_Server::get_routes() exposes normalized method maps such as
+        // ['POST' => true]. Validate the complete map before accepting the
+        // requested method; indexed/mixed maps and non-boolean values are not
+        // valid route method evidence.
+        if ($registered_methods === []) {
+            return false;
+        }
+        foreach ($registered_methods as $registered_method => $enabled) {
+            if (!is_string($registered_method) || $enabled !== true) {
+                return false;
+            }
+        }
+        return array_key_exists($method, $registered_methods);
+    }
     if (is_string($registered_methods)) {
         return in_array($method, preg_split('/[|,\s]+/', $registered_methods, -1, PREG_SPLIT_NO_EMPTY), true);
     }
@@ -324,13 +339,8 @@ function impactshop_owner_policy_runtime_inventory(): array
                 continue;
             }
             $registered_methods = $handler['methods'] ?? '';
-            if (is_string($registered_methods) && in_array($method, preg_split('/[|,\\s]+/', $registered_methods, -1, PREG_SPLIT_NO_EMPTY), true)) {
-                $method_registered = true;
-            }
-            if (is_int($registered_methods)) {
-                $mask = ['GET' => 1, 'POST' => 2, 'PUT' => 4, 'PATCH' => 4, 'DELETE' => 8][$method] ?? 0;
-                $method_registered = $method_registered || ($mask !== 0 && ($registered_methods & $mask) !== 0);
-            }
+            $method_registered = $method_registered
+                || impactshop_owner_policy_registered_method($registered_methods, $method);
             $callback_registered = $callback_registered || isset($handler['callback']);
             if (impactshop_owner_policy_registered_method($registered_methods, $method)) {
                 $callback_exact = $callback_exact || impactshop_owner_policy_callback_matches($handler['callback'] ?? null, (string) ($entry['callback'] ?? ''));
@@ -459,15 +469,8 @@ function impactshop_owner_policy_runtime_self_test(): bool
                 continue;
             }
             $registered_methods = $handler['methods'] ?? '';
-            if (is_string($registered_methods) && in_array($method, preg_split('/[|,\\s]+/', $registered_methods, -1, PREG_SPLIT_NO_EMPTY), true)) {
-                $method_registered = true;
-            }
-            if (is_int($registered_methods)) {
-                $method_mask = ['GET' => 1, 'POST' => 2, 'PUT' => 4, 'PATCH' => 4, 'DELETE' => 8][$method] ?? 0;
-                if ($method_mask !== 0 && ($registered_methods & $method_mask) !== 0) {
-                    $method_registered = true;
-                }
-            }
+            $method_registered = $method_registered
+                || impactshop_owner_policy_registered_method($registered_methods, $method);
             if (impactshop_owner_policy_registered_method($registered_methods, $method)
                 && impactshop_owner_policy_callback_matches($handler['callback'] ?? null, (string) ($entry['callback'] ?? ''))) {
                 $callback_registered = true;

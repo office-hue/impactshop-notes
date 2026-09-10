@@ -7456,3 +7456,19 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - Applied exactly the reviewed seven protected CAS blobs and the six required support paths. The schema-v2 record binds `deploy-control-source:sharity-staging-cas-v1`, the exact reviewed hashes and unchanged production companion `ea894097c343148cb375c74148021ac684ef44ebb04dc56be766f8c86966885d`.
 - Manifest serialization is guard-writer compatible with no trailing newline: `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`; companion: `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
 - Source-only checkpoint: no push, PR, deployment, SSH, shared-dependency, provider, database, runtime, cron or watchdog mutation. Targeted shell tests, adapter full-validation/bastion/freeze/verify, strict audit, DocSync/continuity, diff-check and clean-tree checkpoint remain the closeout gates.
+## 2026-09-10 — Sharity profile live-release staging follow-up
+
+- Staging evidence: six profile CAS files are currently deployed; owner-policy
+  schema v2 is read back as InnoDB and `safe_disable=1` remains active.
+- Root cause of the staging self-test blocker: WordPress `get_routes()` exposes
+  handler methods as associative maps such as `POST => true`. The bounded
+  remediation accepts only exact boolean associative registrations, routes both
+  runtime inventory and self-test through the canonical helper, and adds
+  hermetic exact-callback coverage. Production remains untouched; no database,
+  source, provider, OPcache, cron or watchdog mutation occurred.
+- Terra/high rejected the first local checkpoint because malformed mixed maps
+  were not fully fail-closed and protected source admission was missing. The
+  completed correction validates the whole method map and uses an exact
+  schema-v1 protected record for the four protected paths; it does not expand
+  the schema-v2 deploy-control profile. Staging remains `safe_disable=1` and
+  production remains untouched.
