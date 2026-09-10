@@ -381,6 +381,22 @@ Operator approval reference:
 - A tartalmi remote-write keresés kizárólag changed script/bin/deploy vagy CI
   workflow végrehajtható surface-en fut; docs és tests fixture szöveg nem
   minősíti át a változást deploynak.
+## 2026-09-09 Sharity staging CAS source-admission bootstrap
+
+The repo-local DEV-v2 contract contains one fixed source-admission profile for
+the already completed Sharity staging CAS candidate. It is not a general deploy
+class and grants no provider or remote authority. The profile requires the exact
+seven protected CAS modifications plus the exact six continuity/support paths,
+an immutable plan and approval reference, and a schema-v2 record whose reviewed
+SHA-256 matches the byte-identical production companion at base and head.
+Every protected candidate file also has a contract-pinned HEAD SHA-256 that the
+manifest must echo and the adapter verifies from raw Git blob bytes.
+
+The admission control itself is isolated on a separate branch and closes through
+the ordinary schema-v1 protected lane, so it cannot admit itself. Control-plane
+contract, policy, adapter, tests and CI remain maximum-protected and belong to
+the deploy-guard smoke group. No runtime scheduler, cron or watchdog is involved.
+
 # 2026-09-09 Sharity Profile SP1 evidence sync
 
 The Sharity Profile SP1 package changes no governance executable or admission
