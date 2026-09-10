@@ -29,6 +29,9 @@ assert "consumed_at'" in SOURCE
 assert "stale_revision" in SOURCE
 assert "idempotency_conflict" in SOURCE
 assert "fail_closed_until_enabled" in SOURCE
+assert "SHARITY_NGO_PREF_SCOPES" in SOURCE
+assert "bff_authenticated" in SOURCE
+assert "before_revision" in SOURCE and "after_revision" in SOURCE
 assert "policy_allow_user_selection" in SOURCE
 assert "campaign" not in SOURCE.lower()
 

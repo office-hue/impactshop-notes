@@ -12,6 +12,7 @@ const SHARITY_NGO_PREF_SOURCE_VERSION = 'v1';
 const SHARITY_NGO_PREF_CODE_TTL = 60;
 const SHARITY_NGO_PREF_BEARER_TTL = 900;
 const SHARITY_NGO_PREF_CACHE_CONTROL = 'private, no-store';
+const SHARITY_NGO_PREF_SCOPES = ['profile_default', 'impact_shopping', 'offerwall', 'commitments', 'vb2026'];
 
 function sharity_ngo_pref_normalize_origin(string $origin): ?string
 {
@@ -98,11 +99,12 @@ function sharity_ngo_pref_pkce_valid(string $verifier, string $challenge): bool
     return hash_equals($challenge, $digest);
 }
 
-function sharity_ngo_pref_issue_code(array &$codes, string $code, array $claims, int $now): bool
+function sharity_ngo_pref_issue_code(array &$codes, string $code, array $claims, array $registry, int $now): bool
 {
     if (strlen($code) !== 32 || empty($claims['owner_grant_hash']) || empty($claims['subject'])
         || empty($claims['client_id']) || str_contains((string) $claims['client_id'], '*')
         || !sharity_ngo_pref_redirect_uri_valid((string) ($claims['redirect_uri'] ?? ''))
+        || !sharity_ngo_pref_client_redirect_allowed($registry, (string) $claims['client_id'], (string) $claims['redirect_uri'])
         || empty($claims['pkce_challenge'])) {
         return false;
     }
@@ -122,7 +124,7 @@ function sharity_ngo_pref_issue_code(array &$codes, string $code, array $claims,
     return true;
 }
 
-function sharity_ngo_pref_redeem_code(array &$codes, string $code, string $owner_grant_hash, string $client, string $redirect, string $verifier, int $now): ?string
+function sharity_ngo_pref_redeem_code(array &$codes, string $code, string $owner_grant_hash, string $client, string $redirect, string $verifier, bool $bff_authenticated, int $now): ?string
 {
     $digest = hash('sha256', $code);
     $entry = $codes[$digest] ?? null;
@@ -130,13 +132,19 @@ function sharity_ngo_pref_redeem_code(array &$codes, string $code, string $owner
         return null;
     }
     $codes[$digest]['consumed_at'] = $now;
-    if (!hash_equals((string) $entry['owner_grant_hash'], $owner_grant_hash)
+    if (!$bff_authenticated
+        || !hash_equals((string) $entry['owner_grant_hash'], $owner_grant_hash)
         || !hash_equals((string) $entry['client_id'], $client)
         || !hash_equals((string) $entry['redirect_uri'], $redirect)
         || !sharity_ngo_pref_pkce_valid($verifier, (string) $entry['pkce_challenge'])) {
         return null;
     }
     return (string) $entry['subject'];
+}
+
+function sharity_ngo_pref_scope_allowed(string $scope): bool
+{
+    return in_array($scope, SHARITY_NGO_PREF_SCOPES, true);
 }
 
 function sharity_ngo_pref_csrf_digest(string $secret, string $owner_grant_hash, string $client, string $redirect, string $challenge, string $nonce): string
@@ -211,23 +219,23 @@ function sharity_ngo_pref_response_headers(): array
 function sharity_ngo_pref_table_names(): array
 {
     return [
-        ['name' => 'authorization_codes', 'writes' => ['issue', 'consume']],
-        ['name' => 'web_sessions', 'writes' => ['issue', 'revoke']],
-        ['name' => 'catalog_policy', 'writes' => ['explicit_activation_only']],
-        ['name' => 'preferences', 'writes' => ['cas']],
-        ['name' => 'preference_audit', 'writes' => ['append_only']],
+        ['name' => 'authorization_codes', 'keys' => ['code_hash'], 'writes' => ['issue', 'consume']],
+        ['name' => 'web_sessions', 'keys' => ['bearer_hash'], 'writes' => ['issue', 'revoke']],
+        ['name' => 'catalog_policy', 'keys' => ['sharity_ngo_id'], 'writes' => ['explicit_activation_only']],
+        ['name' => 'preferences', 'keys' => ['subject', 'scope'], 'writes' => ['cas']],
+        ['name' => 'preference_audit', 'keys' => ['operation_id'], 'writes' => ['append_only']],
     ];
 }
 
-function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, array &$audit, string $subject, string $scope, int $ngo_id, string $revision, string $current_revision, string $selection_status, int $expected_version, string $idempotency_key, int $now): string
+function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, array &$audit, string $subject, string $scope, int $ngo_id, string $revision, string $current_revision, array $master, ?array $policy, int $expected_version, string $idempotency_key, int $now): string
 {
-    if ($subject === '' || $scope === '' || $ngo_id <= 0 || $revision === '' || $idempotency_key === '') {
+    if ($subject === '' || !sharity_ngo_pref_scope_allowed($scope) || $ngo_id <= 0 || $revision === '' || $idempotency_key === '') {
         return 'invalid';
     }
     if ($revision !== $current_revision) {
         return 'stale_revision';
     }
-    if ($selection_status !== 'selectable') {
+    if (sharity_ngo_pref_selection_status($master, $policy, $ngo_id) !== 'selectable') {
         return 'selection_required';
     }
     $fingerprint = hash('sha256', implode("\n", [$subject, $scope, (string) $ngo_id, $revision, (string) $expected_version]));
@@ -251,7 +259,8 @@ function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, a
         'after_ngo_id' => $ngo_id,
         'before_version' => (int) $current['version'],
         'after_version' => $next,
-        'catalog_revision' => $revision,
+        'before_revision' => $current['revision'] ?? null,
+        'after_revision' => $revision,
         'outcome' => 'updated',
         'at' => $now,
     ];
