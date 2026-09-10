@@ -274,9 +274,34 @@ function impactshop_identity_owner_grant_table(): string
     return $wpdb->prefix . 'impactshop_identity_device_grants';
 }
 
+/**
+ * Return one captured UTC clock value for the current request.
+ *
+ * Keeping all lifecycle comparisons on this value prevents a grant from
+ * crossing a boundary half way through one request.
+ */
+function impactshop_identity_utc_now(): int
+{
+    static $now;
+    if ($now === null) {
+        $now = time();
+    }
+    return (int) $now;
+}
+
+function impactshop_identity_utc_sql(?int $timestamp = null): string
+{
+    return gmdate('Y-m-d H:i:s', $timestamp ?? impactshop_identity_utc_now());
+}
+
+function impactshop_identity_grant_schema_version(): int
+{
+    return 2;
+}
+
 function impactshop_identity_maybe_install_owner_grants(): void
 {
-    if ((int) get_option('impactshop_identity_owner_grants_schema', 0) >= 1) {
+    if ((int) get_option('impactshop_identity_owner_grants_schema', 0) >= impactshop_identity_grant_schema_version()) {
         return;
     }
     global $wpdb;
@@ -290,13 +315,25 @@ function impactshop_identity_maybe_install_owner_grants(): void
         last_seen_at datetime NOT NULL,
         expires_at datetime NOT NULL,
         revoked_at datetime NULL,
-        version smallint unsigned NOT NULL DEFAULT 1,
+        state varchar(16) NOT NULL DEFAULT 'pending',
+        activated_at datetime NULL,
+        supersedes_grant_hash char(64) NULL,
+        version smallint unsigned NOT NULL DEFAULT 2,
         PRIMARY KEY (grant_hash),
+        KEY state_expires (state, expires_at),
         KEY pseudo_active (pseudo_hash, revoked_at, expires_at),
+        KEY pseudo_state (pseudo_hash, state, expires_at),
+        KEY supersedes_grant (supersedes_grant_hash),
         KEY expires_at (expires_at)
     ) {$charset};");
     if (!$wpdb->last_error) {
-        update_option('impactshop_identity_owner_grants_schema', 1, false);
+        // Existing v1 rows were already device-bound and remain readable as
+        // active grants; newly issued rows always start as v2/pending.
+        $wpdb->query("UPDATE {$table} SET state = 'active', activated_at = COALESCE(activated_at, created_at), version = 2 WHERE version = 1 AND revoked_at IS NULL");
+        if ($wpdb->last_error !== '') {
+            return;
+        }
+        update_option('impactshop_identity_owner_grants_schema', impactshop_identity_grant_schema_version(), false);
     }
 }
 
@@ -324,10 +361,118 @@ function impactshop_identity_request_same_origin(): bool
     if ($candidate === '') {
         return false;
     }
-    $candidate_host = strtolower((string) wp_parse_url($candidate, PHP_URL_HOST));
-    $home_host = strtolower((string) wp_parse_url(home_url('/'), PHP_URL_HOST));
-    $allowed_hosts = array_unique(array_filter([$home_host, 'sharity.hu', 'www.sharity.hu', 'app.sharity.hu', 'staging.sharity.hu', 'app-staging.sharity.hu']));
-    return $candidate_host !== '' && in_array($candidate_host, $allowed_hosts, true);
+    $candidate_parts = wp_parse_url($candidate);
+    $home_parts = wp_parse_url(home_url('/'));
+    if (!is_array($candidate_parts) || !is_array($home_parts)) {
+        return false;
+    }
+    $candidate_scheme = strtolower((string) ($candidate_parts['scheme'] ?? ''));
+    $home_scheme = strtolower((string) ($home_parts['scheme'] ?? ''));
+    $candidate_host = strtolower((string) ($candidate_parts['host'] ?? ''));
+    $home_host = strtolower((string) ($home_parts['host'] ?? ''));
+    $candidate_port = isset($candidate_parts['port']) ? (int) $candidate_parts['port'] : ($candidate_scheme === 'https' ? 443 : 80);
+    $home_port = isset($home_parts['port']) ? (int) $home_parts['port'] : ($home_scheme === 'https' ? 443 : 80);
+    return $candidate_scheme !== ''
+        && $candidate_scheme === $home_scheme
+        && $candidate_host !== ''
+        && hash_equals($home_host, $candidate_host)
+        && $candidate_port === $home_port;
+}
+
+function impactshop_identity_grant_state_valid(string $state): bool
+{
+    return in_array($state, ['pending', 'active'], true);
+}
+
+function impactshop_identity_mark_safe_disabled(): void
+{
+    if (function_exists('impactshop_owner_policy_safe_disable_set')) {
+        impactshop_owner_policy_safe_disable_set(true);
+        return;
+    }
+    update_option('impactshop_owner_policy_safe_disable', true, false);
+}
+
+function impactshop_identity_grant_compensate_revoke(string $grant_hash): bool
+{
+    global $wpdb;
+    $table = impactshop_identity_owner_grant_table();
+    $updated = $wpdb->query($wpdb->prepare(
+        "UPDATE {$table} SET revoked_at = %s, state = 'pending' WHERE grant_hash = %s AND revoked_at IS NULL",
+        impactshop_identity_utc_sql(),
+        $grant_hash
+    ));
+    $readback = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$table} WHERE grant_hash = %s AND revoked_at IS NOT NULL",
+        $grant_hash
+    ));
+    if ($updated === false || $wpdb->last_error !== '' || (int) $readback !== 1) {
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    return true;
+}
+
+/** Renew the database row and both host-only cookies as one lifecycle unit. */
+function impactshop_identity_owner_renew_coupled(string $pseudo_id, string $grant_hash): bool
+{
+    global $wpdb;
+    $table = impactshop_identity_owner_grant_table();
+    $prior = $wpdb->get_row($wpdb->prepare(
+        "SELECT last_seen_at, expires_at FROM {$table} WHERE grant_hash = %s AND state = 'active' AND revoked_at IS NULL LIMIT 1",
+        $grant_hash
+    ), ARRAY_A);
+    if ($wpdb->last_error !== '' || !is_array($prior)) {
+        return false;
+    }
+    $expires_at = impactshop_identity_utc_sql(impactshop_identity_utc_now() + (365 * DAY_IN_SECONDS));
+    $updated = $wpdb->update(
+        impactshop_identity_owner_grant_table(),
+        ['last_seen_at' => impactshop_identity_utc_sql(), 'expires_at' => $expires_at],
+        ['grant_hash' => $grant_hash, 'state' => 'active', 'revoked_at' => null],
+        ['%s', '%s'],
+        ['%s', '%s', '%s']
+    );
+    if ($updated === false) {
+        return false;
+    }
+    $readback = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$table} WHERE grant_hash = %s AND state = 'active' AND expires_at = %s AND revoked_at IS NULL",
+        $grant_hash,
+        $expires_at
+    ));
+    if ($wpdb->last_error !== '' || (int) $readback !== 1) {
+        return false;
+    }
+    $owner_token = impactshop_identity_owner_cookie();
+    $owner_ok = setcookie('__Host-impactshop_owner', $owner_token, [
+        'expires' => impactshop_identity_utc_now() + (365 * DAY_IN_SECONDS),
+        'path' => '/',
+        'secure' => true,
+        'httponly' => true,
+        'samesite' => 'Strict',
+    ]);
+    $pseudo_ok = impactshop_identity_profile_set_cookie($pseudo_id, impactshop_identity_utc_now() + (365 * DAY_IN_SECONDS));
+    if ($owner_ok && $pseudo_ok) {
+        return true;
+    }
+    $reverted = $wpdb->update(
+        $table,
+        ['last_seen_at' => (string) $prior['last_seen_at'], 'expires_at' => (string) $prior['expires_at']],
+        ['grant_hash' => $grant_hash, 'state' => 'active', 'revoked_at' => null],
+        ['%s', '%s'],
+        ['%s', '%s', '%s']
+    );
+    $revert_readback = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$table} WHERE grant_hash = %s AND expires_at = %s AND last_seen_at = %s AND state = 'active'",
+        $grant_hash,
+        (string) $prior['expires_at'],
+        (string) $prior['last_seen_at']
+    ));
+    if ($reverted === false || $wpdb->last_error !== '' || (int) $revert_readback !== 1) {
+        impactshop_identity_mark_safe_disabled();
+    }
+    return false;
 }
 
 function impactshop_identity_owner_authorized(string $pseudo_id): bool
@@ -339,64 +484,218 @@ function impactshop_identity_owner_authorized(string $pseudo_id): bool
     global $wpdb;
     $table = impactshop_identity_owner_grant_table();
     $row = $wpdb->get_row($wpdb->prepare(
-        "SELECT grant_hash, last_seen_at FROM {$table} WHERE grant_hash = %s AND pseudo_hash = %s AND revoked_at IS NULL AND expires_at > UTC_TIMESTAMP() LIMIT 1",
+        "SELECT grant_hash, last_seen_at, state, created_at FROM {$table} WHERE grant_hash = %s AND pseudo_hash = %s AND state = 'active' AND revoked_at IS NULL AND expires_at > %s LIMIT 1",
         impactshop_identity_owner_hash($token),
-        impactshop_identity_owner_pseudo_hash($pseudo_id)
+        impactshop_identity_owner_pseudo_hash($pseudo_id),
+        impactshop_identity_utc_sql()
     ), ARRAY_A);
     if (!is_array($row)) {
         return false;
     }
-    if (strtotime((string) ($row['last_seen_at'] ?? '')) < (time() - 300)) {
-        $wpdb->update($table, ['last_seen_at' => gmdate('Y-m-d H:i:s'), 'expires_at' => gmdate('Y-m-d H:i:s', time() + (365 * DAY_IN_SECONDS))], ['grant_hash' => (string) $row['grant_hash']], ['%s', '%s'], ['%s']);
+    if (strtotime((string) ($row['last_seen_at'] ?? '')) < (impactshop_identity_utc_now() - 300)) {
+        return impactshop_identity_owner_renew_coupled($pseudo_id, (string) $row['grant_hash']);
     }
     return true;
 }
 
-function impactshop_identity_owner_issue(string $pseudo_id): bool
+/** Activate a pending grant only after both cookies are present on a later request. */
+function impactshop_identity_owner_activate_pending(string $pseudo_id): bool
+{
+    $token = impactshop_identity_owner_cookie();
+    if ($token === '' || !preg_match('/^[a-f0-9]{64}$/i', $token)) {
+        return false;
+    }
+    global $wpdb;
+    $table = impactshop_identity_owner_grant_table();
+    $hash = impactshop_identity_owner_hash($token);
+    $pseudo_hash = impactshop_identity_owner_pseudo_hash($pseudo_id);
+    if ($wpdb->query('START TRANSACTION') === false) {
+        return false;
+    }
+    $row = $wpdb->get_row($wpdb->prepare(
+        "SELECT grant_hash, state, created_at, expires_at, supersedes_grant_hash FROM {$table} WHERE grant_hash = %s AND pseudo_hash = %s AND revoked_at IS NULL LIMIT 1 FOR UPDATE",
+        $hash,
+        $pseudo_hash
+    ), ARRAY_A);
+    if ($wpdb->last_error !== '' || !is_array($row)) {
+        $wpdb->query('ROLLBACK');
+        return false;
+    }
+    if (($row['state'] ?? '') !== 'pending') {
+        $wpdb->query('COMMIT');
+        return ($row['state'] ?? '') === 'active';
+    }
+    $now = impactshop_identity_utc_now();
+    $created = strtotime((string) ($row['created_at'] ?? ''));
+    $expires = strtotime((string) ($row['expires_at'] ?? ''));
+    if (!$created || !$expires || $now > ($created + 600) || $expires <= $now) {
+        $wpdb->query('ROLLBACK');
+        return false;
+    }
+    $superseded = (string) ($row['supersedes_grant_hash'] ?? '');
+    if ($superseded !== '') {
+        $revoked = $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} SET revoked_at = %s, state = 'pending' WHERE grant_hash = %s AND revoked_at IS NULL",
+            impactshop_identity_utc_sql(),
+            $superseded
+        ));
+        if ($revoked === false || $wpdb->last_error !== '') {
+            $wpdb->query('ROLLBACK');
+            return false;
+        }
+    }
+    $updated = $wpdb->query($wpdb->prepare(
+        "UPDATE {$table} SET state = 'active', activated_at = %s, last_seen_at = %s, expires_at = %s WHERE grant_hash = %s AND state = 'pending' AND revoked_at IS NULL",
+        impactshop_identity_utc_sql(),
+        impactshop_identity_utc_sql(),
+        impactshop_identity_utc_sql($now + (365 * DAY_IN_SECONDS)),
+        $hash
+    ));
+    if ($updated !== 1) {
+        $wpdb->query('ROLLBACK');
+        return false;
+    }
+    if ($wpdb->query('COMMIT') === false) {
+        $wpdb->query('ROLLBACK');
+        return false;
+    }
+    return impactshop_identity_owner_renew_coupled($pseudo_id, $hash);
+}
+
+function impactshop_identity_owner_issue(string $pseudo_id, ?string $supersedes_grant_hash = null): bool
 {
     if (!is_ssl()) {
         return false;
     }
     global $wpdb;
-    $token = bin2hex(random_bytes(32));
-    $now = gmdate('Y-m-d H:i:s');
-    $expires = gmdate('Y-m-d H:i:s', time() + (365 * DAY_IN_SECONDS));
+    try {
+        $token = bin2hex(random_bytes(32));
+    } catch (Throwable $exception) {
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    if ($supersedes_grant_hash === null) {
+        $prior_token = impactshop_identity_owner_cookie();
+        $supersedes_grant_hash = $prior_token !== '' && preg_match('/^[a-f0-9]{64}$/i', $prior_token)
+            ? impactshop_identity_owner_hash($prior_token)
+            : null;
+    }
+    $now = impactshop_identity_utc_sql();
+    $expires = impactshop_identity_utc_sql(impactshop_identity_utc_now() + 600);
+    $table = impactshop_identity_owner_grant_table();
+    if ($wpdb->query('START TRANSACTION') === false) {
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    if ($supersedes_grant_hash !== null) {
+        $prior_revoked = $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} SET revoked_at = %s, state = 'pending' WHERE grant_hash = %s AND revoked_at IS NULL",
+            $now,
+            $supersedes_grant_hash
+        ));
+        if ($prior_revoked === false || $wpdb->last_error !== '') {
+            $wpdb->query('ROLLBACK');
+            impactshop_identity_mark_safe_disabled();
+            return false;
+        }
+    }
     $inserted = $wpdb->insert(impactshop_identity_owner_grant_table(), [
         'grant_hash' => impactshop_identity_owner_hash($token),
         'pseudo_hash' => impactshop_identity_owner_pseudo_hash($pseudo_id),
         'created_at' => $now,
         'last_seen_at' => $now,
         'expires_at' => $expires,
-        'version' => 1,
-    ], ['%s', '%s', '%s', '%s', '%s', '%d']);
+        'state' => 'pending',
+        'activated_at' => null,
+        'supersedes_grant_hash' => $supersedes_grant_hash,
+        'version' => 2,
+    ], ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']);
     if ($inserted === false) {
+        $wpdb->query('ROLLBACK');
+        return false;
+    }
+    $readback = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM " . impactshop_identity_owner_grant_table() . " WHERE grant_hash = %s AND pseudo_hash = %s AND state = 'pending'",
+        impactshop_identity_owner_hash($token),
+        impactshop_identity_owner_pseudo_hash($pseudo_id)
+    ));
+    if ($wpdb->last_error !== '' || (int) $readback !== 1) {
+        $wpdb->query('ROLLBACK');
+        return false;
+    }
+    if ($wpdb->query('COMMIT') === false) {
+        $wpdb->query('ROLLBACK');
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    // Persist the pending token only in request memory. The owner cookie is
+    // emitted by the caller after the pseudo cookie succeeds, so a partial
+    // browser binding cannot become usable.
+    $GLOBALS['impactshop_pending_owner_token'] = $token;
+    return true;
+}
+
+function impactshop_identity_owner_set_pending_cookie(): bool
+{
+    $token = isset($GLOBALS['impactshop_pending_owner_token']) ? (string) $GLOBALS['impactshop_pending_owner_token'] : '';
+    if ($token === '' || !preg_match('/^[a-f0-9]{64}$/i', $token)) {
         return false;
     }
     $cookie_set = setcookie('__Host-impactshop_owner', $token, [
-        'expires' => time() + (365 * DAY_IN_SECONDS),
+        'expires' => impactshop_identity_utc_now() + 600,
         'path' => '/',
         'secure' => true,
         'httponly' => true,
         'samesite' => 'Strict',
     ]);
     if (!$cookie_set) {
-        $wpdb->update(impactshop_identity_owner_grant_table(), ['revoked_at' => $now], ['grant_hash' => impactshop_identity_owner_hash($token)], ['%s'], ['%s']);
+        impactshop_identity_grant_compensate_revoke(impactshop_identity_owner_hash($token));
         return false;
     }
     // Make the freshly issued binding available to same-request fail-closed
     // compensation and subsequent ownership checks.
     $_COOKIE['__Host-impactshop_owner'] = $token;
+    unset($GLOBALS['impactshop_pending_owner_token']);
     return true;
 }
 
-function impactshop_identity_owner_revoke_current(): void
+function impactshop_identity_owner_compensate_pending(): void
+{
+    $token = isset($GLOBALS['impactshop_pending_owner_token']) ? (string) $GLOBALS['impactshop_pending_owner_token'] : '';
+    if ($token !== '' && preg_match('/^[a-f0-9]{64}$/i', $token)) {
+        impactshop_identity_grant_compensate_revoke(impactshop_identity_owner_hash($token));
+    }
+    unset($GLOBALS['impactshop_pending_owner_token']);
+}
+
+function impactshop_identity_owner_revoke_current(): bool
 {
     $token = impactshop_identity_owner_cookie();
     if ($token === '') {
-        return;
+        return true;
     }
     global $wpdb;
-    $wpdb->update(impactshop_identity_owner_grant_table(), ['revoked_at' => gmdate('Y-m-d H:i:s')], ['grant_hash' => impactshop_identity_owner_hash($token), 'revoked_at' => null], ['%s'], ['%s', '%s']);
+    $table = impactshop_identity_owner_grant_table();
+    $hash = impactshop_identity_owner_hash($token);
+    $existing = $wpdb->get_row($wpdb->prepare("SELECT revoked_at FROM {$table} WHERE grant_hash = %s LIMIT 1", $hash), ARRAY_A);
+    if ($wpdb->last_error !== '') {
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    if (!is_array($existing) || !empty($existing['revoked_at'])) {
+        return true;
+    }
+    $updated = $wpdb->update($table, ['revoked_at' => impactshop_identity_utc_sql(), 'state' => 'pending'], ['grant_hash' => $hash, 'revoked_at' => null], ['%s', '%s'], ['%s', '%s']);
+    if ($updated === false || $wpdb->last_error !== '') {
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    $readback = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE grant_hash = %s AND revoked_at IS NOT NULL", $hash));
+    if ($wpdb->last_error !== '' || (int) $readback !== 1) {
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -417,6 +716,11 @@ function impactshop_identity_profile_state(string $pseudo_id): string
 
     $owner_token = impactshop_identity_owner_cookie();
     if ($owner_token !== '' && preg_match('/^[a-f0-9]{64}$/i', $owner_token)) {
+        // A freshly issued grant is intentionally pending for this request.
+        // Activation requires the owner and pseudo cookies on a subsequent GET.
+        if (impactshop_identity_owner_activate_pending($pseudo_id)) {
+            return 'active';
+        }
         if (impactshop_identity_owner_authorized($pseudo_id)) {
             return 'active';
         }
@@ -425,7 +729,7 @@ function impactshop_identity_profile_state(string $pseudo_id): string
     global $wpdb;
     $table = impactshop_identity_owner_grant_table();
     $grant_rows = $wpdb->get_results($wpdb->prepare(
-        "SELECT revoked_at, expires_at FROM {$table} WHERE pseudo_hash = %s ORDER BY created_at DESC LIMIT 5",
+        "SELECT revoked_at, expires_at, state, created_at FROM {$table} WHERE pseudo_hash = %s ORDER BY created_at DESC LIMIT 5",
         impactshop_identity_owner_pseudo_hash($pseudo_id)
     ), ARRAY_A);
     if ($wpdb->last_error !== '') {
@@ -433,18 +737,29 @@ function impactshop_identity_profile_state(string $pseudo_id): string
     }
 
     $has_expired_or_revoked = false;
+    $has_pending = false;
     if (is_array($grant_rows)) {
         foreach ($grant_rows as $grant_row) {
             if (!is_array($grant_row)) {
                 continue;
             }
-            if (!empty($grant_row['revoked_at']) || (!empty($grant_row['expires_at']) && strtotime((string) $grant_row['expires_at']) <= time())) {
+            if (($grant_row['state'] ?? '') === 'pending'
+                && empty($grant_row['revoked_at'])
+                && strtotime((string) ($grant_row['created_at'] ?? '')) !== false
+                && impactshop_identity_utc_now() <= strtotime((string) $grant_row['created_at']) + 600
+                && strtotime((string) ($grant_row['expires_at'] ?? '')) > impactshop_identity_utc_now()) {
+                $has_pending = true;
+            }
+            if (!empty($grant_row['revoked_at']) || (!empty($grant_row['expires_at']) && strtotime((string) $grant_row['expires_at']) <= impactshop_identity_utc_now())) {
                 $has_expired_or_revoked = true;
                 break;
             }
         }
     }
 
+    if ($has_pending) {
+        return 'binding_pending';
+    }
     return $has_expired_or_revoked ? 'invalid_or_revoked' : 'legacy_read_only';
 }
 
@@ -559,9 +874,10 @@ function impactshop_identity_profile_resolve(): array
         $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
         $owner_issued = impactshop_identity_owner_issue($pseudo_id);
         $pseudo_cookie_set = $owner_issued && impactshop_identity_profile_set_cookie($pseudo_id);
-        if (!$pseudo_cookie_set) {
+        $owner_cookie_set = $pseudo_cookie_set && impactshop_identity_owner_set_pending_cookie();
+        if (!$pseudo_cookie_set || !$owner_cookie_set) {
             if ($owner_issued) {
-                impactshop_identity_owner_revoke_current();
+                impactshop_identity_owner_compensate_pending();
             }
             $pseudo_id = '';
         }
@@ -991,9 +1307,10 @@ function impactshop_identity_profile_get(): WP_REST_Response
         $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
         $owner_issued = impactshop_identity_owner_issue($pseudo_id);
         $pseudo_cookie_set = $owner_issued && impactshop_identity_profile_set_cookie($pseudo_id);
-        if (!$pseudo_cookie_set) {
+        $owner_cookie_set = $pseudo_cookie_set && impactshop_identity_owner_set_pending_cookie();
+        if (!$pseudo_cookie_set || !$owner_cookie_set) {
             if ($owner_issued) {
-                impactshop_identity_owner_revoke_current();
+                impactshop_identity_owner_compensate_pending();
             }
             $response = new WP_REST_Response([
                 'pseudo_id'         => '',
@@ -1138,12 +1455,17 @@ function impactshop_identity_profile_restore(WP_REST_Request $request): WP_REST_
         return new WP_REST_Response(['message' => 'Hibás azonosító vagy belépési kód.'], 403);
     }
 
-    impactshop_identity_owner_revoke_current();
+    $revoked = impactshop_identity_owner_revoke_current();
+    if (!$revoked) {
+        return new WP_REST_Response(['message' => 'A fiók biztonságos összekapcsolása most nem sikerült.'], 503);
+    }
     if (!impactshop_identity_owner_issue($pseudo_id)) {
         return new WP_REST_Response(['message' => 'A fiók biztonságos összekapcsolása most nem sikerült.'], 503);
     }
-    if (!impactshop_identity_profile_set_cookie($pseudo_id)) {
-        impactshop_identity_owner_revoke_current();
+    $pseudo_cookie_set = impactshop_identity_profile_set_cookie($pseudo_id);
+    $owner_cookie_set = $pseudo_cookie_set && impactshop_identity_owner_set_pending_cookie();
+    if (!$pseudo_cookie_set || !$owner_cookie_set) {
+        impactshop_identity_owner_compensate_pending();
         return new WP_REST_Response(['message' => 'A fiók biztonságos összekapcsolása most nem sikerült.'], 503);
     }
     $response = new WP_REST_Response(['status' => 'ok', 'pseudo_id' => $pseudo_id], 200);
@@ -1575,19 +1897,20 @@ function impactshop_identity_profile_generate_pseudo_id(): string
  * @param string $pseudo_id Pseudo ID.
  * @return bool
  */
-function impactshop_identity_profile_set_cookie(string $pseudo_id): bool
+function impactshop_identity_profile_set_cookie(string $pseudo_id, ?int $expires = null): bool
 {
     $pseudo_id = strtolower($pseudo_id);
     $secure = true;
+    $expires = $expires ?? (impactshop_identity_utc_now() + (365 * DAY_IN_SECONDS));
     if (PHP_VERSION_ID >= 70300) {
         return setcookie('impactshop_pseudo_id', $pseudo_id, [
-            'expires'  => time() + (365 * DAY_IN_SECONDS),
+            'expires'  => $expires,
             'path'     => '/',
             'secure'   => $secure,
             'httponly' => false,
             'samesite' => 'Lax',
         ]);
     } else {
-        return setcookie('impactshop_pseudo_id', $pseudo_id, time() + (365 * DAY_IN_SECONDS), '/; samesite=Lax', '', $secure, false);
+        return setcookie('impactshop_pseudo_id', $pseudo_id, $expires, '/; samesite=Lax', '', $secure, false);
     }
 }

@@ -1,3 +1,24 @@
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
+
+- A Luna B checkpoint a profile summary A fölött lezárja az owner-grant v2
+  életciklust: pending/active, 10 perces aktiválási ablak, egyetlen UTC óra,
+  tranzakciós supersedes/revoke + readback, 365 napos coupled renewal és
+  fail-closed cookie/DB kompenzáció. Token csak `random_bytes(32)` után HMAC
+  hashként marad a szerveren.
+- A `000-impactshop-owner-policy.php` first-loaded MU modul központi,
+  gépi registryje a tényleges pseudo-backed mutátorokat és privát olvasásokat
+  owner granthez köti. Restore külön `access_code_exchange`: exact-origin,
+  nonce, callback-saját pseudo+kód proof, owner/grant body tiltás.
+- A token_get_all inventory a védett MU route tuple-kat a registryvel két
+  irányban, pontosan egyezteti; runtime self-test route/method/callback/policy
+  tuple-t ellenőriz és safe-disable esetén nem enged mutációt. A service,
+  webhook, admin és public/read-only felületek explicit kivételek.
+- Az action-bar fiók-linkje environment-aware `/profil/#impactshop-account-top`;
+  a régi `#impactshop-account` hash-resolver megmaradt. Exact-origin nem bízik
+  forwarded hostban; `sharity.hu` csak link-only marad.
+- B célzott lint/static/inventory és `git diff --check` PASS. Nincs push, PR,
+  merge, provider/runtime, DB migration execution, OPcache, cron vagy watchdog.
+
 ## 2026-09-10 — Sharity profile summary closure — Luna checkpoint A
 
 - A teljes és kompakt profil most explicit becenevet vagy `Nincs becenév`

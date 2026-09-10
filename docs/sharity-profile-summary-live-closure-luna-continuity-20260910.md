@@ -1,5 +1,36 @@
 # Sharity profile summary live closure — Luna checkpoint A
 
+## Checkpoint B — owner-grant and policy closure
+
+The same clean worktree/branch continued to checkpoint B. The grant table is
+an idempotent v2 `dbDelta` migration with `pending|active` state,
+`activated_at`, `supersedes_grant_hash` and lifecycle indexes. New grants are
+256-bit `random_bytes(32)` values stored only as HMAC-SHA256 hashes, remain
+pending for ten minutes, and activate only on a later GET with both cookies.
+Activation, superseded-grant revocation and readback use one captured UTC
+clock and a transaction; active renewal couples the owner and pseudo cookies
+for 365 days and compensates cookie failures by restoring the prior DB expiry.
+
+`000-impactshop-owner-policy.php` is the first-loaded central policy layer.
+Its machine-readable registry covers the exact current pseudo-backed mutator
+and private-read route set (`owner_required`), the restore exchange
+(`access_code_exchange`), admin and service classifications, and explicit
+public/read-only exclusions. Existing endpoint nonce, webhook, service and
+admin checks remain authoritative. Runtime introspection checks route, method,
+callback and policy tuples; DB/policy failure or safe-disable denies owner
+mutation. The token_get_all inventory performs an exact two-way source/registry
+comparison and rejects unclassified routes. No cron/watchdog was added.
+
+The action-bar account target now uses `home_url('/profil/#impactshop-account-top')`;
+the legacy `#impactshop-account` resolver remains for old links. Exact-origin
+checks compare scheme, host and effective port against `home_url`; forwarded
+host headers and cross-host Sharity aliases are not trusted.
+
+Checkpoint B evidence: PHP lint, A static contracts, exact owner-policy
+inventory and `git diff --check` PASS. No provider, SSH, database execution,
+OPcache, deployment, push, PR or merge was performed. Remaining gates are
+staging backup/schema/browser/API E2E and runtime/provider worker proof.
+
 Date: 2026-09-10
 Plan ID: `sharity-profile-summary-live-closure-20260910`
 Worktree: `impactshop-notes-feat-sharity-profile-summary-live-closure-luna-20260910`

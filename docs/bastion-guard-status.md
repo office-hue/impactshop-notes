@@ -2,6 +2,18 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
+
+The protected profile lane now includes the first-loaded
+`000-impactshop-owner-policy.php` registry, the v2 pending/active grant
+lifecycle and the environment-aware action-bar profile target. The registry
+has exact owner-required, access-code-exchange, admin, service and explicit
+public/read-only classifications; token_get_all inventory and runtime
+route/method/callback self-test fail closed on drift. The protected inventory
+and guard hashes include the new module and updated identity/action-bar bytes.
+No provider, database, OPcache, staging, production, push, PR, cron or
+watchdog operation was performed.
+
 ## 2026-09-10 — Sharity profile summary closure — Luna checkpoint A
 
 The existing maximum-protected identity and AdSense sources now carry the

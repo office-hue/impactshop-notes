@@ -1,3 +1,18 @@
+## 2026-09-10 — Sharity profile summary closure — checkpoint B
+
+- A profil summary A fölött a v2 owner-grant lifecycle és a first-loaded,
+  gépi owner-policy registry forrásban elkészült. A pending grant 10 perces,
+  a következő mindkét cookie-s GET aktiválja; active renewal a két cookie-t és
+  DB expiry-t együtt 365 napra újítja. Transaction/readback/cookie-compensation
+  hiba fail-closed, safe-disable további védelmi réteg.
+- A route inventory token_get_all alapú és kétirányú exact registry/source
+  ellenőrzésű; runtime route/method/callback/policy self-test van. A restore
+  külön access-code exchange (exact-origin + nonce + callback pseudo/kód proof),
+  nem owner_required. Az action-bar account target canonical `/profil` anchor.
+- Forrásellenőrzések PASS; staging backup/schema/browser/API E2E, provider
+  worker-inventory és production acceptance még nincs végrehajtva. Nincs push,
+  PR, merge, DB activation, provider/runtime, OPcache, cron vagy watchdog.
+
 ## 2026-09-10 — Sharity profile summary closure — checkpoint A
 
 - A dedikált `feat/sharity-profile-summary-live-closure-luna-20260910` branch

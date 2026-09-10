@@ -38,6 +38,7 @@
     "wp-content/mu-plugins/impactshop-rest-totals.php",
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
+    "wp-content/mu-plugins/000-impactshop-owner-policy.php",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
     "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php",
     "wp-content/mu-plugins/impactshop-ngo-selector.php",
@@ -215,6 +216,7 @@
     "identity_and_points": [
       "wp-content/mu-plugins/impactshop-identity-panel.php",
       "wp-content/mu-plugins/impactshop-identity-panel.js",
+      "wp-content/mu-plugins/000-impactshop-owner-policy.php",
       "wp-content/mu-plugins/impactshop-rest-totals.php",
       "wp-content/mu-plugins/impactshop-full-leaderboard.php",
       "wp-content/mu-plugins/impactshop-vote-purchase.php",
