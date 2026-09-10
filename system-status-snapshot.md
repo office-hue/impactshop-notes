@@ -1165,3 +1165,47 @@ deployment state changed.
   runtime mutation occurred.
 - The adapter remains disabled; existing identity, catalog, campaign, reward
   and economic writers are unchanged.
+
+## 2026-09-10 — Multi-active worktree continuity source candidate
+
+- Dedicated worktree/branch:
+  `impactshop-notes-feat-multi-active-continuity-sol-20260910` /
+  `feat/impactshop-multi-active-continuity-sol-20260910`, base
+  `origin/main@d39349a3dedad8ebda597c2d531fd2e498268990`.
+- Explicit primary selection and non-primary registration replace implicit
+  active-pointer takeover. One locked generation binds both coordination files.
+- Push continuity checks exact branch/full HEAD, clean state and decision
+  evidence for the publishing worktree; stale, dirty and split-generation
+  states block.
+- Starter/push/hook paths are repo-local and do not call sibling `ai-agent` or
+  shared Node dependencies. No push, PR, merge, provider, VPS, runtime, cron or
+  watchdog action belongs to this checkpoint.
+
+## 2026-09-10 — Multi-active worktree continuity Terra QA
+
+- The exact source checkpoint `4eced811` / tree `5506f9fc` is `qa-blocked`
+  after independent Terra/high QA: source security is clean, but live
+  workspace-global coordination collides with an `ai-agent` primary pointer.
+- Complete six-script security diff review `2dcbf725-2ab9-4fb0-9657-11ab5b62ef6e`
+  found 0 reportable findings. Its scope is local source control-plane behavior;
+  it grants no remote or runtime authority.
+
+## 2026-09-10 — Multi-active worktree continuity Sol namespace remediation
+
+- Pointer, snapshot and lock now live in the `impactshop-notes` common Git
+  directory, isolated from every sibling repository sharing the workspace.
+- Legacy workspace-global files are read-only migration evidence: a same-repo
+  primary may be adopted once; foreign or invalid evidence is ignored and left
+  byte-identical.
+- The two-repository hermetic contract PASS. No sibling worktree, shared
+  dependency, push, PR, merge, provider, VPS, runtime, cron or watchdog changed.
+- Status: `source-candidate`; fresh Terra/high QA is required before publication.
+
+## 2026-09-10 — Multi-active worktree continuity Terra QA closure
+
+- Checkpoint `763a21a` is `source-reviewed`: the independent six-script security
+  diff review completed with 0 reportable findings and complete coverage.
+- Prior exact-tree tests and DEV-v2/bastion/continuity/audit evidence remain
+  valid; no provider, VPS, runtime, push, PR, merge, cron or watchdog changed.
+- A separately authorized Luna/medium source-publication package is the only
+  remaining source-delivery step. Runtime and production remain separate gates.

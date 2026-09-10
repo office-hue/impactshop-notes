@@ -7373,6 +7373,57 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   módosítás, retry, PR, merge, provider vagy deploy; a remote feature branch nincs
   létrehozva. Következő próbálkozás csak operator-controlled runtime admission után.
 
+## 2026-09-10 — Multi-active worktree continuity source package
+
+- A repo-local `--register` lane preserves the nominated primary worktree while
+  refreshing each concurrent publisher's exact full HEAD, clean/dirty and
+  task-start decision evidence.
+- Coordination outputs are lock-protected, temp-file replaced and tied by one
+  generation ID; stale HEAD, dirty state, generation mismatch and lock
+  contention fail closed.
+- Worktree creation, task start, guarded push and generated hooks no longer
+  discover or execute sibling `ai-agent` memory/dependency commands.
+- The control plane and hermetic linked-worktree test are maximum protected.
+  This is source-only: no shared dependency, provider, VPS, runtime, cron or
+  watchdog state changed.
+
+## 2026-09-10 — Multi-active worktree continuity Terra QA
+
+- Exact checkpoint `4eced811` / tree `5506f9fc` received independent Terra/high
+  QA and a complete six-script Codex Security diff review (`2dcbf725-2ab9-4fb0-9657-11ab5b62ef6e`).
+- Result: 0 reportable source finding, but source publication is blocked. Live
+  registration found an `ai-agent` pointer in the shared workspace-global
+  snapshot namespace; the impactshop guard refused to overwrite it.
+- No push, PR, merge, provider, VPS, runtime, cron, watchdog or pointer rewrite
+  occurred. Next gate is Sol/high namespace architecture and migration design.
+
+## 2026-09-10 — Multi-active worktree continuity Sol namespace remediation
+
+- The coordination pointer, snapshot and lock now live below the repository's
+  common Git directory with private `0700`/`0600` modes, so parallel repositories
+  cannot overwrite one another's continuity authority.
+- Workspace-global legacy files are read-only migration evidence. A valid
+  same-repo primary is adopted once; foreign or invalid legacy evidence is
+  ignored and remains byte-identical.
+- The two-repository hermetic contract and the DEV-v2 adapter fixture are PASS.
+  Live registration wrote only repo-specific Git metadata and preserved both
+  legacy workspace files at their original SHA-256 values.
+- No push, PR, merge, provider, VPS, runtime, cron or watchdog changed. Fresh
+  `gpt-5.6-terra`, high QA is required before source publication.
+
+## 2026-09-10 — Multi-active worktree continuity Terra QA closure
+
+- Independent QA reviewed checkpoint `763a21a` after the common-Git-dir
+  namespace remediation. Result: `source-reviewed`.
+- The canonical six-script security diff review has complete coverage and 0
+  reportable findings. The local Daybreak advisory is `not_granted`; only
+  protected scan-output display may be limited.
+- Existing exact-tree hermetic, DEV-v2, continuity, full-validation, bastion,
+  audit and diff-check PASS evidence was reused. No source/runtime change,
+  push, PR, merge, provider, VPS, cron or watchdog action occurred.
+- Next step only with explicit authority: `gpt-5.6-luna`, medium, bounded source
+  publication.
+
 ## 2026-09-10 — Sharity public portal redirects production closure
 
 - PR #192 delivered the additive exact-route plugin; PR #193 reconciled two

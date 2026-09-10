@@ -100,6 +100,18 @@ jobs:
           bash tests/deploy-wpcontent-map-exact-file.test.sh
           bash tests/impactshop-guard-rollback-truth.test.sh
 
+      - name: Worktree multi-active continuity contract
+        run: |
+          set -euo pipefail
+          bash -n scripts/start-feature-worktree.sh
+          bash -n scripts/worktree-task-start.sh
+          bash -n scripts/worktree-coordination-sync.sh
+          bash -n scripts/worktree-continuity-guard.sh
+          bash -n scripts/guarded-push.sh
+          bash -n scripts/install-hooks.sh
+          bash -n tests/worktree-multi-active-continuity.test.sh
+          bash tests/worktree-multi-active-continuity.test.sh
+
       - name: Validation Gate (staging, read-only; SSH timeout tolerated)
         continue-on-error: true
         env:
