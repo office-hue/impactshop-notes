@@ -33,3 +33,8 @@
   contract tests are present, with no WordPress/runtime registration. Python static
   evidence passes; PHP lint/contract execution is blocked because this environment
   has no `php` executable. No dependency installation or alternate runtime was used.
+- Terra post-Luna QA (2026-09-10): the adapter is only a helper skeleton and route
+  list, missing the approved owner-grant, code/PKCE, subject, route, persistence,
+  CAS/idempotency/audit, and response contracts. The bounded Luna allowlist remains
+  sufficient for remediation; no Sol decision is needed. PHP evidence remains
+  blocked until an admitted PHP-capable environment exists.

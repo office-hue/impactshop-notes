@@ -17,6 +17,15 @@
 - Bastion-status és protected change record rögzítve; provider, deploy, secret,
   schema, activation, push és PR továbbra sem történt.
 
+## 2026-09-10 — Sharity NGO preference Package B Terra post-Luna QA
+
+- A `.php.off` adapter csak helper-skeleton és route-névlista: hiányzik az
+  owner-grant, subject, authorization-code/PKCE, endpoint, CAS/idempotency/audit és
+  öt táblás source contract. Emiatt runtime-eligible állapot nincs.
+- A javítás a meglévő Luna allowlisten belül marad; új Sol architecture döntés nem
+  kell. A PHP lint/contract evidencia továbbra is blokkolt a hiányzó PHP executable
+  miatt.
+
 ## 2026-09-10 — Sharity NGO preference Package B Sol revision
 
 - A QA-B1 döntése: környezetenként egy exact HTTPS `home_url('/')` issuer origin;
