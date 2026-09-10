@@ -54,6 +54,7 @@ $namespace_by_file = [
 ];
 
 $inventory = [];
+$registered_callbacks = [];
 foreach ($files as $relative) {
     $path = $root . '/' . $relative;
     $text = (string) file_get_contents($path);
@@ -85,17 +86,24 @@ foreach ($files as $relative) {
                         break;
                     }
                 }
-                $methods = [];
-                if (preg_match_all("/'methods'\\s*=>\\s*'((?:GET|POST|PUT|PATCH|DELETE))'/", $window, $method_matches)) {
-                    $methods = array_merge($methods, $method_matches[1]);
-                }
-                if (preg_match_all('~WP_REST_Server::(READABLE|CREATABLE|EDITABLE|DELETABLE)~', $window, $constant_matches)) {
-                    foreach ($constant_matches[1] as $constant) {
-                        $methods[] = ['READABLE' => 'GET', 'CREATABLE' => 'POST', 'EDITABLE' => 'POST', 'DELETABLE' => 'DELETE'][$constant];
+                $endpoint_pairs = [];
+                if (preg_match_all("~'methods'\\s*=>\\s*'(GET|POST|PUT|PATCH|DELETE)'.*?'callback'\\s*=>\\s*'([^']+)'~s", $window, $string_endpoint_matches, PREG_SET_ORDER)) {
+                    foreach ($string_endpoint_matches as $match) {
+                        $endpoint_pairs[] = [$match[1], $match[2]];
                     }
                 }
-                foreach (array_unique($methods) as $method) {
-                    $routes[] = $method . ' /' . ($namespace !== '' ? $namespace : 'UNKNOWN') . $path_literals[0];
+                if (preg_match_all("~'methods'\\s*=>\\s*WP_REST_Server::(READABLE|CREATABLE|EDITABLE|DELETABLE).*?'callback'\\s*=>\\s*'([^']+)'~s", $window, $constant_endpoint_matches, PREG_SET_ORDER)) {
+                    foreach ($constant_endpoint_matches as $match) {
+                        $endpoint_pairs[] = [
+                            ['READABLE' => 'GET', 'CREATABLE' => 'POST', 'EDITABLE' => 'POST', 'DELETABLE' => 'DELETE'][$match[1]],
+                            $match[2],
+                        ];
+                    }
+                }
+                foreach ($endpoint_pairs as [$method, $callback]) {
+                    $route_key = $method . ' /' . ($namespace !== '' ? $namespace : 'UNKNOWN') . $path_literals[0];
+                    $routes[] = $route_key;
+                    $registered_callbacks[$route_key][] = $callback;
                 }
             }
         }
@@ -108,24 +116,52 @@ foreach ($inventory as $routes) {
     $actual = array_merge($actual, $routes);
 }
 $actual = array_values(array_unique($actual));
-$registry_entries = [];
-foreach (token_get_all($source) as $token) {
+$registry_entry_literals = [];
+$registry_source = substr($source, 0, strpos($source, 'function impactshop_owner_policy_key'));
+foreach (token_get_all($registry_source) as $token) {
     if (is_array($token) && $token[0] === T_CONSTANT_ENCAPSED_STRING) {
         $literal = str_replace(["\\\\'", "\\\\\\"], ["'", "\\"], substr($token[1], 1, -1));
         if (preg_match('~^(?:GET|POST|PUT|PATCH|DELETE) /~', $literal)) {
-            $registry_entries[] = $literal;
+            $registry_entry_literals[] = $literal;
         }
     }
 }
-$registry_entries = array_values(array_unique($registry_entries));
+$registry_counts = array_count_values($registry_entry_literals);
+$duplicate_policy_routes = array_keys(array_filter($registry_counts, static fn(int $count): bool => $count > 1));
+$registry_entries = array_values(array_unique($registry_entry_literals));
+$policy_routes = $registry_entries;
+$callback_manifest_matches = [];
+$callback_manifest_source = substr($source, strpos($source, 'function impactshop_owner_policy_callback_manifest'));
+preg_match_all("~'((?:GET|POST|PUT|PATCH|DELETE) /[^']+)'\\s*=>\\s*'([^']+)'~", $callback_manifest_source, $callback_manifest_matches);
+$callback_routes = $callback_manifest_matches[1] ?? [];
+$callback_names = $callback_manifest_matches[2] ?? [];
+$callback_manifest = count($callback_routes) === count($callback_names)
+    ? array_combine($callback_routes, $callback_names)
+    : [];
+$callback_mismatches = [];
+foreach ($registered_callbacks as $route => $callbacks) {
+    $callbacks = array_values(array_unique($callbacks));
+    $expected_callback = is_array($callback_manifest) ? (string) ($callback_manifest[$route] ?? '') : '';
+    if (count($callbacks) !== 1 || $callbacks[0] === '' || !hash_equals($expected_callback, $callbacks[0])) {
+        $callback_mismatches[] = $route;
+    }
+}
 $missing = array_values(array_diff($expected_owner, $registry_entries));
 $unclassified = array_values(array_diff($actual, array_merge($registry_entries, [
     // Dynamic/conditional routes are explicitly represented by their source
     // module and are still required to have a registry classification.
 ])));
 $orphan_registry = array_values(array_diff($registry_entries, $actual));
-$missing = array_values(array_unique(array_merge($missing, $unclassified, $orphan_registry)));
+$missing = array_values(array_unique(array_merge(
+    $missing,
+    $unclassified,
+    $orphan_registry,
+    $duplicate_policy_routes,
+    $callback_mismatches,
+    array_diff($policy_routes, $callback_routes),
+    array_diff($callback_routes, $policy_routes)
+)));
 
-$result = ['version' => 2, 'expected_owner' => count($expected_owner), 'missing' => $missing, 'actual' => $actual, 'registry' => $registry_entries, 'files' => $inventory];
+$result = ['version' => 3, 'expected_owner' => count($expected_owner), 'missing' => $missing, 'actual' => $actual, 'registry' => $registry_entries, 'callback_manifest' => array_values(array_unique($callback_routes)), 'duplicate_policy_routes' => $duplicate_policy_routes, 'callback_mismatches' => $callback_mismatches, 'files' => $inventory];
 fwrite(STDOUT, json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
 exit($missing === [] ? 0 : 1);
