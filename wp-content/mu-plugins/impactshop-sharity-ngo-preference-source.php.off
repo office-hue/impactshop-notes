@@ -1,0 +1,136 @@
+<?php
+/**
+ * Sharity NGO preference source adapter (intentionally disabled).
+ *
+ * This file must retain the .off suffix until a separately approved release.
+ * The pure helpers are deliberately dependency-light so the contract test is
+ * hermetic; no schema, network call, secret, or provider operation is performed.
+ */
+declare(strict_types=1);
+
+const SHARITY_NGO_PREF_SOURCE_VERSION = 'v1';
+const SHARITY_NGO_PREF_CODE_TTL = 60;
+const SHARITY_NGO_PREF_BEARER_TTL = 900;
+const SHARITY_NGO_PREF_CACHE_CONTROL = 'private, no-store';
+
+function sharity_ngo_pref_normalize_origin(string $origin): ?string
+{
+    $parts = parse_url(trim($origin));
+    if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || empty($parts['host'])) {
+        return null;
+    }
+    foreach (['user', 'pass', 'path', 'query', 'fragment'] as $forbidden) {
+        if (array_key_exists($forbidden, $parts)) {
+            return null;
+        }
+    }
+    $host = strtolower((string) $parts['host']);
+    if ($host === '' || str_contains($host, '*')) {
+        return null;
+    }
+    $port = isset($parts['port']) ? (int) $parts['port'] : 443;
+    if ($port !== 443) {
+        return 'https://' . $host . ':' . $port;
+    }
+    return 'https://' . $host;
+}
+
+function sharity_ngo_pref_exact_origin(string $provided, string $canonical): bool
+{
+    $left = sharity_ngo_pref_normalize_origin($provided);
+    $right = sharity_ngo_pref_normalize_origin($canonical);
+    return $left !== null && $right !== null && hash_equals($right, $left);
+}
+
+function sharity_ngo_pref_client_redirect_allowed(array $registry, string $client, string $redirect): bool
+{
+    if ($client === '' || $redirect === '' || str_contains($client, '*') || str_contains($redirect, '*')) {
+        return false;
+    }
+    $registered = $registry[$client] ?? null;
+    if (!is_array($registered)) {
+        return false;
+    }
+    foreach ($registered as $candidate) {
+        if (is_string($candidate) && hash_equals($candidate, $redirect)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function sharity_ngo_pref_csrf_digest(string $secret, string $owner_grant_hash, string $client, string $redirect, string $challenge, string $nonce): string
+{
+    return hash_hmac('sha256', implode("\n", [$owner_grant_hash, $client, $redirect, $challenge, $nonce]), $secret);
+}
+
+function sharity_ngo_pref_consume_csrf(array &$tokens, string $token, string $expected_digest, int $now): bool
+{
+    $entry = $tokens[$token] ?? null;
+    if (!is_array($entry) || !empty($entry['used']) || (int) ($entry['expires_at'] ?? 0) < $now) {
+        return false;
+    }
+    if (!hash_equals((string) ($entry['digest'] ?? ''), $expected_digest)) {
+        return false;
+    }
+    $tokens[$token]['used'] = true;
+    return true;
+}
+
+function sharity_ngo_pref_bearer_active(array $session, int $now, string $owner_grant_hash): bool
+{
+    return empty($session['revoked_at'])
+        && (int) ($session['expires_at'] ?? 0) >= $now
+        && hash_equals((string) ($session['owner_grant_hash'] ?? ''), $owner_grant_hash);
+}
+
+function sharity_ngo_pref_catalog_revision(array $rows): string
+{
+    $normalized = [];
+    foreach ($rows as $row) {
+        $normalized[] = [
+            'id' => (int) ($row['sharity_ngo_id'] ?? 0),
+            'active' => (int) !empty($row['master_active']),
+            'source_row_hash' => (string) ($row['source_row_hash'] ?? ''),
+            'allow' => (int) !empty($row['policy_allow_user_selection']),
+            'state' => (string) ($row['policy_state'] ?? ''),
+            'policy_version' => (int) ($row['policy_version'] ?? 0),
+        ];
+    }
+    usort($normalized, static fn (array $a, array $b): int => $a['id'] <=> $b['id']);
+    return 'catalog-v2:' . hash('sha256', json_encode($normalized, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+}
+
+function sharity_ngo_pref_selection_status(array $master, ?array $policy, int $ngo_id): string
+{
+    if ((int) ($master['sharity_ngo_id'] ?? 0) !== $ngo_id || empty($master['master_active'])) {
+        return 'selection_required';
+    }
+    if ($policy === null || empty($policy['allow_user_selection']) || ($policy['state'] ?? '') !== 'active') {
+        return 'selection_required';
+    }
+    return 'selectable';
+}
+
+function sharity_ngo_pref_origin_post_allowed(string $origin, string $canonical_origin, bool $csrf_valid): bool
+{
+    return sharity_ngo_pref_exact_origin($origin, $canonical_origin) && $csrf_valid;
+}
+
+/**
+ * Registration is intentionally inert while this file is .off. The future
+ * activation path must register only the documented source routes and must
+ * keep browser-origin preference mutation disabled.
+ */
+function sharity_ngo_pref_source_routes(): array
+{
+    return [
+        'GET /identity/web-session/authorize',
+        'POST /identity/web-session/authorize',
+        'POST /identity/web-session/token',
+        'GET /identity/web-session/summary',
+        'POST /identity/web-session/revoke',
+        'GET /ngo-preferences',
+        'PUT /ngo-preferences/{scope_key}',
+    ];
+}

@@ -29,3 +29,7 @@
   tests, bastion/change-record evidence, and continuity notes. No existing MU plugin,
   client/secret/key, policy row, schema execution, activation, provider, or deploy is
   allowed. See the Terra QA document for the exact allowlist and test matrix.
+- Luna implementation (2026-09-10): the additive `.php.off` adapter and both
+  contract tests are present, with no WordPress/runtime registration. Python static
+  evidence passes; PHP lint/contract execution is blocked because this environment
+  has no `php` executable. No dependency installation or alternate runtime was used.

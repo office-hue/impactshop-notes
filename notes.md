@@ -8,6 +8,15 @@
   activation, provider és deploy tiltott.
 - Következő kapu: `gpt-5.6-luna`, medium, bounded source-only implementation.
 
+## 2026-09-10 — Sharity NGO preference Package B Luna implementation
+
+- Elkészült az új, `.php.off` suffixű additive source adapter és a két hermetikus
+  teszt; meglévő runtime/MU-plugin nem változott.
+- A Python static teszt PASS. A PHP lint és contract futtatás környezeti blocker:
+  nincs `php` executable; dependency telepítés vagy alternatív runtime nem történt.
+- Bastion-status és protected change record rögzítve; provider, deploy, secret,
+  schema, activation, push és PR továbbra sem történt.
+
 ## 2026-09-10 — Sharity NGO preference Package B Sol revision
 
 - A QA-B1 döntése: környezetenként egy exact HTTPS `home_url('/')` issuer origin;
