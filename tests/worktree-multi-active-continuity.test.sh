@@ -233,7 +233,8 @@ HOOK_DIR="$(git -C "$REPO" rev-parse --git-path hooks)"
 if [[ "$HOOK_DIR" != /* ]]; then HOOK_DIR="$REPO/$HOOK_DIR"; fi
 ! grep -REq 'resolve_ai_agent_repo|AI_AGENT_REPO|npm --prefix .*memory:' \
   "$ROOT/scripts/guarded-push.sh" "$ROOT/scripts/install-hooks.sh" \
-  "$ROOT/scripts/start-feature-worktree.sh" "$HOOK_DIR"
+  "$ROOT/scripts/start-feature-worktree.sh" "$HOOK_DIR/pre-push" \
+  "$HOOK_DIR/pre-commit" "$HOOK_DIR/commit-msg"
 grep -Eq 'WORKTREE_COORDINATION_SYNC' "$HOOK_DIR/pre-push"
 grep -Eq -- '--register "\$REPO_ROOT"' "$HOOK_DIR/pre-push"
 
