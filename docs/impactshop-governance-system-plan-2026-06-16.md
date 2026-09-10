@@ -503,9 +503,11 @@ semantics.
 The existing exact staging CAS admission profile is rebound to the two future
 manifest blobs derived from `origin/main@44547312`. The complete current
 protected inventory is retained, while the already reviewed deploy, rollback
-and test bytes stay fixed. The ordinary protected lane admits only this metadata
-change; provider deployment, S59 access and runtime activation remain denied.
+and test bytes stay fixed. The existing `.github/workflows/ci.yml` manifest key
+is also corrected to its raw `44547312` SHA-256 `ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015`;
+no new inventory keys are added. The ordinary protected lane admits only this
+metadata change; provider deployment, S59 access and runtime activation remain denied.
 The deterministic future manifest uses `generated_at`
 `2026-09-10T20:30:00+00:00` and pins manifest/checksum blob SHA-256 values
-`0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054` /
-`e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
+`a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` /
+`b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.

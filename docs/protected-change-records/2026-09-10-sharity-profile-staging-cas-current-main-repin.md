@@ -13,12 +13,18 @@ VPS, remote-write, deploy or runtime authority.
 - Reviewed CAS source: `b1b6dd2c64e969788873daeecdf464b2eec92d0c`.
 - Deterministic `generated_at`: `2026-09-10T20:30:00+00:00`.
 - Future `docs/impactshop-guard-hashes.json` SHA-256:
-  `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054`.
+  `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`.
 - Future `docs/impactshop-guard-hashes.sha256` blob SHA-256:
-  `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
+  `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
 - Inventory parity: 155 protected paths and the identical 157 hash keys;
-  only the four inventoried CAS script/test values change. The fifth reviewed
-  CAS byte, `.deploy.staging.env`, remains separately pinned by the profile.
+  the four inventoried CAS script/test values and the existing
+  `.github/workflows/ci.yml` value change. PR #197 changed that workflow from
+  recorded `4033833c90a90b54d32b5a80eb6232eafa32adb1793208eeb8bbce5d45deebe9`
+  to raw-base blob SHA-256
+  `ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015`.
+  The fifth reviewed CAS byte, `.deploy.staging.env`, remains separately pinned
+  by the profile. Serialization is the guard writer's two-space UTF-8 JSON with
+  no trailing newline.
 
 ## Rollback plan
 

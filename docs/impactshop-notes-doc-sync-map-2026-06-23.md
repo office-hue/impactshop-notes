@@ -142,5 +142,7 @@ the current-main repin plan/continuity/change record, bastion status, governance
 plan, `notes.md` and `system-status-snapshot.md` form one source-only DocSync
 unit. No release script, remote environment or runtime byte changes here.
 The synchronized base is `origin/main@44547312`; the future manifest/checksum
-blob pins are `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054`
-and `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
+blob pins are `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`
+and `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+They cover four reviewed CAS manifest keys plus the PR #197 current-main
+`.github/workflows/ci.yml` correction; the 155-path/157-key inventory is unchanged.

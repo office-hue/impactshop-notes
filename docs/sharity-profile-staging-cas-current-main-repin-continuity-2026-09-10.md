@@ -17,12 +17,16 @@ policy digest. Production profile bytes, S59, WordPress, database, provider,
 runtime, cron and watchdog state are unchanged.
 
 The future candidate manifest retains the full current protected inventory,
-including the Sharity owner policy and VB2026 route, and replaces only the
-four CAS-controlled deploy/rollback test and script hashes. The deterministic
-`generated_at` is `2026-09-10T20:30:00+00:00`; the resulting manifest and
-checksum blob SHA-256 values are
-`0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054`
-and `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
+including the Sharity owner policy and VB2026 route. It replaces the four
+CAS-controlled deploy/rollback test and script hashes and corrects the existing
+`.github/workflows/ci.yml` key to raw `44547312` SHA-256
+`ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015`.
+The other PR #197 script, test and protected-model paths are not manifest keys
+and are not added. With deterministic `generated_at`
+`2026-09-10T20:30:00+00:00` and guard-writer serialization without a trailing
+newline, the resulting manifest and checksum blob SHA-256 values are
+`a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`
+and `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
 
 ## Resume boundary
 

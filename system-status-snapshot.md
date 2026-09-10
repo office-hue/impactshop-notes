@@ -1215,8 +1215,12 @@ deployment state changed.
 - Base: `origin/main@44547312cb06e24fe2999faf9abb4e2f63fb945e`.
 - Scope: two future manifest pins plus derived DEV-v2 policy digest and DocSync.
 - Deterministic candidate: `generated_at=2026-09-10T20:30:00+00:00`,
-  manifest/checksum blob SHA-256 `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054` /
-  `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
+  manifest/checksum blob SHA-256 `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` /
+  `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+- The future manifest changes four reviewed CAS hash keys and the stale PR #197
+  `.github/workflows/ci.yml` entry to raw-base SHA-256
+  `ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015`;
+  its 155 protected paths and 157 hash keys remain unchanged.
 - Status: local source-control package; no remote write or deployment.
 - Next: exact schema-v2 CAS source package, then one staging and one production
   wave if all runtime gates pass.
