@@ -55,6 +55,9 @@ jobs:
           payload=json.loads(sys.argv[1])
           assert payload['fullValidationEvidence'] is True
           assert payload['sourceMergeAdmission'] is False
+          assert payload['providerDeployAllowed'] is False
+          assert payload['sourceAdmissionProfile'] in (None, 'deploy-control-source:sharity-staging-cas-v1')
+          assert payload['sourceAdmissionProfile'] is None or payload['changedPathClass'] == 'protected'
           assert payload['decision'] in ('allowed', 'operator-review')
           PY
           payload="$(bash scripts/dev-delivery-v2-adapter.sh bastion --json)"
@@ -69,6 +72,9 @@ jobs:
           assert payload['baseSha'] == expected_base
           assert payload['bastionDecision'] == 'pass'
           assert payload['sourceMergeAdmission'] is True
+          assert payload['providerDeployAllowed'] is False
+          assert payload['sourceAdmissionProfile'] in (None, 'deploy-control-source:sharity-staging-cas-v1')
+          assert payload['sourceAdmissionProfile'] is None or payload['changedPathClass'] == 'protected'
           assert payload['decision'] == 'operator-review' if payload['changedPathClass'] == 'protected' else True
           assert payload['changedPathClass'] != 'deploy'
           assert payload['providerBuildDecision'] != 'provider' + '-deploy'

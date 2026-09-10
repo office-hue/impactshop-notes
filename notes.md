@@ -93,6 +93,35 @@
   identity, selector and VB2026 files remain unchanged.
 - No push, PR, merge, provider, VPS, secret, schema execution, deploy, cron or
   watchdog action occurred. Next gate: Terra/high independent plan QA.
+## 2026-09-10 — Sharity public portal redirects
+
+- Read-only diagnosis proved that both portal URLs are real WordPress pages but
+  an early protected guide handler sends them by `301` to the retired Jövőnk
+  Vize auction embed.
+- A dedicated clean `origin/main@67d066a` worktree now carries an additive
+  production-only MU-plugin with exact host/path/method boundaries and a fixed,
+  query-free `302` destination: `https://sharity.hu/`.
+- The existing `impactshop-ngo-guides.php` remains unchanged. The new module is
+  added to maximum bastion inventory/digest and a dedicated smoke group.
+- The mandatory Impact Challenge memory loader was degraded by shared
+  `better-sqlite3` ABI drift (cache ABI 127, active Node ABI 147); no shared
+  dependency repair was attempted and repo-local canonical docs supplied the
+  bounded fallback.
+- Source publication and live exact-file CAS release remain pending. No cron,
+  Cronos or watchdog is required for a stateless request redirect.
+
+## 2026-09-09 — Sharity staging CAS admission control
+
+- Külön, `origin/main@073f285` alapú worktree-ben elkészült az egyszeri
+  `deploy-control-source:sharity-staging-cas-v1` source-admission profil.
+- Csak a parkolt CAS branch pontos hét protected és hat support fájlos diffjét
+  fogadja el; mind a hét protected blobot contract-pinned HEAD SHA-256, a
+  production companion változatlanságát review-zott SHA-256 köti. Minden
+  same-path mutáció, subset/superset, extra runtime/workflow/remote fájl,
+  rename/copy/delete, ref/hash/evidence drift és self-admission fail-closed.
+- Provider deploy végig tiltott. Az admission control saját fájljai maximum
+  protected deploy-guard körbe kerültek. Nem történt push, merge, VPS/provider
+  művelet; cron/watchdog nem szükséges.
 
 ## 2026-09-09 — Sharity Profile SP1
 
@@ -7258,3 +7287,16 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   a jelenlegi Node ABI 147-et igényel. Nem volt install, rebuild, ownership/cache
   módosítás, retry, PR, merge, provider vagy deploy; a remote feature branch nincs
   létrehozva. Következő próbálkozás csak operator-controlled runtime admission után.
+
+## 2026-09-10 — Sharity public portal redirects production closure
+
+- PR #192 delivered the additive exact-route plugin; PR #193 reconciled two
+  already merged guard-manifest digests found by the fail-closed dry-run.
+- Exact-main release `sharity-portals-20260910-77e345eb` deployed SHA
+  `b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9`
+  as `0444` under a `0555` parent.
+- Both requested URLs now return query-free `302` to `https://sharity.hu/`
+  and reach final `200`. NGO guides, JYSK report, Impact Challenge and profile
+  control routes remained `200`.
+- No database, cron, Cronos or watchdog change was needed. Rollback is bound to
+  the release ID and deployed SHA recorded above.

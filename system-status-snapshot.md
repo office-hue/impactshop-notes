@@ -1,3 +1,38 @@
+## 2026-09-10 — Sharity public portal redirects source package
+
+- Dedicated worktree/branch: `impactshop-notes-feat-redirect-donation-portals-20260910` /
+  `feat/redirect-donation-portals-to-sharity-20260910`, base
+  `origin/main@67d066aef5f2f3bc4ca6d440cdccd8ae822aace9`.
+- New additive MU-plugin owns only the two exact production GET/HEAD portal
+  paths and returns a fixed query-free `302` to `https://sharity.hu/`.
+- The legacy guide file remains byte-identical; donation/auction, profile,
+  identity, points/votes/rewards and all data writers are outside scope.
+- Maximum bastion inventory/digest, protected record, focused runtime test,
+  docsync and exact-file rollback contract are included in the same package.
+- Source merged through PR #192; the guard-hash parity correction merged
+  through PR #193. Exact-main CAS release
+  `sharity-portals-20260910-77e345eb` is production-accepted.
+- Both portal routes return query-free `302` to `https://sharity.hu/`, which
+  resolves `200`. The deployed SHA is
+  `b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9`;
+  target mode is `0444`, parent mode `0555`. No cron, Cronos or watchdog was
+  added.
+
+## 2026-09-09 — Sharity staging CAS source-admission bootstrap
+
+- Dedicated worktree/branch: `sharity-profile-deploy-control-source-bootstrap-20260909` /
+  `ops/sharity-profile-deploy-control-source-bootstrap-20260909`, base
+  `origin/main@073f2854d4e4bc01ad928636125b7a18dc43efa0`.
+- The exact seven protected CAS blobs are bound by contract-pinned HEAD SHA-256;
+  same-path content drift is source-blocked before any deploy authority exists.
+- Source-only capability: one exact staging CAS profile with schema-v2 record,
+  exact seven protected plus six support paths, unchanged production companion
+  digest, fixed plan/approval and provider deploy denial.
+- Control-plane files are maximum protected; self-admission and all tested
+  scope/ref/hash/evidence/provider drift fail closed.
+- No push, PR, merge, provider build, VPS write, runtime activation, cron or
+  watchdog belongs to this checkpoint. Next gate is independent Terra/high QA.
+
 ## 2026-09-09 — Sharity Profile SP1 source candidate
 
 - Persistent device ownership, explicit portable-code issuance/reveal, legacy

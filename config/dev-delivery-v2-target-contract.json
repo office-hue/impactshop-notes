@@ -28,6 +28,43 @@
     "repoLocalPolicyRequired": true,
     "automaticProductDeployAuthority": false
   },
+  "sourceAdmissionProfiles": {
+    "deploy-control-source:sharity-staging-cas-v1": {
+      "schemaVersion": 2,
+      "protectedPaths": [
+        ".deploy.staging.env",
+        "bin/deploy-wpcontent-map.sh",
+        "bin/impactshop-guard-rollback.sh",
+        "docs/impactshop-guard-hashes.json",
+        "docs/impactshop-guard-hashes.sha256",
+        "tests/deploy-wpcontent-map-exact-file.test.sh",
+        "tests/impactshop-guard-rollback-truth.test.sh"
+      ],
+      "requiredUnchangedPaths": [
+        ".deploy.production.env"
+      ],
+      "requiredChangedSupportPaths": [
+        "docs/impactshop-notes-doc-sync-map-2026-06-23.md",
+        "docs/protected-change-records/2026-09-09-sharity-profile-staging-cas.md",
+        "docs/sharity-profile-sp1-luna-continuity-2026-09-09.md",
+        "docs/sharity-profile-sp1-sol-release-gate-2026-09-09.md",
+        "notes.md",
+        "system-status-snapshot.md"
+      ],
+      "requiredHeadSha256": {
+        ".deploy.staging.env": "1bc12eb1bde5184e97e159081cd4be9a7d23ad4238c1a557efbc527e47a7ed25",
+        "bin/deploy-wpcontent-map.sh": "eaa6990de8c843cacd219859615e5f0d917aa7c6ee7309dab470a5ef9fa1fe8a",
+        "bin/impactshop-guard-rollback.sh": "225211c03db3e921b4c8538de6f3522f283f6caa22a52b049d311c1f3c864993",
+        "docs/impactshop-guard-hashes.json": "4fb754cd4233a6596121b847ada0cef1c889985e763b000a3790a774cc3a6f17",
+        "docs/impactshop-guard-hashes.sha256": "7b76b80b40e7ac5150994f6c080adf6e6b0ee32b360fddd8bcd8f64e0e0486ee",
+        "tests/deploy-wpcontent-map-exact-file.test.sh": "a64167d629f257a10ff759651ffbe06e6c9a4254bddb0efdab681054f23f150f",
+        "tests/impactshop-guard-rollback-truth.test.sh": "600e56326cf1b041786c90502aa0888ca89ad6f7b1fe8d00adc308a08cbb5756"
+      },
+      "planRef": "docs/sharity-profile-sp1-sol-release-gate-2026-09-09.md#canonical-staging-cas-implementation",
+      "operatorApprovalRef": "operator-approval:sharity-profile-staging-cas-20260909",
+      "providerDeployAllowed": false
+    }
+  },
   "requiredOutputFields": [
     "schemaVersion",
     "repo",
@@ -38,6 +75,8 @@
     "treeSha",
     "changedPathClass",
     "providerBuildDecision",
+    "providerDeployAllowed",
+    "sourceAdmissionProfile",
     "evidenceReuseAllowed",
     "decision",
     "blockingReasons"

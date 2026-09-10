@@ -4,6 +4,20 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-10 Sharity public portal redirects note
+
+- A két nyugdíjazott `adomany-automata-portal` út additív, production-only
+  MU-pluginon keresztül ad át a `https://sharity.hu/` nyilvános főoldalnak.
+- A fix `302` cél query-mentes; csak az exact host/path GET/HEAD ág él, míg
+  admin, REST, AJAX, guide, donation/auction, identity és gazdasági writerek
+  változatlanok.
+- A modul a protected inventory, digest és `public_portal_redirects` smoke
+  csoport alatt maximum-védett. Cronos/watchdog nem szükséges, mert nincs
+  háttérfolyamat vagy állapotírás.
+- Kanonikus csomag:
+  `docs/sharity-public-portal-redirects-sol-plan-2026-09-10.md` és
+  `docs/protected-change-records/2026-09-10-sharity-public-portal-redirects.md`.
+
 ## 2026-08-21 Hatás Körök Human Touch route note
 
 - Az `app.sharity.hu/hatas-korok` publikus dokumentumút Human Touch cutoverje
@@ -381,6 +395,22 @@ Operator approval reference:
 - A tartalmi remote-write keresés kizárólag changed script/bin/deploy vagy CI
   workflow végrehajtható surface-en fut; docs és tests fixture szöveg nem
   minősíti át a változást deploynak.
+## 2026-09-09 Sharity staging CAS source-admission bootstrap
+
+The repo-local DEV-v2 contract contains one fixed source-admission profile for
+the already completed Sharity staging CAS candidate. It is not a general deploy
+class and grants no provider or remote authority. The profile requires the exact
+seven protected CAS modifications plus the exact six continuity/support paths,
+an immutable plan and approval reference, and a schema-v2 record whose reviewed
+SHA-256 matches the byte-identical production companion at base and head.
+Every protected candidate file also has a contract-pinned HEAD SHA-256 that the
+manifest must echo and the adapter verifies from raw Git blob bytes.
+
+The admission control itself is isolated on a separate branch and closes through
+the ordinary schema-v1 protected lane, so it cannot admit itself. Control-plane
+contract, policy, adapter, tests and CI remain maximum-protected and belong to
+the deploy-guard smoke group. No runtime scheduler, cron or watchdog is involved.
+
 # 2026-09-09 Sharity Profile SP1 evidence sync
 
 The Sharity Profile SP1 package changes no governance executable or admission

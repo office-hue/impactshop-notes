@@ -39,6 +39,7 @@
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
+    "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php",
     "wp-content/mu-plugins/impactshop-ngo-selector.php",
     "wp-content/mu-plugins/impactshop-ngo-card.php",
     "wp-content/mu-plugins/impactshop-vote-purchase.php",
@@ -60,6 +61,10 @@
     "tests/impactshop-guard-preflight-detached.test.sh",
     "tests/deploy-wpcontent-map-exact-file.test.sh",
     "tests/impactshop-guard-rollback-truth.test.sh",
+    "config/dev-delivery-v2-target-contract.json",
+    "config/dev-delivery-v2-impact-policy.json",
+    "scripts/dev-delivery-v2-adapter.sh",
+    "tests/dev-delivery-v2-adapter.test.sh",
     ".github/workflows/ci.yml",
     "docs/impactshop-guard-config.json",
     "docs/impactshop-guard-config.sha256",
@@ -161,6 +166,15 @@
       "browser:mobile",
       "browser:chrome"
     ],
+    "public_portal_redirects": [
+      "route:adomany-automata-portal-1",
+      "route:adomany-automata-portal-2",
+      "destination:sharity-public-home",
+      "route:ngo-guides",
+      "route:jysk-riport",
+      "route:impact-challenge",
+      "route:profil"
+    ],
     "guide_runtime": [
       "route:jysk-riport",
       "route:ngo-guides",
@@ -212,6 +226,9 @@
       "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
       "scripts/hatas-korok-post-deploy-smoke.sh"
     ],
+    "public_portal_redirects": [
+      "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php"
+    ],
     "impact_shop_surface": [
       "wp-content/mu-plugins/impactshop-saved-offers.php",
       "wp-content/mu-plugins/impactshop-saved-offers.js",
@@ -244,6 +261,10 @@
       "tests/impactshop-guard-preflight-detached.test.sh",
       "tests/deploy-wpcontent-map-exact-file.test.sh",
       "tests/impactshop-guard-rollback-truth.test.sh",
+      "config/dev-delivery-v2-target-contract.json",
+      "config/dev-delivery-v2-impact-policy.json",
+      "scripts/dev-delivery-v2-adapter.sh",
+      "tests/dev-delivery-v2-adapter.test.sh",
       ".github/workflows/ci.yml",
       "docs/impactshop-protected-files.json",
       "docs/impactshop-deploy.md",
