@@ -27,6 +27,17 @@ contract, policy, CI
 assertions and tests are themselves protected in the deploy-guard group. No
 remote write, runtime activation, cron or watchdog was added.
 
+## 2026-09-10 — Sharity NGO preference source adapter
+
+The new NGO preference source adapter is retained as a `.php.off` additive
+module and is not loaded by WordPress. Its narrow perimeter is recorded with
+static and hermetic contract tests: exact HTTPS issuer origin/CSRF, exact BFF
+redirect tuples, global policy catalog revision, no campaign fallback, and
+redaction/default-off checks. Existing identity, selector, and VB2026 files are
+unchanged and remain maximum protected. No client, secret, key, policy row,
+schema execution, provider, cron, watchdog, staging, or production action
+occurred; activation requires a later Sol release admission.
+
 ## 2026-09-09 — Sharity Profile SP1 owner grant
 
 The existing identity PHP/JS surfaces remain maximum protected. Their candidate

@@ -23,7 +23,9 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          git fetch --no-tags --depth=1 origin "$PR_BASE_SHA"
+          if ! git cat-file -e "$PR_BASE_SHA^{commit}"; then
+            git fetch --no-tags origin "$PR_BASE_SHA"
+          fi
           [[ "$(git rev-parse --verify "$PR_BASE_SHA^{commit}")" == "$PR_BASE_SHA" ]]
 
       - name: Validation script syntax

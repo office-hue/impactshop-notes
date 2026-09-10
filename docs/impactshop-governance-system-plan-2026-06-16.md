@@ -428,3 +428,13 @@ The `ai-agent`-only `worktree-shared-deps.sh check --node-only` is explicitly
 admission input. Protected source eligibility comes only from the repo-local
 DEV-v2 adapter, its exact six-path manifest, the recorded source-only operator
 approval and private base/HEAD/tree-bound full-validation evidence.
+
+## 2026-09-10 — Sharity source-authority admission sync
+
+The `impactshop-notes` Sharity NGO preference package is a source-only,
+default-off additive adapter. Its protected admission is limited to the disabled
+`.php.off` module and the bastion record; it has no provider, VPS, database,
+secret, activation or deployment authority. The repository-local DEV-v2 adapter
+and exact change record remain the source of truth for candidate evidence. This
+governance sync is documentation only and does not change global DEV or release
+semantics.

@@ -1,3 +1,106 @@
+## 2026-09-10 — Sharity NGO preference CI publication correction
+
+- A current-main reconciliation után a required CI hamisan blokkolt, mert a teljes
+  checkoutot egy redundáns `--depth=1` base-fetch sekélyítette vissza. A workflow
+  most csak ténylegesen hiányzó base commitot fetch-el, sekélyítés nélkül.
+- A PR merge-ref exact commit-lane ellenőrzése és a repo-local adapter fixture PASS;
+  required jobnév, termékkód, runtime, provider és deploy authority nem változott.
+
+## 2026-09-10 — Sharity NGO preference Package B Terra re-QA after hardening
+
+- A code-issue registry binding, confidential-BFF admission, exact scope és
+  master/policy-derived selection továbbra is hiányzik; a schema/audit descriptor
+  sem teljes. Emiatt a source authority contract még nem QA-approved.
+- A javítás a meglévő Luna allowlisten belül marad; PHP evidence blocker és minden
+  activation/provider/deploy határ változatlan.
+
+## 2026-09-10 — Sharity NGO preference Package B Terra re-QA after remediation
+
+- A remediation még nem zárható: raw CSRF token storage, retryolható hibás code
+  redemption, catalog revision/selection gate hiánya, gyenge idempotency/audit és
+  schema/handler descriptor hiány maradt.
+- A javítás a meglévő Luna allowlisten belül marad; új Sol döntés nem kell. PHP
+  lint/contract evidence továbbra is csak admittált PHP-képes környezetben lehet.
+
+## 2026-09-10 — Sharity NGO preference Package B Luna integrity follow-up
+
+- A javítás hash-elt CSRF storage-t, consume-on-attempt code redemptiont, 32-byte
+  code boundot, catalog revision/selection gate-et, request-bound idempotencyt,
+  részletes append-only auditot és explicit table/handler descriptorokat ad.
+- Python static teszt PASS; PHP lint/contract továbbra is blocker a hiányzó `php`
+  executable miatt. Következő kapu: Terra re-QA.
+
+## 2026-09-10 — Sharity NGO preference Package B Terra re-QA
+
+- QA-B1 és QA-B2 architekturálisan lezárható: a source issuer origin exact és
+  fail-closed, a preference catalog policy pedig globális és campaign-independent.
+- A Luna allowlist kizárólag új disabled `.php.off` source adaptert, két hermetikus
+  tesztet és a kötelező bastion/change-record/continuity dokumentációt enged. Minden
+  meglévő MU-plugin, tényleges client/secret/key/policy adat, schema execution,
+  activation, provider és deploy tiltott.
+- Következő kapu: `gpt-5.6-luna`, medium, bounded source-only implementation.
+
+## 2026-09-10 — Sharity NGO preference Package B Luna implementation
+
+- Elkészült az új, `.php.off` suffixű additive source adapter és a két hermetikus
+  teszt; meglévő runtime/MU-plugin nem változott.
+- A Python static teszt PASS. A PHP lint és contract futtatás környezeti blocker:
+  nincs `php` executable; dependency telepítés vagy alternatív runtime nem történt.
+- Bastion-status és protected change record rögzítve; provider, deploy, secret,
+  schema, activation, push és PR továbbra sem történt.
+
+## 2026-09-10 — Sharity NGO preference Package B Terra post-Luna QA
+
+- A `.php.off` adapter csak helper-skeleton és route-névlista: hiányzik az
+  owner-grant, subject, authorization-code/PKCE, endpoint, CAS/idempotency/audit és
+  öt táblás source contract. Emiatt runtime-eligible állapot nincs.
+- A javítás a meglévő Luna allowlisten belül marad; új Sol architecture döntés nem
+  kell. A PHP lint/contract evidencia továbbra is blokkolt a hiányzó PHP executable
+  miatt.
+
+## 2026-09-10 — Sharity NGO preference Package B Luna remediation
+
+- A source adapter kiegészült owner-grant gate, subject-HMAC, exact HTTPS redirect,
+  PKCE-s egyszer használatos code, route-auth metadata, response header, öt tábla,
+  CAS/idempotency/audit és fail-closed helper contractokkal.
+- Python static teszt PASS; PHP lint/contract továbbra is blokkolt, mert nincs
+  `php` executable. Runtime, activation, schema, provider, deploy és secret nem
+  történt.
+
+## 2026-09-10 — Sharity NGO preference Package B Sol revision
+
+- A QA-B1 döntése: környezetenként egy exact HTTPS `home_url('/')` issuer origin;
+  a code-issuing POST exact `Origin` és owner-grant/request-bound egyszer használatos
+  CSRF tokent követel, hiányzó Origin esetén fail closed. A meglévő cross-host helper
+  önmagában nem használható.
+- A QA-B2 döntése: új, campaign-flagektől független globális preference catalog
+  policy szolgálja ki az összes preference scope-ot. Üres policy esetén nincs
+  választható NGO; az első adatfeltöltés/aktiválás későbbi explicit Sol művelet.
+- A változás dokumentációs architecture checkpoint; runtime, protected file,
+  provider, VPS, secret, schema execution, deploy és publication nem változott.
+- Következő kapu: `gpt-5.6-terra`, high, független re-QA és exact Luna allowlist.
+
+## 2026-09-10 — Sharity NGO preference Package B Terra QA
+
+- A Sol source-authority terv két implementációs blokkert kapott: az owner-grant
+  same-origin helper cross-host allowlistes, és a négy globális preference context
+  catalog campaign/global-policy mappingje nincs kanonikusan döntve.
+- Emiatt Luna implementation allowlist nem készült; Sol/high architecture revision
+  szükséges. Runtime, protected file, provider, VPS, secret, schema, deploy és
+  publication nem változott.
+
+## 2026-09-09 — Sharity NGO preference Package B source authority
+
+- Sol source-only architecture decision added on exact `origin/main@073f2854`.
+- The proposed browser/BFF bridge uses the existing owner grant only to mint a
+  one-time authorization code; only the confidential BFF exchange receives the
+  short-lived opaque bearer.
+- Preference authority is a versioned HMAC subject plus numeric current-catalog
+  validation, revision-bound CAS, idempotency and append-only audit.
+- Planned implementation is an additive `.php.off` module. Existing protected
+  identity, selector and VB2026 files remain unchanged.
+- No push, PR, merge, provider, VPS, secret, schema execution, deploy, cron or
+  watchdog action occurred. Next gate: Terra/high independent plan QA.
 ## 2026-09-10 — Sharity public portal redirects
 
 - Read-only diagnosis proved that both portal URLs are real WordPress pages but
@@ -7168,6 +7271,30 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   workflow, remote-write script, protected WP, rename, missing/forged/partial
   record and wrong base/tree evidence. Memory guard-load remained unavailable
   because the canonical ai-agent worktree lacks its local `tsx` dependency.
+- PHP capability closure (2026-09-10): Air now has approved keg-only
+  `/opt/homebrew/opt/php@8.4/bin/php` (8.4.25). Lint and the hermetic contract
+  test pass after correcting three test-fixture mismatches; the `.php.off` source
+  remains disabled and no runtime, schema, provider, or deploy state changed.
+- Terra PHP re-QA correction (2026-09-10): az expiry negatív fixture raw token
+  kulccsal tárol, miközben a helper derivált kulccsal keres; ezért a jelenlegi
+  PASS nem az expirációs ágat fedi le. A helyesen kulcsolt közvetlen PHP ellenőrzés
+  PASS. Egy szűk Luna test-only fixture-javítás kell a QA approval előtt.
+- Terra PHP re-QA lezárás (2026-09-10): az expiry fixture most derivált token
+  kulcsot használ; PHP lint/contract és Python static tesztek PASS. Source-only QA
+  Sol source publicationre jóváhagyva; a `.php.off` adapter disabled, runtime,
+  provider és deploy változatlan.
+- Sol source-publication security gate (2026-09-10): a Codex Security
+  `de2ebafd-073b-45b8-9e98-051f1759e2c5` scan az exact
+  `073f2854d4e4bc01ad928636125b7a18dc43efa0..6cb815404d7e346732e64a43da5e970d023aca85`
+  range-en 0 reportolható findinggal zárt. A `.php.off` automatikus inventoryból
+  kimaradt, ezért a három source-like fájl teljes kézi review-t kapott; a hét
+  docs-only fájl elszámolva. Döntés: `sol-source-publication-approved`; activation,
+  storage, secret, provider, VPS, deploy és production továbbra sincs engedélyezve.
+- Source publication attempt (2026-09-10): az egyetlen normál push-t a repo
+  pre-push memory gate blokkolta: a shared `better-sqlite3` Node ABI 127-re készült,
+  a jelenlegi Node ABI 147-et igényel. Nem volt install, rebuild, ownership/cache
+  módosítás, retry, PR, merge, provider vagy deploy; a remote feature branch nincs
+  létrehozva. Következő próbálkozás csak operator-controlled runtime admission után.
 
 ## 2026-09-10 — Sharity public portal redirects production closure
 

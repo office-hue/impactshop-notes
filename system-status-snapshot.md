@@ -1111,3 +1111,12 @@ deployment state changed.
   deploy admission is always false.
 - Local/CI assertions keep policy-integrity PASS, operator-review and source
   admission as separate states.
+
+## 2026-09-10 — Sharity NGO preference source-authority package
+
+- Source-only, default-off adapter: `wp-content/mu-plugins/impactshop-sharity-ngo-preference-source.php.off`.
+- PHP lint, hermetic contract, static source guard and maximum bastion checks
+  pass at checkpoint `3d178259`; no route, schema, secret, provider, VPS or
+  runtime mutation occurred.
+- The adapter remains disabled; existing identity, catalog, campaign, reward
+  and economic writers are unchanged.
