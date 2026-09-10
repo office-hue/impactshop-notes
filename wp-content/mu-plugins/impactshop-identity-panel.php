@@ -105,11 +105,152 @@ add_shortcode('impactshop_identity_panel', 'impactshop_identity_panel_shortcode'
 add_shortcode('impactshop_identity_id', 'impactshop_identity_id_shortcode');
 
 add_action('wp_enqueue_scripts', 'impactshop_identity_panel_register_assets');
+add_action('wp_enqueue_scripts', 'impactshop_identity_profile_dequeue_adsense', 1000);
 add_action('admin_init', 'impactshop_identity_register_broadcast_setting');
 add_action('init', 'impactshop_identity_maybe_install_owner_grants', 1);
 add_action('init', 'impactshop_identity_handle_password_manager_save');
+add_action('template_redirect', 'impactshop_identity_profile_cache_headers', -999);
+add_action('template_redirect', 'impactshop_identity_profile_suppress_ads', -998);
 add_action('template_redirect', 'impactshop_identity_render_code_page', 0);
 add_action('template_redirect', 'impactshop_identity_maybe_complete_profile_return', 1);
+add_action('elementor/frontend/widget/before_render', 'impactshop_identity_suppress_profile_adsense_widget', 1);
+add_filter('rest_post_dispatch', 'impactshop_identity_profile_rest_cache_headers', 1000, 3);
+
+/**
+ * Return the normalized path used by the profile route classifier.
+ *
+ * The classifier is intentionally path-only: query strings, fragments and
+ * host aliases must not turn the profile cache/privacy boundary off.
+ *
+ * @param string|null $request_uri Optional request URI override for tests.
+ * @return string
+ */
+function impactshop_identity_profile_route_path(?string $request_uri = null): string
+{
+    $request_uri = $request_uri ?? (string) ($_SERVER['REQUEST_URI'] ?? '');
+    $path = (string) parse_url($request_uri, PHP_URL_PATH);
+    return '/' . ltrim(untrailingslashit($path), '/');
+}
+
+/**
+ * Shared classifier for the complete /profil route family.
+ *
+ * @param string|null $request_uri Optional request URI override for tests.
+ * @return bool
+ */
+function impactshop_identity_is_profile_route(?string $request_uri = null): bool
+{
+    $path = impactshop_identity_profile_route_path($request_uri);
+    return $path === '/profil' || str_starts_with($path, '/profil/');
+}
+
+/**
+ * Canonical in-environment profile action target.
+ *
+ * @return string
+ */
+function impactshop_identity_canonical_profile_url(): string
+{
+    return home_url('/profil/#impactshop-account-top');
+}
+
+/**
+ * Prevent shared/page caches from serving a profile response to another
+ * cookie jar. This runs before a theme or page builder renders the page.
+ *
+ * @return void
+ */
+function impactshop_identity_profile_cache_headers(): void
+{
+    if (!impactshop_identity_is_profile_route()) {
+        return;
+    }
+
+    nocache_headers();
+    header('Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: Wed, 11 Jan 1984 05:00:00 GMT');
+    header('Vary: Cookie', false);
+}
+
+/**
+ * Disable repository and known third-party ad integrations on profile pages.
+ * No rendered HTML is rewritten; each producer is disabled at its hook.
+ *
+ * @return void
+ */
+function impactshop_identity_profile_suppress_ads(): void
+{
+    if (!impactshop_identity_is_profile_route()) {
+        return;
+    }
+
+    add_filter('googlesitekit_adsense_enabled', '__return_false', 1000);
+    add_filter('googlesitekit_ads_enabled', '__return_false', 1000);
+    add_filter('googlesitekit_modules_enabled', 'impactshop_identity_profile_site_kit_modules', 1000);
+}
+
+/**
+ * Dequeue only clearly ad-related frontend handles on profile pages.
+ *
+ * @return void
+ */
+function impactshop_identity_profile_dequeue_adsense(): void
+{
+    if (!impactshop_identity_is_profile_route() || !function_exists('wp_scripts')) {
+        return;
+    }
+
+    $scripts = wp_scripts();
+    if (!$scripts || !is_array($scripts->queue ?? null)) {
+        return;
+    }
+    foreach ($scripts->queue as $handle) {
+        if (preg_match('/(?:adsense|google[-_]?ads)/i', (string) $handle)) {
+            wp_dequeue_script((string) $handle);
+        }
+    }
+}
+
+/**
+ * Remove only Site Kit's AdSense module from its enabled-module map.
+ *
+ * @param mixed $modules Site Kit module map.
+ * @return mixed
+ */
+function impactshop_identity_profile_site_kit_modules($modules)
+{
+    if (!is_array($modules)) {
+        return $modules;
+    }
+    foreach (['adsense', 'google-adsense', 'adSense'] as $key) {
+        unset($modules[$key]);
+    }
+    return $modules;
+}
+
+/**
+ * Suppress an exact Elementor AdSense widget on profile pages.
+ *
+ * @param mixed $widget Elementor widget instance.
+ * @return void
+ */
+function impactshop_identity_suppress_profile_adsense_widget($widget): void
+{
+    if (!impactshop_identity_is_profile_route() || !is_object($widget) || !method_exists($widget, 'get_name')) {
+        return;
+    }
+
+    $widget_name = strtolower((string) $widget->get_name());
+    $adsense_widgets = ['adsense', 'google_adsense', 'elementor_google_adsense'];
+    if (!in_array($widget_name, $adsense_widgets, true)) {
+        return;
+    }
+
+    if (method_exists($widget, 'set_should_render')) {
+        $widget->set_should_render(false);
+    }
+}
 
 function impactshop_identity_register_broadcast_setting(): void
 {
@@ -234,7 +375,7 @@ function impactshop_identity_owner_issue(string $pseudo_id): bool
     $cookie_set = setcookie('__Host-impactshop_owner', $token, [
         'expires' => time() + (365 * DAY_IN_SECONDS),
         'path' => '/',
-        'secure' => is_ssl(),
+        'secure' => true,
         'httponly' => true,
         'samesite' => 'Strict',
     ]);
@@ -242,6 +383,9 @@ function impactshop_identity_owner_issue(string $pseudo_id): bool
         $wpdb->update(impactshop_identity_owner_grant_table(), ['revoked_at' => $now], ['grant_hash' => impactshop_identity_owner_hash($token)], ['%s'], ['%s']);
         return false;
     }
+    // Make the freshly issued binding available to same-request fail-closed
+    // compensation and subsequent ownership checks.
+    $_COOKIE['__Host-impactshop_owner'] = $token;
     return true;
 }
 
@@ -253,6 +397,120 @@ function impactshop_identity_owner_revoke_current(): void
     }
     global $wpdb;
     $wpdb->update(impactshop_identity_owner_grant_table(), ['revoked_at' => gmdate('Y-m-d H:i:s')], ['grant_hash' => impactshop_identity_owner_hash($token), 'revoked_at' => null], ['%s'], ['%s', '%s']);
+}
+
+/**
+ * Resolve the compatibility state of the current device/profile binding.
+ *
+ * This is deliberately read-only. A missing or invalid grant never causes a
+ * new grant to be minted here; only the existing bootstrap path may issue one.
+ *
+ * @param string $pseudo_id Current pseudo ID.
+ * @return string One of binding_pending, active, legacy_read_only,
+ *                invalid_or_revoked or unavailable.
+ */
+function impactshop_identity_profile_state(string $pseudo_id): string
+{
+    if ($pseudo_id === '' || !impactshop_identity_profile_valid_pseudo($pseudo_id)) {
+        return 'unavailable';
+    }
+
+    $owner_token = impactshop_identity_owner_cookie();
+    if ($owner_token !== '' && preg_match('/^[a-f0-9]{64}$/i', $owner_token)) {
+        if (impactshop_identity_owner_authorized($pseudo_id)) {
+            return 'active';
+        }
+    }
+
+    global $wpdb;
+    $table = impactshop_identity_owner_grant_table();
+    $grant_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT revoked_at, expires_at FROM {$table} WHERE pseudo_hash = %s ORDER BY created_at DESC LIMIT 5",
+        impactshop_identity_owner_pseudo_hash($pseudo_id)
+    ), ARRAY_A);
+    if ($wpdb->last_error !== '') {
+        return 'unavailable';
+    }
+
+    $has_expired_or_revoked = false;
+    if (is_array($grant_rows)) {
+        foreach ($grant_rows as $grant_row) {
+            if (!is_array($grant_row)) {
+                continue;
+            }
+            if (!empty($grant_row['revoked_at']) || (!empty($grant_row['expires_at']) && strtotime((string) $grant_row['expires_at']) <= time())) {
+                $has_expired_or_revoked = true;
+                break;
+            }
+        }
+    }
+
+    return $has_expired_or_revoked ? 'invalid_or_revoked' : 'legacy_read_only';
+}
+
+/**
+ * Read the current pseudo's available votes without creating or changing a
+ * row. The value is intentionally scoped to the current cookie only.
+ *
+ * @param string $pseudo_id Current pseudo ID.
+ * @return int
+ */
+function impactshop_identity_profile_votes_available(string $pseudo_id): int
+{
+    if ($pseudo_id === '' || !impactshop_identity_profile_valid_pseudo($pseudo_id)) {
+        return 0;
+    }
+
+    global $wpdb;
+    $table = $wpdb->prefix . 'impactshop_ads_user_votes';
+    $raw = $wpdb->get_var($wpdb->prepare(
+        "SELECT available_votes FROM {$table} WHERE pseudo_id = %s LIMIT 1",
+        $pseudo_id
+    ));
+    if ($wpdb->last_error !== '' || $raw === null || !is_scalar($raw)) {
+        return 0;
+    }
+
+    $raw = trim((string) $raw);
+    if (!preg_match('/^-?\d+$/', $raw)) {
+        return 0;
+    }
+
+    return max(0, (int) $raw);
+}
+
+/**
+ * Apply the profile API's private cache contract.
+ *
+ * @param WP_REST_Response $response REST response.
+ * @return WP_REST_Response
+ */
+function impactshop_identity_profile_response_headers(WP_REST_Response $response): WP_REST_Response
+{
+    $response->header('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0');
+    $response->header('Pragma', 'no-cache');
+    $response->header('Vary', 'Cookie');
+    return $response;
+}
+
+/**
+ * Enforce the profile cache contract even when another callback changes the
+ * response after the profile handler has returned.
+ *
+ * @param mixed $response REST response.
+ * @param mixed $server REST server.
+ * @param mixed $request REST request.
+ * @return mixed
+ */
+function impactshop_identity_profile_rest_cache_headers($response, $server, $request)
+{
+    if (!$response instanceof WP_REST_Response || !is_object($request) || !method_exists($request, 'get_route')) {
+        return $response;
+    }
+    if ((string) $request->get_route() !== '/impact/v1/identity/profile') {
+        return $response;
+    }
+    return impactshop_identity_profile_response_headers($response);
 }
 
 function impactshop_identity_allowed_message_tags(): array
@@ -292,28 +550,41 @@ function impactshop_identity_render_broadcast_field(): void
 /**
  * Resolve only the non-secret profile identity for rendering.
  *
- * @return array{pseudo_id:string,nickname:?string,access_code_state:string}
+ * @return array{pseudo_id:string,nickname:?string,access_code_state:string,votes_available:int|null,identity_state:string}
  */
 function impactshop_identity_profile_resolve(): array
 {
     $pseudo_id = impactshop_identity_profile_cookie();
     if ($pseudo_id === '') {
         $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
-        if (impactshop_identity_owner_issue($pseudo_id)) {
-            impactshop_identity_profile_set_cookie($pseudo_id);
-        } else {
+        $owner_issued = impactshop_identity_owner_issue($pseudo_id);
+        $pseudo_cookie_set = $owner_issued && impactshop_identity_profile_set_cookie($pseudo_id);
+        if (!$pseudo_cookie_set) {
+            if ($owner_issued) {
+                impactshop_identity_owner_revoke_current();
+            }
             $pseudo_id = '';
         }
     }
 
     if ($pseudo_id === '') {
-        $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
+        return [
+            'pseudo_id'         => '',
+            'nickname'          => null,
+            'access_code_state' => 'missing',
+            'votes_available'   => null,
+            'identity_state'    => 'unavailable',
+        ];
     }
+
+    $identity_state = impactshop_identity_profile_state($pseudo_id);
 
     return [
         'pseudo_id'        => $pseudo_id,
-        'nickname'         => impactshop_identity_profile_load($pseudo_id),
+        'nickname'         => $identity_state === 'invalid_or_revoked' ? null : impactshop_identity_profile_load($pseudo_id),
         'access_code_state' => impactshop_identity_profile_has_access_code($pseudo_id) ? 'available' : 'missing',
+        'votes_available'   => $identity_state === 'active' ? impactshop_identity_profile_votes_available($pseudo_id) : null,
+        'identity_state'    => $identity_state,
     ];
 }
 
@@ -372,13 +643,15 @@ function impactshop_identity_panel_shortcode(): string
     $current_url = impactshop_identity_current_url();
     $profile = impactshop_identity_profile_resolve();
     $pseudo_id = esc_html($profile['pseudo_id']);
-    $nickname = esc_html((string) ($profile['nickname'] ?? ''));
+    $nickname_value = (string) ($profile['nickname'] ?? '');
+    $nickname_label = esc_html($nickname_value !== '' ? $nickname_value : 'Nincs becenév');
 
     $html = '<div class="impactshop-identity-panel" id="' . esc_attr($panel_id) . '" data-rest-base="' . esc_attr($rest_base) . '">';
     $html .= '<div id="impactshop-account-top"></div>';
     $html .= '<div class="impactshop-identity-card">';
     $html .= '<div class="impactshop-identity-header">';
     $html .= '<h3>Profilod</h3>';
+    $html .= '<p class="impactshop-identity-summary"><span class="impactshop-identity-summary__label">Becenév</span> <strong data-role="nickname-display">' . $nickname_label . '</strong></p>';
     $html .= '<p class="impactshop-identity-hint" data-role="greeting"></p>';
     $html .= '<p class="impactshop-identity-hint" data-role="account-message"></p>';
     $html .= '</div>';
@@ -441,6 +714,11 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-benefits" data-role="points-benefits"></div>';
     $html .= '</div>';
+    $html .= '<div class="impactshop-identity-block impactshop-identity-votes" data-role="votes-summary">';
+    $html .= '<h4>Elkölthető szavazatok</h4>';
+    $html .= '<strong data-role="votes-available">' . (isset($profile['votes_available']) && $profile['votes_available'] !== null ? esc_html((string) $profile['votes_available']) : 'Belépés szükséges') . '</strong>';
+    $html .= '<p class="impactshop-identity-hint" data-role="votes-state"></p>';
+    $html .= '</div>';
     $html .= '<div class="impactshop-identity-block impactshop-identity-history">';
     $html .= '<h4>Legutóbbi aktivitás</h4>';
     $html .= '<ul class="impactshop-identity-list" data-role="points-history"></ul>';
@@ -479,7 +757,7 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-restore">';
     $html .= '<h4 id="impactshop-restore-title">Belépés meglévő fiókba <button type="button" class="impactshop-identity-info-trigger" aria-describedby="impactshop-signin-help">i</button></h4>';
-    $html .= '<p id="impactshop-signin-help" class="impactshop-identity-hint">Ha másik eszközön már létrehoztad a fiókodat, itt a pseudo ID és a korábban elmentett belépési kód megadásával léphetsz be.</p>';
+    $html .= '<p id="impactshop-signin-help" class="impactshop-identity-hint">A fiókot automatikusan létrehoztuk; az adataidat a pseudo ID és a belépési kód kapcsolja össze. Ha másik eszközön már létrehoztad, itt léphetsz be. Az elvesztett belépési kód másik ellenőrzött azonosító nélkül nem állítható helyre.</p>';
     $html .= '<label class="impactshop-identity-restore__label">Azonosító</label>';
     $html .= '<input type="text" name="impactshop_restore_pseudo" data-role="restore-pseudo" autocomplete="username" placeholder="Azonosító" />';
     $html .= '<label class="impactshop-identity-restore__label">Belépési kód</label>';
@@ -507,10 +785,10 @@ function impactshop_identity_id_shortcode(): string
     $current_url = impactshop_identity_current_url();
     $profile = impactshop_identity_profile_resolve();
     $pseudo_id = esc_html($profile['pseudo_id']);
-    $nickname = esc_html((string) ($profile['nickname'] ?? ''));
+    $nickname_value = (string) ($profile['nickname'] ?? '');
+    $nickname_label = esc_html($nickname_value !== '' ? $nickname_value : 'Nincs becenév');
         $broadcast = (string) get_option('impactshop_identity_broadcast_message', '');
     $broadcast = wp_kses($broadcast, impactshop_identity_allowed_message_tags());
-    $panel_url = apply_filters('impactshop_identity_panel_url', site_url('/profil'));
     $restore_url = apply_filters('impactshop_identity_restore_url', site_url('/profil') . '#impactshop-restore-title');
     $html = '<div class="impactshop-identity-panel impactshop-identity-panel--compact" id="' . esc_attr($panel_id) . '" data-rest-base="' . esc_attr($rest_base) . '">';
     $html .= '<div class="impactshop-identity-card">';
@@ -524,8 +802,10 @@ function impactshop_identity_id_shortcode(): string
     $html .= '<li>Ha máshova mentenéd, használd a <strong>Másolás</strong> gombot.</li>';
     $html .= '<li>Ha később másik eszközről lépsz be, használd a <strong>Belépés meglévő fiókba</strong> pontot.</li>';
     $html .= '</ul>';
+    $html .= '<p>Az elvesztett belépési kód másik ellenőrzött azonosító nélkül nem állítható helyre.</p>';
     $html .= '<p>Csak a fiókodban tudod összegyűjteni az előnyöket és a jelvényeket, ezért érdemes elmentened.</p>';
     $html .= '</div>';
+    $html .= '<p class="impactshop-identity-summary"><span class="impactshop-identity-summary__label">Becenév</span> <strong data-role="nickname-display">' . $nickname_label . '</strong></p>';
     $html .= '</div>';
     $html .= '<p class="impactshop-identity-hint" data-role="greeting"></p>';
     $html .= '<form class="impactshop-identity-row" data-role="save-form" method="post" action="' . esc_url(home_url('/')) . '" autocomplete="on">';
@@ -539,7 +819,8 @@ function impactshop_identity_id_shortcode(): string
     $html .= '</form>';
     $html .= '<span class="impactshop-identity-hidden" data-role="recovery-display"></span>';
     $html .= '<div class="impactshop-identity-actions">';
-    $html .= '<a class="impactshop-identity-link" href="' . esc_url($panel_url . '#impactshop-account-top') . '" target="_blank" rel="noopener">A fiókom kezelése</a>';
+    $profile_action_url = impactshop_identity_canonical_profile_url();
+    $html .= '<a class="impactshop-identity-link" href="' . esc_url($profile_action_url) . '" target="_blank" rel="noopener">A fiókom kezelése</a>';
     $html .= '<a class="impactshop-identity-link impactshop-identity-link--muted" data-role="identity-restore-link" href="' . esc_url($restore_url) . '" target="_blank" rel="noopener">Belépés meglévő fiókba</a>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-compact" data-role="points-compact" hidden>';
@@ -552,6 +833,10 @@ function impactshop_identity_id_shortcode(): string
     $html .= '<div class="impactshop-identity-progress-bar" data-role="points-compact-bar"></div>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-progress-text" data-role="points-compact-text"></div>';
+    $html .= '</div>';
+    $html .= '<div class="impactshop-identity-compact impactshop-identity-votes" data-role="votes-summary">';
+    $html .= '<span class="impactshop-identity-summary__label">Elkölthető szavazatok</span> <strong data-role="votes-available">' . (isset($profile['votes_available']) && $profile['votes_available'] !== null ? esc_html((string) $profile['votes_available']) : 'Belépés szükséges') . '</strong>';
+    $html .= '<span class="impactshop-identity-hint" data-role="votes-state"></span>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-block impactshop-identity-message" data-role="broadcast-message" hidden>';
     $html .= '<strong>Üzenet</strong>';
@@ -602,6 +887,11 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-card { border-radius: 18px; padding: 22px; background: rgba(255,255,255,0.7); border: 1px solid rgba(148,163,184,0.35); box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12); backdrop-filter: blur(16px); position: relative; overflow: hidden; }
 .impactshop-identity-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 55%), radial-gradient(circle at bottom right, rgba(14,165,233,0.14), transparent 55%); pointer-events: none; }
 .impactshop-identity-card h3, .impactshop-identity-card h4 { margin: 0 0 10px; font-weight: 700; }
+.impactshop-identity-summary { margin: 0 0 8px; color: #1a1a2e; line-height: 1.5; }
+.impactshop-identity-summary__label { color: #475569; font-size: 13px; font-weight: 600; margin-right: 4px; }
+.impactshop-identity-votes { padding: 12px 14px; border-radius: 14px; background: #f0fdfa; border: 1px solid rgba(13,148,136,.24); }
+.impactshop-identity-votes h4 { color: #0f766e; }
+.impactshop-identity-votes [data-role=votes-available] { color: #1a1a2e; font-size: 1.15rem; }
 .impactshop-identity-title { display: flex; align-items: center; gap: 8px; position: relative; }
 .impactshop-identity-info-trigger { width: 22px; height: 22px; border-radius: 999px; border: 0; background: #e2e8f0; color: #0f172a; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .impactshop-identity-info-trigger:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
@@ -617,6 +907,7 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-card label { display: block; margin-top: 14px; font-weight: 600; }
 .impactshop-identity-card input, .impactshop-identity-card select { width: 100%; padding: 12px; border: 1px solid rgba(148,163,184,0.6); border-radius: 12px; background: rgba(255,255,255,0.8); }
 .impactshop-identity-card button { padding: 11px 16px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.2); background: #0f172a; color: #fff; cursor: pointer; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18); }
+.impactshop-identity-card button:disabled { cursor: not-allowed; opacity: .6; }
 .impactshop-identity-card button:hover { background: #1e293b; }
 .impactshop-identity-card code { background: rgba(15,23,42,0.06); padding: 10px 12px; border-radius: 10px; font-weight: 700; letter-spacing: 0.02em; }
 .impactshop-identity-actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -654,6 +945,12 @@ function impactshop_identity_panel_register_assets(): void
 @media (max-width: 640px) {
   .impactshop-identity-row { flex-direction: column; align-items: stretch; }
   .impactshop-identity-card button { width: 100%; }
+  .impactshop-identity-card { padding: 18px; border-radius: 14px; }
+}
+@media (prefers-contrast: more) {
+  .impactshop-identity-card { border-color: #1a1a2e; background: #fff; }
+  .impactshop-identity-hint, .impactshop-identity-summary__label { color: #1a1a2e; }
+  .impactshop-identity-votes { border-color: #0f766e; }
 }
 CSS;
     wp_add_inline_style('impactshop-identity-panel', $css);
@@ -692,24 +989,36 @@ function impactshop_identity_profile_get(): WP_REST_Response
     $pseudo_id = impactshop_identity_profile_cookie();
     if ($pseudo_id === '') {
         $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
-        if (impactshop_identity_owner_issue($pseudo_id)) {
-            impactshop_identity_profile_set_cookie($pseudo_id);
+        $owner_issued = impactshop_identity_owner_issue($pseudo_id);
+        $pseudo_cookie_set = $owner_issued && impactshop_identity_profile_set_cookie($pseudo_id);
+        if (!$pseudo_cookie_set) {
+            if ($owner_issued) {
+                impactshop_identity_owner_revoke_current();
+            }
+            $response = new WP_REST_Response([
+                'pseudo_id'         => '',
+                'nickname'          => null,
+                'access_code_state' => 'missing',
+                'votes_available'   => null,
+                'identity_state'    => 'unavailable',
+            ], 200);
+            return impactshop_identity_profile_response_headers($response);
         }
     }
 
+    $identity_state = impactshop_identity_profile_state($pseudo_id);
     $nickname = impactshop_identity_profile_load($pseudo_id);
     $response = new WP_REST_Response(
         [
             'pseudo_id'         => $pseudo_id,
-            'nickname'          => $nickname,
+            'nickname'          => $identity_state === 'invalid_or_revoked' ? null : $nickname,
             'access_code_state' => impactshop_identity_profile_has_access_code($pseudo_id) ? 'available' : 'missing',
+            'votes_available'   => $identity_state === 'active' ? impactshop_identity_profile_votes_available($pseudo_id) : null,
+            'identity_state'    => $identity_state,
         ],
         200
     );
-    $response->header('Cache-Control', 'no-store, no-cache, must-revalidate');
-    $response->header('Pragma', 'no-cache');
-    $response->header('Vary', 'Cookie');
-    return $response;
+    return impactshop_identity_profile_response_headers($response);
 }
 
 /**
@@ -833,7 +1142,10 @@ function impactshop_identity_profile_restore(WP_REST_Request $request): WP_REST_
     if (!impactshop_identity_owner_issue($pseudo_id)) {
         return new WP_REST_Response(['message' => 'A fiók biztonságos összekapcsolása most nem sikerült.'], 503);
     }
-    impactshop_identity_profile_set_cookie($pseudo_id);
+    if (!impactshop_identity_profile_set_cookie($pseudo_id)) {
+        impactshop_identity_owner_revoke_current();
+        return new WP_REST_Response(['message' => 'A fiók biztonságos összekapcsolása most nem sikerült.'], 503);
+    }
     $response = new WP_REST_Response(['status' => 'ok', 'pseudo_id' => $pseudo_id], 200);
     $response->header('Cache-Control', 'private, no-store, max-age=0');
     $response->header('Vary', 'Cookie');
@@ -899,7 +1211,8 @@ function impactshop_identity_profile_cookie(): string
     if (empty($_COOKIE['impactshop_pseudo_id']) || !is_string($_COOKIE['impactshop_pseudo_id'])) {
         return '';
     }
-    return strtolower(sanitize_text_field(wp_unslash($_COOKIE['impactshop_pseudo_id'])));
+    $pseudo_id = strtolower(sanitize_text_field(wp_unslash($_COOKIE['impactshop_pseudo_id'])));
+    return impactshop_identity_profile_valid_pseudo($pseudo_id) ? $pseudo_id : '';
 }
 
 /**
@@ -1260,14 +1573,14 @@ function impactshop_identity_profile_generate_pseudo_id(): string
  * Set pseudo ID cookie on client.
  *
  * @param string $pseudo_id Pseudo ID.
- * @return void
+ * @return bool
  */
-function impactshop_identity_profile_set_cookie(string $pseudo_id): void
+function impactshop_identity_profile_set_cookie(string $pseudo_id): bool
 {
     $pseudo_id = strtolower($pseudo_id);
-    $secure = is_ssl();
+    $secure = true;
     if (PHP_VERSION_ID >= 70300) {
-        setcookie('impactshop_pseudo_id', $pseudo_id, [
+        return setcookie('impactshop_pseudo_id', $pseudo_id, [
             'expires'  => time() + (365 * DAY_IN_SECONDS),
             'path'     => '/',
             'secure'   => $secure,
@@ -1275,6 +1588,6 @@ function impactshop_identity_profile_set_cookie(string $pseudo_id): void
             'samesite' => 'Lax',
         ]);
     } else {
-        setcookie('impactshop_pseudo_id', $pseudo_id, time() + (365 * DAY_IN_SECONDS), '/; samesite=Lax', '', $secure, false);
+        return setcookie('impactshop_pseudo_id', $pseudo_id, time() + (365 * DAY_IN_SECONDS), '/; samesite=Lax', '', $secure, false);
     }
 }

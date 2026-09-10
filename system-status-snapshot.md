@@ -1,3 +1,16 @@
+## 2026-09-10 — Sharity profile summary closure — checkpoint A
+
+- A dedikált `feat/sharity-profile-summary-live-closure-luna-20260910` branch
+  az `origin/main@d39349a3` alapból source-only checkpoint A-t készít: full/compact
+  profil summary, additive profile state/vote API, canonical account anchor,
+  `/profil` cache/privacy boundary és producer-szintű ad suppression.
+- A vote balance SELECT-only és current-cookie scoped; invalid/negative/missing
+  érték 0. Pseudo/grant/cookie hiba esetén nincs megjelenített új pseudo, és a
+  módosító UI `unavailable`/read-only módba kerül.
+- Targeted PHP lint, JS syntax, static contract és diff-check PASS. A teljes
+  owner-policy registry, v2 pending-grant migráció, live DB/browser E2E,
+  staging/production és consent CMP továbbra is későbbi kapu.
+
 ## 2026-09-10 — Sharity public portal redirects source package
 
 - Dedicated worktree/branch: `impactshop-notes-feat-redirect-donation-portals-20260910` /

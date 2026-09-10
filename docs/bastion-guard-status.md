@@ -2,6 +2,18 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint A
+
+The existing maximum-protected identity and AdSense sources now carry the
+bounded profile-summary contract: additive `votes_available`/
+`identity_state`, current-cookie SELECT-only vote read, fail-closed pseudo
+bootstrap, shared `/profil` cache/privacy classifier and producer-level
+AdSense/Site Kit/Elementor suppression. The focused static contract, PHP/JS
+syntax and diff checks pass. No owner-policy registry migration, provider,
+staging, production, schema execution, cron or watchdog authority was added.
+See `docs/protected-change-records/2026-09-10-sharity-profile-summary-checkpoint-a.md`
+and `docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md`.
+
 ## 2026-09-10 — Sharity public portal redirects
 
 The two retired donation-portal routes receive a new additive, production-only

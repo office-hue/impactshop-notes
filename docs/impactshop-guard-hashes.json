@@ -179,7 +179,7 @@
     "wp-content/mu-plugins/impactshop-cj.php": "fd44148a2c1c51320566b18dfdd3822e7a879337ff3e2e5b0413466c931382f7",
     "wp-content/mu-plugins/impactshop-auto-banner.php": "1032a0d3846fbee8b91d15f54dd4db6b938b5d50708f8fb190a3ee1bc7fd2a60",
     "wp-content/mu-plugins/impactshop-auto-banner-sync.php": "95a197f439544b273232327fcf28d84b8a481bce619409cb51203dade4d7cb7a",
-    "wp-content/mu-plugins/impactshop-adsense-head.php": "2f8b2d38afc5f5027b2c24961c1c75a0d2ce1f781927f47d66f44f8e10660367",
+    "wp-content/mu-plugins/impactshop-adsense-head.php": "dd626269495a0f9e98ac6a99fe973162d40eada58d4905029be3ad63163b4b34",
     "wp-content/mu-plugins/impactshop-netflix-shortcodes.php": "04117bac42c29c8b46fff1021a81c989e7b09e69883fd5f110629acfad3d791e",
     "wp-content/mu-plugins/impactshop-rest-totals.php": "e1135ecdd0bfd6ef6ab18944aa4b2ce47b099a9c4af89b2b9fe669d87ae65a21",
     "wp-content/mu-plugins/impactshop-rest-coupons.php": "d7a8ae294c9f6530fa7fae77c4ae1ce6c22154b582a1cb64d23a12181170b63f",
@@ -188,8 +188,8 @@
     "wp-content/mu-plugins/impactshop-ngo-card.js": "5c3cc8161f32766f579d7b06a56b9a214b05a99678a26327aec9b8b4d2bb34c1",
     "wp-content/mu-plugins/impactshop-go-bridge.php": "ff6e33eba855848aa0b50f25c66d4caafbe08f3884a43c5ed0958f5ec4b8b572",
     "wp-content/mu-plugins/impactshop-sum-pack.php": "6361a433bd74fe14ae8f67d2e49dea65ba9ebe529ae808fc31f7866d239a8085",
-    "wp-content/mu-plugins/impactshop-identity-panel.php": "339b570ee4c4b03a4f0556f194d6addb77cbb8ea4bb5f0c37e0dd3bb8f208be9",
-    "wp-content/mu-plugins/impactshop-identity-panel.js": "dd3ffa085194f3a6e1646bfe7c6e685beeb714f376eb56b4a80edf88e87856df",
+    "wp-content/mu-plugins/impactshop-identity-panel.php": "22a15bf5968a733a72f0e79c878468c1e3dd36a9225b69684a3533143c75c82c",
+    "wp-content/mu-plugins/impactshop-identity-panel.js": "ed2d796a3f76d14263559023d8ddd3ced143cf51575440f5a19da4efec3fe6b4",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php": "433f26fd21af69aa84c75535c5f5228af4ca661be39335e180bf616f872461e0",
     "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php": "b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9",
     "wp-content/mu-plugins/impactshop-vote-jysk.php": "40ef3e7243f232449da0f69f06a86aa6a325be3d7ecf49b2c35c518694304d9d",
@@ -317,5 +317,5 @@
     ".github/workflows/ci.yml": "2865b8ea13a0eebbfb006a3a4db1fb31cd28bc515054f4891db5791395037c94",
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208"
   },
-  "generated_at": "2026-09-10T07:15:32Z"
+  "generated_at": "2026-09-10T16:50:01Z"
 }

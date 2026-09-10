@@ -1,3 +1,23 @@
+## 2026-09-10 — Sharity profile summary closure — Luna checkpoint A
+
+- A teljes és kompakt profil most explicit becenevet vagy `Nincs becenév`
+  fallbacket, pseudo ID-t, pont/szint összefoglalót és elkölthető szavazat
+  állapotot jelenít meg. A profil REST válasza additívan tartalmazza a
+  `votes_available` és `identity_state` mezőket.
+- Az egyenleg kizárólag a jelenlegi pseudo cookie-hoz tartozó
+  `impactshop_ads_user_votes.available_votes` SELECT eredménye; hiányzó,
+  hibás vagy negatív érték 0, más pseudo nem kérdezhető le és sor nem készül.
+- A `/profil` teljes útvonalcsaládja private/no-store/no-cache + `Vary: Cookie`
+  védelmet kapott. A repo AdSense head, ismert Site Kit AdSense ágak és az exact
+  Elementor AdSense widgetek ezen a route-családon kikapcsolnak; kimeneti HTML
+  regex nincs.
+- A sikertelen grant- vagy pseudo-cookie kiadás nem jelenít meg új pseudo ID-t;
+  az állapot `unavailable`, a módosító UI fail-closed. A meglévő owner-grant
+  jogosultsági modellhez és a többi pseudo-mutátor központi registryjéhez ez a
+  checkpoint nem nyúlt.
+- Célzott static/lint/syntax tesztek és `git diff --check` PASS. Nincs push,
+  PR, merge, staging, production, adatbázis-migráció vagy provider-művelet.
+
 ## 2026-09-10 — Sharity NGO preference CI publication correction
 
 - A current-main reconciliation után a required CI hamisan blokkolt, mert a teljes
