@@ -511,3 +511,14 @@ The deterministic future manifest uses `generated_at`
 `2026-09-10T20:30:00+00:00` and pins manifest/checksum blob SHA-256 values
 `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` /
 `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+
+## 2026-09-10 Sharity owner-policy method-map admission sync
+
+The staging-discovered WordPress REST method-map compatibility correction uses
+the existing ordinary schema-v1 protected lane. The record covers the changed
+owner-policy blob and its bástya metadata exactly; it does not add or modify a
+schema-v2 source profile, adapter behavior, provider deployment authority or
+remote execution path. Malformed mixed/indexed/non-boolean maps remain denied
+as complete values, and exact callback matching remains mandatory. Staging is
+kept fail-closed until live self-test PASS; production is unchanged. No cron,
+Cronos guard or watchdog is introduced.

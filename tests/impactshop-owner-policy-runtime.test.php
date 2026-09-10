@@ -63,9 +63,15 @@ function build_routes(bool $include_debug): array
 }
 
 test_assert(impactshop_owner_policy_registered_method(['POST' => true], 'POST') === true, 'associative method map must register exact method');
+test_assert(impactshop_owner_policy_registered_method(['GET' => true, 'POST' => true], 'POST') === true, 'valid multi-method map must register exact method');
+test_assert(impactshop_owner_policy_registered_method(['GET' => true, 'POST' => true], 'DELETE') === false, 'valid map must reject absent method');
+test_assert(impactshop_owner_policy_registered_method([], 'POST') === false, 'empty method map must not register method');
 test_assert(impactshop_owner_policy_registered_method(['POST' => false], 'POST') === false, 'false associative method value must not register method');
 test_assert(impactshop_owner_policy_registered_method(['POST' => 1], 'POST') === false, 'non-boolean associative method value must not register method');
 test_assert(impactshop_owner_policy_registered_method(['POST'], 'POST') === false, 'indexed method list must not register method');
+test_assert(impactshop_owner_policy_registered_method(['POST' => true, 0 => 'POST'], 'POST') === false, 'mixed indexed map must not register method');
+test_assert(impactshop_owner_policy_registered_method(['POST' => true, 'GET' => 'x'], 'POST') === false, 'mixed value map must not register method');
+test_assert(impactshop_owner_policy_registered_method(['POST' => true, 'PATCH' => false], 'POST') === false, 'false secondary method must not register method');
 
 $wp_rest_server = new ImpactshopPolicyTestServer(build_routes(false));
 $debug_enabled = false;

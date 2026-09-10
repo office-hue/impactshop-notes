@@ -159,3 +159,16 @@ companion remains unchanged and the future manifest/checksum pins are
 `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
 This is source-only: no push, PR, deploy, SSH, provider, database, runtime,
 cron or watchdog action.
+
+## 2026-09-10 Sharity owner-policy method-map hotfix
+
+The live method-map correction is governed by
+`docs/sharity-profile-owner-policy-method-map-sol-plan-2026-09-10.md` and the
+exact protected record
+`docs/protected-change-records/2026-09-10-sharity-profile-owner-policy-method-map.md`.
+The runtime and regression surfaces are
+`wp-content/mu-plugins/000-impactshop-owner-policy.php` and
+`tests/impactshop-owner-policy-runtime.test.php`; continuity is mirrored in
+`docs/bastion-guard-status.md`, `notes.md` and `system-status-snapshot.md`.
+Staging remains safe-disabled pending source publication and live self-test;
+production remains untouched. No cron or watchdog is required.

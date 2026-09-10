@@ -7466,3 +7466,9 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   runtime inventory and self-test through the canonical helper, and adds
   hermetic exact-callback coverage. Production remains untouched; no database,
   source, provider, OPcache, cron or watchdog mutation occurred.
+- Terra/high rejected the first local checkpoint because malformed mixed maps
+  were not fully fail-closed and protected source admission was missing. The
+  completed correction validates the whole method map and uses an exact
+  schema-v1 protected record for the four protected paths; it does not expand
+  the schema-v2 deploy-control profile. Staging remains `safe_disable=1` and
+  production remains untouched.

@@ -274,10 +274,18 @@ function impactshop_owner_policy_registered_method($registered_methods, string $
 {
     if (is_array($registered_methods)) {
         // WP_REST_Server::get_routes() exposes normalized method maps such as
-        // ['POST' => true]. Accept only an exact boolean registration; indexed
-        // lists and non-boolean values are not valid route method evidence.
-        return array_key_exists($method, $registered_methods)
-            && $registered_methods[$method] === true;
+        // ['POST' => true]. Validate the complete map before accepting the
+        // requested method; indexed/mixed maps and non-boolean values are not
+        // valid route method evidence.
+        if ($registered_methods === []) {
+            return false;
+        }
+        foreach ($registered_methods as $registered_method => $enabled) {
+            if (!is_string($registered_method) || $enabled !== true) {
+                return false;
+            }
+        }
+        return array_key_exists($method, $registered_methods);
     }
     if (is_string($registered_methods)) {
         return in_array($method, preg_split('/[|,\s]+/', $registered_methods, -1, PREG_SPLIT_NO_EMPTY), true);

@@ -13,6 +13,12 @@ helper for both runtime self-test and inventory, with exact callback checks and
 hermetic associative-map coverage. Production is untouched; no production
 database, source, provider, OPcache, cron or watchdog mutation occurred.
 
+Terra/high additionally required whole-map rejection for mixed/indexed or
+non-boolean entries and exact protected source admission. The follow-up closes
+both with adversarial regression cases and a schema-v1 record covering the
+four protected paths. The schema-v2 deploy-control profile and provider deploy
+authority are unchanged; staging remains `safe_disable=1`.
+
 ## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
 
 Remediation checkpoint: owner-grant issuance no longer mutates `$_COOKIE` in

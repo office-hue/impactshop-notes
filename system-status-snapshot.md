@@ -9,6 +9,11 @@
   in runtime inventory and self-test.
 - Production remains untouched: no production database/source/provider/
   OPcache/cron/watchdog mutation has occurred.
+- Terra/high found and the follow-up closes two source blockers: malformed
+  mixed method maps are now denied as a whole, and an exact schema-v1 protected
+  record covers the policy plus bástya metadata without changing provider
+  authority. Staging remains fail-closed until the fixed blob passes live
+  self-test.
 
 ## 2026-09-10 — Sharity profile summary closure — checkpoint B
 ## 2026-09-10 — Sharity profile owner-policy remediation — source-only
