@@ -1113,6 +1113,40 @@ function impactshop_vb2026_resolve_service_token(): string
     return wp_salt('sharity_points');
 }
 
+function impactshop_vb2026_service_request_authorized(WP_REST_Request $request): bool
+{
+    $header = trim((string) $request->get_header('authorization'));
+    if (!preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
+        return false;
+    }
+    $provided = trim((string) ($matches[1] ?? ''));
+    $expected = impactshop_vb2026_resolve_service_token();
+    $pseudo = sanitize_text_field((string) $request->get_header('x-sharity-pseudo-id'));
+    return $provided !== ''
+        && $expected !== ''
+        && hash_equals($expected, $provided)
+        && $pseudo !== ''
+        && (!function_exists('impactshop_identity_profile_valid_pseudo') || impactshop_identity_profile_valid_pseudo($pseudo));
+}
+
+function impactshop_vb2026_owner_binding_authorized(): bool
+{
+    if (!function_exists('impactshop_identity_profile_cookie')
+        || !function_exists('impactshop_identity_owner_authorized')
+        || !function_exists('impactshop_identity_request_same_origin')) {
+        return false;
+    }
+    $pseudo = (string) impactshop_identity_profile_cookie();
+    return $pseudo !== ''
+        && impactshop_identity_request_same_origin()
+        && impactshop_identity_owner_authorized($pseudo);
+}
+
+function impactshop_vb2026_owner_or_service_authorized(WP_REST_Request $request): bool
+{
+    return impactshop_vb2026_owner_binding_authorized() || impactshop_vb2026_service_request_authorized($request);
+}
+
 function impactshop_vb2026_resolve_request_pseudo(WP_REST_Request $request, bool $allowServiceAuth): array
 {
     $pseudo = impactshop_vb2026_get_pseudo_id();

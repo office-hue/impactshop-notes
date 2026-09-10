@@ -1,5 +1,28 @@
 ## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
 
+- A remediation kör lezárja a Sol `2e0aa501-788f-4e33-8183-30361081557f`
+  és Terra blokkolók által jelzett ordering hibákat: friss owner-token nem
+  kerül `$_COOKIE`-ba, ugyanazon kérésben `binding_pending` marad; restore nem
+  revoke-olja előre a jelenlegi valid grantet, hanem `supersedes_grant_hash`
+  pending replacementet készít.
+- Aktiválás és stale renewal előtt mindkét cookie header queue/ellenőrzésre
+  kerül; InnoDB readback, lockolt pending/superseded sorok, közös pontos
+  365-napos expiry és transaction/readback/commit kompenzáció védi a DB-cookie
+  invariánsokat. Hiba esetén replacement cookie expire + safe-disable történik.
+- A registryben az identity total és NGO selector get egyszer, explicit
+  `owner_required`; VB2026 módok: pre-auth selection-intent, illetve
+  owner-or-existing-Bearer service select/complete. A canonical callback
+  manifest minden route method/policy/source/callback tuple-ját runtime is
+  exact módon ellenőrzi. A JS restore eltávolította a `document.cookie` rewrite-ot
+  és invalidálja a kétperces profile cache-t.
+- A statikus inventory most a tényleges route-callback párokat is összeveti a
+  manifesttel; külön tamper fixture bizonyítja a callback-drift és a duplikált
+  besorolás fail-closed blokkolását. Pending/unavailable állapot nem ad vissza
+  profilértéket, invalid/revoked csak pseudo ID-t.
+- Célzott lint/syntax/static/inventory és diff-check PASS; staging InnoDB,
+  két-request browser activation, failure compensation, VB2026 native
+  service/browser/pre-auth, IDOR és live acceptance továbbra is előfeltétel.
+
 - A Luna B checkpoint a profile summary A fölött lezárja az owner-grant v2
   életciklust: pending/active, 10 perces aktiválási ablak, egyetlen UTC óra,
   tranzakciós supersedes/revoke + readback, 365 napos coupled renewal és

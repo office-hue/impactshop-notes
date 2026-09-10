@@ -875,6 +875,11 @@
       return sharedState.profileCache;
     }
 
+    function invalidateProfileCache() {
+      sharedState.profileCache = null;
+      sharedState.profileAt = 0;
+    }
+
     function renderGreeting(nickname) {
       if (!greetingEl) return;
       if (nickname) {
@@ -1482,7 +1487,7 @@
             if (restoreStatus) restoreStatus.textContent = message;
             return;
           }
-          document.cookie = "impactshop_pseudo_id=" + encodeURIComponent(pseudo) + "; path=/; samesite=Lax";
+          invalidateProfileCache();
           if (pseudoDisplay) {
             pseudoDisplay.textContent = pseudo;
           }
@@ -1667,7 +1672,6 @@
       fetchPointsHistory();
     });
 
-    refreshPseudo();
     initPush();
     fetchProfile()
       .then(function(){

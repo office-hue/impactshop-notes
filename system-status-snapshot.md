@@ -1,4 +1,14 @@
 ## 2026-09-10 — Sharity profile summary closure — checkpoint B
+## 2026-09-10 — Sharity profile owner-policy remediation — source-only
+
+- The Luna remediation closes same-request pending activation, restore
+  supersession ordering, cookie/header-before-commit renewal/activation,
+  duplicate registry precedence and exact route/method/policy/source/callback
+  runtime checks. VB2026 keeps pre-auth intent creation and native Bearer
+  service authorization; grant mutation requires InnoDB engine readback.
+- Focused lint/static/inventory/JS checks and `git diff --check` PASS. Staging
+  schema/browser/E2E, live DB, provider, push, PR, merge and deploy remain out
+  of scope.
 
 - A profil summary A fölött a v2 owner-grant lifecycle és a first-loaded,
   gépi owner-policy registry forrásban elkészült. A pending grant 10 perces,

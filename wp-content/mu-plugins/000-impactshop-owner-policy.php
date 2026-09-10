@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const IMPACTSHOP_OWNER_POLICY_VERSION = 2;
+const IMPACTSHOP_OWNER_POLICY_VERSION = 3;
 const IMPACTSHOP_OWNER_POLICY_SAFE_DISABLE_OPTION = 'impactshop_owner_policy_safe_disable';
 
 /**
@@ -53,9 +53,9 @@ function impactshop_owner_policy_registry(): array
         'POST /sharity/v1/pseudo/video-ad' => ['policy' => 'owner_required', 'source' => 'sharity-points-events.php'],
 
         // VB2026 selection mutators bind a pseudo ID to a selection/intent.
-        'POST /impact/v1/vb2026/select-ngo' => ['policy' => 'owner_required', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
-        'POST /impact/v1/vb2026/selection-intent' => ['policy' => 'owner_required', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
-        'POST /impact/v1/vb2026/selection-intent/complete' => ['policy' => 'owner_required', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
+        'POST /impact/v1/vb2026/select-ngo' => ['policy' => 'owner_or_service_auth', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
+        'POST /impact/v1/vb2026/selection-intent' => ['policy' => 'pre_auth_intent', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
+        'POST /impact/v1/vb2026/selection-intent/complete' => ['policy' => 'owner_or_service_auth', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
 
         // Private reads are also owner-bound to avoid cross-device leakage.
         'GET /impact/v1/saved-offers' => ['policy' => 'owner_required', 'source' => 'impactshop-saved-offers.php'],
@@ -71,23 +71,21 @@ function impactshop_owner_policy_registry(): array
         // retain their original authentication callbacks. Service routes in
         // other MU files are outside this exact pseudo-backed inventory and
         // remain classified by their native HMAC/webhook callbacks.
-        'POST /sharity/v1/admin/adjust' => ['policy' => 'admin_capability', 'source' => 'sharity-points-api.php'],
 
-        // Intentionally public/non-identity reads and nonce issuers.
-        'GET /impact/v1/identity/profile' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-identity-panel.php'],
-        'GET /impact/v1/identity/total' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-identity-panel.php'],
-        'GET /impact/v1/identity/refresh-nonce' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-identity-panel.php'],
-        'GET /impact/v1/identity/messages' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-vote-jysk.php'],
-        'GET /impact/v1/ngo-selector/get' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-ngo-selector.php'],
-        'GET /impact/v1/ngo-catalog' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
-        'GET /impact/v1/vb2026/featured-ngos' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-vb2026-ngo-catalog.php'],
-        'GET /impact/v1/vote/refresh-nonce' => ['policy' => 'explicitly_public_non_identity/read_only', 'source' => 'impactshop-vote-jysk.php'],
+        // User-bound reads promoted from the public exclusion list.
+        'GET /impact/v1/identity/total' => ['policy' => 'owner_required', 'source' => 'impactshop-identity-panel.php'],
+        'GET /impact/v1/ngo-selector/get' => ['policy' => 'owner_required', 'source' => 'impactshop-ngo-selector.php'],
     ];
     foreach (impactshop_owner_policy_explicit_exclusions() as $route => $entry) {
         if (!isset($registry[$route])) {
             $registry[$route] = $entry;
         }
     }
+    $callbacks = impactshop_owner_policy_callback_manifest();
+    foreach ($registry as $route => &$entry) {
+        $entry['callback'] = $callbacks[$route] ?? '';
+    }
+    unset($entry);
     return $registry;
 }
 
@@ -101,10 +99,8 @@ function impactshop_owner_policy_explicit_exclusions(): array
     $service = static fn(string $source): array => ['policy' => 'service_auth', 'source' => $source];
     return [
         'GET /impact/v1/identity/profile' => $public('impactshop-identity-panel.php'),
-        'GET /impact/v1/identity/total' => ['policy' => 'owner_required', 'source' => 'impactshop-identity-panel.php'],
         'GET /impact/v1/identity/refresh-nonce' => $public('impactshop-identity-panel.php'),
         'GET /impact/v1/identity/messages' => $public('impactshop-vote-jysk.php'),
-        'GET /impact/v1/ngo-selector/get' => ['policy' => 'owner_required', 'source' => 'impactshop-ngo-selector.php'],
         'GET /impact/v1/ngo-catalog' => $public('impactshop-vb2026-ngo-catalog.php'),
         'GET /impact/v1/vb2026/featured-ngos' => $public('impactshop-vb2026-ngo-catalog.php'),
         'GET /impact/v1/vote/refresh-nonce' => $public('impactshop-vote-jysk.php'),
@@ -237,6 +233,18 @@ function impactshop_owner_policy_request_allowed(WP_REST_Request $request, array
             && impactshop_identity_request_same_origin()
             && impactshop_identity_owner_authorized($pseudo);
     }
+    if ($policy === 'owner_or_service_auth') {
+        if (impactshop_owner_policy_safe_disabled()
+            || impactshop_owner_policy_request_has_secret_body($request)
+            || !function_exists('impactshop_vb2026_owner_or_service_authorized')) {
+            return false;
+        }
+        return impactshop_vb2026_owner_or_service_authorized($request);
+    }
+    if ($policy === 'pre_auth_intent') {
+        return !impactshop_owner_policy_safe_disabled()
+            && !impactshop_owner_policy_request_has_secret_body($request);
+    }
     if ($policy === 'admin_capability') {
         return current_user_can('manage_options') || current_user_can('manage_sharity_points');
     }
@@ -262,6 +270,33 @@ function impactshop_owner_policy_before_callbacks($response, $handler, WP_REST_R
 }
 add_filter('rest_request_before_callbacks', 'impactshop_owner_policy_before_callbacks', 5, 3);
 
+function impactshop_owner_policy_registered_method($registered_methods, string $method): bool
+{
+    if (is_string($registered_methods)) {
+        return in_array($method, preg_split('/[|,\s]+/', $registered_methods, -1, PREG_SPLIT_NO_EMPTY), true);
+    }
+    if (is_int($registered_methods)) {
+        $mask = ['GET' => 1, 'POST' => 2, 'PUT' => 4, 'PATCH' => 4, 'DELETE' => 8][$method] ?? 0;
+        return $mask !== 0 && ($registered_methods & $mask) !== 0;
+    }
+    return false;
+}
+
+function impactshop_owner_policy_callback_matches($callback, string $expected): bool
+{
+    if ($expected === '') {
+        return false;
+    }
+    if (is_string($callback)) {
+        return hash_equals($expected, $callback);
+    }
+    if (is_array($callback) && count($callback) === 2) {
+        $target = is_object($callback[0]) ? get_class($callback[0]) : (string) $callback[0];
+        return hash_equals($expected, $target . '::' . (string) $callback[1]);
+    }
+    return false;
+}
+
 /** Runtime inventory snapshot consumed by the release self-test. */
 function impactshop_owner_policy_runtime_inventory(): array
 {
@@ -274,6 +309,7 @@ function impactshop_owner_policy_runtime_inventory(): array
         [$method, $route] = explode(' ', $pattern, 2);
         $method_registered = false;
         $callback_registered = false;
+        $callback_exact = false;
         foreach ((array) ($routes[$route] ?? []) as $handler) {
             if (!is_array($handler)) {
                 continue;
@@ -287,6 +323,9 @@ function impactshop_owner_policy_runtime_inventory(): array
                 $method_registered = $method_registered || ($mask !== 0 && ($registered_methods & $mask) !== 0);
             }
             $callback_registered = $callback_registered || isset($handler['callback']);
+            if (impactshop_owner_policy_registered_method($registered_methods, $method)) {
+                $callback_exact = $callback_exact || impactshop_owner_policy_callback_matches($handler['callback'] ?? null, (string) ($entry['callback'] ?? ''));
+            }
         }
         $registered[$pattern] = [
             'policy' => $entry['policy'],
@@ -294,6 +333,8 @@ function impactshop_owner_policy_runtime_inventory(): array
             'route_registered' => isset($routes[$route]),
             'method_registered' => $method_registered,
             'callback_registered' => $callback_registered,
+            'callback_exact' => $callback_exact,
+            'callback' => $entry['callback'] ?? '',
             'method' => $method,
         ];
     }
@@ -301,6 +342,82 @@ function impactshop_owner_policy_runtime_inventory(): array
         'version' => IMPACTSHOP_OWNER_POLICY_VERSION,
         'safe_disable' => impactshop_owner_policy_safe_disabled(),
         'registered' => $registered,
+    ];
+}
+
+/**
+ * Canonical route -> callback manifest. The source and effective policy live
+ * beside each route above; this map makes callback identity equally explicit
+ * for static inventory and the runtime self-test.
+ */
+function impactshop_owner_policy_callback_manifest(): array
+{
+    return [
+        'POST /impact/v1/identity/profile' => 'impactshop_identity_profile_update',
+        'POST /impact/v1/identity/restore' => 'impactshop_identity_profile_restore',
+        'POST /impact/v1/identity/code/generate' => 'impactshop_identity_code_generate',
+        'POST /impact/v1/ngo-selector/set' => 'impactshop_ngo_selector_set',
+        'POST /impact/v1/saved-offers/save' => 'impactshop_saved_offers_save',
+        'POST /impact/v1/push/subscribe' => 'impactshop_pwa_push_subscribe',
+        'POST /impact/v1/push/unsubscribe' => 'impactshop_pwa_push_unsubscribe',
+        'POST /impact/v1/tracking/cta-click' => 'impactshop_click_tracking_handle',
+        'POST /impact/v1/ads-watch/view' => 'impactshop_ads_watch_view',
+        'POST /impact/v1/ads-watch/education' => 'impactshop_ads_watch_education',
+        'POST /impact/v1/ads-watch/allocate' => 'impactshop_ads_watch_allocate_votes',
+        'POST /impact/v1/ads-watch/set-ngo' => 'impactshop_ads_watch_set_ngo',
+        'POST /impact/v1/ads-watch/set-auto-vote' => 'impactshop_ads_watch_set_auto_vote',
+        'POST /impact/v1/vote/view' => 'impactshop_vote_jysk_view',
+        'POST /impact/v1/vote/cast' => 'impactshop_vote_jysk_cast',
+        'POST /impact/v1/identity/message-read' => 'impactshop_vote_jysk_identity_message_read',
+        'POST /sharity/v1/pseudo/points/earn' => 'sharity_points_pseudo_earn',
+        'POST /sharity/v1/pseudo/vacation' => 'sharity_points_pseudo_vacation_start',
+        'POST /sharity/v1/pseudo/vacation/end' => 'sharity_points_pseudo_vacation_end',
+        'POST /sharity/v1/pseudo/last-ngo' => 'sharity_points_set_pseudo_last_ngo',
+        'POST /sharity/v1/pseudo/feedback' => 'sharity_points_pseudo_feedback',
+        'POST /sharity/v1/pseudo/video-ad' => 'sharity_points_video_ad',
+        'POST /impact/v1/vb2026/select-ngo' => 'impactshop_vb2026_rest_select_ngo',
+        'POST /impact/v1/vb2026/selection-intent' => 'impactshop_vb2026_rest_selection_intent',
+        'POST /impact/v1/vb2026/selection-intent/complete' => 'impactshop_vb2026_rest_selection_intent_complete',
+        'GET /impact/v1/saved-offers' => 'impactshop_saved_offers_list',
+        'GET /impact/v1/saved-offers/open/(?P<id>\d+)' => 'impactshop_saved_offers_open',
+        'GET /impact/v1/vb2026/my-ngo-selection' => 'impactshop_vb2026_rest_my_ngo_selection',
+        'GET /sharity/v1/pseudo/points' => 'sharity_points_get_pseudo_points',
+        'GET /sharity/v1/pseudo/points/history' => 'sharity_points_get_pseudo_history',
+        'GET /sharity/v1/pseudo/vacation' => 'sharity_points_pseudo_vacation_status',
+        'GET /sharity/v1/pseudo/last-ngo' => 'sharity_points_get_pseudo_last_ngo',
+        'GET /sharity/v1/pseudo/referral' => 'sharity_points_get_pseudo_referral',
+        'POST /sharity/v1/admin/adjust' => 'sharity_points_admin_adjust',
+        'GET /impact/v1/identity/profile' => 'impactshop_identity_profile_get',
+        'GET /impact/v1/identity/total' => 'impactshop_identity_profile_total',
+        'GET /impact/v1/identity/refresh-nonce' => 'impactshop_identity_refresh_nonce',
+        'GET /impact/v1/identity/messages' => 'impactshop_vote_jysk_identity_messages',
+        'GET /impact/v1/vote/init' => 'impactshop_vote_jysk_init',
+        'GET /impact/v1/vote/campaign' => 'impactshop_vote_jysk_campaign',
+        'GET /impact/v1/vote/status' => 'impactshop_vote_jysk_status',
+        'GET /impact/v1/vote/tally' => 'impactshop_vote_jysk_tally',
+        'GET /impact/v1/ngo-selector/get' => 'impactshop_ngo_selector_get',
+        'GET /impact/v1/ngo-catalog' => 'impactshop_vb2026_rest_ngo_catalog',
+        'GET /impact/v1/vb2026/featured-ngos' => 'impactshop_vb2026_rest_featured_ngos',
+        'GET /impact/v1/vote/refresh-nonce' => 'impactshop_vote_jysk_refresh_nonce',
+        'GET /impact/v1/ads-watch/debug-rotation' => 'impactshop_ads_watch_debug_rotation',
+        'GET /impact/v1/ads-watch/config' => 'impactshop_ads_watch_config',
+        'GET /impact/v1/ads-watch/next' => 'impactshop_ads_watch_next',
+        'GET /impact/v1/ads-watch/status' => 'impactshop_ads_watch_status',
+        'GET /impact/v1/ads-watch/tally' => 'impactshop_ads_watch_tally',
+        'GET /impact/v1/ads-watch/leaderboard' => 'impactshop_ads_watch_leaderboard',
+        'GET /impact/v1/ads-watch/ngos' => 'impactshop_ads_watch_ngos',
+        'GET /sharity/v1/user/points' => 'sharity_points_get_user_points',
+        'GET /sharity/v1/user/points/history' => 'sharity_points_get_history',
+        'GET /sharity/v1/user/vacation' => 'sharity_points_vacation_status',
+        'POST /sharity/v1/user/vacation' => 'sharity_points_vacation_start',
+        'POST /sharity/v1/user/vacation/end' => 'sharity_points_vacation_end',
+        'GET /sharity/v1/user/last-ngo' => 'sharity_points_get_last_ngo',
+        'POST /sharity/v1/user/last-ngo' => 'sharity_points_set_last_ngo',
+        'GET /sharity/v1/user/referral' => 'sharity_points_get_user_referral',
+        'POST /sharity/v1/user/feedback' => 'sharity_points_user_feedback',
+        'POST /sharity/v1/points/earn' => 'sharity_points_earn',
+        'POST /sharity/v1/webhook/purchase' => 'sharity_points_webhook_purchase',
+        'GET /impact/v1/push/public-key' => 'impactshop_pwa_push_public_key',
     ];
 }
 
@@ -313,9 +430,6 @@ function impactshop_owner_policy_runtime_self_test(): bool
     }
     $routes = (array) $wp_rest_server->get_routes();
     foreach (impactshop_owner_policy_registry() as $pattern => $entry) {
-        if (($entry['policy'] ?? '') !== 'owner_required') {
-            continue;
-        }
         [, $route] = explode(' ', $pattern, 2);
         if (!isset($routes[$route])) {
             impactshop_owner_policy_safe_disable_set(true);
@@ -338,7 +452,8 @@ function impactshop_owner_policy_runtime_self_test(): bool
                     $method_registered = true;
                 }
             }
-            if (isset($handler['callback']) && (is_callable($handler['callback']) || $handler['callback'] === '__return_true')) {
+            if (impactshop_owner_policy_registered_method($registered_methods, $method)
+                && impactshop_owner_policy_callback_matches($handler['callback'] ?? null, (string) ($entry['callback'] ?? ''))) {
                 $callback_registered = true;
             }
         }

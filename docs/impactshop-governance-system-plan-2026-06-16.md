@@ -80,6 +80,16 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 
 ## 2026-08-19 Deploy bastion manifest guard note
 
+## 2026-09-10 Owner-policy maximum-bastion remediation sync
+
+- The Sharity profile closure now treats the central owner-policy registry as
+  a maximum-bastion source: every route has one method, effective policy,
+  expected callback and source identity, and runtime self-test fails closed on
+  any mismatch. VB2026 native service authorization remains endpoint-owned.
+- Owner-grant mutation requires actual InnoDB readback; implicit engine
+  conversion is rejected and remains a staging/operator prerequisite.
+
+
 - A mapping deploy kontrollsík maga is max-védett lane: az undefined remote
   manifest check vagy egy részben író dry-run nem kerülhető meg kézi
   `scp`/`rsync` használatával.

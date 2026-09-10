@@ -176,6 +176,18 @@
       "owner_branch": "main"
     },
     {
+      "path": "wp-content/mu-plugins/000-impactshop-owner-policy.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
       "path": "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
