@@ -4,6 +4,20 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-10 Sharity profile summary closure note
+
+- A Luna checkpoint A kizárólag source-only profile summary és cache/privacy
+  csomag: additive `identity_state`/`votes_available`, current-cookie
+  SELECT-only vote read, fail-closed pseudo bootstrap és producer-szintű
+  `/profil` AdSense/Site Kit/Elementor suppression.
+- Az identity és AdSense források maximum-protected touchként, külön
+  protected change recorddal, rollback- és smoke-scope-pal kerültek commitba;
+  nincs push, PR, merge, provider, staging, production, schema execution,
+  cron vagy watchdog authority.
+- Kanonikus csomag:
+  `docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md` és
+  `docs/protected-change-records/2026-09-10-sharity-profile-summary-checkpoint-a.md`.
+
 ## 2026-09-10 Sharity public portal redirects note
 
 - A két nyugdíjazott `adomany-automata-portal` út additív, production-only
