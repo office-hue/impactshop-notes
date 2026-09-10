@@ -102,3 +102,41 @@ Within the existing allowlist, change the pure contracts and tests to prove:
 The PHP execution blocker remains separate: no lint or hermetic PHP evidence can be
 claimed until a PHP-capable environment is explicitly admitted. No Sol decision is
 needed for these corrections.
+
+## Terra re-QA after integrity hardening
+
+The hardening closes the raw-token, attempted-redemption, stale-revision, and
+request-fingerprint findings. Functional QA remains blocked by the missing PHP
+runtime, and the following source-contract gaps keep status at
+`luna-remediation-required`.
+
+### QA-L4 — authority binding and exact data contract remain incomplete
+
+- `sharity_ngo_pref_issue_code()` validates only the callback URI shape; it does
+  not receive or enforce the exact `(client_id, redirect_uri)` registry. The prior
+  allowlist helper is therefore disconnected from code issuance.
+- Redemption verifies PKCE but has no confidential-BFF admission input/contract.
+  A future endpoint could invoke it for an unauthenticated caller.
+- Preference mutation accepts arbitrary scope and a caller-supplied `selectable`
+  string instead of deriving it from the master row plus global policy. It cannot
+  enforce the exact permitted scopes or make the source the selection authority.
+- Table descriptors contain names and write modes only, not the required record
+  keys/columns. The audit tuple still has one `catalog_revision` rather than explicit
+  before/after revisions required by the approved decision.
+
+### Required bounded Luna correction
+
+Within the existing allowlist, add and test:
+
+1. exact registry admission during code issue and a fail-closed confidential-BFF
+   admission parameter during code redemption;
+2. an exact scope allowlist and a mutation entry point that derives selection from
+   master/policy input rather than trusting a `selectable` string;
+3. schema descriptors with the unique/key fields for all five logical records and
+   audit `before_revision` plus `after_revision`; and
+4. negative fixtures for unregistered callback, unauthenticated BFF, wrong scope,
+   inactive/missing policy, and the amended audit shape.
+
+No activation, real client/secret, policy data, schema execution, provider, deploy,
+or protected runtime touch is permitted. PHP lint and hermetic execution remain a
+separate environment admission blocker.

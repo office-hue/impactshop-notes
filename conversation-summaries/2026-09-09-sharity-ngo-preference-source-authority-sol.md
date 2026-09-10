@@ -51,3 +51,7 @@
   selection status; idempotency binds a request fingerprint; audit captures before/
   after and revision; table/route descriptors are explicit. Python static evidence
   passes; PHP evidence remains blocked by the absent executable.
+- Terra re-QA after hardening (2026-09-10): code issuance still does not enforce the
+  exact client/redirect registry; redemption lacks confidential-BFF admission;
+  scope/selection are caller supplied; and schema/audit descriptors are incomplete.
+  Another bounded Luna correction is required; no Sol decision is needed.

@@ -1,3 +1,11 @@
+## 2026-09-10 — Sharity NGO preference Package B Terra re-QA after hardening
+
+- A code-issue registry binding, confidential-BFF admission, exact scope és
+  master/policy-derived selection továbbra is hiányzik; a schema/audit descriptor
+  sem teljes. Emiatt a source authority contract még nem QA-approved.
+- A javítás a meglévő Luna allowlisten belül marad; PHP evidence blocker és minden
+  activation/provider/deploy határ változatlan.
+
 ## 2026-09-10 — Sharity NGO preference Package B Terra re-QA after remediation
 
 - A remediation még nem zárható: raw CSRF token storage, retryolható hibás code
