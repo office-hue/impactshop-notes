@@ -44,9 +44,32 @@ browser or deployment smoke ran because the module remains disabled.
 
 ## Evidence and rollback
 
-Python static evidence passed. PHP lint and hermetic PHP contract execution were
-not available in this environment because the `php` executable is absent; no
-dependency installation or alternate runtime was attempted. `git diff --check`,
-continuity, and protected-touch checks are required at checkpoint. Rollback is a
+Python static evidence, PHP lint and hermetic PHP contract execution passed using
+the admitted local PHP 8.4 runtime. `git diff --check`, continuity, and
+protected-touch checks remain required at checkpoint. Rollback is a
 revert/removal of this source-only commit before activation; no live schema or
 data exists to roll back.
+
+## Protected source admission
+
+The machine-readable manifest below covers the exact protected endpoints in the
+pinned base-to-HEAD candidate. It grants source-only admission only; it grants
+no activation, staging, provider, VPS, database, secret or production authority.
+
+<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+{
+  "operatorApprovalRef": "operator-approval:sharity-ngo-preference-source-publication-20260910",
+  "planRef": "docs/sharity-ngo-preference-source-authority-sol-plan-2026-09-09.md#sharity-ngo-preference-source-authority-sol-decision",
+  "protectedPaths": [
+    "docs/bastion-guard-status.md",
+    "wp-content/mu-plugins/impactshop-sharity-ngo-preference-source.php.off"
+  ],
+  "rollbackNote": "revert the exact source-only candidate commits before activation; no live schema or data exists",
+  "schemaVersion": 1,
+  "smokeTags": [
+    "sharity:ngo-preference-source-static",
+    "sharity:ngo-preference-source-contract",
+    "sharity:disabled-adapter"
+  ]
+}
+<!-- END PROTECTED SOURCE ADMISSION -->

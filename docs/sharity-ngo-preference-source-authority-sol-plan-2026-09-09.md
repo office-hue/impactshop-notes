@@ -1,6 +1,10 @@
 # Sharity NGO preference Package B — source authority Sol decision
 
-Status: `architecture-revised`; Terra re-QA and implementation plan pending.
+Status: `re-qa-approved-for-sol-source-publication`; source-only publication,
+activation and deployment remain separate.
+
+Operator approval for this exact source-only publication instruction:
+`operator-approval:sharity-ngo-preference-source-publication-20260910`.
 
 Plan/session ID: `sharity-ngo-preference-source-authority-20260909`
 
