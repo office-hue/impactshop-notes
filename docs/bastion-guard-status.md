@@ -2,6 +2,17 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-10 — Sharity profile live-release staging follow-up
+
+The staging runtime has the six profile CAS files deployed and the owner-policy
+schema is read back as v2 on InnoDB. The runtime remains fail-closed with
+`safe_disable=1`: WordPress exposes route methods as associative maps (for
+example `POST => true`), while the previous self-test accepted only string and
+integer method forms. The bounded source fix now uses one canonical method
+helper for both runtime self-test and inventory, with exact callback checks and
+hermetic associative-map coverage. Production is untouched; no production
+database, source, provider, OPcache, cron or watchdog mutation occurred.
+
 ## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
 
 Remediation checkpoint: owner-grant issuance no longer mutates `$_COOKIE` in

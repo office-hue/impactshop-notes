@@ -53,12 +53,19 @@ function build_routes(bool $include_debug): array
             continue;
         }
         $routes[$route][] = [
-            'methods' => $method,
+            // WordPress normalizes registered methods to an associative map
+            // when exposing routes through get_routes().
+            'methods' => [$method => true],
             'callback' => $entry['callback'],
         ];
     }
     return $routes;
 }
+
+test_assert(impactshop_owner_policy_registered_method(['POST' => true], 'POST') === true, 'associative method map must register exact method');
+test_assert(impactshop_owner_policy_registered_method(['POST' => false], 'POST') === false, 'false associative method value must not register method');
+test_assert(impactshop_owner_policy_registered_method(['POST' => 1], 'POST') === false, 'non-boolean associative method value must not register method');
+test_assert(impactshop_owner_policy_registered_method(['POST'], 'POST') === false, 'indexed method list must not register method');
 
 $wp_rest_server = new ImpactshopPolicyTestServer(build_routes(false));
 $debug_enabled = false;
@@ -73,5 +80,11 @@ $test_options[IMPACTSHOP_OWNER_POLICY_SAFE_DISABLE_OPTION] = 0;
 $wp_rest_server = new ImpactshopPolicyTestServer(build_routes(true));
 test_assert(impactshop_owner_policy_runtime_self_test() === true, 'enabled registered debug route must pass');
 test_assert(impactshop_owner_policy_safe_disabled() === false, 'valid debug route must remain enabled');
+$inventory = impactshop_owner_policy_runtime_inventory();
+foreach ($inventory['registered'] as $pattern => $route) {
+    test_assert($route['route_registered'] === true, "inventory route must be registered: {$pattern}");
+    test_assert($route['method_registered'] === true, "inventory method must be registered: {$pattern}");
+    test_assert($route['callback_exact'] === true, "inventory callback must match exactly: {$pattern}");
+}
 
 echo "impactshop owner-policy conditional runtime: PASS\n";

@@ -1,3 +1,15 @@
+## 2026-09-10 — Sharity profile live-release staging follow-up
+
+- Staging currently has six profile files installed through the exact CAS lane;
+  the owner-policy schema is v2 and read back as InnoDB.
+- Staging remains fail-closed with `safe_disable=1` until the corrected source
+  is published and the staging self-test is rerun. WordPress route methods are
+  associative maps (`METHOD => true`); the local compatibility fix now checks
+  that canonical shape without widening invalid forms and uses the same helper
+  in runtime inventory and self-test.
+- Production remains untouched: no production database/source/provider/
+  OPcache/cron/watchdog mutation has occurred.
+
 ## 2026-09-10 — Sharity profile summary closure — checkpoint B
 ## 2026-09-10 — Sharity profile owner-policy remediation — source-only
 
