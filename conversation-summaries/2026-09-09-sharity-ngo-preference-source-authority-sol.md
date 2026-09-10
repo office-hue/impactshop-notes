@@ -11,5 +11,8 @@
   CAS, idempotency, append-only audit, prospective preferences only.
 - Boundaries: no UI/activity integration, provider, deploy, schema execution, secret,
   cron, watchdog, push, PR or merge.
-- Next gate: `gpt-5.6-terra`, high reasoning for independent plan QA and exact
-  implementation allowlist.
+- Terra QA result (2026-09-10): Sol revision required before a Luna allowlist. The
+  existing owner-grant origin helper is cross-host, not exact issuer-origin; the
+  current catalog is campaign-scoped and lacks a canonical mapping for the four
+  global preference contexts. See
+  `docs/sharity-ngo-preference-source-authority-terra-qa-2026-09-10.md`.

@@ -1,3 +1,12 @@
+## 2026-09-10 — Sharity NGO preference Package B Terra QA
+
+- A Sol source-authority terv két implementációs blokkert kapott: az owner-grant
+  same-origin helper cross-host allowlistes, és a négy globális preference context
+  catalog campaign/global-policy mappingje nincs kanonikusan döntve.
+- Emiatt Luna implementation allowlist nem készült; Sol/high architecture revision
+  szükséges. Runtime, protected file, provider, VPS, secret, schema, deploy és
+  publication nem változott.
+
 ## 2026-09-09 — Sharity NGO preference Package B source authority
 
 - Sol source-only architecture decision added on exact `origin/main@073f2854`.
