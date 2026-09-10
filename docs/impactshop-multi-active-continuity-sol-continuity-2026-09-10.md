@@ -64,5 +64,9 @@ recursive `grep -R` assumptions with an explicit file-by-file POSIX `grep`
 check. The security assertion is unchanged and now reports the exact offending
 generated hook or source file on failure.
 
+The Linux CI fixture also uses an explicit snapshot assertion helper so an
+early namespace or migration mismatch reports the exact expected field and
+bounded snapshot content instead of exiting silently.
+
 Next use `gpt-5.6-luna`, medium, only if the operator explicitly authorizes
 source publication. Otherwise no further action is required in this worktree.

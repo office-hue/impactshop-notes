@@ -116,9 +116,18 @@ SNAP_FILE="$COORD_DIR/ACTIVE_WORKTREES.md"
 mode_of() {
   stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
 }
-grep -Fq "path: $SECONDARY" "$ACTIVE_FILE"
-grep -Fq 'coordination_namespace: common-git-dir-v1' "$ACTIVE_FILE"
-grep -Fq 'migration_source: foreign-or-invalid-legacy-ignored' "$ACTIVE_FILE"
+assert_file_contains() {
+  local needle="$1"
+  local path="$2"
+  if ! grep -Fq "$needle" "$path"; then
+    echo "missing expected text '$needle' in $path" >&2
+    sed -n '1,160p' "$path" >&2
+    return 1
+  fi
+}
+assert_file_contains "path: $SECONDARY" "$ACTIVE_FILE"
+assert_file_contains 'coordination_namespace: common-git-dir-v1' "$ACTIVE_FILE"
+assert_file_contains 'migration_source: foreign-or-invalid-legacy-ignored' "$ACTIVE_FILE"
 [[ "$(mode_of "$COORD_DIR")" == "700" ]]
 [[ "$(mode_of "$ACTIVE_FILE")" == "600" ]]
 [[ "$(mode_of "$SNAP_FILE")" == "600" ]]
