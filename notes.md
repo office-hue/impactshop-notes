@@ -7238,3 +7238,7 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   `/opt/homebrew/opt/php@8.4/bin/php` (8.4.25). Lint and the hermetic contract
   test pass after correcting three test-fixture mismatches; the `.php.off` source
   remains disabled and no runtime, schema, provider, or deploy state changed.
+- Terra PHP re-QA correction (2026-09-10): az expiry negatív fixture raw token
+  kulccsal tárol, miközben a helper derivált kulccsal keres; ezért a jelenlegi
+  PASS nem az expirációs ágat fedi le. A helyesen kulcsolt közvetlen PHP ellenőrzés
+  PASS. Egy szűk Luna test-only fixture-javítás kell a QA approval előtt.

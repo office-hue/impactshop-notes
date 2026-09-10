@@ -59,3 +59,7 @@
   `/opt/homebrew/opt/php@8.4/bin/php` (8.4.25). Lint and the hermetic contract
   test pass after correcting three test-fixture mismatches; the `.php.off` source
   remains disabled and no runtime, schema, provider, or deploy state changed.
+- Terra PHP re-QA correction (2026-09-10): the expiry negative fixture is keyed
+  by raw token instead of its required derived token key, so its current PASS does
+  not exercise expiry. A direct correctly keyed PHP check passes. One bounded Luna
+  test-only fixture correction is required before source-publication QA approval.

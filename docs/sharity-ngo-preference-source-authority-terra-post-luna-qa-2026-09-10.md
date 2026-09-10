@@ -1,6 +1,6 @@
 # Sharity NGO preference Package B — Terra post-Luna QA
 
-Status: `re-qa-approved-for-sol-source-publication`; not runtime-eligible.
+Status: `luna-test-fixture-remediation-required`; not runtime-eligible.
 
 Reviewed identity: `impactshop-notes`, branch
 `feat/sharity-ngo-preference-source-authority-terra-20260909`, Luna source commit
@@ -147,11 +147,18 @@ The approved Air PHP runtime executed the disabled module's syntax and hermetic
 contract checks at the reviewed checkpoint. Three fixture defects were corrected:
 an array literal was passed by reference, a consumed authorization code was later
 expected to redeem, and catalog-row fields were supplied where separate policy
-fields were required. The final fixture preserves the intended contracts: hashed
-CSRF records, consume-on-attempt code redemption, an independent successful
-redemption, catalog/policy selection, and request-fingerprint idempotency conflict.
+fields were required. The fixture preserves the intended contracts for
+consume-on-attempt code redemption, an independent successful redemption,
+catalog/policy selection, and request-fingerprint idempotency conflict; the
+separate expiry negative case remains mis-keyed as recorded below.
 
-Result: `re-qa-approved-for-sol-source-publication`. The adapter remains `.off`;
-no WordPress route is registered and no schema, network, provider, secret, VPS or
-runtime mutation occurred. This is source-only QA approval, not staging, release or
-production acceptance.
+QA-L5 — the expiry negative fixture stores its record under raw `expired`, while
+the helper looks it up under the derived token key. Its current PASS therefore
+proves an absent record rather than expiry. A direct PHP check with
+`sharity_ngo_pref_token_key('expired')` passes the expiry path.
+
+Result: PHP syntax, hermetic contract, static contract, and the direct correctly
+keyed expiry check pass; QA approval remains conditional on a bounded Luna
+test-only fixture correction. No source, architecture, runtime, schema, network,
+provider, secret, VPS, or protected-file change is required. The adapter remains
+`.off`; this is not staging, release, or production acceptance.
