@@ -1,0 +1,46 @@
+# Impactshop multi-active continuity — checkpoint continuity
+
+## Identity
+
+- Repository: `impactshop-notes`.
+- Worktree: `impactshop-notes-feat-multi-active-continuity-sol-20260910`.
+- Branch: `feat/impactshop-multi-active-continuity-sol-20260910`.
+- Plan ID: `impactshop-multi-active-continuity-sol-20260910`.
+- Base: `origin/main@d39349a3dedad8ebda597c2d531fd2e498268990`.
+
+## Completed capability
+
+The repo-local continuity lane now supports multiple concurrent worktrees
+without implicit primary takeover. Registration preserves the nominated
+primary, snapshots are lock-protected and generation-bound, and push admission
+checks the publishing worktree's exact full HEAD and clean state. All worktree
+and hook entrypoints have been disconnected from sibling `ai-agent` memory and
+dependency execution.
+
+The control plane and its hermetic multi-worktree contract test are included in
+the maximum-protected deploy-guard inventory. No shared dependency tree,
+provider, VPS, runtime, cron or watchdog state changed.
+
+## Evidence identity
+
+Pre-checkpoint evidence on the current source:
+
+- shell syntax for the six control-plane scripts and the new fixture: PASS;
+- `bash tests/worktree-multi-active-continuity.test.sh`: PASS;
+- `bash tests/dev-delivery-v2-adapter.test.sh`: PASS;
+- protected-touch admission with the exact change record and required deploy
+  smoke tags: PASS;
+- strict local repository audit: PASS;
+- `git diff --check`: PASS.
+
+The final Git commit/tree identity and post-commit closure result are recorded
+in the checkpoint handover.
+Evidence is reusable only while source, base and relevant local environment
+remain unchanged.
+
+## Next package
+
+Use `gpt-5.6-terra`, high, for independent QA of concurrent registration,
+primary transfer, fail-closed drift handling, hook ordering and protected-file
+admission. Only after that review should one bounded source-publication cycle
+be considered.

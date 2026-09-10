@@ -64,6 +64,8 @@ SNAP_FILE="$WT_BASE/ACTIVE_WORKTREES.md"
 
 CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
 CURRENT_PATH="$REPO_ROOT"
+CURRENT_HEAD="$(git rev-parse HEAD 2>/dev/null || true)"
+CURRENT_STATUS_COUNT="$(git status --short | sed '/^$/d' | wc -l | tr -d ' ')"
 
 STATUS="allowed"
 DECISION="allowed"
@@ -104,7 +106,7 @@ python_payload=""
 
 if ((${#BLOCKING_REASONS[@]} == 0)); then
   python_payload="$(python3 - <<'PY' \
-    "$MARKER_FILE" "$ARTIFACT_FILE" "$ACTIVE_FILE" "$SNAP_FILE" "$CURRENT_BRANCH" "$CURRENT_PATH" "$MODE"
+    "$MARKER_FILE" "$ARTIFACT_FILE" "$ACTIVE_FILE" "$SNAP_FILE" "$CURRENT_BRANCH" "$CURRENT_PATH" "$CURRENT_HEAD" "$CURRENT_STATUS_COUNT" "$MODE"
 import json
 import sys
 from pathlib import Path
@@ -115,7 +117,9 @@ active_path = Path(sys.argv[3])
 snapshot_path = Path(sys.argv[4])
 current_branch = sys.argv[5]
 current_path = sys.argv[6]
-mode = sys.argv[7]
+current_head = sys.argv[7]
+current_status_count = sys.argv[8]
+mode = sys.argv[9]
 
 blocking = []
 warnings = []
@@ -158,36 +162,86 @@ if not artifact.get("docSyncPathPrefix"):
     warnings.append("missing-doc-sync-path-prefix")
 
 active_text = active_path.read_text(encoding="utf-8")
-if f"path: {current_path}" not in active_text:
-    blocking.append("active-worktree-path-mismatch")
-if f"branch: {current_branch}" not in active_text:
-    blocking.append("active-worktree-branch-mismatch")
-if "task_start_decision: present" not in active_text:
-    blocking.append("active-worktree-missing-decision-evidence")
-if "task_start_decision_status:" not in active_text:
-    blocking.append("active-worktree-missing-decision-status")
-if "task_start_decision_value:" not in active_text:
-    blocking.append("active-worktree-missing-decision-value")
-
 snapshot_text = snapshot_path.read_text(encoding="utf-8")
-section_header = f"## {current_path}"
-if section_header not in snapshot_text:
+
+def field(text: str, key: str) -> str:
+    prefix = key + ": "
+    for line in text.splitlines():
+        if line.startswith(prefix):
+            return line[len(prefix):].strip()
+    return ""
+
+def section(text: str, path: str) -> str:
+    header = f"## {path}"
+    lines = text.splitlines()
+    try:
+        start = lines.index(header) + 1
+    except ValueError:
+        return ""
+    end = next(
+        (index for index in range(start, len(lines)) if lines[index].startswith("## ")),
+        len(lines),
+    )
+    return "\n".join(lines[start:end])
+
+active_worktree = field(active_text, "path")
+active_branch = field(active_text, "branch")
+active_head = field(active_text, "head")
+active_generation = field(active_text, "generation")
+snapshot_generation = field(snapshot_text, "generation")
+snapshot_primary = field(snapshot_text, "primary_path")
+
+if not active_generation or not snapshot_generation:
+    blocking.append("coordination-generation-missing")
+elif active_generation != snapshot_generation:
+    blocking.append("coordination-generation-mismatch")
+if not active_worktree or snapshot_primary != active_worktree:
+    blocking.append("coordination-primary-mismatch")
+
+primary_section = section(snapshot_text, active_worktree) if active_worktree else ""
+if not primary_section:
+    blocking.append("active-worktrees-missing-primary-section")
+else:
+    if active_branch and field(primary_section, "branch") != active_branch:
+        blocking.append("active-worktree-branch-mismatch")
+    if active_head and field(primary_section, "head") != active_head:
+        blocking.append("active-worktree-head-mismatch")
+    if "task_start_decision: present" not in primary_section:
+        blocking.append("active-worktree-missing-decision-evidence")
+    if "task_start_decision_status:" not in primary_section:
+        blocking.append("active-worktree-missing-decision-status")
+    if "task_start_decision_value:" not in primary_section:
+        blocking.append("active-worktree-missing-decision-value")
+
+current_section = section(snapshot_text, current_path)
+if not current_section:
     blocking.append("active-worktrees-missing-current-section")
 else:
-    current_section = snapshot_text.split(section_header, 1)[1]
-    if "\n## " in current_section:
-        current_section = current_section.split("\n## ", 1)[0]
-    if f"branch: {current_branch}" not in current_section:
+    if field(current_section, "branch") != current_branch:
         blocking.append("active-worktrees-branch-mismatch")
+    if field(current_section, "head") != current_head:
+        blocking.append("active-worktrees-head-mismatch")
     if "task_start_decision: present" not in current_section:
         blocking.append("active-worktrees-missing-decision-evidence")
     if "task_start_decision_status:" not in current_section:
         blocking.append("active-worktrees-missing-decision-status")
     if "task_start_decision_value:" not in current_section:
         blocking.append("active-worktrees-missing-decision-value")
+    if mode == "push":
+        if current_status_count != "0":
+            blocking.append("current-worktree-dirty")
+        if field(current_section, "dirty") != "no":
+            blocking.append("active-worktrees-current-dirty")
+        if field(current_section, "status_short_line_count") != current_status_count:
+            blocking.append("active-worktrees-current-status-count-invalid")
 
-if mode == "push" and "status_short_line_count:" not in active_text:
-    warnings.append("active-worktree-missing-status-count")
+if active_worktree == current_path:
+    if active_branch != current_branch:
+        blocking.append("active-current-branch-mismatch")
+    if active_head != current_head:
+        blocking.append("active-current-head-mismatch")
+else:
+    warnings.append("non-primary-active-worktree")
 
 status = "allowed"
 decision = "allowed"

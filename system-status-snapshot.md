@@ -1165,3 +1165,18 @@ deployment state changed.
   runtime mutation occurred.
 - The adapter remains disabled; existing identity, catalog, campaign, reward
   and economic writers are unchanged.
+
+## 2026-09-10 — Multi-active worktree continuity source candidate
+
+- Dedicated worktree/branch:
+  `impactshop-notes-feat-multi-active-continuity-sol-20260910` /
+  `feat/impactshop-multi-active-continuity-sol-20260910`, base
+  `origin/main@d39349a3dedad8ebda597c2d531fd2e498268990`.
+- Explicit primary selection and non-primary registration replace implicit
+  active-pointer takeover. One locked generation binds both coordination files.
+- Push continuity checks exact branch/full HEAD, clean state and decision
+  evidence for the publishing worktree; stale, dirty and split-generation
+  states block.
+- Starter/push/hook paths are repo-local and do not call sibling `ai-agent` or
+  shared Node dependencies. No push, PR, merge, provider, VPS, runtime, cron or
+  watchdog action belongs to this checkpoint.

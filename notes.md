@@ -7373,6 +7373,20 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   módosítás, retry, PR, merge, provider vagy deploy; a remote feature branch nincs
   létrehozva. Következő próbálkozás csak operator-controlled runtime admission után.
 
+## 2026-09-10 — Multi-active worktree continuity source package
+
+- A repo-local `--register` lane preserves the nominated primary worktree while
+  refreshing each concurrent publisher's exact full HEAD, clean/dirty and
+  task-start decision evidence.
+- Coordination outputs are lock-protected, temp-file replaced and tied by one
+  generation ID; stale HEAD, dirty state, generation mismatch and lock
+  contention fail closed.
+- Worktree creation, task start, guarded push and generated hooks no longer
+  discover or execute sibling `ai-agent` memory/dependency commands.
+- The control plane and hermetic linked-worktree test are maximum protected.
+  This is source-only: no shared dependency, provider, VPS, runtime, cron or
+  watchdog state changed.
+
 ## 2026-09-10 — Sharity public portal redirects production closure
 
 - PR #192 delivered the additive exact-route plugin; PR #193 reconciled two

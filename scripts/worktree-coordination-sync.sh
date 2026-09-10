@@ -2,7 +2,8 @@
 set -euo pipefail
 
 REPO_ROOT=""
-ACTIVE_WT=""
+REGISTER_WT=""
+PRIMARY_WT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -10,8 +11,12 @@ while [[ $# -gt 0 ]]; do
       REPO_ROOT="${2:-}"
       shift 2
       ;;
-    --active)
-      ACTIVE_WT="${2:-}"
+    --register)
+      REGISTER_WT="${2:-}"
+      shift 2
+      ;;
+    --primary|--active)
+      PRIMARY_WT="${2:-}"
       shift 2
       ;;
     *)
@@ -43,11 +48,13 @@ WORKSPACE_DIR="$(cd "$PRIMARY_REPO_ROOT/.." && pwd -P)"
 WT_BASE="$WORKSPACE_DIR/.worktrees"
 mkdir -p "$WT_BASE"
 
-if [[ -z "$ACTIVE_WT" ]]; then
-  ACTIVE_WT="$REPO_ROOT"
+if [[ -n "$REGISTER_WT" && -n "$PRIMARY_WT" ]]; then
+  echo "ERROR: --register and --primary/--active are mutually exclusive" >&2
+  exit 1
 fi
 
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+GENERATION="${NOW}-$$"
 ACTIVE_FILE="$WT_BASE/ACTIVE_WORKTREE.md"
 SNAP_FILE="$WT_BASE/ACTIVE_WORKTREES.md"
 
@@ -72,10 +79,63 @@ worktree_is_accessible() {
   git -C "$cwd" rev-parse --is-inside-work-tree >/dev/null 2>&1
 }
 
+worktree_belongs_to_repo() {
+  local cwd="$1"
+  local candidate_common=""
+  worktree_is_accessible "$cwd" || return 1
+  candidate_common="$(git -C "$cwd" rev-parse --git-common-dir 2>/dev/null || true)"
+  [[ -n "$candidate_common" ]] || return 1
+  if [[ "$candidate_common" != /* ]]; then
+    candidate_common="$(cd "$cwd/$candidate_common" && pwd -P)"
+  fi
+  [[ "$candidate_common" == "$COMMON_GIT_DIR" ]]
+}
+
+if [[ -z "$REGISTER_WT" && -z "$PRIMARY_WT" ]]; then
+  REGISTER_WT="$REPO_ROOT"
+fi
+
+if [[ -n "$REGISTER_WT" ]]; then
+  worktree_belongs_to_repo "$REGISTER_WT" || {
+    echo "ERROR: register target is not an accessible worktree of this repo: $REGISTER_WT" >&2
+    exit 1
+  }
+  if [[ -f "$ACTIVE_FILE" ]]; then
+    PRIMARY_WT="$(sed -n 's/^path: //p' "$ACTIVE_FILE" | head -1)"
+    if [[ -z "$PRIMARY_WT" ]] || ! worktree_belongs_to_repo "$PRIMARY_WT"; then
+      echo "ERROR: existing primary snapshot is invalid; explicit --primary required" >&2
+      exit 1
+    fi
+  else
+    PRIMARY_WT="$REGISTER_WT"
+  fi
+else
+  worktree_belongs_to_repo "$PRIMARY_WT" || {
+    echo "ERROR: primary target is not an accessible worktree of this repo: $PRIMARY_WT" >&2
+    exit 1
+  }
+fi
+
+LOCK_DIR="$WT_BASE/.impactshop-notes-coordination.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  echo "ERROR: coordination sync already running: $LOCK_DIR" >&2
+  exit 1
+fi
+ACTIVE_TMP="$(mktemp "$WT_BASE/.ACTIVE_WORKTREE.md.XXXXXX")"
+SNAP_TMP="$(mktemp "$WT_BASE/.ACTIVE_WORKTREES.md.XXXXXX")"
+cleanup() {
+  rm -f "$ACTIVE_TMP" "$SNAP_TMP"
+  rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+trap cleanup EXIT
+
 emit_task_start_evidence() {
   local cwd="$1"
   local marker
   marker="$(git -C "$cwd" rev-parse --git-path worktree-active.json 2>/dev/null || true)"
+  if [[ -n "$marker" && "$marker" != /* ]]; then
+    marker="$cwd/$marker"
+  fi
   if [[ -z "$marker" || ! -f "$marker" ]]; then
     echo "task_start_marker: missing"
     return
@@ -114,6 +174,9 @@ emit_task_start_decision_evidence() {
   local cwd="$1"
   local artifact
   artifact="$(git -C "$cwd" rev-parse --git-path worktree-task-start-decision.json 2>/dev/null || true)"
+  if [[ -n "$artifact" && "$artifact" != /* ]]; then
+    artifact="$cwd/$artifact"
+  fi
   if [[ -z "$artifact" || ! -f "$artifact" ]]; then
     echo "task_start_decision: missing"
     return
@@ -158,23 +221,24 @@ if warnings:
 PY
 }
 
-ACTIVE_BRANCH="$(safe_git_text "$ACTIVE_WT" branch --show-current)"
-ACTIVE_HEAD="$(safe_git_text "$ACTIVE_WT" rev-parse --short HEAD)"
-ACTIVE_STATUS="$(safe_status_line_count "$ACTIVE_WT")"
+ACTIVE_BRANCH="$(safe_git_text "$PRIMARY_WT" branch --show-current)"
+ACTIVE_HEAD="$(safe_git_text "$PRIMARY_WT" rev-parse HEAD)"
+ACTIVE_STATUS="$(safe_status_line_count "$PRIMARY_WT")"
 
-cat > "$ACTIVE_FILE" <<EOF
+cat > "$ACTIVE_TMP" <<EOF
 # ACTIVE WORKTREE
 
 updated_utc: ${NOW}
-path: ${ACTIVE_WT}
+generation: ${GENERATION}
+path: ${PRIMARY_WT}
 repo: ${PRIMARY_REPO_ROOT}
 branch: ${ACTIVE_BRANCH:-unknown}
 head: ${ACTIVE_HEAD:-unknown}
 status_short_line_count: ${ACTIVE_STATUS:-unknown}
 EOF
 
-emit_task_start_evidence "$ACTIVE_WT" >> "$ACTIVE_FILE"
-emit_task_start_decision_evidence "$ACTIVE_WT" >> "$ACTIVE_FILE"
+emit_task_start_evidence "$PRIMARY_WT" >> "$ACTIVE_TMP"
+emit_task_start_decision_evidence "$PRIMARY_WT" >> "$ACTIVE_TMP"
 
 WT_PATHS=()
 while IFS= read -r line; do
@@ -185,7 +249,9 @@ done < <(git -C "$REPO_ROOT" worktree list --porcelain | awk '/^worktree /{print
   echo "# ACTIVE WORKTREES SNAPSHOT"
   echo
   echo "updated_utc: $NOW"
+  echo "generation: $GENERATION"
   echo "repo: $PRIMARY_REPO_ROOT"
+  echo "primary_path: $PRIMARY_WT"
   echo "count: ${#WT_PATHS[@]}"
   echo
 
@@ -206,7 +272,7 @@ done < <(git -C "$REPO_ROOT" worktree list --porcelain | awk '/^worktree /{print
     fi
 
     BRANCH="$(safe_git_text "$WT" branch --show-current)"
-    HEAD="$(safe_git_text "$WT" rev-parse --short HEAD)"
+    HEAD="$(safe_git_text "$WT" rev-parse HEAD)"
     STATUS_LINES="$(safe_status_line_count "$WT")"
     DIRTY="no"
     if [[ "$STATUS_LINES" != "0" ]]; then
@@ -232,7 +298,10 @@ done < <(git -C "$REPO_ROOT" worktree list --porcelain | awk '/^worktree /{print
 
   echo "summary_dirty_worktrees: $DIRTY_TOTAL"
   echo "summary_invalid_worktrees: $INVALID_TOTAL"
-} > "$SNAP_FILE"
+} > "$SNAP_TMP"
+
+mv "$ACTIVE_TMP" "$ACTIVE_FILE"
+mv "$SNAP_TMP" "$SNAP_FILE"
 
 echo "[worktree-coordination-sync] wrote: $ACTIVE_FILE"
 echo "[worktree-coordination-sync] wrote: $SNAP_FILE"

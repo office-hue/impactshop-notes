@@ -160,6 +160,22 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 - A pre-push hook es a `git wpush` wrapper most mar nem csak altalanos auditot futtat, hanem explicit ellenorzi a marker + decision artifact + koordinacios snapshot paritast is.
 - Ezzel a local truth mar nem allhat meg az N3 snapshot lathatosagnal; push elott kotelezo continuity evidence lett belole.
 
+## 2026-09-10 Multi-active continuity note
+
+- A kozos active pointer explicit primary szerepet jelent; egy worktree startja
+  vagy push elotti regisztracioja ezt nem veheti at hallgatolagosan.
+- A koordinacios pointer es snapshot lock alatt, azonos generation azonositoval
+  keszul. A publikalo worktree exact branch/full HEAD/clean/decision truthja
+  kotelezo; stale, dirty, generation-drift es lock race fail-closed.
+- Egy ervenyes non-primary worktree `degraded` warninggal publikacio-kepes, igy
+  a parhuzamos feature worktree-k nem irjak felul es nem uldozik egymas shared
+  pointeret.
+- A starter, coordination, continuity, guarded push es generalt hook contract
+  teljesen repo-local. Nem keres es nem futtat sibling `ai-agent` worktree-t,
+  memoria parancsot vagy shared Node dependency fat.
+- A control-plane scriptek, CI contract es hermetikus linked-worktree teszt a
+  deploy-guard maximum-protected keszletebe tartoznak.
+
 ## 2026-07-01 Impact Challenge pause-lock note
 
 - A protected `impact-challenge` publikus runtime atmeneti pause-lock maintenance allapotot kapott a `wp-content/mu-plugins/zzz-impactshop-ui-lock.php` lane-ben.
@@ -224,7 +240,9 @@ Ez a dokumentum nem uj policy-t vezet be, hanem egyetlen helyi governance-hubken
 1. a governance, guard es policy lane valtozasai push elott fail-closed local system-plan sync gate alatt allnak;
 2. ez azt jelenti, hogy a `docs/impactshop-governance-system-plan-2026-06-16.md` frissitese nem utolagos adminisztracio, hanem a helyi DEV folyamat resze.
 3. env/auth/runtime lane valtozasnal a `docs/impactshop-env-auth-runtime-guard-adapter-2026-06-17.md` is kotelezo continuity anchor.
-4. a runtime worktree-start lane-nel a marker + decision + coordination snapshot paritast a local continuity guard kotelezoen ervenyesiti.
+4. a runtime worktree-start lane-nel a marker + decision + generation-bound
+   coordination snapshot paritast, valamint a publikalo worktree exact
+   full-HEAD/clean truthjat a local continuity guard kotelezoen ervenyesiti.
 
 ## Decision Rules
 

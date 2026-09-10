@@ -225,7 +225,7 @@ bash "$REPO_ROOT/scripts/worktree-task-start-guard.sh" \
 
 COORD_SCRIPT="$REPO_ROOT/scripts/worktree-coordination-sync.sh"
 if [[ -x "$COORD_SCRIPT" || -f "$COORD_SCRIPT" ]]; then
-  if bash "$COORD_SCRIPT" --repo-root "$REPO_ROOT" --active "$WT_DIR" >/dev/null 2>&1; then
+  if bash "$COORD_SCRIPT" --repo-root "$REPO_ROOT" --register "$WT_DIR" >/dev/null 2>&1; then
     echo "[worktree-task-start] coordination snapshot frissitve"
   else
     echo "[worktree-task-start] ERROR: coordination snapshot failed" >&2
