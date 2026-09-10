@@ -11,7 +11,7 @@ Plan ID: `sharity-profile-staging-cas-current-main-repin-20260910`.
 
 Repin the existing repo-local
 `deploy-control-source:sharity-staging-cas-v1` profile to the exact CAS
-candidate derived from `origin/main@9d351cd45412bb95c7839d7e77155dbb46b2a92f`.
+candidate derived from `origin/main@44547312cb06e24fe2999faf9abb4e2f63fb945e`.
 The candidate preserves the current protected inventory, adds the previously
 reviewed staging exact-release CAS bytes, and corrects the staging HTTP base to
 `https://app.sharity.hu/impactshop-staging`.
@@ -24,15 +24,16 @@ connect to S59, write a database, deploy, or activate runtime state.
 
 - Only the two current-main-derived manifest blob pins change:
   - `docs/impactshop-guard-hashes.json` ->
-    `fed75afef4638a6de80748e3842a3a02a15ef3ec4d98fd1654abc6a5e60025f3`;
+    `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054`;
   - `docs/impactshop-guard-hashes.sha256` ->
-    `2583a3a0c60b1f24db1333624f176d86b57c1a22c9bcffc2b4378e91aa81b2e0`.
+    `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
 - The five previously reviewed CAS blob pins, exact seven protected paths,
   exact six support paths, production companion and provider denial remain
   unchanged.
-- The future manifest keeps the complete `9d351cd` protected inventory and
-  changes only the four CAS-controlled file digests plus its deterministic
-  `generated_at` field.
+- The future manifest keeps the complete `44547312` protected inventory (155
+  protected paths and the same 157 hash keys) and changes only the four
+  CAS-controlled script/test digests plus the explicit deterministic
+  `generated_at` value `2026-09-10T20:30:00+00:00`.
 - The ordinary schema-v1 protected lane closes this repin. The staging CAS
   profile cannot admit its own control-plane change.
 

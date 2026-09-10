@@ -7,6 +7,19 @@ impact policy and the bastion evidence log. Only two reviewed future candidate
 manifest pins and the derived contract digest change. This creates no provider,
 VPS, remote-write, deploy or runtime authority.
 
+## Candidate identity
+
+- Base: `origin/main@44547312cb06e24fe2999faf9abb4e2f63fb945e`.
+- Reviewed CAS source: `b1b6dd2c64e969788873daeecdf464b2eec92d0c`.
+- Deterministic `generated_at`: `2026-09-10T20:30:00+00:00`.
+- Future `docs/impactshop-guard-hashes.json` SHA-256:
+  `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054`.
+- Future `docs/impactshop-guard-hashes.sha256` blob SHA-256:
+  `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
+- Inventory parity: 155 protected paths and the identical 157 hash keys;
+  only the four inventoried CAS script/test values change. The fifth reviewed
+  CAS byte, `.deploy.staging.env`, remains separately pinned by the profile.
+
 ## Rollback plan
 
 Revert the exact checkpoint commit. No external state or data rollback is

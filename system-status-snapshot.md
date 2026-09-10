@@ -1212,8 +1212,11 @@ deployment state changed.
 
 ## 2026-09-10 — Sharity staging CAS current-main repin
 
-- Base: `origin/main@9d351cd45412bb95c7839d7e77155dbb46b2a92f`.
+- Base: `origin/main@44547312cb06e24fe2999faf9abb4e2f63fb945e`.
 - Scope: two future manifest pins plus derived DEV-v2 policy digest and DocSync.
+- Deterministic candidate: `generated_at=2026-09-10T20:30:00+00:00`,
+  manifest/checksum blob SHA-256 `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054` /
+  `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
 - Status: local source-control package; no remote write or deployment.
 - Next: exact schema-v2 CAS source package, then one staging and one production
   wave if all runtime gates pass.

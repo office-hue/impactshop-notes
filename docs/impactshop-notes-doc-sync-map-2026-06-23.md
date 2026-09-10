@@ -141,3 +141,6 @@ operator-reference coverage, while deploy-class admission remains false.
 the current-main repin plan/continuity/change record, bastion status, governance
 plan, `notes.md` and `system-status-snapshot.md` form one source-only DocSync
 unit. No release script, remote environment or runtime byte changes here.
+The synchronized base is `origin/main@44547312`; the future manifest/checksum
+blob pins are `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054`
+and `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.

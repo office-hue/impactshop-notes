@@ -7439,5 +7439,9 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 
 - Sharity staging CAS current-main repin (2026-09-10): the existing exact
   admission profile is rebound to a deterministic future manifest derived from
-  `origin/main@9d351cd`. This checkpoint is source metadata only; no S59,
-  database, staging, production, provider, cron or watchdog mutation occurs.
+  `origin/main@44547312`. With deterministic `generated_at`
+  `2026-09-10T20:30:00+00:00`, the future manifest/checksum blob pins are
+  `0e5fcc5d4e4306f550b02b4a202887f052d4a1affca9fc2a48f4a4380c47e054` /
+  `e2f7620eb6f77817f92f4df471711bc06065c4c009b8e1dcf32ae25be5cf62d4`.
+  This checkpoint is source metadata only; no S59, database, staging,
+  production, provider, cron or watchdog mutation occurs.
