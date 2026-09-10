@@ -1,3 +1,13 @@
+## 2026-09-10 — Sharity NGO preference Package B Terra re-QA
+
+- QA-B1 és QA-B2 architekturálisan lezárható: a source issuer origin exact és
+  fail-closed, a preference catalog policy pedig globális és campaign-independent.
+- A Luna allowlist kizárólag új disabled `.php.off` source adaptert, két hermetikus
+  tesztet és a kötelező bastion/change-record/continuity dokumentációt enged. Minden
+  meglévő MU-plugin, tényleges client/secret/key/policy adat, schema execution,
+  activation, provider és deploy tiltott.
+- Következő kapu: `gpt-5.6-luna`, medium, bounded source-only implementation.
+
 ## 2026-09-10 — Sharity NGO preference Package B Sol revision
 
 - A QA-B1 döntése: környezetenként egy exact HTTPS `home_url('/')` issuer origin;

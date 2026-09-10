@@ -1,6 +1,7 @@
 # Sharity NGO preference Package B — Terra architecture QA
 
-Status: `sol-revision-required`; no Luna implementation is approved.
+Status: `re-qa-approved-for-bounded-luna`; implementation remains source-only and
+default-off.
 
 Reviewed identity: `impactshop-notes` branch
 `feat/sharity-ngo-preference-source-authority-terra-20260909`, Sol checkpoint
@@ -74,7 +75,61 @@ The Sol architecture revision now specifies:
   independent of `sharity_ngo_campaign_flags`, with zero selectable NGOs until an
   explicit later data activation.
 
-These changes architecturally address QA-B1 and QA-B2 but do not self-close an
-independent Terra finding. Status remains `sol-revision-required` until Terra re-QA
-confirms the revision and, if admitted, publishes the exact Luna allowlist and test
-matrix. The additive, default-off, no-provider/no-deploy boundary is unchanged.
+These changes architecturally address QA-B1 and QA-B2 but required an independent
+Terra re-QA before any Luna allowlist could be published. The additive, default-off,
+no-provider/no-deploy boundary is unchanged.
+
+## Terra re-QA outcome
+
+The revision resolves both blockers. QA-B1 now separates the source-origin browser
+POST check from the BFF callback registry, keeps one exact HTTPS issuer origin per
+environment, and fails closed on a missing origin. QA-B2 now assigns global
+preference eligibility to a distinct policy table and excludes campaign flags from
+the preference revision. Neither decision requires a protected runtime edit or a
+live data operation.
+
+The later module must have no populated BFF client registry, no secret, and no
+catalog-policy rows in this package. An absent registry or policy must deny/return
+`selection_required`; it must not infer data from a campaign or a legacy selector.
+Subject-key provisioning, client registration, policy population, activation, schema
+execution, staging, and production stay outside the Luna scope.
+
+### Approved Luna file allowlist
+
+Only the following paths may be added or changed by the bounded implementation:
+
+- `wp-content/mu-plugins/impactshop-sharity-ngo-preference-source.php.off` (new,
+  disabled additive module only);
+- `tests/impactshop-sharity-ngo-preference-source-static.test.py` (new);
+- `tests/impactshop-sharity-ngo-preference-source-contract.test.php` (new,
+  hermetic pure-function contract test);
+- `docs/bastion-guard-status.md`;
+- `docs/protected-change-records/2026-09-10-sharity-ngo-preference-source.md`
+  (new);
+- `conversation-summaries/2026-09-09-sharity-ngo-preference-source-sol.md`; and
+- `notes.md`.
+
+No existing file under `wp-content/mu-plugins/` may be changed. In particular, the
+identity-panel, selector, and VB2026 catalog/flags files are outside the allowlist.
+The implementation must not add a config value with a real client, secret, key, or
+policy row, and must not rename the `.off` module to an autoloaded PHP file.
+
+### Required Luna evidence
+
+1. `php -l` on the new disabled module.
+2. The static test must prove default-off status, no activation/schema execution,
+   no network/provider call, no legacy selector reuse, no use of the broad
+   `impactshop_identity_request_same_origin()` helper, no raw identifier/token
+   logging, and private no-store route policy.
+3. The hermetic PHP contract test must prove exact HTTPS origin normalization and
+   cross-host/missing-origin rejection; exact client/redirect tuple validation;
+   CSRF binding and one-time rejection; code/bearer expiry and revocation semantics;
+   globally policy-based catalog revision; empty-policy, campaign-independence,
+   inactive/unselectable, stale-revision, CAS, idempotency, and audit outcomes.
+4. The existing protected-touch, continuity, and `git diff --check` guards must
+   pass before the Luna checkpoint. Runtime, provider, browser, database, and
+   deployment tests are intentionally out of scope because the module stays `.off`.
+
+This is a narrow implementation authorization only. Any need to change an existing
+runtime file, activate the module, write schema/policy data, provide a client or
+secret, or resolve a test conflict returns the work to `gpt-5.6-sol`, high.

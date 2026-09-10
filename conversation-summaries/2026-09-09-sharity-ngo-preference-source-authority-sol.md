@@ -24,3 +24,8 @@
   population and activation require a later explicit Sol data operation.
 - Next gate: `gpt-5.6-terra`, high, for independent re-QA and the exact Luna
   implementation allowlist/test matrix. No runtime or protected source changed.
+- Terra re-QA (2026-09-10): QA-B1 and QA-B2 are resolved by the Sol revision.
+  Bounded Luna work is admitted only for a new `.php.off` adapter, two hermetic
+  tests, bastion/change-record evidence, and continuity notes. No existing MU plugin,
+  client/secret/key, policy row, schema execution, activation, provider, or deploy is
+  allowed. See the Terra QA document for the exact allowlist and test matrix.
