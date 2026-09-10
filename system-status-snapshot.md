@@ -1,3 +1,37 @@
+## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
+
+- Source-only checkpoint C keeps the runtime change to `impactshop-boot.php` and
+  `impactshop-identity-panel.php`. Query REST and pretty REST under a
+  subdirectory are excluded from the shared init/HTML automatic cookie touch;
+  `impact_pseudo_id` query compatibility is preserved. The public profile REST
+  GET handler intentionally owns exactly one no-cookie pending issuance through
+  the common prune/quota path, so REST is not a zero-issuance path.
+- Owner issuance prunes expired pending rows in a bounded 64-row transaction,
+  preserves active/nonexpired rows, and enforces a 256-row public pending quota
+  before token/cookie/global-marker creation. The bounded locking read covers
+  overlapping issuers under normal InnoDB isolation; non-default isolation
+  remains a staging verification gate rather than an absolute ceiling claim.
+  Successful quota refusal commits pruning; verified recovery bypasses only
+  the public quota and still prunes.
+- Behavior fixtures, existing identity/owner-policy suites, PHP lints and
+  diff-check pass. Guard hashes, companion digest, protected admission and
+  task-start/continuity evidence are refreshed. Live staging/schema/browser,
+  provider, publication and production acceptance remain pending.
+
+## 2026-09-10 — Sharity profile first-request owner bootstrap correction
+
+- Source-only Luna correction on the dedicated bootstrap worktree moves owner
+  grant storage setup and the new-browser owner binding ahead of the legacy
+  `impactshop-boot.php` priority-1 pseudo-cookie callback.
+- Normal no-source HTML requests get one pending grant plus both cookies;
+  query identity overrides, REST/wp-json and existing legacy cookie sources
+  retain compatibility behavior. Any owner/storage/cookie/compensation failure
+  blocks the legacy fallback and leaves profile output `unavailable`.
+- Hermetic bootstrap contract, PHP lint, profile/owner-policy static and
+  runtime checks plus `git diff --check` PASS. Staging two-request activation,
+  live schema/browser/API, provider, publication and production acceptance
+  remain pending; no remote or runtime state changed.
+
 ## 2026-09-10 — Sharity profile live-release staging follow-up
 
 - Staging currently has six profile files installed through the exact CAS lane;

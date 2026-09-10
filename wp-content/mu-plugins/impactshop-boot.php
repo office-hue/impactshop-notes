@@ -64,13 +64,24 @@ if (!function_exists('impactshop_identity_ensure_pseudo_cookie')) {
       return false;
     }
 
+    // WordPress can dispatch REST requests through a query route, including
+    // installs living below a subdirectory. Keep scalar/non-empty handling
+    // explicit so an unrelated empty or malformed array value is not trusted
+    // as a REST signal.
+    if (isset($_GET['rest_route'])
+      && is_scalar($_GET['rest_route'])
+      && trim((string) $_GET['rest_route']) !== '') {
+      return false;
+    }
+
     $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
     $path = strtolower((string) parse_url($uri, PHP_URL_PATH));
     if ($path === '') {
       $path = '/';
     }
 
-    if (str_starts_with($path, '/wp-login.php') || str_starts_with($path, '/wp-json/')) {
+    if (str_starts_with($path, '/wp-login.php')
+      || preg_match('~(?:^|/)wp-json(?:/|$)~', $path) === 1) {
       return false;
     }
 
@@ -106,6 +117,13 @@ if (!function_exists('impactshop_identity_ensure_pseudo_cookie')) {
         }
         return;
       }
+    }
+
+    // The v2 identity bootstrap owns this ordinary no-source request. A
+    // storage/readback/cookie failure must remain unavailable rather than
+    // falling back to a legacy pseudo without an owner grant.
+    if (!empty($GLOBALS['impactshop_identity_bootstrap_block_legacy'])) {
+      return;
     }
 
     $generated = impactshop_identity_generate_pseudo();

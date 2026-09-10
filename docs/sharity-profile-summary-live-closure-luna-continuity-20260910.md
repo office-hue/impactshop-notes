@@ -65,6 +65,55 @@ Worktree: `impactshop-notes-feat-sharity-profile-summary-live-closure-luna-20260
 Branch: `feat/sharity-profile-summary-live-closure-luna-20260910`
 Base: `d39349a3dedad8ebda597c2d531fd2e498268990`
 
+## Follow-up — first-request owner bootstrap correction
+
+The dedicated Luna follow-up worktree `fix/sharity-profile-bootstrap-owner-grant-luna-20260910`
+closes the remaining init-order gap without changing the owner-grant contract:
+storage installation and new-browser binding run at init priority 0, before the
+legacy priority-1 boot callback. A normal no-source HTML request issues exactly
+one pending grant and queues both cookies; the next request performs activation.
+Query `impact_pseudo_id`, REST/wp-json, and existing legacy cookie sources retain
+their compatibility paths. On storage, random, cookie/header, readback or
+compensation failure a request-local block prevents legacy pseudo fallback and
+profile output stays `unavailable`.
+
+Follow-up evidence: `tests/impactshop-profile-bootstrap-owner-grant.test.py`,
+PHP lint for both changed MU plugins, existing profile/static/remediation,
+owner-policy inventory/runtime checks and `git diff --check` PASS. This remains
+source-only; staging schema/browser/API E2E, publication and production
+acceptance are not performed.
+
+## Checkpoint C — REST predicate and bounded pending-grant quota
+
+The complete source-bearing candidate starts at
+`origin/main@dd0a19eecfdeb021ed312b5a836f14ff64af0a6e` and ends at
+`f3a5fb3e27e840de07c14c570eeef7bf789718b7` with tree
+`9505d904e68bb5c49ddaa1c5aa3e4a72a2c25fd5`; the governance-only follow-up
+`6cf300bb547da540e0107ada9d015fd11499520f` is separate. The follow-up keeps the runtime scope to the two identity MU
+plugins. The shared cookie-touch predicate rejects non-empty scalar
+`rest_route` query dispatch and pretty REST paths under subdirectories, while
+the earlier `impact_pseudo_id` query compatibility branch remains first.
+This rejection applies only to the shared init/HTML bootstrap. The public
+`GET /impact/v1/identity/profile` handler intentionally owns exactly one
+pending issuance when no cookie exists and uses the same common prune/quota
+issuer; REST is not a zero-issuance path.
+Common owner issuance now prunes only expired pending rows in the indexed
+state/expiry range, at most 64 per transaction. Automatic public issuance
+locks up to 257 eligible rows and refuses at 256, committing successful prune
+work without creating a token, cookie or request marker. Recovery restore
+passes an explicit quota bypass but still uses the prune transaction and
+supersession path. The bounded lock/read accounts for overlapping concurrent
+issuers under normal InnoDB isolation; a non-default isolation level remains a
+staging verification gate, so this is not an absolute cross-isolation ceiling
+claim. No IP/header trust or scheduled cleanup is added.
+
+Checkpoint C evidence: executable cookie-touch and owner-grant quota fixtures,
+the existing bootstrap/profile/remediation/inventory/runtime suites, PHP lint
+and `git diff --check` PASS. Guard hashes, companion digest, protected source
+admission and continuity evidence are refreshed in this checkpoint. Live
+staging schema/browser/API acceptance, publication and production acceptance
+remain pending.
+
 ## Protected source admission
 
 Operator approval reference:

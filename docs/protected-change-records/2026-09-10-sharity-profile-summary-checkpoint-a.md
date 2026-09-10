@@ -11,8 +11,15 @@ fail-closed bootstrap correction. Checkpoint B now closes the approved owner
 grant v2 lifecycle and central policy boundary without provider or runtime
 activation.
 
+This source-only follow-up additionally corrects first-request init ordering:
+owner-grant storage/new-browser bootstrap runs before the legacy pseudo-cookie
+callback, while ordinary no-source failures block legacy fallback and leave
+profile output unavailable. Query identity overrides and existing legacy
+cookie sources remain compatibility paths.
+
 ## Protected files touched
 
+- `wp-content/mu-plugins/impactshop-boot.php`
 - `wp-content/mu-plugins/impactshop-identity-panel.php`
 - `wp-content/mu-plugins/impactshop-identity-panel.js`
 - `wp-content/mu-plugins/impactshop-adsense-head.php`
@@ -41,6 +48,11 @@ implementation is fail-closed: schema/DB/readback/cookie/compensation failure
 denies owner mutation and can engage safe-disable; no plaintext owner token is
 stored or accepted in request bodies.
 
+The follow-up's additional risk is callback ordering: a failed priority-0
+bootstrap must not fall through to the priority-1 legacy callback. A
+request-local block is asserted by hermetic contracts and honored by boot and
+profile resolvers; no cross-request state or new owner-token exposure is added.
+
 ## Smoke scope and required post-merge/staging checks
 
 - full/compact profile nickname, pseudo, level/points, votes and canonical anchor;
@@ -57,6 +69,9 @@ stored or accepted in request bodies.
 - runtime route/policy/callback self-test and token_get_all inventory PASS;
 - action-bar profile anchor plus legacy `#impactshop-account` resolver;
 - keyboard tooltip, mobile layout and no ad-induced layout shift.
+- first ordinary HTML request creates one pending grant plus both cookies;
+  second request activates; storage/cookie failure leaves no pseudo and no
+  duplicate grant; query and REST paths retain their intended behavior.
 
 No production deploy, database migration execution, cron/watchdog, push or PR
 is part of this record. Rollback is forward-safe source disable/revert before

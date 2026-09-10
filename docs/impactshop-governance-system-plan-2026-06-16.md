@@ -522,3 +522,19 @@ remote execution path. Malformed mixed/indexed/non-boolean maps remain denied
 as complete values, and exact callback matching remains mandatory. Staging is
 kept fail-closed until live self-test PASS; production is unchanged. No cron,
 Cronos guard or watchdog is introduced.
+## 2026-09-10 Sharity profile bootstrap REST/quota checkpoint
+
+The protected profile follow-up remains source-only and binds the two runtime
+files `wp-content/mu-plugins/impactshop-boot.php` and
+`wp-content/mu-plugins/impactshop-identity-panel.php` to the exact schema-v1
+record `docs/protected-change-records/2026-09-10-sharity-profile-bootstrap-quota.md`.
+The shared init/HTML cookie-touch predicate excludes query REST and
+subdirectory `wp-json` paths while preserving the legacy query override. This
+does not disable the public `GET /impact/v1/identity/profile` handler: its
+no-cookie path intentionally owns exactly one pending issuance through the
+same common prune/quota issuer. Public owner-grant issuance prunes expired
+pending rows in a bounded transaction and enforces the 256-row pending quota
+before token/cookie creation; verified recovery bypasses only the public quota.
+The lock/read is bounded concurrency control under the normal InnoDB isolation
+contract; non-default isolation remains a staging verification gate. No
+provider, remote, database, cron or watchdog authority is added.
