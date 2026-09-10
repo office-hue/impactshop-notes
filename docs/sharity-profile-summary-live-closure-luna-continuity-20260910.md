@@ -65,6 +65,24 @@ Worktree: `impactshop-notes-feat-sharity-profile-summary-live-closure-luna-20260
 Branch: `feat/sharity-profile-summary-live-closure-luna-20260910`
 Base: `d39349a3dedad8ebda597c2d531fd2e498268990`
 
+## Follow-up — first-request owner bootstrap correction
+
+The dedicated Luna follow-up worktree `fix/sharity-profile-bootstrap-owner-grant-luna-20260910`
+closes the remaining init-order gap without changing the owner-grant contract:
+storage installation and new-browser binding run at init priority 0, before the
+legacy priority-1 boot callback. A normal no-source HTML request issues exactly
+one pending grant and queues both cookies; the next request performs activation.
+Query `impact_pseudo_id`, REST/wp-json, and existing legacy cookie sources retain
+their compatibility paths. On storage, random, cookie/header, readback or
+compensation failure a request-local block prevents legacy pseudo fallback and
+profile output stays `unavailable`.
+
+Follow-up evidence: `tests/impactshop-profile-bootstrap-owner-grant.test.py`,
+PHP lint for both changed MU plugins, existing profile/static/remediation,
+owner-policy inventory/runtime checks and `git diff --check` PASS. This remains
+source-only; staging schema/browser/API E2E, publication and production
+acceptance are not performed.
+
 ## Protected source admission
 
 Operator approval reference:

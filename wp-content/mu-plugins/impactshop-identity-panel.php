@@ -107,7 +107,11 @@ add_shortcode('impactshop_identity_id', 'impactshop_identity_id_shortcode');
 add_action('wp_enqueue_scripts', 'impactshop_identity_panel_register_assets');
 add_action('wp_enqueue_scripts', 'impactshop_identity_profile_dequeue_adsense', 1000);
 add_action('admin_init', 'impactshop_identity_register_broadcast_setting');
-add_action('init', 'impactshop_identity_maybe_install_owner_grants', 1);
+// The boot MU plugin creates its legacy pseudo cookie at init priority 1.
+// Install storage and bind a new browser before that compatibility callback
+// can run, otherwise a first HTML request becomes legacy_read_only forever.
+add_action('init', 'impactshop_identity_maybe_install_owner_grants', 0);
+add_action('init', 'impactshop_identity_maybe_bootstrap_owner_binding', 0);
 add_action('init', 'impactshop_identity_handle_password_manager_save');
 add_action('template_redirect', 'impactshop_identity_profile_cache_headers', -999);
 add_action('template_redirect', 'impactshop_identity_profile_suppress_ads', -998);
@@ -297,6 +301,67 @@ function impactshop_identity_utc_sql(?int $timestamp = null): string
 function impactshop_identity_grant_schema_version(): int
 {
     return 2;
+}
+
+/**
+ * Bind a brand-new ordinary browser request to one pending owner grant.
+ *
+ * The legacy boot callback remains responsible for compatibility identities
+ * and query overrides. This callback runs first so a normal HTML request is
+ * issued exactly one pending grant and queues both binding cookies together.
+ * A failed cookie/header step compensates the database row and exposes no
+ * newly generated pseudo ID to the request.
+ */
+function impactshop_identity_maybe_bootstrap_owner_binding(): void
+{
+    if (!function_exists('impactshop_identity_should_touch_cookie')
+        || !impactshop_identity_should_touch_cookie()) {
+        return;
+    }
+
+    $query_pseudo = isset($_GET['impact_pseudo_id'])
+        ? impactshop_identity_normalize_pseudo($_GET['impact_pseudo_id'])
+        : '';
+    if ($query_pseudo !== '') {
+        return;
+    }
+
+    $known_sources = [
+        $_COOKIE['impactshop_pseudo_id'] ?? null,
+        $_COOKIE['impact_pseudo_id'] ?? null,
+        $_COOKIE['impact_pseudo'] ?? null,
+    ];
+    foreach ($known_sources as $source) {
+        if (impactshop_identity_normalize_pseudo($source ?? '') !== '') {
+            return;
+        }
+    }
+
+    // Claim the no-source ordinary-browser path before any failure can fall
+    // through to impactshop-boot.php's legacy pseudo-cookie callback.
+    $GLOBALS['impactshop_identity_bootstrap_block_legacy'] = true;
+
+    try {
+        $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
+    } catch (Throwable $exception) {
+        return;
+    }
+    if (!impactshop_identity_profile_valid_pseudo($pseudo_id)
+        || !impactshop_identity_owner_issue($pseudo_id)) {
+        return;
+    }
+
+    $pseudo_cookie_set = impactshop_identity_profile_set_cookie($pseudo_id);
+    $owner_cookie_set = $pseudo_cookie_set && impactshop_identity_owner_set_pending_cookie();
+    if (!$pseudo_cookie_set || !$owner_cookie_set) {
+        impactshop_identity_owner_compensate_pending();
+        impactshop_identity_restore_or_expire_pseudo_cookie('', $pseudo_id);
+        return;
+    }
+
+    // Keep the current request on the pending path without copying the
+    // HttpOnly owner token into request cookies. The next request activates.
+    $_COOKIE['impactshop_pseudo_id'] = $pseudo_id;
 }
 
 function impactshop_identity_maybe_install_owner_grants(): void
@@ -1058,6 +1123,15 @@ function impactshop_identity_profile_resolve(): array
 {
     $pseudo_id = impactshop_identity_profile_cookie();
     if ($pseudo_id === '') {
+        if (!empty($GLOBALS['impactshop_identity_bootstrap_block_legacy'])) {
+            return [
+                'pseudo_id'         => '',
+                'nickname'          => null,
+                'access_code_state' => 'missing',
+                'votes_available'   => null,
+                'identity_state'    => 'unavailable',
+            ];
+        }
         $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
         $owner_issued = impactshop_identity_owner_issue($pseudo_id);
         $pseudo_cookie_set = $owner_issued && impactshop_identity_profile_set_cookie($pseudo_id);
@@ -1494,6 +1568,16 @@ function impactshop_identity_profile_get(): WP_REST_Response
 {
     $pseudo_id = impactshop_identity_profile_cookie();
     if ($pseudo_id === '') {
+        if (!empty($GLOBALS['impactshop_identity_bootstrap_block_legacy'])) {
+            $response = new WP_REST_Response([
+                'pseudo_id'         => '',
+                'nickname'          => null,
+                'access_code_state' => 'missing',
+                'votes_available'   => null,
+                'identity_state'    => 'unavailable',
+            ], 200);
+            return impactshop_identity_profile_response_headers($response);
+        }
         $pseudo_id = impactshop_identity_profile_generate_pseudo_id();
         $owner_issued = impactshop_identity_owner_issue($pseudo_id);
         $pseudo_cookie_set = $owner_issued && impactshop_identity_profile_set_cookie($pseudo_id);

@@ -7456,6 +7456,23 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - Applied exactly the reviewed seven protected CAS blobs and the six required support paths. The schema-v2 record binds `deploy-control-source:sharity-staging-cas-v1`, the exact reviewed hashes and unchanged production companion `ea894097c343148cb375c74148021ac684ef44ebb04dc56be766f8c86966885d`.
 - Manifest serialization is guard-writer compatible with no trailing newline: `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`; companion: `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
 - Source-only checkpoint: no push, PR, deployment, SSH, shared-dependency, provider, database, runtime, cron or watchdog mutation. Targeted shell tests, adapter full-validation/bastion/freeze/verify, strict audit, DocSync/continuity, diff-check and clean-tree checkpoint remain the closeout gates.
+## 2026-09-10 — Sharity profile first-request owner bootstrap correction
+
+- Dedicated Luna package `fix/sharity-profile-bootstrap-owner-grant-luna-20260910`
+  keeps the existing legacy boot callback as compatibility fallback but runs
+  owner-grant storage installation and new-browser binding at init priority 0.
+- An ordinary no-source HTML request now issues one pending v2 grant and queues
+  both pseudo and `__Host-impactshop_owner` cookies. The owner token remains
+  HttpOnly/request-server-only; activation still requires a later request.
+- Query `impact_pseudo_id`, REST/wp-json, and existing legacy cookie sources
+  remain outside new issuance. Storage, random generation, cookie/header or
+  compensation failures set a request-local legacy-block flag, so no fallback
+  pseudo is displayed and profile resolution remains `unavailable`.
+- Hermetic bootstrap ordering/failure/compatibility contracts, PHP lint, the
+  profile static/remediation/checkpoint contracts, owner-policy inventory and
+  conditional runtime checks pass. No push, PR, merge, DB/schema execution,
+  provider/runtime or deployment action was performed.
+
 ## 2026-09-10 — Sharity profile live-release staging follow-up
 
 - Staging evidence: six profile CAS files are currently deployed; owner-policy

@@ -1,3 +1,17 @@
+## 2026-09-10 — Sharity profile first-request owner bootstrap correction
+
+- Source-only Luna correction on the dedicated bootstrap worktree moves owner
+  grant storage setup and the new-browser owner binding ahead of the legacy
+  `impactshop-boot.php` priority-1 pseudo-cookie callback.
+- Normal no-source HTML requests get one pending grant plus both cookies;
+  query identity overrides, REST/wp-json and existing legacy cookie sources
+  retain compatibility behavior. Any owner/storage/cookie/compensation failure
+  blocks the legacy fallback and leaves profile output `unavailable`.
+- Hermetic bootstrap contract, PHP lint, profile/owner-policy static and
+  runtime checks plus `git diff --check` PASS. Staging two-request activation,
+  live schema/browser/API, provider, publication and production acceptance
+  remain pending; no remote or runtime state changed.
+
 ## 2026-09-10 — Sharity profile live-release staging follow-up
 
 - Staging currently has six profile files installed through the exact CAS lane;

@@ -108,6 +108,13 @@ if (!function_exists('impactshop_identity_ensure_pseudo_cookie')) {
       }
     }
 
+    // The v2 identity bootstrap owns this ordinary no-source request. A
+    // storage/readback/cookie failure must remain unavailable rather than
+    // falling back to a legacy pseudo without an owner grant.
+    if (!empty($GLOBALS['impactshop_identity_bootstrap_block_legacy'])) {
+      return;
+    }
+
     $generated = impactshop_identity_generate_pseudo();
     impactshop_identity_set_pseudo_cookie($generated);
   }
