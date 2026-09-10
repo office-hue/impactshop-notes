@@ -35,7 +35,7 @@ and policy checks, and deploy a forward corrective immutable artifact.
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
   "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-20260910",
-  "planRef": "sharity-profile-summary-live-closure-20260910",
+  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#protected-source-admission",
   "protectedPaths": [
     "docs/bastion-guard-status.md",
     "docs/impactshop-guard-config.json",

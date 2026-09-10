@@ -61,7 +61,7 @@ two-request cookie activation, failure compensation, browser cache invalidation,
 native VB2026 Bearer/browser/pre-auth cases and IDOR denial before any live
 acceptance. No push, PR, merge or deploy occurred.
 
-<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+<!-- BEGIN PROTECTED CHECKPOINT EVIDENCE -->
 {
   "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-remediation-20260910",
   "planRef": "sharity-profile-summary-live-closure-20260910",
@@ -94,4 +94,4 @@ acceptance. No push, PR, merge or deploy occurred.
     "flow:owner-grant-two-request-activation"
   ]
 }
-<!-- END PROTECTED SOURCE ADMISSION -->
+<!-- END PROTECTED CHECKPOINT EVIDENCE -->

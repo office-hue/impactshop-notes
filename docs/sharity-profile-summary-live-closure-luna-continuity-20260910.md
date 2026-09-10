@@ -46,6 +46,13 @@ Worktree: `impactshop-notes-feat-sharity-profile-summary-live-closure-luna-20260
 Branch: `feat/sharity-profile-summary-live-closure-luna-20260910`
 Base: `d39349a3dedad8ebda597c2d531fd2e498268990`
 
+## Protected source admission
+
+Operator approval reference:
+`operator-approval:sharity-profile-summary-live-closure-20260910`.
+The aggregate protected path set and forward-safe rollback contract are in
+`docs/protected-change-records/2026-09-10-sharity-profile-summary-live-closure.md`.
+
 ## Remediation checkpoint
 
 - Same-request pending activation was removed: server cookies are the sole
