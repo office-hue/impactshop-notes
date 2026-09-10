@@ -59,3 +59,22 @@ unselectable preferences correctly, or supply an auditable no-fallback resolutio
 issuer-origin policy and catalog policy/mapping. It must preserve the additive,
 default-off, no-provider/no-deploy boundary. Terra will then define the exact Luna
 allowlist and test matrix.
+
+## Sol revision recorded
+
+The Sol architecture revision now specifies:
+
+- one exact HTTPS issuer origin per environment, derived from the normalized
+  `home_url('/')` origin tuple, enforced on the issuing POST together with a
+  purpose-bound one-time CSRF token; the existing cross-host helper is not the sole
+  control and missing `Origin` fails closed;
+- a separate exact per-environment `(client_id, redirect_uri)` BFF callback
+  registry with no wildcard or suffix matching; and
+- a new global preference catalog policy, common to all preference scopes and
+  independent of `sharity_ngo_campaign_flags`, with zero selectable NGOs until an
+  explicit later data activation.
+
+These changes architecturally address QA-B1 and QA-B2 but do not self-close an
+independent Terra finding. Status remains `sol-revision-required` until Terra re-QA
+confirms the revision and, if admitted, publishes the exact Luna allowlist and test
+matrix. The additive, default-off, no-provider/no-deploy boundary is unchanged.

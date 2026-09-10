@@ -16,3 +16,11 @@
   current catalog is campaign-scoped and lacks a canonical mapping for the four
   global preference contexts. See
   `docs/sharity-ngo-preference-source-authority-terra-qa-2026-09-10.md`.
+- Sol revision (2026-09-10): the issuer uses one exact HTTPS `home_url('/')` origin
+  per environment plus a purpose-bound one-time CSRF token on code-issuing POST;
+  missing `Origin` fails closed and the existing cross-host helper is insufficient.
+- Global preference eligibility moves to a new policy table shared by all preference
+  scopes and independent of campaign flags. It starts empty/fail-closed; initial
+  population and activation require a later explicit Sol data operation.
+- Next gate: `gpt-5.6-terra`, high, for independent re-QA and the exact Luna
+  implementation allowlist/test matrix. No runtime or protected source changed.

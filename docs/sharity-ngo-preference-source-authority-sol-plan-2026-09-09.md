@@ -1,6 +1,6 @@
 # Sharity NGO preference Package B — source authority Sol decision
 
-Status: `architecture-review-complete`; Terra QA and implementation plan pending.
+Status: `architecture-revised`; Terra re-QA and implementation plan pending.
 
 Plan/session ID: `sharity-ngo-preference-source-authority-20260909`
 
@@ -26,8 +26,9 @@ Commitments, VB2026 activity writers, and UI integration remain later packages.
 - The `__Host-impactshop_owner` cookie is host-only and cannot be forwarded to a
   different Sharity host. The later BFF therefore needs an authorization-code
   exchange; browser-supplied profile IDs are forbidden.
-- `sharity_ngo_catalog.sharity_ngo_id` is the numeric NGO identifier. Active and
-  campaign-selectable state must be checked at every preference write and resolve.
+- `sharity_ngo_catalog.sharity_ngo_id` is the numeric NGO identifier. Master active
+  state and the separate global preference policy must be checked at every
+  preference write and resolve; campaign selectability is not global authority.
 - VB2026 selection, the legacy slug selector, votes, points/rewards/fund state, NGO
   Card, and Hatás Körök remain separate truth sources.
 - Existing protected runtime files are not edited. The implementation must be an
@@ -57,6 +58,27 @@ must redact query strings and request bodies on these routes. State is verified 
 the BFF; code replay, redirect mismatch, PKCE mismatch, or client mismatch returns an
 indistinguishable denial and consumes no session.
 
+### Exact issuer-origin policy
+
+The authorization-code issuer has one canonical source origin per environment: the
+normalized origin tuple derived from `home_url('/')` (scheme, host, and effective
+port). It must be HTTPS. Production and staging each use their own exact origin;
+there is no shared multi-host list, suffix match, wildcard, or production/staging
+fallback.
+
+Authorization is split into a non-mutating GET and an issuing POST. GET validates
+the exact registered BFF client and redirect URI and establishes the authorization
+intent. POST may issue a code only when the `Origin` header exactly equals the
+canonical source origin and a purpose-bound, one-time CSRF token matches the current
+owner grant and immutable request parameters. A missing `Origin` fails closed; the
+issuer does not fall back to `Referer`.
+
+The additive module must implement a new, narrowly scoped exact-origin check. It
+must not use `impactshop_identity_request_same_origin()` as its sole origin or CSRF
+control because that helper intentionally accepts multiple Sharity hosts. BFF
+callbacks use a separate per-environment registry of exact `(client_id,
+redirect_uri)` pairs; callback registration never authorizes a browser origin.
+
 ## Subject and key decision
 
 The preference subject is `v1:` plus a base64url HMAC-SHA-256 of the normalized
@@ -70,12 +92,14 @@ measured migration; silently changing the key is forbidden.
 
 ## Data authority
 
-The additive module owns four logical tables:
+The additive module owns five logical tables:
 
 - web authorization codes: hashed code, owner-grant hash, subject, client/redirect,
   PKCE challenge, expiry and consumed timestamp;
 - web sessions: hashed bearer, subject, owner-grant hash, scope, issued/expiry and
   revoked timestamps;
+- global preference catalog policy: numeric NGO ID, global selection flag, policy
+  state/version/hash and timestamps, independent of campaign flags;
 - NGO preferences: `(subject, scope_key)` unique, numeric NGO ID, catalog revision,
   monotonic version and timestamps, where `scope_key` is `profile_default` or one
   of `impact_shopping`, `offerwall`, `commitments`, `vb2026`;
@@ -91,14 +115,32 @@ with the current non-sensitive version. Preference changes are prospective only.
 Activity owners must persist immutable `(ngo_id, catalog_revision)` snapshots; this
 service never rewrites historical attribution.
 
-## Catalog revision
+## Global preference catalog policy and revision
 
-The source catalog revision is a versioned SHA-256 digest of the sorted normalized
-selection fields: numeric NGO ID, active flag, campaign allow-selection flag, and
-campaign state. The digest algorithm/version is fixed in code and recorded with the
-preference. A write must supply the current revision and fail with `409` if stale.
-Inactive, deleted, or unselectable choices return `selection_required`; no fallback,
-legacy slug promotion, or VB2026 implicit promotion is allowed.
+Global NGO preference eligibility is a new truth source, separate from every
+campaign. The additive module owns a `sharity_ngo_preference_catalog_policy` table
+keyed by numeric `sharity_ngo_id`, with global `allow_user_selection`, policy state,
+policy version/hash, and update timestamp. It joins the master
+`sharity_ngo_catalog` only for the current numeric row, master active state, and
+source row identity. It never reads `sharity_ngo_campaign_flags` to decide global
+preference eligibility.
+
+The same global eligible set applies to `profile_default`, `impact_shopping`,
+`offerwall`, `commitments`, and `vb2026`; a scope changes the stored preference, not
+which NGO is globally selectable. An empty or uninitialized policy exposes zero
+selectable NGOs and resolves to `selection_required`. No row is populated or
+promoted implicitly from VB2026, another campaign, the legacy selector, or a slug.
+Initial policy population and activation are a later explicit Sol data operation,
+outside this source-only package; the disabled module may define schema/routines but
+must not execute a live migration.
+
+The source catalog revision is a versioned SHA-256 digest of sorted normalized
+tuples containing numeric NGO ID, master active state, master source-row hash, and
+global policy selectability, state, and version. Campaign fields are excluded. The
+digest algorithm/version is fixed in code and recorded with the preference. A write
+must supply the current revision and fail with `409` if stale. Inactive, deleted, or
+globally unselectable choices return `selection_required`; no fallback, legacy slug
+promotion, campaign promotion, or VB2026 implicit promotion is allowed.
 
 ## Source endpoints
 
@@ -135,8 +177,9 @@ key version, and data; destructive schema rollback is forbidden.
 1. Static and PHP syntax tests for the disabled additive module.
 2. Tests for owner-grant mismatch/revocation, exact redirect allowlist, PKCE, code
    replay/expiry, bearer expiry/revocation, and response/log redaction.
-3. Tests for exact scopes, numeric ID, active/selectable catalog state, revision
-   mismatch, CAS conflict, idempotent retry, audit append, and no fallback.
+3. Tests for exact scopes, numeric ID, master-active/global-policy-selectable state,
+   empty policy, campaign independence, revision mismatch, CAS conflict, idempotent
+   retry, audit append, and no fallback.
 4. Protected inventory/digest parity proving no existing protected runtime file
    changed; update `docs/bastion-guard-status.md` and a protected change record for
    the new perimeter module.
@@ -145,6 +188,9 @@ key version, and data; destructive schema rollback is forbidden.
 ## Handoff
 
 Next model: `gpt-5.6-terra`, high reasoning. Terra must independently audit this
-security/data design against the existing owner-grant and catalog source, define the
-exact file allowlist and test matrix, and approve Luna only if no protected-file edit
-or unresolved key/session decision remains.
+revision. The two prior blockers now have explicit decisions: a single exact
+HTTPS issuer origin per environment with a purpose-bound one-time CSRF token, and a
+new global preference catalog policy independent of campaign flags. Terra must
+verify those decisions against the existing owner-grant and catalog source, define
+the exact file allowlist and test matrix, and approve Luna only if no protected-file
+edit or unresolved security/data decision remains.

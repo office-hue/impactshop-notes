@@ -1,3 +1,16 @@
+## 2026-09-10 — Sharity NGO preference Package B Sol revision
+
+- A QA-B1 döntése: környezetenként egy exact HTTPS `home_url('/')` issuer origin;
+  a code-issuing POST exact `Origin` és owner-grant/request-bound egyszer használatos
+  CSRF tokent követel, hiányzó Origin esetén fail closed. A meglévő cross-host helper
+  önmagában nem használható.
+- A QA-B2 döntése: új, campaign-flagektől független globális preference catalog
+  policy szolgálja ki az összes preference scope-ot. Üres policy esetén nincs
+  választható NGO; az első adatfeltöltés/aktiválás későbbi explicit Sol művelet.
+- A változás dokumentációs architecture checkpoint; runtime, protected file,
+  provider, VPS, secret, schema execution, deploy és publication nem változott.
+- Következő kapu: `gpt-5.6-terra`, high, független re-QA és exact Luna allowlist.
+
 ## 2026-09-10 — Sharity NGO preference Package B Terra QA
 
 - A Sol source-authority terv két implementációs blokkert kapott: az owner-grant
