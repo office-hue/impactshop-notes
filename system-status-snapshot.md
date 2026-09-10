@@ -1,3 +1,15 @@
+## 2026-09-11 — Sharity profile release status after PR #201
+
+- Source: merged, exact SHA `220432b1f9d1ca15e6095d03b4f8cce1cf288ecd`,
+  tree `fd81686a4bfb0bb774ff39e97b79ad9266c02fd`, six required checks PASS.
+- Staging: `safe_disable=1`; grant table empty; isolation `REPEATABLE-READ`.
+  Both new CAS release IDs are absent and the two runtime files remain at the
+  recorded preimage hashes, so no source apply occurred in the stopped wave.
+- Production: untouched; inspected runtime files remain mode `0444`, and the
+  owner-policy safe-disable option is absent.
+- State: `source-merged / staging-fail-closed / production-not-started`.
+  Resume requires a new Sol/high live package; no cron/watchdog is required.
+
 ## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
 
 - Source-only checkpoint C keeps the runtime change to `impactshop-boot.php` and

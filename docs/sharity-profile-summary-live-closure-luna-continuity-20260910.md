@@ -1,5 +1,33 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Sol release resume — source merged, staging fail-closed stop
+
+On 2026-09-11 the bootstrap/quota follow-up was published by the single
+guarded source lane and squash-merged as PR #201. The exact merge is
+`220432b1f9d1ca15e6095d03b4f8cce1cf288ecd`; its tree
+`fd81686a4b4fb0bb774ff39e97b79ad9266c02fd` exactly matches the tested
+candidate tree. All six required GitHub checks passed. The Mini release
+worktree was cleanly repinned detached to that exact `origin/main` identity.
+
+Both staging exact-file previews then passed the repo guard, bastion manifest,
+four HTTP preflight endpoints and no-write rsync comparison. The staging
+database reported `REPEATABLE-READ` and an empty grant table. The subsequent
+mutating command enabled `impactshop_owner_policy_safe_disable=1`, then stopped
+locally on the Mini because nested shell expansion attempted to resolve the
+WP-CLI readback before the S59 hop. Exact-CAS prepare/apply did not start: the
+two planned release IDs are absent and both target SHA-256 values remain at
+their preimages (`impactshop-boot.php` `cccc3f4147c0d849a4d53bf1567150c94e1493afda88686b6709d89f2136b56f`,
+`impactshop-identity-panel.php` `54f21494d8e2e08afde2e7d02269002629a57b3ce21d922bf634d0285ae92e67`).
+The staging state is deliberately left fail-closed; no retry or automatic
+safe-disable clear was performed in the same live wave.
+
+Production was not mutated. Its two inspected files remain mode `0444` at
+their pre-existing hashes, and the owner-policy safe-disable option is absent.
+The next package is a Sol/high release resume: re-read exact source/target
+identity and `safe_disable=1`, then use separate non-nested S59 commands for
+the two admitted CAS applies and postconditions. Production remains gated by
+successful staging acceptance and provider-proven LSAPI drain/recycle.
+
 ## Checkpoint B — owner-grant and policy closure
 
 ### Terra blocker follow-up — conditional debug and active UI principal
