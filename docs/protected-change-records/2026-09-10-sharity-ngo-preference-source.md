@@ -59,7 +59,7 @@ no activation, staging, provider, VPS, database, secret or production authority.
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
   "operatorApprovalRef": "operator-approval:sharity-ngo-preference-source-publication-20260910",
-  "planRef": "docs/sharity-ngo-preference-source-authority-sol-plan-2026-09-09.md#sharity-ngo-preference-source-authority-sol-decision",
+  "planRef": "docs/sharity-ngo-preference-source-authority-sol-plan-2026-09-09.md#sharity-ngo-preference-package-b-source-authority-sol-decision",
   "protectedPaths": [
     "docs/bastion-guard-status.md",
     "wp-content/mu-plugins/impactshop-sharity-ngo-preference-source.php.off"
