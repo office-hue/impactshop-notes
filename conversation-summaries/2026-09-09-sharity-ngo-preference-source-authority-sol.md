@@ -63,3 +63,7 @@
   by raw token instead of its required derived token key, so its current PASS does
   not exercise expiry. A direct correctly keyed PHP check passes. One bounded Luna
   test-only fixture correction is required before source-publication QA approval.
+- Terra PHP re-QA closure (2026-09-10): the expiry fixture now uses the derived
+  token key and the PHP lint/contract plus Python static checks pass. Source-only
+  QA is approved for Sol source publication; the `.php.off` adapter remains
+  disabled and no runtime/provider/deploy action is admitted.

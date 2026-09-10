@@ -28,7 +28,7 @@ assert(sharity_ngo_pref_consume_csrf($tokens, 'csrf', $digest, 99));
 assert($tokens[sharity_ngo_pref_token_key('csrf')]['used'] === true);
 assert(!sharity_ngo_pref_consume_csrf($tokens, 'csrf', $digest, 99));
 assert(!sharity_ngo_pref_consume_csrf($tokens, 'missing', $digest, 99));
-$expired_tokens = ['expired' => ['digest' => $digest, 'expires_at' => 1]];
+$expired_tokens = [sharity_ngo_pref_token_key('expired') => ['digest' => $digest, 'expires_at' => 1, 'used' => false]];
 assert(!sharity_ngo_pref_consume_csrf($expired_tokens, 'expired', $digest, 2));
 assert(sharity_ngo_pref_origin_post_allowed('https://sharity.hu', 'https://sharity.hu:443', true));
 assert(!sharity_ngo_pref_origin_post_allowed('https://app.sharity.hu', 'https://sharity.hu', true));

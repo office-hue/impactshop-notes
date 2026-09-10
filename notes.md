@@ -7242,3 +7242,7 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   kulccsal tárol, miközben a helper derivált kulccsal keres; ezért a jelenlegi
   PASS nem az expirációs ágat fedi le. A helyesen kulcsolt közvetlen PHP ellenőrzés
   PASS. Egy szűk Luna test-only fixture-javítás kell a QA approval előtt.
+- Terra PHP re-QA lezárás (2026-09-10): az expiry fixture most derivált token
+  kulcsot használ; PHP lint/contract és Python static tesztek PASS. Source-only QA
+  Sol source publicationre jóváhagyva; a `.php.off` adapter disabled, runtime,
+  provider és deploy változatlan.
