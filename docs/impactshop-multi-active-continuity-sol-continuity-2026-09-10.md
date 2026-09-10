@@ -40,7 +40,13 @@ remain unchanged.
 
 ## Next package
 
-Use `gpt-5.6-terra`, high, for independent QA of concurrent registration,
-primary transfer, fail-closed drift handling, hook ordering and protected-file
-admission. Only after that review should one bounded source-publication cycle
-be considered.
+The independent Terra/high QA is recorded in
+`docs/impactshop-multi-active-continuity-terra-qa-2026-09-10.md`. It found no
+reportable source security issue in the exact code checkpoint, but live
+continuity remains blocked: an `ai-agent` worktree can occupy the same
+workspace-global coordination filename. No shared pointer was overwritten.
+
+Use `gpt-5.6-sol`, high, for a fresh architecture package that separates
+coordination snapshots by common Git directory and supplies a safe migration
+from the legacy workspace-global file names. Provider, VPS and runtime
+activation remain separate Sol/high gates.
