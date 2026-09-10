@@ -231,10 +231,16 @@ grep -Fq "path: $SECONDARY" "$ACTIVE_FILE"
 (cd "$REPO" && bash scripts/install-hooks.sh >/dev/null)
 HOOK_DIR="$(git -C "$REPO" rev-parse --git-path hooks)"
 if [[ "$HOOK_DIR" != /* ]]; then HOOK_DIR="$REPO/$HOOK_DIR"; fi
-! grep -REq 'resolve_ai_agent_repo|AI_AGENT_REPO|npm --prefix .*memory:' \
+for inspected_hook_source in \
   "$ROOT/scripts/guarded-push.sh" "$ROOT/scripts/install-hooks.sh" \
   "$ROOT/scripts/start-feature-worktree.sh" "$HOOK_DIR/pre-push" \
-  "$HOOK_DIR/pre-commit" "$HOOK_DIR/commit-msg"
+  "$HOOK_DIR/pre-commit" "$HOOK_DIR/commit-msg"; do
+  if grep -Eq 'resolve_ai_agent_repo|AI_AGENT_REPO|npm --prefix .*memory:' \
+    "$inspected_hook_source"; then
+    echo "unexpected sibling ai-agent dependency: $inspected_hook_source" >&2
+    exit 1
+  fi
+done
 grep -Eq 'WORKTREE_COORDINATION_SYNC' "$HOOK_DIR/pre-push"
 grep -Eq -- '--register "\$REPO_ROOT"' "$HOOK_DIR/pre-push"
 

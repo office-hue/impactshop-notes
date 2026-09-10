@@ -59,5 +59,10 @@ complete six-script security diff review and 0 reportable findings. The source
 is ready only for a separately authorized bounded publication package; provider,
 VPS and runtime activation remain separate Sol/high gates.
 
+Publication portability closure replaces the fixture's non-portable `rg` and
+recursive `grep -R` assumptions with an explicit file-by-file POSIX `grep`
+check. The security assertion is unchanged and now reports the exact offending
+generated hook or source file on failure.
+
 Next use `gpt-5.6-luna`, medium, only if the operator explicitly authorizes
 source publication. Otherwise no further action is required in this worktree.
