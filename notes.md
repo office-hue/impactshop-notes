@@ -7436,3 +7436,8 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   control routes remained `200`.
 - No database, cron, Cronos or watchdog change was needed. Rollback is bound to
   the release ID and deployed SHA recorded above.
+
+- Sharity staging CAS current-main repin (2026-09-10): the existing exact
+  admission profile is rebound to a deterministic future manifest derived from
+  `origin/main@9d351cd`. This checkpoint is source metadata only; no S59,
+  database, staging, production, provider, cron or watchdog mutation occurs.

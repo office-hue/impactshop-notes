@@ -134,3 +134,10 @@ manifest, governance plan, bastion status, tests, notes and status snapshot are
 one docsync unit. Rename/copy evaluates both endpoints. Full validation is only
 evidence; protected source admission additionally requires exact record/plan/
 operator-reference coverage, while deploy-class admission remains false.
+
+## 2026-09-10 Sharity staging CAS current-main repin
+
+`config/dev-delivery-v2-target-contract.json`, its derived impact policy,
+the current-main repin plan/continuity/change record, bastion status, governance
+plan, `notes.md` and `system-status-snapshot.md` form one source-only DocSync
+unit. No release script, remote environment or runtime byte changes here.

@@ -1209,3 +1209,11 @@ deployment state changed.
   valid; no provider, VPS, runtime, push, PR, merge, cron or watchdog changed.
 - A separately authorized Luna/medium source-publication package is the only
   remaining source-delivery step. Runtime and production remain separate gates.
+
+## 2026-09-10 — Sharity staging CAS current-main repin
+
+- Base: `origin/main@9d351cd45412bb95c7839d7e77155dbb46b2a92f`.
+- Scope: two future manifest pins plus derived DEV-v2 policy digest and DocSync.
+- Status: local source-control package; no remote write or deployment.
+- Next: exact schema-v2 CAS source package, then one staging and one production
+  wave if all runtime gates pass.

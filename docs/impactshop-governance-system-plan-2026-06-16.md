@@ -497,3 +497,11 @@ secret, activation or deployment authority. The repository-local DEV-v2 adapter
 and exact change record remain the source of truth for candidate evidence. This
 governance sync is documentation only and does not change global DEV or release
 semantics.
+
+## 2026-09-10 Sharity staging CAS current-main repin
+
+The existing exact staging CAS admission profile is rebound to the two future
+manifest blobs derived from `origin/main@9d351cd`. The complete current
+protected inventory is retained, while the already reviewed deploy, rollback
+and test bytes stay fixed. The ordinary protected lane admits only this metadata
+change; provider deployment, S59 access and runtime activation remain denied.
