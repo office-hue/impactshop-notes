@@ -75,3 +75,9 @@
   the seven documentation-only files were accounted for. Result:
   `sol-source-publication-approved`; activation, storage, secrets, provider,
   VPS, deploy and production remain outside authority.
+- Source publication attempt (2026-09-10): the single normal push was blocked by
+  the repo pre-push memory gate because shared `better-sqlite3` is Node ABI 127
+  while the current Node requires ABI 147. No install, rebuild, ownership/cache
+  change, retry, PR, merge, provider or deploy action was performed. The remote
+  feature branch remains absent; operator-controlled runtime admission is needed
+  before a later publication attempt.

@@ -7253,3 +7253,8 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   kimaradt, ezért a három source-like fájl teljes kézi review-t kapott; a hét
   docs-only fájl elszámolva. Döntés: `sol-source-publication-approved`; activation,
   storage, secret, provider, VPS, deploy és production továbbra sincs engedélyezve.
+- Source publication attempt (2026-09-10): az egyetlen normál push-t a repo
+  pre-push memory gate blokkolta: a shared `better-sqlite3` Node ABI 127-re készült,
+  a jelenlegi Node ABI 147-et igényel. Nem volt install, rebuild, ownership/cache
+  módosítás, retry, PR, merge, provider vagy deploy; a remote feature branch nincs
+  létrehozva. Következő próbálkozás csak operator-controlled runtime admission után.
