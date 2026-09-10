@@ -55,8 +55,8 @@
         ".deploy.staging.env": "1bc12eb1bde5184e97e159081cd4be9a7d23ad4238c1a557efbc527e47a7ed25",
         "bin/deploy-wpcontent-map.sh": "eaa6990de8c843cacd219859615e5f0d917aa7c6ee7309dab470a5ef9fa1fe8a",
         "bin/impactshop-guard-rollback.sh": "225211c03db3e921b4c8538de6f3522f283f6caa22a52b049d311c1f3c864993",
-        "docs/impactshop-guard-hashes.json": "4fb754cd4233a6596121b847ada0cef1c889985e763b000a3790a774cc3a6f17",
-        "docs/impactshop-guard-hashes.sha256": "7b76b80b40e7ac5150994f6c080adf6e6b0ee32b360fddd8bcd8f64e0e0486ee",
+        "docs/impactshop-guard-hashes.json": "a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6",
+        "docs/impactshop-guard-hashes.sha256": "b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14",
         "tests/deploy-wpcontent-map-exact-file.test.sh": "a64167d629f257a10ff759651ffbe06e6c9a4254bddb0efdab681054f23f150f",
         "tests/impactshop-guard-rollback-truth.test.sh": "600e56326cf1b041786c90502aa0888ca89ad6f7b1fe8d00adc308a08cbb5756"
       },

@@ -497,3 +497,17 @@ secret, activation or deployment authority. The repository-local DEV-v2 adapter
 and exact change record remain the source of truth for candidate evidence. This
 governance sync is documentation only and does not change global DEV or release
 semantics.
+
+## 2026-09-10 Sharity staging CAS current-main repin
+
+The existing exact staging CAS admission profile is rebound to the two future
+manifest blobs derived from `origin/main@44547312`. The complete current
+protected inventory is retained, while the already reviewed deploy, rollback
+and test bytes stay fixed. The existing `.github/workflows/ci.yml` manifest key
+is also corrected to its raw `44547312` SHA-256 `ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015`;
+no new inventory keys are added. The ordinary protected lane admits only this
+metadata change; provider deployment, S59 access and runtime activation remain denied.
+The deterministic future manifest uses `generated_at`
+`2026-09-10T20:30:00+00:00` and pins manifest/checksum blob SHA-256 values
+`a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` /
+`b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.

@@ -7436,3 +7436,16 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   control routes remained `200`.
 - No database, cron, Cronos or watchdog change was needed. Rollback is bound to
   the release ID and deployed SHA recorded above.
+
+- Sharity staging CAS current-main repin (2026-09-10): the existing exact
+  admission profile is rebound to a deterministic future manifest derived from
+  `origin/main@44547312`. With deterministic `generated_at`
+  `2026-09-10T20:30:00+00:00`, the future manifest/checksum blob pins are
+  `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` /
+  `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+  Reconstruction changes the four reviewed CAS manifest keys plus the stale
+  PR #197 `.github/workflows/ci.yml` key to raw-base SHA-256
+  `ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015`,
+  using guard-writer JSON serialization with no trailing newline.
+  This checkpoint is source metadata only; no S59, database, staging,
+  production, provider, cron or watchdog mutation occurs.
