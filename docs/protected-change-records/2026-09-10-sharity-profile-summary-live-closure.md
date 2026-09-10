@@ -17,6 +17,22 @@ profile-family advertising producers, applies private/no-store cache controls,
 and introduces the v2 owner-grant lifecycle and exact route-policy-callback
 inventory. It does not authorize cross-host SSO, cron or watchdog changes.
 
+## Protected files touched
+
+- `docs/bastion-guard-status.md`
+- `docs/impactshop-guard-config.json`
+- `docs/impactshop-guard-config.sha256`
+- `docs/impactshop-guard-hashes.json`
+- `docs/impactshop-guard-hashes.sha256`
+- `docs/impactshop-protected-files.json`
+- `scripts/impactshop-owner-policy-inventory.php`
+- `wp-content/mu-plugins/000-impactshop-owner-policy.php`
+- `wp-content/mu-plugins/impactshop-action-bar.php`
+- `wp-content/mu-plugins/impactshop-adsense-head.php`
+- `wp-content/mu-plugins/impactshop-identity-panel.js`
+- `wp-content/mu-plugins/impactshop-identity-panel.php`
+- `wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php`
+
 ## Rollback and recovery
 
 Before deployment, revert the complete candidate range. After schema v2 or
