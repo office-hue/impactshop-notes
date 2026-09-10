@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-09T12:45:00+00:00",
+  "timestamp": "2026-09-10T06:38:21+00:00",
   "repo": {
     "root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
     "remote": "https://github.com/office-hue/impactshop-notes.git",
@@ -36,6 +36,7 @@
     "wp-content/mu-plugins/impactshop-identity-panel.php",
     "wp-content/mu-plugins/impactshop-identity-panel.js",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
+    "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php",
     "wp-content/mu-plugins/impactshop-vote-jysk.php",
     "wp-content/mu-plugins/impactshop-vote-jysk.js",
     "wp-content/mu-plugins/impact-social-mvp.php",
@@ -160,7 +161,7 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json"
   ],
   "hashes": {
-    "docs/impactshop-guard-config.json": "c768696d534a74d5a9c573bf47a63797413603ecdca72f8a1fe0682b780e8a9c",
+    "docs/impactshop-guard-config.json": "b588ba97aaee0ff50e18895dae073869064bd62dab6e64e360fe8692780587e6",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "845d284f8869eb18b131de935e21a27702f8cf324299d519004dc1090f44c67a",
@@ -190,6 +191,7 @@
     "wp-content/mu-plugins/impactshop-identity-panel.php": "339b570ee4c4b03a4f0556f194d6addb77cbb8ea4bb5f0c37e0dd3bb8f208be9",
     "wp-content/mu-plugins/impactshop-identity-panel.js": "dd3ffa085194f3a6e1646bfe7c6e685beeb714f376eb56b4a80edf88e87856df",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php": "433f26fd21af69aa84c75535c5f5228af4ca661be39335e180bf616f872461e0",
+    "wp-content/mu-plugins/impactshop-sharity-public-portal-redirects.php": "b525a44e6efc7b00e915be5f06b16bdddb8585545f70567e8ac390ba5f82c7b9",
     "wp-content/mu-plugins/impactshop-vote-jysk.php": "40ef3e7243f232449da0f69f06a86aa6a325be3d7ecf49b2c35c518694304d9d",
     "wp-content/mu-plugins/impactshop-vote-jysk.js": "360f782a6160cb828b2ac2eec0d8ebe93cb03f78ca1c7de18d247c15c203b697",
     "wp-content/mu-plugins/impact-social-mvp.php": "2647c064a2afbf93c4778b6e0ce7a9498ef65ccdbd29e8cecaf9043b67eeb326",

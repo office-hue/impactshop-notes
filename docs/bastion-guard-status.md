@@ -1,6 +1,17 @@
 # Bastion Guard Status
 
-Last updated: 2026-09-09
+Last updated: 2026-09-10
+
+## 2026-09-10 — Sharity public portal redirects
+
+The two retired donation-portal routes receive a new additive, production-only
+MU-plugin owner ahead of the unchanged legacy guide handler. Exact host, path
+and GET/HEAD matching, protected request exclusions, a fixed query-free `302`
+destination and runtime fixtures constrain the change. The module is registered
+in the protected inventory, digest and dedicated smoke group; exact-main CAS
+release must install it as `0444` under the existing `0555` parent. Donation,
+auction, guide, identity and economic writers are unchanged. No cron, Cronos or
+watchdog is needed.
 
 ## 2026-09-09 — Sharity staging CAS source-admission profile
 
@@ -88,6 +99,7 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-09-10 | `impactshop-sharity-public-portal-redirects.php` | Additív production-only redirect a két exact adomány-automata útvonalról a Sharity public főoldalra. Fix query-mentes 302, host/path/method allowlist, admin/REST/AJAX kizárás; protected inventory, SHA-lock és külön smoke group. | `tests/sharity-public-portal-redirects.test.py`, `docs/sharity-public-portal-redirects-sol-plan-2026-09-10.md`, `docs/protected-change-records/2026-09-10-sharity-public-portal-redirects.md` |
 | 2026-09-09 | DEV-v2 Sharity staging CAS source profile | Egyetlen exact 13-path staging CAS csomagot protected source-ként ismer fel; schema-v2 record, production companion SHA-256, fix terv/approval, provider-denial és self-admission blokk kötelező. A control-plane fájlok a deploy-guard maximum-védett készletébe kerültek. | `tests/dev-delivery-v2-adapter.test.sh`, `docs/sharity-profile-deploy-control-source-bootstrap-sol-plan-2026-09-09.md`, `docs/protected-change-records/2026-09-09-sharity-profile-deploy-control-source-bootstrap.md` |
 | 2026-09-04 | DEV delivery v2 source admission | The maximum-bastion adapter now treats scripts, workflows, deploy/config/guard and protected-inventory paths as protected; executable provider-deploy/remote-write content is deploy. It preserves classifier decisions and accepts protected/deploy source review only after exact base/HEAD/tree-bound repo-local commit-lane plus protected-touch evidence. Provider deploy remains false. | `scripts/dev-delivery-v2-adapter.sh`, `scripts/dev-context-policy-guard.sh`, `tests/dev-delivery-v2-adapter.test.sh`, `tests/dev-context-policy-guard.test.sh`, `docs/protected-change-records/2026-09-04-dev-delivery-v2-admission-hardening.md` |
 | 2026-08-23 | `impactshop-sharity-affiliate-runtime.php`, `impactshop-boot.php` VB2026 source bind | Az exact `vb2026-autobanner` source a meglévő SAT1 perimeterbe került. Két külön exact-file tranzakció adott privát backupot, dupla CAS-t, staged PHP lintet, atomikus cserét, `0444` célokat, `0555` szülőt és SHA-kötött rollback inspectet. A retention tuple változatlan, postactivation admission `ADMITTED`; raw pseudo/data5 és gazdasági writerek továbbra is tiltottak. | `docs/protected-change-records/2026-08-23-vb2026-autobanner-canonical-affiliate-bind.md`, releases `20260823T092444Z-4ab348480ead-17e8ae00`, `20260823T092538Z-4ab348480ead-13d6733f` |

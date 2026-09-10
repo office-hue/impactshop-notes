@@ -4,6 +4,20 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-10 Sharity public portal redirects note
+
+- A két nyugdíjazott `adomany-automata-portal` út additív, production-only
+  MU-pluginon keresztül ad át a `https://sharity.hu/` nyilvános főoldalnak.
+- A fix `302` cél query-mentes; csak az exact host/path GET/HEAD ág él, míg
+  admin, REST, AJAX, guide, donation/auction, identity és gazdasági writerek
+  változatlanok.
+- A modul a protected inventory, digest és `public_portal_redirects` smoke
+  csoport alatt maximum-védett. Cronos/watchdog nem szükséges, mert nincs
+  háttérfolyamat vagy állapotírás.
+- Kanonikus csomag:
+  `docs/sharity-public-portal-redirects-sol-plan-2026-09-10.md` és
+  `docs/protected-change-records/2026-09-10-sharity-public-portal-redirects.md`.
+
 ## 2026-08-21 Hatás Körök Human Touch route note
 
 - Az `app.sharity.hu/hatas-korok` publikus dokumentumút Human Touch cutoverje

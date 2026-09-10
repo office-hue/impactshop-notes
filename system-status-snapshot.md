@@ -1,3 +1,17 @@
+## 2026-09-10 — Sharity public portal redirects source package
+
+- Dedicated worktree/branch: `impactshop-notes-feat-redirect-donation-portals-20260910` /
+  `feat/redirect-donation-portals-to-sharity-20260910`, base
+  `origin/main@67d066aef5f2f3bc4ca6d440cdccd8ae822aace9`.
+- New additive MU-plugin owns only the two exact production GET/HEAD portal
+  paths and returns a fixed query-free `302` to `https://sharity.hu/`.
+- The legacy guide file remains byte-identical; donation/auction, profile,
+  identity, points/votes/rewards and all data writers are outside scope.
+- Maximum bastion inventory/digest, protected record, focused runtime test,
+  docsync and exact-file rollback contract are included in the same package.
+- Live state is unchanged until guarded source publication and exact-main CAS
+  release. No cron, Cronos or watchdog addition is applicable.
+
 ## 2026-09-09 — Sharity staging CAS source-admission bootstrap
 
 - Dedicated worktree/branch: `sharity-profile-deploy-control-source-bootstrap-20260909` /
