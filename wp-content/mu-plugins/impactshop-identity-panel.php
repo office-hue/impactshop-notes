@@ -819,18 +819,12 @@ function impactshop_identity_owner_activate_pending(string $pseudo_id): bool
     return true;
 }
 
-function impactshop_identity_owner_issue(string $pseudo_id, ?string $supersedes_grant_hash = null): bool
+function impactshop_identity_owner_issue(string $pseudo_id, ?string $supersedes_grant_hash = null, bool $enforce_public_quota = true): bool
 {
     if (!is_ssl() || !impactshop_identity_grant_storage_ready()) {
         return false;
     }
     global $wpdb;
-    try {
-        $token = bin2hex(random_bytes(32));
-    } catch (Throwable $exception) {
-        impactshop_identity_mark_safe_disabled();
-        return false;
-    }
     if ($supersedes_grant_hash === null) {
         $supersedes_grant_hash = impactshop_identity_owner_current_valid_grant_hash();
     }
@@ -841,6 +835,59 @@ function impactshop_identity_owner_issue(string $pseudo_id, ?string $supersedes_
         impactshop_identity_mark_safe_disabled();
         return false;
     }
+
+    // Keep bounded cleanup in the issuance transaction. The state/expiry
+    // index makes this scan bounded and it cannot touch active or unexpired
+    // pending rows.
+    $pruned = $wpdb->query($wpdb->prepare(
+        "DELETE FROM {$table} WHERE state = 'pending' AND expires_at <= %s ORDER BY expires_at ASC LIMIT 64",
+        $now
+    ));
+    if ($pruned === false || $wpdb->last_error !== '') {
+        $wpdb->query('ROLLBACK');
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+
+    if ($enforce_public_quota) {
+        // Lock the bounded candidate set before counting. Under the normal
+        // InnoDB default isolation this serializes overlapping issuers at the
+        // indexed pending/expiry range. A non-default isolation level still
+        // requires staging verification; this is bounded concurrency control,
+        // not an absolute cross-isolation ceiling claim.
+        $pending_rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT grant_hash FROM {$table}
+             WHERE state = 'pending'
+               AND revoked_at IS NULL
+               AND expires_at > %s
+             ORDER BY expires_at ASC, grant_hash ASC
+             LIMIT 257 FOR UPDATE",
+            $now
+        ), ARRAY_A);
+        if ($wpdb->last_error !== '' || !is_array($pending_rows)) {
+            $wpdb->query('ROLLBACK');
+            impactshop_identity_mark_safe_disabled();
+            return false;
+        }
+        if (count($pending_rows) >= 256) {
+            if ($wpdb->query('COMMIT') === false) {
+                $wpdb->query('ROLLBACK');
+                impactshop_identity_mark_safe_disabled();
+            }
+            return false;
+        }
+    }
+
+    // Do not generate or retain a token until the public quota has admitted
+    // the row. A quota refusal therefore queues no cookie/global token.
+    try {
+        $token = bin2hex(random_bytes(32));
+    } catch (Throwable $exception) {
+        $wpdb->query('ROLLBACK');
+        impactshop_identity_mark_safe_disabled();
+        return false;
+    }
+
     $inserted = $wpdb->insert(impactshop_identity_owner_grant_table(), [
         'grant_hash' => impactshop_identity_owner_hash($token),
         'pseudo_hash' => impactshop_identity_owner_pseudo_hash($pseudo_id),
@@ -1733,7 +1780,10 @@ function impactshop_identity_profile_restore(WP_REST_Request $request): WP_REST_
     }
 
     $supersedes_grant_hash = impactshop_identity_owner_current_valid_grant_hash();
-    if (!impactshop_identity_owner_issue($pseudo_id, $supersedes_grant_hash)) {
+    // Verified recovery is not an automatic public issuance path. It still
+    // runs the common bounded expired-pending prune, but may bypass the
+    // anonymous pending-row quota.
+    if (!impactshop_identity_owner_issue($pseudo_id, $supersedes_grant_hash, false)) {
         return new WP_REST_Response(['message' => 'A fiók biztonságos összekapcsolása most nem sikerült.'], 503);
     }
     $pseudo_cookie_set = impactshop_identity_profile_set_cookie($pseudo_id);

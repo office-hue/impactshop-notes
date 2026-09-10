@@ -83,6 +83,29 @@ owner-policy inventory/runtime checks and `git diff --check` PASS. This remains
 source-only; staging schema/browser/API E2E, publication and production
 acceptance are not performed.
 
+## Checkpoint C — REST predicate and bounded pending-grant quota
+
+The follow-up on `9df5c126` keeps the runtime scope to the two identity MU
+plugins. The shared cookie-touch predicate rejects non-empty scalar
+`rest_route` query dispatch and pretty REST paths under subdirectories, while
+the earlier `impact_pseudo_id` query compatibility branch remains first.
+Common owner issuance now prunes only expired pending rows in the indexed
+state/expiry range, at most 64 per transaction. Automatic public issuance
+locks up to 257 eligible rows and refuses at 256, committing successful prune
+work without creating a token, cookie or request marker. Recovery restore
+passes an explicit quota bypass but still uses the prune transaction and
+supersession path. The bounded lock/read accounts for overlapping concurrent
+issuers under normal InnoDB isolation; a non-default isolation level remains a
+staging verification gate, so this is not an absolute cross-isolation ceiling
+claim. No IP/header trust or scheduled cleanup is added.
+
+Checkpoint C evidence: executable cookie-touch and owner-grant quota fixtures,
+the existing bootstrap/profile/remediation/inventory/runtime suites, PHP lint
+and `git diff --check` PASS. Guard hashes, companion digest, protected source
+admission and continuity evidence are refreshed in this checkpoint. Live
+staging schema/browser/API acceptance, publication and production acceptance
+remain pending.
+
 ## Protected source admission
 
 Operator approval reference:

@@ -2,6 +2,27 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
+
+The source-only Luna follow-up keeps the runtime scope to the two protected
+identity files: `impactshop-boot.php` and `impactshop-identity-panel.php`.
+The shared cookie-touch predicate now rejects scalar, non-empty `rest_route`
+queries and pretty `/wp-json` paths below a subdirectory while preserving the
+earlier `impact_pseudo_id` query override. The owner issuer prunes only expired
+pending rows with the indexed state/expiry predicate, at most 64 per issuance
+transaction, and locks a bounded 257-row eligible set before enforcing the
+256-row public automatic quota. Successful quota refusal commits pruning and
+queues no token/cookie/global marker; verified restore bypasses only the public
+quota and still prunes.
+
+Hermetic behavior fixtures cover REST query/path exclusion, query compatibility,
+bounded prune/preservation, public quota refusal, recovery bypass,
+transactional rollback/safe-disable and supersession. Guard hashes and the
+companion digest are refreshed for both runtime files. No IP/X-Forwarded-For,
+cron, watchdog, provider, database, staging or production authority is added.
+The exact schema-v1 admission record is
+`docs/protected-change-records/2026-09-10-sharity-profile-bootstrap-quota.md`.
+
 ## 2026-09-10 — Sharity profile live-release staging follow-up
 
 The staging runtime has the six profile CAS files deployed and the owner-policy

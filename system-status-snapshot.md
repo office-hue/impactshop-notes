@@ -1,3 +1,21 @@
+## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
+
+- Source-only checkpoint C keeps the runtime change to `impactshop-boot.php` and
+  `impactshop-identity-panel.php`. Query REST and pretty REST under a
+  subdirectory are excluded from automatic cookie touch; `impact_pseudo_id`
+  query compatibility is preserved.
+- Owner issuance prunes expired pending rows in a bounded 64-row transaction,
+  preserves active/nonexpired rows, and enforces a 256-row public pending quota
+  before token/cookie/global-marker creation. The bounded locking read covers
+  overlapping issuers under normal InnoDB isolation; non-default isolation
+  remains a staging verification gate rather than an absolute ceiling claim.
+  Successful quota refusal commits pruning; verified recovery bypasses only
+  the public quota and still prunes.
+- Behavior fixtures, existing identity/owner-policy suites, PHP lints and
+  diff-check pass. Guard hashes, companion digest, protected admission and
+  task-start/continuity evidence are refreshed. Live staging/schema/browser,
+  provider, publication and production acceptance remain pending.
+
 ## 2026-09-10 — Sharity profile first-request owner bootstrap correction
 
 - Source-only Luna correction on the dedicated bootstrap worktree moves owner

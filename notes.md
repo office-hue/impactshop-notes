@@ -7456,6 +7456,25 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - Applied exactly the reviewed seven protected CAS blobs and the six required support paths. The schema-v2 record binds `deploy-control-source:sharity-staging-cas-v1`, the exact reviewed hashes and unchanged production companion `ea894097c343148cb375c74148021ac684ef44ebb04dc56be766f8c86966885d`.
 - Manifest serialization is guard-writer compatible with no trailing newline: `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`; companion: `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
 - Source-only checkpoint: no push, PR, deployment, SSH, shared-dependency, provider, database, runtime, cron or watchdog mutation. Targeted shell tests, adapter full-validation/bastion/freeze/verify, strict audit, DocSync/continuity, diff-check and clean-tree checkpoint remain the closeout gates.
+## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
+
+- On clean checkpoint `9df5c126`, the shared cookie-touch predicate now rejects
+  non-empty scalar `rest_route` query dispatch and pretty `/wp-json` paths under
+  subdirectories. The earlier `impact_pseudo_id` query compatibility branch
+  remains first and behavior-tested.
+- Common owner issuance prunes only expired `state='pending'` rows with the
+  indexed state/expiry predicate, at most 64 per transaction. Public automatic
+  issuance locks a bounded eligible set and refuses at 256 rows, committing
+  successful pruning without generating a token/global marker; recovery restore
+  bypasses only that public quota and still prunes.
+- The bounded locking read covers overlapping issuers under normal InnoDB
+  isolation; a non-default isolation level remains a staging verification gate,
+  not an absolute cross-isolation ceiling claim.
+- Executable hermetic fixtures cover query/path behavior, prune bounds and
+  preservation, quota refusal/no token, recovery bypass, DB rollback/
+  safe-disable and supersession. No IP/X-Forwarded-For trust, cron/watchdog,
+  database, provider, publication or deployment action was performed.
+
 ## 2026-09-10 — Sharity profile first-request owner bootstrap correction
 
 - Dedicated Luna package `fix/sharity-profile-bootstrap-owner-grant-luna-20260910`

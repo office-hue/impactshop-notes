@@ -166,7 +166,7 @@
     "docs/impactshop-guard-config.json": "438ae88072027300af4d6482b814bfe2dc4be02159c6d1be4aaeeceb28f96a1b",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
-    "wp-content/mu-plugins/impactshop-boot.php": "845d284f8869eb18b131de935e21a27702f8cf324299d519004dc1090f44c67a",
+    "wp-content/mu-plugins/impactshop-boot.php": "f7cf5099d80e515e76e2bd0d5bb8b6e0de0c3455d48efa31a265bb994c9e5f27",
     "wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php": "876ba7c815e1a98ed6cfeb559696d0e3213713e3552876f62b5505fff8f1a0a8",
     "wp-content/mu-plugins/impactshop-metrics-ngo.php": "a869a58e1fab412a21fab85544081561430da6fd96f1d8e57ed6189b0aa1aa90",
     "wp-content/mu-plugins/impactshop-ads-watch.php": "2f48730ac2cde54241d1cb6929b1e8b57e90b0ba4dbe17835896a1f9de614c39",
@@ -190,7 +190,7 @@
     "wp-content/mu-plugins/impactshop-ngo-card.js": "5c3cc8161f32766f579d7b06a56b9a214b05a99678a26327aec9b8b4d2bb34c1",
     "wp-content/mu-plugins/impactshop-go-bridge.php": "ff6e33eba855848aa0b50f25c66d4caafbe08f3884a43c5ed0958f5ec4b8b572",
     "wp-content/mu-plugins/impactshop-sum-pack.php": "6361a433bd74fe14ae8f67d2e49dea65ba9ebe529ae808fc31f7866d239a8085",
-    "wp-content/mu-plugins/impactshop-identity-panel.php": "54f21494d8e2e08afde2e7d02269002629a57b3ce21d922bf634d0285ae92e67",
+    "wp-content/mu-plugins/impactshop-identity-panel.php": "bec0ec93d264a171968008a00ff734e4329b9be4b0b766880e5f72b2c0b4aa38",
     "wp-content/mu-plugins/impactshop-identity-panel.js": "cda132eac43fa8fc4d4bfde2576aa683f0f234a674eea6e41161fef9225dbd6e",
     "wp-content/mu-plugins/000-impactshop-owner-policy.php": "370608ba08bf75ec537846669f67f81bf45b863c55b0ac47b96a52a86372705c",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php": "433f26fd21af69aa84c75535c5f5228af4ca661be39335e180bf616f872461e0",
@@ -321,5 +321,5 @@
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208",
     "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "55198b339d2ababb0fb84cf46bf2c4dda28d43741fb0c0643b4bc34050e96d8c"
   },
-  "generated_at": "2026-09-10T21:30:00+00:00"
+  "generated_at": "2026-09-10T21:56:00+00:00"
 }
