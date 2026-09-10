@@ -1224,3 +1224,18 @@ deployment state changed.
 - Status: local source-control package; no remote write or deployment.
 - Next: exact schema-v2 CAS source package, then one staging and one production
   wave if all runtime gates pass.
+
+## 2026-09-10 — Sharity staging CAS exact schema-v2 source package
+
+- Current-main Luna implementation worktree is pinned to base
+  `c0f450143f492b582a3db5a9fea4a741d32020f1` on
+  `ops/sharity-profile-staging-cas-current-main-luna-20260910`.
+- Exactly seven protected paths and six required support paths are in scope.
+  The schema-v2 admission record carries the exact CAS hashes and unchanged
+  production companion; the guard manifest/checksum pins are
+  `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` /
+  `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+- Status: source-only candidate. No push, PR, deploy, SSH, provider, database,
+  runtime, cron or watchdog state changed. Closeout requires the adapter
+  full-validation/bastion/freeze/verify chain, strict audit, DocSync/continuity,
+  diff-check and one clean checkpoint commit.

@@ -26,3 +26,30 @@
 - **Publication policy clarification:** no push was attempted from `fcf770d`. Checkpoint `87f4567` incorrectly treated the absence of a newer `impactshop-notes/main` commit as proof that DEV-v3 was not active. The operator confirmed that the new global DEV rule and handbook are already installed. Under that active rule, the `ai-agent` node/dependency path is `not-applicable` here; source publication relies on the explicitly executed `impactshop-notes` task-start, continuity, audit and DEV-v2 admission chain. No sibling worktree or shared dependency repair is used.
 - **Cronos/watchdog:** not required. Owner-grant expiry is authorization-time enforced and cleanup is request-driven.
 - **Next:** complete the single source-only push/PR/merge cycle using the exact frozen candidate and the repo-local guard evidence. Staging schema/browser work and production remain separate Sol gates. No `ai-agent` dependency repair is part of this package.
+
+## Current-main staging CAS source package
+
+- Repository: `impactshop-notes`
+- Worktree/branch: `impactshop-notes-ops-sharity-profile-staging-cas-current-main-luna-20260910` / `ops/sharity-profile-staging-cas-current-main-luna-20260910`
+- Base: `c0f450143f492b582a3db5a9fea4a741d32020f1`
+- Admission profile: `deploy-control-source:sharity-staging-cas-v1`
+- Reviewed source blobs: `b1b6dd2c64e969788873daeecdf464b2eec92d0c`
+
+The exact seven protected paths use the reviewed CAS bytes. The six required
+support paths are changed only for admission, continuity and DocSync evidence.
+The production companion `.deploy.production.env` is unchanged at
+`ea894097c343148cb375c74148021ac684ef44ebb04dc56be766f8c86966885d`.
+
+The guard manifest is derived from current main with the four CAS-controlled
+script/test hashes and raw-base `.github/workflows/ci.yml` hash
+`ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015`, using
+`generated_at=2026-09-10T20:30:00+00:00`, guard-writer JSON serialization and
+no trailing newline. Its SHA-256 is
+`a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`; the
+companion SHA-256 is
+`b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+
+Local shell syntax, targeted exact-file and rollback tests, adapter full
+validation/bastion/freeze/verify, strict audit, DocSync/continuity and the
+final clean-tree checkpoint remain required. No push, PR, deployment, SSH,
+shared-dependency or remote-state action is part of this package.

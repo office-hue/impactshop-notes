@@ -146,3 +146,16 @@ blob pins are `a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6`
 and `b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
 They cover four reviewed CAS manifest keys plus the PR #197 current-main
 `.github/workflows/ci.yml` correction; the 155-path/157-key inventory is unchanged.
+
+## 2026-09-10 Sharity staging CAS exact schema-v2 source package
+
+The exact source candidate binds the seven protected paths and six required
+support paths to `deploy-control-source:sharity-staging-cas-v1`. The protected
+record is `docs/protected-change-records/2026-09-09-sharity-profile-staging-cas.md`;
+the Luna continuity and Sol release-gate files provide the matching checkpoint
+and `canonical-staging-cas-implementation` plan anchor. The production
+companion remains unchanged and the future manifest/checksum pins are
+`a4863e43c5ea5c3ce6a407215764fe9cd33dec2897954d7eaec1044d5e32cea6` /
+`b5fdeb82a868101e96ba5407ea32eb5403270ee6ebc1e90fdbf8d6e63f078c14`.
+This is source-only: no push, PR, deploy, SSH, provider, database, runtime,
+cron or watchdog action.
