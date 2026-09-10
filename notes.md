@@ -6,6 +6,14 @@
 - A javítás a meglévő Luna allowlisten belül marad; új Sol döntés nem kell. PHP
   lint/contract evidence továbbra is csak admittált PHP-képes környezetben lehet.
 
+## 2026-09-10 — Sharity NGO preference Package B Luna integrity follow-up
+
+- A javítás hash-elt CSRF storage-t, consume-on-attempt code redemptiont, 32-byte
+  code boundot, catalog revision/selection gate-et, request-bound idempotencyt,
+  részletes append-only auditot és explicit table/handler descriptorokat ad.
+- Python static teszt PASS; PHP lint/contract továbbra is blocker a hiányzó `php`
+  executable miatt. Következő kapu: Terra re-QA.
+
 ## 2026-09-10 — Sharity NGO preference Package B Terra re-QA
 
 - QA-B1 és QA-B2 architekturálisan lezárható: a source issuer origin exact és

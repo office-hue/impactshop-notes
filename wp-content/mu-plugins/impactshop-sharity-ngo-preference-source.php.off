@@ -100,7 +100,7 @@ function sharity_ngo_pref_pkce_valid(string $verifier, string $challenge): bool
 
 function sharity_ngo_pref_issue_code(array &$codes, string $code, array $claims, int $now): bool
 {
-    if ($code === '' || empty($claims['owner_grant_hash']) || empty($claims['subject'])
+    if (strlen($code) !== 32 || empty($claims['owner_grant_hash']) || empty($claims['subject'])
         || empty($claims['client_id']) || str_contains((string) $claims['client_id'], '*')
         || !sharity_ngo_pref_redirect_uri_valid((string) ($claims['redirect_uri'] ?? ''))
         || empty($claims['pkce_challenge'])) {
@@ -129,13 +129,13 @@ function sharity_ngo_pref_redeem_code(array &$codes, string $code, string $owner
     if (!is_array($entry) || $entry['consumed_at'] !== null || (int) $entry['expires_at'] < $now) {
         return null;
     }
+    $codes[$digest]['consumed_at'] = $now;
     if (!hash_equals((string) $entry['owner_grant_hash'], $owner_grant_hash)
         || !hash_equals((string) $entry['client_id'], $client)
         || !hash_equals((string) $entry['redirect_uri'], $redirect)
         || !sharity_ngo_pref_pkce_valid($verifier, (string) $entry['pkce_challenge'])) {
         return null;
     }
-    $codes[$digest]['consumed_at'] = $now;
     return (string) $entry['subject'];
 }
 
@@ -144,16 +144,22 @@ function sharity_ngo_pref_csrf_digest(string $secret, string $owner_grant_hash, 
     return hash_hmac('sha256', implode("\n", [$owner_grant_hash, $client, $redirect, $challenge, $nonce]), $secret);
 }
 
+function sharity_ngo_pref_token_key(string $token): string
+{
+    return hash('sha256', $token);
+}
+
 function sharity_ngo_pref_consume_csrf(array &$tokens, string $token, string $expected_digest, int $now): bool
 {
-    $entry = $tokens[$token] ?? null;
+    $key = sharity_ngo_pref_token_key($token);
+    $entry = $tokens[$key] ?? null;
     if (!is_array($entry) || !empty($entry['used']) || (int) ($entry['expires_at'] ?? 0) < $now) {
         return false;
     }
     if (!hash_equals((string) ($entry['digest'] ?? ''), $expected_digest)) {
         return false;
     }
-    $tokens[$token]['used'] = true;
+    $tokens[$key]['used'] = true;
     return true;
 }
 
@@ -205,21 +211,29 @@ function sharity_ngo_pref_response_headers(): array
 function sharity_ngo_pref_table_names(): array
 {
     return [
-        'authorization_codes',
-        'web_sessions',
-        'catalog_policy',
-        'preferences',
-        'preference_audit',
+        ['name' => 'authorization_codes', 'writes' => ['issue', 'consume']],
+        ['name' => 'web_sessions', 'writes' => ['issue', 'revoke']],
+        ['name' => 'catalog_policy', 'writes' => ['explicit_activation_only']],
+        ['name' => 'preferences', 'writes' => ['cas']],
+        ['name' => 'preference_audit', 'writes' => ['append_only']],
     ];
 }
 
-function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, array &$audit, string $subject, string $scope, int $ngo_id, string $revision, int $expected_version, string $idempotency_key, int $now): string
+function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, array &$audit, string $subject, string $scope, int $ngo_id, string $revision, string $current_revision, string $selection_status, int $expected_version, string $idempotency_key, int $now): string
 {
     if ($subject === '' || $scope === '' || $ngo_id <= 0 || $revision === '' || $idempotency_key === '') {
         return 'invalid';
     }
+    if ($revision !== $current_revision) {
+        return 'stale_revision';
+    }
+    if ($selection_status !== 'selectable') {
+        return 'selection_required';
+    }
+    $fingerprint = hash('sha256', implode("\n", [$subject, $scope, (string) $ngo_id, $revision, (string) $expected_version]));
     if (array_key_exists($idempotency_key, $idempotency)) {
-        return 'idempotent_replay';
+        return (($idempotency[$idempotency_key]['fingerprint'] ?? '') === $fingerprint)
+            ? 'idempotent_replay' : 'idempotency_conflict';
     }
     $key = $subject . ':' . $scope;
     $current = $preferences[$key] ?? ['version' => 0];
@@ -228,8 +242,19 @@ function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, a
     }
     $next = $expected_version + 1;
     $preferences[$key] = ['ngo_id' => $ngo_id, 'revision' => $revision, 'version' => $next, 'updated_at' => $now];
-    $idempotency[$idempotency_key] = $key;
-    $audit[] = ['operation_id' => $idempotency_key, 'subject' => $subject, 'scope' => $scope, 'version' => $next, 'at' => $now];
+    $idempotency[$idempotency_key] = ['fingerprint' => $fingerprint, 'storage_key' => $key, 'result' => 'updated'];
+    $audit[] = [
+        'operation_id' => $idempotency_key,
+        'subject' => $subject,
+        'scope' => $scope,
+        'before_ngo_id' => $current['ngo_id'] ?? null,
+        'after_ngo_id' => $ngo_id,
+        'before_version' => (int) $current['version'],
+        'after_version' => $next,
+        'catalog_revision' => $revision,
+        'outcome' => 'updated',
+        'at' => $now,
+    ];
     return 'updated';
 }
 
@@ -241,12 +266,12 @@ function sharity_ngo_pref_cas_update(array &$preferences, array &$idempotency, a
 function sharity_ngo_pref_source_routes(): array
 {
     return [
-        ['method' => 'GET', 'path' => '/identity/web-session/authorize', 'auth' => 'owner-grant-intent'],
-        ['method' => 'POST', 'path' => '/identity/web-session/authorize', 'auth' => 'exact-origin-csrf-owner-grant'],
-        ['method' => 'POST', 'path' => '/identity/web-session/token', 'auth' => 'confidential-bff-pkce'],
-        ['method' => 'GET', 'path' => '/identity/web-session/summary', 'auth' => 'bearer'],
-        ['method' => 'POST', 'path' => '/identity/web-session/revoke', 'auth' => 'bearer-or-bff'],
-        ['method' => 'GET', 'path' => '/ngo-preferences', 'auth' => 'bearer'],
-        ['method' => 'PUT', 'path' => '/ngo-preferences/{scope_key}', 'auth' => 'bearer-cas'],
+        ['method' => 'GET', 'path' => '/identity/web-session/authorize', 'auth' => 'owner-grant-intent', 'handler' => 'fail_closed_until_enabled'],
+        ['method' => 'POST', 'path' => '/identity/web-session/authorize', 'auth' => 'exact-origin-csrf-owner-grant', 'handler' => 'fail_closed_until_enabled'],
+        ['method' => 'POST', 'path' => '/identity/web-session/token', 'auth' => 'confidential-bff-pkce', 'handler' => 'fail_closed_until_enabled'],
+        ['method' => 'GET', 'path' => '/identity/web-session/summary', 'auth' => 'bearer', 'handler' => 'fail_closed_until_enabled'],
+        ['method' => 'POST', 'path' => '/identity/web-session/revoke', 'auth' => 'bearer-or-bff', 'handler' => 'fail_closed_until_enabled'],
+        ['method' => 'GET', 'path' => '/ngo-preferences', 'auth' => 'bearer', 'handler' => 'fail_closed_until_enabled'],
+        ['method' => 'PUT', 'path' => '/ngo-preferences/{scope_key}', 'auth' => 'bearer-cas', 'handler' => 'fail_closed_until_enabled'],
     ];
 }

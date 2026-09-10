@@ -24,6 +24,11 @@ assert "sharity_ngo_pref_catalog_revision" in SOURCE
 assert "sharity_ngo_pref_subject_key" in SOURCE
 assert "sharity_ngo_pref_redeem_code" in SOURCE
 assert "sharity_ngo_pref_cas_update" in SOURCE
+assert "sharity_ngo_pref_token_key" in SOURCE
+assert "consumed_at'" in SOURCE
+assert "stale_revision" in SOURCE
+assert "idempotency_conflict" in SOURCE
+assert "fail_closed_until_enabled" in SOURCE
 assert "policy_allow_user_selection" in SOURCE
 assert "campaign" not in SOURCE.lower()
 

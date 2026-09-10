@@ -46,3 +46,8 @@
   Raw CSRF storage, retryable invalid code redemption, ungated catalog revision and
   selection, weak idempotency/audit, and missing schema/handler descriptors require
   another bounded Luna correction. No Sol decision is required.
+- Luna follow-up (2026-09-10): CSRF now hashes token keys; code redemption consumes
+  on attempted use and requires a 32-byte code; CAS enforces current revision and
+  selection status; idempotency binds a request fingerprint; audit captures before/
+  after and revision; table/route descriptors are explicit. Python static evidence
+  passes; PHP evidence remains blocked by the absent executable.
