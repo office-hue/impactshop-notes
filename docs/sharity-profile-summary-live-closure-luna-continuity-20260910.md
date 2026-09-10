@@ -108,6 +108,9 @@ E2E; this commit has no live authority.
   so its single-active pointer check was not overwritten in this checkpoint.
 - No push, PR, merge, staging, production, remote write, schema execution or
   provider operation.
+- The complete protected candidate is bound by
+  `docs/protected-change-records/2026-09-10-sharity-profile-summary-live-closure.md`;
+  checkpoint-specific records remain narrower historical evidence.
 
 ## Manual UI handoff after staging
 
