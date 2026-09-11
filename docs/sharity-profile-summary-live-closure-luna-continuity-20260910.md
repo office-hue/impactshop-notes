@@ -1,5 +1,22 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Sol blocker correction — environment-aware profile route family
+
+The staging UI gate found a real hosting difference: `app.sharity.hu` serves
+the staging WordPress installation below `/impactshop-staging`, while
+production serves the same profile family at the host root. The shared profile
+route classifier now strips only the exact `home_url('/')` path segment before
+matching `/profil` and its children. Query strings remain irrelevant and
+near-miss prefixes remain outside the profile boundary. The one-time
+`/profil/belepesi-kod` check and its HttpOnly reveal-cookie path use the same
+canonical environment-path helper, so root and subdirectory installs retain
+the same first-party and cache/ad suppression guarantees.
+
+Focused hermetic root/subdirectory, query, near-miss and reveal-cookie-path
+tests pass. This is a source-only correction; no staging page, database,
+provider, cache, cron/watchdog or production state was changed by this
+checkpoint.
+
 ## Sol staging source apply — API accepted, profile fixture blocked
 
 The new Sol/high resume preserved the exact merge identity

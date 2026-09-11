@@ -190,7 +190,7 @@
     "wp-content/mu-plugins/impactshop-ngo-card.js": "5c3cc8161f32766f579d7b06a56b9a214b05a99678a26327aec9b8b4d2bb34c1",
     "wp-content/mu-plugins/impactshop-go-bridge.php": "ff6e33eba855848aa0b50f25c66d4caafbe08f3884a43c5ed0958f5ec4b8b572",
     "wp-content/mu-plugins/impactshop-sum-pack.php": "6361a433bd74fe14ae8f67d2e49dea65ba9ebe529ae808fc31f7866d239a8085",
-    "wp-content/mu-plugins/impactshop-identity-panel.php": "bec0ec93d264a171968008a00ff734e4329b9be4b0b766880e5f72b2c0b4aa38",
+    "wp-content/mu-plugins/impactshop-identity-panel.php": "2adec983904270cdf66ea01b415ce42bcb81380e7c9cd7f53b646d1ddeb3fcbc",
     "wp-content/mu-plugins/impactshop-identity-panel.js": "cda132eac43fa8fc4d4bfde2576aa683f0f234a674eea6e41161fef9225dbd6e",
     "wp-content/mu-plugins/000-impactshop-owner-policy.php": "370608ba08bf75ec537846669f67f81bf45b863c55b0ac47b96a52a86372705c",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php": "433f26fd21af69aa84c75535c5f5228af4ca661be39335e180bf616f872461e0",
@@ -321,5 +321,5 @@
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208",
     "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "55198b339d2ababb0fb84cf46bf2c4dda28d43741fb0c0643b4bc34050e96d8c"
   },
-  "generated_at": "2026-09-10T21:56:00+00:00"
+  "generated_at": "2026-09-11T04:44:20+00:00"
 }

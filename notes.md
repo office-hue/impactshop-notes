@@ -1,3 +1,15 @@
+## 2026-09-11 — Sharity profile subdirectory route correction
+
+- The staging UI blocker was isolated to `/impactshop-staging` hosting, not a
+  missing runtime source route. Profile cache/privacy and ad suppression now
+  classify the exact environment-prefixed `/profil` family while preserving
+  root production behavior and near-miss rejection.
+- The one-time `belepesi-kod` route and reveal-cookie path use the same
+  environment-aware canonical path helper. Focused route, syntax, static,
+  owner-policy and guard-hash checks pass; no remote or live state changed.
+- Next live wave may continue only from the Sol-authorized staging fixture
+  package after this source checkpoint is published through the guarded lane.
+
 ## 2026-09-11 — Sharity staging exact source apply and UI fixture block
 
 - Exact-main `220432b1...` deployed the boot and identity follow-up to staging

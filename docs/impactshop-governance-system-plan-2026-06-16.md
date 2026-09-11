@@ -4,6 +4,17 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-11 Sharity profile subdirectory route sync
+
+The staging UI blocker was a hosting-prefix mismatch: its WordPress home is
+`/impactshop-staging`, while production is root-mounted. The source-only Luna
+correction keeps the exact `home_url('/')` prefix in the shared profile route
+classifier and derives the one-time reveal route/cookie path from the same
+canonical helper. Root behavior, near-miss rejection, host/origin checks and
+owner-grant policy remain unchanged. The continuity, protected change record,
+guard hashes, notes and focused hermetic route tests are synchronized. No
+provider, VPS, database, runtime, cron or watchdog authority is added.
+
 ## 2026-09-10 Sharity profile summary closure note
 
 - A Luna checkpoint A kizárólag source-only profile summary és cache/privacy
