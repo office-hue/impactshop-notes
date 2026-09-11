@@ -4,6 +4,8 @@ Plan ID: `dev-v4-impactshop-stage-b-v2-20260911`
 
 Operator approval: `operator-approval:dev-v4-impactshop-stage-b-v2-20260911`
 
+Correction approval: `operator-approval:dev-v4-activation-20260911`
+
 This candidate transfers the reviewed Stage B source concepts while remaining
 truthfully `v2-only` on the exact Stage A base. After merge, a new task is v4
 admitted only when its schema-v2 capsule base is the task-start origin/main
