@@ -68,7 +68,6 @@ namespace {
     {
         private string $name;
         private array $settings;
-        public bool $should_render = true;
 
         public function __construct(string $name, array $settings = [])
         {
@@ -86,10 +85,6 @@ namespace {
             return $this->settings;
         }
 
-        public function set_should_render(bool $should_render): void
-        {
-            $this->should_render = $should_render;
-        }
     }
 
     require dirname(__DIR__) . '/wp-content/mu-plugins/impactshop-identity-panel.php';
@@ -138,28 +133,28 @@ namespace {
     assert_true($GLOBALS['removed_actions'][0][1][0] === $exact, 'removed callback is exact Site Kit object');
 
     $adsense_widget = new FakeWidget('adsense');
-    impactshop_identity_suppress_profile_adsense_widget($adsense_widget);
-    assert_true(!$adsense_widget->should_render, 'exact AdSense widget is suppressed');
+    assert_true(!impactshop_identity_filter_profile_adsense_widget_render(true, $adsense_widget), 'exact AdSense widget is suppressed');
 
     $html_host = new FakeWidget('html', ['content' => ['nested' => 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js']]);
-    impactshop_identity_suppress_profile_adsense_widget($html_host);
-    assert_true(!$html_host->should_render, 'generic HTML widget with AdSense host is suppressed');
+    assert_true(!impactshop_identity_filter_profile_adsense_widget_render(true, $html_host), 'generic HTML widget with AdSense host is suppressed');
 
     $html_marker = new FakeWidget('html', ['content' => ['nested' => '<ins class="adsbygoogle" data-ad-client="ca-pub-example"></ins>']]);
-    impactshop_identity_suppress_profile_adsense_widget($html_marker);
-    assert_true(!$html_marker->should_render, 'generic HTML widget with AdSense marker is suppressed');
+    assert_true(!impactshop_identity_filter_profile_adsense_widget_render(true, $html_marker), 'generic HTML widget with AdSense marker is suppressed');
+
+    $text_editor_host = new FakeWidget('text-editor', ['editor' => '<script src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>']);
+    assert_true(!impactshop_identity_filter_profile_adsense_widget_render(true, $text_editor_host), 'text-editor AdSense producer is suppressed');
 
     $code_sample = new FakeWidget('html', ['content' => 'Example code: adsbygoogle = window.adsbygoogle || [];']);
-    impactshop_identity_suppress_profile_adsense_widget($code_sample);
-    assert_true($code_sample->should_render, 'explanatory AdSense code sample remains visible');
+    assert_true(impactshop_identity_filter_profile_adsense_widget_render(true, $code_sample), 'explanatory AdSense code sample remains visible');
 
     $benign_html = new FakeWidget('html', ['content' => '<p>Human Touch</p>']);
-    impactshop_identity_suppress_profile_adsense_widget($benign_html);
-    assert_true($benign_html->should_render, 'benign generic HTML widget remains visible');
+    assert_true(impactshop_identity_filter_profile_adsense_widget_render(true, $benign_html), 'benign generic HTML widget remains visible');
+
+    $benign_text_editor = new FakeWidget('text-editor', ['editor' => '<p>Human Touch</p>']);
+    assert_true(impactshop_identity_filter_profile_adsense_widget_render(true, $benign_text_editor), 'benign text-editor remains visible');
 
     $near_miss_widget = new FakeWidget('text-editor', ['content' => 'adsbygoogle']);
-    impactshop_identity_suppress_profile_adsense_widget($near_miss_widget);
-    assert_true($near_miss_widget->should_render, 'non-HTML widget near miss remains visible');
+    assert_true(impactshop_identity_filter_profile_adsense_widget_render(true, $near_miss_widget), 'text-editor near miss remains visible');
 
     $_SERVER['REQUEST_URI'] = '/control/?tab=account';
     $removed_before_control = count($GLOBALS['removed_actions']);
@@ -167,8 +162,7 @@ namespace {
     assert_same($removed_before_control, count($GLOBALS['removed_actions']), 'control route keeps Site Kit callback');
 
     $control_html = new FakeWidget('html', ['content' => 'adsbygoogle']);
-    impactshop_identity_suppress_profile_adsense_widget($control_html);
-    assert_true($control_html->should_render, 'control route remains untouched');
+    assert_true(impactshop_identity_filter_profile_adsense_widget_render(true, $control_html), 'control route remains untouched');
 
     $_SERVER['REQUEST_URI'] = '/profil/?tab=account';
     $registering = new \Google\Site_Kit\Modules\AdSense();

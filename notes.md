@@ -7,6 +7,17 @@
   regressions, guard hashes and diff-check pass. Mobile `<0.1` remains a
   staging remeasurement gate.
 
+## 2026-09-11 — Sharity profile canonical Elementor render filter
+
+- Production read-only evidence found remaining AdSense widgets as Elementor
+  `text-editor`. The source now uses the canonical
+  `elementor/frontend/widget/should_render` boolean filter (`accepted_args=2`)
+  and removes the ineffective `before_render` setter path.
+- Exact named AdSense widgets plus `html`/`text-editor` settings with actual
+  script, `ins` or AdSense-host URL markers are suppressed; benign and
+  explanatory text-editor content and control routes remain visible.
+- Source-only checkpoint; no push/deploy/live mutation.
+
 ## 2026-09-11 — Sharity profile AdSense hook order and marker precision
 
 - The profile suppression removes the exact Site Kit `register_tag` callback

@@ -6,6 +6,15 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 
 ## 2026-09-11 Sharity profile hidden push sync
 
+## 2026-09-11 Sharity profile Elementor render-filter sync
+
+The producer guard now uses Elementor's canonical boolean
+`elementor/frontend/widget/should_render` filter (`accepted_args=2`) for exact
+AdSense widgets and executable-marker-bearing `html`/`text-editor` settings.
+The old `before_render` setter path is removed. No output rewrite,
+auth/data/DB/cookie, shared dependency, provider, VPS, runtime, cron or
+watchdog authority is added.
+
 ## 2026-09-11 Sharity profile AdSense hook-order sync
 
 The profile producer guard removes the exact Site Kit callback before ordinary

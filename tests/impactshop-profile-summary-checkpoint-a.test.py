@@ -42,8 +42,9 @@ assert "impactshop_identity_profile_remove_site_kit_adsense_tag();" in PHP
 assert "PHP_INT_MAX" in PHP
 assert "Google\\\\Site_Kit\\\\Modules\\\\AdSense" in PHP
 assert "wp_dequeue_script" in PHP
-assert "elementor/frontend/widget/before_render" in PHP
-assert "set_should_render(false)" in PHP
+assert "elementor/frontend/widget/should_render" in PHP
+assert "impactshop_identity_filter_profile_adsense_widget_render" in PHP
+assert ", 1, 2);" in PHP
 assert "impactshop_identity_profile_settings_contain_adsense_signature" in PHP
 assert "pagead2.googlesyndication.com" in PHP
 assert "adsbygoogle" in PHP
@@ -51,7 +52,7 @@ assert "<script" in PHP
 assert "<ins" in PHP
 assert "preg_match" in PHP
 assert "get_settings_for_display" in PHP
-assert "$widget_name === 'html'" in PHP
+assert "['html', 'text-editor']" in PHP
 assert "'secure' => true" in PHP
 assert "Cache-Control', 'private, no-store, no-cache" in PHP
 assert "rest_post_dispatch" in PHP

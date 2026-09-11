@@ -117,7 +117,7 @@ add_action('template_redirect', 'impactshop_identity_profile_cache_headers', -99
 add_action('template_redirect', 'impactshop_identity_profile_suppress_ads', -998);
 add_action('template_redirect', 'impactshop_identity_render_code_page', 0);
 add_action('template_redirect', 'impactshop_identity_maybe_complete_profile_return', 1);
-add_action('elementor/frontend/widget/before_render', 'impactshop_identity_suppress_profile_adsense_widget', 1);
+add_filter('elementor/frontend/widget/should_render', 'impactshop_identity_filter_profile_adsense_widget_render', 1, 2);
 add_filter('rest_post_dispatch', 'impactshop_identity_profile_rest_cache_headers', 1000, 3);
 
 /**
@@ -369,22 +369,22 @@ function impactshop_identity_profile_settings_contain_adsense_signature($value):
 }
 
 /**
- * Suppress exact Elementor AdSense widgets and matching generic HTML widgets
- * on profile pages.
+ * Filter Elementor's canonical render decision for profile AdSense producers.
  *
+ * @param bool $should_render Existing Elementor render decision.
  * @param mixed $widget Elementor widget instance.
- * @return void
+ * @return bool
  */
-function impactshop_identity_suppress_profile_adsense_widget($widget): void
+function impactshop_identity_filter_profile_adsense_widget_render(bool $should_render, $widget): bool
 {
-    if (!impactshop_identity_is_profile_route() || !is_object($widget) || !method_exists($widget, 'get_name')) {
-        return;
+    if (!$should_render || !impactshop_identity_is_profile_route() || !is_object($widget) || !method_exists($widget, 'get_name')) {
+        return $should_render;
     }
 
     $widget_name = strtolower((string) $widget->get_name());
     $adsense_widgets = ['adsense', 'google_adsense', 'elementor_google_adsense'];
     $should_suppress = in_array($widget_name, $adsense_widgets, true);
-    if (!$should_suppress && $widget_name === 'html') {
+    if (!$should_suppress && in_array($widget_name, ['html', 'text-editor'], true)) {
         $settings = [];
         if (method_exists($widget, 'get_settings_for_display')) {
             $settings = $widget->get_settings_for_display();
@@ -395,12 +395,10 @@ function impactshop_identity_suppress_profile_adsense_widget($widget): void
     }
 
     if (!$should_suppress) {
-        return;
+        return $should_render;
     }
 
-    if (method_exists($widget, 'set_should_render')) {
-        $widget->set_should_render(false);
-    }
+    return false;
 }
 
 function impactshop_identity_register_broadcast_setting(): void
