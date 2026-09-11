@@ -7714,3 +7714,12 @@ secret/cron/watchdog state changed.
 # pins merge `94db78c66b21979c9511594344649a518a4d31d8`; historical Stage A
 # objects and digests remain retained. Task-start marker replacement is atomic
 # and mode 0600. Candidate Phase 0 remains v2-only until Stage B merge.
+## 2026-09-11 — DEV v4 fresh launcher context admission
+
+- The bounded DEV v4 admission fix classifies only `.codex/context/` as the
+  private generated context-pack family, so a fresh launcher is not blocked by
+  its own branch context artifact. Other `.codex/` files remain outside the
+  maintenance write surface and are blocked.
+- Added a merged-base positive fixture plus the negative boundary fixture;
+  provider/build/deploy/VPS/runtime/secret/scheduler authority is unchanged.
+- Source-only checkpoint; no push, PR, deploy, or live mutation.

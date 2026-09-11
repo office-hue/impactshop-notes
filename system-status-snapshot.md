@@ -1506,3 +1506,10 @@ lane-specific. No live or remote mutation occurred.
 # QA P0 correction: corrected v2 central snapshot and verifier are pinned;
 # legacy safe markers remain v2-only before permission enforcement, while
 # unsafe nonlegacy capsules block. No remote/runtime mutation.
+## 2026-09-11 — DEV v4 fresh launcher context admission
+
+- DEV v4 now excludes only generated private `.codex/context/` artifacts from
+  admission write-surface accounting; all other `.codex/` and product paths
+  remain fail-closed.
+- Positive fresh-launcher and negative boundary fixtures pass. No provider,
+  VPS, runtime, secret, scheduler or watchdog authority was added.
