@@ -1,5 +1,18 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — canonical Elementor render filter
+
+Production evidence showed the remaining AdSense widgets are Elementor
+`text-editor` instances. The profile suppression now uses Elementor's
+`elementor/frontend/widget/should_render` boolean filter with the widget as
+the second argument, returning false only for exact AdSense widget names or
+`html`/`text-editor` settings containing an executable script, `ins`, or
+AdSense-host URL marker. The ineffective `before_render` setter path is gone.
+
+The hermetic contract covers the boolean filter, text-editor producer,
+benign/explanatory text-editor and control-route behavior. No auth, data/DB,
+cookie, shared dependency, provider or live runtime state changes.
+
 ## Luna follow-up — AdSense hook order and marker precision
 
 The profile suppression now removes the exact Site Kit AdSense
@@ -325,8 +338,8 @@ The aggregate protected path set and forward-safe rollback contract are in
   SELECT-only query; malformed, missing and negative values normalize to zero.
 - The profile route family has a shared path classifier, private no-store
   response/page headers and `Vary: Cookie`. Repository AdSense, known Site Kit
-  AdSense paths and exact Elementor AdSense widgets are suppressed at their
-  producers; no rendered HTML regex is used.
+  AdSense paths and exact/configured Elementor AdSense widgets are suppressed
+  at their producers; no rendered HTML is rewritten.
 - Failed owner/pseudo cookie issuance returns `unavailable` without exposing a
   newly generated pseudo. Non-active states keep mutation controls disabled in
   the profile UI. The central owner registry now covers the complete inspected
@@ -337,7 +350,7 @@ The aggregate protected path set and forward-safe rollback contract are in
 
 Affected route and hooks: identity profile REST GET/POST, profile/compact
 shortcodes, profile `template_redirect` headers, REST post-dispatch headers,
-AdSense `wp_head`, Site Kit filters and Elementor widget `before_render`.
+AdSense `wp_head`, Site Kit filters and Elementor widget `should_render`.
 
 Unaffected: vote/points business logic, cross-host SSO, provider/runtime
 deployment, cron and watchdog.

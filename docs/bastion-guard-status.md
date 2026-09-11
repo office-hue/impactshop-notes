@@ -2,6 +2,17 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-11 — Sharity profile canonical Elementor render filter
+
+The remaining production AdSense widgets were Elementor `text-editor`
+instances. Profile suppression now uses the canonical
+`elementor/frontend/widget/should_render` boolean filter with two arguments;
+the ineffective `before_render` setter path is removed. Exact AdSense widget
+names and `html`/`text-editor` producer settings require an actual script,
+`ins`, or narrow AdSense-host URL marker. Benign/explanatory text and control
+routes remain untouched. Focused filter/order tests and maximum-bastion checks
+are required; no provider, runtime, cron or watchdog authority is added.
+
 ## 2026-09-11 — Sharity profile AdSense hook order and marker precision
 
 The exact Site Kit AdSense object callback is removed immediately in the early

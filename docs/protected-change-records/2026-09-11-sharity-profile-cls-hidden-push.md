@@ -7,7 +7,7 @@ Status: source-only Luna checkpoint; no publication or live activation
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
   "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-20260910",
-  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#luna-follow-up-adsense-hook-order-and-marker-precision",
+  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#luna-follow-up-canonical-elementor-render-filter",
   "protectedPaths": [
     "docs/bastion-guard-status.md",
     "docs/impactshop-guard-hashes.json",
@@ -41,10 +41,12 @@ now removes only the exact `Google\\Site_Kit\\Modules\\AdSense` object callback
 with method `register_tag` immediately in the early suppression phase, while
 retaining a late callback-registry scan for late loaders.
 
-Elementor keeps its exact AdSense widget-name suppression and additionally
-suppresses only the generic `html` widget when render settings, recursively,
-contain an actual script, `ins`, or `pagead2.googlesyndication.com` URL marker.
-Plain explanatory/code-sample `adsbygoogle` text, near misses and benign HTML
+Elementor suppression now uses the canonical
+`elementor/frontend/widget/should_render` boolean filter (`accepted_args=2`),
+keeping exact AdSense widget-name suppression and additionally suppressing
+only `html`/`text-editor` widgets whose render settings, recursively, contain
+an actual script, `ins`, or `pagead2.googlesyndication.com` URL marker. Plain
+explanatory/code-sample `adsbygoogle` text, near misses and benign content
 remain renderable. No output buffer, rendered-HTML regex, auth,
 data/DB/cookie, shared dependency, provider or live runtime change is included.
 
@@ -67,6 +69,8 @@ Required identity/profile smoke tags: `route:factlens-vb-prod`,
 
 - `php -l wp-content/mu-plugins/impactshop-identity-panel.php` PASS
 - `php tests/impactshop-profile-ads-suppression.test.php` PASS
+- Canonical boolean filter fixture covers text-editor producer suppression,
+  benign/explanatory text-editor and control-route PASS
 - Hook-order fixture proves `register_tag` was not called before dispatch;
   explanatory/code-sample negative fixture PASS
 - Existing profile summary/CLS/bootstrap/remediation/static and owner-policy
