@@ -47,3 +47,37 @@ Required identity/profile smoke tags: `route:factlens-vb-prod`,
 Rollback is a source-only revert of this checkpoint before publication. No
 remote, provider, database, OPcache, cron or watchdog operation belongs to
 this record.
+
+## Protected source admission
+
+This manifest covers every protected endpoint in the exact
+`origin/main..HEAD` candidate. It grants source publication authority only;
+runtime staging and production acceptance remain separate Sol gates.
+
+<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+{
+  "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-20260910",
+  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#sol-blocker-correction-environment-aware-profile-route-family",
+  "protectedPaths": [
+    "docs/bastion-guard-status.md",
+    "docs/impactshop-guard-hashes.json",
+    "docs/impactshop-guard-hashes.sha256",
+    "wp-content/mu-plugins/impactshop-identity-panel.php"
+  ],
+  "rollbackNote": "revert the exact subdirectory-route checkpoint before runtime publication; after staging deployment use its exact-file CAS preimage and retain the owner-grant v2 schema and verifier",
+  "schemaVersion": 1,
+  "smokeTags": [
+    "browser:chrome",
+    "browser:webkit",
+    "flow:legacy-pool-visibility",
+    "flow:message-popup",
+    "flow:points-jump",
+    "flow:profile-open",
+    "flow:profile-return-account",
+    "flow:profile-return-restore",
+    "route:factlens-vb-prod",
+    "route:impact-challenge",
+    "route:profil"
+  ]
+}
+<!-- END PROTECTED SOURCE ADMISSION -->
