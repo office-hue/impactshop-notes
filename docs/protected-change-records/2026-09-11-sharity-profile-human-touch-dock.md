@@ -6,8 +6,8 @@ Status: source checkpoint; exact merged-main production publication required
 
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
-  "operatorApprovalRef": "operator-command:sharity-profile-human-touch-dock-20260911",
-  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md",
+  "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-20260910",
+  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#2026-09-11-human-touch-profile-dock-follow-up",
   "protectedPaths": [
     "docs/bastion-guard-status.md",
     "docs/impactshop-guard-hashes.json",
