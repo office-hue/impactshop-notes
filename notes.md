@@ -1,3 +1,50 @@
+## 2026-09-11 — Sharity profile subdirectory route correction
+
+- The staging UI blocker was isolated to `/impactshop-staging` hosting, not a
+  missing runtime source route. Profile cache/privacy and ad suppression now
+  classify the exact environment-prefixed `/profil` family while preserving
+  root production behavior and near-miss rejection.
+- The one-time `belepesi-kod` route and reveal-cookie path use the same
+  environment-aware canonical path helper. Focused route, syntax, static,
+  owner-policy and guard-hash checks pass; no remote or live state changed.
+- Next live wave may continue only from the Sol-authorized staging fixture
+  package after this source checkpoint is published through the guarded lane.
+
+## 2026-09-11 — Sharity staging exact source apply and UI fixture block
+
+- Exact-main `220432b1...` deployed the boot and identity follow-up to staging
+  through two one-shot exact-CAS releases. Both manifests are `deployed`, target
+  hashes match, modes are `0444`, runtime self-test is true and safe-disable is
+  back to `0`.
+- Query and pretty REST each passed the two-request pending-to-active flow with
+  separate cookie jars. Distinct identity, persistence, legacy isolation,
+  private/no-store/Vary headers, policy v3 and cookie attributes passed.
+- Full staging acceptance stopped at the canonical profile page: staging
+  `/impactshop-staging/profil/` is `404` because its database has no `profil`
+  page; production has published page ID `18984`. No production mutation or
+  cross-environment page copy occurred.
+- Terra/high independently marked the UI acceptance blocked. Next is a bounded
+  Sol/high staging-content fixture package, then only the failed UI/ad/layout
+  and mutation-isolation checks. Production worker-drain gate remains closed.
+
+## 2026-09-11 — Sharity profile PR #201 and fail-closed staging stop
+
+- The bootstrap/quota candidate was guarded-pushed once, opened as PR #201,
+  passed all six required checks and was squash-merged at
+  `220432b1f9d1ca15e6095d03b4f8cce1cf288ecd`; merge tree `fd81686...` matches
+  the tested candidate tree exactly.
+- The Mini exact-main release worktree was repinned to the merge. Both
+  exact-file staging previews passed guard, bastion, four HTTP endpoints and
+  no-write rsync. Staging DB isolation is `REPEATABLE-READ`; grant rows: `0`.
+- The live wave changed only `impactshop_owner_policy_safe_disable` to `1`.
+  A nested Mini/S59 shell readback then failed before either CAS release
+  started. Both target files retained their exact preimage hashes and both
+  planned release IDs are absent. Per the one-live-attempt rule, no retry and
+  no automatic safe-disable clear followed.
+- Production was not changed. Next action is a new Sol/high resume package
+  using separate, non-nested SSH commands; staging acceptance must pass before
+  the existing provider worker-drain production gate can reopen.
+
 ## 2026-09-10 — Sharity profile summary closure — Luna checkpoint B
 
 - Terra follow-up: runtime self-test permits an absent ads-watch

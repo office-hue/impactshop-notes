@@ -1,3 +1,28 @@
+## 2026-09-11 — Sharity profile staging source installed, UI route blocked
+
+- Staging source: exact merge `220432b1...`; boot SHA `f7cf5099...`, identity
+  SHA `bec0ec93...`; both mode `0444`; exact release manifests `deployed`.
+- Runtime: owner-policy self-test true, `safe_disable=0`.
+- API acceptance: query/pretty REST two-request activation, two-actor isolation,
+  legacy visibility boundary, cookie flags and private cache headers PASS.
+- UI acceptance: BLOCKED because staging has no `profil` page record and its
+  canonical `/impactshop-staging/profil/` URL returns `404`. Production page ID
+  `18984` exists but was not copied or modified.
+- State: `source-merged / staging-runtime-installed / staging-UI-blocked /
+  production-not-started`. No cron/watchdog required.
+
+## 2026-09-11 — Sharity profile release status after PR #201
+
+- Source: merged, exact SHA `220432b1f9d1ca15e6095d03b4f8cce1cf288ecd`,
+  tree `fd81686a4bfb0bb774ff39e97b79ad9266c02fd`, six required checks PASS.
+- Staging: `safe_disable=1`; grant table empty; isolation `REPEATABLE-READ`.
+  Both new CAS release IDs are absent and the two runtime files remain at the
+  recorded preimage hashes, so no source apply occurred in the stopped wave.
+- Production: untouched; inspected runtime files remain mode `0444`, and the
+  owner-policy safe-disable option is absent.
+- State: `source-merged / staging-fail-closed / production-not-started`.
+  Resume requires a new Sol/high live package; no cron/watchdog is required.
+
 ## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
 
 - Source-only checkpoint C keeps the runtime change to `impactshop-boot.php` and

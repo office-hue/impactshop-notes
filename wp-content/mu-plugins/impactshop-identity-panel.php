@@ -133,7 +133,57 @@ function impactshop_identity_profile_route_path(?string $request_uri = null): st
 {
     $request_uri = $request_uri ?? (string) ($_SERVER['REQUEST_URI'] ?? '');
     $path = (string) parse_url($request_uri, PHP_URL_PATH);
+    $path = '/' . ltrim(untrailingslashit($path), '/');
+
+    // WordPress installations can be mounted below the host root (for
+    // example /impactshop-staging). Classify the route relative to the
+    // current home path, while requiring an exact path segment boundary so a
+    // near-miss such as /impactshop-stagingx/profil is never admitted.
+    $home_path = impactshop_identity_profile_home_path();
+    if ($home_path !== '' && ($path === $home_path || str_starts_with($path, $home_path . '/'))) {
+        $path = substr($path, strlen($home_path));
+    }
+
     return '/' . ltrim(untrailingslashit($path), '/');
+}
+
+/**
+ * Return the normalized path component of the current WordPress home URL.
+ *
+ * @return string Empty string when WordPress is mounted at the host root.
+ */
+function impactshop_identity_profile_home_path(): string
+{
+    $path = (string) wp_parse_url(home_url('/'), PHP_URL_PATH);
+    $path = '/' . trim($path, '/');
+    return $path === '/' ? '' : $path;
+}
+
+/**
+ * Return a canonical profile-relative path in the current environment.
+ *
+ * @param string $suffix Optional profile child path.
+ * @param bool $trailing_slash Whether to retain a trailing slash.
+ * @return string
+ */
+function impactshop_identity_profile_environment_path(string $suffix = '', bool $trailing_slash = false): string
+{
+    $path = impactshop_identity_profile_home_path() . '/profil';
+    $suffix = trim($suffix, '/');
+    if ($suffix !== '') {
+        $path .= '/' . $suffix;
+    }
+    return $path . ($trailing_slash ? '/' : '');
+}
+
+/**
+ * Return the one-time reveal cookie path for the current environment.
+ *
+ * @return string
+ */
+function impactshop_identity_profile_reveal_cookie_path(): string
+{
+    return impactshop_identity_profile_environment_path('belepesi-kod', true);
 }
 
 /**
@@ -1831,7 +1881,7 @@ function impactshop_identity_code_generate(WP_REST_Request $request): WP_REST_Re
     if (PHP_VERSION_ID >= 70300) {
         setcookie('impactshop_identity_reveal', $grant, [
             'expires' => time() + 60,
-            'path' => '/profil/belepesi-kod/',
+            'path' => impactshop_identity_profile_reveal_cookie_path(),
             'secure' => is_ssl(),
             'httponly' => true,
             'samesite' => 'Strict',
@@ -2066,8 +2116,7 @@ function impactshop_identity_profile_store_recovery(string $pseudo_id, string $r
 /** Render the one-time, first-party-only code reveal page. */
 function impactshop_identity_render_code_page(): void
 {
-    $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-    if (untrailingslashit($path) !== '/profil/belepesi-kod') {
+    if (impactshop_identity_profile_route_path() !== '/profil/belepesi-kod') {
         return;
     }
 
@@ -2086,7 +2135,7 @@ function impactshop_identity_render_code_page(): void
         delete_transient('impactshop_identity_reveal_' . hash('sha256', $grant));
         setcookie('impactshop_identity_reveal', '', [
             'expires' => time() - 3600,
-            'path' => '/profil/belepesi-kod/',
+            'path' => impactshop_identity_profile_reveal_cookie_path(),
             'secure' => is_ssl(),
             'httponly' => true,
             'samesite' => 'Strict',

@@ -33,6 +33,9 @@ assert "UPDATE" not in votes.upper()
 assert "max(0, (int) $raw)" in votes
 
 assert "impactshop_identity_is_profile_route" in ADS
+assert "impactshop_identity_profile_home_path" in PHP
+assert "impactshop_identity_profile_reveal_cookie_path" in PHP
+assert "impactshop_identity_profile_route_path() !== '/profil/belepesi-kod'" in PHP
 assert "googlesitekit_adsense_enabled" in PHP
 assert "wp_dequeue_script" in PHP
 assert "elementor/frontend/widget/before_render" in PHP

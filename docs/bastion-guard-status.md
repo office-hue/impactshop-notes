@@ -2,6 +2,18 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-11 — Sharity profile environment-aware route correction
+
+The staging WordPress home is mounted below `/impactshop-staging`, unlike the
+root-mounted production profile. The protected identity-panel route classifier
+now removes only the exact `home_url('/')` path prefix before matching the
+`/profil` family. The one-time code route and reveal-cookie path use that same
+canonical helper; root behavior, query insensitivity, host/origin checks and
+near-miss rejection remain unchanged. Hermetic route-path and existing profile
+contracts pass. This is source-only; no provider, database, runtime, cron or
+watchdog mutation occurred. See
+`docs/protected-change-records/2026-09-11-sharity-profile-subdirectory-route.md`.
+
 ## 2026-09-10 — Sharity profile bootstrap REST/quota follow-up
 
 The source-only Luna follow-up keeps the runtime scope to the two protected

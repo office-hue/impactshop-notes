@@ -1,5 +1,85 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Sol blocker correction — environment-aware profile route family
+
+The staging UI gate found a real hosting difference: `app.sharity.hu` serves
+the staging WordPress installation below `/impactshop-staging`, while
+production serves the same profile family at the host root. The shared profile
+route classifier now strips only the exact `home_url('/')` path segment before
+matching `/profil` and its children. Query strings remain irrelevant and
+near-miss prefixes remain outside the profile boundary. The one-time
+`/profil/belepesi-kod` check and its HttpOnly reveal-cookie path use the same
+canonical environment-path helper, so root and subdirectory installs retain
+the same first-party and cache/ad suppression guarantees.
+
+Focused hermetic root/subdirectory, query, near-miss and reveal-cookie-path
+tests pass. This is a source-only correction; no staging page, database,
+provider, cache, cron/watchdog or production state was changed by this
+checkpoint.
+
+## Sol staging source apply — API accepted, profile fixture blocked
+
+The new Sol/high resume preserved the exact merge identity
+`220432b1f9d1ca15e6095d03b4f8cce1cf288ecd` / tree
+`fd81686a4b4fb0bb774ff39e97b79ad9266c02fd`. From the clean detached Mini
+release worktree, the two previously previewed staging files were applied once
+through the exact-CAS guard while safe-disable remained enabled:
+
+- `sharity-profile-stg-20260910T232500Z-resume-boot` deployed
+  `impactshop-boot.php` at SHA-256 `f7cf5099d80e515e76e2bd0d5bb8b6e0de0c3455d48efa31a265bb994c9e5f27`;
+- `sharity-profile-stg-20260910T232500Z-resume-identity` deployed
+  `impactshop-identity-panel.php` at SHA-256 `bec0ec93d264a171968008a00ff734e4329b9be4b0b766880e5f72b2c0b4aa38`.
+
+Both manifests are `deployed`, exact readback matches, both targets are mode
+`0444`, the runtime owner-policy self-test is true, and safe-disable was cleared
+to `0` only after those postconditions passed. The staging API acceptance then
+proved query and pretty REST pending-to-active persistence for two distinct
+cookie jars, legacy read-only/no-votes isolation, policy v3, owner/pseudo cookie
+flags and private/no-store/Vary cache headers.
+
+The first UI-route request stopped the acceptance wave because the canonical
+staging URL `https://app.sharity.hu/impactshop-staging/profil/` returns `404`.
+Read-only WordPress inventory confirms that staging has no `profil` page record;
+production has published page ID `18984`. This is a staging content fixture/data
+gap, not a rewrite or merged-source failure. No production write, page copy,
+provider action, cache flush, cron or watchdog action followed. The staging
+grant inventory observed after the test/diagnostic requests was two active and
+three pending rows; it is diagnostic state, not UI acceptance evidence.
+
+Independent Terra/high QA therefore records `BLOCK` for full staging acceptance.
+The next package remains Sol/high and must explicitly authorize and create or
+copy the minimal staging `profil` page fixture before rerunning only the failed
+UI/ad/layout and mutation-isolation checks. Production remains blocked until
+that acceptance passes and the S59 LSAPI worker drain/recycle proof is available.
+
+## Sol release resume — source merged, staging fail-closed stop
+
+On 2026-09-11 the bootstrap/quota follow-up was published by the single
+guarded source lane and squash-merged as PR #201. The exact merge is
+`220432b1f9d1ca15e6095d03b4f8cce1cf288ecd`; its tree
+`fd81686a4b4fb0bb774ff39e97b79ad9266c02fd` exactly matches the tested
+candidate tree. All six required GitHub checks passed. The Mini release
+worktree was cleanly repinned detached to that exact `origin/main` identity.
+
+Both staging exact-file previews then passed the repo guard, bastion manifest,
+four HTTP preflight endpoints and no-write rsync comparison. The staging
+database reported `REPEATABLE-READ` and an empty grant table. The subsequent
+mutating command enabled `impactshop_owner_policy_safe_disable=1`, then stopped
+locally on the Mini because nested shell expansion attempted to resolve the
+WP-CLI readback before the S59 hop. Exact-CAS prepare/apply did not start: the
+two planned release IDs are absent and both target SHA-256 values remain at
+their preimages (`impactshop-boot.php` `cccc3f4147c0d849a4d53bf1567150c94e1493afda88686b6709d89f2136b56f`,
+`impactshop-identity-panel.php` `54f21494d8e2e08afde2e7d02269002629a57b3ce21d922bf634d0285ae92e67`).
+The staging state is deliberately left fail-closed; no retry or automatic
+safe-disable clear was performed in the same live wave.
+
+Production was not mutated. Its two inspected files remain mode `0444` at
+their pre-existing hashes, and the owner-policy safe-disable option is absent.
+The next package is a Sol/high release resume: re-read exact source/target
+identity and `safe_disable=1`, then use separate non-nested S59 commands for
+the two admitted CAS applies and postconditions. Production remains gated by
+successful staging acceptance and provider-proven LSAPI drain/recycle.
+
 ## Checkpoint B — owner-grant and policy closure
 
 ### Terra blocker follow-up — conditional debug and active UI principal
