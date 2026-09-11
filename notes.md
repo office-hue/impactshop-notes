@@ -7657,3 +7657,25 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   kártyakeret készült.
 - Az identity/grant/REST/adatfolyam érintetlen; külön bounded presentation
   checkpointként kezelendő.
+- PR #211 merge és exact production kiadás lezárva: release
+  `20260911T082700Z-05b3d147-profile-shell`, SHA-256
+  `d2cc8c83f7707a756f3aa2edb3b48dd63bbec7acc9cd06f04ef0199b92e9aaea`, mode
+  `0444`. Live desktop/mobile QA PASS; nincs profil-hirdetésmarker vagy
+  vízszintes túlcsordulás. Az Elementor külső fejléc/lábléc nem része ennek a
+  csomagnak.
+
+## 2026-09-11 — Profil visual acceptance correction
+
+- A kiadott kétcellás profil/belépési dock nem az elvárt minden oldalas
+  nyolcfunkciós lebegő gombsor, ezért a termékelfogadás elutasítva.
+- A teal/üveg panel nem követi a `sharity.hu/hatas-korok` Human Touch világos,
+  kontúros lila–lime–korall komponensnyelvét. Következő: Luna/high korrekció,
+  majd Terra/high vizuális QA.
+
+## 2026-09-11 — Profil corrective source checkpoint
+
+- A nyolcfunkciós globális `data-bar` sáv markupja visszakerült, a kétcellás
+  profil dock kikerült.
+- A profil shell és kontrollok Human Touch világos háttérre, sötét kontúrra,
+  lila–lime–korall akcentusokra váltottak. Forrás-only, nincs deploy; Terra
+  vizuális QA szükséges.

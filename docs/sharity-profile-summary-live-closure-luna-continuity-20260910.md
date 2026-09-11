@@ -454,3 +454,52 @@ existing identity, points, votes, restore and owner-grant behavior is
 unchanged. This is the next bounded presentation checkpoint after the global
 floating dock; the outer Elementor header/footer remains intentionally
 untouched.
+
+Production closure: PR #211 squash-merged as `05b3d1478371`. Exact-main CAS
+release `20260911T082700Z-05b3d147-profile-shell` deployed the identity panel
+at SHA-256 `d2cc8c83f7707a756f3aa2edb3b48dd63bbec7acc9cd06f04ef0199b92e9aaea`
+with mode `0444`. Five-endpoint production preflight and desktop/mobile live
+QA passed: HTTP 200, Human Touch shell and dock present, canonical anchors,
+pseudo/nickname/votes visible, no horizontal overflow and no profile ad
+markers. The outer Elementor header/footer remains outside this package.
+
+## 2026-09-11 Terra QA closure
+
+Independent QA reconfirmed the published `origin/main@05b3d1478371` identity
+and the production identity-panel SHA-256/mode (`d2cc8c83…`, `0444`). A fresh
+live response contained the Human Touch shell and intro; the unchanged
+source/runtime browser evidence was reused for the injected dock, canonical
+anchors, profile data, zero overflow and zero profile ad markers. No blocking
+regression was found. Details: `docs/sharity-profile-human-touch-terra-qa-20260911.md`.
+
+### Product acceptance correction
+
+Operator visual review rejected the prior shell/dock as the wrong product
+surface. The dock is only a profile/sign-in panel, whereas the required global
+control is the original eight-action floating bar. The live Human Touch
+reference uses outlined purple/lime/coral components rather than the deployed
+teal glass treatment. The next bounded Luna package must restore the eight
+action contracts, remove the dock and recompose the profile in that component
+grammar; no identity or owner-grant behavior may change.
+
+## 2026-09-11 Luna corrective source checkpoint
+
+The corrective source package restores the real eight-action `.sharity-action-bar`
+markup (`video`, `tasks`, `shop`, `donate`, `account`, `ngo`, `message`,
+`stats`) and removes the two-cell profile dock. The profile shell, cards,
+inputs, buttons and vote panel now use the live Human Touch light canvas with
+dark outlines and purple/lime/coral accents. PHP lint, focused static/profile/
+policy tests, guard hash verification and diff-check pass. New source hashes
+are recorded in the protected change record; no push, PR, deployment or runtime
+change has occurred. Terra visual QA is required before any Sol release gate.
+
+## 2026-09-11 Terra corrective source QA
+
+Source QA accepts the corrected action contract: all eight handler-backed
+global actions are present and the obsolete dock contract is absent. The
+profile token contract contains the reviewed Human Touch light/dark-outline/
+purple/lime/coral system. The local tests and hash verification are PASS.
+Production deliberately remains on the earlier CAS hashes, so no old browser
+evidence is reused for this changed UI. The next package must be Sol/high for
+one source publication plus exact-file release; fresh desktop/mobile visual QA
+is then mandatory.

@@ -1429,3 +1429,45 @@ deployment state changed.
 
 - A bounded profile-only Human Touch shell is prepared; identity, grant,
   schema, cron and watchdog behavior remain unchanged.
+
+## 2026-09-11 — Profile Human Touch shell production closure
+
+- PR #211 squash-merged as `05b3d1478371`; exact-main release
+  `20260911T082700Z-05b3d147-profile-shell` deployed the identity panel at
+  SHA-256 `d2cc8c83f7707a756f3aa2edb3b48dd63bbec7acc9cd06f04ef0199b92e9aaea`,
+  mode `0444`.
+- Five-endpoint production preflight and desktop/mobile live QA passed with
+  HTTP 200, 0 px overflow and 0 profile ad markers. No DB, cron, watchdog or
+  shared dependency change; outer Elementor header/footer remains untouched.
+
+## 2026-09-11 — Profile Human Touch Terra QA
+
+- QA closure confirms `origin/main@05b3d1478371` and production identity-panel
+  SHA-256 `d2cc8c83…` at mode `0444` still match.
+- Fresh live shell contract plus reused exact-identity browser evidence: PASS.
+  No blocker; no additional production action is needed.
+
+## 2026-09-11 — Profile visual acceptance correction
+
+- Technical QA did not reveal a runtime failure, but operator visual acceptance
+  rejected the published two-cell dock and teal profile shell.
+- Status: corrective source work required. Restore the eight-action global bar,
+  remove the dock and use the live Human Touch outlined purple/lime/coral
+  component system for the profile. Identity/owner-grant data behavior stays
+  out of scope.
+
+## 2026-09-11 — Sharity corrective source checkpoint
+
+- Restored the eight global `data-bar` actions and removed the two-cell profile
+  dock. Reworked profile UI tokens to the Human Touch light, outlined
+  purple/lime/coral system; data/grant logic unchanged.
+- Targeted tests, PHP lint, guard hash and diff-check: PASS. Source-only,
+  not deployed; Sol publication is next, then fresh Terra visual QA.
+
+## 2026-09-11 — Sharity corrective Terra source QA
+
+- PASS: eight-action/global-handler contract, dock removal and Human Touch
+  token contract. Existing production still runs the old action-bar and panel
+  CAS images, so source QA is not live visual acceptance.
+- Next: one Sol/high source-publication and exact-file release package, then
+  fresh desktop/mobile visual QA on the released source.
