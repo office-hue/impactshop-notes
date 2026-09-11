@@ -104,3 +104,13 @@ The pinned repo-local target-contract digest is
 `989dd16dd30bdebb07403c1b0f88ad9a182ea0dd167fc37674438b4bc8ef0194`.
 The maximum-bastion adapter has no network, provider, or product-deploy
 authority; candidate evidence is private Git metadata (`0700`/`0600`).
+
+## DEV v4 Stage B admission
+
+Fresh tasks use `node scripts/dev-v4-admission.mjs --phase0`. A candidate
+based on Stage A remains `v2-only` until Stage B is merged; post-merge admission
+requires a capsule base that is a descendant of Stage A and contains the
+base-owned Stage B contract. Legacy markerless/safe legacy worktrees stay
+`v2-only`; unsafe nonlegacy capsules block. PHP/provider/staging gaps are
+lane-specific and unverified; no deploy, VPS, runtime, secret, cron or
+watchdog authority is granted.
