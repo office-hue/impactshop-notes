@@ -7679,3 +7679,11 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - A profil shell és kontrollok Human Touch világos háttérre, sötét kontúrra,
   lila–lime–korall akcentusokra váltottak. Forrás-only, nincs deploy; Terra
   vizuális QA szükséges.
+
+## 2026-09-11 — Profil corrective production closure
+
+- PR #212 merge: `fb77e62df4c`. A két exact CAS release az új action-bar és
+  identity-panel fájlt `0444` módban élesítette.
+- Élő ellenőrzés: mind a nyolc gomb látható a vizsgált app-oldalakon, a hibás
+  dock sehol nincs; a Human Touch profil desktopon és mobilon overflow- és
+  hirdetésmarker-mentes. Cron/watchdog nem szükséges.

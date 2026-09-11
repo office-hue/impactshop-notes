@@ -1471,3 +1471,12 @@ deployment state changed.
   CAS images, so source QA is not live visual acceptance.
 - Next: one Sol/high source-publication and exact-file release package, then
   fresh desktop/mobile visual QA on the released source.
+
+## 2026-09-11 — Sharity corrective production acceptance
+
+- PR #212 merge `fb77e62df4c`; exact-main tree matches the tested candidate.
+- Production action bar/identity hashes: `d7682cd8…` / `30c24dca…`, both
+  `0444`. Eight global actions are present across the four checked app routes;
+  dock count is zero.
+- Profile desktop/mobile: Human Touch treatment present, 0 px overflow and 0
+  ad markers. Status: production-accepted; no cron/watchdog required.
