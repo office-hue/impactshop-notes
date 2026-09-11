@@ -7,6 +7,28 @@
   regressions, guard hashes and diff-check pass. Mobile `<0.1` remains a
   staging remeasurement gate.
 
+## 2026-09-11 — Sharity profile AdSense hook order and marker precision
+
+- The profile suppression removes the exact Site Kit `register_tag` callback
+  immediately before normal `template_redirect` dispatch and retains the late
+  scan as a second catch-up path.
+- Generic HTML detection now requires a real script, `ins`, or
+  `pagead2.googlesyndication.com` URL marker. A plain explanatory/code-sample
+  `adsbygoogle` string remains visible. Hook-order and negative fixtures pass.
+- Source-only follow-up; no push/deploy/live activation.
+
+## 2026-09-11 — Sharity profile AdSense producer suppression
+
+- Production acceptance passed cache/cookie/isolation but found seven AdSense
+  markers and desktop overflow/CLS. Profile `template_redirect` now queues a
+  late registry removal for only the exact Site Kit AdSense object
+  `register_tag`; generic Elementor `html` widgets are inspected recursively
+  for only the two narrow AdSense signatures.
+- Positive/negative hermetic coverage includes root and control routes, exact
+  versus near-miss callbacks, nested settings and benign HTML. No output
+  buffer, HTML rewrite, auth/data/DB/cookie/shared dependency or deploy change.
+- Source-only checkpoint; live remeasurement/publication remains pending.
+
 ## 2026-09-11 — Sharity profile responsive CLS reservations
 
 - Exact staging timeline: desktop CLS `0.0413`, mobile `0.2506`, overflow `0`;

@@ -1,5 +1,36 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — AdSense hook order and marker precision
+
+The profile suppression now removes the exact Site Kit AdSense
+`register_tag` callback immediately during the early suppression phase, before
+normal `template_redirect` callbacks can execute, and keeps the late registry
+scan as a catch-up for late loaders. Generic Elementor `html` settings now
+require an actual script, `ins`, or AdSense-host URL marker; explanatory or
+code-sample text alone is not suppressed.
+
+The hook-order contract proves the exact Site Kit callback is absent before
+dispatch and therefore its `register_tag` method is not called. The source-only
+follow-up changes no auth, data/DB/cookie, shared dependency, provider or live
+runtime state.
+
+## Luna follow-up — AdSense producer suppression
+
+Production acceptance found seven remaining AdSense markers and desktop
+overflow/CLS on `/profil/`, while cache, cookie and identity isolation passed.
+The profile suppression now queues a late `template_redirect` registry scan and
+removes only the exact `Google\\Site_Kit\\Modules\\AdSense::register_tag`
+object callback after Site Kit registers it. Elementor suppression keeps the
+exact AdSense widget names and additionally disables only the generic `html`
+widget when its render settings recursively contain
+`pagead2.googlesyndication.com` or `adsbygoogle`.
+
+The hermetic producer contract covers the late callback, static callback near
+miss, root/control routes, nested settings, benign HTML and non-HTML near miss.
+No output-buffer rewrite, auth/data/DB/cookie/shared-dependency or provider
+change is included. This is source-only; live remeasurement and publication
+remain separate gates.
+
 ## Luna follow-up — hidden push reservation specificity
 
 The exact shared Playwright simulation measured desktop CLS `0.041389` and

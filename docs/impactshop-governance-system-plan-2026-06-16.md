@@ -6,6 +6,24 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 
 ## 2026-09-11 Sharity profile hidden push sync
 
+## 2026-09-11 Sharity profile AdSense hook-order sync
+
+The profile producer guard removes the exact Site Kit callback before ordinary
+`template_redirect` dispatch and retains a late catch-up scan. Generic HTML
+settings are suppressed only for actual script, `ins`, or narrow AdSense URL
+markers, so explanatory code samples remain visible. No output rewrite,
+auth/data/DB/cookie, shared dependency, provider, VPS, runtime, cron or
+watchdog authority is added.
+
+## 2026-09-11 Sharity profile AdSense producer sync
+
+The profile route now suppresses the exact Site Kit AdSense producer callback
+after its `template_redirect` registration, and only matching generic
+Elementor `html` widget settings with the two narrow AdSense signatures. This
+does not use output buffering or rendered-HTML replacement and does not add
+auth, data, DB, cookie, dependency, provider, VPS, runtime, cron or watchdog
+authority. The live marker/CLS result remains a separate remeasurement gate.
+
 The profile/data-role hidden push selector now explicitly reserves its
 responsive height with `display:block !important` and `visibility:hidden`.
 The HTML hidden attribute, JS/auth behavior and all global/shared dependency

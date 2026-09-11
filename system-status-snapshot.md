@@ -1,3 +1,28 @@
+## 2026-09-11 — Sharity profile AdSense hook order and marker precision
+
+- The exact Site Kit AdSense callback is removed immediately in the early
+  profile suppression phase, with the late registry scan retained as a catch-up
+  for late loaders. The hermetic hook-order fixture proves `register_tag` is
+  not executed during `template_redirect` dispatch.
+- Generic Elementor `html` suppression now requires an actual script, `ins`, or
+  AdSense-host URL marker; explanatory/code-sample text remains visible.
+- Focused producer/static contracts, PHP lint, guard hash, protected-touch,
+  strict audit and diff-check remain required; no push, deploy or live state.
+
+## 2026-09-11 — Sharity profile AdSense producer suppression
+
+- Production acceptance left seven AdSense markers and desktop overflow/CLS;
+  cache, cookie and identity isolation passed. The bounded source correction
+  removes only the exact Site Kit AdSense `register_tag` object callback from
+  the late `template_redirect` registry on the profile route.
+- Generic Elementor `html` widgets are suppressed only when nested render
+  settings contain `pagead2.googlesyndication.com` or `adsbygoogle`; exact
+  AdSense widget names remain covered. Root/control routes, auth/data/DB/cookie
+  state and shared dependencies are unchanged.
+- Hermetic producer contract, PHP lint, profile contracts, guard hashes,
+  protected-touch and diff-check PASS. Staging/production remeasurement and
+  publication remain pending; no provider, runtime, cron or watchdog action.
+
 ## 2026-09-11 — Sharity profile hidden push CLS correction
 
 - Exact simulation: desktop CLS `0.041389`, mobile `0.137899`; residual mobile
