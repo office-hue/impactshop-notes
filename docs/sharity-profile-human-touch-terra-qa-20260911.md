@@ -55,3 +55,17 @@ affect the profile HTTP 200 or layout and are not changed by this package.
 
 No schema, database, cookie policy, cron, watchdog, shared dependency, provider
 or further production action is required.
+
+## 2026-09-11 corrective source QA
+
+- PASS: the corrected source renders every handler-backed global action:
+  `video`, `tasks`, `shop`, `donate`, `account`, `ngo`, `message` and `stats`.
+- PASS: the obsolete dock selectors, its profile/points fetch contract and its
+  sign-in target are absent from the action-bar renderer.
+- PASS: the profile source contains the reviewed Human Touch light canvas,
+  dark outline and purple/lime/coral token set; PHP lint, static profile,
+  summary and owner-policy contracts and guard hash verification pass.
+- NOT YET LIVE: `origin/main` and production retain the earlier release hashes.
+  The prior browser evidence is intentionally not reused for this changed UI.
+  A fresh desktop/mobile visual QA is required after the exact source is
+  published and deployed.

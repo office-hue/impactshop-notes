@@ -492,3 +492,14 @@ dark outlines and purple/lime/coral accents. PHP lint, focused static/profile/
 policy tests, guard hash verification and diff-check pass. New source hashes
 are recorded in the protected change record; no push, PR, deployment or runtime
 change has occurred. Terra visual QA is required before any Sol release gate.
+
+## 2026-09-11 Terra corrective source QA
+
+Source QA accepts the corrected action contract: all eight handler-backed
+global actions are present and the obsolete dock contract is absent. The
+profile token contract contains the reviewed Human Touch light/dark-outline/
+purple/lime/coral system. The local tests and hash verification are PASS.
+Production deliberately remains on the earlier CAS hashes, so no old browser
+evidence is reused for this changed UI. The next package must be Sol/high for
+one source publication plus exact-file release; fresh desktop/mobile visual QA
+is then mandatory.

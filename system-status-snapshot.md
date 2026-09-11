@@ -1462,4 +1462,12 @@ deployment state changed.
   dock. Reworked profile UI tokens to the Human Touch light, outlined
   purple/lime/coral system; data/grant logic unchanged.
 - Targeted tests, PHP lint, guard hash and diff-check: PASS. Source-only,
-  not deployed; Terra visual QA is the next gate.
+  not deployed; Sol publication is next, then fresh Terra visual QA.
+
+## 2026-09-11 — Sharity corrective Terra source QA
+
+- PASS: eight-action/global-handler contract, dock removal and Human Touch
+  token contract. Existing production still runs the old action-bar and panel
+  CAS images, so source QA is not live visual acceptance.
+- Next: one Sol/high source-publication and exact-file release package, then
+  fresh desktop/mobile visual QA on the released source.

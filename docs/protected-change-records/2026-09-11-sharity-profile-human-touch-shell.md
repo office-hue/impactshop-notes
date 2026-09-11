@@ -70,7 +70,10 @@ unchanged.
   `30c24dcac622bc476648112f45fb9fcf0491f6ccab70f14355a0aff2dae6be66`.
 - Targeted PHP/static/profile-policy tests and guard verification pass.
 - The prior exact production releases remain historical; this correction is
-  not deployed and requires Terra visual QA before any Sol publication gate.
+  not deployed and requires fresh Terra visual QA after a Sol publication gate.
+- Terra corrective source QA passed the eight-action, dock-removal and Human
+  Touch token contracts. Live visual QA remains explicitly pending the new
+  exact source publication.
 
 ## Production closure
 
