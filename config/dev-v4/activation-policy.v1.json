@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "contractId": "dev-v4.impactshop-notes.activation-policy",
+  "status": "active",
+  "authority": "base-git-object",
+  "repo": "office-hue/impactshop-notes",
+  "stageABase": {"commit":"92b2a4fc58ecfa86e14b3bd80e5022778c015805","tree":"2c699ea16210b00ca9f62740e32db1376f2376c6"},
+  "central": {"repoId":"1173292974","mergeSha":"94db78c66b21979c9511594344649a518a4d31d8","tree":"6fd0f87b40b74e74abce72caf03a48280f7659ab","operationsPackageSha256":"229649232d28644a85321f43f0f7b266bdb8a05cc6d5329d8b40c84b154d43dd"},
+  "stageAProtectedSha256": {
+    "config/dev-v4/central-contract-snapshot.v1.json":"935482cf99e122e872126520f7f17d24c6dc01cb35212c66cda511cba79073e9",
+    "config/dev-v4/repo-capabilities.v1.json":"c3a1574a06f5e9a72c02da65fd5d0bb2fe0e63b0ac2a24a56e1234ad66b913b9",
+    "config/dev-v4/stage-a-bastion-policy.v1.json":"9882693a05c97b0e7830e37ea47eb9f09459844cca33d66d54c5baeead0e6e7e",
+    "scripts/dev-v4-stage-a-verifier.mjs":"790e2961311806d7c15aefa611f011fe0d78cd20dff075a1b79840d76ac0cf96"
+  },
+  "candidateAuthority": false,
+  "providerBuildAllowed": false,
+  "providerDeployAllowed": false,
+  "vpsMutationAllowed": false,
+  "runtimeMutationAllowed": false,
+  "secretMaterialAllowed": false,
+  "schedulerMutationAllowed": false,
+  "selectors": {
+    "maintenance-docs":{"lane":"maintenance","riskCeiling":"low","requiresPlanId":false,"writeSurface":["docs/","notes.md","system-status-snapshot.md"]},
+    "standard-source":{"lane":"standard","riskCeiling":"medium","requiresPlanId":true,"writeSurface":["AGENTS.md",".github/","config/","scripts/","tests/","docs/","notes.md","system-status-snapshot.md"]},
+    "protected-source":{"lane":"protected","riskCeiling":"high","requiresPlanId":true,"writeSurface":["AGENTS.md",".github/","config/","scripts/","tests/","docs/","notes.md","system-status-snapshot.md"]}
+  }
+}
