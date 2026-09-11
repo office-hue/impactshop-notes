@@ -7704,3 +7704,9 @@ and negative fixtures keep the result `valid-unverified` / `pending-activation`:
 `ready=false`, with no provider/build/deploy/VPS/runtime/secret/cron/watchdog
 or hook mutation. PHP/staging/remote observations are degraded or blocked only
 for their affected protected lanes. Plan: `dev-v4-impactshop-stage-a-20260911`.
+# 2026-09-11 — DEV v4 Stage B v2 semantics
+
+Candidate source remains v2-only until the Stage B contract is merged. New
+post-merge tasks require a descendant base containing the active contract and
+consistent schema-v2 capsule identity. No provider/build/deploy/VPS/runtime,
+secret/cron/watchdog state changed.

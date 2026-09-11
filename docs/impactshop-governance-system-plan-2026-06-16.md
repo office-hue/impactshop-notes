@@ -615,3 +615,9 @@ in favor of one compact, read-only profile summary plus an explicit existing
 account sign-in action. It reuses the established cookie-bound identity and
 points reads and adds no authority, mutation, schema, scheduler or provider
 surface. Protected hashes, rollback and route/profile smoke remain mandatory.
+# DEV v4 Stage B v2 sync — 2026-09-11
+
+The candidate remains v2-only on the exact Stage A base. A new task becomes
+v4-aware only after a merged descendant contains the Stage B contract and a
+fresh capsule binds origin/main, HEAD, tree and branch. No live authority is
+added.
