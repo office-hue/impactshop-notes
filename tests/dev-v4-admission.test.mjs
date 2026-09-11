@@ -4,3 +4,10 @@ const root=path.resolve(import.meta.dirname,'..'), helper=path.join(root,'script
 function fixture(){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'impactshop-v4-'));spawnSync('/usr/bin/git',['-C',dir,'init','-q']);spawnSync('/usr/bin/git',['-C',dir,'config','user.email','fixture@example.invalid']);spawnSync('/usr/bin/git',['-C',dir,'config','user.name','Fixture']);fs.writeFileSync(path.join(dir,'README'),'fixture');spawnSync('/usr/bin/git',['-C',dir,'add','.']);spawnSync('/usr/bin/git',['-C',dir,'commit','-qm','fixture']);return dir}
 test('markerless pre-merge candidate is explicitly v2-only without writes',()=>{const dir=fixture();try{const r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'});assert.equal(r.status,0);const p=JSON.parse(r.stdout);assert.equal(p.v4.state,'v2-only');assert.equal(p.combinedDecision,'planning-only');}finally{fs.rmSync(dir,{recursive:true,force:true})}});
 test('unsafe nonlegacy capsule is blocked in a temporary fixture',()=>{const dir=fixture();try{const marker=path.join(dir,'.git','worktree-active.json'),target=path.join(dir,'unsafe');fs.writeFileSync(target,'x');fs.symlinkSync(target,marker);const r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'});assert.equal(r.status,0);assert.equal(JSON.parse(r.stdout).combinedDecision,'blocked');}finally{fs.rmSync(dir,{recursive:true,force:true})}});
+test('corrected central snapshot and atomic marker contract are pinned',()=>{
+  const snapshot=JSON.parse(fs.readFileSync(path.join(root,'config/dev-v4/central-contract-snapshot.v2.json')));
+  assert.equal(snapshot.centralMergeSha,'94db78c66b21979c9511594344649a518a4d31d8');
+  assert.equal(snapshot.centralTree,'6fd0f87b40b74e74abce72caf03a48280f7659ab');
+  const starter=fs.readFileSync(path.join(root,'scripts/worktree-task-start.sh'),'utf8');
+  assert.match(starter,/fchmod\(fd, 0o600\)/); assert.match(starter,/os\.replace\(temp, marker_file\)/);
+});
