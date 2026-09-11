@@ -4,6 +4,15 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-11 Sharity profile early-enqueue sync
+
+The profile identity assets are now enqueued during the ordinary
+`wp_enqueue_scripts` hook only when the canonical profile route is active.
+This closes the late-inline-stylesheet CLS source without adding global CSS,
+shared dependencies, provider/VPS/database authority, cron or watchdog state.
+The staging `<0.1` CLS and zero-overflow results remain explicit remeasurement
+gates.
+
 ## 2026-09-11 Sharity profile CLS correction sync
 
 The profile-only identity panel now reserves space for its async points,

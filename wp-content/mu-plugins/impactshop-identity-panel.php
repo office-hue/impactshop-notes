@@ -1639,6 +1639,14 @@ CSS;
         'restBase'  => esc_url_raw(rest_url('impact/v1')),
         'restNonce' => wp_create_nonce('wp_rest'),
     ]);
+
+    // The profile shortcode renders in page content, after wp_head. Enqueue
+    // the already-registered profile assets during the normal hook only for
+    // the profile route so the inline stylesheet is present before first
+    // paint without adding identity CSS or JS to other pages.
+    if (impactshop_identity_is_profile_route()) {
+        impactshop_identity_panel_enqueue_assets();
+    }
 }
 
 /**

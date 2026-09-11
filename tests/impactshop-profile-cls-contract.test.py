@@ -13,6 +13,12 @@ def css_rule(selector: str, end: str) -> str:
     return PHP[start:PHP.index(end, start)]
 
 
+register_assets = PHP[PHP.index("function impactshop_identity_panel_register_assets"):PHP.index("function impactshop_identity_panel_enqueue_assets")]
+assert "if (impactshop_identity_is_profile_route())" in register_assets
+assert "impactshop_identity_panel_enqueue_assets();" in register_assets
+assert "add_action('wp_enqueue_scripts', 'impactshop_identity_panel_register_assets')" in PHP
+
+
 points = css_rule(
     ".impactshop-identity-points[data-role=points-section][hidden]",
     "\n",
