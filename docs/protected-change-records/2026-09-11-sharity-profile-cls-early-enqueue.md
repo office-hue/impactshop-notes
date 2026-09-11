@@ -44,3 +44,37 @@ Required identity/profile smoke tags: `route:factlens-vb-prod`,
 The `<0.1` desktop/mobile CLS and zero-horizontal-overflow targets remain
 staging remeasurement gates. Rollback is a source-only revert of this exact
 checkpoint before publication; no live rollback or data change is included.
+
+## Protected source admission
+
+This manifest covers every protected endpoint in the exact
+`origin/main..HEAD` candidate. It grants source publication authority only;
+runtime staging and production acceptance remain separate Sol gates.
+
+<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+{
+  "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-20260910",
+  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#luna-follow-up-early-profile-asset-enqueue",
+  "protectedPaths": [
+    "docs/bastion-guard-status.md",
+    "docs/impactshop-guard-hashes.json",
+    "docs/impactshop-guard-hashes.sha256",
+    "wp-content/mu-plugins/impactshop-identity-panel.php"
+  ],
+  "rollbackNote": "revert the exact early-enqueue checkpoint before runtime publication; after deployment use its exact-file CAS preimage and retain the owner-grant v2 schema and verifier",
+  "schemaVersion": 1,
+  "smokeTags": [
+    "browser:chrome",
+    "browser:webkit",
+    "flow:legacy-pool-visibility",
+    "flow:message-popup",
+    "flow:points-jump",
+    "flow:profile-open",
+    "flow:profile-return-account",
+    "flow:profile-return-restore",
+    "route:factlens-vb-prod",
+    "route:impact-challenge",
+    "route:profil"
+  ]
+}
+<!-- END PROTECTED SOURCE ADMISSION -->
