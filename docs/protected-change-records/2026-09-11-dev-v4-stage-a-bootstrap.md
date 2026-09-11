@@ -39,6 +39,6 @@ conversation instruction for this session to implement the full DEV Upgrade
 target rollout with source publication authorized, subject to the existing
 fail-closed boundaries. It is independently corroborated by the merged central
 approved plan `dev-v4-activation-rollout-20260911` in `office-hue/ai-agent` at
-merge `94db78c66b21979c9511594344e9a518a4d31d8`. Candidate text does not create
+merge `94db78c66b21979c9511594344649a518a4d31d8`. Candidate text does not create
 authority; independent QA corroborates the external instruction. No runtime or
 deploy authority is added by this record.
