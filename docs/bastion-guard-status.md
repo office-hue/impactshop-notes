@@ -2,6 +2,23 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-11 — Sharity profile AdSense producer suppression
+
+Production acceptance passed cache, cookie and identity isolation but reported
+seven AdSense markers and desktop overflow/CLS. The maximum-protected profile
+source now removes only the exact Site Kit AdSense object
+`Google\\Site_Kit\\Modules\\AdSense::register_tag` from the
+`template_redirect` callback registry after producer registration. Elementor
+`html` widgets are disabled only when nested render settings contain the two
+narrow AdSense signatures; exact AdSense widget names remain covered.
+
+The hermetic contract covers positive and negative callback/widget cases,
+root/control route boundaries, near misses and benign HTML. PHP lint, focused
+profile contracts, guard verification, protected-touch and `git diff --check`
+are required before checkpoint. This is source-only; no output-buffer rewrite,
+auth/data/DB/cookie/shared dependency, provider, runtime, cron or watchdog
+change is admitted. Live remeasurement and publication remain pending.
+
 ## 2026-09-11 — Sharity profile hidden push reservation specificity
 
 The shared Playwright simulation measured desktop CLS `0.041389` and mobile

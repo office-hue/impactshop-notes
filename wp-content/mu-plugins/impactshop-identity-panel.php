@@ -239,9 +239,50 @@ function impactshop_identity_profile_suppress_ads(): void
         return;
     }
 
+    // Site Kit registers its Web_Tag producer from template_redirect.  Queue
+    // an exact, late registry removal so the producer cannot later emit its
+    // wp_head AdSense tag on the profile route.
+    add_action('template_redirect', 'impactshop_identity_profile_remove_site_kit_adsense_tag', PHP_INT_MAX);
     add_filter('googlesitekit_adsense_enabled', '__return_false', 1000);
     add_filter('googlesitekit_ads_enabled', '__return_false', 1000);
     add_filter('googlesitekit_modules_enabled', 'impactshop_identity_profile_site_kit_modules', 1000);
+}
+
+/**
+ * Remove only the exact Site Kit AdSense register_tag callback.
+ *
+ * @return void
+ */
+function impactshop_identity_profile_remove_site_kit_adsense_tag(): void
+{
+    if (!impactshop_identity_is_profile_route()) {
+        return;
+    }
+
+    global $wp_filter;
+    $hook = $wp_filter['template_redirect'] ?? null;
+    if (!is_object($hook) || !is_array($hook->callbacks ?? null)) {
+        return;
+    }
+
+    foreach ($hook->callbacks as $priority => $callbacks) {
+        if (!is_array($callbacks)) {
+            continue;
+        }
+        foreach ($callbacks as $callback_data) {
+            $callback = $callback_data['function'] ?? null;
+            if (
+                !is_array($callback)
+                || count($callback) !== 2
+                || !is_object($callback[0])
+                || get_class($callback[0]) !== 'Google\\Site_Kit\\Modules\\AdSense'
+                || $callback[1] !== 'register_tag'
+            ) {
+                continue;
+            }
+            remove_action('template_redirect', $callback, (int) $priority);
+        }
+    }
 }
 
 /**
@@ -284,7 +325,36 @@ function impactshop_identity_profile_site_kit_modules($modules)
 }
 
 /**
- * Suppress an exact Elementor AdSense widget on profile pages.
+ * Recursively detect only the narrow AdSense producer signatures in widget
+ * render settings.  This inspects producer configuration; it never rewrites
+ * rendered HTML.
+ *
+ * @param mixed $value Widget render settings value.
+ * @return bool
+ */
+function impactshop_identity_profile_settings_contain_adsense_signature($value): bool
+{
+    if (is_string($value)) {
+        return stripos($value, 'pagead2.googlesyndication.com') !== false
+            || stripos($value, 'adsbygoogle') !== false;
+    }
+
+    if (!is_array($value)) {
+        return false;
+    }
+
+    foreach ($value as $nested_value) {
+        if (impactshop_identity_profile_settings_contain_adsense_signature($nested_value)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Suppress exact Elementor AdSense widgets and matching generic HTML widgets
+ * on profile pages.
  *
  * @param mixed $widget Elementor widget instance.
  * @return void
@@ -297,7 +367,18 @@ function impactshop_identity_suppress_profile_adsense_widget($widget): void
 
     $widget_name = strtolower((string) $widget->get_name());
     $adsense_widgets = ['adsense', 'google_adsense', 'elementor_google_adsense'];
-    if (!in_array($widget_name, $adsense_widgets, true)) {
+    $should_suppress = in_array($widget_name, $adsense_widgets, true);
+    if (!$should_suppress && $widget_name === 'html') {
+        $settings = [];
+        if (method_exists($widget, 'get_settings_for_display')) {
+            $settings = $widget->get_settings_for_display();
+        } elseif (method_exists($widget, 'get_settings')) {
+            $settings = $widget->get_settings();
+        }
+        $should_suppress = impactshop_identity_profile_settings_contain_adsense_signature($settings);
+    }
+
+    if (!$should_suppress) {
         return;
     }
 
