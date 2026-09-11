@@ -7671,3 +7671,11 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - A teal/üveg panel nem követi a `sharity.hu/hatas-korok` Human Touch világos,
   kontúros lila–lime–korall komponensnyelvét. Következő: Luna/high korrekció,
   majd Terra/high vizuális QA.
+
+## 2026-09-11 — Profil corrective source checkpoint
+
+- A nyolcfunkciós globális `data-bar` sáv markupja visszakerült, a kétcellás
+  profil dock kikerült.
+- A profil shell és kontrollok Human Touch világos háttérre, sötét kontúrra,
+  lila–lime–korall akcentusokra váltottak. Forrás-only, nincs deploy; Terra
+  vizuális QA szükséges.

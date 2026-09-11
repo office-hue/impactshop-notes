@@ -1659,28 +1659,28 @@ function impactshop_identity_panel_register_assets(): void
     );
 
     $css = <<<CSS
-.impactshop-identity-panel { max-width: 720px; margin: 24px auto; font-family: inherit; color: #0f172a; }
+.impactshop-identity-panel { max-width: 720px; margin: 24px auto; font-family: inherit; color: #171421; }
 .impactshop-profile-shell { max-width: 820px; margin: clamp(20px, 4vw, 56px) auto; }
-.impactshop-profile-shell::before { content: ""; display: block; position: fixed; z-index: -1; inset: 0; background: linear-gradient(145deg, #f5fffc 0%, #eef7ff 48%, #fff8f4 100%); pointer-events: none; }
-.impactshop-profile-intro { margin-bottom: 16px; padding: clamp(20px, 4vw, 34px); border-radius: 26px; color: #f8fffd; background: linear-gradient(135deg, #0b5361 0%, #0f8a9d 58%, #0f766e 100%); box-shadow: 0 20px 44px rgba(11, 83, 97, 0.2); overflow: hidden; position: relative; }
-.impactshop-profile-intro::after { content: ""; position: absolute; width: 180px; height: 180px; right: -54px; top: -74px; border-radius: 50%; background: rgba(255,255,255,0.13); }
-.impactshop-profile-intro__kicker { display: inline-block; margin-bottom: 10px; color: #bff7e8; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.impactshop-profile-intro h2 { margin: 0 0 8px; color: #fff; font-size: clamp(24px, 4vw, 34px); line-height: 1.1; }
-.impactshop-profile-intro p { max-width: 620px; margin: 0; color: rgba(248,255,253,.88); font-size: 15px; line-height: 1.55; }
-.impactshop-profile-shell .impactshop-identity-card { background: rgba(255,255,255,.82); border-color: rgba(15,138,157,.2); box-shadow: 0 24px 52px rgba(11,31,42,.12); }
+.impactshop-profile-shell::before { content: ""; display: block; position: fixed; z-index: -1; inset: 0; background: radial-gradient(circle at 8% 10%, rgba(201,255,61,.22), transparent 26%), linear-gradient(145deg, #fffdf7 0%, #f7f1ff 52%, #fff7ed 100%); pointer-events: none; }
+.impactshop-profile-intro { margin-bottom: 16px; padding: clamp(20px, 4vw, 34px); border: 3px solid #171421; border-radius: 24px; color: #171421; background: #dfd2ff; box-shadow: 7px 7px 0 #171421; overflow: hidden; position: relative; }
+.impactshop-profile-intro::after { content: ""; position: absolute; width: 180px; height: 180px; right: -54px; top: -74px; border-radius: 50%; background: #c9ff3d; border: 3px solid #171421; }
+.impactshop-profile-intro__kicker { display: inline-block; margin-bottom: 10px; color: #713cff; font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.impactshop-profile-intro h2 { margin: 0 0 8px; color: #171421; font-size: clamp(24px, 4vw, 34px); line-height: 1.1; }
+.impactshop-profile-intro p { max-width: 620px; margin: 0; color: #2c243d; font-size: 15px; line-height: 1.55; }
+.impactshop-profile-shell .impactshop-identity-card { background: #fffdf7; border-color: #171421; box-shadow: 7px 7px 0 #171421; }
 .impactshop-identity-panel--compact { max-width: 460px; }
-.impactshop-identity-card { border-radius: 18px; padding: 22px; background: rgba(255,255,255,0.7); border: 1px solid rgba(148,163,184,0.35); box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12); backdrop-filter: blur(16px); position: relative; overflow: hidden; }
-.impactshop-identity-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 55%), radial-gradient(circle at bottom right, rgba(14,165,233,0.14), transparent 55%); pointer-events: none; }
+.impactshop-identity-card { border-radius: 18px; padding: 22px; background: #fffdf7; border: 3px solid #171421; box-shadow: 5px 5px 0 #171421; position: relative; overflow: hidden; }
+.impactshop-identity-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top left, rgba(223,210,255,.52), transparent 55%), radial-gradient(circle at bottom right, rgba(201,255,61,.22), transparent 55%); pointer-events: none; }
 .impactshop-identity-card h3, .impactshop-identity-card h4 { margin: 0 0 10px; font-weight: 700; }
 .impactshop-identity-summary { margin: 0 0 8px; color: #1a1a2e; line-height: 1.5; }
 .impactshop-identity-summary__label { color: #475569; font-size: 13px; font-weight: 600; margin-right: 4px; }
-.impactshop-identity-votes { padding: 12px 14px; border-radius: 14px; background: #f0fdfa; border: 1px solid rgba(13,148,136,.24); }
-.impactshop-identity-votes h4 { color: #0f766e; }
+.impactshop-identity-votes { padding: 12px 14px; border-radius: 14px; background: #edffd0; border: 3px solid #171421; }
+.impactshop-identity-votes h4 { color: #713cff; }
 .impactshop-identity-votes [data-role=votes-available] { color: #1a1a2e; font-size: 1.15rem; }
 .impactshop-identity-title { display: flex; align-items: center; gap: 8px; position: relative; }
-.impactshop-identity-info-trigger { width: 22px; height: 22px; border-radius: 999px; border: 0; background: #e2e8f0; color: #0f172a; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.impactshop-identity-info-trigger { width: 22px; height: 22px; border-radius: 999px; border: 2px solid #171421; background: #c9ff3d; color: #171421; font-weight: 700; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .impactshop-identity-info-trigger:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
-.impactshop-identity-info-bubble { position: absolute; top: calc(100% + 6px); left: 0; background: #0f172a; color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; width: min(360px, 90vw); box-shadow: 0 14px 30px rgba(15, 23, 42, 0.35); opacity: 0; transform: translateY(6px); transition: opacity .2s ease, transform .2s ease; pointer-events: none; z-index: 5; }
+.impactshop-identity-info-bubble { position: absolute; top: calc(100% + 6px); left: 0; background: #171421; color: #fffdf7; padding: 12px 14px; border: 2px solid #171421; border-radius: 12px; font-size: 13px; width: min(360px, 90vw); box-shadow: 5px 5px 0 #713cff; opacity: 0; transform: translateY(6px); transition: opacity .2s ease, transform .2s ease; pointer-events: none; z-index: 5; }
 .impactshop-identity-info-bubble p { margin: 0 0 8px; }
 .impactshop-identity-info-bubble ul { margin: 0 0 8px; padding-left: 18px; }
 .impactshop-identity-info-bubble li { margin: 0 0 6px; }
@@ -1690,25 +1690,25 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .impactshop-identity-row input { flex: 1; }
 .impactshop-identity-card label { display: block; margin-top: 14px; font-weight: 600; }
-.impactshop-identity-card input, .impactshop-identity-card select { width: 100%; padding: 12px; border: 1px solid rgba(148,163,184,0.6); border-radius: 12px; background: rgba(255,255,255,0.8); }
-.impactshop-identity-card button { padding: 11px 16px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.2); background: #0f172a; color: #fff; cursor: pointer; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18); }
+.impactshop-identity-card input, .impactshop-identity-card select { width: 100%; padding: 12px; border: 2px solid #171421; border-radius: 10px; background: #fff; }
+.impactshop-identity-card button { padding: 11px 16px; border-radius: 11px; border: 2px solid #171421; background: #c9ff3d; color: #171421; cursor: pointer; box-shadow: 3px 3px 0 #171421; font-weight: 800; }
 .impactshop-identity-card button:disabled { cursor: not-allowed; opacity: .6; }
-.impactshop-identity-card button:hover { background: #1e293b; }
-.impactshop-identity-card code { background: rgba(15,23,42,0.06); padding: 10px 12px; border-radius: 10px; font-weight: 700; letter-spacing: 0.02em; }
+.impactshop-identity-card button:hover { background: #f6c4d8; }
+.impactshop-identity-card code { background: #dfd2ff; border: 2px solid #171421; padding: 10px 12px; border-radius: 10px; font-weight: 800; letter-spacing: 0.02em; }
 .impactshop-identity-actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
-.impactshop-identity-link { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.2); background: #0f172a; color: #fff; text-decoration: none; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.18); }
-.impactshop-identity-link:hover { background: #1e293b; }
-.impactshop-identity-link--muted { background: rgba(15,23,42,0.08); color: #0f172a; box-shadow: none; }
-.impactshop-identity-link--muted:hover { background: rgba(15,23,42,0.14); }
+.impactshop-identity-link { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 12px; border: 2px solid #171421; background: #c9ff3d; color: #171421; text-decoration: none; box-shadow: 3px 3px 0 #171421; }
+.impactshop-identity-link:hover { background: #f6c4d8; }
+.impactshop-identity-link--muted { background: #dfd2ff; color: #171421; box-shadow: 3px 3px 0 #171421; }
+.impactshop-identity-link--muted:hover { background: #f6c4d8; }
 .impactshop-identity-hidden { display: none; }
 .impactshop-identity-save-ghost { position: absolute !important; left: -9999px !important; top: -9999px !important; width: 1px !important; height: 1px !important; opacity: 0 !important; pointer-events: none !important; }
 .impactshop-identity-value--recovery { background: rgba(14,165,233,0.15); color: #0e7490; }
 .impactshop-identity-card hr { margin: 18px 0; border: none; border-top: 1px solid rgba(148,163,184,0.4); }
 .impactshop-identity-status { margin-top: 12px; color: #0f172a; min-height: 20px; }
 .impactshop-identity-hint { color: #475569; margin-top: 8px; line-height: 1.5; }
-.impactshop-identity-save { margin-top: 14px; padding: 12px; border: 1px dashed rgba(148,163,184,0.5); border-radius: 14px; background: rgba(248,250,252,0.75); }
+.impactshop-identity-save { margin-top: 14px; padding: 12px; border: 2px dashed #171421; border-radius: 14px; background: #f7f1ff; }
 .impactshop-identity-save__label { display: block; font-weight: 600; margin-bottom: 6px; }
-.impactshop-identity-restore { margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(148,163,184,0.35); display: grid; gap: 10px; }
+.impactshop-identity-restore { margin-top: 18px; padding-top: 12px; border-top: 2px solid #171421; display: grid; gap: 10px; }
 .impactshop-identity-restore h4 { margin: 0; font-size: 16px; font-weight: 700; }
 .impactshop-identity-restore__label { display: block; font-weight: 600; }
 .impactshop-identity-block { margin-top: 18px; }
@@ -1721,8 +1721,8 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-history { min-height: 75px; box-sizing: border-box; }
 .impactshop-identity-lastngo { min-height: 72px; }
 .impactshop-identity-header { margin-bottom: 12px; }
-.impactshop-identity-progress { width: 100%; height: 8px; background: rgba(148,163,184,0.3); border-radius: 999px; overflow: hidden; margin: 10px 0; }
-.impactshop-identity-progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, #0ea5e9, #22c55e); }
+.impactshop-identity-progress { width: 100%; height: 10px; background: #f6c4d8; border: 2px solid #171421; border-radius: 999px; overflow: hidden; margin: 10px 0; }
+.impactshop-identity-progress-bar { height: 100%; width: 0; background: #713cff; }
 .impactshop-identity-benefits span { display: block; margin-top: 6px; font-size: 13px; color: #334155; }
 .impactshop-identity-list { list-style: none; padding: 0; margin: 0; }
 .impactshop-identity-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(148,163,184,0.2); font-size: 13px; }

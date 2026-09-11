@@ -481,3 +481,14 @@ reference uses outlined purple/lime/coral components rather than the deployed
 teal glass treatment. The next bounded Luna package must restore the eight
 action contracts, remove the dock and recompose the profile in that component
 grammar; no identity or owner-grant behavior may change.
+
+## 2026-09-11 Luna corrective source checkpoint
+
+The corrective source package restores the real eight-action `.sharity-action-bar`
+markup (`video`, `tasks`, `shop`, `donate`, `account`, `ngo`, `message`,
+`stats`) and removes the two-cell profile dock. The profile shell, cards,
+inputs, buttons and vote panel now use the live Human Touch light canvas with
+dark outlines and purple/lime/coral accents. PHP lint, focused static/profile/
+policy tests, guard hash verification and diff-check pass. New source hashes
+are recorded in the protected change record; no push, PR, deployment or runtime
+change has occurred. Terra visual QA is required before any Sol release gate.

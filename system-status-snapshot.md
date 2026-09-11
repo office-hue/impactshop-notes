@@ -1455,3 +1455,11 @@ deployment state changed.
   remove the dock and use the live Human Touch outlined purple/lime/coral
   component system for the profile. Identity/owner-grant data behavior stays
   out of scope.
+
+## 2026-09-11 — Sharity corrective source checkpoint
+
+- Restored the eight global `data-bar` actions and removed the two-cell profile
+  dock. Reworked profile UI tokens to the Human Touch light, outlined
+  purple/lime/coral system; data/grant logic unchanged.
+- Targeted tests, PHP lint, guard hash and diff-check: PASS. Source-only,
+  not deployed; Terra visual QA is the next gate.
