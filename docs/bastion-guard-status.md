@@ -2,6 +2,17 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-11 — Sharity profile async layout reservation
+
+The protected identity-panel inline CSS reserves only the profile points,
+compact-summary and last-NGO blocks that otherwise change height after async
+identity data arrives. This is a bounded layout-stability correction for the
+staging Playwright finding (desktop CLS `0.064`, mobile CLS `0.326`); the
+mobile `<0.1` target remains unverified until a new staging measurement.
+Focused hermetic contract, syntax and existing profile checks pass. No
+provider, database, runtime, cron or watchdog mutation occurred. See
+`docs/protected-change-records/2026-09-11-sharity-profile-cls-stability.md`.
+
 ## 2026-09-11 — Sharity profile environment-aware route correction
 
 The staging WordPress home is mounted below `/impactshop-staging`, unlike the

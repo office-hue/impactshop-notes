@@ -1604,6 +1604,9 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-restore h4 { margin: 0; font-size: 16px; font-weight: 700; }
 .impactshop-identity-restore__label { display: block; font-weight: 600; }
 .impactshop-identity-block { margin-top: 18px; }
+.impactshop-identity-points[data-role=points-section][hidden] { display: block; visibility: hidden; min-height: 250px; }
+.impactshop-identity-compact[data-role=points-compact][hidden] { display: block; visibility: hidden; min-height: 72px; }
+.impactshop-identity-lastngo { min-height: 72px; }
 .impactshop-identity-header { margin-bottom: 12px; }
 .impactshop-identity-progress { width: 100%; height: 8px; background: rgba(148,163,184,0.3); border-radius: 999px; overflow: hidden; margin: 10px 0; }
 .impactshop-identity-progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, #0ea5e9, #22c55e); }

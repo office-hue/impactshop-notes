@@ -4,6 +4,14 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-11 Sharity profile CLS correction sync
+
+The profile-only identity panel now reserves space for its async points,
+compact-summary and last-NGO blocks. This is a source-only layout-stability
+fix for the staging Playwright CLS finding; no global CSS, shared dependency,
+provider, VPS, database, runtime, cron or watchdog authority is added. The
+mobile `<0.1` target remains an explicit staging remeasurement gate.
+
 ## 2026-09-11 Sharity profile subdirectory route sync
 
 The staging UI blocker was a hosting-prefix mismatch: its WordPress home is
