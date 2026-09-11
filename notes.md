@@ -7657,3 +7657,9 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   kártyakeret készült.
 - Az identity/grant/REST/adatfolyam érintetlen; külön bounded presentation
   checkpointként kezelendő.
+- PR #211 merge és exact production kiadás lezárva: release
+  `20260911T082700Z-05b3d147-profile-shell`, SHA-256
+  `d2cc8c83f7707a756f3aa2edb3b48dd63bbec7acc9cd06f04ef0199b92e9aaea`, mode
+  `0444`. Live desktop/mobile QA PASS; nincs profil-hirdetésmarker vagy
+  vízszintes túlcsordulás. Az Elementor külső fejléc/lábléc nem része ennek a
+  csomagnak.

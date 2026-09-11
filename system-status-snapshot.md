@@ -1429,3 +1429,13 @@ deployment state changed.
 
 - A bounded profile-only Human Touch shell is prepared; identity, grant,
   schema, cron and watchdog behavior remain unchanged.
+
+## 2026-09-11 — Profile Human Touch shell production closure
+
+- PR #211 squash-merged as `05b3d1478371`; exact-main release
+  `20260911T082700Z-05b3d147-profile-shell` deployed the identity panel at
+  SHA-256 `d2cc8c83f7707a756f3aa2edb3b48dd63bbec7acc9cd06f04ef0199b92e9aaea`,
+  mode `0444`.
+- Five-endpoint production preflight and desktop/mobile live QA passed with
+  HTTP 200, 0 px overflow and 0 profile ad markers. No DB, cron, watchdog or
+  shared dependency change; outer Elementor header/footer remains untouched.

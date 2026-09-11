@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 
-Status: source checkpoint; bounded presentation follow-up
+Status: production-accepted; bounded presentation follow-up closed
 
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
@@ -49,3 +49,20 @@ schema, cron, watchdog and shared dependencies remain unchanged.
 - profile summary, owner-policy and profile-shell static tests
 - protected hash verification and git diff --check
 - one desktop/mobile production DOM/layout check after publication
+
+## Production closure
+
+- PR #211 squash-merged as `05b3d147837127355539bbd46beb919214d7c2e9`.
+- Exact-main release: `20260911T082700Z-05b3d147-profile-shell`.
+- Production target: `wp-content/mu-plugins/impactshop-identity-panel.php`.
+- CAS postimage SHA-256:
+  `d2cc8c83f7707a756f3aa2edb3b48dd63bbec7acc9cd06f04ef0199b92e9aaea`;
+  remote mode `0444`.
+- Production preflight passed all five public control endpoints.
+- Browser QA: desktop/mobile HTTP 200, Human Touch intro visible, profile dock
+  visible, canonical anchors present, pseudo/nickname/votes visible, 0 px
+  horizontal overflow and 0 profile ad markers. Screenshots:
+  `/tmp/sharity-profile-shell-live-20260911-yAwN/desktop.png` and
+  `/tmp/sharity-profile-shell-live-20260911-yAwN/mobile.png`.
+- Rollback remains the recorded exact release rollback command; no database,
+  cron, watchdog or shared dependency change.

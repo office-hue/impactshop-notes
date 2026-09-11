@@ -454,3 +454,11 @@ existing identity, points, votes, restore and owner-grant behavior is
 unchanged. This is the next bounded presentation checkpoint after the global
 floating dock; the outer Elementor header/footer remains intentionally
 untouched.
+
+Production closure: PR #211 squash-merged as `05b3d1478371`. Exact-main CAS
+release `20260911T082700Z-05b3d147-profile-shell` deployed the identity panel
+at SHA-256 `d2cc8c83f7707a756f3aa2edb3b48dd63bbec7acc9cd06f04ef0199b92e9aaea`
+with mode `0444`. Five-endpoint production preflight and desktop/mobile live
+QA passed: HTTP 200, Human Touch shell and dock present, canonical anchors,
+pseudo/nickname/votes visible, no horizontal overflow and no profile ad
+markers. The outer Elementor header/footer remains outside this package.
