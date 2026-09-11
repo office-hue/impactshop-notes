@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 
-Status: source-only Luna checkpoint; no publication or live activation
+Status: production-accepted from exact merged main; no cron/watchdog change
 
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
@@ -78,6 +78,15 @@ Required identity/profile smoke tags: `route:factlens-vb-prod`,
 - guard hash verification and `git diff --check` PASS
 - protected-touch, strict audit and maximum-bastion checks PASS
 
-Live AdSense-marker/CLS remeasurement and publication remain pending. Rollback
-is a source-only revert of this exact checkpoint before publication; no live
-rollback or data change is included.
+Publication completed through PR #206 and PR #207. The final merged-main source
+is `e9d9c934fb7bfce4ec9bb2af0586f19a8d9782f6`; the deployed PHP SHA-256 is
+`72980c402f05666c73f4a7b1f69df68d4ad54bf45bf7ecdd6b333b40f0f54cbc`.
+Exact-file staging release `20260911T071009Z-e9d9c934fb7b-20804a79` and
+production release `20260911T071058Z-e9d9c934fb7b-20804a79` both verified
+mode `0444`. Final staging and production browser checks reported zero
+AdSense markers and zero overflow; production CLS was `0.006905` desktop and
+`0.070579` mobile. Two isolated production cookie jars returned distinct
+active pseudo IDs, private/no-store cache headers, `Vary: Cookie`, Cloudflare
+`DYNAMIC`, and zero ad markers. Production rollback restores the release
+preimage through the recorded release ID and deployed SHA; no database change
+was made by this follow-up.

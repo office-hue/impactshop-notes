@@ -1,5 +1,41 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Production closure — 2026-09-11
+
+The Sharity profile package is merged and user-visible in production from
+`origin/main@e9d9c934fb7bfce4ec9bb2af0586f19a8d9782f6`. PR #206 removed the exact
+Site Kit AdSense producer; production evidence then identified the remaining
+stored producers as Elementor `text-editor` widgets. PR #207 replaced the
+non-functional setter path with Elementor's canonical
+`elementor/frontend/widget/should_render` filter.
+
+The final immutable PHP source SHA-256 is
+`72980c402f05666c73f4a7b1f69df68d4ad54bf45bf7ecdd6b333b40f0f54cbc`.
+It was applied by exact-file CAS to staging release
+`20260911T071009Z-e9d9c934fb7b-20804a79` and production release
+`20260911T071058Z-e9d9c934fb7b-20804a79`, both mode `0444`. Production
+rollback is bound to the latter release ID and deployed SHA. The verified
+database backup from the parent production package remains
+`/home/sharityh/impactshop_backups/sharity-profile/app-20260911T060000Z.sql`
+with its checked checksum sidecar; this presentation-only follow-up made no
+database change.
+
+Final browser acceptance: staging and production returned status `200`, one
+profile panel, zero AdSense markers and zero horizontal overflow. Production
+CLS was `0.006905` desktop and `0.070579` mobile; the canonical sign-in label,
+profile anchor, keyboard focus outline and owner/pseudo cookie flags passed.
+Two isolated production cookie jars both reached `active`, received distinct
+pseudo IDs, and returned `private, no-store, no-cache`, `Vary: Cookie` and
+Cloudflare `DYNAMIC`, with zero AdSense markers.
+
+Terra source QA passed. Codex Security scans
+`24bf9053-5b81-4e61-bafb-1ee6ee0d425b` and
+`2af6d6af-7f20-4745-8b8d-01a1d6ae5951` completed with zero reportable
+findings. Cron/watchdog changes were not required. Status:
+`production-accepted`; deterministic provider worker inventory is unavailable
+on S59, so acceptance is bound to exact CAS readback plus repeated public
+origin responses, not a worker-count claim.
+
 ## Luna follow-up — canonical Elementor render filter
 
 Production evidence showed the remaining AdSense widgets are Elementor

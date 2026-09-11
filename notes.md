@@ -1,3 +1,19 @@
+## 2026-09-11 — Sharity profile production accepted
+
+- PR #206 removed the exact Site Kit AdSense producer; PR #207 switched the
+  stored Elementor `text-editor` ads to the canonical `should_render` filter.
+- Exact merged main: `e9d9c934fb7bfce4ec9bb2af0586f19a8d9782f6`; production
+  release: `20260911T071058Z-e9d9c934fb7b-20804a79`; deployed PHP SHA-256:
+  `72980c402f05666c73f4a7b1f69df68d4ad54bf45bf7ecdd6b333b40f0f54cbc`.
+- Final production: ads `0`, overflow `0`, desktop CLS `0.006905`, mobile CLS
+  `0.070579`; two isolated active profiles were distinct and both returned
+  private/no-store, `Vary: Cookie`, Cloudflare `DYNAMIC`.
+- Security scans `24bf9053-5b81-4e61-bafb-1ee6ee0d425b` and
+  `2af6d6af-7f20-4745-8b8d-01a1d6ae5951`: zero reportable findings.
+- Shared browser QA is pinned outside repositories at
+  `/Users/bujdosoarnold/.local/share/office-hue-dev-tools/playwright/1.63.0`;
+  wrappers are in `/Users/bujdosoarnold/.local/bin`.
+
 ## 2026-09-11 — Sharity profile hidden push reservation specificity
 
 - Shared Playwright: desktop CLS `0.041389`, mobile `0.137899`; the residual
