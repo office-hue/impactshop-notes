@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "contractId": "dev-v4.impactshop-notes.stage-a-bastion",
+  "protectionLevel": "maximum",
+  "stage": "A",
+  "activationAllowed": false,
+  "readyAllowed": false,
+  "allowedOperations": ["read-local-files", "read-git-objects", "static-verification"],
+  "forbiddenOperations": ["provider", "build", "deploy", "vps", "runtime", "secret", "cron", "watchdog", "hook-install", "network-write"],
+  "forbiddenTokens": ["--activate", "--ready", "--deploy", "--apply", "providerMutation", "runtimeMutation", "secretMaterial"],
+  "maximumInputBytes": 262144,
+  "authority": "repo-base"
+}
