@@ -54,22 +54,10 @@ function impactshop_action_bar_render(): void
         return;
     }
 
-    $path = impactshop_action_bar_current_path();
-    $video_current = str_starts_with($path, '/impact-challenge') || str_starts_with($path, '/impactad-2');
-    $shop_current = str_starts_with($path, '/impactshop');
-
-    $video_url = home_url('/impact-challenge/') . '#ads-watch-video';
-    $tasks_url = home_url('/impact-challenge/') . '#impactshop-offerwall';
-    $shop_url = home_url('/impactshop/');
-    $donate_url = home_url('/impact-challenge/') . '#ads-watch-purchase';
     $account_url = home_url('/profil/#impactshop-account-top');
-    $ngo_url = home_url('/impact-challenge/') . '#ads-watch-ngo';
-    $message_url = home_url('/impact-challenge/') . '#ads-watch-message';
-    $stats_url = home_url('/impact-challenge/') . '#impactshop-ads-watch';
-
-    $video_attr = $video_current ? ' aria-current="page" data-default-current="1"' : '';
-    $shop_attr = $shop_current ? ' aria-current="page"' : '';
-    $donate_attr = '';
+    $signin_url = home_url('/profil/#impactshop-signin');
+    $profile_rest_url = rest_url('impact/v1/identity/profile');
+    $points_rest_url = rest_url('sharity/v1/pseudo/points');
 
     // Lang + country selector
     $current_lang    = sanitize_key( (string)( $_GET['lang']    ?? '' ) );
@@ -94,9 +82,9 @@ function impactshop_action_bar_render(): void
     ?>
     <style>
         :root {
-            --sharity-action-bar-height: 116px;
-            --sharity-action-bar-height-tablet: 126px;
-            --sharity-action-bar-height-desktop: 70px;
+            --sharity-action-bar-height: 86px;
+            --sharity-action-bar-height-tablet: 86px;
+            --sharity-action-bar-height-desktop: 86px;
             --sharity-a11y-clearance: 110px;
         }
 
@@ -600,42 +588,197 @@ function impactshop_action_bar_render(): void
                 display: none;
             }
         }
+
+        .sharity-profile-dock {
+            position: fixed;
+            z-index: 10005;
+            left: 50%;
+            bottom: max(12px, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            width: min(680px, calc(100vw - 24px));
+            display: grid;
+            grid-template-columns: minmax(0, 1.65fr) minmax(150px, 0.85fr);
+            gap: 8px;
+            padding: 8px;
+            border: 1px solid rgba(15, 138, 157, 0.24);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 16px 44px rgba(11, 31, 42, 0.2);
+            backdrop-filter: blur(16px);
+            font-family: inherit;
+        }
+
+        .sharity-profile-dock a {
+            min-width: 0;
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border-radius: 15px;
+            text-decoration: none !important;
+            font-weight: 800;
+            line-height: 1.15;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .sharity-profile-dock a:hover,
+        .sharity-profile-dock a:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 9px 22px rgba(15, 138, 157, 0.2);
+        }
+
+        .sharity-profile-dock__account {
+            justify-content: flex-start !important;
+            color: #0b1f2a !important;
+            border: 1px solid rgba(15, 138, 157, 0.2);
+            background: linear-gradient(135deg, #f2fffb 0%, #e8f8fb 100%);
+        }
+
+        .sharity-profile-dock__signin {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #0f8a9d 0%, #0f766e 100%);
+            text-align: center;
+        }
+
+        .sharity-profile-dock__icon {
+            flex: 0 0 auto;
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 5px 14px rgba(15, 138, 157, 0.16);
+            font-size: 20px;
+        }
+
+        .sharity-profile-dock__copy {
+            min-width: 0;
+            display: grid;
+            gap: 3px;
+            text-align: left;
+        }
+
+        .sharity-profile-dock__name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .sharity-profile-dock__meta {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #47636d;
+            font-size: 11px;
+            font-weight: 650;
+        }
+
+        .sharity-profile-dock__signin small {
+            display: block;
+            font-size: 11px;
+            font-weight: 650;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 520px) {
+            .sharity-profile-dock {
+                grid-template-columns: minmax(0, 1fr) 118px;
+                width: calc(100vw - 16px);
+                padding: 6px;
+                border-radius: 18px;
+            }
+
+            .sharity-profile-dock a {
+                min-height: 56px;
+                padding: 8px 10px;
+                border-radius: 13px;
+            }
+
+            .sharity-profile-dock__icon {
+                width: 34px;
+                height: 34px;
+                font-size: 18px;
+            }
+
+            .sharity-profile-dock__meta {
+                max-width: 46vw;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .sharity-profile-dock a {
+                transition: none;
+            }
+        }
     </style>
 
-    <nav class="sharity-action-bar" aria-label="Gyors műveletek">
-        <a href="<?php echo esc_url($video_url); ?>" data-bar="video"<?php echo $video_attr; ?>>
-            <span class="bar-icon">🎬</span>
-            <span>Videó</span>
+    <nav class="sharity-profile-dock" aria-label="Profil és belépés">
+        <a class="sharity-profile-dock__account" href="<?php echo esc_url($account_url); ?>" data-profile-dock-account>
+            <span class="sharity-profile-dock__icon" aria-hidden="true">👤</span>
+            <span class="sharity-profile-dock__copy">
+                <strong class="sharity-profile-dock__name" data-profile-dock-name>Profilom</strong>
+                <small class="sharity-profile-dock__meta" data-profile-dock-meta>Profiladatok betöltése…</small>
+            </span>
         </a>
-        <a href="<?php echo esc_url($tasks_url); ?>" data-bar="tasks">
-            <span class="bar-icon">🎁</span>
-            <span>Feladatok</span>
-        </a>
-        <a href="<?php echo esc_url($shop_url); ?>" data-bar="shop"<?php echo $shop_attr; ?>>
-            <span class="bar-icon">🛍️</span>
-            <span>Impact Shop</span>
-        </a>
-        <a href="<?php echo esc_url($donate_url); ?>" data-bar="donate"<?php echo $donate_attr; ?>>
-            <span class="bar-icon">❤️</span>
-            <span>Adományozok</span>
-        </a>
-        <a href="<?php echo esc_url($account_url); ?>" data-bar="account">
-            <span class="bar-icon">👤</span>
-            <span>Profil</span>
-        </a>
-        <a href="<?php echo esc_url($ngo_url); ?>" data-bar="ngo">
-            <span class="bar-icon">🏛️</span>
-            <span>NGO</span>
-        </a>
-        <a href="<?php echo esc_url($message_url); ?>" data-bar="message">
-            <span class="bar-icon">💬</span>
-            <span>Üzenetek</span>
-        </a>
-        <a href="<?php echo esc_url($stats_url); ?>" data-bar="stats">
-            <span class="bar-icon">📊</span>
-            <span>Pontok</span>
+        <a class="sharity-profile-dock__signin" href="<?php echo esc_url($signin_url); ?>">
+            <span>Belépés<small>meglévő fiókba</small></span>
         </a>
     </nav>
+
+    <script>
+    (function(){
+        var dock = document.querySelector('.sharity-profile-dock');
+        if (!dock || typeof window.fetch !== 'function') return;
+
+        var nameNode = dock.querySelector('[data-profile-dock-name]');
+        var metaNode = dock.querySelector('[data-profile-dock-meta]');
+        var profileUrl = <?php echo wp_json_encode($profile_rest_url); ?>;
+        var pointsUrl = <?php echo wp_json_encode($points_rest_url); ?>;
+        var state = { profile: null, points: null };
+
+        function safeNumber(value) {
+            var number = Number(value);
+            return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+        }
+
+        function updateDock() {
+            var profile = state.profile || {};
+            var pseudo = typeof profile.pseudo_id === 'string' ? profile.pseudo_id.trim() : '';
+            var nickname = typeof profile.nickname === 'string' ? profile.nickname.trim() : '';
+            var votes = safeNumber(profile.votes_available);
+            var points = state.points && state.points.points && typeof state.points.points.total !== 'undefined'
+                ? safeNumber(state.points.points.total)
+                : safeNumber(state.points && state.points.points_total);
+            var votesLabel = profile.identity_state === 'active'
+                ? votes.toLocaleString('hu-HU') + ' szavazat'
+                : 'belépés szükséges';
+
+            if (nameNode) nameNode.textContent = nickname || (pseudo ? 'Profilom' : 'Fiók létrehozása');
+            if (metaNode) {
+                var identity = pseudo || 'Automatikus, e-mail nélkül';
+                metaNode.textContent = identity + ' · ' + points.toLocaleString('hu-HU') + ' pont · ' + votesLabel;
+            }
+        }
+
+        Promise.all([
+            fetch(profileUrl + '?ts=' + Date.now(), { credentials: 'include', cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
+                .then(function(response){ return response.ok ? response.json() : null; })
+                .catch(function(){ return null; }),
+            fetch(pointsUrl + '?ts=' + Date.now(), { credentials: 'include', cache: 'no-store' })
+                .then(function(response){ return response.ok ? response.json() : null; })
+                .catch(function(){ return null; })
+        ]).then(function(results){
+            state.profile = results[0];
+            state.points = results[1];
+            updateDock();
+        });
+    })();
+    </script>
 
     <button class="sharity-slc" id="sharity-slc-btn" type="button" aria-label="Nyelv és ország választó" aria-haspopup="dialog">
         <span class="sharity-slc__globe">🌐</span>

@@ -1527,7 +1527,7 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '<span data-role="herowall-points">—</span>';
     $html .= '</div>';
     $html .= '</div>';
-    $html .= '<div class="impactshop-identity-restore">';
+    $html .= '<div class="impactshop-identity-restore" id="impactshop-signin">';
     $html .= '<h4 id="impactshop-restore-title">Belépés meglévő fiókba <button type="button" class="impactshop-identity-info-trigger" aria-describedby="impactshop-signin-help">i</button></h4>';
     $html .= '<p id="impactshop-signin-help" class="impactshop-identity-hint">A fiókot automatikusan létrehoztuk; az adataidat a pseudo ID és a belépési kód kapcsolja össze. Ha másik eszközön már létrehoztad, itt léphetsz be. Az elvesztett belépési kód másik ellenőrzött azonosító nélkül nem állítható helyre.</p>';
     $html .= '<label class="impactshop-identity-restore__label">Azonosító</label>';

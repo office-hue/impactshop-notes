@@ -7645,3 +7645,9 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   schema-v1 protected record for the four protected paths; it does not expand
   the schema-v2 deploy-control profile. Staging remains `safe_disable=1` and
   production remains untouched.
+## 2026-09-11 — Sharity profil lebegő vezérlő
+
+- A régi nyolcgombos alsó sáv renderelése megszűnt.
+- Az új Human Touch dock két egyértelmű célja a profil és a „Belépés meglévő
+  fiókba”; az összegző becenevet/pseudo ID-t, pontot és szavazatot mutat.
+- Célzott PHP/static/profile-policy tesztek PASS; exact-main publikálás következik.

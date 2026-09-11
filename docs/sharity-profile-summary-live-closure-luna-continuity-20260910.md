@@ -422,3 +422,17 @@ E2E; this commit has no live authority.
 3. Verify active, legacy read-only, expired/revoked and unavailable states.
 4. Verify a negative/malformed/missing vote row renders zero without creating a
    row, and a different pseudo's balance is never returned.
+## 2026-09-11 Human Touch profile dock follow-up
+
+The legacy eight-item floating action bar is retired. Every eligible app page
+now renders one compact Human Touch profile dock with two unambiguous actions:
+the account summary opens `/profil/#impactshop-account-top`, while existing
+account sign-in opens `/profil/#impactshop-signin`. The summary reads the
+current cookie-bound profile and points endpoints and displays nickname or
+profile fallback, pseudo ID, points and spendable votes. Non-active identity
+states show `belépés szükséges` instead of a vote balance.
+
+Source scope is limited to the action-bar renderer, the explicit sign-in
+anchor, its focused smoke/static test, protected hashes and continuity. No
+schema, owner-grant policy, cron, watchdog or shared dependency change is
+included. Plan ID remains `sharity-profile-summary-live-closure-20260910`.
