@@ -81,7 +81,7 @@ Required identity/profile smoke tags: `route:factlens-vb-prod`,
 Publication completed through PR #206 and PR #207. The final merged-main source
 is `e9d9c934fb7bfce4ec9bb2af0586f19a8d9782f6`; the deployed PHP SHA-256 is
 `72980c402f05666c73f4a7b1f69df68d4ad54bf45bf7ecdd6b333b40f0f54cbc`.
-Exact-file staging release `20260911T071009Z-e9d9c934fb7b-20804a79` and
+Exact-file staging release `20260911T071010Z-e9d9c934fb7b-0eb783ee` and
 production release `20260911T071058Z-e9d9c934fb7b-20804a79` both verified
 mode `0444`. Final staging and production browser checks reported zero
 AdSense markers and zero overflow; production CLS was `0.006905` desktop and
