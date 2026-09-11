@@ -1,3 +1,12 @@
+## 2026-09-11 — Sharity profile responsive CLS reservations
+
+- Exact staging timeline: desktop CLS `0.0413`, mobile `0.2506`, overflow `0`;
+  remaining shifts were push, points, votes and history blocks.
+- Profile-only responsive reservations now match the measured dimensions;
+  hidden push reserves the same desktop/mobile space as its visible state.
+  Contract, syntax, regressions, guard hashes and diff-check pass. Mobile
+  `<0.1` remains a staging remeasurement gate.
+
 ## 2026-09-11 — Sharity profile early asset enqueue
 
 - The remaining staging CLS shift (`mobile 0.2585`, `desktop 0.2704`) was

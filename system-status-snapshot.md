@@ -1,3 +1,14 @@
+## 2026-09-11 — Sharity profile responsive CLS source correction
+
+- Exact timeline bounded remaining shifts to profile push, points, votes and
+  history blocks. Responsive profile-only reservations now match the measured
+  desktop/mobile dimensions; hidden push is reserved without visual output.
+- Supplied result: desktop CLS `0.0413`, mobile `0.2506`, overflow `0`.
+  Mobile `<0.1` remains a new staging Playwright gate; production is untouched.
+- State: `source-checkpoint / staging-remeasurement-pending /
+  production-not-started`; no provider, database, runtime, cron or watchdog
+  authority was used.
+
 ## 2026-09-11 — Sharity profile early enqueue source correction
 
 - The late stylesheet source of the remaining staging CLS shift was corrected:

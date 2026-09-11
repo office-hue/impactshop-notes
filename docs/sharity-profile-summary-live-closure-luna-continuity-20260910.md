@@ -1,5 +1,21 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — responsive async block reservations
+
+The exact staging timeline after early enqueue measured mobile CLS `0.2506`,
+desktop CLS `0.0413` and zero overflow. The remaining shifts were bounded to
+the push block (`181px` mobile / `157px` desktop), points block (`301px` /
+`265px`), votes summary (`139px`) and history (`75px`). Profile-only CSS now
+reserves those responsive dimensions; the hidden push state uses the same
+display/visibility reservation as its visible state. The previous compact and
+last-NGO reservations remain. No auth, JS, global CSS or shared dependency
+changed.
+
+The exact responsive CLS contract, syntax, profile regressions, guard hashes,
+protected-touch and diff checks pass. The `<0.1` mobile target remains a
+staging remeasurement gate; desktop is already below target in the supplied
+measurement.
+
 ## Luna follow-up — early profile asset enqueue
 
 The first CLS reservation checkpoint reduced but did not close the staging

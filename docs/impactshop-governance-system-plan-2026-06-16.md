@@ -4,6 +4,14 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-11 Sharity profile responsive CLS sync
+
+The profile-only inline stylesheet now reserves exact responsive dimensions for
+the asynchronous push, points, votes and history blocks, including a hidden
+push reservation. This is a bounded staging CLS correction with no auth, JS,
+global/shared dependency, provider/VPS/database, cron or watchdog authority.
+The mobile `<0.1` target remains a remeasurement gate.
+
 ## 2026-09-11 Sharity profile early-enqueue sync
 
 The profile identity assets are now enqueued during the ordinary
