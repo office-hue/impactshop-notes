@@ -7663,3 +7663,11 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   `0444`. Live desktop/mobile QA PASS; nincs profil-hirdetésmarker vagy
   vízszintes túlcsordulás. Az Elementor külső fejléc/lábléc nem része ennek a
   csomagnak.
+
+## 2026-09-11 — Profil visual acceptance correction
+
+- A kiadott kétcellás profil/belépési dock nem az elvárt minden oldalas
+  nyolcfunkciós lebegő gombsor, ezért a termékelfogadás elutasítva.
+- A teal/üveg panel nem követi a `sharity.hu/hatas-korok` Human Touch világos,
+  kontúros lila–lime–korall komponensnyelvét. Következő: Luna/high korrekció,
+  majd Terra/high vizuális QA.

@@ -471,3 +471,13 @@ live response contained the Human Touch shell and intro; the unchanged
 source/runtime browser evidence was reused for the injected dock, canonical
 anchors, profile data, zero overflow and zero profile ad markers. No blocking
 regression was found. Details: `docs/sharity-profile-human-touch-terra-qa-20260911.md`.
+
+### Product acceptance correction
+
+Operator visual review rejected the prior shell/dock as the wrong product
+surface. The dock is only a profile/sign-in panel, whereas the required global
+control is the original eight-action floating bar. The live Human Touch
+reference uses outlined purple/lime/coral components rather than the deployed
+teal glass treatment. The next bounded Luna package must restore the eight
+action contracts, remove the dock and recompose the profile in that component
+grammar; no identity or owner-grant behavior may change.

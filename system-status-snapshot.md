@@ -1446,3 +1446,12 @@ deployment state changed.
   SHA-256 `d2cc8c83…` at mode `0444` still match.
 - Fresh live shell contract plus reused exact-identity browser evidence: PASS.
   No blocker; no additional production action is needed.
+
+## 2026-09-11 — Profile visual acceptance correction
+
+- Technical QA did not reveal a runtime failure, but operator visual acceptance
+  rejected the published two-cell dock and teal profile shell.
+- Status: corrective source work required. Restore the eight-action global bar,
+  remove the dock and use the live Human Touch outlined purple/lime/coral
+  component system for the profile. Identity/owner-grant data behavior stays
+  out of scope.
