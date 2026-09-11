@@ -1,5 +1,19 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — AdSense hook order and marker precision
+
+The profile suppression now removes the exact Site Kit AdSense
+`register_tag` callback immediately during the early suppression phase, before
+normal `template_redirect` callbacks can execute, and keeps the late registry
+scan as a catch-up for late loaders. Generic Elementor `html` settings now
+require an actual script, `ins`, or AdSense-host URL marker; explanatory or
+code-sample text alone is not suppressed.
+
+The hook-order contract proves the exact Site Kit callback is absent before
+dispatch and therefore its `register_tag` method is not called. The source-only
+follow-up changes no auth, data/DB/cookie, shared dependency, provider or live
+runtime state.
+
 ## Luna follow-up — AdSense producer suppression
 
 Production acceptance found seven remaining AdSense markers and desktop

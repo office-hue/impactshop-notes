@@ -6,6 +6,15 @@ Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review,
 
 ## 2026-09-11 Sharity profile hidden push sync
 
+## 2026-09-11 Sharity profile AdSense hook-order sync
+
+The profile producer guard removes the exact Site Kit callback before ordinary
+`template_redirect` dispatch and retains a late catch-up scan. Generic HTML
+settings are suppressed only for actual script, `ins`, or narrow AdSense URL
+markers, so explanatory code samples remain visible. No output rewrite,
+auth/data/DB/cookie, shared dependency, provider, VPS, runtime, cron or
+watchdog authority is added.
+
 ## 2026-09-11 Sharity profile AdSense producer sync
 
 The profile route now suppresses the exact Site Kit AdSense producer callback

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Google\Site_Kit\Modules {
     final class AdSense
     {
-        public function register_tag(): void {}
+        public function register_tag(): void
+        {
+            $GLOBALS['site_kit_register_calls'] = ($GLOBALS['site_kit_register_calls'] ?? 0) + 1;
+        }
     }
 }
 
@@ -27,6 +30,17 @@ namespace {
     function remove_action(string $hook, $callback, int $priority = 10, int $accepted_args = 1): bool
     {
         $GLOBALS['removed_actions'][] = [$hook, $callback, $priority, $accepted_args];
+        $registered_hook = $GLOBALS['wp_filter'][$hook] ?? null;
+        if (is_object($registered_hook) && is_array($registered_hook->callbacks ?? null)) {
+            foreach ($registered_hook->callbacks as $registered_priority => &$callbacks) {
+                foreach ($callbacks as $key => $callback_data) {
+                    if (($callback_data['function'] ?? null) === $callback && (int) $registered_priority === $priority) {
+                        unset($callbacks[$key]);
+                    }
+                }
+            }
+            unset($callbacks);
+        }
         return true;
     }
 
@@ -131,9 +145,13 @@ namespace {
     impactshop_identity_suppress_profile_adsense_widget($html_host);
     assert_true(!$html_host->should_render, 'generic HTML widget with AdSense host is suppressed');
 
-    $html_marker = new FakeWidget('html', ['content' => ['nested' => '(adsbygoogle = window.adsbygoogle || [])']]);
+    $html_marker = new FakeWidget('html', ['content' => ['nested' => '<ins class="adsbygoogle" data-ad-client="ca-pub-example"></ins>']]);
     impactshop_identity_suppress_profile_adsense_widget($html_marker);
     assert_true(!$html_marker->should_render, 'generic HTML widget with AdSense marker is suppressed');
+
+    $code_sample = new FakeWidget('html', ['content' => 'Example code: adsbygoogle = window.adsbygoogle || [];']);
+    impactshop_identity_suppress_profile_adsense_widget($code_sample);
+    assert_true($code_sample->should_render, 'explanatory AdSense code sample remains visible');
 
     $benign_html = new FakeWidget('html', ['content' => '<p>Human Touch</p>']);
     impactshop_identity_suppress_profile_adsense_widget($benign_html);
@@ -151,6 +169,26 @@ namespace {
     $control_html = new FakeWidget('html', ['content' => 'adsbygoogle']);
     impactshop_identity_suppress_profile_adsense_widget($control_html);
     assert_true($control_html->should_render, 'control route remains untouched');
+
+    $_SERVER['REQUEST_URI'] = '/profil/?tab=account';
+    $registering = new \Google\Site_Kit\Modules\AdSense();
+    $GLOBALS['wp_filter'] = [
+        'template_redirect' => (object) [
+            'callbacks' => [
+                10 => [
+                    'site-kit-register-tag' => ['function' => [$registering, 'register_tag']],
+                ],
+            ],
+        ],
+    ];
+    $GLOBALS['site_kit_register_calls'] = 0;
+    impactshop_identity_profile_suppress_ads();
+    foreach ($GLOBALS['wp_filter']['template_redirect']->callbacks as $callbacks) {
+        foreach ($callbacks as $callback_data) {
+            ($callback_data['function'])();
+        }
+    }
+    assert_same(0, $GLOBALS['site_kit_register_calls'], 'immediate suppression removes Site Kit before hook execution');
 
     echo "impactshop profile AdSense suppression: PASS\n";
 }

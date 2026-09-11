@@ -239,6 +239,10 @@ function impactshop_identity_profile_suppress_ads(): void
         return;
     }
 
+    // The callback is normally already registered before template_redirect
+    // dispatch begins. Remove it immediately at the profile suppression
+    // phase, then retain the late scan below as a catch-up for late loaders.
+    impactshop_identity_profile_remove_site_kit_adsense_tag();
     // Site Kit registers its Web_Tag producer from template_redirect.  Queue
     // an exact, late registry removal so the producer cannot later emit its
     // wp_head AdSense tag on the profile route.
@@ -335,8 +339,20 @@ function impactshop_identity_profile_site_kit_modules($modules)
 function impactshop_identity_profile_settings_contain_adsense_signature($value): bool
 {
     if (is_string($value)) {
-        return stripos($value, 'pagead2.googlesyndication.com') !== false
-            || stripos($value, 'adsbygoogle') !== false;
+        $normalized = strtolower($value);
+        $has_adsense_script = strpos($normalized, '<script') !== false
+            && (
+                strpos($normalized, 'pagead2.googlesyndication.com') !== false
+                || strpos($normalized, 'adsbygoogle') !== false
+            );
+        $has_adsense_ins = strpos($normalized, '<ins') !== false
+            && strpos($normalized, 'adsbygoogle') !== false;
+        $has_adsense_url = preg_match(
+            '~(?:https?:)?//pagead2\\.googlesyndication\\.com(?:[/?#]|$)~i',
+            $value
+        ) === 1;
+
+        return $has_adsense_script || $has_adsense_ins || $has_adsense_url;
     }
 
     if (!is_array($value)) {

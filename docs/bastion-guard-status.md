@@ -2,6 +2,18 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-11 — Sharity profile AdSense hook order and marker precision
+
+The exact Site Kit AdSense object callback is removed immediately in the early
+profile suppression phase, before ordinary `template_redirect` callbacks can
+execute; the late registry scan remains as a catch-up for late loaders.
+Generic Elementor `html` settings require an actual script, `ins`, or narrow
+AdSense-host URL marker. Plain explanatory/code-sample text is not suppressed.
+The hook-order/negative hermetic contract, protected-touch and maximum-bastion
+evidence are required; no auth/data/DB/cookie/shared dependency, provider,
+runtime, cron or watchdog change is admitted. Live remeasurement remains
+pending.
+
 ## 2026-09-11 — Sharity profile AdSense producer suppression
 
 Production acceptance passed cache, cookie and identity isolation but reported

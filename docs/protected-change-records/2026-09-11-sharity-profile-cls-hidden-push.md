@@ -7,7 +7,7 @@ Status: source-only Luna checkpoint; no publication or live activation
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
   "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-20260910",
-  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#luna-follow-up-adsense-producer-suppression",
+  "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#luna-follow-up-adsense-hook-order-and-marker-precision",
   "protectedPaths": [
     "docs/bastion-guard-status.md",
     "docs/impactshop-guard-hashes.json",
@@ -37,14 +37,15 @@ Status: source-only Luna checkpoint; no publication or live activation
 Production acceptance passed cache, cookie and identity isolation but retained
 seven AdSense markers and a desktop overflow/CLS failure. Site Kit registers
 its AdSense `register_tag` callback from `template_redirect`; the profile route
-now queues a late callback-registry scan and removes only the exact
-`Google\\Site_Kit\\Modules\\AdSense` object callback with method
-`register_tag`.
+now removes only the exact `Google\\Site_Kit\\Modules\\AdSense` object callback
+with method `register_tag` immediately in the early suppression phase, while
+retaining a late callback-registry scan for late loaders.
 
 Elementor keeps its exact AdSense widget-name suppression and additionally
 suppresses only the generic `html` widget when render settings, recursively,
-contain `pagead2.googlesyndication.com` or `adsbygoogle`. Near misses and
-benign HTML remain renderable. No output buffer, rendered-HTML regex, auth,
+contain an actual script, `ins`, or `pagead2.googlesyndication.com` URL marker.
+Plain explanatory/code-sample `adsbygoogle` text, near misses and benign HTML
+remain renderable. No output buffer, rendered-HTML regex, auth,
 data/DB/cookie, shared dependency, provider or live runtime change is included.
 
 ## Protected files touched
@@ -66,6 +67,8 @@ Required identity/profile smoke tags: `route:factlens-vb-prod`,
 
 - `php -l wp-content/mu-plugins/impactshop-identity-panel.php` PASS
 - `php tests/impactshop-profile-ads-suppression.test.php` PASS
+- Hook-order fixture proves `register_tag` was not called before dispatch;
+  explanatory/code-sample negative fixture PASS
 - Existing profile summary/CLS/bootstrap/remediation/static and owner-policy
   tests PASS
 - guard hash verification and `git diff --check` PASS

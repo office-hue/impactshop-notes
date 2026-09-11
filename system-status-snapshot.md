@@ -1,3 +1,14 @@
+## 2026-09-11 — Sharity profile AdSense hook order and marker precision
+
+- The exact Site Kit AdSense callback is removed immediately in the early
+  profile suppression phase, with the late registry scan retained as a catch-up
+  for late loaders. The hermetic hook-order fixture proves `register_tag` is
+  not executed during `template_redirect` dispatch.
+- Generic Elementor `html` suppression now requires an actual script, `ins`, or
+  AdSense-host URL marker; explanatory/code-sample text remains visible.
+- Focused producer/static contracts, PHP lint, guard hash, protected-touch,
+  strict audit and diff-check remain required; no push, deploy or live state.
+
 ## 2026-09-11 — Sharity profile AdSense producer suppression
 
 - Production acceptance left seven AdSense markers and desktop overflow/CLS;

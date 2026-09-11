@@ -38,6 +38,7 @@ assert "impactshop_identity_profile_reveal_cookie_path" in PHP
 assert "impactshop_identity_profile_route_path() !== '/profil/belepesi-kod'" in PHP
 assert "googlesitekit_adsense_enabled" in PHP
 assert "impactshop_identity_profile_remove_site_kit_adsense_tag" in PHP
+assert "impactshop_identity_profile_remove_site_kit_adsense_tag();" in PHP
 assert "PHP_INT_MAX" in PHP
 assert "Google\\\\Site_Kit\\\\Modules\\\\AdSense" in PHP
 assert "wp_dequeue_script" in PHP
@@ -46,6 +47,9 @@ assert "set_should_render(false)" in PHP
 assert "impactshop_identity_profile_settings_contain_adsense_signature" in PHP
 assert "pagead2.googlesyndication.com" in PHP
 assert "adsbygoogle" in PHP
+assert "<script" in PHP
+assert "<ins" in PHP
+assert "preg_match" in PHP
 assert "get_settings_for_display" in PHP
 assert "$widget_name === 'html'" in PHP
 assert "'secure' => true" in PHP

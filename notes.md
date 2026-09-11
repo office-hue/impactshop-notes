@@ -7,6 +7,16 @@
   regressions, guard hashes and diff-check pass. Mobile `<0.1` remains a
   staging remeasurement gate.
 
+## 2026-09-11 — Sharity profile AdSense hook order and marker precision
+
+- The profile suppression removes the exact Site Kit `register_tag` callback
+  immediately before normal `template_redirect` dispatch and retains the late
+  scan as a second catch-up path.
+- Generic HTML detection now requires a real script, `ins`, or
+  `pagead2.googlesyndication.com` URL marker. A plain explanatory/code-sample
+  `adsbygoogle` string remains visible. Hook-order and negative fixtures pass.
+- Source-only follow-up; no push/deploy/live activation.
+
 ## 2026-09-11 — Sharity profile AdSense producer suppression
 
 - Production acceptance passed cache/cookie/isolation but found seven AdSense
