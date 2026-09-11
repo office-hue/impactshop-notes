@@ -12,7 +12,7 @@ non-functional setter path with Elementor's canonical
 The final immutable PHP source SHA-256 is
 `72980c402f05666c73f4a7b1f69df68d4ad54bf45bf7ecdd6b333b40f0f54cbc`.
 It was applied by exact-file CAS to staging release
-`20260911T071009Z-e9d9c934fb7b-20804a79` and production release
+`20260911T071010Z-e9d9c934fb7b-0eb783ee` and production release
 `20260911T071058Z-e9d9c934fb7b-20804a79`, both mode `0444`. Production
 rollback is bound to the latter release ID and deployed SHA. The verified
 database backup from the parent production package remains
