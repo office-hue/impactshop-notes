@@ -201,7 +201,7 @@ payload = {
     "resume": resume == "1",
     "schema_version": 2,
     "base": {"ref": "origin/main", "commit": base_sha},
-    "current": {"head": base_sha, "tree": base_tree, "recorded_at": started_at},
+    "current": {"head": base_sha, "tree": base_tree, "branch": feature_branch, "recorded_at": started_at},
     "selector": "maintenance-docs",
 }
 if doc_sync_label:
@@ -211,9 +211,20 @@ if doc_sync_repo_id:
 if doc_sync_path_prefix:
     payload["doc_sync_path_prefix"] = doc_sync_path_prefix
 
-with open(marker_file, "w", encoding="utf-8") as handle:
-    json.dump(payload, handle, ensure_ascii=True, indent=2)
-    handle.write("\n")
+import os, tempfile
+parent = os.path.dirname(marker_file)
+fd, temp = tempfile.mkstemp(prefix=".worktree-active.", dir=parent)
+try:
+    os.fchmod(fd, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=True, indent=2)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temp, marker_file)
+    os.chmod(marker_file, 0o600)
+finally:
+    if os.path.exists(temp): os.unlink(temp)
 PY
 fi
 
