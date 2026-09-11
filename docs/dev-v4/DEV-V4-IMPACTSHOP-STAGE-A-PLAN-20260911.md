@@ -27,3 +27,7 @@ changed by Stage A.
 - existing PHP/WordPress release policy remains authoritative;
 - activation requires a later operator-approved stage and fresh central
   readback; this commit is not an activation request.
+
+## Operator approval reference
+
+`operator-approval:dev-v4-impactshop-stage-a-20260911`
