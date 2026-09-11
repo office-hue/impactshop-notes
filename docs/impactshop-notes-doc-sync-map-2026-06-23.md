@@ -182,3 +182,7 @@ The runtime and regression surfaces are
 `docs/bastion-guard-status.md`, `notes.md` and `system-status-snapshot.md`.
 Staging remains safe-disabled pending source publication and live self-test;
 production remains untouched. No cron or watchdog is required.
+# DEV v4 Stage B v2 sync (2026-09-11)
+
+The native admission helper is dormant on the Stage A candidate and becomes
+active only from a merged descendant base carrying the Stage B contract.

@@ -83,6 +83,9 @@ jobs:
           PY
           bash tests/dev-delivery-v2-adapter.test.sh
 
+      - name: DEV v4 Stage B admission fixtures
+        run: node --test tests/dev-v4-stage-a-verifier.test.mjs tests/dev-v4-admission.test.mjs
+
       - name: Deploy control-plane bastion tests
         run: |
           set -euo pipefail

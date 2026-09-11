@@ -168,10 +168,12 @@ if [[ -n "$MARKER_FILE" ]]; then
 fi
 
 STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+BASE_SHA="$(git -C "$WT_DIR" rev-parse HEAD)"
+BASE_TREE="$(git -C "$WT_DIR" show -s --format=%T HEAD)"
 if [[ -n "$MARKER_FILE" ]]; then
   python3 - <<'PY' \
     "$MARKER_FILE" "$FEATURE_BRANCH" "$WT_DIR" "$REPO_NAME" "$REPO_ROOT" "$STARTED_AT" "$RESUME" \
-    "$DOC_SYNC_LABEL" "$DOC_SYNC_REPO_ID" "$DOC_SYNC_PATH_PREFIX"
+    "$DOC_SYNC_LABEL" "$DOC_SYNC_REPO_ID" "$DOC_SYNC_PATH_PREFIX" "$BASE_SHA" "$BASE_TREE"
 import json
 import sys
 
@@ -186,7 +188,9 @@ import sys
     doc_sync_label,
     doc_sync_repo_id,
     doc_sync_path_prefix,
-) = sys.argv[1:11]
+    base_sha,
+    base_tree,
+) = sys.argv[1:13]
 
 payload = {
     "branch": feature_branch,
@@ -195,6 +199,10 @@ payload = {
     "repo_root": repo_root,
     "started_at": started_at,
     "resume": resume == "1",
+    "schema_version": 2,
+    "base": {"ref": "origin/main", "commit": base_sha},
+    "current": {"head": base_sha, "tree": base_tree, "branch": feature_branch, "recorded_at": started_at},
+    "selector": "maintenance-docs",
 }
 if doc_sync_label:
     payload["doc_sync_label"] = doc_sync_label
@@ -203,9 +211,20 @@ if doc_sync_repo_id:
 if doc_sync_path_prefix:
     payload["doc_sync_path_prefix"] = doc_sync_path_prefix
 
-with open(marker_file, "w", encoding="utf-8") as handle:
-    json.dump(payload, handle, ensure_ascii=True, indent=2)
-    handle.write("\n")
+import os, tempfile
+parent = os.path.dirname(marker_file)
+fd, temp = tempfile.mkstemp(prefix=".worktree-active.", dir=parent)
+try:
+    os.fchmod(fd, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=True, indent=2)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temp, marker_file)
+    os.chmod(marker_file, 0o600)
+finally:
+    if os.path.exists(temp): os.unlink(temp)
 PY
 fi
 
@@ -213,6 +232,17 @@ echo "[worktree-task-start] repo:   $REPO_NAME"
 echo "[worktree-task-start] branch: $FEATURE_BRANCH"
 echo "[worktree-task-start] path:   $WT_DIR"
 echo "[worktree-task-start] marker: ${MARKER_FILE:-unavailable}"
+
+# DEV v4 is progressive: a Stage A candidate may continue as v2-only, while
+# an actual blocked Phase 0 result is a hard stop before later writers.
+if [[ -f "$WT_DIR/scripts/dev-v4-admission.mjs" ]]; then
+  V4_PHASE0="$(cd "$WT_DIR" && node scripts/dev-v4-admission.mjs --phase0)"
+  echo "$V4_PHASE0"
+  if ! python3 -c 'import json,sys; raise SystemExit(1 if json.load(sys.stdin).get("combinedDecision") == "blocked" else 0)' <<<"$V4_PHASE0"; then
+    echo "[worktree-task-start] DEV v4 Phase 0 blocked" >&2
+    exit 1
+  fi
+fi
 
 echo "[worktree-task-start] readiness:"
 bash "$REPO_ROOT/scripts/worktree-readiness-check.sh"

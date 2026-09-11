@@ -1498,3 +1498,11 @@ deployment state changed.
   cron, watchdog and hook operations.
 - Capability caveat: PHP, staging and remote/provider are degraded or blocked
   and do not change unrelated local/static lanes.
+# 2026-09-11 — DEV v4 Stage B v2 semantics
+
+Stage A candidate admission is explicitly `v2-only`; only a later merged base
+containing Stage B activates v4. PHP, staging and provider observations remain
+lane-specific. No live or remote mutation occurred.
+# QA P0 correction: corrected v2 central snapshot and verifier are pinned;
+# legacy safe markers remain v2-only before permission enforcement, while
+# unsafe nonlegacy capsules block. No remote/runtime mutation.

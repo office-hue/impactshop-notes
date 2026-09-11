@@ -7704,3 +7704,13 @@ and negative fixtures keep the result `valid-unverified` / `pending-activation`:
 `ready=false`, with no provider/build/deploy/VPS/runtime/secret/cron/watchdog
 or hook mutation. PHP/staging/remote observations are degraded or blocked only
 for their affected protected lanes. Plan: `dev-v4-impactshop-stage-a-20260911`.
+# 2026-09-11 — DEV v4 Stage B v2 semantics
+
+Candidate source remains v2-only until the Stage B contract is merged. New
+post-merge tasks require a descendant base containing the active contract and
+consistent schema-v2 capsule identity. No provider/build/deploy/VPS/runtime,
+secret/cron/watchdog state changed.
+# QA P0 correction: corrected central snapshot `central-contract-snapshot.v2.json`
+# pins merge `94db78c66b21979c9511594344649a518a4d31d8`; historical Stage A
+# objects and digests remain retained. Task-start marker replacement is atomic
+# and mode 0600. Candidate Phase 0 remains v2-only until Stage B merge.
