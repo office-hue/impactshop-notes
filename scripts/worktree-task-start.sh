@@ -168,10 +168,12 @@ if [[ -n "$MARKER_FILE" ]]; then
 fi
 
 STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+BASE_SHA="$(git -C "$WT_DIR" rev-parse HEAD)"
+BASE_TREE="$(git -C "$WT_DIR" show -s --format=%T HEAD)"
 if [[ -n "$MARKER_FILE" ]]; then
   python3 - <<'PY' \
     "$MARKER_FILE" "$FEATURE_BRANCH" "$WT_DIR" "$REPO_NAME" "$REPO_ROOT" "$STARTED_AT" "$RESUME" \
-    "$DOC_SYNC_LABEL" "$DOC_SYNC_REPO_ID" "$DOC_SYNC_PATH_PREFIX"
+    "$DOC_SYNC_LABEL" "$DOC_SYNC_REPO_ID" "$DOC_SYNC_PATH_PREFIX" "$BASE_SHA" "$BASE_TREE"
 import json
 import sys
 
@@ -186,7 +188,9 @@ import sys
     doc_sync_label,
     doc_sync_repo_id,
     doc_sync_path_prefix,
-) = sys.argv[1:11]
+    base_sha,
+    base_tree,
+) = sys.argv[1:13]
 
 payload = {
     "branch": feature_branch,
@@ -195,6 +199,10 @@ payload = {
     "repo_root": repo_root,
     "started_at": started_at,
     "resume": resume == "1",
+    "schema_version": 2,
+    "base": {"ref": "origin/main", "commit": base_sha},
+    "current": {"head": base_sha, "tree": base_tree, "recorded_at": started_at},
+    "selector": "maintenance-docs",
 }
 if doc_sync_label:
     payload["doc_sync_label"] = doc_sync_label
