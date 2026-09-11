@@ -222,6 +222,17 @@ echo "[worktree-task-start] branch: $FEATURE_BRANCH"
 echo "[worktree-task-start] path:   $WT_DIR"
 echo "[worktree-task-start] marker: ${MARKER_FILE:-unavailable}"
 
+# DEV v4 is progressive: a Stage A candidate may continue as v2-only, while
+# an actual blocked Phase 0 result is a hard stop before later writers.
+if [[ -f "$WT_DIR/scripts/dev-v4-admission.mjs" ]]; then
+  V4_PHASE0="$(cd "$WT_DIR" && node scripts/dev-v4-admission.mjs --phase0)"
+  echo "$V4_PHASE0"
+  if ! python3 -c 'import json,sys; raise SystemExit(1 if json.load(sys.stdin).get("combinedDecision") == "blocked" else 0)' <<<"$V4_PHASE0"; then
+    echo "[worktree-task-start] DEV v4 Phase 0 blocked" >&2
+    exit 1
+  fi
+fi
+
 echo "[worktree-task-start] readiness:"
 bash "$REPO_ROOT/scripts/worktree-readiness-check.sh"
 
