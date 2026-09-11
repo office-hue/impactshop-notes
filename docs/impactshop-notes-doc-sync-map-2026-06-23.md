@@ -86,6 +86,15 @@ Felteteles continuity target:
 
 ## Natural Next Step
 
+### DEV v4 Stage A (2026-09-11)
+
+The inert bootstrap snapshot and verifier live under `config/dev-v4/` and
+`scripts/dev-v4-stage-a-verifier.mjs`. The plan and acceptance truth is
+`docs/dev-v4/DEV-V4-IMPACTSHOP-STAGE-A-PLAN-20260911.md`; continuity is carried
+by `notes.md`, `system-status-snapshot.md`, and the maximum perimeter status in
+`docs/bastion-guard-status.md`. Status remains `valid-unverified` and
+`pending-activation`; no central promotion or activation is implied.
+
 Innen a kovetkezo legkisebb hasznos szelet:
 
 1. a repo-root `DOC-SYNC-HUB.md` karbantartasa, ha uj local map vagy helper jelenik meg;

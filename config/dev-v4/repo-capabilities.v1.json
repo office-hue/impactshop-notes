@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "contractId": "dev-v4.repo-capabilities",
+  "status": "valid-unverified",
+  "authority": "repo-base",
+  "repoId": "impactshop-notes",
+  "capabilities": [
+    {"id":"git-readback","state":"available","source":"repo","requirement":"base-required"},
+    {"id":"static-node-test","state":"available","source":"repo","requirement":"plan-required"},
+    {"id":"php-runtime","state":"degraded","source":"host","requirement":"optional"},
+    {"id":"staging-runtime","state":"blocked","source":"external-review","requirement":"optional"},
+    {"id":"remote-provider","state":"blocked","source":"external-review","requirement":"optional"}
+  ],
+  "semanticSurfaces": [
+    {"id":"dev-v4-stage-a-contracts","paths":["config/dev-v4/"],"authority":"repo"},
+    {"id":"dev-v4-stage-a-verifier","paths":["scripts/dev-v4-stage-a-verifier.mjs","tests/dev-v4-stage-a-verifier.test.mjs"],"authority":"repo"}
+  ],
+  "activation": {"decision":"pending-activation","authoritative":false,"ready":false}
+}

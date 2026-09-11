@@ -1488,3 +1488,13 @@ deployment state changed.
 - The local candidate replaces it with the canonical public 2x4 Human Touch
   quick-actions component. Source checks pass; status is source-checkpoint,
   not deployed and not yet live-accepted.
+# DEV v4 Stage A (2026-09-11)
+
+- Scope: inert, source-only bootstrap for `impactshop-notes`.
+- Decision: `valid-unverified` / `pending-activation`; `ready=false`.
+- Authority: repo-local snapshot only; central identity is recorded but not
+  promoted to activation authority.
+- Guard: maximum bastion denies provider, build, deploy, VPS, runtime, secret,
+  cron, watchdog and hook operations.
+- Capability caveat: PHP, staging and remote/provider are degraded or blocked
+  and do not change unrelated local/static lanes.

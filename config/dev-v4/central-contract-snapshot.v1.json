@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "contractId": "dev-v4.impactshop-notes.central-contract-snapshot",
+  "status": "valid-unverified",
+  "authority": "central-base-reference",
+  "planId": "dev-v4-impactshop-stage-a-20260911",
+  "repo": "office-hue/impactshop-notes",
+  "repoId": "1173292974",
+  "centralRepo": "office-hue/ai-agent",
+  "centralMergeSha": "94db78c66b21979c9511594349a518a4d31d8",
+  "centralTree": "6fd0f87b40b74e74abce72caf03a48280f7659ab",
+  "operationsPackageSha256": "229649232d28644a85321f43f0f7b266bdb8a05cc6d5329d8b40c84b154d43dd",
+  "sourceReference": "read-only-central-contract-snapshot",
+  "activationAllowed": false,
+  "readyAllowed": false,
+  "providerMutationAllowed": false,
+  "buildAllowed": false,
+  "deployAllowed": false,
+  "vpsMutationAllowed": false,
+  "runtimeMutationAllowed": false,
+  "secretMaterialAllowed": false,
+  "schedulerMutationAllowed": false,
+  "requiredActivationEvidence": [
+    "operator-approval",
+    "current-central-contract-readback",
+    "repo-capability-receipts",
+    "protected-lane-review"
+  ]
+}

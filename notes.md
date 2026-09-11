@@ -7696,3 +7696,11 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - Célzott statikus/policy teszt és PHP lint PASS; source-checkpoint, publikálás
   és friss live browser acceptance még hátra van. Adat-, cron- és watchdog-
   változás nincs.
+# [2026-09-11] | feat(dev-v4/stage-a): inert bootstrap snapshot
+
+Stage A source-only bootstrap recorded the central contract identity, repo
+capabilities and maximum bastion under `config/dev-v4/`. The static verifier
+and negative fixtures keep the result `valid-unverified` / `pending-activation`:
+`ready=false`, with no provider/build/deploy/VPS/runtime/secret/cron/watchdog
+or hook mutation. PHP/staging/remote observations are degraded or blocked only
+for their affected protected lanes. Plan: `dev-v4-impactshop-stage-a-20260911`.
