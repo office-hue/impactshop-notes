@@ -1418,8 +1418,13 @@ function impactshop_identity_panel_shortcode(): string
     $nickname_value = (string) ($profile['nickname'] ?? '');
     $nickname_label = esc_html($nickname_value !== '' ? $nickname_value : 'Nincs becenév');
 
-    $html = '<div class="impactshop-identity-panel" id="' . esc_attr($panel_id) . '" data-rest-base="' . esc_attr($rest_base) . '">';
+    $html = '<div class="impactshop-identity-panel impactshop-profile-shell" id="' . esc_attr($panel_id) . '" data-rest-base="' . esc_attr($rest_base) . '">';
     $html .= '<div id="impactshop-account-top"></div>';
+    $html .= '<div class="impactshop-profile-intro">';
+    $html .= '<span class="impactshop-profile-intro__kicker">Sharity · Human Touch</span>';
+    $html .= '<h2>Az impactod egy helyen</h2>';
+    $html .= '<p>Itt találod a profilodat, a pontjaidat és az elkölthető szavazataidat. A fiókod automatikusan létrejön, neked csak a belépési kódodat érdemes elmentened.</p>';
+    $html .= '</div>';
     $html .= '<div class="impactshop-identity-card">';
     $html .= '<div class="impactshop-identity-header">';
     $html .= '<h3>Profilod</h3>';
@@ -1655,6 +1660,14 @@ function impactshop_identity_panel_register_assets(): void
 
     $css = <<<CSS
 .impactshop-identity-panel { max-width: 720px; margin: 24px auto; font-family: inherit; color: #0f172a; }
+.impactshop-profile-shell { max-width: 820px; margin: clamp(20px, 4vw, 56px) auto; }
+.impactshop-profile-shell::before { content: ""; display: block; position: fixed; z-index: -1; inset: 0; background: linear-gradient(145deg, #f5fffc 0%, #eef7ff 48%, #fff8f4 100%); pointer-events: none; }
+.impactshop-profile-intro { margin-bottom: 16px; padding: clamp(20px, 4vw, 34px); border-radius: 26px; color: #f8fffd; background: linear-gradient(135deg, #0b5361 0%, #0f8a9d 58%, #0f766e 100%); box-shadow: 0 20px 44px rgba(11, 83, 97, 0.2); overflow: hidden; position: relative; }
+.impactshop-profile-intro::after { content: ""; position: absolute; width: 180px; height: 180px; right: -54px; top: -74px; border-radius: 50%; background: rgba(255,255,255,0.13); }
+.impactshop-profile-intro__kicker { display: inline-block; margin-bottom: 10px; color: #bff7e8; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.impactshop-profile-intro h2 { margin: 0 0 8px; color: #fff; font-size: clamp(24px, 4vw, 34px); line-height: 1.1; }
+.impactshop-profile-intro p { max-width: 620px; margin: 0; color: rgba(248,255,253,.88); font-size: 15px; line-height: 1.55; }
+.impactshop-profile-shell .impactshop-identity-card { background: rgba(255,255,255,.82); border-color: rgba(15,138,157,.2); box-shadow: 0 24px 52px rgba(11,31,42,.12); }
 .impactshop-identity-panel--compact { max-width: 460px; }
 .impactshop-identity-card { border-radius: 18px; padding: 22px; background: rgba(255,255,255,0.7); border: 1px solid rgba(148,163,184,0.35); box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12); backdrop-filter: blur(16px); position: relative; overflow: hidden; }
 .impactshop-identity-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 55%), radial-gradient(circle at bottom right, rgba(14,165,233,0.14), transparent 55%); pointer-events: none; }

@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 
-Status: source checkpoint; exact merged-main production publication required
+Status: production-accepted from exact merged main
 
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
@@ -64,3 +64,21 @@ the two recorded PHP preimages.
 - existing profile-summary and owner-policy inventory tests
 - protected hash verification and `git diff --check`
 - one production DOM/layout check after exact-file publication
+
+## Production acceptance
+
+PR #210 was squash-merged as
+`94e25a9acbb995b1f26fa23ebfc360114f76c114`. Exact-file production
+release `20260911T081100Z-94e25a9acbb9-actionbar` deployed the action-bar
+source at SHA-256
+`4fb191637a55ea8c0b3a9e85ff7f571ab9d4218383f8a0d89be9191523dbea0e`;
+release `20260911T081200Z-94e25a9acbb9-identity` deployed the identity source
+at SHA-256
+`a92582a7f7904ef736fdcb47bf07234226793bef1f0265ca6e323c8c409c3395`.
+Both targets verified mode `0444` and retain executable CAS rollback records.
+
+The public `/profil/` response contains one `sharity-profile-dock`, no
+rendered `sharity-action-bar`, both exact anchors and the sign-in target.
+One desktop/mobile browser run reported zero horizontal overflow, profile
+data in the dock, desktop CLS `0.005874`, and screenshots under
+`/tmp/sharity-profile-dock-live-20260911/`.

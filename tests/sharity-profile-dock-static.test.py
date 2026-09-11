@@ -19,3 +19,6 @@ assert "identity_state === 'active'" in ACTION_BAR
 assert "Belépés" in ACTION_BAR
 assert "meglévő fiókba" in ACTION_BAR
 assert 'id="impactshop-signin"' in IDENTITY_PANEL
+assert 'impactshop-profile-shell' in IDENTITY_PANEL
+assert 'impactshop-profile-intro' in IDENTITY_PANEL
+assert 'Sharity · Human Touch' in IDENTITY_PANEL

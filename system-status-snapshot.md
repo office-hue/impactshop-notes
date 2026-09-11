@@ -1420,5 +1420,12 @@ deployment state changed.
   replaced by the compact Human Touch profile/sign-in dock.
 - The dock exposes cookie-bound nickname/pseudo, points and spendable votes;
   inactive identity states do not expose a balance.
-- Production publication is pending the single exact-main release round. No
+- Production publication completed in one exact-main release round. No
   database, cron, watchdog or shared dependency change.
+- Production accepted from merged main `94e25a9acbb9` via exact CAS releases
+  `20260911T081100Z-94e25a9acbb9-actionbar` and
+  `20260911T081200Z-94e25a9acbb9-identity`; both targets are mode `0444`.
+## 2026-09-11 — Profile Human Touch shell checkpoint
+
+- A bounded profile-only Human Touch shell is prepared; identity, grant,
+  schema, cron and watchdog behavior remain unchanged.

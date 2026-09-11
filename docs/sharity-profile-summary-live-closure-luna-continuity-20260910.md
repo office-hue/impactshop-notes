@@ -436,3 +436,21 @@ Source scope is limited to the action-bar renderer, the explicit sign-in
 anchor, its focused smoke/static test, protected hashes and continuity. No
 schema, owner-grant policy, cron, watchdog or shared dependency change is
 included. Plan ID remains `sharity-profile-summary-live-closure-20260910`.
+
+Production closure: PR #210 merged as `94e25a9acbb9`. Exact CAS releases
+`20260911T081100Z-94e25a9acbb9-actionbar` and
+`20260911T081200Z-94e25a9acbb9-identity` deployed both PHP files at mode
+`0444`. Live DOM verification found the new dock, both exact anchors and no
+rendered legacy action bar. Desktop/mobile browser evidence reported zero
+horizontal overflow. The full outer WordPress page redesign remains a
+separate presentation package; this follow-up closes only the global floating
+control replacement.
+
+## 2026-09-11 Human Touch profile shell follow-up
+
+The full profile shortcode now has a profile-only Human Touch shell: a soft
+background treatment, a teal intro panel and a responsive card width. The
+existing identity, points, votes, restore and owner-grant behavior is
+unchanged. This is the next bounded presentation checkpoint after the global
+floating dock; the outer Elementor header/footer remains intentionally
+untouched.

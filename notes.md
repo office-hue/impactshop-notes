@@ -7651,3 +7651,9 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
 - Az új Human Touch dock két egyértelmű célja a profil és a „Belépés meglévő
   fiókba”; az összegző becenevet/pseudo ID-t, pontot és szavazatot mutat.
 - Célzott PHP/static/profile-policy tesztek PASS; exact-main publikálás következik.
+## 2026-09-11 — Profil Human Touch shell
+
+- A teljes profil shortcode köré profile-only háttér, teal intro és reszponzív
+  kártyakeret készült.
+- Az identity/grant/REST/adatfolyam érintetlen; külön bounded presentation
+  checkpointként kezelendő.
