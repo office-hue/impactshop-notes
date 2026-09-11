@@ -49,6 +49,9 @@ behavior are unchanged.
 - `docs/impactshop-guard-hashes.sha256`
 - `wp-content/mu-plugins/impactshop-action-bar.php`
 
+`docs/bastion-guard-status.md` was returned to its `origin/main` bytes before
+publication, so it is not part of the final protected diff or manifest scope.
+
 ## Rollback
 
 Use the exact-file rollback lane to restore the recorded production preimage
