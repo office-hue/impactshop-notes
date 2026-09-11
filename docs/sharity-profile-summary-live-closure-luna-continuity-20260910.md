@@ -1,5 +1,18 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — hidden push reservation specificity
+
+The exact shared Playwright simulation measured desktop CLS `0.041389` and
+mobile CLS `0.137899`; the remaining mobile shift was the hidden push block
+computed as `display:none` despite its profile rule, then expanding to `181px`.
+The narrow profile/data-role selector now uses `display:block !important` with
+`visibility:hidden`, preserving the HTML hidden attribute and existing JS/auth
+semantics while reserving the measured responsive space.
+
+The focused CLS contract, syntax, profile regressions, guard hashes,
+protected-touch and diff checks pass. The mobile `<0.1` target remains a
+staging remeasurement gate; no live state changed.
+
 ## Luna follow-up — responsive async block reservations
 
 The exact staging timeline after early enqueue measured mobile CLS `0.2506`,

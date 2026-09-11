@@ -1,3 +1,12 @@
+## 2026-09-11 — Sharity profile hidden push reservation specificity
+
+- Shared Playwright: desktop CLS `0.041389`, mobile `0.137899`; the residual
+  mobile shift was the hidden push block being forced to `display:none`.
+- The narrow profile selector now overrides only that hidden block with
+  `display:block !important` and `visibility:hidden`; contract, syntax,
+  regressions, guard hashes and diff-check pass. Mobile `<0.1` remains a
+  staging remeasurement gate.
+
 ## 2026-09-11 — Sharity profile responsive CLS reservations
 
 - Exact staging timeline: desktop CLS `0.0413`, mobile `0.2506`, overflow `0`;

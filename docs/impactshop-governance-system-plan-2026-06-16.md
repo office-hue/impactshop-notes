@@ -4,6 +4,13 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-09-11 Sharity profile hidden push sync
+
+The profile/data-role hidden push selector now explicitly reserves its
+responsive height with `display:block !important` and `visibility:hidden`.
+The HTML hidden attribute, JS/auth behavior and all global/shared dependency
+boundaries remain unchanged; mobile `<0.1` is still a staging gate.
+
 ## 2026-09-11 Sharity profile responsive CLS sync
 
 The profile-only inline stylesheet now reserves exact responsive dimensions for

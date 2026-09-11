@@ -1605,7 +1605,7 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-restore__label { display: block; font-weight: 600; }
 .impactshop-identity-block { margin-top: 18px; }
 .impactshop-identity-push[data-role=push-section] { min-height: 157px; box-sizing: border-box; }
-.impactshop-identity-push[data-role=push-section][hidden] { display: block; visibility: hidden; }
+.impactshop-identity-push[data-role=push-section][hidden] { display: block !important; visibility: hidden; }
 .impactshop-identity-points[data-role=points-section] { min-height: 265px; }
 .impactshop-identity-points[data-role=points-section][hidden] { display: block; visibility: hidden; }
 .impactshop-identity-compact[data-role=points-compact][hidden] { display: block; visibility: hidden; min-height: 72px; }

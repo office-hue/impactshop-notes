@@ -39,7 +39,7 @@ last_ngo = css_rule(".impactshop-identity-lastngo", "\n")
 
 assert "min-height: 157px" in push
 assert "box-sizing: border-box" in push
-assert "display: block" in push_hidden
+assert "display: block !important" in push_hidden
 assert "visibility: hidden" in push_hidden
 assert "min-height: 265px" in points_visible
 assert "display: block" in points
