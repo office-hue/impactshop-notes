@@ -2,7 +2,7 @@
 
 Date: 2026-09-11
 
-Status: source checkpoint; product acceptance correction pending QA
+Status: production-accepted; corrective release closed
 
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
@@ -74,6 +74,28 @@ unchanged.
 - Terra corrective source QA passed the eight-action, dock-removal and Human
   Touch token contracts. Live visual QA remains explicitly pending the new
   exact source publication.
+
+## Corrective production closure
+
+- PR #212 squash-merged as `fb77e62df4cdac4702648ee7a1ab3ada94607ccc`;
+  the merge tree equals the tested candidate tree
+  `74aa9935da47dd1f1df6e889d4861873bf95007d`.
+- Exact CAS releases:
+  - `20260911T091000Z-fb77e62d-actionbar` →
+    `d7682cd89f8bf3af6d68c01d35adc4353a4d2db9f546b3f44cbbedd9c6484002`;
+  - `20260911T091100Z-fb77e62d-identity` →
+    `30c24dcac622bc476648112f45fb9fcf0491f6ccab70f14355a0aff2dae6be66`.
+- Both protected production files read back at mode `0444`.
+- Live browser QA found the same eight action labels on home, Impact Challenge,
+  Impact Shop and Profile, with zero obsolete docks. The profile passed desktop
+  and mobile at zero horizontal overflow and zero ad markers; Human Touch intro
+  and card borders read back as the expected lilac/3 px outlined treatment.
+- A transient first overflow sample on two carousel pages was not reproduced;
+  the diagnostic readback showed a 1440 px document and the 1220 px action bar
+  fully inside the viewport. No corrective runtime mutation followed.
+- Visual evidence:
+  `/tmp/sharity-overflow-diagnostic-20260911-oONJ/profil-desktop.png` and
+  `/tmp/sharity-overflow-diagnostic-20260911-oONJ/profil-mobile.png`.
 
 ## Production closure
 

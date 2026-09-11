@@ -503,3 +503,36 @@ Production deliberately remains on the earlier CAS hashes, so no old browser
 evidence is reused for this changed UI. The next package must be Sol/high for
 one source publication plus exact-file release; fresh desktop/mobile visual QA
 is then mandatory.
+
+## 2026-09-11 corrective production closure
+
+PR #212 squash-merged as `fb77e62df4c`; the exact-main tree equals the tested
+candidate tree `74aa9935da47…`. CAS releases
+`20260911T091000Z-fb77e62d-actionbar` and
+`20260911T091100Z-fb77e62d-identity` deployed the two protected PHP files at
+hashes `d7682cd8…` and `30c24dca…`, both mode `0444`. Live browser QA found all
+eight actions on home, Impact Challenge, Impact Shop and Profile, no dock, and
+a zero-overflow/zero-ad-marker Human Touch profile on desktop and mobile. A
+read-only follow-up showed the action bar fully inside the viewport and did not
+reproduce the initial carousel-page overflow sample. No DB, schema, cron,
+watchdog or shared dependency change was made.
+
+## 2026-09-11 canonical quick-actions correction
+
+Operator acceptance rejected the released legacy action set even after its
+visual restyling. The required control is the canonical `sharity.hu` 2x4
+`Sharity gyorsműveletek` component, not the old app action contract.
+
+The bounded correction replaces only the action-bar markup and presentation
+with the canonical order, labels, destinations and inline SVG icon geometry:
+Vásárlási Segéd, Feladatok adományokért, disabled Üzenetek/Hamarosan, NGO Card,
+Tippjáték, Vállalások, Profil and Közösség. The profile target remains the
+environment-local `/profil/#impactshop-account-top`; the other enabled targets
+match the public Human Touch component. The old Videó/Impact Shop/Adományozok/
+Pontok labels and emoji icons are absent.
+
+Source SHA-256 for `impactshop-action-bar.php` is
+`f05af5bf0c6112e78bc701637217e8ad3ffabba3ac4843f955856146e15fabfd`.
+PHP lint, owner-policy inventory, the focused static contract and diff-check
+pass. Identity, grants, database, cron, watchdog and shared dependencies are
+unchanged. Publication and live visual acceptance remain pending.

@@ -69,3 +69,14 @@ or further production action is required.
   The prior browser evidence is intentionally not reused for this changed UI.
   A fresh desktop/mobile visual QA is required after the exact source is
   published and deployed.
+
+## Corrective production acceptance
+
+PR #212 merged as `fb77e62df4c`; its tree exactly matches the reviewed source
+tree. Exact CAS releases deployed the action bar and identity panel at hashes
+`d7682cd8…` and `30c24dca…`, both mode `0444`. Live browser QA confirms all
+eight actions on home, Impact Challenge, Impact Shop and Profile, zero dock
+instances, and a desktop/mobile profile with zero overflow and zero ad markers.
+The initial carousel-route overflow sample was transient and was not reproduced
+by the read-only element diagnostic; the action bar remained fully inside the
+viewport. Corrective release: production-accepted.
