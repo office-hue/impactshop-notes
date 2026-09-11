@@ -608,3 +608,10 @@ before token/cookie creation; verified recovery bypasses only the public quota.
 The lock/read is bounded concurrency control under the normal InnoDB isolation
 contract; non-default isolation remains a staging verification gate. No
 provider, remote, database, cron or watchdog authority is added.
+## 2026-09-11 addendum — profile dock source boundary
+
+The Sharity profile lane retires the rendered legacy eight-action floating bar
+in favor of one compact, read-only profile summary plus an explicit existing
+account sign-in action. It reuses the established cookie-bound identity and
+points reads and adds no authority, mutation, schema, scheduler or provider
+surface. Protected hashes, rollback and route/profile smoke remain mandatory.

@@ -1414,3 +1414,11 @@ deployment state changed.
   runtime, cron or watchdog state changed. Closeout requires the adapter
   full-validation/bastion/freeze/verify chain, strict audit, DocSync/continuity,
   diff-check and one clean checkpoint commit.
+## 2026-09-11 — Sharity Human Touch profile dock
+
+- Source checkpoint: the rendered legacy eight-item floating action bar is
+  replaced by the compact Human Touch profile/sign-in dock.
+- The dock exposes cookie-bound nickname/pseudo, points and spendable votes;
+  inactive identity states do not expose a balance.
+- Production publication is pending the single exact-main release round. No
+  database, cron, watchdog or shared dependency change.
