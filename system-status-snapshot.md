@@ -1425,3 +1425,7 @@ deployment state changed.
 - Production accepted from merged main `94e25a9acbb9` via exact CAS releases
   `20260911T081100Z-94e25a9acbb9-actionbar` and
   `20260911T081200Z-94e25a9acbb9-identity`; both targets are mode `0444`.
+## 2026-09-11 — Profile Human Touch shell checkpoint
+
+- A bounded profile-only Human Touch shell is prepared; identity, grant,
+  schema, cron and watchdog behavior remain unchanged.

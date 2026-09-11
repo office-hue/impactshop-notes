@@ -445,3 +445,12 @@ rendered legacy action bar. Desktop/mobile browser evidence reported zero
 horizontal overflow. The full outer WordPress page redesign remains a
 separate presentation package; this follow-up closes only the global floating
 control replacement.
+
+## 2026-09-11 Human Touch profile shell follow-up
+
+The full profile shortcode now has a profile-only Human Touch shell: a soft
+background treatment, a teal intro panel and a responsive card width. The
+existing identity, points, votes, restore and owner-grant behavior is
+unchanged. This is the next bounded presentation checkpoint after the global
+floating dock; the outer Elementor header/footer remains intentionally
+untouched.
