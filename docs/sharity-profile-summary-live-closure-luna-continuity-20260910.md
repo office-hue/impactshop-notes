@@ -9,6 +9,15 @@ The narrow profile/data-role selector now uses `display:block !important` with
 `visibility:hidden`, preserving the HTML hidden attribute and existing JS/auth
 semantics while reserving the measured responsive space.
 
+A service-worker-blocked Playwright response simulation verified the exact
+profile-scoped rule at first render: desktop CLS `0.006540`, mobile CLS
+`0.012649`, horizontal overflow `0`, and hidden push reservation
+`157px`/`181px`. Codex Security diff scan
+`1611d230-c83f-41e1-aa1a-ff94fd277adc` completed with zero reportable
+findings. Current `origin/main@94e442d410356fa4b89a8ccc779b36b9e2ca4dec`
+was merged while preserving exact source tree
+`6016843d08862d6f840f6f907937dae0906fe0c8`.
+
 The focused CLS contract, syntax, profile regressions, guard hashes,
 protected-touch and diff checks pass. The mobile `<0.1` target remains a
 staging remeasurement gate; no live state changed.
