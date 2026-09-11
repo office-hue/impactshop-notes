@@ -462,3 +462,12 @@ with mode `0444`. Five-endpoint production preflight and desktop/mobile live
 QA passed: HTTP 200, Human Touch shell and dock present, canonical anchors,
 pseudo/nickname/votes visible, no horizontal overflow and no profile ad
 markers. The outer Elementor header/footer remains outside this package.
+
+## 2026-09-11 Terra QA closure
+
+Independent QA reconfirmed the published `origin/main@05b3d1478371` identity
+and the production identity-panel SHA-256/mode (`d2cc8c83…`, `0444`). A fresh
+live response contained the Human Touch shell and intro; the unchanged
+source/runtime browser evidence was reused for the injected dock, canonical
+anchors, profile data, zero overflow and zero profile ad markers. No blocking
+regression was found. Details: `docs/sharity-profile-human-touch-terra-qa-20260911.md`.
