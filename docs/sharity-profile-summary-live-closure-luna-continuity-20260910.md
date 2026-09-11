@@ -1,5 +1,40 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Sol staging source apply — API accepted, profile fixture blocked
+
+The new Sol/high resume preserved the exact merge identity
+`220432b1f9d1ca15e6095d03b4f8cce1cf288ecd` / tree
+`fd81686a4b4fb0bb774ff39e97b79ad9266c02fd`. From the clean detached Mini
+release worktree, the two previously previewed staging files were applied once
+through the exact-CAS guard while safe-disable remained enabled:
+
+- `sharity-profile-stg-20260910T232500Z-resume-boot` deployed
+  `impactshop-boot.php` at SHA-256 `f7cf5099d80e515e76e2bd0d5bb8b6e0de0c3455d48efa31a265bb994c9e5f27`;
+- `sharity-profile-stg-20260910T232500Z-resume-identity` deployed
+  `impactshop-identity-panel.php` at SHA-256 `bec0ec93d264a171968008a00ff734e4329b9be4b0b766880e5f72b2c0b4aa38`.
+
+Both manifests are `deployed`, exact readback matches, both targets are mode
+`0444`, the runtime owner-policy self-test is true, and safe-disable was cleared
+to `0` only after those postconditions passed. The staging API acceptance then
+proved query and pretty REST pending-to-active persistence for two distinct
+cookie jars, legacy read-only/no-votes isolation, policy v3, owner/pseudo cookie
+flags and private/no-store/Vary cache headers.
+
+The first UI-route request stopped the acceptance wave because the canonical
+staging URL `https://app.sharity.hu/impactshop-staging/profil/` returns `404`.
+Read-only WordPress inventory confirms that staging has no `profil` page record;
+production has published page ID `18984`. This is a staging content fixture/data
+gap, not a rewrite or merged-source failure. No production write, page copy,
+provider action, cache flush, cron or watchdog action followed. The staging
+grant inventory observed after the test/diagnostic requests was two active and
+three pending rows; it is diagnostic state, not UI acceptance evidence.
+
+Independent Terra/high QA therefore records `BLOCK` for full staging acceptance.
+The next package remains Sol/high and must explicitly authorize and create or
+copy the minimal staging `profil` page fixture before rerunning only the failed
+UI/ad/layout and mutation-isolation checks. Production remains blocked until
+that acceptance passes and the S59 LSAPI worker drain/recycle proof is available.
+
 ## Sol release resume — source merged, staging fail-closed stop
 
 On 2026-09-11 the bootstrap/quota follow-up was published by the single

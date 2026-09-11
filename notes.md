@@ -1,3 +1,20 @@
+## 2026-09-11 — Sharity staging exact source apply and UI fixture block
+
+- Exact-main `220432b1...` deployed the boot and identity follow-up to staging
+  through two one-shot exact-CAS releases. Both manifests are `deployed`, target
+  hashes match, modes are `0444`, runtime self-test is true and safe-disable is
+  back to `0`.
+- Query and pretty REST each passed the two-request pending-to-active flow with
+  separate cookie jars. Distinct identity, persistence, legacy isolation,
+  private/no-store/Vary headers, policy v3 and cookie attributes passed.
+- Full staging acceptance stopped at the canonical profile page: staging
+  `/impactshop-staging/profil/` is `404` because its database has no `profil`
+  page; production has published page ID `18984`. No production mutation or
+  cross-environment page copy occurred.
+- Terra/high independently marked the UI acceptance blocked. Next is a bounded
+  Sol/high staging-content fixture package, then only the failed UI/ad/layout
+  and mutation-isolation checks. Production worker-drain gate remains closed.
+
 ## 2026-09-11 — Sharity profile PR #201 and fail-closed staging stop
 
 - The bootstrap/quota candidate was guarded-pushed once, opened as PR #201,
