@@ -22,3 +22,17 @@ test('negative fixtures cannot unlock activation', () => {
   assert.equal(verifyStageA({...base(), bastion: {...base().bastion, protectionLevel: 'standard'}}).decision, 'blocked');
   assert.equal(verifyStageA({...base(), capabilities: {...base().capabilities, activation: {decision: 'ready', ready: true}}}).decision, 'blocked');
 });
+
+test('immutable central identity rejects zero and tampered values', () => {
+  for (const name of ['identity-zero.json', 'identity-tamper.json']) {
+    assert.equal(verifyStageA({...base(), contract: {...base().contract, ...fixture(name)}}).reason, 'central_identity_mismatch');
+  }
+});
+
+test('maximum bastion requires every denied lane', () => {
+  const lanes = ['provider', 'deploy', 'vps', 'secret', 'build', 'runtime', 'cron', 'watchdog', 'hook-install', 'network-write'];
+  for (const lane of lanes) {
+    const forbiddenOperations = base().bastion.forbiddenOperations.filter((value) => value !== lane);
+    assert.equal(verifyStageA({...base(), bastion: {...base().bastion, forbiddenOperations}}).reason, 'bastion_scope_incomplete', lane);
+  }
+});
