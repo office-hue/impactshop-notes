@@ -31,3 +31,14 @@ changed by Stage A.
 ## Operator approval reference
 
 `operator-approval:dev-v4-impactshop-stage-a-20260911`
+
+This opaque reference is bound to the operator-originated conversation
+instruction for this session: implement the full DEV Upgrade target rollout
+with source publication authorized, while preserving every stated activation,
+provider, runtime and deploy boundary. It is corroborated independently by
+the already merged central approved plan `dev-v4-activation-rollout-20260911`
+in `office-hue/ai-agent` at merge
+`94db78c66b21979c9511594344e9a518a4d31d8`. Candidate text does not create
+approval or authority; independent QA corroborates the external instruction.
+This Stage A package remains inert and does not broaden runtime or deploy
+authority.
