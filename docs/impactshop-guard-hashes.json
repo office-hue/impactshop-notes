@@ -309,7 +309,7 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/rolunk.html": "9faf4ba7e37216310644703a3dd47b06095567757bd913f6d58812abfbd3dc1a",
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.html": "10e152495dcae6fbdf1d67d41407d7e34e034bca99fb95472877c35350b6d67f",
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json": "9b916cecc57809c3954a669441f9a0565486aedd8bb42b09fa9d90e77cda4bbd",
-    "wp-content/mu-plugins/impactshop-action-bar.php": "d7682cd89f8bf3af6d68c01d35adc4353a4d2db9f546b3f44cbbedd9c6484002",
+    "wp-content/mu-plugins/impactshop-action-bar.php": "f05af5bf0c6112e78bc701637217e8ad3ffabba3ac4843f955856146e15fabfd",
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php": "6b158e29ba3c46be171b81610c2965b3b0371695249b1dbd1d5e66a87c485d5d",
     "bin/deploy-wpcontent-map.sh": "eaa6990de8c843cacd219859615e5f0d917aa7c6ee7309dab470a5ef9fa1fe8a",
     "bin/impactshop-guard-rollback.sh": "225211c03db3e921b4c8538de6f3522f283f6caa22a52b049d311c1f3c864993",

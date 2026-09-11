@@ -516,3 +516,23 @@ a zero-overflow/zero-ad-marker Human Touch profile on desktop and mobile. A
 read-only follow-up showed the action bar fully inside the viewport and did not
 reproduce the initial carousel-page overflow sample. No DB, schema, cron,
 watchdog or shared dependency change was made.
+
+## 2026-09-11 canonical quick-actions correction
+
+Operator acceptance rejected the released legacy action set even after its
+visual restyling. The required control is the canonical `sharity.hu` 2x4
+`Sharity gyorsműveletek` component, not the old app action contract.
+
+The bounded correction replaces only the action-bar markup and presentation
+with the canonical order, labels, destinations and inline SVG icon geometry:
+Vásárlási Segéd, Feladatok adományokért, disabled Üzenetek/Hamarosan, NGO Card,
+Tippjáték, Vállalások, Profil and Közösség. The profile target remains the
+environment-local `/profil/#impactshop-account-top`; the other enabled targets
+match the public Human Touch component. The old Videó/Impact Shop/Adományozok/
+Pontok labels and emoji icons are absent.
+
+Source SHA-256 for `impactshop-action-bar.php` is
+`f05af5bf0c6112e78bc701637217e8ad3ffabba3ac4843f955856146e15fabfd`.
+PHP lint, owner-policy inventory, the focused static contract and diff-check
+pass. Identity, grants, database, cron, watchdog and shared dependencies are
+unchanged. Publication and live visual acceptance remain pending.

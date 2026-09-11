@@ -1480,3 +1480,11 @@ deployment state changed.
   dock count is zero.
 - Profile desktop/mobile: Human Touch treatment present, 0 px overflow and 0
   ad markers. Status: production-accepted; no cron/watchdog required.
+
+## 2026-09-11 — Sharity canonical quick-actions source correction
+
+- Current production still serves the rejected legacy action contract from
+  release `20260911T091000Z-fb77e62d-actionbar`.
+- The local candidate replaces it with the canonical public 2x4 Human Touch
+  quick-actions component. Source checks pass; status is source-checkpoint,
+  not deployed and not yet live-accepted.

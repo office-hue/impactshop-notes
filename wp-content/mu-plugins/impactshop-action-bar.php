@@ -55,21 +55,14 @@ function impactshop_action_bar_render(): void
     }
 
     $path = impactshop_action_bar_current_path();
-    $video_current = str_starts_with($path, '/impact-challenge') || str_starts_with($path, '/impactad-2');
-    $shop_current = str_starts_with($path, '/impactshop');
-
-    $video_url = home_url('/impact-challenge/') . '#ads-watch-video';
-    $tasks_url = home_url('/impact-challenge/') . '#impactshop-offerwall';
-    $shop_url = home_url('/impactshop/');
-    $donate_url = home_url('/impact-challenge/') . '#ads-watch-purchase';
+    $shopping_assistant_url = 'https://sharity.hu/vasarlasi-seged';
+    $offerwall_url = 'https://sharity.hu/offerwall';
+    $ngo_card_url = 'https://sharity.hu/ngo-kartyak';
+    $tip_game_url = 'https://factlens.eu/factlens/vb-prod/';
+    $commitments_url = 'https://sharity.hu/vallalasok';
     $account_url = home_url('/profil/#impactshop-account-top');
-    $ngo_url = home_url('/impact-challenge/') . '#ads-watch-ngo';
-    $message_url = home_url('/impact-challenge/') . '#ads-watch-message';
-    $stats_url = home_url('/impact-challenge/') . '#impactshop-ads-watch';
-
-    $video_attr = $video_current ? ' aria-current="page" data-default-current="1"' : '';
-    $shop_attr = $shop_current ? ' aria-current="page"' : '';
-    $donate_attr = '';
+    $community_url = 'https://sharity.hu/hatas-korok';
+    $account_attr = str_starts_with($path, '/profil') ? ' aria-current="page"' : '';
 
     // Lang + country selector
     $current_lang    = sanitize_key( (string)( $_GET['lang']    ?? '' ) );
@@ -94,9 +87,9 @@ function impactshop_action_bar_render(): void
     ?>
     <style>
         :root {
-            --sharity-action-bar-height: 86px;
-            --sharity-action-bar-height-tablet: 86px;
-            --sharity-action-bar-height-desktop: 86px;
+            --sharity-action-bar-height: 126px;
+            --sharity-action-bar-height-tablet: 146px;
+            --sharity-action-bar-height-desktop: 146px;
             --sharity-a11y-clearance: 110px;
         }
 
@@ -308,49 +301,91 @@ function impactshop_action_bar_render(): void
 
         .sharity-action-bar {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: max(8px, env(safe-area-inset-bottom));
+            left: 50%;
             z-index: 10005;
             pointer-events: auto;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 0;
-            background: #fffdf7;
-            border: 2px solid #171421;
-            padding-bottom: calc(4px + env(safe-area-inset-bottom));
-            box-shadow: 5px -5px 0 #171421;
+            gap: 6px;
+            width: min(720px, calc(100vw - 16px));
+            padding: 8px;
+            transform: translateX(-50%);
+            background: rgba(250, 249, 246, 0.95);
+            border: 2px solid #150f26;
+            border-radius: 20px;
+            box-shadow: 6px 6px 0 #150f26;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
         }
 
         .sharity-action-bar a,
         .sharity-action-bar button {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px 4px;
-            color: #171421;
+            min-width: 0;
+            min-height: 48px;
+            padding: 6px 4px;
+            color: #150f26;
             text-decoration: none;
-            font-size: 11px;
-            font-weight: 600;
+            text-align: center;
+            font-size: 10px;
+            line-height: 12px;
+            font-weight: 700;
             gap: 4px;
-            white-space: nowrap;
             cursor: pointer;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             pointer-events: auto;
-            transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease;
-            border: 0;
-            background: transparent;
+            transition: transform 0.15s ease;
+            border: 2px solid #150f26;
+            border-radius: 12px;
             margin: 0;
             font-family: inherit;
             appearance: none;
         }
 
+        .sharity-action-bar [data-bar="shopping-assistant"],
+        .sharity-action-bar [data-bar="tip-game"] {
+            background: #fff7d9;
+        }
+
+        .sharity-action-bar [data-bar="offerwall"],
+        .sharity-action-bar [data-bar="commitments"] {
+            background: #f4ffd7;
+        }
+
+        .sharity-action-bar [data-bar="messages-upcoming"],
+        .sharity-action-bar [data-bar="account"] {
+            background: #fff0f3;
+        }
+
+        .sharity-action-bar [data-bar="ngo-card"],
+        .sharity-action-bar [data-bar="community"] {
+            background: #ede5ff;
+        }
+
+        .sharity-action-bar [data-bar="messages-upcoming"] {
+            cursor: not-allowed;
+            opacity: 0.75;
+        }
+
         .sharity-action-bar a:active,
         .sharity-action-bar button:active {
-            opacity: 0.85;
-            transform: translateY(2px);
+            transform: translateY(1px);
+        }
+
+        .sharity-action-bar a:hover {
+            transform: translateY(-2px);
+        }
+
+        .sharity-action-bar a:focus-visible,
+        .sharity-action-bar button:focus-visible {
+            outline: 4px solid rgba(109, 59, 245, 0.45);
+            outline-offset: 2px;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -362,30 +397,37 @@ function impactshop_action_bar_render(): void
 
         .sharity-action-bar a[aria-current="page"],
         .sharity-action-bar button[aria-current="page"] {
-            color: #171421;
-            background: #c9ff3d;
+            box-shadow: inset 0 0 0 2px #6d3bf5;
         }
 
         .sharity-action-bar .bar-icon {
-            position: relative;
             display: inline-flex;
-            font-size: 20px;
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
         }
 
-        .sharity-action-bar [data-bar="message"].has-unread {
-            color: #fbbf24;
+        .sharity-action-bar .bar-icon svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
-        .sharity-action-bar [data-bar="message"].has-unread .bar-icon::after {
-            content: "";
+        .sharity-action-bar .bar-coming-soon {
             position: absolute;
-            top: -2px;
-            right: -7px;
-            width: 7px;
-            height: 7px;
+            top: 4px;
+            right: 4px;
+            padding: 0 4px;
+            border: 1px solid #150f26;
             border-radius: 999px;
-            background: #fb7185;
-            box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.95);
+            background: #fff;
+            font-size: 8px;
+            line-height: 12px;
         }
 
         .sharity-message-popover {
@@ -531,36 +573,25 @@ function impactshop_action_bar_render(): void
             }
 
             .sharity-action-bar {
-                left: 50%;
-                right: auto;
-                bottom: 14px;
-                transform: translateX(-50%);
-                width: min(760px, calc(100vw - 28px));
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                gap: 4px;
-                border: 2px solid #171421;
-                border-radius: 16px;
-                padding: 6px;
-                box-shadow: 6px 6px 0 #171421;
-                background: #fffdf7;
+                bottom: max(16px, env(safe-area-inset-bottom));
+                width: min(720px, calc(100vw - 32px));
+                gap: 8px;
+                padding: 12px;
             }
 
             .sharity-action-bar a,
             .sharity-action-bar button {
-                font-size: 13px;
-                padding: 10px 8px;
-                gap: 6px;
-                border-radius: 10px;
+                min-height: 56px;
+                flex-direction: row;
+                font-size: 12px;
+                line-height: 16px;
+                padding: 8px;
+                gap: 8px;
             }
 
             .sharity-action-bar .bar-icon {
-                font-size: 22px;
-            }
-
-            .sharity-action-bar a[aria-current="page"],
-            .sharity-action-bar button[aria-current="page"] {
-                border-top: 0;
-                background: #c9ff3d;
+                width: 20px;
+                height: 20px;
             }
 
             .sharity-message-popover {
@@ -585,56 +616,46 @@ function impactshop_action_bar_render(): void
                 padding-bottom: calc(var(--sharity-action-bar-height-desktop) + 18px);
             }
 
-            .sharity-action-bar {
-                width: min(1220px, calc(100vw - 32px));
-                grid-template-columns: repeat(8, minmax(0, 1fr));
-            }
-
             .sharity-message-popover {
-                bottom: 96px;
-            }
-        }
-
-        @media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
-            .sharity-action-bar {
-                display: none;
+                bottom: 154px;
             }
         }
 
     </style>
 
-    <nav class="sharity-action-bar" aria-label="Gyors műveletek">
-        <a href="<?php echo esc_url($video_url); ?>" data-bar="video"<?php echo $video_attr; ?>>
-            <span class="bar-icon">🎬</span>
-            <span>Videó</span>
+    <nav class="sharity-action-bar" aria-label="Sharity gyorsműveletek" data-sharity-quick-dock="true">
+        <a href="<?php echo esc_url($shopping_assistant_url); ?>" data-bar="shopping-assistant">
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></span>
+            <span>Vásárlási Segéd</span>
         </a>
-        <a href="<?php echo esc_url($tasks_url); ?>" data-bar="tasks">
-            <span class="bar-icon">🎁</span>
-            <span>Feladatok</span>
+        <a href="<?php echo esc_url($offerwall_url); ?>" data-bar="offerwall">
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg></span>
+            <span>Feladatok adományokért</span>
         </a>
-        <a href="<?php echo esc_url($shop_url); ?>" data-bar="shop"<?php echo $shop_attr; ?>>
-            <span class="bar-icon">🛍️</span>
-            <span>Impact Shop</span>
+        <button type="button" disabled aria-disabled="true" aria-label="Üzenetek (hamarosan)" title="A profil üzenetei hamarosan elérhetők." data-bar="messages-upcoming">
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg></span>
+            <span>Üzenetek</span>
+            <span class="bar-coming-soon">Hamarosan</span>
+        </button>
+        <a href="<?php echo esc_url($ngo_card_url); ?>" data-bar="ngo-card">
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"></path><path d="m18 15-2-2"></path><path d="m15 18-2-2"></path></svg></span>
+            <span>NGO Card</span>
         </a>
-        <a href="<?php echo esc_url($donate_url); ?>" data-bar="donate"<?php echo $donate_attr; ?>>
-            <span class="bar-icon">❤️</span>
-            <span>Adományozok</span>
+        <a href="<?php echo esc_url($tip_game_url); ?>" data-bar="tip-game">
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></span>
+            <span>Tippjáték</span>
         </a>
-        <a href="<?php echo esc_url($account_url); ?>" data-bar="account">
-            <span class="bar-icon">👤</span>
+        <a href="<?php echo esc_url($commitments_url); ?>" data-bar="commitments">
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11 14h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"></path><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"></path><path d="m2 15 6 6"></path><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.73 2.73 0 0 0 16 4a2.78 2.78 0 0 0-5 1.8c0 1.2.8 2 1.5 2.8L16 12Z"></path></svg></span>
+            <span>Vállalások</span>
+        </a>
+        <a href="<?php echo esc_url($account_url); ?>" data-bar="account"<?php echo $account_attr; ?>>
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 20a6 6 0 0 0-12 0"></path><circle cx="12" cy="10" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg></span>
             <span>Profil</span>
         </a>
-        <a href="<?php echo esc_url($ngo_url); ?>" data-bar="ngo">
-            <span class="bar-icon">🏛️</span>
-            <span>NGO</span>
-        </a>
-        <a href="<?php echo esc_url($message_url); ?>" data-bar="message">
-            <span class="bar-icon">💬</span>
-            <span>Üzenetek</span>
-        </a>
-        <a href="<?php echo esc_url($stats_url); ?>" data-bar="stats">
-            <span class="bar-icon">📊</span>
-            <span>Pontok</span>
+        <a href="<?php echo esc_url($community_url); ?>" data-bar="community">
+            <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 21a8 8 0 0 0-16 0"></path><circle cx="10" cy="8" r="5"></circle><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg></span>
+            <span>Közösség</span>
         </a>
     </nav>
 
@@ -1311,45 +1332,13 @@ function impactshop_action_bar_render(): void
             }
 
             function updateCurrent() {
-                var hash = window.location.hash || '';
                 var currentPath = normalizePath(window.location.pathname);
-                var isShopPage = currentPath.indexOf('/impactshop') === 0;
-                var shop = bar.querySelector('[data-bar="shop"]');
-                var video = bar.querySelector('[data-bar="video"]');
-                var tasks = bar.querySelector('[data-bar="tasks"]');
-                var donate = bar.querySelector('[data-bar="donate"]');
                 var account = bar.querySelector('[data-bar="account"]');
-                var ngo = bar.querySelector('[data-bar="ngo"]');
-                var message = bar.querySelector('[data-bar="message"]');
-                var stats = bar.querySelector('[data-bar="stats"]');
-
-                [video, tasks, donate, account, ngo, message, stats].forEach(function(node) {
-                    if (node) node.removeAttribute('aria-current');
-                });
-
-                if (shop) {
-                    if (isShopPage) {
-                        shop.setAttribute('aria-current', 'page');
-                    } else {
-                        shop.removeAttribute('aria-current');
-                    }
-                }
-
-                if (!video || !tasks || !donate) return;
-                if (hash === '#impactshop-offerwall') {
-                    tasks.setAttribute('aria-current', 'page');
-                } else if (hash === '#ads-watch-purchase') {
-                    donate.setAttribute('aria-current', 'page');
-                } else if (hash === '#impactshop-account') {
-                    if (account) account.setAttribute('aria-current', 'page');
-                } else if (hash === '#ads-watch-ngo') {
-                    if (ngo) ngo.setAttribute('aria-current', 'page');
-                } else if (hash === '#ads-watch-message') {
-                    if (message) message.setAttribute('aria-current', 'page');
-                } else if (hash === '#impactshop-ads-watch') {
-                    if (stats) stats.setAttribute('aria-current', 'page');
-                } else if (video.getAttribute('data-default-current') === '1') {
-                    video.setAttribute('aria-current', 'page');
+                if (!account) return;
+                if (currentPath.indexOf('/profil') === 0) {
+                    account.setAttribute('aria-current', 'page');
+                } else {
+                    account.removeAttribute('aria-current');
                 }
             }
 
