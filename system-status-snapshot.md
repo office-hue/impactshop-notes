@@ -1,3 +1,16 @@
+## 2026-09-11 — Sharity profile async CLS source correction
+
+- Source-only Luna checkpoint reserves profile-scoped layout space for the
+  asynchronous points, compact-summary and last-NGO identity blocks that
+  shifted after first paint on staging (desktop CLS `0.064`, mobile `0.326`).
+- Focused CLS contract, PHP/JS syntax, profile regression, guard-hash,
+  protected-touch and diff-check evidence PASS. The mobile `<0.1` target is
+  not yet claimed; it requires a new staging Playwright measurement after
+  guarded publication.
+- State: `source-checkpoint / staging-remeasurement-pending /
+  production-not-started`; no provider, database, runtime, cron or watchdog
+  authority was used.
+
 ## 2026-09-11 — Sharity profile staging source installed, UI route blocked
 
 - Staging source: exact merge `220432b1...`; boot SHA `f7cf5099...`, identity

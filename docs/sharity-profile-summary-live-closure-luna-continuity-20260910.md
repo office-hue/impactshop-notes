@@ -1,5 +1,18 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — profile-scoped layout stability
+
+The staging Playwright sample measured desktop CLS `0.064` and mobile CLS
+`0.326`; the shifts came from async identity/points blocks changing height
+after the first paint. The profile-only inline CSS now reserves the measured
+points/compact-summary and last-NGO space while keeping those blocks visually
+hidden until data arrives. No global layout or shared dependency is changed.
+
+The focused CLS contract, PHP lint, JavaScript syntax, existing profile
+contracts, guard hash verification and diff check pass. This remains
+source-only; the mobile target `<0.1` is not claimed until the corrected
+source is deployed and the staging Playwright measurement is rerun.
+
 ## Sol blocker correction — environment-aware profile route family
 
 The staging UI gate found a real hosting difference: `app.sharity.hu` serves

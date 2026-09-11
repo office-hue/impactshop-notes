@@ -1,3 +1,13 @@
+## 2026-09-11 — Sharity profile async layout reservation
+
+- Source-only Luna correction reserves profile-scoped space for async points,
+  compact summary and last-NGO blocks, addressing the staging Playwright
+  desktop CLS `0.064` / mobile CLS `0.326` finding without global CSS or
+  dependency changes.
+- Focused CLS contract, PHP/JS syntax, profile regression, guard-hash and
+  diff-check evidence passes. Mobile `<0.1` remains a staging remeasurement
+  gate; no deploy or live state changed.
+
 ## 2026-09-11 — Sharity profile subdirectory route correction
 
 - The staging UI blocker was isolated to `/impactshop-staging` hosting, not a
