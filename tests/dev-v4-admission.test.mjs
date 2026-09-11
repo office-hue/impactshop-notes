@@ -8,6 +8,8 @@ test('corrected central snapshot and atomic marker contract are pinned',()=>{
   const snapshot=JSON.parse(fs.readFileSync(path.join(root,'config/dev-v4/central-contract-snapshot.v2.json')));
   assert.equal(snapshot.centralMergeSha,'94db78c66b21979c9511594344649a518a4d31d8');
   assert.equal(snapshot.centralTree,'6fd0f87b40b74e74abce72caf03a48280f7659ab');
+  assert.equal(snapshot.supersedes,'config/dev-v4/central-contract-snapshot.v1.json');
+  assert.equal(snapshot.supersededSnapshotSha256,'935482cf99e122e872126520f7f17d24c6dc01cb35212c66cda511cba79073e9');
   const starter=fs.readFileSync(path.join(root,'scripts/worktree-task-start.sh'),'utf8');
   assert.match(starter,/fchmod\(fd, 0o600\)/); assert.match(starter,/os\.replace\(temp, marker_file\)/);
 });
