@@ -1,5 +1,20 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — early profile asset enqueue
+
+The first CLS reservation checkpoint reduced but did not close the staging
+Playwright shift: mobile `0.2585`, desktop `0.2704`, with the largest desktop
+shift at `664ms` attributed to the identity card/page content. The profile
+shortcode was registering/enqueuing its inline stylesheet only while rendering
+page content, after `wp_head`. The existing `wp_enqueue_scripts` registration
+now enqueues the already-registered profile assets only when the canonical
+profile route is active. The three profile-only min-height reservations remain
+because they address the later async data blocks and do not add global CSS.
+
+The early-enqueue contract, syntax, profile regressions, guard hashes,
+protected-touch and diff checks pass. The `<0.1` desktop/mobile CLS target and
+zero-overflow claim remain staging remeasurement gates; no live state changed.
+
 ## Luna follow-up — profile-scoped layout stability
 
 The staging Playwright sample measured desktop CLS `0.064` and mobile CLS

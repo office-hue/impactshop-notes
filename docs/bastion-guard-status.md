@@ -2,6 +2,18 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-11 — Sharity profile early asset enqueue
+
+The second CLS follow-up keeps the profile-only min-height reservations and
+corrects the earlier stylesheet timing defect: the normal
+`wp_enqueue_scripts` flow now enqueues the already-registered inline profile
+assets only for the canonical `/profil` route family, before `wp_head`.
+Staging Playwright had measured mobile CLS `0.2585` and desktop `0.2704`, with
+the largest desktop shift attributed to the late identity card stylesheet.
+The `<0.1` target remains unverified until staging is remeasured. No provider,
+database, runtime, cron or watchdog mutation occurred. See
+`docs/protected-change-records/2026-09-11-sharity-profile-cls-early-enqueue.md`.
+
 ## 2026-09-11 — Sharity profile async layout reservation
 
 The protected identity-panel inline CSS reserves only the profile points,

@@ -1,3 +1,15 @@
+## 2026-09-11 — Sharity profile early enqueue source correction
+
+- The late stylesheet source of the remaining staging CLS shift was corrected:
+  profile assets enqueue during `wp_enqueue_scripts` only on the canonical
+  profile route. Existing profile-only async reservations remain.
+- Contract, syntax, profile regression, guard-hash, protected-touch and
+  diff-check evidence PASS. Staging remeasurement must prove desktop/mobile
+  CLS `<0.1` and horizontal overflow `0`; production remains untouched.
+- State: `source-checkpoint / staging-remeasurement-pending /
+  production-not-started`; no provider, database, runtime, cron or watchdog
+  authority was used.
+
 ## 2026-09-11 — Sharity profile async CLS source correction
 
 - Source-only Luna checkpoint reserves profile-scoped layout space for the

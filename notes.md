@@ -1,3 +1,12 @@
+## 2026-09-11 — Sharity profile early asset enqueue
+
+- The remaining staging CLS shift (`mobile 0.2585`, `desktop 0.2704`) was
+  traced to identity stylesheet output after `wp_head`; the existing profile
+  asset registration now enqueues early only on the profile route.
+- The three profile-only async block reservations remain. Contract, syntax,
+  profile regression, guard-hash, protected-touch and diff-check evidence
+  passes; `<0.1` and overflow remain staging remeasurement gates.
+
 ## 2026-09-11 — Sharity profile async layout reservation
 
 - Source-only Luna correction reserves profile-scoped space for async points,
