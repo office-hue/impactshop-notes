@@ -1604,8 +1604,13 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-restore h4 { margin: 0; font-size: 16px; font-weight: 700; }
 .impactshop-identity-restore__label { display: block; font-weight: 600; }
 .impactshop-identity-block { margin-top: 18px; }
-.impactshop-identity-points[data-role=points-section][hidden] { display: block; visibility: hidden; min-height: 250px; }
+.impactshop-identity-push[data-role=push-section] { min-height: 157px; box-sizing: border-box; }
+.impactshop-identity-push[data-role=push-section][hidden] { display: block !important; visibility: hidden; }
+.impactshop-identity-points[data-role=points-section] { min-height: 265px; }
+.impactshop-identity-points[data-role=points-section][hidden] { display: block; visibility: hidden; }
 .impactshop-identity-compact[data-role=points-compact][hidden] { display: block; visibility: hidden; min-height: 72px; }
+.impactshop-identity-votes[data-role=votes-summary] { min-height: 139px; box-sizing: border-box; }
+.impactshop-identity-history { min-height: 75px; box-sizing: border-box; }
 .impactshop-identity-lastngo { min-height: 72px; }
 .impactshop-identity-header { margin-bottom: 12px; }
 .impactshop-identity-progress { width: 100%; height: 8px; background: rgba(148,163,184,0.3); border-radius: 999px; overflow: hidden; margin: 10px 0; }
@@ -1626,6 +1631,8 @@ function impactshop_identity_panel_register_assets(): void
   .impactshop-identity-row { flex-direction: column; align-items: stretch; }
   .impactshop-identity-card button { width: 100%; }
   .impactshop-identity-card { padding: 18px; border-radius: 14px; }
+  .impactshop-identity-push[data-role=push-section] { min-height: 181px; }
+  .impactshop-identity-points[data-role=points-section] { min-height: 301px; }
 }
 @media (prefers-contrast: more) {
   .impactshop-identity-card { border-color: #1a1a2e; background: #fff; }

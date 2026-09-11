@@ -2,6 +2,27 @@
 
 Last updated: 2026-09-10
 
+## 2026-09-11 — Sharity profile hidden push reservation specificity
+
+The shared Playwright simulation measured desktop CLS `0.041389` and mobile
+CLS `0.137899`; the remaining mobile shift was the hidden push block losing
+its reserved height to the browser `[hidden]` rule. The narrow profile/data
+role selector now uses `display:block !important` plus `visibility:hidden`.
+The hidden attribute and JS/auth behavior remain unchanged. Mobile `<0.1`
+remains unverified until staging remeasurement. See
+`docs/protected-change-records/2026-09-11-sharity-profile-cls-hidden-push.md`.
+
+## 2026-09-11 — Sharity profile responsive CLS reservations
+
+The final bounded CLS refinement reserves exact profile-only async block
+dimensions from staging: push `157px` desktop / `181px` mobile, points `265px`
+desktop / `301px` mobile, votes `139px` and history `75px`. Hidden push uses
+`display:block` plus `visibility:hidden`, matching the visible reservation.
+The supplied timeline is desktop CLS `0.0413`, mobile `0.2506`, overflow `0`;
+mobile `<0.1` remains unverified until a new staging measurement. No provider,
+database, runtime, cron or watchdog mutation occurred. See
+`docs/protected-change-records/2026-09-11-sharity-profile-cls-responsive.md`.
+
 ## 2026-09-11 — Sharity profile early asset enqueue
 
 The second CLS follow-up keeps the profile-only min-height reservations and

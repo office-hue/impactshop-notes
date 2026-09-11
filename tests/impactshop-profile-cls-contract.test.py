@@ -23,18 +23,36 @@ points = css_rule(
     ".impactshop-identity-points[data-role=points-section][hidden]",
     "\n",
 )
+points_visible = css_rule(
+    ".impactshop-identity-points[data-role=points-section] {",
+    "\n",
+)
 compact = css_rule(
     ".impactshop-identity-compact[data-role=points-compact][hidden]",
     "\n",
 )
+push = css_rule(".impactshop-identity-push[data-role=push-section]", "\n")
+push_hidden = css_rule(".impactshop-identity-push[data-role=push-section][hidden]", "\n")
+votes = css_rule(".impactshop-identity-votes[data-role=votes-summary]", "\n")
+history = css_rule(".impactshop-identity-history", "\n")
 last_ngo = css_rule(".impactshop-identity-lastngo", "\n")
 
+assert "min-height: 157px" in push
+assert "box-sizing: border-box" in push
+assert "display: block !important" in push_hidden
+assert "visibility: hidden" in push_hidden
+assert "min-height: 265px" in points_visible
 assert "display: block" in points
 assert "visibility: hidden" in points
-assert "min-height: 250px" in points
 assert "display: block" in compact
 assert "visibility: hidden" in compact
 assert "min-height: 72px" in compact
+assert "min-height: 139px" in votes
+assert "min-height: 75px" in history
 assert "min-height: 72px" in last_ngo
+
+mobile_css = PHP[PHP.index("@media (max-width: 640px)"):PHP.index("@media (prefers-contrast", PHP.index("@media (max-width: 640px)"))]
+assert ".impactshop-identity-push[data-role=push-section] { min-height: 181px; }" in mobile_css
+assert ".impactshop-identity-points[data-role=points-section] { min-height: 301px; }" in mobile_css
 
 print("impactshop profile CLS contract: PASS")

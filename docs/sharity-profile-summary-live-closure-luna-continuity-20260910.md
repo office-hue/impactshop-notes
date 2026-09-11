@@ -1,5 +1,43 @@
 # Sharity profile summary live closure — Luna checkpoints A–B
 
+## Luna follow-up — hidden push reservation specificity
+
+The exact shared Playwright simulation measured desktop CLS `0.041389` and
+mobile CLS `0.137899`; the remaining mobile shift was the hidden push block
+computed as `display:none` despite its profile rule, then expanding to `181px`.
+The narrow profile/data-role selector now uses `display:block !important` with
+`visibility:hidden`, preserving the HTML hidden attribute and existing JS/auth
+semantics while reserving the measured responsive space.
+
+A service-worker-blocked Playwright response simulation verified the exact
+profile-scoped rule at first render: desktop CLS `0.006540`, mobile CLS
+`0.012649`, horizontal overflow `0`, and hidden push reservation
+`157px`/`181px`. Codex Security diff scan
+`1611d230-c83f-41e1-aa1a-ff94fd277adc` completed with zero reportable
+findings. Current `origin/main@94e442d410356fa4b89a8ccc779b36b9e2ca4dec`
+was merged while preserving exact source tree
+`6016843d08862d6f840f6f907937dae0906fe0c8`.
+
+The focused CLS contract, syntax, profile regressions, guard hashes,
+protected-touch and diff checks pass. The mobile `<0.1` target remains a
+staging remeasurement gate; no live state changed.
+
+## Luna follow-up — responsive async block reservations
+
+The exact staging timeline after early enqueue measured mobile CLS `0.2506`,
+desktop CLS `0.0413` and zero overflow. The remaining shifts were bounded to
+the push block (`181px` mobile / `157px` desktop), points block (`301px` /
+`265px`), votes summary (`139px`) and history (`75px`). Profile-only CSS now
+reserves those responsive dimensions; the hidden push state uses the same
+display/visibility reservation as its visible state. The previous compact and
+last-NGO reservations remain. No auth, JS, global CSS or shared dependency
+changed.
+
+The exact responsive CLS contract, syntax, profile regressions, guard hashes,
+protected-touch and diff checks pass. The `<0.1` mobile target remains a
+staging remeasurement gate; desktop is already below target in the supplied
+measurement.
+
 ## Luna follow-up — early profile asset enqueue
 
 The first CLS reservation checkpoint reduced but did not close the staging
