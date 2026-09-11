@@ -1,3 +1,19 @@
+## 2026-09-11 — Sharity profile production accepted
+
+- Runtime source: merged `origin/main@e9d9c934fb7bfce4ec9bb2af0586f19a8d9782f6`.
+- Exact production release: `20260911T071058Z-e9d9c934fb7b-20804a79`;
+  `impactshop-identity-panel.php` SHA-256
+  `72980c402f05666c73f4a7b1f69df68d4ad54bf45bf7ecdd6b333b40f0f54cbc`,
+  mode `0444`.
+- Production browser acceptance: status `200`, one profile panel, ads `0`,
+  overflow `0`, desktop CLS `0.006905`, mobile CLS `0.070579`; sign-in label,
+  canonical anchor, keyboard focus and identity cookie flags PASS.
+- Two isolated active profiles: distinct pseudo IDs; both responses
+  `private/no-store`, `Vary: Cookie`, Cloudflare `DYNAMIC`, ads `0`.
+- State: `production-accepted`; no DB mutation in the follow-up and no
+  cron/watchdog addition. S59 worker count is not claimed because the provider
+  exposes no deterministic worker inventory.
+
 ## 2026-09-11 — Sharity profile canonical Elementor render filter
 
 - Production read-only evidence identified remaining AdSense widgets as
