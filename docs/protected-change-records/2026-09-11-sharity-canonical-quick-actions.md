@@ -8,7 +8,7 @@ Status: source-checkpoint; publication pending
 {
   "schemaVersion": 1,
   "planRef": "docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md#2026-09-11-canonical-quick-actions-correction",
-  "operatorApprovalRef": "operator-approval:replace-legacy-action-bar-with-canonical-sharity-quick-actions-20260911",
+  "operatorApprovalRef": "operator-approval:sharity-profile-summary-live-closure-20260910",
   "protectedPaths": [
     "docs/impactshop-guard-hashes.json",
     "docs/impactshop-guard-hashes.sha256",
