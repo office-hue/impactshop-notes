@@ -7723,3 +7723,11 @@ secret/cron/watchdog state changed.
 - Added a merged-base positive fixture plus the negative boundary fixture;
   provider/build/deploy/VPS/runtime/secret/scheduler authority is unchanged.
 - Source-only checkpoint; no push, PR, deploy, or live mutation.
+
+## 2026-09-13 — Sharity NGO preference v4.4 G2
+
+- Added future-only protected S4/S5 selectors, base-owned dynamic PHP readiness,
+  canonical capsule writer compatibility and bounded governance records.
+- No `wp-content/`, provider, deploy, VPS, runtime, secret, cron or watchdog
+  mutation. Focused admission tests pass; independent Terra/high QA reports no
+  remaining P0/P1/P2 finding.

@@ -1,8 +1,10 @@
 # Sharity NGO-preferencia v4.4 — G2 impactshop-notes governance plan
 
-Plan ID: `sharity-ngo-preference-v4-4-g2-20260913`  
-Umbrella Plan ID: `sharity-ngo-preference-v4-4-20260913`  
+Plan ID: `sharity-ngo-preference-v4-4-g2-20260913`
+Umbrella Plan ID: `sharity-ngo-preference-v4-4-20260913`
 Status: `approved-for-luna`
+
+Operator approval reference: `operator-approval:sharity-ngo-preference-v4-4-g2-20260913` (the user explicitly requested implementation of the approved v4.4 plan in this chat).
 
 <!-- DEV-DELIVERY-V2-MANIFEST
 {
@@ -98,7 +100,7 @@ Mindkettő `protected`, requires-plan-id, és explicit PHP capabilityt kér. A s
 
 `config/dev-v4/repo-capabilities.v2.json` új/finomított `php-runtime` capabilityt deklarál, de nem állíthatja előre `available`-nek. `scripts/dev-v4-admission.mjs` az immutable base policyból értékel: kizárólag `/opt/homebrew/bin/php` vagy `/usr/bin/php` resolved realpath, regular executable, nem group/world-writable mód, PHP `>= 8.1`, `json`, `hash`, `sodium`, `mysqli`, lint és hermetikus fixture PASS, valamint valid environment receipt és TTL együtt jelenthet `available` állapotot. A receipt provenance base-owned/host-receipt, identity- és scope-bound; candidate self-attestation, PATH, stale receipt, hiányzó extension vagy fixture hiba fail-closed.
 
-`tests/dev-v4-admission.test.mjs` pozitív és negatív fixture-ökkel ellenőrzi a selector/capability parser, path allowlist, insecure executable, verzió/extension hiány, lint/fixture failure, lejárt vagy idegen receipt, selector self-use, valamint `wp-content/`/provider/deploy extra path tiltását.
+`tests/dev-v4-admission.test.mjs` pozitív és negatív fixture-ökkel ellenőrzi a selector/capability parser, path allowlist, insecure executable, verzió/extension hiány, lint/fixture failure, lejárt vagy idegen receipt, selector self-use, valamint `wp-content/`/provider/deploy extra path tiltását. A jövőbeli selectorok dokumentációs felületei is exact fájlok; nem öröklik a G2 change-recordját vagy continuityjét, és nem kapnak általános `docs/`, `scripts/`, `tests/` vagy `wp-content/` gyökeret.
 
 `scripts/worktree-task-start.sh` a merge utáni capsule-oknál a központi checker kanonikus `current={head,tree,recorded_at}` alakját írja. `scripts/dev-v4-admission.mjs` a jelen, base által létrehozott capsule `current.branch` mezőjét csak erre a G2 átmenetre fogadja el, miközben a repo/branch/path/head/tree kötést változatlanul ellenőrzi; a merge utáni fresh capsule már nem hordozza az eltérő mezőt. A candidate nem állíthat elő új base-authorityt, és a saját admission-módosítását nem használhatja a G2 engedélyezésére.
 
