@@ -194,3 +194,7 @@ production remains untouched. No cron or watchdog is required.
 
 The native admission helper is dormant on the Stage A candidate and becomes
 active only from a merged descendant base carrying the Stage B contract.
+
+G2 continuity covers the activation policy, capability evaluator, capsule writer,
+protected-file record, status snapshot and notes. S4/S5 runtime paths remain
+future-only selector surfaces and are not changed by this package.

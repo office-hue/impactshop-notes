@@ -1498,6 +1498,14 @@ deployment state changed.
   cron, watchdog and hook operations.
 - Capability caveat: PHP, staging and remote/provider are degraded or blocked
   and do not change unrelated local/static lanes.
+
+## 2026-09-13 — Sharity NGO preference v4.4 G2 governance
+
+- Source-only protected governance; S4/S5 selectors remain future-only.
+- Dynamic PHP capability is fail-closed and receipt/TTL bound.
+- Focused admission tests and independent Terra/high QA pass on the bounded
+  13-path candidate.
+- No WordPress, provider, deploy, VPS, runtime, secret, cron or watchdog mutation.
 # 2026-09-11 — DEV v4 Stage B v2 semantics
 
 Stage A candidate admission is explicitly `v2-only`; only a later merged base

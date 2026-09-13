@@ -621,3 +621,10 @@ The candidate remains v2-only on the exact Stage A base. A new task becomes
 v4-aware only after a merged descendant contains the Stage B contract and a
 fresh capsule binds origin/main, HEAD, tree and branch. No live authority is
 added.
+
+## Sharity NGO preference v4.4 G2 governance (2026-09-13)
+
+G2 is source-only governance: reserved S4 profile-consumer and S5 additive
+provider-activity selectors are protected, plan-bound, narrow, and PHP-gated.
+The dynamic PHP receipt is base-owned with a 15-minute TTL; runtime, provider,
+WordPress, deploy, VPS and secret mutation remain out of scope.

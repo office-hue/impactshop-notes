@@ -405,3 +405,9 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 The admission helper is source-only and fail-closed: pre-merge is v2-only,
 unsafe nonlegacy capsules block, and post-merge base/contract identity is
 verified. Provider/build/deploy/VPS/runtime/secret/cron/watchdog remain denied.
+
+## 2026-09-13 — Sharity NGO preference v4.4 G2 governance
+
+Protected source-only governance adds future-only S4/S5 selectors and a
+base-owned dynamic PHP readiness evaluator. No `wp-content/`, provider, deploy,
+VPS, secret, cron or runtime mutation occurred.
