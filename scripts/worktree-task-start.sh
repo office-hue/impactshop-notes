@@ -201,16 +201,9 @@ payload = {
     "resume": resume == "1",
     "schema_version": 2,
     "base": {"ref": "origin/main", "commit": base_sha},
-    "current": {"head": base_sha, "tree": base_tree, "branch": feature_branch, "recorded_at": started_at},
+    "current": {"head": base_sha, "tree": base_tree, "recorded_at": started_at},
     "selector": "maintenance-docs",
 }
-if doc_sync_label:
-    payload["doc_sync_label"] = doc_sync_label
-if doc_sync_repo_id:
-    payload["doc_sync_repo_id"] = doc_sync_repo_id
-if doc_sync_path_prefix:
-    payload["doc_sync_path_prefix"] = doc_sync_path_prefix
-
 import os, tempfile
 parent = os.path.dirname(marker_file)
 fd, temp = tempfile.mkstemp(prefix=".worktree-active.", dir=parent)
