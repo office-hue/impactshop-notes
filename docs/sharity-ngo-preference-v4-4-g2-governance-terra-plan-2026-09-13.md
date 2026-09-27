@@ -23,7 +23,7 @@ Operator approval reference: `operator-approval:sharity-ngo-preference-v4-4-g2-2
     "candidateTree": "private-evidence"
   },
   "changeAllowlist": [
-    "config/dev-v4/activation-policy.v1.json",
+    "config/dev-v4/stage-b-activation-policy.v1.json",
     "config/dev-v4/repo-capabilities.v2.json",
     "scripts/dev-v4-admission.mjs",
     "scripts/worktree-task-start.sh",
@@ -74,7 +74,7 @@ Kizárt: minden `wp-content/` írás, MU-plugin vagy plugin módosítás, owner-
 
 ## 2. Context and canonical sources
 
-Kanonikus helyi források: `AGENTS.md`, `docs/ai-assistant-canonical-policy.md`, `docs/impactshop-governance-system-plan-2026-06-16.md`, `docs/protected-file-change-checklist.md`, `config/dev-v4/activation-policy.v1.json`, `config/dev-v4/repo-capabilities.v2.json`, valamint a base-owned `scripts/dev-v4-admission.mjs`. Az umbrella terv az `sharity-ngo-preference-v4-4-20260913`; G2 nem módosíthatja annak S1–S6 ownership vagy live activation döntéseit.
+Kanonikus helyi források: `AGENTS.md`, `docs/ai-assistant-canonical-policy.md`, `docs/impactshop-governance-system-plan-2026-06-16.md`, `docs/protected-file-change-checklist.md`, `config/dev-v4/stage-b-activation-policy.v1.json`, `config/dev-v4/repo-capabilities.v2.json`, valamint a base-owned `scripts/dev-v4-admission.mjs`. Az umbrella terv az `sharity-ngo-preference-v4-4-20260913`; G2 nem módosíthatja annak S1–S6 ownership vagy live activation döntéseit.
 
 ## 3. Acceptance criteria
 
@@ -91,7 +91,7 @@ A candidate nem használhat saját maga által hozzáadott selectort vagy capabi
 
 G2 merge és exact-main readback után kizárólag új exact-main capsule választhatja ki az új S4 vagy S5 selectort. A friss capsule a merge SHA/tree-hez, az új selectorhoz, a megfelelő plan ID-hoz és annak base-owned PHP-capability döntéséhez kötődik. Hiányzó/incompatible owner contract, selector, capability, receipt vagy TTL `blocked`; `degraded` csak tervezést enged.
 
-`config/dev-v4/activation-policy.v1.json` csak a két új, név szerinti selector szabályát kapja:
+`config/dev-v4/stage-b-activation-policy.v1.json` csak a két új, név szerinti selector szabályát kapja:
 
 - `sharity-ngo-preference-s4-profile-consumer`: kizárólag a későbbi S4 pontos profil-consumer/protected-file/doc/test felületére;
 - `sharity-ngo-preference-s5-provider-activity-adapter`: kizárólag a későbbi additív S5 MU-plugin/protected-file/doc/test felületére.
@@ -136,7 +136,7 @@ G2 source rollback csak protected Git revert a merge utáni exact source checkpo
 
 ### Chunk 1 — Protected G2 selector/capability governance
 
-- Files and interfaces: `config/dev-v4/activation-policy.v1.json`, `config/dev-v4/repo-capabilities.v2.json`, `scripts/dev-v4-admission.mjs`, `scripts/worktree-task-start.sh`, and `tests/dev-v4-admission.test.mjs`.
+- Files and interfaces: `config/dev-v4/stage-b-activation-policy.v1.json`, `config/dev-v4/repo-capabilities.v2.json`, `scripts/dev-v4-admission.mjs`, `scripts/worktree-task-start.sh`, and `tests/dev-v4-admission.test.mjs`.
 - Preconditions: planning manifest passes; capsule has atomically switched to existing `protected-source`; exact base/head identity holds.
 - Exact change: add the future-only S4/S5 narrow selectors, PHP base-owned capability evaluator, canonical capsule writer/read compatibility, and positive/negative fixtures without runtime calls or `wp-content/` access.
 - Validation: Phase 0 admission, isolated Node fixtures, PHP lint/hermetic fixture where evaluator permits it, and `git diff --check`.

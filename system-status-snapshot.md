@@ -1488,6 +1488,16 @@ deployment state changed.
 - The local candidate replaces it with the canonical public 2x4 Human Touch
   quick-actions component. Source checks pass; status is source-checkpoint,
   not deployed and not yet live-accepted.
+
+## 2026-09-27 — Linked worktree task-start marker binding
+
+- Status: source-only candidate on exact `origin/main`; the task-start/guard
+  helper now evaluates the new linked worktree marker, decision artifact and
+  coordination snapshot in that worktree context.
+- Validation: linked-worktree regression PASS, multi-active continuity PASS,
+  shell syntax PASS, `git diff --check` PASS.
+- No product, runtime, provider, deploy, VPS, secret, cron, watchdog or shared
+  dependency change. Publication and production acceptance are not performed.
 # DEV v4 Stage A (2026-09-11)
 
 - Scope: inert, source-only bootstrap for `impactshop-notes`.

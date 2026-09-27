@@ -7688,6 +7688,18 @@ No product, deploy, provider, VPS, Cronos or watchdog change occurred.
   dock sehol nincs; a Human Touch profil desktopon és mobilon overflow- és
   hirdetésmarker-mentes. Cron/watchdog nem szükséges.
 
+## 2026-09-27 — Linked worktree task-start marker binding
+
+- A task-start helper a clone rootból futtatta a readiness/guard útvonalat, ezért
+  a linked worktree saját markerét nem látta; a coordination snapshot is a root
+  helyett a linked worktree-re volt regisztrálva.
+- A helper most a linked worktree könyvtárából futtatja a readiness és task-start
+  guardot, és ugyanahhoz a linked worktree-höz köti az aktív coordination
+  snapshotot. Product, WordPress, provider, deploy, runtime, secret, cron és
+  watchdog változás nincs.
+- Fókuszált linked-worktree regresszió, multi-active continuity teszt, shell
+  syntax check és `git diff --check` PASS. Source-only, nincs commit vagy push.
+
 ## 2026-09-11 — Canonical Sharity gyorsműveletek korrekció
 
 - Az operátori vizuális elfogadás elutasította a Human Touchra átszínezett régi
