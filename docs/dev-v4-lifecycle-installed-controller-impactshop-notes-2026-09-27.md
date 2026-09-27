@@ -18,6 +18,9 @@ provider, build, deploy, VPS, runtime and secret changes remain out of scope.
 - `normal-source-short-brief` is the normal source selector and accepts an
   adapter-supplied short brief.
 - `dev-governance-source` is reserved for DEV and governance surfaces.
+- Governance start remains `planning-only`; a plan is bound only through the
+  narrow adapter route `bind --task-id <id> --plan-anchor <40hex>` (with an
+  exact policy commit only when required).
 - `status`, `resume`, context refresh and context consume are read-only
   lifecycle operations; legacy Stage B remains compatible and optional.
 - The disposable smoke runs installed CLI start, status, resume, context
@@ -26,6 +29,8 @@ provider, build, deploy, VPS, runtime and secret changes remain out of scope.
 ## Evidence
 
 `tests/dev-v4-lifecycle-installed-cli.test.sh` passed with the primary tree
-hash unchanged. `bash -n scripts/worktree-task-start.sh`, `node --check
+hash unchanged and covered planning-only governance start, committed plan
+anchor binding, false anchor rejection and extra argument rejection.
+`bash -n scripts/worktree-task-start.sh`, `node --check
 scripts/dev-v4-lifecycle-client.mjs`, and `git diff --check` are required
 focused checks.
