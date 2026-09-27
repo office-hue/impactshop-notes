@@ -22,7 +22,8 @@ function regular(file) {
 function validate(commandArgs) {
   const command = commandArgs[0];
   const allowed = {
-    start: new Set(['--task-id', '--selector', '--branch', '--task-brief', '--plan-id']),
+    start: new Set(['--task-id', '--selector', '--branch', '--task-brief']),
+    bind: new Set(['--task-id', '--plan-anchor', '--policy-commit']),
     status: new Set(), resume: new Set(), projection: new Set(),
     context: new Set(['--refresh', '--consume', '--operation'])
   };
@@ -36,8 +37,11 @@ function validate(commandArgs) {
     for (let index = 1; index < commandArgs.length; index += 1) {
       const option = commandArgs[index];
       if (!allowed[command].has(option)) fail('lifecycle_argument_forbidden');
-      if (['--task-id', '--selector', '--branch', '--task-brief', '--plan-id'].includes(option)) {
+      if (['--task-id', '--selector', '--branch', '--task-brief', '--plan-anchor', '--policy-commit'].includes(option)) {
         if (!commandArgs[index + 1] || commandArgs[index + 1].startsWith('--')) fail('lifecycle_argument_value_missing');
+        if (option === '--plan-anchor' || option === '--policy-commit') {
+          if (!/^[0-9a-f]{40}$/.test(commandArgs[index + 1])) fail('lifecycle_commit_argument_invalid');
+        }
         index += 1;
       }
     }
@@ -55,7 +59,7 @@ function validate(commandArgs) {
     const selector = commandArgs[commandArgs.indexOf('--selector') + 1];
     if (!policy.selectors[selector]) fail('selector_unknown');
     if (selector === 'normal-source-short-brief' && !commandArgs.includes('--task-brief')) fail('task_brief_required');
-    if (selector === 'dev-governance-source' && !commandArgs.includes('--plan-id')) fail('governance_plan_required');
+    if (selector === 'dev-governance-source' && commandArgs.includes('--plan-id')) fail('governance_plan_binding_required');
   }
 }
 function run(args) {
@@ -65,7 +69,7 @@ function run(args) {
   if (!st.isFile() || st.isSymbolicLink() || st.nlink !== 1 || st.uid !== (process.getuid?.() ?? st.uid) || !(st.mode & 0o111) || (st.mode & 0o022)) fail('installed_lifecycle_loader_unsafe');
   const forwarded = [];
   for (let index = 0; index < args.length; index += 1) {
-    if (args[index] === '--task-brief' || args[index] === '--plan-id') { index += 1; continue; }
+    if (args[index] === '--task-brief') { index += 1; continue; }
     forwarded.push(args[index]);
   }
   const result = spawnSync(loader, ['--repo', root, ...forwarded], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 15000, maxBuffer: 1024 * 1024 });
