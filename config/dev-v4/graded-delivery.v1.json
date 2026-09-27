@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "contractId": "dev-v4.graded-delivery",
+  "status": "active",
+  "laneAuthority": "base-owned-classifier",
+  "lanes": {
+    "maintenance": {"purpose": "documentation-and-local-maintenance", "allowedRiskTiers": ["low"], "requiredCapabilities": [], "requiredEvidence": ["worktree-identity", "targeted-tests"], "model": {"id": "gpt-5.6-luna", "reasoning": "medium"}, "provider": {"mode": "none", "builds": 0, "deployments": 0}},
+    "standard": {"purpose": "bounded-source-change", "allowedRiskTiers": ["low", "medium"], "requiredCapabilities": ["node-test"], "requiredEvidence": ["worktree-identity", "targeted-tests", "diff-check", "continuity"], "model": {"id": "gpt-5.6-luna", "reasoning": "medium"}, "provider": {"mode": "source-only", "builds": 0, "deployments": 0}},
+    "protected": {"purpose": "governance-or-protected-source-change", "allowedRiskTiers": ["low", "medium", "high"], "requiredCapabilities": ["node-test", "git-readback"], "requiredEvidence": ["worktree-identity", "full-validation", "diff-check", "continuity"], "model": {"id": "gpt-5.6-sol", "reasoning": "high"}, "provider": {"mode": "source-only", "builds": 0, "deployments": 0}}
+  },
+  "globalGuards": {"selfApproval": false, "candidateIsAuthority": false, "liveMutationAllowed": false, "secretMaterialAllowed": false}
+}

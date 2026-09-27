@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "componentId": "dev.delivery.control-plane",
+  "repoId": "impactshop-notes",
+  "authority": "repo-local",
+  "changeImpact": {"docsPrefixes": ["docs/"], "deployPrefixes": ["deploy/"], "protectedPrefixes": ["config/dev-v4/", "config/dev-delivery-v2-policy.json"], "fullValidationPaths": [], "codePrefixes": ["apps/", "packages/", "tools/", "src/"], "governancePrefixes": ["config/", "scripts/", "tests/", ".github/" ]},
+  "taskRequirements": {"schemaVersion": 1, "authority": "single-policy-table", "classes": {"docs-only": {"requiredChecks": ["git-diff-check"]}, "governance-only": {"requiredChecks": ["git-diff-check"]}, "code-local": {"requiredChecks": ["git-diff-check"]}, "protected": {"requiredChecks": ["git-diff-check"]}, "deploy": {"requiredChecks": ["git-diff-check"]}, "unknown": {"requiredChecks": ["git-diff-check"]}}, "pathRequiredChecks": {}},
+  "evidence": {"maximumCommandOutputBytes": 1048576, "requiredChecksByProfile": {"affected": ["git-diff-check"]}, "registeredCommands": {"git-diff-check": [{"runner": "bash", "args": ["-lc", "git diff --check"]}]}},
+  "lifecycle": {"contractPath": "config/dev-v4/lifecycle-contract.v1.json", "engineContractVersion": 1, "legacyStageBPolicyPath": "config/dev-v4/stage-b-activation-policy.v1.json", "legacyStageBCompatible": true, "legacyStageBRequired": false}
+}
