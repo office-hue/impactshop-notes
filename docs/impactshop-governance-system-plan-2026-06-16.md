@@ -628,3 +628,15 @@ G2 is source-only governance: reserved S4 profile-consumer and S5 additive
 provider-activity selectors are protected, plan-bound, narrow, and PHP-gated.
 The dynamic PHP receipt is base-owned with a 15-minute TTL; runtime, provider,
 WordPress, deploy, VPS and secret mutation remain out of scope.
+
+## 2026-09-27 — Linked worktree task-start marker binding
+
+The task-start helper correction is a governance and continuity maintenance
+change. Readiness, task-start guard and coordination sync now resolve from the
+new linked worktree, preserving marker, decision-artifact and snapshot identity.
+The change adds no product surface, provider/build/deploy/VPS/runtime/secret/
+cron/watchdog authority. It is not a new module; the bastion status inventory
+therefore requires no extension.
+
+Focused linked-worktree and multi-active continuity tests pass, as do shell
+syntax and `git diff --check`.

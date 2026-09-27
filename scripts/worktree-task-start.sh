@@ -6,6 +6,10 @@ FEATURE_BRANCH=""
 DOC_SYNC_LABEL=""
 DOC_SYNC_REPO_ID=""
 DOC_SYNC_PATH_PREFIX=""
+LIFECYCLE_TASK_ID=""
+LIFECYCLE_SELECTOR=""
+LIFECYCLE_BRIEF=""
+LIFECYCLE_PLAN_ID=""
 
 usage() {
   cat <<'EOF'
@@ -17,6 +21,10 @@ Options:
   --doc-sync-label <label>    Optional logical doc-sync scope label
   --doc-sync-repo-id <id>     Optional doc-sync repo scope
   --doc-sync-path-prefix <p>  Optional doc-sync path family
+  --lifecycle-task-id <id>    Start/resume through the installed DEV v4 controller
+  --lifecycle-selector <id>   Target selector for the lifecycle task
+  --task-brief <brief>        Short brief for normal-source lifecycle tasks
+  --plan-id <id>              Plan id for governance lifecycle tasks
 EOF
 }
 
@@ -49,6 +57,26 @@ for ((i=0; i<${#ARGS[@]}; i++)); do
     --doc-sync-path-prefix)
       DOC_SYNC_PATH_PREFIX="${ARGS[$((i + 1))]:-}"
       [[ -n "$DOC_SYNC_PATH_PREFIX" ]] || { echo "Missing value for --doc-sync-path-prefix" >&2; exit 1; }
+      i=$((i + 1))
+      ;;
+    --lifecycle-task-id)
+      LIFECYCLE_TASK_ID="${ARGS[$((i + 1))]:-}"
+      [[ -n "$LIFECYCLE_TASK_ID" ]] || { echo "Missing value for --lifecycle-task-id" >&2; exit 1; }
+      i=$((i + 1))
+      ;;
+    --lifecycle-selector)
+      LIFECYCLE_SELECTOR="${ARGS[$((i + 1))]:-}"
+      [[ -n "$LIFECYCLE_SELECTOR" ]] || { echo "Missing value for --lifecycle-selector" >&2; exit 1; }
+      i=$((i + 1))
+      ;;
+    --task-brief)
+      LIFECYCLE_BRIEF="${ARGS[$((i + 1))]:-}"
+      [[ -n "$LIFECYCLE_BRIEF" ]] || { echo "Missing value for --task-brief" >&2; exit 1; }
+      i=$((i + 1))
+      ;;
+    --plan-id)
+      LIFECYCLE_PLAN_ID="${ARGS[$((i + 1))]:-}"
+      [[ -n "$LIFECYCLE_PLAN_ID" ]] || { echo "Missing value for --plan-id" >&2; exit 1; }
       i=$((i + 1))
       ;;
     -*)
@@ -91,6 +119,17 @@ mkdir -p "$WT_BASE"
 REPO_NAME="$(basename "$PRIMARY_REPO_ROOT")"
 SANITIZED_BRANCH="${FEATURE_BRANCH//\//-}"
 WT_DIR="${WT_BASE}/${REPO_NAME}-${SANITIZED_BRANCH}"
+
+if [[ -n "$LIFECYCLE_TASK_ID" ]]; then
+  [[ -n "$LIFECYCLE_SELECTOR" ]] || { echo "Missing --lifecycle-selector for lifecycle task" >&2; exit 1; }
+  if [[ "$RESUME" -eq 0 ]]; then
+    exec env DEV_V4_REPO_ROOT="$REPO_ROOT" node "$REPO_ROOT/scripts/dev-v4-lifecycle-client.mjs" \
+      start --task-id "$LIFECYCLE_TASK_ID" --selector "$LIFECYCLE_SELECTOR" --branch "$FEATURE_BRANCH" \
+      ${LIFECYCLE_BRIEF:+--task-brief "$LIFECYCLE_BRIEF"} ${LIFECYCLE_PLAN_ID:+--plan-id "$LIFECYCLE_PLAN_ID"}
+  fi
+  [[ -d "$WT_DIR" ]] || { echo "Lifecycle resume worktree missing: $WT_DIR" >&2; exit 1; }
+  exec env DEV_V4_REPO_ROOT="$WT_DIR" node "$REPO_ROOT/scripts/dev-v4-lifecycle-client.mjs" resume
+fi
 
 resolve_existing_worktree_path() {
   local feature_branch="$1"
@@ -238,17 +277,17 @@ if [[ -f "$WT_DIR/scripts/dev-v4-admission.mjs" ]]; then
 fi
 
 echo "[worktree-task-start] readiness:"
-bash "$REPO_ROOT/scripts/worktree-readiness-check.sh"
+(cd "$WT_DIR" && bash scripts/worktree-readiness-check.sh)
 
 echo "[worktree-task-start] task-start guard:"
-bash "$REPO_ROOT/scripts/worktree-task-start-guard.sh" \
+(cd "$WT_DIR" && bash scripts/worktree-task-start-guard.sh \
   ${DOC_SYNC_LABEL:+--doc-sync-label "$DOC_SYNC_LABEL"} \
   ${DOC_SYNC_REPO_ID:+--doc-sync-repo-id "$DOC_SYNC_REPO_ID"} \
-  ${DOC_SYNC_PATH_PREFIX:+--doc-sync-path-prefix "$DOC_SYNC_PATH_PREFIX"}
+  ${DOC_SYNC_PATH_PREFIX:+--doc-sync-path-prefix "$DOC_SYNC_PATH_PREFIX"})
 
 COORD_SCRIPT="$REPO_ROOT/scripts/worktree-coordination-sync.sh"
 if [[ -x "$COORD_SCRIPT" || -f "$COORD_SCRIPT" ]]; then
-  if bash "$COORD_SCRIPT" --repo-root "$REPO_ROOT" --register "$WT_DIR" >/dev/null 2>&1; then
+  if bash "$COORD_SCRIPT" --repo-root "$WT_DIR" --register "$WT_DIR" >/dev/null 2>&1; then
     echo "[worktree-task-start] coordination snapshot frissitve"
   else
     echo "[worktree-task-start] ERROR: coordination snapshot failed" >&2
