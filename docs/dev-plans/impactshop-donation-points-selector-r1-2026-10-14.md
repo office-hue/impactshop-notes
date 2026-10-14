@@ -109,6 +109,13 @@ worktree-ben, live operations profil letrehozasa vagy barmilyen release.
 | Secretary context | controller context | plan checkpoint | degraded before bind | bind utan uj refresh | explicit readback, nincs recovery bypass |
 | Handbook URL | GitHub link | guidance | unavailable/404 | installed package + repo authority | advisory, nem hamis PASS |
 
+A protected-source admissionhez tartozó, operátor által jóváhagyott azonosító:
+`operator-approval:impactshop-donation-points-selector-r1-20261014`. A hozzá
+tartozó change record ezt a tervet és annak
+`#impact-shop-adomanypont-selector-dev-governance-terv` fejezetét hivatkozza;
+ez a hivatkozás source-admission evidence, és nem bővít provider- vagy live
+jogosultságot.
+
 ## 3. Exact product selector write surface
 
 Az alabbi lista egyetlen exact inventory. Prefix, glob vagy konyvtar-szintu

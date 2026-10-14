@@ -3,7 +3,7 @@
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
   "schemaVersion": 1,
-  "planRef": "docs/dev-plans/impactshop-donation-points-selector-r1-2026-10-14.md",
+  "planRef": "docs/dev-plans/impactshop-donation-points-selector-r1-2026-10-14.md#impact-shop-adomanypont-selector-dev-governance-terv",
   "operatorApprovalRef": "operator-approval:impactshop-donation-points-selector-r1-20261014",
   "protectedPaths": [
     "config/dev-v4/task-selectors.v1.json",

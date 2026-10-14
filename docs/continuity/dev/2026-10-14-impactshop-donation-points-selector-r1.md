@@ -8,13 +8,18 @@
 - plan-anchor tree: `bb29fb9a4feadce49e0204744a7fe97ca27747f9`
 - lifecycle selector: `dev-governance-source`
 - lifecycle status after bind: `implementation-ready`
-- post-reconcile capsule before this DocSync closeout:
-  `0ae140d24cae5a7749d4ba3f4dfe1dddbeeefc89cec18748e16c6e96f3837ea3`
+- current capsule before the required-check correction:
+  `18e5156a35702d908895a5a4324fc0c90a0287c290156d1549daa7edd7c93b47`
 - retained engine source: `8d4db0d08520f5f61eebb7cd7ccd26dcff6380ad`
 - retained engine digest: `8487bcc2a112612c42a009afabd5cb8ae2eefc5dcd32801cdfb6b173adb87502`
 - planning package: `c261f205e3f1b581d9cae23988498387f6967e909139efde43306e782b537443`
-- context/memory: `retrieved`, 8 results, consumed; digest `f9d037ca0eb86d0d94f185dcf23195dcf8427509c9a4ae919b748870542ce3fe`
-- external mutations: push/PR/merge/build/deploy `0/0/0/0/0`
+- context/memory: `retrieved`, 8 results, consumed; current publish packet
+  digest `904a7f...`; no required fact missing.
+- active operations package/manifest:
+  `d1265ecf6ccdc26e1f9f79c4ef4e9c8d66eee9fe0af6ff0439b57c5243f98c25` /
+  `f690fc73e6b6c3b954ec904bd881281814a2971c0a1736340cabe67184221767`.
+- external mutations: push/PR/merge/build/deploy `1/1/0/0/0`; PR
+  `office-hue/impactshop-notes#219` is open.
 
 ## Implemented candidate
 
@@ -73,15 +78,32 @@ lifecycle shell test remains unchanged and local-only.
 - the first two post-fix test observations hit the 30-second caller ceiling
   without a result. Diagnosis showed no test failure; the same command with an
   explicit longer orchestrator budget completed PASS 20/20 in 28.3 seconds.
+- `context_next_refresh_only`: attempt 1, resolved by using `--next` only on
+  refresh and consuming the current packet without it.
+- `github_api_slurp_jq_incompatible`: attempt 1, resolved by separating GitHub
+  pagination from the local JSON projection; no mutation occurred.
+- `vercel_personal_scope_cli_invalid`: attempt 1, resolved by an unscoped API
+  readback. The only accessible team and all four returned projects were
+  fully enumerated; every Git link was null.
+- `protected_touch_override_missing`: attempt 1 stopped before remote mutation.
+  The same push passed with the change-record, rollback and exact smoke-tag
+  bindings already documented in this package.
+- `protected-change-record-plan-ref-invalid`: attempt 1 on required GitHub
+  check `validate`. Diagnosis: the schema-v1 manifest requires a `#fragment`
+  and requires its operator-approval identity to resolve in that plan. This
+  correction adds the canonical heading fragment and approval identity; it
+  does not change selector scope or live authority.
 
 ## Next exact step
 
-Commit this fixture and DocSync closeout, reconcile the unchanged plan anchor,
-then record one current candidate-bound source/security review before the
-source publication prestate. No product task may start from this selector
-until the governance merge is read back on exact main.
+Validate the corrected protected-source manifest against the exact candidate,
+reconcile the amended plan, record current candidate-bound review, and freeze
+the repair commit. Because the original plan budget allowed one push and that
+push created PR #219, publishing the correction requires one explicit
+additional corrective-push authority. No product task may start from this
+selector until the governance merge is read back on exact main.
 
-Status at this checkpoint: source-ready pending the current review record;
-source candidate only;
+Status at this checkpoint: source-ready pending the required-check correction
+and current review record; source candidate only;
 source-merged=false; release-ready=false; deployed=false;
 user-visible=false; production-accepted=false.
