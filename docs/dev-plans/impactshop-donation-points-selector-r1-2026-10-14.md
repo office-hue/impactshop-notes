@@ -59,7 +59,7 @@ Plan ID: `impactshop-donation-points-selector-r1-20261014`
     ]
   },
   "validation": {
-    "profileId": "impactshop-donation-points-selector-governance",
+    "profileId": "affected",
     "recipePolicyCommit": "e9bfb75a3b9e47e7f9a948597ca36b883c9e25a7"
   }
 }
