@@ -5,6 +5,8 @@ import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'
 const root=path.resolve(import.meta.dirname,'..'), helper=path.join(root,'scripts/dev-v4-admission.mjs');
 function fixture(){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'impactshop-v4-'));spawnSync('/usr/bin/git',['-C',dir,'init','-q']);spawnSync('/usr/bin/git',['-C',dir,'config','user.email','fixture@example.invalid']);spawnSync('/usr/bin/git',['-C',dir,'config','user.name','Fixture']);fs.writeFileSync(path.join(dir,'README'),'fixture');spawnSync('/usr/bin/git',['-C',dir,'add','.']);spawnSync('/usr/bin/git',['-C',dir,'commit','-qm','fixture']);return dir}
 function mergedFixture(){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'impactshop-v4-fresh-'));const clone=spawnSync('/usr/bin/git',['clone','--shared','-q',root,dir],{encoding:'utf8'});assert.equal(clone.status,0);spawnSync('/usr/bin/git',['-C',dir,'checkout','-q','c401a9709027a9d7e14bc7e91f0478d094205af']);spawnSync('/usr/bin/git',['-C',dir,'switch','-q','-c','feat/fresh-launcher-fixture']);spawnSync('/usr/bin/git',['-C',dir,'update-ref','refs/remotes/origin/main','c401a9709027a9d7e14bc7e91f0478d094205af']);const head=spawnSync('/usr/bin/git',['-C',dir,'rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),tree=spawnSync('/usr/bin/git',['-C',dir,'show','-s','--format=%T','HEAD'],{encoding:'utf8'}).stdout.trim(),marker=path.join(dir,'.git','worktree-active.json');fs.writeFileSync(marker,JSON.stringify({schema_version:2,repo:'impactshop-notes',path:fs.realpathSync(dir),branch:'feat/fresh-launcher-fixture',base:{ref:'origin/main',commit:head},current:{head,tree},selector:'maintenance-docs'}));fs.chmodSync(marker,0o600);return dir}
+function writeSelectorMarker(dir,{planId}={}){const head=spawnSync('/usr/bin/git',['-C',dir,'rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),tree=spawnSync('/usr/bin/git',['-C',dir,'show','-s','--format=%T','HEAD'],{encoding:'utf8'}).stdout.trim(),branch=spawnSync('/usr/bin/git',['-C',dir,'branch','--show-current'],{encoding:'utf8'}).stdout.trim(),marker=path.join(dir,'.git','worktree-active.json'),value={schema_version:2,repo:'impactshop-notes',path:fs.realpathSync(dir),branch,base:{ref:'origin/main',commit:head},current:{head,tree},selector:'impactshop-donation-points-source-r1'};if(planId)value.plan_id=planId;fs.writeFileSync(marker,JSON.stringify(value));fs.chmodSync(marker,0o600)}
+function mergedDonationPointsFixture({planId}={}){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'impactshop-points-selector-')),head=spawnSync('/usr/bin/git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim(),clone=spawnSync('/usr/bin/git',['clone','--shared','-q',root,dir],{encoding:'utf8'});assert.equal(clone.status,0);spawnSync('/usr/bin/git',['-C',dir,'checkout','-q',head]);spawnSync('/usr/bin/git',['-C',dir,'switch','-q','-c','feat/points-selector-fixture']);spawnSync('/usr/bin/git',['-C',dir,'config','user.email','fixture@example.invalid']);spawnSync('/usr/bin/git',['-C',dir,'config','user.name','Fixture']);for(const file of ['config/dev-v4/stage-b-activation-policy.v1.json','scripts/dev-v4-admission.mjs'])fs.copyFileSync(path.join(root,file),path.join(dir,file));spawnSync('/usr/bin/git',['-C',dir,'add','config/dev-v4/stage-b-activation-policy.v1.json','scripts/dev-v4-admission.mjs']);const commit=spawnSync('/usr/bin/git',['-C',dir,'commit','-qm','fixture: merge points selector'],{encoding:'utf8'});assert.equal(commit.status,0);const base=spawnSync('/usr/bin/git',['-C',dir,'rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim();spawnSync('/usr/bin/git',['-C',dir,'update-ref','refs/remotes/origin/main',base]);writeSelectorMarker(dir,{planId});return dir}
 test('markerless pre-merge candidate is explicitly v2-only without writes',()=>{const dir=fixture();try{const r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'});assert.equal(r.status,0);const p=JSON.parse(r.stdout);assert.equal(p.v4.state,'v2-only');assert.equal(p.combinedDecision,'planning-only');}finally{fs.rmSync(dir,{recursive:true,force:true})}});
 test('unsafe nonlegacy capsule is blocked in a temporary fixture',()=>{const dir=fixture();try{const marker=path.join(dir,'.git','worktree-active.json'),target=path.join(dir,'unsafe');fs.writeFileSync(target,'x');fs.symlinkSync(target,marker);const r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'});assert.equal(r.status,0);assert.equal(JSON.parse(r.stdout).combinedDecision,'blocked');}finally{fs.rmSync(dir,{recursive:true,force:true})}});
 test('corrected central snapshot and atomic marker contract are pinned',()=>{
@@ -21,6 +23,83 @@ test('future S4/S5 selectors are exact and require PHP plus existing test capabi
   'sharity-ngo-preference-s4-profile-consumer':['wp-content/mu-plugins/000-impactshop-owner-policy.php','wp-content/mu-plugins/impactshop-identity-panel.php','wp-content/mu-plugins/impactshop-identity-panel.js','tests/impactshop-identity-profile-v2-static.test.py','tests/impactshop-profile-route-path.test.php','tests/impactshop-owner-policy-inventory.test.py','scripts/impactshop-owner-policy-inventory.php',...common,'docs/sharity-profile-summary-live-closure-luna-continuity-20260910.md','docs/sharity-ngo-preference-v4-4-s4-profile-consumer-2026-09-13.md','docs/protected-change-records/2026-09-13-sharity-ngo-preference-v4-4-s4-profile-consumer.md','docs/continuity/dev/2026-09-13-sharity-ngo-preference-v4-4-s4-profile-consumer.md','notes.md','system-status-snapshot.md'],
   'sharity-ngo-preference-s5-provider-activity-adapter':['wp-content/mu-plugins/impactshop-sharity-activity-receipt.php','tests/sharity-affiliate-runtime-bastion.test.sh','scripts/sharity-affiliate-runtime-bastion-guard.sh','tests/impactshop-sharity-activity-receipt.test.php','tests/impactshop-sharity-activity-receipt-static.test.py',...common,'docs/sharity-ngo-preference-v4-4-s5-provider-activity-adapter-2026-09-13.md','docs/protected-change-records/2026-09-13-sharity-ngo-preference-v4-4-s5-provider-activity-adapter.md','docs/continuity/dev/2026-09-13-sharity-ngo-preference-v4-4-s5-provider-activity-adapter.md','notes.md','system-status-snapshot.md']
 };for(const [id,paths] of Object.entries(expected)){const rule=policy.selectors[id];assert.equal(rule.lane,'protected');assert.equal(rule.requiresPlanId,true);assert.deepEqual(rule.requiredCapabilities,['php-runtime','git-readback','static-node-test']);assert.deepEqual(rule.writeSurface,paths);assert.ok(!rule.writeSurface.some(p=>p==='wp-content/'||p==='docs/'||p==='scripts/'||p==='tests/'||p.includes('*')))}});
+
+test('Impact Shop donation points selector is exact, plan-bound, and identical across base policies',()=>{
+  const taskPolicy=JSON.parse(fs.readFileSync(path.join(root,'config/dev-v4/task-selectors.v1.json')));
+  const stagePolicy=JSON.parse(fs.readFileSync(path.join(root,'config/dev-v4/stage-b-activation-policy.v1.json')));
+  const id='impactshop-donation-points-source-r1';
+  const expected=[
+    'wp-content/mu-plugins/sharity-points.php',
+    'wp-content/mu-plugins/sharity-points-money.php',
+    'wp-content/mu-plugins/sharity-points-manager.php',
+    'wp-content/mu-plugins/sharity-points-api.php',
+    'wp-content/mu-plugins/sharity-points-impactshop-attribution.php',
+    'wp-content/mu-plugins/sharity-points-ledger-sync.php',
+    'wp-content/mu-plugins/sharity-points-cron.php',
+    'wp-content/mu-plugins/sharity-vacation-manager.php',
+    'wp-content/mu-plugins/sharity-decay-manager.php',
+    'wp-content/mu-plugins/impactshop-cj.php',
+    'wp-content/mu-plugins/impactshop-partner-api.php',
+    'wp-content/mu-plugins/impactshop-click-tracking.php',
+    'wp-content/mu-plugins/impactshop-ads-watch.js',
+    'wp-content/mu-plugins/impactshop-ads-watch-ui-cta-bundle.js',
+    'tests/sharity-points-money.test.php',
+    'tests/sharity-points-manager-transaction.test.php',
+    'tests/sharity-points-impactshop-attribution.test.php',
+    'tests/sharity-points-key-rotation.test.php',
+    'tests/sharity-points-impactshop-ledger-sync.test.php',
+    'tests/sharity-points-cutover.test.php',
+    'tests/sharity-points-direct-writer-inventory.test.py',
+    'tests/impactshop-click-no-reward.test.php',
+    'tests/impactshop-click-no-reward-static.test.py',
+    'tests/impactshop-cj-donation-contract.test.php',
+    'tests/impactshop-partner-donation-contract.test.php',
+    'tests/impactshop-points-schema-migration.test.php',
+    'tests/impactshop-points-release-contract.test.sh',
+    'docs/rewarding-system.md',
+    'docs/dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md',
+    'docs/partner-api-openapi.yaml',
+    'docs/partner-data-mapping.md',
+    'docs/partner-postman-collection.json',
+    'docs/partner-reconcile-export-spec.md',
+    'docs/protected-change-records/2026-10-13-impactshop-donation-proportional-points-source-r1.md',
+    'docs/security/incidents/2026-10-13-impactshop-committed-credential-wp0s.md',
+    'docs/continuity/dev/2026-10-13-impactshop-donation-proportional-points-source-r1.md',
+    'docs/impactshop-notes-doc-sync-map-2026-06-23.md',
+    'docs/bastion-guard-status.md',
+    'docs/impactshop-governance-system-plan-2026-06-16.md',
+    'docs/impactshop-protected-files.json',
+    'docs/impactshop-guard-config.json',
+    'docs/impactshop-guard-config.sha256',
+    'docs/impactshop-guard-hashes.json',
+    'docs/impactshop-guard-hashes.sha256',
+    'notes.md',
+    'system-status-snapshot.md'
+  ];
+  const task=taskPolicy.selectors[id], stage=stagePolicy.selectors[id];
+  assert.deepEqual(task,{
+    lane:'protected',requiresPlanId:true,requiresTaskBrief:false,
+    writeSurfaceMatch:'exact',
+    requiredCapabilities:['php-runtime','git-readback','static-node-test'],
+    writeSurface:expected
+  });
+  assert.deepEqual(stage,{
+    lane:'protected',riskCeiling:'high',requiresPlanId:true,
+    writeSurfaceMatch:'exact',
+    requiredCapabilities:['php-runtime','git-readback','static-node-test'],
+    writeSurface:expected
+  });
+  assert.equal(taskPolicy.candidateAuthority,false);
+  assert.equal(stagePolicy.candidateAuthority,false);
+  for(const key of ['providerBuildAllowed','providerDeployAllowed','vpsMutationAllowed','runtimeMutationAllowed','secretMaterialAllowed','schedulerMutationAllowed']) assert.equal(stagePolicy[key],false);
+  assert.equal(expected.length,46);
+  assert.equal(new Set(expected).size,expected.length);
+  assert.ok(!expected.some(value=>value.includes('*')||['wp-content/','config/','scripts/','tests/','docs/','.github/'].includes(value)));
+  for(const extra of ['wp-content/mu-plugins/impact-gamification.php','config/extra.json','scripts/extra.sh','tests/sibling.test.php','.deploy.production.env','.github/workflows/ci.yml']) assert.equal(expected.includes(extra),false);
+});
+test('Impact Shop donation points selector cannot self-authorize before merge',()=>{const dir=mergedFixture();try{fs.copyFileSync(path.join(root,'config/dev-v4/stage-b-activation-policy.v1.json'),path.join(dir,'config/dev-v4/stage-b-activation-policy.v1.json'));writeSelectorMarker(dir,{planId:'fixture-plan'});const r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'}),p=JSON.parse(r.stdout);assert.equal(p.v4.state,'blocked');assert.deepEqual(p.v4.reasons,['selector_missing_or_invalid']);}finally{fs.rmSync(dir,{recursive:true,force:true})}});
+test('merged Impact Shop donation points selector requires a Plan ID',()=>{const dir=mergedDonationPointsFixture();try{const r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'}),p=JSON.parse(r.stdout);assert.equal(p.v4.state,'blocked');assert.deepEqual(p.v4.reasons,['plan_id_required']);}finally{fs.rmSync(dir,{recursive:true,force:true})}});
+test('merged Impact Shop donation points selector admits a staged listed file and blocks untracked or staged prefix collisions',()=>{const dir=mergedDonationPointsFixture({planId:'fixture-plan'});try{const allowed='wp-content/mu-plugins/sharity-points-money.php';fs.mkdirSync(path.dirname(path.join(dir,allowed)),{recursive:true});fs.writeFileSync(path.join(dir,allowed),'<?php // exact selector fixture');assert.equal(spawnSync('/usr/bin/git',['-C',dir,'add',allowed]).status,0);let r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'}),p=JSON.parse(r.stdout);assert.equal(p.v4.state,'implementation-ready');assert.deepEqual(p.v4.reclassifiedPaths,[allowed]);const collision=allowed+'.attacker.php';fs.writeFileSync(path.join(dir,collision),'<?php // outside exact selector');r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'});p=JSON.parse(r.stdout);assert.equal(p.v4.state,'blocked');assert.deepEqual(p.v4.outsidePaths,[collision]);assert.equal(spawnSync('/usr/bin/git',['-C',dir,'add',collision]).status,0);assert.equal(spawnSync('/usr/bin/git',['-C',dir,'diff','--name-only'],{encoding:'utf8'}).stdout.trim(),'');assert.equal(spawnSync('/usr/bin/git',['-C',dir,'ls-files','--others','--exclude-standard'],{encoding:'utf8'}).stdout.trim(),'');r=spawnSync(process.execPath,[helper,'--phase0'],{cwd:dir,encoding:'utf8'});p=JSON.parse(r.stdout);assert.equal(p.v4.state,'blocked');assert.deepEqual(p.v4.reasons,['write_surface_exceeded']);assert.deepEqual(p.v4.outsidePaths,[collision]);}finally{fs.rmSync(dir,{recursive:true,force:true})}});
 test('original selectors remain unchanged',()=>{const policy=JSON.parse(fs.readFileSync(path.join(root,'config/dev-v4/stage-b-activation-policy.v1.json')));assert.deepEqual(policy.selectors['maintenance-docs'],{lane:'maintenance',riskCeiling:'low',requiresPlanId:false,writeSurface:['docs/','notes.md','system-status-snapshot.md']});assert.deepEqual(policy.selectors['standard-source'],{lane:'standard',riskCeiling:'medium',requiresPlanId:true,writeSurface:['AGENTS.md','.github/','config/','scripts/','tests/','docs/','notes.md','system-status-snapshot.md']})});
 test('base-owned capability surface includes both admission control scripts',()=>{const capabilities=JSON.parse(fs.readFileSync(path.join(root,'config/dev-v4/repo-capabilities.v2.json'))),surface=capabilities.semanticSurfaces.find(item=>item.id==='dev-v4-stage-b');assert.deepEqual(surface.paths,['config/dev-v4/','scripts/dev-v4-admission.mjs','scripts/worktree-task-start.sh','tests/dev-v4-admission.test.mjs']);assert.equal(surface.authority,'base-owned')});
 test('PHP capability is base-owned, scoped, and ignores candidate self-attestation',()=>{const base=spawnSync('/usr/bin/git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim();const good=evaluatePhpCapability({base,selector:'s4',candidateReceipt:{state:'available'},phpPath:'/tmp/candidate'});if(good.state==='available'){assert.equal(good.evidence.authority,'base-owned');assert.equal(new Date(good.evidence.expiresAt)-new Date(good.evidence.observedAt),900000);}else assert.match(good.reason,/php_/);});

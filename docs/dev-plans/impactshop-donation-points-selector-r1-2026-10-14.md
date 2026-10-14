@@ -185,8 +185,9 @@ configuration es barmely sibling path.
   provider/build/deploy/runtime/secret flag valtozatlanul false.
 - `scripts/dev-v4-admission.mjs`: az eddigi selectorok viselkedesenek
   megvaltoztatasa nelkul az explicit `writeSurfaceMatch=exact` opt-in szerzodes
-  csak literal path-egyezest fogad el. A directory-prefix szemantika mas
-  selectoroknal valtozatlan marad.
+  csak literal path-egyezest fogad el, es ehhez a selectorhoz a staged index
+  utjait is hozzaadja a committed, unstaged es untracked leltarhoz. A
+  directory-prefix szemantika mas selectoroknal valtozatlan marad.
 
 ### WP2 — tesztek
 
@@ -194,8 +195,9 @@ configuration es barmely sibling path.
   deep equalityje, wildcard es broad-prefix tiltas, jelenlegi selectorok es
   globalis deny flag-ek regresszioja, merged immutable base pozitiv fixture,
   valamint missing-plan, candidate-self-registration, extra-path es
-  file-prefix-collision negativ esetek. A pozitiv fixture tenylegesen modosit
-  egy engedelyezett termekfajlt. Ez a CI-ben tenylegesen futó parity teszt.
+  untracked es staged-only file-prefix-collision negativ esetek. A pozitiv
+  fixture tenylegesen letrehoz es stage-el egy engedelyezett termekfajlt. Ez a
+  CI-ben tenylegesen futó parity teszt.
 - `tests/dev-v4-lifecycle-installed-cli.test.sh`: a terv megengedte a lokalis
   controller-smoke boviteset, de a megvalositas nem modositja. Az installed
   controller aktualis engine-pinje nem determinisztikus selector-fixture; az
@@ -303,3 +305,16 @@ kezelte. A javitott terv ezert kizarolag az uj selector explicit
 `writeSurfaceMatch=exact` opt-in viselkedeset es a hozza tartozo pozitiv/negativ
 fixtureket engedi. A finding lezárásahoz uj frozen candidate es uj Sol/high
 review kotelezo.
+
+Az elso fix-verification eredmenye `still_vulnerable`: az exact matcher mar
+helyesen mukodott, de a regi path-leltar nem tartalmazta a staged-only indexet.
+A masodik javitas csak az opt-in exact selector leltarat egesziti ki
+`git diff --cached --name-only` eredmennyel; a regresszios fixture kulon
+bizonyitja a staged allowlisted pozitiv esetet, valamint ugyanazon suffix
+untracked es staged-only blokkolasat. Uj frozen-tree verification kotelezo.
+
+A masodik verify-fix a frozen
+`57533da1aebe7f027983ba49b295e0b90a74e59e` tree-n `fixed` eredmenyt adott:
+az exact-mode index-leltar, a literal egyezes es a legitim staged fajl
+viselkedese egyutt bizonyitott. A finding lezart; ez nem ad push-, merge-,
+release- vagy deployment-authorityt.
