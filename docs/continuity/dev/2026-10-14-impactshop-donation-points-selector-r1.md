@@ -4,11 +4,12 @@
 - branch: `feat/impactshop-donation-points-selector-r1-20261014`
 - worktree: `/Users/bujdosoarnold/Developer/GitHub/.worktrees/impactshop-notes-feat-impactshop-donation-points-selector-r1-20261014`
 - code base / policy commit: `e9bfb75a3b9e47e7f9a948597ca36b883c9e25a7`
-- plan anchor: `5fae56542d86c7b3c600ea25055887ffb72b75df`
-- plan-anchor tree: `c8056e385d142bfdff378e017412b53bd6fb419f`
+- plan anchor: `ab0c26e9d2c08f1c41d3d48558111e7198cc7da1`
+- plan-anchor tree: `bb29fb9a4feadce49e0204744a7fe97ca27747f9`
 - lifecycle selector: `dev-governance-source`
 - lifecycle status after bind: `implementation-ready`
-- capsule: `3327f6bd351307f6a90828f5dfbdd4670a8c32883356681f190ecdd9bafe49b9`
+- post-reconcile capsule before this DocSync closeout:
+  `0ae140d24cae5a7749d4ba3f4dfe1dddbeeefc89cec18748e16c6e96f3837ea3`
 - retained engine source: `8d4db0d08520f5f61eebb7cd7ccd26dcff6380ad`
 - retained engine digest: `8487bcc2a112612c42a009afabd5cb8ae2eefc5dcd32801cdfb6b173adb87502`
 - planning package: `c261f205e3f1b581d9cae23988498387f6967e909139efde43306e782b537443`
@@ -55,16 +56,24 @@ lifecycle shell test remains unchanged and local-only.
   `57533da1aebe7f027983ba49b295e0b90a74e59e`: `fixed`.
 - handbook URL: unavailable/404, advisory; repo-local policy and verified
   planning package are authoritative.
+- `plan_change_impact_underclassified`: attempt 1, resolved by changing the
+  plan manifest from `governance-only` to the base-policy-derived `protected`;
+  no source scope changed.
+- `canonical_recipe_checks_invalid`: attempt 1, resolved by replacing the
+  unregistered custom test profile with the base-owned `affected` profile.
+- rebind route: one malformed manual SHA produced `git_rev_parse_failed`, then
+  the correct SHA showed `legacy_options_require_legacy_state`; diagnosed and
+  resolved through the supported existing-state `reconcile --plan-anchor`
+  path, with no state edit or bypass.
 
 ## Next exact step
 
-Load the active release-operations package and perform the current source
-publication prestate after the final checkpoint commit. The source-bearing
-parent is committed, reconciled and candidate-bound review is PASS; this
-staged DocSync closeout still requires its final checkpoint commit. No product
-task may start from this selector until the governance merge is read back on
-exact main.
+Commit this DocSync closeout, reconcile the unchanged plan anchor, then record
+one current candidate-bound source/security review before the source
+publication prestate. No product task may start from this selector until the
+governance merge is read back on exact main.
 
-Status: source-ready=true locally; source candidate only;
+Status at this checkpoint: source-ready pending the current review record;
+source candidate only;
 source-merged=false; release-ready=false; deployed=false;
 user-visible=false; production-accepted=false.

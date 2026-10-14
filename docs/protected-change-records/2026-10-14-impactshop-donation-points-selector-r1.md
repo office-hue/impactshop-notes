@@ -47,9 +47,10 @@ merged exact-main base with a bound Plan ID.
 
 ## Evidence
 
-- Plan anchor: `5fae56542d86c7b3c600ea25055887ffb72b75df`;
-- plan-anchor tree: `c8056e385d142bfdff378e017412b53bd6fb419f`;
-- lifecycle capsule: `3327f6bd351307f6a90828f5dfbdd4670a8c32883356681f190ecdd9bafe49b9`;
+- Plan anchor: `ab0c26e9d2c08f1c41d3d48558111e7198cc7da1`;
+- plan-anchor tree: `bb29fb9a4feadce49e0204744a7fe97ca27747f9`;
+- lifecycle capsule before final DocSync closeout:
+  `0ae140d24cae5a7749d4ba3f4dfe1dddbeeefc89cec18748e16c6e96f3837ea3`;
 - `node --test tests/dev-v4-admission.test.mjs`: PASS, 20/20;
 - JSON parse and `git diff --check`: PASS;
 - final candidate-bound review: PASS on tree
@@ -57,6 +58,9 @@ merged exact-main base with a bound Plan ID.
   and test blobs are byte-identical to the verified fixed candidate;
 - lifecycle checkpoint context: `continue`, memory `retrieved` with 8 results;
   its two WIP warnings are recorded advisories, not publication authority.
+- the canonical recipe class is `protected` and the base-owned validation
+  profile is `affected`; this corrects plan metadata only and does not widen
+  the 46-path product selector or any live authority.
 
 The installed-controller shell smoke was not added to the candidate. Its first
 local run stopped before selector discovery on the separately pinned retained
