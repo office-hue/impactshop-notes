@@ -4,8 +4,8 @@
 - branch: `feat/impactshop-donation-points-selector-r1-20261014`
 - worktree: `/Users/bujdosoarnold/Developer/GitHub/.worktrees/impactshop-notes-feat-impactshop-donation-points-selector-r1-20261014`
 - code base / policy commit: `e9bfb75a3b9e47e7f9a948597ca36b883c9e25a7`
-- plan anchor: `ab0c26e9d2c08f1c41d3d48558111e7198cc7da1`
-- plan-anchor tree: `bb29fb9a4feadce49e0204744a7fe97ca27747f9`
+- plan anchor: `721f4ee5464835c7dc6c5532b93236ef32aaf6e2`
+- plan-anchor tree: `da70d850b881bca98d003b72aaf495baf568aba0`
 - lifecycle selector: `dev-governance-source`
 - lifecycle status after bind: `implementation-ready`
 - current capsule before the required-check correction:

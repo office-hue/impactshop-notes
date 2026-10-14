@@ -47,8 +47,8 @@ merged exact-main base with a bound Plan ID.
 
 ## Evidence
 
-- Plan anchor: `ab0c26e9d2c08f1c41d3d48558111e7198cc7da1`;
-- plan-anchor tree: `bb29fb9a4feadce49e0204744a7fe97ca27747f9`;
+- Plan anchor: `721f4ee5464835c7dc6c5532b93236ef32aaf6e2`;
+- plan-anchor tree: `da70d850b881bca98d003b72aaf495baf568aba0`;
 - lifecycle capsule before final DocSync closeout:
   `0ae140d24cae5a7749d4ba3f4dfe1dddbeeefc89cec18748e16c6e96f3837ea3`;
 - `node --test tests/dev-v4-admission.test.mjs`: PASS, 20/20;
