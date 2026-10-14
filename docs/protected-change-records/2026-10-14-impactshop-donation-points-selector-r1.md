@@ -51,8 +51,12 @@ merged exact-main base with a bound Plan ID.
 - plan-anchor tree: `c8056e385d142bfdff378e017412b53bd6fb419f`;
 - lifecycle capsule: `3327f6bd351307f6a90828f5dfbdd4670a8c32883356681f190ecdd9bafe49b9`;
 - `node --test tests/dev-v4-admission.test.mjs`: PASS, 20/20;
-- JSON parse and `git diff --check`: PASS before documentation closeout;
-- final candidate-bound review and checkpoint: pending.
+- JSON parse and `git diff --check`: PASS;
+- final candidate-bound review: PASS on tree
+  `78de9f1e9a5c743ffb27963fa7e6adb1e6d35de1`; the protected policy, script
+  and test blobs are byte-identical to the verified fixed candidate;
+- lifecycle checkpoint context: `continue`, memory `retrieved` with 8 results;
+  its two WIP warnings are recorded advisories, not publication authority.
 
 The installed-controller shell smoke was not added to the candidate. Its first
 local run stopped before selector discovery on the separately pinned retained
@@ -63,8 +67,7 @@ The first frozen-candidate Sol/high review found one P1 prefix-collision issue:
 the legacy matcher treated literal file names as prefixes. The amended plan and
 candidate add an explicit `writeSurfaceMatch=exact` opt-in for this selector;
 the positive fixture creates a listed future file, while the negative fixture
-blocks the same name with `.attacker.php` appended. A new frozen-candidate
-Sol/high verification is still required.
+blocks the same name with `.attacker.php` appended.
 
 That first verification returned `still_vulnerable` because the legacy path
 inventory omitted staged-only files. The scoped correction includes the index

@@ -1542,8 +1542,8 @@ lane-specific. No live or remote mutation occurred.
   wildcard or file-prefix collision; exact mode also accounts for staged-only
   paths.
 - Validation: affected admission suite PASS 20/20; Sol/high verify-fix `fixed`
-  on frozen tree `57533da1…`; final documentation/tree binding and checkpoint
-  pending.
-- State: source-ready=false, source-merged=false, release-ready=false,
+  on frozen tree `57533da1…`; final candidate-bound review PASS on tree
+  `78de9f1e…`; checkpoint context decision `continue`.
+- State: source-ready=true, source-merged=false, release-ready=false,
   deployed=false, user-visible=false, production-accepted=false.
 - External mutation counters: push/PR/merge/build/deploy `0/0/0/0/0`.

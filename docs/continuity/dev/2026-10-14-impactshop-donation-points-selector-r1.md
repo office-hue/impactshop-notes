@@ -58,12 +58,13 @@ lifecycle shell test remains unchanged and local-only.
 
 ## Next exact step
 
-Freeze the documentation-complete diff, bind the completed verify-fix evidence
-to the final tree, then create the candidate commits and checkpoint. Before any push,
-load the active release-operations package and perform the current source
-publication prestate. No product task may start from this selector until the
-governance merge is read back on exact main.
+Load the active release-operations package and perform the current source
+publication prestate after the final checkpoint commit. The source-bearing
+parent is committed, reconciled and candidate-bound review is PASS; this
+staged DocSync closeout still requires its final checkpoint commit. No product
+task may start from this selector until the governance merge is read back on
+exact main.
 
-Status: source candidate only; source-ready pending final checkpoint;
+Status: source-ready=true locally; source candidate only;
 source-merged=false; release-ready=false; deployed=false;
 user-visible=false; production-accepted=false.
