@@ -7766,3 +7766,7 @@ secret/cron/watchdog state changed.
   registered `affected` profile. This is plan metadata only; the exact selector
   and executable blobs are unchanged. A current candidate-bound review record
   remains the final local publication prerequisite.
+- Terra/high source review found that the committed candidate made the merged
+  selector fixture a no-op. The fixture now starts from `e9bfb75...`, applies
+  both selector policies plus the admission helper as a real synthetic merge,
+  and the affected suite passes 20/20. Current-tree review remains pending.

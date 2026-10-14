@@ -61,6 +61,11 @@ merged exact-main base with a bound Plan ID.
 - the canonical recipe class is `protected` and the base-owned validation
   profile is `affected`; this corrects plan metadata only and does not widen
   the 46-path product selector or any live authority.
+- final source review exposed a committed-candidate fixture no-op. The fixed
+  fixture now starts from immutable pre-selector base `e9bfb75...`, copies both
+  selector policies and the admission script, creates a real synthetic merge,
+  and then exercises Plan-ID and exact-path behavior; affected suite PASS
+  20/20.
 
 The installed-controller shell smoke was not added to the candidate. Its first
 local run stopped before selector discovery on the separately pinned retained

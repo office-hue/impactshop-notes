@@ -65,13 +65,21 @@ lifecycle shell test remains unchanged and local-only.
   the correct SHA showed `legacy_options_require_legacy_state`; diagnosed and
   resolved through the supported existing-state `reconcile --plan-anchor`
   path, with no state edit or bypass.
+- final source review found `mergedDonationPointsFixture` cloning the already
+  merged candidate, so its synthetic merge became a no-op after commit. The
+  first repair pins immutable pre-selector base `e9bfb75...`, copies the two
+  selector policies plus admission script, commits the synthetic merged base,
+  and updates its fixture-only `origin/main`; affected suite PASS 20/20.
+- the first two post-fix test observations hit the 30-second caller ceiling
+  without a result. Diagnosis showed no test failure; the same command with an
+  explicit longer orchestrator budget completed PASS 20/20 in 28.3 seconds.
 
 ## Next exact step
 
-Commit this DocSync closeout, reconcile the unchanged plan anchor, then record
-one current candidate-bound source/security review before the source
-publication prestate. No product task may start from this selector until the
-governance merge is read back on exact main.
+Commit this fixture and DocSync closeout, reconcile the unchanged plan anchor,
+then record one current candidate-bound source/security review before the
+source publication prestate. No product task may start from this selector
+until the governance merge is read back on exact main.
 
 Status at this checkpoint: source-ready pending the current review record;
 source candidate only;
