@@ -1531,3 +1531,19 @@ lane-specific. No live or remote mutation occurred.
   remain fail-closed.
 - Positive fresh-launcher and negative boundary fixtures pass. No provider,
   VPS, runtime, secret, scheduler or watchdog authority was added.
+
+## 2026-10-14 — Impact Shop donation-points selector R1
+
+- Identity: task/plan `impactshop-donation-points-selector-r1-20261014`, base
+  `e9bfb75a3b9e47e7f9a948597ca36b883c9e25a7`, plan anchor
+  `5fae56542d86c7b3c600ea25055887ffb72b75df`.
+- Candidate: exact protected product selector in both repo-owned policies;
+  source-only, Plan-ID-bound, `writeSurfaceMatch=exact`, no broad root,
+  wildcard or file-prefix collision; exact mode also accounts for staged-only
+  paths.
+- Validation: affected admission suite PASS 20/20; Sol/high verify-fix `fixed`
+  on frozen tree `57533da1…`; final documentation/tree binding and checkpoint
+  pending.
+- State: source-ready=false, source-merged=false, release-ready=false,
+  deployed=false, user-visible=false, production-accepted=false.
+- External mutation counters: push/PR/merge/build/deploy `0/0/0/0/0`.

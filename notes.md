@@ -7743,3 +7743,19 @@ secret/cron/watchdog state changed.
 - No `wp-content/`, provider, deploy, VPS, runtime, secret, cron or watchdog
   mutation. Focused admission tests pass; independent Terra/high QA reports no
   remaining P0/P1/P2 finding.
+
+## 2026-10-14 — Impact Shop donation-points selector R1
+
+- Added a source-only candidate for the product-specific
+  `impactshop-donation-points-source-r1` selector in the two repo-owned policy
+  files; exact inventory: 14 product + 13 test + 19 documentation/guard paths.
+- Affected admission tests PASS 20/20, including candidate self-authority,
+  missing-plan, merged-base, extra-path and `.php.attacker.php` prefix-collision
+  negatives in both untracked and staged-only state. The selector alone opts in
+  to exact file matching and staged-index accounting.
+- No product source, database, provider, runtime, scheduler, secret or live
+  state changed. Push/PR/merge/build/deploy remain `0/0/0/0/0`.
+- Sol/high verify-fix on frozen tree `57533da1…`: `fixed`; both the literal
+  prefix collision and staged-only bypass are closed.
+- Status: documentation-complete local candidate; final tree binding and
+  checkpoint remain before any source publication.
