@@ -18,7 +18,7 @@
 - active operations package/manifest:
   `d1265ecf6ccdc26e1f9f79c4ef4e9c8d66eee9fe0af6ff0439b57c5243f98c25` /
   `f690fc73e6b6c3b954ec904bd881281814a2971c0a1736340cabe67184221767`.
-- external mutations: push/PR/merge/build/deploy `1/1/0/0/0`; PR
+- external mutations: push/PR/merge/build/deploy `2/1/0/0/0`; PR
   `office-hue/impactshop-notes#219` is open.
 
 ## Implemented candidate
@@ -93,17 +93,25 @@ lifecycle shell test remains unchanged and local-only.
   and requires its operator-approval identity to resolve in that plan. This
   correction adds the canonical heading fragment and approval identity; it
   does not change selector scope or live authority.
+- `merged-selector-positive-blocked-ci`: attempt 1 on the corrected candidate.
+  The protected-record correction passed, but the combined Ubuntu CI fixture
+  reached the real `php-runtime` probe and blocked because the hardened
+  validator rejects the runner's non-exact `/usr/bin/php` resolution. The
+  production validator remains unchanged. The exact-path fixture now removes
+  only `php-runtime` from its synthetic base policies, while the preceding
+  static contract still requires it on the real selector. Exact combined CI
+  command PASS 24/24 locally with Node 22.23.2.
 
 ## Next exact step
 
-Validate the corrected protected-source manifest against the exact candidate,
-reconcile the amended plan, record current candidate-bound review, and freeze
-the repair commit. Because the original plan budget allowed one push and that
-push created PR #219, publishing the correction requires one explicit
-additional corrective-push authority. No product task may start from this
-selector until the governance merge is read back on exact main.
+Reconcile the amended plan, align its anchor evidence, record fresh
+candidate-bound correctness and security review, and freeze the CI-hermeticity
+repair. Both previously authorized pushes have been used; publishing this new
+repair requires one explicit additional corrective-push authority. No product
+task may start from this selector until the governance merge is read back on
+exact main.
 
-Status at this checkpoint: source-ready pending the required-check correction
-and current review record; source candidate only;
+Status at this checkpoint: source-ready pending the CI-hermeticity correction,
+current review record and corrective-push authority; source candidate only;
 source-merged=false; release-ready=false; deployed=false;
 user-visible=false; production-accepted=false.

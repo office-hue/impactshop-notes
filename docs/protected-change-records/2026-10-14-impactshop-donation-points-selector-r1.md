@@ -86,6 +86,14 @@ PASS 20/20. The second verify-fix on frozen tree
 `57533da1aebe7f027983ba49b295e0b90a74e59e` returned `fixed`; the P1 finding is
 closed. This evidence grants no external or live authority.
 
+The first corrected PR run exposed a CI-host dependency in the positive
+write-surface fixture: the hardened production PHP probe correctly rejected
+the Ubuntu runner's non-exact PHP resolution. The production admission helper
+is unchanged. The fixture-only synthetic base now isolates `php-runtime` for
+the path-matching scenario, while the real selector contract still requires
+it. The exact combined Stage A/Stage B command passes 24/24 locally on Node
+22.23.2; remote confirmation remains required.
+
 ## Rollback
 
 Rollback is one normal Git revert PR for the governance merge. No data or live

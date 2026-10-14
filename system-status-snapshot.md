@@ -1541,15 +1541,17 @@ lane-specific. No live or remote mutation occurred.
   source-only, Plan-ID-bound, `writeSurfaceMatch=exact`, no broad root,
   wildcard or file-prefix collision; exact mode also accounts for staged-only
   paths.
-- Validation: affected admission suite PASS 20/20; Sol/high verify-fix `fixed`
+- Validation: affected admission suite PASS 20/20; combined Stage A/Stage B
+  command PASS 24/24 locally after fixture-only PHP capability isolation;
+  Sol/high verify-fix `fixed`
   on frozen tree `57533da1…`; final candidate-bound review PASS on tree
   `78de9f1e…`; checkpoint context decision `continue`.
 - Publication recipe: base-owned class `protected`, validation profile
   `affected`; final current-tree source review record pending.
 - Committed-candidate fixture no-op fixed by rebuilding its synthetic merged
   base from `e9bfb75...`; affected admission suite PASS 20/20 after the fix.
-- State: source-ready=pending-corrective-push-authority, source-merged=false,
+- State: source-ready=pending-ci-repair-review-and-push-authority, source-merged=false,
   release-ready=false, deployed=false, user-visible=false,
-  production-accepted=false. PR #219 is open; its required-check correction is
-  validated locally but not yet published.
-- External mutation counters: push/PR/merge/build/deploy `1/1/0/0/0`.
+  production-accepted=false. PR #219 is open; the protected-record correction
+  is published, while the CI-hermeticity correction remains local.
+- External mutation counters: push/PR/merge/build/deploy `2/1/0/0/0`.

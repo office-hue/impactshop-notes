@@ -7754,9 +7754,10 @@ secret/cron/watchdog state changed.
   negatives in both untracked and staged-only state. The selector alone opts in
   to exact file matching and staged-index accounting.
 - No product source, database, provider, runtime, scheduler, secret or live
-  state changed. Push/PR/merge/build/deploy are `1/1/0/0/0`; PR #219 is open.
-  Its required-check correction is validated locally but remains unpushed
-  pending explicit authority for one additional corrective push.
+  state changed. Push/PR/merge/build/deploy are `2/1/0/0/0`; PR #219 is open.
+  The protected-record correction is published, but CI exposed a host-PHP
+  dependency in the exact-path fixture. Its hermetic correction is validated
+  locally and remains unpushed pending explicit additional push authority.
 - Sol/high verify-fix on frozen tree `57533da1…`: `fixed`; both the literal
   prefix collision and staged-only bypass are closed.
 - Candidate-bound review PASS on the pre-recipe-correction tree `78de9f1e…`;
@@ -7771,5 +7772,6 @@ secret/cron/watchdog state changed.
 - Terra/high source review found that the committed candidate made the merged
   selector fixture a no-op. The fixture now starts from `e9bfb75...`, applies
   both selector policies plus the admission helper as a real synthetic merge,
-  and the affected suite passes 20/20. The current correction candidate fixes
-  only protected-record plan resolution and DocSync; it is not yet published.
+  and the affected suite passes 20/20. The combined CI command later exposed
+  host-PHP coupling in the positive fixture; fixture-only capability isolation
+  preserves the real selector's PHP requirement and passes 24/24 locally.

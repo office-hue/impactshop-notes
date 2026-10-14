@@ -203,8 +203,12 @@ configuration es barmely sibling path.
   globalis deny flag-ek regresszioja, merged immutable base pozitiv fixture,
   valamint missing-plan, candidate-self-registration, extra-path es
   untracked es staged-only file-prefix-collision negativ esetek. A pozitiv
-  fixture tenylegesen letrehoz es stage-el egy engedelyezett termekfajlt. Ez a
-  CI-ben tenylegesen futó parity teszt.
+  fixture tenylegesen letrehoz es stage-el egy engedelyezett termekfajlt. A
+  write-surface viselkedesi fixture a hostfuggo PHP-discoveryt fixture-only
+  modon izolalja, mikozben a kozvetlen policy-contract teszt tovabbra is exact
+  modon megkoveteli a valodi selector `php-runtime` capabilityjet. Igy a CI
+  nem lazit production authorityt, de nem is fugg az Ubuntu PHP symlinkjetol.
+  Ez a CI-ben tenylegesen futó parity teszt.
 - `tests/dev-v4-lifecycle-installed-cli.test.sh`: a terv megengedte a lokalis
   controller-smoke boviteset, de a megvalositas nem modositja. Az installed
   controller aktualis engine-pinje nem determinisztikus selector-fixture; az
@@ -227,7 +231,7 @@ Csak erintett ellenorzesek:
 1. manifest JSON/static ellenorzes, majd anchor commit es kizarolag a repo
    adapteren keresztuli `bind`; a wrapper altal nem exportalt validator nem
    resze a tamogatott vegrehajtasi utnak;
-2. `node --test tests/dev-v4-admission.test.mjs`;
+2. `node --test tests/dev-v4-stage-a-verifier.test.mjs tests/dev-v4-admission.test.mjs`;
 3. JSON parse a ket modositott policy fajlon;
 5. selector inventory exact-set, missing-plan, candidate-self-registration,
    broad-prefix/extra-path es `.php.attacker.php` negativ fixture;
