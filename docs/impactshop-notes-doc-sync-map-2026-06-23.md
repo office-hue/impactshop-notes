@@ -198,3 +198,17 @@ active only from a merged descendant base carrying the Stage B contract.
 G2 continuity covers the activation policy, capability evaluator, capsule writer,
 protected-file record, status snapshot and notes. S4/S5 runtime paths remain
 future-only selector surfaces and are not changed by this package.
+
+## 2026-10-14 Impact Shop donation-points selector DocSync unit
+
+The two selector policies, the opt-in exact matcher in
+`scripts/dev-v4-admission.mjs`, `tests/dev-v4-admission.test.mjs`, the R1 plan,
+protected change record and continuity, governance system plan, bastion status,
+`notes.md` and `system-status-snapshot.md` form one source-only DocSync unit.
+They must all state the same 46-path, Plan-ID-bound, future-product selector
+contract, file-prefix-collision denial and the same no-live-mutation boundary.
+For exact mode, committed, unstaged, untracked and staged-only path sources are
+all covered; legacy selectors retain their previous behavior.
+The installed lifecycle shell
+test is unchanged and is not candidate evidence. Governance merge does not
+mean that donation points are implemented, deployed or active.

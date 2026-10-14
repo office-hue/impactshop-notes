@@ -1531,3 +1531,27 @@ lane-specific. No live or remote mutation occurred.
   remain fail-closed.
 - Positive fresh-launcher and negative boundary fixtures pass. No provider,
   VPS, runtime, secret, scheduler or watchdog authority was added.
+
+## 2026-10-14 — Impact Shop donation-points selector R1
+
+- Identity: task/plan `impactshop-donation-points-selector-r1-20261014`, base
+  `e9bfb75a3b9e47e7f9a948597ca36b883c9e25a7`, plan anchor
+  `1f6aecf397aa26cf02803c9705fa94524812f656`.
+- Candidate: exact protected product selector in both repo-owned policies;
+  source-only, Plan-ID-bound, `writeSurfaceMatch=exact`, no broad root,
+  wildcard or file-prefix collision; exact mode also accounts for staged-only
+  paths.
+- Validation: affected admission suite PASS 20/20; combined Stage A/Stage B
+  command PASS 24/24 locally after fixture-only PHP capability isolation;
+  Sol/high verify-fix `fixed`
+  on frozen tree `57533da1…`; final candidate-bound review PASS on tree
+  `78de9f1e…`; checkpoint context decision `continue`.
+- Publication recipe: base-owned class `protected`, validation profile
+  `affected`; final current-tree source review record pending.
+- Committed-candidate fixture no-op fixed by rebuilding its synthetic merged
+  base from `e9bfb75...`; affected admission suite PASS 20/20 after the fix.
+- State: source-ready=pending-ci-repair-review-and-push-authority, source-merged=false,
+  release-ready=false, deployed=false, user-visible=false,
+  production-accepted=false. PR #219 is open; the protected-record correction
+  is published, while the CI-hermeticity correction remains local.
+- External mutation counters: push/PR/merge/build/deploy `2/1/0/0/0`.

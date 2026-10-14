@@ -7743,3 +7743,35 @@ secret/cron/watchdog state changed.
 - No `wp-content/`, provider, deploy, VPS, runtime, secret, cron or watchdog
   mutation. Focused admission tests pass; independent Terra/high QA reports no
   remaining P0/P1/P2 finding.
+
+## 2026-10-14 — Impact Shop donation-points selector R1
+
+- Added a source-only candidate for the product-specific
+  `impactshop-donation-points-source-r1` selector in the two repo-owned policy
+  files; exact inventory: 14 product + 13 test + 19 documentation/guard paths.
+- Affected admission tests PASS 20/20, including candidate self-authority,
+  missing-plan, merged-base, extra-path and `.php.attacker.php` prefix-collision
+  negatives in both untracked and staged-only state. The selector alone opts in
+  to exact file matching and staged-index accounting.
+- No product source, database, provider, runtime, scheduler, secret or live
+  state changed. Push/PR/merge/build/deploy are `2/1/0/0/0`; PR #219 is open.
+  The protected-record correction is published, but CI exposed a host-PHP
+  dependency in the exact-path fixture. Its hermetic correction is validated
+  locally and remains unpushed pending explicit additional push authority.
+- Sol/high verify-fix on frozen tree `57533da1…`: `fixed`; both the literal
+  prefix collision and staged-only bypass are closed.
+- Candidate-bound review PASS on the pre-recipe-correction tree `78de9f1e…`;
+  lifecycle checkpoint context returned `continue` with memory `retrieved`
+  (8 results). The current plan-only follow-up still needs its own bound review
+  record before source publication prestate.
+- Publication-recipe readback classified the package as `protected` because it
+  touches `config/dev-v4/`; the plan now uses that base-owned class and the
+  registered `affected` profile. This is plan metadata only; the exact selector
+  and executable blobs are unchanged. A current candidate-bound review record
+  remains the final local publication prerequisite.
+- Terra/high source review found that the committed candidate made the merged
+  selector fixture a no-op. The fixture now starts from `e9bfb75...`, applies
+  both selector policies plus the admission helper as a real synthetic merge,
+  and the affected suite passes 20/20. The combined CI command later exposed
+  host-PHP coupling in the positive fixture; fixture-only capability isolation
+  preserves the real selector's PHP requirement and passes 24/24 locally.

@@ -411,3 +411,19 @@ verified. Provider/build/deploy/VPS/runtime/secret/cron/watchdog remain denied.
 Protected source-only governance adds future-only S4/S5 selectors and a
 base-owned dynamic PHP readiness evaluator. No `wp-content/`, provider, deploy,
 VPS, secret, cron or runtime mutation occurred.
+
+## 2026-10-14 — Impact Shop donation-points selector R1
+
+The candidate adds one future-only, protected, Plan-ID-bound selector with an
+exact 46-file write surface, `writeSurfaceMatch=exact` and base-owned
+PHP/Git/static-test capability requirements. Candidate self-registration,
+missing Plan ID, extra paths and file-name prefix collisions are
+fail-closed in the affected admission suite, including staged-only collisions.
+Global provider/build/deploy/VPS/
+runtime/secret/scheduler permissions remain false. No product or live byte is
+changed; the selector is inactive until a normal governance merge and a fresh
+exact-main product lifecycle.
+
+Sol/high verify-fix on frozen tree `57533da1…`: `fixed`; the original literal
+prefix collision and the staged-only bypass are both closed. This is source
+evidence only, not activation or release authority.

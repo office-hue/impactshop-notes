@@ -640,3 +640,21 @@ therefore requires no extension.
 
 Focused linked-worktree and multi-active continuity tests pass, as do shell
 syntax and `git diff --check`.
+
+## 2026-10-14 — Impact Shop donation-points product selector R1
+
+The source-only governance candidate registers the exact protected
+`impactshop-donation-points-source-r1` selector for the already audited
+donation-proportional global points package. The selector is Plan-ID-bound,
+requires base-owned PHP/Git/static-test capabilities and names exactly 46
+files; `writeSurfaceMatch=exact` prevents literal file names from admitting
+suffix paths and includes staged index paths in its own source inventory. There
+is no wildcard or broad directory authority; legacy selectors are unchanged.
+
+Admission fixtures prove that an unmerged candidate cannot self-register the
+selector, a merged base still requires a Plan ID, the exact surface is admitted
+and both an additional path and a file-prefix collision are blocked. Product
+source, provider, runtime, database,
+scheduler, secret and production state remain unchanged. Merge of this
+governance package is a prerequisite for a new exact-main product task, not a
+product activation.
