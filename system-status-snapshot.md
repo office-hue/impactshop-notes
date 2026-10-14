@@ -1536,7 +1536,7 @@ lane-specific. No live or remote mutation occurred.
 
 - Identity: task/plan `impactshop-donation-points-selector-r1-20261014`, base
   `e9bfb75a3b9e47e7f9a948597ca36b883c9e25a7`, plan anchor
-  `721f4ee5464835c7dc6c5532b93236ef32aaf6e2`.
+  `1f6aecf397aa26cf02803c9705fa94524812f656`.
 - Candidate: exact protected product selector in both repo-owned policies;
   source-only, Plan-ID-bound, `writeSurfaceMatch=exact`, no broad root,
   wildcard or file-prefix collision; exact mode also accounts for staged-only
