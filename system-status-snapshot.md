@@ -1548,6 +1548,8 @@ lane-specific. No live or remote mutation occurred.
   `affected`; final current-tree source review record pending.
 - Committed-candidate fixture no-op fixed by rebuilding its synthetic merged
   base from `e9bfb75...`; affected admission suite PASS 20/20 after the fix.
-- State: source-ready=pending-current-review-record, source-merged=false, release-ready=false,
-  deployed=false, user-visible=false, production-accepted=false.
-- External mutation counters: push/PR/merge/build/deploy `0/0/0/0/0`.
+- State: source-ready=pending-corrective-push-authority, source-merged=false,
+  release-ready=false, deployed=false, user-visible=false,
+  production-accepted=false. PR #219 is open; its required-check correction is
+  validated locally but not yet published.
+- External mutation counters: push/PR/merge/build/deploy `1/1/0/0/0`.
