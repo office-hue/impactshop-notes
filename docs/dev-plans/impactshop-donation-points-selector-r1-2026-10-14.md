@@ -29,7 +29,7 @@ Plan ID: `impactshop-donation-points-selector-r1-20261014`
     "taskRequestDigest": "a87df38af466b5e95541a41c5700690b3da8253e8e649dd6f255dada4b3b8f54"
   },
   "scope": {
-    "changeImpact": "governance-only",
+    "changeImpact": "protected",
     "riskTier": "high",
     "releaseProfile": "source-only",
     "changeAllowlist": [
