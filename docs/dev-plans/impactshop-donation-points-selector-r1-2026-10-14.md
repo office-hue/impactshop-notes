@@ -35,6 +35,7 @@ Plan ID: `impactshop-donation-points-selector-r1-20261014`
     "changeAllowlist": [
       "config/dev-v4/task-selectors.v1.json",
       "config/dev-v4/stage-b-activation-policy.v1.json",
+      "scripts/dev-v4-admission.mjs",
       "tests/dev-v4-admission.test.mjs",
       "tests/dev-v4-lifecycle-installed-cli.test.sh",
       "docs/dev-plans/impactshop-donation-points-selector-r1-2026-10-14.md",
@@ -78,13 +79,15 @@ Elfogadas:
    policyben azonos exact szerzodessel szerepel;
 2. lane `protected`, risk ceiling `high`, `requiresPlanId=true`;
 3. capabilityk pontosan `php-runtime`, `git-readback`, `static-node-test`;
-4. a pozitiv fixture az exact allowlistet elfogadja, egy extra path negativ
-   fixtureje blokkol;
-5. a governance es a jovobeli product plan release profile-ja `source-only`;
-6. a kesobbi push elotti aktiv source-publication operations preflight kulon
+4. `writeSurfaceMatch=exact`, igy egy literal fajlnev suffix/prefix
+   utkozese sem fer bele;
+5. a pozitiv fixture tenyleges engedelyezett fajlvaltozast fogad el, az extra
+   path es a `.php.attacker.php` prefix-utkozes blokkol;
+6. a governance es a jovobeli product plan release profile-ja `source-only`;
+7. a kesobbi push elotti aktiv source-publication operations preflight kulon
    kapu, nem plan authority es nem resze ennek a source csomagnak;
-7. local/CI selector-policy parity es DocSync rögzitett;
-8. nincs termekkod-, altalanos DEV policy-, provider-, build-, deploy-,
+8. local/CI selector-policy parity es DocSync rögzitett;
+9. nincs termekkod-, altalanos DEV policy-, provider-, build-, deploy-,
    adatbazis-, cron- vagy secret
    mutacio.
 
@@ -178,20 +181,26 @@ configuration es barmely sibling path.
   requires-plan, capability es write-surface szerzodessel. Az exclusive owner
   tablazat es a meglevo selectorok valtozatlanok.
 - `config/dev-v4/stage-b-activation-policy.v1.json`: ugyanaz az exact selector,
-  `riskCeiling=high`; minden globalis provider/build/deploy/runtime/secret flag
-  valtozatlanul false.
+  `riskCeiling=high` es `writeSurfaceMatch=exact`; minden globalis
+  provider/build/deploy/runtime/secret flag valtozatlanul false.
+- `scripts/dev-v4-admission.mjs`: az eddigi selectorok viselkedesenek
+  megvaltoztatasa nelkul az explicit `writeSurfaceMatch=exact` opt-in szerzodes
+  csak literal path-egyezest fogad el. A directory-prefix szemantika mas
+  selectoroknal valtozatlan marad.
 
 ### WP2 — tesztek
 
 - `tests/dev-v4-admission.test.mjs`: a task-selector es Stage B selector exact
   deep equalityje, wildcard es broad-prefix tiltas, jelenlegi selectorok es
   globalis deny flag-ek regresszioja, merged immutable base pozitiv fixture,
-  valamint missing-plan, candidate-self-registration es extra-path negativ
-  esetek. Ez a CI-ben tenylegesen futó parity teszt.
-- `tests/dev-v4-lifecycle-installed-cli.test.sh`: uj selector discoveryje a
-  fixture immutable base policybol; candidate self-registration vagy plan
-  nelkuli implementacio nem valhat jogosultta. Ez lokalis
-  installed-controller kompatibilitasi ellenorzes, a jelen CI nem futtatja.
+  valamint missing-plan, candidate-self-registration, extra-path es
+  file-prefix-collision negativ esetek. A pozitiv fixture tenylegesen modosit
+  egy engedelyezett termekfajlt. Ez a CI-ben tenylegesen futó parity teszt.
+- `tests/dev-v4-lifecycle-installed-cli.test.sh`: a terv megengedte a lokalis
+  controller-smoke boviteset, de a megvalositas nem modositja. Az installed
+  controller aktualis engine-pinje nem determinisztikus selector-fixture; az
+  exact merged-base, missing-plan es self-registration szerzodest ezert a
+  hermetikus admission teszt bizonyitja. Ez a fajl nem resze a candidate diffnek.
 
 ### WP3 — governance es DocSync
 
@@ -210,12 +219,11 @@ Csak erintett ellenorzesek:
    adapteren keresztuli `bind`; a wrapper altal nem exportalt validator nem
    resze a tamogatott vegrehajtasi utnak;
 2. `node --test tests/dev-v4-admission.test.mjs`;
-3. `bash tests/dev-v4-lifecycle-installed-cli.test.sh`;
-4. JSON parse mindharom policy fajlon;
-5. selector inventory exact-set, missing-plan, candidate-self-registration es
-   broad-prefix/extra-path negativ fixture;
-6. local/CI parity read-only vizsgalat: az MJS teszt a CI-ben fut; a shell
-   lifecycle teszt local-only besorolasat dokumentalni kell;
+3. JSON parse a ket modositott policy fajlon;
+5. selector inventory exact-set, missing-plan, candidate-self-registration,
+   broad-prefix/extra-path es `.php.attacker.php` negativ fixture;
+6. local/CI parity read-only vizsgalat: az MJS teszt a CI-ben fut; a valtozatlan
+   shell lifecycle teszt local-only es nem candidate gate;
 7. controller-selected affected checkek;
 8. repo-local continuity/DocSync guard, ha van tamogatott executable;
 9. `git diff --check`;
@@ -279,8 +287,8 @@ Terra/high, read-only audit: `REVISE`. A findingok e verzióban atvezetve:
   kikerult;
 - a product selector inventoryja 14 termekforras + 13 teszt + 19
   dokumentacios/guard path exact halmaza;
-- a CI-ben futó MJS parity teszt es a local-only lifecycle shellteszt szerepe
-  elkulonult;
+- a CI-ben futó MJS parity teszt es a valtozatlan local-only lifecycle
+  shellteszt szerepe elkulonult;
 - bekerult a merged-base, missing-plan, candidate-self-registration es
   extra-path negativ szerzodes;
 - a jovobeli product plan `source-only`; a publication operation preflight
@@ -288,3 +296,10 @@ Terra/high, read-only audit: `REVISE`. A findingok e verzióban atvezetve:
 - a governance task a mar letezo `dev-governance-source` owner alatt fut, a
   product selector pedig csak merge utani exact-main base-bol hasznalhato, igy
   nincs circularis self-authority.
+
+Sol/high candidate review: `REVISE` egy P1 findinggal. A shared admission
+korabbi `p.startsWith(x)` szemantikaja a literal fajlbejegyzeseket is prefixkent
+kezelte. A javitott terv ezert kizarolag az uj selector explicit
+`writeSurfaceMatch=exact` opt-in viselkedeset es a hozza tartozo pozitiv/negativ
+fixtureket engedi. A finding lezárásahoz uj frozen candidate es uj Sol/high
+review kotelezo.
