@@ -7795,3 +7795,7 @@ secret/cron/watchdog state changed.
   repo-local contract. The private-hook fixture passes both the clean positive
   and injected negative cases without changing shared hooks. The hook generator
   itself is unchanged.
+- Candidate review P1 repair attempt 1: the forbidden-pattern gate now covers
+  alternate package managers, direct Node execution, every `memory:*` command
+  and sibling `ai-agent` paths; npm, pnpm and direct-node negatives are distinct
+  fixture cases.

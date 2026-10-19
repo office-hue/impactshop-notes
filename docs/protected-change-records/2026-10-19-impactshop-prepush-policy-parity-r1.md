@@ -38,6 +38,10 @@ that contract and remains unchanged. This change aligns
 - sibling `ai-agent` discovery and external `memory:*` execution are forbidden;
 - the health check fails if those forbidden patterns reappear.
 
+The fail-closed matcher also rejects direct Node/package-manager execution in
+the generated hook and direct `../ai-agent` or `/ai-agent/` path references, so
+the boundary is not limited to one `npm --prefix` spelling.
+
 No WordPress, point, affiliate, NGO, provider or deployment behavior is
 affected.
 
@@ -48,8 +52,8 @@ cross-repository dependency, or a fixture that writes into the real shared hook
 directory. The disposable test therefore owns an absolute `core.hooksPath`,
 asserts all generated hooks remain below it, compares a bounded source/shared
 hook snapshot before and after, requires an untouched-hook health PASS, and
-requires an injected sibling-memory command to produce the exact fail-closed
-diagnostic.
+requires independent `npm`, `pnpm` and direct `node` sibling cases to produce
+the exact fail-closed diagnostic.
 
 The fixture never executes the generated pre-push hook and performs no network,
 push, provider, build, deploy or runtime action.

@@ -1571,3 +1571,6 @@ lane-specific. No live or remote mutation occurred.
   syntax and the isolated hook-policy fixture pass; shared hooks and
   `scripts/install-hooks.sh` remain unchanged. Candidate-bound protected checks
   and final independent review remain pending.
+- First candidate review returned one P1 for a bypassable narrow matcher.
+  Repair attempt 1 broadens the deny contract and adds npm, pnpm and direct-node
+  negatives; targeted retest and verify-fix remain required.

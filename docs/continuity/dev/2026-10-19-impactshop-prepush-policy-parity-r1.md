@@ -68,6 +68,12 @@ the bounded outside snapshot remains identical. Next: run the base-selected
 affected/protected checks, freeze the candidate, then perform one independent
 candidate review.
 
+The first candidate review returned `REVISE` with one P1: the initial matcher
+covered only the documented `npm --prefix` form. Repair attempt 1 broadens the
+fail-closed boundary to any generated-hook `memory:*`, Node/package-manager
+execution or direct sibling `ai-agent` path and adds separate npm, pnpm and
+direct-node negative cases. A verify-fix review is required on the new tree.
+
 ## Preserved authoring handover reference
 
 Per workspace handover policy, future session/worktree handovers preserve the

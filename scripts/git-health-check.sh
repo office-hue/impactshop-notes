@@ -47,7 +47,7 @@ if [[ -x "$HOOK_PATH" ]]; then
     FAIL_COUNT=$((FAIL_COUNT + 1))
   fi
 
-  if rg -q -- 'resolve_ai_agent_repo|AI_AGENT_REPO|npm[[:space:]]+--prefix.*memory:' "$HOOK_PATH"; then
+  if rg -q -- 'resolve_ai_agent_repo|AI_AGENT_REPO|memory:[[:alnum:]_-]+|(^|[;&|[:space:]])(node|npm|npx|pnpm|yarn|bun)([[:space:]]|$)|(\.\./|/)ai-agent(/|[[:space:]"])' "$HOOK_PATH"; then
     echo "[git-health-check] FAIL: pre-push hook tiltott sibling-memory függést tartalmaz"
     FAIL_COUNT=$((FAIL_COUNT + 1))
   else

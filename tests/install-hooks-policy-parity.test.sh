@@ -91,10 +91,6 @@ PRE_PUSH="$HOOK_DIR/pre-push"
 rg -q -- '--strict --mode push' "$PRE_PUSH"
 rg -q -- 'safe-repo-audit\.sh' "$PRE_PUSH"
 rg -q -- 'worktree-continuity-guard\.sh|WORKTREE_CONTINUITY_GUARD' "$PRE_PUSH"
-if rg -q -- 'resolve_ai_agent_repo|AI_AGENT_REPO|npm[[:space:]]+--prefix.*memory:' "$PRE_PUSH"; then
-  echo 'generated pre-push hook contains forbidden sibling-memory dependency' >&2
-  exit 1
-fi
 
 set +e
 positive_output="$(cd "$REPO" && bash scripts/git-health-check.sh 2>&1)"
@@ -107,21 +103,34 @@ fi
 grep -Fq '[git-health-check] summary: WARN=0 FAIL=0' <<<"$positive_output"
 grep -Fq '[git-health-check] OK: pre-push hook repo-local; nincs sibling-memory függés' <<<"$positive_output"
 
-cat >> "$PRE_PUSH" <<'HOOK'
-AI_AGENT_REPO="$REPO_ROOT/../ai-agent"
-npm --prefix "$AI_AGENT_REPO" run -s memory:gate -- --repo "$REPO_ROOT"
-HOOK
+CLEAN_PRE_PUSH="$TMP_ROOT/pre-push.clean"
+cp "$PRE_PUSH" "$CLEAN_PRE_PUSH"
 
-set +e
-negative_output="$(cd "$REPO" && bash scripts/git-health-check.sh 2>&1)"
-negative_rc=$?
-set -e
-if [[ "$negative_rc" -eq 0 ]]; then
-  printf '%s\n' "$negative_output" >&2
-  exit 1
-fi
-grep -Fq '[git-health-check] FAIL: pre-push hook tiltott sibling-memory függést tartalmaz' <<<"$negative_output"
-grep -Fq '[git-health-check] summary: WARN=0 FAIL=1' <<<"$negative_output"
+assert_health_rejects() {
+  local label="$1"
+  local injected_line="$2"
+  local negative_output negative_rc
+  cp "$CLEAN_PRE_PUSH" "$PRE_PUSH"
+  printf '%s\n' "$injected_line" >> "$PRE_PUSH"
+  set +e
+  negative_output="$(cd "$REPO" && bash scripts/git-health-check.sh 2>&1)"
+  negative_rc=$?
+  set -e
+  if [[ "$negative_rc" -eq 0 ]]; then
+    echo "health check accepted forbidden case: $label" >&2
+    printf '%s\n' "$negative_output" >&2
+    exit 1
+  fi
+  grep -Fq '[git-health-check] FAIL: pre-push hook tiltott sibling-memory függést tartalmaz' <<<"$negative_output"
+  grep -Fq '[git-health-check] summary: WARN=0 FAIL=1' <<<"$negative_output"
+}
+
+assert_health_rejects npm-memory \
+  'npm --prefix "$REPO_ROOT/../ai-agent" run -s memory:gate -- --repo "$REPO_ROOT"'
+assert_health_rejects pnpm-sibling \
+  'pnpm --dir "$REPO_ROOT/../ai-agent" run memory:gate'
+assert_health_rejects direct-node-sibling \
+  'node "$REPO_ROOT/../ai-agent/scripts/dev-memory-guard.mjs"'
 
 outside_after="$(snapshot_source_boundary)"
 if [[ "$outside_before" != "$outside_after" ]]; then
