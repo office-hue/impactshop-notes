@@ -7775,3 +7775,36 @@ secret/cron/watchdog state changed.
   and the affected suite passes 20/20. The combined CI command later exposed
   host-PHP coupling in the positive fixture; fixture-only capability isolation
   preserves the real selector's PHP requirement and passes 24/24 locally.
+
+## 2026-10-19 — Pre-push policy parity R1 planning checkpoint
+
+- Exact-main dedicated repair worktree created through the repo task starter;
+  the short main quiet window is released.
+- Root cause: the hook generator correctly preserves repo-local multi-active
+  isolation, while `git-health-check.sh` and PR policy still require the older
+  removed sibling-memory integration.
+- Approved repair: align the health/policy contract and prove hook installation
+  plus health execution in a disposable fixture. Shared hooks, sibling
+  worktrees, dependencies, product and live systems remain untouched.
+- Canonical restart follow-up: the distributed dispatcher hotfix was verified
+  locally and the task now runs on the repo-accepted retained engine. The first
+  bind exposed only a stale fallback task-request digest; plan and continuity
+  now use the controller-projected canonical digest.
+- Implementation: `git-health-check.sh` now rejects forbidden sibling-memory
+  patterns instead of requiring removed memory hooks; PR policy matches the
+  repo-local contract. The private-hook fixture passes both the clean positive
+  and injected negative cases without changing shared hooks. The hook generator
+  itself is unchanged.
+- Candidate review P1 repair attempt 1: the forbidden-pattern gate now covers
+  alternate package managers, direct Node execution, every `memory:*` command
+  and sibling `ai-agent` paths; npm, pnpm and direct-node negatives are distinct
+  fixture cases.
+- The targeted retest passed after that repair. Verify-fix returned `fixed` on
+  candidate HEAD `4018a4b7...`, tree `30557dfd...`; the executable/test blobs
+  are frozen and only a docs evidence checkpoint plus final exact-tree source
+  review remain before publication preflight.
+- The following exact-tree review found a combined token-boundary bypass plus
+  an unproved standalone `AI_AGENT_REPO` branch. Repair attempt 2 closes both;
+  the targeted fixture remains PASS and verify-fix is `fixed` on HEAD
+  `71c4e3d2...`, tree `941070ce...`, with no new P0/P1/P2. Executable/test
+  source is frozen again pending only final docs-tree review.

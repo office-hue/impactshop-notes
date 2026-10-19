@@ -1,6 +1,15 @@
 # Bastion Guard Status
 
-Last updated: 2026-09-10
+Last updated: 2026-10-19
+
+## 2026-10-19 — Pre-push policy parity R1
+
+The health check now enforces the already merged repo-local hook boundary
+instead of requiring the removed sibling-memory integration. A disposable
+fixture owns its absolute hook directory, requires a clean generated-hook PASS,
+injects a forbidden sibling-memory command for a fail-closed negative, and
+proves the bounded shared-hook/source snapshot unchanged. The hook generator,
+shared hooks, product and live systems are unchanged.
 
 ## 2026-09-11 — Sharity profile canonical Elementor render filter
 
@@ -307,6 +316,7 @@ Ez a fájl a kötelező evidencianapló minden új modulhoz tartozó bástya/gua
 ## Kiterjesztési napló
 | Dátum | Modul | Guard kiterjesztés | Evidencia |
 | --- | --- | --- | --- |
+| 2026-10-19 | `scripts/git-health-check.sh` pre-push parity | The health check preserves strict audit, safe-audit and continuity requirements, positively proves repo-local generated hooks, and fails closed on sibling `ai-agent` or external `memory:*` patterns. The hermetic fixture cannot install into the shared hook directory. | `tests/install-hooks-policy-parity.test.sh`, `docs/protected-change-records/2026-10-19-impactshop-prepush-policy-parity-r1.md` |
 | 2026-09-10 | Multi-active worktree coordination and continuity control plane | Explicit primary preservation, common-Git-dir namespace, `0700`/`0600` private evidence, read-only same-repo legacy migration, foreign legacy isolation, lock + atomic generation-bound snapshots, exact publisher branch/full-HEAD/clean evidence, fail-closed stale/dirty/generation/lock checks and repo-local hook/start/push boundary. The touched control-plane scripts, CI contract and two-repository hermetic test are maximum protected. | `tests/worktree-multi-active-continuity.test.sh`, `docs/impactshop-multi-active-continuity-sol-plan-2026-09-10.md`, `docs/protected-change-records/2026-09-10-impactshop-multi-active-continuity.md` |
 | 2026-09-10 | `impactshop-sharity-public-portal-redirects.php` | Additív production-only redirect a két exact adomány-automata útvonalról a Sharity public főoldalra. Fix query-mentes 302, host/path/method allowlist, admin/REST/AJAX kizárás; protected inventory, SHA-lock és külön smoke group. | `tests/sharity-public-portal-redirects.test.py`, `docs/sharity-public-portal-redirects-sol-plan-2026-09-10.md`, `docs/protected-change-records/2026-09-10-sharity-public-portal-redirects.md` |
 | 2026-09-09 | DEV-v2 Sharity staging CAS source profile | Egyetlen exact 13-path staging CAS csomagot protected source-ként ismer fel; schema-v2 record, production companion SHA-256, fix terv/approval, provider-denial és self-admission blokk kötelező. A control-plane fájlok a deploy-guard maximum-védett készletébe kerültek. | `tests/dev-delivery-v2-adapter.test.sh`, `docs/sharity-profile-deploy-control-source-bootstrap-sol-plan-2026-09-09.md`, `docs/protected-change-records/2026-09-09-sharity-profile-deploy-control-source-bootstrap.md` |

@@ -1555,3 +1555,28 @@ lane-specific. No live or remote mutation occurred.
   production-accepted=false. PR #219 is open; the protected-record correction
   is published, while the CI-hermeticity correction remains local.
 - External mutation counters: push/PR/merge/build/deploy `2/1/0/0/0`.
+
+## 2026-10-19 — Pre-push policy parity R1
+
+- Dedicated exact-main worktree is active; plan selector is
+  `dev-governance-source`, with binding pending after the plan checkpoint.
+- Intended contract: generated hooks stay repo-local; sibling `ai-agent`
+  memory/dependency discovery remains forbidden.
+- Current state: planning only; no shared hook, source publication, provider,
+  runtime, build or deploy mutation.
+- Canonical lifecycle start is `current` on the verified retained engine after
+  the distributed dispatcher hotfix. One bind attempt found a stale fallback
+  request digest; the canonical digest is prepared for a new plan checkpoint.
+- Plan bind is complete at `e51024f2...`, capsule `375384da...`. Targeted shell
+  syntax and the isolated hook-policy fixture pass; shared hooks and
+  `scripts/install-hooks.sh` remain unchanged. Candidate-bound protected checks
+  and final independent review remain pending.
+- First candidate review returned one P1 for a bypassable narrow matcher.
+  Repair attempt 1 broadens the deny contract and adds npm, pnpm and direct-node
+  negatives. The targeted retest passed and verify-fix returned `fixed` on
+  HEAD `4018a4b7...`, tree `30557dfd...`.
+- The next exact-tree review found a combined token-boundary bypass and missing
+  standalone `AI_AGENT_REPO` fixture. Repair attempt 2 closes both; targeted
+  retest PASS and verify-fix `fixed` on HEAD `71c4e3d2...`, tree `941070ce...`,
+  with no new P0/P1/P2. Executable/test source is frozen; only the final
+  docs-tree review remains pending.
