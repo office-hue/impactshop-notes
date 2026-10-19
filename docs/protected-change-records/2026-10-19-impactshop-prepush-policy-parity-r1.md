@@ -3,7 +3,7 @@
 <!-- BEGIN PROTECTED SOURCE ADMISSION -->
 {
   "schemaVersion": 1,
-  "planRef": "docs/dev-plans/impactshop-prepush-policy-parity-r1-2026-10-19.md",
+  "planRef": "docs/dev-plans/impactshop-prepush-policy-parity-r1-2026-10-19.md#operator-approval-reference",
   "operatorApprovalRef": "operator-approval:impactshop-prepush-policy-parity-r1-20261019",
   "protectedPaths": [
     "scripts/git-health-check.sh",

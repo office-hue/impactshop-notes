@@ -38,6 +38,11 @@ provider or runtime state is modified.
 - `context_render_arguments_invalid`: one product-task Secretary invocation;
   the supported invocation without the unsupported argument succeeded. This is
   not a repair-task blocker.
+- `protected-change-record-plan-ref-invalid`: one repo-local publication
+  admission attempt. The record referenced the plan file without the mandatory
+  heading fragment, and its approval reference was not yet resolvable inside
+  that plan. The correction adds an explicit, non-authority-expanding approval
+  reference section and points the record to that exact heading.
 
 ## Next action
 
@@ -85,6 +90,15 @@ returned `fixed` on HEAD `71c4e3d20de40c20488f1864569eaedd3bfc1ea7`,
 tree `941070ce57b495b7ee31b24df0d217bf24098985`, with no new P0/P1/P2.
 Executable and test blobs are now frozen. This docs-only evidence checkpoint is
 followed by one final exact-tree identity/coherence review.
+
+The final exact-tree review passed on HEAD
+`a133215f0dff747972d1f1e28b2452d70e29af9f`, tree
+`d15ea6586b2cbb0d5a419d84afd43effd0f2434d`, with no P0/P1/P2. The first
+repo-local publication admission then stopped before freeze with
+`protected-change-record-plan-ref-invalid`; no external mutation occurred.
+The traceability-only correction above invalidates only the exact-tree review
+and publication admission evidence. After committing it, rerun the exact-tree
+review once, then the repo-local `full-validate`, `freeze` and `verify` path.
 
 ## Preserved authoring handover reference
 

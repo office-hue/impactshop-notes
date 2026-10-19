@@ -61,6 +61,13 @@ Plan ID: `impactshop-prepush-policy-parity-r1-20261019`
 }
 DEV-DELIVERY-V2-MANIFEST -->
 
+## Operator approval reference
+
+The operator approved this bounded source-only repair under
+`operator-approval:impactshop-prepush-policy-parity-r1-20261019`. This reference
+records the already granted task authority; it does not authorize push, PR,
+merge, provider, runtime or production mutation.
+
 ## Goal, acceptance and boundaries
 
 The generated `impactshop-notes` pre-push hook has intentionally been
