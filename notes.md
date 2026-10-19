@@ -7799,3 +7799,7 @@ secret/cron/watchdog state changed.
   alternate package managers, direct Node execution, every `memory:*` command
   and sibling `ai-agent` paths; npm, pnpm and direct-node negatives are distinct
   fixture cases.
+- The targeted retest passed after that repair. Verify-fix returned `fixed` on
+  candidate HEAD `4018a4b7...`, tree `30557dfd...`; the executable/test blobs
+  are frozen and only a docs evidence checkpoint plus final exact-tree source
+  review remain before publication preflight.

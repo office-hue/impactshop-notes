@@ -65,8 +65,11 @@ push, provider, build, deploy or runtime action.
 - positive result: `WARN=0 FAIL=0`;
 - negative result: `WARN=0 FAIL=1` with the exact sibling-memory diagnostic;
 - `scripts/install-hooks.sh`: inspected, unchanged;
-- final protected-touch, affected-check, candidate review and publication
-  evidence remain required before merge.
+- protected-touch, commit-lane, strict push audit and `git diff --check`: PASS;
+- the candidate-review P1 was repaired once; the targeted retest passed and
+  verify-fix returned `fixed` on HEAD `4018a4b7...`, tree `30557dfd...`;
+- the final exact-tree source review and publication evidence remain required
+  before merge.
 
 There is no manual UI checklist: this package has no user interface or runtime
 surface. After merge, a new disposable fixture run is sufficient; installing

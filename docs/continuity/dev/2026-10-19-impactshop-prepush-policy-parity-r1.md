@@ -72,7 +72,12 @@ The first candidate review returned `REVISE` with one P1: the initial matcher
 covered only the documented `npm --prefix` form. Repair attempt 1 broadens the
 fail-closed boundary to any generated-hook `memory:*`, Node/package-manager
 execution or direct sibling `ai-agent` path and adds separate npm, pnpm and
-direct-node negative cases. A verify-fix review is required on the new tree.
+direct-node negative cases. The targeted retest passed, and the verify-fix
+review returned `fixed` on candidate HEAD
+`4018a4b7c94c720b0adb7a32bcc7c241ff070f5a`, tree
+`30557dfd74b566dbbfe7430e03a3aa2ade2137c2`. The executable and test blobs are
+now frozen; only this evidence checkpoint follows before the final exact-tree
+source review.
 
 ## Preserved authoring handover reference
 

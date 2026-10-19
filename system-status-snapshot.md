@@ -1573,4 +1573,7 @@ lane-specific. No live or remote mutation occurred.
   and final independent review remain pending.
 - First candidate review returned one P1 for a bypassable narrow matcher.
   Repair attempt 1 broadens the deny contract and adds npm, pnpm and direct-node
-  negatives; targeted retest and verify-fix remain required.
+  negatives. The targeted retest passed and verify-fix returned `fixed` on
+  HEAD `4018a4b7...`, tree `30557dfd...`. Executable/test source is frozen;
+  the final exact-tree source review remains pending after the docs-only
+  evidence checkpoint.
