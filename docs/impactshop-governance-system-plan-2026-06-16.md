@@ -658,3 +658,11 @@ source, provider, runtime, database,
 scheduler, secret and production state remain unchanged. Merge of this
 governance package is a prerequisite for a new exact-main product task, not a
 product activation.
+
+## 2026-10-19 — Pre-push policy parity R1
+
+The bounded governance repair preserves the merged multi-active contract:
+generated hooks remain repo-local and must not discover or run sibling
+`ai-agent` memory or dependency commands. The stale health-check and policy
+claims are aligned to that contract and verified in a disposable Git fixture.
+No shared hook, product, provider, runtime, secret or deployment state changes.

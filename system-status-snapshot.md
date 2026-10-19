@@ -1555,3 +1555,12 @@ lane-specific. No live or remote mutation occurred.
   production-accepted=false. PR #219 is open; the protected-record correction
   is published, while the CI-hermeticity correction remains local.
 - External mutation counters: push/PR/merge/build/deploy `2/1/0/0/0`.
+
+## 2026-10-19 — Pre-push policy parity R1
+
+- Dedicated exact-main worktree is active; plan selector is
+  `dev-governance-source`, with binding pending after the plan checkpoint.
+- Intended contract: generated hooks stay repo-local; sibling `ai-agent`
+  memory/dependency discovery remains forbidden.
+- Current state: planning only; no shared hook, source publication, provider,
+  runtime, build or deploy mutation.

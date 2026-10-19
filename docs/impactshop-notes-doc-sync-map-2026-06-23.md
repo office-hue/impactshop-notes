@@ -212,3 +212,13 @@ all covered; legacy selectors retain their previous behavior.
 The installed lifecycle shell
 test is unchanged and is not candidate evidence. Governance merge does not
 mean that donation points are implemented, deployed or active.
+
+## 2026-10-19 Pre-push policy parity DocSync unit
+
+`scripts/git-health-check.sh`, the generated hook contract in
+`scripts/install-hooks.sh`, the isolated parity fixture, PR policy, R1 plan,
+protected change record, continuity, governance plan, bastion status,
+`notes.md` and `system-status-snapshot.md` form one source-only DocSync unit.
+They must all preserve repo-local hook isolation and must not claim that a
+sibling `ai-agent` memory command is executed. Shared hook installation and all
+external/runtime mutations remain outside this unit.

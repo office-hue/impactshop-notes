@@ -7775,3 +7775,14 @@ secret/cron/watchdog state changed.
   and the affected suite passes 20/20. The combined CI command later exposed
   host-PHP coupling in the positive fixture; fixture-only capability isolation
   preserves the real selector's PHP requirement and passes 24/24 locally.
+
+## 2026-10-19 — Pre-push policy parity R1 planning checkpoint
+
+- Exact-main dedicated repair worktree created through the repo task starter;
+  the short main quiet window is released.
+- Root cause: the hook generator correctly preserves repo-local multi-active
+  isolation, while `git-health-check.sh` and PR policy still require the older
+  removed sibling-memory integration.
+- Approved repair: align the health/policy contract and prove hook installation
+  plus health execution in a disposable fixture. Shared hooks, sibling
+  worktrees, dependencies, product and live systems remain untouched.
