@@ -1564,3 +1564,6 @@ lane-specific. No live or remote mutation occurred.
   memory/dependency discovery remains forbidden.
 - Current state: planning only; no shared hook, source publication, provider,
   runtime, build or deploy mutation.
+- Canonical lifecycle start is `current` on the verified retained engine after
+  the distributed dispatcher hotfix. One bind attempt found a stale fallback
+  request digest; the canonical digest is prepared for a new plan checkpoint.

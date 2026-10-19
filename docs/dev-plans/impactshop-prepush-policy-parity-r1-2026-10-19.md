@@ -23,7 +23,7 @@ Plan ID: `impactshop-prepush-policy-parity-r1-20261019`
   },
   "authorization": {
     "source": "task-request",
-    "taskRequestDigest": "eb94c8caac6890edbc9625b65986d2c2223db8ed0da18bcb1f50a5de081825f7"
+    "taskRequestDigest": "65b1e1f2f899319394d0dab4cfa0c15fa4094685e3dafc6eeb0300cc250bc02f"
   },
   "scope": {
     "changeImpact": "governance-only",
@@ -129,11 +129,20 @@ planned merely to create a diff.
 
 The historical lifecycle start failure
 `retained_engine_not_accepted_by_repository_policy` reached two failed attempts.
-Diagnosis showed that the retained engine reads `acceptedRetainedEngines` from
-the wrong policy level. The user authorized the repo-supported local task-start
-fallback; this worktree was created by `scripts/worktree-task-start.sh`, not by
-raw worktree or lifecycle-state editing. The source package does not repair the
-central DEV engine.
+It was subsequently fixed in the distributed central dispatcher at source
+`94ee04a309843ccec991fa55fd7f8c01a6124e90`; dispatcher digest
+`9b4e1d4e7b6c9869ccaf3323fd34c7971e2b87666dcef80b56fb62d6ae384109`
+was read back locally. The canonical task was then started successfully from
+the primary checkout with the repo-accepted retained descriptor, without
+editing policy or lifecycle state. The source package does not modify that
+central DEV fix.
+
+The first bind attempt after the canonical restart returned
+`bound_plan_authority_mismatch` once. Readback showed that only the previous
+fallback task-request digest differed from the canonical lifecycle digest.
+This plan now binds the controller-projected digest
+`65b1e1f2f899319394d0dab4cfa0c15fa4094685e3dafc6eeb0300cc250bc02f`;
+no product scope, allowlist or acceptance condition changed.
 
 If the fixture fails twice with the same identifier, stop for a focused cause
 analysis and short repair plan. Test artifacts remain under a private temporary
@@ -176,3 +185,9 @@ The follow-up independent review verified revised draft digest
 `21845b43ace89ad6961af69551ee6e1ca4b339b99661fc051765d22c6069d73c`
 and returned `PASS` with no remaining P0/P1 planning issue. This is planning
 evidence only; implementation and test results remain unclaimed.
+
+After canonical lifecycle restart, an identity-only follow-up review verified
+plan digest `91b0a718d86922fedf1b4fcee24d63585fe61d3705f4bc5c1a8ff5cdc3555d47`
+and returned `PASS`. It confirmed that the canonical task-request digest update
+does not change the allowlist, source-only boundary, fixture acceptance or
+hook-isolation requirements. No P0/P1 issue remains.

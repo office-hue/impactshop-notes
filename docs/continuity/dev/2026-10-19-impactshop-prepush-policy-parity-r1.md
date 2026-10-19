@@ -7,7 +7,9 @@
 - worktree: `/Users/bujdosoarnold/Developer/GitHub/.worktrees/impactshop-notes-fix-impactshop-prepush-memory-gate-parity-r1-20261019`
 - base/HEAD/policy: `f6e0e54ba0cb761fdd71b2c3bd3137edc3124a5a`
 - initial tree: `44d38ad6ab31ded3a65e93936ad77a81a0ff8d77`
-- initial marker digest: `f4d14f9eded673a768460f86783870bdc79b66984b864cfd1c9c033e77676e83`
+- canonical lifecycle capsule: `7342e34234b4e8cbf6070ce640b39c1b7fad451c98bde08eb865125b924e70a7`
+- canonical task-request digest: `65b1e1f2f899319394d0dab4cfa0c15fa4094685e3dafc6eeb0300cc250bc02f`
+- retained engine: `8487bcc2a112612c42a009afabd5cb8ae2eefc5dcd32801cdfb6b173adb87502`, verified
 - initial selector: `maintenance-docs`; governance bind pending
 
 ## Decision and current state
@@ -17,16 +19,22 @@ restore the removed cross-repository `ai-agent` memory invocation. Instead it
 aligns the stale health check and PR policy with the repo-local hook generator
 and proves parity in a disposable repository.
 
-The canonical primary was used only to create this exact-main worktree. The
-main quiet window was released immediately afterwards. No other worktree,
-shared hook, shared dependency, provider or runtime state is modified.
+After the dispatcher hotfix, the canonical primary was used only to recreate
+this exact-main task with the repo-accepted retained engine. The earlier plan
+commit remains in an owned archive worktree and was fast-forwarded unchanged
+into the canonical worktree. The main quiet window was released immediately
+after identity readback. No other worktree, shared hook, shared dependency,
+provider or runtime state is modified.
 
 ## Failure ledger
 
 - `start_requires_canonical_primary_main_checkout`: one historical attempt.
 - `retained_engine_not_accepted_by_repository_policy`: two failed lifecycle
-  start attempts; diagnosed as the retained engine reading the accepted-engine
-  list from the wrong policy level. No third blind retry occurred.
+  start attempts before the central dispatcher hotfix. No third blind retry
+  occurred; the fixed dispatcher then started the canonical task successfully.
+- `bound_plan_authority_mismatch`: one bind attempt after canonical start;
+  diagnosed as the stale fallback request digest in the plan. The canonical
+  controller-projected digest is now used before the second attempt.
 - `context_render_arguments_invalid`: one product-task Secretary invocation;
   the supported invocation without the unsupported argument succeeded. This is
   not a repair-task blocker.
@@ -40,10 +48,13 @@ compatibility advisory, not a reason to rewrite repo policy in this task. The
 first Terra/medium planning review returned `REVISE` on digest `719b1332...`;
 its fixture isolation and positive/negative execution findings are now in the
 plan. The follow-up review returned `PASS` on revised digest `21845b43...` with
-no remaining P0/P1 planning issue. Commit the plan anchor, bind the
-existing base-owned governance selector using the repo-supported schema-v2
-transition, then implement and run only the targeted fixture and affected
-governance checks.
+no remaining P0/P1 planning issue. Commit the canonical identity correction,
+validate its exact digest, bind the existing base-owned governance selector
+through the retained lifecycle controller, then implement and run only the
+targeted fixture and affected governance checks.
+
+The canonical identity-only follow-up review returned `PASS` on plan digest
+`91b0a718...3555d47`; scope, allowlist and acceptance remain unchanged.
 
 ## Preserved authoring handover reference
 

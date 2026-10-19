@@ -7786,3 +7786,7 @@ secret/cron/watchdog state changed.
 - Approved repair: align the health/policy contract and prove hook installation
   plus health execution in a disposable fixture. Shared hooks, sibling
   worktrees, dependencies, product and live systems remain untouched.
+- Canonical restart follow-up: the distributed dispatcher hotfix was verified
+  locally and the task now runs on the repo-accepted retained engine. The first
+  bind exposed only a stale fallback task-request digest; plan and continuity
+  now use the controller-projected canonical digest.
