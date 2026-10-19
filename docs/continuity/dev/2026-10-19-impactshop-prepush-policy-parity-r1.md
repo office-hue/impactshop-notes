@@ -75,9 +75,16 @@ execution or direct sibling `ai-agent` path and adds separate npm, pnpm and
 direct-node negative cases. The targeted retest passed, and the verify-fix
 review returned `fixed` on candidate HEAD
 `4018a4b7c94c720b0adb7a32bcc7c241ff070f5a`, tree
-`30557dfd74b566dbbfe7430e03a3aa2ade2137c2`. The executable and test blobs are
-now frozen; only this evidence checkpoint follows before the final exact-tree
-source review.
+`30557dfd74b566dbbfe7430e03a3aa2ade2137c2`.
+
+The later exact-tree Terra/high review found one remaining combined token-boundary
+bypass and one missing standalone `AI_AGENT_REPO` assertion. Repair attempt 2
+uses non-identifier command boundaries, accepts an end-of-line sibling path,
+and adds both exact negative fixtures. The targeted test passed; verify-fix
+returned `fixed` on HEAD `71c4e3d20de40c20488f1864569eaedd3bfc1ea7`,
+tree `941070ce57b495b7ee31b24df0d217bf24098985`, with no new P0/P1/P2.
+Executable and test blobs are now frozen. This docs-only evidence checkpoint is
+followed by one final exact-tree identity/coherence review.
 
 ## Preserved authoring handover reference
 

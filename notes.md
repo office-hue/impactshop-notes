@@ -7803,3 +7803,8 @@ secret/cron/watchdog state changed.
   candidate HEAD `4018a4b7...`, tree `30557dfd...`; the executable/test blobs
   are frozen and only a docs evidence checkpoint plus final exact-tree source
   review remain before publication preflight.
+- The following exact-tree review found a combined token-boundary bypass plus
+  an unproved standalone `AI_AGENT_REPO` branch. Repair attempt 2 closes both;
+  the targeted fixture remains PASS and verify-fix is `fixed` on HEAD
+  `71c4e3d2...`, tree `941070ce...`, with no new P0/P1/P2. Executable/test
+  source is frozen again pending only final docs-tree review.

@@ -68,6 +68,10 @@ push, provider, build, deploy or runtime action.
 - protected-touch, commit-lane, strict push audit and `git diff --check`: PASS;
 - the candidate-review P1 was repaired once; the targeted retest passed and
   verify-fix returned `fixed` on HEAD `4018a4b7...`, tree `30557dfd...`;
+- the subsequent exact-tree review exposed a combined token-boundary bypass and
+  a missing standalone `AI_AGENT_REPO` fixture. Repair attempt 2 closes both;
+  targeted retest PASS and verify-fix `fixed` on HEAD `71c4e3d2...`, tree
+  `941070ce...`, with no new P0/P1/P2;
 - the final exact-tree source review and publication evidence remain required
   before merge.
 

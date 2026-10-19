@@ -1574,6 +1574,9 @@ lane-specific. No live or remote mutation occurred.
 - First candidate review returned one P1 for a bypassable narrow matcher.
   Repair attempt 1 broadens the deny contract and adds npm, pnpm and direct-node
   negatives. The targeted retest passed and verify-fix returned `fixed` on
-  HEAD `4018a4b7...`, tree `30557dfd...`. Executable/test source is frozen;
-  the final exact-tree source review remains pending after the docs-only
-  evidence checkpoint.
+  HEAD `4018a4b7...`, tree `30557dfd...`.
+- The next exact-tree review found a combined token-boundary bypass and missing
+  standalone `AI_AGENT_REPO` fixture. Repair attempt 2 closes both; targeted
+  retest PASS and verify-fix `fixed` on HEAD `71c4e3d2...`, tree `941070ce...`,
+  with no new P0/P1/P2. Executable/test source is frozen; only the final
+  docs-tree review remains pending.
