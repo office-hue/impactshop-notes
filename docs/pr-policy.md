@@ -8,7 +8,7 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
    - `bash scripts/install-hooks-all.sh`
 2. Új fejlesztés csak `origin/main` alapról indulhat:
    - `bash scripts/start-feature-worktree.sh <feature-branch>`
-   - automatikusan fut: `memory:pre-task` + branch context pack (`.codex/context/<branch>.md`)
+   - a repo-local task-start nem futtat sibling `ai-agent` memory vagy dependency parancsot
    - Impact Challenge érintettségnél az alapértelmezett megoldás additív új kód.
    - Védett meglévő Impact Challenge fájlhoz vagy útvonalhoz csak külön engedéllyel szabad nyúlni, és csak akkor, ha nincs ugyanilyen jó additív megoldás.
 3. Módosítás után kötelező helyi állapotellenőrzés:
@@ -49,11 +49,10 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 - `pre-push` hook: kötelező policy fájlok meglétét ellenőrzi.
 - `pre-push` hook: `safe-repo-audit.sh --strict --mode push` futtatása kötelező.
 - `pre-push` hook: Impact Challenge változásnál a bástyavédelmi és dokumentációs evidencia megléte kötelező.
-- `pre-push` hook: memory gate (`memory:gate`) kötelező.
-- `pre-push` hook: PR auto-memory sync (`memory:sync-pr`) fail-open módban.
-- `post-commit` hook: automatikusan memóriába rögzíti a commit kontextust (fail-open).
-- `post-commit` hook: kiírja a következő logikus workflow-lépést.
-- `post-merge` + `post-checkout` hook: automatikus memóriafrissítés throttlinggal (fail-open).
+- `pre-push` hook: repo-local marad; sibling `ai-agent` feloldás és külső
+  `memory:*` parancs tiltott.
+- `post-commit` hook: csak az opcionális repo-local státusz scriptet futtatja.
+- `post-checkout` hook: repo-local no-op.
 - `post-merge` hook: repo-specifikus deploy-döntési guardot futtat.
 - CI: PR Checklist Guard kötelező PR body ellenőrzéssel.
 - Merge/deploy döntésnél a bástyavédelmi szabály megsértése hard stop.
@@ -63,7 +62,7 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
 - A lokális guard és a GitHub oldali CI guard közötti szabályparitás kötelező.
   - Új protected modell vagy guard-szigorítás csak akkor tekinthető késznek, ha lokálban és CI-ben ugyanazt a döntést adja ugyanarra a lane-re.
 - A guardolt push wrapper teljes értékű belépési pont.
-  - Nem támaszkodhat kizárólag arra, hogy a hookok telepítve vannak; saját maga is köteles futtatni a lane guardot, a protected-touch checket, a strict auditot és a memory gate-et, ha elérhetők.
+  - Nem támaszkodhat kizárólag arra, hogy a hookok telepítve vannak; saját maga is köteles futtatni a lane guardot, a protected-touch checket, a strict auditot és a repo-local continuity guardot, ha elérhetők.
 - Worktree-specifikus logika csak a valódi repo-identitásból indulhat ki.
   - Repo- és deploy-döntés nem épülhet a worktree mappanévre.
 - Protected env párokat együtt kell kezelni.
@@ -74,6 +73,10 @@ Ez a repo **kötelező, egyetlen útvonalú** commit/push/PR/deploy policyt köv
   - Üres provider-válasz nem válhat tartós kanonikus állapottá forced refresh / retry / rövid TTL nélkül.
 
 ## Workflow kiegészítők (dev-memory)
+
+Ezek történeti vagy külön operátori helper-parancsok. A generált Git hookok és
+a repo-local task-start nem kereshetnek sibling repót, és nem futtathatják őket
+automatikusan. A `Memory-ID` commit trailer kompatibilitási metadata marad.
 
 - `memory:pre-task`: task-indítási brief mentése `tmp/state/dev-memory/last-brief.json`-ba.
 - `memory:context-pack`: branch-specifikus `.codex/context/<branch>.md` generálás.
