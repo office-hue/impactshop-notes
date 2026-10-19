@@ -131,6 +131,10 @@ assert_health_rejects pnpm-sibling \
   'pnpm --dir "$REPO_ROOT/../ai-agent" run memory:gate'
 assert_health_rejects direct-node-sibling \
   'node "$REPO_ROOT/../ai-agent/scripts/dev-memory-guard.mjs"'
+assert_health_rejects command-substitution-after-sibling-cd \
+  $'cd ../ai-agent\nresult=$(node ./scripts/guard.mjs)'
+assert_health_rejects ai-agent-repo-variable \
+  'AI_AGENT_REPO="$REPO_ROOT/../ai-agent"'
 
 outside_after="$(snapshot_source_boundary)"
 if [[ "$outside_before" != "$outside_after" ]]; then
