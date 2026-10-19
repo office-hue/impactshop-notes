@@ -666,3 +666,8 @@ generated hooks remain repo-local and must not discover or run sibling
 `ai-agent` memory or dependency commands. The stale health-check and policy
 claims are aligned to that contract and verified in a disposable Git fixture.
 No shared hook, product, provider, runtime, secret or deployment state changes.
+
+The fixture pins `core.hooksPath` below its private temporary repository,
+checks all generated hook paths and a bounded outside snapshot, and exercises
+both the clean generated-hook PASS and an injected sibling-memory FAIL. The
+hook generator itself remains byte-unchanged.

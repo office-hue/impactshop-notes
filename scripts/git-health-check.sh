@@ -47,18 +47,11 @@ if [[ -x "$HOOK_PATH" ]]; then
     FAIL_COUNT=$((FAIL_COUNT + 1))
   fi
 
-  if rg -q -- 'memory:gate' "$HOOK_PATH"; then
-    echo "[git-health-check] OK: pre-push memory gate bekötve"
-  else
-    echo "[git-health-check] FAIL: pre-push hookból hiányzik a memory:gate"
+  if rg -q -- 'resolve_ai_agent_repo|AI_AGENT_REPO|npm[[:space:]]+--prefix.*memory:' "$HOOK_PATH"; then
+    echo "[git-health-check] FAIL: pre-push hook tiltott sibling-memory függést tartalmaz"
     FAIL_COUNT=$((FAIL_COUNT + 1))
-  fi
-
-  if rg -q -- 'memory:sync-pr' "$HOOK_PATH"; then
-    echo "[git-health-check] OK: pre-push PR auto-memory sync bekötve"
   else
-    echo "[git-health-check] WARN: pre-push hookból hiányzik a memory:sync-pr"
-    WARN_COUNT=$((WARN_COUNT + 1))
+    echo "[git-health-check] OK: pre-push hook repo-local; nincs sibling-memory függés"
   fi
 
   if rg -q -- 'safe-repo-audit\.sh' "$HOOK_PATH"; then

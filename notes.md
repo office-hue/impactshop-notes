@@ -7790,3 +7790,8 @@ secret/cron/watchdog state changed.
   locally and the task now runs on the repo-accepted retained engine. The first
   bind exposed only a stale fallback task-request digest; plan and continuity
   now use the controller-projected canonical digest.
+- Implementation: `git-health-check.sh` now rejects forbidden sibling-memory
+  patterns instead of requiring removed memory hooks; PR policy matches the
+  repo-local contract. The private-hook fixture passes both the clean positive
+  and injected negative cases without changing shared hooks. The hook generator
+  itself is unchanged.

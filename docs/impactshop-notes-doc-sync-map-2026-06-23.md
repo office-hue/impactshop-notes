@@ -222,3 +222,9 @@ protected change record, continuity, governance plan, bastion status,
 They must all preserve repo-local hook isolation and must not claim that a
 sibling `ai-agent` memory command is executed. Shared hook installation and all
 external/runtime mutations remain outside this unit.
+
+Implementation evidence is `tests/install-hooks-policy-parity.test.sh`: the
+fixture owns an absolute private hook path, proves the generated hook passes
+with `WARN=0 FAIL=0`, proves an injected sibling-memory dependency fails with
+`WARN=0 FAIL=1`, and verifies the bounded source/shared-hook snapshot is
+unchanged. `scripts/install-hooks.sh` required no source change.

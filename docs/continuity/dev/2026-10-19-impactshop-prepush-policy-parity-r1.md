@@ -56,6 +56,18 @@ targeted fixture and affected governance checks.
 The canonical identity-only follow-up review returned `PASS` on plan digest
 `91b0a718...3555d47`; scope, allowlist and acceptance remain unchanged.
 
+The plan is now bound at anchor `e51024f2fab4bdd8e166c1e7fc59018110794eda`
+with capsule `375384da6caa6552b271031f9f29e36b04fc045c24416e827c973d79f281a11a`.
+Secretary/context returned `continue`; memory was `unavailable` with no missing
+fact, so it is advisory. The implementation changes the health check, PR policy
+and isolated fixture only; `scripts/install-hooks.sh` remains unchanged.
+
+Targeted syntax and fixture execution pass. The positive fixture reports
+`WARN=0 FAIL=0`; the injected forbidden dependency reports `WARN=0 FAIL=1`;
+the bounded outside snapshot remains identical. Next: run the base-selected
+affected/protected checks, freeze the candidate, then perform one independent
+candidate review.
+
 ## Preserved authoring handover reference
 
 Per workspace handover policy, future session/worktree handovers preserve the

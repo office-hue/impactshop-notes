@@ -1567,3 +1567,7 @@ lane-specific. No live or remote mutation occurred.
 - Canonical lifecycle start is `current` on the verified retained engine after
   the distributed dispatcher hotfix. One bind attempt found a stale fallback
   request digest; the canonical digest is prepared for a new plan checkpoint.
+- Plan bind is complete at `e51024f2...`, capsule `375384da...`. Targeted shell
+  syntax and the isolated hook-policy fixture pass; shared hooks and
+  `scripts/install-hooks.sh` remain unchanged. Candidate-bound protected checks
+  and final independent review remain pending.
