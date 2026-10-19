@@ -43,6 +43,11 @@ provider or runtime state is modified.
   heading fragment, and its approval reference was not yet resolvable inside
   that plan. The correction adds an explicit, non-authority-expanding approval
   reference section and points the record to that exact heading.
+- `full-validation-failed:scripts/check-protected-file-touch.sh`: one
+  publication-admission attempt after the plan-reference repair. Direct
+  diagnostic execution identified the exact missing `deploy_guard` smoke tags:
+  `deploy:checksum-verify` and `deploy:guard-preflight`. They are added to the
+  existing governance smoke scope without authorizing or executing deployment.
 
 ## Next action
 
@@ -99,6 +104,12 @@ repo-local publication admission then stopped before freeze with
 The traceability-only correction above invalidates only the exact-tree review
 and publication admission evidence. After committing it, rerun the exact-tree
 review once, then the repo-local `full-validate`, `freeze` and `verify` path.
+
+That corrected candidate passed its fresh exact-tree review. The next
+`full-validate` reached the protected-touch subcheck and exposed the separately
+diagnosed missing `deploy_guard` smoke tags recorded in the failure ledger.
+After committing that metadata-only correction, refresh only the invalidated
+diff check and exact-tree review, then rerun the admission chain.
 
 ## Preserved authoring handover reference
 

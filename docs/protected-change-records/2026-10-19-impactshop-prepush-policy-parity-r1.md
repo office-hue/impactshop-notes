@@ -12,6 +12,8 @@
   ],
   "rollbackNote": "Revert the single source merge. The package changes no shared hook, product, provider, runtime, credential or production state.",
   "smokeTags": [
+    "deploy:checksum-verify",
+    "deploy:guard-preflight",
     "governance:hook-policy-parity",
     "governance:repo-local-isolation",
     "governance:sibling-memory-denied"
