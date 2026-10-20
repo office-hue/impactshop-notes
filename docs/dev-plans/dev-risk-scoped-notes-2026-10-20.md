@@ -1,6 +1,6 @@
 # Notes risk-scoped DEV — T1 compatibility source
 
-Status: approved source scope; detailed implementation review pending. Not a
+Status: implemented, bounded source review closed; native source commits pending. Not a
 push, merge, installation, activation or production acceptance.
 
 <!-- DEV-DELIVERY-V2-MANIFEST
@@ -212,3 +212,23 @@ candidate-independent bound reads, local-main selection versus controller
 fetched-base compatibility, no fallback, unchanged T1 root policy/hook gates.
 Its protected-preimage requirement is recorded in the protected change record.
 This is plan review, not implementation acceptance or a typed old-model receipt.
+
+## Implementation closure
+
+The bounded independent five-axis review found three medium issues and then
+verified all three fixes: Git replacement objects cannot override committed
+policy, safe native JSON reason codes remain actionable without raw disclosure,
+and linked fixture metadata cannot redirect writes through ambient Git state.
+Final client SHA-256
+`6bbffde88ed921d4e439d77bee6a3a07204f9a1b046f12439b76cc3b3be2db04`;
+test `f26f3ad207348f4b69138bb096fbc742779e7aed0ed49344a229a1c38904c1e3`.
+No material issue remains across the five axes. Evidence is 65/65 before
+those source repairs plus 12/12 targeted post-repair cases; no full final-suite
+claim. Syntax/diff checks pass. Final new-client real `context --render`
+verified engine and `writes:false`, packet absent, lifecycle state unchanged.
+Exact evidence and audit/repair ledger are in the continuity document.
+
+Native lane requires separate ops source and protected Bastion-status commits.
+That source finalization does not publish or activate the package. Hub/Factlens
+task bootstrap is the next main-dependent operation and requires a NEW narrow
+quiet window; the former Notes bootstrap confirmation was already released.

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+// Existing CI entrypoint also covers the hermetic retained-engine adapter.
+import './dev-v4-lifecycle-client.test.mjs';
 import crypto from 'node:crypto';
 import { evaluatePhpCapability, validatePhpBinary, validatePhpObservation, validatePhpReceipt } from '../scripts/dev-v4-admission.mjs';
 import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import {spawnSync} from 'node:child_process'; import test from 'node:test';

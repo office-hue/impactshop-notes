@@ -30,6 +30,10 @@ its own tested exact rollback inputs and authority.
 
 ## Smoke checklist
 
-Node22 focused hermetic fixture, client syntax, diff hygiene, native local
-protected-touch and lane checks. Results pending until recorded in continuity.
+Node22 hermetic integration 65/65 before audit repairs, then 12/12 targeted
+post-repair cases; source/test syntax and diff hygiene PASS. Independent
+five-axis review closed three concrete findings; exact source/test hashes and
+the real read-only bound Secretary proof are in continuity. No full final-suite
+claim. Native local protected-touch and lane checks run at their own commit
+boundaries; protected status finalization is separate from the ops source commit.
 Manual UI: N/A, no UI/product path changed. No live smoke or production claim.

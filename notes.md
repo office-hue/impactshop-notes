@@ -7785,6 +7785,14 @@ secret/cron/watchdog state changed.
   read-only Secretary view without changing task pins or root routing policy.
 - No shared hooks, primary/sibling worktree, dependency, provider, installed or
   product mutation. Tests and implementation acceptance are not yet claimed.
+- The required docs anchor committed as `9149a1735d3b32ac52d9e2006626d6bebb1d46c8`
+  through native hooks. Supported bind/readback now verifies exact plan,
+  `dev-governance-source` and retained engine; implementation is in progress.
+- Implementation now complete and independently source-reviewed on five axes.
+  Three audit findings fixed; 65/65 pre-repair integration cases plus 12/12
+  post-repair targeted cases, syntax/diff PASS. Real bound Secretary render is
+  read-only with unchanged state/verified engine; packet absent, not retrieved.
+  Native source/Bastion commits remain; no fresh start, install or activation.
 
 ## 2026-10-19 — Pre-push policy parity R1 planning checkpoint
 

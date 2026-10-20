@@ -31,6 +31,98 @@ blocker across the five axes, input plan SHA-256
 Protected base preimage is recorded before any status touch. This is not a
 normal old-model review receipt or implementation PASS.
 
+Supported bind completed after native-hook docs anchor commit
+`9149a1735d3b32ac52d9e2006626d6bebb1d46c8`. Controller readback:
+`status:bound`, revision 2, selector `dev-governance-source`; projection
+`status:current`, `writes:false`, engine `verified`, plan ID exact. Capsule
+SHA-256 `17a9f3565fb928a944d46da8ecefc389ff1f2ca493122434502de849c985ec68`.
+This is local source authority, not publication/host authorization. The bounded
+client and private-fixture implementation is now in progress; no real start,
+fetch, shared hook or provider command was run.
+
+Editing ledger: two documentation patch applications initially had mismatched
+literal contexts (wrapped baseline lines), with no partial write. Diagnosis:
+readback confirmed source wrapping, not a product/controller failure. Repair
+plan: use exact read-back contexts and smaller file groups; corrected patches
+applied. No executable repair or test rerun was involved.
+
+Native commit-lane preflight by source inspection: the client is `ops`, while
+the Bastion status document is `protected`. They must not be mixed in one
+commit or leave a conflicting open lane. Commit the reviewed client/tests and
+non-protected DocSync first; then apply/commit the Bastion status update with
+its existing change-record, rollback and smoke inputs. No lane-guard bypass.
+
+Legacy Phase 0 readback (Node22 `scripts/dev-v4-admission.mjs --phase0`):
+`v2-only`, reason `capsule_missing`, combined `planning-only`. Its historical
+marker route is not the installed schema-3 lifecycle state route. Exit zero is
+not an admission PASS. The actual supported controller bind/projection above
+is the source authority; no marker is invented and the legacy helper is not
+changed to hide this result. T2 hook/controller coupling remains separate.
+
+## Implementation evidence and bounded audit repair
+
+Initial client `373f7144389f67c39dbd99de535b172f0dda057f3a39c61f2dc89ad5ea15a58b`
+and strengthened/isolation-fixed test
+`c195af60071242343b29bfa77f6cad81f302816d3c626885d096ba16d9253d2d`:
+the existing Node22 admission CI-entrypoint integration run passed 65/65 in
+30.974 seconds (45 new adapter cases plus 20 existing cases). It used private
+fixtures, no provider/CI trigger. This is PRE-audit-repair evidence, not proof
+of the later final bytes.
+
+The new client also rendered the real bound Secretary view successfully:
+`writes:false`, packet `absent`, engine `verified`. Own lifecycle state SHA-256
+was identical before/after (`17a9f356...` above); no consume receipt is claimed.
+
+Independent five-axis review identified three medium issues before acceptance:
+
+1. Local Git replacement refs could redirect committed policy objects, and the
+   historical controller inherits that behavior. Diagnosis: removing ambient
+   Git variables alone does not disable replacements. Repair: fixed
+   `GIT_NO_REPLACE_OBJECTS=1` for reads and forwarded controller environment,
+   with a private replacement-blob regression and env readback.
+2. Generic nonzero-controller errors lost actionable recovery reason codes.
+   Repair: a small explicit allowlist of real native JSON error codes; unknown,
+   raw, malformed or duplicate-field output stays sanitized. Test known policy
+   mismatch/branch conflict and secret-bearing unknown output.
+3. The linked-worktree fixture had one direct Git metadata read outside its
+   sanitized helper, followed by a state write. Repair: use the same isolated
+   helper, assert private-fixture metadata containment BEFORE writing, and add
+   hostile ambient Git coverage for that branch as well.
+
+Earlier test-only improvements removed a false-positive negative-test pattern
+and isolated fixture Git setup with a private empty hooks directory and normal
+commits. The three findings above are diagnosed first-pass audit discoveries,
+not failed blind repairs. Implementer is applying only these bounded repairs;
+final focused verification and independent closure are still pending.
+
+## Final bounded source review and verification
+
+All three findings above are fixed and independently closed by
+`/root/source_review_risk_scope` (6.1 Sol/high), with no remaining material
+issue on operability, functionality, coherence, security or risk. Final hashes:
+
+- client: `6bbffde88ed921d4e439d77bee6a3a07204f9a1b046f12439b76cc3b3be2db04`;
+- test: `f26f3ad207348f4b69138bb096fbc742779e7aed0ed49344a229a1c38904c1e3`.
+
+One post-repair targeted Node22 run: 12/12 PASS in 5.507 seconds. It covers
+replacement-object pin selection and forwarded environment, fixture isolation,
+hostile linked-worktree metadata/foreign-fixture unchanged proof, known native
+policy and branch failures, unknown/duplicate/malformed/wrong-status output,
+and the prior sanitization cases. Both source/test syntax checks and scoped
+diff-check pass. Unchanged prior coverage is reused, not reported as a new
+full final-suite run. Failed tests/failed code repairs: zero.
+
+Final production bytes also passed the REAL read-only bound Secretary render:
+exit 0, engine `verified`, selector/task exact, `writes:false`, packet `absent`.
+Lifecycle state SHA-256 remained `17a9f356...` before/after. This is not a real
+fresh start, consumed packet, install or activation test. Reviewer ran no tests
+or external mutations; this is source review, not a forged native/5.6 receipt.
+
+Local refs/replace inventory was empty; the protected base-preimage hash was
+rechecked with replacements disabled and matches the record. Next: native ops
+source commit, then separate protected Bastion-status finalization. No quiet
+window is active or needed for those own-branch commits.
+
 Preserved author-work pointer: `SUBSTACK-HANDOVER.md` in the ai-agent author
 workspace is reference-only, not this DEV task. Do not claim its referenced
 editorial files were loaded here or execute editorial work.
