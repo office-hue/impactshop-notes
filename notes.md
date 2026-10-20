@@ -7793,6 +7793,10 @@ secret/cron/watchdog state changed.
   post-repair targeted cases, syntax/diff PASS. Real bound Secretary render is
   read-only with unchanged state/verified engine; packet absent, not retrieved.
   Native source/Bastion commits remain; no fresh start, install or activation.
+- Native source committed as `abd48f5bc3491c8c9f9df211804800b276358e16`, tree
+  `0b3c11b588d494660c0cce5420ac1305c3c373d4` matched staged candidate; normal
+  hooks/lane checks passed. Separate protected Bastion/docs checkpoint only.
+  Next Hub/Factlens bootstrap needs a new short quiet window, not main chasing.
 
 ## 2026-10-19 — Pre-push policy parity R1 planning checkpoint
 

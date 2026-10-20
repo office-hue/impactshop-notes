@@ -37,3 +37,9 @@ the real read-only bound Secretary proof are in continuity. No full final-suite
 claim. Native local protected-touch and lane checks run at their own commit
 boundaries; protected status finalization is separate from the ops source commit.
 Manual UI: N/A, no UI/product path changed. No live smoke or production claim.
+
+The protected-status local preflight passed using the existing guarded input
+route: this exact change record, explicit source revert rollback note, and
+`dev-t1,hermetic,docs-sync` smoke scope. The protected predicate/guard was not
+changed or bypassed. The executable source commit had already passed normal
+native hooks and exact staged-tree readback separately.

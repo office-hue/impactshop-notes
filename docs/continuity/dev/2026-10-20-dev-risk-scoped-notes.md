@@ -123,6 +123,31 @@ rechecked with replacements disabled and matches the record. Next: native ops
 source commit, then separate protected Bastion-status finalization. No quiet
 window is active or needed for those own-branch commits.
 
+## Native source checkpoint and next task
+
+Native source commit `abd48f5bc3491c8c9f9df211804800b276358e16` passed the
+existing hooks/lane checks, no override or bypass; tree readback
+`0b3c11b588d494660c0cce5420ac1305c3c373d4` exactly matched the staged tree.
+Only the separate protected Bastion-status/docs finalization follows; it uses
+the existing protected-record/rollback/smoke input route, without changing any
+guard. The frozen executable/test hashes remain those independently reviewed.
+
+Next main-dependent step is supported bootstrap of the Hub and Factlens
+dedicated T1 tasks, using each repo's OWN accepted descriptor. Request a new
+narrow quiet window before that operation; do not reuse the released Notes
+window. Stop/release immediately after the bounded bootstrap or unrelated
+blocker. Main is not chased. Other chats may work while no window is active.
+
+No push, PR, merge, provider call, CI trigger, dependency installation, shared
+hook edit, installed/default mutation or activation occurred in this Notes
+source checkpoint. Source readiness is not normal typed-review publication
+readiness; old-model receipts remain unclaimed. No new subagent/MCP server was
+spawned: existing bounded workers were reused and are complete.
+
+Protected-status preflight passed with the existing record/rollback/smoke
+inputs (`dev-t1,hermetic,docs-sync`). This is guarded source documentation,
+not an installed/live permission and not a guard modification.
+
 Preserved author-work pointer: `SUBSTACK-HANDOVER.md` in the ai-agent author
 workspace is reference-only, not this DEV task. Do not claim its referenced
 editorial files were loaded here or execute editorial work.

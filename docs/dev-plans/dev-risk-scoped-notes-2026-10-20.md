@@ -1,6 +1,6 @@
 # Notes risk-scoped DEV — T1 compatibility source
 
-Status: implemented, bounded source review closed; native source commits pending. Not a
+Status: source-ready local candidate; source committed and bounded review closed. Not a
 push, merge, installation, activation or production acceptance.
 
 <!-- DEV-DELIVERY-V2-MANIFEST
@@ -232,3 +232,9 @@ Native lane requires separate ops source and protected Bastion-status commits.
 That source finalization does not publish or activate the package. Hub/Factlens
 task bootstrap is the next main-dependent operation and requires a NEW narrow
 quiet window; the former Notes bootstrap confirmation was already released.
+
+Native ops source commit completed with normal hooks:
+`abd48f5bc3491c8c9f9df211804800b276358e16`, tree
+`0b3c11b588d494660c0cce5420ac1305c3c373d4`; tree readback matched the exact
+staged candidate. The separate protected status checkpoint contains no new
+executable/policy change. No push/PR/merge/install/activation occurred.

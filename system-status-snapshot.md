@@ -6,7 +6,8 @@
   Native docs anchor `9149a173...` and supported governance bind verified;
   implementation and repaired five-axis source review complete. 65/65
   pre-repair integration plus 12/12 post-repair targeted cases, syntax/diff
-  PASS. Native source/Bastion commits remain. This is not activation.
+  PASS. Native source committed `abd48f5b...`, exact staged tree verified;
+  separate protected Bastion/docs checkpoint only. This is not activation.
 - Goal: exact accepted-engine start selection and read-only Secretary render,
   retaining bound task pins and active v1 policy. No main quiet window active.
 - No shared hooks, installation, provider, WordPress, live or other-chat writes.

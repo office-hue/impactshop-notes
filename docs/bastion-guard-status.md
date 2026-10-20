@@ -1,6 +1,29 @@
 # Bastion Guard Status
 
-Last updated: 2026-10-19
+Last updated: 2026-10-20
+
+## 2026-10-20 — DEV Notes T1 source checkpoint
+
+Implemented and independently five-axis-reviewed source:
+`abd48f5bc3491c8c9f9df211804800b276358e16`, tree
+`0b3c11b588d494660c0cce5420ac1305c3c373d4`.
+The existing client now selects the exact committed-policy retained descriptor
+for an unbound start, retains dispatcher-owned bound pins and exposes exact
+read-only `context --render`. Git replacements cannot change policy authority;
+known safe native recovery codes survive sanitization. Private fixtures guard
+their metadata writes from ambient Git overrides.
+
+Evidence: 65/65 pre-audit-repair integration cases, 12/12 targeted post-repair
+cases, syntax/diff checks and a real read-only bound Secretary render with
+unchanged lifecycle state. Three medium audit findings independently closed;
+no full final-suite run, real fresh-start, installation or live smoke claimed.
+
+Plan/rollback/preimage: `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`,
+`docs/protected-change-records/2026-10-20-dev-risk-scoped-notes.md`;
+exact evidence: `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`.
+Native guards, protected inventory/hash, shared hooks, old pins, active v1
+policy and installed defaults remain unchanged. This is not a new product or
+runtime module; no UI, provider or activation acceptance is implied.
 
 ## 2026-10-19 — Pre-push policy parity R1
 

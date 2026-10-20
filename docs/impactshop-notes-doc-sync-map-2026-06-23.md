@@ -60,8 +60,9 @@ Ez a helyi map a kozos minimum statuszokat hasznalja:
 - Evidence/next: `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`,
   `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md`.
 - State: `partial` — real governance bind and repaired source audit verified;
-  65/65 pre-repair integration plus 12/12 post-repair cases. Native source and
-  separate protected Bastion-status finalization remain; installation is pending.
+  65/65 pre-repair integration plus 12/12 post-repair cases. Native
+  source commit `abd48f5b...` exists; protected Bastion-status is a separate
+  docs checkpoint. Installation/activation remain pending.
   No cross-repo hub, shared hooks, installed engine/default or live mutation.
   Active policy remains v1; T1 is not target activation.
 
