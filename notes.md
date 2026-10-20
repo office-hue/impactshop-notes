@@ -7776,6 +7776,16 @@ secret/cron/watchdog state changed.
   host-PHP coupling in the positive fixture; fixture-only capability isolation
   preserves the real selector's PHP requirement and passes 24/24 locally.
 
+## 2026-10-20 — Risk-scoped DEV Notes T1 start
+
+- Dedicated controller-created task `dev-risk-scoped-notes-20261020` starts at
+  `73beb6f4598acdca22e7910d39a0088cd5f38b14`; bootstrap window released.
+- Plan: `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`; source authority
+  only, governance bind pending. Fix accepted-engine selection and add a narrow
+  read-only Secretary view without changing task pins or root routing policy.
+- No shared hooks, primary/sibling worktree, dependency, provider, installed or
+  product mutation. Tests and implementation acceptance are not yet claimed.
+
 ## 2026-10-19 — Pre-push policy parity R1 planning checkpoint
 
 - Exact-main dedicated repair worktree created through the repo task starter;

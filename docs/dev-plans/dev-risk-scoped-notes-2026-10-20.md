@@ -1,0 +1,214 @@
+# Notes risk-scoped DEV — T1 compatibility source
+
+Status: approved source scope; detailed implementation review pending. Not a
+push, merge, installation, activation or production acceptance.
+
+<!-- DEV-DELIVERY-V2-MANIFEST
+{
+  "schemaVersion": 3,
+  "contractId": "dev-v4.plan",
+  "planId": "dev-risk-scoped-notes-20261020",
+  "repo": "impactshop-notes",
+  "selectorId": "dev-governance-source",
+  "identity": {
+    "taskId": "dev-risk-scoped-notes-20261020",
+    "branch": "dev/risk-scoped-notes-20261020",
+    "codeBase": "73beb6f4598acdca22e7910d39a0088cd5f38b14",
+    "policyCommit": "73beb6f4598acdca22e7910d39a0088cd5f38b14"
+  },
+  "decision": {
+    "state": "approved",
+    "summary": "Implement the explicitly requested exceptional central DEV target adapter, retaining old task pins and active v1 policy until staged engine rollout; source only."
+  },
+  "authorization": {
+    "source": "task-request",
+    "taskRequestDigest": "43dcac432fc6a8f8abf1960136bf112bdc51a70013d8638705b164ead61ca9e9"
+  },
+  "scope": {
+    "changeImpact": "governance-only",
+    "riskTier": "high",
+    "releaseProfile": "source-only",
+    "changeAllowlist": [
+      "scripts/dev-v4-lifecycle-client.mjs",
+      "tests/dev-v4-lifecycle-client.test.mjs",
+      "tests/dev-v4-admission.test.mjs",
+      "docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md",
+      "docs/protected-change-records/2026-10-20-dev-risk-scoped-notes.md",
+      "docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md",
+      "docs/dev-v4-lifecycle-installed-controller-impactshop-notes-2026-09-27.md",
+      "docs/impactshop-governance-system-plan-2026-06-16.md",
+      "docs/impactshop-notes-doc-sync-map-2026-06-23.md",
+      "docs/bastion-guard-status.md",
+      "notes.md",
+      "system-status-snapshot.md"
+    ],
+    "documentationTargets": [
+      "docs/dev-v4-lifecycle-installed-controller-impactshop-notes-2026-09-27.md",
+      "docs/impactshop-governance-system-plan-2026-06-16.md",
+      "docs/impactshop-notes-doc-sync-map-2026-06-23.md",
+      "docs/bastion-guard-status.md",
+      "docs/protected-change-records/2026-10-20-dev-risk-scoped-notes.md",
+      "docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md",
+      "notes.md",
+      "system-status-snapshot.md"
+    ]
+  },
+  "validation": {
+    "profileId": "affected",
+    "recipePolicyCommit": "73beb6f4598acdca22e7910d39a0088cd5f38b14"
+  }
+}
+DEV-DELIVERY-V2-MANIFEST -->
+
+## Goal and authority
+
+Arnold explicitly requested continued implementation of the central DEV change
+on its exceptional separate source route. This is the Notes target portion of
+that existing task, not a product/WordPress task or a new central framework.
+The manifest carries the real installed controller task-request digest, not a
+manually invented approval. Code writes require a clean committed plan anchor
+and successful supported `bind`; maintenance-docs alone does not authorize them.
+
+Parent source: `office-hue/ai-agent`, branch `dev/risk-scoped-20261020`, candidate
+`d329593dfd831c97dd3b505eb1d70cbae8f88df8`, tree
+`68186498f3280e34a7d390b56d568ef3fa300919`. Parent plan:
+`docs/dev-plans/dev-central-exclusive-write-surfaces-risk-scoped-20261020.md`.
+This target starts at Notes commit `73beb6f4598acdca22e7910d39a0088cd5f38b14`,
+tree `0f7aff058cc3f2579dabc7580cd470ea49794682`. No moving-main synchronization
+is needed for these local source edits.
+
+## Smallest functional T1 change, file by file
+
+1. `scripts/dev-v4-lifecycle-client.mjs`: preserve the existing installed fixed
+   dispatcher and its verification, argument allowlist and timeout. A bound
+   task delegates engine selection to the dispatcher, preserving its exact pin;
+   no installed-default replacement or manual capsule/state edit. For unbound
+   `start`, require the canonical primary main checkout, resolve the locally
+   known `refs/remotes/origin/main` once without fetching, and select the exact
+   accepted retained-engine canonical descriptor from that committed policy,
+   never HEAD or candidate working-tree JSON. Bound reads must not depend on
+   current candidate contract contents. Resolve real Git metadata paths; an
+   unsafe state or orphan lifecycle directory is not an unbound task. Reject ambiguous,
+   missing or unsafe identities, stale-policy mismatch, descriptor conflicts,
+   malformed output and unknown/duplicate arguments. The historical controller
+   fetches internally and revalidates against its actual fetched base before
+   creating a worktree/state. It has no expected-base argument: this adapter
+   selects compatibility, not proof that the two snapshots are identical.
+   Incompatible drift must fail closed there. Actual starts need a new narrow
+   quiet window; this local source package runs no real start. Do not probe multiple
+   engines or retry with the global default. Expose only `context --render` as
+   the additional read-only Secretary view, retaining refresh/consume syntax.
+   Errors must not echo arbitrary controller output or credentials. Existing
+   test root/data-root seams are not new public arbitrary-command authority.
+2. `tests/dev-v4-lifecycle-client.test.mjs`: hermetic temporary Git/dispatcher
+   fixtures prove unbound selection despite mismatching default, candidate
+   policy non-authority, exact source/digest, bound-pin preservation, unsafe or
+   ambiguous state/descriptor refusal, origin mismatch, narrow context render,
+   duplicate/unknown argument refusal and sanitized malformed output. Fixtures
+   must not fetch, use real installed state, call models, install hooks or touch
+   sibling worktrees. Validate the dispatcher argv, not invented controller
+   success. Synthetic responses are fixture evidence only.
+3. `tests/dev-v4-admission.test.mjs`: register/import the focused fixture so the
+   existing CI suite covers it; do not change workflows or unrelated product
+   assertions. Do not make host PHP a dependency of the focused new tests.
+4. Installed-controller guide: document descriptor selection, bound-task
+   behavior, exact recovery instructions, Secretary absent/unavailable versus
+   retrieved state, and T1/T2 separation.
+5. Governance plan, DocSync map, Bastion status, notes and status snapshot:
+   cross-link this exact plan and protected record; record only actually run
+   tests and audit findings, never imply installation or completed rollout.
+6. Protected record and continuity: preserve identity, goal, authority limits,
+   failure ledger, rollback, audit findings and the next unblocked operation.
+
+No active root policy, selector, guard hash, shared hook or wrapper changes are
+part of this bounded T1. Hook `requirements` coupling is deferred to compatible
+T2 source rather than introducing an old-model blocker. Dormant policy copies
+are omitted: the controller reads five existing root policies, so inert JSON
+would not activate routing and would add maintenance without functionality.
+
+## Controls, recovery and cost
+
+Hard boundaries remain: foreign repo/worktree, branch/origin/task/base mismatch,
+unsafe files, authority/integrity/CAS, native protected/lane guards, actual
+security/data-loss/live risk, and existing machine prohibitions. Resolve missing
+facts with the supported controller/source repair; do not disable the guard.
+Optional memory/context absence and unrelated registered checks are visible
+advisories, not fabricated PASS or reasons for global repair/rerun. No actual
+5.6 model execution or false 5.6 receipt: use available 6.1 Sol/high for bounded
+source/security review and 6 Astra/high only for concrete unresolved complexity.
+The old typed review route may remain unverified; exceptional source evidence
+does not claim normal lifecycle publication readiness.
+
+Failure ledger: the original default-engine Notes bootstrap refusal was
+diagnosed as repo/default mismatch, then resolved once using the accepted
+canonical descriptor and supported task-start. New local failure identifiers
+start with zero failed repairs. After two failed repairs of one identifier,
+write diagnosis plus a short repair plan before another fix. No blind retries.
+
+Rollback: revert this target source commit through normal guarded Git; no task
+pin, installed package, global default, runtime, provider or data change needs
+reversal. Do not use source revert as a substitute for a future host rollback.
+
+## Five-axis acceptance and validation
+
+- Operability: deterministic private fixture success and one read-only bound
+  task/context handoff, without installed mutation or default fallback.
+- Functionality: reproduce the mismatch and fix exact descriptor forwarding;
+  bound pins and old v1 consumers remain unchanged.
+- Coherence: code/test/CI registration/DocSync/Secretary status agree; T1 is
+  source compatibility, never final risk-scoped activation.
+- Security: committed authority, fixed dispatcher, exact identity, refusal of
+  unsafe/ambiguous paths and no raw-output leakage; no gate bypass.
+- Risk: private fixtures, bounded subprocesses, no network/shared-hook/provider
+  writes; complete source and later host rollback are separate.
+
+Run focused Node22 tests and syntax check, `git diff --check`, native
+protected-touch/lane checks applicable to the exact staged paths, and a bounded
+independent source review. Reuse unchanged original sequential fresh plan-audit
+evidence; review this concrete target design separately, incorporate findings
+before implementation, then verify the changed candidate. The existing broad
+installed-CLI test is host dependent and is not a substitute for hermetic tests.
+PHP/WordPress/browser/provider suites are N/A to this no-product delta, not PASS.
+Manual UI checklist: no UI, browser or user-data path is modified; no live smoke
+is claimed. Bastion sources and native guards are not weakened or replaced.
+
+## Publication through activation: explicit remaining prerequisites
+
+1. Commit the required documentation identity anchor using native hooks, then
+   supported controller bind/readback to `dev-governance-source`; no remote action.
+2. Implement only the allowlist, correct independent review findings, run only
+   invalidated tests, DocSync and guarded source commit on this branch.
+3. Before any push/PR: load current release-operations policy, inspect actual
+   provider trigger prestate, exact candidate/check evidence and authorization;
+   preserve native hooks. Current source authorization is not a provider permit.
+   Source-ready, pushed, PR, merged, installed and accepted are distinct states.
+4. Request a new narrow main quiet window only at actual integration/merge.
+   Verify exact current prestate/CAS/required checks and target merge witness;
+   stop and release the window after bounded main work or unrelated blocker.
+5. Complete central S/P plus Notes/Hub/Factlens T1 source roles: four repository
+   merge witnesses cover five roles. No unnecessary new publisher framework.
+6. Assemble the exact staged release-set. Separately authorized Air install,
+   engine-only canary and rollback readiness, then Mini install/canary, must
+   precede any routing-schema-2 root cutover. This is ENGINE-STAGE only.
+7. Separately approved T2 target-root source changes use fresh source/witness,
+   grant and CAS; T1 rights do not authorize them. Preserve predecessor pins.
+   Old engines parse only v1; premature root v2 would break fresh task starts.
+8. After T2, verify actual target behavior and safe rollback on Air then Mini.
+   Only these readbacks establish target activation/acceptance. Never call
+   dormant files or the first engine-only canary final activation.
+
+No quiet window is active during this local source work. No paid generation,
+dependency install, CI trigger, provider build/deploy or host scan is authorized
+by this document. Secretary read-only context may be absent; this continuity
+document is not a consumed packet receipt.
+
+## Bounded target design review
+
+Independent `/root/source_review_risk_scope` (actual 6.1 Sol/high) reviewed plan
+SHA-256 `b227609ff500b92da474dfb1e3577b55ceae7534a4cef2a93c30e7ca65f37fe5`
+and found no material blocker on the five required axes before anchor/bind.
+The concrete design observations are incorporated: real Git metadata,
+candidate-independent bound reads, local-main selection versus controller
+fetched-base compatibility, no fallback, unchanged T1 root policy/hook gates.
+Its protected-preimage requirement is recorded in the protected change record.
+This is plan review, not implementation acceptance or a typed old-model receipt.

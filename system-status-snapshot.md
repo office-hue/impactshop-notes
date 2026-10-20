@@ -1,3 +1,13 @@
+## 2026-10-20 — Notes DEV T1 local source start
+
+- Task `dev-risk-scoped-notes-20261020`, dedicated branch, exact base
+  `73beb6f4598acdca22e7910d39a0088cd5f38b14`.
+- Source plan: `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`.
+  Governance bind and implementation checks pending; this is not activation.
+- Goal: exact accepted-engine start selection and read-only Secretary render,
+  retaining bound task pins and active v1 policy. No main quiet window active.
+- No shared hooks, installation, provider, WordPress, live or other-chat writes.
+
 ## 2026-09-11 — Sharity profile production accepted
 
 - Runtime source: merged `origin/main@e9d9c934fb7bfce4ec9bb2af0586f19a8d9782f6`.
