@@ -18,9 +18,17 @@ produce clean-commit validation evidence; the record is not a PASS receipt.
     "scripts/worktree-continuity-guard.sh"
   ],
   "rollbackNote": "Revert only the Notes T1 source commits through native guarded Git; preserve task pins, retained engines and all live runtime state.",
-  "smokeTags": ["dev-t1", "hermetic", "docs-sync"]
+  "smokeTags": ["dev-t1", "hermetic", "docs-sync", "deploy:guard-preflight", "deploy:checksum-verify"]
 }
 <!-- END PROTECTED SOURCE ADMISSION -->
+
+The two `deploy:*` tags are the unchanged native `deploy_guard` group's required
+scope labels because this package touches `worktree-continuity-guard.sh`. They
+are not a claim that production deployment or remote smoke ran. For this T1
+source-only change, evidence is the reviewed guard/client hermetic fixtures,
+actual read-only installed continuity preflight, checksum comparison against
+the reviewed source, and unchanged deploy entrypoints/hash inventories at the
+pinned base. Any future live deploy still requires its own full preflight.
 
 The executable client and native continuity guard are both protected source
 surfaces for this adapter. Their reviewed hashes and tests remain those in

@@ -1,5 +1,23 @@
 # Notes DEV T1 continuity
 
+## Source admission validation diagnosis — 2026-10-21
+
+Metadata commit `6a5c4d65f9b0f572cbc2f59eb2480803de68b530` passed native commit
+hooks. Initial same-task bind incorrectly supplied the legacy-only
+`--policy-commit` argument; installed controller source identifies
+`legacy_options_require_legacy_state`, with state unchanged. Omitting that
+argument bound revision 6 successfully and preserved the original policy/engine.
+
+The first native `full-validate` then failed in protected-touch. A direct
+diagnostic identified the exact missing tags `deploy:guard-preflight` and
+`deploy:checksum-verify`, required by the unchanged model for the continuity
+guard. Repair is limited to adding those scope labels to the source record,
+with explicit local evidence and no live/deploy PASS. This is the first repair
+of this failure identifier; no unchanged failed validation is rerun.
+Commit this documentation, bind without legacy-only arguments, then perform
+native full validation/bastion. Successful final evidence remains a separate
+private, exact-HEAD receipt, not a claim made in advance here.
+
 ## Native publication prerequisite repair — 2026-10-21
 
 Pre-push inspection found the actual CI adapter requires a schema-1 protected
