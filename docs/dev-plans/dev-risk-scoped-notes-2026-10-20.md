@@ -1,5 +1,27 @@
 # Notes risk-scoped DEV — T1 compatibility source
 
+## Jóváhagyott különutas kiadás és végső review — 2026-10-21
+
+Arnold kifejezetten jóváhagyta a Notes és Hub saját különutas forráskiadását,
+valódi 6.1 Sol/high review-val, a natív biztonsági védelmek megtartásával,
+hamis lifecycle PASS nélkül. Ez nem a központi kivétel újrafelhasználása,
+nem 5.6 receipt és nem termékdeploy-/hosttelepítési engedély.
+
+Az elkülönített `notes_release_review_61` review-invokáció kifejezetten
+`gpt-6.1-sol/high` beállítással vizsgálta a pontos 13 fájlos deltát az öt tengelyen.
+Külön runtime-attesztációt nem állítunk. Egy P2 hibát talált: a continuity guard
+100644 módja miatt a natív pre-push `-x` feltétele kihagyta. Javítás commitja
+`6b655531092b0589a630ddcfb047f3ddfab41da5`: kizárólag 100755 mód és a meglévő
+regressziós teszt közvetlen végrehajtása/X_OK ellenőrzése. Guard/client tartalom
+változatlan; a reviewer a forrásoldali findingot lezárta.
+
+Célzott módosított teszt 1/1 PASS. A korábbi 86/86 sorozatból a többi 85 eset
+változatlan; nem állítunk új teljes futást. A valódi telepített pre-push hook
+hálózati push nélküli negatív canaryja elérte a guardot és
+`lifecycle_continuity_dirty_push` hibával helyesen megállt. A tiszta végleges
+commit/bind utáni pozitív canary, natív Bástya és tényleges PR/CI még szükséges.
+A normál controller régi modellhez kötött review-ja továbbra sem PASS.
+
 Status: original source committed; native v3 continuity repair implemented and
 independently reviewed, final client 86/86 and legacy fixture PASS. Local repair
 checkpoint and central exact T1 path addition precede native publication.

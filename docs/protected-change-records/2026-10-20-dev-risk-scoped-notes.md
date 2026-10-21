@@ -1,5 +1,16 @@
 # Notes DEV T1 protected change record
 
+## Végső natív útvonaljavítás — 2026-10-21
+
+Kifejezett Notes-specifikus különutas forráskiadási jóváhagyás és elkülönített
+6.1 Sol/high review alapján a continuity guard tracked módja100755 lett.
+A módhiba miatt a valódi hook korábban kihagyta a guardot; a tartalma nem változott.
+A közvetlen végrehajtás regressziós tesztje1/1 PASS, az installed pre-push
+dirty-push negatív canaryja a várt continuity elutasítást adta. Ez megerősíti,
+nem oldja fel a natív védelmet. A pozitív végső canary külön szükséges.
+Rollback kizárólag normál guarded source revert; nincs shared hook/host/data
+visszaírás. A gépi protectedPaths/rollback/smoke kör változatlan marad.
+
 ## Native source-admission binding — 2026-10-21
 
 This block expresses the already approved Notes T1 source scope in the existing

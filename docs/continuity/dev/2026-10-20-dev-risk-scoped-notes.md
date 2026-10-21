@@ -1,5 +1,22 @@
 # Notes DEV T1 continuity
 
+## Különutas kiadási review és natív elérhetőség — 2026-10-21
+
+Arnold a Notes/Hub saját különutas forráskiadását kifejezetten jóváhagyta,
+valódi6.1 Sol/high review-val és natív védelem megtartásával. Elkülönített
+`notes_release_review_61` invokáció, gpt-6.1-sol/high; nincs külön runtime-
+attesztáció vagy hamis régi controller receipt. Egy érintett P2: a guard0644
+miatt a natív -x ág nem futott. A6b655531 commit csak a tracked módot100755-re
+és a wrapperteszt közvetlen végrehajtását módosítja; reviewer finding lezárt.
+
+Tényleges célzott teszt1/1 PASS, a többi85 változatlan eredmény újrahasznált.
+Teszt SHA256: `d07e8708c20a1671d211ca44c9e6ca64bc714d30c8ec3781ecfbdd86dc3fefeb`.
+Client/guard tartalmi hash változatlan. Installed pre-push negatív canary:
+natív audit/protected/lane siker után tényleges `lifecycle_continuity_dirty_push`
+elutasítás; nem történt hálózati push, shared hook/config/pin módosítás.
+Végleges tiszta commit/bind utáni pozitív canary és Bástya még ellenőrzendő;
+ez a bejegyzés nem állítja előre azok eredményét vagy a PR/merge megtörténtét.
+
 ## Source admission validation diagnosis — 2026-10-21
 
 Metadata commit `6a5c4d65f9b0f572cbc2f59eb2480803de68b530` passed native commit

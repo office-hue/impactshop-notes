@@ -1,5 +1,11 @@
 ## 2026-10-21 — Notes T1 natív forráskiadási előfeltétel
 
+Aktuális kiegészítés: Arnold külön jóváhagyta a Notes/Hub saját forráskiadását.
+A6.1 Sol/high review P2 találatát javító6b655531 commit a continuity guardot
+futtathatóvá tette, közvetlen végrehajtási teszt1/1 PASS. Installed pre-push
+negatív canary valóban elérte és dirty-pushnál megállította a guardot. Végső
+pozitív canary/CI/publikálás még hátravan; régi lifecycle PASS nem keletkezett.
+
 - Push előtt feltárt hiány: a meglévő protected change recordból hiányzott
   a natív adapter által elvárt gépi forrásjóváhagyási blokk. A javítás kizárólag
   dokumentációs bekötés, a már jóváhagyott három védett forrásfelületre.

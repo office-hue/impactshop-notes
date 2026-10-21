@@ -1,5 +1,12 @@
 ## 2026-10-21 — Notes T1 source-admission metadata preparation
 
+Latest superseding source fact: explicit target-specific exceptional publication
+approval received. Independent6.1 Sol/high review found a native-hook reachability
+defect;6b655531 fixes guard executable mode and direct-exec regression test.
+Focused1/1 PASS and actual installed pre-push dirty-state rejection observed.
+Final clean positive canary/CI/publication remain unverified; no false old-model
+lifecycle receipt, shared hook change, host install or product deploy.
+
 - Native CI admission prerequisites were inspected before publication. The
   missing schema-1 source record is connected to the existing approved task,
   exact protected paths, rollback and smoke scope; no executable/policy change.
