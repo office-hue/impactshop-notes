@@ -1,6 +1,27 @@
 # Bastion Guard Status
 
-Last updated: 2026-10-20
+Last updated: 2026-10-21
+
+## 2026-10-21 — Native v3 continuity compatibility checkpoint
+
+Adapter/tests/DOCSYNC committed with normal hooks at
+`13524ee4aee5e28d97bdc68c39141ae2db667724`, tree
+`654c515e3434cd1ac2d5fa2238edbade801ba5e2`.
+This protected checkpoint adds only the reviewed native v3 dispatch and this
+status, with existing protected record/rollback/smoke inputs. Its exact guard
+SHA-256 is `e749361a20557a54b3f60920bf4a0007f7c065dff442756907add91bdf9b56e7`.
+The combined code was verified by 86/86 client cases and the legacy multi-active
+fixture; independent five-axis review and readiness finding closure are in
+continuity. Planning/context routes and no-v3 legacy behavior remain unchanged.
+Explicit policy readiness, original pins and current identity are mandatory;
+result never grants publication authority. No legacy marker is fabricated.
+
+The required deploy_guard smoke labels map here to local guard preflight and
+exact reviewed-source checksum verification only, NOT a product deployment or
+live smoke. Guard inventories, shared installed hooks and root v1 policy stay
+unchanged. Native source publication, central exact T1 path addition and later
+Air/Mini/T2 acceptance remain pending. Rollback is guarded source revert,
+preserving task pins/packages. Manual UI: N/A, no product/UI paths changed.
 
 ## 2026-10-20 — DEV Notes T1 source checkpoint
 

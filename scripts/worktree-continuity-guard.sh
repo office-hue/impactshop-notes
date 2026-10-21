@@ -49,6 +49,15 @@ fi
 
 cd "$REPO_ROOT"
 
+V3_NAMESPACE="$(git rev-parse --git-path dev-v4-lifecycle)"
+if [[ -e "$V3_NAMESPACE" || -L "$V3_NAMESPACE" ]]; then
+  # An existing v3 namespace is authoritative for this worktree. Never forge a
+  # schema2 marker or fall back to legacy checks on an orphan/unsafe v3 state.
+  # This is context verification only, not lifecycle publication permission.
+  exec env -u DEV_V4_DATA_ROOT DEV_V4_REPO_ROOT="$REPO_ROOT" node \
+    "$REPO_ROOT/scripts/dev-v4-lifecycle-client.mjs" continuity --mode "$MODE"
+fi
+
 MARKER_FILE="$(git rev-parse --git-path worktree-active.json 2>/dev/null || true)"
 ARTIFACT_FILE="$(git rev-parse --git-path worktree-task-start-decision.json 2>/dev/null || true)"
 
