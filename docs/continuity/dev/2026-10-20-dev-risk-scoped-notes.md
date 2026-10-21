@@ -1,5 +1,60 @@
 # Notes DEV T1 continuity
 
+## Native v3 continuity implementation — 2026-10-21
+
+Plan anchor `59f81c32708f609f35d389c9616cd48a84152aab` was committed with
+native hooks, then supported bind returned revision 4, implementation-ready,
+dev-governance-source. No state/marker was edited by hand. The adapter now
+reads installed `status` (not the optional Secretary packet) and compares
+actual repo/task/branch/HEAD/tree, original base/policy/plan anchor and pinned
+engine. It requires implementation-ready policy, rejects unsafe/orphan or
+conflicting legacy state without fallback, and grants continuity only:
+`publicationAuthorized:false`. Existing planning/status/context commands
+and non-v3 legacy continuity remain unchanged.
+
+Final Node22 lifecycle-client suite: 86 cases, exit 0. Existing multi-active
+legacy continuity shell fixture: PASS. Both are private synthetic Git fixtures,
+not a live publication or installation test. Initial continuity run was 26/30:
+relative `git --git-path` resolution caused four fixture failures; resolving
+against the actual repo corrected it, with 8/8 focused regressions before the
+final suite. Initial legacy-suite isolation set hooksPath=/dev/null, preventing
+the fixture installer from creating hooks; diagnosis removed that conflicting
+test-only override while retaining disabled global/system Git config. No
+shared hook was installed. No unchanged CI or provider call was repeated.
+
+Independent 6.1 Sol/high five-axis source review found one material issue:
+matching policyState alone did not prove readiness. Explicit readiness and
+four non-ready regressions (both local/push) correct it. Final independent
+read-only reviewer closure confirms the finding is closed; no tests rerun and
+no native typed-review receipt exists. Syntax and diff hygiene checks pass.
+Frozen reviewed source SHA-256:
+
+- client: `fd5900b2624d1172fc76ea8326c12a99e7b6c78cbe20403971c9c75b037f4e20`;
+- guard: `e749361a20557a54b3f60920bf4a0007f7c065dff442756907add91bdf9b56e7`;
+- tests: `99a7d117a0a4c32e61dc589a72ef4d7eb8630d33727da7f0ebce82759fb4fad6`.
+
+Real local continuity already returned allowed with installed verified engine
+and unchanged state SHA-256
+`c271ea6829142e334eadd607d57fd0289fd0d3f85c847b815d254304aedbbae5`;
+that observation preceded the final readiness assertion and is not clean-push
+evidence. Secretary packet remains absent from the prior real render.
+
+Central T1 PR1701 and FactLens T1 PR348 are merged; Notes and Hub are not.
+Central exact T1 target scope must add this guard path before expanded Notes
+release-set admission. Next: final source/DOCSYNC checkpoint, separate guarded
+Bastion status checkpoint, supported task reconciliation and clean native
+continuity readback. No root-v2 cutover, engine/hook install or activation.
+No main quiet window is needed for this local work.
+
+Native checkpoint diagnosis: the first combined commit was blocked (no commit
+created) because the continuity guard is protected, unlike the adapter's ops
+lane. Corrected sequence: retain its reviewed Git blob, remove only the own
+nine-line addition temporarily, commit adapter/tests/DOCSYNC normally, then
+reapply byte-identical guard and commit it with Bastion status using the
+existing protected record/rollback/smoke route. No hook or classification change.
+The guard preimage and final reviewed digest are recorded. This is one
+diagnosed commit-layout correction, not a failed code repair or test retry.
+
 ## Publication repair checkpoint — 2026-10-21
 
 Candidate7f191a4c is unchanged before this plan-only scope amendment. Actual

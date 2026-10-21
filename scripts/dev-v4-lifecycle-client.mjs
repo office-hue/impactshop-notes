@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const root = path.resolve(process.env.DEV_V4_REPO_ROOT || process.cwd());
-const dataRoot = path.resolve(process.env.DEV_V4_DATA_ROOT || path.join(os.homedir(), 'Library', 'Application Support', 'office-dev'));
+const dataRoot = path.resolve(process.env.DEV_V4_DATA_ROOT || path.join(os.userInfo().homedir, 'Library', 'Application Support', 'office-dev'));
 const loader = path.join(dataRoot, 'bin', 'dev-v4-office-dev');
 
 function fail(error) { process.stderr.write(JSON.stringify({ status: 'blocked', error }) + '\n'); process.exit(1); }
@@ -61,6 +61,7 @@ const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !ke
 env.GIT_TERMINAL_PROMPT = '0';
 // Both this selection and the historical controller must read the original Git objects.
 env.GIT_NO_REPLACE_OBJECTS = '1';
+env.GIT_OPTIONAL_LOCKS = '0';
 const safeControllerErrors = new Set([
   'retained_engine_not_accepted_by_repository_policy', 'task_branch_already_exists_or_reserved',
   'start_requires_canonical_primary_main_checkout', 'start_requires_head_at_exact_main',
@@ -76,6 +77,10 @@ function git(args) {
 }
 function validate(commandArgs) {
   const command = commandArgs[0];
+  if (command === 'continuity') {
+    if (commandArgs.length !== 3 || commandArgs[1] !== '--mode' || !['local', 'push'].includes(commandArgs[2])) fail('lifecycle_continuity_argument_forbidden');
+    return;
+  }
   const allowed = {
     start: new Set(['--task-id', '--selector', '--branch', '--task-brief']),
     bind: new Set(['--task-id', '--plan-anchor', '--policy-commit']),
@@ -113,9 +118,57 @@ function bound() {
   try { stat = fs.lstatSync(dir); } catch (error) { if (error.code === 'ENOENT') return false; throw error; }
   if (!stat.isDirectory() || stat.isSymbolicLink() || stat.uid !== process.getuid() || (stat.mode & 0o077)) fail('lifecycle_state_unsafe');
   // Orphan directories/journals are recovery state, never an unbound default route.
-  const state = json(regular(path.join(dir, 'state.json'), true));
+  const file = path.join(dir, 'state.json'), raw = regular(file, true), state = json(raw);
   if (state.schemaVersion !== 3 || !state.engine || !/^[0-9a-f]{64}$/.test(state.engine.digest) || !/^[0-9a-f]{40}$/.test(state.engine.sourceCommit)) fail('lifecycle_state_invalid');
-  return true;
+  return { file, raw, state };
+}
+function continuityObservation(task, observation, mode) {
+  const state = task.state, identity = state.identity, hex40 = /^[0-9a-f]{40}$/;
+  const branch = git(['branch', '--show-current']), head = git(['rev-parse', 'HEAD']), tree = git(['rev-parse', 'HEAD^{tree}']);
+  const dirty = git(['status', '--porcelain', '--untracked-files=all']) !== '';
+  if (state.repoId !== 'impactshop-notes' || !branch || ['main', 'master'].includes(branch) || state.branch !== branch ||
+      typeof state.taskId !== 'string' || !state.taskId || typeof state.selectorId !== 'string' || !state.selectorId ||
+      !identity || state.base?.ref !== 'origin/main' || !hex40.test(state.base.commit) ||
+      ['codeBase', 'policyCommit', 'integrationBase', 'head', 'tree'].some(k => !hex40.test(identity[k])) ||
+      (identity.planAnchorCommit !== null && !hex40.test(identity.planAnchorCommit)) ||
+      identity.head !== head || identity.tree !== tree) fail('lifecycle_continuity_identity_mismatch');
+  for (const commit of [state.base.commit, identity.codeBase, identity.integrationBase]) git(['merge-base', '--is-ancestor', commit, head]);
+  git(['cat-file', '-e', `${identity.policyCommit}^{commit}`]);
+  if (identity.planAnchorCommit !== null) git(['merge-base', '--is-ancestor', identity.planAnchorCommit, head]);
+  // "current" only establishes identity; it must not promote blocked policy.
+  if (state.policyState !== 'implementation-ready') fail('lifecycle_continuity_policy_not_ready');
+  const sameFields = (a, b, keys) => a && b && keys.every(k => a[k] === b[k]);
+  if (observation.status !== 'current' || observation.writes !== false || observation.dirty !== dirty ||
+      !sameFields(observation, state, ['taskId', 'selectorId', 'policyState', 'revision', 'branch']) ||
+      observation.head !== head || observation.tree !== tree ||
+      !sameFields(observation.identity, identity, ['codeBase', 'policyCommit', 'integrationBase', 'planAnchorCommit', 'head', 'tree']) ||
+      observation.engine?.state !== 'verified' || state.engine.sourceRepo !== 'office-hue/ai-agent' ||
+      state.engine.capsuleSchemaVersion !== 3 || state.engine.engineContractVersion !== 1 ||
+      !sameFields(observation.engine.expected, state.engine, ['sourceRepo', 'sourceCommit', 'digest', 'engineContractVersion', 'capsuleSchemaVersion']) ||
+      observation.sourceMergeHandoff?.recoveryRequired === true) fail('lifecycle_continuity_unverified');
+  const marker = path.resolve(root, git(['rev-parse', '--git-path', 'worktree-active.json']));
+  let markerExists = false, markerRaw = null;
+  try { fs.lstatSync(marker); markerExists = true; } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  if (markerExists) {
+    markerRaw = regular(marker);
+    const legacy = json(markerRaw);
+    if (legacy.branch !== branch || legacy.path !== root || legacy.repo !== state.repoId ||
+        (legacy.selector !== undefined && legacy.selector !== state.selectorId) ||
+        (legacy.base !== undefined && (legacy.base.ref !== 'origin/main' || legacy.base.commit !== identity.codeBase)) ||
+        (legacy.head !== undefined && legacy.head !== head) || (legacy.tree !== undefined && legacy.tree !== tree) ||
+        (legacy.current !== undefined && (legacy.current.head !== head || legacy.current.tree !== tree))) fail('lifecycle_continuity_legacy_conflict');
+  }
+  for (const file of ['docs/impactshop-notes-doc-sync-map-2026-06-23.md', 'docs/impactshop-governance-system-plan-2026-06-16.md', 'notes.md', 'system-status-snapshot.md']) {
+    if (!fs.lstatSync(path.join(root, file)).isFile()) fail('lifecycle_continuity_document_missing');
+  }
+  if (markerExists ? regular(marker) !== markerRaw : fs.existsSync(marker)) fail('lifecycle_continuity_changed');
+  if (regular(task.file, true) !== task.raw || git(['branch', '--show-current']) !== branch ||
+      git(['rev-parse', 'HEAD']) !== head || git(['rev-parse', 'HEAD^{tree}']) !== tree ||
+      (git(['status', '--porcelain', '--untracked-files=all']) !== '') !== dirty) fail('lifecycle_continuity_changed');
+  if (mode === 'push' && dirty) fail('lifecycle_continuity_dirty_push');
+  return { status: 'allowed', decision: 'allowed', authority: 'installed-v3-continuity-only', mode,
+    taskId: state.taskId, selectorId: state.selectorId, repoRoot: root, branch, head, tree,
+    lifecycle: identity, engine: state.engine, writes: false, publicationAuthorized: false, warnings: [] };
 }
 function committedJson(base, relative) {
   const row = git(['ls-tree', base, '--', relative]), match = /^100644 blob ([0-9a-f]{40})\t([^\n]+)$/.exec(row);
@@ -150,10 +203,12 @@ function run(args) {
   canonicalDirectory(root);
   if (git(['rev-parse', '--show-toplevel']) !== root || git(['config', '--local', '--get-all', 'remote.origin.url']) !== 'https://github.com/office-hue/impactshop-notes.git') fail('origin_policy_repository_mismatch');
   const hasBoundTask = bound();
+  const continuity = args[0] === 'continuity';
+  if (continuity && !hasBoundTask) fail('lifecycle_state_missing');
   const descriptor = args[0] === 'start' && !hasBoundTask ? startDescriptor(args) : null;
   installedPath(loader); regular(loader, false, true);
-  const forwarded = [];
-  for (let index = 0; index < args.length; index += 1) {
+  const forwarded = continuity ? ['status'] : [];
+  if (!continuity) for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--task-brief') { index += 1; continue; }
     forwarded.push(args[index]);
   }
@@ -163,7 +218,8 @@ function run(args) {
     const output = json(result.stderr || result.stdout || '', true);
     fail(output?.status === 'blocked' && safeControllerErrors.has(output.error) ? output.error : 'lifecycle_controller_failed');
   }
-  process.stdout.write(JSON.stringify(json(result.stdout || '')) + '\n');
+  const observation = json(result.stdout || '');
+  process.stdout.write(JSON.stringify(continuity ? continuityObservation(hasBoundTask, observation, args[2]) : observation) + '\n');
 }
 const args = process.argv.slice(2);
 if (!args.length) fail('lifecycle_client_usage');

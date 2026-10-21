@@ -1,5 +1,15 @@
 # Impactshop-Notes Doc Sync Map
 
+## 2026-10-21 — T1 native v3 continuity addendum
+
+The existing T1 DocSync unit additionally covers
+`scripts/worktree-continuity-guard.sh`. Its lifecycle client reads installed
+status, not a Secretary receipt, and preserves exact old task/engine/policy
+pins. Plan, installed-controller guide, governance, continuity, protected
+record, notes, snapshot and Bastion status distinguish local source evidence
+(86/86 client cases and legacy fixture PASS) from still-pending Notes
+publication, central exact target admission, host install and activation.
+
 Datum: 2026-06-23
 Statusz: canonical local doc-sync map
 RepoId: `impactshop-notes`

@@ -1,3 +1,15 @@
+## 2026-10-21 — Notes T1 native v3 continuity repair
+
+- Own bound task preserves its real base, selector, policy and engine pin;
+  no legacy marker is invented. Installed status plus explicit policy readiness
+  supply continuity only, never publication authority.
+- Final client suite 86/86 and existing multi-active fixture PASS; diagnosed
+  fixture-path/isolation errors and independent review repair are recorded in
+  `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`.
+- Central PR1701 and FactLens PR348 merged; Notes/Hub publication, central
+  target-scope follow-up, Air/Mini installation and T2 activation remain.
+  Secretary absent is advisory. No new provider/CI/shared-hook action.
+
 ## 2026-09-11 — Sharity profile production accepted
 
 - PR #206 removed the exact Site Kit AdSense producer; PR #207 switched the

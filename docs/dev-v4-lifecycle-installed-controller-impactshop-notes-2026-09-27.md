@@ -38,6 +38,20 @@ focused checks.
 
 ## 2026-10-20 — T1 compatibility source continuation
 
+### 2026-10-21 addendum — native continuity of a bound v3 task
+
+`continuity --mode local|push` is a separate bounded read-only check using
+installed `status`. It verifies actual Git identity and original task/policy/
+engine pins, requires implementation-ready, preserves any compatible marker,
+rejects conflicting/unsafe/orphan state and never synthesizes legacy evidence.
+Push additionally requires clean source. Result is explicitly not publication
+authority. The native shell guard selects it only for an existing own v3
+namespace, clears the test data-root override and never falls back on failure.
+Non-v3 worktrees keep the unchanged legacy checks. Planning/status/context
+remain distinct; optional Secretary absence does not gate this check.
+Evidence: final client 86/86 and legacy multi-active fixture PASS; exact audit,
+failure diagnosis and remaining publication prerequisites are in continuity.
+
 Exact plan: `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`; continuity:
 `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`.
 The source candidate is implemented and independently reviewed; the historical

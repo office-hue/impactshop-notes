@@ -1,7 +1,9 @@
 # Notes risk-scoped DEV — T1 compatibility source
 
-Status: source-ready local candidate; source committed and bounded review closed. Not a
-push, merge, installation, activation or production acceptance.
+Status: original source committed; native v3 continuity repair implemented and
+independently reviewed, final client 86/86 and legacy fixture PASS. Local repair
+checkpoint and central exact T1 path addition precede native publication.
+Not a push, merge, installation, activation or production acceptance.
 
 <!-- DEV-DELIVERY-V2-MANIFEST
 {
@@ -255,11 +257,14 @@ authority. The central T1 exact target path anchor must separately add this path
 before the expanded target can be admitted into the release set.
 
 1. Existing lifecycle client: add only `continuity --mode local|push`. It calls
-   the fixed installed dispatcher `context --render`, never a candidate engine,
+   the fixed installed dispatcher `status`, never a candidate engine,
    and verifies own safe v3 state before/after the read. Preserve actual task,
    branch, repo, base/codeBase/policyCommit, plan anchor, HEAD/tree, engine pin and
    selector. Compare the installed observation to both the local Git identity
-   and pinned state; reject malformed/stale/foreign/unsafe/pending state. Optional
+   and pinned state; reject malformed/stale/foreign/unsafe/pending state. Require
+   `implementation-ready` policy on this bounded continuity route: `current`
+   alone proves identity, not policy readiness. This does not change the separate
+   planning/status/context routes or authorize publication. Optional
    Secretary packet absence is not a failure. Push requires a clean worktree.
    Existing conflicting legacy marker is rejected, never overwritten. No marker,
    receipt, state, journal, coordinator, network/provider or shared-hook write.

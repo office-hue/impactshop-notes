@@ -1,3 +1,14 @@
+## 2026-10-21 — Notes DEV T1 continuity repair checkpoint
+
+- Own native v3 route verifies installed status, exact pins/current identity,
+  ready policy and clean push; no synthesized v2 marker or publication permit.
+- Final affected client suite 86/86 and legacy fixture PASS. Five-axis review
+  readiness finding fixed; detailed evidence/failure ledger is in continuity.
+- Notes remains local/unpublished. Central exact target scope extension,
+  native publication, engine staging and T2 activation remain pending.
+  Central PR1701 and FactLens PR348 are merged, not host-activation evidence.
+- No product deployment, shared hook/default or task-pin mutation.
+
 ## 2026-10-20 — Notes DEV T1 local source start
 
 - Task `dev-risk-scoped-notes-20261020`, dedicated branch, exact base

@@ -1,9 +1,29 @@
 # Notes DEV T1 protected change record
 
+## 2026-10-21 continuity repair addendum
+
+Affected function: native v3 continuity readback through the existing target
+client; legacy no-v3 behavior is unchanged. Risk: wrongly granting continuity
+for blocked, stale, mismatched or unsafe state. Countermeasures: verified
+installed status plus independent Git/pin comparisons, explicit ready policy,
+no legacy fallback or synthesized marker, clean push and no publication grant.
+Final client suite 86/86; legacy fixture PASS; independent five-axis review
+identified the readiness assertion and its regression repair. Exact evidence
+and reviewer closeout are in continuity. Bastion-status update follows in its
+own guarded commit; no guard/hash inventory or product code changes.
+Rollback: guarded source revert only, retaining actual task pins and packages.
+Manual UI checklist: N/A (no UI touched). Live/install smoke remains pending.
+
 Authority: existing Arnold exceptional central DEV source task; exact plan
 `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`. Source only.
 
 ## Protected files touched
+
+`scripts/worktree-continuity-guard.sh` adds the bounded v3 dispatch ahead of
+unchanged legacy checks. Original bytes at plan anchor `59f81c32708f609f35d389c9616cd48a84152aab`:
+SHA-256 `04a31f122fcff1b6829fb9bc970f83b6761654bfe7136fa4911fb9d98908c101`.
+The reviewed new guard hash is recorded in continuity and must match when
+reapplied for the separate protected commit. No guard policy/inventory changes.
 
 `docs/bastion-guard-status.md` receives an additive source-status entry only.
 Executable change is limited to `scripts/dev-v4-lifecycle-client.mjs`, with

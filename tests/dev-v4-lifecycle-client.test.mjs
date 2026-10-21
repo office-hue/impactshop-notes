@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const client = fileURLToPath(new URL('../scripts/dev-v4-lifecycle-client.mjs', import.meta.url));
+const continuityGuard = fileURLToPath(new URL('../scripts/worktree-continuity-guard.sh', import.meta.url));
 const start = ['start', '--task-id', 'fixture-task', '--selector', 'dev-governance-source', '--branch', 'dev/fixture-task'];
 const accepted = { sourceRepo: 'office-hue/ai-agent', sourceCommit: '8'.repeat(40), digest: 'a'.repeat(64), engineContractVersion: 1, capsuleSchemaVersion: 3 };
 function snapshot(dir) {
@@ -197,3 +198,93 @@ for (const [name, raw] of [
 for (const body of ['process.stdout.write("SECRET /private/secret invalid JSON");', 'process.stderr.write("SECRET /private/secret");process.exit(2);', 'process.stdout.write("{\\"x\\":1,\\"x\\":2}");']) {
   test('controller output and argument failures remain sanitized', t => { const f = fixture(t); f.loaderBody(body); f.blocked(['status']); });
 }
+
+function continuityFixture(t) {
+  const f = fixture(t), base = f.git('rev-parse', 'HEAD');
+  f.git('checkout', '-b', 'dev/fixture-task');
+  for (const name of ['docs/impactshop-notes-doc-sync-map-2026-06-23.md', 'docs/impactshop-governance-system-plan-2026-06-16.md', 'notes.md', 'system-status-snapshot.md']) {
+    fs.mkdirSync(path.dirname(path.join(f.root, name)), { recursive: true });
+    fs.writeFileSync(path.join(f.root, name), 'Synthetic continuity document\n');
+  }
+  f.git('add', '.'); f.git('commit', '-m', 'synthetic task delta');
+  const head = f.git('rev-parse', 'HEAD'), tree = f.git('rev-parse', 'HEAD^{tree}');
+  const state = { schemaVersion: 3, repoId: 'impactshop-notes', taskId: 'fixture-task', selectorId: 'dev-governance-source',
+    policyState: 'implementation-ready', revision: 2, branch: 'dev/fixture-task', engine: accepted,
+    base: { ref: 'origin/main', commit: base }, identity: { codeBase: base, policyCommit: base, integrationBase: base, planAnchorCommit: head, head, tree } };
+  f.bind(JSON.stringify(state));
+  const observation = { status: 'current', taskId: state.taskId, selectorId: state.selectorId, policyState: state.policyState, revision: 2,
+    branch: state.branch, head, tree, dirty: false, identity: structuredClone(state.identity), engine: { state: 'verified', expected: accepted }, writes: false };
+  const respond = (value = observation, prefix = '') => f.loaderBody(`${prefix}\nif (JSON.stringify(process.argv.slice(2)) !== ${JSON.stringify(JSON.stringify(['--repo', f.root, 'status']))}) process.exit(9); process.stdout.write(${JSON.stringify(JSON.stringify(value))});`);
+  respond(); return { ...f, state, observation, respond };
+}
+test('continuity verifies installed current v3 without synthesizing a legacy marker or changing state', t => {
+  const f = continuityFixture(t), before = fs.readFileSync(f.stateFile);
+  const result = f.run(['continuity', '--mode', 'push']); assert.equal(result.status, 0, result.stderr);
+  const report = JSON.parse(result.stdout); assert.equal(report.authority, 'installed-v3-continuity-only');
+  assert.equal(report.publicationAuthorized, false); assert.equal(report.writes, false);
+  assert.deepEqual(report.lifecycle, f.state.identity); assert.notEqual(report.lifecycle.codeBase, report.head);
+  assert.equal(report.selectorId, 'dev-governance-source'); assert.equal(fs.existsSync(path.join(f.root, '.git/worktree-active.json')), false);
+  assert.deepEqual(fs.readFileSync(f.stateFile), before);
+});
+for (const [label, mutate] of [
+  ['stale status', o => o.status = 'stale'], ['journal recovery', o => o.status = 'recovery-required'],
+  ['pending handoff', o => o.sourceMergeHandoff = { recoveryRequired: true }],
+  ['unverified engine', o => o.engine.state = 'unverified'], ['wrong pin', o => o.engine.expected = { ...accepted, digest: 'd'.repeat(64) }],
+  ['wrong task', o => o.taskId = 'other'], ['wrong selector', o => o.selectorId = 'maintenance-docs'],
+  ['wrong branch', o => o.branch = 'dev/foreign'], ['wrong head', o => o.head = '1'.repeat(40)],
+  ['wrong tree', o => o.tree = '1'.repeat(40)], ['wrong base', o => o.identity.codeBase = o.head],
+  ['wrong policy', o => o.identity.policyCommit = o.head], ['wrong anchor', o => o.identity.planAnchorCommit = null],
+  ['wrong revision', o => o.revision++], ['write claim', o => o.writes = true], ['dirty mismatch', o => o.dirty = true]
+]) test(`continuity refuses ${label}`, t => { const f = continuityFixture(t); mutate(f.observation); f.respond(); f.blocked(['continuity', '--mode', 'push'], 'lifecycle_continuity_unverified'); });
+test('continuity rejects foreign state even if synthetic dispatcher repeats it', t => {
+  const f = continuityFixture(t); f.state.repoId = 'foreign'; fs.writeFileSync(f.stateFile, JSON.stringify(f.state));
+  f.blocked(['continuity', '--mode', 'push'], 'lifecycle_continuity_identity_mismatch');
+});
+test('continuity detects state mutation during dispatcher read', t => {
+  const f = continuityFixture(t); f.respond(f.observation, `require('node:fs').appendFileSync(${JSON.stringify(f.stateFile)}, ' ');`);
+  f.blocked(['continuity', '--mode', 'push'], 'lifecycle_continuity_changed');
+});
+for (const policyState of ['blocked', 'planning-only', 'stale', 'unknown']) test(`continuity refuses matching non-ready policy ${policyState}`, t => {
+  const f = continuityFixture(t);
+  f.state.policyState = policyState; f.observation.policyState = policyState;
+  fs.writeFileSync(f.stateFile, JSON.stringify(f.state)); f.respond();
+  const before = fs.readFileSync(f.stateFile);
+  for (const mode of ['local', 'push']) f.blocked(['continuity', '--mode', mode], 'lifecycle_continuity_policy_not_ready');
+  assert.deepEqual(fs.readFileSync(f.stateFile), before);
+});
+test('continuity allows local dirty context but refuses dirty push without writes', t => {
+  const f = continuityFixture(t); fs.writeFileSync(path.join(f.root, 'untracked'), 'fixture'); f.observation.dirty = true; f.respond();
+  assert.equal(f.run(['continuity', '--mode', 'local']).status, 0);
+  f.blocked(['continuity', '--mode', 'push'], 'lifecycle_continuity_dirty_push');
+});
+test('continuity preserves and verifies an existing compatible legacy marker', t => {
+  const f = continuityFixture(t), file = path.join(f.root, '.git/worktree-active.json');
+  const raw = JSON.stringify({ branch: f.state.branch, path: f.root, repo: f.state.repoId, base: f.state.base, selector: f.state.selectorId });
+  fs.writeFileSync(file, raw, { mode: 0o600 }); assert.equal(f.run(['continuity', '--mode', 'push']).status, 0); assert.equal(fs.readFileSync(file, 'utf8'), raw);
+});
+for (const kind of ['foreign branch', 'wrong base', 'wrong selector', 'symlink']) test(`continuity rejects ${kind} legacy marker`, t => {
+  const f = continuityFixture(t), file = path.join(f.root, '.git/worktree-active.json');
+  const marker = { branch: f.state.branch, path: f.root, repo: f.state.repoId, base: f.state.base, selector: f.state.selectorId };
+  if (kind === 'foreign branch') marker.branch = 'dev/foreign';
+  if (kind === 'wrong base') marker.base = { ref: 'origin/main', commit: f.state.identity.head };
+  if (kind === 'wrong selector') marker.selector = 'maintenance-docs';
+  if (kind === 'symlink') fs.symlinkSync(f.stateFile, file); else fs.writeFileSync(file, JSON.stringify(marker), { mode: 0o600 });
+  const before = fs.lstatSync(file).isSymbolicLink() ? fs.readlinkSync(file) : fs.readFileSync(file, 'utf8');
+  f.blocked(['continuity', '--mode', 'push'], kind === 'symlink' ? 'lifecycle_file_unsafe_or_missing' : 'lifecycle_continuity_legacy_conflict');
+  assert.equal(fs.lstatSync(file).isSymbolicLink() ? fs.readlinkSync(file) : fs.readFileSync(file, 'utf8'), before);
+});
+for (const args of [['continuity'], ['continuity', '--mode', 'release'], ['continuity', '--mode', 'push', '--mode', 'local']]) test(`continuity rejects argv ${args.join(' ')}`, t => {
+  const f = fixture(t); f.blocked(args, 'lifecycle_continuity_argument_forbidden');
+});
+test('continuity never falls back from missing or orphan v3 state', t => {
+  const f = fixture(t); f.blocked(['continuity', '--mode', 'push'], 'lifecycle_state_missing');
+  fs.mkdirSync(f.stateDir, { mode: 0o700 }); f.blocked(['continuity', '--mode', 'push']);
+});
+test('continuity wrapper uses exact v3 mode and clears data-root override without legacy fallback', t => {
+  const f = fixture(t); fs.mkdirSync(f.stateDir, { mode: 0o700 });
+  fs.mkdirSync(path.join(f.root, 'scripts'));
+  fs.writeFileSync(path.join(f.root, 'scripts/dev-v4-lifecycle-client.mjs'), 'console.log(JSON.stringify({argv:process.argv.slice(2), root:process.env.DEV_V4_REPO_ROOT, data:process.env.DEV_V4_DATA_ROOT??null}));process.exit(7);');
+  const result = spawnSync('/bin/bash', [continuityGuard, '--json', '--mode', 'push'], { cwd: f.root, env: { ...process.env, PATH: path.dirname(process.execPath) + ':' + process.env.PATH, DEV_V4_REPO_ROOT: '/foreign', DEV_V4_DATA_ROOT: '/foreign' }, encoding: 'utf8' });
+  assert.equal(result.status, 7); assert.deepEqual(JSON.parse(result.stdout), { argv: ['continuity', '--mode', 'push'], root: f.root, data: null });
+  assert.equal(fs.existsSync(path.join(f.root, '.git/worktree-active.json')), false);
+});

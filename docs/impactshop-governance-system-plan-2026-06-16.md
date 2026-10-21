@@ -1,5 +1,18 @@
 # ImpactShop Governance System Plan
 
+## 2026-10-21 — Bound v3 native continuity repair
+
+The existing risk-scoped T1 plan adds one owned path,
+`scripts/worktree-continuity-guard.sh`, alongside the lifecycle client and its
+tests. Bound v3 continuity uses installed status and actual pins, never a
+fabricated v2 marker/default selector. Implementation-ready and exact current
+identity are separate checks; clean push is required and no publication permit
+is issued. No-v3 behavior and independent planning/context reads stay unchanged.
+Final affected client suite 86/86 and legacy multi-active fixture PASS. Audit/
+failure details are in `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`.
+Central finite T1 scope extension and native publication remain pending; no
+root policy, shared hook, product runtime or host installation changed.
+
 Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
