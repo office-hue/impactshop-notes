@@ -280,11 +280,14 @@ test('continuity never falls back from missing or orphan v3 state', t => {
   const f = fixture(t); f.blocked(['continuity', '--mode', 'push'], 'lifecycle_state_missing');
   fs.mkdirSync(f.stateDir, { mode: 0o700 }); f.blocked(['continuity', '--mode', 'push']);
 });
-test('continuity wrapper uses exact v3 mode and clears data-root override without legacy fallback', t => {
+test('native executable continuity wrapper uses exact v3 mode without legacy fallback', t => {
+  // Native hooks discover this guard with -x and execute it directly, not bash.
+  fs.accessSync(continuityGuard, fs.constants.X_OK);
   const f = fixture(t); fs.mkdirSync(f.stateDir, { mode: 0o700 });
   fs.mkdirSync(path.join(f.root, 'scripts'));
   fs.writeFileSync(path.join(f.root, 'scripts/dev-v4-lifecycle-client.mjs'), 'console.log(JSON.stringify({argv:process.argv.slice(2), root:process.env.DEV_V4_REPO_ROOT, data:process.env.DEV_V4_DATA_ROOT??null}));process.exit(7);');
-  const result = spawnSync('/bin/bash', [continuityGuard, '--json', '--mode', 'push'], { cwd: f.root, env: { ...process.env, PATH: path.dirname(process.execPath) + ':' + process.env.PATH, DEV_V4_REPO_ROOT: '/foreign', DEV_V4_DATA_ROOT: '/foreign' }, encoding: 'utf8' });
+  const result = spawnSync(continuityGuard, ['--json', '--mode', 'push'], { cwd: f.root, env: { ...process.env, PATH: path.dirname(process.execPath) + ':' + process.env.PATH, DEV_V4_REPO_ROOT: '/foreign', DEV_V4_DATA_ROOT: '/foreign' }, encoding: 'utf8' });
+  assert.equal(result.error, undefined);
   assert.equal(result.status, 7); assert.deepEqual(JSON.parse(result.stdout), { argv: ['continuity', '--mode', 'push'], root: f.root, data: null });
   assert.equal(fs.existsSync(path.join(f.root, '.git/worktree-active.json')), false);
 });
