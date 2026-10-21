@@ -63,7 +63,40 @@ Not a push, merge, installation, activation or production acceptance.
 }
 DEV-DELIVERY-V2-MANIFEST -->
 
-## Goal and authority
+## Native protected source admission
+
+Source-approval reference: `operator-approval:dev-risk-scoped-notes-source-20261020`.
+This names Arnold's already approved implementation of this exact Notes T1
+package, whose installed task-request digest is in the manifest above. It does
+not reuse a commit exception, the central publication exception or a host grant.
+Push/PR and merge still need their own current operation authority; the adapter's
+`sourceMergeAdmission` is validation evidence, not a provider or deployment permit.
+
+Pre-publication diagnosis on source HEAD `99023e6780aaad6a64d282115eaa35b3178c4a7d`:
+the native maximum-bastion read returned `operator-review`, with
+`protected-change-record-exact-admission-missing` and
+`full-validation-evidence-missing`. No CI was started and no blind repair tried.
+The existing source record lacked the schema-1 block that the unchanged native
+adapter and CI already require. The exact protected path set is only
+`docs/bastion-guard-status.md`, `scripts/dev-v4-lifecycle-client.mjs` and
+`scripts/worktree-continuity-guard.sh`.
+
+Repair: connect the existing protected record to this heading and source approval,
+with that exact set, the existing rollback and smoke scope; update continuity,
+notes and status only. Executable, test, policy, hash-lock and hook bytes stay
+unchanged. Commit through native hooks, rebind the same task through the supported
+client, then run the native `full-validate` and read-only `bastion` on the resulting
+clean commit. These check per-commit lanes and protected-source metadata; they do
+not rerun the unchanged 86/86 client suite or authorize a live operation.
+The resulting evidence must be real, private and tied to the exact new HEAD/tree;
+this document itself does not assert that those checks passed.
+
+The central finite scope extension is now merged as PR1702, source commit
+`48cac5e319c2748d21397a6c5ecf2c1ccd3022f4`; this updates the historical pending
+scope notes below, without migrating Notes policy/engine pins or granting a
+central exception to this repo.
+
+## Goal and existing source authority
 
 Arnold explicitly requested continued implementation of the central DEV change
 on its exceptional separate source route. This is the Notes target portion of

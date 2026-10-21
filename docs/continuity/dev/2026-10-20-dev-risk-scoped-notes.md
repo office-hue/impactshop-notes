@@ -1,5 +1,24 @@
 # Notes DEV T1 continuity
 
+## Native publication prerequisite repair — 2026-10-21
+
+Pre-push inspection found the actual CI adapter requires a schema-1 protected
+source-admission block. On `99023e6780aaad6a64d282115eaa35b3178c4a7d`, its
+read-only `bastion` reported exact-admission and full-validation evidence missing.
+Diagnosis and repair are in the plan's native-protected-source-admission heading.
+Only the existing plan/record/continuity/notes/status receive metadata; no code,
+test, policy, hook, hash-lock or installed state is repaired or relaxed.
+The named source-approval reference denotes the already approved task request,
+not a new self-issued push/merge permit. Verification follows the native docs
+commit and supported same-task bind; no result is invented in this record.
+
+Current central source facts: PR1701 and PR1702 are merged, the latter at
+`48cac5e319c2748d21397a6c5ecf2c1ccd3022f4` with both protections restored;
+FactLens PR348 is merged. Notes and Hub remain unpublished. The older pending
+central-scope statements below are historical. No quiet window is held.
+Final client/guard/test hashes still match the reviewed 86/86/legacy evidence.
+Secretary packet absence remains advisory; no receipt or old-model run is claimed.
+
 ## Native v3 continuity implementation — 2026-10-21
 
 Plan anchor `59f81c32708f609f35d389c9616cd48a84152aab` was committed with

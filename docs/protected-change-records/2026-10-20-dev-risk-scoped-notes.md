@@ -1,5 +1,32 @@
 # Notes DEV T1 protected change record
 
+## Native source-admission binding — 2026-10-21
+
+This block expresses the already approved Notes T1 source scope in the existing
+repo-native format. It grants no product deploy, host install or central bypass.
+Actual push/PR and merge authority remains separate. Only the native adapter may
+produce clean-commit validation evidence; the record is not a PASS receipt.
+
+<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+{
+  "schemaVersion": 1,
+  "planRef": "docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md#native-protected-source-admission",
+  "operatorApprovalRef": "operator-approval:dev-risk-scoped-notes-source-20261020",
+  "protectedPaths": [
+    "docs/bastion-guard-status.md",
+    "scripts/dev-v4-lifecycle-client.mjs",
+    "scripts/worktree-continuity-guard.sh"
+  ],
+  "rollbackNote": "Revert only the Notes T1 source commits through native guarded Git; preserve task pins, retained engines and all live runtime state.",
+  "smokeTags": ["dev-t1", "hermetic", "docs-sync"]
+}
+<!-- END PROTECTED SOURCE ADMISSION -->
+
+The executable client and native continuity guard are both protected source
+surfaces for this adapter. Their reviewed hashes and tests remain those in
+continuity; the older text below is historical, not an assertion that the guard
+is outside the package. The admission-format repair changes documentation only.
+
 ## 2026-10-21 continuity repair addendum
 
 Affected function: native v3 continuity readback through the existing target

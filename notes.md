@@ -1,3 +1,14 @@
+## 2026-10-21 — Notes T1 natív forráskiadási előfeltétel
+
+- Push előtt feltárt hiány: a meglévő protected change recordból hiányzott
+  a natív adapter által elvárt gépi forrásjóváhagyási blokk. A javítás kizárólag
+  dokumentációs bekötés, a már jóváhagyott három védett forrásfelületre.
+- A terv/rekord/continuity/status frissült; kód, teszt, policy, hook és hash-lock
+  változatlan. Tiszta commit utáni natív full-validate/bastion ellenőrzés szükséges;
+  ez a bejegyzés nem állít PASS-t vagy publikálási engedélyt.
+- Központi PR1702 már merged, `48cac5e3`; Notes/Hub publikálás és Air/Mini/T2
+  még hátravan. Nincs fenntartott nyugalmi ablak vagy új CI/provider-futtatás.
+
 ## 2026-10-21 — Notes T1 native v3 continuity repair
 
 - Own bound task preserves its real base, selector, policy and engine pin;
