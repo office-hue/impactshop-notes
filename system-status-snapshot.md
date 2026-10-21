@@ -1,3 +1,46 @@
+## 2026-10-21 — Notes T1 source-admission metadata preparation
+
+Latest superseding source fact: explicit target-specific exceptional publication
+approval received. Independent6.1 Sol/high review found a native-hook reachability
+defect;6b655531 fixes guard executable mode and direct-exec regression test.
+Focused1/1 PASS and actual installed pre-push dirty-state rejection observed.
+Final clean positive canary/CI/publication remain unverified; no false old-model
+lifecycle receipt, shared hook change, host install or product deploy.
+
+- Native CI admission prerequisites were inspected before publication. The
+  missing schema-1 source record is connected to the existing approved task,
+  exact protected paths, rollback and smoke scope; no executable/policy change.
+- Native clean-commit validation remains required. No push, PR, merge, host
+  installation or activation is asserted by this metadata update.
+- Central finite-scope PR1702 merged at `48cac5e319c2748d21397a6c5ecf2c1ccd3022f4`;
+  Notes/Hub source publication and Air/Mini/T2 rollout remain. Old status entries
+  below are historical; no quiet window or fabricated Secretary receipt.
+
+## 2026-10-21 — Notes DEV T1 continuity repair checkpoint
+
+- Own native v3 route verifies installed status, exact pins/current identity,
+  ready policy and clean push; no synthesized v2 marker or publication permit.
+- Final affected client suite 86/86 and legacy fixture PASS. Five-axis review
+  readiness finding fixed; detailed evidence/failure ledger is in continuity.
+- Notes remains local/unpublished. Central exact target scope extension,
+  native publication, engine staging and T2 activation remain pending.
+  Central PR1701 and FactLens PR348 are merged, not host-activation evidence.
+- No product deployment, shared hook/default or task-pin mutation.
+
+## 2026-10-20 — Notes DEV T1 local source start
+
+- Task `dev-risk-scoped-notes-20261020`, dedicated branch, exact base
+  `73beb6f4598acdca22e7910d39a0088cd5f38b14`.
+- Source plan: `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`.
+  Native docs anchor `9149a173...` and supported governance bind verified;
+  implementation and repaired five-axis source review complete. 65/65
+  pre-repair integration plus 12/12 post-repair targeted cases, syntax/diff
+  PASS. Native source committed `abd48f5b...`, exact staged tree verified;
+  separate protected Bastion/docs checkpoint only. This is not activation.
+- Goal: exact accepted-engine start selection and read-only Secretary render,
+  retaining bound task pins and active v1 policy. No main quiet window active.
+- No shared hooks, installation, provider, WordPress, live or other-chat writes.
+
 ## 2026-09-11 — Sharity profile production accepted
 
 - Runtime source: merged `origin/main@e9d9c934fb7bfce4ec9bb2af0586f19a8d9782f6`.

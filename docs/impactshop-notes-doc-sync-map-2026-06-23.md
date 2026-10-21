@@ -1,5 +1,15 @@
 # Impactshop-Notes Doc Sync Map
 
+## 2026-10-21 — T1 native v3 continuity addendum
+
+The existing T1 DocSync unit additionally covers
+`scripts/worktree-continuity-guard.sh`. Its lifecycle client reads installed
+status, not a Secretary receipt, and preserves exact old task/engine/policy
+pins. Plan, installed-controller guide, governance, continuity, protected
+record, notes, snapshot and Bastion status distinguish local source evidence
+(86/86 client cases and legacy fixture PASS) from still-pending Notes
+publication, central exact target admission, host install and activation.
+
 Datum: 2026-06-23
 Statusz: canonical local doc-sync map
 RepoId: `impactshop-notes`
@@ -47,6 +57,24 @@ Ez a helyi map a kozos minimum statuszokat hasznalja:
 5. `unknown`
 
 ## Canonical Topic Map
+
+### 2026-10-20 — DEV T1 target compatibility source
+
+- Master/authority: `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`;
+  `docs/impactshop-governance-system-plan-2026-06-16.md` addendum.
+- Implementation truth: `scripts/dev-v4-lifecycle-client.mjs`; private test
+  `tests/dev-v4-lifecycle-client.test.mjs`, registered by the existing
+  `tests/dev-v4-admission.test.mjs`. Source-reviewed candidate, not installed truth.
+- Guide: `docs/dev-v4-lifecycle-installed-controller-impactshop-notes-2026-09-27.md`.
+- Risk/rollback: `docs/protected-change-records/2026-10-20-dev-risk-scoped-notes.md`.
+- Evidence/next: `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`,
+  `notes.md`, `system-status-snapshot.md`, `docs/bastion-guard-status.md`.
+- State: `partial` — real governance bind and repaired source audit verified;
+  65/65 pre-repair integration plus 12/12 post-repair cases. Native
+  source commit `abd48f5b...` exists; protected Bastion-status is a separate
+  docs checkpoint. Installation/activation remain pending.
+  No cross-repo hub, shared hooks, installed engine/default or live mutation.
+  Active policy remains v1; T1 is not target activation.
 
 | Topic | Master doc | Implementation truth | QA / audit truth | Runtime / guard evidence | Continuity target | Status | Notes |
 |---|---|---|---|---|---|---|---|

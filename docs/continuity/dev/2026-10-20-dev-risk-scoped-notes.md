@@ -1,0 +1,275 @@
+# Notes DEV T1 continuity
+
+## Különutas kiadási review és natív elérhetőség — 2026-10-21
+
+Arnold a Notes/Hub saját különutas forráskiadását kifejezetten jóváhagyta,
+valódi6.1 Sol/high review-val és natív védelem megtartásával. Elkülönített
+`notes_release_review_61` invokáció, gpt-6.1-sol/high; nincs külön runtime-
+attesztáció vagy hamis régi controller receipt. Egy érintett P2: a guard0644
+miatt a natív -x ág nem futott. A6b655531 commit csak a tracked módot100755-re
+és a wrapperteszt közvetlen végrehajtását módosítja; reviewer finding lezárt.
+
+Tényleges célzott teszt1/1 PASS, a többi85 változatlan eredmény újrahasznált.
+Teszt SHA256: `d07e8708c20a1671d211ca44c9e6ca64bc714d30c8ec3781ecfbdd86dc3fefeb`.
+Client/guard tartalmi hash változatlan. Installed pre-push negatív canary:
+natív audit/protected/lane siker után tényleges `lifecycle_continuity_dirty_push`
+elutasítás; nem történt hálózati push, shared hook/config/pin módosítás.
+Végleges tiszta commit/bind utáni pozitív canary és Bástya még ellenőrzendő;
+ez a bejegyzés nem állítja előre azok eredményét vagy a PR/merge megtörténtét.
+
+## Source admission validation diagnosis — 2026-10-21
+
+Metadata commit `6a5c4d65f9b0f572cbc2f59eb2480803de68b530` passed native commit
+hooks. Initial same-task bind incorrectly supplied the legacy-only
+`--policy-commit` argument; installed controller source identifies
+`legacy_options_require_legacy_state`, with state unchanged. Omitting that
+argument bound revision 6 successfully and preserved the original policy/engine.
+
+The first native `full-validate` then failed in protected-touch. A direct
+diagnostic identified the exact missing tags `deploy:guard-preflight` and
+`deploy:checksum-verify`, required by the unchanged model for the continuity
+guard. Repair is limited to adding those scope labels to the source record,
+with explicit local evidence and no live/deploy PASS. This is the first repair
+of this failure identifier; no unchanged failed validation is rerun.
+Commit this documentation, bind without legacy-only arguments, then perform
+native full validation/bastion. Successful final evidence remains a separate
+private, exact-HEAD receipt, not a claim made in advance here.
+
+## Native publication prerequisite repair — 2026-10-21
+
+Pre-push inspection found the actual CI adapter requires a schema-1 protected
+source-admission block. On `99023e6780aaad6a64d282115eaa35b3178c4a7d`, its
+read-only `bastion` reported exact-admission and full-validation evidence missing.
+Diagnosis and repair are in the plan's native-protected-source-admission heading.
+Only the existing plan/record/continuity/notes/status receive metadata; no code,
+test, policy, hook, hash-lock or installed state is repaired or relaxed.
+The named source-approval reference denotes the already approved task request,
+not a new self-issued push/merge permit. Verification follows the native docs
+commit and supported same-task bind; no result is invented in this record.
+
+Current central source facts: PR1701 and PR1702 are merged, the latter at
+`48cac5e319c2748d21397a6c5ecf2c1ccd3022f4` with both protections restored;
+FactLens PR348 is merged. Notes and Hub remain unpublished. The older pending
+central-scope statements below are historical. No quiet window is held.
+Final client/guard/test hashes still match the reviewed 86/86/legacy evidence.
+Secretary packet absence remains advisory; no receipt or old-model run is claimed.
+
+## Native v3 continuity implementation — 2026-10-21
+
+Plan anchor `59f81c32708f609f35d389c9616cd48a84152aab` was committed with
+native hooks, then supported bind returned revision 4, implementation-ready,
+dev-governance-source. No state/marker was edited by hand. The adapter now
+reads installed `status` (not the optional Secretary packet) and compares
+actual repo/task/branch/HEAD/tree, original base/policy/plan anchor and pinned
+engine. It requires implementation-ready policy, rejects unsafe/orphan or
+conflicting legacy state without fallback, and grants continuity only:
+`publicationAuthorized:false`. Existing planning/status/context commands
+and non-v3 legacy continuity remain unchanged.
+
+Final Node22 lifecycle-client suite: 86 cases, exit 0. Existing multi-active
+legacy continuity shell fixture: PASS. Both are private synthetic Git fixtures,
+not a live publication or installation test. Initial continuity run was 26/30:
+relative `git --git-path` resolution caused four fixture failures; resolving
+against the actual repo corrected it, with 8/8 focused regressions before the
+final suite. Initial legacy-suite isolation set hooksPath=/dev/null, preventing
+the fixture installer from creating hooks; diagnosis removed that conflicting
+test-only override while retaining disabled global/system Git config. No
+shared hook was installed. No unchanged CI or provider call was repeated.
+
+Independent 6.1 Sol/high five-axis source review found one material issue:
+matching policyState alone did not prove readiness. Explicit readiness and
+four non-ready regressions (both local/push) correct it. Final independent
+read-only reviewer closure confirms the finding is closed; no tests rerun and
+no native typed-review receipt exists. Syntax and diff hygiene checks pass.
+Frozen reviewed source SHA-256:
+
+- client: `fd5900b2624d1172fc76ea8326c12a99e7b6c78cbe20403971c9c75b037f4e20`;
+- guard: `e749361a20557a54b3f60920bf4a0007f7c065dff442756907add91bdf9b56e7`;
+- tests: `99a7d117a0a4c32e61dc589a72ef4d7eb8630d33727da7f0ebce82759fb4fad6`.
+
+Real local continuity already returned allowed with installed verified engine
+and unchanged state SHA-256
+`c271ea6829142e334eadd607d57fd0289fd0d3f85c847b815d254304aedbbae5`;
+that observation preceded the final readiness assertion and is not clean-push
+evidence. Secretary packet remains absent from the prior real render.
+
+Central T1 PR1701 and FactLens T1 PR348 are merged; Notes and Hub are not.
+Central exact T1 target scope must add this guard path before expanded Notes
+release-set admission. Next: final source/DOCSYNC checkpoint, separate guarded
+Bastion status checkpoint, supported task reconciliation and clean native
+continuity readback. No root-v2 cutover, engine/hook install or activation.
+No main quiet window is needed for this local work.
+
+Native checkpoint diagnosis: the first combined commit was blocked (no commit
+created) because the continuity guard is protected, unlike the adapter's ops
+lane. Corrected sequence: retain its reviewed Git blob, remove only the own
+nine-line addition temporarily, commit adapter/tests/DOCSYNC normally, then
+reapply byte-identical guard and commit it with Bastion status using the
+existing protected record/rollback/smoke route. No hook or classification change.
+The guard preimage and final reviewed digest are recorded. This is one
+diagnosed commit-layout correction, not a failed code repair or test retry.
+
+## Publication repair checkpoint — 2026-10-21
+
+Candidate7f191a4c is unchanged before this plan-only scope amendment. Actual
+installed context verifies the own v3 task and engine; Secretary packet absent.
+Native push continuity blocks missing legacy marker/decision. Independent review
+rejected legacy resume because it invents the wrong base/selector. No such
+command was executed. The appended repair plan adds only the native continuity
+script to the already-owned governance scope; client and test paths already
+exist. Preserve all task pins and old evidence. Code follows a supported clean
+plan-anchor bind, then targeted fixtures and five-axis review. The central target
+T1 anchor needs the additional path before release-set acceptance. No push,
+installation, v2 policy cutover or activation is claimed for Notes.
+
+Goal: remove the concrete wrong-default engine failure without weakening hard
+controls or activating v2 routing before both hosts can read it.
+
+Task/plan `dev-risk-scoped-notes-20261020`; branch
+`dev/risk-scoped-notes-20261020`; codeBase/policyCommit
+`73beb6f4598acdca22e7910d39a0088cd5f38b14`. Real taskRequestDigest:
+`43dcac432fc6a8f8abf1960136bf112bdc51a70013d8638705b164ead61ca9e9`.
+Dedicated worktree is the Notes `dev-risk-scoped-notes-20261020` worktree;
+no source edits in its primary, parent ai-agent lane or another chat's worktree.
+
+Bootstrap quiet window 2026-10-20 17:59:05–17:59:27 UTC was released. No active
+main window. The installed controller verified the task/retained engine; initial
+selector is maintenance-docs, not yet code-writing authority. Next: bounded
+design review, docs-only native anchor commit, supported bind and readback,
+then client/private-fixture implementation. Source plan and protected record
+are linked from `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`.
+
+SECRETARY: real read-only `context --render` returned `writes:false`, packet
+`absent`. No refresh/consume receipt exists; do not claim retrieval. No shared
+memory repair or sibling command was executed.
+
+Failure ledger: default/repository engine mismatch diagnosed and bootstrap
+resolved using the supported canonical-descriptor route. No code repair has
+yet been attempted. Five-axis implementation evidence pending.
+
+Bounded target design review: actual independent 6.1 Sol/high found no material
+blocker across the five axes, input plan SHA-256
+`b227609ff500b92da474dfb1e3577b55ceae7534a4cef2a93c30e7ca65f37fe5`.
+Protected base preimage is recorded before any status touch. This is not a
+normal old-model review receipt or implementation PASS.
+
+Supported bind completed after native-hook docs anchor commit
+`9149a1735d3b32ac52d9e2006626d6bebb1d46c8`. Controller readback:
+`status:bound`, revision 2, selector `dev-governance-source`; projection
+`status:current`, `writes:false`, engine `verified`, plan ID exact. Capsule
+SHA-256 `17a9f3565fb928a944d46da8ecefc389ff1f2ca493122434502de849c985ec68`.
+This is local source authority, not publication/host authorization. The bounded
+client and private-fixture implementation is now in progress; no real start,
+fetch, shared hook or provider command was run.
+
+Editing ledger: two documentation patch applications initially had mismatched
+literal contexts (wrapped baseline lines), with no partial write. Diagnosis:
+readback confirmed source wrapping, not a product/controller failure. Repair
+plan: use exact read-back contexts and smaller file groups; corrected patches
+applied. No executable repair or test rerun was involved.
+
+Native commit-lane preflight by source inspection: the client is `ops`, while
+the Bastion status document is `protected`. They must not be mixed in one
+commit or leave a conflicting open lane. Commit the reviewed client/tests and
+non-protected DocSync first; then apply/commit the Bastion status update with
+its existing change-record, rollback and smoke inputs. No lane-guard bypass.
+
+Legacy Phase 0 readback (Node22 `scripts/dev-v4-admission.mjs --phase0`):
+`v2-only`, reason `capsule_missing`, combined `planning-only`. Its historical
+marker route is not the installed schema-3 lifecycle state route. Exit zero is
+not an admission PASS. The actual supported controller bind/projection above
+is the source authority; no marker is invented and the legacy helper is not
+changed to hide this result. T2 hook/controller coupling remains separate.
+
+## Implementation evidence and bounded audit repair
+
+Initial client `373f7144389f67c39dbd99de535b172f0dda057f3a39c61f2dc89ad5ea15a58b`
+and strengthened/isolation-fixed test
+`c195af60071242343b29bfa77f6cad81f302816d3c626885d096ba16d9253d2d`:
+the existing Node22 admission CI-entrypoint integration run passed 65/65 in
+30.974 seconds (45 new adapter cases plus 20 existing cases). It used private
+fixtures, no provider/CI trigger. This is PRE-audit-repair evidence, not proof
+of the later final bytes.
+
+The new client also rendered the real bound Secretary view successfully:
+`writes:false`, packet `absent`, engine `verified`. Own lifecycle state SHA-256
+was identical before/after (`17a9f356...` above); no consume receipt is claimed.
+
+Independent five-axis review identified three medium issues before acceptance:
+
+1. Local Git replacement refs could redirect committed policy objects, and the
+   historical controller inherits that behavior. Diagnosis: removing ambient
+   Git variables alone does not disable replacements. Repair: fixed
+   `GIT_NO_REPLACE_OBJECTS=1` for reads and forwarded controller environment,
+   with a private replacement-blob regression and env readback.
+2. Generic nonzero-controller errors lost actionable recovery reason codes.
+   Repair: a small explicit allowlist of real native JSON error codes; unknown,
+   raw, malformed or duplicate-field output stays sanitized. Test known policy
+   mismatch/branch conflict and secret-bearing unknown output.
+3. The linked-worktree fixture had one direct Git metadata read outside its
+   sanitized helper, followed by a state write. Repair: use the same isolated
+   helper, assert private-fixture metadata containment BEFORE writing, and add
+   hostile ambient Git coverage for that branch as well.
+
+Earlier test-only improvements removed a false-positive negative-test pattern
+and isolated fixture Git setup with a private empty hooks directory and normal
+commits. The three findings above are diagnosed first-pass audit discoveries,
+not failed blind repairs. Implementer is applying only these bounded repairs;
+final focused verification and independent closure are still pending.
+
+## Final bounded source review and verification
+
+All three findings above are fixed and independently closed by
+`/root/source_review_risk_scope` (6.1 Sol/high), with no remaining material
+issue on operability, functionality, coherence, security or risk. Final hashes:
+
+- client: `6bbffde88ed921d4e439d77bee6a3a07204f9a1b046f12439b76cc3b3be2db04`;
+- test: `f26f3ad207348f4b69138bb096fbc742779e7aed0ed49344a229a1c38904c1e3`.
+
+One post-repair targeted Node22 run: 12/12 PASS in 5.507 seconds. It covers
+replacement-object pin selection and forwarded environment, fixture isolation,
+hostile linked-worktree metadata/foreign-fixture unchanged proof, known native
+policy and branch failures, unknown/duplicate/malformed/wrong-status output,
+and the prior sanitization cases. Both source/test syntax checks and scoped
+diff-check pass. Unchanged prior coverage is reused, not reported as a new
+full final-suite run. Failed tests/failed code repairs: zero.
+
+Final production bytes also passed the REAL read-only bound Secretary render:
+exit 0, engine `verified`, selector/task exact, `writes:false`, packet `absent`.
+Lifecycle state SHA-256 remained `17a9f356...` before/after. This is not a real
+fresh start, consumed packet, install or activation test. Reviewer ran no tests
+or external mutations; this is source review, not a forged native/5.6 receipt.
+
+Local refs/replace inventory was empty; the protected base-preimage hash was
+rechecked with replacements disabled and matches the record. Next: native ops
+source commit, then separate protected Bastion-status finalization. No quiet
+window is active or needed for those own-branch commits.
+
+## Native source checkpoint and next task
+
+Native source commit `abd48f5bc3491c8c9f9df211804800b276358e16` passed the
+existing hooks/lane checks, no override or bypass; tree readback
+`0b3c11b588d494660c0cce5420ac1305c3c373d4` exactly matched the staged tree.
+Only the separate protected Bastion-status/docs finalization follows; it uses
+the existing protected-record/rollback/smoke input route, without changing any
+guard. The frozen executable/test hashes remain those independently reviewed.
+
+Next main-dependent step is supported bootstrap of the Hub and Factlens
+dedicated T1 tasks, using each repo's OWN accepted descriptor. Request a new
+narrow quiet window before that operation; do not reuse the released Notes
+window. Stop/release immediately after the bounded bootstrap or unrelated
+blocker. Main is not chased. Other chats may work while no window is active.
+
+No push, PR, merge, provider call, CI trigger, dependency installation, shared
+hook edit, installed/default mutation or activation occurred in this Notes
+source checkpoint. Source readiness is not normal typed-review publication
+readiness; old-model receipts remain unclaimed. No new subagent/MCP server was
+spawned: existing bounded workers were reused and are complete.
+
+Protected-status preflight passed with the existing record/rollback/smoke
+inputs (`dev-t1,hermetic,docs-sync`). This is guarded source documentation,
+not an installed/live permission and not a guard modification.
+
+Preserved author-work pointer: `SUBSTACK-HANDOVER.md` in the ai-agent author
+workspace is reference-only, not this DEV task. Do not claim its referenced
+editorial files were loaded here or execute editorial work.

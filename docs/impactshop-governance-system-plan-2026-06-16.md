@@ -1,5 +1,18 @@
 # ImpactShop Governance System Plan
 
+## 2026-10-21 — Bound v3 native continuity repair
+
+The existing risk-scoped T1 plan adds one owned path,
+`scripts/worktree-continuity-guard.sh`, alongside the lifecycle client and its
+tests. Bound v3 continuity uses installed status and actual pins, never a
+fabricated v2 marker/default selector. Implementation-ready and exact current
+identity are separate checks; clean push is required and no publication permit
+is issued. No-v3 behavior and independent planning/context reads stay unchanged.
+Final affected client suite 86/86 and legacy multi-active fixture PASS. Audit/
+failure details are in `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`.
+Central finite T1 scope extension and native publication remain pending; no
+root policy, shared hook, product runtime or host installation changed.
+
 Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
@@ -671,3 +684,20 @@ The fixture pins `core.hooksPath` below its private temporary repository,
 checks all generated hook paths and a bounded outside snapshot, and exercises
 both the clean generated-hook PASS and an injected sibling-memory FAIL. The
 hook generator itself remains byte-unchanged.
+
+## 2026-10-20 — Risk-scoped DEV Notes T1 compatibility
+
+Bound source task: `dev-risk-scoped-notes-20261020`, approved manifest and
+supported bind at `9149a1735d3b32ac52d9e2006626d6bebb1d46c8`; exact plan
+`docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`. The targeted client fix
+selects a repo-accepted committed-policy descriptor for an unbound start and
+preserves dispatcher-selected old pins for bound tasks. The narrow read-only
+Secretary view is `context --render`; a missing optional packet is not a permit.
+
+This is an existing adapter correction, not a new product module. It changes
+no WordPress, protected inventory/hash, shared hook or installed default.
+Active root policy stays v1. No real task-start/fetch is part of local tests.
+T1 compatibility source, engine staging and T2 target activation are separate;
+new-engine staging on both Air and Mini must precede root routing-schema-2.
+Implementation checks and final acceptance must be read from the exact
+continuity record, not inferred from plan/bind status.

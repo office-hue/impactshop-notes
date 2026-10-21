@@ -1,3 +1,32 @@
+## 2026-10-21 — Notes T1 natív forráskiadási előfeltétel
+
+Aktuális kiegészítés: Arnold külön jóváhagyta a Notes/Hub saját forráskiadását.
+A6.1 Sol/high review P2 találatát javító6b655531 commit a continuity guardot
+futtathatóvá tette, közvetlen végrehajtási teszt1/1 PASS. Installed pre-push
+negatív canary valóban elérte és dirty-pushnál megállította a guardot. Végső
+pozitív canary/CI/publikálás még hátravan; régi lifecycle PASS nem keletkezett.
+
+- Push előtt feltárt hiány: a meglévő protected change recordból hiányzott
+  a natív adapter által elvárt gépi forrásjóváhagyási blokk. A javítás kizárólag
+  dokumentációs bekötés, a már jóváhagyott három védett forrásfelületre.
+- A terv/rekord/continuity/status frissült; kód, teszt, policy, hook és hash-lock
+  változatlan. Tiszta commit utáni natív full-validate/bastion ellenőrzés szükséges;
+  ez a bejegyzés nem állít PASS-t vagy publikálási engedélyt.
+- Központi PR1702 már merged, `48cac5e3`; Notes/Hub publikálás és Air/Mini/T2
+  még hátravan. Nincs fenntartott nyugalmi ablak vagy új CI/provider-futtatás.
+
+## 2026-10-21 — Notes T1 native v3 continuity repair
+
+- Own bound task preserves its real base, selector, policy and engine pin;
+  no legacy marker is invented. Installed status plus explicit policy readiness
+  supply continuity only, never publication authority.
+- Final client suite 86/86 and existing multi-active fixture PASS; diagnosed
+  fixture-path/isolation errors and independent review repair are recorded in
+  `docs/continuity/dev/2026-10-20-dev-risk-scoped-notes.md`.
+- Central PR1701 and FactLens PR348 merged; Notes/Hub publication, central
+  target-scope follow-up, Air/Mini installation and T2 activation remain.
+  Secretary absent is advisory. No new provider/CI/shared-hook action.
+
 ## 2026-09-11 — Sharity profile production accepted
 
 - PR #206 removed the exact Site Kit AdSense producer; PR #207 switched the
@@ -7775,6 +7804,28 @@ secret/cron/watchdog state changed.
   and the affected suite passes 20/20. The combined CI command later exposed
   host-PHP coupling in the positive fixture; fixture-only capability isolation
   preserves the real selector's PHP requirement and passes 24/24 locally.
+
+## 2026-10-20 — Risk-scoped DEV Notes T1 start
+
+- Dedicated controller-created task `dev-risk-scoped-notes-20261020` starts at
+  `73beb6f4598acdca22e7910d39a0088cd5f38b14`; bootstrap window released.
+- Plan: `docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md`; source authority
+  only, governance bind pending. Fix accepted-engine selection and add a narrow
+  read-only Secretary view without changing task pins or root routing policy.
+- No shared hooks, primary/sibling worktree, dependency, provider, installed or
+  product mutation. Tests and implementation acceptance are not yet claimed.
+- The required docs anchor committed as `9149a1735d3b32ac52d9e2006626d6bebb1d46c8`
+  through native hooks. Supported bind/readback now verifies exact plan,
+  `dev-governance-source` and retained engine; implementation is in progress.
+- Implementation now complete and independently source-reviewed on five axes.
+  Three audit findings fixed; 65/65 pre-repair integration cases plus 12/12
+  post-repair targeted cases, syntax/diff PASS. Real bound Secretary render is
+  read-only with unchanged state/verified engine; packet absent, not retrieved.
+  Native source/Bastion commits remain; no fresh start, install or activation.
+- Native source committed as `abd48f5bc3491c8c9f9df211804800b276358e16`, tree
+  `0b3c11b588d494660c0cce5420ac1305c3c373d4` matched staged candidate; normal
+  hooks/lane checks passed. Separate protected Bastion/docs checkpoint only.
+  Next Hub/Factlens bootstrap needs a new short quiet window, not main chasing.
 
 ## 2026-10-19 — Pre-push policy parity R1 planning checkpoint
 
