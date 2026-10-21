@@ -1,5 +1,18 @@
 # Notes DEV T1 continuity
 
+## Publication repair checkpoint — 2026-10-21
+
+Candidate7f191a4c is unchanged before this plan-only scope amendment. Actual
+installed context verifies the own v3 task and engine; Secretary packet absent.
+Native push continuity blocks missing legacy marker/decision. Independent review
+rejected legacy resume because it invents the wrong base/selector. No such
+command was executed. The appended repair plan adds only the native continuity
+script to the already-owned governance scope; client and test paths already
+exist. Preserve all task pins and old evidence. Code follows a supported clean
+plan-anchor bind, then targeted fixtures and five-axis review. The central target
+T1 anchor needs the additional path before release-set acceptance. No push,
+installation, v2 policy cutover or activation is claimed for Notes.
+
 Goal: remove the concrete wrong-default engine failure without weakening hard
 controls or activating v2 routing before both hosts can read it.
 

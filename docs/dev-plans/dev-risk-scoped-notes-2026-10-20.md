@@ -30,6 +30,7 @@ push, merge, installation, activation or production acceptance.
     "releaseProfile": "source-only",
     "changeAllowlist": [
       "scripts/dev-v4-lifecycle-client.mjs",
+      "scripts/worktree-continuity-guard.sh",
       "tests/dev-v4-lifecycle-client.test.mjs",
       "tests/dev-v4-admission.test.mjs",
       "docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md",
@@ -238,3 +239,47 @@ Native ops source commit completed with normal hooks:
 `0b3c11b588d494660c0cce5420ac1305c3c373d4`; tree readback matched the exact
 staged candidate. The separate protected status checkpoint contains no new
 executable/policy change. No push/PR/merge/install/activation occurred.
+
+## T1 publication repair — native v3 continuity, 2026-10-21
+
+Failure `notes-native-continuity-v3-marker-gap`: the real installed v3 task is
+verified, but the native push guard requires missing schema2 marker/decision
+files. No blind repair was attempted. Independent review rejected legacy
+`worktree-task-start --resume`: it would mislabel HEAD as origin/main and assign
+maintenance-docs, hiding the real source delta. Do not run it or forge a marker.
+
+The approved DEV implementation/release scope requires this compatibility repair
+before Notes T1 can publish. Base-owned dev-governance-source already owns both
+scripts and tests. This manifest adds exactly one source path, not selector
+authority. The central T1 exact target path anchor must separately add this path
+before the expanded target can be admitted into the release set.
+
+1. Existing lifecycle client: add only `continuity --mode local|push`. It calls
+   the fixed installed dispatcher `context --render`, never a candidate engine,
+   and verifies own safe v3 state before/after the read. Preserve actual task,
+   branch, repo, base/codeBase/policyCommit, plan anchor, HEAD/tree, engine pin and
+   selector. Compare the installed observation to both the local Git identity
+   and pinned state; reject malformed/stale/foreign/unsafe/pending state. Optional
+   Secretary packet absence is not a failure. Push requires a clean worktree.
+   Existing conflicting legacy marker is rejected, never overwritten. No marker,
+   receipt, state, journal, coordinator, network/provider or shared-hook write.
+   Output means continuity only, explicitly not publication/activation authority.
+2. Native continuity guard: if its own v3 namespace exists (including unsafe or
+   orphan state), call that exact read-only route with the real repo and mode;
+   never fall back on an error. Clear the existing test-only data-root override.
+   Worktrees with no v3 namespace retain the unchanged legacy path and checks.
+3. Existing lifecycle-client tests and registered admission entrypoint: hermetic
+   valid v3, wrong task/repo/branch/pin/base/head/tree, dirty push, malformed or
+   unavailable dispatcher, changed state during read, conflicting legacy marker,
+   orphan/symlink state, and wrapper dispatch/no-fallback/legacy parity. No real
+   controller fixture calls, fetches, installs or shared-hook changes.
+4. DOCSYNC: installed-controller guide, governance, map, protected record,
+   continuity, notes, status and Bastion reflect the exact repair and actual
+   checks. Review all five axes before a source checkpoint; keep old test facts
+   historical. Central and FactLens are merged, Notes/Hub not yet published.
+
+Rollback is a normal source revert, preserving task pins and all packages. This
+repair does not activate root v2, waive native protected guards, authorize a
+provider action or export the central publication exception. Native context
+success does not claim normal lifecycle publication readiness. After committing,
+use supported same-task reconcile/bind as needed; no manual state changes.
