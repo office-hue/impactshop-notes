@@ -18,7 +18,7 @@
         "checks": ["dev-notes-source-push"]
       },
       "notes-hook-images": {
-        "paths": ["scripts/dev-v4-target-hooks.mjs", "scripts/safe-repo-audit.sh", "scripts/worktree-continuity-guard.sh", "scripts/git-health-check.sh", "tests/install-hooks-policy-parity.test.sh", "tests/dev-v4-lifecycle-client.test.mjs"],
+        "paths": ["scripts/dev-v4-target-hooks.mjs", "scripts/safe-repo-audit.sh", "scripts/worktree-continuity-guard.sh", "scripts/git-health-check.sh", "tests/install-hooks-policy-parity.test.sh", "tests/worktree-multi-active-continuity.test.sh", "tests/dev-v4-lifecycle-client.test.mjs"],
         "checks": ["dev-notes-hook-images"]
       },
       "notes-hook-entrypoint": {
@@ -48,7 +48,8 @@
       "dev-notes-source-push": [{"runner": "node", "args": ["--test", "--test-name-pattern=^T2 Notes push ", "tests/dev-v4-lifecycle-client.test.mjs"]}],
       "dev-notes-hook-images": [
         {"runner": "node", "args": ["--test", "--test-name-pattern=^T2 Notes render", "tests/dev-v4-lifecycle-client.test.mjs"]},
-        {"runner": "bash", "args": ["tests/install-hooks-policy-parity.test.sh"]}
+        {"runner": "bash", "args": ["tests/install-hooks-policy-parity.test.sh"]},
+        {"runner": "bash", "args": ["tests/worktree-multi-active-continuity.test.sh"]}
       ],
       "dev-notes-hook-entrypoint": [{"runner": "node", "args": ["--test", "--test-name-pattern=^T2 hook installer ", "tests/dev-v4-lifecycle-client.test.mjs"]}],
       "dev-notes-policy-routing": [{"runner": "node", "args": ["--test", "--test-name-pattern=^T2 Notes policy ", "tests/dev-v4-lifecycle-client.test.mjs"]}],

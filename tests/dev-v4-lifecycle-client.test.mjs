@@ -75,7 +75,8 @@ test('T2 Notes check mapping preserves the old baseline and registers only bound
     'dev-notes-lifecycle-client': [command('^(?!T2 )')],
     'dev-notes-source-push': [command('^T2 Notes push ')],
     'dev-notes-hook-images': [command('^T2 Notes render'),
-      { runner: 'bash', args: ['tests/install-hooks-policy-parity.test.sh'] }],
+      { runner: 'bash', args: ['tests/install-hooks-policy-parity.test.sh'] },
+      { runner: 'bash', args: ['tests/worktree-multi-active-continuity.test.sh'] }],
     'dev-notes-hook-entrypoint': [command('^T2 hook installer ')],
     'dev-notes-policy-routing': [command('^T2 Notes policy ')],
     'dev-notes-source-classification': [{ runner: 'bash', args: ['tests/dev-delivery-v2-adapter.test.sh'] }],
@@ -99,7 +100,7 @@ test('T2 Notes check mapping uses finite capability paths and covers every top-l
     'notes-hook-images': {
       paths: ['scripts/dev-v4-target-hooks.mjs', 'scripts/safe-repo-audit.sh',
         'scripts/worktree-continuity-guard.sh', 'scripts/git-health-check.sh',
-        'tests/install-hooks-policy-parity.test.sh', shared],
+        'tests/install-hooks-policy-parity.test.sh', 'tests/worktree-multi-active-continuity.test.sh', shared],
       checks: ['dev-notes-hook-images'],
     },
     'notes-hook-entrypoint': {
