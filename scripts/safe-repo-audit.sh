@@ -9,29 +9,27 @@ TARGET_PATH="."
 MODE="local"
 PUSH_BASE=""
 PUSH_RANGE=""
+PRINT_PUSH_BASE=0
 
 resolve_push_base() {
-  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
-  local candidate=""
-
-  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-    git merge-base HEAD "$upstream_ref"
-    return 0
+  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-}"
+  local candidate="" upstream_commit=""
+  if [[ -z "$upstream_ref" ]]; then
+    for candidate in '@{upstream}' refs/remotes/origin/HEAD refs/remotes/origin/main refs/remotes/origin/master refs/heads/main refs/heads/master; do
+      if git rev-parse --verify --end-of-options "${candidate}^{commit}" >/dev/null 2>&1; then
+        upstream_ref="$candidate"
+        break
+      fi
+    done
   fi
-
-  for candidate in "origin/HEAD" "origin/main" "origin/master" "main" "master"; do
-    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
-      git merge-base HEAD "$candidate"
-      return 0
-    fi
-  done
-
-  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-    git rev-parse --verify HEAD^
-    return 0
+  if [[ -z "$upstream_ref" ]] || ! upstream_commit="$(git rev-parse --verify --end-of-options "${upstream_ref}^{commit}" 2>/dev/null)"; then
+    echo 'ERROR: audit base unavailable; supply SAFE_REPO_AUDIT_UPSTREAM=<verified-base-commit>.' >&2
+    return 1
   fi
-
-  git hash-object -t tree /dev/null
+  git merge-base HEAD "$upstream_commit" || {
+    echo 'ERROR: audit base has no common history with HEAD; verify the intended base.' >&2
+    return 1
+  }
 }
 
 usage() {
@@ -43,6 +41,7 @@ Options:
   --repo <path>   Target git repository path (default: current directory)
   --strict        Exit non-zero when warnings are found
   --mode <mode>   Scan mode: local (working tree) or push (committed range to upstream)
+  --print-push-base  With --mode push, only resolve the base; does not run an audit
   -h, --help      Show this help
 
 Examples:
@@ -59,6 +58,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --strict)
       STRICT=1
+      shift
+      ;;
+    --print-push-base)
+      PRINT_PUSH_BASE=1
       shift
       ;;
     --mode)
@@ -88,6 +91,12 @@ if [[ "$MODE" != "local" && "$MODE" != "push" ]]; then
 fi
 
 cd "$REPO_ROOT"
+
+if [[ "$PRINT_PUSH_BASE" == 1 ]]; then
+  [[ "$MODE" == push ]] || { echo 'ERROR: --print-push-base requires --mode push' >&2; exit 1; }
+  resolve_push_base
+  exit "$?"
+fi
 
 BRANCH="$(git branch --show-current 2>/dev/null || echo detached)"
 HEAD_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -119,6 +128,8 @@ REMOTE_WRITE_HITS="$TMP_DIR/remote-write-hits.txt"
 if [[ "$MODE" == "push" ]]; then
   PUSH_BASE="$(resolve_push_base)"
   PUSH_RANGE="${PUSH_BASE}..HEAD"
+  # Both semantic guards consume the same resolved range, not their old fallback.
+  export SAFE_REPO_AUDIT_PUSH_RANGE="$PUSH_RANGE"
 fi
 
 {

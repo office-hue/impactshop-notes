@@ -1,5 +1,23 @@
 # Impactshop notes installed-controller lifecycle — 2026-09-27
 
+## 2026-10-23 — T2 forráspolicy, aktiválás előtt
+
+Az alábbi T1 bejegyzések történetiek. A T2 forráspolicy friss feladata egyetlen
+PR1708 motort választ: fcd987b5fc842419e01df2ea07ebcb21f6b4d931 /
+4252eacfb65d65cf9a25f96d7e962336eaf23acfd91ec6d09fcc6a4cca39cc9d.
+A központi policy külön commitja 4099c5a4; nem cserélhető össze a motorcommittal.
+A routing explicit v2 (6-luna/medium, 6.1-sol/high, 6-astra/high); nincs
+automatikus fallback vagy retry. A régi task saját policyCommit és motorpin
+alatt marad. Valódi read-only context render ezt a saját régi taskon igazolta.
+
+A kockázati döntés az aktuális műveletre vonatkozik. Opcionális Secretary
+hiánya advisory; a raw failed check nem PASS. A push/PR/merge/host határ
+továbbra tényleges identitást, jogosultságot, érintett ellenőrzést és
+visszaállíthatóságot követel. A telepítő belépő nem ír automatikusan hookot:
+prepare/apply/status/recover/rollback csak pontos ellenőrzött tranzakcióval.
+Notes T2 itt még nem publikált/aktivált; 107 sikeres helyi client-eset nem
+host-canary. Részletes kiadási sorrend és további feltételek a tasktervben.
+
 ## Scope and continuity
 
 This source-only continuation keeps the exact remote-main base and the linked

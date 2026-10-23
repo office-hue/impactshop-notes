@@ -223,6 +223,65 @@ commit_all "$repo" governance
 payload="$(adapter_payload "$repo" bastion)"
 assert_payload "$payload" "p['changedPathClass']=='governance-only' and p['sourceMergeAdmission'] is True"
 
+# A diagnostic label is not a command. Neither this observation nor an exact
+# source-admission record grants runtime/provider permission.
+repo="$(new_repo audit-diagnostic)"
+printf '%s\n' '#!/usr/bin/env bash' '# Detect possible manual remote write.' 'echo "WARN: remote-write diagnostic only"' > "$repo/scripts/audit.sh"
+commit_all "$repo" audit-diagnostic
+payload="$(reject_bastion "$repo" diagnostic-without-admission)"
+assert_payload "$payload" "p['changedPathClass']=='protected' and p['sourceMergeAdmission'] is False and 'protected-change-record-exact-admission-missing' in p['sourceAdmissionReasons']"
+write_admission "$repo" scripts/audit.sh
+commit_all "$repo" diagnostic-source-record
+payload="$(adapter_payload "$repo" full-validate)"
+assert_payload "$payload" "p['fullValidationEvidence'] is True and p['sourceMergeAdmission'] is False"
+payload="$(adapter_payload "$repo" bastion)"
+assert_payload "$payload" "p['changedPathClass']=='protected' and p['sourceMergeAdmission'] is True and p['providerDeployAllowed'] is False"
+
+# Inspect the actual audit source as data; never execute it in this fixture.
+repo="$(new_repo actual-safe-audit-source)"
+cp "$ROOT/scripts/safe-repo-audit.sh" "$repo/scripts/safe-repo-audit.sh"
+commit_all "$repo" actual-safe-audit-source
+payload="$(reject_bastion "$repo" actual-audit-needs-source-admission)"
+assert_payload "$payload" "p['changedPathClass']=='protected' and p['sourceMergeAdmission'] is False and p['providerDeployAllowed'] is False"
+
+# The narrower classification must retain every existing executable matcher,
+# even with an exact source record and successful local validation.
+# Cases are explicit argv data, not executable shell snippets in this test.
+# Render only into disposable source for inspection; never execute that source.
+remote_cases=(
+  '["git","push","origin","feat/fixture"]'
+  '["gh","pr","create","--title","example"]'
+  '["gh","pr","merge","1"]'
+  '["ssh","user@example.invalid","install","payload"]'
+  '["scp","payload","user@example.invalid:/remote"]'
+  '["rsync","payload","host:/remote/path"]'
+  '["curl","https://example.invalid"]'
+  '["wget","https://example.invalid"]'
+  '["provider-deploy","production"]'
+  '["vercel","deploy","--prod"]'
+  '["railway","up"]'
+)
+case_index=0
+for remote_case in "${remote_cases[@]}"; do
+  case_index=$((case_index + 1))
+  repo="$(new_repo "remote-command-$case_index")"
+  remote_command="$(python3 - "$remote_case" <<'PY'
+import json, shlex, sys
+argv = json.loads(sys.argv[1])
+assert isinstance(argv, list) and argv
+assert all(isinstance(arg, str) for arg in argv)
+print(' '.join(shlex.quote(arg) for arg in argv))
+PY
+)"
+  printf '%s\n' '#!/usr/bin/env bash' "$remote_command" > "$repo/scripts/action.sh"
+  write_admission "$repo" scripts/action.sh
+  commit_all "$repo" remote-command
+  payload="$(adapter_payload "$repo" full-validate)"
+  assert_payload "$payload" "p['fullValidationEvidence'] is True and p['sourceMergeAdmission'] is False"
+  payload="$(reject_bastion "$repo" "remote-command-$case_index")"
+  assert_payload "$payload" "p['changedPathClass']=='deploy' and p['providerDeployAllowed'] is False and 'deploy-source-admission-forbidden' in p['sourceAdmissionReasons']"
+done
+
 repo="$(new_repo workflow)"
 printf '%s\n' 'name: hostile' 'jobs:' '  deploy:' '    runs-on: ubuntu-latest' '    steps:' '      - run: provider-deploy production' > "$repo/.github/workflows/provider-deploy.yml"
 commit_all "$repo" workflow

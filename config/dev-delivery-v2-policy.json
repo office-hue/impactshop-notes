@@ -4,7 +4,58 @@
   "repoId": "impactshop-notes",
   "authority": "repo-local",
   "changeImpact": {"docsPrefixes": ["docs/"], "deployPrefixes": ["deploy/"], "protectedPrefixes": ["config/dev-v4/", "config/dev-delivery-v2-policy.json"], "fullValidationPaths": [], "codePrefixes": ["apps/", "packages/", "tools/", "src/"], "governancePrefixes": ["config/", "scripts/", "tests/", ".github/" ]},
-  "taskRequirements": {"schemaVersion": 1, "authority": "single-policy-table", "classes": {"docs-only": {"requiredChecks": ["git-diff-check"]}, "governance-only": {"requiredChecks": ["git-diff-check"]}, "code-local": {"requiredChecks": ["git-diff-check"]}, "protected": {"requiredChecks": ["git-diff-check"]}, "deploy": {"requiredChecks": ["git-diff-check"]}, "unknown": {"requiredChecks": ["git-diff-check"]}}, "pathRequiredChecks": {}},
-  "evidence": {"maximumCommandOutputBytes": 1048576, "requiredChecksByProfile": {"affected": ["git-diff-check"]}, "registeredCommands": {"git-diff-check": [{"runner": "bash", "args": ["-lc", "git diff --check"]}]}},
+  "taskRequirements": {
+    "schemaVersion": 1,
+    "authority": "single-policy-table",
+    "classes": {"docs-only": {"requiredChecks": ["git-diff-check"]}, "governance-only": {"requiredChecks": ["git-diff-check"]}, "code-local": {"requiredChecks": ["git-diff-check"]}, "protected": {"requiredChecks": ["git-diff-check"]}, "deploy": {"requiredChecks": ["git-diff-check"]}, "unknown": {"requiredChecks": ["git-diff-check"]}},
+    "pathRequiredChecks": {
+      "notes-lifecycle-client": {
+        "paths": ["scripts/dev-v4-lifecycle-client.mjs", "scripts/worktree-continuity-guard.sh", "config/dev-v4/lifecycle-contract.v1.json", "tests/dev-v4-lifecycle-client.test.mjs"],
+        "checks": ["dev-notes-lifecycle-client"]
+      },
+      "notes-source-push": {
+        "paths": ["scripts/guarded-push.sh", "scripts/safe-repo-audit.sh", "tests/dev-v4-lifecycle-client.test.mjs"],
+        "checks": ["dev-notes-source-push"]
+      },
+      "notes-hook-images": {
+        "paths": ["scripts/dev-v4-target-hooks.mjs", "scripts/safe-repo-audit.sh", "scripts/worktree-continuity-guard.sh", "scripts/git-health-check.sh", "tests/install-hooks-policy-parity.test.sh", "tests/worktree-multi-active-continuity.test.sh", "tests/dev-v4-lifecycle-client.test.mjs"],
+        "checks": ["dev-notes-hook-images"]
+      },
+      "notes-hook-entrypoint": {
+        "paths": ["scripts/install-hooks.sh", "tests/dev-v4-lifecycle-client.test.mjs"],
+        "checks": ["dev-notes-hook-entrypoint"]
+      },
+      "notes-policy-routing": {
+        "paths": ["config/dev-v4/lifecycle-contract.v1.json", "config/dev-v4/graded-delivery.v1.json", "tests/dev-v4-lifecycle-client.test.mjs"],
+        "checks": ["dev-notes-policy-routing"]
+      },
+      "notes-source-classification": {
+        "paths": ["scripts/dev-delivery-v2-adapter.sh", "scripts/safe-repo-audit.sh", "tests/dev-delivery-v2-adapter.test.sh"],
+        "checks": ["dev-notes-source-classification"]
+      },
+      "notes-check-map": {
+        "paths": ["config/dev-delivery-v2-policy.json", "tests/dev-v4-lifecycle-client.test.mjs"],
+        "checks": ["dev-notes-check-map"]
+      }
+    }
+  },
+  "evidence": {
+    "maximumCommandOutputBytes": 1048576,
+    "requiredChecksByProfile": {"affected": ["git-diff-check"]},
+    "registeredCommands": {
+      "git-diff-check": [{"runner": "bash", "args": ["-lc", "git diff --check"]}],
+      "dev-notes-lifecycle-client": [{"runner": "node", "args": ["--test", "--test-name-pattern=^(?!T2 )", "tests/dev-v4-lifecycle-client.test.mjs"]}],
+      "dev-notes-source-push": [{"runner": "node", "args": ["--test", "--test-name-pattern=^T2 Notes push ", "tests/dev-v4-lifecycle-client.test.mjs"]}],
+      "dev-notes-hook-images": [
+        {"runner": "node", "args": ["--test", "--test-name-pattern=^T2 Notes render", "tests/dev-v4-lifecycle-client.test.mjs"]},
+        {"runner": "bash", "args": ["tests/install-hooks-policy-parity.test.sh"]},
+        {"runner": "bash", "args": ["tests/worktree-multi-active-continuity.test.sh"]}
+      ],
+      "dev-notes-hook-entrypoint": [{"runner": "node", "args": ["--test", "--test-name-pattern=^T2 hook installer ", "tests/dev-v4-lifecycle-client.test.mjs"]}],
+      "dev-notes-policy-routing": [{"runner": "node", "args": ["--test", "--test-name-pattern=^T2 Notes policy ", "tests/dev-v4-lifecycle-client.test.mjs"]}],
+      "dev-notes-source-classification": [{"runner": "bash", "args": ["tests/dev-delivery-v2-adapter.test.sh"]}],
+      "dev-notes-check-map": [{"runner": "node", "args": ["--test", "--test-name-pattern=^T2 Notes check mapping ", "tests/dev-v4-lifecycle-client.test.mjs"]}]
+    }
+  },
   "lifecycle": {"contractPath": "config/dev-v4/lifecycle-contract.v1.json", "engineContractVersion": 1, "legacyStageBPolicyPath": "config/dev-v4/stage-b-activation-policy.v1.json", "legacyStageBCompatible": true, "legacyStageBRequired": false}
 }

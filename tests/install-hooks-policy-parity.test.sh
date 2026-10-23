@@ -71,6 +71,23 @@ snapshot_source_boundary() {
 
 outside_before="$(snapshot_source_boundary)"
 (cd "$REPO" && bash scripts/install-hooks.sh >/dev/null)
+[[ -z "$(ls -A "$HOOK_DIR")" ]]
+# A renderer is not a host installer. Only this test writes its disposable hooks.
+NODE_BIN="${NODE_BIN:-node}"
+"$NODE_BIN" "$ROOT/scripts/dev-v4-target-hooks.mjs" --render > "$TMP_ROOT/images.json"
+python3 - "$TMP_ROOT/images.json" "$HOOK_DIR" <<'FIXTURE_IMAGES'
+import base64, hashlib, json, pathlib, sys
+images = json.loads(pathlib.Path(sys.argv[1]).read_text())["changes"]
+assert set(images) == {"pre-commit", "commit-msg", "pre-push", "post-commit", "post-merge", "post-checkout"}
+root = pathlib.Path(sys.argv[2])
+for name, image in images.items():
+    raw = base64.b64decode(image["bytes"], validate=True)
+    assert image["state"] == "file" and image["mode"] == 0o755
+    assert hashlib.sha256(raw).hexdigest() == image["sha256"]
+    target = root / name
+    target.write_bytes(raw)
+    target.chmod(image["mode"])
+FIXTURE_IMAGES
 
 actual_hook_dir="$(git -C "$REPO" rev-parse --git-path hooks)"
 [[ "$actual_hook_dir" == "$HOOK_DIR" ]]

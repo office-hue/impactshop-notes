@@ -237,9 +237,49 @@ bash "$SECONDARY/scripts/worktree-coordination-sync.sh" \
 grep -Fq "path: $SECONDARY" "$ACTIVE_FILE"
 (cd "$SECONDARY" && bash scripts/worktree-continuity-guard.sh --mode push >/dev/null)
 
-(cd "$REPO" && bash scripts/install-hooks.sh >/dev/null)
 HOOK_DIR="$(git -C "$REPO" rev-parse --git-path hooks)"
 if [[ "$HOOK_DIR" != /* ]]; then HOOK_DIR="$REPO/$HOOK_DIR"; fi
+# No-argument help must not install or rewrite hooks/configuration.
+snapshot_fixture_hooks() {
+  python3 - "$HOOK_DIR" <<'HOOK_SNAPSHOT'
+import hashlib, json, pathlib, stat, sys
+root = pathlib.Path(sys.argv[1])
+rows = []
+for entry in sorted(root.rglob("*")):
+    assert not entry.is_symlink()
+    if entry.is_file():
+        rows.append([str(entry.relative_to(root)), stat.S_IMODE(entry.stat().st_mode),
+                     hashlib.sha256(entry.read_bytes()).hexdigest()])
+print(json.dumps(rows))
+HOOK_SNAPSHOT
+}
+hooks_before="$(snapshot_fixture_hooks)"
+config_before="$(git -C "$REPO" config --local --list)"
+(cd "$REPO" && bash scripts/install-hooks.sh >/dev/null)
+[[ "$(snapshot_fixture_hooks)" == "$hooks_before" ]]
+[[ "$(git -C "$REPO" config --local --list)" == "$config_before" ]]
+# Render actual production images, but materialize only in this disposable repo.
+NODE_BIN="${NODE_BIN:-node}"
+"$NODE_BIN" "$ROOT/scripts/dev-v4-target-hooks.mjs" --render > "$TMP_ROOT/images.json"
+python3 - "$TMP_ROOT/images.json" "$HOOK_DIR" "$TMP_ROOT" <<'FIXTURE_IMAGES'
+import base64, hashlib, json, pathlib, sys
+root = pathlib.Path(sys.argv[2]).resolve()
+assert pathlib.Path(sys.argv[3]).resolve() in root.parents
+images = json.loads(pathlib.Path(sys.argv[1]).read_text())["changes"]
+assert set(images) == {"pre-commit", "commit-msg", "pre-push",
+                       "post-commit", "post-merge", "post-checkout"}
+decoded = {}
+for name, image in images.items():
+    raw = base64.b64decode(image["bytes"], validate=True)
+    assert image["state"] == "file" and image["mode"] == 0o755
+    assert hashlib.sha256(raw).hexdigest() == image["sha256"]
+    assert not (root / name).exists() and not (root / name).is_symlink()
+    decoded[name] = raw
+for name, raw in decoded.items():
+    target = root / name
+    target.write_bytes(raw)
+    target.chmod(0o755)
+FIXTURE_IMAGES
 for inspected_hook_source in \
   "$ROOT/scripts/guarded-push.sh" "$ROOT/scripts/install-hooks.sh" \
   "$ROOT/scripts/start-feature-worktree.sh" "$HOOK_DIR/pre-push" \
@@ -250,7 +290,11 @@ for inspected_hook_source in \
     exit 1
   fi
 done
-grep -Eq 'WORKTREE_COORDINATION_SYNC' "$HOOK_DIR/pre-push"
-grep -Eq -- '--register "\$REPO_ROOT"' "$HOOK_DIR/pre-push"
+grep -Fq 'local_guard worktree-continuity-guard.sh --mode push' "$HOOK_DIR/pre-push"
+if grep -Eq 'WORKTREE_COORDINATION_SYNC|worktree-coordination-sync\.sh|--register' \
+  "$HOOK_DIR/pre-push"; then
+  echo "unexpected coordination writer in rendered pre-push" >&2
+  exit 1
+fi
 
 echo "worktree multi-active continuity: PASS"

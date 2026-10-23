@@ -1,287 +1,127 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
+# No direct hook/config write and no sibling discovery. This wrapper is not a permit.
+SCRIPT_DIR="$(cd -- "$(/usr/bin/dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+exec /usr/bin/python3 -I -B - "$SCRIPT_DIR/install-hooks.sh" "$@" <<'OFFICE_DEV_TARGET_HOOK_ENTRYPOINT'
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import pwd
+import re
+import stat
+import sys
+import uuid
 
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-if [[ -z "${REPO_ROOT}" ]]; then
-  echo "[install-hooks] hiba: nem git repóban futsz." >&2
-  exit 1
-fi
+TARGET = "impactshop-notes"
+SCRIPT_NAME = "install-hooks.sh"
+LIMIT = 2097152
 
-ORIGIN_URL="$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)"
+def snapshot(file):
+    """Stable no-follow bytes from the one fixed native-account loader."""
+    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for part in file.parts[1:-1]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            value = os.fstat(child)
+            if (value.st_uid not in {0, os.getuid()} or value.st_mode & 0o022
+                    and not (value.st_uid == 0 and value.st_mode & stat.S_ISVTX)):
+                os.close(child)
+                raise ValueError("unsafe_loader_ancestor")
+            os.close(fd)
+            fd = child
+        opened = os.open(file.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+        try:
+            before = os.fstat(opened)
+            def identity(value):
+                return (value.st_dev, value.st_ino, value.st_uid, value.st_mode,
+                        value.st_nlink, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+            if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+                    or before.st_uid != os.getuid() or stat.S_IMODE(before.st_mode) != 0o500
+                    or not 0 < before.st_size <= LIMIT):
+                raise ValueError("unsafe_loader_file")
+            chunks, total = [], 0
+            while total <= LIMIT:
+                chunk = os.read(opened, min(65536, LIMIT + 1 - total))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                total += len(chunk)
+            if (total != before.st_size or identity(before) != identity(os.fstat(opened))
+                    or identity(before) != identity(os.stat(file.name, dir_fd=fd, follow_symlinks=False))):
+                raise ValueError("loader_changed")
+            return b"".join(chunks)
+        finally:
+            os.close(opened)
+    finally:
+        os.close(fd)
 
-case "$ORIGIN_URL" in
-  *impactshop-notes.git)
-    ORIGIN_ENV_VAR="IMPACTSHOP_NOTES_EXPECTED_ORIGIN"
-    DEFAULT_ORIGIN="https://github.com/office-hue/impactshop-notes.git"
-    ORIGIN_MODE="required"
-    ;;
-  *ai-agent.git)
-    ORIGIN_ENV_VAR="AI_AGENT_EXPECTED_ORIGIN"
-    DEFAULT_ORIGIN=""
-    ORIGIN_MODE="optional"
-    ;;
-  *impact_hub.git)
-    ORIGIN_ENV_VAR="IMPACT_HUB_EXPECTED_ORIGIN"
-    DEFAULT_ORIGIN="https://github.com/office-hue/impact_hub.git"
-    ORIGIN_MODE="required"
-    ;;
-  *)
-    # Fallback by path for local/offline cases.
-    if [[ "$REPO_ROOT" == *"/impactshop-notes"* || "$REPO_ROOT" == *"/impactshop-notes-"* ]]; then
-      ORIGIN_ENV_VAR="IMPACTSHOP_NOTES_EXPECTED_ORIGIN"
-      DEFAULT_ORIGIN="https://github.com/office-hue/impactshop-notes.git"
-      ORIGIN_MODE="required"
-    elif [[ "$REPO_ROOT" == *"/ai-agent"* || "$REPO_ROOT" == *"/ai-agent-"* ]]; then
-      ORIGIN_ENV_VAR="AI_AGENT_EXPECTED_ORIGIN"
-      DEFAULT_ORIGIN=""
-      ORIGIN_MODE="optional"
-    elif [[ "$REPO_ROOT" == *"/impact_hub"* || "$REPO_ROOT" == *"/impact_hub-"* ]]; then
-      ORIGIN_ENV_VAR="IMPACT_HUB_EXPECTED_ORIGIN"
-      DEFAULT_ORIGIN="https://github.com/office-hue/impact_hub.git"
-      ORIGIN_MODE="required"
-    else
-      echo "[install-hooks] hiba: nem támogatott repo (origin/path alapján): $REPO_ROOT" >&2
-      exit 1
-    fi
-    ;;
-esac
+def run(script, arguments):
+    parser = argparse.ArgumentParser(allow_abbrev=False,
+        description="Repo-only hook tranzakció. Nem telepít automatikusan; külön jóváhagyott loader/bootstrap/grant szükséges.")
+    parser.add_argument("operation", choices=["prepare", "status", "apply", "recover", "rollback"])
+    parser.add_argument("--transaction-id", required=True)
+    parser.add_argument("--expected-launcher-digest", required=True)
+    parser.add_argument("--expected-bootstrap-digest", required=True)
+    for key in ("request", "expected-manifest-digest", "expected-grant-digest", "expected-quiescence-digest"):
+        parser.add_argument("--" + key)
+    if not arguments:
+        parser.print_help()
+        return 0
+    args = parser.parse_args(arguments)
+    dispatched = False
+    try:
+        seen = set()
+        for value in arguments:
+            if value.startswith("--"):
+                key = value.split("=", 1)[0]
+                if key in seen:
+                    raise ValueError("duplicate_argument")
+                seen.add(key)
+        for key, value in vars(args).items():
+            if key.endswith("_digest") and value is not None and not re.fullmatch("[0-9a-f]{64}", value):
+                raise ValueError("digest_invalid")
+        if str(uuid.UUID(args.transaction_id)) != args.transaction_id:
+            raise ValueError("transaction_invalid")
+        if args.request is not None and not Path(args.request).is_absolute():
+            raise ValueError("request_must_be_absolute")
+        if not sys.flags.isolated or sys.platform != "darwin" or not os.getuid() or os.getuid() != os.geteuid():
+            raise ValueError("native_runtime_required")
+        home = Path(pwd.getpwuid(os.getuid()).pw_dir)
+        if home.resolve(strict=True) != home or home.stat().st_uid != os.getuid():
+            raise ValueError("native_home_invalid")
+        if os.environ.get("HOME", str(home)) != str(home) or any(
+                key.startswith(("GIT_", "LD_", "DYLD_", "OFFICE_DEV_")) or
+                key in {"PYTHONPATH", "PYTHONHOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "CODEX_HOME"}
+                for key in os.environ):
+            raise ValueError("environment_override")
+        script = Path(script)
+        if (not script.is_absolute() or script.is_symlink() or script.resolve(strict=True) != script
+                or script.name != SCRIPT_NAME or script.parent.name != "scripts"):
+            raise ValueError("script_identity_invalid")
+        repo = script.parent.parent
+        loader = home / "Library/Application Support/office-dev/bin/dev-v4-target-hooks"
+        raw = snapshot(loader)
+        if hashlib.sha256(raw).hexdigest() != args.expected_launcher_digest:
+            raise ValueError("launcher_digest_mismatch")
+        forwarded = [str(loader), args.operation, "--expected-target", TARGET,
+                     "--expected-repo", str(repo)]
+        for key, value in vars(args).items():
+            if key not in {"operation", "expected_launcher_digest"} and value is not None:
+                forwarded.extend(["--" + key.replace("_", "-"), value])
+        sys.argv = forwarded
+        namespace = {"__file__": str(loader), "__name__": "__main__"}
+        dispatched = True
+        exec(compile(raw, str(loader), "exec"), namespace)
+        return 0
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        print(json.dumps({"schemaVersion": 1, "state": "unverified",
+            "reasonCode": "hook_entrypoint_unverified", "authorityGranted": False,
+            "writes": None if dispatched else False, "recoveryRequired": dispatched,
+            "nextAction": "status" if dispatched else "diagnose_inputs"}))
+        return 2
 
-HOOK_DIR="$(git -C "$REPO_ROOT" rev-parse --git-path hooks)"
-if [[ "$HOOK_DIR" != /* ]]; then
-  HOOK_DIR="${REPO_ROOT}/${HOOK_DIR}"
-fi
-mkdir -p "${HOOK_DIR}"
-
-COMMIT_TEMPLATE="${REPO_ROOT}/.gitmessage"
-if [[ ! -f "${COMMIT_TEMPLATE}" ]]; then
-  cat > "${COMMIT_TEMPLATE}" <<'TPL'
-# type(scope): rövid összefoglaló
-#
-# Why:
-#
-# Memory-ID: none
-#
-# Rollback:
-#
-TPL
-fi
-git -C "${REPO_ROOT}" config commit.template "${COMMIT_TEMPLATE}"
-git -C "${REPO_ROOT}" config alias.wstate '!bash scripts/workflow-state.sh'
-git -C "${REPO_ROOT}" config alias.wnext '!bash scripts/workflow-state.sh'
-git -C "${REPO_ROOT}" config alias.wpush '!bash scripts/guarded-push.sh'
-
-cat > "${HOOK_DIR}/pre-commit" <<'HOOK'
-#!/usr/bin/env bash
-set -euo pipefail
-
-if [[ "${IMPACT_POLICY_ALLOW_MAIN_COMMIT:-0}" == "1" ]]; then
-  exit 0
-fi
-
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-if [[ -n "${REPO_ROOT}" && -x "${REPO_ROOT}/scripts/check-protected-file-touch.sh" ]]; then
-  "${REPO_ROOT}/scripts/check-protected-file-touch.sh" --mode local
-fi
-if [[ -n "${REPO_ROOT}" && -x "${REPO_ROOT}/scripts/check-commit-lane.sh" ]]; then
-  "${REPO_ROOT}/scripts/check-commit-lane.sh" --mode local
-fi
-
-BRANCH="$(git branch --show-current 2>/dev/null || echo detached)"
-if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
-  echo "[repo-guard] Blocked commit on protected branch: $BRANCH" >&2
-  echo "[repo-guard] Use feature/worktree flow:" >&2
-  echo "[repo-guard]   bash scripts/start-feature-worktree.sh <feature-branch>" >&2
-  echo "[repo-guard] Emergency bypass (approval required): IMPACT_POLICY_ALLOW_MAIN_COMMIT=1" >&2
-  exit 1
-fi
-HOOK
-
-cat > "${HOOK_DIR}/commit-msg" <<'HOOK'
-#!/usr/bin/env bash
-set -euo pipefail
-
-MSG_FILE="${1:-}"
-if [[ -z "${MSG_FILE}" || ! -f "${MSG_FILE}" ]]; then
-  exit 0
-fi
-
-if ! rg -q '^Memory-ID:' "${MSG_FILE}"; then
-  printf '\nMemory-ID: none\n' >> "${MSG_FILE}"
-fi
-HOOK
-
-cat > "${HOOK_DIR}/pre-push" <<HOOK
-#!/usr/bin/env bash
-set -euo pipefail
-
-REPO_ROOT="\$(git rev-parse --show-toplevel)"
-BRANCH="\$(git branch --show-current 2>/dev/null || echo detached)"
-
-if [[ "\${IMPACT_POLICY_ALLOW_MAIN_PUSH:-0}" != "1" ]]; then
-  if [[ "\$BRANCH" == "main" || "\$BRANCH" == "master" ]]; then
-    echo "[repo-guard] Blocked push from protected branch: \$BRANCH" >&2
-    echo "[repo-guard] Use feature/worktree flow:" >&2
-    echo "[repo-guard]   bash scripts/start-feature-worktree.sh <feature-branch>" >&2
-    echo "[repo-guard] Emergency bypass (approval required): IMPACT_POLICY_ALLOW_MAIN_PUSH=1" >&2
-    exit 1
-  fi
-
-  while read -r local_ref local_sha remote_ref remote_sha; do
-    [[ -z "\${local_ref:-}" ]] && continue
-    if [[ "\$local_ref" == "refs/heads/main" || "\$remote_ref" == "refs/heads/main" || "\$local_ref" == "refs/heads/master" || "\$remote_ref" == "refs/heads/master" ]]; then
-      echo "[repo-guard] Blocked direct push to main/master." >&2
-      echo "[repo-guard] Open PR from feature/worktree branch instead." >&2
-      exit 1
-    fi
-  done
-fi
-
-required_paths=(
-  "scripts/start-feature-worktree.sh"
-  "scripts/git-health-check.sh"
-  "docs/pr-policy.md"
-  ".github/pull_request_template.md"
-  "PR-EXIT-CHECKLIST.md"
-)
-missing=0
-for rel in "\${required_paths[@]}"; do
-  if [[ ! -e "\$REPO_ROOT/\$rel" ]]; then
-    echo "[repo-guard] Missing required policy file: \$rel" >&2
-    missing=1
-  fi
-done
-if [[ "\$missing" -ne 0 ]]; then
-  exit 1
-fi
-
-SAFE_AUDIT_SCRIPT=""
-PROTECTED_TOUCH_SCRIPT=""
-COMMIT_LANE_SCRIPT=""
-WORKTREE_CONTINUITY_GUARD=""
-WORKTREE_COORDINATION_SYNC=""
-search_dir="\$REPO_ROOT"
-for _ in 1 2 3 4 5 6; do
-  candidate="\$search_dir/scripts/safe-repo-audit.sh"
-  if [[ -x "\$candidate" ]]; then
-    SAFE_AUDIT_SCRIPT="\$candidate"
-  fi
-  protected_candidate="\$search_dir/scripts/check-protected-file-touch.sh"
-  if [[ -x "\$protected_candidate" ]]; then
-    PROTECTED_TOUCH_SCRIPT="\$protected_candidate"
-  fi
-  commit_lane_candidate="\$search_dir/scripts/check-commit-lane.sh"
-  if [[ -x "\$commit_lane_candidate" ]]; then
-    COMMIT_LANE_SCRIPT="\$commit_lane_candidate"
-  fi
-  continuity_candidate="\$search_dir/scripts/worktree-continuity-guard.sh"
-  if [[ -x "\$continuity_candidate" ]]; then
-    WORKTREE_CONTINUITY_GUARD="\$continuity_candidate"
-  fi
-  coordination_candidate="\$search_dir/scripts/worktree-coordination-sync.sh"
-  if [[ -x "\$coordination_candidate" ]]; then
-    WORKTREE_COORDINATION_SYNC="\$coordination_candidate"
-  fi
-  if [[ -n "\$SAFE_AUDIT_SCRIPT" && -n "\$PROTECTED_TOUCH_SCRIPT" && -n "\$COMMIT_LANE_SCRIPT" && -n "\$WORKTREE_CONTINUITY_GUARD" && -n "\$WORKTREE_COORDINATION_SYNC" ]]; then
-    break
-  fi
-  parent="\$(cd "\$search_dir/.." && pwd)"
-  [[ "\$parent" == "\$search_dir" ]] && break
-  search_dir="\$parent"
-done
-
-if [[ -z "\$SAFE_AUDIT_SCRIPT" ]]; then
-  echo "[repo-guard] missing safe audit script (searched upwards from: \$REPO_ROOT)" >&2
-  exit 1
-fi
-
-"\${SAFE_AUDIT_SCRIPT}" --repo "\${REPO_ROOT}" --strict --mode push
-
-if [[ -n "\$PROTECTED_TOUCH_SCRIPT" ]]; then
-  "\${PROTECTED_TOUCH_SCRIPT}" --mode push
-fi
-
-if [[ -n "\$COMMIT_LANE_SCRIPT" ]]; then
-  "\${COMMIT_LANE_SCRIPT}" --mode push
-fi
-
-if [[ -n "\$WORKTREE_COORDINATION_SYNC" ]]; then
-  "\${WORKTREE_COORDINATION_SYNC}" --repo-root "\$REPO_ROOT" --register "\$REPO_ROOT"
-fi
-
-if [[ -n "\$WORKTREE_CONTINUITY_GUARD" ]]; then
-  "\${WORKTREE_CONTINUITY_GUARD}" --mode push
-fi
-
-expected_origin="\${${ORIGIN_ENV_VAR}:-${DEFAULT_ORIGIN}}"
-actual_origin="\$(git remote get-url origin 2>/dev/null || true)"
-HOOK
-
-if [[ "$ORIGIN_MODE" == "optional" ]]; then
-  cat >> "${HOOK_DIR}/pre-push" <<'HOOK'
-if [[ -n "${expected_origin}" ]]; then
-  if [[ "${actual_origin}" != "${expected_origin}" ]]; then
-    echo "[repo-guard] Blocked push: origin mismatch" >&2
-    echo "[repo-guard] expected: ${expected_origin}" >&2
-    echo "[repo-guard] actual:   ${actual_origin}" >&2
-    exit 1
-  fi
-else
-  echo "[repo-guard] origin check skipped (expected origin nincs beállítva)"
-fi
-HOOK
-else
-  cat >> "${HOOK_DIR}/pre-push" <<'HOOK'
-if [[ "${actual_origin}" != "${expected_origin}" ]]; then
-  echo "[repo-guard] Blocked push: origin mismatch" >&2
-  echo "[repo-guard] expected: ${expected_origin}" >&2
-  echo "[repo-guard] actual:   ${actual_origin}" >&2
-  exit 1
-fi
-HOOK
-fi
-
-cat > "${HOOK_DIR}/post-commit" <<'HOOK'
-#!/usr/bin/env bash
-set -u
-
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-[[ -n "${REPO_ROOT}" ]] || exit 0
-
-if [[ -x "$REPO_ROOT/scripts/post-commit-status.sh" ]]; then
-  "$REPO_ROOT/scripts/post-commit-status.sh" || true
-fi
-
-exit 0
-HOOK
-
-cat > "${HOOK_DIR}/post-merge" <<'HOOK'
-#!/usr/bin/env bash
-set -u
-
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-[[ -n "${REPO_ROOT}" ]] || exit 0
-
-if [[ -x "$REPO_ROOT/scripts/post-merge-deploy-guard.sh" ]]; then
-  "$REPO_ROOT/scripts/post-merge-deploy-guard.sh" || true
-fi
-
-exit 0
-HOOK
-
-cat > "${HOOK_DIR}/post-checkout" <<'HOOK'
-#!/usr/bin/env bash
-set -u
-
-exit 0
-HOOK
-
-chmod +x "${HOOK_DIR}/pre-commit" "${HOOK_DIR}/commit-msg" "${HOOK_DIR}/pre-push" "${HOOK_DIR}/post-commit" "${HOOK_DIR}/post-merge" "${HOOK_DIR}/post-checkout"
-echo "[install-hooks] OK: ${HOOK_DIR}/pre-commit telepítve."
-echo "[install-hooks] OK: ${HOOK_DIR}/commit-msg telepítve (Memory-ID auto line)."
-echo "[install-hooks] OK: ${HOOK_DIR}/pre-push telepítve."
-echo "[install-hooks] OK: ${HOOK_DIR}/post-commit telepítve (repo-local status)."
-echo "[install-hooks] OK: ${HOOK_DIR}/post-merge telepítve (repo-local deploy guard)."
-echo "[install-hooks] OK: ${HOOK_DIR}/post-checkout telepítve (repo-local no-op)."
-echo "[install-hooks] commit template: ${COMMIT_TEMPLATE}"
-echo "[install-hooks] git aliasok: wstate, wnext, wpush"
-echo "[install-hooks] enforced one-path policy aktív (commit/push/PR/deploy flow)."
+if __name__ == "__main__":
+    raise SystemExit(run(sys.argv[1], sys.argv[2:]))
+OFFICE_DEV_TARGET_HOOK_ENTRYPOINT

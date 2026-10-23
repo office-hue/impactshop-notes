@@ -5,11 +5,374 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { renderHookImages } from '../scripts/dev-v4-target-hooks.mjs';
 
 const client = fileURLToPath(new URL('../scripts/dev-v4-lifecycle-client.mjs', import.meta.url));
+
+test('T2 Notes policy binds the verified engine and explicit v2 models without live authority', () => {
+  const load = relative => JSON.parse(fs.readFileSync(new URL('../config/dev-v4/' + relative, import.meta.url)));
+  const life = load('lifecycle-contract.v1.json'), graded = load('graded-delivery.v1.json');
+  assert.equal(life.repoId, 'impactshop-notes');
+  assert.deepEqual(life.acceptedRetainedEngines, [{
+    sourceRepo: 'office-hue/ai-agent', sourceCommit: 'fcd987b5fc842419e01df2ea07ebcb21f6b4d931',
+    digest: '4252eacfb65d65cf9a25f96d7e962336eaf23acfd91ec6d09fcc6a4cca39cc9d',
+    engineContractVersion: 1, capsuleSchemaVersion: 3,
+  }]);
+  assert.deepEqual(life.reviewRouting, {
+    schemaVersion: 2, contractId: 'dev-v4.review-routing', routeAuthority: 'task-policy-commit',
+    runtimeProvenance: 'actual-model-and-reasoning-required', fallback: { state: 'unavailable', automatic: false },
+    boundedImplementation: { model: 'gpt-6-luna', reasoning: 'medium' },
+    planning: { model: 'gpt-6-astra', reasoning: 'high' },
+    sourceReview: { model: 'gpt-6.1-sol', reasoning: 'high', minimumCount: 1 },
+    authoritySecurityProduction: { model: 'gpt-6.1-sol', reasoning: 'high' },
+    boundedSystemicProblem: { model: 'gpt-6-astra', reasoning: 'high' },
+    maximumOrUltra: 'explicit-runtime-supported-choice-only',
+    independentPlanQa: { minimumCount: 2, onlyPlanIds: ['dev-lifecycle-recovery-20260922', 'dev-lifecycle-simplification-20260922'] },
+  });
+  for (const name of ['maintenance', 'standard', 'protected']) {
+    const route = life.reviewRouting[name === 'protected' ? 'authoritySecurityProduction' : 'boundedImplementation'];
+    assert.deepEqual(graded.lanes[name].model, { id: route.model, reasoning: route.reasoning });
+    assert.equal(graded.lanes[name].provider.deployments, 0);
+  }
+  for (const key of ['candidateAuthority', 'providerMutationAllowed', 'hostMutationAllowed', 'runtimeMutationAllowed', 'secretMaterialAllowed']) assert.equal(life[key], false);
+  assert.equal(graded.globalGuards.liveMutationAllowed, false);
+  assert.deepEqual(life.readOnlyCommands, ['status', 'resume']);
+});
+
+test('T2 Notes policy scopes guidance to actual hard risks and never turns warnings into permission', () => {
+  const life = JSON.parse(fs.readFileSync(new URL('../config/dev-v4/lifecycle-contract.v1.json', import.meta.url)));
+  assert.deepEqual(life.decisionModel, {
+    schemaVersion: 1,
+    hardRiskClasses: ['identity', 'foreign-work', 'secret', 'authority', 'applicable-check-risk', 'required-dependency', 'integrity', 'live-prestate', 'cas', 'uncertain-mutation'],
+    advisoryDefault: true, diagnosisAfterFailedRepairs: 2, warningRationaleAuthorizesMutation: false,
+    rawFailureCanBecomePass: false, futurePrerequisiteBlocksCurrentOperation: false,
+  });
+  assert.deepEqual(Object.keys(life.operationProfiles).sort(), ['acceptance', 'merge', 'pr-check', 'pr-create', 'provider-release', 'push', 'vps-release']);
+  for (const [name, profile] of Object.entries(life.operationProfiles)) {
+    assert.ok(life.operations.includes(name));
+    assert.equal(profile.advisoryOnly, true); assert.equal(profile.authorityGranted, false);
+    assert.ok(profile.hardBlockers.includes('identity'));
+    assert.ok(profile.hardBlockers.every(value => life.decisionModel.hardRiskClasses.includes(value)));
+    assert.ok(!profile.hardBlockers.includes('required-check'));
+  }
+});
+
+test('T2 Notes check mapping preserves the old baseline and registers only bounded local argv', () => {
+  const policy = JSON.parse(fs.readFileSync(new URL('../config/dev-delivery-v2-policy.json', import.meta.url)));
+  assert.equal(policy.repoId, 'impactshop-notes');
+  assert.equal(policy.taskRequirements.authority, 'single-policy-table');
+  assert.deepEqual(Object.keys(policy.taskRequirements.classes).sort(),
+    ['code-local', 'deploy', 'docs-only', 'governance-only', 'protected', 'unknown']);
+  for (const entry of Object.values(policy.taskRequirements.classes)) {
+    assert.deepEqual(entry, { requiredChecks: ['git-diff-check'] });
+  }
+  assert.deepEqual(policy.evidence.requiredChecksByProfile, { affected: ['git-diff-check'] });
+  const command = pattern => ({ runner: 'node',
+    args: ['--test', '--test-name-pattern=' + pattern, 'tests/dev-v4-lifecycle-client.test.mjs'] });
+  assert.deepEqual(policy.evidence.registeredCommands, {
+    'git-diff-check': [{ runner: 'bash', args: ['-lc', 'git diff --check'] }],
+    'dev-notes-lifecycle-client': [command('^(?!T2 )')],
+    'dev-notes-source-push': [command('^T2 Notes push ')],
+    'dev-notes-hook-images': [command('^T2 Notes render'),
+      { runner: 'bash', args: ['tests/install-hooks-policy-parity.test.sh'] },
+      { runner: 'bash', args: ['tests/worktree-multi-active-continuity.test.sh'] }],
+    'dev-notes-hook-entrypoint': [command('^T2 hook installer ')],
+    'dev-notes-policy-routing': [command('^T2 Notes policy ')],
+    'dev-notes-source-classification': [{ runner: 'bash', args: ['tests/dev-delivery-v2-adapter.test.sh'] }],
+    'dev-notes-check-map': [command('^T2 Notes check mapping ')],
+  });
+});
+
+test('T2 Notes check mapping uses finite capability paths and covers every top-level fixture once', () => {
+  const policy = JSON.parse(fs.readFileSync(new URL('../config/dev-delivery-v2-policy.json', import.meta.url)));
+  const shared = 'tests/dev-v4-lifecycle-client.test.mjs';
+  assert.deepEqual(policy.taskRequirements.pathRequiredChecks, {
+    'notes-lifecycle-client': {
+      paths: ['scripts/dev-v4-lifecycle-client.mjs', 'scripts/worktree-continuity-guard.sh',
+        'config/dev-v4/lifecycle-contract.v1.json', shared],
+      checks: ['dev-notes-lifecycle-client'],
+    },
+    'notes-source-push': {
+      paths: ['scripts/guarded-push.sh', 'scripts/safe-repo-audit.sh', shared],
+      checks: ['dev-notes-source-push'],
+    },
+    'notes-hook-images': {
+      paths: ['scripts/dev-v4-target-hooks.mjs', 'scripts/safe-repo-audit.sh',
+        'scripts/worktree-continuity-guard.sh', 'scripts/git-health-check.sh',
+        'tests/install-hooks-policy-parity.test.sh', 'tests/worktree-multi-active-continuity.test.sh', shared],
+      checks: ['dev-notes-hook-images'],
+    },
+    'notes-hook-entrypoint': {
+      paths: ['scripts/install-hooks.sh', shared], checks: ['dev-notes-hook-entrypoint'],
+    },
+    'notes-check-map': {
+      paths: ['config/dev-delivery-v2-policy.json', shared], checks: ['dev-notes-check-map'],
+    },
+    'notes-policy-routing': {
+      paths: ['config/dev-v4/lifecycle-contract.v1.json', 'config/dev-v4/graded-delivery.v1.json', shared],
+      checks: ['dev-notes-policy-routing'],
+    },
+    'notes-source-classification': {
+      paths: ['scripts/dev-delivery-v2-adapter.sh', 'scripts/safe-repo-audit.sh', 'tests/dev-delivery-v2-adapter.test.sh'],
+      checks: ['dev-notes-source-classification'],
+    },
+  });
+  const nodeCommands = Object.values(policy.evidence.registeredCommands)
+    .flat().filter(entry => entry.runner === 'node');
+  const patterns = nodeCommands.map(entry => new RegExp(entry.args[1].slice('--test-name-pattern='.length)));
+  const source = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  const titles = [...source.matchAll(/^test\('([^']+)'/gm)].map(match => match[1]);
+  assert.ok(titles.length > 30);
+  for (const title of titles) {
+    assert.equal(patterns.filter(pattern => pattern.test(title)).length, 1, title);
+  }
+  for (const pattern of patterns) assert.ok(titles.some(title => pattern.test(title)), String(pattern));
+  for (const rule of Object.values(policy.taskRequirements.pathRequiredChecks)) {
+    assert.equal(new Set(rule.paths).size, rule.paths.length);
+    for (const relative of rule.paths) {
+      assert.ok(!relative.includes('*') && !relative.endsWith('/') && !relative.includes('..'));
+      const info = fs.lstatSync(new URL('../' + relative, import.meta.url));
+      assert.ok(info.isFile() && !info.isSymbolicLink(), relative);
+    }
+    for (const check of rule.checks) assert.ok(Object.hasOwn(policy.evidence.registeredCommands, check));
+  }
+});
+
+function notesLegacyAuditFixture() {
+  let source = fs.readFileSync(new URL('../scripts/safe-repo-audit.sh', import.meta.url), 'utf8');
+  source = source.replace(/resolve_push_base\(\) \{[\s\S]*?\n\}\n/, "resolve_push_base() {\n  local upstream_ref=\"${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}\"\n  local candidate=\"\"\n\n  if git rev-parse --verify \"$upstream_ref\" >/dev/null 2>&1; then\n    git merge-base HEAD \"$upstream_ref\"\n    return 0\n  fi\n\n  for candidate in \"origin/HEAD\" \"origin/main\" \"origin/master\" \"main\" \"master\"; do\n    if git rev-parse --verify \"$candidate\" >/dev/null 2>&1; then\n      git merge-base HEAD \"$candidate\"\n      return 0\n    fi\n  done\n\n  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then\n    git rev-parse --verify HEAD^\n    return 0\n  fi\n\n  git hash-object -t tree /dev/null\n}\n")
+    .replace('PRINT_PUSH_BASE=0\n', '')
+    .replace('  --print-push-base  With --mode push, only resolve the base; does not run an audit\n', '')
+    .replace('    --print-push-base)\n      PRINT_PUSH_BASE=1\n      shift\n      ;;\n', '')
+    .replace(/if \[\[ "\$PRINT_PUSH_BASE" == 1 \]\]; then[\s\S]*?\nfi\n\n/, '')
+    .replace('  # Both semantic guards consume the same resolved range, not their old fallback.\n  export SAFE_REPO_AUDIT_PUSH_RANGE="$PUSH_RANGE"\n', '');
+  assert.equal(createHash('sha256').update(source).digest('hex'), '4b519c1510ab34955bcaeb31da4b2a3dab9f91841e64ad7437a232fe00785563');
+  return source;
+}
+test('T2 Notes rendered hook repairs only the known legacy audit with the frozen exact-base successor', t => {
+  const f = notesRenderedHookFixture(t), audit = path.join(f.scripts, 'safe-repo-audit.sh');
+  const historical = notesLegacyAuditFixture();
+  fs.writeFileSync(audit, historical);
+  f.git('add', '.'); f.git('commit', '-m', 'historical audit fixture');
+  const base = f.git('rev-parse', 'HEAD'); f.git('update-ref', 'refs/remotes/origin/main', base);
+  fs.writeFileSync(path.join(f.root, 'docs/another.md'), 'docs delta\n');
+  f.git('add', '.'); f.git('commit', '-m', 'docs delta');
+  const head = f.git('rev-parse', 'HEAD'), result = f.push(f.row('0'.repeat(40), head));
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stderr, /known legacy audit: frozen exact-base/);
+  assert.ok(result.stdout.includes('Range:   ' + base + '..HEAD'));
+  assert.equal(fs.readFileSync(audit, 'utf8'), historical, 'old task source is not rewritten');
+});
+
+function notesRenderedHookFixture(t) {
+  const f = fixture(t), scripts = path.join(f.root, 'scripts');
+  fs.mkdirSync(scripts); fs.mkdirSync(path.join(f.root, 'docs')); fs.mkdirSync(path.join(f.root, '.github'));
+  for (const file of ['scripts/start-feature-worktree.sh', 'scripts/git-health-check.sh',
+    'docs/pr-policy.md', '.github/pull_request_template.md', 'PR-EXIT-CHECKLIST.md'])
+    fs.writeFileSync(path.join(f.root, file), 'fixture\n');
+  const log = path.join(f.root, '.git/hook-guard-calls');
+  for (const name of ['check-protected-file-touch.sh', 'check-commit-lane.sh', 'worktree-continuity-guard.sh', 'safe-repo-audit.sh'])
+    fs.writeFileSync(path.join(scripts, name), '#!/bin/bash\nprintf "%s|%s|%s\\n" "' + name
+      + '" "$*" "${SAFE_REPO_AUDIT_PUSH_RANGE:-}" >> "' + log + '"\n[[ "${FIXTURE_DENY:-}" != "' + name + '" ]]\n');
+  fs.writeFileSync(path.join(scripts, 'worktree-coordination-sync.sh'), '#!/bin/bash\nexit 88\n');
+  f.git('add', '.'); f.git('commit', '-m', 'hook fixture base');
+  const base = f.git('rev-parse', 'HEAD'); f.git('update-ref', 'refs/remotes/origin/main', base);
+  f.git('checkout', '-b', 'dev/hook-fixture');
+  fs.writeFileSync(path.join(f.root, 'docs/delta.md'), 'delta');
+  f.git('add', '.'); f.git('commit', '-m', 'hook fixture task');
+  const head = f.git('rev-parse', 'HEAD');
+  const hooks = path.join(f.root, '.git/rendered-hooks'); fs.mkdirSync(hooks);
+  const rendered = renderHookImages();
+  for (const [name, image] of Object.entries(rendered.changes)) {
+    assert.equal(image.mode, 0o755);
+    fs.writeFileSync(path.join(hooks, name), Buffer.from(image.bytes, 'base64'), { mode: image.mode });
+  }
+  const origin = 'https://github.com/office-hue/impactshop-notes.git';
+  const row = (remote = '0'.repeat(40), local = head, target = 'refs/heads/dev/hook-fixture') =>
+    'refs/heads/dev/hook-fixture ' + local + ' ' + target + ' ' + remote + '\n';
+  const invoke = (name, args = [], input = '', overrides = {}) => spawnSync('/bin/bash',
+    [path.join(hooks, name), ...args], { cwd: f.root, env: { ...f.env, ...overrides }, encoding: 'utf8', input, timeout: 7000 });
+  const push = (input = row(), overrides = {}, args = ['origin', origin]) => invoke('pre-push', args, input, overrides);
+  return { ...f, scripts, log, base, head, hooks, row, invoke, push, origin, rendered };
+}
+
+test('T2 Notes rendered hooks preserve six images and exact push base without coordination writes', t => {
+  const f = notesRenderedHookFixture(t), before = snapshot(f.root);
+  assert.deepEqual(Object.keys(f.rendered.changes).sort(),
+    ['commit-msg', 'post-checkout', 'post-commit', 'post-merge', 'pre-commit', 'pre-push']);
+  const result = f.push();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const lines = fs.readFileSync(f.log, 'utf8').trim().split('\n');
+  assert.equal(lines.length, 4);
+  for (const line of lines) assert.ok(line.endsWith('|' + f.base + '..' + f.head), line);
+  assert.ok(lines[2].startsWith('worktree-continuity-guard.sh|--mode push|'));
+  assert.ok(lines[3].includes('--strict --mode push'));
+  assert.deepEqual(snapshot(f.root).filter(([file]) => file !== f.log), before,
+    'only the explicitly owned fixture call log may change');
+});
+test('T2 Notes rendered pre-commit keeps both mandatory native guards including 0644 scripts', t => {
+  const f = notesRenderedHookFixture(t);
+  assert.equal(f.invoke('pre-commit').status, 0);
+  for (const name of ['check-protected-file-touch.sh', 'check-commit-lane.sh'])
+    assert.notEqual(f.invoke('pre-commit', [], '', { FIXTURE_DENY: name }).status, 0);
+  f.git('checkout', 'main');
+  assert.notEqual(f.invoke('pre-commit').status, 0);
+});
+test('T2 Notes rendered push preserves all guard denials and rejects missing or symlink guard', t => {
+  const f = notesRenderedHookFixture(t);
+  for (const name of ['check-protected-file-touch.sh', 'check-commit-lane.sh', 'worktree-continuity-guard.sh', 'safe-repo-audit.sh'])
+    assert.notEqual(f.push(f.row(), { FIXTURE_DENY: name }).status, 0);
+  const guard = path.join(f.scripts, 'worktree-continuity-guard.sh');
+  fs.unlinkSync(guard); f.git('add', '.'); f.git('commit', '-m', 'missing continuity');
+  let head = f.git('rev-parse', 'HEAD');
+  assert.notEqual(f.push(f.row('0'.repeat(40), head)).status, 0);
+  fs.symlinkSync('check-commit-lane.sh', guard); f.git('add', '.'); f.git('commit', '-m', 'unsafe continuity');
+  head = f.git('rev-parse', 'HEAD');
+  assert.notEqual(f.push(f.row('0'.repeat(40), head)).status, 0);
+});
+test('T2 Notes rendered push denies transport/ref/head/dirty drift and uses existing remote base', t => {
+  const f = notesRenderedHookFixture(t);
+  assert.equal(f.push(f.row(f.base)).status, 0);
+  for (const input of ['', f.row()+f.row(), f.row('0'.repeat(40), f.base),
+    f.row('f'.repeat(40)), f.row('0'.repeat(40), f.head, 'refs/heads/main')])
+    assert.notEqual(f.push(input).status, 0);
+  assert.notEqual(f.push(f.row(), {}, ['origin', 'https://example.invalid/foreign.git']).status, 0);
+  f.git('remote', 'set-url', 'origin', 'https://example.invalid/foreign.git');
+  assert.notEqual(f.push().status, 0);
+  f.git('remote', 'set-url', 'origin', f.origin);
+  fs.writeFileSync(path.join(f.root, 'dirty.txt'), 'dirty');
+  assert.notEqual(f.push().status, 0);
+});
+test('T2 Notes rendered commit metadata and optional hooks stay repo-local', t => {
+  const f = notesRenderedHookFixture(t), message = path.join(f.root, '.git/message');
+  fs.writeFileSync(message, 'fixture\n');
+  assert.equal(f.invoke('commit-msg', [message]).status, 0);
+  assert.equal(f.invoke('commit-msg', [message]).status, 0);
+  assert.equal(fs.readFileSync(message, 'utf8').match(/Memory-ID: none/g).length, 1);
+  for (const name of ['post-commit', 'post-merge', 'post-checkout'])
+    assert.equal(f.invoke(name).status, 0);
+});
+test('T2 Notes renderer rejects delimiter injection and oversized images', () => {
+  for (const value of ['\nNOTES_FROZEN_AUDIT\n', 'NOTES_FROZEN_AUDIT\necho injected',
+    '#!/bin/bash\nNOTES_FROZEN_AUDIT', 'NOTES_FROZEN_AUDIT', '#!/bin/bash\n\0'])
+    assert.throws(() => renderHookImages(value), /audit_source_invalid/);
+  assert.throws(() => renderHookImages('x'.repeat(65536)), /hook_image_too_large/);
+});
+
+test('T2 Notes rendered hooks never execute guards through a symlinked scripts directory', t => {
+  const f = notesRenderedHookFixture(t), foreign = path.join(f.home, 'foreign-scripts');
+  fs.renameSync(f.scripts, foreign);
+  const sentinel = path.join(f.home, 'foreign-executed');
+  for (const name of ['check-protected-file-touch.sh', 'check-commit-lane.sh', 'worktree-continuity-guard.sh',
+    'safe-repo-audit.sh', 'post-commit-status.sh', 'post-merge-deploy-guard.sh'])
+    fs.writeFileSync(path.join(foreign, name), '#!/bin/bash\ntouch "' + sentinel + '"\n');
+  fs.symlinkSync(foreign, f.scripts, 'dir');
+  f.git('add', '.'); f.git('commit', '-m', 'unsafe scripts fixture');
+  const head = f.git('rev-parse', 'HEAD');
+  assert.notEqual(f.invoke('pre-commit').status, 0);
+  assert.notEqual(f.push(f.row('0'.repeat(40), head)).status, 0);
+  for (const name of ['post-commit', 'post-merge', 'post-checkout'])
+    assert.equal(f.invoke(name).status, 0);
+  assert.equal(fs.existsSync(sentinel), false);
+});
 const continuityGuard = fileURLToPath(new URL('../scripts/worktree-continuity-guard.sh', import.meta.url));
 const start = ['start', '--task-id', 'fixture-task', '--selector', 'dev-governance-source', '--branch', 'dev/fixture-task'];
 const accepted = { sourceRepo: 'office-hue/ai-agent', sourceCommit: '8'.repeat(40), digest: 'a'.repeat(64), engineContractVersion: 1, capsuleSchemaVersion: 3 };
+
+function pushEntrypointFixture(t) {
+  const f = fixture(t), scripts = path.join(f.root, 'scripts'), bin = path.join(f.home, 'bin');
+  fs.mkdirSync(scripts); fs.mkdirSync(bin); fs.mkdirSync(path.join(f.root, 'docs'));
+  for (const name of ['guarded-push.sh', 'safe-repo-audit.sh']) {
+    fs.copyFileSync(new URL('../scripts/' + name, import.meta.url), path.join(scripts, name));
+    fs.chmodSync(path.join(scripts, name), 0o644);
+  }
+  const log = path.join(f.root, '.git/fixture-guards'), pushed = path.join(f.root, '.git/fixture-push');
+  const guards = ['check-commit-lane.sh', 'check-protected-file-touch.sh', 'worktree-continuity-guard.sh'];
+  for (const name of guards) fs.writeFileSync(path.join(scripts, name), `#!/bin/bash\n\nprintf '%s|%s|%s\\n' '${name}' "$*" "\${SAFE_REPO_AUDIT_PUSH_RANGE:-}" >> '${log}'\n[[ "\${FIXTURE_DENY_GUARD:-}" != '${name}' ]]\n`, { mode: 0o644 });
+  const coordinated = path.join(f.root, '.git/fixture-coordination');
+  fs.writeFileSync(path.join(scripts, 'worktree-coordination-sync.sh'), `#!/bin/bash\ntouch '${coordinated}'\nexit 19\n`, { mode: 0o755 });
+  fs.writeFileSync(path.join(f.root, 'docs/fixture.md'), 'baseline\n');
+  f.git('add', '.'); f.git('commit', '-m', 'fixture entrypoints');
+  const base = f.git('rev-parse', 'HEAD'); f.git('update-ref', 'refs/remotes/origin/main', base);
+  f.git('checkout', '-b', 'dev/push-fixture');
+  fs.writeFileSync(path.join(f.root, 'docs/fixture.md'), 'changed\n');
+  f.git('add', '.'); f.git('commit', '-m', 'fixture change');
+  fs.writeFileSync(path.join(bin, 'git'), `#!/bin/bash\nfor arg in "$@"; do\n if [[ "$arg" == push ]]; then printf '%s\\n' "$@" > '${pushed}'; exit 0; fi\ndone\nexec /usr/bin/git "$@"\n`, { mode: 0o755 });
+  const env = { ...f.env, PATH: bin + ':' + process.env.PATH, SAFE_REPO_AUDIT_UPSTREAM: '', SAFE_REPO_AUDIT_PUSH_RANGE: '' };
+  const audit = (args = [], extra = {}) => spawnSync('/bin/bash', [path.join(scripts, 'safe-repo-audit.sh'), '--repo', f.root, '--mode', 'push', ...args], { cwd: f.root, env: { ...env, ...extra }, encoding: 'utf8', timeout: 7000 });
+  const push = (extra = {}) => spawnSync('/bin/bash', [path.join(scripts, 'guarded-push.sh'), 'origin', 'dev/push-fixture:dev/push-fixture'], { cwd: f.root, env: { ...env, ...extra }, encoding: 'utf8', timeout: 7000 });
+  return { ...f, scripts, log, pushed, coordinated, guards, base, audit, push };
+}
+
+test('T2 Notes push first-push checks 0644 guards with one range and no coordination write', t => {
+  const f = pushEntrypointFixture(t), result = f.push();
+  assert.equal(result.status, 0, result.stderr + result.stdout);
+  assert.equal(fs.existsSync(f.coordinated), false);
+  assert.deepEqual(fs.readFileSync(f.pushed, 'utf8').trim().split('\n'), ['-C', f.root, 'push', 'origin', 'dev/push-fixture:dev/push-fixture']);
+  const lines = fs.readFileSync(f.log, 'utf8').trim().split('\n');
+  assert.equal(lines.length, 3);
+  for (const line of lines) assert.ok(line.endsWith('|' + f.base + '..HEAD'));
+  assert.match(result.stdout, new RegExp('Range:   ' + f.base + '\\.\\.HEAD'));
+});
+test('T2 Notes push resolves explicit base and rejects invalid or disconnected bases', t => {
+  const f = pushEntrypointFixture(t);
+  assert.equal(f.audit(['--print-push-base'], { SAFE_REPO_AUDIT_UPSTREAM: f.base }).stdout.trim(), f.base);
+  const foreign = f.git('commit-tree', f.git('rev-parse', 'HEAD^{tree}'), '-m', 'unrelated synthetic root');
+  for (const base of ['does-not-exist', '--all', foreign]) {
+    const r = f.push({ SAFE_REPO_AUDIT_UPSTREAM: base });
+    assert.notEqual(r.status, 0); assert.match(r.stderr, /audit base (unavailable|has no common history)/);
+    assert.equal(fs.existsSync(f.pushed), false); assert.equal(fs.existsSync(f.log), false);
+  }
+});
+test('T2 Notes push cannot skip a denied 0644 guard', t => {
+  const f = pushEntrypointFixture(t);
+  for (const name of f.guards) {
+    assert.notEqual(f.push({ FIXTURE_DENY_GUARD: name }).status, 0);
+    assert.equal(fs.existsSync(f.pushed), false);
+  }
+});
+test('T2 Notes push uses an existing upstream and never invents a base without one', t => {
+  const f = pushEntrypointFixture(t);
+  f.git('update-ref', 'refs/remotes/origin/reviewed', f.base);
+  // The base adapter fixture sets only origin.url; no network fetch is run.
+  f.git('config', 'remote.origin.fetch', '+refs/heads/*:refs/remotes/origin/*');
+  f.git('branch', '--set-upstream-to=origin/reviewed');
+  f.git('update-ref', '-d', 'refs/remotes/origin/main'); f.git('branch', '-D', 'main');
+  const resolved = f.audit(['--print-push-base']);
+  assert.equal(resolved.status, 0, resolved.stderr); assert.equal(resolved.stdout.trim(), f.base);
+  f.git('branch', '--unset-upstream'); f.git('update-ref', '-d', 'refs/remotes/origin/reviewed');
+  const missing = f.audit(['--print-push-base']);
+  assert.notEqual(missing.status, 0); assert.match(missing.stderr, /audit base unavailable/);
+  assert.equal(fs.existsSync(f.pushed), false);
+});
+test('T2 Notes push rejects missing and symlinked required guards before any push', t => {
+  const f = pushEntrypointFixture(t);
+  for (const name of [...f.guards, 'safe-repo-audit.sh']) {
+    const file = path.join(f.scripts, name); fs.renameSync(file, file + '.saved');
+    assert.notEqual(f.push().status, 0);
+    fs.symlinkSync(file + '.saved', file); assert.notEqual(f.push().status, 0);
+    fs.unlinkSync(file); fs.renameSync(file + '.saved', file);
+  }
+  assert.equal(fs.existsSync(f.pushed), false); assert.equal(fs.existsSync(f.log), false);
+});
+test('T2 Notes push audit propagates its exact range to semantic guards', t => {
+  const f = pushEntrypointFixture(t);
+  for (const name of f.guards.slice(0, 2)) fs.chmodSync(path.join(f.scripts, name), 0o755);
+  const result = f.audit(['--strict'], { SAFE_REPO_AUDIT_UPSTREAM: f.base });
+  assert.equal(result.status, 0, result.stderr + result.stdout);
+  const lines = fs.readFileSync(f.log, 'utf8').trim().split('\n');
+  assert.equal(lines.length, 2);
+  for (const line of lines) assert.ok(line.endsWith('|' + f.base + '..HEAD'));
+  assert.equal(fs.existsSync(f.pushed), false);
+});
+test('T2 Notes push preserves strict sensitive-path rejection', t => {
+  const f = pushEntrypointFixture(t);
+  fs.writeFileSync(path.join(f.root, '.env.fixture-private'), 'FIXTURE_ONLY=not-a-real-secret\n');
+  f.git('add', '.env.fixture-private'); f.git('commit', '-m', 'synthetic sensitive path');
+  const result = f.push(); assert.notEqual(result.status, 0);
+  assert.match(result.stdout, /STRICT MODE/); assert.equal(fs.existsSync(f.pushed), false);
+});
 function snapshot(dir) {
   return fs.readdirSync(dir).sort().flatMap(name => {
     const file = path.join(dir, name), stat = fs.lstatSync(file);
@@ -53,7 +416,7 @@ function fixture(t, inheritedEnv = process.env) {
   function run(args, overrides = {}) { return spawnSync(process.execPath, [client, ...args], { env: { ...env, ...overrides }, encoding: 'utf8', timeout: 10000 }); }
   function argv(args) { const result = run(args); assert.equal(result.status, 0, result.stderr); const out = JSON.parse(result.stdout); assert.equal(out.fixtureOnly, true); return out.argv; }
   function blocked(args, code) { const result = run(args); assert.equal(result.status, 1); assert.equal(result.stdout, ''); const out = JSON.parse(result.stderr); assert.equal(out.status, 'blocked'); if (code) assert.equal(out.error, code); assert.ok(!result.stderr.includes(tmp)); assert.ok(!result.stderr.includes('SECRET')); }
-  return { root, data, git, contract, selectors, life, descriptor, loader, loaderBody, bind, stateDir, stateFile, commitPolicy, run, argv, blocked };
+  return { root, home, env, data, git, contract, selectors, life, descriptor, loader, loaderBody, bind, stateDir, stateFile, commitPolicy, run, argv, blocked };
 }
 
 test('ambient Git overrides cannot redirect fixture setup writes to another synthetic repository', t => {
@@ -290,4 +653,149 @@ test('native executable continuity wrapper uses exact v3 mode without legacy fal
   assert.equal(result.error, undefined);
   assert.equal(result.status, 7); assert.deepEqual(JSON.parse(result.stdout), { argv: ['continuity', '--mode', 'push'], root: f.root, data: null });
   assert.equal(fs.existsSync(path.join(f.root, '.git/worktree-active.json')), false);
+});
+
+const hookEntrypointFixtureHarness = String.raw`
+import contextlib, hashlib, io, json, os, pathlib, sys, tempfile, unittest
+from unittest.mock import patch
+from types import SimpleNamespace
+source = pathlib.Path(sys.argv[1]).read_text()
+python = source.split("<<'OFFICE_DEV_TARGET_HOOK_ENTRYPOINT'\n", 1)[1].rsplit("\nOFFICE_DEV_TARGET_HOOK_ENTRYPOINT", 1)[0]
+scope = {"__name__": "fixture"}
+exec(compile(python, "reviewed-wrapper-fixture", "exec"), scope)
+
+class EntrypointTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = pathlib.Path(self.tmp.name).resolve()
+        self.home = self.root / "native-home"
+        self.home.mkdir()
+        self.repo = self.root / "own repo"
+        self.script = self.repo / "scripts" / scope["SCRIPT_NAME"]
+        self.script.parent.mkdir(parents=True)
+        self.script.write_text(source)
+        self.loader = self.home / "Library/Application Support/office-dev/bin/dev-v4-target-hooks"
+        self.loader.parent.mkdir(parents=True, mode=0o700)
+        self.payload = b'import json,sys\nprint(json.dumps({"argv":sys.argv,"file":__file__}))\nraise SystemExit(17)\n'
+        self.set_loader(self.payload)
+        self.base = ["--transaction-id", "22222222-2222-4222-8222-222222222222",
+                     "--expected-bootstrap-digest", "b"*64,
+                     "--expected-launcher-digest", hashlib.sha256(self.payload).hexdigest()]
+    def set_loader(self, raw):
+        if self.loader.exists():
+            self.loader.chmod(0o600)
+        self.loader.write_bytes(raw)
+        self.loader.chmod(0o500)
+    def invoke(self, operation="status", arguments=None, environment=None):
+        output = io.StringIO()
+        with patch.object(scope["sys"], "platform", "darwin"), patch.object(scope["pwd"], "getpwuid",
+                return_value=SimpleNamespace(pw_dir=str(self.home))), patch.dict(os.environ,
+                {"HOME":str(self.home), **(environment or {})}, clear=True), contextlib.redirect_stdout(output):
+            previous = sys.argv[:]
+            try:
+                try:
+                    code = scope["run"](str(self.script), [operation, *(self.base if arguments is None else arguments)])
+                except SystemExit as error:
+                    code = error.code
+            finally:
+                sys.argv = previous
+        lines = output.getvalue().splitlines()
+        return code, json.loads(lines[-1]) if lines else None
+    def denied(self, **kwargs):
+        code, result = self.invoke(**kwargs)
+        self.assertEqual(code, 2)
+        self.assertIs(result["writes"], False)
+        self.assertFalse(result["authorityGranted"])
+    def test_every_operation_binds_own_root_and_literal_target(self):
+        previous = pathlib.Path.cwd()
+        try:
+            os.chdir(self.root)
+            for operation in ("prepare","status","apply","recover","rollback"):
+                code, result = self.invoke(operation)
+                self.assertEqual(code,17)
+                argv = result["argv"]
+                self.assertEqual(argv[:6], [str(self.loader),operation,"--expected-target",scope["TARGET"],"--expected-repo",str(self.repo)])
+                self.assertNotIn("--expected-launcher-digest",argv)
+                self.assertEqual(result["file"],str(self.loader))
+                self.assertIn("b"*64,argv)
+        finally:
+            os.chdir(previous)
+    def test_environment_selection_is_rejected(self):
+        for env in ({"HOME":str(self.root)},{"OFFICE_DEV_CONTROLLER":"/foreign"},
+                    {"GIT_DIR":"/foreign"},{"PYTHONPATH":"/foreign"},{"CODEX_HOME":"/foreign"}):
+            self.denied(environment=env)
+    def test_bad_hash_and_bad_input_are_denied_before_dispatch(self):
+        for args in (self.base[:-1]+["a"*64], self.base+["--request","relative"],
+                     self.base+["--expected-manifest-digest","bad"],
+                     ["--transaction-id","bad",*self.base[2:]], self.base+self.base[:2]):
+            self.denied(arguments=args)
+    def test_caller_cannot_supply_scope_unknown_or_abbreviated_flag(self):
+        for extra in (["--expected-target","foreign"],["--expected-repo","/foreign"],
+                      ["--expected-launcher-dig","a"*64],["--foreign","anything"]):
+            code,result=self.invoke(arguments=self.base+extra)
+            self.assertEqual(code,2)
+            self.assertIsNone(result)
+    def test_missing_symlink_hardlink_and_writable_loader_are_denied(self):
+        self.loader.unlink()
+        self.denied()
+        other=self.root/"other.py"; other.write_bytes(self.payload);other.chmod(0o500)
+        self.loader.symlink_to(other)
+        self.denied()
+        self.loader.unlink();os.link(other,self.loader)
+        self.denied()
+        self.loader.unlink();self.set_loader(self.payload);self.loader.chmod(0o700)
+        self.denied()
+    def test_ancestor_symlink_is_denied(self):
+        parent=self.loader.parent
+        destination=parent.with_name("other-bin")
+        parent.rename(destination);parent.symlink_to(destination,target_is_directory=True)
+        self.denied()
+    def test_exact_snapshot_executes_even_if_path_changes_after_read(self):
+        original=scope["snapshot"]
+        def raced(file):
+            raw=original(file)
+            self.set_loader(b'raise RuntimeError("unverified bytes executed")\n')
+            return raw
+        with patch.dict(scope, {"snapshot":raced}):
+            code,result=self.invoke()
+        self.assertEqual(code,17)
+        self.assertEqual(result["argv"][3],scope["TARGET"])
+    def test_dispatch_exception_never_claims_no_effect(self):
+        payload=b'raise ValueError("simulated post-dispatch uncertainty")\n'
+        self.set_loader(payload)
+        code,result=self.invoke(arguments=self.base[:-1]+[hashlib.sha256(payload).hexdigest()])
+        self.assertEqual(code,2)
+        self.assertIsNone(result["writes"])
+        self.assertTrue(result["recoveryRequired"])
+        self.assertEqual(result["nextAction"],"status")
+    def test_symlink_script_cannot_redirect_repo_identity(self):
+        other=self.script.with_name("other.sh");self.script.rename(other);self.script.symlink_to(other)
+        self.denied()
+
+unittest.main(argv=["fixture"], verbosity=1)
+`;
+
+test('T2 hook installer entrypoint freezes its loader and binds only its own repo', () => {
+  const script = new URL('../scripts/install-hooks.sh', import.meta.url);
+  const python = process.platform === 'darwin' ? '/usr/bin/python3' : 'python3';
+  const result = spawnSync(python, ['-I', '-B', '-c', hookEntrypointFixtureHarness, script.pathname],
+    { encoding: 'utf8', timeout: 15000 });
+  assert.equal(result.status, 0, result.stderr + result.stdout);
+  assert.match(result.stderr, /Ran 9 tests/);
+});
+
+test('T2 hook installer help is non-mutating and has no automatic legacy fallback', t => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'hook-entrypoint-help-'));
+  t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
+  const script = new URL('../scripts/install-hooks.sh', import.meta.url);
+  const source = fs.readFileSync(script, 'utf8');
+  assert.doesNotMatch(source, /install_hook\s*\(|git .*config|WORKSPACE_ROOT|mkdir -p|cat >|memory:|coordination-sync/);
+  for (const argv of [[], ['--help']]) {
+    const result = spawnSync('/bin/bash', [script.pathname, ...argv],
+      { cwd: temporary, env: { HOME: temporary, PATH: '/usr/bin:/bin' }, encoding: 'utf8', timeout: 5000 });
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    assert.match(result.stdout, /--expected-launcher-digest/);
+    assert.deepEqual(fs.readdirSync(temporary), []);
+  }
 });

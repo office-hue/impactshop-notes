@@ -1,4 +1,91 @@
+## 2026-10-23 — Téves deploy-besorolás javítása és review-lezárás
+
+A generic remote-write diagnosztikai címke többé nem végrehajtható parancs.
+A tényleges távoli/provider parancsminták és a deploy-tiltás változatlanok.
+A szűk scope-bővítést Arnold külön jóváhagyta (call_357a45a03c3946a9b6a1684ae5314d9a).
+A teljes natív adapter shell-fixture sikeres, benne a valós safe-audit forrás
+és 11 parancsminta negatív ellenőrzése. A módosított check-map 2/2 PASS;
+most hét exact check-leaf van. A korábbi 107/107 más fájlhashhez tartozik,
+változatlan részeit újrahasználjuk, nem állítunk új teljes-suite PASS-t.
+Mind a policy-szelet, mind a classifier/regisztráció külön 6.1 Sol/high
+öt tengelyű forrásreview-ja konkrét P1/P2 nélkül lezárult.
+A natív protected source-admission, tiszta commit és CI külön hátravan.
+A központi kétfájlos fázislista-bővítés helyben tesztelt, még nincs kiadva.
+Nincs host-, hook-, pin- vagy provider-módosítás; teljes aktiválás nem történt.
+
+## 2026-10-23 — T2 policy véglegesítés, helyi ellenőrzés
+
+A Notes friss feladatainak forráspolicyja a mindkét hoston ellenőrzött PR1708
+motorhoz kötött (fcd987b5 / 4252eacf); explicit v2, 6/6.1 routing és
+műveletenkénti kockázati szabályok. Hat véges check-leaf választ érintett
+teszteket; más termék útvonala nem kap általános DEV-suite-kötelezettséget.
+A teljes lifecycle-client tesztfájl 107/107 esete sikeres (Node22.23.2,
+42.850s); ez nem teljes repo-CI vagy host-canary. A különutas forrásreview folyamatban.
+A valódi Secretary context --render írásmentesen ellenőrzött régi motorpint
+és implementation-ready saját feladatot adott; packet absent advisory.
+A központi T2 PR1709 merge 4099c5a4 igazolt, védelmei visszaálltak.
+Notes T2 még helyi WIP: nincs új commit/push/merge, hook- vagy taskpin-módosítás.
+Részletes binding, rollback és hátralévő kapuk a saját 2026-10-20-i tasktervben.
+
+## 2026-10-21 — T2 célzott tesztválasztás: helyi source-ready
+
+A tényleges delivery-policy öt véges DEV-ellenőrzést kapott; az örökölt
+class/profile és git-diff-check változatlan. Két új contract fixture PASS;
+a valódi motor path-resolverének 16 esete PASS, idegen termék- és suffix-utak
+nem választják a DEV-suite-ot. Kért független 6.1 Sol/high delta-review: nincs
+konkrét P1/P2. Ez nem teljes lifecycle-, CI-, telepítési vagy aktiválási PASS.
+Secretary továbbra advisory, új receipt nincs; élő hook/task/policy-pin változatlan.
+Részletek és hash-kötések: docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md.
+
+
+## 2026-10-21 — T2 hook-belépő és renderer: helyi, ellenőrzött forrás
+
+A régi közvetlen installer helyén saját repohoz kötött, fagyasztott loader-bájtokat
+ellenőrző belépő áll; nincs automatikus hook/config/alias vagy sibling írás.
+Két entrypoint-teszt PASS (9 izolált Python-eset + valódi shell help); a hat-hookos
+read-only renderer végső 8/8 fixture-je PASS (2.615s), a teljes meglévő paritáspróba
+PASS az öt tiltott sibling/memória negatívval. A health-check korábbi általános
+Node-név tiltása téves volt: a valódi foreign/memory tiltások maradnak.
+Független kért 6.1 Sol/high review: a talált scripts-könyvtár-symlink P2 javítva,
+külön sentinel-negatívval ellenőrizve és visszaolvasva; nincs nyitott P1/P2 ebben
+a deltában. Ez nem teljes lifecycle-suite, CI, source publication vagy host PASS.
+Pontos binding/diagnózis a saját tasktervben. T1/pinek és élő hookok változatlanok.
+Következő: végleges T2 policy/check mapping és kiadási összekötés; Air/Mini
+tranzakció/canary külön hátravan. Secretary advisory változatlan, receipt nincs.
+
+## 2026-10-21 — T1 forrásmerge igazolva, T2 még nem aktív
+
+[PR221](https://github.com/office-hue/impactshop-notes/pull/221) merge-elve: `2afced920b4087050b9d4587cf1cf34fd52bfbfd`,
+tree `45e3ad68c2813e5e95551baf812dcbcba1e06d6c`; a candidate és a squash fa egyezik.
+A kötelező candidate-CI sikeres, a teljes natív main-védelem változatlan;
+nem történt bypass, kézi CI-újrafuttatás vagy termékdeploy. A központi pontos
+fájlkör-kiegészítés PR1703-ban szintén merge-elve. A helyi T2-forrásmunka megmaradt,
+a régi task-/motor-/policypinek nem változtak. Secretary context: writes:false,
+verified motor, hiányzó packet advisory; normál lifecycle-publication PASS nincs.
+Az új motor telepítése, T2 policy/hook/canary és teljes Bástya-elfogadás még hátra van.
+Ez a lezáró DOCSYNC-bejegyzés helyi T2-WIP, még nem publikált dokumentációfrissítés.
+A korábbi nyitott PR-ra vonatkozó sorok történetiek; a main-ablak felszabadult.
+
 # ImpactShop Governance System Plan
+
+## T2 push-forrásellenőrzés — 2026-10-21
+
+Helyi, nem commitolt T2 javítás: egyetlen audit-base resolver, hibás explicit
+ref elutasítása, kötelező regular/nem symlink guardok Bash-futtatása, azonos
+range továbbadása. A wrapper koordinációs és post-push writerhívása megszűnt;
+a telepített natív hook saját koordinációs viselkedése NEM változott.
+Hat célzott regresszió PASS; az utólag hozzáadott upstream/no-base eset külön
+1/1 PASS. Ez nem új teljes client-suite vagy CI PASS. Két fixture-setup hibát
+diagnosztizáltunk: hiányzó home/env visszaadás, majd hiányzó szintetikus fetch
+refspec. Mindkettő célzott javítás után sikeres; valódi fetch nem történt.
+Független, kért 6.1 Sol/high review a két shellfájlban és első hat fixture-ben
+nem talált P1/P2 hibát. A későbbi upstream fixture nincs e review-val lefedve.
+Secretary context: writes:false, retained engine verified, packet absent
+advisory. A saját feladat pinje és a publikált T1 HEAD8b101fc3 változatlan.
+A T1 PR221 korábban igazolt required CI-je zöld; T2 push/merge/host-aktiválás
+nincs. Kiadás előtt a központi T2 exact scope-ba a safe-repo-audit.sh is kell,
+valamint a végleges T2 plan/selector/check mapping és review. A központi
+fagyasztott T1 csomagot nem módosítottuk. Nem állítunk teljes-rollout készültséget.
 
 ## 2026-10-21 — Bound v3 native continuity repair
 
@@ -701,3 +788,34 @@ T1 compatibility source, engine staging and T2 target activation are separate;
 new-engine staging on both Air and Mini must precede root routing-schema-2.
 Implementation checks and final acceptance must be read from the exact
 continuity record, not inferred from plan/bind status.
+
+## 2026-10-23 — PR222 multi-active fixture javítás, jóváhagyott forrásmunka
+
+Arnold call_a409168c52bc4d16a430e84f2a7f2456 jóváhagyása egy új T2-útvonalra:
+`tests/worktree-multi-active-continuity.test.sh`. CI run40013184982 validate
+hibája: a régi teszt automatikus hookírást várt a no-argument telepítőtől.
+Repair: az írásmentes helpet hookhash/mód és lokális config előtte/utána
+ellenőrzéssel vizsgáljuk; a valódi renderer hat képét név/digest/mód-validálás
+után kizárólag disposable repo hookmappájába írja a fixture. A pre-push továbbra
+continuityt ellenőrizzen, de ne végezzen koordinációs regisztrációt.
+Minden korábbi multi-active, foreign-worktree, HEAD-, generation-, dirty- és
+lock-negatív teszt megmarad. A véges hook-check mapping és saját terv ugyanazt
+az egy tesztútvonalat kapja. Production installer, hook, guard nem módosul.
+Koherencia/kockázat: kizárólag teszt és checkkiválasztás; nem lehet a fixture
+írásából host-telepítési engedély. Backup a f5c01c05 Git-forrás; rollback saját
+forrás-revert, taskpin/csomag és idegen WIP változtatása nélkül. UI nem érintett.
+Célzott shell-fixture, mapping és központi exact-scope teszt, majd független
+6.1 Sol/high review szükséges; az eredmény külön lezárásban, itt nem előlegezett PASS.
+Nincs új push/CI/merge, védelemmódosítás, host/hook aktiválás vagy termékdeploy.
+
+### Szűk fixture-javítás ellenőrzése lezárva
+
+Teljes multi-active shell-fixture PASS; mapping2/2 PASS (54ms); központi
+exact-path negatív1/1 és finite-delta1/1 PASS. Független, kért gpt-6.1-sol/high
+notes_multi_active_delta_review öt tengelyen nem talált P1/P2-t; nem normál
+régi pinelt lifecycle receipt. Fixture SHA256:
+1a8ba6faa6fde2c936b9e118429621a9e4954861331ec9f547a0aa741566a26b.
+Notes strict helyi audit PASS a jóváhagyott protected-change recorddal;
+a record nélküli korábbi tiltás helyes, nem utólagos PASS. Secretary rendered,
+writes:false, régi motor verified, packet absent advisory. Git diff-check PASS.
+Kiadási commitok, új candidate-CI és élesítés külön hátravan; nincs live módosítás.
