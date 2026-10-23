@@ -819,3 +819,23 @@ Notes strict helyi audit PASS a jóváhagyott protected-change recorddal;
 a record nélküli korábbi tiltás helyes, nem utólagos PASS. Secretary rendered,
 writes:false, régi motor verified, packet absent advisory. Git diff-check PASS.
 Kiadási commitok, új candidate-CI és élesítés külön hátravan; nincs live módosítás.
+
+## 2026-10-23 — Risk-scoped DEV: Air és Mini aktiválva, élőben ellenőrizve
+
+Ez új állapotbejegyzés; a fenti korábbi kiadási/engedélyezési státuszok
+történeti tények maradnak. A T1/T2 forráskiadás és a kétgép-es aktiválás
+lezárult; termékdeploy vagy adatbázis-migráció nem történt. A PR1708 motor
+megmaradt, T2 miatt nem készült második motorcsomag.
+
+A részletes forrás-/host-/hook-/canary-bizonyíték és a pontos indítási,
+visszaállítási, illetve ismert advisory feltételek:
+[központi aktiválási záróbejegyzés](https://github.com/office-hue/ai-agent/blob/main/docs/continuity/dev/2026-10-20-risk-scoped-target-bootstrap.md).
+Az opcionális memóriahiány nem forrásmunka-blokk; hiányzó kötelező tény,
+azonosság-, jogosultság- vagy integritáskockázat továbbra is blokkol.
+Új feladat routingja v2 (explicit 6/6.1 + reasoning); régi feladatpin nem változott.
+Secretary context-render mindkét hoston valós; hiányzó opcionális packet nem
+PASS és nem engedély. A záró öt-tengelyű, külön kért 6.1 Sol/high review nem
+talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receipt.
+
+A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
+commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
