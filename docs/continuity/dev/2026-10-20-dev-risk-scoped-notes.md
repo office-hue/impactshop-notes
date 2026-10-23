@@ -449,6 +449,15 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
 
+### PR223 dokumentációs admission-javítás
+
+A validate CI a történeti T2 manifest túl tág fájllistáján megállt
+(`protected-change-record-path-coverage-mismatch`). A natív diff szerint
+a jelen closure egyetlen védett útja `docs/bastion-guard-status.md`.
+A rekord történeti T2 tartalma megmarad; külön aktív DOCSYNC manifest és
+plan/approval-hivatkozás készül. Kód-/policy-/hookváltozás, korábbi PASS
+átírása és CI-kivétel nincs; új tartalomhoz új ellenőrzési eredmény kell.
+
 T2 #222 / 052b9e6d30d8442116c8d0b114cb950c3c150b76. Air és Mini: 6 saját hook tranzakciósan települt. Új normál feladat: a saját dev-v4-lifecycle-client.mjs, normal-source-short-brief selector és --task-brief; régi feladat saját pinje megmarad.
 
 Mini új feladatok támogatott, saját main indítási gyökere:

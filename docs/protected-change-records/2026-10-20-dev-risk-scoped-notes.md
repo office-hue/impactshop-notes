@@ -33,7 +33,7 @@ külön host-grant. Smoke: korábbi107 client, map2/2, teljes adapter-fixture,
 read-only Secretary; nem élő deploy-smoke. Rollback: guarded source revert,
 pinek/csomagok megtartásával. Kézi termék-UI N/A, host-canary külön szükséges.
 
-<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+<!-- HISTORICAL T2 SOURCE ADMISSION (not active for DOCSYNC closure) -->
 {
   "schemaVersion": 1,
   "planRef": "docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md#t2-native-protected-source-admission",
@@ -55,7 +55,7 @@ pinek/csomagok megtartásával. Kézi termék-UI N/A, host-canary külön szüks
   "rollbackNote": "Guarded revert of exact Notes T2 source commits only; retain old task pins, engines and live product state.",
   "smokeTags": ["dev-t2", "hermetic", "docs-sync", "deploy:guard-preflight", "deploy:checksum-verify"]
 }
-<!-- END PROTECTED SOURCE ADMISSION -->
+<!-- END HISTORICAL T2 SOURCE ADMISSION -->
 
 A scope-tag nem távoli deploy bizonyíték. A manifest adat, nem önengedély.
 A korábbi T1-record lent történeti adat, nem aktív T2 admission.
@@ -302,3 +302,21 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+### Aktuális DOCSYNC protected source admission
+
+A PR223 első CI-ja helyesen megállt: a T2 kódcsomag történeti manifestje nem
+azonos a mostani kilenc dokumentációs fájl egyetlen védett útjával. A korábbi
+T2 rekord tartalma fent megmaradt, csak történeti címkét kapott. Az alábbi
+manifest kizárólag a jelen dokumentációs deltához tartozik; nem ad deployjogot.
+
+<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+{
+  "schemaVersion": 1,
+  "planRef": "docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md#docsync-activation-closure-admission",
+  "operatorApprovalRef": "operator-approval:dev-risk-scoped-docsync-closure-20261023",
+  "protectedPaths": ["docs/bastion-guard-status.md"],
+  "rollbackNote": "Revert only the nine-file DOCSYNC closure; retain activated engine, hooks, packages and all task pins.",
+  "smokeTags": ["docs:activation-readback", "docs:whitespace-check"]
+}
+<!-- END PROTECTED SOURCE ADMISSION -->

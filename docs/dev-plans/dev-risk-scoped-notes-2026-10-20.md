@@ -740,3 +740,19 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+### DOCSYNC activation closure admission
+
+Authority: `operator-approval:dev-risk-scoped-docsync-closure-20261023` — Arnold
+kifejezett, teljes feladaton belüli folytatási jóváhagyása. A PR223 kilencfájlos
+dokumentációs deltájában kizárólag `docs/bastion-guard-status.md` védett út.
+A manifest ezt az exact kört írja le; a T2 kódcsomag korábbi rekordja történeti.
+
+Diagnózis: `NOTES-DOCSYNC-RECORD-PATH-COVERAGE`, CI validate job120672768719:
+a korábbi kód-/config-fájllista eltért a mostani dokumentációs diff védett
+útjaitól. Javítás: a régi manifest megőrzése történeti címkével, egyetlen új
+schema1 manifest a jelen exact útra, e plan/approval hivatkozással. Forráskód,
+policy, teszt és hook nem változik. A javított commiton a valódi full-validate
+és Bástya ellenőrzés, majd ugyanazon PR új tartalomhoz tartozó CI-ja szükséges.
+Rollback: a kilenc dokumentációs fájl szűk source-revertje; aktiválás és pinek
+változatlanul maradnak. Hamis korábbi PASS vagy CI-kivétel nincs.
