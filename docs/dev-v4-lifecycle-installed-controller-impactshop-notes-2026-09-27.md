@@ -109,3 +109,23 @@ Air and Mini engine staging/canaries precede separately approved T2 root-policy
 changes. Final target acceptance is later, Air then Mini. Do not invoke 5.6 or
 forge a typed old-model review; real 6.1 review evidence remains distinct from
 normal lifecycle publication readiness.
+
+## 2026-10-23 — Risk-scoped DEV: Air és Mini aktiválva, élőben ellenőrizve
+
+Ez új állapotbejegyzés; a fenti korábbi kiadási/engedélyezési státuszok
+történeti tények maradnak. A T1/T2 forráskiadás és a kétgép-es aktiválás
+lezárult; termékdeploy vagy adatbázis-migráció nem történt. A PR1708 motor
+megmaradt, T2 miatt nem készült második motorcsomag.
+
+A részletes forrás-/host-/hook-/canary-bizonyíték és a pontos indítási,
+visszaállítási, illetve ismert advisory feltételek:
+[központi aktiválási záróbejegyzés](https://github.com/office-hue/ai-agent/blob/main/docs/continuity/dev/2026-10-20-risk-scoped-target-bootstrap.md).
+Az opcionális memóriahiány nem forrásmunka-blokk; hiányzó kötelező tény,
+azonosság-, jogosultság- vagy integritáskockázat továbbra is blokkol.
+Új feladat routingja v2 (explicit 6/6.1 + reasoning); régi feladatpin nem változott.
+Secretary context-render mindkét hoston valós; hiányzó opcionális packet nem
+PASS és nem engedély. A záró öt-tengelyű, külön kért 6.1 Sol/high review nem
+talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receipt.
+
+A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
+commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.

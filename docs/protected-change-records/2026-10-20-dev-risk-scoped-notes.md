@@ -33,7 +33,7 @@ külön host-grant. Smoke: korábbi107 client, map2/2, teljes adapter-fixture,
 read-only Secretary; nem élő deploy-smoke. Rollback: guarded source revert,
 pinek/csomagok megtartásával. Kézi termék-UI N/A, host-canary külön szükséges.
 
-<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+<!-- HISTORICAL T2 SOURCE ADMISSION (not active for DOCSYNC closure) -->
 {
   "schemaVersion": 1,
   "planRef": "docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md#t2-native-protected-source-admission",
@@ -55,7 +55,7 @@ pinek/csomagok megtartásával. Kézi termék-UI N/A, host-canary külön szüks
   "rollbackNote": "Guarded revert of exact Notes T2 source commits only; retain old task pins, engines and live product state.",
   "smokeTags": ["dev-t2", "hermetic", "docs-sync", "deploy:guard-preflight", "deploy:checksum-verify"]
 }
-<!-- END PROTECTED SOURCE ADMISSION -->
+<!-- END HISTORICAL T2 SOURCE ADMISSION -->
 
 A scope-tag nem távoli deploy bizonyíték. A manifest adat, nem önengedély.
 A korábbi T1-record lent történeti adat, nem aktív T2 admission.
@@ -282,3 +282,41 @@ Notes strict helyi audit PASS a jóváhagyott protected-change recorddal;
 a record nélküli korábbi tiltás helyes, nem utólagos PASS. Secretary rendered,
 writes:false, régi motor verified, packet absent advisory. Git diff-check PASS.
 Kiadási commitok, új candidate-CI és élesítés külön hátravan; nincs live módosítás.
+
+## 2026-10-23 — Risk-scoped DEV: Air és Mini aktiválva, élőben ellenőrizve
+
+Ez új állapotbejegyzés; a fenti korábbi kiadási/engedélyezési státuszok
+történeti tények maradnak. A T1/T2 forráskiadás és a kétgép-es aktiválás
+lezárult; termékdeploy vagy adatbázis-migráció nem történt. A PR1708 motor
+megmaradt, T2 miatt nem készült második motorcsomag.
+
+A részletes forrás-/host-/hook-/canary-bizonyíték és a pontos indítási,
+visszaállítási, illetve ismert advisory feltételek:
+[központi aktiválási záróbejegyzés](https://github.com/office-hue/ai-agent/blob/main/docs/continuity/dev/2026-10-20-risk-scoped-target-bootstrap.md).
+Az opcionális memóriahiány nem forrásmunka-blokk; hiányzó kötelező tény,
+azonosság-, jogosultság- vagy integritáskockázat továbbra is blokkol.
+Új feladat routingja v2 (explicit 6/6.1 + reasoning); régi feladatpin nem változott.
+Secretary context-render mindkét hoston valós; hiányzó opcionális packet nem
+PASS és nem engedély. A záró öt-tengelyű, külön kért 6.1 Sol/high review nem
+talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receipt.
+
+A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
+commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+### Aktuális DOCSYNC protected source admission
+
+A PR223 első CI-ja helyesen megállt: a T2 kódcsomag történeti manifestje nem
+azonos a mostani kilenc dokumentációs fájl egyetlen védett útjával. A korábbi
+T2 rekord tartalma fent megmaradt, csak történeti címkét kapott. Az alábbi
+manifest kizárólag a jelen dokumentációs deltához tartozik; nem ad deployjogot.
+
+<!-- BEGIN PROTECTED SOURCE ADMISSION -->
+{
+  "schemaVersion": 1,
+  "planRef": "docs/dev-plans/dev-risk-scoped-notes-2026-10-20.md#docsync-activation-closure-admission",
+  "operatorApprovalRef": "operator-approval:dev-risk-scoped-docsync-closure-20261023",
+  "protectedPaths": ["docs/bastion-guard-status.md"],
+  "rollbackNote": "Revert only the nine-file DOCSYNC closure; retain activated engine, hooks, packages and all task pins.",
+  "smokeTags": ["docs:activation-readback", "docs:whitespace-check"]
+}
+<!-- END PROTECTED SOURCE ADMISSION -->
