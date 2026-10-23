@@ -47,7 +47,9 @@ if [[ -x "$HOOK_PATH" ]]; then
     FAIL_COUNT=$((FAIL_COUNT + 1))
   fi
 
-  if rg -q -- 'resolve_ai_agent_repo|AI_AGENT_REPO|memory:[[:alnum:]_-]+|(^|[^[:alnum:]_-])(node|npm|npx|pnpm|yarn|bun)([^[:alnum:]_-]|$)|(\.\./|/)ai-agent(/|[^[:alnum:]_.-]|$)' "$HOOK_PATH"; then
+  # Runtime names/paths alone are not a cross-repo memory dependency.
+  # Keep the actual foreign-repo and memory-call evidence checks.
+  if rg -q -- 'resolve_ai_agent_repo|AI_AGENT_REPO|memory:[[:alnum:]_-]+|(\.\./|/)ai-agent(/|[^[:alnum:]_.-]|$)' "$HOOK_PATH"; then
     echo "[git-health-check] FAIL: pre-push hook tiltott sibling-memory függést tartalmaz"
     FAIL_COUNT=$((FAIL_COUNT + 1))
   else
