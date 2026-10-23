@@ -1733,3 +1733,34 @@ lane-specific. No live or remote mutation occurred.
   retest PASS and verify-fix `fixed` on HEAD `71c4e3d2...`, tree `941070ce...`,
   with no new P0/P1/P2. Executable/test source is frozen; only the final
   docs-tree review remains pending.
+
+## 2026-10-23 — PR222 multi-active fixture javítás, jóváhagyott forrásmunka
+
+Arnold call_a409168c52bc4d16a430e84f2a7f2456 jóváhagyása egy új T2-útvonalra:
+`tests/worktree-multi-active-continuity.test.sh`. CI run40013184982 validate
+hibája: a régi teszt automatikus hookírást várt a no-argument telepítőtől.
+Repair: az írásmentes helpet hookhash/mód és lokális config előtte/utána
+ellenőrzéssel vizsgáljuk; a valódi renderer hat képét név/digest/mód-validálás
+után kizárólag disposable repo hookmappájába írja a fixture. A pre-push továbbra
+continuityt ellenőrizzen, de ne végezzen koordinációs regisztrációt.
+Minden korábbi multi-active, foreign-worktree, HEAD-, generation-, dirty- és
+lock-negatív teszt megmarad. A véges hook-check mapping és saját terv ugyanazt
+az egy tesztútvonalat kapja. Production installer, hook, guard nem módosul.
+Koherencia/kockázat: kizárólag teszt és checkkiválasztás; nem lehet a fixture
+írásából host-telepítési engedély. Backup a f5c01c05 Git-forrás; rollback saját
+forrás-revert, taskpin/csomag és idegen WIP változtatása nélkül. UI nem érintett.
+Célzott shell-fixture, mapping és központi exact-scope teszt, majd független
+6.1 Sol/high review szükséges; az eredmény külön lezárásban, itt nem előlegezett PASS.
+Nincs új push/CI/merge, védelemmódosítás, host/hook aktiválás vagy termékdeploy.
+
+### Szűk fixture-javítás ellenőrzése lezárva
+
+Teljes multi-active shell-fixture PASS; mapping2/2 PASS (54ms); központi
+exact-path negatív1/1 és finite-delta1/1 PASS. Független, kért gpt-6.1-sol/high
+notes_multi_active_delta_review öt tengelyen nem talált P1/P2-t; nem normál
+régi pinelt lifecycle receipt. Fixture SHA256:
+1a8ba6faa6fde2c936b9e118429621a9e4954861331ec9f547a0aa741566a26b.
+Notes strict helyi audit PASS a jóváhagyott protected-change recorddal;
+a record nélküli korábbi tiltás helyes, nem utólagos PASS. Secretary rendered,
+writes:false, régi motor verified, packet absent advisory. Git diff-check PASS.
+Kiadási commitok, új candidate-CI és élesítés külön hátravan; nincs live módosítás.

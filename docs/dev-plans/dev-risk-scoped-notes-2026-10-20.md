@@ -398,6 +398,7 @@ Not a push, merge, installation, activation or production acceptance.
       "scripts/safe-repo-audit.sh",
       "tests/dev-delivery-v2-adapter.test.sh",
       "tests/install-hooks-policy-parity.test.sh",
+      "tests/worktree-multi-active-continuity.test.sh",
       "scripts/dev-v4-lifecycle-client.mjs",
       "scripts/worktree-continuity-guard.sh",
       "tests/dev-v4-lifecycle-client.test.mjs",
@@ -688,3 +689,34 @@ repair does not activate root v2, waive native protected guards, authorize a
 provider action or export the central publication exception. Native context
 success does not claim normal lifecycle publication readiness. After committing,
 use supported same-task reconcile/bind as needed; no manual state changes.
+
+## 2026-10-23 — PR222 multi-active fixture javítás, jóváhagyott forrásmunka
+
+Arnold call_a409168c52bc4d16a430e84f2a7f2456 jóváhagyása egy új T2-útvonalra:
+`tests/worktree-multi-active-continuity.test.sh`. CI run40013184982 validate
+hibája: a régi teszt automatikus hookírást várt a no-argument telepítőtől.
+Repair: az írásmentes helpet hookhash/mód és lokális config előtte/utána
+ellenőrzéssel vizsgáljuk; a valódi renderer hat képét név/digest/mód-validálás
+után kizárólag disposable repo hookmappájába írja a fixture. A pre-push továbbra
+continuityt ellenőrizzen, de ne végezzen koordinációs regisztrációt.
+Minden korábbi multi-active, foreign-worktree, HEAD-, generation-, dirty- és
+lock-negatív teszt megmarad. A véges hook-check mapping és saját terv ugyanazt
+az egy tesztútvonalat kapja. Production installer, hook, guard nem módosul.
+Koherencia/kockázat: kizárólag teszt és checkkiválasztás; nem lehet a fixture
+írásából host-telepítési engedély. Backup a f5c01c05 Git-forrás; rollback saját
+forrás-revert, taskpin/csomag és idegen WIP változtatása nélkül. UI nem érintett.
+Célzott shell-fixture, mapping és központi exact-scope teszt, majd független
+6.1 Sol/high review szükséges; az eredmény külön lezárásban, itt nem előlegezett PASS.
+Nincs új push/CI/merge, védelemmódosítás, host/hook aktiválás vagy termékdeploy.
+
+### Szűk fixture-javítás ellenőrzése lezárva
+
+Teljes multi-active shell-fixture PASS; mapping2/2 PASS (54ms); központi
+exact-path negatív1/1 és finite-delta1/1 PASS. Független, kért gpt-6.1-sol/high
+notes_multi_active_delta_review öt tengelyen nem talált P1/P2-t; nem normál
+régi pinelt lifecycle receipt. Fixture SHA256:
+1a8ba6faa6fde2c936b9e118429621a9e4954861331ec9f547a0aa741566a26b.
+Notes strict helyi audit PASS a jóváhagyott protected-change recorddal;
+a record nélküli korábbi tiltás helyes, nem utólagos PASS. Secretary rendered,
+writes:false, régi motor verified, packet absent advisory. Git diff-check PASS.
+Kiadási commitok, új candidate-CI és élesítés külön hátravan; nincs live módosítás.
