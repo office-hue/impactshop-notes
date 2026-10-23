@@ -1,3 +1,33 @@
+## 2026-10-23 — T2 commitolt forrás és pontos tervkötés
+
+A három natív, hookkal ellenőrzött checkpoint elkészült:
+app-content cc7bc0e2acb6ced17a215f6019dd182b61572203;
+ops 2b9468e198a067f87a336aba16dc72072b8752d7;
+protected 5998b6b9d8570668a4bcbb93cd57ee5fe176424e.
+Utóbbi tree86691fdb76470a62b7803d1d42d6f575c455d3d4, tiszta forrás;
+az eredeti 21 fájl byte/mode azonossága ellenőrzött. A saját szűk stash-mentések
+már visszaálltak, biztonsági másolatként megmaradtak; nem alkalmazhatók újra.
+
+Exact Notes base2afced920b4087050b9d4587cf1cf34fd52bfbfd mellett a natív
+full-validate és Bástya sikeres: maximum/pass, sourceMergeAdmission:true,
+providerDeployAllowed:false. Ez a fenti HEAD-re vonatkozó forrásbizonyíték,
+nem normál lifecycle PASS vagy hostaktiválás. Az új dokumentációs commit
+után csak a HEAD-hez kötött előfeltételeket ellenőrizzük újra.
+
+A központi kétfájlos scope-regisztráció immár kiadva:
+PR1710 merge a4d721ca05b7d36044082a27721cf03d156faa01,
+tree abba8177fd6daf06460b29fc0f7f3f82cbb5651e; mindkét védelem
+visszaállítása külön visszaolvasva. Ez nem Notes merge/aktiválás.
+
+A manifest korábbi T1 allowlistjét az elfogadott teljes T1+T2 pontos
+24 fájlos kör egészíti ki, a tényleges védett változás impactje protected.
+A task-request digest és codeBase/policyCommit változatlan. A T2 forrásváltás
+és külön classifier-scope jóváhagyását a következő fejezet őrzi; nem írjuk át
+a régi task engedélyének eredetét, policyját, motorját vagy receiptjeit.
+Következő: natív dokumentációs commit, támogatott same-task bind, continuity,
+Secretary render, exact-range audit és friss natív forrásadmission.
+Ezek után jöhet a saját Notes push/PR; központi publisher nem használható.
+
 ## T2 native protected source admission
 
 Approval: `operator-approval:dev-risk-scoped-notes-t2-20261023`.
@@ -323,17 +353,28 @@ Not a push, merge, installation, activation or production acceptance.
   },
   "decision": {
     "state": "approved",
-    "summary": "Implement the explicitly requested exceptional central DEV target adapter, retaining old task pins and active v1 policy until staged engine rollout; source only."
+    "summary": "Implement the approved Notes T1 adapter and T2 exact-engine/risk-scoped policy plus native source-classification repair; preserve this task's original policy and engine pins. Source only, no host or hook activation."
   },
   "authorization": {
     "source": "task-request",
     "taskRequestDigest": "43dcac432fc6a8f8abf1960136bf112bdc51a70013d8638705b164ead61ca9e9"
   },
   "scope": {
-    "changeImpact": "governance-only",
+    "changeImpact": "protected",
     "riskTier": "high",
     "releaseProfile": "source-only",
     "changeAllowlist": [
+      "config/dev-delivery-v2-policy.json",
+      "config/dev-v4/graded-delivery.v1.json",
+      "config/dev-v4/lifecycle-contract.v1.json",
+      "scripts/dev-delivery-v2-adapter.sh",
+      "scripts/dev-v4-target-hooks.mjs",
+      "scripts/git-health-check.sh",
+      "scripts/guarded-push.sh",
+      "scripts/install-hooks.sh",
+      "scripts/safe-repo-audit.sh",
+      "tests/dev-delivery-v2-adapter.test.sh",
+      "tests/install-hooks-policy-parity.test.sh",
       "scripts/dev-v4-lifecycle-client.mjs",
       "scripts/worktree-continuity-guard.sh",
       "tests/dev-v4-lifecycle-client.test.mjs",

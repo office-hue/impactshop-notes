@@ -1,3 +1,17 @@
+## 2026-10-23 — Natív T2 checkpointok és központi regisztráció lezárva
+
+Notes három natív commit: cc7bc0e2 (config), 2b9468e1 (ops),
+5998b6b9 (protected); tree86691fdb76470a62b7803d1d42d6f575c455d3d4.
+Exact base2afced92 mellett full-validate és maximum Bástya sikeres,
+sourceMergeAdmission:true, providerDeployAllowed:false. Nem lifecycle PASS.
+A központi PR1710 merge a4d721ca05b7d36044082a27721cf03d156faa01
+kiadta a két Notes classifier-fájl pontos regisztrációját; védelmei visszaálltak.
+Most a saját terv T1+T2 allowlistje igazodik a jóváhagyott 24 fájlhoz,
+protected besorolással. Task-request, régi motor és policy-pin változatlan.
+A dokumentációs checkpoint után támogatott bind és HEAD-kötött új
+forrásellenőrzés kell. Notes push/PR/merge és Air/Mini hook-canary még hátravan;
+termékdeploy nincs. A korábbi WIP-bejegyzések történeti állapotok.
+
 ## 2026-10-23 — Téves deploy-besorolás javítása és review-lezárás
 
 A generic remote-write diagnosztikai címke többé nem végrehajtható parancs.
