@@ -246,24 +246,34 @@ assert_payload "$payload" "p['changedPathClass']=='protected' and p['sourceMerge
 
 # The narrower classification must retain every existing executable matcher,
 # even with an exact source record and successful local validation.
+# Cases are explicit argv data, not executable shell snippets in this test.
+# Render only into disposable source for inspection; never execute that source.
 remote_cases=(
-  'git push origin feat/fixture'
-  'gh pr create --title example'
-  'gh pr merge 1'
-  'ssh user@example.invalid install payload'
-  'scp payload user@example.invalid:/remote'
-  'rsync payload host:/remote/path'
-  'curl https://example.invalid'
-  'wget https://example.invalid'
-  'provider-deploy production'
-  'vercel deploy --prod'
-  'railway up'
+  '["git","push","origin","feat/fixture"]'
+  '["gh","pr","create","--title","example"]'
+  '["gh","pr","merge","1"]'
+  '["ssh","user@example.invalid","install","payload"]'
+  '["scp","payload","user@example.invalid:/remote"]'
+  '["rsync","payload","host:/remote/path"]'
+  '["curl","https://example.invalid"]'
+  '["wget","https://example.invalid"]'
+  '["provider-deploy","production"]'
+  '["vercel","deploy","--prod"]'
+  '["railway","up"]'
 )
 case_index=0
 for remote_case in "${remote_cases[@]}"; do
   case_index=$((case_index + 1))
   repo="$(new_repo "remote-command-$case_index")"
-  printf '%s\n' '#!/usr/bin/env bash' "$remote_case" > "$repo/scripts/action.sh"
+  remote_command="$(python3 - "$remote_case" <<'PY'
+import json, shlex, sys
+argv = json.loads(sys.argv[1])
+assert isinstance(argv, list) and argv
+assert all(isinstance(arg, str) for arg in argv)
+print(' '.join(shlex.quote(arg) for arg in argv))
+PY
+)"
+  printf '%s\n' '#!/usr/bin/env bash' "$remote_command" > "$repo/scripts/action.sh"
   write_admission "$repo" scripts/action.sh
   commit_all "$repo" remote-command
   payload="$(adapter_payload "$repo" full-validate)"

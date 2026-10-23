@@ -1,3 +1,26 @@
+## 2026-10-23 — Negatív parancsteszt: explicit adat, változatlan védelem
+
+Failure notes-audit-test-literal-remote-write: a strict audit két idézett
+tesztadat-sort távoli írásként jelölt. Nem futott push és nem lett audit-PASS.
+A diagnózis után kizárólag a meglévő adapterteszt 11 esete váltott
+JSON argumentumlistára; Python json/shlex csak a disposable forrást rendereli,
+nem hajtja végre. Mind a 11 előállított parancssor bájtpontosan egyezik
+a d4c40df1 előtti alakjával; valamennyi tiltási assertion megmaradt.
+Az audit, deploy-besoroló és natív hook védelmei változatlanok, nincs bypass.
+
+Ellenőrzés: 11/11 byte-egyezés, shell syntax/diff PASS; a teljes natív
+adapter-fixture új futása PASS (session7630). A szűk, független
+notes_literal_audit_fix, explicit gpt-6.1-sol/high forrásreview mind az öt
+tengelyen lezárt, nincs nyitott source finding. Reviewolt teszt SHA-256:
+1f69d205b14cee7d531eca018ec6db238ddcdfee3f9723c900fd21528169f015.
+Ez nem általános shellbiztonsági bizonyíték és nem normál lifecycle receipt.
+
+A d4c40df1 taskbind revision10 sikeres volt; Secretary read-only verified,
+packet absent advisory. E javító checkpoint után ismét csak a HEAD-kötött
+bind/audit/admission szükséges; változatlan client-suite nem indul újra.
+Notes forráspublikálás/CI és Air/Mini hookaktiválás/canary még nincs lezárva.
+Rollback: saját tesztadat-delta guarded revertje; régi pin/csomag megmarad.
+
 ## 2026-10-23 — Téves deploy-besorolás javítása és review-lezárás
 
 A generic remote-write diagnosztikai címke többé nem végrehajtható parancs.
