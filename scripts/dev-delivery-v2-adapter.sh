@@ -338,7 +338,7 @@ try:
     remote_write = re.compile(
         r'\b(git\s+push|gh\s+pr\s+(?:create|merge)|ssh\s+(?:-[a-z]|[^\s"\x27]+@)|scp\s+|'
         r'rsync(?:\s|$)|curl(?:\s|$)|wget(?:\s|$)|provider[ -]deploy|'
-        r'remote[ -]write|' + provider_cli + ')',
+        + provider_cli + ')',
         re.I,
     )
     def executable_surface(path):

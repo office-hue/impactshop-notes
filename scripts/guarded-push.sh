@@ -2,80 +2,38 @@
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-[[ -n "${REPO_ROOT}" ]] || exit 1
+[[ -n "$REPO_ROOT" ]] || exit 1
+cd "$REPO_ROOT"
 
-LANE_GUARD="${REPO_ROOT}/scripts/check-commit-lane.sh"
-PROTECTED_GUARD="${REPO_ROOT}/scripts/check-protected-file-touch.sh"
-SAFE_AUDIT="${REPO_ROOT}/scripts/safe-repo-audit.sh"
-WORKTREE_CONTINUITY_GUARD="${REPO_ROOT}/scripts/worktree-continuity-guard.sh"
-WORKTREE_COORDINATION_SYNC="${REPO_ROOT}/scripts/worktree-coordination-sync.sh"
+LANE_GUARD="$REPO_ROOT/scripts/check-commit-lane.sh"
+PROTECTED_GUARD="$REPO_ROOT/scripts/check-protected-file-touch.sh"
+SAFE_AUDIT="$REPO_ROOT/scripts/safe-repo-audit.sh"
+WORKTREE_CONTINUITY_GUARD="$REPO_ROOT/scripts/worktree-continuity-guard.sh"
 
-resolve_push_base_ref() {
-  local upstream_ref="${SAFE_REPO_AUDIT_UPSTREAM:-@{upstream}}"
-  local candidate=""
-  if git rev-parse --verify "$upstream_ref" >/dev/null 2>&1; then
-    printf '%s\n' "$upstream_ref"
-    return 0
-  fi
+# Required checks are not optional simply because a checkout uses mode 0644.
+for guard in "$LANE_GUARD" "$PROTECTED_GUARD" "$SAFE_AUDIT" "$WORKTREE_CONTINUITY_GUARD"; do
+  [[ -f "$guard" && ! -L "$guard" ]] || {
+    echo "[guarded-push] Missing or unsafe required local guard: $guard" >&2
+    exit 1
+  }
+done
 
-  for candidate in "origin/HEAD" "origin/main" "origin/master" "main" "master"; do
-    if git rev-parse --verify "$candidate" >/dev/null 2>&1; then
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-  done
-
-  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-    printf '%s\n' "HEAD^"
-    return 0
-  fi
-
-  printf '%s\n' "$(git hash-object -t tree /dev/null)"
+# One repo-owned resolver; no fetch, empty-tree/HEAD^ fallback or silent
+# replacement of an invalid explicit base. Resolution is not an audit PASS.
+PUSH_BASE="$(/bin/bash "$SAFE_AUDIT" --repo "$REPO_ROOT" --mode push --print-push-base)"
+[[ "$PUSH_BASE" =~ ^[0-9a-f]{40}$ ]] || {
+  echo '[guarded-push] Invalid resolved base; no push attempted.' >&2
+  exit 1
 }
+PUSH_RANGE="$PUSH_BASE..HEAD"
+export SAFE_REPO_AUDIT_UPSTREAM="$PUSH_BASE" SAFE_REPO_AUDIT_PUSH_RANGE="$PUSH_RANGE"
 
-resolve_push_range() {
-  local base_ref="$1"
-  local base_sha=""
-  if [[ "$base_ref" == *".."* ]]; then
-    printf '%s\n' "$base_ref"
-    return 0
-  fi
-  if [[ "$base_ref" == "$(git hash-object -t tree /dev/null)" ]]; then
-    printf '%s..HEAD\n' "$base_ref"
-    return 0
-  fi
-  base_sha="$(git merge-base HEAD "$base_ref" 2>/dev/null || git rev-parse --verify "$base_ref")"
-  printf '%s..HEAD\n' "$base_sha"
-}
+/bin/bash "$LANE_GUARD" --mode push --push-range "$PUSH_RANGE"
+/bin/bash "$PROTECTED_GUARD" --mode push --push-range "$PUSH_RANGE"
+# The existing guard selects v3 or legacy. No failure fallback, marker creation
+# or shared coordination write is performed by the push entrypoint.
+/bin/bash "$WORKTREE_CONTINUITY_GUARD" --mode push
+/bin/bash "$SAFE_AUDIT" --repo "$REPO_ROOT" --strict --mode push
 
-if [[ -x "${LANE_GUARD}" ]]; then
-  PUSH_BASE_REF="$(resolve_push_base_ref)"
-  PUSH_RANGE="$(resolve_push_range "${PUSH_BASE_REF}")"
-  "${LANE_GUARD}" --mode push --push-range "${PUSH_RANGE}"
-fi
-
-if [[ -x "${PROTECTED_GUARD}" ]]; then
-  PUSH_BASE_REF="${PUSH_BASE_REF:-$(resolve_push_base_ref)}"
-  PUSH_RANGE="${PUSH_RANGE:-$(resolve_push_range "${PUSH_BASE_REF}")}"
-  "${PROTECTED_GUARD}" --mode push --push-range "${PUSH_RANGE}"
-fi
-
-if [[ -x "${WORKTREE_COORDINATION_SYNC}" ]]; then
-  "${WORKTREE_COORDINATION_SYNC}" --repo-root "${REPO_ROOT}" --register "${REPO_ROOT}"
-fi
-
-if [[ -x "${WORKTREE_CONTINUITY_GUARD}" ]]; then
-  "${WORKTREE_CONTINUITY_GUARD}" --mode push
-fi
-
-if [[ -x "${SAFE_AUDIT}" ]]; then
-  SAFE_REPO_AUDIT_UPSTREAM="${PUSH_BASE_REF:-$(resolve_push_base_ref)}" \
-    "${SAFE_AUDIT}" --repo "${REPO_ROOT}" --strict --mode push
-fi
-
-command git -C "${REPO_ROOT}" push "$@"
-
-POST_PUSH="${REPO_ROOT}/scripts/post-push-pr-suggest.sh"
-if [[ -x "${POST_PUSH}" ]]; then
-  "${POST_PUSH}" || true
-fi
+# Preserve the actual Git command and native hooks; no post-push foreign writer.
+exec git -C "$REPO_ROOT" push "$@"
