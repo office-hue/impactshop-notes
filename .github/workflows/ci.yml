@@ -2,131 +2,46 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
+
+permissions:
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Bind pull-request base commit
-        if: github.event_name == 'pull_request'
-        env:
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      - name: Native source-support positive and negative fixtures
+        run: python3 -B tests/workspace-retirement.test.py
+
+      - name: Local source syntax (no engine or admission)
         run: |
-          set -euo pipefail
-          [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          if ! git cat-file -e "$PR_BASE_SHA^{commit}"; then
-            git fetch --no-tags origin "$PR_BASE_SHA"
-          fi
-          [[ "$(git rev-parse --verify "$PR_BASE_SHA^{commit}")" == "$PR_BASE_SHA" ]]
+          bash -n scripts/validate-deploy-profile.sh
+          bash -n scripts/start-feature-worktree.sh
+          bash -n scripts/worktree-task-start.sh
+          bash -n scripts/install-hooks.sh
+          bash -n scripts/guarded-push.sh
+          bash -n scripts/check-protected-file-touch.sh
+          bash -n scripts/check-commit-lane.sh
+          git diff --check
 
-      - name: Validation script syntax
-        run: bash -n scripts/validate-deploy-profile.sh
-
-      - name: DEV context policy guard
-        env:
-          DEV_DELIVERY_V2_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      - name: Actual product deploy/rollback contracts (isolated mocks)
         run: |
-          set -euo pipefail
-          policy="$(bash scripts/dev-context-policy-guard.sh --json || true)"
-          python3 - "$policy" <<'PY'
-          import json, sys
-          payload=json.loads(sys.argv[1])
-          assert payload['decision'] in ('allowed', 'operator-review')
-          assert payload['changedPathClass'] != 'unknown'
-          assert payload['providerBuildDecision'] == 'not-configured' if payload['decision'] == 'allowed' else True
-          PY
-
-      - name: DEV delivery v2 maximum bastion
-        run: |
-          set -euo pipefail
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            export DEV_DELIVERY_V2_BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          fi
-          validation="$(bash scripts/dev-delivery-v2-adapter.sh full-validate --json)"
-          python3 - "$validation" <<'PY'
-          import json, sys
-          payload=json.loads(sys.argv[1])
-          assert payload['fullValidationEvidence'] is True
-          assert payload['sourceMergeAdmission'] is False
-          assert payload['providerDeployAllowed'] is False
-          assert payload['sourceAdmissionProfile'] in (None, 'deploy-control-source:sharity-staging-cas-v1')
-          assert payload['sourceAdmissionProfile'] is None or payload['changedPathClass'] == 'protected'
-          assert payload['decision'] in ('allowed', 'operator-review')
-          PY
-          payload="$(bash scripts/dev-delivery-v2-adapter.sh bastion --json)"
-          python3 - "$payload" <<'PY'
-          import json, subprocess, sys
-          payload=json.loads(sys.argv[1])
-          head=subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip()
-          tree=subprocess.check_output(['git','show','-s','--format=%T','HEAD'], text=True).strip()
-          assert payload['headSha'] == head and payload['treeSha'] == tree
-          assert payload['candidateTreeSha'] == tree
-          expected_base=__import__('os').environ.get('DEV_DELIVERY_V2_BASE_SHA', payload['baseSha'])
-          assert payload['baseSha'] == expected_base
-          assert payload['bastionDecision'] == 'pass'
-          assert payload['sourceMergeAdmission'] is True
-          assert payload['providerDeployAllowed'] is False
-          assert payload['sourceAdmissionProfile'] in (None, 'deploy-control-source:sharity-staging-cas-v1')
-          assert payload['sourceAdmissionProfile'] is None or payload['changedPathClass'] == 'protected'
-          assert payload['decision'] == 'operator-review' if payload['changedPathClass'] == 'protected' else True
-          assert payload['changedPathClass'] != 'deploy'
-          assert payload['providerBuildDecision'] != 'provider' + '-deploy'
-          PY
-          bash tests/dev-delivery-v2-adapter.test.sh
-
-      - name: DEV v4 Stage B admission fixtures
-        run: node --test tests/dev-v4-stage-a-verifier.test.mjs tests/dev-v4-admission.test.mjs
-
-      - name: Deploy control-plane bastion tests
-        run: |
-          set -euo pipefail
-          python3 -m py_compile scripts/impactshop-exact-release-remote.py
-          bash -n bin/deploy-wpcontent-map.sh
-          bash -n bin/impactshop-guard-rollback.sh
-          bash -n tests/impactshop-exact-release-remote.test.sh
-          bash -n tests/impactshop-guard-preflight-detached.test.sh
-          bash -n tests/deploy-wpcontent-map-bastion.test.sh
-          bash -n tests/deploy-wpcontent-map-exact-file.test.sh
-          bash -n tests/impactshop-guard-rollback-truth.test.sh
           bash tests/impactshop-exact-release-remote.test.sh
           bash tests/impactshop-guard-preflight-detached.test.sh
           bash tests/deploy-wpcontent-map-bastion.test.sh
           bash tests/deploy-wpcontent-map-exact-file.test.sh
           bash tests/impactshop-guard-rollback-truth.test.sh
 
-      - name: Worktree multi-active continuity contract
-        run: |
-          set -euo pipefail
-          bash -n scripts/start-feature-worktree.sh
-          bash -n scripts/worktree-task-start.sh
-          bash -n scripts/worktree-coordination-sync.sh
-          bash -n scripts/worktree-continuity-guard.sh
-          bash -n scripts/guarded-push.sh
-          bash -n scripts/install-hooks.sh
-          bash -n tests/worktree-multi-active-continuity.test.sh
-          bash tests/worktree-multi-active-continuity.test.sh
-
-      - name: Validation Gate (staging, read-only; SSH timeout tolerated)
-        continue-on-error: true
-        env:
-          SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
-          SSH_USER: ${{ secrets.STAGING_SSH_USER }}
-          WP_PATH:  ${{ secrets.STAGING_WP_PATH }}
-        run: |
-          set -eo pipefail
-          if ! bash scripts/validate-deploy-profile.sh --profile=staging --timeout-ssh=10 --timeout-wpcli=30; then
-            echo "⚠️ SSH/WP-CLI nem elérhető a GitHub runnerből (várható: firewall/whitelist hiány)."
-            echo "ℹ️ Hivatkozás: Pack #2 REAL RUN bizonyította a staging elérhetőségét."
-          fi
-
-      - name: Record CI outcome (green with warnings)
-        run: echo "✅ CI pipeline completed (read-only checks + tolerated SSH timeout)."
+      - name: Record bounded scope honestly
+        run: echo 'Local fixtures completed. No staging SSH probe, deploy, host installation or production acceptance was performed.'

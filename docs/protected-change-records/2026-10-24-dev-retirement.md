@@ -5,7 +5,9 @@ Protected files touched: `safe-repo-audit.sh`, `install-hooks.sh`,
 `worktree-task-start-guard.sh`, `worktree-readiness-check.sh`,
 `worktree-coordination-sync.sh`, `worktree-continuity-guard.sh`,
 `dev-delivery-v2-adapter.sh`, `check-protected-file-touch.sh`,
-`check-commit-lane.sh` és a saját új opcionális natív helper.
+`check-commit-lane.sh`, `.github/workflows/ci.yml`,
+`docs/ai-assistant-canonical-policy.md`, `docs/bastion-guard-status.md`,
+`docs/pr-policy.md` és a saját új opcionális natív helper.
 Felhatalmazás: Arnold kifejezetten elfogadott DEV-enforcement retirement terve.
 Ez forrásmódosításra szól, nem deployra vagy hosthook aktiválására.
 
