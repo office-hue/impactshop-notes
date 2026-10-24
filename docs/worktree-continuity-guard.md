@@ -1,3 +1,8 @@
+> Történeti DEV-leírás. A jelenlegi, engine/capsule/selector/repin nélküli
+> útmutató: [DEV-kivezetés](dev-retirement-2026-10-24.md).
+> Az alábbi kapuk nem aktív fejlesztési előfeltételek; a valódi
+> termék/domain/biztonsági és deploy/rollback követelmények megmaradnak.
+
 # Worktree Continuity Guard
 
 Datum: 2026-09-10

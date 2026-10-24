@@ -62,7 +62,9 @@ CHANGED_LIST="$TMP_DIR/changed-files.txt"
 
 cd "$ROOT_DIR"
 
-if [[ "$MODE" == "push" ]]; then
+if [[ "$MODE" == "staged" ]]; then
+  git diff --cached --name-only --no-renames | sed '/^$/d' | sort -u > "$CHANGED_LIST"
+elif [[ "$MODE" == "push" ]]; then
   if [[ -z "$PUSH_RANGE" ]]; then
     base="$(resolve_push_base)"
     PUSH_RANGE="${base}..HEAD"

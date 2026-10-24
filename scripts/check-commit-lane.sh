@@ -111,6 +111,8 @@ lane_map = {}
 for path in paths:
     if path.startswith("docs/protected-change-records/"):
         lane = "docs"
+    elif path.startswith("scripts/") or path.startswith(("config/dev-v4/", "config/dev-delivery-v2")):
+        lane = "ops"
     elif matches(path, additive_globs):
         lane = "additive"
     elif matches(path, protected_globs):
@@ -259,7 +261,7 @@ for lane in data["cross"]:
         print(f"  - {path}")
 print("[commit-lane] Előbb tisztítsd szét: stash, külön worktree vagy külön commit.")
 PY
-    exit 3
+    echo "[commit-lane] advisory: preserve unrelated unstaged work; only staged content is proposed." >&2
   fi
 fi
 

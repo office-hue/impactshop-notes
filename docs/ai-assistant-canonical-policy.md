@@ -14,34 +14,12 @@ Ha eltérés van a lokális asszisztens-config és a repo szabályok között, a
 
 ## Session workflow
 
-### Session elején
-
-```bash
-cd /Users/bujdosoarnold/Developer/GitHub/ai-agent
-npm run memory:pre-task -- --task "<rövid feladatleírás>"
-```
-
-Ha a feladat a guardrendszert, protected lane-t, Impact Challenge / Impact Shop surface-t vagy offerwall protected runtime-ot érinti, ezt a célzott betöltőt kell előnyben részesíteni:
-
-```bash
-cd /Users/bujdosoarnold/Developer/GitHub/ai-agent
-npm run memory:impact-challenge-load -- --task "<rövid feladatleírás>"
-```
-
-Ha a kontextus stale vagy hiányos:
-
-```bash
-cd /Users/bujdosoarnold/Developer/GitHub/ai-agent
-npm run memory:full-sync -- --task "<rövid feladatleírás>"
-```
-
-### Session végén
-
-```bash
-cd /Users/bujdosoarnold/Developer/GitHub/ai-agent
-npm run memory:v2:session-save -- --summary "<mi történt>" --tags "impactshop-notes,tag1"
-npm run memory:full-sync -- --task "<lezáró összefoglaló>"
-```
+A DEV-kivezetés aktuális helyi útmutatója: `docs/dev-retirement-2026-10-24.md`.
+Kezdéskor a saját repo/worktree/branch/base/HEAD, a cél és a következő lépés
+ellenőrzendő. Csak az aktuális és következő fázis útmutatóját olvasd.
+Nincs kötelező sibling-memory parancs, engine, capsule, selector vagy modellkapu.
+Az opcionális memória hiánya nem forrásellenőrzési PASS és nem jogosultság.
+A meglevő termék-, domain-, titok-, WordPress- és deploy-szabályok megmaradnak.
 
 ## Repo-specifikus működés
 
