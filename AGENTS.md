@@ -86,31 +86,35 @@ find .codex/backups -mindepth 1 -maxdepth 1 -type d -mtime +2 -print -exec rm -r
   - guard, policy vagy governance-hub lane valtozas nem tolható fel a local governance system plan syncje nelkul: `docs/impactshop-governance-system-plan-2026-06-16.md`
 - New module files must include bastion/guard extension evidence in `docs/bastion-guard-status.md`.
 
-<!-- BEGIN REPO-LOCAL DEV UPGRADE CONTRACT -->
-The repo-local authority is stronger than any global prompt or memory. Every
-task uses one clean dedicated worktree with a recorded branch/base/head/tree
-and checkpoint; unknown, dirty or detached state blocks. Terra plans and QA,
-Luna bounded implementation, and Sol cross-system or release decisions are
-distinct. Required closeout is targeted/full necessary tests plus `git diff
---check`, docsync/continuity evidence and one checkpoint commit. Vercel builds,
-push/PR/merge and main reconciliation stay at the safe minimum; no manual
-build or retry. Protected WordPress, deploy, remote-write and data paths require
-operator review. No global waiver can replace this local policy.
-<!-- END REPO-LOCAL DEV UPGRADE CONTRACT -->
+## DEV kivezetés — aktuális útmutató
 
-## DEV delivery v2 local admission
+A 2026-10-24-i jóváhagyott DEV-kivezetés után a forrásfejlesztéshez nincs
+engine, capsule, selector, modellnév, admission, taskpin vagy repin követelmény.
+A régi DEV JSON contractok és tesztek történeti anyagok; nem aktív felhatalmazás.
+A kompatibilitási belépők `retired/advisory` állapotot adnak, nem sikeres
+forrásellenőrzést vagy publikálási jogot.
 
-The pinned repo-local target-contract digest is
-`989dd16dd30bdebb07403c1b0f88ad9a182ea0dd167fc37674438b4bc8ef0194`.
-The maximum-bastion adapter has no network, provider, or product-deploy
-authority; candidate evidence is private Git metadata (`0700`/`0600`).
+Közvetlen Git használható. Az opcionális `scripts/workspace-hooks.py`
+natív tartalom- és termékellenőrzést, illetve explicit, backup/CAS/rollback
+védett hooktelepítést kínál. Hiányzó opcionális helper nem állítja le a Gitet
+és nem hoz létre PASS-t. Telepítés alapból csak írásmentes előkészítés.
+A main/master, titok-, idegen WIP-, termék-, WordPress-, Hatás Körök-,
+affiliate- és deploy-védelem megmarad. Érintett termékcheck hiányát jelöld;
+az útmutató nem ad külső jogosultságot.
 
-## DEV v4 Stage B admission
+Kezdéskor ellenőrizd a repo/remote/branch/base/HEAD-et. Csak saját kijelölt
+worktree-be írj. A task-start HEAD-ről indul, nincs automatikus fetch vagy
+közös koordinációs writer. Meglévő munka ugyanabban a worktree-ben folytatható.
+Main fetch/integration/merge előtt szűk quiet window, utána azonnali elengedés.
+Futó kliensnél tényleges újraolvasás vagy checkpoint után új chat szükséges;
+forrásmódosítás nem bizonyít hosttelepítést vagy chatbetöltést.
 
-Fresh tasks use `node scripts/dev-v4-admission.mjs --phase0`. A candidate
-based on Stage A remains `v2-only` until Stage B is merged; post-merge admission
-requires a capsule base that is a descendant of Stage A and contains the
-base-owned Stage B contract. Legacy markerless/safe legacy worktrees stay
-`v2-only`; unsafe nonlegacy capsules block. PHP/provider/staging gaps are
-lane-specific and unverified; no deploy, VPS, runtime, secret, cron or
-watchdog authority is granted.
+Ajánlás: 6.1 Sol/high érdemi fejlesztés/review, 6 Luna/medium mechanikus munka,
+6 Astra/high összetett tervezés. Alkalmas független review a konkrét kockázat
+alapján szükséges; modellazonosító hiánya önmagában nem blokk. A tényleges
+vizsgálatot és a nem ellenőrizhető tényt őszintén jelöld.
+
+Részletek: `docs/dev-retirement-2026-10-24.md`. A stabil központi útmutató
+telepítés után `~/.local/share/office-workspace/current/docs/dev-guide/index.md`;
+csak az aktuális és következő fázist olvasd, ne keress sibling checkoutot.
+A source-ready, merged, installed, activated és deployed külön állapot.

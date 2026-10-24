@@ -1,3 +1,25 @@
+## 2026-10-24 — DEV-kivezetés: helyi forrás, aktiválás nélkül
+
+A kijelölt `dev/retirement-20261024` clone base-e
+`bbf2345416fe4aa2f4b49c8f02e57fa4ceb1a77c`.
+Az engine/capsule/selector/modell/admission/repin kényszer kivezetve;
+a kompatibilitási belépő `retired/advisory`, nem permission vagy PASS.
+Natív Git, opcionális saját hook/audit, explicit backup/CAS/rollback telepítő;
+nincs központ/sibling írás, automatikus fetch, hosttelepítés vagy termékdeploy.
+A WordPress/Hatás Körök/affiliate/guide/JYSK/identity védelem és tényleges
+deploy/restore kód megmaradt. Részletek:
+`docs/dev-retirement-2026-10-24.md`;
+protected rekord: `docs/protected-change-records/2026-10-24-dev-retirement.md`.
+
+Evidencia: 34/34 retirement fixture + 1 új célzott CI content-only fixture; öt deploy/rollback mockteszt;
+affiliate tamper fixture; Impi source audit; helyi natív titokscan sikeres.
+Az exact-file fixture saját hiányzó staging-guard warningja látható maradt.
+Az implementációs tesztkörben nem futott staging SSH, Codex bridge, provider vagy host-apply.
+Forráspublikálás külön jóváhagyott PR-útvonalon; merge és deploy nem engedélyezett.
+Ez nem teljes repo-CI/repo-audit, kliensbetöltés vagy élő acceptance.
+A korábbi DEV-engine/pin kapuleírások történetiek; a termékszabályokat
+az aktuális saját forrásból kell alkalmazni.
+
 ## 2026-10-23 — Téves deploy-besorolás javítása és review-lezárás
 
 A generic remote-write diagnosztikai címke többé nem végrehajtható parancs.

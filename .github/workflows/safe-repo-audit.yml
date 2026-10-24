@@ -1,15 +1,35 @@
-name: Safe Repo Audit
+name: Native Source Audit
 
 on:
   push:
   pull_request:
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   safe-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Run strict safe repo audit
-        run: bash scripts/safe-repo-audit.sh --strict
+      - name: Audit exact committed source range
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          if test -n "$BASE_SHA" && test "$BASE_SHA" != 0000000000000000000000000000000000000000; then
+            # CI verifies source content, not protected-change authorization.
+            # Default local/native-push audits still run all product guards.
+            bash scripts/safe-repo-audit.sh --strict --content-only --mode push --base "$BASE_SHA" --head "$HEAD_SHA"
+          else
+            # Missing base is explicit; do not convert a clean checkout into PASS.
+            echo 'No event base: run isolated fixtures and review the intended range directly.'
+            python3 -B tests/workspace-retirement.test.py
+          fi
