@@ -638,10 +638,15 @@ def product_paths(repo, changed, mode, pairs=()):
             models.append(json.loads(target.read_bytes()))
     if not models:
         raise ValueError('product protection manifest unavailable; no product evidence')
-    patterns = {pattern for model in models for key in ('protected_globs', 'additive_globs')
-                for pattern in model.get(key, [])}
-    if any(not isinstance(pattern, str) for pattern in patterns):
-        raise ValueError('invalid product manifest patterns')
+    patterns = set()
+    for model in models:
+        if not isinstance(model, dict):
+            raise ValueError('invalid product manifest object')
+        for key in ('protected_globs', 'additive_globs'):
+            values = model.get(key, [])
+            if not isinstance(values, list) or any(not isinstance(pattern, str) for pattern in values):
+                raise ValueError('invalid product manifest patterns')
+            patterns.update(values)
     return {path for path in changed if path not in RETIRED_DEV_SURFACES and
             (re.search(PRODUCT_SCOPE, path) or any(fnmatch.fnmatchcase(path, pattern) for pattern in patterns))}
 
@@ -804,7 +809,14 @@ def audit(args):
     content_failed = bool(findings) or any(item['status'] == 'failed' for item in checks)
     content_unavailable = any(item['status'] == 'unavailable' for item in checks)
     content_status = 'findings' if content_failed else ('unavailable' if content_unavailable else 'checked')
-    selected_product = set() if args.content_only else product_paths(repo, changed, args.mode, pairs if args.mode == 'push' else ())
+    try:
+        selected_product = set() if args.content_only else product_paths(repo, changed, args.mode, pairs if args.mode == 'push' else ())
+    except (OSError, ValueError, RuntimeError):
+        # Product-data unavailability must never discard already found secrets
+        # (or another actual failure). Static scoped guards can still run.
+        selected_product = None
+        checks.append({'name': 'product-manifest-selection', 'status': 'unavailable',
+                       'reason': 'product manifest unavailable, unsafe or malformed; no product evidence'})
     for script, pattern in PRODUCT_GUARDS:
         if args.content_only:
             break
@@ -820,46 +832,50 @@ def audit(args):
         if tool_root:
             item['checkerRoot'] = str(tool_root)
             item['dataRoot'] = str(repo)
-        input_error = product_input_error(repo, script, args.mode, changed) if tool_root else None
-        # Stable staged checks bind their real inputs individually. Unrelated
-        # foreign WIP is neither executed nor a permission/clean-worktree gate.
-        snapshot_ok = current_snapshot if not tool_root else (args.mode != 'push' or all(head == active_head for _, head in pairs))
-        if input_error:
-            item.update(status='unavailable', reason=input_error)
-        elif not snapshot_ok:
-            item.update(status='unavailable', reason='checker reads worktree; run the direct command in a clean checkout of the exact pushed head or align index/worktree')
-        elif (not tool_root and ((repo / 'scripts').is_symlink() or not target.resolve().is_relative_to(repo))) or target.is_symlink() or not target.is_file() or not shutil.which(command[0]):
-            item.update(status='unavailable', reason='local product checker/runtime missing; run displayed direct check, no product PASS claimed')
-        elif script.endswith('.sh') and 'affiliate' in script and not shutil.which('php'):
-            item.update(status='unavailable', reason='PHP missing; direct affiliate checker remains required for its product scope')
-        else:
-            env = git_environment()
-            if tool_root:
-                # User-provided fixture paths must never redirect live checks
-                # away from the actual target's affiliate source.
-                env.pop('AFFILIATE_RUNTIME_SOURCE', None)
-                env.pop('AFFILIATE_BOOT_SOURCE', None)
-            if args.mode == 'push':
-                if len(pairs) != 1:
-                    item.update(status='unavailable', reason='product guard requires a checkout per pushed ref')
-                    checks.append(item)
-                    continue
-                base, head = pairs[0]
-                if base is None:
-                    roots = git(repo, 'rev-list', '--max-parents=0', head).stdout.decode().splitlines()
-                    if len(roots) != 1:
-                        item.update(status='unavailable', reason='product guard needs explicit source base for multiple-root history')
+        try:
+            input_error = product_input_error(repo, script, args.mode, changed) if tool_root else None
+            # Stable staged checks bind their real inputs individually. Unrelated
+            # foreign WIP is neither executed nor a permission/clean-worktree gate.
+            snapshot_ok = current_snapshot if not tool_root else (args.mode != 'push' or all(head == active_head for _, head in pairs))
+            if input_error:
+                item.update(status='unavailable', reason=input_error)
+            elif not snapshot_ok:
+                item.update(status='unavailable', reason='checker reads worktree; run the direct command in a clean checkout of the exact pushed head or align index/worktree')
+            elif (not tool_root and ((repo / 'scripts').is_symlink() or not target.resolve().is_relative_to(repo))) or target.is_symlink() or not target.is_file() or not shutil.which(command[0]):
+                item.update(status='unavailable', reason='local product checker/runtime missing; run displayed direct check, no product PASS claimed')
+            elif script.endswith('.sh') and 'affiliate' in script and not shutil.which('php'):
+                item.update(status='unavailable', reason='PHP missing; direct affiliate checker remains required for its product scope')
+            else:
+                env = git_environment()
+                if tool_root:
+                    # User-provided fixture paths must never redirect live checks
+                    # away from the actual target's affiliate source.
+                    env.pop('AFFILIATE_RUNTIME_SOURCE', None)
+                    env.pop('AFFILIATE_BOOT_SOURCE', None)
+                if args.mode == 'push':
+                    if len(pairs) != 1:
+                        item.update(status='unavailable', reason='product guard requires a checkout per pushed ref')
                         checks.append(item)
                         continue
-                    item.update(status='unavailable', reason='new branch has no explicit product-audit base; product permission is not inferred')
-                    checks.append(item)
-                    continue
-                env['SAFE_REPO_AUDIT_PUSH_RANGE'] = base + '..' + head
-                env['SAFE_REPO_AUDIT_UPSTREAM'] = base
-            run = (run_support_product(command, repo, env) if tool_root else
-                   subprocess.run(command, cwd=repo, env=env, capture_output=True))
-            # Avoid copying arbitrary product output or secrets into an audit log.
-            item.update(status='passed' if run.returncode == 0 else 'failed', exitCode=run.returncode)
+                    base, head = pairs[0]
+                    if base is None:
+                        roots = git(repo, 'rev-list', '--max-parents=0', head).stdout.decode().splitlines()
+                        if len(roots) != 1:
+                            item.update(status='unavailable', reason='product guard needs explicit source base for multiple-root history')
+                            checks.append(item)
+                            continue
+                        item.update(status='unavailable', reason='new branch has no explicit product-audit base; product permission is not inferred')
+                        checks.append(item)
+                        continue
+                    env['SAFE_REPO_AUDIT_PUSH_RANGE'] = base + '..' + head
+                    env['SAFE_REPO_AUDIT_UPSTREAM'] = base
+                run = (run_support_product(command, repo, env) if tool_root else
+                       subprocess.run(command, cwd=repo, env=env, capture_output=True))
+                # Avoid copying arbitrary product output or secrets into an audit log.
+                item.update(status='passed' if run.returncode == 0 else 'failed', exitCode=run.returncode)
+        except (OSError, ValueError, RuntimeError):
+            # A later input/path/runtime error also cannot mask prior failures.
+            item.update(status='unavailable', reason='product input/check unavailable or unsafe; no product evidence')
         checks.append(item)
     failures = findings or any(item['status'] == 'failed' for item in checks)
     unavailable = any(item['status'] == 'unavailable' for item in checks)

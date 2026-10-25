@@ -123,6 +123,59 @@ class Support(unittest.TestCase):
         self.assertTrue(report['findings'])
         self.assertNotIn('sk-proj-', result.stdout + result.stderr)
 
+    def test_secret_precedes_missing_or_malformed_product_manifest(self):
+        manifest = 'docs/impactshop-protected-files.json'
+        secret = 'sk-proj-' + 'q' * 60
+        cases = (None, '{malformed', '[]', '{"protected_globs":"not-a-list"}',
+                 '{"protected_globs":[["unhashable"]]}')
+        for content in cases:
+            with self.subTest(manifest=content):
+                self.git('reset', '--hard', self.base)
+                if content is None:
+                    self.git('rm', manifest)
+                    self.git('commit', '-m', 'fixture old ref without product manifest')
+                else:
+                    self.stage(manifest, content)
+                self.stage('readme.md', 'OPENAI_API_KEY=' + secret + '\n')
+                direct = self.audit('--mode', 'staged', check=False)
+                self.assertEqual(direct.returncode, 1, direct.stdout + direct.stderr)
+                report = json.loads(direct.stdout)
+                self.assertEqual(report['status'], 'findings')
+                self.assertEqual(report['sourceContentStatus'], 'findings')
+                self.assertTrue(any(item['kind'] == 'secret-like-content' for item in report['findings']))
+                self.assertEqual(self.check_status(direct, 'product-manifest-selection')['status'], 'unavailable')
+                native = self.hook(check=False)
+                self.assertEqual(native.returncode, 1, native.stdout + native.stderr)
+                self.assertNotIn(secret, direct.stdout + direct.stderr + native.stdout + native.stderr)
+
+    def test_missing_product_manifest_without_finding_is_honest_advisory(self):
+        self.git('rm', 'docs/impactshop-protected-files.json')
+        self.git('commit', '-m', 'fixture old ref without product manifest')
+        self.stage('readme.md', 'ordinary source change\n')
+        direct = self.audit('--mode', 'staged', check=False)
+        self.assertEqual(direct.returncode, 2)
+        self.assertEqual(json.loads(direct.stdout)['status'], 'unavailable')
+        self.assertEqual(self.check_status(direct, 'product-manifest-selection')['status'], 'unavailable')
+        native = self.hook()
+        self.assertIn('advisory', native.stderr)
+        self.assertNotIn('"status": "checked"', native.stdout)
+        self.assertNotIn('"status": "PASS"', native.stdout)
+
+    def test_later_product_input_exception_preserves_real_finding(self):
+        self.stage('wp-content/mu-plugins/protected.php', '<?php // proposed\n')
+        secret = 'sk-proj-' + 'r' * 60
+        self.stage('readme.md', 'OPENAI_API_KEY=' + secret + '\n')
+        record = self.repo / 'docs/protected-change-records/loop'
+        record.parent.mkdir(parents=True, exist_ok=True)
+        record.symlink_to('loop')
+        env = {**self.env, 'BASTION_CHANGE_RECORD': 'docs/protected-change-records/loop'}
+        result = self.audit('--mode', 'staged', env=env, check=False)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertEqual(self.check_status(result, 'check-protected-file-touch.sh')['status'], 'unavailable')
+        self.assertTrue(any(item['kind'] == 'secret-like-content' for item in json.loads(result.stdout)['findings']))
+        self.assertNotIn(secret, result.stdout + result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+
     def test_old_worktree_outgoing_secret_scan_exact_range(self):
         self.stage('readme.md', 'OPENAI_API_KEY=' + 'sk-proj-' + 'b' * 60 + '\n')
         self.git('commit', '-m', 'synthetic secret fixture')

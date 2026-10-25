@@ -1,5 +1,72 @@
 # Notes stabil support — szűk repair plan
 
+## 2026-10-25 — P1 finding-megőrzés: follow-up a merge után
+
+Exact base: a normálisan merge-elt #225, `cab09c88ad2a976a8b774798e685148ad3b4fc22`,
+tree `f5cf2fcb4c0f7c417efbfc50bd03c302c034e12f`. Saját ág:
+`fix/notes-audit-findings-20261025`. Egyszeri exact-commit fetch, saját WIP
+megőrzött branchváltás; nincs main-chase vagy idegen worktree-írás.
+Engedély: a jóváhagyott retirement keretében célzott javítás és normál PR;
+merge után külön readbackes hostaktiválás, nem termékdeploy.
+
+Diagnózis: az audit már összegyűjtötte a valódi secret findinget, de a
+`product_paths` hiányzó/hibás manifestje ValueErrorral kilépett. A külső
+unavailable2 eredményt a natív hook advisory0-ra fordította. A saját tényleges
+Air canary két futása ezt igazolta, nem placeholder vagy termék-PASS történt.
+Repair: a product manifest szelekcióhiba külön unavailable check; a már
+megtalált secret/content/product hiba exit1 marad. A későbbi guard-input,
+útvonal-feloldás vagy runtime OSError/ValueError/RuntimeError is csak az
+érintett product check evidenciáját teszi unavailable-lé, a korábbi hibát
+nem törli. A manifest object/list/string típusellenőrzése explicit.
+A statikus affiliate/Impi scope kiválasztása hibás manifest mellett is megmarad.
+Nincs check-waiver, fake PASS vagy új DEV-követelmény.
+
+Pontos source/DOCSYNC kör: `scripts/workspace-hooks.py`,
+`tests/notes-workspace-support.test.py`, ez a repair plan, új protected rekord,
+`notes.md`, `system-status-snapshot.md`, `DOC-SYNC-HUB.md`, helyi governance
+system plan, canonical doc-sync map és `docs/bastion-guard-status.md`.
+Négy product checker, adat-root adapter, builder, workflow és termékforrás
+byte-változatlan. Koherencia: lokális/fallback audit ugyanazt a javított
+finding-elsőbbséget kapja; a CI content-only útja nem változik.
+
+Tényleges eredmény: 3 új fixture PASS 4.435s, majd a teljes érintett
+`python3 -B tests/notes-workspace-support.test.py -v`: 25/25 PASS,20.715s.
+Öt manifesthiba + secret direct/native deny; clean missing-manifest honest
+unavailable/advisory; későbbi önhivatkozó record-path exception sem nyeli el
+a titkot. A 22 változatlan ellenőrzés ismét benne volt. Diff-check tiszta.
+Független main diffreview lezárt: nincs további material finding ebben a deltában.
+
+Hostállapot: Air37WT/3dirty, Mini26WT/7dirty leltár. Air röviden alkalmazott
+ownermigrationje után a fenti canary miatt támogatott rollback történt;
+37WT HEAD/index/status/modifiedstat/sourcehook/template változatlan.
+Az eredeti config SHA `592bc237e538e10463ce39b9a224e035e07bc35d9ad2d22669b06ba766011370`,
+hat régi hook és hiányzó current függetlenül visszaolvasva, config.lock nincs.
+Saját privát rollback-journal `owner-migration-jidjr_sc`, régi inaktív bundle
+és evidence megmarad, külön jóváhagyott legalább30napos megőrzéssel.
+Mini nem kapott csomag/current/hook/config apply-t. Mindkét ablak elengedve.
+A két temp-path buildelutasítás egy custody-incidens: canonical owned stable
+parentre javítva, guard-lazítás nélkül. A két canaryhiba után diagnózis és
+ez a rövid repair plan készült; vak ismétlés nem történt.
+
+Új forrás content-version prepare (nem build/activate):
+`1e6ad490b415f34c345d806b3ffff07c23437c92df9e28dead13026adfd87e6b`.
+Régi `3ddfad...` bundle többé nem aktiválható e finding javításaként.
+Source rollback: csak saját follow-up delta célzott revertje a fenti exact
+merge preimage-re; foreign WIP megőrzése. Host rollback már ténylegesen kész.
+Új hosted CI/merge és utána új csomag/selector/hook CAS + installed natív
+clean/advisory, secret és protected canary hátravan; nem állítunk aktiválást.
+Kézi web-UI checklist N/A: route/REST/shortcode/reward/import/redirect/UI
+payload nincs módosítva. Operátori ellenőrzés: no-secret finding esetén
+advisory, secret esetén deny, main/master tiltás, WIP/index unchanged.
+
+Öt tengely: (1) működés: valódi finding1 > unavailable2; (2) funkcionalitás:
+opcionális hiány nem DEV-blokk; (3) koherencia: local/stable azonos audit,
+termékscriptek változatlanok; (4) biztonság: értékkiírás nélküli negatív
+tesztek és támogatott saját rollback; (5) kockázat/evidencia: source-ready
+helyi25fixture+független review, még nem új merge/host/deploy acceptance.
+
+## Történeti #225 repair — 2026-10-24
+
 Base: `7417e18bad21a31a781917003af7b8ea61335838`; saját ág:
 `dev/retirement-notes-support-20261024`. Engedély: a feltárt kompatibilitási
 hiány helyi forrásjavítása review-ra; nem publikálás vagy aktiválás.
