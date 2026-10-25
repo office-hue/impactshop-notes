@@ -33,6 +33,68 @@ LEGACY = {
 }
 OLD_TEMPLATE = '# type(scope): rövid összefoglaló\n#\n# Why:\n#\n# Memory-ID: none\n#\n# Rollback:\n#\n'
 
+SUPPORT_FILES = ('scripts/workspace-hooks.py', 'scripts/notes-product-check.py',
+                 'scripts/check-protected-file-touch.sh', 'scripts/check-commit-lane.sh',
+                 'scripts/sharity-affiliate-runtime-bastion-guard.sh',
+                 'scripts/impact-impi-source-bastion-audit.py')
+# Source-owned stdlib validator, embedded verbatim in the fallback before any
+# packaged Python is imported. It is never read/executed from the package.
+SUPPORT_VALIDATOR = '''def validate_support(raw_root, expected_version):
+    root = Path(raw_root)
+    if not root.is_absolute() or root.is_symlink():
+        raise ValueError('support root must be an explicit canonical release')
+    for parent in (root, *root.parents):
+        info = parent.lstat()
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid not in (0, os.getuid()) or info.st_mode & 0o022:
+            # The OS-owned sticky temporary directory is allowed for isolated fixtures.
+            if not (info.st_uid == 0 and info.st_mode & stat.S_ISVTX and parent == Path(tempfile.gettempdir()).resolve()):
+                raise ValueError('unsafe support directory ownership/path')
+    if root != root.resolve() or root.stat().st_uid != os.getuid():
+        raise ValueError('support root ownership/canonical path drift')
+    def checked_file(relative):
+        path = root / relative
+        for parent in path.relative_to(root).parents:
+            directory = root / parent
+            info = directory.lstat()
+            if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o022:
+                raise ValueError('unsafe support file parent')
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.getuid() or info.st_mode & 0o022:
+            raise ValueError('unsafe support file')
+        return path.read_bytes()
+    manifest = json.loads(checked_file('manifest.json'))
+    if not isinstance(manifest, dict):
+        raise ValueError('support manifest must be a JSON object')
+    files = manifest.get('files')
+    if manifest.get('kind') != 'impactshop-notes-source-support-v1' or not isinstance(files, dict) or set(files) != set(SUPPORT_FILES):
+        raise ValueError('not a Notes support package')
+    version = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if version != expected_version or manifest.get('version') != version or root.name != version or root.parent.name != 'releases':
+        raise ValueError('support version/trust binding drift')
+    for name, sha in files.items():
+        if hashlib.sha256(checked_file(name)).hexdigest() != sha:
+            raise ValueError('support content drift: ' + name)
+    return root
+'''
+exec(SUPPORT_VALIDATOR)  # Only the static source literal above, never external input.
+
+
+def support_files(source):
+    files = {}
+    for name in SUPPORT_FILES:
+        path = source / name
+        if path.resolve() != path or path.is_symlink():
+            raise ValueError('unsafe support source path')
+        value = file_state(path)
+        if value is None or path.stat().st_uid != os.getuid() or path.stat().st_mode & 0o022:
+            raise ValueError('unsafe/missing support source')
+        files[name] = hashlib.sha256(base64.b64decode(value['data'])).hexdigest()
+    return files
+
+
+def support_version():
+    return digest(support_files(Path(__file__).resolve().parents[1]))
+
 class UnsafePush(ValueError):
     """Actual source/transport risk; optional tooling must not turn it into advice."""
 
@@ -87,8 +149,49 @@ esac
 case "${1:-}" in origin|"$2") ;; *) echo '[notes-hook] unexpected Notes push remote' >&2; exit 1;; esac
 [ "$(git remote get-url --push origin)" = "$2" ] || { echo '[notes-hook] origin mismatch' >&2; exit 1; }
 ''' if name == 'pre-push' else ''
+    # Missing optional source inputs keep render usable in old/minimal checkouts;
+    # they cannot mint a trusted stable fallback version.
+    try:
+        version = support_version()
+    except (OSError, ValueError):
+        version = None
+    fallback = ''
+    if version:
+        bootstrap = ('import hashlib, json, os, stat, subprocess, sys, tempfile\nfrom pathlib import Path\n'
+                     + 'SUPPORT_FILES = ' + repr(SUPPORT_FILES) + '\n' + SUPPORT_VALIDATOR + '''
+try:
+    current = Path.home() / '.local/share/office-workspace/targets/impactshop-notes/current'
+    # Only this fixed Notes-specific selector is followed, never an env override.
+    for parent in current.parents:
+        info = parent.lstat()
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid not in (0, os.getuid()) or info.st_mode & 0o022:
+            if not (info.st_uid == 0 and info.st_mode & stat.S_ISVTX and parent == Path(tempfile.gettempdir()).resolve()):
+                raise ValueError('unsafe support selector parent')
+    info = current.lstat()
+    if not stat.S_ISLNK(info.st_mode) or info.st_uid != os.getuid():
+        raise ValueError('support current must be an owned symlink')
+    try:
+        root = current.resolve(strict=True)
+    except RuntimeError as error:
+        # Older Python reports a selector symlink cycle as RuntimeError.
+        raise ValueError('support selector symlink cycle') from error
+    if root.parent != current.parent / 'releases':
+        raise ValueError('support selector outside Notes releases')
+    validate_support(root, sys.argv[1])
+except (OSError, ValueError, KeyError, TypeError) as error:
+    print('[source-check] advisory: Notes stable support unavailable; no audit evidence: ' + str(error), file=sys.stderr)
+    sys.exit(2)
+sys.exit(subprocess.call([sys.executable, '-I', '-B', str(root / 'scripts/workspace-hooks.py'),
+                         'audit', '--tool-root', str(root), '--tool-version', sys.argv[1], *sys.argv[2:]]))
+''')
+        # -c leaves native pre-push stdin untouched for the real ref audit.
+        fallback = ('if [ ! -f "$helper" ] && command -v python3 >/dev/null 2>&1; then\n'
+                    + '  set +e\n  python3 -I -B -c ' + shlex.quote(bootstrap) + ' ' + version
+                    + ' --strict --optional-hook --mode ' + ('staged' if name == 'pre-commit' else 'push --stdin --remote-name "${1-}" --remote-url "${2-}"')
+                    + ' --repo "$repo"\n  result=$?\n  set -e\n'
+                    + '  if [ "$result" -ne 2 ]; then exit "$result"; fi\nfi\n')
     text = '''#!/bin/sh
-# impactshop-notes optional source hook v1; resolves only in the current worktree.
+# impactshop-notes optional source hook v2; local source or pinned Notes support.
 set -eu
 repo=$(git rev-parse --show-toplevel)
 cd "$repo"
@@ -100,10 +203,11 @@ if [ -L "$repo/scripts" ] || [ -L "$helper" ]; then
   echo '[notes-hook] unsafe helper path; foreign source was not executed.' >&2
   exit 1
 fi
-if ! command -v python3 >/dev/null 2>&1 || [ ! -f "$helper" ]; then
+''' + fallback + '''if ! command -v python3 >/dev/null 2>&1 || [ ! -f "$helper" ]; then
 ''' + native + '''
   echo '[source-check] advisory: optional checker/Python unavailable; no audit evidence produced. Native Git continues.' >&2
   echo '[source-check] Direct path: ''' + direct + '''' >&2
+  echo '[source-check] Product checks in the affected current worktree: bash scripts/check-protected-file-touch.sh --mode staged|push; bash scripts/check-commit-lane.sh --mode staged|push; bash scripts/sharity-affiliate-runtime-bastion-guard.sh; python3 -B scripts/impact-impi-source-bastion-audit.py. Missing checks provide no successful evidence.' >&2
   exit 0
 fi
 set +e
@@ -542,8 +646,71 @@ def product_paths(repo, changed, mode, pairs=()):
             (re.search(PRODUCT_SCOPE, path) or any(fnmatch.fnmatchcase(path, pattern) for pattern in patterns))}
 
 
+def product_input_error(repo, script, mode, changed):
+    """Bind only actual checker inputs, never all foreign/unstaged work.
+
+    The source-owned checker code may be stable; its manifest, authority record
+    and product data must still belong to this worktree and the checked index
+    (or exact pushed HEAD). Local inspection intentionally reads current data.
+    """
+    names = {'docs/impactshop-protected-files.json'}
+    if script == 'check-protected-file-touch.sh':
+        names.update(name for name in changed if name.startswith('docs/protected-change-records/'))
+        if os.environ.get('BASTION_CHANGE_RECORD'):
+            names.add(os.environ['BASTION_CHANGE_RECORD'])
+    if script == 'sharity-affiliate-runtime-bastion-guard.sh':
+        names = {'wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php',
+                 'wp-content/mu-plugins/impactshop-boot.php'}
+    if script == 'impact-impi-source-bastion-audit.py':
+        names = {'wp-content/mu-plugins/impact-community-impi-source.php',
+                 'config/impact-impi-source-authority.json'}
+    for name in names:
+        relative = Path(name)
+        if relative.is_absolute() or '..' in relative.parts:
+            return 'checker input must be worktree-relative: ' + name
+        path = repo / relative
+        if path.resolve() != path or not path.resolve().is_relative_to(repo):
+            return 'checker input outside/symlinked worktree: ' + name
+        try:
+            value = file_state(path)
+        except (OSError, ValueError):
+            return 'unsafe checker input: ' + name
+        if value is None:
+            return 'checker input missing: ' + name
+        if mode != 'local':
+            expected = git(repo, 'show', (':' if mode == 'staged' else 'HEAD:') + name, check=False)
+            if expected.returncode or expected.stdout != base64.b64decode(value['data']):
+                return 'checker input differs from checked ' + ('index: ' if mode == 'staged' else 'HEAD: ') + name
+    return None
+
+
+def run_support_product(command, repo, environment):
+    """Isolate only trusted-support children's Python imports, including stdin.
+
+    The four reviewed checkers remain byte-identical. Their shell-side python3
+    calls use this private short-lived launcher, not worktree modules or an
+    inherited Python environment. No user/global PATH or configuration changes.
+    """
+    with tempfile.TemporaryDirectory(prefix='notes-support-python-') as temporary:
+        directory = Path(temporary).resolve()
+        directory.chmod(0o700)
+        launcher = directory / 'python3'
+        launcher.write_text('#!/bin/sh\nexec ' + shlex.quote(sys.executable) + ' -I -B "$@"\n')
+        launcher.chmod(0o700)
+        env = environment.copy()
+        env.pop('PYTHONPATH', None)
+        env.pop('PYTHONHOME', None)
+        env['PATH'] = str(directory) + os.pathsep + env.get('PATH', os.defpath)
+        return subprocess.run(command, cwd=repo, env=env, capture_output=True)
+
+
 def audit(args):
     repo = repository(args.repo)
+    tool_root = None
+    if bool(args.tool_root) != bool(args.tool_version):
+        raise ValueError('--tool-root and --tool-version must be explicit together')
+    if args.tool_root:
+        tool_root = validate_support(args.tool_root, args.tool_version)
     if args.mode != 'push' and (args.stdin or args.head or args.base or args.range or args.all_history or args.remote_url or args.remote_name):
         raise ValueError('push refs/range require --mode push')
     if args.stdin and (args.head or args.base or args.range):
@@ -643,19 +810,35 @@ def audit(args):
             break
         if not (selected_product if pattern is None else any(re.search(pattern, name) for name in changed)):
             continue
-        command = (['python3', '-B'] if script.endswith('.py') else ['bash']) + ['scripts/' + script]
+        target = (tool_root or repo) / 'scripts' / script
+        command = (['python3', '-B'] if script.endswith('.py') else ['bash']) + [str(target) if tool_root else 'scripts/' + script]
+        if tool_root and script == 'impact-impi-source-bastion-audit.py':
+            command = ['python3', '-I', '-B', str(tool_root / 'scripts/notes-product-check.py'), '--repo', str(repo)]
         if script in ('check-protected-file-touch.sh', 'check-commit-lane.sh'):
             command += ['--mode', 'staged' if args.mode == 'staged' else args.mode]
         item = {'name': script, 'command': command, 'cwd': str(repo)}
-        target = repo / 'scripts' / script
-        if not current_snapshot:
+        if tool_root:
+            item['checkerRoot'] = str(tool_root)
+            item['dataRoot'] = str(repo)
+        input_error = product_input_error(repo, script, args.mode, changed) if tool_root else None
+        # Stable staged checks bind their real inputs individually. Unrelated
+        # foreign WIP is neither executed nor a permission/clean-worktree gate.
+        snapshot_ok = current_snapshot if not tool_root else (args.mode != 'push' or all(head == active_head for _, head in pairs))
+        if input_error:
+            item.update(status='unavailable', reason=input_error)
+        elif not snapshot_ok:
             item.update(status='unavailable', reason='checker reads worktree; run the direct command in a clean checkout of the exact pushed head or align index/worktree')
-        elif (repo / 'scripts').is_symlink() or not target.resolve().is_relative_to(repo) or target.is_symlink() or not target.is_file() or not shutil.which(command[0]):
+        elif (not tool_root and ((repo / 'scripts').is_symlink() or not target.resolve().is_relative_to(repo))) or target.is_symlink() or not target.is_file() or not shutil.which(command[0]):
             item.update(status='unavailable', reason='local product checker/runtime missing; run displayed direct check, no product PASS claimed')
         elif script.endswith('.sh') and 'affiliate' in script and not shutil.which('php'):
             item.update(status='unavailable', reason='PHP missing; direct affiliate checker remains required for its product scope')
         else:
             env = git_environment()
+            if tool_root:
+                # User-provided fixture paths must never redirect live checks
+                # away from the actual target's affiliate source.
+                env.pop('AFFILIATE_RUNTIME_SOURCE', None)
+                env.pop('AFFILIATE_BOOT_SOURCE', None)
             if args.mode == 'push':
                 if len(pairs) != 1:
                     item.update(status='unavailable', reason='product guard requires a checkout per pushed ref')
@@ -673,7 +856,8 @@ def audit(args):
                     continue
                 env['SAFE_REPO_AUDIT_PUSH_RANGE'] = base + '..' + head
                 env['SAFE_REPO_AUDIT_UPSTREAM'] = base
-            run = subprocess.run(command, cwd=repo, env=env, capture_output=True)
+            run = (run_support_product(command, repo, env) if tool_root else
+                   subprocess.run(command, cwd=repo, env=env, capture_output=True))
             # Avoid copying arbitrary product output or secrets into an audit log.
             item.update(status='passed' if run.returncode == 0 else 'failed', exitCode=run.returncode)
         checks.append(item)
@@ -803,6 +987,8 @@ def main(argv=None):
     scanner.add_argument('--strict', action='store_true')
     scanner.add_argument('--optional-hook', action='store_true', help='native-hook whitespace advice; actual security findings still fail')
     scanner.add_argument('--content-only', action='store_true', help='explicit content-only CI audit; product guards/permission not evaluated')
+    scanner.add_argument('--tool-root', help='explicit trusted Notes support release; data always comes from --repo')
+    scanner.add_argument('--tool-version', help='reviewed support content version; required with --tool-root')
     scanner.add_argument('--mode', choices=('local', 'staged', 'push'), default='local')
     scanner.add_argument('--head')
     scanner.add_argument('--base')

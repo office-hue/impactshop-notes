@@ -1,3 +1,30 @@
+## 2026-10-24 — Notes stabil support repair: terv, még nem aktivált
+
+Saját ág: `dev/retirement-notes-support-20261024`; exact base:
+`7417e18bad21a31a781917003af7b8ea61335838` (#224), tree
+`802bf7224b10cb2de8a807a60025e7b81802a7be`.
+Egyszeri exact-commit fetch történt; nincs main-chase. Air 37 + Mini 26 régi
+WT-ben nincs helyi helper, mindegyik régi staged/foreign-WIP guardot használ.
+Ezért a korábbi forrásmerge nem teljes hookaktiválás.
+
+Repair plan és pontos 13 fájlos kör:
+`docs/notes-workspace-support-repair-2026-10-24.md`.
+Stabil Notes-specifikus, verziózott csomag + explicit trusted tool-root;
+adat/manifest/record mindig a cél-WT, nem a supportcsomag.
+A négy product checker ellenőrzési logikája és forrása változatlan.
+Elfogadás: tényleges secret/protected/foreign-WIP/affiliate/Impi/root-drift
+pozitív-negatív fixture; default local működés változatlan.
+Most nincs commit/push/CI-attempt, hostcsomag-/hookapply vagy termékdeploy.
+
+Helyi forrásjelölt: 22/22 új izolált fixture PASS; a régi érintett suite 34/35,
+majd az egyetlen szöveges no-PASS regresszió javítva és külön 1/1 PASS.
+Négy Python AST + CI YAML parse + diff-check OK; négy productchecker byte-változatlan.
+Manifest-nonobject/symlinkciklus unavailable/advisory, nem natív DEV-kapu.
+Független main-review két konkrét lelete javítva: metadata-típus/ciklus és
+shell-child Python importárnyékolás; markeríró targetmodul nem fut a valódi
+protected/lane ellenőrzésnél. Ez nem az alábbi önreview megállapítása.
+Részletes eredmény, trust-határ és öt tengelyű review a fenti repair planben.
+
 ## 2026-10-24 — DEV-kivezetés: helyi forrás, aktiválás nélkül
 
 A kijelölt `dev/retirement-20261024` clone base-e
