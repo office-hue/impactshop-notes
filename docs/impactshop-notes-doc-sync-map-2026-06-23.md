@@ -1,3 +1,22 @@
+## 2026-10-25 — Notes audit: valódi finding elsőbbsége, rollout visszaállítva
+
+A #225 merge `cab09c88ad2a976a8b774798e685148ad3b4fc22` fája
+`f5cf2fcb4c0f7c417efbfc50bd03c302c034e12f`; a required hosted CI sikeres,
+protection nem változott. A következő Air-aktiválás saját natív canary-je
+valódi hibát talált: hiányzó product manifest eldobta a már megtalált secretet.
+A támogatott Air rollback és 37WT HEAD/index/WIP/source readback sikeres;
+régi hook/config visszaállt, current nincs. Mini26WT érintetlen, nincs deploy.
+
+A follow-up a megtalált content/product hibát megtartja: exit1 elsőbbséget
+élvez a későbbi product-data/path/runtime unavailable előtt. Hiányzó adat
+önmagában továbbra advisory, nem sikeres product-audit vagy DEV-kapu.
+25/25 érintett supportfixture PASS (20.715s), benne 3 új kombinált negatív;
+független main diffreview lezárt, további material finding nélkül.
+Repair/rollback/öt tengely: `docs/notes-workspace-support-repair-2026-10-24.md`;
+rekord: `docs/protected-change-records/2026-10-25-notes-audit-findings.md`.
+Új forráspublikálás/CI/merge és csak utána új csomag+hostcanary szükséges.
+A lentebbi 2026-10-24-i állapotok történetiek.
+
 ## 2026-10-24 — Notes stabil support repair: terv, még nem aktivált
 
 Saját ág: `dev/retirement-notes-support-20261024`; exact base:
