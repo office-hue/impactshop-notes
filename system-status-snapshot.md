@@ -1,3 +1,10 @@
+## 2026-10-28 — CI guard baseline: narrow source repair
+
+One approved CI digest + manifest checksum refresh only; full #197→#225
+CI history reviewed. No CI/guard/runtime logic changes, no automatic approval.
+Regression cases use the actual unchanged checker; hosted checks/merge pending.
+No deployment or game activation. Protected record: `2026-10-28-jysk-ci-guard-digest.md`.
+
 ## 2026-10-27 — JYSK SQL-layer verified locally; NOT production-activated
 
 WP227 merged2823f4a. Local-only approved MariaDB10.11.19, actual target wpdb,

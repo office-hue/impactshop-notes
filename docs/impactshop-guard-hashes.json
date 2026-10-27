@@ -319,7 +319,7 @@
     "tests/impactshop-exact-release-remote.test.sh": "ca0c5b0ec0353839574ff5c943401d2ec9f98a907be98dd0dcc83dcd45dfa582",
     "tests/deploy-wpcontent-map-exact-file.test.sh": "a64167d629f257a10ff759651ffbe06e6c9a4254bddb0efdab681054f23f150f",
     "tests/impactshop-guard-rollback-truth.test.sh": "600e56326cf1b041786c90502aa0888ca89ad6f7b1fe8d00adc308a08cbb5756",
-    ".github/workflows/ci.yml": "ab43c08a72c69d56187771b5b4f8cf81deda401d22685adf4cd84f0d52886015",
+    ".github/workflows/ci.yml": "c32ce57eaf58ce4ef78f06440125c204b1186434cb1b2105b6ee78505a3a7d34",
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208",
     "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "55198b339d2ababb0fb84cf46bf2c4dda28d43741fb0c0643b4bc34050e96d8c"
   },
