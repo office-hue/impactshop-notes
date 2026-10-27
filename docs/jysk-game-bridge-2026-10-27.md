@@ -1,5 +1,50 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## Valódi helyi MariaDB-próba — 2026-10-27, irányadó új checkpoint
+
+WP #227 merge-elt: `2823f4a0aa7b04e328e71739f8e3f969b971c08b`, tree
+`daf06c37a0897ce0a6a51fd3ab1d14c8838f79bf`. A lentebbi nem-merge-elt státuszok
+történetiek. Nincs új main-fetch vagy csendablak, WP-production telepítés sem.
+
+Arnold külön engedélyével a meglévő helyi Dockerben ideiglenes, kizárólag
+localhoston elérhető adatbázis futott, 512 MiB / 1 CPU kerettel, tmpfs adatokkal.
+Az éles szerver olvasással igazolt verziójához illesztett MariaDB10.11.19 kép:
+`sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae`.
+Nincs éles adat/konfiguráció másolva; csak szintetikus rekordok és saját tesztkulcsok.
+A valódi target wpdb osztály olvasott, hash-ellenőrzött másolatának SHA256-ja
+`0fd1ffb9a24e9db8cb7370965db379a2fecd985dbeb73d319521cc1bca1bd04c`.
+
+Új, célzott `tests/jysk-mysql.integration.php`: **141 ellenőrzés PASS**,
+PHP lint sikeres. A tényleges merge-elt canonical manager/level/bridge kód futott.
+Igazolt: 11 SQL-hibahatár rollbackje, valós KILL CONNECTION, COMMIT után
+modellezett hibás visszaigazolás, hat külön kapcsolatos párhuzamos kérés;
+azonos dedupe-kulcs egyszer ír, külön kulcsok nem veszítenek növekményt.
+A manager-kör aktív SQL-tranzakcióinak átfedése ténylegesen mért; a bridge
+busy kérése a valódi event-lockot tartó művelettel fed át (a lock a claim
+tranzakciója előtt kezdődik). Tartós claim, unknown→absent→azonos retry,
+receipt-readback és a 35 pontos technikai plafon napváltás után is igazolt.
+Nem tranzakciós engine és hiányzó gazdasági unique index elutasítása vizsgált.
+
+Korlát: a WordPress boot/auth és downstream hookok nem futnak, a bridge órája
+csak a helyi fixture namespace-ben helyettesített. A COMMIT-hiba nem tényleges
+hálózati csomagvesztés. A technikai plafon napváltási esete soros; közös subject
+lockja forrásreview-val ellenőrzött. Nincs production-időeltolás, pontírás vagy
+aktiválási bizonyíték. A 6.1 Sol/high független review blokkoló forráshibát nem
+talált; a mért párhuzamosság állítását pontosító tesztjavítás bekerült, újrafutott.
+
+Reprodukció saját, új lokális konténerrel (titkot ne adj CLI-argumentumban):
+`JYSK_MYSQL_SANDBOX_CONFIRM=LOCAL_JYSK_ONLY JYSK_MYSQL_CONFIG=<privát-0600-json> JYSK_WPDB_FILE=<ellenőrzött-wpdb-fájl> php tests/jysk-mysql.integration.php`.
+Az eredmény és futási metaadat a saját ignorált `tmp/jysk-mysql-20261027/`
+alatt megőrzött. Ez a SQL-réteg bizonyítéka, nem teljes WordPress staging-PASS.
+Az exact saját `22af2647c2f7…` tesztkonténer a végső jelentés mentése után
+leállítva és `--rm` útján visszaolvasottan eltávolítva; a tmpfs szintetikus DB
+megszűnt. Más konténer, Docker-beállítás vagy megosztott image/cache nem törlődött.
+
+Friss config-összevetés: `app-staging` és `app` ugyanazt a DB_NAME/DB_HOST
+célpontot használja. A közös stagingen nem futott pontíró teszt/deploy.
+A production readiness flag false marad; guarded kiadás, saját profil/séma,
+backup/restore, valódi belépés/HTTP és Card-owned TLS javítás még szükséges.
+
 ## Publikált forráscheckpoint — 2026-10-27
 
 Az alábbi korábbi helyi állapot történeti. A forrás PR #227-ben publikált:
