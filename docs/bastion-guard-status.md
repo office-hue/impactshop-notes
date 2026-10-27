@@ -159,6 +159,27 @@ A korábbi nyitott PR-ra vonatkozó sorok történetiek; a main-ablak felszabadu
 
 # Bastion Guard Status
 
+Last updated: 2026-10-27
+
+## 2026-10-27 — JYSK game additive bridge, default closed
+
+New source perimeter: `wp-content/mu-plugins/impactshop-jysk-game.php`, isolated
+`jysk-game/v1` namespace and six own tables. Real owner authorization, separate
+subject/service keys, PKCE, nonce/response MAC, fixed point policy, durable
+claim and per-event connection-owned lock extend the protected boundary.
+Only the existing canonical manager may write global points. Its approved minimal
+pseudo SQL/COMMIT/level fix follows proven live/base parity; unverified staging
+transaction readiness blocks bridge awards by default. Legacy identity,
+vote, Offerwall, guide and message source files are unchanged. No new scheduler,
+provider or remote mutation. The extension source is not yet a deployed digest
+lock or production manifest admission; those remain exact-release requirements.
+Failure fixtures: bridge 178, private profile 14 scenarios, canonical managers
+124 assertions. Private own JSON profile defaults closed; technical subject
+gets a single shared lock and 35-point lifetime ceiling. Coherence,
+risks, affected functions, backup/rollback and UI checklist:
+`docs/jysk-game-bridge-2026-10-27.md`. Shared manager live/base hashes match via
+Mini own S59 key to we040 with strict known hostkey alias; no remote mutation.
+
 ## T2 push-forrásellenőrzés — 2026-10-21
 
 Helyi, nem commitolt T2 javítás: egyetlen audit-base resolver, hibás explicit

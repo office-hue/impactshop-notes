@@ -105,7 +105,7 @@ class Sharity_Level_Manager
         ];
     }
 
-    public function check_and_update_level_for_pseudo(string $pseudo_id, int $points_total): array
+    public function check_and_update_level_for_pseudo(string $pseudo_id, int $points_total, bool $emit_action = true): array
     {
         global $wpdb;
 
@@ -113,15 +113,14 @@ class Sharity_Level_Manager
             "SELECT current_level FROM {$wpdb->prefix}user_points WHERE pseudo_id = %s",
             $pseudo_id
         ));
-
-        if ($current_level === '') {
-            $current_level = 'basic';
+        if ($wpdb->last_error !== '' || $current_level === '') {
+            throw new RuntimeException('point_level_read_failed');
         }
 
-        $new_level = $this->calculate_level_for_pseudo($pseudo_id);
+        $new_level = $this->calculate_level_for_points($points_total);
 
         if ($current_level !== $new_level) {
-            $wpdb->update(
+            $updated = $wpdb->update(
                 "{$wpdb->prefix}user_points",
                 [
                     'current_level' => $new_level,
@@ -130,8 +129,11 @@ class Sharity_Level_Manager
                 ],
                 ['pseudo_id' => $pseudo_id]
             );
+            if ($updated === false || $wpdb->last_error !== '') {
+                throw new RuntimeException('point_level_update_failed');
+            }
 
-            $wpdb->insert("{$wpdb->prefix}level_history", [
+            $inserted = $wpdb->insert("{$wpdb->prefix}level_history", [
                 'user_id' => null,
                 'pseudo_id' => $pseudo_id,
                 'old_level' => $current_level,
@@ -140,8 +142,13 @@ class Sharity_Level_Manager
                 'reason' => $this->compare_levels($new_level, $current_level) > 0 ? 'upgrade' : 'downgrade',
                 'created_at' => current_time('mysql'),
             ]);
+            if ($inserted !== 1 || $wpdb->last_error !== '') {
+                throw new RuntimeException('point_level_history_failed');
+            }
 
-            do_action('sharity_level_changed', $pseudo_id, $current_level, $new_level, $points_total);
+            if ($emit_action) {
+                do_action('sharity_level_changed', $pseudo_id, $current_level, $new_level, $points_total);
+            }
 
             return [
                 'changed' => true,

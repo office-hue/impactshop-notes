@@ -2,6 +2,12 @@
   "version": 2,
   "protected_files": [
     {
+      "path": "wp-content/mu-plugins/impactshop-jysk-game.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
       "path": "docs/impactshop-guard-config.json",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",

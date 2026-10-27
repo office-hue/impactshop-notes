@@ -54,6 +54,7 @@
     "wp-content/mu-plugins/impact-gamification.php",
     "wp-content/mu-plugins/impact-social-mvp.php",
     "wp-content/mu-plugins/sharity-level-manager.php",
+    "wp-content/mu-plugins/impactshop-jysk-game.php",
     "wp-content/mu-plugins/sharity-points*.php",
     "wp-content/mu-plugins/impactshop-pwa.php",
     "wp-content/mu-plugins/impactshop-pwa-push.php",
@@ -222,6 +223,7 @@
       "sw.js"
     ],
     "identity_and_points": [
+      "wp-content/mu-plugins/impactshop-jysk-game.php",
       "wp-content/mu-plugins/impactshop-identity-panel.php",
       "wp-content/mu-plugins/impactshop-identity-panel.js",
       "wp-content/mu-plugins/000-impactshop-owner-policy.php",

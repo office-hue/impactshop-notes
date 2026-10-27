@@ -172,6 +172,16 @@ Datum: 2026-06-16
 Statusz: canonical local governance hub
 Scope: rovid, repo-helyi belepesi pont az `impactshop-notes` governance, review, continuity es protected-lane szabalyaihoz.
 
+## 2026-10-27 JYSK game source extension
+
+The new default-off bridge joins the identity/points protected source inventory.
+Only its new file and the explicitly approved pseudo writer/level transaction
+fix receive updated hashes. Existing guard logic and remote/runtime state do not
+change. Read-only production parity is proven through the Mini's own S59 key
+against we040 with the known host-key alias; real database/staging acceptance and
+independent review remain pending. See `docs/jysk-game-bridge-2026-10-27.md` and
+`docs/protected-change-records/2026-10-27-jysk-canonical-points-transaction.md`.
+
 ## 2026-09-11 Sharity profile hidden push sync
 
 ## 2026-09-11 Sharity profile Elementor render-filter sync

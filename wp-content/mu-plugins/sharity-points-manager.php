@@ -27,15 +27,36 @@ class Sharity_Points_Manager
 
         global $wpdb;
 
-        $this->ensure_pseudo_row($pseudo_id);
-
         $dedupe = $dedupe_key ?? $this->build_dedupe_key($type, $source_id, $metadata);
         $metadata_json = !empty($metadata) ? wp_json_encode($metadata) : null;
+        // wpdb's documented magic accessors expose reconnect_retries. A drop-in
+        // that cannot disable reconnect must fail closed before any point write.
+        if (!property_exists($wpdb, 'reconnect_retries')) {
+            return ['success' => false, 'error' => 'transaction_unavailable'];
+        }
+        $previous_retries = $wpdb->reconnect_retries;
+        $checked = static function ($result) use ($wpdb) {
+            if ($result === false || $wpdb->last_error !== '') {
+                throw new RuntimeException('point_storage_failure');
+            }
+            return $result;
+        };
+        $started = false;
+        try {
+            $wpdb->reconnect_retries = 0;
+            if ($wpdb->reconnect_retries !== 0) {
+                throw new RuntimeException('point_connection_guard_unavailable');
+            }
+            $connection = (string) $checked($wpdb->get_var('SELECT CONNECTION_ID()'));
+            if ($connection === '') {
+                throw new RuntimeException('point_connection_unavailable');
+            }
+            $checked($wpdb->query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED'));
+            $checked($wpdb->query('START TRANSACTION'));
+            $started = true;
+            $this->ensure_pseudo_row($pseudo_id);
 
-        $wpdb->query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
-        $wpdb->query('START TRANSACTION');
-
-        $inserted = $wpdb->query($wpdb->prepare(
+            $inserted = $checked($wpdb->query($wpdb->prepare(
             "INSERT IGNORE INTO {$wpdb->prefix}point_transactions
                 (user_id, pseudo_id, points, type, source_id, source_type, dedupe_key, metadata, created_at)
              VALUES (NULL, %s, %d, %s, %s, %s, %s, %s, %s)",
@@ -47,16 +68,28 @@ class Sharity_Points_Manager
             $dedupe,
             $metadata_json,
             current_time('mysql')
-        ));
+            )));
 
-        if ($inserted === 0) {
-            $wpdb->query('ROLLBACK');
-            return ['success' => true, 'duplicate' => true, 'transaction_id' => null];
-        }
+            if ($inserted === 0) {
+                $existing_id = $checked($wpdb->get_var($wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}point_transactions WHERE pseudo_id = %s AND dedupe_key = %s LIMIT 1",
+                    $pseudo_id,
+                    $dedupe
+                )));
+                if ($existing_id === null || (int) $existing_id <= 0) {
+                    throw new RuntimeException('point_duplicate_unconfirmed');
+                }
+                $checked($wpdb->query('ROLLBACK'));
+                $started = false;
+                return ['success' => true, 'duplicate' => true, 'transaction_id' => (int) $existing_id];
+            }
+            if ($inserted !== 1) {
+                throw new RuntimeException('point_insert_unconfirmed');
+            }
 
-        $transaction_id = (int) $wpdb->insert_id;
+            $transaction_id = (int) $wpdb->insert_id;
 
-        $wpdb->query(
+            $updated = $checked($wpdb->query(
             $wpdb->prepare(
                 "UPDATE {$wpdb->prefix}user_points
                  SET points_total = GREATEST(points_total + %d, 0),
@@ -70,17 +103,47 @@ class Sharity_Points_Manager
                 current_time('mysql'),
                 $pseudo_id
             )
-        );
+            ));
+            if (!in_array($updated, [0, 1], true)) {
+                throw new RuntimeException('point_total_unconfirmed');
+            }
 
-        $new_total = (int) $wpdb->get_var($wpdb->prepare(
+            $new_total_result = $checked($wpdb->get_var($wpdb->prepare(
             "SELECT points_total FROM {$wpdb->prefix}user_points WHERE pseudo_id = %s",
             $pseudo_id
-        ));
+            )));
+            if ($new_total_result === null) {
+                throw new RuntimeException('point_total_missing');
+            }
+            $new_total = (int) $new_total_result;
 
-        $level_manager = new Sharity_Level_Manager();
-        $level_change = $level_manager->check_and_update_level_for_pseudo($pseudo_id, $new_total);
+            $level_manager = new Sharity_Level_Manager();
+            $level_change = $level_manager->check_and_update_level_for_pseudo($pseudo_id, $new_total, false);
 
-        $wpdb->query('COMMIT');
+            if ((string) $checked($wpdb->get_var('SELECT CONNECTION_ID()')) !== $connection) {
+                throw new RuntimeException('point_connection_changed');
+            }
+            $checked($wpdb->query('COMMIT'));
+            $started = false;
+            if ((string) $checked($wpdb->get_var('SELECT CONNECTION_ID()')) !== $connection) {
+                throw new RuntimeException('point_commit_unconfirmed');
+            }
+        } catch (Throwable $error) {
+            if ($started) {
+                try {
+                    $wpdb->query('ROLLBACK');
+                } catch (Throwable $ignored) {
+                    // The outcome remains unknown; never reconnect or claim success.
+                }
+            }
+            return ['success' => false, 'error' => 'transaction_unconfirmed'];
+        } finally {
+            $wpdb->reconnect_retries = $previous_retries;
+        }
+
+        if ($level_change['changed']) {
+            do_action('sharity_level_changed', $pseudo_id, $level_change['old_level'], $level_change['new_level'], $new_total);
+        }
 
         do_action(
             'sharity_points_earned',
@@ -262,12 +325,15 @@ class Sharity_Points_Manager
             "SELECT COUNT(*) FROM {$wpdb->prefix}user_points WHERE pseudo_id = %s",
             $pseudo_id
         ));
+        if ($wpdb->last_error !== '') {
+            throw new RuntimeException('point_user_read_failed');
+        }
 
         if ($exists > 0) {
             return;
         }
 
-        $wpdb->insert("{$wpdb->prefix}user_points", [
+        $inserted = $wpdb->insert("{$wpdb->prefix}user_points", [
             'user_id' => null,
             'pseudo_id' => $pseudo_id,
             'points_total' => 0,
@@ -277,6 +343,9 @@ class Sharity_Points_Manager
             'created_at' => current_time('mysql'),
             'updated_at' => current_time('mysql'),
         ]);
+        if ($inserted === false || $wpdb->last_error !== '') {
+            throw new RuntimeException('point_user_insert_failed');
+        }
     }
 
     private function build_dedupe_key(string $type, ?string $source_id, array $metadata): string

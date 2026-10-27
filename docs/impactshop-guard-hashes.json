@@ -6,6 +6,7 @@
     "branch": "main"
   },
   "protected_files": [
+    "wp-content/mu-plugins/impactshop-jysk-game.php",
     "docs/impactshop-guard-config.json",
     "Hirdetési fiókok integrációja TERV.ini.md",
     "impact-hub-system-v1.3.md",
@@ -163,7 +164,8 @@
     "wp-content/mu-plugins/impactshop-ngo-guides/jysk-riport.data.json"
   ],
   "hashes": {
-    "docs/impactshop-guard-config.json": "438ae88072027300af4d6482b814bfe2dc4be02159c6d1be4aaeeceb28f96a1b",
+    "wp-content/mu-plugins/impactshop-jysk-game.php": "bce8b1adfc65a9da17f5632700c6d4ce6c14570d7a0e51740801574cd8d9c8b5",
+    "docs/impactshop-guard-config.json": "d4bd82381ba33f6458210723d43e748afd6bcc5fbeb8fcf44625088f17765643",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "f7cf5099d80e515e76e2bd0d5bb8b6e0de0c3455d48efa31a265bb994c9e5f27",
@@ -199,7 +201,7 @@
     "wp-content/mu-plugins/impactshop-vote-jysk.js": "360f782a6160cb828b2ac2eec0d8ebe93cb03f78ca1c7de18d247c15c203b697",
     "wp-content/mu-plugins/impact-social-mvp.php": "2647c064a2afbf93c4778b6e0ce7a9498ef65ccdbd29e8cecaf9043b67eeb326",
     "wp-content/mu-plugins/impact-gamification.php": "87831fe01075ef43202d4acde71c07fa67008f52e39d902248b92577e753759a",
-    "wp-content/mu-plugins/sharity-level-manager.php": "f2612b61c9cc51e399bc6bca635505f26325143fb39e04ad799e77a4cebae8b7",
+    "wp-content/mu-plugins/sharity-level-manager.php": "136e2ea9bab04a7265af7239c7bdb27b340bec645430455367d84d2a3de545ad",
     "wp-content/mu-plugins/sharity-points.php": "3d01f091a566ddbe351202ab4603d4dc35c70275132288d32e7e4ec3c2233f19",
     "wp-content/mu-plugins/sharity-points-api.php": "9bb76b83d6acc05a769a3182c48f73446d061eb51bd74fe4097920c7886a75a8",
     "wp-content/mu-plugins/sharity-points-cron.php": "82f6c890d14826d81d15bc94bf858f6ba9846020b7cc275835f72b902f56d757",
@@ -207,7 +209,7 @@
     "wp-content/mu-plugins/sharity-points-events.php": "1048c656b1a3b149fc391648d426ac26dfd263f1f6884c4a60832c63aca3d3ef",
     "wp-content/mu-plugins/sharity-points-helpers.php": "ac183fad82fa022b71f58fac39f2061ecc3b20d5c43d1c1653439df23345a3bd",
     "wp-content/mu-plugins/sharity-points-ledger-sync.php": "7258f990097171c8eb987d4cfa8a408fa14af5b75de242489b2dfad41b124bec",
-    "wp-content/mu-plugins/sharity-points-manager.php": "3a295f14ed81170234559b71aab8afb256c24f0516a9ccf0310c733dc07e5504",
+    "wp-content/mu-plugins/sharity-points-manager.php": "5f0be67fe56a09c087f0e62b2db617ca9ef385e21db671cb5d0d96251ed5d3bc",
     "wp-content/mu-plugins/sharity-points-webhooks.php": "8a87b0e450f0ff0594dad5236c02cbf11f85d92c566d9510ac7312f09592b13d",
     "wp-content/mu-plugins/sharity-points-admin.php": "18ade65eafacee78549edea8df76cdaee8244a1c10f805acf6a09f4e056535db",
     "wp-content/mu-plugins/sharity-points-notifications.php": "9c10d5c45ad849bf8161db90baf443f33a1cb3599e1ec65d443f53dc9a1ffd76",
@@ -237,7 +239,7 @@
     "bin/impactshop-guard-deploy.sh": "ec7972f696e1a411550c92bd29b638c1e77d51b1b4dc93f586c23e2a373be194",
     "bin/impactshop-guard-preflight.sh": "360abe38eab321ab9ad72759397c3ec470d8fc39a630fe5e60602485a39bc17e",
     "docs/bastion-protection-extension-plan.md": "c138cf6f1a18fcb8f36c666fd554bc3a1cee9cb3de9c340eecadf30bc2309361",
-    "docs/impactshop-guard-config.sha256": "711f8dd5e82ec976a48fa7be12c600853c283c4633679049901974ea76eb7f69",
+    "docs/impactshop-guard-config.sha256": "1f4d5f9ce25c2cedc5d2a41e0eb3305d67c51fb4089cb9cf296a88d7ab73d4c4",
     "wp-content/mu-plugins/impact-arukereso-guard.php": "6707993fde9f3a1c465289ae010c7447edf22010f07ccf802151ee76a7a4df9c",
     "wp-content/mu-plugins/impact-combat-pack.php": "50a1a6b9e22b3fd17035406d8ede87553d206c29252f8dccb63fd5ac1b4a7868",
     "wp-content/mu-plugins/impactshop-ngo-guides/assets/access-control-matrix.md": "08a4d4a5fafc20dd536a6e3925b6bc56a85e941ec6e2070b2391bb9c9a427c0f",

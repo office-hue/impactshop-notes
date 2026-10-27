@@ -1,3 +1,33 @@
+## 2026-10-27 — JYSK saját ág publikálva, main-ablak felszabadítva
+
+PR227 head `26365a9b759524baf89f8cf1d3e0207bd538c124`, pinned main68a6c324;
+tree69432e0a változatlan. Explicit jóváhagyott saját-ág helyreállítás,
+elődmentés, exact force-with-lease és remote readback; közvetlen exact17fájl
+titok-/protected-touch-/commit-lane audit sikeres, wrapper-PASS nincs.
+PR-safe-audit sikeres; a push-event audit régi elérhetetlen SHA miatt exit2,
+nem PHP-hiba. Ez a tényleges DOCSYNC normal fast-forward változás;
+CI-t külön visszaolvassuk, nem minősítjük előre sikeresnek.
+AppPR1768 merge e9a6f92c; WPmain-merge/deploy/game-aktiválás nincs.
+TLS/Card külön, infrastruktúraírás nem történt; quiet window szabad.
+Részletek: `docs/jysk-game-bridge-2026-10-27.md` publikált checkpoint.
+
+## 2026-10-27 — JYSK game bridge, helyi additív forrás
+
+- Saját `feat/jysk-game-bridge-20261027`, base `73beb6f4`; új MU-plugin,
+  service-HMAC/PKCE owner context, claim/receipt alapú jutalom és külön üzenet ACK.
+- Futtatva: PHP lint és `php tests/jysk-game-bridge.test.php`: 178 determinisztikus
+  assertion. Nincs valódi DB-, browser- vagy éles működésigazolás.
+- A helyi kanonikus manager SQL/COMMIT hibakezelési hiánya miatt reward
+  `TRANSACTION_READY` alapból false. Igazolt live/base parity után jóváhagyott
+  minimális pseudo writer/level javítás: SQL/COMMIT check és defer-elt action.
+- Mini saját S59-kulccsal we040 live/base hashazonosság; canonical manager
+  fixture 124 assertion PASS. Nincs DB-staging proof, telepítés, push, commit vagy aktiválás.
+- Saját privát JSON loader: 14 virtuális profilteszt PASS; technical subject
+  teljes kampánykorlát 35 pont, közös subject lock és ellenőrzött ledger SUM.
+- Élő SELECT/SHOW: globális engine/index/readonly metaadatok rendben; saját
+  bridge-séma nincs telepítve, a transaction readiness továbbra is false.
+- Részletek/kockázat/rollback/UI checklist: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-25 — Notes audit: valódi finding elsőbbsége, rollout visszaállítva
 
 A #225 merge `cab09c88ad2a976a8b774798e685148ad3b4fc22` fája
@@ -8051,6 +8081,19 @@ secret/cron/watchdog state changed.
   the targeted fixture remains PASS and verify-fix is `fixed` on HEAD
   `71c4e3d2...`, tree `941070ce...`, with no new P0/P1/P2. Executable/test
   source is frozen again pending only final docs-tree review.
+## 2026-10-27 — JYSK publikálási ellenőrzés pontosítása
+
+A natív git-health-check a régi worktree continuity hook hiányát FAIL-ként
+jelzi; ez a task-start/coordination marker lánc kivezetett DEV-elvárása,
+nem pontteszt. Nem telepítettünk közös hookot, nem készítettünk taskmarkert,
+nem módosítottunk idegen main/upstream ágakat. Saját branch/remote/head,
+scope, diff, titokvédelem és valódi product Bástya külön ellenőrzött.
+A protected-touch első futásából hiányzott az explicit jóváhagyott scope,
+a következőből a manifest miatt szükséges deploy_guard két smoke-tagje.
+Diagnózis: hiányos scope metadata, nem PHP-funkcióhiba. Célzott javítás:
+identity_and_points + deploy_guard teljes ellenőrzési kör, valós checksum,
+ugyanazon change record és pontos Git-előd rollback; production smoke nincs
+PASS-nak állítva. Nincs új helper vagy közös guardjavítás.
 
 ## 2026-10-23 — PR222 multi-active fixture javítás, jóváhagyott forrásmunka
 
