@@ -1,3 +1,16 @@
+## 2026-10-27 — JYSK saját ág publikálva, main-ablak felszabadítva
+
+PR227 head `26365a9b759524baf89f8cf1d3e0207bd538c124`, pinned main68a6c324;
+tree69432e0a változatlan. Explicit jóváhagyott saját-ág helyreállítás,
+elődmentés, exact force-with-lease és remote readback; közvetlen exact17fájl
+titok-/protected-touch-/commit-lane audit sikeres, wrapper-PASS nincs.
+PR-safe-audit sikeres; a push-event audit régi elérhetetlen SHA miatt exit2,
+nem PHP-hiba. Ez a tényleges DOCSYNC normal fast-forward változás;
+CI-t külön visszaolvassuk, nem minősítjük előre sikeresnek.
+AppPR1768 merge e9a6f92c; WPmain-merge/deploy/game-aktiválás nincs.
+TLS/Card külön, infrastruktúraírás nem történt; quiet window szabad.
+Részletek: `docs/jysk-game-bridge-2026-10-27.md` publikált checkpoint.
+
 ## 2026-10-27 — JYSK game bridge, helyi additív forrás
 
 - Saját `feat/jysk-game-bridge-20261027`, base `73beb6f4`; új MU-plugin,

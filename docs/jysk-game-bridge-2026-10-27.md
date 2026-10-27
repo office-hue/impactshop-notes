@@ -1,5 +1,37 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## Publikált forráscheckpoint — 2026-10-27
+
+Az alábbi korábbi helyi állapot történeti. A forrás PR #227-ben publikált:
+`26365a9b759524baf89f8cf1d3e0207bd538c124`, rögzített main-alap
+`68a6c3241c8be74ff9998d57ca0a3dac24c83904`;
+tree `69432e0ad4de6423e831086d7310bae255b63d05`.
+Arnold külön jóváhagyásával az egyetlen saját commit erre az alapra került;
+a végső tartalom byte-azonos a korábbi helyi, feloldott integrációval.
+Mentési ref: `backup/jysk-pre-replay-20261027-829cc9c5`.
+
+A közvetlen, exact main→HEAD audit ténylegesen sikeres: 17 fájl titokscan,
+diff-check, protected-touch és commit-lane. A változatlan PHP-fára a korábbi
+178 bridge / 124 canonical-manager assertion és 14 privátprofil-szcenárió
+bizonyítékát használjuk újra. Valódi MySQL staging és éles acceptance nincs.
+
+A történetfrissítéshez külön jóváhagyott native recovery tartozott:
+egyetlen, pontos régi remote SHA-val védett force-with-lease; a non-fast-forwardot
+nem támogató opcionális wrapper egyparancsos hooksPath felülbírálással nem
+futott. Tartós hook/config/guard módosítás nincs, wrapper-PASS nincs; a valódi
+termékguardok külön, változatlanul lefutottak. Remote OID readback sikeres.
+
+A PR-es safe-audit sikeres. A push-es run40539571569 exit2 oka: a CI a
+történetátírás előtti `ddd14318...` commitot nem találta (`rev-parse --verify`),
+nem tartalom- vagy PHP-hiba. Nincs vak rerun vagy workflow-módosítás: a jelen
+valódi DOCSYNC-státuszfrissítés normál fast-forward pushja már elérhető
+elődcommitot ad. Új checkek eredményét külön kell visszaolvasni.
+
+Az app PR #1768 merge-commitja `e9a6f92cfe3001f7e99cd8cd0a1bc6bb8f4e534f`.
+A WP PR main-merge-je, WP/app-telepítés és pontaktiválás még nem történt meg.
+A TLS-javítás a Card-szálban marad; ebben a szálban nincs infrastruktúraírás.
+A jóváhagyott main-ablak a műveletek/readback után felszabadult.
+
 Állapot: helyi, nem commitolt forrás; nincs push, merge, telepítés, aktiválás
 vagy éles elfogadás. Saját worktree `impactshop-notes-jysk-game-bridge-20261027`,
 ág `feat/jysk-game-bridge-20261027`, alap `73beb6f4598acdca22e7910d39a0088cd5f38b14`.
