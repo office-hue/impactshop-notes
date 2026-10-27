@@ -1,3 +1,14 @@
+## 2026-10-27 — JYSK valódi helyi MariaDB-teszt, production érintetlen
+
+#227 exact merge2823f4a az alap. Külön engedélyezett, localhost-only, 512MiB/1CPU,
+tmpfs MariaDB10.11.19; actual target wpdb hash és változatlan merge-elt manager/
+level/bridge. Új integration fixture141 ellenőrzés PASS, PHP lint és független
+szűk review; aktív SQL-tranzakciók mért átfedése, rollback/connection-kill/
+ambiguous-commit/claim-readback/technikai35pont. WP boot/auth/hook/éles proof NINCS.
+Közös staging ténylegesen production DB-re mutat, ezért azon nincs író teszt
+vagy deploy. TLS Card-owned, nincs main-fetch vagy csendablak. Részletek és
+reprodukció: `docs/jysk-game-bridge-2026-10-27.md` legfelső checkpointja.
+
 ## 2026-10-27 — JYSK saját ág publikálva, main-ablak felszabadítva
 
 PR227 head `26365a9b759524baf89f8cf1d3e0207bd538c124`, pinned main68a6c324;

@@ -1,3 +1,13 @@
+## 2026-10-27 — JYSK SQL-layer verified locally; NOT production-activated
+
+WP227 merged2823f4a. Local-only approved MariaDB10.11.19, actual target wpdb,
+canonical manager/level and JYSK claim/readback integration141 checks PASS;
+PHP lint and bounded independent review. No production data or credentials,
+no shared staging writes, no remote deployment, no readiness-flag change.
+SQL transaction overlap measured; WP boot/auth/HTTP/downstream hooks excluded.
+Existing staging shares the production database; not an isolated test target.
+Exact recipe/evidence/limitations: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-27 — JYSK PR227 konfliktusmentes forrás, még nincs deployment
 
 Own remote head26365a9b, pinned main68a6c324, tree69432e0a változatlan;
