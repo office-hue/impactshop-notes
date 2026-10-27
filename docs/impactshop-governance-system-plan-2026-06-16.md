@@ -1,3 +1,12 @@
+## 2026-10-28 — egyetlen CI-digest célzott baseline-javítása
+
+Explicit operátori scope: a #197-ről stale CI-hash követése az ellenőrzött
+#215/#224/#225 merge-elt forrásig, és a manifest külső checksumjának egyeztetése.
+Nincs guard-/CI-policy- vagy logikaváltás, más digest/inventory/env/runtime nem változik.
+Valódi guardchecker-pozitív/negatív helyi fixture, eredeti CI/suite változatlan;
+backup/rollback/érintettség: `docs/protected-change-records/2026-10-28-jysk-ci-guard-digest.md`.
+Nem telepítés vagy aktiválás, a JYSK háromfájlos kiadási jogosultságot nem bővíti.
+
 ## 2026-10-25 — Notes audit: valódi finding elsőbbsége, rollout visszaállítva
 
 A #225 merge `cab09c88ad2a976a8b774798e685148ad3b4fc22` fája

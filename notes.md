@@ -1,3 +1,12 @@
+## 2026-10-28 — célzott JYSK/CI guard-digest javítás
+
+A #197-ről beragadt CI-hash teljes története ellenőrizve (#215/#224/#225).
+Csak a jóváhagyott aktuális CI-blob digestje és a hozzá tartozó manifest-checksum
+frissül; a workflow, guardkód és minden más hash/inventory változatlan.
+Izolált pozitív/negatív ellenőrzés külön helyi fixture-ben, eredeti suite változatlan;
+record: `docs/protected-change-records/2026-10-28-jysk-ci-guard-digest.md`.
+Forrás-only változás, nincs WordPress/Vercel/provider-írás vagy aktiválás.
+
 ## 2026-10-27 — JYSK valódi helyi MariaDB-teszt, production érintetlen
 
 #227 exact merge2823f4a az alap. Külön engedélyezett, localhost-only, 512MiB/1CPU,
