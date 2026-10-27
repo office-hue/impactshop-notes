@@ -1,3 +1,18 @@
+## 2026-10-27 — JYSK game bridge: local source, reward readiness closed
+
+- New isolated MU-plugin namespace `jysk-game/v1`; all routes default-off.
+- Identity/vote/Offerwall/guide sources unchanged; approved minimal pseudo
+  writer/level transaction fix follows proven exact live/base hash parity.
+- PHP lint, bridge 178 assertions, private-profile 14 scenarios, actual canonical manager 124 fixture assertions
+  PASS; no real DB or live acceptance claim.
+- Reward transaction readiness unverified/default false; Mini own S59 key to
+  we040 with known hostkey alias enabled strict read-only source verification.
+- Read-only global table InnoDB, canonical full unique indices, read_only=0 and
+  no DB drop-in verified; own bridge schema absent, real staging still pending.
+- Own bounded private JSON profile; technical canary capped at 35 total points.
+- No commit/push/merge/deploy/activation/production acceptance.
+- Protocol and protected extension: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-25 — Notes audit: valódi finding elsőbbsége, rollout visszaállítva
 
 A #225 merge `cab09c88ad2a976a8b774798e685148ad3b4fc22` fája

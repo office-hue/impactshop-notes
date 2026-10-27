@@ -1,0 +1,14 @@
+{
+    "fixtureOnly": true,
+    "serviceKeyHex": "1111111111111111111111111111111111111111111111111111111111111111",
+    "timestamp": "1794744000",
+    "nonce": "33333333333333333333333333333333",
+    "method": "POST",
+    "path": "/wp-json/jysk-game/v1/award",
+    "rawRequest": "{\"eventId\":\"5341bd4c1d817d9e1800bceed886b4de930dea1829847866be05bf7a46ca1f7b\",\"subject\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"quiz_answered\",\"dayIndex\":6,\"slot\":0,\"ngoId\":\"ngo-1\",\"points\":5,\"occurredAt\":\"2026-11-15T11:00:00.000Z\",\"policyHash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"producerSha\":\"cccccccccccccccccccccccccccccccccccccccc\",\"isTest\":false}",
+    "requestSignature": "b049320a346ce62ae5bfe475010e52c0016c1ba1ffd73e2ed5117ab0ae3d353a",
+    "payloadHash": "f0a517b511f5478b8180add30567ec493cbf12ec20f20c2b9251224038431e41",
+    "status": 200,
+    "rawResponse": "{\"eventId\":\"5341bd4c1d817d9e1800bceed886b4de930dea1829847866be05bf7a46ca1f7b\",\"payloadHash\":\"f0a517b511f5478b8180add30567ec493cbf12ec20f20c2b9251224038431e41\",\"points\":5,\"state\":\"confirmed\"}",
+    "responseSignature": "d7ff0f573ba2b12fe67fe929e147d732c33be24181fc002aea6b718aab03ff21"
+}
