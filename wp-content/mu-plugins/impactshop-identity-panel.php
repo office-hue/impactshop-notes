@@ -2085,10 +2085,45 @@ function impactshop_identity_profile_native_fallback(string $ui_target): string
 }
 
 /**
- * Complete profile-return redirect after a successful client-side action.
- *
- * @return void
+ * Recognize only the canonical, unambiguous User Card completion request.
  */
+function impactshop_identity_is_user_card_completion(): bool
+{
+    if (rtrim(home_url('/'), '/') !== 'https://app.sharity.hu' || !is_ssl() ||
+        ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET' ||
+        wp_parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) !== '/profil/') {
+        return false;
+    }
+
+    // PHP collapses duplicate keys. Inspect the original query before trusting
+    // $_GET, and reject array/mixed forms instead of normalizing them into a URL.
+    $fields = [];
+    foreach (explode('&', (string) ($_SERVER['QUERY_STRING'] ?? '')) as $pair) {
+        $parts = explode('=', $pair, 2);
+        $key = urldecode($parts[0]);
+        if (!preg_match('/^(return|selection_intent|prctx|bridge_target|impactshop_profile_return_complete)(?:\[|$)/', $key, $match)) {
+            continue;
+        }
+        if ($key !== $match[1] || in_array($key, ['selection_intent', 'prctx'], true) || array_key_exists($key, $fields)) {
+            return false;
+        }
+        $fields[$key] = urldecode($parts[1] ?? '');
+    }
+    if (($fields['return'] ?? '') !== 'https://sharity.hu/sajat-sharity' ||
+        ($fields['impactshop_profile_return_complete'] ?? '') !== '1' ||
+        !in_array($fields['bridge_target'] ?? '', ['account', 'restore'], true) ||
+        array_key_exists('selection_intent', $_GET) || array_key_exists('prctx', $_GET)) {
+        return false;
+    }
+    foreach ($fields as $key => $value) {
+        if (($_GET[$key] ?? null) !== $value) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** Complete the redirect, preserving the signed FactLens resolver's priority. */
 function impactshop_identity_maybe_complete_profile_return(): void
 {
     if (is_admin()) {
@@ -2104,7 +2139,12 @@ function impactshop_identity_maybe_complete_profile_return(): void
         return;
     }
 
-    $target = impactshop_factlens_profile_return_target($ui_target, impactshop_identity_profile_native_fallback($ui_target));
+    $had_context = array_key_exists('__Host-impact_profile_return_ctx', $_COOKIE);
+    $native_fallback = impactshop_identity_profile_native_fallback($ui_target);
+    $target = impactshop_factlens_profile_return_target($ui_target, $native_fallback);
+    if (!$had_context && $target === $native_fallback && impactshop_identity_is_user_card_completion()) {
+        $target = 'https://sharity.hu/api/sharity/session/start?return_intent=sajat-sharity&profile_return=1';
+    }
     if (!is_string($target) || $target === '') {
         return;
     }
