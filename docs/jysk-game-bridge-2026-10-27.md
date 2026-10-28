@@ -1,5 +1,35 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-28 — prefixjavítás telepítve, valódi profilkapcsolás igazolt
+
+#232 merge `77c4abbf1b7d45ce9e01eadb102e44554dbdcd15`, tree
+`f8c688d1b68c7697440013d1b7bc0a7651c1e037`; exact saját checkout és source/hash
+readback után a rövid main-ablak azonnal felszabadult. Az egyfájlos guarded
+dry-run sikeres (két nem blokkoló latency warning), majd az öt production
+preflight endpoint warning nélkül válaszolt. Release
+`jysk-wire-prefix-20261028-77c4abbf`: privát elődmentés, CAS/atomi csere,
+remote SHA256 `53f972cd70950730e343b9b220b04afcad4af69bf653e7b5e44b681d30846cbb`,
+mód0444 és valódi WP-boot visszaolvasva. Más fájl/TLS/config nem változott.
+
+09:27:10Z-kor a valós signed context hibaválasza pontosan 27 JSON-bájt,
+HTTP403/invalid_session, az exact-wire HMAC helyes. Ezután a meglévő valódi
+tulajdonosi böngészőprofil → WP handoff → JYSK callback → session sikeres;
+„Sharity-profil kapcsolódva” látható. A kampány zárt, a részvételi jelölők
+nem lettek elfogadva, nincs jutalomkérés. WP-profil ready/auth-enabled,
+rewards=false, transaction=false. A 09:29Z natív DB-readback: game inactive/V1,
+kapuk000, roster0/participants0; intake open/V20/111/hold1, nincs backlog/lease.
+Az intake korábbi egy kizárt tesztje és két sent levele változatlan.
+
+Rollback: a meglévő `bin/impactshop-guard-rollback.sh --production --apply
+--release-id=jysk-wire-prefix-20261028-77c4abbf
+--expected-deployed-sha=53f972cd70950730e343b9b220b04afcad4af69bf653e7b5e44b681d30846cbb`;
+előbb inspect, idegen drift esetén nincs írás. Nincs DB-restore/törlés.
+Bizonyíték: saját ignorált final-dry/final-release napló, kapcsolódott képernyőkép;
+privát exact-wire és DB-readback JSON. Teljes játékaktiválás/35 pontos élő
+elfogadás nincs: jóváhagyott roster a jelentkezészárás után, pontszerzés
+november9.12:00 Budapest előtt tiltott. E záró dokumentáció helyi checkpoint,
+nem új runtime vagy újabb telepítést igénylő változás.
+
 ## 2026-10-28 — a #231 review-zott bridge-hash célzott felvétele
 
 Protected files touched: `docs/impactshop-guard-hashes.json`,

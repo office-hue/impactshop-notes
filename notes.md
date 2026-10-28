@@ -1,3 +1,11 @@
+## 2026-10-28 — JYSK prefixjavítás éles, profilkapcsolás igazolt
+
+#232 merge77c4abbf, main-ablak felszabadult. Egyetlen saját bridge-fájl guarded
+kiadása: jysk-wire-prefix-20261028-77c4abbf, SHA53f972cd…, mód0444, backup/CAS.
+Valós exact-wire HMAC és owner→callback→session sikeres. Reward/transaction off;
+game inactive/V1/000/participants0, intake open/V20/111. Nincs új Vercel-build,
+pontírás vagy teljes játékelfogadás. Részletek/rollback/UI: JYSK bridge doksi.
+
 ## 2026-10-28 — #231 merge utáni egyetlen JYSK-hash jóváhagyása
 
 Arnold jóváhagyta a review-zott bridge53f972cd… egyetlen baseline-bejegyzését és

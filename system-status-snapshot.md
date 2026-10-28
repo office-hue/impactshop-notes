@@ -1,3 +1,13 @@
+## 2026-10-28 — JYSK prefix fix deployed; owner session verified, rewards off
+
+Exact merge77c4abbf, quiet window released. One-file guarded bridge release
+jysk-wire-prefix-20261028-77c4abbf, SHA53f972cd…/0444/backup/CAS read back.
+Actual 27-byte JSON MAC verified, real browser owner/callback/session connected.
+No terms/participation/award submitted; WP reward/transaction flags false,
+game inactive V1 gates000 participants0; intake open V20 gates111. No new
+Vercel build. Approved roster and timed arm/live points acceptance still pending.
+Details/rollback/evidence: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-28 — JYSK #231 merged; reviewed digest follow-up
 
 WP #231 merged f61e60c8; quiet window released. Exact-file dry-run stopped
