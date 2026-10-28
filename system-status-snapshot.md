@@ -1,3 +1,12 @@
+## 2026-10-28 — Signed profile return correction: source tested
+
+Approved isolated PHP/JS correction preserves signed FactLens resolver priority;
+User Card fallback only with no context cookie and exact canonical input.
+36 stub +42 actual-production-resolver PHP cases, 25 isolated browser cases,
+syntax and existing profile/route tests PASS. Independent 6.1 Sol/high review
+closed without P0/P1/P2. Existing query-context lane also preserves resolver priority.
+No new publication/deployment/live acceptance. Protected-change record has details.
+
 ## 2026-10-28 — User Card profile return: local source
 
 Bounded identity-panel.js navigation exception implemented in own 77c4abbf-based

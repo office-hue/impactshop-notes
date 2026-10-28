@@ -1,3 +1,14 @@
+## 2026-10-28 — Aláírt FactLens-visszatérés elsőbbsége: korrekció indul
+
+Jóváhagyott kétfájlos paneljavítás saját `fix/signed-profile-return-20261028`
+worktree-ben, `02fbec8b` alapról. A JS megtartja a PHP completiont; a PHP csak
+eredetileg hiányzó FactLens-cookie esetén adhat rögzített User Card-fallbacket.
+A web, bridge, identity authority és gazdasági írók változatlanok. Célzott
+Végleges teszt: 36 stub +42 production-resolver PHP-eset, 25 böngészős eset,
+szintaxis és meglévő profil/route PASS. A production `prctx` út szintén megmarad.
+Független 6.1 Sol/high review lezárt, nincs P0/P1/P2; egy Notes-PR következik.
+Forráskész, nincs még új merge/telepítés/élő elfogadás. Részletek a change recordban.
+
 ## 2026-10-28 — User Card profil-visszatérés javítása indul
 
 Saját tiszta 77c4abbf worktree, jóváhagyott egyfájlos JS scope; donor read-only.

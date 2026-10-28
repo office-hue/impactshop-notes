@@ -1,3 +1,12 @@
+## 2026-10-28 — Signed profile return: bounded source correction
+
+Only identity-panel PHP/JS and their source hashes/checksum change under the
+approved plan. Signed resolver, native fallback, economic writers and remote
+guard configuration unchanged. 36+42 completion and 25 browser cases PASS;
+independent 6.1 Sol/high review closed without P0/P1/P2, including live-source
+query-context compatibility. Planned exact-file PHP→JS rollout, reverse rollback.
+No deployment or live acceptance claimed. See protected-change record.
+
 ## 2026-10-25 — Notes audit: valódi finding elsőbbsége, rollout visszaállítva
 
 A #225 merge `cab09c88ad2a976a8b774798e685148ad3b4fc22` fája
