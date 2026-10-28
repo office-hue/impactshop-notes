@@ -224,15 +224,52 @@ final class Impactshop_Jysk_Game
         return new WP_REST_Response($data, $status, $headers);
     }
 
+    /** Only discard bounded whitespace in plain PHP buffers; never unwind a handler. */
+    private static function cleanWirePrefix(): bool
+    {
+        if (headers_sent()) {
+            return false;
+        }
+        $buffers = ob_get_status(true);
+        foreach ($buffers as $index => $buffer) {
+            if ($buffer['name'] !== 'default output handler' || $buffer['type'] !== 0
+                || ($buffer['flags'] & PHP_OUTPUT_HANDLER_CLEANABLE) === 0
+                || ($index < count($buffers) - 1 && $buffer['buffer_used'] !== 0)) {
+                return false;
+            }
+        }
+        if ($buffers === []) {
+            return true;
+        }
+        $prefix = ob_get_contents();
+        if (!is_string($prefix) || strlen($prefix) > 256 || !preg_match('/\A[ \t\r\n]*\z/D', $prefix)) {
+            return false;
+        }
+        return $prefix === '' || ob_clean();
+    }
+
     /** Sign and serve the same bytes, independent of WordPress JSON encoding filters. */
     public static function serve($served, $result, $request, $server)
     {
+        if (!str_starts_with($request->get_route(), '/jysk-game/v1/')) {
+            return $served;
+        }
         $key = spl_object_hash($request);
         if (!isset(self::$wire[$key])) {
             return $served;
         }
         [$bytes, $status, $headers] = self::$wire[$key];
         unset(self::$wire[$key]);
+        if (!self::cleanWirePrefix()) {
+            // A late output failure is not an authenticated success or an award retry.
+            if (!headers_sent()) {
+                status_header(503);
+                $server->send_header('x-jysk-signature', '');
+            }
+            // Flushed headers cannot be retracted; these bytes invalidate the wire MAC.
+            echo '{"error":"bridge_unavailable"}';
+            return true;
+        }
         status_header($status);
         foreach ($headers as $name => $value) {
             $server->send_header($name, $value);
@@ -626,6 +663,9 @@ final class Impactshop_Jysk_Game
     {
         $nonce = '';
         try {
+            if (!self::cleanWirePrefix()) {
+                throw new RuntimeException('response_unavailable');
+            }
             if (!self::enabled()) {
                 throw new RuntimeException('disabled');
             }
