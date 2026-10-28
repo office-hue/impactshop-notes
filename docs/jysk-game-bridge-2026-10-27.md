@@ -1,5 +1,31 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-28 — a #231 review-zott bridge-hash célzott felvétele
+
+Protected files touched: `docs/impactshop-guard-hashes.json`,
+`docs/impactshop-guard-hashes.sha256`; smoke scope: deploy_guard,
+`deploy:checksum-verify`, `deploy:guard-preflight`.
+Arnold kifejezetten jóváhagyta az egyetlen JYSK-hash és a külső checksum
+frissítését. Alap: #231 merge `f61e60c86f39a0d4a481a127ec4ab4185cbb325d`.
+Az új érték a már függetlenül review-zott, 200+14 célzott teszttel ellenőrzött
+`impactshop-jysk-game.php` SHA256-ja:
+`53f972cd70950730e343b9b220b04afcad4af69bf653e7b5e44b681d30846cbb`.
+
+Koherencia/kockázat/érintettség: a guard változatlan programja pontosan ezt a
+merge-elt fájlt ismeri fel; a régi baseline `bce8b1ad…` csak a kiadási próbát
+állította meg, élő fájl nem változott. Más hash, időbélyeg, inventory, config,
+engedélyezési logika vagy runtime-forrás nem változhat. Fő kockázat téves
+forrás legitimálása: teljes strukturális one-key diff, exact forrásdigest,
+külső checksum és a valódi guard teljes inventory-ellenőrzése szükséges.
+A meglévő hat pozitív/negatív hash-regresszió fut; nincs új helper vagy tesztkód.
+
+Rollback: csak e baseline-commit célzott revertje új PR-ben; ettől a régi
+ismert blokkolás tér vissza. Ez nem production rollback vagy adat-visszaállítás.
+Kézi UI/smoke: e forrás-only hash-adoptálásnak nincs új UI-ja; merge után a
+meglévő egyfájlos guarded dry-run, majd backup/CAS/0444 kiadás és exact-wire
+HMAC/profilkapcsolás továbbra is kötelező. Nincs auto-approve bővítés,
+guard-kikapcsolás, Vercel-build vagy pontaktiválás.
+
 ## 2026-10-28 — JYSK aláírt válasz előtagjának célzott javítása (forrásmunka)
 
 Protected files touched: `wp-content/mu-plugins/impactshop-jysk-game.php`.

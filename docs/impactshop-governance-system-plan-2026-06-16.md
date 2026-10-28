@@ -1,3 +1,11 @@
+## 2026-10-28 — egyetlen review-zott JYSK-digest követése
+
+Külön operátori jóváhagyással csak a #231 merge-elt bridge hash-bejegyzése és
+a manifest külső checksumja változik. A guard kódja/policy-ja, minden más hash
+és a runtime forrása változatlan. Célzott strukturális/inventory/negatív teszt;
+forrás-only adoptálás, nem kiadás vagy aktiválás. Rekord és rollback:
+`docs/jysk-game-bridge-2026-10-27.md` aktuális baseline-szakasza.
+
 ## 2026-10-28 — egyetlen CI-digest célzott baseline-javítása
 
 Explicit operátori scope: a #197-ről stale CI-hash követése az ellenőrzött

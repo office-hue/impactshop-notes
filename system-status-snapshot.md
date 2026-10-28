@@ -1,3 +1,11 @@
+## 2026-10-28 — JYSK #231 merged; reviewed digest follow-up
+
+WP #231 merged f61e60c8; quiet window released. Exact-file dry-run stopped
+before live writes because its own bridge digest was still bce8b1ad… . Arnold
+approved only that entry→53f972cd… and the external checksum, with no other
+hash/policy/runtime change. Source-only follow-up; deployment and live auth
+acceptance still pending. Record: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-28 — JYSK auth wire-prefix fix: local source only
 
 Actual authenticated response is LF+JSON, but HMAC covers JSON only. Existing
