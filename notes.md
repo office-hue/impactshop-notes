@@ -1,3 +1,11 @@
+## 2026-10-28 — #231 merge utáni egyetlen JYSK-hash jóváhagyása
+
+Arnold jóváhagyta a review-zott bridge53f972cd… egyetlen baseline-bejegyzését és
+a manifest checksumját. A runtime fix már merge-elt f61e60c8; dry-run a régi
+hashnél írás előtt megállt. Más hash/guardkód/engedély nem változik, nincs deploy
+vagy aktiválás. Strukturális és valódi guard-regresszió; a 200+14 PHP-proof él.
+Részletek/rollback: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-28 — JYSK háromfájlos production kiadás, jutalmazás zárt
 
 Saját tiszta f8f3c456 forrásból level → points → bridge exact-file guarded
