@@ -1,3 +1,13 @@
+## 2026-10-28 — JYSK háromfájlos production kiadás, jutalmazás zárt
+
+Saját tiszta f8f3c456 forrásból level → points → bridge exact-file guarded
+release, előhash/backup/CAS/PHP-lint/0444 és három utóhash igazolt. Valódi WP
+boot sikeres, hat saját üres InnoDB tábla, privát profil minden flagje false.
+Tényleges pontírás/aktiválás nincs. Öt olvasó endpoint preflightja válaszolt;
+egy ticker latency warning megmarad. TLS-konfiguráció és más app változatlan.
+Release-ID-k, rollback és kézi UI-checklist: `docs/jysk-game-bridge-2026-10-27.md`.
+E dokumentációs változás nem új runtime-kiadás; main-ablak nincs lefoglalva.
+
 ## 2026-10-28 — célzott JYSK/CI guard-digest javítás
 
 A #197-ről beragadt CI-hash teljes története ellenőrizve (#215/#224/#225).

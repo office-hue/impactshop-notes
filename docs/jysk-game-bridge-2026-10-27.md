@@ -1,5 +1,49 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-28 — háromfájlos production kiadás visszaolvasva, jutalmazás zárt
+
+A #229 merge `f8f3c4568ee437fe6ab0c4ba871f2bd6c9b135e3` saját tiszta detached
+worktree-jéből, külön jóváhagyott scope-ban mindhárom fájl a canonical
+`bin/impactshop-guard-deploy.sh` → exact-file engine útvonalon kiadva:
+
+| Fájl | Release-ID | Távoli, visszaolvasott SHA256 |
+| --- | --- | --- |
+| `sharity-level-manager.php` | `jysk-level-20261028-f8f3c456` | `136e2ea9bab04a7265af7239c7bdb27b340bec645430455367d84d2a3de545ad` |
+| `sharity-points-manager.php` | `jysk-points-20261028-f8f3c456` | `5f0be67fe56a09c087f0e62b2db617ca9ef385e21db671cb5d0d96251ed5d3bc` |
+| `impactshop-jysk-game.php` | `jysk-bridge-20261028-f8f3c456` | `bce8b1adfc65a9da17f5632700c6d4ce6c14570d7a0e51740801574cd8d9c8b5` |
+
+Mindegyik külön írásmentes próba, elődhash-CAS, távoli privát mentés, atomi
+csere/PHP-lint és 0444 mód mellett. Az eredeti production profil változatlan;
+az Air → Mini → S59 kapcsolat folyamaton belüli transport, gépkonfig-/kulcsírás
+nélkül. Bastion manifest és public_html→app origin ellenőrzés sikeres. Öt
+preflight endpoint válaszolt; a bridge-kiadásnál ticker4166ms latency warning,
+nem blokkoló hiba. A WP-boot valóban betölti a bridge-et és a pontkezelőt.
+Más meglévő pluginok nullable/deprecation jelzései látszanak; nem JYSK-javítások.
+`app.sharity.hu/wp-json/` frissen HTTP200; TLS-beállítást nem módosítottunk.
+
+Explicit `Impactshop_Jysk_Game::install()` létrehozta a hat saját üres táblát;
+mind InnoDB. A három érintett közös ponttábla is InnoDB; valódi `wpdb`,
+read_only=0, routing db.php drop-in nincs. A privát profil 0700/0600, azonos
+tulajdonosú, symlink nélkül; enabled/rewards/transaction=false, külön kulcsokkal.
+Sem pontírás, sem profil-belépési/üzenet-/sorsolási acceptance nem történt.
+Az izolált 141 SQL-ellenőrzés a változatlan kódhoz továbbra is használható,
+de nem helyettesíti a promóció utáni valódi owner-grant/callback próbát.
+
+Rollback: előbb JYSK reward/acceptance off; saját release-ID ellenőrzése
+`bin/impactshop-guard-rollback.sh --production --release-id=<ID>`, majd szükség
+esetén `--apply --expected-deployed-sha=<fenti SHA>`, fordított fájlsorrendben.
+Idegen driftet nem írunk felül, pontadatot nem törlünk. A remote engine őrzi
+az elődbyte-okat és az eredeti módot; bridge előállapota absent volt.
+
+Kézi UI-checklist: a Sharity profil normál pontösszeg/szint/üzenet megjelenése;
+JYSK `/jatek` elérhető, kampánykezdet előtt nincs pontszerzés; későbbi saját
+tesztprofilnál az ismételt aktivitás nem ad új pontot. Jelenleg csak WP-boot,
+forrásparity, séma és a fenti olvasó endpointok igazoltak; valódi jutalom,
+szintküszöb és downstream értesítés élő tesztje nem állítható PASS-nak.
+
+A kiadás után saját dokumentációs ág készült; új main-fetch vagy csendablak
+nem kellett. A JYSK appkiadás és végleges roster/aktiválás külön állapot.
+
 ## Valódi helyi MariaDB-próba — 2026-10-27, irányadó új checkpoint
 
 WP #227 merge-elt: `2823f4a0aa7b04e328e71739f8e3f969b971c08b`, tree
