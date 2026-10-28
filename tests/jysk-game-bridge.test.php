@@ -221,6 +221,91 @@ ob_start(); Bridge::serve(false, $r, $req, $server); $bytes = ob_get_clean();
 $expected = hash_hmac('sha256', 'response' . "\n" . $req->headers['x-jysk-nonce'] . "\n409\n" . hash('sha256', $bytes), hex2bin(JYSK_GAME_SERVICE_KEY));
 check(hash_equals($expected, $server->headers['x-jysk-signature']), 'signature covers actual error wire bytes');
 
+// A real WordPress bootstrap emitted LF before the signed JSON. Keep the exact-wire
+// consumer strict: remove only a bounded, inspectable whitespace prefix at the producer.
+$db = freshDb();
+$req = request('context', ['subject' => str_repeat('0', 64), 'sessionToken' => str_repeat('0', 64)]);
+ob_start(); echo "\n \t\r\n";
+$level = ob_get_level();
+$r = Bridge::service($req);
+check(ob_get_contents() === '' && ob_get_level() === $level, 'early whitespace removed without closing buffer');
+echo "\n"; // Simulate later WordPress output after dispatch, before pre-serve.
+Bridge::serve(false, $r, $req, $server);
+$bytes = ob_get_clean();
+check($bytes === '{"error":"invalid_session"}' && $r->status === 403, 'actual error body has no unsigned prefix');
+$expected = hash_hmac('sha256', "response\n" . $req->headers['x-jysk-nonce'] . "\n403\n" . hash('sha256', $bytes), hex2bin(JYSK_GAME_SERVICE_KEY));
+check(hash_equals($expected, $server->headers['x-jysk-signature']), 'HMAC covers exact emitted bytes after whitespace cleanup');
+
+$db = freshDb();
+$req = request('award', payload());
+ob_start(); echo "\n";
+$r = Bridge::service($req);
+Bridge::serve(false, $r, $req, $server); $bytes = ob_get_clean();
+check($r->status === 200 && json_decode($bytes, true)['state'] === 'confirmed', 'successful fixture response removes prefix without changing receipt');
+$expected = hash_hmac('sha256', "response\n" . $req->headers['x-jysk-nonce'] . "\n200\n" . hash('sha256', $bytes), hex2bin(JYSK_GAME_SERVICE_KEY));
+check(hash_equals($expected, $server->headers['x-jysk-signature']), 'successful response MAC covers exact emitted JSON');
+
+foreach (["unexpected output", str_repeat(' ', 257)] as $prefix) {
+    $db = freshDb();
+    ob_start(); echo $prefix;
+    $r = Bridge::service(request('context', []));
+    $remaining = ob_get_clean();
+    check($r->status === 503 && $db->log === [], 'unsafe prefix blocks service before any DB query');
+    check($remaining === $prefix, 'unsafe prefix is not silently erased');
+}
+$db = freshDb();
+ob_start(); echo "\n"; ob_start();
+$r = Bridge::service(request('context', []));
+$inner = ob_get_clean(); $outer = ob_get_clean();
+check($r->status === 503 && $db->log === [] && $inner === '' && $outer === "\n", 'non-empty outer buffer fails closed without unwinding');
+$db = freshDb();
+ob_start(static fn($bytes) => $bytes);
+$r = Bridge::service(request('context', [])); ob_end_clean();
+check($r->status === 503 && $db->log === [], 'unknown output handler blocks before any DB query');
+$db = freshDb();
+ob_start(null, 0, PHP_OUTPUT_HANDLER_STDFLAGS & ~PHP_OUTPUT_HANDLER_CLEANABLE);
+$r = Bridge::service(request('context', [])); ob_end_clean();
+check($r->status === 503 && $db->log === [], 'non-cleanable buffer blocks before any DB query');
+
+$db = freshDb();
+$req = request('context', ['subject' => str_repeat('0', 64), 'sessionToken' => str_repeat('0', 64)]);
+$r = Bridge::service($req);
+ob_start(); echo 'late unexpected output';
+Bridge::serve(false, $r, $req, $server); $bytes = ob_get_clean();
+check($GLOBALS['status'] === 503 && $server->headers['x-jysk-signature'] === '', 'late unsafe output cannot retain a signed success');
+ob_start(); echo "\n";
+$unrelated = new FixtureRequest('/other/v1/read', []);
+check(Bridge::serve(false, null, $unrelated, $server) === false && ob_get_contents() === "\n", 'unrelated REST output is untouched');
+ob_end_clean();
+
+$flushedFixture = <<<'PHP'
+define('ABSPATH', __DIR__);
+function add_action(...$args) {}
+function add_filter(...$args) {}
+function wp_json_encode($data, $flags = 0) { return json_encode($data, $flags); }
+function status_header($status) { throw new RuntimeException('cannot rewrite flushed status'); }
+class WP_REST_Response { public function __construct(public $data, public $status, public $headers) {} }
+require getcwd() . '/wp-content/mu-plugins/impactshop-jysk-game.php';
+$request = new class {
+    public function get_route() { return '/jysk-game/v1/context'; }
+    public function get_header($name) { return ''; }
+};
+$GLOBALS['wpdb'] = new class { public function __call($name, $args) { throw new RuntimeException('unexpected database call'); } };
+echo "\n";
+if (!headers_sent()) { exit(41); }
+$response = Impactshop_Jysk_Game::service($request);
+if ($response->status !== 503 || $response->data !== ['error' => 'bridge_unavailable']) { exit(42); }
+$wire = new ReflectionProperty(Impactshop_Jysk_Game::class, 'wire');
+$wire->setValue(null, [spl_object_hash($request) => ['{"ok":true}', 200, ['x-jysk-signature' => 'stale-signature']]]);
+$server = new class { public function send_header($name, $value) { throw new RuntimeException('cannot rewrite flushed header'); } };
+Impactshop_Jysk_Game::serve(false, $response, $request, $server);
+PHP;
+$child = proc_open([PHP_BINARY, '-d', 'output_buffering=0', '-d', 'display_errors=stderr', '-r', $flushedFixture], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, dirname(__DIR__));
+check(is_resource($child), 'isolated already-flushed-header fixture starts');
+$childOutput = stream_get_contents($pipes[1]); $childError = stream_get_contents($pipes[2]);
+fclose($pipes[1]); fclose($pipes[2]); $childExit = proc_close($child);
+check($childExit === 0 && $childError === '' && $childOutput === "\n" . '{"error":"bridge_unavailable"}', 'flushed headers block DB and never attempt header mutation or emit signed success');
+
 foreach (['INSERT INTO wp_jysk_game_rewards', 'COMMIT'] as $failure) {
     $db = freshDb(); $db->fail = $failure;
     $calls = Sharity_Points_Manager::$calls;

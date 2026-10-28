@@ -1,3 +1,14 @@
+## 2026-10-28 — JYSK auth wire-prefix fix: local source only
+
+Actual authenticated response is LF+JSON, but HMAC covers JSON only. Existing
+consumer correctly fails closed. Own bridge-only bounded plain-buffer cleanup
+before DB access and own response serving; no consumer MAC relaxation, no other
+REST/identity/point-manager/TLS changes. PHP lint, 200 bridge assertions and
+14 private-profile scenarios PASS; independent review P2 flushed-header fix
+resolved, no remaining P0/P1/P2. Publication/live readback still pending.
+No new deployment or reward activation. Detailed risk, rollback
+and UI checklist: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-28 — JYSK WP installed; rewards remain disabled
 
 Merged source f8f3c456: exact guarded level/points/bridge production releases

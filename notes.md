@@ -8175,3 +8175,13 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+## 2026-10-28 — JYSK wire-prefix javítás indul, auth még nem igazolt
+
+A karbantartás utáni valódi context-wire LF+JSON, miközben a HMAC csak a JSON-t
+fedi. Célzott saját bridge output-határ javítása, kliens-MAC gyengítés nélkül.
+Koherencia/kockázat/érintett ágak/rollback/UI-checklist a JYSK bridge doksiban.
+Más plugin, TLS vagy karbantartási konfiguráció nem érintett; reward off marad.
+PHP lint, 200 bridge assertion/14 privátprofilteszt PASS. Független review P2
+headers-sent korrekciója javítva és külön subprocessben igazolva, utóreview tiszta.
+Ez forráskész javítás, nem merge/telepítés/élő profilkapcsolási elfogadás.

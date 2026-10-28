@@ -1,5 +1,53 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-28 — JYSK aláírt válasz előtagjának célzott javítása (forrásmunka)
+
+Protected files touched: `wp-content/mu-plugins/impactshop-jysk-game.php`.
+Smoke scope: identity_and_points; ez a bejegyzés a célzott change record.
+
+Reprodukció a karbantartás megszűnése után: a hitelesített, nem létező sessionre
+irányuló context-kérés HTTP403/`invalid_session`; a wire 28 bájt, kezdete LF,
+utána 27 bájt JSON. HMAC az exact 28 bájtra hibás, a 27 bájtra helyes.
+A JYSK fogyasztó jogosan zár (`game_bridge_unverified`); a kliens nem trimelhet
+és nem gyengítheti az exact-wire ellenőrzést. A teljes válasz privátan megőrzött.
+
+Módosítás előtti koherencia/kockázat/funkciólista: kizárólag a saját
+`impactshop-jysk-game.php` válaszkezelése és hermetikus bridge-tesztje érintett.
+Minden saját aláírt service-ág (exchange/context/revoke/reward-status/award/
+messages) ugyanazt a response/serve utat használja; a böngészős handoff marad.
+Globális identity, pont-/level-manager, TLS/WAF, más REST-válasz vagy plugin
+nem változhat. A saját service belépésénél, DB-művelet előtt és a saját wire
+kiküldésekor csak ismert, tisztítható alap PHP-puffer ASCII whitespace-e
+üríthető. Nem-whitespace, nagy előtag, már elküldött fejléc, ismeretlen handler
+vagy nem üres külső puffer: fail-closed, nem aláírt siker. A puffer és handler
+nem szüntethető meg, más útvonal outputja nem tisztítható.
+
+Kockázat: más kimeneti pufferprofil zárhatja a saját bridge-et; ezért negatív
+puffertesztek, exact-wire HMAC-teszt és független diffreview szükséges. Late
+output-hiba után már commitált eseményt nem ismétlünk: a meglévő claim/receipt
+readback kezeli, a jutalmazás most végig tiltva marad. Nincs új release-rendszer.
+Már kiküldött fejléceknél a státusz/aláírásfejléc nem vonható vissza; ilyenkor
+nincs fejlécátírási kísérlet. A hibás wire-t az exact-byte fogyasztó utasítja el.
+Ezt külön, output_buffering=0 alfolyamat igazolja; a DB előtti zárás is ellenőrzött.
+Kiadás csak egyfájlos guardolt merge-elt forrásból, friss SHA/backup/CAS/0444
+readback mellett; visszaút az exact saját release guardolt rollbackje.
+Ellenőrzés: lint, bridge/private-profile célzott teszt, érintett Bástya; live
+aláírt hibaválasz és valódi owner→callback→session próba, jutalom nélkül.
+Kézi UI: `/jatek` → „Kapcsolódás a Sharity-profilommal” → kapcsolódott állapot;
+ne legyen raw JSON hiba, a kampány maradjon zárt, a civil jelentkezés működjön.
+Forrás/merge/telepítés/profilpróba állapotát külön kell rögzíteni; jelenleg nincs
+új kiadás vagy sikeres profilkapcsolási bizonyíték.
+
+Helyi eredmény: PHP-lint, 200 determinisztikus bridge assertion és 14 virtuális
+private-profile eset sikeres. Az első célzott fixture az objektumhash-újrahasználat
+miatt más route-ra is elérő serve ágat talált; explicit saját routeprefix rendezi.
+Független 6.1 Sol/high review: P0/P1 nincs; a már kiküldött fejlécek utólagos
+átírására vonatkozó P2 guarddal és külön alfolyamatteszttel javítva. A javított
+delta második review-ja nem talált fennmaradó P0/P1/P2-t; nem FPM/live-PASS.
+Protected-touch és öt saját fájl natív tartalom/titok-audit sikeres. A gépi
+identity_and_points smoke-tagek érintettségi scope-ot jelölnek, nem nyolc most
+lefuttatott UI-folyamatot; a változatlan ledger SQL-bizonyítékot újrahasználjuk.
+
 ## 2026-10-28 — háromfájlos production kiadás visszaolvasva, jutalmazás zárt
 
 A #229 merge `f8f3c4568ee437fe6ab0c4ba871f2bd6c9b135e3` saját tiszta detached
