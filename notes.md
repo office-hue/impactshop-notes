@@ -1,3 +1,11 @@
+## 2026-10-28 — User Card profil-visszatérés javítása indul
+
+Saját tiszta 77c4abbf worktree, jóváhagyott egyfájlos JS scope; donor read-only.
+Előzetes koherencia/kockázat/rollback/UI-checklist:
+`docs/protected-change-records/2026-10-28-user-card-profile-return.md`.
+Más termék visszatérése, PHP/owner/pont/adatbázis és DEV-rendszer változatlan.
+Nincs még tesztelfogadás, push, merge vagy telepítés.
+
 ## 2026-10-28 — #231 merge utáni egyetlen JYSK-hash jóváhagyása
 
 Arnold jóváhagyta a review-zott bridge53f972cd… egyetlen baseline-bejegyzését és

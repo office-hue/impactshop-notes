@@ -1,3 +1,12 @@
+## 2026-10-28 — User Card profile return: local source
+
+Bounded identity-panel.js navigation exception implemented in own 77c4abbf-based
+worktree; PHP, economic writers and every nonmatching return unchanged.
+19 full-JS mocked Chrome cases PASS; no real credentials/reward/network writes.
+Only its source hash and manifest checksum follow the approved file change.
+No push/merge/deploy/activation yet; Safari and live acceptance remain open.
+Record: `docs/protected-change-records/2026-10-28-user-card-profile-return.md`.
+
 ## 2026-10-28 — JYSK #231 merged; reviewed digest follow-up
 
 WP #231 merged f61e60c8; quiet window released. Exact-file dry-run stopped
