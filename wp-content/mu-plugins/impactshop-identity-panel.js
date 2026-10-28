@@ -221,7 +221,20 @@
     }
 
     function navigateAfterIdentityAction(targetUrl, fallbackUrl) {
-      const destination = targetUrl || fallbackUrl || "";
+      let destination = targetUrl || fallbackUrl || "";
+      try {
+        const current = new URL(window.location.href);
+        const returns = current.searchParams.getAll("return");
+        // Only the explicit User Card entry starts a fresh server-verified handoff.
+        // Keep every other bridge (including the password-manager form) unchanged.
+        if (current.origin === "https://app.sharity.hu" && current.pathname === "/profil/" &&
+            returns.length === 1 && returns[0] === "https://sharity.hu/sajat-sharity" &&
+            !current.searchParams.has("selection_intent")) {
+          destination = "https://sharity.hu/api/sharity/session/start?return_intent=sajat-sharity&profile_return=1";
+        }
+      } catch (e) {
+        // Retain the existing bridge destination on malformed input.
+      }
       if (!destination) {
         window.location.reload();
         return;
