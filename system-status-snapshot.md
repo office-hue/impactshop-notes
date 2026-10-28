@@ -1,3 +1,13 @@
+## 2026-10-28 — JYSK WP installed; rewards remain disabled
+
+Merged source f8f3c456: exact guarded level/points/bridge production releases
+completed with remote hash/mode/backup readback and real WordPress boot.
+Six own empty InnoDB tables installed; private profile enabled/rewards/transaction
+all false. No live point award, owner-grant acceptance or game activation.
+Existing intake and Card runtime are separate; no TLS changes. One ticker
+preflight latency warning, no blocking preflight error. Exact release IDs,
+rollback and required manual UI checks: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-28 — CI guard baseline: narrow source repair
 
 One approved CI digest + manifest checksum refresh only; full #197→#225
