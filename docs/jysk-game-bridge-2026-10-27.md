@@ -1,5 +1,121 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-28 — eredmény, sorsolás és privát nyeremény, implementáció
+
+Saját ág feat/jysk-game-completion-20261028, alap368e466a; ez az új fejezet
+a következő forráskiadást írja le, nem már megtörtént deploymentet.
+Protected files touched: wp-content/mu-plugins/impactshop-jysk-game.php,
+docs/impactshop-guard-hashes.json, docs/impactshop-guard-hashes.sha256,
+docs/bastion-guard-status.md. Arnold a teljes fájlszintű terv implementációját
+jóváhagyta; a BASTION_OVERRIDE e konkrét reviewed változás dokumentált
+feloldása, nem guardkód- vagy idegen scope-kivétel. Rollback és smoke scope
+az alábbi ellenőrzési fejezetben, kizárólag JYSK és deploy-integritás.
+Egyetlen saját bridge bővül. A közös pont/identity/legacy sorsoló és TLS
+változatlan; új runtime konfigurációs kulcs vagy scheduler nincs.
+
+### Adatút és ellenőrzött műveletek
+
+Az app game-results-export konzisztens, zárt, időkapuzott Turso-olvasásából
+származó privát jysk-game-results-v1 fájl érkezik. Tartalmazza a forrás/policy/
+roster/döntés/eseményhash és ellenőrzött NGO-szavazat, illetve külön személy-
+sorsolási súly mezőket. Privát szervezői többprofilos ellenőrzés történik;
+a profil nem bizonyít természetes személyazonosságot. A notificationSubject
+egy ellenőrzött csoport profilja; a mapping HMAC-azonossága ellenőrzött,
+régi grant lejárata nem törli a megszerzett szavazatot.
+
+Saját új results/prizes/prize_events táblák, explicit WP-CLI DDL-lel.
+Minden eredményírás előtt: valódi wpdb, dropin hiánya, writer DB, érintett
+saját és közös üzenettáblák InnoDB-je és saját elsődleges indexek. Nincs
+közös tábla-konverzió. A valódi escaped INSERT mérete max_allowed_packethez
+kötött. Unknown schema/engine csak az eredményírást állítja meg.
+
+```text
+wp jysk-game results status
+wp jysk-game results install --expected-version 0 --intent-file /private/install-intent.json
+wp jysk-game results prepare --input /private/results.json --expected-hash H --expected-version V --intent-file /private/prepare-intent.json
+wp jysk-game results approve --expected-hash H --expected-version V --verification-file /private/verification.json --intent-file /private/approve-intent.json
+wp jysk-game results resume --expected-hash H --expected-version V --intent-file /private/resume-intent.json
+wp jysk-game prize status
+wp jysk-game prize status --input /private/claim-lookup.json
+wp jysk-game prize record --input /private/event.json --expected-version V --intent-file /private/record-intent.json
+wp jysk-game prize redraw --input /private/redraw.json --expected-hash H --expected-version V --intent-file /private/redraw-intent.json
+```
+
+Az inputok repón kívüli saját0700 könyvtár/0600 fájlok, max8MiB, symlink
+nélkül. Status olvasó, más művelet saját privát intenthez kötött:
+kind=jysk-game-operator-intent-v1, operation=results-prepare/results-approve/
+results-resume/results-install/prize-record/prize-redraw, expectedVersion egész,
+parameters a pontos CLI-opciók az intent-file nélkül, input/verification-file
+esetén a fájlok input-sha256/verification-file-sha256 értékével is.
+Folyamat-env megerősítés: JYSK-GAME:<operation>:<version>; titok nem argumentum.
+Az install version0, prepare kezdetben0→1, approve1→2→published3.
+Status az aktuális verziót/hash-t mutatja; nem ad seedet vagy játékoslistát.
+Minden mutáció után friss status szükséges.
+
+A verify outputját az app készíti friss tartalomellenőrzéssel; a WP approve
+ötperces időablakban a pontos manifest/dataset/decisions hashhez köti.
+A seed egyszer, jóváhagyó tranzakcióban rögzül. Utána a visszaállítható
+feldolgozás atomikusan rögzíti a sorsolást, saját nyereményt, közös semleges
+értesítést/célzást és saját mappinget. Ugyanaz a globális kampánylock és
+kapcsolat/reconnect ellenőrzés védi az approve/resume/ACK/ügyírást.
+Lockütközés busy, nem siker; bizonytalan commit után readback, nem új seed.
+Jóváhagyott input nem írható át. Nincs automatikus reset/újrasorsolás.
+
+### Véletlen és privát értesítés
+
+V1 sorsolás: 32 bájtos seed; HMAC-SHA256 domain a manifestHash/round/kind/
+slot/counter mezőkből; az első6bájt uint48, intdiv(2^48,bound)*bound
+visszautasításos küszöbbel. PHP64bites egész; explicit bájtrendezés.
+Három külön személy súlyozottan, visszatevés nélkül; 0/1/2 jogosult külön
+eset, nincs későbbi helyfeltöltés. NGO-holtverseny külön véletlen domain.
+A PHP és TypeScript ugyanazt a rögzített v1 vektort ellenőrzi.
+
+GET /api/jysk/game/results az appból a rögzített signed bridge results
+POST-ot hívja; a bridge nem publikus író. NGO-végeredmény játékosazonosító
+nélkül, session és Turso megnyitása előtt is olvasható az appon.
+Közös profilüzenet csak semleges link. A saját messages/ACK a tulajdonosi
+sessionből olvassa a teljes nyereményt, az első igazolt megjelenés idejét
+és a 7napos határidőt; közös üzenet lejárata/read flagje nem jogosultság.
+ACK után újraolvasható, nincs határidőhosszabbítás. A reference nem
+személyazonosság-igazolás. Lezárt játék után auth/read marad, reward külön off.
+
+### Szervezői ügykezelés
+
+Claim lookup fájl: {"claimReference":"<32 hex>"}; csak a pontos round/slot/
+version/state/deadline kerül vissza, nincs teljes személylista-nyomtatás.
+Event JSON: round(0/1), slot(1..3), kind, occurredAt(UTC másodperces ISO),
+reference(mentett bizonyíték SHA256), details(rövid technikai ügyhivatkozás,
+személyadat nélkül). Támogatott kind: received, deficiency-sent,
+deficiency-delivered, response, disputed, decision, approved, fulfilled,
+forfeit-decision. Minden esemény append-only; verzióütközésnél nincs írás.
+Határidőben érkező hiányos igény/hiánypótlás/vita szervezői hold; nincs
+automatikus jogvesztés. Fulfilled csak approved, forfeit-decision csak
+dokumentált decision után írható. Személyes/postai átadás operátori feladat.
+
+Redraw JSON: slots([ténylegesen megüresedett eredeti slotok]), reference(SHA),
+deadlinesReviewed=true. Csak végleges forfeit-decision után; a fennmaradó
+igénylési/hiánypótlási/átadási időt a szervező ellenőrzi. Legfeljebb egy
+pótkör; minden korábbi nyertes kizárt, kezdetben üres hely nem tölthető fel.
+
+### Ellenőrzés és visszaállítás
+
+Független forrásreview: két P2 (receipt-egyediség, busy ACK) célzottan javítva;
+delta-review lezárva, a javított határokon nyitott P0/P1/P2 nincs.
+200 meglévő bridge,14 privát-profil,19 pure eredmény és172 valódi SQL
+ellenőrzés PASS. Célzott PHP/protokoll és valódi izolált MariaDB
+hibatesztek; nincs éles vagy közös staging pont/sorsolási próba.
+Guard-hash csak az utolsó reviewed bridge után zárható. Deploy az existing
+exact-file guarded úton, tiszta merge-forrásból, backup/CAS/0444/readbackkel.
+Additív táblák és változatlan profile-keyek megtartják a korábbi auth rollbacket.
+Publikált nyeremény után az olvasást megőrző javítás kell. Nincs adat/pont/
+seed törlés vagy teljes production restore.
+
+Kézi UI-checklist: /jatek belépés/reconnect; eredmény „ellenőrzés alatt” majd
+NGO-végeredmény; csak saját privát üzenet nyitható; első látható nyitás után
+változatlan hétnapos határidő; hiba után őszinte unknown és readback.
+Kontroll: intake, profil, Ads Watch/Offerwall és meglévő JYSK-riport működése.
+Forrás/merge/deploy/aktiválás/élő pontelfogadás/valós sorsolás külön státusz.
+
 ## 2026-10-28 — prefixjavítás telepítve, valódi profilkapcsolás igazolt
 
 #232 merge `77c4abbf1b7d45ce9e01eadb102e44554dbdcd15`, tree

@@ -1,3 +1,17 @@
+## 2026-10-28 — JYSK eredményzárás megvalósítása, saját forráság
+
+Jóváhagyott terv: saját bridge additív eredmény/nyeremény/ügyesemény táblák,
+WP-CLI jóváhagyás után egyszeri súlyozott sorsolás, privát tulajdonosi
+nyertesüzenet. Érintett: saját REST results/messages/ACK, saját CLI/install;
+upstream az ellenőrzött app-export, downstream közös üzenettáblába csak semleges
+értesítés. Kockázat: dupla sorsolás, részleges commit, idegen üzenetolvasás,
+lejárt session és read-only kompatibilitás. Védelem: zárolás, tartós seed,
+verzió+hash, InnoDB/kapcsolatellenőrzés, tulajdonosi session, saját táblák.
+Közös pontkezelő/identity/legacy sorsoló/TLS nincs módosítva. Telepítés előtt
+exact-file backup/CAS; rollback a korábbi bridge, additív adatok megtartásával.
+Publikált nyeremény után olvasási hozzáférést megtartó célzott javítás szükséges.
+Helyi implementáció folyamatban; teszt/merge/deploy/aktiválás még nem igazolt.
+
 ## 2026-10-28 — JYSK prefixjavítás éles, profilkapcsolás igazolt
 
 #232 merge77c4abbf, main-ablak felszabadult. Egyetlen saját bridge-fájl guarded

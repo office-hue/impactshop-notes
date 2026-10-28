@@ -1,3 +1,12 @@
+## 2026-10-28 — JYSK completion source work in progress
+
+Own branch feat/jysk-game-completion-20261028 adds result export consumer,
+durable one-time weighted raffle and owner-only prize messages/cases. Three
+additive own tables; existing points/identity/TLS unchanged. 200+14 legacy,
+19 pure result checks and 172 isolated SQL checks passed; two review P2
+findings fixed and independently delta-reviewed. No merge/deploy/activation for
+this change; prior live state below remains the last acknowledged checkpoint.
+
 ## 2026-10-28 — JYSK prefix fix deployed; owner session verified, rewards off
 
 Exact merge77c4abbf, quiet window released. One-file guarded bridge release
