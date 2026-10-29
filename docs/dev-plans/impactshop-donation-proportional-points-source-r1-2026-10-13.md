@@ -111,3 +111,15 @@ Rollback: Impact Shop lane off, események megőrzése, guarded exact-file
 backup/CAS; a közös Offerwall-fájlok éles felülírása nem része a kiadásnak.
 Production writer-pause/mentés, partner replay és Dognet-contract külön
 ellenőrzendő a szükséges lépésnél. Új forrás még nem merge-elt/telepített.
+
+
+## 2026-10-29 — Dognet normál jóváírás forráskész
+
+Három runtime-fájl; channel+campaign:order_id vásárlás, rawid esemény;
+jóváhagyott SAT1 alsó időkorlát, EUR jutalék50% × MNB, egyszeri kerekítés.
+Négyoldalas folytatható poll, négy új FX-nap, meglévő consumer/schema.
+Provider/transport/money/MNB fixturek, PHP-lintek és139 saját SQL-check sikeres.
+Független review javításai célzottan visszaellenőrizve. Merge/deploy/aktiválás
+még nyitott; Dognet korábbi OFF állapota ebben a körben nem változott.
+Részletes működés/teszt/rollback/UI: `docs/protected-change-records/2026-10-29-impactshop-simple-points.md`;
+végrehajtási terv: `docs/dev-plans/impactshop-dognet-confirmed-purchases-2026-10-29.md`.
