@@ -152,3 +152,44 @@ folytatás→tényleges affiliate/merchant cél, opaqueSAT1 és azonosNGO a tár
 pont5891és history kattintástól változatlan. Nincs pénzügyi vásárlás. /profil/ szint,
 pont/history és LegacyPool egyezzen; hiányzóowner kapjon profilhibát, ne adminlogint.
 Az eredeti20természetes eseményes pénzügyi elfogadás és további providercontract nyitott.
+
+
+## 2026-10-29 — Dognet normál jóváírás implementálva, publikálás előtt
+
+Saját ág `feat/impactshop-dognet-confirmed-20261029`, indulóHEAD fb8cbaad,
+a #239 merge fájlfájával azonos alap. Három runtime-fájl: Dognet-adapter,
+a két meglévő transzport opcionális raw módja. Nincs DDL, core/shared
+pontport-, globális Dognet-csatorna-, frontend- vagy release-rendszer-csere.
+
+Hiteles read-only sale-minta: channel26081, campaign357, rtypeS, pozitív
+total_cost, string order_id. A hivatalos API order_id-t használ rendeléshez;
+namespace+campaign:order_id a vásárlás, rawid az esemény. Nincs idfallback.
+EUR/EuropeBratislava korábbi accountbizonyíték újrahasználva. A jóváhagyott
+postcutover SAT1 időkorlát explicit source-jelölést kap; nem pontos purchase-time.
+P stabil kötést ment, A a tényleges jutalék50%-át MNBvel egyszer kerekíti.
+A/D/összegváltozás és több raw rekord egy order alatt kézi; nincs feltételezett refund.
+4oldal/4új FX-nap/poll, tartós egészlap-kurzor, saját ellenőrzött DB-zár;
+provider/MNBhiba nem dob kivételt a közös cronba. Globális adchannel0 marad.
+
+Tényleges helyi ellenőrzés: providerfixture, mindkét valódi transportfixture,
+money/MNBfixture, három PHP-lint és139 valódi saját MariaDB SQL-check sikeres.
+A SQL tényleges correlate/prepare/capture/manager kódot futtat, lejárt intentet,
+P→A orderváltást, duplikációt és megváltozott végleges összeget is vizsgál.
+Független review: P→A rawroot-megkerülés és zero-sale P javítva; második
+körben Unicode-basis mérethatár javítva, célzott független recheck újP1/P2 nélkül.
+
+Tokenellátás meglévő6órás auto-banner cronból, nem új authfolyamat: éles
+callback10, következőfutás2026-10-30 00:32:33UTC, token cache jelen van,
+lejárat21:36:03UTC. A pontpoll lejáratkor explicit hibával várhat a rendes
+cache-megújításig (legfeljebb a következő6órás sikeres kör), eseményt nem veszít.
+Ez ismert késleltetés, nem folyamatos tokenrendelkezésreállási PASS.
+Host WP-CLI max_execution_time0; adapter hálózati becslés legfeljebb160s+DB.
+
+Publikálás/CI/merge/telepítés/aktiválás még nincs ebből a változásból.
+Kiadás: két transport előbb, adapter utoljára, Dognet OFF, exact-file backup/CAS;
+bootstrap/hash/mode/kupontranszport smoke, aztán kizárólag Dognet lane+scanfrom.
+Nincs teljes adatbázis-visszatöltés. Gazdasági rollbackkor a scanfrom ÉS a
+Dognet namespace kikapcsolása szükséges a queued események miatt, CJ marad.
+Kézi UIlista: ImpactShop kuponlista, aktuális partner→NGO→merchant; kattintás0;
+profilpont/szint/history csak igazolt vásárlásból. Ezek új éles futtatása még nyitott.
+Decathlon nem használható mintának; Árukereső korábbi CPC útpróba nem pénzügyi elfogadás.

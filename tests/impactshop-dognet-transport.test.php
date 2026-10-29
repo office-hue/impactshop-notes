@@ -40,7 +40,7 @@ function wp_json_encode($value) { return json_encode($value); }
 function wp_remote_request($url, $args) {
     ++$GLOBALS['requests'];
     if ($GLOBALS['requests'] > 2) { throw new RuntimeException('Unexpected unbounded resource retry'); }
-    return ['status' => $GLOBALS['code'], 'body' => '{}'];
+    return ['status' => $GLOBALS['code'], 'body' => ($GLOBALS['response_body'] ?? '{}')];
 }
 function wp_remote_retrieve_response_code($response) { return $response['status']; }
 function wp_remote_retrieve_body($response) { return $response['body']; }
@@ -65,4 +65,10 @@ $result = dognet_api_request('POST', '/raw-transactions/filter', []);
 check(is_wp_error($result) && $requests === 1 && $refreshes === 0, '429 must not retry');
 reset_case(200);
 check(dognet_api_request('POST', '/raw-transactions/filter', [], false) === [] && $requests === 1, 'Normal response unchanged');
+reset_case(200);
+$response_body = '{"data":[{"commission":0.073400,"note":"0.073400"}]}';
+check(dognet_api_request('POST', '/raw-transactions/filter', [], false, true) === $response_body, 'Exact wire numeric lexeme preserved');
+reset_case(429);
+$result = dognet_api_request('POST', '/raw-transactions/filter', [], false, true);
+check(is_wp_error($result) && $requests === 1 && !isset($result->data['response']) && !isset($result->data['resp']), 'Raw error has no response payload or retry');
 echo $argv[1] . " transport passed\n";

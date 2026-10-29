@@ -112,7 +112,7 @@ check(sharity_points_migrate_impactshop(true)['success'], 'read-only preflight')
 check(!isset($options['sharity_points_impactshop_migration_lock']), 'preflight does not acquire mutable migration lock');
 check(sharity_points_migrate_impactshop()['success'], 'explicit additive migration');
 check(sharity_points_migrate_impactshop()['success'], 'migration idempotent');
-sql($wpdb, "CREATE TABLE impactshop_test_impactshop_affiliate_intents(provider_token_hash char(64) PRIMARY KEY, subject_ref varchar(80),provider_key varchar(16),partner_key varchar(128),status varchar(24),delete_after datetime) ENGINE=InnoDB");
+sql($wpdb, "CREATE TABLE impactshop_test_impactshop_affiliate_intents(provider_token_hash char(64) PRIMARY KEY, subject_ref varchar(80),provider_key varchar(16),partner_key varchar(128),status varchar(24),delete_after datetime,activation_id varchar(64),ngo_ref varchar(128),provider_program_ref varchar(160),source_placement varchar(64),redirected_at datetime) ENGINE=InnoDB");
 $manager = new Sharity_Impactshop_Points_Manager();
 $pseudo='abcdef123456';
 check($manager && sharity_points_impactshop_bind_subject($pseudo)['success'], 'server subject bound');
@@ -339,4 +339,60 @@ check($r['success'] && $r['recovered_commit'] && count($actions)===$actionsBefor
     && (int)$wpdb->get_var("SELECT points_total FROM impactshop_test_user_points WHERE pseudo_id='{$decayPseudo}'")===2005,'shared port lost ACK uses durable readback and emits no unconfirmed hook');
 check((new Sharity_Points_Manager())->award_points_for_pseudo($decayPseudo,5,'bonus','ack-fixture',['source_type'=>'jysk_campaign'],'jysk:lost-ack')['duplicate']
     && (int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE dedupe_key='jysk:lost-ack'")===1,'readback then replay cannot double-credit JYSK');
+// Real Dognet adapter -> immutable SQL capture -> existing economic transaction.
+require __DIR__ . '/../wp-content/mu-plugins/impactshop-dognet-points.php';
+function impactshop_sharity_affiliate_table() { global $wpdb; return $wpdb->prefix.'impactshop_affiliate_intents'; }
+$affiliateSource=file_get_contents(__DIR__.'/../wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php');
+$start=strpos($affiliateSource,'function impactshop_sharity_affiliate_correlate(');
+$end=strpos($affiliateSource,'function impactshop_sharity_affiliate_retention_cleanup(', $start);
+eval(substr($affiliateSource,$start,$end-$start));
+function impactshop_get_shops() { return [['shop_slug'=>'dognet-test','dognet_base'=>'https://go.dognet.com/?cid=357']]; }
+function dognet_extract_campaign_id_from_base($base) { parse_str(parse_url($base,PHP_URL_QUERY),$q);return $q['cid']??0; }
+function get_transient($key) { return $GLOBALS['dognet_quotes'][$key]??false; }
+function set_transient($key,$value,$ttl) { $GLOBALS['dognet_quotes'][$key]=$value; }
+function wp_remote_get($url,$args) { ++$GLOBALS['dognet_fx_reads'];return ['body'=>file_get_contents(__DIR__.'/fixtures/impactshop-mnb-eur-20261029.html')]; }
+function wp_remote_retrieve_response_code($response) { return 200; }
+function wp_remote_retrieve_body($response) { return $response['body']; }
+$dognet_fx_reads=0;
+$options['sharity_points_impactshop_cutover_utc']='2026-10-26 00:00:00';
+$options['sharity_points_impactshop_lanes'][]='impactshop:dognet:26081';
+$dognetToken='sat1_'.str_repeat('d',43);
+$wpdb->insert('impactshop_test_impactshop_affiliate_intents',['provider_token_hash'=>hash('sha256',$dognetToken),
+    'subject_ref'=>impactshop_sharity_affiliate_subject_ref($pseudo),'provider_key'=>'dognet','partner_key'=>'dognet-test',
+    'status'=>'redirected','delete_after'=>'2030-01-01','redirected_at'=>'2026-10-28 08:00:00']);
+$dn=['id'=>'500','campaign_id'=>'357','ad_channel_id'=>'26081','order_id'=>'dognet-order-1','data1'=>$dognetToken,
+    'rstatus'=>'P','rtype'=>'S','created_at'=>'2026-10-28 10:00:00','commission'=>'10','total_cost'=>'100','date_approved'=>'2026-10-28 14:00:00'];
+$beforeDognet=total();$pendingEvent=impactshop_dognet_points_event($dn,'26081');$pendingId=captured($pendingEvent);
+$r=$manager->apply_impactshop_event($pendingId,$run);
+check($r['success'] && total()===$beforeDognet && eventRow($pendingId)['status']==='applied','Dognet real P persists binding without points');
+$estimated=$dn;$estimated['commission']='19';
+check(captured(impactshop_dognet_points_event($estimated,'26081'))===$pendingId,'Dognet provisional commission changes remain same pending SQL event');
+sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after='2020-01-01' WHERE provider_key='dognet'");
+$dn['rstatus']='A';$finalEvent=impactshop_dognet_points_event($dn,'26081');$finalId=captured($finalEvent);
+$r=$manager->apply_impactshop_event($finalId,$run);
+check($r['success'] && $r['actual_delta']===2000 && total()===$beforeDognet+2000,'Dognet expired real intent still credits frozen owner once');
+$reads=$dognet_fx_reads;
+$dn['updated_at']='changed';$dn['commission']='10.0000';
+check(captured(impactshop_dognet_points_event($dn,'26081'))===$finalId && $dognet_fx_reads===$reads,'Dognet replay same durable SQL event and quote');
+check($manager->apply_impactshop_event($finalId,$run)['duplicate'] && total()===$beforeDognet+2000,'Dognet replay no double balance/history movement');
+$dn['commission']='11';$conflict=captured(impactshop_dognet_points_event($dn,'26081'));
+$r=$manager->apply_impactshop_event($conflict,$run);
+check($r['success'] && eventRow($conflict)['status']==='manual' && total()===$beforeDognet+2000,'Dognet changed final stays manual with existing award preserved');
+$dn['commission']='10';$dn['rstatus']='D';$decline=captured(impactshop_dognet_points_event($dn,'26081'));$manager->apply_impactshop_event($decline,$run);
+check(eventRow($decline)['status']==='manual' && total()===$beforeDognet+2000,'Dognet ambiguous D cannot create automatic reversal');
+// First-seen A has its own new order and fresh authenticated binding.
+sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after='2030-01-01' WHERE provider_key='dognet'");
+$dn['id']='501';$dn['order_id']='dognet-order-2';$dn['rstatus']='A';
+$firstA=captured(impactshop_dognet_points_event($dn,'26081'));$r=$manager->apply_impactshop_event($firstA,$run);
+check($r['success'] && $r['actual_delta']===2000 && total()===$beforeDognet+4000,'Dognet first A real attribution and atomic balance');
+$dn['id']='502';$dn['order_id']='';$dn['rstatus']='P';
+$badPending=captured(impactshop_dognet_points_event($dn,'26081'));$manager->apply_impactshop_event($badPending,$run);
+$dn['order_id']='new-order-after-manual';$dn['rstatus']='A';
+$blocked=captured(impactshop_dognet_points_event($dn,'26081'));$manager->apply_impactshop_event($blocked,$run);
+check(eventRow($blocked)['root_id']===eventRow($badPending)['root_id'] && eventRow($blocked)['status']==='manual' && total()===$beforeDognet+4000,'Raw ID cannot escape manual unresolved P by changing order on A');
+$dn['id']='503';$dn['rstatus']='P';$dn['order_id']='pending-original';
+$validPending=captured(impactshop_dognet_points_event($dn,'26081'));$manager->apply_impactshop_event($validPending,$run);
+$dn['rstatus']='A';$dn['order_id']='pending-corrected';
+$blocked=captured(impactshop_dognet_points_event($dn,'26081'));$manager->apply_impactshop_event($blocked,$run);
+check(eventRow($blocked)['root_id']===eventRow($validPending)['root_id'] && eventRow($blocked)['status']==='manual' && total()===$beforeDognet+4000,'Raw ID changing order P to A quarantines original root');
 echo "Impact Shop SQL integration passed ({$checks} checks); no live/provider writes\n";

@@ -40,17 +40,21 @@ function sharity_points_impactshop_capture(array $event): array {
 }
 $requests = [];
 $pages = [];
-function dognet_api_request($method, $path, $body) {
-    $GLOBALS['requests'][] = [$method, $path, $body];
-    return array_shift($GLOBALS['pages']) ?? ['data' => []];
+function dognet_api_request($method, $path, $body, $auth = true, $raw = false) {
+    $GLOBALS['requests'][] = [$method, $path, $body, $auth, $raw];
+    $value = array_shift($GLOBALS['pages']) ?? ['data' => []];
+    return $raw && is_array($value) ? json_encode($value) : $value;
 }
+function impactshop_get_shops() { return [['shop_slug'=>'actual-dognet-shop','dognet_base'=>'https://go.dognet.com/?cid=357']]; }
+function dognet_extract_campaign_id_from_base($base) { parse_str(parse_url($base, PHP_URL_QUERY),$q);return $q['cid']??0; }
+
 require __DIR__ . '/../wp-content/mu-plugins/sharity-points-money.php';
 function get_transient($key) { return false; }
 function set_transient($key, $value, $ttl) {}
 $mnb_requests = 0;
 function wp_remote_get($url, $args) {
     ++$GLOBALS['mnb_requests'];
-    return ['status' => 200, 'body' => file_get_contents(__DIR__ . '/fixtures/impactshop-mnb-usd-20261029.html')];
+    return ['status' => ($GLOBALS['mnb_status'] ?? 200), 'body' => file_get_contents(__DIR__ . '/fixtures/impactshop-mnb-' . (str_contains($url, 'devizaSelected=EUR') ? 'eur' : 'usd') . '-20261029.html')];
 }
 function wp_remote_retrieve_response_code($r) { return $r['status']; }
 function wp_remote_retrieve_body($r) { return $r['body']; }
@@ -104,7 +108,7 @@ check(ImpactShop_CJ::points_event($cj, 'publisher:website')['merchant'] === 'act
 $GLOBALS['correlation'] = ['provider_key' => 'dognet', 'partner_key' => 'wrong-provider-shop'];
 check(ImpactShop_CJ::points_event($cj, 'publisher:website')['merchant'] !== 'wrong-provider-shop', 'CJ cannot borrow another provider binding');
 $GLOBALS['correlation'] = ['provider_key' => 'dognet', 'partner_key' => 'actual-dognet-shop'];
-check(impactshop_dognet_points_event(['id' => 1, 'data1' => $token], '26081')['merchant'] === 'actual-dognet-shop', 'Dognet merchant is token binding');
+// Dognet identity/economics are tested below with actual sale fields and snapshot database.
 $GLOBALS['correlation'] = null;
 $cj['actionStatus'] = 'locked';
 check(ImpactShop_CJ::points_event($cj, 'publisher:website')['kind'] === 'adjustment', 'Locked commission is not a donation');
@@ -125,8 +129,15 @@ check($award['kind'] === 'award' && $award['donation_amount_huf'] === '1650', 'C
 check(str_contains($award['authority_ref'], ':329.93/1') && $mnb_requests === 1, 'Exact rate and quote day retained');
 class AwardSnapshotDatabase {
     public string $prefix = 'wp_'; public string $last_error = ''; public string $snapshot = '';
-    public function prepare($sql, ...$args) { return $sql; }
-    public function get_var($sql) { return $this->snapshot; }
+    public array $snapshots = []; public array $history = []; public array $args = []; public bool $owns = true;
+    public function prepare($sql, ...$args) { $this->args=$args; return $sql; }
+    public function get_var($sql) {
+        if (str_contains($sql,'IS_USED_LOCK')) return $this->owns ? 17 : 0;
+        if (str_contains($sql,'GET_LOCK') || str_contains($sql,'RELEASE_LOCK')) return 1;
+        if (str_contains($sql,'CONNECTION_ID')) return 17;
+        if (str_contains($sql,'logical_id IN')) { foreach($this->args as $id){if(isset($this->history[$id])) return $this->history[$id];}return null; }
+        return $this->snapshots[$this->args[0] ?? ''] ?? $this->snapshot;
+    }
 }
 $wpdb = new AwardSnapshotDatabase(); $wpdb->snapshot = json_encode($award);
 $cj['actionStatus'] = 'closed';
@@ -148,21 +159,70 @@ check(ImpactShop_CJ::points_event($cj, 'publisher:website')['kind'] === 'adjustm
 unset($wpdb);
 check(impactshop_dognet_points_poll()['status'] === 'disabled' && !$requests, 'Dormant lane makes no request');
 $options['sharity_points_impactshop_producer_enabled'] = '1';
-check(impactshop_dognet_points_poll()['error'] === 'dognet_scan_contract_unavailable' && !$requests, 'Missing scan contract makes no request');
-$options['impactshop_dognet_points_scan_from'] = '2026-10-29';
+check(impactshop_dognet_points_poll()['status'] === 'disabled' && !$requests, 'Empty scan switch makes no request');
+$options['impactshop_dognet_points_scan_from'] = '2026-10-26';
 $pages = [['data' => [['id' => 5, 'rstatus' => 'A', 'data1' => $token, 'commission' => '999.00']]], ['data' => []]];
-$result = impactshop_dognet_points_poll();
-check($result['success'] && $result['captured'] === 1, 'Bounded manual capture');
-check($captured[0]['kind'] === 'adjustment' && $captured[0]['donation_amount_huf'] === '', 'Dognet commission/status cannot award');
-check($requests[0][1] === '/raw-transactions/filter' && !isset($requests[0][2]['last_id']), 'Whole cutover window, supported endpoint');
-$requests = [];
-$pages = array_fill(0, 4, ['data' => [['id' => 5, 'rstatus' => 'A']]]);
-check(impactshop_dognet_points_poll()['error'] === 'dognet_pagination_stalled', 'Stalled pagination is explicit');
-$requests = []; $pages = [];
-for ($i = 1; $i <= 4; $i++) { $pages[] = ['data' => [['id' => $i, 'rstatus' => 'A']]]; }
-check(impactshop_dognet_points_poll()['error'] === 'dognet_scan_incomplete' && count($requests) === 4, 'Hard request bound without false completion');
-$requests = []; $pages = [new WP_Error()];
-check(impactshop_dognet_points_poll()['error'] === 'dognet_provider_request_failed' && count($requests) === 1, 'No provider retry');
+$options['impactshop_dognet_points_channel_id'] = '26081';
+$wpdb = new AwardSnapshotDatabase();
+$GLOBALS['correlation'] = ['provider_key'=>'dognet','partner_key'=>'actual-dognet-shop','redirected_at'=>'2026-10-28 08:00:00'];
+$row = ['id'=>'100','campaign_id'=>'357','ad_channel_id'=>'26081','order_id'=>'order-1',
+    'data1'=>$token,'rstatus'=>'P','rtype'=>'S','created_at'=>'2026-10-28 10:00:00',
+    'commission'=>'10.0000','total_cost'=>'100.0000','date_approved'=>'2026-10-28 14:00:00'];
+function dognet_snapshot($event) {
+    $event['token_digest'] = hash('sha256',$event['provider_token']);
+    unset($event['provider_token']);
+    $event['root_id']=hash('sha256',json_encode(['dognet',$event['namespace'],$event['purchase_id']]));
+    $GLOBALS['wpdb']->snapshots[$event['root_id']] = json_encode($event);
+    $logical=hash('sha256',json_encode(['dognet',$event['namespace'],$event['event_id'],$event['revision']]));
+    $GLOBALS['wpdb']->history[$logical] ??= json_encode($event);
+}
+$pending=impactshop_dognet_points_event($row,'26081');
+check($pending['kind']==='pending' && $pending['original_purchase_at']==='2026-10-28 08:00:00','Pending persists post-cutover SAT1 lower bound');
+$changed=$row;$changed['commission']='12';$changed['total_cost']='120';
+check(impactshop_dognet_points_event($changed,'26081')===$pending,'Provisional pending economics never cause conflict');
+dognet_snapshot($pending); $GLOBALS['correlation']=null;
+$row['rstatus']='A';$award=impactshop_dognet_points_event($row,'26081');
+check($award['kind']==='award' && $award['donation_amount_huf']==='2000','Expired correlation uses stored binding, exact EUR ×50% ×400');
+dognet_snapshot($award);$before=$mnb_requests;
+$changed=$row;$changed['commission']='10.00';$changed['updated_at']='volatile';
+check(impactshop_dognet_points_event($changed,'26081')===$award && $before===$mnb_requests,'Same final money frozen, no FX or metadata conflict');
+$changed['commission']='11';check(impactshop_dognet_points_event($changed,'26081')['manual_reason']==='dognet_final_changed','Changed final money manual');
+$changed=$row;$changed['id']='101';check(impactshop_dognet_points_event($changed,'26081')['manual_reason']==='dognet_binding_changed','Multiple raw records for one order manual');
+$changed=$row;$changed['rstatus']='D';check(impactshop_dognet_points_event($changed,'26081')['kind']==='adjustment','D is not proof of full refund');
+$changed=$row;$changed['data1']='sat1_'.str_repeat('b',43);check(impactshop_dognet_points_event($changed,'26081')['kind']==='adjustment','Token cannot be rebound');
+$wpdb->snapshots=[]; $wpdb->history=[]; $GLOBALS['correlation']=['provider_key'=>'dognet','partner_key'=>'actual-dognet-shop','redirected_at'=>'2026-10-28 08:00:00'];
+check(impactshop_dognet_points_event($row,'26081')['kind']==='award','First seen approved sale eligible');
+$changed=$row;$changed['commission']=10.0;check(impactshop_dognet_points_event($changed,'26081')['kind']==='adjustment','Decoded float never money authority');
+$changed=$row;$changed['total_cost']='0';check(impactshop_dognet_points_event($changed,'26081')['kind']==='adjustment','CPC approved commission not purchase');
+$changed['rstatus']='P';check(impactshop_dognet_points_event($changed,'26081')['kind']==='adjustment','Zero-sale pending cannot reserve an eligible purchase');
+$changed=$row;$changed['rstatus']='P';$changed['order_id']='';$badP=impactshop_dognet_points_event($changed,'26081');dognet_snapshot($badP);
+check(impactshop_dognet_points_event($row,'26081')['manual_reason']==='dognet_identity_changed','Manual unresolved P cannot escape into new valid order root');
+$wpdb->snapshots=[];$wpdb->history=[];
+$changed=$row;$changed['campaign_id']='897';check(impactshop_dognet_points_event($changed,'26081')['kind']==='adjustment','Campaign must match trusted intent merchant');
+$large=$row;$large['id']='990';$large['rstatus']='P';$large['order_id']=str_repeat('á',90);
+check(impactshop_dognet_points_event($large,'26081')['manual_reason']==='dognet_basis_too_large','Oversize Unicode pending basis explicit manual, no silent loss');
+$changed=$row;$changed['date_approved']='2026-10-28 09:00:00';check(impactshop_dognet_points_event($changed,'26081')['kind']==='adjustment','Finality cannot precede creation');
+check(impactshop_dognet_points_utc('2026-10-25 02:30:00')==='' && impactshop_dognet_points_utc('2026-03-29 02:30:00')==='','Ambiguous and nonexistent local DST times rejected');
+check(impactshop_dognet_points_utc('2026-10-28 10:00:00')==='2026-10-28 09:00:00','Provider account timezone converted');
+$wire='{"data":[{"id":100,"commission":0.073400,"note":"123 \\"commission\\":0.1"}],"meta":{"last_id":100}}';
+check(impactshop_dognet_points_decode($wire)['data'][0]['commission']==='0.073400','Wire decimals exact, quoted numeric content preserved');
+try { impactshop_dognet_points_decode('{bad'); check(false,'Invalid wire must throw'); } catch (JsonException $e) {}
+$days=['2026-10-24'=>true,'2026-10-25'=>true,'2026-10-26'=>true,'2026-10-27'=>true];
+try { impactshop_dognet_points_event($row,'26081',$days);check(false,'Fifth FX day must defer'); } catch(RuntimeException $e){check($e->getMessage()==='dognet_fx_budget','FX budget explicit');}
+$rows=[];for($i=100;$i<300;$i++){ $x=$row;$x['id']=(string)$i;$x['order_id']='order-'.$i;$x['rstatus']='P';$rows[]=$x; }
+$pages=[['data'=>$rows,'meta'=>['last_id'=>299]],['data'=>[]]];$requests=[];
+$result=impactshop_dognet_points_poll();
+check($result['success'] && $result['status']==='completed' && count($requests)===2,'Explicit ascending scan completes only on empty page');
+check($requests[0][2]['sort']==='id' && $requests[1][2]['last_id']===299 && $requests[0][3]===false && $requests[0][4]===true,'Documented cursor with exact no-refresh transport');
+$pages=[];for($i=0;$i<4;$i++){$x=$row;$x['id']=(string)(400+$i);$x['rstatus']='P';$pages[]=['data'=>[$x],'meta'=>['last_id'=>400+$i]];}
+$requests=[];$result=impactshop_dognet_points_poll();
+check($result['status']==='in_progress' && count($requests)===4 && $options['impactshop_dognet_points_scan']['last_id']===403,'Four request bound with durable resume');
+$pages=[['data'=>[]]];$requests=[];impactshop_dognet_points_poll();check($requests[0][2]['last_id']===403,'Next cron resumes instead of starving old pages');
+$pages=[['data'=>[$row,$row],'meta'=>['last_id'=>100]]];check(impactshop_dognet_points_poll()['error']==='dognet_pagination_stalled','Nonascending page explicit error');
+$pages=[new WP_Error('rate_limit','429')];$requests=[];
+check(impactshop_dognet_points_poll()['error']==='dognet_provider_request_failed' && count($requests)===1,'Provider failure no retry');
+$wpdb->owns=false;$pages=[['data'=>[]]];check(impactshop_dognet_points_poll()['error']==='dognet_lock_lost','Lost network-era lock cannot advance scan');$wpdb->owns=true;
+$options['impactshop_dognet_points_scan_from']='';$requests=[];check(impactshop_dognet_points_poll()['status']==='disabled' && !$requests,'Own scan switch disables without HTTP');
 // The real CJ poll must revisit locking dates and retain a partially completed page.
 function sharity_points_impactshop_cutover() { return get_option('sharity_points_impactshop_cutover_utc'); }
 $graphql_requests = []; $graphql_pages = [];
