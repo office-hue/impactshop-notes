@@ -1,3 +1,13 @@
+## 2026-10-29 — valós UI-handoff hiba célzott javítása
+
+Meglévő két védett fájl: impactshop-boot.php és impactshop-netflix-shortcodes.php.
+Az egyszeri saját-origin folytatás nem ad ownergrantot; Strictcookie és meglévő
+tulajdonosi ellenőrzés marad. A CJredirect meglévő allowlistje nem bővül,
+trackinghiány kontrollált hiba. Csak a két meglévő hash frissül; guardkód/config/CI
+nem változik. Két független tervaudit korrekcióval, implementációreview és célzott
+attributionfixture sikeres. Koherencia/kockázat/UI/rollback a meglévő protected recordban.
+Javítás még nem merge-elt/telepített, valódi cookiehop UI-PASS nincs.
+
 ## 2026-10-29 — saját Impact Shop osztály, meglévő shared port megőrzése
 
 A már védett pont/szint/decay fájlok byte-azonos éles/kanonikus másolatot

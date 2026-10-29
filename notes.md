@@ -1,3 +1,21 @@
+## 2026-10-29 — Impact Shop éles UI-vizsgálat és szűk handoff-javítás
+
+#238/80d6eb7f stagingen és productionön telepítve/migrálva; csak CJ aktív,
+UTC cutover15:37:39, legacy0. Két rendes posting/locking poll előrelépett,
+új pontesemény0. Saját meglévő profil5891/Bronze és öt history sor DBvel egyezik.
+Normál CJcoupon→Fillout→NGO út adminloginra futott: cached click_url hiány,
+affiliate helyett destination fallback. Strict ownercookie a külső visszatérés
+első kérésén nem használható. Egy pontos hiteles CJlink-read0rekord, nincs retry.
+Saját fix/impactshop-points-handoff-20261029, alap80d6eb7f: egyszeri saját-origin
+landing, változatlan ownercheck/Strictcookie, sikertelenségnél kontrollált profilhiba;
+csak meglévő allowlistbe illő CJtracking, nincs directmerchantfallback;
+elérhetetlen CJkupon rejtve. Két egymást követő független tervaudit javításokkal,
+majd független implementációreview és attributionfixture PASS. Két runtimefájl,
+nincs séma/gazdasági/sharedport/identitygrant/release-rendszer változás.
+Javítás még nem merge-elt/telepített; valódi cookiehop és20 természetes esemény
+elfogadása nyitott. Exactfile backup/CAS, két célzott cacheszint érvénytelenítése,
+staging→production UI-readback; cutover nem változik. Részletek: meglévő protected record.
+
 ## 2026-10-29 — Impact Shop elfogadott MNB-szabály, célzott folytatás
 
 Saját worktree/ág: `feat/impactshop-points-mnb-20261029`, alap a merge-elt

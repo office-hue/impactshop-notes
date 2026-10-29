@@ -110,3 +110,45 @@ Bástya: az új manager a meglévő inventory/hashlistában. UI checklist fent,
 kiegészítésként a meglévő Offerwall jutalom megjelenését is ellenőrizni kell.
 Rollback: lane off, esemény marad, guarded backup/CAS; az éles shared fájlokat
 nem írjuk felül. Nincs új séma vagy release-rendszer, nincs új deploy/aktiválás.
+
+
+## Éles UI alapján szűk handoff follow-up — 80d6eb7f után
+
+Előállapot: #238/80d6eb7f staging/production telepítve, schema/mode/hash és HTTP
+visszaolvasva, CJ aktív; két rendes poll előrelépett, új esemény0. A meglévő saját
+profil5891/Bronze és öt history sor DBazonos. A CJcoupon→Fillout→NGO próba
+WPadminloginra futott; nincs intent/bind/pontváltozás. Cached click_url üres,
+destination fallbackot a meglévő safe redirect adminra cserélte. Egy pontos hiteles
+CJlink-read0rekord; nem ismételtük. Az ownercookieStrict külső első visszatérése
+nem azonos a hiteles saját-origin kéréssel; valódi javított UI-próba még nyitott.
+
+Koherencia/funkciók: meglévő boot go/go-deal→SAT1 prepare→bind/redirect;
+CJcachedlinkpicker→generátor→allowlist; Netflix CJcouponlista két cacheszinttel.
+Csak két runtimefájl és meglévő attributionfixture változik. A saját-origin200
+landing fix belső URLt és nem-authority loopmarkert használ, JSON_HEX kódolással,
+no-cache/no-referrerrel. Ownercsak a meglévő ellenőrzésből; nincs új grant/cookiepolicy.
+Második ownerhiány/present-invalid controlled profilhiba, nem néma legacypontút.
+Anonim/no-producer és meglévő Sharitysource út megmarad. Csak működő CJtracking
+választható; végső URL existing wp_validate_redirect(emptyfallback), allowlist nem bővül.
+Unavailablelink már bind előtt hibázik; az ilyen advertiser kuponja nem jelenik meg.
+
+Kockázat: hoploop, payloadmódosulás, rawpseudo jogosultsággá emelése, adminfallback,
+stale HTMLben elérhetetlen kupon. Két egymást követő független tervaudit között
+átvezetve: failedowner controlledhiba; készURL validate; két cacheszint invalidálása.
+Független implementációreview újP1/P2nélkül, attributionfixture különreviewerfutásban
+isPASS. A fixture tényleges exit-bearing handlert izolált childPHPban futtat;
+valódi cookieviselkedést, providert, SQLt vagy telepítést nem szimulálPASSnak.
+Money/state/schema/sharedport változatlan, korábbi118SQL eredmény újrahasználva.
+
+Kiadás/rollback: meglévő PR/requiredCI/quietwindowmerge/exactfilebackupCAS út;
+nincs DDL vagy új teljes karbantartás. Staging majd production. Invalidate csak
+impactshop_cj_coupons_v1 és a tényleges shortcodeparaméterből számolt érintett
+impactshop_fragment_ kulcs; nincs blanketcacheflush. Két saját fájl pontos korábbi
+SHAja rollback, consumer/captureoff szükség esetén, legacy marad0; nincs DBrestore.
+Javítás jelenleg forráskész, nem merge-elt/telepített/élőben elfogadott.
+
+Kézi UI: /impactshop/→csak elérhető CJkupon→NGOválasztás→egyszeri saját-origin
+folytatás→tényleges affiliate/merchant cél, opaqueSAT1 és azonosNGO a tárolt intentben;
+pont5891és history kattintástól változatlan. Nincs pénzügyi vásárlás. /profil/ szint,
+pont/history és LegacyPool egyezzen; hiányzóowner kapjon profilhibát, ne adminlogint.
+Az eredeti20természetes eseményes pénzügyi elfogadás és további providercontract nyitott.

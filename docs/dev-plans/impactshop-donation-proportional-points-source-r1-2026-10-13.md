@@ -1,7 +1,7 @@
 # Impact Shop egyszerűsített pontozás — implementáció és kiadás
 
 Dátum: 2026-10-29. Alap: d953e525; donor: 369e227d, csak célzott újrahasználat.
-Állapot: #236 és #237/b9e24fb7 merge-elt, staging telepítve/migrálva és off. Az éles közös Offerwall pont/szint/decay port megőrzéséhez saját kompatibilitási follow-up készül, 118 SQL-check sikeres; production változatlan, aktiválás nincs.
+Állapot: #238/80d6eb7f merge-elt, staging/production telepítve és migrálva, CJ aktív UTC15:37:39-től; rendes posting/locking poll sikeres, új pontesemény0. Két valós normál-UI-hibára szűk handoff/tracking follow-up forráskész és függetlenül review-zott, még nem merge-elt/telepített; élő elfogadás nyitott.
 
 ## Elfogadott működés
 
