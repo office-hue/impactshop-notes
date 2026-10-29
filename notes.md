@@ -1,3 +1,17 @@
+## 2026-10-29 — JYSK teljes kérdésjóváhagyás és új app éles
+
+Arnold a teljes október29-i105kérdéses PDF JYSK-jóváhagyását visszaigazolta.
+Üres/inaktív Turso V1→V2 policy-adopt és backup/restore után a saját WP-profil
+előhash/privátbackup/atomikusCAS/readback mellett új17ab28eb… policyt kapott.
+Az app mergea17d27b0 hozzáadódott a producerlistához, d90521de megmaradt.
+Profil SHAe027030d…/0600, újprocess ready; reward/transaction továbbra false.
+Nem volt új WP-kódkiadás a lentebbi bridge-telepítésen túl. Az app egyetlen
+új buildje/promote-ja CAH18wn3… éles;63fájl/908650byte és Node22/120s igazolt.
+Valódi tulajdonosi kapcsolódás és signed public result pending-review működik;
+nincs részvétel/pont/sorsolás/üzenet. Intake V22/open/111, game V2/inactive/000.
+Végleges civil lista november6 után; játékkezdés november9.12:00 Budapest.
+Közös web/Card/TLS változatlan, csendablak nincs. Ez helyi kiadási checkpoint.
+
 ## 2026-10-29 — JYSK completion bridge telepítve, jutalmazás zárt
 
 #234 merge16690883f169, tree5c913dda; a pontos commit saját tiszta worktree-ben.

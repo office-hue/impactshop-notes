@@ -1,3 +1,16 @@
+## 2026-10-29 — JYSK approved questions deployed; rewards still off
+
+Full105question partner approval confirmed by Arnold. Closed/empty Turso policy
+adoption V1→V2 and own private WP profile CAS/backup/readback verified;
+new policy17ab28eb…, profile SHAe027030d…/0600. Producer a17d27b0 added,
+old d90521de retained. Private profile ready, rewards/transaction false.
+App mergea17d27b0 deployed once as dpl_CAH18wn3ipUmcbrQ9ovuKMTnbkrW,
+same-ID promote,63files/908650bytes/Node22/maintenance120s verified.
+Real owner login and pending-review results verified, no participation/points.
+Intake open V22/111; game inactive V2/000/roster0/participants0.
+Roster after Nov6; no point activity before Nov9 noon Budapest.
+No additional WP code deploy, shared Card/web/TLS change or quiet window.
+
 ## 2026-10-29 — JYSK completion bridge installed, rewards remain off
 
 Exact source merge16690883f169/tree5c913dda. Guarded single-file release

@@ -1,5 +1,38 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-29 — jóváhagyott kérdésbank, app éles, jutalmazás zárva
+
+Ez felülírja a lentebbi app/approval-pending részállapotot. A teljes október29-i
+105kérdéses PDF jóváhagyását Arnold visszaigazolta. Az üres/inaktív game_config
+policy-adoptja V1→V2; saját WP-profil változása kizárólag POLICY_HASH és az új
+PRODUCER_SHAS bejegyzés. Régi producer megmaradt, kulcsok/NGO_IDS/kapuk változatlanok.
+Előprofil SHAebbbf39f50fa7d8817a8000cc7fd431449d0b0c98a2baf130c6dbc508fefebe3;
+új SHAe027030d4dff5d6f222271d92fbfbace90dceba5098118fada6142c25f1b4994.
+Régi profil és mentett intent a saját privát
+`/home/sharityh/jysk-game/completion-20261029-16690883/` könyvtárban0600;
+friss fájlhash-CAS, atomikus rename és külön process readback igazolt.
+Aktuális policy `17ab28ebd977950bcfe234e7c728fe9fa730a06035483fd200aff11c2e9a228b`;
+új app source `a17d27b0d6b4c07755d300ce415abc29364c99b0`, korábbi d90521de… megtartva.
+
+App deployment `dpl_CAH18wn3ipUmcbrQ9ovuKMTnbkrW`, egy staged build és same-ID
+promote; mindkét alias, exactcron,63fájl/908650byte szolgáltatói sourcebyte,
+Node22.x és120s maintenance Resources-readback igazolt. Nyilvános result
+pending-review; session nélkül private messages401; valódi tulajdonosi
+profilkapcsolódás sikeres. Nincs elfogadott részvétel, pont, szavazat vagy sorsolás.
+Intake V22/open/111/hold1; game V2/inactive/000, minden részvételi tábla üres.
+Friss titkosított backupok és helyi hálózatmentes22táblás restore igazolt.
+Az új app természetes maintenance cronja10:30:13Z/200, DB lastSuccess10:30:14Z;
+lease/backlog nincs, kézi normál maintenance-hívás nem történt.
+
+Bridge-kód továbbra92af8b62…/0444, nincs második WP-runtime-kiadás. Rollbackhez
+a profil csak saját változatlan utóhashből, továbbra üres/zárt játék mellett
+állítható vissza, régi DB-policyval és az app8i57 elődjével együtt. Új részvétel
+után nincs policyreset; publikált nyeremények olvasása mindig megőrzendő.
+Jutalmazás/transaction false marad. Végleges civil lista november6 után,
+aktiválási readiness/arm külön, valódi pontpróba november9.12:00 előtt tilos.
+Nincs shared web/Card/identity/TLS változás vagy lefoglalt main-ablak.
+
+
 ## 2026-10-29 — completion bridge tényleges kiadása
 
 Ez az operációs checkpoint felülírja a lentebbi source-only leírást, de nem
