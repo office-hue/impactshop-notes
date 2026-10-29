@@ -195,7 +195,7 @@ check(Bridge::signature($fixture['timestamp'], $fixture['nonce'], $fixture['meth
 check(Bridge::payloadHash(Bridge::payload(json_decode($fixture['rawRequest'], true))) === $fixture['payloadHash'], 'cross-language canonical payload fixture');
 check(hash_hmac('sha256', "response\n" . $fixture['nonce'] . "\n" . $fixture['status'] . "\n" . hash('sha256', $fixture['rawResponse']), hex2bin($fixture['serviceKeyHex'])) === $fixture['responseSignature'], 'cross-language response fixture');
 Bridge::register();
-check(count($GLOBALS['routes']) === 8, 'isolated endpoint inventory');
+check(count($GLOBALS['routes']) === 9 && in_array('jysk-game/v1/results', $GLOBALS['routes'], true), 'isolated endpoint inventory includes signed results');
 $db = freshDb();
 $r = Bridge::service(request('award', payload()));
 check($r->data['state'] === 'policy_blocked' && Sharity_Points_Manager::$calls === 0, 'transaction readiness defaults closed');

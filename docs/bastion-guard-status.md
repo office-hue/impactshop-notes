@@ -1,3 +1,16 @@
+## 2026-10-28 — saját JYSK eredmény/nyeremény forrásreview
+
+Jóváhagyott egyfájlos bridge-bővítés, meglévő védett inventoryn belül.
+Nincs új protected út vagy közös guardmodell. Előtte koherencia/kockázat/
+funkciólista a notes és JYSK runbook elején. Két konkrét P2 javítva és külön
+delta-review-val visszaellenőrizve: globális completion-receipt egyediség és
+busy ACK téves sikere. Az érintett határokon nincs nyitott P0/P1/P2.
+200 bridge +14 privát profil +19 pure eredmény +172 valódi izolált MariaDB
+ellenőrzés PASS; nem production acceptance. UI checklist, backup/CAS/0444
+és olvasást megőrző rollback a bridge runbookban. Csak a saját bridge digest
+és a manifest checksum frissül; idegen fájlok hash-e változatlan.
+Új merge/deploy/aktiválás nincs.
+
 ## 2026-10-28 — Signed profile return: bounded source correction
 
 Only identity-panel PHP/JS and their source hashes/checksum change under the
