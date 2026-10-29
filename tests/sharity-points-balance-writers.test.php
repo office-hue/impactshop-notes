@@ -86,21 +86,10 @@ final class WriterTestWpdb {
         return 1;
     }
 }
-require_once __DIR__ . '/../wp-content/mu-plugins/sharity-decay-manager.php';
 require_once __DIR__ . '/../wp-content/mu-plugins/sharity-vacation-manager.php';
 function check($condition, $message): void { if (!$condition) { throw new RuntimeException($message); } }
-$decay = new Sharity_Decay_Manager();
 $vacation = new Sharity_Vacation_Manager();
 foreach (['user', 'pseudo'] as $subject) {
-    $wpdb = new WriterTestWpdb();
-    $wpdb->lockedBalance = 1800; // A concurrent award completed before this locked read.
-    $actual = $subject === 'user' ? $decay->calculate_and_apply_decay(12) : $decay->calculate_and_apply_decay_for_pseudo('abc123def456');
-    check($actual === 27 && $wpdb->row->points_total === 1773, 'decay uses latest locked balance and unchanged rate');
-    check(count($wpdb->transactions) === 1 && count($wpdb->logs) === 1, 'decay history and log committed together');
-    check($wpdb->reconnect_retries === 5, 'decay restores reconnect setting');
-    $wpdb->lockedBalance = null;
-    $again = $subject === 'user' ? $decay->calculate_and_apply_decay(12) : $decay->calculate_and_apply_decay_for_pseudo('abc123def456');
-    check($again === 0 && $wpdb->row->points_total === 1773, 'daily decay is not repeated');
     $wpdb = new WriterTestWpdb();
     $wpdb->lockedBalance = 900;
     $result = $subject === 'user' ? $vacation->activate_vacation(12, 7) : $vacation->activate_vacation_for_pseudo('abc123def456', 7);
@@ -113,25 +102,20 @@ foreach (['user', 'pseudo'] as $subject) {
 }
 foreach (['update', 'history', 'commit'] as $failure) {
     $wpdb = new WriterTestWpdb(); $wpdb->fail = $failure;
-    check($decay->calculate_and_apply_decay(12) === 0, 'failed decay is not success');
-    check($wpdb->row->points_total === 1000 && count($wpdb->transactions) === 0, 'failed decay rolls back all changes');
-    $wpdb = new WriterTestWpdb(); $wpdb->fail = $failure;
     check($vacation->activate_vacation(12, 7)['success'] === false, 'failed vacation is not success');
     check($wpdb->row->points_total === 1000 && $wpdb->row->freeze_until === null, 'failed vacation restores balance and freeze');
 }
-foreach (['decay', 'vacation'] as $writer) {
+foreach (['vacation'] as $writer) {
     $wpdb = new WriterTestWpdb(); $wpdb->fail = 'connection'; $testActions = [];
-    $result = $writer === 'decay' ? $decay->calculate_and_apply_decay(12) : $vacation->activate_vacation(12, 7)['success'];
-    check($result === ($writer === 'decay' ? 0 : false), 'changed connection cannot report commit success');
+    $result = $vacation->activate_vacation(12, 7)['success'];
+    check($result === false, 'changed connection cannot report commit success');
     check(count(array_filter($testActions, fn($a) => in_array($a[0], ['sharity_points_decayed', 'sharity_vacation_activated'], true))) === 0, 'unknown commit emits no success action');
     check($wpdb->reconnect_retries === 5, 'unknown commit restores setting');
 }
-$wpdb = new WriterTestWpdb(); $wpdb->row->points_total = 101;
-check($decay->calculate_and_apply_decay(12) === 1 && $wpdb->row->points_total === 100, 'existing floor preserved');
 $wpdb = new WriterTestWpdb(); $wpdb->row->points_total = 499;
 check($vacation->activate_vacation(12, 7)['success'] === false && $wpdb->row->points_total === 499, 'insufficient vacation balance unchanged');
 $wpdb = new WriterTestWpdb();
 check($vacation->activate_vacation(12, 99)['success'] === false, 'duration bound retained');
 $wpdb->row->freeze_until = gmdate('Y-m-d H:i:s', time() + 86400);
 check(sharity_points_block_when_frozen(true, 12, 'purchase') === false, 'existing freeze behavior is not broadened');
-echo "sharity shared balance writer transactions: PASS\n";
+echo "sharity vacation writer transactions: PASS (native decay is covered by impactshop-points-mysql.integration.php)\n";

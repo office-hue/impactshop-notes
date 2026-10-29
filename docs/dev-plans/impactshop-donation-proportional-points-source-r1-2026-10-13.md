@@ -1,7 +1,7 @@
 # Impact Shop egyszerűsített pontozás — implementáció és kiadás
 
 Dátum: 2026-10-29. Alap: d953e525; donor: 369e227d, csak célzott újrahasználat.
-Állapot: a #236/f2210d6c core merge-elt és stagingen telepítve/migrálva, új feldolgozás off; production nincs telepítve. Az elfogadott MNB-szabály és CJ-befejezés saját follow-up ágon, célzottan tesztelve/review-zva, még nem publikált.
+Állapot: #236 és #237/b9e24fb7 merge-elt, staging telepítve/migrálva és off. Az éles közös Offerwall pont/szint/decay port megőrzéséhez saját kompatibilitási follow-up készül, 118 SQL-check sikeres; production változatlan, aktiválás nincs.
 
 ## Elfogadott működés
 
@@ -69,3 +69,45 @@ Elsődleges források: [CJ schema](https://docs.cj.com/docs/pub-commissiondetail
 Tényleges follow-up ellenőrzés: új MNB és meglévő money/provider/state/Dognettransport fixturek sikeresek; saját MariaDB + az éles wpdb pontos forrása:82 SQL-check sikeres, benne a már beérkezett komplex korrekcióval megelőzött queued award. A candidate money-kód a we040 tényleges PHP8.3 környezetéből hiteles MNB HTTPS GET-tel329.93 HUF/USD jegyzést és10USD jutalékból1650pontot adott; ez kizárólag írásmentes számításpróba, nem telepítés vagy pontjóváírás. Független review egy CJ kill-switch P2-t talált; minimális javítás után a valódi régi syncet is futtató fixture független recheckje sikeres.
 
 A már telepített f221 staging és a follow-up forrás külön állapot. Production, aktiválás és természetes élő elfogadás továbbra nyitott.
+
+## 2026-10-29 — közös éles pontport megőrzése
+
+A #237 `b9e24fb7` merge-elt; mind a 20 runtime fájl stagingen telepítve,
+PHP8.3 lint és négy HTTP smoke sikeres, maintenance eltávolítva, új és régi
+pontfeldolgozás kikapcsolva. Production nem módosult, aktiválás nincs.
+
+A production három közös modulja (`sharity-points-manager.php`,
+`sharity-level-manager.php`, `sharity-decay-manager.php`) byte-azonos az
+`office-hue/ai-agent@79aa1e7d890d9b1dd47458db898f95c8421847e8/server-patches/`
+kanonikus forrásával. A Notes ezeket változtatás nélkül követi: az éles
+kiadásnál nincs szükség cseréjükre, csak az azonosság visszaolvasására.
+Az Impact Shop már meglévő tranzakciós műveletei önálló
+`Sharity_Impactshop_Points_Manager` osztályba kerülnek; a shared Offerwall-port
+és a decay szabálya nem módosul. Az explicit level `success=false` rollbacket
+vált ki. Az első vásárlás/shop/referral egyszeri jogosultságát a saját
+reconciliation célpont+típus+összeg+üzleti dedupe alapján ismeri fel; az új
+vásárlási root metaadata nem jelent új bónuszt. Részleges referral másik rootból
+befejezhető. A közös port szigorú tartalom-deduplikációja megmarad.
+
+Ellenőrzés: az éles wpdb pontos forrásával és saját MariaDB10.11.19-cel
+118 valódi SQL-check sikeres; új esetek: két root/same shop, replay, hibás
+bónuszösszeg, részleges referral, triggeres level-hiba rollback, JYSK
+award/replay/conflict, valódi COMMIT utáni elveszett ACK tartós readbackje,
+decay napi dedupe és pontpadló. A SQL fixture időfüggvénye most helyes
+integer timestampet ad: a korábbi refund/decay tesztben a decay nem futott,
+ezért annak korábbi eredménye nem bizonyított tényleges átfedő decayt.
+A mostani teszt a tényleges levonást is ellenőrzi. A régi canonical wpdb-fake
+belépő ezt a valódi SQL-suite-ot futtatja, hiányzó sandbox explicit hiba.
+Vacation-fixture, admin/attribution/state/provider, 200 JYSK bridge és
+19 eredményprotokoll ellenőrzés sikeres. A régi teljes JYSK SQL-suite
+wpdb-query-hookos hibainjektálása nem igazolja a native portot; arra nem
+állítunk friss PASS-t, a játék/eredmény/nyeremény tesztjeit megőrizzük.
+Független delta-review referral P2 javítva és visszaellenőrizve.
+
+Nincs új séma, queue, ütemező, release-rendszer vagy gazdasági szabály.
+Új fájl kizárólag a már meglévő üzleti kód kiemelése a konkrét éles ütközés
+elkerülésére; bekerül a meglévő Bástya inventory/hashlistába.
+Rollback: Impact Shop lane off, események megőrzése, guarded exact-file
+backup/CAS; a közös Offerwall-fájlok éles felülírása nem része a kiadásnak.
+Production writer-pause/mentés, partner replay és Dognet-contract külön
+ellenőrzendő a szükséges lépésnél. Új forrás még nem merge-elt/telepített.

@@ -1,3 +1,13 @@
+## 2026-10-29 — Impact Shop kompatibilitási follow-up, forrás tesztelve
+
+#237/b9e24fb7 merge-elt és stagingen telepítve; minden új/régi feldolgozó off,
+HTTP smoke sikeres, production változatlan. A tényleges éles közös
+Offerwall pont/szint/decay portot byte-azonosan megőrző javítás saját ágon:
+Impact Shop osztálykiemelés, level-hiba rollback, egyszeri bónusz/referral
+folytatás. 118 valódi SQL-check és célzott regressziók sikeresek;
+referral P2 javítva, függetlenül recheckelve. Új javítás még nem merge-elt,
+telepített vagy aktivált. Bizonyíték/korlát: meglévő termékterv utolsó szakasza.
+
 ## 2026-10-29 — Impact Shop MNB/CJ follow-up, source tested
 
 Core #236/f2210d6c merged;20 runtime files staging installed/migrated,

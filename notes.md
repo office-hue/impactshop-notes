@@ -8283,3 +8283,19 @@ Bástya diagnózis: a közvetlen check először hiányzó invocation rollback/s
 ## 2026-10-29 — Impact Shop #236 célzott main-integráció
 
 Jóváhagyott rövid csendablakban a távoli és helyi main egyező 16690883 alapját integráltuk a saját d776963b candidate-be. Két ütközés: guard hashjegyzék és checksum. A main új JYSK digestje és a saját pontozási/guard digestek együtt megmaradnak; runtime-átfedés nincs. A JYSK forrás és tesztek byteazonosak a rögzített mainnel, a saját runtime byteazonos a korábban tesztelt candidate-del. Ez helyi integráció; új célzott ellenőrzés, push/CI/merge és deploy/aktiválás külön következik, ablakon kívül.
+
+
+### 2026-10-29 — éles közös pontport megőrzése, folyamatban
+
+Saját `fix/impactshop-live-points-compat-20261029`, alap a merge-elt #237 `b9e24fb7`. Staging: mind a 20 runtime fájl az alapnak megfelelő, HTTP smoke sikeres, pontfeldolgozás kikapcsolva; production nem módosult. A production három közös pont/szint/decay modulja byte-azonos az `office-hue/ai-agent@79aa1e7d890d9b1dd47458db898f95c8421847e8/server-patches/` kanonikus forrásával. Ezeket változtatás nélkül megőrizzük, a már review-zott Impact Shop műveleteket saját osztályba mozgatjuk. Valós kockázat: közös Offerwall-port elvesztése, szintfrissítés false eredménye, második vásárlás egyszeri bónuszának eltérő root-metaadata. Célzott SQL/bonus/rollback ellenőrzés következik; új gazdasági szabály, séma és release-rendszer nem készül.
+
+## 2026-10-29 — kompatibilitási javítás ellenőrizve
+
+A közös Offerwall-port változatlan, saját osztálykiemelés és egyszeri
+bónusz/referral kompatibilitás. 118 valódi SQL-check, admin/attribution/
+state/provider/vacation és 200+19 JYSK fixture sikeres. A független review
+referral P2-je javítva és recheckelve. A SQL fixture integer timestamp hibája
+javult: a mostani refund/decay teszt tényleges levonást is követel; korábbi
+átfedési PASS nem használható újra. Részletes bizonyíték és telepítési
+korlát a meglévő termékterv utolsó szakaszában. Új forrás még nem merge-elt;
+staging b9 telepítve/off, production változatlan.

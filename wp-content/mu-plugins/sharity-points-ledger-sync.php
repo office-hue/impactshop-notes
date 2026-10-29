@@ -242,7 +242,7 @@ function sharity_points_store_pending_ledger_ids(array $ids): void
     update_option(SHARITY_POINTS_LEDGER_PENDING_OPTION, $ids, false);
 }
 
-function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array $metadata): bool
+function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array $metadata, bool $impactshop = false): bool
 {
     global $wpdb;
 
@@ -260,6 +260,12 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
     }
 
     $manager = new Sharity_Points_Manager();
+    $award = static function (string|int $subject, int $points, string $type, string $source, array $metadata, string $key) use ($manager, $impactshop): array {
+        if ($impactshop) { return sharity_points_impactshop_bonus_once($subject, $points, $type, $source, $metadata, $key); }
+        return is_string($subject)
+            ? $manager->award_points_for_pseudo($subject, $points, $type, $source, $metadata, $key)
+            : $manager->award_points($subject, $points, $type, $source, $metadata, $key);
+    };
     $referrer_points = (int) apply_filters('sharity_referral_points', 200);
     $referred_points = (int) apply_filters('sharity_referral_bonus_points', 50);
     $referrer_tx = null;
@@ -270,7 +276,7 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
     $referrer_user = isset($row['referrer_user_id']) ? (int) $row['referrer_user_id'] : 0;
 
     if ($referrer_pseudo !== '') {
-        $result = $manager->award_points_for_pseudo(
+        $result = $award(
             $referrer_pseudo,
             $referrer_points,
             'referral',
@@ -281,7 +287,7 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
         $referrer_tx = $result['transaction_id'] ?? null;
         $referrer_ok = !empty($result['success']);
     } elseif ($referrer_user > 0) {
-        $result = $manager->award_points(
+        $result = $award(
             $referrer_user,
             $referrer_points,
             'referral',
@@ -293,7 +299,7 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
         $referrer_ok = !empty($result['success']);
     }
 
-    $result = $manager->award_points_for_pseudo(
+    $result = $award(
         $pseudo_id,
         $referred_points,
         'referral_bonus',
@@ -315,6 +321,27 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
         ['id' => (int) $row['id']]
     );
     return $updated !== false && $wpdb->last_error === '';
+}
+
+/** Existing one-time bonus entitlement, independent of the current purchase root.
+ * A partial referral payout can resume on another root without weakening shared port dedupe.
+ */
+function sharity_points_impactshop_bonus_once(string|int $subject, int $points, string $type, string $source, array $metadata, string $key): array
+{
+    global $wpdb;
+    $pseudo = is_string($subject);
+    $identity = $pseudo ? 'pseudo_id' : 'user_id';
+    $other = $pseudo ? 'user_id' : 'pseudo_id';
+    $row = sharity_points_impactshop_sql($wpdb->get_row($wpdb->prepare(
+        "SELECT id,pseudo_id,user_id,points,type FROM {$wpdb->prefix}point_transactions WHERE {$identity}=%s AND dedupe_key=%s LIMIT 1", $subject, $key
+    ), ARRAY_A));
+    if ($row) {
+        return ['success' => (string) $row[$identity] === (string) $subject && $row[$other] === null
+            && (int) $row['points'] === $points && $row['type'] === $type, 'transaction_id' => (int) $row['id']];
+    }
+    $manager = new Sharity_Points_Manager();
+    return $pseudo ? $manager->award_points_for_pseudo($subject, $points, $type, $source, $metadata, $key)
+        : $manager->award_points($subject, $points, $type, $source, $metadata, $key);
 }
 
 function sharity_points_decode_meta($raw): array
@@ -456,7 +483,7 @@ function sharity_points_impactshop_capture(array $input): array
         return $prepared;
     }
     $event = $prepared['event'];
-    return (new Sharity_Points_Manager())->impactshop_transaction(function () use ($event): array {
+    return (new Sharity_Impactshop_Points_Manager())->impactshop_transaction(function () use ($event): array {
         global $wpdb;
         $now = gmdate('Y-m-d H:i:s');
         if ($event['root_id'] !== null) {
@@ -566,7 +593,7 @@ function sharity_points_impactshop_consume(): void
              WHERE id<=%d AND status IN ('queued','retry') AND (next_retry_at IS NULL OR next_retry_at<=UTC_TIMESTAMP())
              ORDER BY id LIMIT 200", $run['high_water']
         )));
-        $manager = new Sharity_Points_Manager();
+        $manager = new Sharity_Impactshop_Points_Manager();
         foreach ($rows as $id) {
             if (!$ownsLock()) { return; }
             $result = $manager->apply_impactshop_event((int) $id, $run['id']);

@@ -1,3 +1,13 @@
+## 2026-10-29 — saját Impact Shop osztály, meglévő shared port megőrzése
+
+A már védett pont/szint/decay fájlok byte-azonos éles/kanonikus másolatot
+követnek, az Offerwall-port nem változik. A meglévő Impact Shop műveletek
+új `sharity-points-impactshop-manager.php` fájlja ugyanabba a protected
+config/hashlistába kerül; külső checksumok frissülnek. Guard-kód/model/CI
+nem módosul. Helyi és CI ugyanazt a meglévő inventoryt használja.
+Koherencia/kockázat/funkciólista/UI/rollback: a 2026-10-29 protected record.
+118 tényleges SQL-check és célzott regressziók sikeresek; merge/deploy nincs.
+
 ## 2026-10-28 — saját JYSK eredmény/nyeremény forrásreview
 
 Jóváhagyott egyfájlos bridge-bővítés, meglévő védett inventoryn belül.

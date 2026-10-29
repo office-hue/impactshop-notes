@@ -49,7 +49,7 @@ function apply_filters($name, $value, ...$rest) {
 function wp_json_encode($value, $flags = 0) { return json_encode($value, $flags); }
 function sanitize_text_field($value) { return strip_tags($value); }
 function wp_strip_all_tags($value) { return strip_tags($value); }
-function current_time($format) { return gmdate('Y-m-d H:i:s'); }
+function current_time($format) { return $format === 'timestamp' ? time() : gmdate($format === 'mysql' ? 'Y-m-d H:i:s' : $format); }
 function wp_load_translations_early(): void {}
 function __($text) { return $text; }
 function _doing_it_wrong($function, $message, $version): void { throw new RuntimeException($function . ': ' . strip_tags($message)); }
@@ -68,6 +68,7 @@ function do_action($name, ...$args): void {
 require $wpdbFile;
 require __DIR__ . '/../wp-content/mu-plugins/sharity-level-manager.php';
 require __DIR__ . '/../wp-content/mu-plugins/sharity-points-manager.php';
+require __DIR__ . '/../wp-content/mu-plugins/sharity-points-impactshop-manager.php';
 function connection(): wpdb {
     global $cfg;
     $db = new wpdb($cfg['user'], $cfg['password'], $cfg['database'], '127.0.0.1:' . $cfg['port']);
@@ -95,14 +96,15 @@ require __DIR__ . '/../wp-content/mu-plugins/sharity-points-impactshop-attributi
 require __DIR__ . '/../wp-content/mu-plugins/sharity-points-ledger-sync.php';
 require __DIR__ . '/../wp-content/mu-plugins/sharity-decay-manager.php';
 require __DIR__ . '/../wp-content/mu-plugins/sharity-vacation-manager.php';
+require __DIR__ . '/../wp-content/mu-plugins/sharity-points-cron.php';
 $wpdb = connection();
 $source = file_get_contents(__DIR__ . '/../wp-content/mu-plugins/sharity-points.php');
 eval(substr($source, strpos($source, 'function sharity_points_migrate_impactshop(')));
 $existing = $wpdb->get_col('SHOW TABLES');
-$owned=['user_points','point_transactions','level_history','decay_logs','impactshop_point_settlements','impactshop_point_changes','impactshop_affiliate_intents'];
+$owned=['user_points','point_transactions','level_history','decay_logs','user_referrals','impactshop_point_settlements','impactshop_point_changes','impactshop_affiliate_intents'];
 check(array_diff($existing,array_map(fn($t)=>'impactshop_test_'.$t,$owned))===[], 'own database contains no foreign tables');
 foreach($owned as $t){sql($wpdb,'DROP TABLE IF EXISTS impactshop_test_'.$t);}
-foreach (['user_points','point_transactions','level_history','decay_logs'] as $table) {
+foreach (['user_points','point_transactions','level_history','decay_logs','user_referrals'] as $table) {
     check(preg_match('/\$tables\[\] = "(CREATE TABLE \{\$wpdb->prefix\}' . $table . '.*?) \{\$charset\};";/s', $source, $m) === 1, 'extract exact schema ' . $table);
     sql($wpdb, str_replace('{$wpdb->prefix}', 'impactshop_test_', $m[1]) . ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 }
@@ -111,7 +113,7 @@ check(!isset($options['sharity_points_impactshop_migration_lock']), 'preflight d
 check(sharity_points_migrate_impactshop()['success'], 'explicit additive migration');
 check(sharity_points_migrate_impactshop()['success'], 'migration idempotent');
 sql($wpdb, "CREATE TABLE impactshop_test_impactshop_affiliate_intents(provider_token_hash char(64) PRIMARY KEY, subject_ref varchar(80),provider_key varchar(16),partner_key varchar(128),status varchar(24),delete_after datetime) ENGINE=InnoDB");
-$manager = new Sharity_Points_Manager();
+$manager = new Sharity_Impactshop_Points_Manager();
 $pseudo='abcdef123456';
 check($manager && sharity_points_impactshop_bind_subject($pseudo)['success'], 'server subject bound');
 $token='sat1_' . str_repeat('a',43);
@@ -177,7 +179,7 @@ $parallel=captured(input('order6','parallel','award','100'));
 $wpdb->close();$children=[];
 for($i=0;$i<2;$i++){
     $pid=pcntl_fork();check($pid!==-1,'fork worker');
-    if($pid===0){$wpdb=connection();$r=(new Sharity_Points_Manager())->apply_impactshop_event($parallel,$run);exit($r['success']?0:1);}
+    if($pid===0){$wpdb=connection();$r=(new Sharity_Impactshop_Points_Manager())->apply_impactshop_event($parallel,$run);exit($r['success']?0:1);}
     $children[]=$pid;
 }
 foreach($children as $pid){pcntl_waitpid($pid,$status);check(pcntl_wexitstatus($status)===0,'concurrent worker success');}
@@ -185,7 +187,7 @@ $wpdb=connection();
 check(total()===250,'concurrent duplicate exactly once');
 check((int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE dedupe_key='impactshop:event:{$parallel}'")===1,'single concurrent history row');
 // Existing point writer still operates against the extended schema.
-$r=$manager->award_points_for_pseudo($pseudo,5,'bonus','existing',['source_type'=>'existing_reward'],'existing:1');
+$r=(new Sharity_Points_Manager())->award_points_for_pseudo($pseudo,5,'bonus','existing',['source_type'=>'existing_reward'],'existing:1');
 check($r['success'] && total()===255,'existing writer compatibility: '.json_encode($r));
 // SQL failure rolls back history, root and balance together.
 $rolled=captured(input('order7','rollback','award','20'));
@@ -210,13 +212,13 @@ $prior=(int)$wpdb->get_var('SELECT COALESCE(MAX(id),0) FROM impactshop_test_poin
 $wpdb->close();$children=[];
 for($i=0;$i<2;$i++){
     $pid=pcntl_fork();check($pid!==-1,'fork refund/decay worker');
-    if($pid===0){$wpdb=connection();if($i===0){$r=(new Sharity_Points_Manager())->apply_impactshop_event($decayRefund,$run);exit($r['success']?0:1);}(new Sharity_Decay_Manager())->calculate_and_apply_decay_for_pseudo($pseudo);exit(0);}
+    if($pid===0){$wpdb=connection();if($i===0){$r=(new Sharity_Impactshop_Points_Manager())->apply_impactshop_event($decayRefund,$run);exit($r['success']?0:1);}(new Sharity_Decay_Manager())->calculate_and_apply_decay_for_pseudo($pseudo);exit(0);}
     $children[]=$pid;
 }
 foreach($children as $pid){pcntl_waitpid($pid,$status);check(pcntl_wexitstatus($status)===0,'refund/decay worker successful');}
 $wpdb=connection();
 $movement=(int)$wpdb->get_var('SELECT COALESCE(SUM(points),0) FROM impactshop_test_point_transactions WHERE id>'.$prior);
-check(total()===1000+$movement && total()>=700 && total()<=800,'concurrent refund/decay balance equals committed history');
+check(total()===1000+$movement && total()>=700 && total()<800,'concurrent refund/decay balance equals committed history with an actual deduction');
 // Losing the consumer connection releases GET_LOCK. Never continue this batch after reconnect.
 $c1=captured(input('order10','connection-first','award','10'));
 $c2=captured(input('order11','connection-second','award','10'));
@@ -254,4 +256,87 @@ $partial=input('order13','partial-before-consume','adjustment','');$partial['man
 $partialId=captured($partial);$unchanged=total();
 check($manager->apply_impactshop_event($queued,$run)['status']==='manual' && total()===$unchanged,'complex capture latches manual before earlier award is consumed');
 check($manager->apply_impactshop_event($partialId,$run)['status']==='manual','complex event remains separately reviewable');
+// The live shared level manager reports SQL failure as success=false; roll back all economic writes.
+sql($wpdb,"UPDATE impactshop_test_user_points SET current_level='bronze' WHERE pseudo_id='abcdef123456'");
+$levelFailure=captured(input('order14','level-failure','award','10'));
+$beforeTotal=total();$beforeTx=(int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_point_transactions');
+$beforeLevels=(int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_level_history');
+sql($wpdb,"CREATE TRIGGER impactshop_test_reject_level BEFORE INSERT ON impactshop_test_level_history FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='isolated level failure'");
+try {
+    $r=$manager->apply_impactshop_event($levelFailure,$run);
+    check(!$r['success'] && total()===$beforeTotal,'explicit shared-level failure rolls back balance');
+    check((int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_point_transactions')===$beforeTx
+        && (int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_level_history')===$beforeLevels
+        && $wpdb->get_var("SELECT current_level FROM impactshop_test_user_points WHERE pseudo_id='abcdef123456'")==='bronze'
+        && eventRow($levelFailure)['status']==='queued','level failure rolls back history, level and event');
+} finally { sql($wpdb,'DROP TRIGGER impactshop_test_reject_level'); }
+check($manager->apply_impactshop_event($levelFailure,$run)['actual_delta']===10,'same event resumes after level failure');
+// Two purchases share the first-purchase/shop entitlement, even with the live strict content port.
+sql($wpdb,'UPDATE impactshop_test_impactshop_point_settlements SET needs_reconciliation=0');
+$bonus1=captured(input('order15','bonus-root-one','award','10'));
+$bonus2=captured(input('order16','bonus-root-two','award','10'));
+$beforeTotal=total();
+check($manager->apply_impactshop_event($bonus1,$run)['actual_delta']===10
+    && $manager->apply_impactshop_event($bonus2,$run)['actual_delta']===10,'different roots awarded before reconciliation');
+sharity_points_impactshop_reconcile();
+check(total()===$beforeTotal+20+125,'first purchase and shop bonus paid once across roots');
+check((int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE type IN ('first_purchase','shop_discovery')")===2
+    && (int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_settlements WHERE needs_reconciliation=1')===0,
+    'both roots reconciled without loosening shared content dedupe');
+$afterBonus=total();sharity_points_impactshop_reconcile();
+check(total()===$afterBonus,'reconciliation replay awards no bonus');
+// A partial referral on root A resumes on root B with the unchanged strict shared port.
+sql($wpdb,"INSERT INTO impactshop_test_user_referrals(referrer_pseudo_id,referred_pseudo_id,referral_code,status) VALUES('fedcba654321','abcdef123456','isolated-code','pending')");
+sql($wpdb,"CREATE TRIGGER impactshop_test_reject_referral BEFORE INSERT ON impactshop_test_point_transactions FOR EACH ROW BEGIN IF NEW.type='referral_bonus' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='isolated referred failure'; END IF; END");
+try {
+    check(!sharity_points_handle_referral($pseudo,0,['source_type'=>'impactshop_bonus','root_id'=>'root-A'],true),'partial referral does not mark completed');
+    check((int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE type='referral'")===1
+        && (int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE type='referral_bonus'")===0,'first side committed, second side failed');
+} finally { sql($wpdb,'DROP TRIGGER impactshop_test_reject_referral'); }
+check(sharity_points_handle_referral($pseudo,0,['source_type'=>'impactshop_bonus','root_id'=>'root-B'],true),'different root resumes partial referral');
+check($wpdb->get_var('SELECT status FROM impactshop_test_user_referrals')==='completed'
+    && (int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE type IN ('referral','referral_bonus')")===2,
+    'exactly two referral entries and terminal completion');
+// A malformed existing entitlement remains visible for reconciliation instead of being silently accepted.
+$bonus3=captured(input('order17','bonus-conflict','award','10'));
+check($manager->apply_impactshop_event($bonus3,$run)['actual_delta']===10,'third root awarded');
+sql($wpdb,"UPDATE impactshop_test_point_transactions SET points=99 WHERE dedupe_key='first_purchase:abcdef123456'");
+sharity_points_impactshop_reconcile();
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_settlements WHERE needs_reconciliation=1')===1,
+    'wrong bonus amount cannot mark entitlement fulfilled');
+// Existing decay runs on a real timestamp; daily replay and the existing 100-point floor hold.
+$decayPseudo='123456abcdef';
+sql($wpdb,"INSERT INTO impactshop_test_user_points(pseudo_id,points_total,points_lifetime,current_level,last_activity_at) VALUES('{$decayPseudo}',101,101,'basic',DATE_SUB(UTC_TIMESTAMP(),INTERVAL 45 DAY))");
+$decay=new Sharity_Decay_Manager();
+check($decay->calculate_and_apply_decay_for_pseudo($decayPseudo)===1
+    && (int)$wpdb->get_var("SELECT points_total FROM impactshop_test_user_points WHERE pseudo_id='{$decayPseudo}'")===100,'real native decay preserves 100-point floor');
+check($decay->calculate_and_apply_decay_for_pseudo($decayPseudo)===0
+    && (int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE pseudo_id='{$decayPseudo}' AND type='decay'")===1,'same-day decay is not repeated');
+// JYSK's existing canonical award signature, actual native port and shared level boundary.
+sql($wpdb,"UPDATE impactshop_test_user_points SET points_total=1995,points_lifetime=1995,current_level='basic' WHERE pseudo_id='{$decayPseudo}'");
+$jyskAward=static fn($meta=['source_type'=>'jysk_campaign'])=>(new Sharity_Points_Manager())->award_points_for_pseudo($decayPseudo,5,'bonus','jysk-fixture',$meta,'jysk:canonical-sql');
+sql($wpdb,"CREATE TRIGGER impactshop_test_reject_level BEFORE INSERT ON impactshop_test_level_history FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='isolated JYSK level failure'");
+try {
+    check(!$jyskAward()['success'] && (int)$wpdb->get_var("SELECT points_total FROM impactshop_test_user_points WHERE pseudo_id='{$decayPseudo}'")===1995
+        && (int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE dedupe_key='jysk:canonical-sql'")===0,'JYSK shared port rolls back level SQL failure');
+} finally { sql($wpdb,'DROP TRIGGER impactshop_test_reject_level'); }
+check($jyskAward()['success'] && $wpdb->get_var("SELECT current_level FROM impactshop_test_user_points WHERE pseudo_id='{$decayPseudo}'")==='bronze','JYSK award commits ledger, total and level');
+check($jyskAward()['duplicate'] && (int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE dedupe_key='jysk:canonical-sql'")===1,'JYSK canonical replay writes once');
+check($jyskAward(['source_type'=>'jysk_campaign','changed'=>true])['error']==='dedupe_conflict','JYSK same-key changed payload remains conflict');
+// Simulate a lost ACK after a real COMMIT on the native mysqli path; verify actual durable readback.
+$oldConnection=$wpdb->dbh;
+$wpdb->dbh=new class($cfg['host'],$cfg['user'],$cfg['password'],$cfg['database'],$cfg['port']) extends mysqli {
+    public bool $loseCommitAck=true;
+    public function query(string $query, int $result_mode=MYSQLI_STORE_RESULT): mysqli_result|bool {
+        $result=parent::query($query,$result_mode);
+        if ($query==='COMMIT' && $this->loseCommitAck) { $this->loseCommitAck=false; return false; }
+        return $result;
+    }
+};
+$oldConnection->close();$actionsBefore=count($actions);
+$r=(new Sharity_Points_Manager())->award_points_for_pseudo($decayPseudo,5,'bonus','ack-fixture',['source_type'=>'jysk_campaign'],'jysk:lost-ack');
+check($r['success'] && $r['recovered_commit'] && count($actions)===$actionsBefore
+    && (int)$wpdb->get_var("SELECT points_total FROM impactshop_test_user_points WHERE pseudo_id='{$decayPseudo}'")===2005,'shared port lost ACK uses durable readback and emits no unconfirmed hook');
+check((new Sharity_Points_Manager())->award_points_for_pseudo($decayPseudo,5,'bonus','ack-fixture',['source_type'=>'jysk_campaign'],'jysk:lost-ack')['duplicate']
+    && (int)$wpdb->get_var("SELECT COUNT(*) FROM impactshop_test_point_transactions WHERE dedupe_key='jysk:lost-ack'")===1,'readback then replay cannot double-credit JYSK');
 echo "Impact Shop SQL integration passed ({$checks} checks); no live/provider writes\n";
