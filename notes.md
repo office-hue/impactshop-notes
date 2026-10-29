@@ -1,3 +1,41 @@
+## 2026-10-29 — Dognet normál jóváírás forráskész
+
+Három runtime-fájl; channel+campaign:order_id vásárlás, rawid esemény;
+jóváhagyott SAT1 alsó időkorlát, EUR jutalék50% × MNB, egyszeri kerekítés.
+Négyoldalas folytatható poll, négy új FX-nap, meglévő consumer/schema.
+Provider/transport/money/MNB fixturek, PHP-lintek és139 saját SQL-check sikeres.
+Független review javításai célzottan visszaellenőrizve. Merge/deploy/aktiválás
+még nyitott; Dognet korábbi OFF állapota ebben a körben nem változott.
+Részletes működés/teszt/rollback/UI: `docs/protected-change-records/2026-10-29-impactshop-simple-points.md`;
+végrehajtási terv: `docs/dev-plans/impactshop-dognet-confirmed-purchases-2026-10-29.md`.
+
+## 2026-10-29 — Dognet normál jóváírás: célzott befejezési terv
+
+A terv további végrehajtási részletekkel bővült: két transportdefiníció pontos
+nyersválasz-opciója, pending/final hash-szétválasztás, tárolt kötés, sweep-opció,
+aktiválási sorrend és queued-eseményeket is kezelő rollback. A két meglévő
+tervaudit újrahasználva; új audit vagy providerfutás nem történt. Az azonosító-
+mapping, tartós tokenellátás és host-futáskeret célzott ellenőrzése még nyitott.
+
+Saját worktree: impactshop-points-simple-20261029, HEAD fb8cbaad; fájlfája
+azonos a #239/3cdcf4e2 merge fájlfájával. Új terv:
+`docs/dev-plans/impactshop-dognet-confirmed-purchases-2026-10-29.md`.
+Három runtime-fájl tervezett módosítása: meglévő Dognet-adapter és a két
+meglévő transportdefiníció. Core/DDL/új release-rendszer nem szükséges.
+Két egymást követő független tervaudit közti javítással; időbizonyíték,
+ID-szemantika és MNB-kéréskeret pontosítva. Terv, nem implementációs PASS.
+Az eredeti unknown-time manual szabály helyett SAT1 post-cutover alsó
+időkorlát használatát Arnold kifejezetten jóváhagyta: „Igen, a bizonyított
+átállás utáni vásárlás így pontozható.” Nem hallgatólagos pénzügyi módosítás. Dognetlevél nem ment ki, nem előfeltétel, nem küldendő.
+Decathlon kifutott partner, Árukereső korábbi útpróba nem vásárlási elfogadás.
+A privát #239 release-átadás szerint staging/prod telepítve, CJ aktív;
+Dognet/partner OFF, természetes pénzügyi elfogadás nyitott. Ez korábbi
+időbélyegzett bizonyíték, ebben a tervezési körben élő visszaolvasás nincs.
+Forrás/runtime/konfiguráció/pénzügyi adat nem változott; csak ez a terv és
+helyi jegyzet készült. Mainművelet és csendablak nincs. A korábbi, lentebb
+maradt #239 „nem merge-elt” bejegyzés történeti, nem aktuális releaseállapot.
+Substack-hivatkozás megőrizve a tervben, nem végrehajtandó mellékfeladat.
+
 ## 2026-10-29 — Impact Shop éles UI-vizsgálat és szűk handoff-javítás
 
 #238/80d6eb7f stagingen és productionön telepítve/migrálva; csak CJ aktív,

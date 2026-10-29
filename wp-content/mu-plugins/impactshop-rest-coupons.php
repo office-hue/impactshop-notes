@@ -91,7 +91,7 @@ if (!function_exists('dognet_get_token')) {
 }
 
 if (!function_exists('dognet_api_request')) {
-    function dognet_api_request($method, $path, $body = null, bool $allow_auth_refresh = true)
+    function dognet_api_request($method, $path, $body = null, bool $allow_auth_refresh = true, bool $raw_response = false)
     {
         $token = $allow_auth_refresh ? dognet_get_token(false) : get_transient('dognet_api_token_cache_v1');
         if (!$token) {
@@ -121,17 +121,18 @@ if (!function_exists('dognet_api_request')) {
 
         $code = wp_remote_retrieve_response_code($resp);
         $raw  = wp_remote_retrieve_body($resp);
-        $json = json_decode($raw, true);
+        $json = $raw_response ? null : json_decode($raw, true);
 
         if ($code === 401 && $allow_auth_refresh) {
             delete_transient('dognet_api_token_cache_v1');
             $token = dognet_get_token(true);
             if ($token) {
-                return dognet_api_request($method, $path, $body, false);
+                return dognet_api_request($method, $path, $body, false, $raw_response);
             }
         }
 
         if ($code < 200 || $code >= 300) {
+            if ($raw_response) { return new WP_Error('dognet_http_error', 'Dognet HTTP ' . $code, ['code' => $code]); }
             return new WP_Error(
                 'dognet_api_error',
                 sprintf('Dognet API hiba (HTTP %d)', $code),
@@ -139,7 +140,7 @@ if (!function_exists('dognet_api_request')) {
             );
         }
 
-        return $json ?: [];
+        return $raw_response ? $raw : ($json ?: []);
     }
 }
 
