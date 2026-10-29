@@ -461,7 +461,7 @@ function sharity_points_admin_adjust(WP_REST_Request $request): WP_REST_Response
             || !is_int($payload['points'] ?? null) || !is_string($payload['reason'] ?? null)) {
             return new WP_REST_Response(['message' => 'Invalid resolution'], 400);
         }
-        $result = (new Sharity_Points_Manager())->resolve_impactshop_event(
+        $result = (new Sharity_Impactshop_Points_Manager())->resolve_impactshop_event(
             $payload['review_event_id'], $payload['expected_version'], $payload['points'], $payload['reason'], get_current_user_id()
         );
         $status = !empty($result['success']) ? 200 : (($result['error'] ?? '') === 'resolution_conflict' ? 409 : 400);

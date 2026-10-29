@@ -43,7 +43,7 @@ function sharity_points_impactshop_bind_subject(string $pseudo): array
         return ['success' => false, 'error' => 'subject_binding_unavailable'];
     }
     $digest = hash('sha256', $ref);
-    return (new Sharity_Points_Manager())->impactshop_transaction(function () use ($pseudo, $digest): array {
+    return (new Sharity_Impactshop_Points_Manager())->impactshop_transaction(function () use ($pseudo, $digest): array {
         global $wpdb;
         sharity_points_impactshop_sql($wpdb->query($wpdb->prepare(
             "INSERT INTO {$wpdb->prefix}user_points (pseudo_id, current_level, created_at, updated_at)

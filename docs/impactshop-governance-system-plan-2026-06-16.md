@@ -1,3 +1,11 @@
+## 2026-10-29 — meglévő Impact Shop műveletek osztálykiemelése
+
+A valóban eltérő éles Offerwall shared pont/szint/decay port megőrzéséhez
+az Impact Shop műveletek saját osztályba kerülnek. Egy új domainfájl a
+meglévő Bástya config/hashlistában; guard-kód, jogosultság és kiadási
+mechanizmus változatlan. A shared modulok rögzített kanonikus/live másolatok.
+Forrás, staging és éles állapot: a 2026-10-29 protected record és snapshot.
+
 ## 2026-10-28 — egyetlen review-zott JYSK-digest követése
 
 Külön operátori jóváhagyással csak a #231 merge-elt bridge hash-bejegyzése és

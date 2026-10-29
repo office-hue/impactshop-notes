@@ -25,6 +25,7 @@ require_once __DIR__ . '/sharity-points-helpers.php';
 require_once __DIR__ . '/sharity-points-money.php';
 require_once __DIR__ . '/sharity-points-impactshop-attribution.php';
 require_once __DIR__ . '/sharity-points-manager.php';
+require_once __DIR__ . '/sharity-points-impactshop-manager.php';
 require_once __DIR__ . '/sharity-level-manager.php';
 require_once __DIR__ . '/sharity-decay-manager.php';
 require_once __DIR__ . '/sharity-vacation-manager.php';

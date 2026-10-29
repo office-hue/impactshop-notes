@@ -218,3 +218,11 @@ Ha valaki egy évig aktív, eléri a Legendet. Ha utána is hasonló ütemben ak
 Az új szabály az éles átállási időtől: végleges, igazolt adomány 1 egészHUF=1 purchasepont, egyszeri half-up kerekítéssel, felhasználói szorzó nélkül. Kattintásból0pont/0szavazat, attribution megmarad. Egyszeri teljes refund az aktuális egyenlegig vonható vissza; a hiány végleg elengedett. Részleges, ismételt, történeti vagy bizonytalan korrekció kézi eset. Másjutalmak és a freeze-szabály megmaradnak. Az új kód és a providerlane-ek alapból kikapcsoltak; implementáció nem éles aktiválás. Részletek: [egyszerűsített terv](dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md).
 
 Az elfogadott affiliate-szabály: a tényleges végleges jutalék50%-a, a véglegessé válás napján elérhető utolsó hivatalos MNB-jegyzéssel (devizaegység megőrizve), egyszeri egész-HUF half-up kerekítéssel. CJ-nél a pontos USD-mező/lockingDate és rögzített esemény-snapshot alapján számolunk; locked→closed nem új jóváírás. Teljes, összekapcsolt negatív commission ÉS sale igazolhat teljes refundot; más korrekció kézi. A Dognet hiányos contractja továbbra nem ad automatikus pontot. A szabály forrásimplementációja nem jelenti aktiválását.
+
+
+A közös éles Offerwall pont/szint/decay modulok változatlanok maradnak;
+az Impact Shop tranzakciós műveletei saját osztályban futnak. Az első
+vásárlás, bolt-felfedezés és referral továbbra egyszeri jogosultság:
+egy másik vásárlási root nem ad új bónuszt, a részleges referral kifizetés
+onnan is befejezhető. Hibás meglévő összeg/típus/célpont nem elfogadott
+jogosultság. Ez kompatibilitási javítás, nem új jutalmazási szabály.

@@ -486,13 +486,12 @@ function sharity_points_impactshop_reconcile(): void
             $first = $shop = ['success' => true];
             $referral = true;
             if ((int) $root['awarded_points'] > 0) {
-                $manager = new Sharity_Points_Manager();
                 $metadata = ['source_type' => 'impactshop_bonus', 'root_id' => $root['root_id']];
-                $first = $manager->award_points_for_pseudo($pseudo, 100, 'first_purchase', $root['root_id'], $metadata, 'first_purchase:' . $pseudo);
-                $shop = $root['merchant'] === '' ? ['success' => true] : $manager->award_points_for_pseudo(
+                $first = sharity_points_impactshop_bonus_once($pseudo, 100, 'first_purchase', $root['root_id'], $metadata, 'first_purchase:' . $pseudo);
+                $shop = $root['merchant'] === '' ? ['success' => true] : sharity_points_impactshop_bonus_once(
                     $pseudo, 25, 'shop_discovery', $root['root_id'], $metadata, 'shop_discovery:' . $pseudo . ':' . $root['merchant']
                 );
-                $referral = sharity_points_handle_referral($pseudo, 0, $metadata);
+                $referral = sharity_points_handle_referral($pseudo, 0, $metadata, true);
             }
             if (!empty($first['success']) && !empty($shop['success']) && $referral) {
                 sharity_points_impactshop_sql($wpdb->update($wpdb->prefix . 'impactshop_point_settlements', ['needs_reconciliation' => 0], ['root_id' => $root['root_id'], 'version' => $root['version']]));

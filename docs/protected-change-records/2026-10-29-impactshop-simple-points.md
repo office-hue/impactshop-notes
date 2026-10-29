@@ -32,6 +32,9 @@ Közvetlen kapcsolatok: CJ/Dognet/signedpartner→capture→globális purchase/h
 - `wp-content/mu-plugins/sharity-points-impactshop-attribution.php`
 - `wp-content/mu-plugins/sharity-points-money.php`
 
+- `wp-content/mu-plugins/sharity-level-manager.php`
+- `wp-content/mu-plugins/sharity-points-impactshop-manager.php`
+
 A transport két meglévő definíciójának opcionális no-auth-refresh kapcsolója a konkrét rekurzív401 kockázat legkisebb javítása. A totals NGO-feloldása a tokenes normálhandoff közvetlen regresszióját előzi meg. Mindkét deployprofil együtt kapja az igazolt új fizikaihostot; új releasehelper nem készül. Új modulok a meglévő config/hashlistába kerülnek.
 
 ## Kockázat és rollback
@@ -42,7 +45,7 @@ Rollback: új consumer/captureoff, tartósesemények megőrzése, bizonytalanál
 
 ## Smoke és tényleges eredmény
 
-Tényleges helyiPASS: money/state/admin/attribution/providerfixture; clickPHP/Python; balancewritermock; no-retry429; mindkét Dognettransport401/429fixture. Izolált MariaDB10.11.19 + az éles WP6.9.4 exactwpdbforrás:78checkPASS, többek között valódi rollback/lostACK/KILLCONNECTION, párhuzamosduplicate/refunddecay, freezehold, manualzero/replay és pending→expiry→finalbinding. Nincs élőprovidereset/deploy/aktiválás. A mégfuttatandó checket nem tekintjükPASSnak.
+Tényleges helyiPASS: money/state/admin/attribution/providerfixture; clickPHP/Python; balancewritermock; no-retry429; mindkét Dognettransport401/429fixture. Izolált MariaDB10.11.19 + az éles WP6.9.4 exactwpdbforrás:78checkPASS, többek között valódi rollback/lostACK/KILLCONNECTION, párhuzamosduplicate, freezehold, manualzero/replay és pending→expiry→finalbinding. Nincs élőprovidereset/deploy/aktiválás. A tényleges refund/decay átfedést csak az alábbi javított118checkes futás igazolja. A mégfuttatandó checket nem tekintjükPASSnak.
 
 Kiadásutáni kötelező, MÉG NEM FUTTATOTT route/UI-smoke címkék:
 
@@ -90,3 +93,20 @@ no-token transport, meglévő SQL state/manager regresszió arányosan.
 Kézi UI: profil pont/szint/history, CTA továbbra0, redirect és NGO megmarad.
 Rollback: új lane off; tartós esemény marad; guarded exact-file backup/CAS.
 Ez a bekezdés felhatalmazás és terv, nem teszt- vagy deploy-PASS.
+
+
+## 2026-10-29 — élő shared porttal való kompatibilitás
+
+Konkrét kockázat: a kiadás felülírná az éles Offerwall közös pontportot.
+A három shared modul byte-azonos rögzített canonical/live másolat; production
+írásuk nem szükséges. Meglévő Impact Shop kód saját osztályba mozog,
+level false visszagörgetést vált ki. Első/shop/referral jutalom üzleti
+jogosultság ellenőrzésével másik rootról is folytatható; shared strict dedupe
+változatlan. Érintett: loader, capture/bind, admin resolve, consumer,
+post-commit reconciliation; közös gazdasági szabály nem változik.
+118 valódi SQL-check és célzott fixturek sikeresek; review P2 javítva és
+visszaellenőrizve. Részletek/korábbi fixture-korlátok: termékterv utolsó szakasza.
+Bástya: az új manager a meglévő inventory/hashlistában. UI checklist fent,
+kiegészítésként a meglévő Offerwall jutalom megjelenését is ellenőrizni kell.
+Rollback: lane off, esemény marad, guarded backup/CAS; az éles shared fájlokat
+nem írjuk felül. Nincs új séma vagy release-rendszer, nincs új deploy/aktiválás.
