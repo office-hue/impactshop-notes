@@ -1,3 +1,11 @@
+## 2026-10-29 — Közvetlen partnerfogadó ellenőrzése; lane OFF
+
+Saját `feat/impactshop-partner-finish-20261029` ág, #240 / 1b4aab11927fc46ae8bd729bb8335e00bc1169e9 alapról. A teljes aláírt callback SQL-teszt valódi insert-formátumhibát reprodukált: az idempotenciakulcs `0` lett. Egyetlen formátumlista igazítva; nincs séma/adat/scheduler változás. 171 izolált SQL-ellenőrzés, provider-fixture és PHP-lint sikeres. Független review: runtime-javítás helyes; az OpenAPI összegregexét a pénzkonverter szigorúbb korlátjához visszaigazítottuk. A kulcs/discount mezők, hibás HMAC/lejárt timestamp, pending/final/replay, tartós subject, refund/elengedés, eltérő tartalom és OFF lane ellenőrizve.
+
+Közvetlen partnerpontozás OFF marad, valódi kereskedő nincs bekötve. A mintahidak nem production integrációk; 200-as ACK nem pontjóváírás. Contract/payload/install dokumentumok pontosítva; guard-hash csak az egy érintett runtime-ra frissítve. Forrásellenőrzött; PR/merge/telepítés még nyitott. A korábbi CJ/Dognet technikai kiadást nem módosítja; ≥20 természetes vásárlás pénzügyi elfogadása továbbra is külön, nyitott feladat. 2026-10-29 22:00:06 UTC éles readback: 0 vásárlási root, 0 pontesemény, 0 partnertranzakció; CJ/Dognet ON, producer/consumer1, legacy0, cutover 15:37:39 UTC. Nincs éles írás vagy tesztvásárlás.
+
+Koherencia, kockázat, rollback és kézi UI-checklist: `docs/partner-data-mapping.md`. Megőrzendő Substack-hivatkozás: `/Users/bujdosoarnold/ai-agent/SUBSTACK-HANDOVER.md`; nem végrehajtandó mellékfeladat.
+
 ## 2026-10-29 — Dognet normál jóváírás forráskész
 
 Három runtime-fájl; channel+campaign:order_id vásárlás, rawid esemény;

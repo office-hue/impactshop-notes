@@ -336,7 +336,7 @@
     ".deploy.staging.env": "46f796b70a0960d7cc45eb31ffe6a3c3842c0563af143352390e91a7cb3d30f9",
     "bin/preflight-check.sh": "d4c35ab8f6fd96cee0e4a84bfdfa912bade1c0168184b8ddae32859fa5caabc6",
     "wp-content/mu-plugins/impactshop-ads-watch-ui-cta-bundle.js": "0bd18dd3571dbdc68dc273a146115c34c84d2748fce0a6c76fd5cec2774775ed",
-    "wp-content/mu-plugins/impactshop-partner-api.php": "cc75a12d409fbf1a6710c94410c955cab87a3704c0a8f89ec09387a212ef1537",
+    "wp-content/mu-plugins/impactshop-partner-api.php": "f18197124795153937c2fb983b9c9fcb95855d3b4e908b16867c426ebee40d78",
     "wp-content/mu-plugins/sharity-vacation-manager.php": "7d2884fb618bfbb8871279aebac4666b5775ac5aff346fd7c9441609535ca213",
     "wp-content/mu-plugins/impactshop-dognet-points.php": "a0315b35ddba2fd66df2536ba6bf909c383d70cb165e8c5a1ac54918ac66caf3",
     "wp-content/mu-plugins/sharity-points-impactshop-attribution.php": "fa0b93c21ca6bf22e0dc8db4958ebd123b11bf749a1335393bbf55e169d510e0",

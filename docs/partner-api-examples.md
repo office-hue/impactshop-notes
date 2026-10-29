@@ -124,3 +124,34 @@ Content-Type: application/json
   }
 }
 ```
+
+
+## 5) Pontozási contractminta (szintetikus, lane OFF)
+
+Az 1. példa legacy ledgerkérés, önmagában nem pontozható. A teljes body mintája:
+
+```json
+{
+  "partner_code": "synthetic-shop",
+  "event_id": "order_123456",
+  "event_type": "purchase",
+  "pseudo_id": "ab12cd34ef56",
+  "ngo_code": "synthetic-ngo",
+  "amount_gross": 19990,
+  "currency": "HUF",
+  "timestamp": "2026-10-29T16:01:00Z",
+  "payment_status": "unpaid",
+  "original_purchase_id": "order_123456",
+  "original_purchase_at": "2026-10-29T16:00:00Z",
+  "donation_amount_huf": "0",
+  "donation_policy_version": "merchant-approved-v1",
+  "revision": "1",
+  "attribution_token": "<SERVER_ISSUED_SAT1>"
+}
+```
+
+Minden érték szintetikus; a token helykitöltő, nem érvényes SAT1 és nem valós hozzárendelés. Véglegesítés: ugyanaz a vásárlás/idő/token, `payment_status=paid`, `revision=2`, a szerződés szerinti végleges összeg például `"100.50"`. Teljes refund: ugyanaz a vásárlás/idő, `payment_status=refunded`, `revision=3`, `refund_scope=full`, az összegmező továbbra is decimális string. Részleges korrekció `refund_scope=partial`: megőrzött kézi eset.
+
+Aláírás: `sha256=` + a **pontosan elküldött nyers body** HMAC-SHA256 hex digestje a partner HMAC-kulcsával. A jelenlegi fogadó nem a method/path/timestamp konkatenációját ellenőrzi. A külön `X-Impact-Timestamp` aktuális Unix milliszekundum, ±5 perc toleranciával; Bearer API-kulcs is kell. Titok nem kerül forrásba vagy logba. Státuszváltásnál új Idempotency-Key; változatlan kérés ismétlésekor az eredeti kulcs és body.
+
+A 200-as ACK nem bizonyít jóváírást: azt a tárolt pontesemény és a ponttranzakció együtt igazolja. A lane OFF mellett nincs automatikus jóváírás. Valódi kereskedő, szerződés és aktiválás későbbi munkacsomag.

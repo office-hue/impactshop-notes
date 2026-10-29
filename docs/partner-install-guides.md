@@ -1,36 +1,11 @@
-# Partner install guide – Shopify / WooCommerce / UNAS
+# Partner integrációs minták – Shopify / WooCommerce / UNAS
 
-## Shopify (minimal)
-1. Adj hozzá egy theme snippetet, ami **pseudo‑ID + NGO kódot** beír a checkout note‑ba.
-2. Hozz létre webhookot: **Order Created** → bridge endpoint.
-3. Bridge továbbítja az Impact Shop endpointjára.
+**A hidak fejlesztési minták, nem igazolt éles pontozási integrációk. A közvetlen partnerlane OFF.** A `partner-prod` technikai tesztazonosító, nem bekötött kereskedő.
 
-**Validáció**
-- 1 teszt order → `accepted` + `ledger_id`.
+- Shopify: az Order Created esemény önmagában nem bizonyít fizetést, végleges adományt vagy SAT1-hozzárendelést.
+- WooCommerce: a `tools/partner-bridge-samples/woocommerce-bridge.php` minta bejövő hitelesítése és HMAC-üzenetformája nem tekinthető ellenőrzött production szerződésnek. Ne telepítsd változtatás nélkül.
+- UNAS: az export/webhook minta nem igazolja a végleges adományt és korrekciókövetést.
 
----
+Későbbi valódi integrációnál a [mezőszerződés](partner-data-mapping.md) és a [teljes payloadminta](partner-api-examples.md#5-pontozási-contractminta-szintetikus-lane-off) alapján kell igazolni a partner bejövő eseményeinek hitelességét, adományszabályát, SAT1-kötését, véglegességét, ismétléseit és korrekcióit. A HMAC nyers bodyt ír alá; az `accepted` válasz önmagában nem pontozási elfogadás.
 
-## WooCommerce (minimal)
-1. Telepítsd a `woocommerce-bridge.php` mintát egy custom pluginba.
-2. Hozz létre webhookot WooCommerce-ben → `/impactshop/v1/woo-webhook`.
-3. Ellenőrizd a HMAC + Idempotency‑Key küldést.
-
-**Validáció**
-- 1 teszt order → `accepted`.
-
----
-
-## UNAS (minimal)
-1. UNAS export / webhook beállítás.
-2. Fut a `unas-bridge-node.js` (localhost vagy VPS).
-3. Bridge továbbítja az Impact Shop endpointjára.
-
-**Validáció**
-- 1 teszt rendelés → `accepted`.
-
----
-
-## Közös ellenőrzés
-- HMAC signature érvényes
-- Idempotency‑Key működik
-- `ledger_id` visszatér a válaszban
+Ebben a munkacsomagban a hidakat nem telepítjük, nem aktiválunk valódi partnert, és nem végzünk éles tesztvásárlást.

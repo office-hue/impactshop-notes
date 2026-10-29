@@ -238,10 +238,13 @@ components:
         donation_amount_huf:
           type: string
           pattern: '^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$'
-          description: Optional final confirmed HUF donation, never a cart or commission estimate.
+          maxLength: 64
+          description: Exact decimal string; required by the points contract, including unpaid (zero allowed). Paid means final merchant-approved donation. Direct partner points lane remains OFF.
         donation_policy_version:
           type: string
-          maxLength: 64
+          maxLength: 96
+          pattern: '^[A-Za-z0-9._:-]{1,96}$'
+          description: Merchant-approved policy; syntax validation is not verification of the merchant agreement. Affiliate 50 percent is not implied.
         original_purchase_id:
           type: string
           maxLength: 128
