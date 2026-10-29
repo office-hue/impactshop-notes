@@ -14,101 +14,19 @@ class Sharity_Vacation_Manager
 
     public function activate_vacation(int $user_id, int $days = self::MAX_DURATION_DAYS): array
     {
-        global $wpdb;
-
-        $validation = $this->validate_vacation_request($user_id, $days);
-        if (!$validation['valid']) {
-            return ['success' => false, 'error' => $validation['reason']];
+        if ($user_id <= 0) {
+            return ['success' => false, 'error' => 'invalid_user'];
         }
-
-        $cost = $this->get_vacation_cost();
-        $freeze_until = gmdate('Y-m-d H:i:s', strtotime("+{$days} days"));
-
-        $points_total = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT points_total FROM {$wpdb->prefix}user_points WHERE user_id = %d",
-            $user_id
-        ));
-
-        $freeze_count = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT freeze_count_yearly FROM {$wpdb->prefix}user_points WHERE user_id = %d",
-            $user_id
-        ));
-
-        $wpdb->update(
-            "{$wpdb->prefix}user_points",
-            [
-                'points_total' => max(0, $points_total - $cost),
-                'freeze_until' => $freeze_until,
-                'freeze_count_yearly' => $freeze_count + 1,
-            ],
-            ['user_id' => $user_id]
-        );
-
-        $wpdb->insert("{$wpdb->prefix}point_transactions", [
-            'user_id' => $user_id,
-            'points' => -$cost,
-            'type' => 'vacation_start',
-            'metadata' => wp_json_encode(['freeze_until' => $freeze_until, 'days' => $days]),
-            'dedupe_key' => 'vacation_start:user:' . $user_id . ':' . gmdate('Y-m-d'),
-            'created_at' => current_time('mysql'),
-        ]);
-
-        do_action('sharity_vacation_activated', $user_id, $freeze_until);
-
-        return ['success' => true, 'freeze_until' => $freeze_until];
+        return $this->activate_vacation_transactional('user_id', $user_id, $days);
     }
 
     public function activate_vacation_for_pseudo(string $pseudo_id, int $days = self::MAX_DURATION_DAYS): array
     {
-        global $wpdb;
-
         $pseudo_id = $this->normalize_pseudo_id($pseudo_id);
         if ($pseudo_id === '') {
             return ['success' => false, 'error' => 'invalid_pseudo'];
         }
-
-        $validation = $this->validate_vacation_request_for_pseudo($pseudo_id, $days);
-        if (!$validation['valid']) {
-            return ['success' => false, 'error' => $validation['reason']];
-        }
-
-        $freeze_until = gmdate('Y-m-d H:i:s', strtotime("+{$days} days"));
-
-        $points_total = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT points_total FROM {$wpdb->prefix}user_points WHERE pseudo_id = %s",
-            $pseudo_id
-        ));
-
-        $freeze_count = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT freeze_count_yearly FROM {$wpdb->prefix}user_points WHERE pseudo_id = %s",
-            $pseudo_id
-        ));
-
-        $cost = $this->get_vacation_cost();
-
-        $wpdb->update(
-            "{$wpdb->prefix}user_points",
-            [
-                'points_total' => max(0, $points_total - $cost),
-                'freeze_until' => $freeze_until,
-                'freeze_count_yearly' => $freeze_count + 1,
-            ],
-            ['pseudo_id' => $pseudo_id]
-        );
-
-        $wpdb->insert("{$wpdb->prefix}point_transactions", [
-            'user_id' => null,
-            'pseudo_id' => $pseudo_id,
-            'points' => -$cost,
-            'type' => 'vacation_start',
-            'metadata' => wp_json_encode(['freeze_until' => $freeze_until, 'days' => $days]),
-            'dedupe_key' => 'vacation_start:pseudo:' . $pseudo_id . ':' . gmdate('Y-m-d'),
-            'created_at' => current_time('mysql'),
-        ]);
-
-        do_action('sharity_vacation_activated', $pseudo_id, $freeze_until);
-
-        return ['success' => true, 'freeze_until' => $freeze_until];
+        return $this->activate_vacation_transactional('pseudo_id', $pseudo_id, $days);
     }
 
     public function deactivate_vacation(int $user_id): array
@@ -238,74 +156,118 @@ class Sharity_Vacation_Manager
         ];
     }
 
-    private function validate_vacation_request(int $user_id, int $days): array
+    private function activate_vacation_transactional(string $column, $subject, int $days): array
     {
         global $wpdb;
-
-        $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT points_total, freeze_until, freeze_count_yearly FROM {$wpdb->prefix}user_points WHERE user_id = %d",
-            $user_id
-        ));
-
-        if (!$row) {
-            return ['valid' => false, 'reason' => 'User not found'];
+        if (!property_exists($wpdb, 'reconnect_retries')) {
+            return ['success' => false, 'error' => 'transaction_unconfirmed'];
         }
-
-        $cost = $this->get_vacation_cost();
-        if ((int) $row->points_total < $cost) {
-            return ['valid' => false, 'reason' => sprintf('Nincs elég pont (szükséges: %d)', $cost)];
+        $previous_retries = $wpdb->reconnect_retries;
+        try {
+            $wpdb->reconnect_retries = 0;
+            $connection = (string) $wpdb->get_var('SELECT CONNECTION_ID()');
+            if ($wpdb->reconnect_retries !== 0 || $connection === '' || $wpdb->last_error !== '') {
+                return ['success' => false, 'error' => 'transaction_unconfirmed'];
+            }
+            return $this->activate_vacation_transactional_locked($column, $subject, $days, $connection);
+        } catch (Throwable $error) {
+            try {
+                $wpdb->query('ROLLBACK');
+            } catch (Throwable $ignored) {
+                // Lost connection remains unconfirmed; never claim success.
+            }
+            return ['success' => false, 'error' => 'transaction_unconfirmed'];
+        } finally {
+            $wpdb->reconnect_retries = $previous_retries;
         }
-
-        if ($row->freeze_until && strtotime($row->freeze_until) > time()) {
-            return ['valid' => false, 'reason' => 'Már van aktív vakáció'];
-        }
-
-        $max_yearly = $this->get_max_yearly_count();
-        if ((int) $row->freeze_count_yearly >= $max_yearly) {
-            return ['valid' => false, 'reason' => sprintf('Éves limit elérve (max %d alkalom)', $max_yearly)];
-        }
-
-        $max_days = $this->get_max_duration_days();
-        if ($days < 1 || $days > $max_days) {
-            return ['valid' => false, 'reason' => sprintf('Érvénytelen időtartam (1-%d nap)', $max_days)];
-        }
-
-        return ['valid' => true];
     }
 
-    private function validate_vacation_request_for_pseudo(string $pseudo_id, int $days): array
+    private function activate_vacation_transactional_locked(string $column, $subject, int $days, string $connection): array
     {
+        $max_days = $this->get_max_duration_days();
+        if ($days < 1 || $days > $max_days) {
+            return ['success' => false, 'error' => sprintf('Érvénytelen időtartam (1-%d nap)', $max_days)];
+        }
+
         global $wpdb;
-
+        $format = $column === 'user_id' ? '%d' : '%s';
+        if ($wpdb->query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED') === false
+            || $wpdb->query('START TRANSACTION') === false) {
+            return ['success' => false, 'error' => 'transaction_start_failed'];
+        }
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT points_total, freeze_until, freeze_count_yearly FROM {$wpdb->prefix}user_points WHERE pseudo_id = %s",
-            $pseudo_id
+            "SELECT points_total, freeze_until, freeze_count_yearly
+             FROM {$wpdb->prefix}user_points WHERE {$column} = {$format} FOR UPDATE",
+            $subject
         ));
-
-        if (!$row) {
-            return ['valid' => false, 'reason' => 'Pseudo not found'];
+        if (!$row || $wpdb->last_error !== '') {
+            $wpdb->query('ROLLBACK');
+            return ['success' => false, 'error' => 'subject_not_found'];
         }
 
         $cost = $this->get_vacation_cost();
         if ((int) $row->points_total < $cost) {
-            return ['valid' => false, 'reason' => sprintf('Nincs elég pont (szükséges: %d)', $cost)];
+            $wpdb->query('ROLLBACK');
+            return ['success' => false, 'error' => sprintf('Nincs elég pont (szükséges: %d)', $cost)];
         }
-
         if ($row->freeze_until && strtotime($row->freeze_until) > time()) {
-            return ['valid' => false, 'reason' => 'Már van aktív vakáció'];
+            $wpdb->query('ROLLBACK');
+            return ['success' => false, 'error' => 'Már van aktív vakáció'];
+        }
+        if ((int) $row->freeze_count_yearly >= $this->get_max_yearly_count()) {
+            $wpdb->query('ROLLBACK');
+            return ['success' => false, 'error' => sprintf('Éves limit elérve (max %d alkalom)', $this->get_max_yearly_count())];
         }
 
-        $max_yearly = $this->get_max_yearly_count();
-        if ((int) $row->freeze_count_yearly >= $max_yearly) {
-            return ['valid' => false, 'reason' => sprintf('Éves limit elérve (max %d alkalom)', $max_yearly)];
+        $freeze_until = gmdate('Y-m-d H:i:s', strtotime("+{$days} days"));
+        $metadata = wp_json_encode(['freeze_until' => $freeze_until, 'days' => $days]);
+        if ($metadata === false) {
+            $wpdb->query('ROLLBACK');
+            return ['success' => false, 'error' => 'metadata_encode_failed'];
+        }
+        $dedupe = 'vacation_start:' . ($column === 'user_id' ? 'user' : 'pseudo') . ':' . (string) $subject . ':' . gmdate('Y-m-d');
+        $inserted = $column === 'user_id'
+            ? $wpdb->query($wpdb->prepare(
+                "INSERT IGNORE INTO {$wpdb->prefix}point_transactions
+                    (user_id, pseudo_id, points, type, dedupe_key, metadata, created_at)
+                 VALUES (%d, NULL, %d, 'vacation_start', %s, %s, %s)",
+                (int) $subject,
+                -$cost,
+                $dedupe,
+                $metadata,
+                current_time('mysql')
+            ))
+            : $wpdb->query($wpdb->prepare(
+                "INSERT IGNORE INTO {$wpdb->prefix}point_transactions
+                    (user_id, pseudo_id, points, type, dedupe_key, metadata, created_at)
+                 VALUES (NULL, %s, %d, 'vacation_start', %s, %s, %s)",
+                (string) $subject,
+                -$cost,
+                $dedupe,
+                $metadata,
+                current_time('mysql')
+            ));
+        $updated = $inserted === 1 ? $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->prefix}user_points
+             SET points_total = points_total - %d, freeze_until = %s,
+                 freeze_count_yearly = freeze_count_yearly + 1
+             WHERE {$column} = {$format}",
+            $cost,
+            $freeze_until,
+            $subject
+        )) : false;
+        if ($inserted !== 1 || $updated !== 1
+            || $wpdb->last_error !== ''
+            || (string) $wpdb->get_var('SELECT CONNECTION_ID()') !== $connection
+            || $wpdb->query('COMMIT') === false
+            || (string) $wpdb->get_var('SELECT CONNECTION_ID()') !== $connection
+            || $wpdb->last_error !== '') {
+            $wpdb->query('ROLLBACK');
+            return ['success' => false, 'error' => $inserted === 0 ? 'duplicate' : 'vacation_write_failed'];
         }
 
-        $max_days = $this->get_max_duration_days();
-        if ($days < 1 || $days > $max_days) {
-            return ['valid' => false, 'reason' => sprintf('Érvénytelen időtartam (1-%d nap)', $max_days)];
-        }
-
-        return ['valid' => true];
+        do_action('sharity_vacation_activated', $subject, $freeze_until);
+        return ['success' => true, 'freeze_until' => $freeze_until];
     }
 
     private function get_vacation_cost(): int

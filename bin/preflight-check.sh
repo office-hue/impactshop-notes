@@ -28,6 +28,10 @@ LAT_WARN_MS=$(awk -v t="$LAT_WARN" 'BEGIN{printf "%.0f", t*1000}')
 LAT_FAIL_MS=$(awk -v t="$LAT_FAIL" 'BEGIN{printf "%.0f", t*1000}')
 MAX_RETRY="${PREFLIGHT_RETRY:-0}"
 [[ "$MAX_RETRY" =~ ^[0-9]+$ ]] || MAX_RETRY=0
+# Explicit invocation override wins over the sourced deployment profile.
+if [[ "${PREFLIGHT_NO_RETRY:-0}" == "1" ]]; then
+  MAX_RETRY=0
+fi
 MIN_BYTES_WARN="${PREFLIGHT_MIN_BYTES:-0}"
 [[ "$MIN_BYTES_WARN" =~ ^[0-9]+$ ]] || MIN_BYTES_WARN=0
 MIN_BYTES_FAIL="${PREFLIGHT_MIN_BYTES_FAIL:-0}"

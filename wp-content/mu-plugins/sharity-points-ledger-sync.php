@@ -14,6 +14,15 @@ const SHARITY_POINTS_LEDGER_PENDING_BATCH = 200;
 
 function sharity_points_sync_ledger(): void
 {
+    if ((string) get_option('sharity_points_legacy_consumer_enabled', '1') !== '1') {
+        sharity_points_impactshop_consume();
+        return;
+    }
+    sharity_points_sync_ledger_legacy();
+}
+
+function sharity_points_sync_ledger_legacy(): void
+{
     global $wpdb;
 
     $table = $wpdb->prefix . 'impact_ledger';
@@ -233,7 +242,7 @@ function sharity_points_store_pending_ledger_ids(array $ids): void
     update_option(SHARITY_POINTS_LEDGER_PENDING_OPTION, $ids, false);
 }
 
-function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array $metadata): void
+function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array $metadata): bool
 {
     global $wpdb;
 
@@ -247,13 +256,14 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
     ), ARRAY_A);
 
     if (!$row) {
-        return;
+        return $wpdb->last_error === '';
     }
 
     $manager = new Sharity_Points_Manager();
     $referrer_points = (int) apply_filters('sharity_referral_points', 200);
     $referred_points = (int) apply_filters('sharity_referral_bonus_points', 50);
     $referrer_tx = null;
+    $referrer_ok = true;
     $referred_tx = null;
 
     $referrer_pseudo = isset($row['referrer_pseudo_id']) ? (string) $row['referrer_pseudo_id'] : '';
@@ -269,6 +279,7 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
             'referral:' . $pseudo_id
         );
         $referrer_tx = $result['transaction_id'] ?? null;
+        $referrer_ok = !empty($result['success']);
     } elseif ($referrer_user > 0) {
         $result = $manager->award_points(
             $referrer_user,
@@ -279,6 +290,7 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
             'referral:' . $pseudo_id
         );
         $referrer_tx = $result['transaction_id'] ?? null;
+        $referrer_ok = !empty($result['success']);
     }
 
     $result = $manager->award_points_for_pseudo(
@@ -290,8 +302,9 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
         'referral_bonus:' . $pseudo_id
     );
     $referred_tx = $result['transaction_id'] ?? null;
+    if (!$referrer_ok || empty($result['success'])) { return false; }
 
-    $wpdb->update(
+    $updated = $wpdb->update(
         $referrals_table,
         [
             'status' => 'completed',
@@ -301,6 +314,7 @@ function sharity_points_handle_referral(string $pseudo_id, int $ledger_id, array
         ],
         ['id' => (int) $row['id']]
     );
+    return $updated !== false && $wpdb->last_error === '';
 }
 
 function sharity_points_decode_meta($raw): array
@@ -357,4 +371,219 @@ function sharity_points_extract_amount_huf(array $row, array $meta): float
     }
 
     return 0.0;
+}
+
+function sharity_points_impactshop_schema_ready(): bool
+{
+    return (string) get_option('sharity_points_impactshop_schema', '') === '2026-10-29-simple1';
+}
+
+function sharity_points_impactshop_sql($value)
+{
+    global $wpdb;
+    if ($value === false || $wpdb->last_error !== '') {
+        throw new RuntimeException('point_storage_failure');
+    }
+    return $value;
+}
+
+/** Normalize authenticated adapter input; bearer tokens/raw provider bodies are not retained. */
+function sharity_points_impactshop_prepare(array $input): array
+{
+    if (($input['authority'] ?? false) !== true) {
+        return ['success' => false, 'error' => 'unauthenticated_event'];
+    }
+    foreach (['provider' => 16, 'namespace' => 96, 'purchase_id' => 256, 'event_id' => 256, 'revision' => 64, 'merchant' => 128] as $key => $limit) {
+        if (!is_string($input[$key] ?? null) || strlen($input[$key]) > $limit) {
+            return ['success' => false, 'error' => 'invalid_event_identity'];
+        }
+    }
+    if (!in_array($input['provider'], ['cj', 'dognet', 'partner'], true)
+        || $input['namespace'] === '' || $input['event_id'] === '' || $input['revision'] === '') {
+        return ['success' => false, 'error' => 'invalid_event_identity'];
+    }
+    $kind = $input['kind'] ?? '';
+    if (!in_array($kind, ['pending', 'award', 'refund', 'adjustment'], true)) {
+        return ['success' => false, 'error' => 'invalid_event_kind'];
+    }
+    $original = (string) ($input['original_purchase_at'] ?? '');
+    $date = preg_match('/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)?$/D', $original)
+        ? DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', substr(str_replace('T', ' ', $original), 0, 19), new DateTimeZone('UTC')) : false;
+    $original = $date && $date->format('Y-m-d H:i:s') === substr(str_replace('T', ' ', $original), 0, 19)
+        ? $date->format('Y-m-d H:i:s') : '';
+    $identity = [$input['provider'], $input['namespace'], $input['purchase_id']];
+    $root = $input['purchase_id'] === '' ? null : hash('sha256', wp_json_encode($identity));
+    $money = $kind === 'award' ? sharity_points_money_donation_huf_to_points($input['donation_amount_huf'] ?? '') : ['success' => true, 'points' => 0];
+    $reason = (string) ($input['manual_reason'] ?? '');
+    if ($reason !== '' && !preg_match('/^[a-z0-9_:-]{1,64}$/D', $reason)) {
+        $reason = 'invalid_authority';
+    }
+    $token = is_string($input['provider_token'] ?? null) ? $input['provider_token'] : '';
+    $event = [
+        'root_id' => $root,
+        'logical_id' => hash('sha256', wp_json_encode([$input['provider'], $input['namespace'], $input['event_id'], $input['revision']])),
+        'provider' => $input['provider'], 'namespace' => $input['namespace'],
+        'kind' => $kind, 'original_purchase_at' => $original, 'merchant' => $input['merchant'],
+        'points' => $money['success'] ? $money['points'] : 0,
+        'donation_amount_huf' => is_string($input['donation_amount_huf'] ?? null) || is_int($input['donation_amount_huf'] ?? null) ? (string) $input['donation_amount_huf'] : '',
+        'payload_ref' => preg_match('/^[a-f0-9]{64}$/D', (string) ($input['payload_ref'] ?? '')) ? $input['payload_ref'] : '',
+        'authority_ref' => substr((string) ($input['authority_ref'] ?? ''), 0, 160),
+        'token_digest' => $token === '' ? '' : hash('sha256', $token),
+        'reason' => $reason !== '' ? $reason : (!$money['success'] ? $money['error'] : ''),
+    ];
+    // The token is resolved only on first capture; retries can use the immutable root binding.
+    $event['subject_digest'] = $token === '' ? null : sharity_points_impactshop_attribution($token, $input['provider'], $input['merchant']);
+    $event['payload_digest'] = hash('sha256', wp_json_encode(array_diff_key($event, ['subject_digest' => true])));
+    return ['success' => true, 'event' => $event];
+}
+
+function sharity_points_impactshop_capture(array $input): array
+{
+    if ((string) get_option('sharity_points_impactshop_producer_enabled', '0') !== '1') {
+        return ['success' => false, 'error' => 'producer_disabled'];
+    }
+    if (!sharity_points_impactshop_schema_ready()) {
+        return ['success' => false, 'error' => 'schema_unavailable'];
+    }
+    if ((string) get_option('sharity_points_legacy_consumer_enabled', '1') !== '0'
+        || !sharity_points_impactshop_cutover()) {
+        return ['success' => false, 'error' => 'cutover_unavailable'];
+    }
+    $prepared = sharity_points_impactshop_prepare($input);
+    if (!$prepared['success']) {
+        return $prepared;
+    }
+    $event = $prepared['event'];
+    return (new Sharity_Points_Manager())->impactshop_transaction(function () use ($event): array {
+        global $wpdb;
+        $now = gmdate('Y-m-d H:i:s');
+        if ($event['root_id'] !== null) {
+            sharity_points_impactshop_sql($wpdb->query($wpdb->prepare(
+                "INSERT INTO {$wpdb->prefix}impactshop_point_settlements
+                 (root_id, provider, namespace, subject_digest, original_purchase_at, merchant, updated_at)
+                 VALUES (%s,%s,%s,UNHEX(NULLIF(%s,'')),NULLIF(%s,''),%s,%s)
+                 ON DUPLICATE KEY UPDATE root_id=VALUES(root_id)",
+                $event['root_id'], $event['provider'], $event['namespace'], $event['subject_digest'] ?? '',
+                $event['original_purchase_at'], $event['merchant'], $now
+            )));
+            $root = sharity_points_impactshop_sql($wpdb->get_row($wpdb->prepare(
+                "SELECT *, HEX(subject_digest) AS subject_hex FROM {$wpdb->prefix}impactshop_point_settlements WHERE root_id=%s FOR UPDATE", $event['root_id']
+            ), ARRAY_A));
+            if (!$root) {
+                throw new RuntimeException('root_not_persisted');
+            }
+            $conflict = ($event['subject_digest'] !== null && $root['subject_hex'] !== null
+                && strtolower($root['subject_hex']) !== $event['subject_digest'])
+                || ($event['original_purchase_at'] !== '' && $root['original_purchase_at'] !== null && $event['original_purchase_at'] !== $root['original_purchase_at'])
+                || ($event['merchant'] !== '' && $event['merchant'] !== $root['merchant']);
+            if ($conflict) {
+                sharity_points_impactshop_sql($wpdb->update($wpdb->prefix . 'impactshop_point_settlements', ['state' => 'manual'], ['root_id' => $event['root_id']]));
+            }
+        }
+        sharity_points_impactshop_sql($wpdb->query($wpdb->prepare(
+            "INSERT INTO {$wpdb->prefix}impactshop_point_changes
+             (root_id,logical_id,payload_digest,event_json,created_at,updated_at)
+             VALUES (NULLIF(%s,''),%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+            $event['root_id'] ?? '', $event['logical_id'], $event['payload_digest'], wp_json_encode($event), $now, $now
+        )));
+        $row = sharity_points_impactshop_sql($wpdb->get_row($wpdb->prepare(
+            "SELECT id,status FROM {$wpdb->prefix}impactshop_point_changes WHERE logical_id=%s AND payload_digest=%s", $event['logical_id'], $event['payload_digest']
+        ), ARRAY_A));
+        if (!$row) {
+            throw new RuntimeException('capture_unconfirmed');
+        }
+        return ['success' => true, 'event_id' => (int) $row['id'], 'status' => $row['status']];
+    });
+}
+
+function sharity_points_impactshop_cutover(): ?string
+{
+    $value = (string) get_option('sharity_points_impactshop_cutover_utc', '');
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $value, new DateTimeZone('UTC'));
+    return $date && $date->format('Y-m-d H:i:s') === $value ? $value : null;
+}
+
+/** Small explicit state machine: one award, one full reversal; every other correction is manual. */
+function sharity_points_impactshop_decide(array $root, array $event, int $balance): array
+{
+    $manual = ['status' => 'manual', 'delta' => 0, 'forgiven' => 0, 'state' => 'manual'];
+    if ($root['state'] === 'manual' || $event['reason'] !== '' || $root['subject_digest'] === null
+        || !$root['original_purchase_at'] || $root['original_purchase_at'] < sharity_points_impactshop_cutover()) {
+        return $manual + ['reason' => $event['reason'] ?: 'manual_review_required'];
+    }
+    if ($event['kind'] === 'pending' && $root['state'] === 'pending') {
+        return ['status' => 'applied', 'delta' => 0, 'forgiven' => 0, 'state' => 'pending', 'reason' => 'pending_captured'];
+    }
+    if ($event['authority_ref'] === '') {
+        return $manual + ['reason' => 'missing_donation_authority'];
+    }
+    if ($event['kind'] === 'award' && $root['state'] === 'pending' && $event['points'] > 0) {
+        return ['status' => 'applied', 'delta' => $event['points'], 'forgiven' => 0, 'state' => 'awarded', 'reason' => ''];
+    }
+    if ($event['kind'] === 'refund' && $root['state'] === 'awarded') {
+        $actual = min((int) $root['awarded_points'], max(0, $balance));
+        return ['status' => 'applied', 'delta' => -$actual, 'forgiven' => (int) $root['awarded_points'] - $actual, 'state' => 'reversed', 'reason' => ''];
+    }
+    return $manual + ['reason' => 'complex_correction'];
+}
+
+function sharity_points_impactshop_consume(): void
+{
+    if ((string) get_option('sharity_points_impactshop_consumer_enabled', '0') !== '1'
+        || (string) get_option('sharity_points_legacy_consumer_enabled', '1') !== '0'
+        || !sharity_points_impactshop_schema_ready() || !sharity_points_impactshop_cutover()) {
+        return;
+    }
+    global $wpdb;
+    $lock = substr($wpdb->prefix . 'impactshop_points_consumer', 0, 64);
+    if ((int) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s,0)', $lock)) !== 1) {
+        return;
+    }
+    try {
+        $connection = (string) sharity_points_impactshop_sql($wpdb->get_var('SELECT CONNECTION_ID()'));
+        $ownsLock = static function () use ($wpdb, $lock, $connection): bool {
+            return (string) $wpdb->get_var('SELECT CONNECTION_ID()') === $connection
+                && (string) $wpdb->get_var($wpdb->prepare('SELECT IS_USED_LOCK(%s)', $lock)) === $connection;
+        };
+        $run = get_option('sharity_points_impactshop_run', null);
+        if (!is_array($run) || ($run['state'] ?? '') === 'completed') {
+            $high = (int) sharity_points_impactshop_sql($wpdb->get_var("SELECT COALESCE(MAX(id),0) FROM {$wpdb->prefix}impactshop_point_changes"));
+            $run = ['id' => bin2hex(random_bytes(16)), 'high_water' => $high, 'state' => 'active'];
+            update_option('sharity_points_impactshop_run', $run, false);
+            if (get_option('sharity_points_impactshop_run') !== $run) {
+                throw new RuntimeException('run_not_persisted');
+            }
+        }
+        $rows = sharity_points_impactshop_sql($wpdb->get_col($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}impactshop_point_changes
+             WHERE id<=%d AND status IN ('queued','retry') AND (next_retry_at IS NULL OR next_retry_at<=UTC_TIMESTAMP())
+             ORDER BY id LIMIT 200", $run['high_water']
+        )));
+        $manager = new Sharity_Points_Manager();
+        foreach ($rows as $id) {
+            if (!$ownsLock()) { return; }
+            $result = $manager->apply_impactshop_event((int) $id, $run['id']);
+            if (!$result['success']) {
+                if (!$ownsLock()) { return; }
+                // Unknown commit is resolved by the durable event outcome on the next cron; no immediate retry.
+                $wpdb->query($wpdb->prepare(
+                    "UPDATE {$wpdb->prefix}impactshop_point_changes SET status=IF(attempts>=2,'manual','retry'),
+                     reason='transaction_unconfirmed', attempts=attempts+1, next_retry_at=DATE_ADD(UTC_TIMESTAMP(),INTERVAL 15 MINUTE)
+                     WHERE id=%d AND status IN ('queued','retry')", $id
+                ));
+            }
+        }
+        if (!$ownsLock()) { return; }
+        $left = (int) sharity_points_impactshop_sql($wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}impactshop_point_changes WHERE id<=%d AND status IN ('queued','retry')", $run['high_water']
+        )));
+        if ($left === 0) {
+            $run['state'] = 'completed';
+            update_option('sharity_points_impactshop_run', $run, false);
+        }
+    } catch (Throwable $error) {
+        do_action('sharity_points_error', 'impactshop_consumer_unconfirmed', []);
+    } finally {
+        $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+    }
 }

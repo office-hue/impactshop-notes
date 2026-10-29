@@ -161,6 +161,25 @@ function impactshop_partner_transaction(WP_REST_Request $request)
         return impactshop_partner_handle_error(new WP_Error('partner_payload_invalid', 'Event type is not allowed', ['status' => 422]), $request_id, 'partner_tx_rejected', $payload, $raw_body);
     }
 
+    // Validate the transport idempotency contract before queuing any points.
+    // A canonical replay still replays durable capture before acknowledgement.
+    $idempotency_conflict = impactshop_partner_check_idempotency_conflict($idempotency_key, $raw_body, $request_id);
+    if (is_wp_error($idempotency_conflict)) {
+        return impactshop_partner_handle_error($idempotency_conflict, $request_id, 'partner_tx_rejected', $payload, $raw_body);
+    }
+
+    // Authenticated durable capture precedes the legacy duplicate acknowledgement.
+    if ((string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1') {
+        $points = impactshop_partner_capture_points($payload, $partner_code);
+        if (!($points['success'] ?? false)) {
+            return impactshop_partner_handle_error(new WP_Error('partner_points_unavailable', 'Points event persistence failed', ['status' => 503]), $request_id, 'partner_tx_rejected', null, null);
+        }
+    }
+
+    if ($idempotency_conflict instanceof WP_REST_Response) {
+        return $idempotency_conflict;
+    }
+
     global $wpdb;
     $tx_table = $wpdb->prefix . 'impact_partner_tx';
 
@@ -210,14 +229,6 @@ function impactshop_partner_transaction(WP_REST_Request $request)
         return rest_ensure_response($response_payload);
     }
 
-    $idempotency_conflict = impactshop_partner_check_idempotency_conflict($idempotency_key, $raw_body, $request_id);
-    if ($idempotency_conflict instanceof WP_REST_Response) {
-        return $idempotency_conflict;
-    }
-    if (is_wp_error($idempotency_conflict)) {
-        return impactshop_partner_handle_error($idempotency_conflict, $request_id, 'partner_tx_rejected', $payload, $raw_body);
-    }
-
     $payload['currency'] = strtoupper((string) $payload['currency']);
 
     $status = impactshop_partner_status_from_payment($payload['payment_status']);
@@ -244,7 +255,7 @@ function impactshop_partner_transaction(WP_REST_Request $request)
             'discount_amount' => $discount_amount,
             'idempotency_key' => $idempotency_key,
             'proof_hash' => impactshop_partner_hash($raw_body),
-            'payload_json' => wp_json_encode($payload),
+            'payload_json' => wp_json_encode(impactshop_partner_stored_payload($payload)),
             'created_at' => $now,
         ],
         ['%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%f', '%f', '%d', '%s', '%s', '%s', '%s']
@@ -575,6 +586,71 @@ function impactshop_partner_validate_transaction(array $payload)
     }
 
     return true;
+}
+
+/** HMAC-authenticated additive contract; cart totals never award points. */
+function impactshop_partner_points_event(array $payload, string $partner_code): array
+{
+    $status = (string) ($payload['payment_status'] ?? '');
+    $purchase_raw = $payload['original_purchase_id'] ?? $payload['event_id'] ?? '';
+    $purchase = is_string($purchase_raw) ? $purchase_raw : (string) ($payload['event_id'] ?? '');
+    $original_at = is_string($payload['original_purchase_at'] ?? null) ? $payload['original_purchase_at'] : '';
+    $policy = is_string($payload['donation_policy_version'] ?? null) ? $payload['donation_policy_version'] : '';
+    $revision = is_int($payload['revision'] ?? null) || is_string($payload['revision'] ?? null) ? (string) $payload['revision'] : '';
+    $amount = $payload['donation_amount_huf'] ?? null;
+    $reason = '';
+    $kind = $status === 'unpaid' ? 'pending' : ($status === 'refunded' ? 'refund' : 'award');
+    // Incoming timestamp is not proof of the original purchase time.
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/D', $original_at)
+        || strtotime($original_at) === false
+        || gmdate('Y-m-d\TH:i:s\Z', strtotime($original_at)) !== $original_at) {
+        $original_at = '';
+        $reason = 'original_purchase_time_missing';
+    }
+    if (!is_string($amount) || !preg_match('/^\d+(?:\.\d+)?$/D', $amount)
+        || !preg_match('/^[A-Za-z0-9._:-]{1,96}$/D', $policy)
+        || !is_string($payload['original_purchase_id'] ?? null)
+        || !preg_match('/^[A-Za-z0-9._:-]{1,128}$/D', $purchase)
+        || (!is_int($payload['revision'] ?? null) && !is_string($payload['revision'] ?? null))
+        || !preg_match('/^[A-Za-z0-9._:-]{1,64}$/D', $revision)) {
+        $reason = 'donation_authority_missing';
+    }
+    if ($status === 'refunded' && ($payload['refund_scope'] ?? '') !== 'full') {
+        $reason = 'refund_scope_not_full';
+    }
+    if ($reason !== '' && $kind !== 'pending') {
+        $kind = 'adjustment';
+    }
+    return [
+        'provider' => 'partner',
+        'namespace' => 'impactshop:partner:' . $partner_code,
+        'purchase_id' => $purchase,
+        'event_id' => 'partner:' . hash('sha256', (string) ($payload['event_id'] ?? '') . ':' . $status),
+        'revision' => $revision !== '' ? $revision : 'legacy',
+        'original_purchase_at' => $original_at,
+        'kind' => $kind,
+        'donation_amount_huf' => $kind === 'award' ? $amount : '',
+        'provider_token' => is_string($payload['attribution_token'] ?? null) ? $payload['attribution_token'] : '',
+        'merchant' => $partner_code,
+        'authority' => true,
+        'authority_ref' => $reason === '' ? 'partner:' . hash('sha256', $partner_code . ':' . $policy) : '',
+        'manual_reason' => $reason,
+    ];
+}
+
+/** Do not copy the new bearer attribution token into legacy payload storage. */
+function impactshop_partner_stored_payload(array $payload): array
+{
+    unset($payload['attribution_token']);
+    return $payload;
+}
+
+function impactshop_partner_capture_points(array $payload, string $partner_code): array
+{
+    if (!function_exists('sharity_points_impactshop_capture')) {
+        return ['success' => false, 'error' => 'points_runtime_unavailable'];
+    }
+    return sharity_points_impactshop_capture(impactshop_partner_points_event($payload, $partner_code));
 }
 
 function impactshop_partner_validate_discount(array $payload)

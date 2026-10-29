@@ -453,6 +453,20 @@ function sharity_points_earn(WP_REST_Request $request): WP_REST_Response
 function sharity_points_admin_adjust(WP_REST_Request $request): WP_REST_Response
 {
     $payload = (array) $request->get_json_params();
+    if (array_key_exists('review_event_id', $payload)) {
+        if (!sharity_points_manage_permission()) {
+            return new WP_REST_Response(['message' => 'Forbidden'], 403);
+        }
+        if (!is_int($payload['review_event_id']) || !is_int($payload['expected_version'] ?? null)
+            || !is_int($payload['points'] ?? null) || !is_string($payload['reason'] ?? null)) {
+            return new WP_REST_Response(['message' => 'Invalid resolution'], 400);
+        }
+        $result = (new Sharity_Points_Manager())->resolve_impactshop_event(
+            $payload['review_event_id'], $payload['expected_version'], $payload['points'], $payload['reason'], get_current_user_id()
+        );
+        $status = !empty($result['success']) ? 200 : (($result['error'] ?? '') === 'resolution_conflict' ? 409 : 400);
+        return new WP_REST_Response($result, $status);
+    }
     $user_id = (int) ($payload['user_id'] ?? 0);
     $pseudo_id = isset($payload['pseudo_id']) ? sanitize_text_field((string) $payload['pseudo_id']) : '';
     $points = (int) ($payload['points'] ?? 0);
@@ -492,6 +506,13 @@ function sharity_points_webhook_purchase(WP_REST_Request $request): WP_REST_Resp
     }
 
     $payload = (array) $request->get_json_params();
+    // The generic signed webhook is not an alternative Impact Shop donation producer.
+    $impactshopIdentity = strtolower((string) ($payload['source_id'] ?? '') . ':' . (string) ($payload['dedupe_key'] ?? '')
+        . ':' . (string) ($payload['metadata']['source_type'] ?? '') . ':' . (string) ($payload['metadata']['namespace'] ?? '')
+        . ':' . (string) ($payload['metadata']['provider'] ?? ''));
+    if (preg_match('/impactshop|(?:^|:)(?:cj|dognet|partner)(?:$|:)/', $impactshopIdentity)) {
+        return new WP_REST_Response(['message' => 'Use the authenticated Impact Shop provider contract'], 403);
+    }
     $pseudo_id = isset($payload['pseudo_id']) ? sanitize_text_field((string) $payload['pseudo_id']) : '';
     $amount_huf = (float) ($payload['amount_huf'] ?? 0);
     $points = (int) ($payload['points'] ?? 0);

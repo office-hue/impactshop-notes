@@ -497,7 +497,7 @@ final class ImpactShop_CJ
             $interval = new DateInterval('PT2H');
         }
         $startIso = gmdate('Y-m-d\TH:i:s\Z', $startTs);
-        $durationSeconds = (int) $interval->format('%s');
+        $durationSeconds = self::sync_window_seconds($startTs, $interval);
         $endIso = $since ? gmdate('Y-m-d\TH:i:s\Z', $now) : gmdate('Y-m-d\TH:i:s\Z', min($now, $startTs + $durationSeconds));
 
         $batch = [];
@@ -510,6 +510,16 @@ final class ImpactShop_CJ
             $records = $payload['records'] ?? [];
             if ($records) {
                 foreach ($records as $record) {
+                    if ((string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1') {
+                        if (!function_exists('sharity_points_impactshop_capture')) {
+                            throw new RuntimeException('CJ points runtime unavailable; cursor retained.');
+                        }
+                        $scope = (string) $creds['publisher_id'] . ':' . (string) ($creds['website_id'] ?? '');
+                        $captured = sharity_points_impactshop_capture(self::points_event($record, $scope));
+                        if (!($captured['success'] ?? false)) {
+                            throw new RuntimeException('CJ points event persistence failed; cursor retained.');
+                        }
+                    }
                     $converted = self::map_graphql_commission($record);
                     if ($converted) {
                         $normalized = self::normalize_commission($converted);
@@ -871,6 +881,22 @@ GQL;
         $eventDate = self::field($item, 'event-date');
         $statusRaw = strtolower(self::field($item, 'action-status'));
         $sid = self::field($item, 'sid');
+        if (preg_match('/^sat1_[A-Za-z0-9_-]{43}$/D', $sid)) {
+            $correlation = function_exists('impactshop_sharity_affiliate_correlate')
+                ? impactshop_sharity_affiliate_correlate($sid) : null;
+            if (!is_array($correlation) || ($correlation['provider_key'] ?? '') !== 'cj'
+                || empty($correlation['ngo_ref'])) {
+                self::queue_failure([
+                    'provider_event_digest' => hash('sha256', $actionId),
+                    'provider_token_digest' => hash('sha256', $sid),
+                ], 'cj_legacy_correlation_unavailable');
+                return null;
+            }
+            // Correlation supplies only the legacy NGO label, never points authority.
+            // The old path already uses a derived pseudo when none is supplied.
+            $sid = (string) $correlation['ngo_ref'] . '|' . substr(hash('sha256', $sid), 0, 12);
+            $item['sid'] = $sid;
+        }
         if ($actionId === '' || $advertiserId === '' || $eventDate === '' || $sid === '') {
             self::queue_failure($item, 'missing required fields');
             return null;
@@ -1165,6 +1191,8 @@ query ($publisherIds: [String!]!, $since: String, $before: String, $cursor: Stri
     maxCommissionId
     records {
       commissionId
+      orderId
+      original
       actionStatus
       advertiserId
       advertiserName
@@ -1335,6 +1363,49 @@ GRAPHQL;
             'sid'                => (string) ($record['shopperId'] ?? ($record['sid'] ?? '')),
             'commission-amount'  => $amount ?? '',
             'commission-currency'=> $currency ?: 'HUF',
+        ];
+    }
+
+    public static function sync_window_seconds(int $start, DateInterval $interval): int
+    {
+        $seconds = (new DateTimeImmutable('@' . $start))->add($interval)->getTimestamp() - $start;
+        if ($seconds <= 0) { throw new RuntimeException('CJ sync window must be positive.'); }
+        return $seconds;
+    }
+
+    /** CJ correction records are deltas, never replacement donation totals. */
+    public static function points_event(array $record, string $account_scope): array
+    {
+        $status = strtolower((string) ($record['actionStatus'] ?? ''));
+        $original = ($record['original'] ?? null) === true;
+        $purchase = (string) ($record['orderId'] ?? '');
+        $advertiser = (string) ($record['advertiserId'] ?? '');
+        $at = $original ? (string) ($record['eventDate'] ?? '') : '';
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/D', $at)
+            || strtotime($at) === false) {
+            $at = '';
+        }
+        $pending = $original && in_array($status, ['new', 'extended'], true);
+        $correlation = function_exists('impactshop_sharity_affiliate_correlate')
+            ? impactshop_sharity_affiliate_correlate((string) ($record['shopperId'] ?? '')) : null;
+        $merchant = is_array($correlation) && ($correlation['provider_key'] ?? '') === 'cj'
+            && is_string($correlation['partner_key'] ?? null) && $correlation['partner_key'] !== ''
+            ? $correlation['partner_key'] : '';
+        return [
+            'provider' => 'cj',
+            'namespace' => 'impactshop:cj:' . $account_scope,
+            'purchase_id' => $advertiser . ':' . ($purchase !== '' ? $purchase : ('unresolved:' . (string) ($record['commissionId'] ?? ''))),
+            'event_id' => (string) ($record['commissionId'] ?? ''),
+            'revision' => $status . ':' . (string) ($record['postingDate'] ?? ''),
+            'original_purchase_at' => $at,
+            'kind' => $pending ? 'pending' : 'adjustment',
+            'donation_amount_huf' => '',
+            'provider_token' => (string) ($record['shopperId'] ?? ''),
+            'merchant' => $merchant,
+            'authority' => true,
+            'authority_ref' => '',
+            'manual_reason' => $pending ? '' : ($original ? 'settled_donation_authority_missing' : 'cj_delta_correction_requires_review'),
+            'payload_ref' => hash('sha256', json_encode($record, JSON_UNESCAPED_SLASHES) ?: ''),
         ];
     }
 

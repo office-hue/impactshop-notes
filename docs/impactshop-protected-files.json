@@ -81,7 +81,14 @@
     "docs/impactshop-guard-hashes.json",
     "docs/impactshop-guard-hashes.sha256",
     ".deploy.production.env",
-    ".deploy.staging.env"
+    ".deploy.staging.env",
+    "wp-content/mu-plugins/impactshop-dognet-points.php",
+    "wp-content/mu-plugins/impactshop-netflix-shortcodes.php",
+    "wp-content/mu-plugins/impactshop-rest-coupons.php",
+    "wp-content/mu-plugins/impactshop-ads-watch-ui-cta-bundle.js",
+    "wp-content/mu-plugins/impactshop-partner-api.php",
+    "wp-content/mu-plugins/sharity-decay-manager.php",
+    "wp-content/mu-plugins/sharity-vacation-manager.php"
   ],
   "additive_globs": [
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",

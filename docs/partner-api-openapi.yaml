@@ -235,6 +235,33 @@ components:
         payment_status:
           type: string
           enum: [paid, unpaid, refunded]
+        donation_amount_huf:
+          type: string
+          pattern: '^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$'
+          description: Optional final confirmed HUF donation, never a cart or commission estimate.
+        donation_policy_version:
+          type: string
+          maxLength: 64
+        original_purchase_id:
+          type: string
+          maxLength: 128
+        original_purchase_at:
+          type: string
+          format: date-time
+          description: Original purchase UTC time (Z); corrections retain this value.
+        revision:
+          oneOf:
+            - type: string
+              maxLength: 64
+            - type: integer
+              minimum: 0
+        attribution_token:
+          type: string
+          pattern: '^sat1_[A-Za-z0-9_-]{43}$'
+        refund_scope:
+          type: string
+          enum: [full, partial]
+          description: Full is mandatory for an automatic complete reversal; otherwise manual.
         discount_tier:
           type: string
           enum: [basic, bronze, silver, gold, platinum, legend]

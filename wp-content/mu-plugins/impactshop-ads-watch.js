@@ -104,15 +104,9 @@
         ctaLabel: '',
         ctaUrl: '',
         ctaMeta: null,
-        currentCtaPoints: 0,
         ctaClicked: false,
         ctaClickedKeys: {},
-        ctaBonusPoints: 0,
-        ctaBonusVotes: 0,
-        ctaBonusCounted: false,
-        ctaUiDeferred: false,
         pendingCtaPayload: null,
-        pendingCtaFallbackReward: null,
         pendingCtaResolved: false,
         imaProgressFrameId: null,
         imaAdDuration: 0,
@@ -231,7 +225,7 @@
         $('#btn-resume-ad').on('click', resumeImaAd);
         // Note: IMA CTA overlay has pointer-events: none in CSS
         // Clicks pass through to ad-container, IMA SDK opens URL
-        // Points are awarded via onAdClick callback (CLICK event listener)
+        // The IMA click callback records analytics only; clicks never award points or votes.
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleExternalReturn);
         window.addEventListener('pageshow', handleExternalReturn);
@@ -360,28 +354,20 @@
 
             var href = String($(this).attr('href') || '').trim();
 
-            // Only award bonus once per video, but still navigate on repeat clicks
             if (state.ctaClicked) {
-                console.log('[Sponsor CTA] Already clicked - skipping bonus, still navigating');
                 if (href && href !== '#') {
                     window.open(href, '_blank', 'noopener');
                 }
                 return;
             }
             state.ctaClicked = true;
-            var fallbackReward = getCtaFallbackReward(state.ctaMeta.points || 0);
-            // Track CTA click
             sendCtaTracking({
                 content_type: state.ctaMeta.content_type,
                 content_id: state.ctaMeta.content_id,
                 cta_url: state.ctaUrl || '',
                 shop_slug: '',
                 category: '',
-                price_range: '',
-                points: state.ctaMeta.points || 0,
-                dedupe_key: state.ctaMeta.dedupe_key || ''
-            }, {
-                fallbackReward: fallbackReward
+                price_range: ''
             });
 
             if (href && href !== '#') {
@@ -432,14 +418,11 @@
                 });
             }
 
-            // ── Award bonus (once per banner rotation) ──
             let trackingRequest = null;
             if (payload && !state.ctaClicked) {
                 state.ctaClicked = true;
-                const fallbackReward = getCtaFallbackReward(payload.points || 0);
-                stashPendingCtaTracking(payload, fallbackReward);
+                stashPendingCtaTracking(payload);
                 trackingRequest = sendCtaTracking(payload, {
-                    fallbackReward: fallbackReward,
                     transport: 'keepalive'
                 }).done(function () {
                     markPendingCtaTrackingResolved();
@@ -1466,7 +1449,6 @@
             state.isPlaying = true;
             state.adProgress = 0;
             state.ctaClicked = false; // Reset CTA clicked flag for new ad
-            state.ctaBonusCounted = false;
             clearPendingCtaTracking();
             updateWatchButton();
             showLoading(true);
@@ -1485,12 +1467,6 @@
                 const contentType = response && response.content_type ? String(response.content_type) : String(response && response.mode ? response.mode : 'regular');
                 const contentId = response && response.content_id ? String(response.content_id) : '';
                 const cta = response && response.cta ? response.cta : null;
-                const ctaPointsHintRaw = cta && cta.points !== undefined
-                    ? Number(cta.points)
-                    : Number(rewardRules.cta_points || 0);
-                state.currentCtaPoints = Number.isFinite(ctaPointsHintRaw)
-                    ? Math.max(0, Math.round(ctaPointsHintRaw))
-                    : 0;
 
                 if (contentType === 'education' && response.education) {
                     state.currentMode = 'education';
@@ -1505,9 +1481,7 @@
                         updateCta(cta.label, cta.url, {
                             content_type: 'education',
                             content_id: contentId || '',
-                            sponsor_id: 0,
-                            points: cta.points || 0,
-                            dedupe_key: cta.dedupe_key || ''
+                            sponsor_id: 0
                         });
                     } else if (response.education.cta_url && response.education.cta_url.trim() !== '' && response.education.cta_url !== '#') {
                         updateCta(response.education.cta_label, response.education.cta_url, {
@@ -1537,20 +1511,17 @@
                     // Show unified video info panel
                     const sponsorPoints = Number(rewardRules.points_sponsor || 5);
                     const sponsorVotes = Number(rewardRules.votes_sponsor || 5);
-                    // CTA click always gives 5 pts + 5 votes (hardcoded in PHP)
                     showVideoInfoPanel('sponsor', {
                         title: response.sponsor.title || 'Szponzori videó',
                         watchReward: '+' + sponsorPoints + ' pont, +' + sponsorVotes + ' szavazat',
-                        clickReward: '+5 pont, +5 szavazat'
+                        clickReward: ''
                     });
                     
                     if (cta) {
                         updateCta(cta.label, cta.url, {
                             content_type: 'sponsor',
                             content_id: contentId || String(response.sponsor.id || ''),
-                            sponsor_id: state.currentSponsorId,
-                            points: cta.points || 0,
-                            dedupe_key: cta.dedupe_key || ''
+                            sponsor_id: state.currentSponsorId
                         });
                     } else {
                         updateCta(response.sponsor.cta_label, response.sponsor.cta_url, {
@@ -1600,12 +1571,10 @@
                     state.currentSponsorId = 0;
                     updateRewardInfoText(rewardRules, 'auto_banner');
                     
-                    // Show unified video info panel for auto banner
-                    // CTA click always gives 5 pts + 5 votes (hardcoded in PHP)
                     showVideoInfoPanel('auto_banner', {
                         title: response.auto_banner.title || 'Akciós ajánlat',
                         watchReward: '+1 pont, +1 szavazat',
-                        clickReward: '+5 pont, +5 szavazat'
+                        clickReward: ''
                     });
                     
                     updateCta('', '', null);
@@ -1626,20 +1595,17 @@
                 // Show unified video info panel for regular ads
                 const regularPoints = Number(rewardRules.points_regular || 1);
                 const regularVotes = Number(rewardRules.votes_regular || 1);
-                // CTA click always gives 5 pts + 5 votes (hardcoded in PHP)
                 showVideoInfoPanel('regular', {
                     title: 'Reklám',
                     watchReward: '+' + regularPoints + ' pont, +' + regularVotes + ' szavazat',
-                    clickReward: '+5 pont, +5 szavazat'
+                    clickReward: ''
                 });
                 
                 if (cta) {
                     updateCta(cta.label, cta.url, {
                         content_type: 'ad',
                         content_id: contentId || '',
-                        sponsor_id: 0,
-                        points: cta.points || 0,
-                        dedupe_key: cta.dedupe_key || ''
+                        sponsor_id: 0
                     });
                 } else {
                     updateCta('', '', null);
@@ -2868,9 +2834,7 @@
             return;
         }
         if (safeMode === 'auto_banner') {
-            const ctaPoints = Number(safeRules.cta_points || 5);
-            const ctaVotes = ctaPoints > 0 ? 5 : 0;
-            $text.html(`<strong>+${ctaPoints} pont</strong> és <strong>+${ctaVotes} szavazat</strong> a hirdetésre kattintás után`);
+            $text.text('Az ajánlat megnyitása nem jár ponttal vagy szavazattal.');
             return;
         }
         if (safeMode === 'sponsor') {
@@ -2916,28 +2880,15 @@
         $link.attr('href', url);
         $link.attr('target', '_blank');
         $link.attr('rel', 'noopener');
-        $link.attr('title', 'Kattints a bónusz pontokért!');
+        $link.attr('title', 'Ajánlat megnyitása');
         $cta.show();
         if (meta && typeof meta === 'object') {
-            const ctaPoints = Number(meta.points);
             state.ctaMeta = {
                 content_type: String(meta.content_type || ''),
                 content_id: String(meta.content_id || ''),
-                sponsor_id: Number(meta.sponsor_id || 0),
-                points: Number.isFinite(ctaPoints) ? Math.max(0, Math.round(ctaPoints)) : 0,
-                dedupe_key: String(meta.dedupe_key || '')
+                sponsor_id: Number(meta.sponsor_id || 0)
             };
         }
-    }
-
-    function buildCtaDedupe(contentType, contentId, ctaUrl) {
-        const pseudo = state.pseudoId || '';
-        const safeType = String(contentType || 'cta');
-        const safeId = String(contentId || '') || (ctaUrl ? String(ctaUrl).slice(-48) : 'unknown');
-        if (safeType === 'auto_banner') {
-            return `cta:${safeType}:${safeId}:${pseudo}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-        }
-        return `cta:${safeType}:${safeId}:${pseudo}`;
     }
 
     function safeBtoa(value) {
@@ -3391,11 +3342,6 @@
         const payload = $banner.data('cta-payload') || {};
         if (finalUrl) {
             payload.cta_url = finalUrl;
-            payload.dedupe_key = buildCtaDedupe(
-                payload.content_type || 'auto_banner',
-                payload.content_id || banner.id || '',
-                finalUrl
-            );
         }
         $banner.data('cta-payload', payload);
         console.log('[AutoBanner][DEBUG] refreshAutoBannerLink', {
@@ -3424,20 +3370,17 @@
         }
 
         const bannerId = contentId || banner.id || '';
-        const ctaPoints = Math.max(0, Number((cta && cta.points) || state.currentCtaPoints || 5));
         state.currentAutoBanner = banner || null;
         state.autoBannerRewardBasePoints = Math.max(0, Math.round(Number(state.points || 0)));
         state.autoBannerRewardBaseVotes = Math.max(0, Math.round(Number(state.availableVotes || 0)));
         prepareAutoBannerSurface();
-        // Reset CTA tracking for new banner so bonus can be earned again
+        // Reset analytics tracking for the new banner.
         state.ctaClicked = false;
         const finalUrl = transformBannerUrl(
             banner.banner_url || '',
             banner.shop_slug || '',
             state.selectedNgo ? state.selectedNgo.slug : ''
         );
-        const ctaDedupe = (cta && cta.dedupe_key) ? cta.dedupe_key : buildCtaDedupe('auto_banner', bannerId, finalUrl);
-
         $banner.prop('hidden', false);
         $banner.find('[data-role=auto-banner-title]').text(banner.title || '');
         const $bannerImg = $banner.find('[data-role=auto-banner-image]');
@@ -3464,9 +3407,7 @@
             raw_url: banner.banner_url || '',
             shop_slug: banner.shop_slug || '',
             category: banner.category || '',
-            price_range: banner.price_range || '',
-            points: ctaPoints,
-            dedupe_key: ctaDedupe
+            price_range: banner.price_range || ''
         });
         ensureAutoBannerCtaVisible();
 
@@ -3474,7 +3415,7 @@
         showVideoInfoPanel('auto_banner', {
             title: banner.title || 'Akciós ajánlat',
             watchReward: '+1 pont, +1 szavazat',
-            clickReward: '+5 pont, +5 szavazat'
+            clickReward: ''
         });
         startBannerProgress($banner, {
             duration: Math.max(5, Number(ttlSeconds || 5)) * 1000,
@@ -3566,15 +3507,13 @@
                 raw_url: banner.banner_url || '',
                 shop_slug: banner.shop_slug || '',
                 category: '',
-                price_range: '',
-                points: 5,
-                dedupe_key: buildCtaDedupe('auto_banner', banner.id || '', finalUrl || '')
+                price_range: ''
             });
 
             showVideoInfoPanel('auto_banner', {
                 title: banner.title || 'Akciós ajánlat',
                 watchReward: '+1 pont, +1 szavazat',
-                clickReward: '+5 pont, +5 szavazat'
+                clickReward: ''
             });
             startBannerProgress($banner, { duration: 5000, onComplete: loadAutoBanner });
         }).fail(function () {
@@ -3719,9 +3658,7 @@
             raw_url: state.currentAutoBanner.banner_url || '',
             shop_slug: state.currentAutoBanner.shop_slug || '',
             category: state.currentAutoBanner.category || '',
-            price_range: state.currentAutoBanner.price_range || '',
-            points: 5,
-            dedupe_key: buildCtaDedupe('auto_banner', bannerId, finalUrl || '')
+            price_range: state.currentAutoBanner.price_range || ''
         });
     }
 
@@ -3749,14 +3686,6 @@
         return 'Ajánlat';
     }
 
-    function getCtaFallbackReward(pointsHint) {
-        const enabled = Number(pointsHint || 0) > 0;
-        return {
-            points: enabled ? 5 : 0,
-            votes: enabled ? 5 : 0
-        };
-    }
-
     function cloneCtaPayload(payload) {
         if (!payload || typeof payload !== 'object') {
             return null;
@@ -3768,105 +3697,23 @@
             raw_url: payload.raw_url || '',
             shop_slug: payload.shop_slug || '',
             category: payload.category || '',
-            price_range: payload.price_range || '',
-            points: Number(payload.points || 0),
-            dedupe_key: payload.dedupe_key || ''
+            price_range: payload.price_range || ''
         };
     }
 
-    function stashPendingCtaTracking(payload, fallbackReward) {
+    function stashPendingCtaTracking(payload) {
         state.pendingCtaPayload = cloneCtaPayload(payload);
-        state.pendingCtaFallbackReward = {
-            points: Number((fallbackReward && fallbackReward.points) || 0),
-            votes: Number((fallbackReward && fallbackReward.votes) || 0)
-        };
         state.pendingCtaResolved = false;
     }
 
     function clearPendingCtaTracking() {
         state.pendingCtaPayload = null;
-        state.pendingCtaFallbackReward = null;
         state.pendingCtaResolved = false;
     }
 
     function markPendingCtaTrackingResolved() {
         state.pendingCtaResolved = true;
         state.pendingCtaPayload = null;
-        state.pendingCtaFallbackReward = null;
-    }
-
-    function applyCtaTrackingReward(response, fallbackReward) {
-        const safeResponse = response && typeof response === 'object' ? response : null;
-        const hasAwardedPoints = !!(safeResponse && Object.prototype.hasOwnProperty.call(safeResponse, 'awarded_points'));
-        const hasAwardedVotes = !!(safeResponse && Object.prototype.hasOwnProperty.call(safeResponse, 'awarded_votes'));
-
-        let awardedPoints = hasAwardedPoints
-            ? Number(safeResponse.awarded_points)
-            : Number((fallbackReward && fallbackReward.points) || 0);
-        let awardedVotes = hasAwardedVotes
-            ? Number(safeResponse.awarded_votes)
-            : Number((fallbackReward && fallbackReward.votes) || 0);
-
-        if (!Number.isFinite(awardedPoints) || awardedPoints < 0) {
-            awardedPoints = 0;
-        }
-        if (!Number.isFinite(awardedVotes) || awardedVotes < 0) {
-            awardedVotes = 0;
-        }
-        awardedPoints = Math.round(awardedPoints);
-        awardedVotes = Math.round(awardedVotes);
-
-        const duplicateRecoveredReward = !!(
-            safeResponse
-            && safeResponse.duplicate
-            && !state.ctaBonusCounted
-            && awardedPoints === 0
-            && awardedVotes === 0
-            && fallbackReward
-            && (Number(fallbackReward.points || 0) > 0 || Number(fallbackReward.votes || 0) > 0)
-        );
-        if (duplicateRecoveredReward) {
-            awardedPoints = Math.max(0, Math.round(Number((fallbackReward && fallbackReward.points) || 0)));
-            awardedVotes = Math.max(0, Math.round(Number((fallbackReward && fallbackReward.votes) || 0)));
-        }
-
-        const hasServerPointsTotal = !!(safeResponse && typeof safeResponse.new_total === 'number' && Number.isFinite(safeResponse.new_total));
-        const hasServerVotes = !!(safeResponse && typeof safeResponse.available_votes === 'number' && Number.isFinite(safeResponse.available_votes));
-
-        if (hasServerPointsTotal) {
-            state.points = Math.max(0, Math.round(Number(safeResponse.new_total)));
-        } else if (awardedPoints > 0) {
-            state.points = Math.max(0, Math.round(Number(state.points || 0))) + awardedPoints;
-        }
-
-        if (hasServerVotes) {
-            state.availableVotes = Math.max(0, Math.round(Number(safeResponse.available_votes)));
-        } else if (awardedVotes > 0) {
-            state.availableVotes = Math.max(0, Math.round(Number(state.availableVotes || 0))) + awardedVotes;
-        }
-
-        if (!state.ctaBonusCounted && (awardedPoints > 0 || awardedVotes > 0)) {
-            state.ctaBonusPoints = Number(state.ctaBonusPoints || 0) + awardedPoints;
-            state.ctaBonusVotes = Number(state.ctaBonusVotes || 0) + awardedVotes;
-            state.ctaBonusCounted = true;
-        }
-
-        const shouldDeferVisibleCtaReward = state.isPlaying && (
-            awardedPoints > 0
-            || awardedVotes > 0
-            || hasServerPointsTotal
-            || hasServerVotes
-        );
-
-        if (awardedPoints > 0 || awardedVotes > 0 || hasServerPointsTotal || hasServerVotes) {
-            if (shouldDeferVisibleCtaReward) {
-                state.ctaUiDeferred = true;
-            } else {
-                updateStatusDisplay();
-                updateVoteControls();
-                notifyPointsUpdated();
-            }
-        }
     }
 
     function flushPendingCtaTracking() {
@@ -3875,16 +3722,12 @@
         }
 
         const payload = cloneCtaPayload(state.pendingCtaPayload);
-        const fallbackReward = state.pendingCtaFallbackReward || getCtaFallbackReward(payload && payload.points ? payload.points : 0);
-
-        return sendCtaTracking(payload, {
-            fallbackReward: fallbackReward
-        })
+        return sendCtaTracking(payload)
             .done(function () {
                 markPendingCtaTrackingResolved();
             })
             .fail(function (error) {
-                console.warn('[CTA] deferred reward retry failed', error);
+                console.warn('[CTA] deferred tracking retry failed', error);
             });
     }
 
@@ -3893,16 +3736,13 @@
             return $.Deferred().reject({ status: 'invalid_payload' }).promise();
         }
         const safeOptions = options && typeof options === 'object' ? options : {};
-        const fallbackReward = safeOptions.fallbackReward || { points: 0, votes: 0 };
         const body = {
             content_type: payload.content_type,
             content_id: payload.content_id || '',
             cta_url: payload.cta_url || '',
             shop_slug: payload.shop_slug || '',
             category: payload.category || '',
-            price_range: payload.price_range || '',
-            points: Number(payload.points || 0),
-            dedupe_key: payload.dedupe_key || ''
+            price_range: payload.price_range || ''
         };
         const headers = {};
         if (restNonce) {
@@ -3933,7 +3773,6 @@
                                     body: responseBody
                                 };
                             }
-                            applyCtaTrackingReward(responseBody, fallbackReward);
                             deferred.resolve(responseBody);
                         });
                 })
@@ -3952,11 +3791,7 @@
             timeout: 8000,
             headers: headers,
             xhrFields: { withCredentials: true }
-        })
-            .done(function (response) {
-                applyCtaTrackingReward(response, fallbackReward);
-            })
-            .fail(function (xhr) {
+        }).fail(function (xhr) {
                 console.error('[CTA] tracking failed', xhr);
             });
     }
@@ -4261,27 +4096,17 @@
     }
 
     function onAdClick() {
-        // Only award bonus once per ad
         if (state.ctaClicked) {
-            console.log('[IMA] Ad already clicked - skipping bonus');
             return;
         }
         state.ctaClicked = true;
-        
-        // User clicked on IMA ad - award bonus points (5 pts + 5 votes)
-        console.log('[IMA] Ad clicked - awarding CTA bonus');
-        const ctaPointsHint = Math.max(0, Math.round(Number(state.currentCtaPoints || 0)));
         sendCtaTracking({
             content_type: state.currentMode || 'ad',
             content_id: '',
             cta_url: state.imaClickThroughUrl || '',
             shop_slug: '',
             category: '',
-            price_range: '',
-            points: ctaPointsHint,
-            dedupe_key: 'ima_click:' + state.pseudoId + ':' + Date.now()
-        }, {
-            fallbackReward: getCtaFallbackReward(ctaPointsHint)
+            price_range: ''
         });
 
         if (state.imaClickThroughUrl) {
@@ -4379,10 +4204,6 @@
                     let points = viewResponse.points || 0;
                     let votes = viewResponse.votes || 0;
                     
-                    // Add CTA bonus if clicked during this video
-                    const ctaBonusPoints = Math.max(0, Number(state.ctaBonusPoints || 0));
-                    const ctaBonusVotes = Math.max(0, Number(state.ctaBonusVotes || 0));
-                    
                     if (typeof viewResponse.new_total === 'number') {
                         state.points = Math.max(
                             Math.max(0, Math.round(Number(state.points || 0))),
@@ -4403,12 +4224,8 @@
                     updateStatusDisplay();
                     updateVoteControls();
                     
-                    // Store base video reward for combined display at CTA click
-                    state.lastVideoRewardPoints = points;
-                    state.lastVideoRewardVotes = votes;
-                    
-                    let displayPoints = points + ctaBonusPoints;
-                    let displayVotes = votes + ctaBonusVotes;
+                    let displayPoints = points;
+                    let displayVotes = votes;
                     if (adType === 'auto_banner') {
                         const bannerDeltaPoints = Math.max(
                             0,
@@ -4421,41 +4238,18 @@
                         displayPoints = Math.max(displayPoints, bannerDeltaPoints);
                         displayVotes = Math.max(displayVotes, bannerDeltaVotes);
                     }
-                    state.ctaUiDeferred = false;
-
-                    // Override the delta overlay to show combined reward (view + CTA bonus)
-                    // when CTA bonus was deferred during banner playback.
-                    if (ctaBonusPoints > 0) {
-                        showVideoBalanceDelta('points', displayPoints);
-                    }
-                    if (ctaBonusVotes > 0) {
-                        showVideoBalanceDelta('votes', displayVotes);
-                    }
-
                     if (displayPoints > 0 || displayVotes > 0) {
                         showRewardAnimation(displayPoints, displayVotes);
                     } else {
                         showNotification('A megtekintést már rögzítettük.', 'warning');
                     }
 
-                    // Show explicit notification for CTA bonus
-                    if (ctaBonusPoints > 0 || ctaBonusVotes > 0) {
-                        var ctaParts = [];
-                        if (displayPoints > 0) ctaParts.push('+' + displayPoints + ' pont');
-                        if (displayVotes > 0) ctaParts.push('+' + displayVotes + ' szavazat');
-                        if (ctaParts.length > 0) {
-                            showNotification(ctaParts.join(', '), 'success');
-                        }
-                    }
-                    
                     hideCtaStickyNotice();
                     trackEvent('ads_watch_view_complete', {
                         ad_type: adType,
                         sponsor_id: sponsorId,
                         points: points,
-                        votes: votes,
-                        cta_bonus_points: ctaBonusPoints,
-                        cta_bonus_votes: ctaBonusVotes
+                        votes: votes
                     });
                     notifyPointsUpdated();
 
@@ -4506,12 +4300,7 @@
         state.pendingAdTagUrl = '';
         state.currentMode = 'regular';
         state.sponsorCompletionFired = false;
-        state.currentCtaPoints = 0;
         state.imaAdDuration = 0;
-        state.ctaBonusPoints = 0;
-        state.ctaBonusVotes = 0;
-        state.ctaBonusCounted = false;
-        state.ctaUiDeferred = false;
         clearPendingCtaTracking();
         stopAutoBannerProgress();
         state.autoBannerPaused = false;
@@ -4703,8 +4492,7 @@
 
     function showRewardAnimation(points, votes) {
         // Reward popups are intentionally disabled for auto views.
-        // Real-time feedback is shown by the animated in-player balance counters
-        // and explicit notifications for CTA bonus rewards.
+        // Real-time feedback is shown by the animated in-player balance counters.
         return;
     }
 

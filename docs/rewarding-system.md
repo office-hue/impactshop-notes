@@ -211,3 +211,8 @@ Ha valaki egy évig aktív, eléri a Legendet. Ha utána is hasonló ütemben ak
 ## 8) Összefoglaló (1 mondatban)
 
 **Pontokbol lesz szint es elony, jelvenyek merfoldko jutalmak extra ponttal, a Legacy Wall a user jelveny‑vitrinje, a Legacy Pool pedig publikus ranglista jelveny‑ikonokkal.**
+
+
+## Impact Shop új vásárlási pont — 2026-10-29
+
+Az új szabály az éles átállási időtől: végleges, igazolt adomány 1 egészHUF=1 purchasepont, egyszeri half-up kerekítéssel, felhasználói szorzó nélkül. Kattintásból0pont/0szavazat, attribution megmarad. Egyszeri teljes refund az aktuális egyenlegig vonható vissza; a hiány végleg elengedett. Részleges, ismételt, történeti vagy bizonytalan korrekció kézi eset. Másjutalmak és a freeze-szabály megmaradnak. Az új kód és a providerlane-ek alapból kikapcsoltak; implementáció nem éles aktiválás. Részletek: [egyszerűsített terv](dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md).
