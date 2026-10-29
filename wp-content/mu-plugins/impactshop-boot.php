@@ -410,9 +410,10 @@ function isb_cj_generate_click_url($slug, $ngo, $pseudo, $targetUrl='', &$sidOut
   $link = isb_cj_pick_link($advertiserId);
   if (!$link) return '';
   $sidParts = [];
-  $ngoSlug = sanitize_title($ngo ?: $slug);
+  $opaqueToken = preg_match('/^sat1_[A-Za-z0-9_-]{43}$/D', (string) $ngo) === 1;
+  $ngoSlug = $opaqueToken ? $ngo : sanitize_title($ngo ?: $slug);
   if ($ngoSlug !== '') $sidParts[] = $ngoSlug;
-  if ($pseudo !== '') $sidParts[] = strtoupper(substr(preg_replace('~[^A-Za-z0-9]~','', $pseudo), 0, 12));
+  if (!$opaqueToken && $pseudo !== '') $sidParts[] = strtoupper(substr(preg_replace('~[^A-Za-z0-9]~','', $pseudo), 0, 12));
   $sid = $sidParts ? implode('~', $sidParts) : $slug;
   $sidOut = $sid;
   $url = $link['click_url'] ?? '';
@@ -737,13 +738,16 @@ function isb_handle_go($is_deal){
   $affiliateActivationId = '';
   $sharityAffiliateRuntime = false;
 
-  if ($sharityAffiliateSource) {
+  $pointsAffiliateSource = (string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1'
+    && $pseudo !== '' && function_exists('impactshop_identity_owner_authorized')
+    && impactshop_identity_owner_authorized(strtolower($pseudo));
+  if ($sharityAffiliateSource || $pointsAffiliateSource) {
     $prepared = apply_filters('impactshop_sharity_affiliate_prepare', null, [
       'shop' => $shop,
       'ngo' => $ngo,
       'pseudo' => $pseudo,
       'provider' => $isCj ? 'cj' : 'dognet',
-      'source' => $src,
+      'source' => $pointsAffiliateSource ? 'impactshop-points' : $src,
     ]);
     if (
       is_wp_error($prepared)

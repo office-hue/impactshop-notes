@@ -78,6 +78,21 @@ if (!function_exists('impactshop_totals_pick_ngo_from_row')) {
             return '';
         }
 
+        // Opaque attribution is not an NGO slug. Reuse the issuer's trusted binding.
+        foreach ($cands as $value) {
+            $candidate = $value;
+            if (preg_match('~^https?://~i', $value)) {
+                parse_str((string) parse_url($value, PHP_URL_QUERY), $parts);
+                $candidate = is_string($parts['d1'] ?? null) ? $parts['d1'] : '';
+            }
+            if (str_starts_with($candidate, 'sat1_')) {
+                $binding = function_exists('impactshop_sharity_affiliate_correlate')
+                    ? impactshop_sharity_affiliate_correlate($candidate) : null;
+                return is_array($binding) && ($binding['provider_key'] ?? '') === 'dognet'
+                    ? sanitize_title((string) ($binding['ngo_ref'] ?? '')) : '';
+            }
+        }
+
         foreach ($cands as $value) {
             if (preg_match('~^[a-z0-9._-]{3,}$~i', $value) && preg_match('~[a-z]~i', $value)) {
                 return sanitize_title($value);

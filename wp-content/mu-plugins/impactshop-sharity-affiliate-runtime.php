@@ -86,13 +86,17 @@ function impactshop_sharity_affiliate_validate_context($value)
     $pseudo = strtoupper(preg_replace('~[^A-Za-z0-9]~', '', (string) $value['pseudo']));
     $provider = (string) $value['provider'];
     $source = (string) $value['source'];
+    $pointsContext = $source === 'impactshop-points'
+        && (string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1'
+        && function_exists('impactshop_identity_owner_authorized')
+        && impactshop_identity_owner_authorized(strtolower($pseudo));
     if (
         $shop === '' || $ngo === '' || strlen($shop) > 128 || strlen($ngo) > 128
         || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $shop)
         || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $ngo)
         || !preg_match('/^[A-Z0-9]{6,12}$/', $pseudo)
-        || !in_array($source, ['shopping-assistant', 'vb2026-autobanner'], true)
-        || $provider !== 'dognet'
+        || (!in_array($source, ['shopping-assistant', 'vb2026-autobanner'], true) && !$pointsContext)
+        || ($provider !== 'dognet' && !($pointsContext && in_array($provider, ['cj', 'partner'], true)))
     ) {
         return new WP_Error('unsupported_context', 'Unsupported affiliate context.');
     }
@@ -169,6 +173,13 @@ function impactshop_sharity_affiliate_prepare($unused, $rawContext)
     if ($subject === '') {
         return new WP_Error('issuer_unavailable', 'Affiliate issuer unavailable.');
     }
+    if ($context['source'] === 'impactshop-points') {
+        $binding = function_exists('sharity_points_impactshop_bind_subject')
+            ? sharity_points_impactshop_bind_subject(strtolower($context['pseudo'])) : ['success' => false];
+        if (empty($binding['success'])) {
+            return new WP_Error('points_binding_unavailable', 'Point identity binding unavailable.');
+        }
+    }
     $now = time();
     $bucket = (string) floor($now / IMPACTSHOP_SHARITY_AFFILIATE_TTL);
     $requestProjection = implode("\0", [
@@ -201,8 +212,8 @@ function impactshop_sharity_affiliate_prepare($unused, $rawContext)
                 'ngo_ref' => $context['ngo'],
                 'partner_key' => $context['shop'],
                 'provider_key' => $context['provider'],
-                'provider_program_ref' => 'dognet:' . $context['shop'],
-                'authority_snapshot_ref' => 'legacy-dognet-v1',
+                'provider_program_ref' => $context['provider'] . ':' . $context['shop'],
+                'authority_snapshot_ref' => $context['source'] === 'impactshop-points' ? 'points-attribution-v1' : 'legacy-dognet-v1',
                 'disclosure_version' => IMPACTSHOP_SHARITY_AFFILIATE_CJ_DISCLOSURE,
                 'source_placement' => $context['source'],
                 'status' => 'ready_to_redirect',

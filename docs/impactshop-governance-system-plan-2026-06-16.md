@@ -934,3 +934,8 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+
+### 2026-10-29 célzott szinkron
+
+Az Impact Shop donationpoints egyszerűsített candidate új runtimefájljai a meglévő Bástya config/hash-védelembe kerülnek. Nincs DEVadmission/újguard/releaseengine. Lásd [termékterv](dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md). Source, merge és live állapot külön; liveprovider/drain feltételek még nyitottak.

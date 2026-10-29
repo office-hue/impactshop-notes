@@ -1940,3 +1940,8 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+
+## 2026-10-29 — Impact Shop simplified points
+
+Saját worktree d953e525 alapon; két üzleti tábla, egyszeri award/fullrefund, komplexkorrekció kézi, kattintási jutalom0. Helyi candidate és valódi izolált SQLteszt elkészült; push/PR/merge/deploy/aktiválás ebben a checkpointban még nincs. Újhost we040 Miniútvonalon elérhető; prod/staging közösDB eltérőprefix. Providerfinalauthority (CJ/Dognet) és teljesdrain nemigazolt, ezért laneek nemaktiválhatók. [Terv](docs/dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md).

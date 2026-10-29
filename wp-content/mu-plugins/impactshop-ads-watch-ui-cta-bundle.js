@@ -149,21 +149,6 @@
                 return;
             }
 
-            if (isUrlMatch(settings, '/wp-json/impact/v1/tracking/cta-click')) {
-                const awardedPoints = Number(response && response.awarded_points ? response.awarded_points : 0);
-                const awardedVotes = Number(response && response.awarded_votes ? response.awarded_votes : 0);
-
-                if (awardedPoints <= 0 && awardedVotes <= 0) {
-                    return;
-                }
-
-                DEFER_STATE.pendingReward = true;
-                window.setTimeout(function () {
-                    keepDeferredUiIfNeeded();
-                }, 0);
-                return;
-            }
-
             if (isUrlMatch(settings, '/wp-json/impact/v1/ads-watch/view')) {
                 DEFER_STATE.releasing = false;
                 DEFER_STATE.pendingReward = false;

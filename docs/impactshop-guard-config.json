@@ -936,6 +936,60 @@
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
       "owner_branch": "main"
+    },
+    {
+      "path": ".deploy.production.env",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": ".deploy.staging.env",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "bin/preflight-check.sh",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-ads-watch-ui-cta-bundle.js",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-partner-api.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/sharity-vacation-manager.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/impactshop-dognet-points.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/sharity-points-impactshop-attribution.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "wp-content/mu-plugins/sharity-points-money.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
     }
   ],
   "emergency_override": {

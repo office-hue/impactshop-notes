@@ -740,3 +740,8 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+
+## 2026-10-29 — egyszerűsített donation points candidate
+
+Új termékmodulok védelme a meglévő config/hashlistában: sharity-points-money.php, sharity-points-impactshop-attribution.php, impactshop-dognet-points.php. A canonicalroot/mainBástya modell megmarad; nem készül új releaseguard. Tényleges local ellenőrzések és maradó host/provider feltételek a [terméktervben](dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md). Nincs ebből deploy/aktiválás állítás.

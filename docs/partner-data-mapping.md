@@ -23,3 +23,10 @@ Egységes mező‑mapping táblázat a partner rendszerekhez.
 
 ## Megjegyzés
 - Ha partner oldalon más a mezőnév, ezt a mappinget kell alkalmazni.
+
+
+## Optional signed donation points contract — 2026-10-29
+
+A meglévő HMAC a teljes JSON törzset védi. Pontozáshoz donation_amount_huf (nemfloat, decimálisstring), donation_policy_version, original_purchase_id, original_purchase_at (UTC Z), revision és attribution_token (SAT1) kell. A rawpseudo és amount_gross/net nem donationauthority. Paid+teljescontract=award; unpaid=pendingbinding; refunded csak refund_scope=full esetén egyszeri teljesrefund. partial/hiányzóscope/hiányoscontract manual. Ugyanaz az eredetivásárlásazonosító és subject marad. A szerver által rögzített namespace impactshop:partner:<partner_code>.
+
+Capture meglévőauth/config/idempotencyvalidáció után, azonosduplicateACK előtt; persistencehiba503, eltérő idempotencybody409 pontesemény nélkül. Optionalmezők hiánya nem töri a régi partnerledger API-t, de nem ad automatikuspontot. A SAT1 bearerérték nem kerül a legacy payload_json-ba.

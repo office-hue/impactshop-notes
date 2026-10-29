@@ -22,6 +22,8 @@ if (!defined('SHARITY_POINTS_SCHEMA')) {
 define('SHARITY_POINTS_PATH', __DIR__);
 
 require_once __DIR__ . '/sharity-points-helpers.php';
+require_once __DIR__ . '/sharity-points-money.php';
+require_once __DIR__ . '/sharity-points-impactshop-attribution.php';
 require_once __DIR__ . '/sharity-points-manager.php';
 require_once __DIR__ . '/sharity-level-manager.php';
 require_once __DIR__ . '/sharity-decay-manager.php';
@@ -36,7 +38,16 @@ require_once __DIR__ . '/sharity-points-discount.php';
 require_once __DIR__ . '/sharity-points-admin.php';
 require_once __DIR__ . '/sharity-points-notifications.php';
 
-add_action('muplugins_loaded', 'sharity_points_maybe_migrate', 5);
+// Schema changes are explicit operations, never side effects of an HTTP request.
+if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('sharity points migrate', function ($args, $assoc): void {
+        $result = sharity_points_migrate_impactshop(isset($assoc['dry-run']));
+        if (!$result['success']) {
+            WP_CLI::error($result['error']);
+        }
+        WP_CLI::success(isset($assoc['dry-run']) ? 'Read-only schema preflight completed.' : 'Points schema verified.');
+    });
+}
 add_action('admin_init', 'sharity_points_register_caps');
 
 function sharity_points_register_caps(): void
@@ -332,4 +343,141 @@ function sharity_points_maybe_alter_point_transaction_types(): void
     $wpdb->query(
         "ALTER TABLE {$table} MODIFY `type` ENUM({$enumSql}) NOT NULL"
     );
+}
+
+/** Explicit additive migration. Existing point/history data is never rebuilt. */
+function sharity_points_migrate_impactshop(bool $dry_run = false): array
+{
+    global $wpdb;
+    $required = ['user_points', 'point_transactions', 'level_history'];
+    foreach ($required as $suffix) {
+        $engine = $wpdb->get_var($wpdb->prepare(
+            'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s',
+            $wpdb->prefix . $suffix
+        ));
+        if (strtoupper((string) $engine) !== 'INNODB') {
+            return ['success' => false, 'error' => 'points_table_not_innodb:' . $suffix];
+        }
+    }
+    if (PHP_INT_SIZE < 8) {
+        return ['success' => false, 'error' => 'php_64_bit_required'];
+    }
+    if ($dry_run) {
+        return ['success' => true];
+    }
+    if (!add_option('sharity_points_impactshop_migration_lock', gmdate('c'), '', false)) {
+        return ['success' => false, 'error' => 'migration_locked'];
+    }
+    try {
+        update_option('sharity_points_impactshop_migration', ['state' => 'started', 'at' => gmdate('c')], false);
+        sharity_points_impactshop_sql($wpdb->query('SET SESSION lock_wait_timeout=5'));
+        sharity_points_impactshop_sql($wpdb->query('SET SESSION innodb_lock_wait_timeout=5'));
+        $charset = $wpdb->get_charset_collate();
+        $statements = sharity_points_impactshop_schema_sql($charset);
+        foreach ($statements as $sql) {
+            sharity_points_impactshop_sql($wpdb->query($sql));
+        }
+        $table = $wpdb->prefix . 'user_points';
+        $column = $wpdb->get_var("SHOW COLUMNS FROM {$table} LIKE 'impactshop_subject_digest'");
+        if ($column === null) {
+            sharity_points_impactshop_sql($wpdb->query("ALTER TABLE {$table} ADD COLUMN impactshop_subject_digest BINARY(32) NULL, ALGORITHM=INPLACE, LOCK=NONE"));
+        }
+        $index = $wpdb->get_var("SHOW INDEX FROM {$table} WHERE Key_name='uniq_impactshop_subject'");
+        if ($index === null) {
+            sharity_points_impactshop_sql($wpdb->query("ALTER TABLE {$table} ADD UNIQUE KEY uniq_impactshop_subject (impactshop_subject_digest), ALGORITHM=INPLACE, LOCK=NONE"));
+        }
+        $history = $wpdb->prefix . 'point_transactions';
+        $type = $wpdb->get_row("SHOW COLUMNS FROM {$history} LIKE 'type'", ARRAY_A);
+        if (!is_array($type) || !str_starts_with((string) $type['Type'], 'enum(')) {
+            throw new RuntimeException('unexpected_history_type');
+        }
+        if (!str_contains($type['Type'], "'purchase_reversal'")) {
+            // Retain every existing enum value, including unrelated reward types.
+            $enum = substr($type['Type'], 0, -1) . ",'purchase_reversal')";
+            sharity_points_impactshop_sql($wpdb->query("ALTER TABLE {$history} MODIFY type {$enum} NOT NULL, ALGORITHM=INPLACE, LOCK=NONE"));
+        }
+        $subject = $wpdb->get_row("SHOW COLUMNS FROM {$table} LIKE 'impactshop_subject_digest'", ARRAY_A);
+        if (!is_array($subject) || strtolower($subject['Type']) !== 'binary(32)') {
+            throw new RuntimeException('subject_column_unverified');
+        }
+        foreach (['impactshop_point_settlements', 'impactshop_point_changes'] as $suffix) {
+            $engine = $wpdb->get_var($wpdb->prepare(
+                'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', $wpdb->prefix . $suffix
+            ));
+            if (strtoupper((string) $engine) !== 'INNODB') {
+                throw new RuntimeException('impactshop_schema_unverified');
+            }
+        }
+        foreach (['impactshop_point_settlements' => ['root_id','subject_digest','awarded_points','reversed_points','forgiven_points','version','needs_reconciliation'],
+                  'impactshop_point_changes' => ['root_id','logical_id','payload_digest','event_json','actual_delta','run_id','resolution_digest','outcome_json']] as $suffix => $columns) {
+            $tableName = $wpdb->prefix . $suffix;
+            $actual = $wpdb->get_col("SHOW COLUMNS FROM {$tableName}");
+            if (!is_array($actual) || array_diff($columns, $actual)) { throw new RuntimeException('schema_columns_unverified'); }
+        }
+        $eventsTable = $wpdb->prefix . 'impactshop_point_changes';
+        $unique = $wpdb->get_results("SHOW INDEX FROM {$eventsTable} WHERE Key_name='exact_event'", ARRAY_A);
+        if (array_column((array) $unique, 'Column_name') !== ['logical_id','payload_digest']
+            || array_filter((array) $unique, static fn($i) => (int) $i['Non_unique'] !== 0)) {
+            throw new RuntimeException('event_uniqueness_unverified');
+        }
+        update_option('sharity_points_impactshop_schema', '2026-10-29-simple1', false);
+        if ((string) get_option('sharity_points_impactshop_schema') !== '2026-10-29-simple1') {
+            throw new RuntimeException('schema_option_unverified');
+        }
+        update_option('sharity_points_impactshop_migration', ['state' => 'completed', 'at' => gmdate('c')], false);
+        return ['success' => true];
+    } catch (Throwable $error) {
+        update_option('sharity_points_impactshop_migration', ['state' => 'incomplete', 'at' => gmdate('c')], false);
+        return ['success' => false, 'error' => 'migration_incomplete'];
+    } finally {
+        delete_option('sharity_points_impactshop_migration_lock');
+    }
+}
+
+function sharity_points_impactshop_schema_sql(string $charset): array
+{
+    global $wpdb;
+    return [
+        "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}impactshop_point_settlements (
+            root_id CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL PRIMARY KEY,
+            provider VARCHAR(16) NOT NULL,
+            namespace VARCHAR(96) NOT NULL,
+            subject_digest BINARY(32) NULL,
+            original_purchase_at DATETIME NULL,
+            merchant VARCHAR(128) NOT NULL DEFAULT '',
+            state VARCHAR(16) NOT NULL DEFAULT 'pending',
+            version BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            awarded_points INT UNSIGNED NOT NULL DEFAULT 0,
+            reversed_points INT UNSIGNED NOT NULL DEFAULT 0,
+            forgiven_points INT UNSIGNED NOT NULL DEFAULT 0,
+            purchase_transaction_id BIGINT UNSIGNED NULL,
+            refund_transaction_id BIGINT UNSIGNED NULL,
+            needs_reconciliation TINYINT NOT NULL DEFAULT 0,
+            updated_at DATETIME NOT NULL,
+            KEY subject_state (subject_digest, state)
+        ) ENGINE=InnoDB {$charset}",
+        "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}impactshop_point_changes (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            root_id CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+            logical_id CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            payload_digest CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            event_json LONGTEXT NOT NULL,
+            status VARCHAR(16) NOT NULL DEFAULT 'queued',
+            reason VARCHAR(64) NOT NULL DEFAULT '',
+            run_id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL,
+            actual_delta INT NOT NULL DEFAULT 0,
+            forgiven_points INT UNSIGNED NOT NULL DEFAULT 0,
+            transaction_id BIGINT UNSIGNED NULL,
+            resolution_digest CHAR(64) NULL,
+            outcome_json LONGTEXT NULL,
+            attempts INT UNSIGNED NOT NULL DEFAULT 0,
+            next_retry_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            UNIQUE KEY exact_event (logical_id, payload_digest),
+            KEY economic_root (root_id, id),
+            KEY pending (status, next_retry_at, id),
+            KEY run_budget (run_id, actual_delta)
+        ) ENGINE=InnoDB {$charset}",
+    ];
 }

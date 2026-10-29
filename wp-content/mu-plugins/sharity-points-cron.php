@@ -190,6 +190,11 @@ function sharity_expire_old_referrals(): void
 
 function sharity_points_sync_ledger_hook(): void
 {
+    if (function_exists('impactshop_dognet_points_poll')
+        && (string) get_option('impactshop_dognet_points_scan_from', '') !== '') {
+        $result = impactshop_dognet_points_poll();
+        if (empty($result['success'])) { do_action('sharity_points_error', 'dognet_points_capture_incomplete', []); }
+    }
     if (function_exists('sharity_points_sync_ledger')) {
         sharity_points_sync_ledger();
     }
@@ -439,3 +444,87 @@ add_action('init', function (): void {
         wp_schedule_event($next, 'sharity_yearly', 'sharity_yearly_reset');
     }
 });
+
+/** Existing hooks/one-off bonuses resume after commit; economic writes remain deduplicated. */
+function sharity_points_impactshop_reconcile(): void
+{
+    if (!sharity_points_impactshop_schema_ready()
+        || (string) get_option('sharity_points_impactshop_consumer_enabled', '0') !== '1') {
+        return;
+    }
+    global $wpdb;
+    $roots = $wpdb->get_results("SELECT *, HEX(subject_digest) AS subject_hex
+        FROM {$wpdb->prefix}impactshop_point_settlements
+        WHERE needs_reconciliation=1 ORDER BY updated_at LIMIT 200", ARRAY_A);
+    foreach ((array) $roots as $root) {
+        try {
+            $pseudo = sharity_points_impactshop_sql($wpdb->get_var($wpdb->prepare(
+                "SELECT pseudo_id FROM {$wpdb->prefix}user_points WHERE impactshop_subject_digest=UNHEX(%s)", $root['subject_hex']
+            )));
+            if (!is_string($pseudo) || $pseudo === '') { continue; }
+            $events = sharity_points_impactshop_sql($wpdb->get_results($wpdb->prepare(
+                "SELECT id,event_json,outcome_json,transaction_id FROM {$wpdb->prefix}impactshop_point_changes
+                 WHERE root_id=%s AND transaction_id IS NOT NULL AND status IN ('applied','resolved') ORDER BY id", $root['root_id']
+            ), ARRAY_A));
+            foreach ($events as $event) {
+                $outcome = json_decode($event['outcome_json'], true, 32, JSON_THROW_ON_ERROR);
+                if (!empty($outcome['callbacks_completed'])) { continue; }
+                $type = isset($outcome['resolution']) ? 'admin_adjustment' : ($outcome['actual_delta'] > 0 ? 'purchase' : 'purchase_reversal');
+                $metadata = ['pseudo_id' => $pseudo, 'transaction_id' => (int) $event['transaction_id'],
+                    'new_total' => $outcome['new_total'], 'root_id' => $root['root_id'], 'source_type' => 'impactshop'];
+                if (!empty($outcome['level_change']['changed'])) {
+                    do_action('sharity_level_changed', $pseudo, $outcome['level_change']['old_level'], $outcome['level_change']['new_level'], $outcome['new_total']);
+                }
+                do_action('sharity_points_earned', null, $outcome['actual_delta'], $type, $metadata);
+                $outcome['callbacks_completed'] = true;
+                sharity_points_impactshop_sql($wpdb->update($wpdb->prefix . 'impactshop_point_changes', ['outcome_json' => wp_json_encode($outcome)], ['id' => $event['id']]));
+            }
+            $first = $shop = ['success' => true];
+            $referral = true;
+            if ((int) $root['awarded_points'] > 0) {
+                $manager = new Sharity_Points_Manager();
+                $metadata = ['source_type' => 'impactshop_bonus', 'root_id' => $root['root_id']];
+                $first = $manager->award_points_for_pseudo($pseudo, 100, 'first_purchase', $root['root_id'], $metadata, 'first_purchase:' . $pseudo);
+                $shop = $root['merchant'] === '' ? ['success' => true] : $manager->award_points_for_pseudo(
+                    $pseudo, 25, 'shop_discovery', $root['root_id'], $metadata, 'shop_discovery:' . $pseudo . ':' . $root['merchant']
+                );
+                $referral = sharity_points_handle_referral($pseudo, 0, $metadata);
+            }
+            if (!empty($first['success']) && !empty($shop['success']) && $referral) {
+                sharity_points_impactshop_sql($wpdb->update($wpdb->prefix . 'impactshop_point_settlements', ['needs_reconciliation' => 0], ['root_id' => $root['root_id'], 'version' => $root['version']]));
+            }
+        } catch (Throwable $error) {
+            do_action('sharity_points_error', 'impactshop_reconciliation_pending', []);
+        }
+    }
+}
+add_action('sharity_points_sync_ledger', 'sharity_points_impactshop_reconcile', 20);
+
+if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('sharity points exceptions list', function ($args, $assoc): void {
+        global $wpdb;
+        if (!sharity_points_impactshop_schema_ready()) { WP_CLI::error('Points schema unavailable.'); }
+        $limit = max(1, min(200, (int) ($assoc['limit'] ?? 50)));
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT c.id,c.root_id,c.status,c.reason,c.created_at,s.version AS expected_version
+             FROM {$wpdb->prefix}impactshop_point_changes c LEFT JOIN {$wpdb->prefix}impactshop_point_settlements s ON s.root_id=c.root_id
+             WHERE c.status IN ('manual','held') ORDER BY c.id LIMIT %d", $limit
+        ), ARRAY_A);
+        WP_CLI::line(wp_json_encode($rows));
+    });
+    WP_CLI::add_command('sharity points exceptions show', function ($args): void {
+        global $wpdb;
+        if (!sharity_points_impactshop_schema_ready()) { WP_CLI::error('Points schema unavailable.'); }
+        $id = (int) ($args[0] ?? 0);
+        $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}impactshop_point_changes WHERE id=%d", $id), ARRAY_A);
+        if (!$row) { WP_CLI::error('Event not found.'); }
+        $row['settlement'] = $row['root_id'] ? $wpdb->get_row($wpdb->prepare(
+            "SELECT s.state,s.version,s.merchant,s.original_purchase_at,s.awarded_points,s.reversed_points,s.forgiven_points,
+                    u.points_total AS current_balance,u.pseudo_id
+             FROM {$wpdb->prefix}impactshop_point_settlements s
+             LEFT JOIN {$wpdb->prefix}user_points u ON u.impactshop_subject_digest=s.subject_digest WHERE s.root_id=%s", $row['root_id']
+        ), ARRAY_A) : null;
+        $row['expected_version'] = (int) ($row['settlement']['version'] ?? 0);
+        WP_CLI::line(wp_json_encode($row));
+    });
+}

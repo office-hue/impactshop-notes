@@ -8212,3 +8212,16 @@ Más plugin, TLS vagy karbantartási konfiguráció nem érintett; reward off ma
 PHP lint, 200 bridge assertion/14 privátprofilteszt PASS. Független review P2
 headers-sent korrekciója javítva és külön subprocessben igazolva, utóreview tiszta.
 Ez forráskész javítás, nem merge/telepítés/élő profilkapcsolási elfogadás.
+
+
+## 2026-10-29 — egyszerűsített Impact Shop pontozás, megkezdve
+
+Saját worktree: impactshop-points-simple-20261029, alap d953e525. Jóváhagyott legacy touch a pontkezeléshez, attribution/redirect és kattintási jutalom ághoz. Cél: új vásárlás végleges adománya 1 HUF = 1 purchase pont; egyszeri teljes refund, minden összetett/historical korrekció kézi.
+Érintett kapcsolatok: providerimport/signed webhook → tartós esemény → canonical pseudo egyenleg/history/level → meglévő bónuszok; SAT1 redirect binding; click analytics; meglévő 15 perces cron; admin adjust. Kockázat: dupla vagy téves személynek adott pont, versenyző egyenlegírás, hiányzó providerfinalitás, karbantartás alatti eseményvesztés. Védelem: egyedi root/event, hiteles subject, egy tranzakció, default-off lane, tartós kézi eset, meglévő backup/CAS/rollback kiadási út.
+Rollback: új feldolgozás kikapcsolása, események megőrzése; éles pontmozgás után nincs régi DB-visszatöltés. Guide/JYSK content, DEV/helper/cache és külső jogosultság nem módosul. Teszt/review/deploy eredmény még nincs; SSH alapkulcs elutasított.
+
+
+Implementációs checkpoint: két üzleti tábla+subjectmapping; actualSQL78checkPASS, provider/admin/state/attribution/leaffixturekPASS. A korábbi üresmetadata generikus awardhoz adott tesztfixture a main meglévő JSONvalidációján elbukott; a kompatibilitáspróba a meglévő callerekhez hasonló nemüresmetadata-val PASS, az általános manager ezen ágát nem írtukát.
+Éleshostreadback: we040, WP6.9.4/staging6.8.3, MariaDB10.11.19, közösDB wp_/stg_prefix. A működő Miniútvonal igazolt. CJ/Dognet véglegesadományauthority nemigazolt; kérdés Arnoldnak elküldve, laneoff. Teljes karbantartás/drain még nemigazolt; nincs deploy. A korábbi általános korrekciós motor helyett célzott core készült; további infrastruktúra nem indult.
+
+Bástya diagnózis: a közvetlen check először hiányzó invocation rollback/smoke paramétert, majd két deploy_guard scope-címke hiányát jelezte. Az ok a runtime-listából képzett scope volt, miközben a guard-konfiguráció is változik. A meglévő dokumentált paraméterek és a két még nem futtatott deploy-smoke címke hozzáadva; nincs guardgyengítés vagy új helper.
