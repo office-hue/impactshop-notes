@@ -1,5 +1,53 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-29 — completion bridge tényleges kiadása
+
+Ez az operációs checkpoint felülírja a lentebbi source-only leírást, de nem
+állít Vercel-telepítést, játékaktiválást vagy tényleges sorsolást.
+
+- WP #234 merge: `16690883f16914091e73ab695a23a96d619fde38`, tree
+  `5c913dda4648816f76a76ec96695efca5eabdfae`; a merge fája azonos a tesztelt
+  PR-éval. A helyi hálózat helyreállása után csak e konkrét objektum letöltése,
+  majd külön jóváhagyott egyetlen main-readback; nincs main-chase/integráció.
+  A Git-ablak azonnal felszabadult, providerre nem vártunk benne.
+- Egyetlen saját PHP-fájl release-ID:
+  `jysk-game-completion-20261029-16690883`. Guarded dry/apply, mindkét körben
+  öt valós HTTP-preflight sikeres. SHA256
+  `92af8b62c22882eafacb3079ac09e6bc589bdd1d44adfb2bc42165b4fc2d12fd`, mód0444.
+  A távoli privát `backup.bin` hash-e az eredeti
+  `53f972cd70950730e343b9b220b04afcad4af69bf653e7b5e44b681d30846cbb`, mód0600.
+  Read-only rollback-inspect deployed állapotot igazolt.
+- `results install --expected-version=0` explicit saját CLI, privát0700/0600
+  intenttel. Intent SHA256
+  `a6d775debe9ff42cfa99500bf06475540e698c492bea987e036909f4d83e25b6`.
+  Előtte mindhárom új tábla hiányzott; utánuk results/prizes/prize_events
+  mind üres, InnoDB, pontos10/11/8 oszlop és elvárt primary/unique indexek.
+  Állapot empty/version0. Meglévő saját és közös üzenettáblák InnoDB-je csak
+  olvasva; nincs meglévő adatátalakítás vagy közös tábla-konverzió.
+- Valós `POST /wp-json/jysk-game/v1/results`: jogosultság nélkül401;
+  a saját meglévő HMAC-kulccsal hitelesített olvasás200/pending-review,
+  az exact válaszbájtok aláírása ellenőrizve. Nincs privát adat, pontkérés
+  vagy értesítés. A protokoll a normál rövid életű nonce-bejegyzést kezeli.
+  `/` és `/jatek`200 a külön JYSK-hoston. A WordPress boot meglévő idegen
+  deprecation/Elementor-jelzései megmaradtak, nem jelöltük warningmentesnek.
+- Privát profil ready, auth enabled; rewardsEnabled=false,
+  transactionFlag=false. Kulcs/config/policy és más runtime fájl változatlan.
+  Az app új forrása #1793/a17d27b0 már merge-elt, de még nincs új Vercel-build.
+  A végleges kérdésjóváhagyás, civil lista és november9.12:00 időkapu nem kész
+  aktiválás. A korábbi izolált200+14+19+172 és független review újrahasználva;
+  a fentiek külön éles kiadási readbackek, nem teljes játékelfogadás.
+
+Rollback: először read-only inspect, majd kizárólag saját változatlan utóhashből
+`bin/impactshop-guard-rollback.sh --production --apply
+--release-id=jysk-game-completion-20261029-16690883
+--expected-deployed-sha=92af8b62c22882eafacb3079ac09e6bc589bdd1d44adfb2bc42165b4fc2d12fd`.
+Az additív üres táblák megmaradnak; nincs production DB-restore vagy törlés.
+Későbbi publikus nyeremény után a tulajdonosi olvasási hozzáférést meg kell
+őrizni. UI checklist: meglévő profilkapcsolódás, lezárt játék, változatlan
+jelentkezési oldal; a nyertesüzenet UI-ja csak az app kiadása után vizsgálható.
+Privát műveleti naplók a saját `tmp/jysk-completion-*20261029*` fájlokban.
+Ez helyi dokumentációs checkpoint; nem indítunk külön buildet/PR-t érte.
+
 ## 2026-10-29 — main-integráció, nem új runtime-módosítás
 
 Arnold jóváhagyott integrációs/merge-ablaka: rögzített main d953e525a12b.

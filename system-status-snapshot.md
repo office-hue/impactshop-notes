@@ -1,3 +1,16 @@
+## 2026-10-29 — JYSK completion bridge installed, rewards remain off
+
+Exact source merge16690883f169/tree5c913dda. Guarded single-file release
+jysk-game-completion-20261029-16690883, SHA92af8b62…/0444; original
+53f972cd… backup/0600 and rollback inspect verified. Three own result tables
+installed explicitly and verified empty/InnoDB with expected columns/indexes.
+Real signed results POST200/pending-review with verified wire HMAC;
+unauthorized POST401; recruitment/game pages200. Private profile ready,
+rewards/transaction flags false. No app build, points, draw or notification.
+App source PR1793 merged but new content/result UI not yet deployed;
+final question approval/roster/time gate remain separate activation conditions.
+Quiet window released; local documentation checkpoint only, see JYSK runbook.
+
 ## 2026-10-28 — JYSK completion source work in progress
 
 Own branch feat/jysk-game-completion-20261028 adds result export consumer,

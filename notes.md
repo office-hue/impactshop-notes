@@ -1,3 +1,18 @@
+## 2026-10-29 — JYSK completion bridge telepítve, jutalmazás zárt
+
+#234 merge16690883f169, tree5c913dda; a pontos commit saját tiszta worktree-ben.
+Egy külön jóváhagyott Git-beolvasás után HEAD=origin/main=16690883, ablak azonnal
+felszabadult. Egyetlen saját bridge-fájl guarded release:
+`jysk-game-completion-20261029-16690883`, hash92af8b62…, mód0444, eredeti
+53f972cd…/0600 backup és read-only rollback-inspect igazolt. Három saját
+eredménytábla explicit privát intenttel telepítve, mind üres/InnoDB; oszlopok,
+primary/unique indexek readbackje sikeres. Közös táblát nem módosítottunk.
+Az éles aláírt results-olvasás 200/pending-review, exact válasz-HMAC igazolt;
+hitelesítés nélkül401. Mindkét JYSK-oldal200; nincs új Vercel-build, pontkérés,
+nyertes, üzenet vagy jutalmazás. Konfiguráció ready/auth-enabled, reward és
+transaction flag false. Tényleges kiadás/rollback/UI checklist a JYSK runbookban.
+Ez a kiadási napló saját helyi dokumentációs checkpoint; nem új runtime-PR.
+
 ## 2026-10-29 — saját JYSK-ág main-integrációja
 
 Jóváhagyott rövid ablakban egyszer beolvasott main: d953e525a12b.
