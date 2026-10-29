@@ -289,7 +289,7 @@ if (!function_exists('dognet_get_token')) {
 if (!function_exists('dognet_api_request')) {
     function dognet_api_request($method, $path, $body = null, bool $allow_auth_refresh = true)
     {
-        $token = dognet_get_token(false);
+        $token = $allow_auth_refresh ? dognet_get_token(false) : get_transient('dognet_api_token_cache_v1');
         if (!$token) {
             return new WP_Error('no_token', 'Dognet API token nem elérhető');
         }

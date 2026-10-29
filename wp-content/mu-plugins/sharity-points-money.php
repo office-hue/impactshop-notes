@@ -235,3 +235,109 @@ function sharity_points_money_normalize_digits(string $digits): string
     $normalized = ltrim($digits, '0');
     return $normalized === '' ? '0' : $normalized;
 }
+
+/** Approved affiliate policy: commission × 50% × HUF quote/unit; round once. */
+function sharity_points_money_affiliate_donation($commission, $rate, $unit = '1'): array
+{
+    $amount = sharity_points_money_parse($commission);
+    $quote = sharity_points_money_parse($rate);
+    if (!$amount['success'] || !$quote['success']) {
+        return !$amount['success'] ? $amount : $quote;
+    }
+    if (!is_string($unit) || !preg_match('/^10{0,6}$/D', $unit)
+        || $amount['zero'] || $quote['zero']) {
+        return ['success' => false, 'error' => 'invalid_quote'];
+    }
+    $digits = sharity_points_money_multiply_digits($amount['digits'], $quote['digits']);
+    $digits = $digits === null ? null : sharity_points_money_multiply_digits($digits, '5');
+    if ($digits === null) { return ['success' => false, 'error' => 'overflow']; }
+    return sharity_points_money_points_result(sharity_points_money_round_half_up(
+        $digits, $amount['scale'] + $quote['scale'] + strlen($unit)
+    ), PHP_INT_MAX);
+}
+
+/** Official MNB query table: explicit currency/unit headers, Hungarian quote dates. */
+function sharity_points_mnb_parse(string $body, string $currency, string $last_day): array
+{
+    $previous = libxml_use_internal_errors(true);
+    try {
+        $dom = new DOMDocument();
+        if (!$dom->loadHTML('<?xml encoding="utf-8" ?>' . $body, LIBXML_NONET)) { throw new RuntimeException(); }
+        $xpath = new DOMXPath($dom);
+        $tables = $xpath->query('//table[contains(concat(" ",normalize-space(@class)," ")," pricetable ")]');
+        if ($tables->length !== 1) { throw new RuntimeException(); }
+        $table = $tables->item(0);
+        $headers = $xpath->query('./thead/tr', $table);
+        if ($headers->length !== 3) { throw new RuntimeException(); }
+        $code = $xpath->query('./th', $headers->item(0));
+        $units = $xpath->query('./th', $headers->item(2));
+        if ($code->length !== 2 || $units->length !== 2 || trim($code->item(1)->textContent) !== $currency) {
+            throw new RuntimeException();
+        }
+        $unit = trim($units->item(1)->textContent);
+        if (!preg_match('/^10{0,6}$/D', $unit)) { throw new RuntimeException(); }
+        $months = ['január', 'február', 'március', 'április', 'május', 'június',
+            'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+        $selected = null;
+        foreach ($xpath->query('./tbody/tr', $table) as $row) {
+            $cells = $xpath->query('./td', $row);
+            if ($cells->length !== 2 || !preg_match('/^(\d{4})\.\s*([^ ]+)\s+(\d{1,2})\./u', trim($cells->item(0)->textContent), $parts)) {
+                throw new RuntimeException();
+            }
+            $month = array_search($parts[2], $months, true);
+            if ($month === false || !checkdate($month + 1, (int) $parts[3], (int) $parts[1])) { throw new RuntimeException(); }
+            $date = sprintf('%04d-%02d-%02d', $parts[1], $month + 1, $parts[3]);
+            if ($date > $last_day) { continue; }
+            $rate = str_replace(',', '.', trim($cells->item(1)->textContent));
+            $value = sharity_points_money_parse($rate);
+            if (!$value['success'] || $value['zero']) { throw new RuntimeException(); }
+            $candidate = ['success' => true, 'currency' => $currency, 'date' => $date, 'rate' => $rate, 'unit' => $unit];
+            if ($selected && $date === $selected['date'] && $candidate !== $selected) { throw new RuntimeException(); }
+            if (!$selected || $date > $selected['date']) { $selected = $candidate; }
+        }
+        return $selected ?? ['success' => false, 'error' => 'mnb_quote_missing'];
+    } catch (Throwable $error) {
+        return ['success' => false, 'error' => 'mnb_response_invalid'];
+    } finally {
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+    }
+}
+
+/** One official HTTPS request per currency/day per invocation, without retry/fallback. */
+function sharity_points_mnb_quote(string $currency, string $finalized_at): array
+{
+    static $quotes = [];
+    if (!preg_match('/^[A-Z]{3}$/D', $currency)
+        || !preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/D', $finalized_at)) {
+        return ['success' => false, 'error' => 'invalid_finalization'];
+    }
+    try { $final = new DateTimeImmutable($finalized_at); } catch (Exception $error) {
+        return ['success' => false, 'error' => 'invalid_finalization'];
+    }
+    if ($final->format('Y-m-d\TH:i:s') !== substr($finalized_at, 0, 19) || $final->getTimestamp() > time()) {
+        return ['success' => false, 'error' => 'invalid_finalization'];
+    }
+    $day = $final->setTimezone(new DateTimeZone('Europe/Budapest'))->format('Y-m-d');
+    if ($currency === 'HUF') { return ['success' => true, 'currency' => 'HUF', 'date' => $day, 'rate' => '1', 'unit' => '1']; }
+    $key = $currency . ':' . $day;
+    if (isset($quotes[$key])) { return $quotes[$key]; }
+    $cache = 'sharity_points_mnb_' . $currency . '_' . $day;
+    $saved = get_transient($cache);
+    if (is_array($saved) && ($saved['success'] ?? false)) { return $quotes[$key] = $saved; }
+    $from = $final->setTimezone(new DateTimeZone('Europe/Budapest'))->modify('-14 days')->format('Y-m-d');
+    $url = 'https://www.mnb.hu/arfolyam-tablazat?query&' . http_build_query([
+        'deviza' => 'rbCurrencySelect', 'devizaSelected' => $currency,
+        'datefrom' => str_replace('-', '. ', $from) . '.',
+        'datetill' => str_replace('-', '. ', $day) . '.',
+    ]);
+    $response = wp_remote_get($url, ['timeout' => 10, 'redirection' => 0, 'sslverify' => true]);
+    $quote = is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200
+        ? ['success' => false, 'error' => 'mnb_request_failed']
+        : sharity_points_mnb_parse((string) wp_remote_retrieve_body($response), $currency, $day);
+    if ($quote['success']) {
+        $today = (new DateTimeImmutable('now', new DateTimeZone('Europe/Budapest')))->format('Y-m-d');
+        set_transient($cache, $quote, $day < $today ? 86400 : 300);
+    }
+    return $quotes[$key] = $quote;
+}

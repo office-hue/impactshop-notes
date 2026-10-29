@@ -247,4 +247,11 @@ sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after=
 $final=input('order12','final12','award','100');$final['merchant']='';
 $finalId=captured($final);$beforeTotal=total();
 check($manager->apply_impactshop_event($finalId,$run)['actual_delta']===100 && total()===$beforeTotal+100,'final after expiry uses immutable subject and merchant');
+// A known partial/complex event in the same fetched page must stop an earlier queued award.
+sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after='2030-01-01'");
+$queued=captured(input('order13','queued-before-correction','award','100'));
+$partial=input('order13','partial-before-consume','adjustment','');$partial['manual_reason']='partial_correction';
+$partialId=captured($partial);$unchanged=total();
+check($manager->apply_impactshop_event($queued,$run)['status']==='manual' && total()===$unchanged,'complex capture latches manual before earlier award is consumed');
+check($manager->apply_impactshop_event($partialId,$run)['status']==='manual','complex event remains separately reviewable');
 echo "Impact Shop SQL integration passed ({$checks} checks); no live/provider writes\n";

@@ -74,3 +74,19 @@ Kiadásutáni kötelező, MÉG NEM FUTTATOTT route/UI-smoke címkék:
 - Meglévő JYSK/pontflow, identityreturn és videó: érintett regresszióellenőrzés, nincs tartalmi módosítás.
 
 DOCSYNC: termékterv/rewarddocs/partnercontract/notes/status/guardstatus és governancehivatkozás célzottan; nincs globálismemória/helperbővítés.
+
+## 2026-10-29 — Elfogadott MNB-részletszabály folytatása
+
+Felhasználói döntés: végleges jutalék 50%-a, a véglegessé válás napján
+elérhető legutóbbi hivatalos MNB-jegyzés, egyetlen egész-HUF half-up
+kerekítés. Érintett: meglévő money és CJ adapter, capture JSON-snapshot,
+15 perces cron és a két meglévő Dognet transport no-refresh ága.
+Koherencia/kockázat: a fenti gazdasági lánc változatlan; árfolyam-ismétlés,
+részleges korrekció téves refundja és posting nélküli locking a konkrét
+kockázat. Snapshot a meglévő event_jsonban, nincs új séma vagy release út.
+Dognet cache nélküli no-refresh hívás nem indíthat kerülő login/retryt.
+Ellenőrzés: money/MNB SOAP fixture, CJ final/duplicate/full/partial/cursor,
+no-token transport, meglévő SQL state/manager regresszió arányosan.
+Kézi UI: profil pont/szint/history, CTA továbbra0, redirect és NGO megmarad.
+Rollback: új lane off; tartós esemény marad; guarded exact-file backup/CAS.
+Ez a bekezdés felhatalmazás és terv, nem teszt- vagy deploy-PASS.

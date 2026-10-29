@@ -1,13 +1,13 @@
 # Impact Shop egyszerűsített pontozás — implementáció és kiadás
 
 Dátum: 2026-10-29. Alap: d953e525; donor: 369e227d, csak célzott újrahasználat.
-Állapot: implementált helyi candidate, célzott ellenőrzés/review folyamatban; nem merged/deployed/activated.
+Állapot: a #236/f2210d6c core merge-elt és stagingen telepítve/migrálva, új feldolgozás off; production nincs telepítve. Az elfogadott MNB-szabály és CJ-befejezés saját follow-up ágon, célzottan tesztelve/review-zva, még nem publikált.
 
 ## Elfogadott működés
 
 Az átállás UTC-időpontjától kezdődő vásárlás végleges, igazolt adománya 1 egész HUF = 1 purchase pont. Egyszeri jóváírás és egyszeri teljes refund automatikus; részleges, ismételt, ellentmondó, történeti és ismeretlen eredeti idejű eset kézi. A régi egyenleg és történet megmarad. Nincs gazdasági backfill.
 
-Provider/account/purchase azonosítja az immutable rootot, nem credential-generáció. A hiteles adapter pontos adományt, eredeti UTC-időt és meglévő SAT1-kötést ad. Kattintás, jutalék, kosárérték, pending státusz vagy nyers pseudo nem pontozási authority. Egyetlen half-up kerekítés, nincs szintszorzó.
+Provider/account/purchase azonosítja az immutable rootot, nem credential-generáció. A hiteles adapter pontos adományt, eredeti UTC-időt és meglévő SAT1-kötést ad. Kattintás, kosárérték, becsült jutalék, pending státusz vagy nyers pseudo nem pontozási authority. Elfogadott affiliate-képzés: tényleges végleges jutalék 50%-a, a véglegessé válás magyar naptári napján elérhető legutóbbi hivatalos MNB-jegyzéssel, a jegyzési egységet megőrizve. Egyetlen egész-HUF half-up kerekítés. A meglévő eseményben rögzül a jutalék, FX, jegyzési nap és policy; újraküldéskor nincs új árfolyam. Egyetlen half-up kerekítés, nincs szintszorzó.
 
 Teljes refundkor actual=min(eredeti purchase pont, aktuális egyenleg); a hiány végleg forgiven. Nem keletkezik későbbi behajtható tartozás. Egy vásárlás a komplex eset után manual marad. A meglévő freeze-filter pozitív awardot held állapotba tesz, refundot nem tilt.
 
@@ -26,13 +26,13 @@ Attribution: owner-granttel hiteles normál handoff a meglévő SAT1 intentet ha
 ## Provider-készültség és API
 
 - Signed partner: optional, teljes HMAC-body által védett donation_amount_huf decimális string, donation_policy_version, original_purchase_id, original_purchase_at UTC, revision, attribution_token. Refundhoz külön refund_scope=full; partial/hiány kézi. A teljes meglévő validáció és idempotency-konfliktus vizsgálat capture ELŐTT történik; azonos replay ACK csak durable capture után.
-- CJ: eredeti order/commission kötés és pending capture megvan. A commission locked/closed státusza önmagában nem végleges adomány; policy/FX/donation authority hiányában a final és delta correction manual. Nincs hiányzó filter-producerre alapozott képzelt működés.
+- CJ follow-up: a hivatalos DecimalNumber USD mező és lockingDate alapján készül a 50%/MNB snapshot. Locked→closed azonos gazdasági esemény; a linked originalActionId + teljes negatív commission ÉS sale egyezés egyetlen teljes refund, más korrekció kézi. A meglévő 15 perces cron egy posting- és egy locking-date oldalt kér le, tárolt oldalcursorral, így a régi ID státuszváltozása is visszakérdezhető. A CJ saját kapcsolója a régi CLI-sync mellékágára is érvényes. Nincs általános korrekciós elszámoló.
 - Dognet: meglévő raw-transactions transport, legfeljebb4 oldalas teljes cutover-window visszaolvasás, nem csak új ID. Missing eredeti idő/finalitás/adományszerződés mellett manual. Scan hiányában nulla kérés. A points-hívás letiltja a meglévő transport401-refresh retryját; 429-re nincs retry.
-- CJ és Dognet automatikus aktiválása továbbra TILOS valódi, jóváhagyott adományauthority nélkül. Fixture nem provider acceptance.
+- CJ pénzügyi képzése jóváhagyott és implementált; szolgáltatói természetes esemény és aktiválás még nincs igazolva. Dognet eredeti idő/összeg/refund contract továbbra hiányos, csak az az adapter marad manual/off. Fixture nem provider acceptance.
 
 ## Kapcsolók és átállás
 
-Default-off: `sharity_points_impactshop_producer_enabled`, `sharity_points_impactshop_consumer_enabled`. A legacy consumer default1 marad addig, amíg az előre egyeztetett átálláskor0-ra állítják. `sharity_points_impactshop_cutover_utc`: egyszer rögzített `YYYY-MM-DD HH:MM:SS` UTC. `sharity_points_impactshop_lanes`: readiness után engedélyezett stabil namespace-ek tömbje. `impactshop_dognet_points_scan_from`: kizárólag visszakérdezési contract igazolása után; alapból üres. Nincs automatikus lane-enable.
+Default-off: `sharity_points_impactshop_producer_enabled`, `sharity_points_impactshop_consumer_enabled`. A legacy consumer default1 marad addig, amíg az előre egyeztetett átálláskor0-ra állítják. `sharity_points_impactshop_cutover_utc`: egyszer rögzített `YYYY-MM-DD HH:MM:SS` UTC. `sharity_points_impactshop_lanes`: readiness után engedélyezett stabil namespace-ek tömbje. `impactshop_cj_points_enabled`: default0, a két CJ-belépőt együtt vezérli; `impactshop_cj_points_scan`: a posting/locking lekérdezések haladása. `impactshop_dognet_points_scan_from`: kizárólag visszakérdezési contract igazolása után; alapból üres. Nincs automatikus lane-enable.
 
 Aktiválás: explicit `wp sharity points migrate --dry-run` csak olvasó preflight, majd valódi migrate karbantartásban; séma/fájlok readback; legacy0, új capture/consumer külön, lane allowlist csak bizonyított contracttal. Signed webhook a karbantartási intervallumra igazolt replay/refetch nélkül nem állítható le veszteségmentesen.
 
@@ -42,7 +42,7 @@ Aktiválás: explicit `wp sharity points migrate --dry-run` csak olvasó preflig
 
 Friss read-only metadata: prodWP6.9.4, stagingWP6.8.3, PHP8.4.26, MariaDB10.11.19. Közös DB, production wp_, staging stg_ prefix: NEM független adatbázisok. Backup/restore/SQL mindig pontos prefixű táblalistára; teljes közös DB restore tiltott. A nagy production history miatt nincs blanket ALTER vagy COUNT/scan. Accountkvóta külön ellenőrzendő.
 
-A karbantartás/drain még nem igazolt. Prod DISABLE_WP_CRON=true ellenére külső percenkénti wp-cron és CLI ütemezés is létezik. `.maintenance` önmagában nem elég; meglévő tárhelykarbantartás + pontos writerpause + tényleges drain szükséges. Ez az éles művelet feltétele, nem a helyi forrásmunka blokkja.
+Stagingen a statikus `.htaccess` 503-gate + tényleges process-drain, nyolc stagingtáblás mentés és izolált restore igazolt; 20 exact-file és migráció után az eredeti gate SHA visszaállt. Négy HTTP endpoint és verziózott JS-hash egyezik; minden points kapcsoló0. Ez nem bizonyít production drain/restore-t. Prod DISABLE_WP_CRON=true ellenére külső percenkénti wp-cron és CLI ütemezés is létezik. `.maintenance` önmagában nem elég; meglévő tárhelykarbantartás + pontos writerpause + tényleges drain szükséges. Ez az éles művelet feltétele, nem a helyi forrásmunka blokkja.
 
 ## Publikálás és meglévő release
 
@@ -61,3 +61,11 @@ Live: minden vállalt lane legalább1 természetes award és annak ismétlése; 
 ## Megőrzendő hivatkozás
 
 A Substack-anyag nem végrehajtandó mellékfeladat. Következő handover őrizze: /Users/bujdosoarnold/ai-agent/SUBSTACK-HANDOVER.md, SUBSTACK-NOVEKEDESI-ES-SZERKESZTOI-KEZIKONYV.md és /Users/bujdosoarnold/blog-ai-tukor/drafts/STILUSJEGYZET-user.md. Betöltést csak tényleges olvasás után állítunk.
+
+## Elfogadott MNB/CJ follow-up — 2026-10-29
+
+Elsődleges források: [CJ schema](https://docs.cj.com/docs/pub-commissiondetail-parameters), [CJ scalar/correction contract](https://docs.cj.com/docs/pub-commissiondetail-api), [MNB saját HTTPS űrlap](https://www.mnb.hu/arfolyam-lekerdezes/). A dokumentált SOAP HTTPS POST két környezetben404; diagnózis után a működő natív MNB HTTPS GET tábla lett az egyetlen adatút. Nincs HTTP/fixárfolyam/alternatívprovider fallback. Hibás vagy elérhetetlen jegyzésnél CJ-cursor nem lép tovább; nincs vak ismétlés ugyanabban a futásban.
+
+Tényleges follow-up ellenőrzés: új MNB és meglévő money/provider/state/Dognettransport fixturek sikeresek; saját MariaDB + az éles wpdb pontos forrása:82 SQL-check sikeres, benne a már beérkezett komplex korrekcióval megelőzött queued award. A candidate money-kód a we040 tényleges PHP8.3 környezetéből hiteles MNB HTTPS GET-tel329.93 HUF/USD jegyzést és10USD jutalékból1650pontot adott; ez kizárólag írásmentes számításpróba, nem telepítés vagy pontjóváírás. Független review egy CJ kill-switch P2-t talált; minimális javítás után a valódi régi syncet is futtató fixture független recheckje sikeres.
+
+A már telepített f221 staging és a follow-up forrás külön állapot. Production, aktiválás és természetes élő elfogadás továbbra nyitott.

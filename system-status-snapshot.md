@@ -1,3 +1,15 @@
+## 2026-10-29 — Impact Shop MNB/CJ follow-up, source tested
+
+Core #236/f2210d6c merged;20 runtime files staging installed/migrated,
+maintenance removed, economic totals unchanged, all new/legacy points switches0.
+Production untouched. New own f221-based branch implements approved50% final
+commission × final-day latest MNB quote, one HUF rounding, persisted snapshot,
+CJ posting+locking capture and exact linked full-delta refund. No new schema,
+queue or release system. MNB HTTPS form200 from real host PHP8.3; fixture
+checks and82 isolated SQL checks passed. Independent review P2 kill-switch
+fixed and delta-reviewed. Follow-up not yet published/deployed/activated;
+Dognet contract and natural live acceptance remain pending. Details: productplan.
+
 ## 2026-10-28 — JYSK completion source work in progress
 
 Own branch feat/jysk-game-completion-20261028 adds result export consumer,

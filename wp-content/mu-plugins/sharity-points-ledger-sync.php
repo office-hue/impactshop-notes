@@ -428,6 +428,8 @@ function sharity_points_impactshop_prepare(array $input): array
         'donation_amount_huf' => is_string($input['donation_amount_huf'] ?? null) || is_int($input['donation_amount_huf'] ?? null) ? (string) $input['donation_amount_huf'] : '',
         'payload_ref' => preg_match('/^[a-f0-9]{64}$/D', (string) ($input['payload_ref'] ?? '')) ? $input['payload_ref'] : '',
         'authority_ref' => substr((string) ($input['authority_ref'] ?? ''), 0, 160),
+        'donation_basis' => is_string($input['donation_basis'] ?? null) && strlen($input['donation_basis']) <= 512
+            ? $input['donation_basis'] : '',
         'token_digest' => $token === '' ? '' : hash('sha256', $token),
         'reason' => $reason !== '' ? $reason : (!$money['success'] ? $money['error'] : ''),
     ];
@@ -476,8 +478,13 @@ function sharity_points_impactshop_capture(array $input): array
                 && strtolower($root['subject_hex']) !== $event['subject_digest'])
                 || ($event['original_purchase_at'] !== '' && $root['original_purchase_at'] !== null && $event['original_purchase_at'] !== $root['original_purchase_at'])
                 || ($event['merchant'] !== '' && $event['merchant'] !== $root['merchant']);
-            if ($conflict) {
-                sharity_points_impactshop_sql($wpdb->update($wpdb->prefix . 'impactshop_point_settlements', ['state' => 'manual'], ['root_id' => $event['root_id']]));
+            // A known complex event already forbids automatic awards, even if
+            // its consumer turn follows an original record in the same page.
+            if ($conflict || $event['kind'] === 'adjustment' || $event['reason'] !== '') {
+                sharity_points_impactshop_sql($wpdb->query($wpdb->prepare(
+                    "UPDATE {$wpdb->prefix}impactshop_point_settlements SET state='manual',version=version+1
+                     WHERE root_id=%s AND state<>'manual'", $event['root_id']
+                )));
             }
         }
         sharity_points_impactshop_sql($wpdb->query($wpdb->prepare(
