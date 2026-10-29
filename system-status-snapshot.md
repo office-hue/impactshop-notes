@@ -17,6 +17,24 @@ game inactive V1 gates000 participants0; intake open V20 gates111. No new
 Vercel build. Approved roster and timed arm/live points acceptance still pending.
 Details/rollback/evidence: `docs/jysk-game-bridge-2026-10-27.md`.
 
+## 2026-10-28 — Signed profile return correction: source tested
+
+Approved isolated PHP/JS correction preserves signed FactLens resolver priority;
+User Card fallback only with no context cookie and exact canonical input.
+36 stub +42 actual-production-resolver PHP cases, 25 isolated browser cases,
+syntax and existing profile/route tests PASS. Independent 6.1 Sol/high review
+closed without P0/P1/P2. Existing query-context lane also preserves resolver priority.
+No new publication/deployment/live acceptance. Protected-change record has details.
+
+## 2026-10-28 — User Card profile return: local source
+
+Bounded identity-panel.js navigation exception implemented in own 77c4abbf-based
+worktree; PHP, economic writers and every nonmatching return unchanged.
+19 full-JS mocked Chrome cases PASS; no real credentials/reward/network writes.
+Only its source hash and manifest checksum follow the approved file change.
+No push/merge/deploy/activation yet; Safari and live acceptance remain open.
+Record: `docs/protected-change-records/2026-10-28-user-card-profile-return.md`.
+
 ## 2026-10-28 — JYSK #231 merged; reviewed digest follow-up
 
 WP #231 merged f61e60c8; quiet window released. Exact-file dry-run stopped

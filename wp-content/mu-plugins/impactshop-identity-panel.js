@@ -221,7 +221,32 @@
     }
 
     function navigateAfterIdentityAction(targetUrl, fallbackUrl) {
-      const destination = targetUrl || fallbackUrl || "";
+      let destination = targetUrl || fallbackUrl || "";
+      try {
+        const current = new URL(window.location.href);
+        const returns = current.searchParams.getAll("return");
+        const completion = targetUrl ? new URL(targetUrl, current.origin) : null;
+        const hasSelection = Array.from(current.searchParams.keys()).some(key =>
+          key === "selection_intent" || key.startsWith("selection_intent["));
+        const hasReturnArray = Array.from(current.searchParams.keys()).some(key => key.startsWith("return["));
+        // Preserve the server completion hop: only PHP can see the HttpOnly
+        // FactLens context and decide whether its signed return takes precedence.
+        // The password-manager form and all nonmatching routes remain unchanged.
+        if (current.origin === "https://app.sharity.hu" && current.pathname === "/profil/" &&
+            returns.length === 1 && returns[0] === "https://sharity.hu/sajat-sharity" &&
+            !hasSelection && !hasReturnArray && completion &&
+            completion.origin === current.origin && completion.pathname === "/profil/" &&
+            !completion.username && !completion.password &&
+            completion.searchParams.getAll("impactshop_profile_return_complete").length === 1 &&
+            completion.searchParams.get("impactshop_profile_return_complete") === "1" &&
+            completion.searchParams.getAll("bridge_target").length === 1 &&
+            ["account", "restore"].includes(completion.searchParams.get("bridge_target"))) {
+          completion.searchParams.set("return", "https://sharity.hu/sajat-sharity");
+          destination = completion.toString();
+        }
+      } catch (e) {
+        // Retain the existing bridge destination on malformed input.
+      }
       if (!destination) {
         window.location.reload();
         return;

@@ -1,5 +1,21 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-10-29 — main-integráció, nem új runtime-módosítás
+
+Arnold jóváhagyott integrációs/merge-ablaka: rögzített main d953e525a12b.
+Protected files touched az indexben: impactshop-identity-panel.php/.js,
+impactshop-guard-hashes.json/.sha256 és bastion-guard-status.md. Az identity
+fájlok és két tesztjük a mainnel byteazonosak; a JYSK-bridge a korábban
+review-zott 7da2f485 változattal byteazonos. Mindkét chat naplói megmaradnak.
+A hash-leltár egyesítése után a három runtime digest és checksum ellenőrzött.
+Az identity eredeti change recordja megmarad:
+`docs/protected-change-records/2026-10-28-user-card-profile-return.md`.
+Rollback: saját integráció visszavonása, idegen main/éles runtime érintése nélkül.
+Smoke scope: identity_and_points és deploy_guard kötelező tagek; ezek
+deklarált hatókörök, nem új éles UI-PASS-ok. Csak a dokumentumos konfliktus
+feloldása és a hash-egyezés új bizonyíték; változatlan kódhoz a korábbi
+JYSK és eredeti identity tesztek/review újrahasználhatók. Nincs deploy/aktiválás.
+
 ## 2026-10-28 — eredmény, sorsolás és privát nyeremény, implementáció
 
 Saját ág feat/jysk-game-completion-20261028, alap368e466a; ez az új fejezet

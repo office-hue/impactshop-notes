@@ -1,3 +1,13 @@
+## 2026-10-29 — saját JYSK-ág main-integrációja
+
+Jóváhagyott rövid ablakban egyszer beolvasott main: d953e525a12b.
+A négy ütközés három prependelt napló és a manifest-checksum; mindkét
+chat bejegyzései megmaradtak. Idegen identity PHP/JS és tesztjei byteazonosak
+a rögzített mainnel, a saját JYSK-bridge byteazonos a review-zott 7da2f485
+állapottal. A manifestben mindhárom tényleges fájlhash ellenőrizve, új checksum
+f449988c9f5f783aeb31950a9e8bc5e77351f2bb20109507f1e3b37f3aae929e.
+Ez nem deploy/aktiválás; az új head kötelező CI-jére ablakon kívül várunk.
+
 ## 2026-10-28 — JYSK eredményzárás megvalósítása, saját forráság
 
 Jóváhagyott terv: saját bridge additív eredmény/nyeremény/ügyesemény táblák,
@@ -19,6 +29,25 @@ kiadása: jysk-wire-prefix-20261028-77c4abbf, SHA53f972cd…, mód0444, backup/C
 Valós exact-wire HMAC és owner→callback→session sikeres. Reward/transaction off;
 game inactive/V1/000/participants0, intake open/V20/111. Nincs új Vercel-build,
 pontírás vagy teljes játékelfogadás. Részletek/rollback/UI: JYSK bridge doksi.
+
+## 2026-10-28 — Aláírt FactLens-visszatérés elsőbbsége: korrekció indul
+
+Jóváhagyott kétfájlos paneljavítás saját `fix/signed-profile-return-20261028`
+worktree-ben, `02fbec8b` alapról. A JS megtartja a PHP completiont; a PHP csak
+eredetileg hiányzó FactLens-cookie esetén adhat rögzített User Card-fallbacket.
+A web, bridge, identity authority és gazdasági írók változatlanok. Célzott
+Végleges teszt: 36 stub +42 production-resolver PHP-eset, 25 böngészős eset,
+szintaxis és meglévő profil/route PASS. A production `prctx` út szintén megmarad.
+Független 6.1 Sol/high review lezárt, nincs P0/P1/P2; egy Notes-PR következik.
+Forráskész, nincs még új merge/telepítés/élő elfogadás. Részletek a change recordban.
+
+## 2026-10-28 — User Card profil-visszatérés javítása indul
+
+Saját tiszta 77c4abbf worktree, jóváhagyott egyfájlos JS scope; donor read-only.
+Előzetes koherencia/kockázat/rollback/UI-checklist:
+`docs/protected-change-records/2026-10-28-user-card-profile-return.md`.
+Más termék visszatérése, PHP/owner/pont/adatbázis és DEV-rendszer változatlan.
+Nincs még tesztelfogadás, push, merge vagy telepítés.
 
 ## 2026-10-28 — #231 merge utáni egyetlen JYSK-hash jóváhagyása
 
