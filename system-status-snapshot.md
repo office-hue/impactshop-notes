@@ -1,3 +1,14 @@
+## 2026-10-29 — Impact Shop telepítve, CJ aktív; UI-handoff javítás forráskész
+
+#238/80d6eb7f staging és production telepítve; explicit migráció és22hash/20lint
+igazolt, éles5HTTP smoke sikeres, három sharedport nem íródott. UTC15:37:39
+óta CJproducer/consumerON, legacyOFF; két rendes poll sikeres, új esemény0.
+Dognet és partner automatikus ágOFF. Saját profil5891/Bronze és history DBazonos.
+A normál Fillout-return UI-próba két valós hibát tárt fel: Strictowner első kérésen
+hiányzik, illetve trackingnélküli CJcoupon directdestinationje adminfallbackra fut.
+Szűk kétsourcefájlos javítás saját80d-alapú ágon, célzott fixture és független review
+sikeres; javítás még nem merge-elt/telepített. Élő financial/UIelfogadás továbbra nyitott.
+
 ## 2026-10-29 — Impact Shop kompatibilitási follow-up, forrás tesztelve
 
 #237/b9e24fb7 merge-elt és stagingen telepítve; minden új/régi feldolgozó off,

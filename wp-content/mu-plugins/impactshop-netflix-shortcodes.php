@@ -1264,6 +1264,9 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
           if ($advertiser_id === '') {
             continue;
           }
+          if (!function_exists('isb_cj_pick_link') || !isb_cj_pick_link($advertiser_id)) {
+            continue;
+          }
           $promotion_type_raw = $link['promotion_type'] ?? '';
           $promotion_type = strtolower(trim((string)$promotion_type_raw));
           $coupon_code = trim((string)($link['coupon_code'] ?? ''));

@@ -391,6 +391,8 @@ function isb_cj_pick_link($advertiserId){
   if (empty($map[$advertiserId])) return null;
   $best = null; $bestScore = -1;
   foreach ($map[$advertiserId] as $link) {
+    $trackingUrl = trim((string) ($link['click_url'] ?? ''));
+    if ($trackingUrl === '' || wp_validate_redirect($trackingUrl, '') === '') continue;
     $score = 0;
     if (!empty($link['coupon_code'])) $score += 5;
     if (!empty($link['is_coupon'])) $score += 2;
@@ -417,7 +419,6 @@ function isb_cj_generate_click_url($slug, $ngo, $pseudo, $targetUrl='', &$sidOut
   $sid = $sidParts ? implode('~', $sidParts) : $slug;
   $sidOut = $sid;
   $url = $link['click_url'] ?? '';
-  if ($url === '') $url = $link['destination'] ?? '';
   if ($url === '') return '';
   if (strpos($url, '{{SID}}') !== false) {
     $url = str_replace('{{SID}}', rawurlencode($sid), $url);
@@ -427,7 +428,7 @@ function isb_cj_generate_click_url($slug, $ngo, $pseudo, $targetUrl='', &$sidOut
   if ($targetUrl !== '') {
     $url = add_query_arg('url', $targetUrl, $url);
   }
-  return $url;
+  return wp_validate_redirect($url, '');
 }
 
 /* ====================== DOGNET API (SAJÁT NÉVVEL) ====================== */
@@ -738,9 +739,37 @@ function isb_handle_go($is_deal){
   $affiliateActivationId = '';
   $sharityAffiliateRuntime = false;
 
+  if ($isCj && !isb_cj_pick_link(preg_replace('~[^0-9]+~', '', substr($shop, 3)))) {
+    isb_error('Ehhez az ajánlathoz jelenleg nincs elérhető partnerlink.');
+  }
   $pointsAffiliateSource = (string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1'
     && $pseudo !== '' && function_exists('impactshop_identity_owner_authorized')
     && impactshop_identity_owner_authorized(strtolower($pseudo));
+  if (
+    (string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1'
+    && preg_match('/^[A-Z0-9]{10,12}$/D', $pseudo)
+    && !$sharityAffiliateSource && !$pointsAffiliateSource
+  ) {
+    // A cross-site Fillout return cannot carry the Strict owner cookie.
+    // A first-party document permits one fresh request; the marker grants nothing.
+    if (function_exists('impactshop_identity_owner_cookie')
+      && impactshop_identity_owner_cookie() === '' && !isset($_GET['_impact_points_hop'])) {
+      $resume = add_query_arg(array_filter([
+        'shop' => $shop, 'd1' => $ngo, 'u' => $u, 'amb' => $amb, 'src' => $src,
+        '_impact_points_hop' => '1',
+      ], static fn($value) => $value !== ''), home_url($is_deal ? '/go-deal/' : '/go/'));
+      status_header(200);
+      nocache_headers();
+      header('Content-Type: text/html; charset=UTF-8');
+      header('Referrer-Policy: no-referrer');
+      echo '<!doctype html><html lang="hu"><meta charset="utf-8"><title>Folytatás a webshopba</title>'
+        . '<p><a href="' . esc_url($resume) . '">Folytatás a webshopba</a></p><script>location.replace('
+        . wp_json_encode($resume, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)
+        . ');</script></html>';
+      exit;
+    }
+    isb_error('A pontgyűjtéshez nyisd meg a profilodat, majd indítsd újra a vásárlást.');
+  }
   if ($sharityAffiliateSource || $pointsAffiliateSource) {
     $prepared = apply_filters('impactshop_sharity_affiliate_prepare', null, [
       'shop' => $shop,
@@ -781,9 +810,6 @@ function isb_handle_go($is_deal){
   if (!$final) {
     if ($isCj) {
       $final = isb_cj_generate_click_url($shop, $affiliateNgo, $affiliatePseudo, $targetUrl, $sidForLog);
-      if (!$final && !empty($row['product_url'])) {
-        $final = $row['product_url'];
-      }
     } else {
       $cid = isb_dognet_extract_campaign_id_from_base($row['dognet_base'] ?? '');
       if ($cid){

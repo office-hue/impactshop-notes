@@ -1,5 +1,11 @@
 # Új jutalmazási rendszer – összefoglaló és szabályok
 
+A normál külső NGO-választóból visszatéréskor egy saját oldali folytatás teszi
+lehetővé a változatlan Strict tulajdonosi cookie ellenőrzését. A folytatási marker
+nem jogosultság: hiányzó/hibás tulajdonosi igazolásnál profilhiba, nincs pontozás
+vagy néma továbbküldés. CJ-ajánlat csak tényleges, a meglévő engedélylistán
+átengedett trackinglinkkel indítható; közvetlen kereskedői helyettesítés nincs.
+
 ## 1) Alapfogalmak és kapcsolatok
 
 ### Pontok (egyetlen pontszám)
