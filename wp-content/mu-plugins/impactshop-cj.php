@@ -510,7 +510,8 @@ final class ImpactShop_CJ
             $records = $payload['records'] ?? [];
             if ($records) {
                 foreach ($records as $record) {
-                    if ((string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1') {
+                    if ((string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1'
+                        && (string) get_option('impactshop_cj_points_enabled', '0') === '1') {
                         if (!function_exists('sharity_points_impactshop_capture')) {
                             throw new RuntimeException('CJ points runtime unavailable; cursor retained.');
                         }
@@ -1176,7 +1177,7 @@ GQL;
         return json_decode(json_encode($xml, JSON_THROW_ON_ERROR), true);
     }
 
-    private static function fetch_commissions_graphql(array $creds, string $since, string $before, ?string $cursor): array
+    private static function fetch_commissions_graphql(array $creds, string $since, string $before, ?string $cursor, bool $locking = false): array
     {
         $query = <<<'GRAPHQL'
 query ($publisherIds: [String!]!, $since: String, $before: String, $cursor: String, $websiteIds: [String!]) {
@@ -1193,18 +1194,26 @@ query ($publisherIds: [String!]!, $since: String, $before: String, $cursor: Stri
       commissionId
       orderId
       original
+      originalActionId
+      actionType
       actionStatus
       advertiserId
       advertiserName
       postingDate
       eventDate
+      lockingDate
       shopperId
       pubCommissionAmountPubCurrency
       pubCommissionAmountUsd
+      saleAmountUsd
     }
   }
 }
 GRAPHQL;
+
+        if ($locking) {
+            $query = str_replace(['sincePostingDate:', 'beforePostingDate:'], ['sinceLockingDate:', 'beforeLockingDate:'], $query);
+        }
 
         $body = [
             'query' => $query,
@@ -1373,7 +1382,29 @@ GRAPHQL;
         return $seconds;
     }
 
-    /** CJ correction records are deltas, never replacement donation totals. */
+    /** Persisted first award fixes the FX and supplies exact full-correction evidence. */
+    private static function points_award_snapshot(string $scope, string $purchase): ?array
+    {
+        global $wpdb;
+        if (!isset($wpdb)) { return null; }
+        $root = hash('sha256', wp_json_encode(['cj', 'impactshop:cj:' . $scope, $purchase]));
+        $json = $wpdb->get_var($wpdb->prepare(
+            "SELECT event_json FROM {$wpdb->prefix}impactshop_point_changes
+             WHERE root_id=%s AND event_json LIKE %s ORDER BY id LIMIT 1", $root, '%"kind":"award"%'
+        ));
+        if ($wpdb->last_error) { throw new RuntimeException('CJ snapshot read failed; cursor retained.'); }
+        $event = is_string($json) ? json_decode($json, true) : null;
+        return is_array($event) && ($event['kind'] ?? '') === 'award' ? $event : null;
+    }
+
+    private static function points_decimal($value): ?string
+    {
+        $parsed = sharity_points_money_parse($value);
+        if (!$parsed['success']) { return null; }
+        return str_contains($parsed['canonical'], '.') ? rtrim(rtrim($parsed['canonical'], '0'), '.') : $parsed['canonical'];
+    }
+
+    /** CJ DecimalNumber is a string; correction records are deltas, never totals. */
     public static function points_event(array $record, string $account_scope): array
     {
         $status = strtolower((string) ($record['actionStatus'] ?? ''));
@@ -1391,12 +1422,13 @@ GRAPHQL;
         $merchant = is_array($correlation) && ($correlation['provider_key'] ?? '') === 'cj'
             && is_string($correlation['partner_key'] ?? null) && $correlation['partner_key'] !== ''
             ? $correlation['partner_key'] : '';
-        return [
+        $purchase_id = $advertiser . ':' . ($purchase !== '' ? $purchase : ('unresolved:' . (string) ($record['commissionId'] ?? '')));
+        $event = [
             'provider' => 'cj',
             'namespace' => 'impactshop:cj:' . $account_scope,
-            'purchase_id' => $advertiser . ':' . ($purchase !== '' ? $purchase : ('unresolved:' . (string) ($record['commissionId'] ?? ''))),
+            'purchase_id' => $purchase_id,
             'event_id' => (string) ($record['commissionId'] ?? ''),
-            'revision' => $status . ':' . (string) ($record['postingDate'] ?? ''),
+            'revision' => $pending ? 'pending' : $status . ':' . (string) ($record['postingDate'] ?? ''),
             'original_purchase_at' => $at,
             'kind' => $pending ? 'pending' : 'adjustment',
             'donation_amount_huf' => '',
@@ -1405,8 +1437,120 @@ GRAPHQL;
             'authority' => true,
             'authority_ref' => '',
             'manual_reason' => $pending ? '' : ($original ? 'settled_donation_authority_missing' : 'cj_delta_correction_requires_review'),
-            'payload_ref' => hash('sha256', json_encode($record, JSON_UNESCAPED_SLASHES) ?: ''),
+            'payload_ref' => '',
         ];
+        $snapshot = self::points_award_snapshot($account_scope, $purchase_id);
+        if ($snapshot && $merchant === '') { $event['merchant'] = (string) $snapshot['merchant']; }
+        if ($pending) { return $event; }
+        $basis = $snapshot ? json_decode($snapshot['donation_basis'] ?? '', true) : null;
+        $commission = self::points_decimal($record['pubCommissionAmountUsd'] ?? null);
+        $sale = self::points_decimal($record['saleAmountUsd'] ?? null);
+        $action = (string) ($record['originalActionId'] ?? '');
+        $final = (string) ($record['lockingDate'] ?? '');
+        if (!$original) {
+            $negative_commission = is_string($record['pubCommissionAmountUsd'] ?? null) && str_starts_with($record['pubCommissionAmountUsd'], '-')
+                ? self::points_decimal(substr($record['pubCommissionAmountUsd'], 1)) : null;
+            $negative_sale = is_string($record['saleAmountUsd'] ?? null) && str_starts_with($record['saleAmountUsd'], '-')
+                ? self::points_decimal(substr($record['saleAmountUsd'], 1)) : null;
+            if ($basis && $action !== '' && $action === ($basis['original_action_id'] ?? '')
+                && $negative_commission !== null && $negative_commission !== '0' && $negative_commission === ($basis['commission_usd'] ?? null)
+                && $negative_sale !== null && $negative_sale !== '0' && $negative_sale === ($basis['sale_usd'] ?? null)
+                && in_array($status, ['locked', 'closed'], true)) {
+                $event['kind'] = 'refund';
+                $event['revision'] = 'full-correction';
+                $event['original_purchase_at'] = (string) $snapshot['original_purchase_at'];
+                $event['authority_ref'] = 'cj:full-delta:' . hash('sha256', $snapshot['donation_basis']);
+                $event['manual_reason'] = '';
+            }
+            return $event;
+        }
+        if (!in_array($status, ['locked', 'closed'], true) || $purchase === '' || $advertiser === '' || $at === ''
+            || !in_array($record['actionType'] ?? '', ['sim_sale', 'item_sale'], true)
+            || $commission === null || $commission === '0' || $sale === null || $sale === '0') {
+            return $event;
+        }
+        $cutover = (string) get_option('sharity_points_impactshop_cutover_utc', '');
+        if ($cutover === '' || str_replace('T', ' ', substr($at, 0, 19)) < $cutover) {
+            $event['manual_reason'] = 'historical_or_unknown_cutover';
+            return $event;
+        }
+        if ($snapshot) {
+            if (!$basis || ($basis['commission_id'] ?? '') !== $event['event_id']
+                || ($basis['commission_usd'] ?? null) !== $commission || ($basis['sale_usd'] ?? null) !== $sale
+                || ($basis['finalized_at'] ?? '') !== $final || ($basis['original_action_id'] ?? '') !== $action) {
+                $event['manual_reason'] = 'cj_final_changed';
+                return $event;
+            }
+            $event['donation_amount_huf'] = (string) $snapshot['donation_amount_huf'];
+            $event['donation_basis'] = $snapshot['donation_basis'];
+            $event['authority_ref'] = $snapshot['authority_ref'];
+        } else {
+            $quote = sharity_points_mnb_quote('USD', $final);
+            if (!$quote['success']) { throw new RuntimeException('CJ MNB quote unavailable; cursor retained: ' . $quote['error']); }
+            $money = sharity_points_money_affiliate_donation($commission, $quote['rate'], $quote['unit']);
+            if (!$money['success']) { $event['manual_reason'] = $money['error']; return $event; }
+            $event['donation_amount_huf'] = (string) $money['points'];
+            $event['authority_ref'] = 'affiliate50-mnb-v1:USD:' . $quote['date'] . ':' . $quote['rate'] . '/' . $quote['unit'];
+            $event['donation_basis'] = wp_json_encode([
+                'commission_id' => $event['event_id'], 'original_action_id' => $action,
+                'commission_usd' => $commission, 'sale_usd' => $sale, 'finalized_at' => $final,
+                'fx' => $quote,
+            ]);
+        }
+        $event['kind'] = 'award';
+        $event['revision'] = 'final:' . $final;
+        $event['manual_reason'] = '';
+        return $event;
+    }
+
+    /** Existing 15-minute cron: one page each for postings and in-place locking. */
+    public static function points_poll(): array
+    {
+        if ((string) get_option('sharity_points_impactshop_producer_enabled', '0') !== '1'
+            || (string) get_option('impactshop_cj_points_enabled', '0') !== '1') {
+            return ['success' => true, 'status' => 'disabled'];
+        }
+        $cutover = function_exists('sharity_points_impactshop_cutover') ? sharity_points_impactshop_cutover() : null;
+        if (!$cutover) { return ['success' => false, 'error' => 'cj_cutover_missing']; }
+        try {
+            $creds = self::get_credentials(true);
+            if (empty($creds['publisher_pat'])) { throw new RuntimeException('CJ publisher PAT missing.'); }
+            $state = get_option('impactshop_cj_points_scan', []);
+            if (!is_array($state)) { throw new RuntimeException('CJ scan state invalid.'); }
+            foreach (['posting', 'locking'] as $lane) {
+                $scan = $state[$lane] ?? ['since' => strtotime($cutover . ' UTC')];
+                $since = (int) ($scan['since'] ?? 0);
+                if ($since < strtotime($cutover . ' UTC') || $since > time()) { throw new RuntimeException('CJ scan boundary invalid.'); }
+                $end = (int) ($scan['end'] ?? min(time(), $since + DAY_IN_SECONDS));
+                if ($end === $since) { continue; }
+                if ($end < $since || $end > time() || $end - $since > DAY_IN_SECONDS) {
+                    throw new RuntimeException('CJ scan window invalid.');
+                }
+                $from = max(strtotime($cutover . ' UTC'), $since - HOUR_IN_SECONDS);
+                $payload = self::fetch_commissions_graphql($creds, gmdate('Y-m-d\TH:i:s\Z', $from),
+                    gmdate('Y-m-d\TH:i:s\Z', $end), $scan['cursor'] ?? null, $lane === 'locking');
+                if (!is_array($payload['records'] ?? null) || !is_bool($payload['payloadComplete'] ?? null)) {
+                    throw new RuntimeException('CJ response invalid; cursor retained.');
+                }
+                foreach ($payload['records'] as $record) {
+                    $event = self::points_event($record, (string) $creds['publisher_id'] . ':' . (string) ($creds['website_id'] ?? ''));
+                    $result = sharity_points_impactshop_capture($event);
+                    if (empty($result['success'])) { throw new RuntimeException('CJ capture failed; cursor retained.'); }
+                }
+                if ($payload['payloadComplete']) { $state[$lane] = ['since' => $end]; }
+                else {
+                    $next = $payload['maxCommissionId'] ?? null;
+                    if (!is_string($next) || $next === '' || $next === ($scan['cursor'] ?? null)) {
+                        throw new RuntimeException('CJ pagination stalled; cursor retained.');
+                    }
+                    $state[$lane] = ['since' => $since, 'end' => $end, 'cursor' => $next];
+                }
+                update_option('impactshop_cj_points_scan', $state, false);
+            }
+            return ['success' => true, 'status' => 'page_captured'];
+        } catch (Throwable $error) {
+            return ['success' => false, 'error' => $error->getMessage()];
+        }
     }
 
     private static function extract_scalar($value): string

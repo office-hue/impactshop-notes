@@ -34,6 +34,7 @@ class WP_Error {
 }
 function is_wp_error($value) { return $value instanceof WP_Error; }
 function dognet_get_token($force = false) { if ($force) { ++$GLOBALS['refreshes']; } return 'fixture-token'; }
+function get_transient($key) { return $GLOBALS['cached_token']; }
 function delete_transient($key) { ++$GLOBALS['deletions']; }
 function wp_json_encode($value) { return json_encode($value); }
 function wp_remote_request($url, $args) {
@@ -46,8 +47,13 @@ function wp_remote_retrieve_body($response) { return $response['body']; }
 eval($function);
 function reset_case($code) {
     $GLOBALS['code'] = $code; $GLOBALS['requests'] = 0; $GLOBALS['refreshes'] = 0; $GLOBALS['deletions'] = 0;
+    $GLOBALS['cached_token'] = 'fixture-token';
 }
 function check($ok, $message) { if (!$ok) { throw new RuntimeException($message); } }
+reset_case(401);
+$cached_token = false;
+$result = dognet_api_request('POST', '/raw-transactions/filter', [], false);
+check(is_wp_error($result) && $requests === 0 && $refreshes === 0, 'No-refresh without cache must not log in or request');
 reset_case(401);
 $result = dognet_api_request('POST', '/raw-transactions/filter', [], false);
 check(is_wp_error($result) && $requests === 1 && $refreshes === 0 && $deletions === 0, 'Points401 must make one request and no refresh');

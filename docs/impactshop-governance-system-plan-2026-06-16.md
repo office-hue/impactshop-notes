@@ -939,3 +939,7 @@ commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a sz
 ### 2026-10-29 célzott szinkron
 
 Az Impact Shop donationpoints egyszerűsített candidate új runtimefájljai a meglévő Bástya config/hash-védelembe kerülnek. Nincs DEVadmission/újguard/releaseengine. Lásd [termékterv](dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md). Source, merge és live állapot külön; liveprovider/drain feltételek még nyitottak.
+
+### 2026-10-29 — Célzott MNB/CJ hash-szinkron
+
+A jóváhagyott50%/MNB-szabály hat meglévő runtime fájlt érint; a meglévő hashjegyzék ezek tényleges tartalmát követi. A védett fájllista, guard-kód, jogosultsági és release-modell nem változik. Célzott money/provider/SQL teszt és független review; részletek a2026-10-29-es points change record és termékterv alatt.

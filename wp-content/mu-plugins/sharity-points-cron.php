@@ -190,6 +190,10 @@ function sharity_expire_old_referrals(): void
 
 function sharity_points_sync_ledger_hook(): void
 {
+    if (class_exists('ImpactShop_CJ')) {
+        $result = ImpactShop_CJ::points_poll();
+        if (empty($result['success'])) { do_action('sharity_points_error', 'cj_points_capture_incomplete', ['error' => $result['error']]); }
+    }
     if (function_exists('impactshop_dognet_points_poll')
         && (string) get_option('impactshop_dognet_points_scan_from', '') !== '') {
         $result = impactshop_dognet_points_poll();

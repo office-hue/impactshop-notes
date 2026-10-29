@@ -1,3 +1,24 @@
+## 2026-10-29 — Impact Shop elfogadott MNB-szabály, célzott folytatás
+
+Saját worktree/ág: `feat/impactshop-points-mnb-20261029`, alap a merge-elt
+`f2210d6c`. Nincs main fetch/ref-módosítás. A #236 stagingen telepítve,
+migrálva és újranyitva; minden új feldolgozó és legacy consumer explicit off,
+production változatlan. Árfolyamszabály: végleges affiliate jutalék 50%-a,
+a véglegessé válás napján elérhető utolsó hivatalos MNB-jegyzés,
+egyetlen half-up HUF-kerekítés. CJ DecimalNumber/UTC/lockingDate és
+originalActionId elsődleges forrása a CJ Commission Detail dokumentáció.
+Koherencia: meglévő money→CJ→capture/event_json→consumer és 15 perces cron;
+nincs új séma/queue/release-helper. Kockázat: változó FX ismétléskor,
+USD/HUF tévesztés, részleges refund és nem új postinggal érkező locking.
+Célzott védelem: tartós egyszeri snapshot, USD mező, teljes negatív
+commission+sale egyezés, külön locking-date lekérdezés a meglévő cronban.
+Dognet idő/refund contract hiánya csak azt az adaptert tartja manuálisan.
+Célzott MNB/money/provider/state/transport fixture és82 valódi SQL-check sikeres.
+A tárhely tényleges PHP8.3-ja hiteles MNB HTTPS GET-tel is helyesen számolt,
+írás nélkül. Független review CJ kill-switch P2-je javítva, célzott független
+recheck sikeres. Follow-up PR/merge/telepítés még nincs. Rollback: lane off, események megőrzése,
+meglévő exact-file CAS/backup; éles DB-visszatöltés nélkül.
+
 ## 2026-10-29 — saját JYSK-ág main-integrációja
 
 Jóváhagyott rövid ablakban egyszer beolvasott main: d953e525a12b.

@@ -36,7 +36,7 @@ define('ARRAY_A', 'ARRAY_A');
 $captured = [];
 function sharity_points_impactshop_capture(array $event): array {
     $GLOBALS['captured'][] = $event;
-    return ['success' => true];
+    return ['success' => !($GLOBALS['capture_fail'] ?? false)];
 }
 $requests = [];
 $pages = [];
@@ -44,6 +44,16 @@ function dognet_api_request($method, $path, $body) {
     $GLOBALS['requests'][] = [$method, $path, $body];
     return array_shift($GLOBALS['pages']) ?? ['data' => []];
 }
+require __DIR__ . '/../wp-content/mu-plugins/sharity-points-money.php';
+function get_transient($key) { return false; }
+function set_transient($key, $value, $ttl) {}
+$mnb_requests = 0;
+function wp_remote_get($url, $args) {
+    ++$GLOBALS['mnb_requests'];
+    return ['status' => 200, 'body' => file_get_contents(__DIR__ . '/fixtures/impactshop-mnb-usd-20261029.html')];
+}
+function wp_remote_retrieve_response_code($r) { return $r['status']; }
+function wp_remote_retrieve_body($r) { return $r['body']; }
 require __DIR__ . '/../wp-content/mu-plugins/impactshop-cj.php';
 require __DIR__ . '/../wp-content/mu-plugins/impactshop-partner-api.php';
 require __DIR__ . '/../wp-content/mu-plugins/impactshop-dognet-points.php';
@@ -102,6 +112,40 @@ $cj['original'] = false; $cj['commissionId'] = 'c2';
 $event = ImpactShop_CJ::points_event($cj, 'publisher:website');
 check($event['purchase_id'] === '42:o1' && $event['original_purchase_at'] === '', 'Correction preserves root without inventing original time');
 check($event['manual_reason'] === 'cj_delta_correction_requires_review', 'CJ delta is not full refund');
+// Original CJ finality, exact USD source, frozen quote, and full delta evidence.
+check(ImpactShop_CJ::points_poll()['status'] === 'disabled', 'CJ off makes no provider request');
+$options['sharity_points_impactshop_cutover_utc'] = '2026-10-26 00:00:00';
+$cj = ['commissionId' => 'c1', 'originalActionId' => 'original-action1', 'orderId' => 'o1', 'advertiserId' => '42',
+    'original' => true, 'actionType' => 'sim_sale', 'actionStatus' => 'locked',
+    'eventDate' => '2026-10-27T00:00:00Z', 'postingDate' => '2026-10-27T01:00:00Z',
+    'lockingDate' => '2026-10-28T12:00:00Z', 'shopperId' => $token,
+    'pubCommissionAmountUsd' => '10.00', 'pubCommissionAmountPubCurrency' => '999999.99', 'saleAmountUsd' => '100'];
+$award = ImpactShop_CJ::points_event($cj, 'publisher:website');
+check($award['kind'] === 'award' && $award['donation_amount_huf'] === '1650', 'CJ final USD commission ×50%× MNB once');
+check(str_contains($award['authority_ref'], ':329.93/1') && $mnb_requests === 1, 'Exact rate and quote day retained');
+class AwardSnapshotDatabase {
+    public string $prefix = 'wp_'; public string $last_error = ''; public string $snapshot = '';
+    public function prepare($sql, ...$args) { return $sql; }
+    public function get_var($sql) { return $this->snapshot; }
+}
+$wpdb = new AwardSnapshotDatabase(); $wpdb->snapshot = json_encode($award);
+$cj['actionStatus'] = 'closed';
+check(ImpactShop_CJ::points_event($cj, 'publisher:website') === $award && $mnb_requests === 1, 'Locked→closed repeats frozen semantic event without quote fetch');
+$changed = $cj; $changed['pubCommissionAmountUsd'] = '11';
+check(ImpactShop_CJ::points_event($changed, 'publisher:website')['manual_reason'] === 'cj_final_changed', 'Changed final commission stays manual');
+$refund = $cj; $refund['original'] = false; $refund['commissionId'] = 'correction1';
+$refund['pubCommissionAmountUsd'] = '-10'; $refund['saleAmountUsd'] = '-100.00';
+$reversal = ImpactShop_CJ::points_event($refund, 'publisher:website');
+check($reversal['kind'] === 'refund' && $reversal['original_purchase_at'] === $award['original_purchase_at'], 'Full linked correction preserves original time and needs no FX');
+$refund['saleAmountUsd'] = '-50';
+check(ImpactShop_CJ::points_event($refund, 'publisher:website')['kind'] === 'adjustment', 'Partial sale refund cannot be full reversal');
+$refund['saleAmountUsd'] = '-100'; $refund['originalActionId'] = 'different';
+check(ImpactShop_CJ::points_event($refund, 'publisher:website')['kind'] === 'adjustment', 'Different original action cannot reverse');
+$wpdb->snapshot = ''; $cj['pubCommissionAmountUsd'] = 10.0;
+check(ImpactShop_CJ::points_event($cj, 'publisher:website')['kind'] === 'adjustment', 'CJ float is never donation authority');
+$cj['pubCommissionAmountUsd'] = '10'; $cj['eventDate'] = '2026-10-25T00:00:00Z';
+check(ImpactShop_CJ::points_event($cj, 'publisher:website')['kind'] === 'adjustment' && $mnb_requests === 1, 'Historical purchase makes no FX request');
+unset($wpdb);
 check(impactshop_dognet_points_poll()['status'] === 'disabled' && !$requests, 'Dormant lane makes no request');
 $options['sharity_points_impactshop_producer_enabled'] = '1';
 check(impactshop_dognet_points_poll()['error'] === 'dognet_scan_contract_unavailable' && !$requests, 'Missing scan contract makes no request');
@@ -119,6 +163,50 @@ for ($i = 1; $i <= 4; $i++) { $pages[] = ['data' => [['id' => $i, 'rstatus' => '
 check(impactshop_dognet_points_poll()['error'] === 'dognet_scan_incomplete' && count($requests) === 4, 'Hard request bound without false completion');
 $requests = []; $pages = [new WP_Error()];
 check(impactshop_dognet_points_poll()['error'] === 'dognet_provider_request_failed' && count($requests) === 1, 'No provider retry');
+// The real CJ poll must revisit locking dates and retain a partially completed page.
+function sharity_points_impactshop_cutover() { return get_option('sharity_points_impactshop_cutover_utc'); }
+$graphql_requests = []; $graphql_pages = [];
+function wp_remote_post($url, $args) {
+    check($url === 'https://commissions.api.cj.com/query', 'No guessed CJ endpoint');
+    $GLOBALS['graphql_requests'][] = json_decode($args['body'], true);
+    return ['status' => 200, 'body' => json_encode(['data' => ['publisherCommissions' => array_shift($GLOBALS['graphql_pages'])]])];
+}
+$prior_cj_env = [];
+foreach (['CJ_PUBLISHER_ID' => 'fixture-publisher', 'CJ_WEBSITE_ID' => 'fixture-website', 'CJ_PUBLISHER_PAT' => 'fixture-not-a-real-token'] as $key => $value) {
+    $prior_cj_env[$key] = getenv($key); putenv($key . '=' . $value);
+}
+try {
+    $options['impactshop_cj_points_enabled'] = '1';
+    $since = time() - 1800;
+    $options['impactshop_cj_points_scan'] = ['posting' => ['since' => $since], 'locking' => ['since' => $since]];
+    $graphql_pages = array_fill(0, 2, ['records' => [], 'payloadComplete' => true]);
+    check(ImpactShop_CJ::points_poll()['success'] && count($graphql_requests) === 2, 'Two bounded pages, no unbounded polling');
+    check(str_contains($graphql_requests[0]['query'], 'sincePostingDate:') && str_contains($graphql_requests[1]['query'], 'sinceLockingDate:'), 'Posting-only scan cannot miss in-place locking');
+    check(str_contains($graphql_requests[1]['query'], 'originalActionId') && str_contains($graphql_requests[1]['query'], 'saleAmountUsd'), 'Exact refund evidence requested');
+    $options['impactshop_cj_points_scan'] = ['posting' => ['since' => $since], 'locking' => ['since' => $since]];
+    $graphql_pages = [['records' => [], 'payloadComplete' => false, 'maxCommissionId' => 'page2'], ['records' => [], 'payloadComplete' => true]];
+    check(ImpactShop_CJ::points_poll()['success'], 'Incomplete page can persist its cursor');
+    $saved_scan = $options['impactshop_cj_points_scan'];
+    check($saved_scan['posting']['cursor'] === 'page2' && $saved_scan['posting']['since'] === $since, 'Pagination never advances window prematurely');
+    $graphql_pages = [['records' => [], 'payloadComplete' => false, 'maxCommissionId' => 'page2']];
+    check(!ImpactShop_CJ::points_poll()['success'] && $options['impactshop_cj_points_scan'] === $saved_scan, 'Stalled pagination is visible with state retained');
+    $options['impactshop_cj_points_scan'] = ['posting' => ['since' => $since], 'locking' => ['since' => $since]];
+    $before = $options['impactshop_cj_points_scan'];
+    $pending_record = $cj; $pending_record['original'] = true; $pending_record['actionStatus'] = 'new';
+    $graphql_pages = [['records' => [$pending_record], 'payloadComplete' => true]];
+    $capture_fail = true;
+    check(!ImpactShop_CJ::points_poll()['success'] && $options['impactshop_cj_points_scan'] === $before, 'Failed durable capture retains provider cursor');
+    $capture_fail = false;
+    $options['impactshop_cj_points_enabled'] = '0';
+    $graphql_pages = [['records' => [[]], 'payloadComplete' => true]];
+    $captured = []; $before_mnb = $mnb_requests;
+    $legacy_sync = new ReflectionMethod(ImpactShop_CJ::class, 'sync_ledger');
+    $legacy_result = $legacy_sync->invoke(null, 'PT2H', null, 'replace');
+    check(!$captured && $mnb_requests === $before_mnb && isset($options['impactshop_cj_last_cursor']), 'Disabled CJ points does not capture/fetch FX or stop the legacy ledger cursor');
+} finally {
+    foreach ($prior_cj_env as $key => $value) { putenv($value === false ? $key : $key . '=' . $value); }
+    $options['impactshop_cj_points_enabled'] = '0';
+}
 // Execute the real signed handler: transport-idempotency rejection must precede capture.
 class PartnerFixtureDatabase {
     public string $prefix = 'wp_';
