@@ -1,3 +1,22 @@
+## 2026-10-28 — JYSK completion source work in progress
+
+Own branch feat/jysk-game-completion-20261028 adds result export consumer,
+durable one-time weighted raffle and owner-only prize messages/cases. Three
+additive own tables; existing points/identity/TLS unchanged. 200+14 legacy,
+19 pure result checks and 172 isolated SQL checks passed; two review P2
+findings fixed and independently delta-reviewed. No merge/deploy/activation for
+this change; prior live state below remains the last acknowledged checkpoint.
+
+## 2026-10-28 — JYSK prefix fix deployed; owner session verified, rewards off
+
+Exact merge77c4abbf, quiet window released. One-file guarded bridge release
+jysk-wire-prefix-20261028-77c4abbf, SHA53f972cd…/0444/backup/CAS read back.
+Actual 27-byte JSON MAC verified, real browser owner/callback/session connected.
+No terms/participation/award submitted; WP reward/transaction flags false,
+game inactive V1 gates000 participants0; intake open V20 gates111. No new
+Vercel build. Approved roster and timed arm/live points acceptance still pending.
+Details/rollback/evidence: `docs/jysk-game-bridge-2026-10-27.md`.
+
 ## 2026-10-28 — Signed profile return correction: source tested
 
 Approved isolated PHP/JS correction preserves signed FactLens resolver priority;

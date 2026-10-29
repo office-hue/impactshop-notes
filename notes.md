@@ -1,3 +1,35 @@
+## 2026-10-29 — saját JYSK-ág main-integrációja
+
+Jóváhagyott rövid ablakban egyszer beolvasott main: d953e525a12b.
+A négy ütközés három prependelt napló és a manifest-checksum; mindkét
+chat bejegyzései megmaradtak. Idegen identity PHP/JS és tesztjei byteazonosak
+a rögzített mainnel, a saját JYSK-bridge byteazonos a review-zott 7da2f485
+állapottal. A manifestben mindhárom tényleges fájlhash ellenőrizve, új checksum
+f449988c9f5f783aeb31950a9e8bc5e77351f2bb20109507f1e3b37f3aae929e.
+Ez nem deploy/aktiválás; az új head kötelező CI-jére ablakon kívül várunk.
+
+## 2026-10-28 — JYSK eredményzárás megvalósítása, saját forráság
+
+Jóváhagyott terv: saját bridge additív eredmény/nyeremény/ügyesemény táblák,
+WP-CLI jóváhagyás után egyszeri súlyozott sorsolás, privát tulajdonosi
+nyertesüzenet. Érintett: saját REST results/messages/ACK, saját CLI/install;
+upstream az ellenőrzött app-export, downstream közös üzenettáblába csak semleges
+értesítés. Kockázat: dupla sorsolás, részleges commit, idegen üzenetolvasás,
+lejárt session és read-only kompatibilitás. Védelem: zárolás, tartós seed,
+verzió+hash, InnoDB/kapcsolatellenőrzés, tulajdonosi session, saját táblák.
+Közös pontkezelő/identity/legacy sorsoló/TLS nincs módosítva. Telepítés előtt
+exact-file backup/CAS; rollback a korábbi bridge, additív adatok megtartásával.
+Publikált nyeremény után olvasási hozzáférést megtartó célzott javítás szükséges.
+Helyi implementáció folyamatban; teszt/merge/deploy/aktiválás még nem igazolt.
+
+## 2026-10-28 — JYSK prefixjavítás éles, profilkapcsolás igazolt
+
+#232 merge77c4abbf, main-ablak felszabadult. Egyetlen saját bridge-fájl guarded
+kiadása: jysk-wire-prefix-20261028-77c4abbf, SHA53f972cd…, mód0444, backup/CAS.
+Valós exact-wire HMAC és owner→callback→session sikeres. Reward/transaction off;
+game inactive/V1/000/participants0, intake open/V20/111. Nincs új Vercel-build,
+pontírás vagy teljes játékelfogadás. Részletek/rollback/UI: JYSK bridge doksi.
+
 ## 2026-10-28 — Aláírt FactLens-visszatérés elsőbbsége: korrekció indul
 
 Jóváhagyott kétfájlos paneljavítás saját `fix/signed-profile-return-20261028`
