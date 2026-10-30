@@ -258,7 +258,7 @@ function impactshop_partner_transaction(WP_REST_Request $request)
             'payload_json' => wp_json_encode(impactshop_partner_stored_payload($payload)),
             'created_at' => $now,
         ],
-        ['%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%f', '%f', '%d', '%s', '%s', '%s', '%s']
+        ['%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%f', '%f', '%d', '%s', '%s', '%s', '%s']
     );
 
     if (!$inserted) {

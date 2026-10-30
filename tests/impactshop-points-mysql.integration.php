@@ -56,7 +56,7 @@ function _doing_it_wrong($function, $message, $version): void { throw new Runtim
 function wp_debug_backtrace_summary(...$args) { return 'isolated-local-impactshop-test'; }
 function mbstring_binary_safe_encoding(): void {}
 function reset_mbstring_encoding(): void {}
-function is_wp_error($value): bool { return false; }
+function is_wp_error($value): bool { return $value instanceof WP_Error; }
 function absint($value): int { return abs((int) $value); }
 function is_multisite(): bool { return false; }
 function do_action($name, ...$args): void {
@@ -101,7 +101,7 @@ $wpdb = connection();
 $source = file_get_contents(__DIR__ . '/../wp-content/mu-plugins/sharity-points.php');
 eval(substr($source, strpos($source, 'function sharity_points_migrate_impactshop(')));
 $existing = $wpdb->get_col('SHOW TABLES');
-$owned=['user_points','point_transactions','level_history','decay_logs','user_referrals','impactshop_point_settlements','impactshop_point_changes','impactshop_affiliate_intents'];
+$owned=['user_points','point_transactions','level_history','decay_logs','user_referrals','impactshop_point_settlements','impactshop_point_changes','impactshop_affiliate_intents','impact_partner_tx','impact_partner_config'];
 check(array_diff($existing,array_map(fn($t)=>'impactshop_test_'.$t,$owned))===[], 'own database contains no foreign tables');
 foreach($owned as $t){sql($wpdb,'DROP TABLE IF EXISTS impactshop_test_'.$t);}
 foreach (['user_points','point_transactions','level_history','decay_logs','user_referrals'] as $table) {
@@ -395,4 +395,108 @@ $validPending=captured(impactshop_dognet_points_event($dn,'26081'));$manager->ap
 $dn['rstatus']='A';$dn['order_id']='pending-corrected';
 $blocked=captured(impactshop_dognet_points_event($dn,'26081'));$manager->apply_impactshop_event($blocked,$run);
 check(eventRow($blocked)['root_id']===eventRow($validPending)['root_id'] && eventRow($blocked)['status']==='manual' && total()===$beforeDognet+4000,'Raw ID changing order P to A quarantines original root');
+
+// Full signed partner receiver -> durable capture -> real SQL settlement.
+// Only this disposable database enables the synthetic partner lane.
+class WP_Error {
+    public function __construct(private string $code, private string $message, private array $data = []) {}
+    public function get_error_code() { return $this->code; }
+    public function get_error_message() { return $this->message; }
+    public function get_error_data() { return $this->data; }
+}
+class WP_REST_Request {
+    public function __construct(private string $body, private array $headers) {}
+    public function get_body() { return $this->body; }
+    public function get_header($key) { return $this->headers[strtolower($key)] ?? ''; }
+}
+class WP_REST_Response {
+    public function __construct(public array $data, public int $status = 200) {}
+}
+function rest_ensure_response($data) { return new WP_REST_Response($data); }
+function wp_generate_uuid4() { return bin2hex(random_bytes(16)); }
+function wp_upload_dir() { return []; }
+function sanitize_key($key) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($key)); }
+require __DIR__ . '/../wp-content/mu-plugins/impactshop-partner-api.php';
+$partnerSource=file_get_contents(__DIR__.'/../wp-content/mu-plugins/impactshop-partner-api.php');
+foreach (['tx','config'] as $table) {
+    check(preg_match('/\$sql_'.$table.' = "(CREATE TABLE \{\$'.$table.'_table\}.*?) \{\$charset\};";/s', $partnerSource, $m)===1, 'extract exact partner '.$table.' schema');
+    sql($wpdb,str_replace('{$'.$table.'_table}', $wpdb->prefix.'impact_partner_'.$table,$m[1]).' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+}
+putenv('IMPACT_PARTNER_SECRETS='.json_encode(['test'=>['api_key'=>'synthetic-key','hmac_secret'=>'synthetic-hmac']]));
+$wpdb->insert($wpdb->prefix.'impact_partner_config',['partner_code'=>'test','status'=>'active','allowed_event_types'=>'purchase','idempotency_ttl_sec'=>86400]);
+sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after='2030-01-01' WHERE provider_key='partner'");
+$options['sharity_points_impactshop_lanes']=['impactshop:partner:test'];
+function partnerRequest(array $payload, string $key, array $headers=[]): WP_REST_Response {
+    $body=json_encode($payload, JSON_UNESCAPED_SLASHES);
+    return impactshop_partner_transaction(new WP_REST_Request($body,array_replace([
+        'authorization'=>'Bearer synthetic-key', 'x-impact-timestamp'=>(string)(int)(microtime(true)*1000),
+        'x-impact-signature'=>'sha256='.hash_hmac('sha256',$body,'synthetic-hmac'), 'idempotency-key'=>$key,
+    ],$headers)));
+}
+function partnerEventId(array $payload): int {
+    global $wpdb;
+    // Read only: calling capture here would hide a callback that failed to persist.
+    $event=impactshop_partner_points_event($payload,'test');
+    $logical=hash('sha256',wp_json_encode([$event['provider'],$event['namespace'],$event['event_id'],$event['revision']]));
+    $id=(int)$wpdb->get_var($wpdb->prepare('SELECT id FROM impactshop_test_impactshop_point_changes WHERE logical_id=%s ORDER BY id DESC LIMIT 1',$logical));
+    check($id>0,'partner callback event readback');
+    return $id;
+}
+$partner=['partner_code'=>'test','event_id'=>'contract-order-1','event_type'=>'purchase','pseudo_id'=>'000000000000',
+    'ngo_code'=>'synthetic-ngo','amount_gross'=>10000,'currency'=>'HUF','timestamp'=>'2026-10-29T10:01:00Z',
+    'payment_status'=>'unpaid','original_purchase_id'=>'contract-order-1','original_purchase_at'=>'2026-10-29T10:00:00Z',
+    'discount_tier'=>'gold','partner_max_discount'=>0.2,'discount_rate'=>0.16,'discount_amount'=>1600,
+    'donation_amount_huf'=>'0','donation_policy_version'=>'synthetic-contract-v1','revision'=>'1','attribution_token'=>$token];
+$beforePartner=total();$beforeEvents=(int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_changes');
+check(partnerRequest($partner,'auth-bad',['x-impact-signature'=>'sha256=bad'])->status===401,'full receiver rejects bad signature');
+check(partnerRequest($partner,'auth-old',['x-impact-timestamp'=>'1'])->status===401,'full receiver rejects expired timestamp');
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_changes')===$beforeEvents,'rejected auth cannot capture events');
+check(partnerRequest($partner,'contract-pending')->status===200,'signed pending receiver ACK');
+$pendingPartner=partnerEventId($partner);$manager->apply_impactshop_event($pendingPartner,$run);
+check(eventRow($pendingPartner)['status']==='applied' && total()===$beforePartner,'pending binds server subject without award');
+$stored=$wpdb->get_var("SELECT payload_json FROM impactshop_test_impact_partner_tx WHERE event_id='contract-order-1'");
+check(!str_contains($stored,$token),'legacy payload excludes bearer attribution');
+$storedFields=$wpdb->get_row("SELECT idempotency_key,partner_max_discount,discount_rate,discount_amount FROM impactshop_test_impact_partner_tx WHERE event_id='contract-order-1'",ARRAY_A);
+check($storedFields['idempotency_key']==='contract-pending' && $storedFields['partner_max_discount']==='0.2000' && $storedFields['discount_rate']==='0.1600' && (int)$storedFields['discount_amount']===1600,'insert formats preserve exact key and discount columns');
+sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after='2020-01-01' WHERE provider_key='partner'");
+$partner['payment_status']='paid';$partner['revision']='2';$partner['donation_amount_huf']='100.50';
+check(partnerRequest($partner,'contract-paid')->status===200,'signed paid receiver ACK after pending');
+$paidPartner=partnerEventId($partner);$r=$manager->apply_impactshop_event($paidPartner,$run);
+check($r['success'] && $r['actual_delta']===101 && total()===$beforePartner+101,'exact half-up award to durable subject despite different raw pseudo and expired token');
+check(partnerRequest($partner,'contract-paid')->status===200 && partnerEventId($partner)===$paidPartner,'signed paid replay reuses event');
+check($manager->apply_impactshop_event($paidPartner,$run)['duplicate'] && total()===$beforePartner+101,'paid replay no additional points');
+// Same original transport key with a changed body is rejected before capture.
+$conflicting=$partner;$conflicting['donation_amount_huf']='200';
+$count=(int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_changes');
+$conflictResponse=partnerRequest($conflicting,'contract-pending');
+
+check($conflictResponse->status===409,'changed original idempotency body rejected');
+check((int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_changes')===$count,'transport conflict adds no event');
+// A full reversal is capped at the actual balance and never collects later debt.
+sql($wpdb,"UPDATE impactshop_test_user_points SET points_total=20 WHERE pseudo_id='abcdef123456'");
+$partner['payment_status']='refunded';$partner['revision']='3';$partner['refund_scope']='full';
+check(partnerRequest($partner,'contract-refund')->status===200,'signed full refund receiver ACK');
+$refundPartner=partnerEventId($partner);$r=$manager->apply_impactshop_event($refundPartner,$run);
+check($r['actual_delta']===-20 && $r['forgiven_points']===81 && total()===0,'full receiver refund caps debit and forgives rest');
+sql($wpdb,"UPDATE impactshop_test_user_points SET points_total=50 WHERE pseudo_id='abcdef123456'");
+check(partnerRequest($partner,'contract-refund')->status===200 && $manager->apply_impactshop_event($refundPartner,$run)['duplicate'] && total()===50,'refund replay preserves later earnings');
+$partner['revision']='4';$partner['refund_scope']='partial';
+check(partnerRequest($partner,'contract-partial')->status===200,'complex correction retained by receiver');
+$partialPartner=partnerEventId($partner);$manager->apply_impactshop_event($partialPartner,$run);
+check(eventRow($partialPartner)['status']==='manual' && total()===50,'partial correction requires manual review');
+$changed=$partner;$changed['payment_status']='paid';$changed['revision']='2';$changed['donation_amount_huf']='200';unset($changed['refund_scope']);
+check(partnerRequest($changed,'contract-changed-final')->status===200,'changed final content durably retained');
+$changedId=partnerEventId($changed);$manager->apply_impactshop_event($changedId,$run);
+check($changedId!==$paidPartner && eventRow($changedId)['status']==='manual' && total()===50,'changed final event cannot credit again');
+// A different root proves OFF capture/processing independently of manual history.
+sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after='2030-01-01' WHERE provider_key='partner'");
+$options['sharity_points_impactshop_lanes']=[];
+$partner['event_id']=$partner['original_purchase_id']='contract-off';$partner['payment_status']='unpaid';$partner['revision']='1';unset($partner['refund_scope']);
+check(partnerRequest($partner,'contract-off-pending')->status===200,'lane OFF still durably receives pending');
+$partner['payment_status']='paid';$partner['revision']='2';
+check(partnerRequest($partner,'contract-off-paid')->status===200,'lane OFF still durably receives final');
+$offPartner=partnerEventId($partner);$manager->apply_impactshop_event($offPartner,$run);
+check(eventRow($offPartner)['status']==='manual' && eventRow($offPartner)['reason']==='lane_not_ready' && total()===50,'lane OFF retains exception without award');
+putenv('IMPACT_PARTNER_SECRETS');
+
 echo "Impact Shop SQL integration passed ({$checks} checks); no live/provider writes\n";
