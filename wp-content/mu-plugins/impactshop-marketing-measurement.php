@@ -85,7 +85,7 @@ function impactshop_marketing_measurement_html(string $html, string $contentType
 // Runs before virtual guide handlers which echo a full document and exit without wp_footer.
 add_action('template_redirect', static function (): void {
     $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
-    if (!impactshop_marketing_measurement_enabled() || ($_SERVER['HTTP_HOST'] ?? '') !== 'app.sharity.hu'
+    if (!impactshop_marketing_measurement_enabled() || is_preview() || ($_SERVER['HTTP_HOST'] ?? '') !== 'app.sharity.hu'
         || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET' || !is_string($path) || !impactshop_marketing_measurement_route($path)) {
         return;
     }

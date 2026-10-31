@@ -1,3 +1,12 @@
+## 2026-10-31 — Publikus mérés: WordPress preview kizárása
+
+A #242 utáni szűk korrekció az `is_preview()` állapotot kizárja a script
+injekciójából. Így a publikus slugon megnyitott, bejelentkezett szerkesztői
+előnézet sem kap mérést. Egy feltétel és a meglévő PHP/HTTP-fixture célzott
+preview esete; nincs más flag/auth/affiliate/guide módosítás. A gyűjtés OFF,
+kiadás és aktiválás továbbra külön státusz. Részletek:
+`docs/marketing-daily-counts-2026-10-31.md`.
+
 ## 2026-10-31 — Napi anonim marketingmérés: helyi forrásjelölt, OFF
 
 Két új MU PHP/JS, explicit v2 hozzájárulás, öt publikus útvonalcsoport; 2 kB,
