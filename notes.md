@@ -1,3 +1,18 @@
+## 2026-10-31 — Napi anonim marketingmérés: helyi forrásjelölt, OFF
+
+Két új MU PHP/JS, explicit v2 hozzájárulás, öt publikus útvonalcsoport; 2 kB,
+pontos origin, webhelytoken, fix upstream, nincs azonosító/retry/DB. A meglévő
+védett guide/JYSK/affiliate/pont/auth források változatlanok. A jóváhagyott
+publikus guide HTML additív scriptje a footer nélküli echo+exit útvonalon is
+működik. 54 PHP-stub ellenőrzés és 5 böngésző/helyi PHP HTTP-fixture sikeres;
+PHP/JS syntax, protected-touch és affiliate-bastion sikeres. Nincs külső kérés,
+install, commit, push, deploy vagy aktiválás. Független review és élő UI/cache/CSP
+elfogadás még nyitott. Részletek/rollback/UI: `docs/marketing-daily-counts-2026-10-31.md`.
+
+## 2026-10-31 — Napi anonim marketingmérés: saját additív forrásmunka
+
+Saját `feat/marketing-daily-counts-20261031`, base `88cb74f485229ddb2a04a8868a4bbd3eda29fb62`. Cél: külön v2 hozzájárulással csak öt stabil publikus útvonalcsoport napi számlálója; alapból kikapcsolva. Új MU PHP/JS; meglévő guide/JYSK/affiliate/pont/auth forrás nem módosul. Elfogadás: szigorú 2 kB proxy, pontos origin és helyi konfiguráció, anonimizált kétmezős payload, nincs retry/azonosító, virtuális guide HTML-injekció célzott fixture-rel. Nincs commit/push/deploy/aktiválás. Hermes nem indult: más munka `pending_readback_required`; nincs retry vagy annak módosítása. Natív helyi megvalósítás és célzott ellenőrzés következik.
+
 ## 2026-10-29 — Közvetlen partnerfogadó ellenőrzése; lane OFF
 
 Saját `feat/impactshop-partner-finish-20261029` ág, #240 / 1b4aab11927fc46ae8bd729bb8335e00bc1169e9 alapról. A teljes aláírt callback SQL-teszt valódi insert-formátumhibát reprodukált: az idempotenciakulcs `0` lett. Egyetlen formátumlista igazítva; nincs séma/adat/scheduler változás. 171 izolált SQL-ellenőrzés, provider-fixture és PHP-lint sikeres. Független review: runtime-javítás helyes; az OpenAPI összegregexét a pénzkonverter szigorúbb korlátjához visszaigazítottuk. A kulcs/discount mezők, hibás HMAC/lejárt timestamp, pending/final/replay, tartós subject, refund/elengedés, eltérő tartalom és OFF lane ellenőrizve.
@@ -1014,7 +1029,7 @@ pozitív canary/CI/publikálás még hátravan; régi lifecycle PASS nem keletke
 - Sandbox write mode bekötve: `X-ImpactShop-Write-Mode` header kezelve, write endpointok sandbox early-return ágon.
 - Deploy verifikáció: prod API 200, debug endpoint 404, dev clone route 404, remote hash parity egyezik.
 
-## 2026-04-07 23:30 CET - ads-watch v2.5.53 CTA navigation fix + bundle disable
+## 2026-04-07 23:30 CET - ads-watch v2.5.54 CTA navigation fix + bundle disable
 - v2.5.53: CTA window.open() hiányzott event.preventDefault() után → sponsor oldal nem nyílt meg. Javítva.
 - MutationObserver bundle (ui-cta-bundle) letiltva PHP return;-nel — ez okozta a ~240/sec observer callback freeze-t.
 - Production deploy verifikált. Change record: docs/protected-change-records/2026-04-07-cta-freeze-fix-v2.5.53.md
@@ -6380,7 +6395,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - Deploy production snapshot: deploy-20260203-111835 (impact-bridge-local default from fallback).
 - Metrics defaults: fallback start date set to last 90 days (when IMPACTSHOP_METRICS_FROM undefined) in impactshop-metrics-ngo and impact-bridge-local.
 - Deploy staging snapshot: deploy-20260203-112929 (metrics default from last 90 days).
-- Deploy production snapshot: deploy-20260203-113053 (metrics default from last 90 days).
+- Deploy production snapshot: deploy-20260203-113054 (metrics default from last 90 days).
 - Deploy staging snapshot: deploy-20260203-113906 (Impact Shop button added to Impact Ad floating bar).
 - Deploy production snapshot: deploy-20260203-114028 (Impact Shop button added to Impact Ad floating bar).
 - Leaderboard: sharity-impact-mini switched to HUF display, filters unknown NGO entries, limit works after filter; uses impactshop_huf_rate option.
@@ -7278,7 +7293,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - **Result:** pass (warnings=0, errors=0, duration=0s)
 - **Source:** /Users/bujdosoarnold/.codex/logs/impactall-last-run.json
 
-## 2026-02-28 19:49:53 CET - impactall auto log
+## 2026-02-28 19:49:54 CET - impactall auto log
 - **Result:** pass (warnings=0, errors=0, duration=0s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
 
@@ -7352,7 +7367,7 @@ Saved 43 promotions to /Users/bujdosoarnold/Documents/GitHub/ai-agent/tools/out/
 - **Result:** pass (warnings=0, errors=0, duration=1s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
 
-## 2026-03-05 08:22:53 CET - impactall auto log
+## 2026-03-05 08:22:54 CET - impactall auto log
 - **Result:** pass (warnings=0, errors=0, duration=0s)
 - **Source:** /Users/bujdosoarnold/Developer/GitHub/.codex/logs/impactall-last-run.json
 
