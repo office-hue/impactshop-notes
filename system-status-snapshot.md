@@ -1,3 +1,14 @@
+## 2026-10-31 — Napi anonim marketingmérés: helyi forrásjelölt, OFF
+
+Két új MU PHP/JS, explicit v2 hozzájárulás, öt publikus útvonalcsoport; 2 kB,
+pontos origin, webhelytoken, fix upstream, nincs azonosító/retry/DB. A meglévő
+védett guide/JYSK/affiliate/pont/auth források változatlanok. A jóváhagyott
+publikus guide HTML additív scriptje a footer nélküli echo+exit útvonalon is
+működik. 54 PHP-stub ellenőrzés és 5 böngésző/helyi PHP HTTP-fixture sikeres;
+PHP/JS syntax, protected-touch és affiliate-bastion sikeres. Nincs külső kérés,
+install, commit, push, deploy vagy aktiválás. Független review és élő UI/cache/CSP
+elfogadás még nyitott. Részletek/rollback/UI: `docs/marketing-daily-counts-2026-10-31.md`.
+
 ## 2026-10-29 — Közvetlen partnerfogadó ellenőrzése; lane OFF
 
 Saját `feat/impactshop-partner-finish-20261029` ág, #240 / 1b4aab11927fc46ae8bd729bb8335e00bc1169e9 alapról. A teljes aláírt callback SQL-teszt valódi insert-formátumhibát reprodukált: az idempotenciakulcs `0` lett. Egyetlen formátumlista igazítva; nincs séma/adat/scheduler változás. 171 izolált SQL-ellenőrzés, provider-fixture és PHP-lint sikeres. Független review: runtime-javítás helyes; az OpenAPI összegregexét a pénzkonverter szigorúbb korlátjához visszaigazítottuk. A kulcs/discount mezők, hibás HMAC/lejárt timestamp, pending/final/replay, tartós subject, refund/elengedés, eltérő tartalom és OFF lane ellenőrizve.
