@@ -1,3 +1,14 @@
+## 2026-10-31 — Preview-határ javítása
+
+A publikus `/impactshop/` slug WordPress-előnézete lehet HTTP200, ezért a fix
+útvonal és HTML-státusz önmagában nem zárja ki a nem publikált tartalmat.
+A `template_redirect` belépő új `is_preview()` kizárása még a buffer indulása
+előtt megáll. A meglévő PHP-fixture és valódi helyi PHP HTTP-eset ellenőrzi a
+`/impactshop/?preview=true` kérést; a publikus oldal pozitív esete megmarad.
+Ellenőrzés: 55 PHP-check és5 JS/HTTP-teszt, PHP-lint sikeres. Nincs telepítés
+vagy aktiválás ebből a javításból; a két MU-fájl éles előállapota 2026-10-31-én
+ellenőrzött `absent`. Target: Mini `s59` → `we040.tarhely.com`, root `/home/sharityh/app`.
+
 # Impact Shop napi anonim marketingmérés — 2026-10-31
 
 Saját forrásjelölt: `feat/marketing-daily-counts-20261031`, base

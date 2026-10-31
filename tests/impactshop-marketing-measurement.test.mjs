@@ -71,7 +71,7 @@ test('real local PHP headers and echo+exit inject approved guide HTML only', asy
   try {
     for (let attempt = 0; !logs.includes('Development Server') && attempt < 30; attempt++) await new Promise(resolve => setTimeout(resolve, 10));
     assert.match(logs, /Development Server/);
-    for (const [path, inject] of [['/ngo-guides/impact-shop/', true], ['/rolunk/', true], ['/jysk-riport/?print=1', false], ['/rolunk/?json=1', false], ['/rolunk/?error=1', false]]) {
+    for (const [path, inject] of [['/ngo-guides/impact-shop/', true], ['/rolunk/', true], ['/impactshop/?preview=true', false], ['/jysk-riport/?print=1', false], ['/rolunk/?json=1', false], ['/rolunk/?error=1', false]]) {
       const html = await new Promise((resolve, reject) => {
         request({ hostname: '127.0.0.1', port, path, headers: { Host: 'app.sharity.hu' } }, response => {
           let body = ''; response.on('data', chunk => { body += chunk; }); response.on('end', () => resolve(body));

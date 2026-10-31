@@ -6,6 +6,7 @@ $GLOBALS['requests'] = [];
 $GLOBALS['upstream'] = ['code' => 202, 'body' => '{"accepted":true}'];
 function add_action($hook, $callback, $priority = 10) { $GLOBALS['hooks'][$hook][] = [$callback, $priority]; }
 function register_rest_route($namespace, $route, $config) { $GLOBALS['registered'] = [$namespace, $route, $config]; }
+function is_preview() { return !empty($GLOBALS['preview']); }
 function wp_json_encode($value) { return json_encode($value); }
 function esc_url($url) { return htmlspecialchars($url, ENT_QUOTES); }
 function wp_remote_post($url, $args) { $GLOBALS['requests'][] = [$url, $args]; return $GLOBALS['upstream']; }
@@ -25,6 +26,7 @@ if (PHP_SAPI === 'cli-server') {
     putenv('MARKETING_SHARITY_APP_MEASUREMENT_ENABLED=1');
     putenv('MARKETING_MEASUREMENT_GATEWAY_URL=https://sharity-legal-production.up.railway.app');
     putenv('MARKETING_SHARITY_APP_MEASUREMENT_BFF_TOKEN=fixture-server-only');
+    $GLOBALS['preview'] = isset($_GET['preview']);
     http_response_code(isset($_GET['error']) ? 404 : 200);
     header('Content-Type: ' . (isset($_GET['json']) ? 'application/json' : 'text/html; charset=UTF-8'));
     ($GLOBALS['hooks']['template_redirect'][0][0])();
@@ -78,6 +80,7 @@ foreach ([['application/json', 200], ['text/html', 404], ['text/html', 302]] as 
 check(impactshop_marketing_measurement_html('{"data":1}', 'application/json', 200) === '{"data":1}', 'JSON unchanged');
 check($GLOBALS['hooks']['template_redirect'][0][1] === 0, 'injection registered before exiting guides');
 $level = ob_get_level(); ($GLOBALS['hooks']['template_redirect'][0][0])(); check(ob_get_level() === $level + 1, 'eligible guide starts output capture'); ob_end_clean();
+$GLOBALS['preview'] = true; ($GLOBALS['hooks']['template_redirect'][0][0])(); check(ob_get_level() === $level, 'WordPress preview does not start capture'); $GLOBALS['preview'] = false;
 $_SERVER['REQUEST_URI'] = '/jysk-riport/?print=1'; ($GLOBALS['hooks']['template_redirect'][0][0])(); check(ob_get_level() === $level, 'JYSK does not start capture');
 ($GLOBALS['hooks']['rest_api_init'][0][0])();
 check($GLOBALS['registered'][0] === 'impactshop-marketing/v1' && $GLOBALS['registered'][2]['methods'] === 'POST', 'fixed POST route');
