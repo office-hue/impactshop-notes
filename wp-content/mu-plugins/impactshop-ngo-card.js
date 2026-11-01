@@ -486,9 +486,140 @@
     navigator.language ||
     "hu-HU";
 
+  const I18N = {
+    hu: {
+      rank: "Rangsor",
+      supporters: "Támogatók",
+      impactShop: "Impact Shop",
+      impactChallenge: "Impact Challenge",
+      total: "Összesen",
+      amount: "Összeg",
+      updatedPrefix: "Frissítve: ",
+      logoAlt: "{name} logója",
+      news: "Sharity hírek",
+      details: "Részletek →",
+      shop: "Shop",
+      videos: "Videók",
+      tasks: "Feladatok",
+      donate: "Adományozok",
+      sharePage: "Megosztási oldal",
+      appDownload: "ImpactShop app letöltése",
+      collected: "Összegyűjtve",
+      supportCta: "Támogasd az Impact Shopban",
+      openNewTab: "Megnyitás új ablakban",
+      missingSlug: "NGO slug hiányzik.",
+      taglineFallback: "Segítsd a(z) {name} ügyét az Impact Shopban.",
+      err429Title: "Túl sok kérés",
+      err429Msg: "Rövid időn belül túl sok kérés érkezett erről az eszközről.",
+      err429Hint: "Várj fél percet, majd frissítsd az oldalt.",
+      err404Title: "Jelenleg nem elérhető",
+      err404Msg: "Próbáld újra később. (Ellenőrizd, hogy helyes slugot adtál meg az embed elemben.)",
+      errTitle: "Jelenleg nem érhető el",
+      errMsg: "Próbáld újra később.",
+    },
+    en: {
+      rank: "Rank",
+      supporters: "Supporters",
+      impactShop: "Impact Shop",
+      impactChallenge: "Impact Challenge",
+      total: "Total",
+      amount: "Amount",
+      updatedPrefix: "Updated: ",
+      logoAlt: "{name} logo",
+      news: "Sharity news",
+      details: "Details →",
+      shop: "Shop",
+      videos: "Videos",
+      tasks: "Tasks",
+      donate: "Donate",
+      sharePage: "Share page",
+      appDownload: "Download the ImpactShop app",
+      collected: "Raised",
+      supportCta: "Support on Impact Shop",
+      openNewTab: "Open in new tab",
+      missingSlug: "NGO slug missing.",
+      taglineFallback: "Help {name}'s cause in the Impact Shop.",
+      err429Title: "Too many requests",
+      err429Msg: "Too many requests were sent from this device in a short time.",
+      err429Hint: "Wait half a minute, then refresh the page.",
+      err404Title: "Currently unavailable",
+      err404Msg: "Try again later. (Check that you used the correct slug in the embed element.)",
+      errTitle: "Currently not available",
+      errMsg: "Try again later.",
+    },
+    de: {
+      rank: "Rang",
+      supporters: "Unterstützer",
+      impactShop: "Impact Shop",
+      impactChallenge: "Impact Challenge",
+      total: "Gesamt",
+      amount: "Betrag",
+      updatedPrefix: "Aktualisiert: ",
+      logoAlt: "{name} Logo",
+      news: "Sharity-Neuigkeiten",
+      details: "Details →",
+      shop: "Shop",
+      videos: "Videos",
+      tasks: "Aufgaben",
+      donate: "Spenden",
+      sharePage: "Teilen-Seite",
+      appDownload: "ImpactShop-App herunterladen",
+      collected: "Gesammelt",
+      supportCta: "Im Impact Shop unterstützen",
+      openNewTab: "In neuem Tab öffnen",
+      missingSlug: "NGO-Slug fehlt.",
+      taglineFallback: "Unterstütze {name} im Impact Shop.",
+      err429Title: "Zu viele Anfragen",
+      err429Msg: "In kurzer Zeit wurden von diesem Gerät zu viele Anfragen gesendet.",
+      err429Hint: "Warte eine halbe Minute und aktualisiere dann die Seite.",
+      err404Title: "Derzeit nicht verfügbar",
+      err404Msg: "Versuche es später erneut. (Prüfe, ob du im Embed-Element den richtigen Slug verwendet hast.)",
+      errTitle: "Derzeit nicht verfügbar",
+      errMsg: "Versuche es später erneut.",
+    },
+    fr: {
+      rank: "Rang",
+      supporters: "Soutiens",
+      impactShop: "Impact Shop",
+      impactChallenge: "Impact Challenge",
+      total: "Total",
+      amount: "Montant",
+      updatedPrefix: "Mis à jour : ",
+      logoAlt: "logo de {name}",
+      news: "Actualités Sharity",
+      details: "Détails →",
+      shop: "Boutique",
+      videos: "Vidéos",
+      tasks: "Missions",
+      donate: "Faire un don",
+      sharePage: "Page de partage",
+      appDownload: "Télécharger l’app ImpactShop",
+      collected: "Collectés",
+      supportCta: "Soutenir sur Impact Shop",
+      openNewTab: "Ouvrir dans un nouvel onglet",
+      missingSlug: "Slug d’ONG manquant.",
+      taglineFallback: "Soutenez la cause de {name} dans l’Impact Shop.",
+      err429Title: "Trop de requêtes",
+      err429Msg: "Trop de requêtes ont été envoyées depuis cet appareil en peu de temps.",
+      err429Hint: "Attendez une demi-minute, puis actualisez la page.",
+      err404Title: "Actuellement indisponible",
+      err404Msg: "Réessayez plus tard. (Vérifiez que vous avez utilisé le bon slug dans l’élément d’intégration.)",
+      errTitle: "Actuellement indisponible",
+      errMsg: "Réessayez plus tard.",
+    },
+  };
+  const LANG_BAR_SELECTOR = '.sharity-action-bar[data-sharity-preferences-managed]';
+  const cardState = new WeakMap();
+
   function getLocale() {
-    return DEFAULT_LOCALE;
+    const bar = document.querySelector(LANG_BAR_SELECTOR);
+    const value = (bar && bar.getAttribute('lang')) || DEFAULT_LOCALE;
+    const language = String(value).split('-')[0].toLowerCase();
+    return Object.prototype.hasOwnProperty.call(I18N, language) ? language : 'hu';
   }
+
+  function t(key) { return I18N[getLocale()][key]; }
+
 
   function escapeHtml(value = "") {
     return String(value).replace(/[&<>"']/g, (char) => {
@@ -543,7 +674,7 @@
     if (data.summary) {
       return data.summary;
     }
-    return `Segítsd a(z) ${name} ügyét az Impact Shopban.`;
+    return t("taglineFallback").replace("{name}", () => name);
   }
 
   function mediumFromContext(context) {
@@ -693,7 +824,8 @@
     }
   }
 
-  function renderCard(el, data, variant, cacheStatus) {
+  function renderCard(el, data, variant, cacheStatus, opts = {}) {
+    el.lang = getLocale();
     const amount = data.amount || {};
     const slug = data.slug || "";
     const shareUrl =
@@ -714,7 +846,7 @@
         ? String(totalDonation.formatted)
         : formattedAmount;
     const hasChallengeLayout = variant === "full";
-    const ctaUrl = resolveCtaUrl(data, slug, variant);
+    const ctaUrl = opts.ctaUrl ?? resolveCtaUrl(data, slug, variant);
     const appendFragment = (url, fragment) => {
       if (!url) {
         return "";
@@ -816,25 +948,25 @@
       }
       return `<span class="impact-ngo-card__action-icon">${icon}</span>${label}`;
     };
-    let secondaryStatLabel = "Rangsor";
+    let secondaryStatLabel = t("rank");
     let secondaryStatValue = `#${escapeHtml(String(rank || "-"))}`;
     if (supporters) {
-      secondaryStatLabel = "Támogatók";
+      secondaryStatLabel = t("supporters");
       secondaryStatValue = escapeHtml(Number(supporters).toLocaleString(locale));
     }
     const statsHtml = hasChallengeLayout
       ? `
         <div class="impact-ngo-card__stats impact-ngo-card__stats--challenge">
           <div class="impact-ngo-card__stats-block">
-            <span class="impact-ngo-card__stat-label">Impact Shop</span>
+            <span class="impact-ngo-card__stat-label">${t("impactShop")}</span>
             <strong>${safeFormattedAmount}</strong>
           </div>
           <div class="impact-ngo-card__stats-block">
-            <span class="impact-ngo-card__stat-label">Impact Challenge</span>
+            <span class="impact-ngo-card__stat-label">${t("impactChallenge")}</span>
             <strong>${safeChallengeFormatted}</strong>
           </div>
           <div class="impact-ngo-card__stats-block">
-            <span class="impact-ngo-card__stat-label">Összesen</span>
+            <span class="impact-ngo-card__stat-label">${t("total")}</span>
             <strong>${safeTotalFormatted}</strong>
           </div>
         </div>
@@ -846,7 +978,7 @@
       : `
         <div class="impact-ngo-card__stats">
           <div class="impact-ngo-card__stats-block">
-            <span class="impact-ngo-card__stat-label">Összeg</span>
+            <span class="impact-ngo-card__stat-label">${t("amount")}</span>
             <strong>${safeFormattedAmount}</strong>
           </div>
           <div class="impact-ngo-card__stats-block">
@@ -868,21 +1000,21 @@
         ctaUrl,
         lastUpdated: data.last_updated,
         cacheStatus,
-      });
-      return;
+      }, opts);
+      return ctaUrl;
     }
 
     el.innerHTML = `
       <div class="${cardClasses.join(" ")}">
         <div class="impact-ngo-card__media">
-          <img src="${logoUrl}" alt="${safeName} logója" loading="lazy" crossorigin="anonymous" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'" />
+          <img src="${logoUrl}" alt="${escapeHtml(t("logoAlt").replace("{name}", () => name))}" loading="lazy" crossorigin="anonymous" onerror="this.onerror=null;this.src='${FALLBACK_LOGO}'" />
         </div>
         <div class="impact-ngo-card__content">
           <div class="impact-ngo-card__header">
             <div>
               <p class="impact-ngo-card__title">${safeName}</p>
               <p class="impact-ngo-card__meta">
-                Frissítve: ${updatedDisplay}${rank ? ` • #${escapeHtml(String(rank))}` : ""}
+                ${t("updatedPrefix")}${updatedDisplay}${rank ? ` • #${escapeHtml(String(rank))}` : ""}
               </p>
             </div>
             ${
@@ -906,11 +1038,11 @@
           ${
             showAnnouncement
               ? `<div class="impact-ngo-card__announcement">
-            <div class="impact-ngo-card__announcement-label">Sharity hírek</div>
+            <div class="impact-ngo-card__announcement-label">${t("news")}</div>
             <p>${announcementText}</p>
             ${
               announcementUrl
-                ? `<a href="${announcementUrl}" target="_blank" rel="noopener">Részletek →</a>`
+                ? `<a href="${announcementUrl}" target="_blank" rel="noopener">${t("details")}</a>`
                 : ""
             }
           </div>`
@@ -918,35 +1050,35 @@
           }
           ${statsHtml}
           <div class="impact-ngo-card__actions">
-            ${buildAction("impact-ngo-card__cta", iconLabel("shop", "Shop"), escapeHtml(baseShopUrl))}
+            ${buildAction("impact-ngo-card__cta", iconLabel("shop", t("shop")), escapeHtml(baseShopUrl))}
             ${buildAction(
               "impact-ngo-card__secondary impact-ngo-card__secondary--video",
-              iconLabel("video", "Videók"),
+              iconLabel("video", t("videos")),
               escapeHtml(videoUrl),
               "video"
             )}
             ${buildAction(
               "impact-ngo-card__secondary impact-ngo-card__secondary--offerwall",
-              iconLabel("offerwall", "Feladatok"),
+              iconLabel("offerwall", t("tasks")),
               escapeHtml(offerwallUrl),
               "offerwall"
             )}
             ${buildAction(
               "impact-ngo-card__secondary impact-ngo-card__secondary--donate",
-              iconLabel("donate", "Adományozok"),
+              iconLabel("donate", t("donate")),
               escapeHtml(donateUrl),
               "donate"
             )}
             ${buildAction(
               "impact-ngo-card__secondary impact-ngo-card__secondary--share",
-              iconLabel("share", "Megosztási oldal"),
+              iconLabel("share", t("sharePage")),
               safeShareLink
             )}
             ${
               showAppDownload
                 ? buildAction(
                     "impact-ngo-card__download",
-                    "ImpactShop app letöltése",
+                    t("appDownload"),
                     safeAppDownloadUrl
                   )
                 : ""
@@ -962,12 +1094,14 @@
     const challengeButtons = el.querySelectorAll(".impact-ngo-card__actions [data-action]");
 
     // Card view tracking
+    if (opts.emitView !== false) {
     trackEvent('card_view', {
       ngo: slug,
       variant: variant,
       cache_hit: cacheStatus === 'HIT',
       rank: rank
     });
+    }
 
     // CTA click tracking
     if (!previewOnly && ctaButton && ctaButton.tagName === "A") {
@@ -1023,9 +1157,10 @@
         });
       });
     }
+    return ctaUrl;
   }
 
-  function renderWidgetCard(el, info) {
+  function renderWidgetCard(el, info, opts = {}) {
     const {
       slug,
       name,
@@ -1039,7 +1174,7 @@
       badgeKey = '',
     } = info;
 
-    const displayUpdated = lastUpdated ? `Frissítve: ${formatTimestamp(lastUpdated)}` : '';
+    const displayUpdated = lastUpdated ? `${t("updatedPrefix")}${formatTimestamp(lastUpdated)}` : '';
     const saveLink = shareUrl || ctaUrl;
     const safeName = escapeHtml(name);
     const safeFormattedAmount = escapeHtml(formattedAmount);
@@ -1055,27 +1190,29 @@
             <p class="impact-ngo-card__title">${safeName}</p>
             ${badgeLabel ? `<span class="impact-ngo-card__badge impact-ngo-card__badge--${sanitizedBadgeKey}">${safeBadgeLabel}</span>` : ''}
             <div class="impact-ngo-card__widget-amount">
-              <span>Összegyűjtve</span>
+              <span>${t("collected")}</span>
               <strong>${safeFormattedAmount}</strong>
             </div>
           </div>
         </div>
         <a class="impact-ngo-card__widget-cta" href="${ctaUrl}" target="_blank" rel="noopener">
-          Támogasd az Impact Shopban
+          ${t("supportCta")}
         </a>
         <div class="impact-ngo-card__widget-footer">
           <span>${displayUpdated}</span>
-          ${saveLink ? `<a class="impact-ngo-card__widget-link" href="${saveLink}" target="_blank" rel="noopener">Megnyitás új ablakban</a>` : ''}
+          ${saveLink ? `<a class="impact-ngo-card__widget-link" href="${saveLink}" target="_blank" rel="noopener">${t("openNewTab")}</a>` : ''}
         </div>
       </div>
     `;
 
+    if (opts.emitView !== false) {
     trackEvent('card_view', {
       ngo: slug,
       variant: 'widget',
       cache_hit: cacheStatus === 'HIT',
       rank: rank
     });
+    }
 
     const cta = el.querySelector('.impact-ngo-card__widget-cta');
     if (cta) {
@@ -1117,11 +1254,15 @@
       el.dataset.slug ||
       el.getAttribute("slug");
     if (!slug) {
-      el.textContent = "NGO slug hiányzik.";
+      el.textContent = t("missingSlug");
+      el.lang = getLocale();
+      cardState.set(el, { kind: "missingSlug", locale: getLocale() });
       return;
     }
     const variant = el.getAttribute("variant") || el.dataset.variant || CONFIG.defaultVariant;
     createSkeleton(el, variant);
+    el.lang = getLocale();
+    cardState.set(el, { kind: "loading", locale: getLocale() });
     const url = buildApiUrl(slug, variant);
     
     fetch(url, { credentials: "same-origin" })
@@ -1141,34 +1282,26 @@
           });
       })
       .then(({ data, cacheStatus }) => {
-        renderCard(el, data, variant, cacheStatus);
+        const ctaUrl = renderCard(el, data, variant, cacheStatus);
+        cardState.set(el, { kind: "data", data, variant, cacheStatus, ctaUrl, locale: getLocale() });
       })
       .catch((error) => {
-        const status = error && error.status;
-        if (status === 429) {
-          return renderErrorCard(el, variant, {
-            title: "Túl sok kérés",
-            message: "Rövid időn belül túl sok kérés érkezett erről az eszközről.",
-            hint: "Várj fél percet, majd frissítsd az oldalt.",
-          });
-        }
-        if (status === 404) {
-          return renderErrorCard(el, variant, {
-            title: "Jelenleg nem elérhető",
-            message: "Próbáld újra később. (Ellenőrizd, hogy helyes slugot adtál meg az embed elemben.)",
-          });
-        }
-
-        const fallbackMessage = (error && error.message) || "Próbáld újra később.";
-        return renderErrorCard(el, variant, {
-          title: "Jelenleg nem érhető el",
-          message: fallbackMessage,
-        });
+        cardState.set(el, { kind: "error", variant, error, locale: getLocale() });
+        renderErrorCard(el, variant, errorOptions(error));
       });
   }
 
+  function errorOptions(error) {
+    if (error?.status === 429) return { title: t('err429Title'), message: t('err429Msg'), hint: t('err429Hint') };
+    if (error?.status === 404) return { title: t('err404Title'), message: t('err404Msg') };
+    return { title: t('errTitle'), message: error?.message || t('errMsg') };
+  }
+
   function renderErrorCard(el, variant, options = {}) {
-    const { title = "Jelenleg nem érhető el", message = "Próbáld újra később.", hint = "" } = options;
+    el.lang = getLocale();
+    const title = escapeHtml(options.title || t('errTitle'));
+    const message = escapeHtml(options.message || t('errMsg'));
+    const hint = escapeHtml(options.hint || '');
     if (variant === "widget") {
       el.innerHTML = `
         <div class="impact-ngo-card impact-ngo-card--widget impact-ngo-card--error">
@@ -1199,6 +1332,28 @@
     injectStyles();
     const nodes = document.querySelectorAll(CONFIG.selector);
     nodes.forEach((el) => hydrateElement(el));
+    // Follow the existing selector, including one inserted after card hydration.
+    // Language changes never fetch data or emit another card-view impression.
+    let language = getLocale();
+    const observer = new MutationObserver(() => {
+      const next = getLocale();
+      if (next === language) return;
+      language = next;
+      nodes.forEach((el) => {
+        const state = cardState.get(el);
+        if (!el.isConnected || !state || state.locale === next) return;
+        if (state.kind === 'data') {
+          renderCard(el, state.data, state.variant, state.cacheStatus, { emitView: false, ctaUrl: state.ctaUrl });
+        } else if (state.kind === 'error') {
+          renderErrorCard(el, state.variant, errorOptions(state.error));
+        } else if (state.kind === 'missingSlug') {
+          el.textContent = t('missingSlug');
+        }
+        el.lang = next;
+        state.locale = next;
+      });
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['lang'] });
   }
 
   if (document.readyState === "loading") {

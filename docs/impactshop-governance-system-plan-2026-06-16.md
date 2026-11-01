@@ -1,3 +1,10 @@
+## 2026-11-01 Sharity P3b inventory extension
+
+The approved new Notes-owned display FX reader joins the existing protected
+file inventory. Only its hash, the config self-hash and manifest checksum change;
+guard logic and release rules stay unchanged. See protected change record
+`2026-10-31-sharity-international-preferences.md` P3b. No deployment/activation.
+
 ## 2026-10-29 — meglévő Impact Shop műveletek osztálykiemelése
 
 A valóban eltérő éles Offerwall shared pont/szint/decay port megőrzéséhez
