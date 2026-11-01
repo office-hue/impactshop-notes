@@ -637,3 +637,24 @@ feat/sharity-intl-wp-delivery-20261101 két commitba választja az alkalmazásk�
 A lane-audit ezzel sikeres; a protected-audit explicit címszóhiánya e bekezdéssel
 javítva. A natív titokscan mind az eredeti84, mind a publikálási22 snapshoton
 sikeres. Nincs mainfetch/merge vagy telepítés; a kiadási hullám draft review.
+
+
+## Sharity Notes main-integráció — 2026-11-01
+
+Arnold kifejezetten jóváhagyott, Notes-only ötperces ablaka: 18:15:24–18:16:37
+Europe/Budapest,73másodperc, utána felszabadítva. Main `67af9bbcc6b189a62df82a193e798276b2a19bc7`
+integrálva a saját PR244-ágba, commit `b6f5e1313d135ec8f80400487b1a3d14e2d82d0e`.
+A fetch a FETCH_HEAD-et frissítette, az origin/main régi maradt; a tényleges
+integráció explicit FETCH_HEAD-re történt. Három dokumentum elején konfliktus:
+notes.md, system-status-snapshot.md, docs/bastion-guard-status.md. Mindkét ág
+bejegyzései megmaradtak, a main négy korábbi történeti sortörlése megmaradt.
+A saját19 és main6 nem ütköző fájl blobazonossága ellenőrizve; termékkódot
+a konfliktusfeloldás nem módosított. Korábbi célzott terméktesztek újrahasználva.
+Egy ellenőrzés túl szigorú teljes-sormegőrzést várt, és a parancssor továbbfutott:
+egy helyi, nem pusholt commit konfliktusjelölőt tartalmazott. Javítva és amendelve;
+a végső három dokumentumban nincs marker, mindkét oldal új sorai igazoltak,
+diff-check és tiszta worktree visszaolvasva. Távolra hibás commit nem került.
+Rollback: az integrációs commit saját ágban visszavonható; main és idegen
+worktree változatlan. Ai-agent main, PR-merge, telepítés és aktiválás nem történt.
+
+Protected érintettség: docs/bastion-guard-status.md dokumentumunió; a main impactshop-marketing-measurement.php/.js moduljai és tesztjei byteazonosan átvéve, nincs saját marketing-, guard- vagy pénzügyi módosítás. Smoke scope ebben az integrációban: dokumentumunió, markerhiány, saját/main blobazonosság, titokscan; nincs új live/browser PASS.
