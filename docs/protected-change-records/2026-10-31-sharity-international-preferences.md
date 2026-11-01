@@ -617,3 +617,23 @@ claim/date/cachevalidálást és használhatatlan tesztvázat javította. No ret
 Független P3b read-only review nem talált lényeges hibát. A CAS-verseny tesztje
 izolált modell, nem éles párhuzamos WordPress/DB bizonyíték. Guardmetadata csak
 a fenti két rekordra változik; teljes meglévő hashcheck külön ellenőrizve.
+
+## Publikálási csomag, 2026-11-01
+
+Protected files touched: impactshop-action-bar.php, impactshop-identity-panel.js,
+impactshop-ngo-card.php, docs/bastion-guard-status.md, impactshop-guard-config.json,
+impactshop-guard-hashes.json és impactshop-guard-hashes.sha256. Az új FX fájl
+inventory tag. Arnold kifejezetten jóváhagyott végrehajtási scope-ja és a fenti
+csomagonkénti koherencia/teszt/rollback érvényes; nincs új funkcióengedély kérése.
+Smoke scope: identity_and_points, profile_identity_surface, pwa_shell,
+mobile_shell_runtime, deploy_guard; a pontos tagok a meglévő policyból származnak.
+A scope nem állít éles WebKit/Chrome/route/próba PASS-t; a tényleges helyi
+ellenőrzéseket csomagonként külön rögzítettük. Éles smoke telepítéskor szükséges.
+Rollback: saját célfájlok előállapot-mentése és CAS; nincs pénzügyi adatvisszaírás.
+
+A teljes eredeti fejlesztési ág e79c8188 megőrizve. A saját publikálási ág
+feat/sharity-intl-wp-delivery-20261101 két commitba választja az alkalmazáskódot
+és protected fájlokat.695ce4ff fájlfája bitazonos e79c8188-cal (git diff exit0).
+A lane-audit ezzel sikeres; a protected-audit explicit címszóhiánya e bekezdéssel
+javítva. A natív titokscan mind az eredeti84, mind a publikálási22 snapshoton
+sikeres. Nincs mainfetch/merge vagy telepítés; a kiadási hullám draft review.
