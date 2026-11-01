@@ -1,4 +1,62 @@
+## Sharity P3b — 2026-11-01, helyi cache-forráskész
+
+Új Notes-owned publikus FX read/cache, defaultOFF refresh, napi egy atomi
+attempt és max3 MNB-hívás. GET csak cache; pontos egység/dátum/frissesség,
+régi cache hiba esetén megmarad.150 izolált PHP assertion, meglévő MNB/money,
+lint/diff sikeres; független review rendben, éles DB/cron még nem igazolt.
+Hermes02316370token,becsült0,002145325USD; hibás claim/date/test javítva.
+Csak új fájl és config/hash/checksum inventory-bővítés, guardlogika változatlan.
+Részlet/rollback: protected record P3b. Nincs push/merge/deploy/aktiválás.
+
+## Sharity P2u — 2026-11-01, helyi forráskész
+
+NGO full/compact/widget saját szövegei négy nyelven, meglévő választóval.
+Összeg/provider szöveg/CTA megmarad; váltás nem fetch-el és nem ír új card_view-t.
+7 Chrome-csoport, syntax/lint/diff, teljes guard inventory és6 eset sikeres;
+független read-only review rendben. Első teszt fixture-encoding/selector hibája
+javítva; 375px FR kép megtekintve, teljes live UI elfogadás nyitott.
+Hermes021 partial;1 hívás, token/díj ismeretlen, részleges átvétel és Codex-javítás.
+Részlet/rollback: protected-change-records/2026-10-31-sharity-international-preferences.md P2u.
+Nincs push/PR/merge/telepítés/aktiválás. SSH live discovery host-key hibán megállt;
+ellenőrzés nem lett kikapcsolva. P3a pontos pénzegység könyvtár Hermes022-nél.
+
+## Sharity P2t — 2026-11-01
+
+Csak action-bar preference kód26 additív sor; meglévő exact hash+checksum
+frissült, policy/inventory/CI változatlan.10 Chrome+85 receiver+25 return+
+36 PHP completion sikeres; canonical resolver NOT RUN. Meglévő full hash
+inventory és6 izolált eset sikeres. Kockázat/backup/UI checklist a meglévő
+protected record P2t részében. Source-only, guarded live acceptance nyitott.
+
+## Sharity P2p — 2026-11-01
+
+Egy meglévő intl overlay, a változatlan mu-plugin protected perimeteren belül.
+Koherencia/mentés/UI-checklist a meglévő protected record P2p részében. Core PHP/JS,
+action-bar/ads és az overlay régi kódja a megjelölt integráción kívül byteazonos.
+9 profilteszt sikeres; hash/config/CI/deploy nem változott. A korábbi166-listás
+hash-eredmény nem az azon kívüli overlay igazolása; itt nincs új guardfutás.
+Forráskész, nem éles elfogadás; ugyanaz a guarded kiadás és overlay-rollback.
+
+## Sharity P2o — 2026-10-31
+
+Egy meglévő identity intl overlay módosult, a mu-plugin critical glob védi.
+A 166 konfigurált hash-útvonal változatlan; az overlay nincs benne, a korábbi
+PASS nem az overlay bizonyítéka. Új guard/hash/CI-modul nincs. PHP/core JS és
+más P2n runtime byteazonos;5 új profilteszt +7 választóteszt sikeres. Protected
+record: `docs/protected-change-records/2026-10-31-sharity-international-preferences.md`.
+Forráskész részcsomag; teljes téma- és éles ellenőrzés/guarded deploy nyitott.
+
 ## 2026-10-29 — valós UI-handoff hiba célzott javítása
+
+## 2026-10-31 — Sharity P2n, forrásjelölt
+
+A meglévő action-bar és két intl overlay célzott változása; új modul nincs.
+A mu-plugin critical-file perem változatlan. Action-bar hash + manifestchecksum
+frissítve, minden más guard/hash változatlan. A meglévő 166 fájlos checker PASS,
+de action-bar nincs az ellenőrzött configlistában; saját hashét külön egyeztettük.
+7 Chrome teszt, PHP/JS syntax és 3 kijelzőméret helyben sikeres; éles checklist
+még nyitott. [Change record](protected-change-records/2026-10-31-sharity-international-preferences.md).
+Nincs kiadási/aktiválási elfogadás.
 
 Meglévő két védett fájl: impactshop-boot.php és impactshop-netflix-shortcodes.php.
 Az egyszeri saját-origin folytatás nem ad ownergrantot; Strictcookie és meglévő
@@ -782,3 +840,39 @@ commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a sz
 ## 2026-10-29 — Partner insert-formátum javítás
 
 Az API meglévő védett fájl; új modul/guard nincs. Csak az insert formátumlista és a megfelelő hash változik. 171 izolált SQL-check és provider-fixture sikeres; lane OFF. Koherencia/rollback/UI-checklist: `docs/partner-data-mapping.md`. Telepítési bizonyíték még nincs.
+
+
+### 2026-11-01 — P2q profil műveletszövegek
+55 sablon HU/EN/DE/FR, hat szerepkör; core mentési finally nyelvfüggetlen boolean.
+13/13 profil +25/25 return +identity-v2 static +meglévő guard/hash és syntax/diff
+sikeres. PHP/auth/API/pont/pénzügy változatlan; nincs kiadás/aktiválás.
+Core hash és manifest checksum frissült; policy/inventory változatlan.
+Hermes017 részben átvéve/javítva:11 205 token,1 hívás,becsült0,001276457 USD;
+Codex-költség ismeretlen. Részletek és kézi UI-checklist:
+`docs/protected-change-records/2026-10-31-sharity-international-preferences.md` P2q.
+Következő P2r; forráskész részcsomag, teljes ág nem release-ready.
+
+
+### 2026-11-01 — P2r push, előzmény és NGO copy
+36 sablon HU/EN/DE/FR, meglévő overlay/matcher; név/dátum/szám és core változatlan.
+18 külön profilcsoport és háromméretes komponensreview sikeres; korábbi25 return/
+guard eredmény újrahasznált. Hermes018 partial,1 hívás, használat/díj ismeretlen;
+szótár átvéve, túl tág kódjavaslat elvetve, Codex integrálta. Nincs kiadás/aktiválás.
+Részletes ellenőrzés, rollback és kézi UI-checklist a meglévő
+`docs/protected-change-records/2026-10-31-sharity-international-preferences.md` P2r részében.
+Következő P2s: maradék dialógus/üzenetgomb és provider badge nyelvi szerződés.
+
+
+### 2026-11-01 — P2s jelvény- és üzenetgomb-fordítás
+41 seed-jelvény neve/title HU/EN/DE/FR; csak pontos key+szövegpár egyezés.
+Egyedi/hiányos adat megmarad, régi EN adatátírás kizárva. Core egy renderelt
+badge-key marker; csoport/sorrend/tier változatlan. Eredeti Rendben gomb fordul,
+read POST/listener megmarad. 21 külön profilcsoport célzott futásokban sikeres;
+identity-v2 static, meglévő guard/6 eset, syntax/diff sikeres. Mobil komponens
+megtekintve, teljes éles WP/Elementor elfogadás nyitott. Nincs kiadás/aktiválás.
+Hermes019:11 608 token,1 hívás,becsült0,001397669 USD; javított szótár átvéve,
+hibás kódjavaslat elvetve. Codex-költség ismeretlen. Secretary
+`evt-b44fd02c-0c2f-4971-8afc-cc3738abf35e` ACK. Részletek és kézi checklist:
+`docs/protected-change-records/2026-10-31-sharity-international-preferences.md` P2s.
+Következő P2t: WP kifelé menő preferenciaátadás meglévő útja; Hermes020 még nincs
+kiadva. P3–P7 pénzügyi terv változatlan, teljes ág nem release-ready.

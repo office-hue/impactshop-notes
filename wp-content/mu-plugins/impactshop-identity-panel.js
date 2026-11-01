@@ -786,6 +786,7 @@
           const icon = badgeIconFor(item.row.badge_key, meta.category || "");
           const badge = document.createElement("span");
           badge.className = "impactshop-legacy-badge";
+          badge.setAttribute("data-badge-key", item.row.badge_key || "");
           badge.title = (meta.description_hu || name || "").toString();
           badge.innerHTML = '<span class="impactshop-legacy-badge-icon">' + icon + '</span><span>' + name + '</span>';
           legacyBadges.appendChild(badge);
@@ -1604,6 +1605,7 @@
         saveNicknameBtn.disabled = true;
         const originalLabel = saveNicknameBtn.textContent;
         saveNicknameBtn.textContent = "Mentés…";
+        let nicknameSavedPending = false;
         try {
           const res = await postWithNonce(
             restBase + "/identity/profile",
@@ -1637,6 +1639,7 @@
           }));
           setStatus("Becenév mentve.");
           if (nicknameStatus) nicknameStatus.textContent = "Becenév mentve.";
+          nicknameSavedPending = true;
           saveNicknameBtn.textContent = "Mentve";
           setTimeout(function(){
             saveNicknameBtn.textContent = originalLabel;
@@ -1646,7 +1649,7 @@
           if (nicknameStatus) nicknameStatus.textContent = "Hiba történt.";
         } finally {
           saveNicknameBtn.disabled = !isIdentityActive();
-          if (saveNicknameBtn.textContent === "Mentés…") {
+          if (!nicknameSavedPending) {
             saveNicknameBtn.textContent = originalLabel;
           }
         }

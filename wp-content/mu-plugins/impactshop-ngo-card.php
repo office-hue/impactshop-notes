@@ -193,7 +193,7 @@ final class ImpactShop_NGO_Card_API
     private const OG_LOGO = 'sharity-logo.png';
     private const BADGE_WINDOW_DAYS = 30;
     private const FRONTEND_SCRIPT_HANDLE = 'impactshop-ngo-card-runtime';
-    private const FRONTEND_SCRIPT_VERSION = '20260224b';
+    private const FRONTEND_SCRIPT_VERSION = '20261101-intl1';
     private const CHALLENGE_CACHE_PREFIX = 'impactshop_ngo_card_challenge_v1_';
     private const CHALLENGE_CACHE_TTL = 300;
     private const CHALLENGE_STALE_TTL = 900;
