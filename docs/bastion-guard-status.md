@@ -46,6 +46,17 @@ más P2n runtime byteazonos;5 új profilteszt +7 választóteszt sikeres. Protec
 record: `docs/protected-change-records/2026-10-31-sharity-international-preferences.md`.
 Forráskész részcsomag; teljes téma- és éles ellenőrzés/guarded deploy nyitott.
 
+## 2026-10-31 — Additív napi marketingmérés: célzott védelmi bizonyíték
+
+Új `impactshop-marketing-measurement.php` és `.js`; nincs meglévő protected
+forrás/config/hash/CI/guard változás. A publikus guide renderelt HTML szűk,
+jóváhagyott scriptbővítésének út/status/content-type kapuját PHP-stub és valódi
+helyi HTTP echo+exit teszt védi. JYSK print/JSON, jogi guide, profil és affiliate
+út nem kaphat injekciót. 54 PHP-check és5 JS/HTTP-teszt PASS; közös meglévő
+protected-touch (csak a státuszdokumentumhoz rögzített override) és affiliate-bastion PASS. Ez a két új modul
+célzott védelmi kiterjesztésének forrásevidenciája, nem éles hash-lock/telepítés.
+Részletes határ/koherencia/kockázat/rollback/UI: `docs/marketing-daily-counts-2026-10-31.md`.
+
 ## 2026-10-29 — valós UI-handoff hiba célzott javítása
 
 ## 2026-10-31 — Sharity P2n, forrásjelölt
