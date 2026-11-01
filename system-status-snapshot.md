@@ -1,3 +1,10 @@
+## Sharity P2w — 2026-11-01
+
+NGO standalone share-template négy nyelven, meglévő választó, eredeti összegek.
+24 Chrome teszt + célzott tördelési ismétlés, PHP lint, teljes guardhash sikeres.
+Hermes027 patch elvetve, Codex implementáció; becsült hívásköltség0,00204113USD.
+Részletek: notes.md P2w és meglévő protected-record. Nincs merge/deploy/aktiválás.
+
 ## Sharity Notes main-integráció — 2026-11-01
 
 Arnold kifejezetten jóváhagyott, Notes-only ötperces ablaka: 18:15:24–18:16:37

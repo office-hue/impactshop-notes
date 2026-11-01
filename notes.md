@@ -1,3 +1,37 @@
+## Sharity P2w NGO-megosztó oldal — 2026-11-01
+
+A standalone PHP share-template HU/EN/DE/FR szövegei, metaadatai, natív/social
+megosztási szövegei, másolási és PDF-feliratai lokalizáltak. A meglévő dockot
+közvetlenül rendereli; nincs általános wp_footer-hívás vagy új preferenciatár.
+Eredeti NGO-adat, összeg, CTA/QR, embedkód és PDF-fájlnév megmarad. Az eredeti
+pénznemről külön tájékoztatás van; ezen a WP-oldalon még nincs FX-konverzió.
+Javítva: description előtti shareText-olvasás, sikertelen másolás hamis sikere,
+betöltéskori automatikus natív megosztás. Megosztás most csak kattintásra indul.
+Biztonságos JSON/HTML-escaping, nyelvváltáskor naprakész copy/PDF/szöveg; rövid
+visszajelzés visszaállítása megtartja az ikonokat és az aktuális nyelvet.
+A template-en kívüli teljes PHP forrás byteazonos az előállapottal.
+
+Ellenőrzés: 24/24 tényleges Chrome teszt (7 új share + 7 NGO + 10 dock),
+benne16 nyelv/deviza kombináció, blokkolt tárolás, hibás/duplikált query,
+rosszindulatú szintetikus NGO-név, eredeti CTA/összeg, nulla új üzleti POST,
+egyetlen NGO-adatlekérés, copy hiba/siker/fallback, kattintásos natív share,
+PDF-stub siker/hiba/felirat/link/fájlnév, billentyűzetes választó, DE/FR
+320/375/1280 px. A képi review hosszú német dock-feliratot talált; tördelés
+javítva, érintett hatnézetes teszt ismét sikeres. PHP lint és guardhash teljes
+inventory/6 negatív eset sikeres. PDF valódi külső lib/CDN, 200%zoom, nyomtatás,
+teljes WordPress/Elementor, staging és éles elfogadás még nincs igazolva.
+Lokális képek: tmp/sharity-internationalization/ngo-share-{de,fr}-320.png.
+
+Hermes027: completed, 1c23fec5-1e39-4cfa-97b4-33223e324569, 17752 input +2339
+output =20091 token,1hívás, becsült0,00204113USD (nem számlázott tény).
+A válasz nem adott teljes patch-et és indokolatlanul függő döntést jelzett;
+a javasolt PHP-queryresolver hibás (ismételt GET elveszne), elvetve. Nincs
+újrahívás/JEV. Codex készítette a működő patch-et és teszteket; javításigény
+jelentős, megtakarítás nem igazolt. Meglévő pénzügyi/auth/reward ág változatlan.
+Protected-record: docs/protected-change-records/2026-10-31-sharity-international-preferences.md.
+Rollback: saját mentett PHP-változat és hozzá illő hash; nincs adatvisszaírás.
+Forrásellenőrzött; nem merge-elt, nem telepített és nem aktivált.
+
 ## Sharity Notes main-integráció — 2026-11-01
 
 Arnold kifejezetten jóváhagyott, Notes-only ötperces ablaka: 18:15:24–18:16:37

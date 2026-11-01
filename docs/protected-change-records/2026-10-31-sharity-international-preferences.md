@@ -658,3 +658,43 @@ Rollback: az integrációs commit saját ágban visszavonható; main és idegen
 worktree változatlan. Ai-agent main, PR-merge, telepítés és aktiválás nem történt.
 
 Protected érintettség: docs/bastion-guard-status.md dokumentumunió; a main impactshop-marketing-measurement.php/.js moduljai és tesztjei byteazonosan átvéve, nincs saját marketing-, guard- vagy pénzügyi módosítás. Smoke scope ebben az integrációban: dokumentumunió, markerhiány, saját/main blobazonosság, titokscan; nincs új live/browser PASS.
+
+## P2w — önálló NGO-megosztó oldal, előzetes határ (2026-11-01)
+
+Kiindulás: Notes da525b1b, saját publikálási ág. A render_share_template önálló
+HTML-válasza érintett: négy nyelvű saját szöveg/metaadat, megosztási és
+másolási feliratok, PDF-felirat, meglévő preferenciaválasztó elérhetősége.
+A PHP és az NGO JS ugyanazon meglévő managed dock nyelvét követi. A HTML/JS
+escaping, nyelvváltás és hosszú címkék tördelése konkrét regressziós kockázat.
+Eredeti név/összeg/jelvény, CTA, affiliate-paraméter, QR, PDF-fájlnév megmarad.
+Nincs admin-, wallet-, REST-adat-, pont-, jutalom-, könyvelési vagy cronváltozás.
+A korábbi leírás előtti változóolvasás és a sikertelen másolás hamis sikerjelzése
+a közvetlenül érintett megosztási funkció javításához tartozik. Native share
+csak kifejezett kattintásra indul. Nem aktiválunk pénzügyi átváltást.
+
+Első kidolgozó Hermes027, Codex integráció és célzott teszt. A jóváhagyott P2
+legacy-touch scope része; nem készül külön felületkeret vagy preference store.
+Backup: .codex/backups/sharity-ngo-share-p2w-20261101/impactshop-ngo-card.php.
+Rollback: csak saját PHP-változás visszavonása ellenőrzött előállapotból;
+éles fájlhoz és adathoz ez a csomag még nem nyúl. Kétnapos helyi megtartás,
+törlés csak lezárt implementáció és UI-review után.
+
+Ellenőrzési lista: tényleges PHP-render Chrome-ban, HU/EN/DE/FR váltás, blokkolt
+tároló, eredeti összeg és CTA byteazonosság, rosszindulatú név escaping,
+copy-siker és hiba, kattintásos native share, PDF-stub, DE/FR keskeny nézet;
+meglévő dock és NGO-kártya célzott regresszió, PHP lint, guardhash.
+Kézi éles UI checklist (még nem teljesített): NGO megosztó URL megnyitása,
+négy nyelv/választó kipróbálása, mobil hosszú feliratok, másolás, megosztás,
+PDF és beágyazás; a CTA ugyanahhoz az NGO-hoz vezessen, összeg ne változzon
+a puszta nyelv/devizapreferenciától. Teljes staging/éles elfogadás külön.
+
+### P2w ellenőrzés és átvétel
+
+24/24 Chrome teszt (share7, NGO7, dock10), PHP lint, teljes hashchecker és
+6 negatív eset sikeres. DE/FR320 képi review után hosszú dockszöveg tördelve;
+320/375/1280 nézetes teszt ismét sikeres. PHP template-en kívül byteazonosság.
+Csak a saját PHP hash/checksum frissült; inventory/guardlogika változatlan.
+Hermes027 incomplete patch javaslat elvetve; Codex implementáció/tesztek;
+20091token,1hívás,becsült0,00204113USD,nincs retry. Részletek notes.md P2w.
+A fenti kézi éles checklist továbbra nyitott. Valódi PDF/CDN,200%zoom,print,
+teljes WP/Elementor és staging/éles teszt nem futott. Nincs új PASS ezekre.

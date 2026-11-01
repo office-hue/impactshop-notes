@@ -2358,26 +2358,130 @@ final class ImpactShop_NGO_Card_API
         $shareUrl = self::share_url($slug);
         $ctaUrl   = self::cta_url($slug, 'ngo-card-share');
         $scriptSrc = self::script_src();
-        $shareTitle = sprintf(__('Támogasd %s ügyét az Impact Shopban', 'impactshop'), $name);
-        $shareText  = wp_strip_all_tags($description);
-        $shareData  = [
-            'title' => $shareTitle,
-            'text'  => $shareText,
-            'url'   => $shareUrl,
+        $copy = [
+            'hu' => [
+                'title' => '{name} — {amount} összegyűjtve',
+                'description' => 'A(z) {name} jelenleg #{rank} a Sharity toplistán, eddig {amount} támogatás gyűlt össze. Támogasd te is az Impact Shopban!',
+                'shareTitle' => 'Támogasd {name} ügyét az Impact Shopban',
+                'message' => 'Segítek a(z) {name} ügyén: csatlakozz te is az Impact Shopban! {url}',
+                'amount' => 'Összegyűjtött támogatás',
+                'cta' => 'Tovább az Impact Shopba',
+                'native' => 'Megosztás natív menüben',
+                'network' => 'Megosztás itt: {network}',
+                'linkDefault' => 'Link másolása',
+                'pdfDefault' => 'Kártya letöltése (PDF)',
+                'embedTitle' => 'Illeszd be a saját weboldaladba',
+                'embedDefault' => 'Kód másolása',
+                'embedHelp' => 'Másold ki a kódot, illeszd be a kívánt oldal HTML blokkjába – a kártya automatikusan frissül és a CTA az Impact Shopra mutat.',
+                'messageTitle' => 'Készült megosztási üzenet:',
+                'messageDefault' => 'Üzenet másolása',
+                'linkCopied' => 'Kimásolva ✓',
+                'messageCopied' => 'Üzenet másolva ✓',
+                'tiktokCopied' => 'TikTok szöveg kimásolva ✓',
+                'embedCopied' => 'Beillesztési kód másolva ✓',
+                'copyFailed' => 'Nem sikerült a másolás',
+                'pdfGenerating' => 'PDF készítése…',
+                'pdfError' => 'Nem sikerült a PDF mentése',
+                'pdfLink' => 'Támogasd most online',
+                'currencyNote' => 'Az összeg az eredeti pénznemben látható; a devizaválasztás ezen az oldalon még nem váltja át.',
+            ],
+            'en' => [
+                'title' => '{name} — {amount} raised',
+                'description' => '{name} is currently #{rank} on the Sharity leaderboard, with {amount} raised. Support them through Impact Shop!',
+                'shareTitle' => 'Support {name} through Impact Shop',
+                'message' => 'I support {name}: join me on Impact Shop! {url}',
+                'amount' => 'Support raised',
+                'cta' => 'Go to Impact Shop',
+                'native' => 'Open sharing menu',
+                'network' => 'Share on {network}',
+                'linkDefault' => 'Copy link',
+                'pdfDefault' => 'Download card (PDF)',
+                'embedTitle' => 'Embed on your website',
+                'embedDefault' => 'Copy code',
+                'embedHelp' => 'Copy the code into an HTML block on your website. The card updates automatically and its button links to Impact Shop.',
+                'messageTitle' => 'Ready-to-share message:',
+                'messageDefault' => 'Copy message',
+                'linkCopied' => 'Copied ✓',
+                'messageCopied' => 'Message copied ✓',
+                'tiktokCopied' => 'TikTok text copied ✓',
+                'embedCopied' => 'Embed code copied ✓',
+                'copyFailed' => 'Copy failed',
+                'pdfGenerating' => 'Creating PDF…',
+                'pdfError' => 'Could not save PDF',
+                'pdfLink' => 'Support online now',
+                'currencyNote' => 'The amount is shown in its original currency; the currency choice does not yet convert it on this page.',
+            ],
+            'de' => [
+                'title' => '{name} — {amount} gesammelt',
+                'description' => '{name} liegt derzeit auf Platz {rank} der Sharity-Rangliste, mit {amount} gesammelter Unterstützung. Unterstütze die Organisation im Impact Shop!',
+                'shareTitle' => 'Unterstütze {name} im Impact Shop',
+                'message' => 'Ich unterstütze {name}: Mach mit im Impact Shop! {url}',
+                'amount' => 'Gesammelte Unterstützung',
+                'cta' => 'Zum Impact Shop',
+                'native' => 'Teilen-Menü öffnen',
+                'network' => 'Auf {network} teilen',
+                'linkDefault' => 'Link kopieren',
+                'pdfDefault' => 'Karte herunterladen (PDF)',
+                'embedTitle' => 'Auf deiner Website einbetten',
+                'embedDefault' => 'Code kopieren',
+                'embedHelp' => 'Kopiere den Code in einen HTML-Block deiner Website. Die Karte wird automatisch aktualisiert und ihre Schaltfläche führt zum Impact Shop.',
+                'messageTitle' => 'Vorbereitete Nachricht zum Teilen:',
+                'messageDefault' => 'Nachricht kopieren',
+                'linkCopied' => 'Kopiert ✓',
+                'messageCopied' => 'Nachricht kopiert ✓',
+                'tiktokCopied' => 'TikTok-Text kopiert ✓',
+                'embedCopied' => 'Einbettungscode kopiert ✓',
+                'copyFailed' => 'Kopieren fehlgeschlagen',
+                'pdfGenerating' => 'PDF wird erstellt…',
+                'pdfError' => 'PDF konnte nicht gespeichert werden',
+                'pdfLink' => 'Jetzt online unterstützen',
+                'currencyNote' => 'Der Betrag bleibt in der Originalwährung; die Währungsauswahl rechnet ihn auf dieser Seite noch nicht um.',
+            ],
+            'fr' => [
+                'title' => '{name} — {amount} collectés',
+                'description' => '{name} occupe la place {rank} du classement Sharity, avec {amount} de soutien collecté. Soutenez cette organisation via Impact Shop !',
+                'shareTitle' => 'Soutenez {name} via Impact Shop',
+                'message' => 'Je soutiens {name} : rejoignez-moi sur Impact Shop ! {url}',
+                'amount' => 'Soutien collecté',
+                'cta' => 'Accéder à Impact Shop',
+                'native' => 'Ouvrir le menu de partage',
+                'network' => 'Partager sur {network}',
+                'linkDefault' => 'Copier le lien',
+                'pdfDefault' => 'Télécharger la carte (PDF)',
+                'embedTitle' => 'Intégrer à votre site web',
+                'embedDefault' => 'Copier le code',
+                'embedHelp' => 'Copiez le code dans un bloc HTML de votre site. La carte se met à jour automatiquement et son bouton mène à Impact Shop.',
+                'messageTitle' => 'Message prêt à partager :',
+                'messageDefault' => 'Copier le message',
+                'linkCopied' => 'Copié ✓',
+                'messageCopied' => 'Message copié ✓',
+                'tiktokCopied' => 'Texte TikTok copié ✓',
+                'embedCopied' => 'Code d’intégration copié ✓',
+                'copyFailed' => 'Échec de la copie',
+                'pdfGenerating' => 'Création du PDF…',
+                'pdfError' => 'Impossible d’enregistrer le PDF',
+                'pdfLink' => 'Soutenir en ligne',
+                'currencyNote' => 'Le montant reste dans sa devise d’origine ; le choix de devise ne le convertit pas encore sur cette page.',
+            ],
         ];
-        $shareMessage = sprintf(
-            __('Segítek a(z) %1$s ügyén: csatlakozz te is az Impact Shopban! %2$s', 'impactshop'),
-            $name,
-            $shareUrl
-        );
-
-        $title = sprintf('%s — %s összegyűjtve', $name, $amountFormatted);
-        $description = sprintf(
-            'A(z) %s jelenleg #%d a Sharity toplistán, eddig %s támogatás gyűlt össze. Támogasd te is az Impact Shopban!',
-            $name,
-            $rank,
-            $amountFormatted
-        );
+        // Parse raw query pairs: PHP's $_GET collapses repeated keys.
+        $queryValues = [];
+        foreach (explode('&', (string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY) ?? '')) as $pair) {
+            $parts = explode('=', $pair, 2);
+            $queryValues[urldecode($parts[0])][] = urldecode($parts[1] ?? '');
+        }
+        $explicit = count($queryValues['ui_lang'] ?? []) === 1 ? $queryValues['ui_lang'][0] : null;
+        $cookie = $_COOKIE['sharity_ui_language'] ?? null;
+        $legacy = count($queryValues['lang'] ?? []) === 1 ? $queryValues['lang'][0] : null;
+        $language = in_array($explicit, ['hu', 'en', 'de', 'fr'], true) ? $explicit
+            : (in_array($cookie, ['hu', 'en', 'de', 'fr'], true) ? $cookie
+                : (in_array($legacy, ['hu', 'en'], true) ? $legacy : 'hu'));
+        $values = ['{name}' => $name, '{amount}' => $amountFormatted, '{rank}' => (string) $rank, '{url}' => $shareUrl];
+        $t = static fn(string $key): string => strtr($copy[$language][$key], $values);
+        $title = $t('title');
+        $description = $t('description');
+        $shareMessage = $t('message');
+        $shareData = ['title' => $t('shareTitle'), 'text' => $description, 'url' => $shareUrl];
         $image = $item['og_image'] ?? self::FALLBACK_OG_IMAGE;
         $badgeLabel = $item['badge_status']['label'] ?? '';
         $badgeKey   = $item['badge_status']['key'] ?? '';
@@ -2452,7 +2556,7 @@ final class ImpactShop_NGO_Card_API
 
         ?>
 <!DOCTYPE html>
-<html lang="hu">
+<html lang="<?php echo esc_attr($language); ?>">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -2476,6 +2580,11 @@ final class ImpactShop_NGO_Card_API
   <meta name="twitter:image" content="<?php echo esc_url($image); ?>">
 
   <style>
+    .impact-ngo-share, .impact-ngo-share * { box-sizing: border-box; min-width: 0; }
+    .impact-ngo-share { overflow-wrap: anywhere; }
+    .impact-ngo-share__embed-code { max-width: 100%; }
+    body .sharity-action-bar [data-bar] > span:not(.bar-icon):not(.bar-coming-soon) { max-width: 100%; overflow-wrap: anywhere; hyphens: auto; }
+    .impact-ngo-share__currency-note { font-size: 0.75rem; }
     body {
       margin: 0;
       font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -2492,7 +2601,7 @@ final class ImpactShop_NGO_Card_API
       border-radius: 26px;
       background: linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,41,59,0.68));
       box-shadow: 0 30px 80px rgba(3,10,27,0.55);
-      max-width: 520px;
+      max-width: calc(520px + 4.4rem);
       width: 100%;
       color: rgba(248,250,252,0.95);
     }
@@ -2744,16 +2853,17 @@ final class ImpactShop_NGO_Card_API
       </div>
     <?php endif; ?>
     <h1 id="ngo-share-title"><?php echo esc_html($name); ?></h1>
-    <p aria-live="polite"><?php echo esc_html($description); ?></p>
-    <p class="impact-ngo-share__amount" aria-label="Összegyűjtött támogatás">
+    <p data-share-copy="description" aria-live="polite"><?php echo esc_html($description); ?></p>
+    <p class="impact-ngo-share__amount" aria-label="<?php echo esc_attr($t('amount')); ?>">
       <strong><?php echo esc_html($amountFormatted); ?></strong>
     </p>
-    <a class="impact-ngo-share__cta" href="<?php echo esc_url($ctaUrl); ?>" aria-label="Tovább az Impact Shopba – <?php echo esc_attr($name); ?>">
-      Tovább az Impact Shopba
+    <p class="impact-ngo-share__currency-note" data-share-copy="currencyNote"><?php echo esc_html($t('currencyNote')); ?></p>
+    <a class="impact-ngo-share__cta" href="<?php echo esc_url($ctaUrl); ?>" aria-label="<?php echo esc_attr($t('cta') . ' – ' . $name); ?>">
+      <span data-share-copy="cta"><?php echo esc_html($t('cta')); ?></span>
     </a>
     <div class="impact-ngo-share__actions">
       <button type="button" class="impact-ngo-share__share-btn" id="impact-ngo-share-trigger">
-        <?php esc_html_e('Megosztás natív menüben', 'impactshop'); ?>
+        <span data-share-copy="native"><?php echo esc_html($t('native')); ?></span>
       </button>
       <div class="impact-ngo-share__grid" role="list">
         <?php foreach ($shareLinks as $network => $config) :
@@ -2774,7 +2884,7 @@ final class ImpactShop_NGO_Card_API
             data-label="<?php echo esc_attr($label); ?>"
             aria-label="<?php
             /* translators: %s social network name. */
-            echo esc_attr(sprintf(__('Megosztás itt: %s', 'impactshop'), $label));
+            echo esc_attr(str_replace('{network}', $label, $t('network')));
             ?>"
           >
             <?php if ($icon) : ?>
@@ -2793,10 +2903,10 @@ final class ImpactShop_NGO_Card_API
         <?php endforeach; ?>
       </div>
       <button type="button" class="impact-ngo-share__copy-btn" id="impact-ngo-share-copy">
-        <?php esc_html_e('Link másolása', 'impactshop'); ?>
+        <span data-share-copy="linkDefault"><?php echo esc_html($t('linkDefault')); ?></span>
       </button>
       <button type="button" class="impact-ngo-share__pdf-btn" id="impact-ngo-share-pdf">
-        <?php esc_html_e('Kártya letöltése (PDF)', 'impactshop'); ?>
+        <span data-share-copy="pdfDefault"><?php echo esc_html($t('pdfDefault')); ?></span>
       </button>
     </div>
     <div style="margin-top:2rem;">
@@ -2813,12 +2923,12 @@ final class ImpactShop_NGO_Card_API
     </div>
     <section class="impact-ngo-share__embed" aria-labelledby="impact-ngo-embed-title">
       <div class="impact-ngo-share__embed-controls">
-        <h2 id="impact-ngo-embed-title"><?php esc_html_e('Illeszd be a saját weboldaladba', 'impactshop'); ?></h2>
+        <h2 id="impact-ngo-embed-title"><span data-share-copy="embedTitle"><?php echo esc_html($t('embedTitle')); ?></span></h2>
         <button type="button" class="impact-ngo-share__embed-copy" id="impact-ngo-share-embed-copy">
-          <?php esc_html_e('Kód másolása', 'impactshop'); ?>
+          <span data-share-copy="embedDefault"><?php echo esc_html($t('embedDefault')); ?></span>
         </button>
       </div>
-      <p><?php esc_html_e('Másold ki a kódot, illeszd be a kívánt oldal HTML blokkjába – a kártya automatikusan frissül és a CTA az Impact Shopra mutat.', 'impactshop'); ?></p>
+      <p><span data-share-copy="embedHelp"><?php echo esc_html($t('embedHelp')); ?></span></p>
       <textarea
         id="impact-ngo-share-embed-code"
         class="impact-ngo-share__embed-code"
@@ -2828,32 +2938,58 @@ final class ImpactShop_NGO_Card_API
       ><?php echo esc_textarea($embedSnippet); ?></textarea>
     </section>
     <div class="impact-ngo-share__message">
-      <div><?php esc_html_e('Készült megosztási üzenet:', 'impactshop'); ?></div>
-      <p id="impact-ngo-share-text"><?php echo esc_html($shareMessage); ?></p>
-      <button type="button" id="impact-ngo-share-copy-text"><?php esc_html_e('Üzenet másolása', 'impactshop'); ?></button>
+      <div><span data-share-copy="messageTitle"><?php echo esc_html($t('messageTitle')); ?></span></div>
+      <p data-share-copy="message" id="impact-ngo-share-text"><?php echo esc_html($shareMessage); ?></p>
+      <button type="button" id="impact-ngo-share-copy-text"><span data-share-copy="messageDefault"><?php echo esc_html($t('messageDefault')); ?></span></button>
     </div>
   </main>
+  <?php if (function_exists('impactshop_action_bar_render')) { impactshop_action_bar_render(); } ?>
   <script>
   (function() {
-    const shareData = <?php echo wp_json_encode($shareData); ?>;
-    const shareUrl = <?php echo wp_json_encode($shareUrl); ?>;
-    const shareMessage = <?php echo wp_json_encode($shareMessage); ?>;
-    const ctaUrl = <?php echo wp_json_encode($ctaUrl); ?>;
-    const cardSlug = <?php echo wp_json_encode($slug); ?>;
-    const copyLabels = {
-      linkCopied: "<?php echo esc_js(__('Kimásolva ✓', 'impactshop')); ?>",
-      linkDefault: "<?php echo esc_js(__('Link másolása', 'impactshop')); ?>",
-      messageCopied: "<?php echo esc_js(__('Üzenet másolva ✓', 'impactshop')); ?>",
-      messageDefault: "<?php echo esc_js(__('Üzenet másolása', 'impactshop')); ?>",
-      tiktokCopied: "<?php echo esc_js(__('TikTok szöveg kimásolva ✓', 'impactshop')); ?>",
-      embedCopied: "<?php echo esc_js(__('Beillesztési kód másolva ✓', 'impactshop')); ?>",
-      embedDefault: "<?php echo esc_js(__('Kód másolása', 'impactshop')); ?>",
-    };
-    const pdfLabels = {
-      default: "<?php echo esc_js(__('Kártya letöltése (PDF)', 'impactshop')); ?>",
-      generating: "<?php echo esc_js(__('PDF készítése…', 'impactshop')); ?>",
-      error: "<?php echo esc_js(__('Nem sikerült a PDF mentése', 'impactshop')); ?>",
-    };
+    const shareData = <?php echo wp_json_encode($shareData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const shareUrl = <?php echo wp_json_encode($shareUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    let shareMessage = <?php echo wp_json_encode($shareMessage, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const ctaUrl = <?php echo wp_json_encode($ctaUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const cardSlug = <?php echo wp_json_encode($slug, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const copy = <?php echo wp_json_encode($copy, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    const values = <?php echo wp_json_encode($values, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    let language = document.documentElement.lang;
+    const t = key => copy[language][key].replace(/\{(?:name|amount|rank|url)\}/g, token => values[token]);
+    const copyLabels = {};
+    const pdfLabels = {};
+    const flashes = new Map();
+    function applyLanguage() {
+      const bar = document.querySelector('.sharity-action-bar[data-sharity-preferences-managed]');
+      const next = bar && bar.getAttribute('lang');
+      if (Object.prototype.hasOwnProperty.call(copy, next)) language = next;
+      document.documentElement.lang = language;
+      flashes.forEach((restore, el) => restore());
+      document.querySelectorAll('[data-share-copy]').forEach(el => { el.textContent = t(el.dataset.shareCopy); });
+      document.title = t('title');
+      ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]'].forEach(selector => document.querySelector(selector).content = t('description'));
+      ['meta[property="og:title"]', 'meta[name="twitter:title"]'].forEach(selector => document.querySelector(selector).content = t('title'));
+      document.querySelector('.impact-ngo-share__amount').setAttribute('aria-label', t('amount'));
+      document.querySelector('.impact-ngo-share__cta').setAttribute('aria-label', t('cta') + ' – ' + values['{name}']);
+      shareMessage = t('message');
+      shareData.title = t('shareTitle'); shareData.text = t('description');
+      Object.keys(copy[language]).forEach(key => { copyLabels[key] = t(key); });
+      Object.assign(pdfLabels, { default: t('pdfDefault'), generating: t('pdfGenerating'), error: t('pdfError') });
+      document.querySelectorAll('[data-network]').forEach(link => {
+        link.setAttribute('aria-label', t('network').replace('{network}', link.dataset.label));
+        const url = new URL(link.href);
+        switch (link.dataset.network) {
+          case 'linkedin': url.searchParams.set('title', t('title')); url.searchParams.set('summary', t('description')); break;
+          case 'x': url.searchParams.set('text', t('title')); break;
+          case 'whatsapp': url.searchParams.set('text', t('description') + ' ' + shareUrl); break;
+          case 'telegram': url.searchParams.set('text', t('title')); break;
+          case 'tiktok': url.searchParams.set('lang', {hu:'hu-HU',en:'en-US',de:'de-DE',fr:'fr-FR'}[language]); break;
+        }
+        if (link.dataset.network !== 'facebook') link.href = url.href;
+      });
+    }
+    applyLanguage();
+    const preferenceBar = document.querySelector('.sharity-action-bar[data-sharity-preferences-managed]');
+    if (preferenceBar) new MutationObserver(applyLanguage).observe(preferenceBar, { attributes: true, attributeFilter: ['lang'] });
 
     function openNativeShare() {
       if (!navigator.share) {
@@ -2883,35 +3019,26 @@ final class ImpactShop_NGO_Card_API
       });
     }
 
-    function flashLabel(el, successText, fallbackText) {
-      if (!el) {
-        return;
-      }
-      const base = fallbackText || el.getAttribute('data-label') || el.textContent;
-      el.dataset.flashOriginalHtml = el.innerHTML;
-      el.textContent = successText;
-      setTimeout(() => {
-        if (fallbackText) {
-          el.textContent = base;
-        } else if (Object.prototype.hasOwnProperty.call(el.dataset, 'flashOriginalHtml')) {
-          el.innerHTML = el.dataset.flashOriginalHtml;
-        } else {
-          el.textContent = base;
-        }
-        delete el.dataset.flashOriginalHtml;
-      }, 2000);
+    function flashLabel(el, text) {
+      if (!el) return;
+      if (flashes.has(el)) flashes.get(el)();
+      const original = Array.from(el.childNodes);
+      el.textContent = text;
+      const restore = () => { clearTimeout(timer); el.replaceChildren(...original); flashes.delete(el); };
+      const timer = setTimeout(restore, 2000);
+      flashes.set(el, restore);
     }
 
     function copyLink(btn) {
       copyValue(shareUrl)
         .then(() => flashLabel(btn, copyLabels.linkCopied, copyLabels.linkDefault))
-        .catch(() => flashLabel(btn, copyLabels.linkCopied, copyLabels.linkDefault));
+        .catch(() => flashLabel(btn, copyLabels.copyFailed));
     }
 
     function copyCustomText(btn) {
       copyValue(shareMessage)
         .then(() => flashLabel(btn, copyLabels.messageCopied, copyLabels.messageDefault))
-        .catch(() => flashLabel(btn, copyLabels.messageCopied, copyLabels.messageDefault));
+        .catch(() => flashLabel(btn, copyLabels.copyFailed));
     }
 
     function bindEmbedCopyButton() {
@@ -2924,7 +3051,7 @@ final class ImpactShop_NGO_Card_API
         e.preventDefault();
         copyValue(embedTextarea.value)
           .then(() => flashLabel(embedBtn, copyLabels.embedCopied, copyLabels.embedDefault))
-          .catch(() => flashLabel(embedBtn, copyLabels.embedCopied, copyLabels.embedDefault));
+          .catch(() => flashLabel(embedBtn, copyLabels.copyFailed));
       });
     }
 
@@ -2937,7 +3064,7 @@ final class ImpactShop_NGO_Card_API
         link.addEventListener('click', function() {
           copyValue(shareMessage)
             .then(() => flashLabel(link, copyLabels.tiktokCopied))
-            .catch(() => flashLabel(link, copyLabels.tiktokCopied));
+            .catch(() => flashLabel(link, copyLabels.copyFailed));
         });
       });
     }
@@ -2997,7 +3124,7 @@ final class ImpactShop_NGO_Card_API
       const y = 40;
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, imgWidth, imgHeight, '', 'FAST');
       if (ctaUrl) {
-        const linkLabel = "<?php echo esc_js(__('Támogasd most online', 'impactshop')); ?>";
+        const linkLabel = t('pdfLink');
         pdf.setFontSize(12);
         pdf.setTextColor(44, 118, 255);
         const textWidth = pdf.getTextWidth(linkLabel);
@@ -3014,7 +3141,6 @@ final class ImpactShop_NGO_Card_API
       if (!btn) {
         return;
       }
-      const originalLabel = pdfLabels.default;
       btn.addEventListener('click', async function(e) {
         e.preventDefault();
         if (btn.dataset.loading === 'true') {
@@ -3024,10 +3150,13 @@ final class ImpactShop_NGO_Card_API
         try {
           btn.textContent = pdfLabels.generating;
           await generatePdf();
-          btn.textContent = originalLabel;
+          btn.replaceChildren();
+          const label = document.createElement('span'); label.dataset.shareCopy = 'pdfDefault'; label.textContent = t('pdfDefault'); btn.appendChild(label);
         } catch (err) {
           console.error('PDF export failed', err);
-          flashLabel(btn, pdfLabels.error, originalLabel);
+          btn.innerHTML = '<span data-share-copy="pdfDefault"></span>';
+          btn.firstChild.textContent = t('pdfDefault');
+          flashLabel(btn, pdfLabels.error);
           return;
         } finally {
           btn.dataset.loading = 'false';
@@ -3036,8 +3165,6 @@ final class ImpactShop_NGO_Card_API
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      openNativeShare().catch(() => {});
-
       const trigger = document.getElementById('impact-ngo-share-trigger');
       if (trigger) {
         trigger.addEventListener('click', function(e) {

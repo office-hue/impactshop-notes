@@ -1,3 +1,10 @@
+## 2026-11-01 Sharity P2w share-template hash sync
+
+Only impactshop-ngo-card.php's approved share-template hash and manifest
+checksum change. Guard logic/inventory unchanged; full existing hash checker
+and six negative cases pass. See P2w protected change record and notes.
+No deployment/activation; unrelated protected paths remain byte-identical.
+
 ## 2026-11-01 Sharity P3b inventory extension
 
 The approved new Notes-owned display FX reader joins the existing protected
