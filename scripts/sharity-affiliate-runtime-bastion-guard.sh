@@ -65,12 +65,17 @@ for needle, label in [
     require(runtime, needle, label)
 
 for needle, label in [
-    ("go.dognet.", "provider redirect ownership in correlation runtime"),
     ("wp_remote_", "outbound network request in correlation runtime"),
     ("update_user_meta", "profile writer"),
     ("INSERT INTO wp_impactshop_points", "points writer"),
 ]:
     forbid(runtime, needle, label)
+
+# Only the approved confirmed-shopping path can construct the Dognet URL.
+legacy = runtime.split('/** New shopping lane:')[0] + runtime.split('function impactshop_sharity_affiliate_register_routes()')[1]
+forbid(legacy, 'go.dognet.', 'provider URL outside confirmed-shopping path')
+for needle in ["impactshop_sharity_shopping_purchase_enabled", "request_payload_hash", "owner_grant_active", "reconnect_retries = 0", "SELECT CONNECTION_ID()", "sharity affiliate migrate-shopping"]:
+    require(runtime, needle, 'confirmed-shopping boundary: ' + needle)
 
 schema_match = re.search(r"CREATE TABLE \{\$table\} \((.*?)\) \{\$charset\};", runtime, re.S)
 if not schema_match:

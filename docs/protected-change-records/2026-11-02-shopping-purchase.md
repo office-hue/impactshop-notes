@@ -89,3 +89,8 @@ Smoke scope: `route:profil`, `route:impactshop`, `route:factlens-vb-prod`,
 `flow:profile-return-restore`, `flow:message-popup`, `flow:points-jump`,
 `flow:legacy-pool-visibility`, `flow:saved-offers-open`, `flow:go-deal`,
 `browser:chrome`, `browser:webkit`. A tagek kötelező hatókört, nem futási eredményt jelentenek.
+
+A két saját commit teljes tartományának natív `workspace-hooks.py audit
+--strict --mode push --base 6098a532... --head 2502f953...` ellenőrzése sikeres:
+titokscan, protected-touch, commit-lane és affiliate Bástya. Ez helyi forrásaudit,
+nem távoli push vagy CI. A saját eldobható SQL-konténert a teszt után eltávolítottuk.
