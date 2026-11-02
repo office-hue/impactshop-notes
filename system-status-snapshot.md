@@ -2184,3 +2184,9 @@ Elkülönített hivatalos SDK22.1.0/lock, API2026-10-28.endive. Új, még be nem
 Hermes034:1 hívás,5031 input+8203 output, becsült0,001950767USD, nem számla. Hibás pénz-/szavazatszabály és SDK-kezelés miatt a javaslat elvetve; Codex készítette a végleges adaptert/tesztet. Nincs ismétlés, tényleges Codex/reviewer költség ismeretlen.
 
 Következő: tartós tulajdonoshoz kötött rendelés/kísérlet és egyszeri küldési igényfoglalás, privát státusz, webhook/pénzügyi egyeztetés; utána D3/D4. A korábbi72/33 teszt nem igazol Stripe-párhuzamosságot. Rollback saját új fájlokra korlátozott, meglévő quote/pénzügyi adatok megőrzendők. Kézi UI/release ellenőrzés továbbra függő. Részletek: docs/protected-change-records/2026-11-02-sharity-donation-prices.md.
+
+## 2026-11-02 — D2c belső rendeléstároló, inaktív
+
+Owner-bound, immutable quote→order és egyetlen CAS-foglalt fizetési kísérlet. Bizonytalan insert/claim/result után visszaolvasás; elveszett claim-ACK nem indít POST-ot. Privát státusz és payment_verified=false. Nincs loader/endpoint/CLI-regisztráció/aktiválás.77 valódi MariaDB-ellenőrzés, helyettesített Stripe HTTP, PHP lint, teljes meglévő guard inventory+6 eset sikeres; független review-ban nincs nyitott scoped hiba. Tesztkonténer eltávolítva és visszaolvasva. Korábbi adapter197/quote72/ár33 eredmény újrahasznált.
+
+Hermes0351hívás,19007token, becsült0,00243971USD; séma részben átvéve, működés lényegesen javítva/újraírva, Codex/reviewer tényleges költsége ismeretlen. Részletes javításlista, folytatás, kézi UI-checklist és rollback: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §57. Csak orders.php és saját inventorybővítés; quote/order/pénzügyi adat megőrzendő. Nincs merge, telepítés vagy élő elfogadás. Chrome-eszköz egyszeri időtúllépése nem bizonyít Stripe-fiókhibát.

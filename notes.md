@@ -8574,3 +8574,13 @@ Elkülönített hivatalos SDK22.1.0/lock, API2026-10-28.endive. Új, még be nem
 Hermes034:1 hívás,5031 input+8203 output, becsült0,001950767USD, nem számla. Hibás pénz-/szavazatszabály és SDK-kezelés miatt a javaslat elvetve; Codex készítette a végleges adaptert/tesztet. Nincs ismétlés, tényleges Codex/reviewer költség ismeretlen.
 
 Következő: tartós tulajdonoshoz kötött rendelés/kísérlet és egyszeri küldési igényfoglalás, privát státusz, webhook/pénzügyi egyeztetés; utána D3/D4. A korábbi72/33 teszt nem igazol Stripe-párhuzamosságot. Rollback saját új fájlokra korlátozott, meglévő quote/pénzügyi adatok megőrzendők. Kézi UI/release ellenőrzés továbbra függő. Részletek: docs/protected-change-records/2026-11-02-sharity-donation-prices.md.
+
+## D2c — kezdés, tartós rendelés és egyszeri küldés
+
+Jóváhagyott D2 folytatás a saját f4badb83 alapról. Új orders.php: owner-bound immutable rendelés, unique quote/kulcs, tartós egyszeri küldési foglalás, privát státusz. Kockázat: két párhuzamos indítás/veszett DB-ACK duplafizetést okozhat; ezért tényleges MariaDB-versenyteszt szükséges. Új endpoint/aktiválás/sémafuttatás nincs; meglévő pont-, szavazat-, adományalap és SDK változatlan. Hermes035 első vázlat, Codex integráció és elkülönített DB-teszt. Rollback csak saját új fájl/inventory, tartós order/quote-adat megmarad. Manuális UI-checklist későbbi kiadáskor: továbbra inaktív választó, ár- és nyelvváltás nem indít pénzmozgást.
+
+## 2026-11-02 — D2c belső rendeléstároló, inaktív
+
+Owner-bound, immutable quote→order és egyetlen CAS-foglalt fizetési kísérlet. Bizonytalan insert/claim/result után visszaolvasás; elveszett claim-ACK nem indít POST-ot. Privát státusz és payment_verified=false. Nincs loader/endpoint/CLI-regisztráció/aktiválás.77 valódi MariaDB-ellenőrzés, helyettesített Stripe HTTP, PHP lint, teljes meglévő guard inventory+6 eset sikeres; független review-ban nincs nyitott scoped hiba. Tesztkonténer eltávolítva és visszaolvasva. Korábbi adapter197/quote72/ár33 eredmény újrahasznált.
+
+Hermes0351hívás,19007token, becsült0,00243971USD; séma részben átvéve, működés lényegesen javítva/újraírva, Codex/reviewer tényleges költsége ismeretlen. Részletes javításlista, folytatás, kézi UI-checklist és rollback: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §57. Csak orders.php és saját inventorybővítés; quote/order/pénzügyi adat megőrzendő. Nincs merge, telepítés vagy élő elfogadás. Chrome-eszköz egyszeri időtúllépése nem bizonyít Stripe-fiókhibát.
