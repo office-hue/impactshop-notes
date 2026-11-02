@@ -1041,3 +1041,8 @@ Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszab
 ## D2l movement-regiszter — saját baseline (2026-11-02)
 
 Termékcommit bd17406b457456e15f600f9ad6fccbacda8cd45d. Kizárólag saját finance-ledger.php/finance-read.php hash és manifest-oldalkocsi frissül; nincs új inventory, idegen pin vagy guardlogika.1060 valódi MariaDB assertion (110 új registry),401offline financial/CLI,13runtime, független kód-/tesztreview sikeres. Kockázat, pontos CLI, funkciólista, kézi kiadási checklist, backup/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §68. A regiszter nem egyeztetett adomány vagy fedezet. Nincs mainművelet, telepítés vagy aktiválás.
+
+
+## D2m backing — saját baseline (2026-11-02)
+
+Termékcommit `bd38f6626d274dc4689cd23fa4a2d1420abf43c3`. Kizárólag saját donation finance-ledger/read két hash és manifest-oldalkocsi frissül; nincs új modul/inventory vagy idegen pin/guardlogika.1187 valódi MariaDB assertion (127backing),401offline financial/CLI,13runtime, független forrás- és tesztreview javítások után leletmentes. Pontos scope/CLI, saját operátori proof korlátai, funkciólista, kiadás/rollback/kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §69. Prepared-only belső foglalás, nem igazolt pénz vagy végrehajtható allokáció. Mainművelet, telepítés, aktiválás nincs.
