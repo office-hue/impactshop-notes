@@ -973,3 +973,7 @@ Existing guard inventory extends to the new donation price loader and package JS
 ### 2026-11-02 D2a donation quote pin
 
 Existing inventory only: refresh sharity-ngo-donations.php after owner-bound quote and explicit additive CLI schema tests. No config/rule changes, no unrelated baseline refresh. Protected record and validation: docs/protected-change-records/2026-11-02-sharity-donation-prices.md. Runtime activation remains OFF.
+
+## 2026-11-02 — D2b célzott donation inventory
+
+A meglévő Bástya inventory három új saját fájlra bővül: sharity-ngo-donations/stripe-checkout.php, composer.json, composer.lock. Config önhash/oldalkocsik frissülnek; idegen hash és szabály változatlan. 197 offline valódi SDK-vizsgálat és független review, részletek a 2026-11-02-es donation protected-recordban. Nincs új guard, runtime-loader, endpoint vagy aktiválás.

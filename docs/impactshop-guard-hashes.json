@@ -174,11 +174,14 @@
     "wp-content/mu-plugins/sharity-points-impactshop-manager.php",
     "wp-content/mu-plugins/sharity-support-finance-read.php",
     "wp-content/mu-plugins/sharity-ngo-donations.php",
-    "wp-content/mu-plugins/sharity-ngo-donations/amplifier-packages.json"
+    "wp-content/mu-plugins/sharity-ngo-donations/amplifier-packages.json",
+    "wp-content/mu-plugins/sharity-ngo-donations/stripe-checkout.php",
+    "wp-content/mu-plugins/sharity-ngo-donations/composer.json",
+    "wp-content/mu-plugins/sharity-ngo-donations/composer.lock"
   ],
   "hashes": {
     "wp-content/mu-plugins/impactshop-jysk-game.php": "92af8b62c22882eafacb3079ac09e6bc589bdd1d44adfb2bc42165b4fc2d12fd",
-    "docs/impactshop-guard-config.json": "65763efad2750ef53339f64736290cca9640854e75189a0308e9deff64eb780b",
+    "docs/impactshop-guard-config.json": "19a51f6adef496031244d7ad1098d270d287d282ef262979b4f56391d43368c6",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "bbbd10da51b619a134b9d3147ab2ef9f081ec9b52697c349775c4aefe1584558",
@@ -252,7 +255,7 @@
     "bin/impactshop-guard-deploy.sh": "ec7972f696e1a411550c92bd29b638c1e77d51b1b4dc93f586c23e2a373be194",
     "bin/impactshop-guard-preflight.sh": "360abe38eab321ab9ad72759397c3ec470d8fc39a630fe5e60602485a39bc17e",
     "docs/bastion-protection-extension-plan.md": "c138cf6f1a18fcb8f36c666fd554bc3a1cee9cb3de9c340eecadf30bc2309361",
-    "docs/impactshop-guard-config.sha256": "fe181ea309c7221c5f46f51cb3789b837f87a9f9c196b6cb08ce375e38ba2a34",
+    "docs/impactshop-guard-config.sha256": "42b430428bce1d8f059e7be31cce92f53f7c7add2e91bc9efb62ce13193398f9",
     "wp-content/mu-plugins/impact-arukereso-guard.php": "6707993fde9f3a1c465289ae010c7447edf22010f07ccf802151ee76a7a4df9c",
     "wp-content/mu-plugins/impact-combat-pack.php": "50a1a6b9e22b3fd17035406d8ede87553d206c29252f8dccb63fd5ac1b4a7868",
     "wp-content/mu-plugins/impactshop-ngo-guides/assets/access-control-matrix.md": "08a4d4a5fafc20dd536a6e3925b6bc56a85e941ec6e2070b2391bb9c9a427c0f",
@@ -347,7 +350,10 @@
     "wp-content/mu-plugins/sharity-points-impactshop-manager.php": "c02875d1076ecd09a2d9192586b9c56851c6fa7036c00d7b7bff56e897108d7e",
     "wp-content/mu-plugins/sharity-support-finance-read.php": "91d85ec553b370176904db46d79ec6648b981ea08011ce39ca00b91abbbc71e8",
     "wp-content/mu-plugins/sharity-ngo-donations.php": "73fbdd45e8386ed55ca61d2d0df65b48c340c0971229612cb92d6a5574aabda5",
-    "wp-content/mu-plugins/sharity-ngo-donations/amplifier-packages.json": "b60fac091567c30c6c25eb8804d7c5dd3fbf64629ae35566ee1a24f2a37a7ffc"
+    "wp-content/mu-plugins/sharity-ngo-donations/amplifier-packages.json": "b60fac091567c30c6c25eb8804d7c5dd3fbf64629ae35566ee1a24f2a37a7ffc",
+    "wp-content/mu-plugins/sharity-ngo-donations/stripe-checkout.php": "c5d48b4fb6b2bdf1632142b826d406855f31c6daba1d5ec7715c3fbd285ac377",
+    "wp-content/mu-plugins/sharity-ngo-donations/composer.json": "1e0e57f27d1e81a8bfa54f925a8a70797bf64283499cc4fd94d431af9961a65c",
+    "wp-content/mu-plugins/sharity-ngo-donations/composer.lock": "2d2b655405e32c2c7e6ad7cef7511408be91842ffa3a257c09e08a0fd62ddc81"
   },
   "generated_at": "2026-09-11T04:44:20+00:00"
 }
