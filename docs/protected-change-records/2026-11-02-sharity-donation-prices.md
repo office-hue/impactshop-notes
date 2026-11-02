@@ -428,3 +428,106 @@ Valós izolált MariaDB: **1274 assertion**, ebből**87 új target**; teljes dir
 Hermes047 egy hívás, completed; execution070b2be0-f894-4b9b-af90-4fa5c678a0cd, inputfde5cc85e71c061f915e7b83f525b807e753a2790a8ab0495b3c0d29e97211d2.48027input+11494output=59521token, **becsült0.006462365USD**, tényleges számlázás és teljes Codex/review ráfordítás ismeretlen. A szűk CLI és immutable target/schema szándék részben átvéve; helyi javítás/egyszerűsítés kellett a kihagyott devizák, hiányzó direct cél, duplikált/hibás összesítés, tranzakcióból korai return, részleges registry-validálás, readback és használhatatlan tesztfixture miatt. Nincs újrahívás/JEV/fallback. Pending és terminal delegálási memória remote_ack.
 
 Állapot: saját forrás és célzott tesztek elkészültek; commit/push/readback és két saját baselinehash következik. Merge, telepítés, aktiválás, tényleges pénz/kifizetés nincs. Következő konkrét hiány: platform-account és végrehajtott díj/NGO-ellenoldal bizonyítéka; teljes kötelezettség és fedezett műveleti állapotgép. Nem kérünk újra már megerősített banktulajdont. A teljes §62 cél változatlan; részállapot nem teljes elfogadás.
+
+
+## 71. D2o - verified connected-account binding and targeted disable (implementation)
+
+Pre-change source N4415b0f3, Aeffd2049a, both clean; no main operation or quiet window.
+Approved scope: existing stripe-checkout.php and finance-read.php gain sanitized GET-only
+account inspection and CLI-only CAS binding/disable for sharity_donation_accounts_v1.
+Quotes and pre-dispatch retain their shared binding/mode/currency check; historical
+orders/status/webhooks keep their original immutable account. No schema migration,
+provider POST, payment, wallet, points, vote or allocation operation is added.
+Risks: confusing platform with NGO, unknown fee/loss exposure, leaking provider PII,
+losing another NGO update, stale retries undoing disable, WordPress option cache staleness.
+Use pinned SDK, selected fields, strict private evidence, native atomic option CAS and
+full readback. Existing helpers and option map are reused; no new release framework.
+Direct binding needs account-paid processing, Stripe-connected-loss responsibility,
+explicit documented zero platform own cost/liability, currency/representative/retention
+and readiness references. These are operator attestations, not automatic provider or
+financial acceptance. Amplifier enabling remains unavailable until its execution path
+is complete; its targeted disable remains supported. Global switches do not change.
+Planned checks: actual SDK mock transport and sanitized errors; disposable native MySQL
+CAS races/replay/uncertain writes; quote/checkout/readback regressions; fresh-process
+partial installation; only the two own Bastyas hashes after tests and independent review.
+Release: existing exact-file staging then production from accepted merge SHA, private
+file/option backup and current target hash CAS. Binding requires fresh actual proof and
+separate runtime verification; no real account has been bound by this source package.
+Rollback: disable new target mode/currency first; restore only own source from verified
+poststate; preserve bindings/history/order/events and later disables. Do not restore an
+old option map across later updates. UI checklist after release: own NGO donation page,
+HU/EN/DE/FR, payment currency and login; disabled cell unavailable; another cell/NGO
+unchanged; prior order remains readable. Live UI/deploy/activation not yet tested.
+
+### D2o implemented contract and actual verification
+
+`wp sharity donations account-inspect --account=<acct_id>` uses the existing pinned
+Stripe22.1.0 / API2026-10-28.endive adapter. GET /v1/account then /v1/accounts/<id>,
+no inherited account/context, no automatic retry. Own platform is rejected as NGO.
+V1 livemode derives from the verified configured key; a provider livemode field, if
+present, must agree. Output contains only IDs, key mode, selected capability/flags,
+requirement counts/disabled state, fee/loss controller, default currency and observed
+UTC. Missing facts remain null; activation_allowed remains false. Raw names, email,
+bank data and provider exceptions are excluded. Card payments, not transfers, is the
+required direct-payment capability. Default currency is not a multi-currency permit.
+
+`account-bind --ngo=<slug> --input=<private_json_path> --expect=<version_or_absent>`
+reuses the canonical private proof reader (owner-only regular nonlinked file, <=64KiB,
+canonical JSON), validates before GET and revalidates expiry after GET. Binding payload
+requires provider observation <=30seconds old, identity/key/default-settlement currency,
+charges/payouts/details enabled, active card_payments, no missing/due/pending/error
+requirements, account-paid fees and Stripe payment-loss responsibility.
+Input exact fields: version=1, ngo_slug, account_id, platform_account_id, boolean livemode,
+verified_at_utc/verified_until_utc, settlement_currency, payout_currency, fee_payer=account,
+losses_payments=stripe, platform_costs_minor="0", platform_liability_minor="0", currencies
+map with min_minor/max_minor strings, mode_currencies direct/amplifier maps, confirmed=true,
+evidence map of representation/fee_terms/currency_support/platform_costs/retention/readiness.
+Each evidence entry is only opaque ref + sha256, tied to this operator-reviewed document.
+No raw identity/bank/key is accepted. Nonzero or unknown platform exposure needs its own
+financial solution; this command does not finance it. Evidence references are operator
+attestations, not automatic independent verification or financial acceptance.
+Only direct cells can be enabled by this release; every true cell needs tested bounds
+and evidence for its payment/settlement/payout combination. Amplifier true is refused.
+No global quote/order switch changes; live release still requires sandbox/actual proof.
+
+The WordPress serialized NGO option map is preserved. The whole current raw value is
+compared atomically using native mysqli BINARY CAS; first insert relies on actual unique
+option_name index. No read/update race, reconnect, nested transaction, DDL or automatic
+retry. 1MiB option limit is explicit. Another NGO's concurrent update cannot be lost;
+an operator may explicitly retry after an unconfirmed write and fresh readback. Sealed
+binding version and request digest make an identical request replay retain the original
+receipt, while an old bind cannot undo a later disable. Uncertain write is decided by
+full native readback. Own option/alloptions/notoptions caches are invalidated after a
+potential write. Existing quote and pre-dispatch readers consume the unchanged map.
+
+`account-disable --ngo=<slug> --mode=<direct|amplifier> --currency=<HUF|EUR|USD|GBP|all>
+--expect=<binding_version>` uses the same CAS without provider calls. It disables only
+selected cells; sibling currencies/NGOs and historical account/session records remain.
+No fee correction, money movement, points, votes or allocation occurs.
+
+Actual tests:90 account assertions (58 SDK/CLI/proof +32 native MariaDB),197 existing
+checkout,401 finance/CLI,13 fresh-process runtime,129 quotes; syntax/diff checks pass.
+MariaDB10.11.19 was an existing image; no image pull/install. Real separate connections
+and fork/barrier cover identical requests, competing NGOs, bind-vs-disable, stale replay,
+prior disable preservation, nested-transaction rejection and cache paths. Fault injection
+covers write-before, lost write ACK and corrupt readback; not physical network loss.
+The synthetic provider clock advances through both GETs, proving post-request freshness.
+Independent d2i_source_review final source/test readback: no findings; reviewer did not
+run tests. The prior financial plan audits are reused; no domain-scope redesign.
+
+Hermes048 execution4f4f75b6-f611-4d1b-a5d6-0178d5192f4b, one completed call:
+19202input+9360output=28562tokens; estimated USD0.0033949916, actual invoice and total
+Codex/reviewer cost unknown. Pending/terminal Secretary remote_ack. Sanitized inspection
+and CLI/CAS intent partially reused; raw draft rejected because SDK property/setter use,
+key-mode parsing, option map/SQL placeholders, absent/replay/CAS, missing exposure proof,
+private-file reader and test skeleton were incorrect. No retry/JEV/fallback. Local bind
+clock corrected before tests; account tests passed on first execution. Initial Docker
+short tag was absent; native image inventory identified the existing exact10.11.19 tag.
+
+Live read: user-selected Chrome Stripe page confirms the Zrt platform. Connector's
+connected account list is empty; no NGO binding was created. Browser follow-up was
+stopped by approval review after an unrelated-window/change risk; no workaround or
+external mutation. Foundation bank ownership is already user-confirmed, not re-asked.
+Separate Foundation Connect onboarding/account proof still required. No new main window,
+merge, deployment, activation, real payment or financial acceptance occurred.
+SUBSTACK-HANDOVER.md remains a preserved reference, not an active authoring task.

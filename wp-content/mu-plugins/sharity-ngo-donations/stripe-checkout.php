@@ -42,6 +42,52 @@ final class Sharity_Stripe_Checkout_Adapter
         $this->now = $now ?? static fn(): int => time();
     }
 
+    /** Platform-authenticated GETs only. No identity/contact/bank data leaves this adapter. */
+    public function inspectAccount(string $accountId): array
+    {
+        try {
+            $key = $this->stripe->getApiKey();
+            if (!preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $accountId)
+                || $this->stripe->getStripeAccount() !== null || $this->stripe->getStripeContext() !== null
+                || !is_string($key) || !preg_match('/^(rk|sk)_(test|live)_[A-Za-z0-9]+$/D', $key, $mode)) { throw new RuntimeException(); }
+            $live = $mode[2] === 'live';
+            $opts = ['stripe_version' => self::API_VERSION, 'max_network_retries' => 0];
+            $platform = $this->stripe->accounts->retrieve(null, [], $opts)->toArray();
+            if (($platform['object'] ?? null) !== 'account' || !is_string($platform['id'] ?? null)
+                || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $platform['id']) || $platform['id'] === $accountId
+                || (array_key_exists('livemode', $platform) && $platform['livemode'] !== $live)) { throw new RuntimeException(); }
+            $a = $this->stripe->accounts->retrieve($accountId, [], $opts)->toArray();
+            if (($a['object'] ?? null) !== 'account' || ($a['id'] ?? null) !== $accountId
+                || (array_key_exists('livemode', $a) && $a['livemode'] !== $live)) { throw new RuntimeException(); }
+            $r = is_array($a['requirements'] ?? null) ? $a['requirements'] : [];
+            $counts = [];
+            foreach (['currently_due', 'past_due', 'pending_verification', 'errors'] as $field) {
+                $counts[$field] = is_array($r[$field] ?? null) && array_is_list($r[$field]) ? count($r[$field]) : null;
+            }
+            $disabled = array_key_exists('disabled_reason', $r) ? ($r['disabled_reason'] === null ? false : true) : null;
+            $caps = [];
+            foreach (['card_payments', 'transfers'] as $name) {
+                $value = $a['capabilities'][$name] ?? null;
+                $caps[$name] = in_array($value, ['active', 'inactive', 'pending'], true) ? $value : null;
+            }
+            $payer = $a['controller']['fees']['payer'] ?? null;
+            $losses = $a['controller']['losses']['payments'] ?? null;
+            $payer = in_array($payer, ['account', 'application', 'application_express', 'application_custom'], true) ? $payer : null;
+            $losses = in_array($losses, ['stripe', 'application'], true) ? $losses : null;
+            $flags = [];
+            foreach (['charges_enabled', 'payouts_enabled', 'details_submitted'] as $field) {
+                $flags[$field] = is_bool($a[$field] ?? null) ? $a[$field] : null;
+            }
+            $currency = is_string($a['default_currency'] ?? null) && preg_match('/^[a-z]{3}$/D', $a['default_currency'])
+                ? strtoupper($a['default_currency']) : null;
+            return ['schema_version' => 'sharity-donation-account-inspect-v1', 'platform_account_id' => $platform['id'],
+                'account_id' => $accountId, 'livemode' => $live, 'observed_at_utc' => gmdate('Y-m-d\TH:i:s\Z', ($this->now)()),
+                'capabilities' => $caps, 'controller' => ['fees_payer' => $payer, 'losses_payments' => $losses],
+                'flags' => $flags, 'requirements' => $counts + ['disabled' => $disabled], 'default_currency' => $currency,
+                'activation_allowed' => false];
+        } catch (Throwable $error) { throw new RuntimeException('DONATION_ACCOUNT_INSPECT_UNAVAILABLE'); }
+    }
+
     /** Deterministic request; accepted snapshot is never repriced from current FX/bindings. */
     public static function envelope(array $snapshot, string $orderId, string $quoteId, int $createdAt, int $expiresAt, string $locale): array
     {

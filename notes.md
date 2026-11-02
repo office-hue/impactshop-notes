@@ -8720,3 +8720,17 @@ Nincs mainművelet/telepítés/aktiválás. Saját commit/push/readback követke
 ## 70. D2n — tartós, pontos, előzetes elszámolási cél (2026-11-02)
 
 Notes finance-ledger/read: explicit target séma és `finance-target --order=<id> [--apply=<digest>]`. Validált eredeti policy, teljes scoped mozgáshalmaz/body, devizánkénti signed nettó és közvetlen NGO-cél; metadata revision nem új economic_generation. Hiányzó platform/NGO-ellenoldal mellett Amplifier cél null; teljes liability unknown, readiness false. Pinned transaction, stale-check és teljes uncertain-commit readback.1274valódiMariaDB/87target,401offlineCLI,13runtime; független review leletmentes, nem saját reviewerfutás. Hermes04759521token, becsült0.006462365USD, részben átvett és jelentősen javított, nincs újrahívás. Részlet, funkciólista, kiadás/rollback/kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §70. Saját forrás, nem telepített/aktivált/financialPASS; nincs mainművelet vagy nyitott csendablak.
+
+
+## D2o account binding - 2026-11-02
+
+Existing Stripe adapter + finance CLI now implement sanitized GET account inspection,
+verified direct-only option binding and per-mode/currency disable. Atomic serialized-map
+CAS preserves siblings and later disables; native full readback resolves uncertain write.
+90 account checks including32 native MariaDB;197checkout/401financeCLI/13runtime/129quotes,
+independent final review no findings. Hermes048 one call28562tokens, estimated USD0.0033949916,
+actual total unknown; substantial local SDK/option/CAS/evidence repair, no retry.
+Exact proof/CLI, limitations, deployment/rollback and manual UI checklist: protected record
+2026-11-02-sharity-donation-prices.md section71. Global switches unchanged, Amplifier enable
+refused, no live account/payment/activation. User-confirmed Foundation bank need not be
+reconfirmed; separate NGO account proof still missing. Source/push/merge/deploy distinct.
