@@ -22,7 +22,7 @@ class OrderDb
     public string $prefix; public string $last_error = '';
     public mysqli $db; public string $failOn = ''; public string $failure = '';
     public ?string $barrier = null; public int $slot = 0; public string $barrierOn = ''; public bool $barrierUsed = false;
-    public int $ddls = 0;
+    public int $ddls = 0; public $afterRead = null;
     public function __construct(int $port) {
         $this->prefix = $GLOBALS['testPrefix'];
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -59,6 +59,7 @@ class OrderDb
                 usleep(1000);
             }
         }
+        if ($this->afterRead !== null) { ($this->afterRead)($sql,$row); }
         return $row;
     }
     public function insert($table, array $row, array $formats) {
@@ -187,10 +188,24 @@ try {
     check(!str_contains(json_encode($ready), 'acct_') && !str_contains(json_encode($ready), $subject) && !isset($ready['envelope_json']), 'owner projection no private binding/token');
     check(sharity_donation_order_dispatch($subject, $first['order_id'], $adapter, $now) === $ready && calls() === 1, 'repeat dispatch never posts again');
     check(sharity_donation_order_status($subject, $first['order_id'], $now + 9000)['checkout_url'] === null, 'expired checkout URL hidden');
+    // Deterministically insert on a second connection after the first key miss,
+    // before its quote lookup; both requests still have exactly the same identity.
+    $interleavedQuote = fixtureQuote(); $interleavedKey = 'interleaved-key-'.$nonce; $winner = null;
+    $wpdb->afterRead = function($sql,$row) use($interleavedQuote,$interleavedKey,$subject,$now,$port,&$winner): void {
+        global $wpdb;
+        if (!str_contains($sql,'WHERE `request_key_hash`')) { return; }
+        $reader = $wpdb; $reader->afterRead = null;
+        check($row === null,'deterministic first key lookup absent');
+        $wpdb = new OrderDb((int)$port);
+        try { $winner = sharity_donation_order_prepare($subject,$interleavedQuote,$interleavedKey,'hu',$now); }
+        finally { $wpdb->db->close(); $wpdb = $reader; }
+    };
+    $replayed = sharity_donation_order_prepare($subject,$interleavedQuote,$interleavedKey,'hu',$now);
+    check($replayed === $winner,'same-key winner between key and quote reads is replayed');
     // Two workers deliberately see absent idempotency key before either inserts.
     $raceQuote = fixtureQuote(); $raceKey = 'parallel-key-' . $nonce;
     $same = race(fn($slot) => sharity_donation_order_prepare($subject, $raceQuote, $raceKey, 'hu', $now), 'WHERE `request_key_hash`');
-    check(isset($same[0]['value'], $same[1]['value']) && $same[0]['value']['order_id'] === $same[1]['value']['order_id'], 'same key creates exactly one order');
+    check(isset($same[0]['value'], $same[1]['value']) && $same[0]['value']['order_id'] === $same[1]['value']['order_id'], 'same key creates exactly one order: ' . json_encode($same));
     $id = $same[0]['value']['order_id']; $before = calls();
     $sent = race(fn($slot) => sharity_donation_order_dispatch($subject, $id, $adapter, $now), 'WHERE `order_id`');
     check(!isset($sent[0]['error']) && !isset($sent[1]['error']) && calls() === $before + 1, 'parallel claims produce one real SDK HTTP call');
@@ -271,6 +286,7 @@ try {
     $transport->drop = false;
     check(sharity_donation_order_handle($request)->status === 202 && calls() === $before + 1, 'HTTP uncertainty replay never re-POSTs');
     require __DIR__ . '/sharity-donation-webhook-mysql.test.php';
+    require __DIR__ . '/sharity-donation-finance-ledger-mysql.test.php';
     // Schema drift rejection must preserve rows and clear readiness. Fixture-only ALTER.
     $table = sharity_donation_order_table(); $beforeRows = $wpdb->db->query("SELECT COUNT(*) AS n FROM `{$table}`")->fetch_assoc()['n'];
     $wpdb->db->query("ALTER TABLE `{$table}` DROP INDEX quote_id");

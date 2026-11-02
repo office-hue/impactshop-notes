@@ -1,7 +1,7 @@
 <?php
 /**
  * Sharity donations: prices, owner-bound quotes and disabled-by-default checkout.
- * No wallet, allocation or ledger writer. Checkout status is not payment proof.
+ * No wallet or allocation. Optional immutable financial observations only. Checkout status is not payment proof.
  * The read route exposes prices, never payment availability or connected accounts.
  * Weekly publication is opt-in and runs AFTER the existing FX refresh hook.
  */
@@ -16,6 +16,7 @@ add_action('plugins_loaded', static function (): void {
     foreach ($files as $file) { require_once $directory . $file; }
     // Additive receiver: a missing new file must not remove existing callbacks.
     if (is_readable($directory . 'webhook.php')) { require_once $directory . 'webhook.php'; }
+    if (is_readable($directory . 'finance-ledger.php')) { require_once $directory . 'finance-ledger.php'; }
     if (is_readable($directory . 'finance-read.php')) { require_once $directory . 'finance-read.php'; }
 });
 

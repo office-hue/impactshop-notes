@@ -163,6 +163,10 @@ require __DIR__.'/../wp-content/mu-plugins/sharity-ngo-donations/orders.php';
 require __DIR__.'/../wp-content/mu-plugins/sharity-ngo-donations/webhook.php';
 require __DIR__.'/../wp-content/mu-plugins/sharity-ngo-donations/finance-read.php';
 check(isset(WP_CLI::$commands['sharity donations payment-inspect']),'explicit CLI registered');
+$factoryCalls=0;
+fails(fn()=>sharity_donation_cli_finance_schema([],['apply'=>true]), 'DONATION_FINANCE_SCHEMA_UNAVAILABLE');
+fails(fn()=>sharity_donation_cli_payment_record([],['order'=>'do_'.str_repeat('a',32)]), 'DONATION_FINANCE_UNAVAILABLE');
+check($factoryCalls===0, 'missing optional journal never constructs SDK');
 [$e,$responses]=fixture('amplifier');$transport->responses=$responses;$transport->calls=[];$factoryCalls=0;
 $result=['session_id'=>'cs_test_SYNTHETIC','checkout_state'=>'complete','checkout_url'=>null,'expires_at'=>$e['expires_at'],'provider_payment_status'=>'paid','payment_verified'=>false];
 $stored=['order_id'=>$e['order_id'],'quote_id'=>$e['quote_id'],'subject_ref'=>'hmac-sha256:'.str_repeat('c',64),

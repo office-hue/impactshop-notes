@@ -73,7 +73,13 @@ function sharity_donation_order_prepare(string $subject, string $quoteId, string
         if (!hash_equals($existing['request_digest'], $digest)) { throw new RuntimeException('IDEMPOTENCY_CONFLICT'); }
         sharity_donation_order_decode($existing); return $existing;
     }
-    if (sharity_donation_order_read($subject, 'quote_id', $quoteId) !== null) { throw new RuntimeException('QUOTE_ALREADY_ORDERED'); }
+    $quoted = sharity_donation_order_read($subject, 'quote_id', $quoteId);
+    if ($quoted !== null) {
+        // A same-key winner can commit between the key lookup and this read.
+        if (!hash_equals($quoted['request_key_hash'], $keyHash)) { throw new RuntimeException('QUOTE_ALREADY_ORDERED'); }
+        if (!hash_equals($quoted['request_digest'], $digest)) { throw new RuntimeException('IDEMPOTENCY_CONFLICT'); }
+        sharity_donation_order_decode($quoted); return $quoted;
+    }
     if (get_option(SHARITY_DONATION_ORDERS_ENABLED, '0') !== '1'
         || get_option(SHARITY_DONATION_ORDERS_SCHEMA_OPTION, '') !== '1') { throw new RuntimeException('ORDERS_DISABLED'); }
     global $wpdb; $quotes = sharity_donation_quote_table(); $table = sharity_donation_order_table();
@@ -108,7 +114,13 @@ function sharity_donation_order_prepare(string $subject, string $quoteId, string
         if (!hash_equals($stored['request_digest'], $digest)) { throw new RuntimeException('IDEMPOTENCY_CONFLICT'); }
         sharity_donation_order_decode($stored); return $stored;
     }
-    if (sharity_donation_order_read($subject, 'quote_id', $quoteId) !== null) { throw new RuntimeException('QUOTE_ALREADY_ORDERED'); }
+    $quoted = sharity_donation_order_read($subject, 'quote_id', $quoteId);
+    if ($quoted !== null) {
+        // A same-key winner can commit between the key lookup and this read.
+        if (!hash_equals($quoted['request_key_hash'], $keyHash)) { throw new RuntimeException('QUOTE_ALREADY_ORDERED'); }
+        if (!hash_equals($quoted['request_digest'], $digest)) { throw new RuntimeException('IDEMPOTENCY_CONFLICT'); }
+        sharity_donation_order_decode($quoted); return $quoted;
+    }
     throw new RuntimeException('ORDER_UNCONFIRMED');
 }
 
