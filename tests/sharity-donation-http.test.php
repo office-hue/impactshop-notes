@@ -61,6 +61,11 @@ function sharity_donation_order_status($subject, $id, $now): array {
     if ($GLOBALS['storeError'] !== null) { throw $GLOBALS['storeError']; }
     return resultFixture($GLOBALS['rowState'] === 'attempted' ? 'reconciliation_required' : $GLOBALS['rowState']);
 }
+function sharity_donation_order_by_quote($subject, $id, $now): array {
+    $GLOBALS['calls'][] = ['status_quote', $subject, $id];
+    if ($GLOBALS['storeError'] !== null) { throw $GLOBALS['storeError']; }
+    return resultFixture($GLOBALS['rowState'] === 'attempted' ? 'reconciliation_required' : $GLOBALS['rowState']);
+}
 function sharity_donation_order_schema_apply(): bool { $GLOBALS['calls'][] = ['schema']; return $GLOBALS['schemaOk']; }
 require __DIR__ . '/../wp-content/mu-plugins/sharity-ngo-donations.php';
 require __DIR__ . '/../wp-content/mu-plugins/sharity-ngo-donations/http.php';
@@ -81,6 +86,7 @@ resetCase();
 foreach ($hooks['rest_api_init'] as $cb) { $cb(); }
 check($routes['sharity/v1/donations/checkout']['methods'] === 'POST', 'real POST registration');
 check($routes['sharity/v1/donations/status/(?P<id>do_[a-f0-9]{32})']['methods'] === 'GET', 'real GET registration');
+check($routes['sharity/v1/donations/status-by-quote/(?P<quote_id>dq_[a-f0-9]{32})']['methods'] === 'GET', 'status-by-quote GET registration');
 check(in_array('sharity donations order-schema', array_keys(WP_CLI::$commands), true), 'real CLI registration');
 check($calls === [], 'load/registration has no store/provider/migration');
 foreach ([new RuntimeException('PRIVATE_AUTH'), new TypeError('PRIVATE_TYPE'), null, ['subject_ref' => "hmac-sha256:" . str_repeat('a',64) . "\n"], new WP_REST_Response(['ok'=>false],403)] as $answer) {
@@ -88,7 +94,9 @@ foreach ([new RuntimeException('PRIVATE_AUTH'), new TypeError('PRIVATE_TYPE'), n
     $expected = $answer instanceof Throwable ? 503 : ($answer instanceof WP_REST_Response ? 403 : 401);
     expectResponse(sharity_donation_order_handle(request()), $expected);
     expectResponse(sharity_donation_order_status_handle(request()), $expected);
-    check(callNames() === ['auth','auth'], 'rejected auth before storage');
+    $q = request(); $q->url = ['quote_id' => 'dq_' . str_repeat('c', 32)];
+    expectResponse(sharity_donation_order_status_by_quote_handle($q), $expected);
+    check(callNames() === ['auth','auth','auth'], 'rejected auth before storage');
 }
 foreach ([null, [], 'text', 7, ['quote_id'=>'dq_'.str_repeat('c',32)], ['locale'=>'hu'], ['quote_id'=>[], 'locale'=>'hu'],
     ['quote_id'=>'dq_'.str_repeat('c',32), 'locale'=>['en']], ['quote_id'=>'dq_'.str_repeat('c',32), 'locale'=>'es'],
@@ -123,6 +131,26 @@ foreach ([null,[],'../other','do_'.str_repeat('a',32)."\n"] as $id) {
 }
 resetCase();$storeError=new RuntimeException('ORDER_NOT_FOUND');$r=request();$r->url=['id'=>'do_'.str_repeat('b',32)];expectResponse(sharity_donation_order_status_handle($r),404);
 resetCase();$storeError=new TypeError('PRIVATE_ROW');expectResponse(sharity_donation_order_status_handle($r),503);
+// D2j status-by-quote: own/foreign/unknown/DB/corrupt, URL-only, no writes/SDK.
+resetCase();$options=[];
+$r=request();$r->url=['quote_id'=>'dq_'.str_repeat('c',32)];$r->query=['quote_id'=>'dq_'.str_repeat('e',32),'id'=>'do_'.str_repeat('e',32)];$r->json=['quote_id'=>'dq_'.str_repeat('f',32)];
+$own=sharity_donation_order_status_by_quote_handle($r);expectResponse($own,200);
+check(callNames()===['auth','status_quote'] && $calls[1][2]===$r->url['quote_id'],'status-by-quote URL-only, own read after disable');
+check($own->body['order']['payment_verified']===false && !isset($own->body['order']['envelope_json']),'minimal public shape no private data');
+foreach (['ORDER_NOT_FOUND'] as $error) {
+    resetCase();$storeError=new RuntimeException($error);$r=request();$r->url=['quote_id'=>'dq_'.str_repeat('c',32)];
+    expectResponse(sharity_donation_order_status_by_quote_handle($r),404);check(!in_array('factory',callNames(),true),'foreign/unknown same 404 no SDK');
+}
+foreach (['ORDER_READ_UNAVAILABLE','ORDER_DATA_UNAVAILABLE'] as $error) {
+    resetCase();$storeError=new RuntimeException($error);$r=request();$r->url=['quote_id'=>'dq_'.str_repeat('c',32)];
+    expectResponse(sharity_donation_order_status_by_quote_handle($r),503);check(!in_array('factory',callNames(),true),'DB/corrupt envelope unavailable no SDK');
+}
+resetCase();$rowState='attempted';$r=request();$r->url=['quote_id'=>'dq_'.str_repeat('c',32)];
+expectResponse(sharity_donation_order_status_by_quote_handle($r),202);check(callNames()===['auth','status_quote'],'historical attempt readable');
+foreach ([null,[],'../x','dq_'.str_repeat('a',32)."\n",'dq_'.str_repeat('A',32)] as $id) {
+    resetCase();$r=request();$r->url=['quote_id'=>$id];$r->query=['quote_id'=>'dq_'.str_repeat('c',32)];$r->json=['quote_id'=>'dq_'.str_repeat('c',32)];
+    expectResponse(sharity_donation_order_status_by_quote_handle($r),400);check(callNames()===['auth'],'invalid/absent URL quote no store');
+}
 $cli=WP_CLI::$commands['sharity donations order-schema'];resetCase();$cli([],[]);check($calls===[] && end(WP_CLI::$messages)[0]==='error','CLI requires apply');
 $cli([],['apply'=>true]);check(callNames()===['schema'] && end(WP_CLI::$messages)[0]==='success','explicit CLI schema');
 resetCase();$schemaOk=false;$cli([],['apply'=>true]);check(callNames()===['schema'] && end(WP_CLI::$messages)[0]==='error','failed schema reported');

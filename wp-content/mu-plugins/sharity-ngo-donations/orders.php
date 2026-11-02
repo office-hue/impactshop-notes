@@ -175,6 +175,15 @@ function sharity_donation_order_status(string $subject, string $orderId, int $no
     if (!preg_match('/^do_[a-f0-9]{32}$/D', $orderId)) { throw new RuntimeException('INVALID_REQUEST'); }
     $row = sharity_donation_order_read($subject, 'order_id', $orderId);
     if ($row === null) { throw new RuntimeException('ORDER_NOT_FOUND'); }
+    return sharity_donation_order_public($row, $now);
+}
+
+/** Same minimal public projection for status-by-order and status-by-quote.
+ * Strict envelope/state/result validation; never a provider or write path. */
+function sharity_donation_order_public(array $row, int $now): array
+{
+    $orderId = (string) $row['order_id'];
+    if (!preg_match('/^do_[a-f0-9]{32}$/D', $orderId)) { throw new RuntimeException('ORDER_DATA_UNAVAILABLE'); }
     $e = sharity_donation_order_decode($row);
     if (!in_array($row['state'], ['prepared', 'attempted', 'session_recorded'], true)) { throw new RuntimeException('ORDER_DATA_UNAVAILABLE'); }
     $result = [];
@@ -189,6 +198,16 @@ function sharity_donation_order_status(string $subject, string $orderId, int $no
         'checkout_state' => $result['checkout_state'] ?? null,
         'checkout_url' => ($result['checkout_state'] ?? null) === 'open' && $e['expires_at'] > $now ? $result['checkout_url'] : null,
         'payment_verified' => false];
+}
+
+/** Owner-scoped read by quote. Read-only: no prepare, dispatch, SDK, write or
+ * activation check. A foreign or unknown quote both surface as ORDER_NOT_FOUND. */
+function sharity_donation_order_by_quote(string $subject, string $quoteId, int $now): array
+{
+    if (!preg_match('/^dq_[a-f0-9]{32}$/D', $quoteId)) { throw new RuntimeException('INVALID_REQUEST'); }
+    $row = sharity_donation_order_read($subject, 'quote_id', $quoteId);
+    if ($row === null) { throw new RuntimeException('ORDER_NOT_FOUND'); }
+    return sharity_donation_order_public($row, $now);
 }
 
 /** Owns the only createSession call. No claim lease/reset or retry exists. */

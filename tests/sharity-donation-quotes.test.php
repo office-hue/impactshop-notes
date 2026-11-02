@@ -76,7 +76,8 @@ require __DIR__ . '/../wp-content/mu-plugins/sharity-ngo-donations.php';
 $subject = 'hmac-sha256:' . str_repeat('a', 64);
 ImpactShop_Sharity_Web_Session::$response = ['subject_ref' => $subject];
 $direct = ['ngo_slug' => 'test-ngo', 'donation_mode' => 'direct', 'currency' => 'HUF', 'amount_minor' => '50000'];
-$account = ['binding_version' => 'verified-test-v1', 'account_id' => 'acct_TESTONLY', 'livemode' => false, 'verified_until' => gmdate('Y-m-d\TH:i:s\Z', time() + 3600), 'modes' => ['direct' => true, 'amplifier' => true], 'currencies' => []];
+$account = ['binding_version' => 'verified-test-v1', 'account_id' => 'acct_TESTONLY', 'livemode' => false, 'verified_until' => gmdate('Y-m-d\TH:i:s\Z', time() + 3600), 'modes' => ['direct' => true, 'amplifier' => true],
+    'mode_currencies' => ['direct' => ['HUF' => true, 'EUR' => true, 'USD' => true, 'GBP' => true], 'amplifier' => ['HUF' => true, 'EUR' => true, 'USD' => true, 'GBP' => true]], 'currencies' => []];
 foreach (['HUF', 'EUR', 'USD', 'GBP'] as $currency) { $account['currencies'][$currency] = ['min_minor' => '100', 'max_minor' => '100000000']; }
 $options['sharity_donation_accounts_v1'] = ['test-ngo' => $account];
 function issue($body, $key = 'donation-test-1234567890') { return sharity_donation_quote_handle(new WP_REST_Request($body, $key)); }
@@ -138,6 +139,28 @@ foreach (['verified_until' => '2026-02-30T00:00:00Z', 'account_id' => 'acct_BAD/
     check(issue($direct, 'binding-bad-key-' . $field)->status === 503, 'invalid private binding blocked');
 }
 $options['sharity_donation_accounts_v1']['test-ngo'] = $account;
+// D2j: chosen mode and currency must have a literal true permission.
+$matrixAccount = $account;
+$matrixAccount['mode_currencies'] = ['direct'=>['HUF'=>true,'EUR'=>true], 'amplifier'=>['HUF'=>true]];
+$options['sharity_donation_accounts_v1']['test-ngo']=$matrixAccount;
+$amp=['ngo_slug'=>'test-ngo','donation_mode'=>'amplifier','currency'=>'HUF','package_id'=>'starter','price_book_version'=>'amplifier-net80-v1:HUF'];
+foreach (['direct','amplifier'] as $mode) { foreach (['HUF','EUR','USD','GBP'] as $currency) {
+    $input=$mode==='direct'?array_replace($direct,['currency'=>$currency,'amount_minor'=>'50000']):array_replace($amp,['currency'=>$currency]);
+    $allowed=($matrixAccount['mode_currencies'][$mode][$currency]??false)===true;
+    $writes=$wpdb->writes;$r=issue($input,'matrix-combination-'.$mode.'-'.$currency);
+    check($r->status===($allowed?200:503),'matrix permits only chosen mode/currency');
+    check($wpdb->writes===$writes+($allowed?1:0),'denied matrix never writes');
+} }
+$badMatrices=[null,[],false,'all',['direct'=>true],['direct'=>[]],['direct'=>['HUF'=>false]],['direct'=>['HUF'=>1]],['direct'=>['HUF'=>'true']],['direct'=>['HUF'=>null]],['direct'=>['HUF'=>[]]]];
+foreach($badMatrices as $i=>$matrix){
+    $options['sharity_donation_accounts_v1']['test-ngo']=array_replace($account,['mode_currencies'=>$matrix]);$writes=$wpdb->writes;
+    check(issue($direct,'matrix-malformed-'.$i)->status===503 && $wpdb->writes===$writes,'malformed selected cell denies before write');
+}
+$legacy=$account;unset($legacy['mode_currencies']);$options['sharity_donation_accounts_v1']['test-ngo']=$legacy;
+check(issue($direct,'matrix-legacy-missing')->status===503,'missing matrix never grandfathered for new quote');
+$options['sharity_donation_accounts_v1']['test-ngo']=array_replace($matrixAccount,['mode_currencies'=>['direct'=>['HUF'=>true],'amplifier'=>'invalid']]);
+check(issue($direct,'matrix-unselected-mode')->status===200,'invalid unselected mode does not change selected permission');
+$options['sharity_donation_accounts_v1']['test-ngo']=$account;
 foreach (['before' => 503, 'after' => 200, 'throw_after' => 200, 'read' => 503] as $failure => $status) {
     $wpdb->failure = $failure;
     $r = issue($direct, 'uncertain-insert-' . $failure);

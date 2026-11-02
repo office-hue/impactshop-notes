@@ -142,6 +142,7 @@ $subject = 'hmac-sha256:' . str_repeat('a', 64); $other = 'hmac-sha256:' . str_r
 $now = time(); $nonce = bin2hex(random_bytes(6));
 $binding = ['binding_version' => 'fixture-v1', 'account_id' => 'acct_SYNTHETIC', 'livemode' => false,
     'verified_until' => gmdate('Y-m-d\TH:i:s\Z', $now + 7200), 'modes' => ['direct' => true, 'amplifier' => true],
+    'mode_currencies' => ['direct' => ['HUF' => true, 'EUR' => true, 'USD' => true, 'GBP' => true], 'amplifier' => ['HUF' => true, 'EUR' => true, 'USD' => true, 'GBP' => true]],
     'currencies' => ['HUF' => ['min_minor' => '100', 'max_minor' => '1000000']]];
 $options['sharity_donation_accounts_v1'] = ['test-ngo' => $binding];
 $snapshot = ['ngo_slug' => 'test-ngo', 'donation_mode' => 'direct', 'currency' => 'HUF', 'amount_minor' => '50000',
@@ -245,6 +246,16 @@ try {
         sharity_donation_order_dispatch($subject, $o['order_id'], $adapter, $now);
         check(calls() === $before + 1, 'result uncertainty never second POST');
     }
+    // D2j: fresh authority before dispatch, without making historical reads depend on it.
+    $o = newOrder('matrix-revoked'); $before = calls();
+    unset($options['sharity_donation_accounts_v1']['test-ngo']['mode_currencies']);
+    fails(fn()=>sharity_donation_order_dispatch($subject,$o['order_id'],$adapter,$now),'NGO_UNAVAILABLE');
+    check(calls()===$before && sharity_donation_order_by_quote($subject,$o['quote_id'],$now)['state']==='prepared','legacy matrix cannot dispatch; owner can read');
+    $options['sharity_donation_accounts_v1']['test-ngo']=$binding;
+    $options['sharity_donation_accounts_v1']['test-ngo']['mode_currencies']['direct']['HUF']=false;
+    fails(fn()=>sharity_donation_order_dispatch($subject,$o['order_id'],$adapter,$now),'NGO_UNAVAILABLE');
+    check(calls()===$before,'revocation after prepare causes zero provider POST');
+    $options['sharity_donation_accounts_v1']['test-ngo']=$binding;
     $o = newOrder('expired-window'); $before = calls();
     fails(fn() => sharity_donation_order_dispatch($subject, $o['order_id'], $adapter, $now + 1801), 'DONATION_SESSION_WINDOW_EXPIRED');
     check(calls() === $before, 'expired prepared envelope never rebuilt');
@@ -289,6 +300,34 @@ try {
     check(sharity_donation_order_handle($request)->status === 202, 'HTTP provider uncertainty returned as pending reconciliation');
     $transport->drop = false;
     check(sharity_donation_order_handle($request)->status === 202 && calls() === $before + 1, 'HTTP uncertainty replay never re-POSTs');
+    // Real owner+quote SQL and envelope validation; read path works after disable/unbind.
+    $known=sharity_donation_order_read($subject,'order_id',$first['order_id']);
+    $expected=sharity_donation_order_status($subject,$known['order_id'],$now);
+    $before=calls();$factory=$runtimeFactoryCalls;$savedOptions=$options;
+    $options[SHARITY_DONATION_ORDERS_ENABLED]='0';unset($options['sharity_donation_accounts_v1']);
+    $byQuote=new WP_REST_Request(['quote_id'=>'dq_'.str_repeat('0',32)],'unused');$byQuote->url=['quote_id'=>$known['quote_id']];
+    $wpdb->db->query('START TRANSACTION READ ONLY');
+    try {
+        $r=sharity_donation_order_status_by_quote_handle($byQuote);
+        check($r->status===200 && $r->body['order']===$expected && $r->headers['Cache-Control']==='private, no-store','real quote owner read after disable and binding removal');
+        ImpactShop_Sharity_Web_Session::$subject=$other;
+        $foreign=sharity_donation_order_status_by_quote_handle($byQuote);
+        check($foreign->status===404,'foreign owner cannot read actual quote');
+        ImpactShop_Sharity_Web_Session::$subject=$subject;$byQuote->url=['quote_id'=>'dq_'.str_repeat('0',32)];
+        check(sharity_donation_order_status_by_quote_handle($byQuote)->body===$foreign->body,'unknown and other owner indistinguishable');
+    } finally {$wpdb->db->rollback();ImpactShop_Sharity_Web_Session::$subject=$subject;}
+    $byQuote->url=['quote_id'=>$known['quote_id']];
+    $wpdb->failOn='WHERE `quote_id`';$wpdb->failure='before';
+    check(sharity_donation_order_status_by_quote_handle($byQuote)->status===503,'real SQL read failure is unavailable, not missing');$wpdb->failOn='';$wpdb->failure='';
+    $table=sharity_donation_order_table();
+    $wpdb->query($wpdb->prepare('UPDATE `'.$table.'` SET envelope_json=%s WHERE order_id=%s','{}',$known['order_id']));
+    check(sharity_donation_order_status_by_quote_handle($byQuote)->status===503,'corrupt persisted envelope fails actual projection');
+    $wpdb->query($wpdb->prepare('UPDATE `'.$table.'` SET envelope_json=%s WHERE order_id=%s',$known['envelope_json'],$known['order_id']));
+    check(calls()===$before && $runtimeFactoryCalls===$factory,'all new reads zero SDK factory or POST');$options=$savedOptions;
+    $freshQuote=fixtureQuote();$byQuote->url=['quote_id'=>$freshQuote];
+    check(sharity_donation_order_status_by_quote_handle($byQuote)->status===404,'no order yet is a temporary missing read');
+    $freshOrder=sharity_donation_order_prepare($subject,$freshQuote,'after-missing-'.$nonce,'hu',$now);
+    check(sharity_donation_order_status_by_quote_handle($byQuote)->body['order']['id']===$freshOrder['order_id'] && calls()===$before,'same quote visible after later prepare without provider call');
     $adapter = $fixtureAdapter;
     require __DIR__ . '/sharity-donation-webhook-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-ledger-mysql.test.php';

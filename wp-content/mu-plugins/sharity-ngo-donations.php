@@ -245,6 +245,12 @@ function sharity_donation_quote_binding(array $input, int $now): ?array
         || (sharity_donation_quote_timestamp($binding['verified_until'] ?? null) ?? 0) <= $now
         || !is_array($binding['modes'] ?? null) || ($binding['modes'][$input['donation_mode']] ?? null) !== true
         || !is_array($binding['currencies'] ?? null)) { return null; }
+    // Mandatory per-mode/currency allow matrix. Only a literal true cell permits
+    // creation; a missing matrix, row, cell or any non-true value denies.
+    $matrix = $binding['mode_currencies'] ?? null;
+    if (!is_array($matrix) || !is_array($matrix[$input['donation_mode']] ?? null)
+        || !array_key_exists($input['currency'], $matrix[$input['donation_mode']])
+        || $matrix[$input['donation_mode']][$input['currency']] !== true) { return null; }
     $bounds = $binding['currencies'][$input['currency']] ?? null;
     if (!is_array($bounds) || !sharity_donation_quote_minor($bounds['min_minor'] ?? null, $input['currency'])
         || !sharity_donation_quote_minor($bounds['max_minor'] ?? null, $input['currency'])

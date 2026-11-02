@@ -79,12 +79,27 @@ function sharity_donation_order_status_handle(WP_REST_Request $request): WP_REST
     } catch (Throwable $error) { return sharity_donation_order_map_error($error); }
 }
 
+function sharity_donation_order_status_by_quote_handle(WP_REST_Request $request): WP_REST_Response
+{
+    $session = sharity_donation_order_authorize($request);
+    if ($session instanceof WP_REST_Response) { return $session; }
+    try {
+        // URL route param only; merged query/JSON values must never select the quote.
+        $quoteId = $request->get_url_params()['quote_id'] ?? null;
+        if (!is_string($quoteId) || !preg_match('/^dq_[a-f0-9]{32}$/D', $quoteId)) { return sharity_donation_quote_error('INVALID_REQUEST', 400); }
+        return sharity_donation_order_response(sharity_donation_order_by_quote($session['subject_ref'], $quoteId, time()));
+    } catch (Throwable $error) { return sharity_donation_order_map_error($error); }
+}
+
 add_action('rest_api_init', static function (): void {
     register_rest_route('sharity/v1', '/donations/checkout', [
         'methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => 'sharity_donation_order_handle',
     ]);
     register_rest_route('sharity/v1', '/donations/status/(?P<id>do_[a-f0-9]{32})', [
         'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => 'sharity_donation_order_status_handle',
+    ]);
+    register_rest_route('sharity/v1', '/donations/status-by-quote/(?P<quote_id>dq_[a-f0-9]{32})', [
+        'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => 'sharity_donation_order_status_by_quote_handle',
     ]);
 });
 if (defined('WP_CLI') && WP_CLI) {

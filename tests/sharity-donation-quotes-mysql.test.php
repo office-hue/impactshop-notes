@@ -74,7 +74,8 @@ $table = sharity_donation_quote_table();
 check($wpdb->ddls === 0, 'load creates no schema');
 check(sharity_donation_quote_schema_apply(), 'actual MariaDB schema verified');
 $options[SHARITY_DONATION_QUOTES_ENABLED] = '1';
-$options['sharity_donation_accounts_v1'] = ['test-ngo' => ['binding_version' => 'fixture-v1', 'account_id' => 'acct_TESTONLY', 'livemode' => false, 'verified_until' => gmdate('Y-m-d\TH:i:s\Z', time() + 3600), 'modes' => ['direct' => true, 'amplifier' => true], 'currencies' => ['HUF' => ['min_minor' => '100', 'max_minor' => '1000000']]]];
+$options['sharity_donation_accounts_v1'] = ['test-ngo' => ['binding_version' => 'fixture-v1', 'account_id' => 'acct_TESTONLY', 'livemode' => false, 'verified_until' => gmdate('Y-m-d\TH:i:s\Z', time() + 3600), 'modes' => ['direct' => true, 'amplifier' => true],
+    'mode_currencies' => ['direct' => ['HUF' => true, 'EUR' => true, 'USD' => true, 'GBP' => true], 'amplifier' => ['HUF' => true, 'EUR' => true, 'USD' => true, 'GBP' => true]], 'currencies' => ['HUF' => ['min_minor' => '100', 'max_minor' => '1000000']]]];
 $body = ['ngo_slug' => 'test-ngo', 'donation_mode' => 'direct', 'currency' => 'HUF', 'amount_minor' => '50000'];
 $nonce = bin2hex(random_bytes(8));
 function runRace(array $body, string $key, bool $different): array {
