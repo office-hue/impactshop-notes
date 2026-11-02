@@ -8634,3 +8634,17 @@ Meglévő N adapter + admin `payment-inspect --adjustments`: teljes, korlátos r
 Hermes0391hívás/17377token/becsült0,001951495USD, tényleges összköltség ismeretlen; használható szándék részben átvéve, hibás patch Codex-javítással, nincs retry/megtakarítási állítás. Részletes szerződés, teszt, javítás, release/rollback és UI-checklist: N `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §61.
 
 Pilot az Alapítvány, HUF; Arnold megerősítette az azonosított Stripe-kifizetési cél alapítványi tulajdonát. A Stripe-fiók továbbra Zrt.; külön NGO-account/díj/felelősség nincs igazolva, teljes bankadat nem tárolt. Nincs fiókmódosítás vagy pénzmozgás. Teljes egyeztetés/főkönyv/nettó80/20/tartalék/UI/D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Commit/push konkrét SHA a Secretaryben; merge, telepítés, aktiválás és élő elfogadás külön hátravan. Maincsendablak nincs. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+
+
+## D2h — tartós pénzügyi megfigyelési napló: kezdés (2026-11-02)
+
+Saját N3d22762b/A22a6ced8, Hermes040 első kidolgozó. Egy rendeléshez kötött, változatlanul megőrzött Stripe-megfigyelés; ismételt import nem új pénz. Konkrét kockázat: adatvesztés, dupla import, bizonytalan INSERT-nyugta és téves pénzügyi készültség. Meglévő autocommit/insert/readback/séma mintát használunk; nincs provider-írás, allokáció, szavazat vagy aktiválás. Explicit séma/CLI, nincs HTTP-migráció. Valódi izolált MariaDB-versenyteszt és független review szükséges. Rollback saját kód/pinek, megfigyelési és rendelési sorok megmaradnak. Érintett UI változatlan; későbbi kézi checklist: meglévő login/státusz, új adomány OFF, sikeroldal nem állít kifizetést.
+
+
+## 62. Aktiválási lezárási terv és megőrzött Hermes040-tervezet (2026-11-02)
+
+A D2h kezdése után Arnold részletes végrehajtási tervet kért; termékkódot nem integráltunk. Kanonikus terv: ai-agent `docs/dev-plans/sharity-internationalization-delivery-20261031.md` §62, a meglévő #1870 PR-ben; N #244 változatlanul inaktív forrás. Rögzített fájlok, tervezett adminparancsok, pontos account/UI/webhook hiányok, két mód külön sandbox/aktiválás, SDK/exact-file/séma/Vercel/publisher sorrend és adatmegőrző rollback szerepel benne.
+
+Két egymást követő független tervaudit, javítással lezárva; második audit utáni célzott readback elfogadta a közös backing javítását. Közös campaign/backing/order/grant/wallet/cast/movement/operation zársorrend; prepared korrekció is foglal, stale cél nem dispatch-elhető; pénzzel fedezett reserve és közös keret egyszeres felhasználása; devizás alaprész csak igazolt HUF-váltás után növelhet pool_huf-ot. A direct pilot önállóan kiadható. Ez tervreview, nem futási vagy éles bizonyíték.
+
+Hermes0401hívás,23738token, becsült0,002791698USD, nem számla; pending és terminal remote_ack. Javaslat privát artifactban megőrizve; nincs átvétel/termékteszt, javításigény még ismeretlen. Nincs retry/fallback, Codex/reviewer tényleges költsége ismeretlen. Új termékfájl/séma/guardpin/SDK/providerbeállítás nem változott, runtime OFF állapotát ez a kör nem ellenőrizte újra. A korábbi D2g teszteket csak változatlan forrásbizonyítékként használjuk újra. Dokumentum-diff és célzott publikálási audit következik; Secretary mentés/readback külön. Rollback a saját dokumentumcommit visszavonása; pénzügyi adatot nem érint. Mainablak nincs, merge/deploy/aktiválás/élő elfogadás hátravan. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
