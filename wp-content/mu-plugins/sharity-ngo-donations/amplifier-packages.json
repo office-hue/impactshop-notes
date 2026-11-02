@@ -1,0 +1,11 @@
+{
+  "schema_version": "sharity-amplifier-packages-v1",
+  "version": "amplifier-net80-v1",
+  "packages": [
+    {"id": "starter", "name": "Starter", "huf_whole": 500, "base_votes": 500, "bonus_votes": 0},
+    {"id": "supporter", "name": "Supporter", "huf_whole": 1000, "base_votes": 1000, "bonus_votes": 100},
+    {"id": "champion", "name": "Champion", "huf_whole": 2500, "base_votes": 2500, "bonus_votes": 500},
+    {"id": "hero", "name": "Hero", "huf_whole": 5000, "base_votes": 5000, "bonus_votes": 1500},
+    {"id": "legend", "name": "Legend", "huf_whole": 10000, "base_votes": 10000, "bonus_votes": 5000}
+  ]
+}
