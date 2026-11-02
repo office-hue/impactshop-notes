@@ -939,3 +939,8 @@ Termekcommit ada1a5b4. Uj sajat finance-ledger.php inventorybejegyzes es hash; s
 ### D2i 2026-11-02
 
 Termékcommit94344f09. Kizárólag saját finance-ledger.php és finance-read.php két hash frissül, nincs új inventory vagy guardlogika/idegen pin.936 MariaDB-assertion (655 D2i, fixture-checkekkel),401 pénzügyi/CLI+461 adjustment,13 runtime; független review lelet nélkül. Írásmentes admin pénzmozgásleltár, --apply elutasított, platformtételek accountbizonyítékig külön feloldatlanok. Részletek/smoke/release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §64. Nincs merge/telepítés/aktiválás.
+
+
+### D2j 2026-11-02
+
+Termékcommit ee69bdb3. Csak a három saját donation main/orders/http hash és a JSON oldalkocsi checksum frissül. Nincs új inventory, guardlogika vagy idegen pin.101 quote+264 HTTP,950 MariaDB order/finance+18 quote,401 pénzügyi/CLI+461 adjustment+13 runtime,65 webteszt és független forrásreview sikeres. Kiválasztott mód/deviza explicit true, privát owner quote-read; nincs aktiválás. Részletek, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §65. Az első hashfrissítő lépés a checksum-formátum téves feltételezése miatt még írás előtt megállt; a tényleges JSON-oldalkocsi formátummal javítva, a végső ellenőrzés külön.

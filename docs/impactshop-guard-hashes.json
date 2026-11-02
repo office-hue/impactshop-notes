@@ -355,17 +355,17 @@
     "wp-content/mu-plugins/sharity-points-money.php": "975b7d3fd2e7a1fd6ba027b15f7e39871dc20bccca8e3285719df1b9b1a4f241",
     "wp-content/mu-plugins/sharity-points-impactshop-manager.php": "c02875d1076ecd09a2d9192586b9c56851c6fa7036c00d7b7bff56e897108d7e",
     "wp-content/mu-plugins/sharity-support-finance-read.php": "91d85ec553b370176904db46d79ec6648b981ea08011ce39ca00b91abbbc71e8",
-    "wp-content/mu-plugins/sharity-ngo-donations.php": "9a3eaed49a2abc3da9b560730c31cc71dc189f934ecfda0fd0d2c164a59f6e05",
+    "wp-content/mu-plugins/sharity-ngo-donations.php": "5495bce1a11c7016152af5b9ecb71e4c0f35b9e0b53ef11bce4398065e544595",
     "wp-content/mu-plugins/sharity-ngo-donations/amplifier-packages.json": "b60fac091567c30c6c25eb8804d7c5dd3fbf64629ae35566ee1a24f2a37a7ffc",
     "wp-content/mu-plugins/sharity-ngo-donations/stripe-checkout.php": "d610e57d248bda3fb88835d6c3562e65258eb5ff5345b106df7edee6b1bad85b",
     "wp-content/mu-plugins/sharity-ngo-donations/composer.json": "1e0e57f27d1e81a8bfa54f925a8a70797bf64283499cc4fd94d431af9961a65c",
     "wp-content/mu-plugins/sharity-ngo-donations/composer.lock": "2d2b655405e32c2c7e6ad7cef7511408be91842ffa3a257c09e08a0fd62ddc81",
-    "wp-content/mu-plugins/sharity-ngo-donations/orders.php": "491bcc4203bb6ac61f0f9b80351174e5ecea0cccdeb412f0c8ac1b7d7bb97e8a",
-    "wp-content/mu-plugins/sharity-ngo-donations/http.php": "5fda2c146af92c01de8aed460b3e26314802dff56b92c3eb08969a8e11783259",
+    "wp-content/mu-plugins/sharity-ngo-donations/orders.php": "14aad7d7f01142e2c84f7c0a5de067ebe51d46a4904b5ff2ae4e397cb323be17",
+    "wp-content/mu-plugins/sharity-ngo-donations/http.php": "1065df5cf9fa98c9bbf6fcd8215932c2d82d490bfafb52b51936ccd346c518ff",
     "wp-content/mu-plugins/sharity-ngo-donations/runtime.php": "ac1614f7b7aca14e8947384c7f8dbc3c169103e79dbc5a721852bb06afdf9b0a",
     "wp-content/mu-plugins/sharity-ngo-donations/webhook.php": "1e170259ba33a63b46653f1b815737aab19879fb2cef1b70db8140a124ee6721",
     "wp-content/mu-plugins/sharity-ngo-donations/finance-read.php": "09ce43b338a5abc778b0cf69572efd217e280d0a11e7284fe4f02342e19d791e",
     "wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php": "d99aaef26dd828581b7debb7d47edde8aabb2b0cad1b2b2802a352f186b469c1"
   },
-  "generated_at": "2026-11-02T18:41:39.515223+00:00"
+  "generated_at": "2026-11-02T18:58:17.500236+00:00"
 }
