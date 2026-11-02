@@ -94,3 +94,20 @@ A két saját commit teljes tartományának natív `workspace-hooks.py audit
 --strict --mode push --base 6098a532... --head 2502f953...` ellenőrzése sikeres:
 titokscan, protected-touch, commit-lane és affiliate Bástya. Ez helyi forrásaudit,
 nem távoli push vagy CI. A saját eldobható SQL-konténert a teszt után eltávolítottuk.
+
+## 2026-11-02 — main-integráció és draft PR
+
+A két saját commit a `67af9bbc` mainre integrálva, HEAD `2fffeea5`; a runtime
+és tesztek változatlanok, a main más állapotbejegyzései megőrizve. A teljes
+saját tartomány natív auditja ismét sikeres. Draft PR: #245; webpár: ai-agent
+#1880. A záró független review továbbra nyitott; nincs merge/deploy/aktiválás.
+
+CI konkrét hiba: a workspace-retirement teszt a szándékosan módosított
+affiliate guardot még az októberi bájtpontos referenciával hasonlította össze.
+Csak e fájl pontos SHA-256 referenciája frissül a jóváhagyott guardra; így
+a squash merge után sincs elérhetetlen feature-commit-függőség. A többi
+domain/deploy fájl eredeti referenciája és a guard maga változatlan.
+Ez nem CI-kikapcsolás vagy új támogató rendszer.
+
+A módosított retirement teszteset és a meglévő affiliate-guard tamper suite
+helyben sikeres; a CI új eredményét külön kell visszaolvasni.

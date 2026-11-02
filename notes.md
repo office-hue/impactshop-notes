@@ -8396,3 +8396,11 @@ SQL52 / profilPHP72 / Chrome5 / affiliate-regresszió / Bástya negatív suite s
 Review újracsatlakozási finding javítva; a reviewer használati limit miatt nem
 fejezte be a zárókört. Aktuális rekord és rollback:
 `docs/protected-change-records/2026-11-02-shopping-purchase.md`. Éles állapot érintetlen.
+
+## 2026-11-02 — shopping draft PR és CI-referencia
+
+#245 (webpár ai-agent #1880): saját main-integráció és push visszaolvasva.
+A régi retirement teszt affiliate-guard referenciafrissítése célzottan a
+jóváhagyott guardváltozást követi; a védelmet nem kapcsolja ki. Részletek:
+`docs/protected-change-records/2026-11-02-shopping-purchase.md`. Review nyitott,
+merge/telepítés/új shopping aktiválás nincs.
