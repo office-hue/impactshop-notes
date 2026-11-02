@@ -1006,3 +1006,7 @@ Következő: teljes refund/dispute/díjkorrekciós mozgás-egyeztetés és tart�
 ### D2g 2026-11-02
 
 Csak a sajat donation stripe-checkout.php es finance-read.php hash frissul; nincs uj guard/modul/idegen pin. Reszletes indok, teszt, release es rollback: protected-change-records/2026-11-02-sharity-donation-prices.md 61. fejezet. Aktivalas nincs.
+
+### D2h 2026-11-02
+
+Termekcommit ada1a5b4. Uj sajat finance-ledger.php inventorybejegyzes es hash; sajat fo loader, finance-read.php, a bizonyitott race miatt orders.php es config onhash/oldalkocsi frissul. Idegen pin es guardlogika valtozatlan. 281 MariaDB (ebbol105 D2h),400 penzugyi/CLI,461 adjustment,13 runtime ellenorzes sikeres. Fuggetlen forrasreview lelet nelkul. Erintett funkciok, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md 63. fejezet. Meg nincs merge/telepites/aktivalas.
