@@ -22,6 +22,8 @@ class WP_REST_Response {
     public function header($key, $value): void { $this->headers[$key] = $value; }
 }
 class WP_REST_Request {
+    public array $url = [];
+    public function get_url_params(): array { return $this->url; }
     public function __construct(public $body, public string $key = 'donation-test-1234567890') {}
     public function get_json_params() { return $this->body; }
     public function get_header($name) { return $name === 'idempotency-key' ? $this->key : ''; }
@@ -174,4 +176,41 @@ check($r->status === 200 && $r->data['quote']['id'] === 'dq_' . str_repeat('c', 
 $wpdb->race = static function ($db, $row): void { $row['request_digest'] = str_repeat('d', 64); $db->rows[$row['request_key_hash']] = $row; };
 check(issue($direct, 'raced-different-input-key')->status === 409, 'raced different payload conflict');
 check($wpdb->ddl === 2, 'no handler DDL ever');
+// D2k public hints: no order module => fail closed, while cached books remain readable.
+$options['sharity_donation_accounts_v1']=['test-ngo'=>$account];
+$beforeOptions=$options;$beforeWrites=$wpdb->writes;$beforeDDL=$wpdb->ddl;$beforeAuth=ImpactShop_Sharity_Web_Session::$calls;
+check((array)sharity_donation_availability('test-ngo',time())['modes']['direct']===[],'missing order dependency disables new activity');
+define('SHARITY_DONATION_ORDERS_ENABLED','sharity_donation_orders_enabled');
+define('SHARITY_DONATION_ORDERS_SCHEMA_OPTION','sharity_donation_orders_schema_v1');
+$options[SHARITY_DONATION_ORDERS_ENABLED]='1';$options[SHARITY_DONATION_ORDERS_SCHEMA_OPTION]='1';
+$body=sharity_donation_availability('test-ngo',time());
+check(count((array)$body['modes']['direct'])===4,'each direct currency independent of missing foreign price books');
+check(count((array)$body['modes']['amplifier'])===1 && isset($body['modes']['amplifier']->HUF),'only current HUF book enables amplifier');
+$json=json_encode($body);
+check(!str_contains($json,'acct_')&&!str_contains($json,'binding_version')&&!str_contains($json,'livemode')&&!str_contains($json,$subject),'public allowlist leaks no account/owner/binding');
+foreach(['direct','amplifier'] as $mode){foreach(['HUF','EUR','USD','GBP'] as $currency){
+ $options['sharity_donation_accounts_v1']['test-ngo']['mode_currencies'][$mode][$currency]=false;
+ $body=sharity_donation_availability('test-ngo',time());
+ check(!isset($body['modes'][$mode]->$currency),'revoked selected cell absent');
+ $options['sharity_donation_accounts_v1']['test-ngo']=$account;
+}}
+$options['sharity_donation_accounts_v1']['test-ngo']['currencies']['HUF']['max_minor']='40000';
+$body=sharity_donation_availability('test-ngo',time());
+check(isset($body['modes']['direct']->HUF)&&!isset($body['modes']['amplifier']->HUF),'no in-bound package disables amplifier only');
+$options['sharity_donation_accounts_v1']['test-ngo']=$account;
+foreach([SHARITY_DONATION_QUOTES_ENABLED,SHARITY_DONATION_QUOTES_SCHEMA_OPTION,SHARITY_DONATION_ORDERS_ENABLED,SHARITY_DONATION_ORDERS_SCHEMA_OPTION] as $flag){
+ $options[$flag]='0';$body=sharity_donation_availability('test-ngo',time());
+ check((array)$body['modes']['direct']===[]&&(array)$body['modes']['amplifier']===[],'readiness switch independently disables');$options[$flag]='1';
+}
+$body=sharity_donation_availability('unknown-ngo',time());check(str_contains(json_encode($body),'"direct":{}'),'empty maps JSON object');
+for($i=0;$i<205;$i++)$options['sharity_donation_accounts_v1']['fixture-'.$i]=$account;
+$options['sharity_donation_accounts_v1']['last-ngo']=$account;
+check(isset(sharity_donation_availability('last-ngo',time())['modes']['direct']->HUF),'requested NGO not silently truncated by catalog size');
+$request=new WP_REST_Request(['slug'=>'wrong-query']);$request->url=['slug'=>'test-ngo'];
+$response=sharity_donation_availability_handle($request);
+check($response->status===200 && $response->data['ngo_slug']==='test-ngo' && $response->headers['Cache-Control']==='no-store','URL-only public request and cache');
+foreach(['test-ngo\n','-bad','test--ngo',str_repeat('a',101),'../test',''] as $invalid){$request->url=['slug'=>$invalid];check(sharity_donation_availability_handle($request)->status===400,'invalid slug rejected');}
+check($wpdb->writes===$beforeWrites&&$wpdb->ddl===$beforeDDL&&ImpactShop_Sharity_Web_Session::$calls===$beforeAuth,'availability no DB writes/migration/auth lookup');
+$snapshot=$options;sharity_donation_availability('test-ngo',time());check($options===$snapshot,'availability never changes options');
+$options=$beforeOptions;
 echo "Donation quotes: {$checks} checks passed (isolated transport, not MySQL concurrency)\n";

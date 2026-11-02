@@ -2,7 +2,7 @@
 /**
  * Sharity donations: prices, owner-bound quotes and disabled-by-default checkout.
  * No wallet or allocation. Optional immutable financial observations only. Checkout status is not payment proof.
- * The read route exposes prices, never payment availability or connected accounts.
+ * Public reads expose prices/availability hints, never connected account details.
  * Weekly publication is opt-in and runs AFTER the existing FX refresh hook.
  */
 declare(strict_types=1);
@@ -257,6 +257,58 @@ function sharity_donation_quote_binding(array $input, int $now): ?array
         || (int) $bounds['min_minor'] > (int) $bounds['max_minor']) { return null; }
     return $binding;
 }
+
+/** Public hint only: the same binding authority is checked again by writes.
+ * Read the requested NGO only; never enumerate accounts, call a provider or write. */
+function sharity_donation_availability(string $slug, int $now): array
+{
+    $books = sharity_donation_read_price_books($now);
+    $modes = ['direct' => [], 'amplifier' => []];
+    $ready = get_option(SHARITY_DONATION_QUOTES_ENABLED, '0') === '1'
+        && get_option(SHARITY_DONATION_QUOTES_SCHEMA_OPTION, '') === '1'
+        && defined('SHARITY_DONATION_ORDERS_ENABLED') && defined('SHARITY_DONATION_ORDERS_SCHEMA_OPTION')
+        && get_option(SHARITY_DONATION_ORDERS_ENABLED, '0') === '1'
+        && get_option(SHARITY_DONATION_ORDERS_SCHEMA_OPTION, '') === '1';
+    if ($ready) {
+        foreach (['direct', 'amplifier'] as $mode) {
+            foreach (['HUF', 'EUR', 'USD', 'GBP'] as $currency) {
+                $binding = sharity_donation_quote_binding(['ngo_slug' => $slug, 'donation_mode' => $mode, 'currency' => $currency], $now);
+                if ($binding === null) { continue; }
+                $bounds = $binding['currencies'][$currency];
+                $cell = ['min_minor' => $bounds['min_minor'], 'max_minor' => $bounds['max_minor']];
+                if ($mode === 'amplifier') {
+                    $book = $books[$currency] ?? null;
+                    if ($book === null) { continue; }
+                    $inRange = array_filter($book['packages'], static fn(array $p): bool =>
+                        (int) $p['amount_minor'] >= (int) $bounds['min_minor'] && (int) $p['amount_minor'] <= (int) $bounds['max_minor']);
+                    if (!$inRange) { continue; }
+                    $cell['price_book_version'] = $book['version'];
+                }
+                $modes[$mode][$currency] = $cell;
+            }
+        }
+    }
+    // Empty maps must serialize as objects, not JSON arrays.
+    return ['ok' => true, 'schema_version' => 'sharity-donation-availability-v1', 'ngo_slug' => $slug,
+        'modes' => ['direct' => (object) $modes['direct'], 'amplifier' => (object) $modes['amplifier']], 'books' => (object) $books];
+}
+
+function sharity_donation_availability_handle(WP_REST_Request $request): WP_REST_Response
+{
+    $slug = $request->get_url_params()['slug'] ?? null;
+    if (!is_string($slug) || strlen($slug) > 100 || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/D', $slug)) {
+        return sharity_donation_quote_error('INVALID_REQUEST', 400);
+    }
+    try { $response = new WP_REST_Response(sharity_donation_availability($slug, time())); }
+    catch (Throwable $e) { return sharity_donation_quote_error('AVAILABILITY_UNAVAILABLE', 503); }
+    $response->header('Cache-Control', 'no-store');
+    return $response;
+}
+add_action('rest_api_init', static function (): void {
+    register_rest_route('sharity/v1', '/donations/availability/(?P<slug>[a-z0-9-]{1,100})', [
+        'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => 'sharity_donation_availability_handle',
+    ]);
+});
 
 function sharity_donation_quote_read(string $subject, string $keyHash): ?array
 {
