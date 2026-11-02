@@ -171,11 +171,12 @@
     "wp-content/mu-plugins/impactshop-dognet-points.php",
     "wp-content/mu-plugins/sharity-points-impactshop-attribution.php",
     "wp-content/mu-plugins/sharity-points-money.php",
-    "wp-content/mu-plugins/sharity-points-impactshop-manager.php"
+    "wp-content/mu-plugins/sharity-points-impactshop-manager.php",
+    "wp-content/mu-plugins/impactshop-ngo-card-news.php"
   ],
   "hashes": {
     "wp-content/mu-plugins/impactshop-jysk-game.php": "92af8b62c22882eafacb3079ac09e6bc589bdd1d44adfb2bc42165b4fc2d12fd",
-    "docs/impactshop-guard-config.json": "a6feb895f0c9f96c7e367452a12cf44327cbb1779a2565a0161885900ebf5026",
+    "docs/impactshop-guard-config.json": "0e53414f555a395bb71d75b098bd6492edeb6bacc9384921e497f2455f922dc9",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "bbbd10da51b619a134b9d3147ab2ef9f081ec9b52697c349775c4aefe1584558",
@@ -341,7 +342,8 @@
     "wp-content/mu-plugins/impactshop-dognet-points.php": "a0315b35ddba2fd66df2536ba6bf909c383d70cb165e8c5a1ac54918ac66caf3",
     "wp-content/mu-plugins/sharity-points-impactshop-attribution.php": "fa0b93c21ca6bf22e0dc8db4958ebd123b11bf749a1335393bbf55e169d510e0",
     "wp-content/mu-plugins/sharity-points-money.php": "975b7d3fd2e7a1fd6ba027b15f7e39871dc20bccca8e3285719df1b9b1a4f241",
-    "wp-content/mu-plugins/sharity-points-impactshop-manager.php": "c02875d1076ecd09a2d9192586b9c56851c6fa7036c00d7b7bff56e897108d7e"
+    "wp-content/mu-plugins/sharity-points-impactshop-manager.php": "c02875d1076ecd09a2d9192586b9c56851c6fa7036c00d7b7bff56e897108d7e",
+    "wp-content/mu-plugins/impactshop-ngo-card-news.php": "2e0326e4e84cf69d0504b346fc88abe49dd5b9bf567770fdf1eed26a7e83052e"
   },
   "generated_at": "2026-09-11T04:44:20+00:00"
 }

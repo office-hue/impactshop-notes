@@ -1,5 +1,18 @@
 # ImpactShop NGO kártya – használati és frissítési jegyzet
 
+## 2026-11-02 — a webes NGO Card központi hírei
+
+Az új, csak olvasó `/wp-json/impact/v1/ngo-card-news` ugyanazt a meglévő
+`impactshop_ngo_card_global_announcement` opciót és
+`impactshop_ngo_card_share_announcement` filtert használja. A meglévő központi
+hírszerkesztő marad; nincs új adminíró vagy per-NGO szerkesztés. A publikus
+válaszban legfeljebb 200 Unicode karakteres sima szöveg és opcionális HTTPS-link
+van; üres opciónál `announcement:null`. A no-store GET-et a Sharity web BFF-je
+olvassa, így a hír/törlés megjelenéséhez nem szükséges új katalógus-snapshot.
+WordPress- vagy webes éles elfogadás még nem történt. A következő Wallet-leírás
+történeti használati út, az új Card-display kiadás nem hoz létre Wallet-passt.
+Kiadás/rollback/UI-lista: [változásrekord](protected-change-records/2026-11-02-ngo-card-news.md).
+
 Ez a dokumentum összegzi, hogyan kell az ImpactShop Apple Wallet megosztási kártyáit előkészíteni és frissíteni, különös tekintettel a backFields CTA blokkra és a dinamikus `sharity_news` szövegre.
 
 ## 1. Alap workflow

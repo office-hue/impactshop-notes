@@ -88,7 +88,8 @@
     "wp-content/mu-plugins/impactshop-ads-watch-ui-cta-bundle.js",
     "wp-content/mu-plugins/impactshop-partner-api.php",
     "wp-content/mu-plugins/sharity-decay-manager.php",
-    "wp-content/mu-plugins/sharity-vacation-manager.php"
+    "wp-content/mu-plugins/sharity-vacation-manager.php",
+    "wp-content/mu-plugins/impactshop-ngo-card-news.php"
   ],
   "additive_globs": [
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
