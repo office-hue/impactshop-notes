@@ -1,3 +1,12 @@
+## 2026-11-02 — Publikus marketingmérés útvonalkiegészítés
+
+A két meglévő measurement MU-fájl listája kiegészült a reklámozói,
+pályázati tájékoztató, partner-API, Impact Challenge publikus belépő és
+publikus jogi útmutató oldallal. A guide/Challenge üzleti logika, identity,
+affiliate és pontkezelés változatlan. 59 PHP és 5 JS/HTTP-fixture sikeres;
+független célzott review nem talált hibát. Forrásjelölt, nincs új telepítés
+vagy aktiválás. Kiadás/rollback/UI: `docs/marketing-coverage-2026-11-02.md`.
+
 ## 2026-10-31 — Publikus mérés: WordPress preview kizárása
 
 A #242 utáni szűk korrekció az `is_preview()` állapotot kizárja a script
