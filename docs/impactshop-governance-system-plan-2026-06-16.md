@@ -1001,3 +1001,8 @@ N adapter + új admin finance-read CLI + additív loader: eredeti session/PI/cha
 Részletes szerződés, források, pontos tesztparancsok, release/rollback/kézi UI-checklist és Hermes-javításlista: impactshop-notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §60, PR244. Hermes0381hívás/17451token/becsült0,002093USD, tényleges összköltség ismeretlen; a hibás első tervezetet Codex javította, megtakarítás nem állított. Secretary termékcheckpoint és remote-SHA külön visszaolvasandó.
 
 Következő: teljes refund/dispute/díjkorrekciós mozgás-egyeztetés és tartós pénzügyi napló, nettó80/20-cél és kitettségi tartalék. Account/díj/felelősségi bizonyíték, UI fizetési lánc, D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Az eredeti charge nettója nem refund utáni aktuális nettó. Saját forráscsomag és célzott teszt kész; merge/telepítés/aktiválás/élő elfogadás nem történt. Maincsendablak nincs. Megőrzött átadás: SUBSTACK-HANDOVER.md.
+
+
+### D2g 2026-11-02
+
+Csak a sajat donation stripe-checkout.php es finance-read.php hash frissul; nincs uj guard/modul/idegen pin. Reszletes indok, teszt, release es rollback: protected-change-records/2026-11-02-sharity-donation-prices.md 61. fejezet. Aktivalas nincs.

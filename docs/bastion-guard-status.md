@@ -925,3 +925,8 @@ D2e helyi Bástya-visszaolvasás: teljes meglévő inventory nulla drift;6 izol�
 Csak új saját sharity-ngo-donations/finance-read.php kerül a meglévő inventoryba; a saját stripe-checkout.php, fő loader és config önhash/oldalkocsik követik. Idegen pin/guardlogika változatlan. Scope, kockázat, funkciólista, tesztek, kézi checklist és rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §60.397 pénzügyi/CLI +197 adapter +12 loader ellenőrzés sikeres, független forrásreview blokkoló nélkül; nincs pénzügyi író vagy aktiválás.
 
 D2f védelmi visszaolvasás: az első inventoryfutás kizárólag a saját config.sha256 kimaradt pinjét jelezte. A konkrét pin javítása után teljes inventory nulla drift és6 izolált hash/checksum eset sikeres; idegen pin változatlan.
+
+
+### D2g 2026-11-02
+
+Csak a sajat donation stripe-checkout.php es finance-read.php hash frissul; nincs uj guard/modul/idegen pin. Reszletes indok, teszt, release es rollback: protected-change-records/2026-11-02-sharity-donation-prices.md 61. fejezet. Aktivalas nincs.
