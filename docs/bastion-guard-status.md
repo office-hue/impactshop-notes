@@ -944,3 +944,8 @@ Termékcommit94344f09. Kizárólag saját finance-ledger.php és finance-read.ph
 ### D2j 2026-11-02
 
 Termékcommit ee69bdb3. Csak a három saját donation main/orders/http hash és a JSON oldalkocsi checksum frissül. Nincs új inventory, guardlogika vagy idegen pin.101 quote+264 HTTP,950 MariaDB order/finance+18 quote,401 pénzügyi/CLI+461 adjustment+13 runtime,65 webteszt és független forrásreview sikeres. Kiválasztott mód/deviza explicit true, privát owner quote-read; nincs aktiválás. Részletek, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §65. Az első hashfrissítő lépés a checksum-formátum téves feltételezése miatt még írás előtt megállt; a tényleges JSON-oldalkocsi formátummal javítva, a végső ellenőrzés külön.
+
+
+### D2k 2026-11-02
+
+Termékcommit e3164546. Csak a saját donation főmodul hash és a JSON-oldalkocsi frissül. Publikus, írásmentes NGO mód/deviza elérhetőség; hiányzó függőség tilt, accountadat nem látható. 129 quote-assertion,13 frissfolyamat-loader,134 webteszt és célzott TypeScript-ellenőrzés sikeres; két review-lelet javítva és visszaolvasva. Korábbi változatlan DB-bizonyíték újrahasználva. Teljes web-typecheck idegen függőség/cache hibák miatt nem PASS. Nincs új inventory, guardlogika, idegen pin vagy aktiválás. Részletek, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §66.
