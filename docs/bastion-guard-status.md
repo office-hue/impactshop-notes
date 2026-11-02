@@ -949,3 +949,10 @@ Termékcommit ee69bdb3. Csak a három saját donation main/orders/http hash és 
 ### D2k 2026-11-02
 
 Termékcommit e3164546. Csak a saját donation főmodul hash és a JSON-oldalkocsi frissül. Publikus, írásmentes NGO mód/deviza elérhetőség; hiányzó függőség tilt, accountadat nem látható. 129 quote-assertion,13 frissfolyamat-loader,134 webteszt és célzott TypeScript-ellenőrzés sikeres; két review-lelet javítva és visszaolvasva. Korábbi változatlan DB-bizonyíték újrahasználva. Teljes web-typecheck idegen függőség/cache hibák miatt nem PASS. Nincs új inventory, guardlogika, idegen pin vagy aktiválás. Részletek, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §66.
+## 2026-11-02 — megerősített shopping indítás
+
+Meglévő affiliate-runtime guard: a Dognet URL kizárólag az új, owner-hitelesített
+shopping POST-ban engedett; régi ágban továbbra tiltott. Lane OFF, payload hash,
+owner-recheck, kapcsolatvédelem és explicit CLI-migráció a célzott ellenőrzésben.
+Guard és negatív suite sikeres. A három módosított runtime hash frissítve;
+telepítési PASS nincs. Részletek: `protected-change-records/2026-11-02-shopping-purchase.md`.

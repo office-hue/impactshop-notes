@@ -69,8 +69,8 @@ foreach (['error', ['code' => 302, 'body' => 'secret'], ['code' => 202, 'body' =
 putenv('MARKETING_MEASUREMENT_GATEWAY_URL=https://other.invalid');
 check(!impactshop_marketing_measurement_enabled(), 'noncanonical target disables');
 putenv('MARKETING_MEASUREMENT_GATEWAY_URL=https://sharity-legal-production.up.railway.app');
-foreach (['/impactshop/', '/rolunk/', '/cegeknek/', '/befektetoknek/', '/ngo-guides/', '/ngo-guides/impact-shop/', '/ngo-guides/impact-challenge/', '/ngo-guides/ngo-card/'] as $path) check(impactshop_marketing_measurement_route($path) !== null, 'public route allowed');
-foreach (['/jysk-riport/', '/jysk-riport.data.json', '/ngo-guides/jogi-dokumentumok/', '/profil/', '/go/', '/ngo-guides/other/', '/rolunk////'] as $path) check(impactshop_marketing_measurement_route($path) === null, 'protected route excluded');
+foreach (['/reklamozoknak/', '/palyazati-tajekoztato/', '/partner-api/', '/impact-challenge/', '/ngo-guides/jogi-dokumentumok/', '/impactshop/', '/rolunk/', '/cegeknek/', '/befektetoknek/', '/ngo-guides/', '/ngo-guides/impact-shop/', '/ngo-guides/impact-challenge/', '/ngo-guides/ngo-card/'] as $path) check(impactshop_marketing_measurement_route($path) !== null, 'public route allowed');
+foreach (['/jysk-riport/', '/jysk-riport.data.json', '/profil/', '/go/', '/ngo-guides/other/', '/rolunk////'] as $path) check(impactshop_marketing_measurement_route($path) === null, 'protected route excluded');
 $html = '<!doctype html><html><body><p>Existing guide</p></body></html>';
 $injected = impactshop_marketing_measurement_html($html, 'text/html; charset=UTF-8', 200);
 check(substr_count($injected, 'impactshop-marketing-script') === 1 && str_contains($injected, '<p>Existing guide</p>'), 'additive full HTML injection');

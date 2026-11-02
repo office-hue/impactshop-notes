@@ -233,7 +233,7 @@
         // FactLens context and decide whether its signed return takes precedence.
         // The password-manager form and all nonmatching routes remain unchanged.
         if (current.origin === "https://app.sharity.hu" && current.pathname === "/profil/" &&
-            returns.length === 1 && returns[0] === "https://sharity.hu/sajat-sharity" &&
+            returns.length === 1 && ["https://sharity.hu/sajat-sharity", "https://sharity.hu/vasarlasi-seged"].includes(returns[0]) &&
             !hasSelection && !hasReturnArray && completion &&
             completion.origin === current.origin && completion.pathname === "/profil/" &&
             !completion.username && !completion.password &&
@@ -241,7 +241,7 @@
             completion.searchParams.get("impactshop_profile_return_complete") === "1" &&
             completion.searchParams.getAll("bridge_target").length === 1 &&
             ["account", "restore"].includes(completion.searchParams.get("bridge_target"))) {
-          completion.searchParams.set("return", "https://sharity.hu/sajat-sharity");
+          completion.searchParams.set("return", returns[0]);
           destination = completion.toString();
         }
       } catch (e) {

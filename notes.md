@@ -116,6 +116,14 @@ meglévő guard PASS, de action-bar nincs a futtatott listájában; határait r�
 Forrás, koherencia, kézi éles checklist, költség, korlátok és rollback:
 [protected change record](docs/protected-change-records/2026-10-31-sharity-international-preferences.md).
 Nincs push/PR/merge/deploy/aktiválás; előbb WP-fogadó, utána Next küldő.
+## 2026-11-02 — Publikus marketingmérés útvonalkiegészítés
+
+A két meglévő measurement MU-fájl listája kiegészült a reklámozói,
+pályázati tájékoztató, partner-API, Impact Challenge publikus belépő és
+publikus jogi útmutató oldallal. A guide/Challenge üzleti logika, identity,
+affiliate és pontkezelés változatlan. 59 PHP és 5 JS/HTTP-fixture sikeres;
+független célzott review nem talált hibát. Forrásjelölt, nincs új telepítés
+vagy aktiválás. Kiadás/rollback/UI: `docs/marketing-coverage-2026-11-02.md`.
 
 ## 2026-10-31 — Publikus mérés: WordPress preview kizárása
 
@@ -8669,3 +8677,19 @@ Szigorú kiválasztott mód/deviza binding az ajánlat és dispatch előtt; tula
 ## 66. D2k — availability és fizetési kliens (2026-11-02)
 
 Kért NGO-ra korlátozott publikus mode/currency/bounds/árlista; meglévő form és BFF bekötve külön ajánlathoz/megerősítéshez, URL-ben rögzített quote/nyelv, refresh/bizonytalan eredmény GET-only, prepared kézi folytatás.129 PHP+13runtime és134webteszt sikeres; scoped TypeScript7 érintett fájl+importok sikeres. Teljes web tsc NEM PASS: érintetlen hiányzó dependency/generáltoldal-hibák; saját típhiba javítva. Független review két találata javítva/visszaolvasva. Hermes043 részleges javított átvétel,41446token, becsült0.0049995946USD, tényleges díj ismeretlen. Részletek/javítás/release/rollback: Notes protected-change-records/2026-11-02-sharity-donation-prices.md §66. Forráskészség nem merge/deploy/aktiválás: hiteles account és közös fedezet továbbra hiányzik, minden mainművelethez Arnold új csendablaka kell. Teljes§62 cél és VB7/Sharing12 nyitott. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+## 2026-11-02 — Shopping purchase saját ág
+Jóváhagyott, alapból OFF hitelesített Dognet indítás megvalósítása. Scope/kockázat/rollback: docs/dev-plans/shopping-purchase-2026-11-02.md. Éles írás nincs.
+
+2026-11-02: új shopping út és külön jóváhagyott, kétfájlos profil-return kész helyben.
+SQL52 / profilPHP72 / Chrome5 / affiliate-regresszió / Bástya negatív suite sikeres.
+Review újracsatlakozási finding javítva; a reviewer használati limit miatt nem
+fejezte be a zárókört. Aktuális rekord és rollback:
+`docs/protected-change-records/2026-11-02-shopping-purchase.md`. Éles állapot érintetlen.
+
+## 2026-11-02 — shopping draft PR és CI-referencia
+
+#245 (webpár ai-agent #1880): saját main-integráció és push visszaolvasva.
+A régi retirement teszt affiliate-guard referenciafrissítése célzottan a
+jóváhagyott guardváltozást követi; a védelmet nem kapcsolja ki. Részletek:
+`docs/protected-change-records/2026-11-02-shopping-purchase.md`. Review nyitott,
+merge/telepítés/új shopping aktiválás nincs.

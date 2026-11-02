@@ -2,6 +2,11 @@
   'use strict';
   if (location.origin !== 'https://app.sharity.hu' || document.getElementById('impactshop-measurement-choice')) return;
   const routes = {
+    '/reklamozoknak': 'sharity-app.advertisers',
+    '/palyazati-tajekoztato': 'sharity-app.grants',
+    '/partner-api': 'sharity-app.partner-api',
+    '/impact-challenge': 'sharity-app.impact-challenge',
+    '/ngo-guides/jogi-dokumentumok': 'sharity-app.ngo-guides',
     '/impactshop': 'sharity-app.impactshop', '/rolunk': 'sharity-app.about', '/cegeknek': 'sharity-app.companies',
     '/befektetoknek': 'sharity-app.investors', '/ngo-guides': 'sharity-app.ngo-guides',
     '/ngo-guides/impact-shop': 'sharity-app.ngo-guides', '/ngo-guides/impact-challenge': 'sharity-app.ngo-guides', '/ngo-guides/ngo-card': 'sharity-app.ngo-guides',

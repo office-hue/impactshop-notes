@@ -89,6 +89,25 @@ meglévő guard PASS, de action-bar nincs a futtatott listájában; határait r�
 Forrás, koherencia, kézi éles checklist, költség, korlátok és rollback:
 [protected change record](docs/protected-change-records/2026-10-31-sharity-international-preferences.md).
 Nincs push/PR/merge/deploy/aktiválás; előbb WP-fogadó, utána Next küldő.
+## 2026-11-02 — Publikus marketingmérés útvonalkiegészítés
+
+A két meglévő measurement MU-fájl listája kiegészült a reklámozói,
+pályázati tájékoztató, partner-API, Impact Challenge publikus belépő és
+publikus jogi útmutató oldallal. A guide/Challenge üzleti logika, identity,
+affiliate és pontkezelés változatlan. 59 PHP és 5 JS/HTTP-fixture sikeres;
+független célzott review nem talált hibát. Forrásjelölt, nincs új telepítés
+vagy aktiválás. Kiadás/rollback/UI: `docs/marketing-coverage-2026-11-02.md`.
+
+
+## 2026-11-02 — shopping vásárlási indítás, helyi implementáció
+
+Három runtimefájl: owner-hitelesített Dognet POST + aktív NGO-lista,
+explicit nullable intentoszlop és vásárlási profil-visszatérés.
+Új lane alapból OFF. 52 valódi SQL-check, 72 profil-PHP-eset, 5 célzott
+Chrome-fixture és affiliate/Bástya tesztek sikeresek. Független záró review
+használati keret miatt nyitott; nincs merge/telepítés/aktiválás.
+Részletek: `docs/protected-change-records/2026-11-02-shopping-purchase.md`.
+A korábbi pénzügyi állapotbejegyzések történeti adatok, itt nem frissültek.
 
 ## 2026-10-31 — Publikus mérés: WordPress preview kizárása
 

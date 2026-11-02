@@ -55,6 +55,13 @@ if (($argv[1] ?? '') !== '--request') {
             $cases[] = ['query ' . $scenario, ['url' => TEST_ENTRY . '&prctx=prctx_fixture', 'scenario' => $scenario], 'native'];
         }
     }
+    // Run the same malformed-input and FactLens-priority cases for the second fixed destination.
+    $shoppingCases = [];
+    foreach ($cases as [$name, $input, $expected]) {
+        $input['url'] = str_replace('sajat-sharity', 'vasarlasi-seged', $input['url'] ?? TEST_ENTRY);
+        $shoppingCases[] = [$name, $input, is_string($expected) ? str_replace('sajat-sharity', 'vasarlasi-seged', $expected) : $expected];
+    }
+    $cases = array_merge($cases, $shoppingCases);
     foreach ($cases as [$name, $input, $expected]) {
         $result = run_request($input);
         $native = ($input['home'] ?? 'https://app.sharity.hu') . '/profil/#impactshop-restore-title';
