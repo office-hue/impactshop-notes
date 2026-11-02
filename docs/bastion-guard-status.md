@@ -985,3 +985,16 @@ foreign pins and guard logic unchanged. 90 account checks including native two-c
 CAS/races;197checkout/401financeCLI/13runtime/129quotes, independent final review no findings.
 Scope/proof/CLI/rollout/rollback/manual UI: protected-change-records/2026-11-02-sharity-donation-prices.md section71.
 Source only; direct binding still needs real operational evidence. No main/deploy/activation.
+
+
+## D2p platform movements — own reviewed baseline (2026-11-02)
+
+Product `8fb07ce5ff991ce5209591afeca22968498dec6a`. Only own stripe-checkout.php and finance-ledger.php hashes,
+generated_at and manifest checksum change; original timestamp, inventory, foreign pins
+and guard logic remain unchanged. Actual platform account is read without Stripe-Account;
+exact fee/refund movements share the existing registry, with legacy evidence preserved and
+platform totals separated from NGO totals. Amplifier allocation and activation remain disabled.
+1340 native MariaDB assertions (66 new D2p),437 finance/CLI,495 adjustments,197 checkout,
+13 fresh runtime checks passed; independent source review found no issues and did not run tests.
+Scope, manual UI checklist, rollout and rollback: protected-change-records/2026-11-02-sharity-donation-prices.md section72.
+No main operation, deploy or activation.
