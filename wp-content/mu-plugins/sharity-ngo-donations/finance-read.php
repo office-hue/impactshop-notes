@@ -50,7 +50,20 @@ function sharity_donation_cli_payment_record(array $args, array $assoc): void
     }
 }
 
+function sharity_donation_cli_payment_reconcile(array $args, array $assoc): void
+{
+    try {
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || array_keys($assoc) !== ['order']
+            || !is_string($assoc['order']) || !preg_match('/^do_[a-f0-9]{32}$/D', $assoc['order'])
+            || !function_exists('sharity_donation_finance_reconcile')) { throw new RuntimeException(); }
+        WP_CLI::line(json_encode(sharity_donation_finance_reconcile($assoc['order'], time()), JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    } catch (Throwable $error) {
+        WP_CLI::error(in_array($error->getMessage(), ['DONATION_RECONCILE_LIMIT', 'DONATION_RECONCILE_CONFLICT'], true) ? $error->getMessage() : 'DONATION_RECONCILE_UNAVAILABLE');
+    }
+}
+
 if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('sharity donations payment-reconcile', 'sharity_donation_cli_payment_reconcile');
     WP_CLI::add_command('sharity donations finance-schema', 'sharity_donation_cli_finance_schema');
     WP_CLI::add_command('sharity donations payment-record', 'sharity_donation_cli_payment_record');
     WP_CLI::add_command('sharity donations payment-inspect', 'sharity_donation_cli_payment_inspect');

@@ -2221,3 +2221,10 @@ Pilot az Alapítvány, HUF; Arnold megerősítette az azonosított Stripe-kifize
 ## 63. Sharity D2h - 2026-11-02
 
 Immutable penzugyi megfigyelesi naplo + explicit admin schema/record CLI; nincs konyvelt adomany vagy aktivalas. UNIQUE(order_id,digest), teljes readback,4 MiB es packetkorlat. Teszt altal feltart korabbi order kulcs-quote race javitva. 281 MariaDB (ebbol105 D2h),400 penzugyi/CLI,461 adjustment,13 runtime eset sikeres; fuggetlen review lelet nelkul. Izolalt kontener torolve; Stripe HTTP helyettesitett. Hermes040 reszleges javitott atvetel, uj hivas nelkul; becsles0.002791698USD, tenyleges koltseg ismeretlen. Reszletek, diagnozis, release/rollback es UI-checklist: docs/protected-change-records/2026-11-02-sharity-donation-prices.md 63. fejezet. Main fetch/merge, telepites es aktivalas nincs. Kovetkezo: egyedi penzmozgasok es kozos fedezeti egyeztetes; teljes62-es cel nyitott. SUBSTACK-HANDOVER.md megorzendo.
+
+
+## 64. D2i pénzmozgásleltár (2026-11-02)
+
+A tárolt donation-megfigyelések read-only egyeztetése elkészült: `payment-reconcile --order=<do_id>`. Account/livemode/balance-transaction szerint deduplikál, eltérő pénzügyi tényt elutasít; eredeti összegek és megfigyelési státuszok külön. Platformaccount-bizonyíték nélkül a platformmozgások külön feloldatlanok. Nincs --apply, írás, SDK/providerhívás vagy aktiválás. Cross-order regiszter/backing/elszámolás továbbra nyitott.
+
+936 valódi MariaDB-assertion (655 D2i, fixture-checkekkel),401 pénzügyi/CLI+461 adjustment,13 runtime; offline HTTP. A köztes régi tesztóra-hiba kizárólag a HTTP-harnessben javítva, végső futás sikeres. Saját konténer törölve/readback. Független review lelet nélkül. Hermes0411hívás20523token, becsült0.001874145USD; nem adott kódot, teljes helyi implementáció, nincs retry vagy megtakarítási állítás. Részletek/release/rollback: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §64; A kanonikus terv/checkpoint DOCSYNC. Saját commit/push/PR után mainablak külön kérendő. Merge/deploy/aktiválás/élő elfogadás nincs; teljes projekt nyitott. SUBSTACK-HANDOVER.md megőrzött hivatkozás.

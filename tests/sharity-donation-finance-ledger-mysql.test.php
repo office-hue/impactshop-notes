@@ -199,6 +199,7 @@ try {
         check(!sharity_donation_finance_schema_apply() && get_option(SHARITY_DONATION_FINANCE_SCHEMA_OPTION) === '0' && financeCount() === $n,'incompatible schema rejected preserving rows');
         $wpdb->db->query($restore); check(sharity_donation_finance_schema_apply(),'explicit fixture repair verified');
     }
+    require __DIR__ . '/sharity-donation-finance-reconcile-mysql.test.php';
     check(calls() >= $beforePosts && !isset($data['allocation_minor']), 'no settlement claim');
     echo 'Donation finance MariaDB: '.($checks-$financeStart)." checks; parallel connections, uncertain INSERT, no provider POST during record\n";
 } finally {

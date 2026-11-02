@@ -263,6 +263,10 @@ try {
     $differentResult = array_replace($result, ['session_id' => 'cs_test_OTHER']);
     fails(fn() => sharity_donation_order_save_result($subject, $first['order_id'], $differentResult, $now), 'ORDER_RESULT_CONFLICT');
     fails(fn() => sharity_donation_order_save_result($subject, $first['order_id'], array_replace($result, ['checkout_url' => 'https://evil.test/c/pay/x']), $now), 'ORDER_RESULT_INVALID');
+    // HTTP uses wall-clock time(). A frozen SDK clock can be one second behind
+    // the newly prepared envelope and fail before POST at a second boundary.
+    $fixtureAdapter = $adapter;
+    $adapter = new Sharity_Stripe_Checkout_Adapter(Sharity_Stripe_Checkout_Adapter::client('rk_test_SYNTHETICNOTACREDENTIAL'));
     ImpactShop_Sharity_Web_Session::$subject = $subject;
     foreach (['hu', 'en', 'de', 'fr'] as $locale) {
         $request = new WP_REST_Request(['quote_id' => fixtureQuote(), 'locale' => $locale], 'http-' . $locale . '-' . $nonce);
@@ -285,6 +289,7 @@ try {
     check(sharity_donation_order_handle($request)->status === 202, 'HTTP provider uncertainty returned as pending reconciliation');
     $transport->drop = false;
     check(sharity_donation_order_handle($request)->status === 202 && calls() === $before + 1, 'HTTP uncertainty replay never re-POSTs');
+    $adapter = $fixtureAdapter;
     require __DIR__ . '/sharity-donation-webhook-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-ledger-mysql.test.php';
     // Schema drift rejection must preserve rows and clear readiness. Fixture-only ALTER.
