@@ -1073,3 +1073,17 @@ platform totals separated from NGO totals. Amplifier allocation and activation r
 13 fresh runtime checks passed; independent source review found no issues and did not run tests.
 Scope, manual UI checklist, rollout and rollback: protected-change-records/2026-11-02-sharity-donation-prices.md section72.
 No main operation, deploy or activation.
+
+
+## D2q verified counterleg — own reviewed baseline (2026-11-02)
+
+Product `8dceb22e54c4ed5209585882768ae6bc403cee43`. Only the two own stripe-checkout.php /
+finance-ledger.php hashes, generated_at and manifest checksum change. Original timestamp,
+inventory, foreign pins and guard logic are unchanged. Exact native NGO credit and
+combined-account conservation permit only a provisional net80/20 target; full liability
+unknown and all financial activation false.1407 native MariaDB (67 D2q),437 finance/CLI,
+521 adjustment (26 D2q SDK),197 checkout,13 runtime; independent final source review clear.
+Existing rollout/rollback/manual UI checklist and costs: protected change record section73.
+The local pin-update assertion first compared JSON key order; it stopped before any write.
+Corrected to compare the exact two-key set; no foreign pin or guard was changed.
+No main window, live money, deployment or activation.
