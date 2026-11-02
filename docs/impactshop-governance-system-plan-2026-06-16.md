@@ -1036,3 +1036,8 @@ rekord: `protected-change-records/2026-11-02-shopping-purchase.md`.
 ### Sharity §67 — Notes main integrálva
 
 Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.
+
+
+## D2l movement-regiszter — saját baseline (2026-11-02)
+
+Termékcommit bd17406b457456e15f600f9ad6fccbacda8cd45d. Kizárólag saját finance-ledger.php/finance-read.php hash és manifest-oldalkocsi frissül; nincs új inventory, idegen pin vagy guardlogika.1060 valódi MariaDB assertion (110 új registry),401offline financial/CLI,13runtime, független kód-/tesztreview sikeres. Kockázat, pontos CLI, funkciólista, kézi kiadási checklist, backup/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §68. A regiszter nem egyeztetett adomány vagy fedezet. Nincs mainművelet, telepítés vagy aktiválás.
