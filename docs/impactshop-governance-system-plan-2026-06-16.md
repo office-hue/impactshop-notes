@@ -981,3 +981,7 @@ A meglévő Bástya inventory három új saját fájlra bővül: sharity-ngo-don
 ## 2026-11-02 — D2c célzott donation inventory
 
 Csak sharity-ngo-donations/orders.php került a meglévő védelembe; config önhash és checksumoldalkocsik frissültek, idegen pin/szabály változatlan. Teljes tényleges inventory és6 izolált hash-eset sikeres.77 valódi MariaDB-ellenőrzés és független scoped review; nincs loader/route/aktiválás. Részletes előállapot, scope, kockázat, rollback és kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §57. Korábbi pénzügyi adat megmarad.
+
+## 2026-11-02 D2d célzott inventory
+
+Két új saját donation-modul: http.php/runtime.php, meglévő donation loader pin és config önhash/oldalkocsik. Idegen pin és guard-szabály változatlan. Teljes inventory+6 hash-eset sikeres; auth/SDK/párhuzamos SQL határ célzottan tesztelt, független review blokkoló nélkül. Nincs telepítés/aktiválás. Koherencia, funkciólista, rollback és kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §58.
