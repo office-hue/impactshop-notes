@@ -2257,3 +2257,8 @@ Szigorú kiválasztott mód/deviza binding az ajánlat és dispatch előtt; tula
 ## 66. D2k — availability és fizetési kliens (2026-11-02)
 
 Kért NGO-ra korlátozott publikus mode/currency/bounds/árlista; meglévő form és BFF bekötve külön ajánlathoz/megerősítéshez, URL-ben rögzített quote/nyelv, refresh/bizonytalan eredmény GET-only, prepared kézi folytatás.129 PHP+13runtime és134webteszt sikeres; scoped TypeScript7 érintett fájl+importok sikeres. Teljes web tsc NEM PASS: érintetlen hiányzó dependency/generáltoldal-hibák; saját típhiba javítva. Független review két találata javítva/visszaolvasva. Hermes043 részleges javított átvétel,41446token, becsült0.0049995946USD, tényleges díj ismeretlen. Részletek/javítás/release/rollback: Notes protected-change-records/2026-11-02-sharity-donation-prices.md §66. Forráskészség nem merge/deploy/aktiválás: hiteles account és közös fedezet továbbra hiányzik, minden mainművelethez Arnold új csendablaka kell. Teljes§62 cél és VB7/Sharing12 nyitott. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+
+
+### Sharity §67 — Notes main integrálva
+
+Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.

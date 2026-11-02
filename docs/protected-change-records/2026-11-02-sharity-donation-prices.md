@@ -335,3 +335,14 @@ Független product review két konkrét eltérése javítva/visszaolvasva: prepa
 Kiadás/rollback a§62/65 útján: saját product/docs commit és külön egyetlen main-modul hash; Notes receiver előbb, web kliens utána. Tiszta merge-SHA, staging/azonos productionbyte, privát mentés/CAS/readback; nincs új séma vagy release-rendszer. Vercel flag és NGO/mód/deviza binding csak igazolt account/díj/felelősség/fedezet+sandbox után aktiválható. Rollback új indítás OFF, saját file/pin/alias; meglévő order/webhook/napló megmarad. Maincsendablak kérdés még válaszra vár, mainművelet nincs.
 
 Forrás tesztelt; commit/push/PR/Secretary exact SHA külön visszaolvasandó. Merge/telepítés/aktiválás/pénzügyi elfogadás nincs. Következő: cross-order mozgásregiszter és közös likvid fedezet, hiteles account CLI/binding, directHUF pilot, Amplifier/D3/D4, további devizák/affiliate/Offerwall és VB7/Sharing12. Teljes cél aktív. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+
+
+## 67. Notes main-integráció — 2026-11-02
+
+Arnold külön ötperces csendablakot engedélyezett kizárólag a Notes main lekérésére és saját #244 ág integrációjára. 19:22:57 UTC-től, a művelet és visszaolvasás után 19:25 UTC előtt felszabadítva; PR-merge/telepítés nem történt. Saját mergecommit `8c1800e9ebbc61c8d64e0a3a1f8d4a08bf24832b`, szülők `c2b01c8e4be09b9d016de5b855769d2f575d9168` és a tényleges távoli main `d5ff78fe966065bb5e478c2105a6e493f7528f31`. Tiszta munkafa és main-ancestor visszaolvasva. A fetch csak FETCH_HEAD-et frissített, a régi origin/main ref helyett a távolival egyező FETCH_HEAD került integrálásra.
+
+Hat dokumentáció/hash ütközés rendezve. A Bástya, governance, notes és snapshot mindkét oldali bejegyzései megmaradtak. A két identity-hash a tényleges integrált PHP/JS-re mutat, más pin felülírása nincs. Az identity PHP byteazonos a mainnel; JS-ben csak a korábban tesztelt lokalizációs badge-jelölő és nickname-pending módosítás marad pluszban. A main shopping/marketing/affiliate változásai változatlanul átvéve; donation forrás nem változott.
+
+Célzott ellenőrzés:72 PHP completion-eset, teljes meglévő Bástya-inventory nulla drift és6 hash-eset, majd38 Chrome-eset sikeres. Utóbbi a tényleges PHP/JS visszatérési teszt és nemzetközi preferenciateszt együtt, külső hálózat tiltva. A PHP teszt önmagában a canonical resolver ágat NOT RUN-ként jelzi; a böngészőteszt saját fixture bizonyíték, nem élő loginelfogadás. Első node-futás a Notes alatt nem talált Playwrightot; az előírt USER_CARD_TEST_DEPENDENCIES_ROOT meglévő web-függőségút feloldásával sikeres, telepítés/shared cache módosítás nélkül.
+
+A merge commit csak a saját PR-ágat integrálja. Mainbe történő PR-merge, staging/production, aktiválás és pénzügyi elfogadás nincs. Az A main-integrációhoz külön csendablak kérve; válaszra vár. A D2k teszt/review bizonyíték változatlanul érvényes.

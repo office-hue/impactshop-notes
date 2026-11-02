@@ -1031,3 +1031,8 @@ A jóváhagyott megerősített Dognet POST a meglévő affiliate-runtime modulba
 konstruál linket; a guard csak e szakaszban engedi, a régi peremeket megtartja.
 Nincs új guard vagy kiadási rendszer. Negatív suite sikeres, éles kiadás még nincs;
 rekord: `protected-change-records/2026-11-02-shopping-purchase.md`.
+
+
+### Sharity §67 — Notes main integrálva
+
+Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.

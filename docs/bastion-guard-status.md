@@ -956,3 +956,8 @@ shopping POST-ban engedett; régi ágban továbbra tiltott. Lane OFF, payload ha
 owner-recheck, kapcsolatvédelem és explicit CLI-migráció a célzott ellenőrzésben.
 Guard és negatív suite sikeres. A három módosított runtime hash frissítve;
 telepítési PASS nincs. Részletek: `protected-change-records/2026-11-02-shopping-purchase.md`.
+
+
+### Sharity §67 — Notes main integrálva
+
+Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.

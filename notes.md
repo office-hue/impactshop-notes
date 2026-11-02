@@ -8693,3 +8693,8 @@ A régi retirement teszt affiliate-guard referenciafrissítése célzottan a
 jóváhagyott guardváltozást követi; a védelmet nem kapcsolja ki. Részletek:
 `docs/protected-change-records/2026-11-02-shopping-purchase.md`. Review nyitott,
 merge/telepítés/új shopping aktiválás nincs.
+
+
+### Sharity §67 — Notes main integrálva
+
+Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.
