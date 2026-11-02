@@ -264,6 +264,170 @@ final class Sharity_Stripe_Checkout_Adapter
         } catch (Throwable $error) { throw new RuntimeException('DONATION_EVIDENCE_UNAVAILABLE'); }
     }
 
+    /** Complete bounded resource lists, NOT an atomic snapshot or settlement authorization.
+     * At most 40 GETs (two original reads + three collections of up to ten pages).
+     * All external calls remain outside any caller-owned DB transaction.
+     */
+    public function retrieveAdjustmentEvidence(string $sessionId, array $e): array
+    {
+        $original = $this->retrievePaymentEvidence($sessionId, $e);
+        $result = ['evidence_version' => 1, 'scope' => 'observed_adjustment_resources',
+            'original' => $original, 'payment_verified' => false, 'allocation_eligible' => false,
+            'atomic_snapshot' => false, 'evidence_state' => 'payment_pending', 'resources_complete' => false,
+            'settlement_reconciled' => false, 'refunds' => [], 'disputes' => [], 'fee_refunds' => [],
+            'unresolved' => [], 'balances_pending' => false];
+        if ($original['evidence_state'] !== 'original_charge_observed') { return $result; }
+        $options = $e['options']; unset($options['idempotency_key']);
+        $platform = $options; unset($platform['stripe_account']);
+        try {
+            $chargeId = $original['charge_id']; $piId = $original['payment_intent_id'];
+            $refunds = $this->adjustmentList(fn($p) => $this->stripe->refunds->all($p, $options),
+                ['charge' => $chargeId, 'expand' => ['data.balance_transaction', 'data.failure_balance_transaction']], 'refund', ['re']);
+            // Always list disputes: the current charge flag is not dispute history.
+            $disputes = $this->adjustmentList(fn($p) => $this->stripe->disputes->all($p, $options), ['charge' => $chargeId], 'dispute', ['dp', 'du']);
+            $fee = $original['application_fee'];
+            $feeRefunds = $fee === null ? [] : $this->adjustmentList(
+                fn($p) => $this->stripe->applicationFees->allRefunds($fee['id'], $p, $platform),
+                ['expand' => ['data.balance_transaction']], 'fee_refund', ['fr']);
+            foreach ([[$original['charge_refund_state'], count($refunds)], [$fee['refund_state'] ?? null, count($feeRefunds)]] as [$inline, $count]) {
+                if ($inline !== null && ($count < $inline['listed_count']
+                    || (!$inline['has_more'] && $count !== $inline['listed_count'])
+                    || ($inline['has_more'] && $count <= $inline['listed_count']))) { throw new RuntimeException(); }
+            }
+            $seen = ['connected:' . $original['initial_charge_balance']['id'] => true];
+            if ($fee !== null) { $seen['platform:' . $fee['initial_balance']['id']] = true; }
+            $pending = $original['balances_pending']; $unresolved = [];
+            $successfulRefunds = 0; $nonfailedRefunds = 0;
+            foreach ($refunds as $r) {
+                $amount = $this->evidenceMoney($r['amount'] ?? null, 1);
+                $currency = $this->evidenceCurrency($r['currency'] ?? null);
+                $status = $r['status'] ?? null;
+                if (($r['charge'] ?? null) !== $chargeId || !array_key_exists('payment_intent', $r)
+                    || ($r['payment_intent'] !== null && $r['payment_intent'] !== $piId)
+                    || $currency !== $original['payment']['currency'] || $amount > (int) $original['payment']['amount_minor']
+                    || !in_array($status, ['pending', 'requires_action', 'succeeded', 'failed', 'canceled'], true)) { throw new RuntimeException(); }
+                $entry = ['id' => $r['id'], 'amount_minor' => (string) $amount, 'currency' => $currency,
+                    'created' => $this->adjustmentCreated($r), 'status' => $status];
+                $entry['balance'] = $this->adjustmentBalance($r, 'balance_transaction', $r['id'], 'connected',
+                    ['refund', 'payment_refund'], $seen, $pending, $unresolved);
+                $entry['failure_balance'] = $this->adjustmentBalance($r, 'failure_balance_transaction', $r['id'], 'connected',
+                    ['refund_failure', 'payment_failure_refund', 'payment_refund', 'adjustment'], $seen, $pending, $unresolved);
+                if ($entry['balance'] !== null) {
+                    if ((int) $entry['balance']['gross_minor'] >= 0) { throw new RuntimeException(); }
+                    $this->evidenceConversion($entry['balance'], $currency, -$amount);
+                }
+                if ($entry['failure_balance'] !== null) {
+                    if ($entry['balance'] === null || !in_array($status, ['failed', 'canceled'], true)) { throw new RuntimeException(); }
+                    if ((int) $entry['failure_balance']['gross_minor'] <= 0) { throw new RuntimeException(); }
+                    $this->evidenceConversion($entry['failure_balance'], $currency, $amount);
+                }
+                if ($status === 'succeeded') {
+                    $successfulRefunds += $amount;
+                    if ($entry['balance'] === null) { $unresolved[] = 'refund_balance_missing'; }
+                }
+                if (!in_array($status, ['failed', 'canceled'], true)) { $nonfailedRefunds += $amount; }
+                if (in_array($status, ['pending', 'requires_action'], true)) { $unresolved[] = 'refund_unresolved'; }
+                if (in_array($status, ['failed', 'canceled'], true) && $entry['balance'] !== null && $entry['failure_balance'] === null) {
+                    $unresolved[] = 'refund_reversal_missing';
+                }
+                $result['refunds'][] = $entry;
+            }
+            // Stripe aggregates can include in-progress refunds. Neither total is silently selected as final.
+            $aggregate = (int) $original['charge_refund_state']['amount_refunded_minor'];
+            if ($aggregate < $successfulRefunds || $aggregate > $nonfailedRefunds) { throw new RuntimeException(); }
+            if ($aggregate !== $successfulRefunds) { $unresolved[] = 'refund_aggregate_pending'; }
+            foreach ($disputes as $d) {
+                $status = $d['status'] ?? null;
+                if (($d['charge'] ?? null) !== $chargeId || ($d['livemode'] ?? null) !== $e['snapshot']['livemode']
+                    || !array_key_exists('payment_intent', $d) || ($d['payment_intent'] !== null && $d['payment_intent'] !== $piId)
+                    || !in_array($status, ['warning_needs_response', 'warning_under_review', 'warning_closed', 'needs_response', 'under_review', 'won', 'lost', 'appeal_needs_response', 'appeal_under_review', 'prevented'], true)
+                    || !is_array($d['balance_transactions'] ?? null) || !array_is_list($d['balance_transactions'])
+                    || count($d['balance_transactions']) > 2) { throw new RuntimeException(); }
+                $entry = ['id' => $d['id'], 'amount_minor' => (string) $this->evidenceMoney($d['amount'] ?? null, 1),
+                    'currency' => $this->evidenceCurrency($d['currency'] ?? null), 'created' => $this->adjustmentCreated($d),
+                    'status' => $status, 'balances' => []];
+                foreach ($d['balance_transactions'] as $b) {
+                    $balance = $this->adjustmentBalance(['balance' => $b], 'balance', $d['id'], 'connected',
+                        ['adjustment'], $seen, $pending, $unresolved);
+                    if ($balance === null) { $unresolved[] = 'dispute_balance_missing'; }
+                    else { $entry['balances'][] = $balance; }
+                }
+                // The disputed nominal amount is not a balance movement, even when currencies coincide.
+                if (!in_array($status, ['warning_closed', 'won', 'lost', 'prevented'], true)) { $unresolved[] = 'dispute_open'; }
+                if (in_array($status, ['won', 'lost'], true) && $entry['balances'] === []) { $unresolved[] = 'dispute_balance_missing'; }
+                $result['disputes'][] = $entry;
+            }
+            if ($original['disputed'] && $disputes === []) { throw new RuntimeException(); }
+            $feeRefunded = 0;
+            foreach ($feeRefunds as $r) {
+                $amount = $this->evidenceMoney($r['amount'] ?? null, 1);
+                $currency = $this->evidenceCurrency($r['currency'] ?? null);
+                if (($r['fee'] ?? null) !== $fee['id'] || $currency !== $fee['currency']) { throw new RuntimeException(); }
+                $feeRefunded += $amount;
+                $entry = ['id' => $r['id'], 'amount_minor' => (string) $amount, 'currency' => $currency,
+                    'created' => $this->adjustmentCreated($r), 'fee_id' => $fee['id']];
+                $entry['balance'] = $this->adjustmentBalance($r, 'balance_transaction', $r['id'], 'platform',
+                    ['application_fee_refund'], $seen, $pending, $unresolved);
+                if ($entry['balance'] === null) { $unresolved[] = 'fee_refund_balance_missing'; }
+                else { if ((int) $entry['balance']['gross_minor'] >= 0) { throw new RuntimeException(); }
+                    $this->evidenceConversion($entry['balance'], $currency, -$amount); }
+                // Platform debit does not prove connected-account credit. Never synthesize that credit.
+                $entry['connected_credit_verified'] = false;
+                $unresolved[] = 'fee_refund_connected_credit_unreconciled';
+                $result['fee_refunds'][] = $entry;
+            }
+            if ($fee !== null && (string) $feeRefunded !== $fee['refund_state']['amount_refunded_minor']) { throw new RuntimeException(); }
+            if ($original['failure_balance_transaction_id'] !== null) { $unresolved[] = 'charge_failure_requires_reconciliation'; }
+            // Detect changes visible in the original aggregate while the lists were fetched.
+            // This is NOT a provider atomic snapshot and does not exclude later or unobserved events.
+            if ($this->retrievePaymentEvidence($sessionId, $e) !== $original) { throw new RuntimeException(); }
+            $unresolved = array_values(array_unique($unresolved)); sort($unresolved);
+            return array_replace($result, ['evidence_state' => 'adjustment_resources_observed', 'resources_complete' => true,
+                'balances_pending' => $pending, 'unresolved' => $unresolved]);
+        } catch (Throwable $error) { throw new RuntimeException('DONATION_ADJUSTMENT_EVIDENCE_UNAVAILABLE'); }
+    }
+
+    private function adjustmentList(callable $fetch, array $params, string $object, array $prefixes): array
+    {
+        $all = []; $seen = [];
+        for ($page = 0; $page < 10; $page++) {
+            $list = $fetch($params + ['limit' => 100])->toArray();
+            if (($list['object'] ?? null) !== 'list' || !is_bool($list['has_more'] ?? null)
+                || !is_array($list['data'] ?? null) || !array_is_list($list['data']) || count($list['data']) > 100
+                || ($list['has_more'] && $list['data'] === [])) { throw new RuntimeException(); }
+            foreach ($list['data'] as $row) {
+                if (!is_array($row) || ($row['object'] ?? null) !== $object) { throw new RuntimeException(); }
+                $valid = false;
+                foreach ($prefixes as $prefix) { $valid = $valid || $this->evidenceId($row['id'] ?? null, $prefix); }
+                if (!$valid || isset($seen[$row['id']])) { throw new RuntimeException(); }
+                $seen[$row['id']] = true; $all[] = $row;
+            }
+            if (!$list['has_more']) { return $all; }
+            $params['starting_after'] = $list['data'][count($list['data']) - 1]['id'];
+        }
+        throw new RuntimeException();
+    }
+
+    private function adjustmentCreated(array $row): int
+    {
+        if (!is_int($row['created'] ?? null) || $row['created'] < 1) { throw new RuntimeException(); }
+        return $row['created'];
+    }
+
+    private function adjustmentBalance(array $row, string $field, string $source, string $scope, array $types,
+        array &$seen, bool &$pending, array &$unresolved): ?array
+    {
+        if (!array_key_exists($field, $row)) { $unresolved[] = 'balance_field_missing'; return null; }
+        $b = $row[$field];
+        if ($b === null) { return null; }
+        // Expanded balances are requested explicitly. No unbounded per-row fetch fallback.
+        if (is_string($b) && $this->evidenceId($b, 'txn')) { $unresolved[] = 'balance_not_expanded'; return null; }
+        if (!is_array($b) || !$this->evidenceId($b['id'] ?? null, 'txn') || isset($seen[$scope . ':' . $b['id']])) { throw new RuntimeException(); }
+        $balance = $this->evidenceBalance($b, $b['id'], $source, $types, true);
+        $seen[$scope . ':' . $b['id']] = true; $pending = $pending || $balance['status'] === 'pending';
+        return $balance + ['scope' => $scope, 'source_id' => $source, 'type' => $b['type']];
+    }
+
     private function evidenceId($id, string $prefix): bool
     {
         // Except Checkout IDs, Stripe resource IDs do not encode test/live mode.
@@ -299,10 +463,10 @@ final class Sharity_Stripe_Checkout_Adapter
     }
 
     /** Project only arithmetic facts; discard descriptions, customer/card data and raw payloads. */
-    private function evidenceBalance(array $b, string $id, string $source, array $types): array
+    private function evidenceBalance(array $b, string $id, string $source, array $types, bool $signed = false): array
     {
-        $amount = $this->evidenceMoney($b['amount'] ?? null, 1);
-        $fee = $this->evidenceMoney($b['fee'] ?? null);
+        $amount = $this->evidenceMoney($b['amount'] ?? null, $signed ? -999999999999 : 1);
+        $fee = $this->evidenceMoney($b['fee'] ?? null, $signed ? -999999999999 : 0);
         $net = $this->evidenceMoney($b['net'] ?? null, -999999999999);
         $currency = $this->evidenceCurrency($b['currency'] ?? null);
         if (($b['object'] ?? null) !== 'balance_transaction' || ($b['id'] ?? null) !== $id || ($b['source'] ?? null) !== $source
@@ -316,9 +480,9 @@ final class Sharity_Stripe_Checkout_Adapter
         foreach ($b['fee_details'] as $d) {
             if (!is_array($d) || ($d['currency'] ?? null) !== strtolower($currency) || !is_string($d['type'] ?? null)
                 || !preg_match('/^[a-z][a-z0-9_]{0,63}$/D', $d['type'])) { throw new RuntimeException(); }
-            $value = $this->evidenceMoney($d['amount'] ?? null);
+            $value = $this->evidenceMoney($d['amount'] ?? null, $signed ? -999999999999 : 0);
             $sum += $value;
-            if ($sum > $fee) { throw new RuntimeException(); }
+            if (!$signed && $sum > $fee) { throw new RuntimeException(); }
             if ($d['type'] === 'application_fee') { $applicationFee += $value; }
             $details[] = ['amount_minor' => (string) $value, 'currency' => $currency, 'type' => $d['type']];
         }

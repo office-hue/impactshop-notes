@@ -2208,3 +2208,12 @@ N adapter + új admin finance-read CLI + additív loader: eredeti session/PI/cha
 Részletes szerződés, források, pontos tesztparancsok, release/rollback/kézi UI-checklist és Hermes-javításlista: impactshop-notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §60, PR244. Hermes0381hívás/17451token/becsült0,002093USD, tényleges összköltség ismeretlen; a hibás első tervezetet Codex javította, megtakarítás nem állított. Secretary termékcheckpoint és remote-SHA külön visszaolvasandó.
 
 Következő: teljes refund/dispute/díjkorrekciós mozgás-egyeztetés és tartós pénzügyi napló, nettó80/20-cél és kitettségi tartalék. Account/díj/felelősségi bizonyíték, UI fizetési lánc, D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Az eredeti charge nettója nem refund utáni aktuális nettó. Saját forráscsomag és célzott teszt kész; merge/telepítés/aktiválás/élő elfogadás nem történt. Maincsendablak nincs. Megőrzött átadás: SUBSTACK-HANDOVER.md.
+
+
+## 61. D2g — korrekciós pénzmozgásolvasó, csak forrás (2026-11-02)
+
+Meglévő N adapter + admin `payment-inspect --adjustments`: teljes, korlátos refund/dispute/fee-refund listák, előjeles eredeti balance/díj, visszafordítás és deviza; eredeti rendeléshez kötött, legfeljebb40 GET. Nincs pénzügyi író vagy aktiválás. Kapcsolt fee-refund jóváírás külön bizonyítandó; platformterhelésből nem gyártunk NGO-jóváírást, minden settlement flag false.397 korábbi +461 új pénzügyi/CLI,197 adapter és12 loader teszt sikeres. Független review két konkrét javítása visszaolvasva; nincs további scoped blokkoló. SDK valódi, HTTP helyettesített, nem sandbox/éles elfogadás.
+
+Hermes0391hívás/17377token/becsült0,001951495USD, tényleges összköltség ismeretlen; használható szándék részben átvéve, hibás patch Codex-javítással, nincs retry/megtakarítási állítás. Részletes szerződés, teszt, javítás, release/rollback és UI-checklist: N `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §61.
+
+Pilot az Alapítvány, HUF; Arnold megerősítette az azonosított Stripe-kifizetési cél alapítványi tulajdonát. A Stripe-fiók továbbra Zrt.; külön NGO-account/díj/felelősség nincs igazolva, teljes bankadat nem tárolt. Nincs fiókmódosítás vagy pénzmozgás. Teljes egyeztetés/főkönyv/nettó80/20/tartalék/UI/D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Commit/push konkrét SHA a Secretaryben; merge, telepítés, aktiválás és élő elfogadás külön hátravan. Maincsendablak nincs. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
