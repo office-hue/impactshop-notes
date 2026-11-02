@@ -969,3 +969,7 @@ A jóváhagyott50%/MNB-szabály hat meglévő runtime fájlt érint; a meglévő
 ### 2026-11-02 Donation D1 source inventory
 
 Existing guard inventory extends to the new donation price loader and package JSON only. No policy/guard behavior change. See protected-change-records/2026-11-02-sharity-donation-prices.md for scope and acceptance.
+
+### 2026-11-02 D2a donation quote pin
+
+Existing inventory only: refresh sharity-ngo-donations.php after owner-bound quote and explicit additive CLI schema tests. No config/rule changes, no unrelated baseline refresh. Protected record and validation: docs/protected-change-records/2026-11-02-sharity-donation-prices.md. Runtime activation remains OFF.

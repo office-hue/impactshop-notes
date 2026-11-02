@@ -891,3 +891,9 @@ kiadva. P3–P7 pénzügyi terv változatlan, teljes ág nem release-ready.
 ## 2026-11-02 Donation D1 inventory extension
 
 Added only sharity-ngo-donations.php and its amplifier-packages.json to the existing source inventory. Config self-hash and sidecars follow; unrelated pins unchanged. No new guard/helper or rule weakening. Source validation and live acceptance boundaries: [D1 record](protected-change-records/2026-11-02-sharity-donation-prices.md).
+
+## 2026-11-02 D2a immutable donation quotes (inactive)
+
+Own sharity-ngo-donations.php now provides owner-bound30-minute immutable quotes using canonical Web Session authentication, exact minor values and validated frozen package books. Single INSERT/unique replay key and readback; no Stripe/payment/vote/ledger writer. Explicit CLI quote-schema --apply only; failed verification invalidates readiness, existing rows stay. New quote switch default-off. Actual checkout/status authority, SDK, account verification, expiry cleanup/admission limits and reconciliation remain pending; no activation permitted by these source checks alone.
+
+Validation:72 isolated quote cases,33 existing price checks, PHP lint;18 actual MariaDB10.11.19 checks with forced parallel connections and uncertain-commit readback. Cached image, temporary loopback/tmpfs container removed after testing; no live DB/provider. Independent source review correction: stale schema-ready marker fixed and tested. BFF counterpart in ai-agent PR1870; deployment remains unperformed. Rollback only own code/flag; preserve quote data. Protected details/manual UI checklist: docs/protected-change-records/2026-11-02-sharity-donation-prices.md.
