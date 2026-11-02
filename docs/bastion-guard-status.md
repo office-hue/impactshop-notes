@@ -975,3 +975,13 @@ Termékcommit `bd38f6626d274dc4689cd23fa4a2d1420abf43c3`. Kizárólag saját don
 ## D2n target — saját baseline (2026-11-02)
 
 Termékcommit057107ec75483b37ac48165646e0c8dea46568c0. Kizárólag a két saját finance-ledger/read hash, generated_at és manifestchecksum változik; eredeti timestamp és idegen pinek megmaradnak. Új inventory/guardlogika nincs.1274MariaDB (87új target),401offlineCLI,13runtime, független forrásreview leletmentes. Részlet, funkciólista és kiadás/rollback/kézi UI: protected-change-records/2026-11-02-sharity-donation-prices.md §70. Előzetes nettó cél és ismeretlen teljes liability külön; nem aktivált vagy pénzügyileg elfogadott.
+
+
+## D2o account binding - own reviewed baseline (2026-11-02)
+
+Product f61e09fb2a154e5e2bd6db3419c0e73f0dca6369. Only own stripe-checkout/finance-read
+hashes, generated_at and manifest checksum change; original timestamp, inventory,
+foreign pins and guard logic unchanged. 90 account checks including native two-connection
+CAS/races;197checkout/401financeCLI/13runtime/129quotes, independent final review no findings.
+Scope/proof/CLI/rollout/rollback/manual UI: protected-change-records/2026-11-02-sharity-donation-prices.md section71.
+Source only; direct binding still needs real operational evidence. No main/deploy/activation.
