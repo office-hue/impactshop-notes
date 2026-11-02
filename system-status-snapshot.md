@@ -1,3 +1,13 @@
+## 2026-11-02 — shopping vásárlási indítás, helyi implementáció
+
+Három runtimefájl: owner-hitelesített Dognet POST + aktív NGO-lista,
+explicit nullable intentoszlop és vásárlási profil-visszatérés.
+Új lane alapból OFF. 52 valódi SQL-check, 72 profil-PHP-eset, 5 célzott
+Chrome-fixture és affiliate/Bástya tesztek sikeresek. Független záró review
+használati keret miatt nyitott; nincs merge/telepítés/aktiválás.
+Részletek: `docs/protected-change-records/2026-11-02-shopping-purchase.md`.
+A korábbi pénzügyi állapotbejegyzések történeti adatok, itt nem frissültek.
+
 ## 2026-10-31 — Publikus mérés: WordPress preview kizárása
 
 A #242 utáni szűk korrekció az `is_preview()` állapotot kizárja a script

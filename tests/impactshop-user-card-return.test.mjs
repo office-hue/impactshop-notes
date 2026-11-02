@@ -177,3 +177,15 @@ for (const url of otherUrls) {
     assert.notEqual(result.url, target);
   });
 }
+
+for (const contextState of [undefined, 'valid', 'invalid']) {
+  test('shopping restore preserves owner handoff and FactLens priority: ' + contextState, async () => {
+    const result = await replay(current, entry.replaceAll('sajat-sharity', 'vasarlasi-seged'), { contextState });
+    const expected = contextState === 'valid' ? 'https://factlens.eu/factlens/vb-prod/'
+      : contextState === 'invalid' ? 'https://app.sharity.hu/profil/#impactshop-restore-title'
+      : target.replace('sajat-sharity', 'vasarlasi-seged');
+    assert.equal(result.url, expected);
+    assert.equal(result.resolutions[0].resolverCalls.length, 1);
+    assert.equal(result.calls.filter(call => call.url.includes('/points/earn')).length, 0);
+  });
+}

@@ -793,3 +793,11 @@ commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a sz
 ## 2026-10-29 — Partner insert-formátum javítás
 
 Az API meglévő védett fájl; új modul/guard nincs. Csak az insert formátumlista és a megfelelő hash változik. 171 izolált SQL-check és provider-fixture sikeres; lane OFF. Koherencia/rollback/UI-checklist: `docs/partner-data-mapping.md`. Telepítési bizonyíték még nincs.
+
+## 2026-11-02 — megerősített shopping indítás
+
+Meglévő affiliate-runtime guard: a Dognet URL kizárólag az új, owner-hitelesített
+shopping POST-ban engedett; régi ágban továbbra tiltott. Lane OFF, payload hash,
+owner-recheck, kapcsolatvédelem és explicit CLI-migráció a célzott ellenőrzésben.
+Guard és negatív suite sikeres. A három módosított runtime hash frissítve;
+telepítési PASS nincs. Részletek: `protected-change-records/2026-11-02-shopping-purchase.md`.

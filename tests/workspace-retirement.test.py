@@ -323,6 +323,11 @@ class Retirement(unittest.TestCase):
     def test_actual_domain_and_deploy_sources_are_not_retired(self):
         for file in ("bin/impactshop-guard-deploy.sh", "scripts/hatas-korok-load-memory.sh",
                      "scripts/sharity-affiliate-runtime-bastion-guard.sh", ".github/workflows/codex-bridge.yml"):
+            # Authorized shopping guard update; digest survives a squash merge.
+            if file == "scripts/sharity-affiliate-runtime-bastion-guard.sh":
+                self.assertEqual("0a3a5185041c849037cb990749668351aeeb1fafecbe1792159a8ef2b32307b0",
+                                 hashlib.sha256((ROOT / file).read_bytes()).hexdigest(), file)
+                continue
             old = subprocess.check_output(["git", "-C", str(ROOT), "show",
                                           "bbf2345416fe4aa2f4b49c8f02e57fa4ceb1a77c:" + file])
             self.assertEqual(old, (ROOT / file).read_bytes(), file)
