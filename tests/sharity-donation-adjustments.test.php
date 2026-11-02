@@ -27,7 +27,7 @@ function arefund(string $id='re_ONE',int $amount=1000,string $status='succeeded'
 }
 function abase(string $mode='direct',string $currency='HUF'):array{
     [$e,$p]=fixture($mode,$currency);$p['/v1/refunds']=alist();$p['/v1/disputes']=alist();
-    if($mode==='amplifier'){$p['/v1/application_fees/fee_SYNTHETIC/refunds']=alist();}return [$e,$p];
+    if($mode==='amplifier'){$p['/v1/application_fees/fee_SYNTHETIC/refunds']=alist();$p['/v1/balance_transactions']=alist();}return [$e,$p];
 }
 function adjustmentRead(array $e,array $p,?callable $modify=null):array{
     global $transport,$adapter;
@@ -109,6 +109,37 @@ $q=$p;$q[$FR]['data'][0]['balance_transaction']['id']='txn_CHARGE';check(adjustm
 $bad=$p;$bad[$FR]['data'][0]['fee']='fee_OTHER';adjustmentFails($e,$bad);
 $bad=$p;$bad[$FR]['data'][0]['amount']=201;adjustmentFails($e,$bad);
 $bad=$p;$bad[$FR]['data'][0]['balance_transaction']['source']='fr_OTHER';adjustmentFails($e,$bad);
+// D2q: only an actual positive NGO balance with exact refund source proves the counterleg.
+$qStart=$checks;$CL='/v1/balance_transactions';$q=$p;
+$q[$CL]=alist([abalance('txn_CREDIT','fr_ONE',200,0,'application_fee_refund')]);
+$got=adjustmentRead($e,$q);$credit=$got['fee_refunds'][0]['connected_credit'];
+check($got['fee_refunds'][0]['connected_credit_verified']&&$credit['gross_minor']==='200'&&$credit['scope']==='connected'&&$credit['account_id']==='acct_SYNTHETIC','sanitized actual credit retained, not only a boolean');
+check(!in_array('fee_refund_connected_credit_unreconciled',$got['unresolved'],true)&&!str_contains(json_encode($got),'PRIVATE_'),'exact source proof and no PII');
+$clCalls=array_values(array_filter($transport->calls,static fn($c)=>$c['path']===$CL));
+check(count($clCalls)===1&&$clCalls[0]['params']===['source'=>'fr_ONE','limit'=>2],'single exact-source bounded GET');
+check($clCalls[0]['method']==='get'&&$clCalls[0]['maxNetworkRetries']===0&&in_array('Stripe-Account: acct_SYNTHETIC',$clCalls[0]['headers'],true)&&in_array('Stripe-Version: 2026-10-28.endive',$clCalls[0]['headers'],true),'frozen account/pinned API/no POST/retry');
+check(!array_filter($clCalls[0]['headers'],static fn($h)=>str_starts_with($h,'Idempotency-Key:')),'no checkout idempotency key on credit read');
+foreach([alist(),alist([$q[$CL]['data'][0],array_replace($q[$CL]['data'][0],['id'=>'txn_OTHER'])]),alist([$q[$CL]['data'][0]],true),alist([array_replace($q[$CL]['data'][0],['type'=>'payout'])])] as $candidate){
+ $z=$q;$z[$CL]=$candidate;$got=adjustmentRead($e,$z);check(!$got['fee_refunds'][0]['connected_credit_verified']&&$got['fee_refunds'][0]['connected_credit']===null&&in_array('fee_refund_connected_credit_unreconciled',$got['unresolved'],true),'missing/ambiguous/unrecognized proof remains unresolved');
+}
+foreach([['source','fr_OTHER'],['id','txn_CHARGE'],['amount',-200],['amount',201],['currency','eur'],['net',201]]as[$field,$value]){
+ $z=$q;$z[$CL]['data'][0][$field]=$value;adjustmentFails($e,$z);
+}
+$z=$q;unset($z[$CL]['has_more']);adjustmentFails($e,$z);
+adjustmentFails($e,$q,static function($r,$path)use($CL){if($path===$CL){throw new RuntimeException('PRIVATE_PROVIDER_ERROR');}return$r;});
+$z=$q;$z[$CL]['data'][0]=abalance('txn_CREDIT','fr_ONE',200,5,'adjustment');$got=adjustmentRead($e,$z);
+check($got['fee_refunds'][0]['connected_credit']['net_minor']==='195'&&$got['fee_refunds'][0]['connected_credit']['processing_cost_minor']==='5','actual fee retained, not assumed zero');
+$z=$q;$z[$CL]['data'][0]=abalance('txn_CREDIT','fr_ONE',1,0,'adjustment','eur');$z[$CL]['data'][0]['exchange_rate']=0.005;$got=adjustmentRead($e,$z);
+check($got['fee_refunds'][0]['connected_credit']['currency']==='EUR'&&$got['fee_refunds'][0]['connected_credit']['gross_minor']==='1','actual FX bucket retained without synthesizing money');
+$z=$q;$z[$CL]['data'][0]['status']='pending';check(adjustmentRead($e,$z)['balances_pending'],'pending credit remains pending');
+foreach([20,21]as$n){
+ [$be,$bp]=abase('amplifier');$bp[$F]['amount_refunded']=$n;$bp[$FR]=alist();
+ for($i=0;$i<$n;$i++){$bp[$FR]['data'][]=['object'=>'fee_refund','id'=>'fr_B'.$i,'fee'=>'fee_SYNTHETIC','amount'=>1,'currency'=>'huf','created'=>1800000040,'balance_transaction'=>abalance('txn_B'.$i,'fr_B'.$i,-1,0,'application_fee_refund')];}
+ $got=adjustmentRead($be,$bp);check(count(array_filter($transport->calls,static fn($c)=>$c['path']===$CL))===($n===20?20:0),'bounded whole counterleg batch, no truncated success');
+ check(in_array('fee_refund_counterleg_read_limit',$got['unresolved'],true)===($n>20),'explicit excess read budget');
+}
+foreach(['direct','amplifier']as$mode){[$be,$bp]=abase($mode);adjustmentRead($be,$bp);check(!array_filter($transport->calls,static fn($c)=>$c['path']===$CL),'no imaginary counterleg GET when no fee refund');}
+echo 'D2q SDK counterleg: '.($checks-$qStart)." checks\n";
 // Malformed lists, wrong economic linkage, foreign balance/source, floats and stale aggregates fail closed.
 [$e,$p]=abase();$p[$C]['amount_refunded']=1000;$p[$R]=alist([arefund()]);
 $cases=[[$R,['object'],'refund'],[$R,['has_more'],null],[$R,['data'],null],[$R,['data',0,'id'],'re_bad/path'],[$R,['data',0,'object'],'charge'],

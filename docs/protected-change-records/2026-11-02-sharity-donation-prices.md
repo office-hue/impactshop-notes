@@ -606,3 +606,71 @@ then direct HUF pilot, Amplifier votes/fund, other currencies/history/remaining 
 Source-ready for this package, not full goal, merge, deployment or activation.
 Own exact source/hash publication and remote readback recorded separately in Secretary.
 SUBSTACK-HANDOVER.md retained as reference only.
+
+
+## 73. D2q — exact NGO counterleg and provisional net80/20 (2026-11-02)
+
+Pre-change scope: existing stripe-checkout.php fee-refund evidence and finance-ledger.php
+movement/reconcile/target projection; existing SDK/actual-MySQL tests. Base4b2a1e96.
+Concrete risk: platform debit mistaken for NGO credit; duplicate/interaccount money counted
+as donor proceeds; missing refund/currency/cost relationship yielding an unfunded split.
+Only exact provider source identity under frozen NGO account is accepted; no amount/time
+matching, invented API fields, new schema/helper framework or live provider writes.
+At most20 extra GETs, no pagination/fallback or direct/no-refund increase; excess remains
+unresolved. Provider docs support exact source-filtered balance lists but do not guarantee
+that this identifies every NGO fee-refund counterleg. Real sandbox acceptance is still required.
+Both native sides must be coherent before provisional80/20; full liability/activation remain
+unknown/false. Existing direct path/history preserved; actual internal credits are not new gross.
+Functions affected: retrieveAdjustmentEvidence/private counterleg projection,
+sharity_donation_finance_movement/reconcile/target_compute and existing tests.
+Manual release UI checklist: unchanged donation availability/login/prior owner status, four
+languages/payment currency, no false success or fund increase; no live UI acceptance claimed.
+Release follows existing merged-SHA exact-file staging/production path; old ledger first-read
+compatibility requires deploy new ledger reader before new adapter observations. Backup own
+files/config; no schema migration. Rollback stops new observations first, preserves stored
+financial evidence/registry/targets and uses compatible reader; no DB restore over new events.
+### Implemented contract and verification
+
+The adapter conditionally reads at most20 exact-source NGO balance transactions, with
+frozen account, zero retries/provider POST and no direct/no-refund extra GET. Empty,
+ambiguous or unsupported mapping remains unresolved. Full projected credit evidence,
+not a boolean assertion, enters the existing immutable observations/native registry.
+Exact legacy absence can be resolved by a later observed native leg; conflicting refund
+facts/IDs fail. Actual interaccount credit is excluded from donor gross. Same-currency
+provisional net80/20 requires matching source sets and exact equality to the combined
+actual account net, including actual platform costs once. Incoherent executed FX retains
+raw money but yields no split. Full future liability remains unknown; all readiness false.
+No schema, financial execution, fund/vote/order mutation or activation was added.
+
+Actual checks: PHP lint/diff;437 finance/CLI,521 adjustment assertions including26 new
+D2q SDK cases;197 checkout,13 fresh-process runtime. Real isolated MariaDB10.11.19:
+1407 assertions total, including67 D2q,220 target,655 reconciliation,110 movement and
+127 backing. Counts overlap within the suite, not additive totals. Coverage includes
+exact native identity/sign/account,20/21 GET bounds, absent/ambiguous credits, nominal
+and actual currency, legacy resolution, full refund/dispute, platform fee, missing
+registry and replay. Existing uncertain-ACK tests are fault injection, not actual network
+failure. Actual provider/sandbox counterleg mapping and live money are not proved.
+Independent d2i_source_review found differing executed-FX amounts could inflate the
+provisional target; Codex added the exact combined-net check and native INITIALDIFF /
+REFUNDDIFF cases. Final source/test readback found no remaining blocker; reviewer did
+not execute tests. One missing fixture bracket failed lint before correction; subsequent
+native behavioral run passed. No new full plan audit; prior two financial audits reused.
+Own tmpfs/loopback test container removed, absence verified; no image pull/shared deps.
+
+Hermes050 execution4a37ce6f-32eb-4d63-949b-d634264f90d5, task SHA
+ ebe799297c0ba1f14c39edcbe463da047201f28ba6595cb0652e4201f0d76264:
+1completed call,40793input+3717output=44510tokens,768cached, estimated USD0.0043327466;
+actual invoice and total Codex/reviewer cost unknown, no savings claim. Exact-source
+lookup intent partially reused; sign/projection/GET-budget, missing ledger/80-20 and
+invalid tests repaired or implemented by Codex. No redispatch/JEV/fallback. Initial
+automatic approval rejected transmission before execution; verified public repository,
+HEAD-identical selected source and sanitized synthetic key fixtures supported a newly
+approved dispatch. Only one actual call occurred. Pending/terminal delegation remote_ack;
+final product checkpoint is separate and requires readback.
+
+Source publication uses only own files and separate two-pin baseline. Existing PR244/1870
+remain draft; no main operation or open quiet window, deployment, activation or financial
+acceptance. Next: full-liability/covered correction lifecycle, separate Foundation NGO
+account verification, direct HUF acceptance, then Amplifier votes/fund and remaining scope.
+Foundation bank ownership remains confirmed; no duplicate onboarding question or live write.
+SUBSTACK-HANDOVER.md retained as reference only.

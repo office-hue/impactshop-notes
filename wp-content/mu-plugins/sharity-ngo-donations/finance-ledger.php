@@ -191,7 +191,8 @@ function sharity_donation_finance_movement(array $b, string $source, string $rol
     if (!in_array($facts['currency'], ['HUF', 'EUR', 'USD', 'GBP'], true)) { throw new RuntimeException(); }
     if ($account !== null && !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $account)) { throw new RuntimeException(); }
     $types = ['refund' => ['refund', 'payment_refund'], 'refund_reversal' => ['refund_failure', 'payment_failure_refund', 'payment_refund', 'adjustment'],
-        'dispute' => ['adjustment'], 'application_fee_refund' => ['application_fee_refund']];
+        'dispute' => ['adjustment'], 'application_fee_refund' => ['application_fee_refund'],
+        'fee_refund_credit' => ['application_fee_refund', 'adjustment']];
     if (isset($types[$role])) {
         if (($b['source_id'] ?? null) !== $source || ($b['scope'] ?? null) !== ($role === 'application_fee_refund' ? 'platform' : 'connected')
             || !in_array($facts['provider_type'], $types[$role], true)) { throw new RuntimeException(); }
@@ -203,7 +204,7 @@ function sharity_donation_finance_movement(array $b, string $source, string $rol
         || (int) $facts['processing_cost_minor'] !== (int) $facts['total_fee_minor'] - (int) $facts['application_fee_minor']
         || !is_array($b['fee_details'] ?? null) || !array_is_list($b['fee_details'])) { throw new RuntimeException(); }
     $gross = (int) $facts['gross_minor'];
-    if ((in_array($role, ['charge', 'application_fee', 'refund_reversal'], true) && $gross <= 0)
+    if ((in_array($role, ['charge', 'application_fee', 'refund_reversal', 'fee_refund_credit'], true) && $gross <= 0)
         || (in_array($role, ['refund', 'application_fee_refund'], true) && $gross >= 0)
         || (in_array($role, ['charge', 'application_fee'], true) && (int) $facts['total_fee_minor'] < 0)) { throw new RuntimeException(); }
     $sum = 0; $application = 0; $details = [];
@@ -247,7 +248,7 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             $bytes = (int) $item['evidence_bytes']; $total += $bytes;
             if ($bytes > SHARITY_DONATION_FINANCE_MAX_BYTES || $total > 16 * 1024 * 1024) { throw new RuntimeException('DONATION_RECONCILE_LIMIT'); }
         }
-        $movements = []; $digests = []; $unresolved = ['cross_order_movement_registry_not_applied', 'backing_not_reconciled']; $paymentBindings = []; $platformIds = [];
+        $movements = []; $digests = []; $unresolved = ['cross_order_movement_registry_not_applied', 'backing_not_reconciled']; $paymentBindings = []; $platformIds = []; $feeRefunds = [];
         $expectedOriginal = ['evidence_version' => 1, 'scope' => 'original_charge_only', 'order_id' => $orderId,
             'session_id' => $order['provider_session_id'], 'account_id' => $snapshot['account_id'],
             'livemode' => $snapshot['livemode'], 'donation_mode' => $snapshot['donation_mode'], 'payment_verified' => false, 'allocation_eligible' => false,
@@ -330,9 +331,34 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             }
             foreach ($e['fee_refunds'] as $refund) {
                 $source = sharity_donation_finance_id($refund['id'] ?? null, 'fr');
-                if ($feeId === null || ($refund['fee_id'] ?? null) !== $feeId || ($refund['connected_credit_verified'] ?? null) !== false || !array_key_exists('balance', $refund)) { throw new RuntimeException(); }
+                $verified = $refund['connected_credit_verified'] ?? null;
+                $credit = $refund['connected_credit'] ?? null;
+                if ($feeId === null || ($refund['fee_id'] ?? null) !== $feeId || !is_bool($verified)
+                    || $verified !== ($credit !== null) || !array_key_exists('balance', $refund)) { throw new RuntimeException(); }
+                $amount = sharity_donation_finance_minor($refund['amount_minor'] ?? null);
+                $currency = $refund['currency'] ?? null;
+                if ($amount <= 0 || $amount > sharity_donation_finance_minor($fee['amount_minor'] ?? null)
+                    || !in_array($currency, ['HUF','EUR','USD','GBP'], true) || $currency !== ($fee['currency'] ?? null)) { throw new RuntimeException(); }
+                $facts = [$feeId, $refund['amount_minor'], $currency];
+                if (isset($feeRefunds[$source]) && $feeRefunds[$source]['facts'] !== $facts) { throw new RuntimeException('DONATION_RECONCILE_CONFLICT'); }
+                $feeRefunds[$source] ??= ['facts' => $facts, 'debit' => null, 'credit' => null];
+                foreach (['debit' => $refund['balance'], 'credit' => $credit] as $side => $balance) {
+                    if ($balance === null) { continue; }
+                    $nativeId = sharity_donation_finance_id($balance['id'] ?? null, 'txn');
+                    if ($feeRefunds[$source][$side] !== null && $feeRefunds[$source][$side] !== $nativeId) { throw new RuntimeException('DONATION_RECONCILE_CONFLICT'); }
+                    $feeRefunds[$source][$side] = $nativeId;
+                    $nativeGross = sharity_donation_finance_minor($balance['gross_minor'] ?? null);
+                    if (($balance['currency'] ?? null) === $currency) {
+                        if ($nativeGross !== ($side === 'credit' ? $amount : -$amount)
+                            || (($balance['exchange_rate'] ?? null) !== null && (float)$balance['exchange_rate'] !== 1.0)) { throw new RuntimeException(); }
+                    } elseif (($balance['exchange_rate'] ?? null) === null) { throw new RuntimeException(); }
+                }
                 if ($refund['balance'] !== null) { $add($refund['balance'], $source, 'application_fee_refund', $platformAccount); }
-                $unresolved[] = 'observed_fee_refund_connected_credit_unreconciled';
+                if ($credit !== null) {
+                    if ($platformAccount === null || ($credit['account_id'] ?? null) !== $snapshot['account_id']
+                        || ($credit['application_fee_minor'] ?? null) !== '0') { throw new RuntimeException(); }
+                    $add($credit, $source, 'fee_refund_credit', $snapshot['account_id']);
+                }
             }
         }
         // Do not infer old account scopes. Supersede an unscoped leg only when the
@@ -350,6 +376,14 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             $movements[$knownKey]['observations'] += $legacy['observations'];
             unset($movements[$key]);
         }
+        // A later exact native observation can resolve historical absence; never erase its row.
+        $counterlegsComplete = true;
+        foreach ($feeRefunds as $refund) {
+            if ($refund['debit'] === null || $refund['credit'] === null) { $counterlegsComplete = false; }
+        }
+        if ($counterlegsComplete) {
+            $unresolved = array_values(array_diff($unresolved, ['observed_fee_refund_connected_credit_unreconciled', 'observed_fee_refund_counterleg_read_limit']));
+        } else { $unresolved[] = 'observed_fee_refund_connected_credit_unreconciled'; }
         if ($index === []) { $unresolved[] = 'observations_missing'; }
         ksort($movements, SORT_STRING); ksort($digests, SORT_STRING); $known = []; $unscoped = []; $financial = [];
         foreach ($movements as $movement) {
@@ -1093,7 +1127,7 @@ function sharity_donation_target_sum(int $a, int $b): int
 }
 function sharity_donation_target_compute(array $inventory, array $snapshot): array
 {
-    $totals = []; $chargeCurrencies = []; $refs = []; $platformTotals = [];
+    $totals = []; $chargeCurrencies = []; $refs = []; $platformTotals = []; $creditGross = []; $feeDebits = []; $feeCredits = [];
     $unresolved = array_values(array_diff($inventory['unresolved'],['cross_order_movement_registry_not_applied']));
     $unresolved[] = 'future_liability_not_proven';
     $fields = ['gross_minor','processing_cost_minor','application_fee_minor','net_minor'];
@@ -1107,19 +1141,27 @@ function sharity_donation_target_compute(array $inventory, array $snapshot): arr
             $platformTotals[$account][$c] ??= array_fill_keys($fields, 0);
             if (count($platformTotals) !== 1) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
             foreach ($fields as $key) { $platformTotals[$account][$c][$key] = sharity_donation_target_sum($platformTotals[$account][$c][$key], sharity_donation_finance_minor($f[$key])); }
+            if ($f['movement_role'] === 'application_fee_refund') { $feeDebits[$f['source_id']] = true; }
             $refs[] = $m['financial_digest'];
             continue;
         }
-        if ($f['account_id'] !== $snapshot['account_id'] || !in_array($f['movement_role'],['charge','refund','refund_reversal','dispute'],true)) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
+        if ($f['account_id'] !== $snapshot['account_id'] || !in_array($f['movement_role'],['charge','refund','refund_reversal','dispute','fee_refund_credit'],true)) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
         if ($f['movement_role'] === 'charge') { $chargeCurrencies[] = $c; }
+        if ($f['movement_role'] === 'fee_refund_credit') {
+            if ($snapshot['donation_mode'] !== 'amplifier') { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
+            $creditGross[$c] = sharity_donation_target_sum($creditGross[$c] ?? 0, sharity_donation_finance_minor($f['gross_minor']));
+            $feeCredits[$f['source_id']] = true;
+        }
         $totals[$c] ??= array_fill_keys($fields,0);
         foreach ($fields as $key) { $totals[$c][$key] = sharity_donation_target_sum($totals[$c][$key],sharity_donation_finance_minor($f[$key])); }
         $refs[] = $m['financial_digest'];
     }
     if (count($chargeCurrencies) !== 1) { throw new RuntimeException('DONATION_TARGET_MISSING_CHARGE'); }
     $settlementCurrency = $chargeCurrencies[0]; ksort($totals,SORT_STRING); sort($refs,SORT_STRING);
-    foreach ($totals as &$bucket) {
-        $bucket['net_before_application_fee_minor'] = sharity_donation_target_sum($bucket['gross_minor'],-$bucket['processing_cost_minor']);
+    foreach ($totals as $c => &$bucket) {
+        $donorGross = sharity_donation_target_sum($bucket['gross_minor'], -($creditGross[$c] ?? 0));
+        if (isset($creditGross[$c])) { $bucket['inter_account_credit_minor'] = $creditGross[$c]; $bucket['donor_gross_minor'] = $donorGross; }
+        $bucket['net_before_application_fee_minor'] = sharity_donation_target_sum($donorGross,-$bucket['processing_cost_minor']);
         $bucket['observed_deficit_minor'] = max(0,-$bucket['net_before_application_fee_minor']);
         foreach ($bucket as &$n) { $n = (string)$n; } unset($n);
     } unset($bucket);
@@ -1139,9 +1181,29 @@ function sharity_donation_target_compute(array $inventory, array $snapshot): arr
         if ($coherent) { $split = ['currency'=>$settlementCurrency,'ngo_minor'=>(string)max(0,(int)$totals[$settlementCurrency]['net_before_application_fee_minor']),'fund_minor'=>'0']; }
     } else {
         if ($snapshot['donation_mode'] !== 'amplifier' || $snapshot['policy_version'] !== 'amplifier-net80-v1') { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
-        // Platform debit alone does not prove NGO credit or total future liability.
-        $unresolved[] = $platformTotals === [] || $inventory['unscoped_platform_movements'] !== []
-            ? 'amplifier_platform_and_counterleg_not_proven' : 'amplifier_counterleg_not_proven';
+        // Both actual native sides and coherent currency are required. No future-liability claim.
+        ksort($feeDebits); ksort($feeCredits);
+        $platform = count($platformTotals) === 1 ? reset($platformTotals) : [];
+        $missing = $platform === [] || $inventory['unscoped_platform_movements'] !== [];
+        $counterlegs = $feeDebits === $feeCredits
+            && !in_array('observed_fee_refund_connected_credit_unreconciled', $unresolved, true);
+        if ($missing || !$counterlegs) {
+            $unresolved[] = $missing ? 'amplifier_platform_and_counterleg_not_proven' : 'amplifier_counterleg_not_proven';
+        } elseif (!$coherent || array_keys($platform) !== [$settlementCurrency]) {
+            $unresolved[] = 'settlement_currencies_require_executed_fx';
+        } else {
+            $net = sharity_donation_target_sum((int)$totals[$settlementCurrency]['net_before_application_fee_minor'],
+                -sharity_donation_finance_minor($platform[$settlementCurrency]['processing_cost_minor']));
+            $observedNet = sharity_donation_target_sum(sharity_donation_finance_minor($totals[$settlementCurrency]['net_minor']),
+                sharity_donation_finance_minor($platform[$settlementCurrency]['net_minor']));
+            if ($net !== $observedNet) {
+                // Different executed FX or missing internal movement cannot become synthetic proceeds.
+                $unresolved[] = 'inter_account_movements_not_balanced';
+            } else {
+                $available = max(0, $net); $fund = intdiv($available, 5);
+                $split = ['currency'=>$settlementCurrency, 'ngo_minor'=>(string)($available-$fund), 'fund_minor'=>(string)$fund];
+            }
+        }
     }
     $unresolved = array_values(array_unique($unresolved)); sort($unresolved,SORT_STRING);
     $policy = array_intersect_key($snapshot,array_flip(['policy_version','donation_mode','ngo_slug','account_id','livemode','currency','amount_minor','package_id','votes','price_book_version','binding_version']));

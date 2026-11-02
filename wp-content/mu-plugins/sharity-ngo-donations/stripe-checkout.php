@@ -317,7 +317,7 @@ final class Sharity_Stripe_Checkout_Adapter
     }
 
     /** Complete bounded resource lists, NOT an atomic snapshot or settlement authorization.
-     * At most 42 GETs (two original reads + three collections of up to ten pages).
+     * At most62 GETs (two original reads, three ten-page collections, up to20 exact-source credits).
      * All external calls remain outside any caller-owned DB transaction.
      */
     public function retrieveAdjustmentEvidence(string $sessionId, array $e): array
@@ -411,6 +411,7 @@ final class Sharity_Stripe_Checkout_Adapter
             }
             if ($original['disputed'] && $disputes === []) { throw new RuntimeException(); }
             $feeRefunded = 0;
+            $counterlegBudget = count($feeRefunds) <= 20;
             foreach ($feeRefunds as $r) {
                 $amount = $this->evidenceMoney($r['amount'] ?? null, 1);
                 $currency = $this->evidenceCurrency($r['currency'] ?? null);
@@ -423,9 +424,13 @@ final class Sharity_Stripe_Checkout_Adapter
                 if ($entry['balance'] === null) { $unresolved[] = 'fee_refund_balance_missing'; }
                 else { if ((int) $entry['balance']['gross_minor'] >= 0) { throw new RuntimeException(); }
                     $this->evidenceConversion($entry['balance'], $currency, -$amount); }
-                // Platform debit does not prove connected-account credit. Never synthesize that credit.
-                $entry['connected_credit_verified'] = false;
-                $unresolved[] = 'fee_refund_connected_credit_unreconciled';
+                // A platform debit is not proof of NGO credit. Source identity is mandatory.
+                $credit = $counterlegBudget ? $this->feeRefundConnectedCredit($r['id'], $amount, $currency,
+                    $options, $seen, $pending, $unresolved) : null;
+                $entry['connected_credit'] = $credit;
+                $entry['connected_credit_verified'] = $credit !== null;
+                if (!$counterlegBudget) { $unresolved[] = 'fee_refund_counterleg_read_limit'; }
+                if ($credit === null) { $unresolved[] = 'fee_refund_connected_credit_unreconciled'; }
                 $result['fee_refunds'][] = $entry;
             }
             if ($fee !== null && (string) $feeRefunded !== $fee['refund_state']['amount_refunded_minor']) { throw new RuntimeException(); }
@@ -437,6 +442,26 @@ final class Sharity_Stripe_Checkout_Adapter
             return array_replace($result, ['evidence_state' => 'adjustment_resources_observed', 'resources_complete' => true,
                 'balances_pending' => $pending, 'unresolved' => $unresolved]);
         } catch (Throwable $error) { throw new RuntimeException('DONATION_ADJUSTMENT_EVIDENCE_UNAVAILABLE'); }
+    }
+
+    /** Exact-source conditional proof, not a promise that Stripe exposes every counterleg.
+     * One GET per refund (up to20 per observation), no pagination or fallback lookup.
+     */
+    private function feeRefundConnectedCredit(string $source, int $amount, string $currency,
+        array $options, array &$seen, bool &$pending, array &$unresolved): ?array
+    {
+        $list = $this->stripe->balanceTransactions->all(['source' => $source, 'limit' => 2], $options)->toArray();
+        if (($list['object'] ?? null) !== 'list' || !is_bool($list['has_more'] ?? null)
+            || !is_array($list['data'] ?? null) || !array_is_list($list['data']) || count($list['data']) > 2) { throw new RuntimeException(); }
+        // Missing/ambiguous mapping is unresolved; no inferred zero or selected first row.
+        if ($list['has_more'] || count($list['data']) !== 1) { return null; }
+        $b = $list['data'][0];
+        if (!is_array($b) || !in_array($b['type'] ?? null, ['application_fee_refund', 'adjustment'], true)) { return null; }
+        $credit = $this->adjustmentBalance(['credit' => $b], 'credit', $source, 'connected',
+            ['application_fee_refund', 'adjustment'], $seen, $pending, $unresolved);
+        if ($credit === null || (int) $credit['gross_minor'] <= 0 || (int) $credit['application_fee_minor'] !== 0) { throw new RuntimeException(); }
+        $this->evidenceConversion($credit, $currency, $amount);
+        return $credit + ['account_id' => $options['stripe_account']];
     }
 
     private function adjustmentList(callable $fetch, array $params, string $object, array $prefixes): array

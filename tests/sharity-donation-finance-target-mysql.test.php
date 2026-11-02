@@ -127,6 +127,78 @@ try {
     $mt=sharity_donation_movement_table();$original=$wpdb->db->query($wpdb->prepare("SELECT facts_json FROM `{$mt}` WHERE order_id=%s LIMIT 1",$full['order_id']))->fetch_assoc()['facts_json'];
     $wpdb->db->query($wpdb->prepare("UPDATE `{$mt}` SET facts_json='{}' WHERE order_id=%s AND facts_json=%s",$full['order_id'],$original));
     fails(fn()=>targetDry($full),'DONATION_TARGET_REGISTRY_MISMATCH');$wpdb->db->query($wpdb->prepare("UPDATE `{$mt}` SET facts_json=%s WHERE order_id=%s AND facts_json='{}'",$original,$full['order_id']));
+    // D2q: coherent real native counterlegs change liquidity, never donor gross.
+    $qStart=$checks;
+    $qFixture=static function(string $tag,?callable $modify=null)use($ampData,$ampOrder):array{
+        global $snapshot,$now;$previous=$snapshot;$snapshot=sharity_donation_order_decode($ampOrder)['snapshot'];
+        try{$o=financeOrder('counterleg'.$tag);}finally{$snapshot=$previous;}
+        $d=$ampData;$d['original']['order_id']=$o['order_id'];$d['original']['session_id']=$o['provider_session_id'];$d['original']['platform_account_id']='acct_PLATFORM';
+        $d['original']['initial_charge_balance']['id']='txn_QCH'.$tag;$d['original']['application_fee']['id']='fee_Q'.$tag;
+        $d['original']['application_fee']['initial_balance']['id']='txn_QFEE'.$tag;$d['original']['application_fee']['refund_state']['amount_refunded_minor']='0';
+        $d['fee_refunds']=[];$d['unresolved']=[];if($modify!==null){$d=$modify($d);}$saved=reconcileFixture($o,$d);
+        sharity_donation_finance_record_movements($o['order_id'],movementProposal($o),$now);return[$o,$d,$saved];
+    };
+    [$qo,$qd]=$qFixture('BASE');$expected=['currency'=>'HUF','ngo_minor'=>'38400','fund_minor'=>'9600'];
+    check(targetSave($qo)['target']['provisional_split']===$expected,'no refund needs no imaginary counterleg; actual fee is not charged twice');
+    $qd['fee_refunds']=[['id'=>'fr_Q','fee_id'=>'fee_QBASE','amount_minor'=>'400','currency'=>'HUF','created'=>1800000010,'connected_credit_verified'=>false,
+        'balance'=>reconcileBalance('txn_QDEBIT','fr_Q','application_fee_refund','-400','0','platform')]];
+    $qd['original']['application_fee']['refund_state']['amount_refunded_minor']='400';$qd['unresolved']=['fee_refund_connected_credit_unreconciled'];$missing=reconcileFixture($qo,$qd);
+    sharity_donation_finance_record_movements($qo['order_id'],movementProposal($qo),$now);check(targetSave($qo)['target']['provisional_split']===null,'platform debit without NGO native proof stays null');
+    $qd['fee_refunds'][0]['connected_credit_verified']=true;
+    $qd['fee_refunds'][0]['connected_credit']=reconcileBalance('txn_QCREDIT','fr_Q','application_fee_refund','400')+['account_id'=>sharity_donation_order_decode($qo)['snapshot']['account_id']];
+    $qd['unresolved']=[];$proof=reconcileFixture($qo,$qd);$qi=sharity_donation_finance_reconcile($qo['order_id'],$now);
+    check(count($qi['movements'])===4&&!in_array('observed_fee_refund_connected_credit_unreconciled',$qi['unresolved'],true),'later actual evidence resolves historical absence without duplicate money');
+    fails(fn()=>targetDry($qo),'DONATION_TARGET_REGISTRY_MISMATCH');sharity_donation_finance_record_movements($qo['order_id'],movementProposal($qo),$now);
+    $qr=targetSave($qo);$qt=$qr['target'];check($qt['provisional_split']===$expected&&targetSave($qo)===$qr,'fee refund leaves donor net80/20 target unchanged and replay exact');
+    check($qt['connected_totals']['HUF']['gross_minor']==='50400'&&$qt['connected_totals']['HUF']['donor_gross_minor']==='50000'&&$qt['connected_totals']['HUF']['inter_account_credit_minor']==='400'&&$qt['connected_totals']['HUF']['net_minor']==='38400','native raw credit retained separately from donor gross');
+    check($qt['platform_totals']['acct_PLATFORM']['HUF']['net_minor']==='9600'&&$qt['full_liability_minor']===null&&!$qt['activation_allowed'],'actual platform net separate, liability unknown and disabled');
+    check(sharity_donation_finance_read($qo['order_id'],$missing['digest'])['canonical_json']===$missing['canonical_json'],'historical evidence remains immutable');
+    foreach(['bool','account','source','id','amount','sign','scope','type','fee','nominal']as$case){
+        $bad=$qd;$c=&$bad['fee_refunds'][0]['connected_credit'];
+        if($case==='bool'){$bad['fee_refunds'][0]['connected_credit_verified']=false;}
+        if($case==='account'){$c['account_id']='acct_OTHER';}
+        if($case==='source'){$c['source_id']='fr_OTHER';}
+        if($case==='id'){$c['id']='txn_QCREDITOTHER';}
+        if($case==='amount'){$c['gross_minor']=$c['net_minor']='401';}
+        if($case==='sign'){$c['gross_minor']=$c['net_minor']='-400';}
+        if($case==='scope'){$c['scope']='platform';}
+        if($case==='type'){$c['type']='payout';}
+        if($case==='fee'){$bad['fee_refunds'][0]['fee_id']='fee_OTHER';}
+        if($case==='nominal'){$bad['fee_refunds'][0]['amount_minor']='401';}unset($c);
+        $badRow=reconcileFixture($qo,$bad);fails(fn()=>sharity_donation_finance_reconcile($qo['order_id'],$now),in_array($case,['id','nominal'],true)?'DONATION_RECONCILE_CONFLICT':'DONATION_RECONCILE_UNAVAILABLE');removeReconcileFixture($badRow);
+    }
+    // Full refund includes both fee counterlegs, retains real fees as deficit and zero payable.
+    $fullData=$qd;$fullData['refunds']=[['id'=>'re_QFULL','balance'=>reconcileBalance('txn_QFULL','re_QFULL','refund','-50000'),'failure_balance'=>null]];
+    $fullData['fee_refunds'][]=['id'=>'fr_QREST','fee_id'=>'fee_QBASE','amount_minor'=>'9600','currency'=>'HUF','created'=>1800000011,'connected_credit_verified'=>true,
+        'balance'=>reconcileBalance('txn_QREST','fr_QREST','application_fee_refund','-9600','0','platform'),
+        'connected_credit'=>reconcileBalance('txn_QRESTC','fr_QREST','adjustment','9600')+['account_id'=>sharity_donation_order_decode($qo)['snapshot']['account_id']]];
+    $fullData['original']['application_fee']['refund_state']['amount_refunded_minor']='10000';reconcileFixture($qo,$fullData);
+    sharity_donation_finance_record_movements($qo['order_id'],movementProposal($qo),$now);$qt=targetSave($qo)['target'];
+    check($qt['provisional_split']===['currency'=>'HUF','ngo_minor'=>'0','fund_minor'=>'0']&&$qt['connected_totals']['HUF']['observed_deficit_minor']==='2000'&&$qt['connected_totals']['HUF']['donor_gross_minor']==='0','full refund zero split, retained deficit, internal credits never new gross');
+    // Platform costs participate once; loss and different currency remain explicit.
+    [$cost]=$qFixture('COST',static function($d){$b=&$d['original']['application_fee']['initial_balance'];
+        $b['total_fee_minor']=$b['processing_cost_minor']='5';$b['net_minor']='9995';$b['fee_details']=[['amount_minor'=>'5','currency'=>'HUF','type'=>'stripe_fee']];unset($b);return$d;});
+    $ct=targetSave($cost)['target'];
+    check($ct['provisional_split']===['currency'=>'HUF','ngo_minor'=>'38396','fund_minor'=>'9599'],'observed platform fee deducted exactly once from combined net');
+    [$lost,$ld]=$qFixture('LOST');$ld['disputes']=[['id'=>'dp_QLOST','balances'=>[reconcileBalance('txn_QLOST','dp_QLOST','adjustment','-50000','1500')]]];reconcileFixture($lost,$ld);
+    sharity_donation_finance_record_movements($lost['order_id'],movementProposal($lost),$now);check(targetSave($lost)['target']['provisional_split']['fund_minor']==='0','lost dispute has zero provisional fund, not negative payable');
+    // Actual cross-currency credit is kept; never forced into HUF or used to claim matching split.
+    [$fxq,$fxd]=$qFixture('FX');$fxd['fee_refunds']=$qd['fee_refunds'];$fxd['fee_refunds'][0]['fee_id']='fee_QFX';$fxd['fee_refunds'][0]['id']='fr_QFX';
+    foreach(['balance','connected_credit']as$field){$fxd['fee_refunds'][0][$field]['source_id']='fr_QFX';$fxd['fee_refunds'][0][$field]['id']='txn_QFX'.($field==='balance'?'D':'C');}
+    $fc=&$fxd['fee_refunds'][0]['connected_credit'];$fc['currency']='EUR';$fc['gross_minor']=$fc['net_minor']='1';$fc['exchange_rate']=0.0025;unset($fc);
+    reconcileFixture($fxq,$fxd);sharity_donation_finance_record_movements($fxq['order_id'],movementProposal($fxq),$now);$qt=targetSave($fxq)['target'];
+    check($qt['provisional_split']===null&&$qt['connected_totals']['EUR']['donor_gross_minor']==='0'&&in_array('settlement_currencies_require_executed_fx',$qt['unresolved'],true),'actual FX bucket separate, no invented HUF credit');
+    // Different executed FX on two internal sides must not create imaginary spendable money.
+    [$diff]=$qFixture('INITIALDIFF',static function($d){$f=&$d['original']['application_fee'];$f['currency']='USD';$f['amount_minor']='20';$f['initial_balance']['gross_minor']=$f['initial_balance']['net_minor']='9999';$f['initial_balance']['exchange_rate']=499.95;unset($f);return$d;});
+    $dt=targetSave($diff)['target'];check($dt['provisional_split']===null&&in_array('inter_account_movements_not_balanced',$dt['unresolved'],true),'initial fee actual native imbalance cannot inflate split');
+    [$diffRefund,$dr]=$qFixture('REFUNDDIFF',static function($d){$d['original']['application_fee']['currency']='USD';$d['original']['application_fee']['amount_minor']='20';$d['original']['application_fee']['initial_balance']['exchange_rate']=500;return$d;});
+    $dr['fee_refunds']=[['id'=>'fr_QDIFF','fee_id'=>'fee_QREFUNDDIFF','amount_minor'=>'1','currency'=>'USD','created'=>1800000011,'connected_credit_verified'=>true,
+        'balance'=>reconcileBalance('txn_QDIFFD','fr_QDIFF','application_fee_refund','-500','0','platform'),
+        'connected_credit'=>reconcileBalance('txn_QDIFFC','fr_QDIFF','adjustment','499')+['account_id'=>sharity_donation_order_decode($diffRefund)['snapshot']['account_id']]]];
+    $dr['fee_refunds'][0]['balance']['exchange_rate']=500;$dr['fee_refunds'][0]['connected_credit']['exchange_rate']=499;
+    reconcileFixture($diffRefund,$dr);sharity_donation_finance_record_movements($diffRefund['order_id'],movementProposal($diffRefund),$now);$dt=targetSave($diffRefund)['target'];
+    check($dt['provisional_split']===null&&in_array('inter_account_movements_not_balanced',$dt['unresolved'],true)&&$dt['connected_totals']['HUF']['inter_account_credit_minor']==='499','nominalUSD to two actualHUF sides preserves imbalance, never synthetic fee');
+    echo 'D2q native counterleg/target: '.($checks-$qStart)." checks\n";
     // Same order two native connections acquire the order lock concurrently.
     [$same]=targetFixture('RACE');$p=targetDry($same)['proposal_digest'];$result=backingRace(fn()=>targetSave($same,$p),'START TRANSACTION');
     check(isset($result[0]['value'],$result[1]['value'])&&$result[0]['value']===$result[1]['value']&&targetCount($same['order_id'])===1,'two connections one exact target');

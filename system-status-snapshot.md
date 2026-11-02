@@ -2311,3 +2311,17 @@ call49093tokens, estimated USD0.0050095136; partial reuse with substantial Codex
 actual total cost unknown. Details, failure diagnosis, source/release/rollback and manual
 UI checklist: docs/protected-change-records/2026-11-02-sharity-donation-prices.md section72.
 No main window, provider write, new schema, merge, deployment or financial activation.
+
+
+## D2q exact NGO fee-refund credit - 2026-11-02
+
+Existing donation adapter/ledger conditionally verifies exact-source NGO credits and
+registers real native movements. Interaccount credits are not donor proceeds. Provisional
+net80/20 requires coherent actual currencies and combined account nets; full liability
+unknown, all readiness false.1407 native MariaDB assertions (67 D2q),437 finance/CLI,
+521 adjustment (26 D2q SDK),197 checkout,13 runtime. Independent review FX discrepancy
+fixed and tested; final source review clear, reviewer did not run tests. Hermes050 one
+call44510tokens, estimated USD0.0043327466, partial reuse/substantial repair; total cost
+unknown. Test container removed. Full contract, limitations, rollout/rollback and manual
+UI checklist: protected change record2026-11-02-sharity-donation-prices.md section73.
+No main operation, provider POST, new schema, merge/deploy/activation or financial PASS.
