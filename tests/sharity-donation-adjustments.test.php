@@ -1,0 +1,136 @@
+<?php
+declare(strict_types=1);
+// Reuse the real SDK, synthetic fixture and existing regression/CLI boundary suite.
+require __DIR__ . '/sharity-donation-finance-read.test.php';
+$checks = 0;
+final class AdjustmentHttp implements Stripe\HttpClient\ClientInterface {
+    public array $responses = []; public array $calls = []; public $modify = null;
+    public function request($method, $url, $headers, $params, $hasFile, $apiMode='v1', $maxNetworkRetries=null) {
+        $path=parse_url($url,PHP_URL_PATH); $headers=array_values(array_filter($headers,static fn($h)=>!str_starts_with(strtolower($h),'authorization:')));
+        $this->calls[]=compact('method','path','headers','params','maxNetworkRetries');
+        $key=$path.(isset($params['starting_after'])?'#'.$params['starting_after']:'');
+        if(!array_key_exists($key,$this->responses)){throw new RuntimeException('PRIVATE_UNEXPECTED_REQUEST');}
+        $r=$this->responses[$key];if($this->modify!==null){$r=($this->modify)($r,$path,$params,count($this->calls));}
+        return [json_encode($r,JSON_THROW_ON_ERROR),200,[]];
+    }
+}
+function alist(array $data=[],bool $more=false):array{return ['object'=>'list','data'=>$data,'has_more'=>$more];}
+function abalance(string $id,string $source,int $amount,int $fee=0,string $type='refund',string $currency='huf'):array{
+    return ['object'=>'balance_transaction','id'=>$id,'source'=>$source,'type'=>$type,'amount'=>$amount,'fee'=>$fee,'net'=>$amount-$fee,
+        'currency'=>$currency,'status'=>'available','created'=>1800000040,'available_on'=>1800000040,'exchange_rate'=>null,
+        'fee_details'=>$fee===0?[]:[['type'=>'stripe_fee','amount'=>$fee,'currency'=>$currency,'description'=>'PRIVATE_DESCRIPTION']]];
+}
+function arefund(string $id='re_ONE',int $amount=1000,string $status='succeeded',string $currency='huf'):array{
+    return ['object'=>'refund','id'=>$id,'charge'=>'ch_SYNTHETIC','payment_intent'=>'pi_SYNTHETIC','amount'=>$amount,
+        'currency'=>$currency,'created'=>1800000040,'status'=>$status,'balance_transaction'=>abalance('txn_'.str_replace('_','',$id),$id,-$amount,0,'refund',$currency),
+        'failure_balance_transaction'=>null,'receipt_number'=>'PRIVATE_RECEIPT'];
+}
+function abase(string $mode='direct',string $currency='HUF'):array{
+    [$e,$p]=fixture($mode,$currency);$p['/v1/refunds']=alist();$p['/v1/disputes']=alist();
+    if($mode==='amplifier'){$p['/v1/application_fees/fee_SYNTHETIC/refunds']=alist();}return [$e,$p];
+}
+function adjustmentRead(array $e,array $p,?callable $modify=null):array{
+    global $transport,$adapter;
+    // Keep the inline summary consistent with synthetic paginated collections by default.
+    // Contradictory summaries are injected explicitly by the modify callback below.
+    foreach (['/v1/refunds'=>['/v1/charges/ch_SYNTHETIC','refund','re'], '/v1/application_fees/fee_SYNTHETIC/refunds'=>['/v1/application_fees/fee_SYNTHETIC','fee_refund','fr']] as $list=>[$parent,$object,$prefix]) {
+        if (!isset($p[$parent])) { continue; } $count=0;
+        foreach ($p as $key=>$page) { if (($key===$list || str_starts_with($key,$list.'#')) && is_array($page['data']??null)) { $count+=count($page['data']); } }
+        $inline=[]; for($i=0;$i<min(10,$count);$i++) { $inline[]=['id'=>$prefix.'_INLINE'.$i,'object'=>$object]; }
+        $p[$parent]['refunds']=alist($inline,$count>10);
+    }
+    $transport=new AdjustmentHttp();$transport->responses=$p;$transport->modify=$modify;
+    Stripe\ApiRequestor::setHttpClient($transport);
+    $adapter=new Sharity_Stripe_Checkout_Adapter(Sharity_Stripe_Checkout_Adapter::client('rk_test_SYNTHETICNOTACREDENTIAL'));
+    return $adapter->retrieveAdjustmentEvidence('cs_test_SYNTHETIC',$e);
+}
+function adjustmentFails(array $e,array $p,?callable $modify=null):void{fails(static fn()=>adjustmentRead($e,$p,$modify),'DONATION_ADJUSTMENT_EVIDENCE_UNAVAILABLE');}
+$R='/v1/refunds';$D='/v1/disputes';$FR='/v1/application_fees/fee_SYNTHETIC/refunds';
+foreach(['direct','amplifier'] as $mode){foreach(['HUF','EUR','USD','GBP'] as $currency){
+    [$e,$p]=abase($mode,$currency);$r=adjustmentRead($e,$p);
+    check($r['resources_complete'] && $r['unresolved']===[] && !$r['atomic_snapshot'],'complete fetched lists are not atomic');
+    check(!$r['allocation_eligible'] && !$r['payment_verified'] && !$r['settlement_reconciled'],'no accounting permission');
+    check($r['original']['payment']['amount_minor']===$e['snapshot']['amount_minor'] && count($transport->calls)===($mode==='direct'?8:13),'units and bounded base readback');
+    foreach($transport->calls as $call){
+        check($call['method']==='get' && $call['maxNetworkRetries']===0,'GET only no retry');
+        check(in_array('Stripe-Version: 2026-10-28.endive',$call['headers'],true),'pinned API');
+        $platform=str_contains($call['path'],'application_fees')||$call['path']===$FB;
+        $scope=array_values(array_filter($call['headers'],static fn($h)=>str_starts_with($h,'Stripe-Account:')));
+        check($scope===($platform?[]:['Stripe-Account: acct_SYNTHETIC']),'right account per call');
+        check(!array_filter($call['headers'],static fn($h)=>str_starts_with($h,'Idempotency-Key:')),'no creation key');
+    }
+    check(!str_contains(json_encode($r),'PRIVATE_'),'minimal fields only');
+}}
+[$e,$p]=abase();$p[$C]['amount_refunded']=600;
+$p[$R]=alist([arefund('re_A',100)],true);$p[$R.'#re_A']=alist([arefund('re_B',200)],true);$p[$R.'#re_B']=alist([arefund('re_C',300)]);
+$r=adjustmentRead($e,$p);check(count($r['refunds'])===3 && $r['unresolved']===[],'all pages retained, cumulative refund matches');
+$listCalls=array_values(array_filter($transport->calls,static fn($c)=>$c['path']==='/v1/refunds'));
+check($listCalls[1]['params']['starting_after']==='re_A' && $listCalls[2]['params']['limit']===100,'explicit pagination cursor/limit');
+check($listCalls[0]['params']['expand']===['data.balance_transaction','data.failure_balance_transaction'],'both refund movements requested');
+[$e,$p]=abase();$rf=arefund(status:'failed');$rf['failure_balance_transaction']=abalance('txn_RETURN','re_ONE',1000,-50,'refund_failure');
+$p[$R]=alist([$rf]);$r=adjustmentRead($e,$p);
+check($r['refunds'][0]['balance']['net_minor']==='-1000' && $r['refunds'][0]['failure_balance']['net_minor']==='1050','signed debit and reversal credit/fee');
+check($r['refunds'][0]['failure_balance']['processing_cost_minor']==='-50' && $r['unresolved']===[],'signed fee reversal retained');
+foreach(['adjustment','payment_refund','payment_failure_refund'] as $type){$q=$p;$q[$R]['data'][0]['failure_balance_transaction']['type']=$type;check(adjustmentRead($e,$q)['resources_complete'],'documented failure types');}
+foreach(['pending','requires_action'] as $state){$q=$p;$q[$R]['data'][0]['status']=$state;$q[$R]['data'][0]['failure_balance_transaction']=null;$q[$R]['data'][0]['balance_transaction']=null;$r=adjustmentRead($e,$q);check(in_array('refund_unresolved',$r['unresolved'],true),'pending not settled');}
+$q=$p;$q[$R]['data'][0]['failure_balance_transaction']=null;check(in_array('refund_reversal_missing',adjustmentRead($e,$q)['unresolved'],true),'missing reversal explicit');
+[$e,$p]=abase();$p[$C]['amount_refunded']=1000;$p[$R]=alist([arefund()]);
+foreach([null,'txn_NOTEXPANDED'] as $missing){$q=$p;$q[$R]['data'][0]['balance_transaction']=$missing;check(in_array('refund_balance_missing',adjustmentRead($e,$q)['unresolved'],true),'missing balance not zero money');}
+$q=$p;unset($q[$R]['data'][0]['failure_balance_transaction']);check(in_array('balance_field_missing',adjustmentRead($e,$q)['unresolved'],true),'absent nullable field is not inferred empty');
+$q=$p;$q[$R]['data'][0]['balance_transaction']['status']='pending';check(adjustmentRead($e,$q)['balances_pending'],'pending balance flagged');
+// Cross-currency signs and native settlement values; no reference-rate arithmetic.
+$q=$p;$q[$R]['data'][0]['balance_transaction']=abalance('txn_FX','re_ONE',-250,-5,'refund','eur');$q[$R]['data'][0]['balance_transaction']['exchange_rate']=0.25;
+$r=adjustmentRead($e,$q);check($r['refunds'][0]['balance']['net_minor']==='-245' && $r['refunds'][0]['balance']['currency']==='EUR','separate native FX balance');
+$bad=$q;$bad[$R]['data'][0]['balance_transaction']['amount']=250;$bad[$R]['data'][0]['balance_transaction']['net']=255;adjustmentFails($e,$bad);
+$bad=$q;$bad[$R]['data'][0]['balance_transaction']['exchange_rate']=null;adjustmentFails($e,$bad);
+$dispute=['object'=>'dispute','id'=>'du_ONE','charge'=>'ch_SYNTHETIC','payment_intent'=>'pi_SYNTHETIC','livemode'=>false,'amount'=>60000,'currency'=>'eur','created'=>1800000040,'status'=>'won',
+    'balance_transactions'=>[abalance('txn_DISPUTE','du_ONE',-50000,1500,'adjustment'),abalance('txn_WON','du_ONE',50000,0,'adjustment')],'evidence'=>['customer_email_address'=>'PRIVATE_EMAIL']];
+[$e,$p]=abase();$p[$D]=alist([$dispute]);$r=adjustmentRead($e,$p);
+check(count($r['disputes'][0]['balances'])===2 && $r['unresolved']===[],'won dispute read even current disputed flag false');
+check($r['disputes'][0]['amount_minor']==='60000' && $r['disputes'][0]['currency']==='EUR','nominal dispute can exceed payment and differ currency');
+check(!str_contains(json_encode($r),'PRIVATE_'),'dispute evidence PII not projected');
+foreach(['needs_response','under_review','appeal_needs_response','appeal_under_review','warning_needs_response','warning_under_review','lost','warning_closed','prevented'] as $state){
+ $q=$p;$q[$D]['data'][0]['status']=$state;$r=adjustmentRead($e,$q);check($r['resources_complete'],'supported dispute status');
+ check(in_array('dispute_open',$r['unresolved'],true)===!in_array($state,['lost','warning_closed','prevented'],true),'open dispute blocks resolution');
+}
+$q=$p;$q[$D]['data'][0]['balance_transactions']=[];check(in_array('dispute_balance_missing',adjustmentRead($e,$q)['unresolved'],true),'terminal dispute without movements not final');
+[$e,$p]=abase('amplifier');$p[$F]['amount_refunded']=200;
+$p[$FR]=alist([['object'=>'fee_refund','id'=>'fr_ONE','fee'=>'fee_SYNTHETIC','amount'=>200,'currency'=>'huf','created'=>1800000040,
+ 'balance_transaction'=>abalance('txn_FEEREFUND','fr_ONE',-200,0,'application_fee_refund')]]);
+$r=adjustmentRead($e,$p);check($r['fee_refunds'][0]['balance']['scope']==='platform' && !$r['fee_refunds'][0]['connected_credit_verified'],'platform debit does not synthesize connected credit');
+check(in_array('fee_refund_connected_credit_unreconciled',$r['unresolved'],true),'missing counterpart blocks settlement');
+// Same Stripe transaction ID is account-scoped, not globally unique.
+$q=$p;$q[$FR]['data'][0]['balance_transaction']['id']='txn_CHARGE';check(adjustmentRead($e,$q)['resources_complete'],'same id allowed across distinct accounts');
+$bad=$p;$bad[$FR]['data'][0]['fee']='fee_OTHER';adjustmentFails($e,$bad);
+$bad=$p;$bad[$FR]['data'][0]['amount']=201;adjustmentFails($e,$bad);
+$bad=$p;$bad[$FR]['data'][0]['balance_transaction']['source']='fr_OTHER';adjustmentFails($e,$bad);
+// Malformed lists, wrong economic linkage, foreign balance/source, floats and stale aggregates fail closed.
+[$e,$p]=abase();$p[$C]['amount_refunded']=1000;$p[$R]=alist([arefund()]);
+$cases=[[$R,['object'],'refund'],[$R,['has_more'],null],[$R,['data'],null],[$R,['data',0,'id'],'re_bad/path'],[$R,['data',0,'object'],'charge'],
+ [$R,['data',0,'charge'],'ch_OTHER'],[$R,['data',0,'payment_intent'],'pi_OTHER'],[$R,['data',0,'amount'],'1000'],[$R,['data',0,'amount'],1000.5],
+ [$R,['data',0,'currency'],'eur'],[$R,['data',0,'created'],0],[$R,['data',0,'status'],'invented'],
+ [$R,['data',0,'balance_transaction','id'],'txn_CHARGE'],[$R,['data',0,'balance_transaction','source'],'re_OTHER'],
+ [$R,['data',0,'balance_transaction','net'],-999],[$R,['data',0,'balance_transaction','fee_details'],[['amount'=>1,'currency'=>'huf','type'=>'stripe_fee']]],
+ [$R,['data',0,'balance_transaction','type'],'payout'],[$C,['amount_refunded'],999]];
+foreach($cases as [$path,$keys,$value]){$q=$p;$ref=&$q[$path];foreach($keys as $key){$ref=&$ref[$key];}$ref=$value;unset($ref);adjustmentFails($e,$q);}
+$q=$p;$q[$R]['data'][]=$q[$R]['data'][0];adjustmentFails($e,$q);
+$q=$p;$q[$R]=alist([],true);adjustmentFails($e,$q);
+$q=$p;$q[$R]['has_more']=true;$q[$R.'#re_ONE']=$q[$R];adjustmentFails($e,$q);
+// Contradictory inline count with zero monetary aggregate must not be accepted.
+[$ce,$cp]=abase();
+adjustmentFails($ce,$cp,static function($r,$path)use($C){if($path===$C){$r['refunds']=alist([['object'=>'refund','id'=>'re_MISSING']]);}return $r;});
+[$ce,$cp]=abase('amplifier');
+adjustmentFails($ce,$cp,static function($r,$path)use($F){if($path===$F){$r['refunds']=alist([],true);}return $r;});
+// Cap ten pages without accepting a truncated collection.
+$q=$p;for($i=0;$i<10;$i++){$key=$R.($i===0?'':'#re_P'.($i-1));$q[$key]=alist([arefund('re_P'.$i,1)],true);}
+adjustmentFails($e,$q);check(count(array_filter($transport->calls,static fn($c)=>$c['path']==='/v1/refunds'))===10,'bounded page budget');
+adjustmentFails($e,$p,static function($r,$path,$params,$count)use($C){if($path===$C&&$count>5){$r['amount_refunded']=1100;}return $r;});
+adjustmentFails($e,$p,static function($r,$path){if($path==='/v1/refunds'){throw new RuntimeException('PRIVATE_PROVIDER_ERROR');}return $r;});
+[$e,$p]=abase();$p[$S]['payment_status']='unpaid';$r=adjustmentRead($e,$p);check(!$r['resources_complete']&&count($transport->calls)===1,'unpaid no adjustment network');
+// Existing CLI owner/order checks and new flag work together; no globals/argv parsing.
+[$e,$p]=abase('amplifier');adjustmentRead($e,$p);$transport->calls=[];$wpdb->row=$stored;$wpdb->transaction=['ac'=>1,'tx'=>0];$factoryCalls=0;
+sharity_donation_cli_payment_inspect([],['adjustments'=>true,'order'=>$e['order_id']]);
+$last=json_decode(end(WP_CLI::$lines),true,64,JSON_THROW_ON_ERROR);check($last['scope']==='observed_adjustment_resources' && $wpdb->writes===0,'CLI opt-in reaches reader with no write');
+foreach([false,'true','1',1,null] as $flag){$n=$factoryCalls;fails(static fn()=>sharity_donation_cli_payment_inspect([],['order'=>$e['order_id'],'adjustments'=>$flag]));check($factoryCalls===$n,'bad flag rejected before SDK');}
+$wpdb->transaction=['ac'=>1,'tx'=>1];$n=$factoryCalls;fails(static fn()=>sharity_donation_cli_payment_inspect([],['order'=>$e['order_id'],'adjustments'=>true]));check($factoryCalls===$n,'adjustments outside DB transactions only');
+echo "PASS donation adjustment reader: {$checks} checks; real SDK/offline HTTP, no ledger or live acceptance\n";

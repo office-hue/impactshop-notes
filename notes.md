@@ -1,3 +1,121 @@
+## Sharity P2w NGO-megosztó oldal — 2026-11-01
+
+A standalone PHP share-template HU/EN/DE/FR szövegei, metaadatai, natív/social
+megosztási szövegei, másolási és PDF-feliratai lokalizáltak. A meglévő dockot
+közvetlenül rendereli; nincs általános wp_footer-hívás vagy új preferenciatár.
+Eredeti NGO-adat, összeg, CTA/QR, embedkód és PDF-fájlnév megmarad. Az eredeti
+pénznemről külön tájékoztatás van; ezen a WP-oldalon még nincs FX-konverzió.
+Javítva: description előtti shareText-olvasás, sikertelen másolás hamis sikere,
+betöltéskori automatikus natív megosztás. Megosztás most csak kattintásra indul.
+Biztonságos JSON/HTML-escaping, nyelvváltáskor naprakész copy/PDF/szöveg; rövid
+visszajelzés visszaállítása megtartja az ikonokat és az aktuális nyelvet.
+A template-en kívüli teljes PHP forrás byteazonos az előállapottal.
+
+Ellenőrzés: 24/24 tényleges Chrome teszt (7 új share + 7 NGO + 10 dock),
+benne16 nyelv/deviza kombináció, blokkolt tárolás, hibás/duplikált query,
+rosszindulatú szintetikus NGO-név, eredeti CTA/összeg, nulla új üzleti POST,
+egyetlen NGO-adatlekérés, copy hiba/siker/fallback, kattintásos natív share,
+PDF-stub siker/hiba/felirat/link/fájlnév, billentyűzetes választó, DE/FR
+320/375/1280 px. A képi review hosszú német dock-feliratot talált; tördelés
+javítva, érintett hatnézetes teszt ismét sikeres. PHP lint és guardhash teljes
+inventory/6 negatív eset sikeres. PDF valódi külső lib/CDN, 200%zoom, nyomtatás,
+teljes WordPress/Elementor, staging és éles elfogadás még nincs igazolva.
+Lokális képek: tmp/sharity-internationalization/ngo-share-{de,fr}-320.png.
+
+Hermes027: completed, 1c23fec5-1e39-4cfa-97b4-33223e324569, 17752 input +2339
+output =20091 token,1hívás, becsült0,00204113USD (nem számlázott tény).
+A válasz nem adott teljes patch-et és indokolatlanul függő döntést jelzett;
+a javasolt PHP-queryresolver hibás (ismételt GET elveszne), elvetve. Nincs
+újrahívás/JEV. Codex készítette a működő patch-et és teszteket; javításigény
+jelentős, megtakarítás nem igazolt. Meglévő pénzügyi/auth/reward ág változatlan.
+Protected-record: docs/protected-change-records/2026-10-31-sharity-international-preferences.md.
+Rollback: saját mentett PHP-változat és hozzá illő hash; nincs adatvisszaírás.
+Forrásellenőrzött; nem merge-elt, nem telepített és nem aktivált.
+
+## Sharity Notes main-integráció — 2026-11-01
+
+Arnold kifejezetten jóváhagyott, Notes-only ötperces ablaka: 18:15:24–18:16:37
+Europe/Budapest,73másodperc, utána felszabadítva. Main `67af9bbcc6b189a62df82a193e798276b2a19bc7`
+integrálva a saját PR244-ágba, commit `b6f5e1313d135ec8f80400487b1a3d14e2d82d0e`.
+A fetch a FETCH_HEAD-et frissítette, az origin/main régi maradt; a tényleges
+integráció explicit FETCH_HEAD-re történt. Három dokumentum elején konfliktus:
+notes.md, system-status-snapshot.md, docs/bastion-guard-status.md. Mindkét ág
+bejegyzései megmaradtak, a main négy korábbi történeti sortörlése megmaradt.
+A saját19 és main6 nem ütköző fájl blobazonossága ellenőrizve; termékkódot
+a konfliktusfeloldás nem módosított. Korábbi célzott terméktesztek újrahasználva.
+Egy ellenőrzés túl szigorú teljes-sormegőrzést várt, és a parancssor továbbfutott:
+egy helyi, nem pusholt commit konfliktusjelölőt tartalmazott. Javítva és amendelve;
+a végső három dokumentumban nincs marker, mindkét oldal új sorai igazoltak,
+diff-check és tiszta worktree visszaolvasva. Távolra hibás commit nem került.
+Rollback: az integrációs commit saját ágban visszavonható; main és idegen
+worktree változatlan. Ai-agent main, PR-merge, telepítés és aktiválás nem történt.
+
+## Sharity P3b — 2026-11-01, helyi cache-forráskész
+
+Új Notes-owned publikus FX read/cache, defaultOFF refresh, napi egy atomi
+attempt és max3 MNB-hívás. GET csak cache; pontos egység/dátum/frissesség,
+régi cache hiba esetén megmarad.150 izolált PHP assertion, meglévő MNB/money,
+lint/diff sikeres; független review rendben, éles DB/cron még nem igazolt.
+Hermes02316370token,becsült0,002145325USD; hibás claim/date/test javítva.
+Csak új fájl és config/hash/checksum inventory-bővítés, guardlogika változatlan.
+Részlet/rollback: protected record P3b. Nincs push/merge/deploy/aktiválás.
+
+## Sharity P2u — 2026-11-01, helyi forráskész
+
+NGO full/compact/widget saját szövegei négy nyelven, meglévő választóval.
+Összeg/provider szöveg/CTA megmarad; váltás nem fetch-el és nem ír új card_view-t.
+7 Chrome-csoport, syntax/lint/diff, teljes guard inventory és6 eset sikeres;
+független read-only review rendben. Első teszt fixture-encoding/selector hibája
+javítva; 375px FR kép megtekintve, teljes live UI elfogadás nyitott.
+Hermes021 partial;1 hívás, token/díj ismeretlen, részleges átvétel és Codex-javítás.
+Részlet/rollback: protected-change-records/2026-10-31-sharity-international-preferences.md P2u.
+Nincs push/PR/merge/telepítés/aktiválás. SSH live discovery host-key hibán megállt;
+ellenőrzés nem lett kikapcsolva. P3a pontos pénzegység könyvtár Hermes022-nél.
+
+## Sharity P2t — 2026-11-01, helyi forráskész
+
+A meglévő action-bar hat pontos külső célra átadja a választott nyelvet/devizát;
+csak ui_lang/ui_currency változik. Raw query/fragment, profil/ország/attribution
+megmarad.10 preference Chrome-csoport,85 Next/FactLens teszt,25 browser return,
+36 PHP completion eset sikeres; canonical resolver NOT RUN. Teljes meglévő
+hash inventory/6 eset, PHP lint/diff sikeres.26 additív terméksor, CSS változatlan.
+Hermes020:19 601 token,1 hívás,becsült0,00231504 USD; logika átvéve/egyszerűsítve,
+hiányos tesztjavaslat kibővítve. Codex-költség ismeretlen. Protected record P2t
+részben exact határ/teszt/rollback/UI-checklist. Következő P2u NGO runtime-copy,
+Hermes021 kiadva. Nincs push/PR/merge/telepítés/aktiválás; teljes ág nem release-ready.
+Az alábbi bejegyzések történetiek.
+
+## Sharity P2p — 2026-11-01, helyi forráskész
+
+27 dinamikus sablon HU/EN/DE/FR: üdvözlés, szavazat/pont/előny, vakáció és Legacy
+Pool kijelzés. Névenként/számonként pontos szövegmegőrzés, változatlan core/jogosultság.
+9 profiltesztcsoport sikeres; meglévő P2n/guard-bizonyíték újrahasználva, nem új PASS.
+Hermes016 szótára részben átvéve, core-t érintő hiányos kód elvetve;15 156 token,
+becsült0,001791608 USD. Javításigény/teszt/rollback/kézi checklist:
+[protected record](docs/protected-change-records/2026-10-31-sharity-international-preferences.md#p2p--dinamikus-profilkijelzés-2026-11-01-változtatás-előtti-terv).
+Nincs push/PR/merge/deploy/aktiválás, FX/pénzügyi változás vagy éles adatírás.
+Következő P2q a maradék profilcopy és szövegfüggő vezérlés;017 még nem használt.
+
+## Sharity P2o — statikus profilcopy, helyi forráskész
+
+30 statikus kulcs HU/EN/DE/FR a meglévő overlayben. 5 új profil +7 P2n Chrome
+csoport PASS, syntax/diff-check és core-byteazonosság ellenőrizve. Dinamikus
+állapotok még HU/EN, nincs FX/pénzügyi/auth változás. Két szűk olvashatósági CSS-fix.
+Hermes015:6 155 token, becsült0,000701792 USD; javítás/korlát/rollback és éles kézi
+checklist a [protected change recordban](docs/protected-change-records/2026-10-31-sharity-international-preferences.md#p2o--statikus-profilcopy-változtatás-előtti-terv).
+Nincs push/PR/merge/deploy/aktiválás; teljes WP/Elementor UI-elfogadás nyitott.
+Következő P2p a dinamikus profilcopy;016 még nem használt, nincs függő Hermes.
+
+## Sharity P2n — 2026-10-31, helyi forráskész
+
+HU/EN/DE/FR navigáció/választó és független HUF/EUR/USD/GBP preferencia a meglévő
+WP action-barban; új query fogadó. HU/EN oldallink és ország megmarad; a többi
+oldalszöveg még HU/EN, nincs átváltás/elszámolási változás. 7 valódi Chrome teszt,
+PHP/JS syntax sikeres; saját action-bar hash célzottan egyeztetve. A 166 fájlos
+meglévő guard PASS, de action-bar nincs a futtatott listájában; határait rögzítettük.
+Forrás, koherencia, kézi éles checklist, költség, korlátok és rollback:
+[protected change record](docs/protected-change-records/2026-10-31-sharity-international-preferences.md).
+Nincs push/PR/merge/deploy/aktiválás; előbb WP-fogadó, utána Next küldő.
 ## 2026-11-02 — Publikus marketingmérés útvonalkiegészítés
 
 A két meglévő measurement MU-fájl listája kiegészült a reklámozói,
@@ -8397,6 +8515,168 @@ javult: a mostani refund/decay teszt tényleges levonást is követel; korábbi
 korlát a meglévő termékterv utolsó szakaszában. Új forrás még nem merge-elt;
 staging b9 telepítve/off, production változatlan.
 
+
+### 2026-11-01 — P2q indítás
+Saját 9b7df230 base: profil becenévmentés/belépés/kódmegjelenítés gomb- és státuszcopy. Hermes017 első tervezet; minimális core UI-javítás szükséges lehet a `Mentés…` szövegfüggéshez. Pénzügy/auth/redirect szerződés változatlan; kiadás nincs.
+
+
+### 2026-11-01 — P2q profil műveletszövegek
+55 sablon HU/EN/DE/FR, hat szerepkör; core mentési finally nyelvfüggetlen boolean.
+13/13 profil +25/25 return +identity-v2 static +meglévő guard/hash és syntax/diff
+sikeres. PHP/auth/API/pont/pénzügy változatlan; nincs kiadás/aktiválás.
+Core hash és manifest checksum frissült; policy/inventory változatlan.
+Hermes017 részben átvéve/javítva:11 205 token,1 hívás,becsült0,001276457 USD;
+Codex-költség ismeretlen. Részletek és kézi UI-checklist:
+`docs/protected-change-records/2026-10-31-sharity-international-preferences.md` P2q.
+Következő P2r; forráskész részcsomag, teljes ág nem release-ready.
+
+
+### 2026-11-01 — P2r indítás
+Push, pontelőzmény és legutóbbi NGO megjelenítési copy, Hermes018 első tervezet. Csak saját overlay/teszt; core/API/állapot/pénzügy változatlan. Jelvénynevek provideradatok, külön nyelvi szerződést igényelnek.
+
+
+### 2026-11-01 — P2r push, előzmény és NGO copy
+36 sablon HU/EN/DE/FR, meglévő overlay/matcher; név/dátum/szám és core változatlan.
+18 külön profilcsoport és háromméretes komponensreview sikeres; korábbi25 return/
+guard eredmény újrahasznált. Hermes018 partial,1 hívás, használat/díj ismeretlen;
+szótár átvéve, túl tág kódjavaslat elvetve, Codex integrálta. Nincs kiadás/aktiválás.
+Részletes ellenőrzés, rollback és kézi UI-checklist a meglévő
+`docs/protected-change-records/2026-10-31-sharity-international-preferences.md` P2r részében.
+Következő P2s: maradék dialógus/üzenetgomb és provider badge nyelvi szerződés.
+
+
+### 2026-11-01 — P2s indítás
+Ismert seed-jelvénycím/leírás és üzenet nyugtázógomb; Hermes019 első tervezet. Egyedi metadata megőrzése, core csak badge-key marker szükség szerint. A jelenlegi PHP nem renderel share-both/copy-recovery gombot: inaktív dialóguskódhoz nem nyúlunk.
+
+
+### 2026-11-01 — P2s jelvény- és üzenetgomb-fordítás
+41 seed-jelvény neve/title HU/EN/DE/FR; csak pontos key+szövegpár egyezés.
+Egyedi/hiányos adat megmarad, régi EN adatátírás kizárva. Core egy renderelt
+badge-key marker; csoport/sorrend/tier változatlan. Eredeti Rendben gomb fordul,
+read POST/listener megmarad. 21 külön profilcsoport célzott futásokban sikeres;
+identity-v2 static, meglévő guard/6 eset, syntax/diff sikeres. Mobil komponens
+megtekintve, teljes éles WP/Elementor elfogadás nyitott. Nincs kiadás/aktiválás.
+Hermes019:11 608 token,1 hívás,becsült0,001397669 USD; javított szótár átvéve,
+hibás kódjavaslat elvetve. Codex-költség ismeretlen. Secretary
+`evt-b44fd02c-0c2f-4971-8afc-cc3738abf35e` ACK. Részletek és kézi checklist:
+`docs/protected-change-records/2026-10-31-sharity-international-preferences.md` P2s.
+Következő P2t: WP kifelé menő preferenciaátadás meglévő útja; Hermes020 még nincs
+kiadva. P3–P7 pénzügyi terv változatlan, teljes ág nem release-ready.
+
+## 2026-11-02 Sharity donation D0/D1
+
+Approved net80/20 Amplifier, direct net100%, fixed package votes; legacy orders unchanged. New default-off weekly price publisher and read-only GET, 33 PHP checks passed; no financial writers or live activation. Coherence, risk, rollback and manual checklist: docs/protected-change-records/2026-11-02-sharity-donation-prices.md.
+
+## 2026-11-02 D2a immutable donation quotes (inactive)
+
+Own sharity-ngo-donations.php now provides owner-bound30-minute immutable quotes using canonical Web Session authentication, exact minor values and validated frozen package books. Single INSERT/unique replay key and readback; no Stripe/payment/vote/ledger writer. Explicit CLI quote-schema --apply only; failed verification invalidates readiness, existing rows stay. New quote switch default-off. Actual checkout/status authority, SDK, account verification, expiry cleanup/admission limits and reconciliation remain pending; no activation permitted by these source checks alone.
+
+Validation:72 isolated quote cases,33 existing price checks, PHP lint;18 actual MariaDB10.11.19 checks with forced parallel connections and uncertain-commit readback. Cached image, temporary loopback/tmpfs container removed after testing; no live DB/provider. Independent source review correction: stale schema-ready marker fixed and tested. BFF counterpart in ai-agent PR1870; deployment remains unperformed. Rollback only own code/flag; preserve quote data. Protected details/manual UI checklist: docs/protected-change-records/2026-11-02-sharity-donation-prices.md.
+
+## 2026-11-02 — D2b Stripe Checkout-adapter, csak forrás
+
+Elkülönített hivatalos SDK22.1.0/lock, API2026-10-28.endive. Új, még be nem töltött adapter: pontos minorösszeg és deviza, kapcsolt NGO-account, közvetlen0%platformdíj, Amplifier ideiglenes20%bruttó alaprész (végső nettó80/20 egyeztetés később). Automatikus devizaárazás és SDK-retry kikapcsolva; változatlan kérés/idempotenciakulcs, szűrt visszaolvasás, Checkout-státusz nem pénzügyi bizonyíték. Új endpoint, rendelésírás, loader, webhook, séma, szavazat vagy aktiválás nincs.
+
+197 valódi SDK-s, helyettesített HTTP-válaszos ellenőrzés,72 meglévő quote+33 árteszt és PHP lint sikeres. Lockazonos install dry-run és helyi PHP8.4.25/curl/json/mbstring megfelel. Composer validate manifest/lock rendben, de strict módban figyelmeztetés: nincs megadott projektlicenc és szándékosan pontos SDK-verzió; ezt nem nevezzük warning-free PASS-nak. Független review két javítása: történeti Amplifier-visszaolvasás változatlan v1-policyből, örökölt StripeContext elutasítása. Javítások visszaolvasva, további scoped blokkoló nincs. Nincs sandbox/live API vagy aktuális éles/UI elfogadás; Stripe connector újrahitelesítést kér.
+
+Hermes034:1 hívás,5031 input+8203 output, becsült0,001950767USD, nem számla. Hibás pénz-/szavazatszabály és SDK-kezelés miatt a javaslat elvetve; Codex készítette a végleges adaptert/tesztet. Nincs ismétlés, tényleges Codex/reviewer költség ismeretlen.
+
+Következő: tartós tulajdonoshoz kötött rendelés/kísérlet és egyszeri küldési igényfoglalás, privát státusz, webhook/pénzügyi egyeztetés; utána D3/D4. A korábbi72/33 teszt nem igazol Stripe-párhuzamosságot. Rollback saját új fájlokra korlátozott, meglévő quote/pénzügyi adatok megőrzendők. Kézi UI/release ellenőrzés továbbra függő. Részletek: docs/protected-change-records/2026-11-02-sharity-donation-prices.md.
+
+## D2c — kezdés, tartós rendelés és egyszeri küldés
+
+Jóváhagyott D2 folytatás a saját f4badb83 alapról. Új orders.php: owner-bound immutable rendelés, unique quote/kulcs, tartós egyszeri küldési foglalás, privát státusz. Kockázat: két párhuzamos indítás/veszett DB-ACK duplafizetést okozhat; ezért tényleges MariaDB-versenyteszt szükséges. Új endpoint/aktiválás/sémafuttatás nincs; meglévő pont-, szavazat-, adományalap és SDK változatlan. Hermes035 első vázlat, Codex integráció és elkülönített DB-teszt. Rollback csak saját új fájl/inventory, tartós order/quote-adat megmarad. Manuális UI-checklist későbbi kiadáskor: továbbra inaktív választó, ár- és nyelvváltás nem indít pénzmozgást.
+
+## 2026-11-02 — D2c belső rendeléstároló, inaktív
+
+Owner-bound, immutable quote→order és egyetlen CAS-foglalt fizetési kísérlet. Bizonytalan insert/claim/result után visszaolvasás; elveszett claim-ACK nem indít POST-ot. Privát státusz és payment_verified=false. Nincs loader/endpoint/CLI-regisztráció/aktiválás.77 valódi MariaDB-ellenőrzés, helyettesített Stripe HTTP, PHP lint, teljes meglévő guard inventory+6 eset sikeres; független review-ban nincs nyitott scoped hiba. Tesztkonténer eltávolítva és visszaolvasva. Korábbi adapter197/quote72/ár33 eredmény újrahasznált.
+
+Hermes0351hívás,19007token, becsült0,00243971USD; séma részben átvéve, működés lényegesen javítva/újraírva, Codex/reviewer tényleges költsége ismeretlen. Részletes javításlista, folytatás, kézi UI-checklist és rollback: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §57. Csak orders.php és saját inventorybővítés; quote/order/pénzügyi adat megőrzendő. Nincs merge, telepítés vagy élő elfogadás. Chrome-eszköz egyszeri időtúllépése nem bizonyít Stripe-fiókhibát.
+
+## D2d — kezdés: hitelesített checkout/státusz és explicit séma
+
+Saját N d60239aa / A78912de74. Új belső HTTP-modul kapcsolja a kanonikus Web Session authot a már review-zott rendeléstárolóhoz; külön verziózott SDK-loader csak új prepared küldésnél. Status/replay nem kér kulcsot vagy SDK-t, kikapcsolás után is működik. Browser body továbbra quote_id, validált nyelvheaderből BFF upstream locale. Új schema csak explicit CLI; nincs pénzügyi/szavazati írás vagy aktiválás. Hermes036 HTTP-modul/teszt első draft, Codex loader/BFF integráció. Konkrét kockázat: idegen rendelés kiolvasása, bizonytalan kérés újraküldése, közös Stripe SDK ütközése; célzott auth/replay/loader tesztek és független review szükséges. Előállapot Git HEAD, rollback csak saját modul/loader/route/inventory, quote/order és idegen munka megmarad. Későbbi kézi checklist: inaktív adományozási oldal, nyelvváltás nem indít checkoutot, másik tulajdonos státusza elutasítva, disable után saját történeti státusz elérhető.
+
+## 2026-11-02 D2d — checkout/státusz forrás, kapcsolók OFF
+
+Kanonikus owner auth, pontos upstream quote_id+locale, URL-only státusz, privát/no-store, SDK nélküli replay és kikapcsolt státusz. Új lazy SDK22.1.0 loader fix artifacthelyen, explicit order-schema --apply, részleges bundle megőrzi ár/quote útvonalat. A59+tsc; N207 HTTP,7 valódi SDK-loader-szcenárió,99 tényleges MariaDB/HTTP/store/SDK ellenőrzés,72 quote+33 ár és guard inventory+6 eset sikeres; független review blokkoló nélkül. SDK HTTP helyettesített, nincs élő hívás vagy aktiválás. Hermes036 részleges átvétel/javítás,17518token,becsült0,002130401USD; tényleges összköltség ismeretlen. Részletes scope/kockázat/folytatás/rollback/kézi UI-checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §58. Webhook, pénzügyi egyeztetés, NGO-evidence, UI és D3/D4 nyitott; nincs merge/deploy.
+
+
+## D2e — kezdés: hiteles Checkout-eseményfogadás és bizonytalan kísérlet rendezése
+
+Koherencia: új webhookmodul, a saját SDK-loader szűk szétválasztása, saját modullista; explicit inbox-séma és egyeseményes CLI. Az eredeti kapcsolt account/rendelés az authority, a publikus tulajdonosi státusz változatlan. Nincs pénzügyi allokáció, szavazat, új cron vagy szolgáltatói írás. Kockázat: hamisított/ismételt értesítés, elveszett adatbázis-visszaigazolás, idegen account/SDK és hibás sikerjelzés. Védelem: valódi SDK-aláírás, befagyasztott rendelési egyezés, minimális egyedi inbox, visszaolvasás, GET-only rendezés, payment_verified=false. Hermes037 első kidolgozás; Codex integráció/teszt és független célzott review.
+
+Ellenőrzés: aláírás/lejárat/test-live/account, duplikáció/párhuzamosság/bizonytalan commit tényleges izolált MariaDB-n, kulcs nélküli signature loader, meglévő checkout/státusz regresszió. Rollback csak saját kódra, adatokat és régi callbackek feldolgozhatóságát megtartva; telepítésig nincs éles változás. Kézi UI checklist kiadáskor: adományoldal és meglévő belépés/státusz változatlan, sikeroldal nem állít könyvelt adományt; sandboxban checkout kikapcsolása után korábbi esemény még fogadható. Éles UI és szolgáltatói próba most nincs.
+
+
+### 2026-11-02 D2e — aláírt webhook és session-helyreállítás
+
+Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit inbox-séma/GET-only recovery.174 valódi MariaDB-,207 HTTP- és10 loader/konfigurációs ellenőrzés sikeres; független forrásreview blokkoló nélkül. Nincs valós providerhívás, pénzügyi könyvelés, szavazat vagy aktiválás. A kontrollált saját tesztkonténer eltávolítva. Teljes scope, kockázat, javítás, költség és kiadási/UI/rollback lista: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §59. Hermes037 egyhívásos becslés0,003256799USD, tényleges díj ismeretlen; fő működési hibáit Codex javította. További pénzügyi egyeztetés/account/UI/D3/D4 és VB7/Sharing12 nyitott. Forráskész nem merge/deploy/aktiválás.
+
+
+## D2f — kezdés: tényleges eredeti Stripe-terhelés és díjak olvasása
+
+Koherencia: meglévő SDK-adapter read-only bővítése és explicit admin payment-inspect CLI; session→PaymentIntent→charge→balance transaction, Amplifiernél a platform alkalmazásdíja külön. A díjkétszerezés és külön devizák összeadása konkrét pénzkockázat, ezért az eredeti kötés és teljes díjrészletezés ellenőrzött. Hermes038 első kidolgozó. Nincs új DB-tábla, közös infrastruktúra, provider-írás, pénzügyi allokáció, szavazat vagy aktiválás; az új pénzügyi napló az egyeztetett korrekciós szerződéssel következik. Az eredeti terhelés adata nem a refund/dispute utáni aktuális egyenleg; ezt a visszaadott állapot egyértelműen jelöli.
+
+Célzott teszt: valódi rögzített SDK, helyettesített HTTP, pontos account és platform scope, teljes lánc/összeg/díj/FX konzisztencia, hiány/pending/refund/dispute, PII- és hibaszűrés. Rollback saját adapter/CLI/loader/pinek; rendelés/inbox/pénzügyi adatok és korábbi callbackek megmaradnak. Későbbi UI-checklist: a fizetési felület még OFF, meglévő státusz nem állít allokációt/kifizetést. Most nincs UI/éles provider próba.
+
+
+## 60. D2f — eredeti terhelés/díj olvasó, inaktív (2026-11-02)
+
+N adapter + új admin finance-read CLI + additív loader: eredeti session/PI/charge/balance, Amplifier platform alkalmazásdíj és saját balance legfeljebb5 GET-tel. Pontos minorösszegek, külön tényleges költség/alaprész, külön devizák; refund/dispute/pending jelzés, payment_verified=false és allocation_eligible=false. Nincs adatbázis/pénzügyi író vagy aktiválás.397 offline pénzügyi/CLI ellenőrzés,197 adapterregresszió,12 friss folyamatú loadereset sikeres. Valódi SDK, helyettesített HTTP és CLI WPDB; nem éles/sandbox elfogadás. Független forrásreview blokkoló nélkül, külön futási teszt nélkül.
+
+Részletes szerződés, források, pontos tesztparancsok, release/rollback/kézi UI-checklist és Hermes-javításlista: impactshop-notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §60, PR244. Hermes0381hívás/17451token/becsült0,002093USD, tényleges összköltség ismeretlen; a hibás első tervezetet Codex javította, megtakarítás nem állított. Secretary termékcheckpoint és remote-SHA külön visszaolvasandó.
+
+Következő: teljes refund/dispute/díjkorrekciós mozgás-egyeztetés és tartós pénzügyi napló, nettó80/20-cél és kitettségi tartalék. Account/díj/felelősségi bizonyíték, UI fizetési lánc, D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Az eredeti charge nettója nem refund utáni aktuális nettó. Saját forráscsomag és célzott teszt kész; merge/telepítés/aktiválás/élő elfogadás nem történt. Maincsendablak nincs. Megőrzött átadás: SUBSTACK-HANDOVER.md.
+
+
+## D2g - korrekcios penzmozgasok: kezdes (2026-11-02)
+
+Sajat N ef7dd5b2 / A ed9c2741e; Hermes039 elso kidolgozo. Az eredeti terheles olvasoja melle teljes, korlatos refund/dispute/application-fee-refund olvasas es admin CLI kapcsolo keszul. Konkret kockazat: korrekcio utani hibas netto, dupla dij es kihagyott penzmozgas. Nincs adatbazis- vagy provider-iro, pont/szavazat, UI vagy aktivalas. Celzott valodi SDK/helyettesitett HTTP teszt es fuggetlen review; rollback csak sajat forras es pin. A meglevo UI/status/webhook valtozatlan; kesobbi UI-checklist: uj adomany OFF, regi sajat status nem allit kifizetest.
+
+
+## 61. D2g — korrekciós pénzmozgásolvasó, csak forrás (2026-11-02)
+
+Meglévő N adapter + admin `payment-inspect --adjustments`: teljes, korlátos refund/dispute/fee-refund listák, előjeles eredeti balance/díj, visszafordítás és deviza; eredeti rendeléshez kötött, legfeljebb40 GET. Nincs pénzügyi író vagy aktiválás. Kapcsolt fee-refund jóváírás külön bizonyítandó; platformterhelésből nem gyártunk NGO-jóváírást, minden settlement flag false.397 korábbi +461 új pénzügyi/CLI,197 adapter és12 loader teszt sikeres. Független review két konkrét javítása visszaolvasva; nincs további scoped blokkoló. SDK valódi, HTTP helyettesített, nem sandbox/éles elfogadás.
+
+Hermes0391hívás/17377token/becsült0,001951495USD, tényleges összköltség ismeretlen; használható szándék részben átvéve, hibás patch Codex-javítással, nincs retry/megtakarítási állítás. Részletes szerződés, teszt, javítás, release/rollback és UI-checklist: N `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §61.
+
+Pilot az Alapítvány, HUF; Arnold megerősítette az azonosított Stripe-kifizetési cél alapítványi tulajdonát. A Stripe-fiók továbbra Zrt.; külön NGO-account/díj/felelősség nincs igazolva, teljes bankadat nem tárolt. Nincs fiókmódosítás vagy pénzmozgás. Teljes egyeztetés/főkönyv/nettó80/20/tartalék/UI/D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Commit/push konkrét SHA a Secretaryben; merge, telepítés, aktiválás és élő elfogadás külön hátravan. Maincsendablak nincs. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+
+
+## D2h — tartós pénzügyi megfigyelési napló: kezdés (2026-11-02)
+
+Saját N3d22762b/A22a6ced8, Hermes040 első kidolgozó. Egy rendeléshez kötött, változatlanul megőrzött Stripe-megfigyelés; ismételt import nem új pénz. Konkrét kockázat: adatvesztés, dupla import, bizonytalan INSERT-nyugta és téves pénzügyi készültség. Meglévő autocommit/insert/readback/séma mintát használunk; nincs provider-írás, allokáció, szavazat vagy aktiválás. Explicit séma/CLI, nincs HTTP-migráció. Valódi izolált MariaDB-versenyteszt és független review szükséges. Rollback saját kód/pinek, megfigyelési és rendelési sorok megmaradnak. Érintett UI változatlan; későbbi kézi checklist: meglévő login/státusz, új adomány OFF, sikeroldal nem állít kifizetést.
+
+
+## 62. Aktiválási lezárási terv és megőrzött Hermes040-tervezet (2026-11-02)
+
+A D2h kezdése után Arnold részletes végrehajtási tervet kért; termékkódot nem integráltunk. Kanonikus terv: ai-agent `docs/dev-plans/sharity-internationalization-delivery-20261031.md` §62, a meglévő #1870 PR-ben; N #244 változatlanul inaktív forrás. Rögzített fájlok, tervezett adminparancsok, pontos account/UI/webhook hiányok, két mód külön sandbox/aktiválás, SDK/exact-file/séma/Vercel/publisher sorrend és adatmegőrző rollback szerepel benne.
+
+Két egymást követő független tervaudit, javítással lezárva; második audit utáni célzott readback elfogadta a közös backing javítását. Közös campaign/backing/order/grant/wallet/cast/movement/operation zársorrend; prepared korrekció is foglal, stale cél nem dispatch-elhető; pénzzel fedezett reserve és közös keret egyszeres felhasználása; devizás alaprész csak igazolt HUF-váltás után növelhet pool_huf-ot. A direct pilot önállóan kiadható. Ez tervreview, nem futási vagy éles bizonyíték.
+
+Hermes0401hívás,23738token, becsült0,002791698USD, nem számla; pending és terminal remote_ack. Javaslat privát artifactban megőrizve; nincs átvétel/termékteszt, javításigény még ismeretlen. Nincs retry/fallback, Codex/reviewer tényleges költsége ismeretlen. Új termékfájl/séma/guardpin/SDK/providerbeállítás nem változott, runtime OFF állapotát ez a kör nem ellenőrizte újra. A korábbi D2g teszteket csak változatlan forrásbizonyítékként használjuk újra. Dokumentum-diff és célzott publikálási audit következik; Secretary mentés/readback külön. Rollback a saját dokumentumcommit visszavonása; pénzügyi adatot nem érint. Mainablak nincs, merge/deploy/aktiválás/élő elfogadás hátravan. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+
+## 63. Sharity D2h - 2026-11-02
+
+Immutable penzugyi megfigyelesi naplo + explicit admin schema/record CLI; nincs konyvelt adomany vagy aktivalas. UNIQUE(order_id,digest), teljes readback,4 MiB es packetkorlat. Teszt altal feltart korabbi order kulcs-quote race javitva. 281 MariaDB (ebbol105 D2h),400 penzugyi/CLI,461 adjustment,13 runtime eset sikeres; fuggetlen review lelet nelkul. Izolalt kontener torolve; Stripe HTTP helyettesitett. Hermes040 reszleges javitott atvetel, uj hivas nelkul; becsles0.002791698USD, tenyleges koltseg ismeretlen. Reszletek, diagnozis, release/rollback es UI-checklist: docs/protected-change-records/2026-11-02-sharity-donation-prices.md 63. fejezet. Main fetch/merge, telepites es aktivalas nincs. Kovetkezo: egyedi penzmozgasok es kozos fedezeti egyeztetes; teljes62-es cel nyitott. SUBSTACK-HANDOVER.md megorzendo.
+
+
+## 64. D2i pénzmozgásleltár (2026-11-02)
+
+A tárolt donation-megfigyelések read-only egyeztetése elkészült: `payment-reconcile --order=<do_id>`. Account/livemode/balance-transaction szerint deduplikál, eltérő pénzügyi tényt elutasít; eredeti összegek és megfigyelési státuszok külön. Platformaccount-bizonyíték nélkül a platformmozgások külön feloldatlanok. Nincs --apply, írás, SDK/providerhívás vagy aktiválás. Cross-order regiszter/backing/elszámolás továbbra nyitott.
+
+936 valódi MariaDB-assertion (655 D2i, fixture-checkekkel),401 pénzügyi/CLI+461 adjustment,13 runtime; offline HTTP. A köztes régi tesztóra-hiba kizárólag a HTTP-harnessben javítva, végső futás sikeres. Saját konténer törölve/readback. Független review lelet nélkül. Hermes0411hívás20523token, becsült0.001874145USD; nem adott kódot, teljes helyi implementáció, nincs retry vagy megtakarítási állítás. Részletek/release/rollback: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §64; A kanonikus terv/checkpoint DOCSYNC. Saját commit/push/PR után mainablak külön kérendő. Merge/deploy/aktiválás/élő elfogadás nincs; teljes projekt nyitott. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+
+
+## 65. D2j — mód–deviza és quote-státusz (2026-11-02)
+
+Szigorú kiválasztott mód/deviza binding az ajánlat és dispatch előtt; tulajdonoshoz kötött status-by-quote GET és web BFF, private/no-store, nulla automatikus POST. Történeti olvasás kikapcsolás után is működik.101 quote+264 HTTP,950 MariaDB order/finance+18 quote,401 pénzügyi/CLI+461 adjustment+13 runtime,65 webteszt; független N/A forrásreview leletmentes. Hermes042 javított átvétel:34225token, becsült0.003635086USD (nem számla), tényleges összköltség ismeretlen. Részletek, javítások és meglévő release/rollback: Notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §65. A saját commit/push/PR SHA és Secretary remote-ack külön visszaolvasandó. Maincsendablak válaszra vár; merge/telepítés/aktiválás nincs. Availability/fizetési UI/account/backing és a teljes§62 cél továbbra nyitott. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
+
+
+## 66. D2k — availability és fizetési kliens (2026-11-02)
+
+Kért NGO-ra korlátozott publikus mode/currency/bounds/árlista; meglévő form és BFF bekötve külön ajánlathoz/megerősítéshez, URL-ben rögzített quote/nyelv, refresh/bizonytalan eredmény GET-only, prepared kézi folytatás.129 PHP+13runtime és134webteszt sikeres; scoped TypeScript7 érintett fájl+importok sikeres. Teljes web tsc NEM PASS: érintetlen hiányzó dependency/generáltoldal-hibák; saját típhiba javítva. Független review két találata javítva/visszaolvasva. Hermes043 részleges javított átvétel,41446token, becsült0.0049995946USD, tényleges díj ismeretlen. Részletek/javítás/release/rollback: Notes protected-change-records/2026-11-02-sharity-donation-prices.md §66. Forráskészség nem merge/deploy/aktiválás: hiteles account és közös fedezet továbbra hiányzik, minden mainművelethez Arnold új csendablaka kell. Teljes§62 cél és VB7/Sharing12 nyitott. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
 ## 2026-11-02 — Shopping purchase saját ág
 Jóváhagyott, alapból OFF hitelesített Dognet indítás megvalósítása. Scope/kockázat/rollback: docs/dev-plans/shopping-purchase-2026-11-02.md. Éles írás nincs.
 
@@ -8413,3 +8693,8 @@ A régi retirement teszt affiliate-guard referenciafrissítése célzottan a
 jóváhagyott guardváltozást követi; a védelmet nem kapcsolja ki. Részletek:
 `docs/protected-change-records/2026-11-02-shopping-purchase.md`. Review nyitott,
 merge/telepítés/új shopping aktiválás nincs.
+
+
+### Sharity §67 — Notes main integrálva
+
+Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.

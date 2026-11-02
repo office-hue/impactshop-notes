@@ -621,9 +621,21 @@ function impactshop_action_bar_render(): void
             }
         }
 
+
+        .sharity-slc { min-height:44px; }
+        .sharity-slc__sheet { max-height:85vh; max-height:85dvh; overflow-y:auto; overscroll-behavior:contain; }
+        .sharity-slc__sheet[hidden] { display:none; }
+        .sharity-slc__header { position:relative; padding-right:60px; }
+        .sharity-slc__row { min-height:44px; box-sizing:border-box; }
+        button.sharity-slc__row { width:100%; border:0; background:transparent; font:inherit; text-align:left; }
+        .sharity-slc__close { position:absolute; right:8px; top:4px; width:44px; height:44px; border:0; border-radius:50%; color:#fff; background:transparent; font-size:24px; cursor:pointer; }
+        .sharity-slc__currency { width:100%; min-height:44px; box-sizing:border-box; border:1px solid #64748b; border-radius:10px; padding:8px 12px; background:#26263c; color:#fff; font:inherit; }
+        .sharity-slc:focus-visible, .sharity-slc__row:focus-visible, .sharity-slc__close:focus-visible, .sharity-slc__currency:focus-visible { outline:2px solid #60a5fa; outline-offset:2px; }
+        .sharity-slc__help { padding:0 20px; margin:8px 0; font-size:12px; line-height:1.5; color:#cbd5e1; }
+        @media (max-width:768px) and (orientation:landscape) and (max-height:500px) { .sharity-slc { display:inline-flex; bottom:12px; } }
     </style>
 
-    <nav class="sharity-action-bar" aria-label="Sharity gyorsműveletek" data-sharity-quick-dock="true">
+    <nav class="sharity-action-bar" aria-label="Sharity gyorsműveletek" data-sharity-quick-dock="true" data-sharity-preferences-managed>
         <a href="<?php echo esc_url($shopping_assistant_url); ?>" data-bar="shopping-assistant">
             <span class="bar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></span>
             <span>Vásárlási Segéd</span>
@@ -659,18 +671,18 @@ function impactshop_action_bar_render(): void
         </a>
     </nav>
 
-    <button class="sharity-slc" id="sharity-slc-btn" type="button" aria-label="Nyelv és ország választó" aria-haspopup="dialog">
+    <button class="sharity-slc" id="sharity-slc-btn" data-sharity-preferences-managed type="button" aria-expanded="false" aria-controls="sharity-slc-sheet" aria-label="Nyelv és ország választó" aria-haspopup="dialog">
         <span class="sharity-slc__globe">🌐</span>
         <span class="sharity-slc__label"><?php echo wp_kses_post( $slc_pill_label ); ?></span>
     </button>
 
     <div class="sharity-slc__backdrop" id="sharity-slc-backdrop" aria-hidden="true"></div>
 
-    <div class="sharity-slc__sheet" id="sharity-slc-sheet" role="dialog" aria-modal="true" aria-label="Nyelv és ország választó">
+    <div class="sharity-slc__sheet" id="sharity-slc-sheet" data-sharity-preferences-managed hidden role="dialog" aria-modal="true" aria-label="Nyelv és ország választó">
         <div class="sharity-slc__handle"></div>
-        <div class="sharity-slc__header">🌍 Nyelv és ország</div>
+        <div class="sharity-slc__header">🌍 <span data-slc-title>Nyelv, deviza és ország</span><button type="button" class="sharity-slc__close" data-slc-close aria-label="Bezárás">×</button></div>
 
-        <div class="sharity-slc__section-title"><?php echo $current_lang === 'hu' ? 'Nyelv' : 'Language'; ?></div>
+        <div class="sharity-slc__section-title" data-slc-section-language><?php echo $current_lang === 'hu' ? 'Nyelv' : 'Language'; ?></div>
         <div class="sharity-slc__rows">
             <?php foreach ( $slc_langs as $lcode => $linfo ) :
                 $lurl = $lcode === 'hu'
@@ -678,7 +690,7 @@ function impactshop_action_bar_render(): void
                     : add_query_arg( 'lang', $lcode, remove_query_arg('lang') );
                 $lactive = $lcode === $current_lang;
             ?>
-            <a href="<?php echo esc_url( $lurl ); ?>" class="sharity-slc__row<?php echo $lactive ? ' sharity-slc__row--active' : ''; ?>">
+            <a href="<?php echo esc_url( $lurl ); ?>" data-slc-language="<?php echo esc_attr($lcode); ?>" lang="<?php echo esc_attr($lcode); ?>" class="sharity-slc__row<?php echo $lactive ? ' sharity-slc__row--active' : ''; ?>">
                 <span class="sharity-slc__row-flag"><?php echo esc_html( $linfo['flag'] ); ?></span>
                 <span class="sharity-slc__row-name"><?php echo esc_html( $linfo['name'] ); ?></span>
                 <?php if ( $lactive ) : ?><span class="sharity-slc__row-check" aria-label="aktív">✓</span><?php endif; ?>
@@ -686,7 +698,18 @@ function impactshop_action_bar_render(): void
             <?php endforeach; ?>
         </div>
 
-        <div class="sharity-slc__section-title"><?php echo $current_lang === 'hu' ? 'Ország' : 'Country'; ?></div>
+        <div class="sharity-slc__rows">
+            <button type="button" class="sharity-slc__row" data-slc-language="de" lang="de" disabled><span class="sharity-slc__row-flag" aria-hidden="true">🇩🇪</span><span class="sharity-slc__row-name">Deutsch</span></button>
+            <button type="button" class="sharity-slc__row" data-slc-language="fr" lang="fr" disabled><span class="sharity-slc__row-flag" aria-hidden="true">🇫🇷</span><span class="sharity-slc__row-name">Français</span></button>
+        </div>
+        <label class="sharity-slc__section-title" for="sharity-slc-currency" data-slc-section-currency>Deviza</label>
+        <div class="sharity-slc__rows">
+            <select id="sharity-slc-currency" class="sharity-slc__currency" aria-describedby="sharity-slc-help" disabled>
+                <option value="HUF">HUF</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option>
+            </select>
+        </div>
+        <p class="sharity-slc__help" id="sharity-slc-help" data-slc-help>A navigáció és a választó a kiválasztott nyelvet használja. A többi oldalszöveg egyelőre magyar vagy angol maradhat. A devizaválasztás még nem váltja át az összegeket, és nem módosít árakat, fizetést vagy elszámolást. Az ország külön bolti beállítás.</p>
+        <div class="sharity-slc__section-title" data-slc-section-country><?php echo $current_lang === 'hu' ? 'Ország' : 'Country'; ?></div>
         <div class="sharity-slc__rows">
             <?php foreach ( $slc_countries as $ccode => $cinfo ) :
                 $curl = $ccode === 'hu'
@@ -694,7 +717,7 @@ function impactshop_action_bar_render(): void
                     : add_query_arg( 'country', $ccode, remove_query_arg('country') );
                 $cactive = $ccode === $current_country;
             ?>
-            <a href="<?php echo esc_url( $curl ); ?>" class="sharity-slc__row<?php echo $cactive ? ' sharity-slc__row--active' : ''; ?>">
+            <a href="<?php echo esc_url( $curl ); ?>" data-slc-country="<?php echo esc_attr($ccode); ?>" class="sharity-slc__row<?php echo $cactive ? ' sharity-slc__row--active' : ''; ?>">
                 <span class="sharity-slc__row-flag"><?php echo esc_html( $cinfo['flag'] ); ?></span>
                 <span class="sharity-slc__row-name"><?php echo esc_html( $cinfo['name'] ); ?></span>
                 <?php if ( $cactive ) : ?><span class="sharity-slc__row-check" aria-label="aktív">✓</span><?php endif; ?>
@@ -703,25 +726,262 @@ function impactshop_action_bar_render(): void
         </div>
     </div>
 
-    <script>
-    (function(){
-        var btn      = document.getElementById('sharity-slc-btn');
-        var sheet    = document.getElementById('sharity-slc-sheet');
-        var backdrop = document.getElementById('sharity-slc-backdrop');
-        if (!btn || !sheet || !backdrop) return;
-
-        function openSheet() {
-            sheet.classList.add('is-open');
-            backdrop.classList.add('is-open');
+    <script id="sharity-wp-preferences">
+    (function () {
+      'use strict';
+      var btn = document.getElementById('sharity-slc-btn');
+      var sheet = document.getElementById('sharity-slc-sheet');
+      var backdrop = document.getElementById('sharity-slc-backdrop');
+      var bar = document.querySelector('.sharity-action-bar');
+      if (!btn || !sheet || !backdrop || !bar) return;
+      var LANGUAGES = ['hu', 'en', 'de', 'fr'];
+      var CURRENCIES = ['HUF', 'EUR', 'USD', 'GBP'];
+      var COOKIE_LANG = 'sharity_ui_language';
+      var COOKIE_CURRENCY = 'sharity_display_currency';
+      var STORAGE_KEY = 'sharity_ui_preferences_v1';
+      var PREFERENCE_DESTINATIONS = [
+        'https://sharity.hu/vasarlasi-seged', 'https://sharity.hu/offerwall',
+        'https://sharity.hu/ngo-kartyak', 'https://sharity.hu/vallalasok',
+        'https://sharity.hu/hatas-korok', 'https://factlens.eu/factlens/vb-prod/'
+      ];
+      function readCookie(name) {
+        try {
+          var fields = document.cookie.split(';').map(function (field) { return field.trim(); })
+            .filter(function (field) { return field.indexOf(name + '=') === 0; });
+          return fields.length === 1 ? decodeURIComponent(fields[0].slice(name.length + 1)) : null;
+        } catch (_) { return null; }
+      }
+      var stored = {};
+      try {
+        var value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || 'null');
+        if (value && typeof value === 'object' && !Array.isArray(value)) stored = value;
+      } catch (_) { /* Optional storage. */ }
+      var cookieLang = readCookie(COOKIE_LANG);
+      var cookieCurrency = readCookie(COOKIE_CURRENCY);
+      var language = LANGUAGES.indexOf(cookieLang) !== -1 ? cookieLang :
+        (LANGUAGES.indexOf(stored.language) !== -1 ? stored.language : 'hu');
+      var currency = CURRENCIES.indexOf(cookieCurrency) !== -1 ? cookieCurrency :
+        (CURRENCIES.indexOf(stored.displayCurrency) !== -1 ? stored.displayCurrency : 'HUF');
+      // Legacy HU/EN URL is a route default only, below saved and explicit choices.
+      var legacy = new URLSearchParams(window.location.search).getAll('lang');
+      if (LANGUAGES.indexOf(cookieLang) === -1 && LANGUAGES.indexOf(stored.language) === -1 &&
+          legacy.length === 1 && ['hu', 'en'].indexOf(legacy[0]) !== -1) language = legacy[0];
+      // Same fieldwise query contract as the Sharity Next receiver.
+      var query = new URLSearchParams(window.location.search);
+      var languages = query.getAll('ui_lang');
+      var currencies = query.getAll('ui_currency');
+      if (languages.length === 1 && LANGUAGES.indexOf(languages[0]) !== -1) language = languages[0];
+      if (currencies.length === 1 && CURRENCIES.indexOf(currencies[0]) !== -1) currency = currencies[0];
+      var remaining = window.location.search.replace(/^\?/, '').split('&').filter(function (field) {
+        var key = new URLSearchParams(field).keys().next().value;
+        return key !== 'ui_lang' && key !== 'ui_currency';
+      }).join('&');
+      var search = remaining ? '?' + remaining : '';
+      if (search !== window.location.search) {
+        try {
+          window.history.replaceState(window.history.state, '', window.location.pathname + search + window.location.hash);
+        } catch (_) { /* Preferences work even when history writes are blocked. */ }
+      }
+      function persist() {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ language: language, displayCurrency: currency }));
+        } catch (_) { /* Keep the in-memory selection. */ }
+        [[COOKIE_LANG, language], [COOKIE_CURRENCY, currency]].forEach(function (pair) {
+          try { document.cookie = pair[0] + '=' + pair[1] + '; Path=/; Max-Age=31536000; SameSite=Lax'; }
+          catch (_) { /* Host-only cookies are optional. */ }
+        });
+      }
+      // Only exact dock destinations with an existing preference receiver.
+      // Preserve unrelated query bytes, including signed/attribution values.
+      function applyPreferenceHrefs() {
+        bar.querySelectorAll('a[href]').forEach(function (link) {
+          var href = link.getAttribute('href');
+          var hashAt = href.indexOf('#');
+          var hash = hashAt === -1 ? '' : href.slice(hashAt);
+          var head = hashAt === -1 ? href : href.slice(0, hashAt);
+          var queryAt = head.indexOf('?');
+          var base = queryAt === -1 ? head : head.slice(0, queryAt);
+          if (PREFERENCE_DESTINATIONS.indexOf(base) === -1) return;
+          var search = queryAt === -1 ? '' : head.slice(queryAt + 1);
+          var kept = search.split('&').filter(function (field) {
+            var key = new URLSearchParams(field).keys().next().value;
+            return key !== 'ui_lang' && key !== 'ui_currency';
+          }).join('&');
+          link.setAttribute('href', base + '?' + (kept ? kept + '&' : '') +
+            'ui_lang=' + language + '&ui_currency=' + currency + hash);
+        });
+      }
+var SLC_COPY = {
+  hu: {
+    title: 'Nyelv, deviza és ország',
+    language: 'Nyelv',
+    currency: 'Deviza',
+    country: 'Ország', hungary: 'Magyarország',
+    close: 'Bezárás',
+    nav: 'Sharity gyorsműveletek',
+    soon: 'Hamarosan',
+    messageTitle: 'A profil üzenetei hamarosan elérhetők.',
+    help: 'A navigáció és a választó a kiválasztott nyelvet használja. A többi oldalszöveg egyelőre magyar vagy angol maradhat. A devizaválasztás még nem váltja át az összegeket, és nem módosít árakat, fizetést vagy elszámolást. Az ország külön bolti beállítás.',
+    items: {
+      'shopping-assistant': 'Vásárlási Segéd',
+      'offerwall': 'Feladatok adományokért',
+      'messages-upcoming': 'Üzenetek',
+      'ngo-card': 'NGO Card',
+      'tip-game': 'Tippjáték',
+      'commitments': 'Vállalások',
+      'account': 'Profil',
+      'community': 'Közösség'
+    }
+  },
+  en: {
+    title: 'Language, currency and country',
+    language: 'Language',
+    currency: 'Display currency',
+    country: 'Country', hungary: 'Hungary',
+    close: 'Close',
+    nav: 'Quick actions',
+    soon: 'Coming soon',
+    messageTitle: 'Profile messages will be available soon.',
+    help: 'Navigation and these controls use the selected language. Other page text may still be Hungarian or English. Currency selection does not yet convert amounts or change prices, payments or settlement. Country is a separate shop setting.',
+    items: {
+      'shopping-assistant': 'Shopping Assistant',
+      'offerwall': 'Tasks for donations',
+      'messages-upcoming': 'Messages',
+      'ngo-card': 'NGO Card',
+      'tip-game': 'Prediction game',
+      'commitments': 'Pledges',
+      'account': 'Profile',
+      'community': 'Community'
+    }
+  },
+  de: {
+    title: 'Sprache, Währung und Land',
+    language: 'Sprache',
+    currency: 'Anzeigewährung',
+    country: 'Land', hungary: 'Ungarn',
+    close: 'Schließen',
+    nav: 'Schnellaktionen',
+    soon: 'Bald verfügbar',
+    messageTitle: 'Profilnachrichten sind bald verfügbar.',
+    help: 'Die Navigation und diese Auswahl verwenden die gewählte Sprache. Andere Seitentexte können vorerst auf Ungarisch oder Englisch bleiben. Die Währungsauswahl rechnet noch keine Beträge um und ändert weder Preise noch Zahlungen oder Abrechnung. Das Land ist eine separate Shop-Einstellung.',
+    items: {
+      'shopping-assistant': 'Einkaufsassistent',
+      'offerwall': 'Aufgaben für Spenden',
+      'messages-upcoming': 'Nachrichten',
+      'ngo-card': 'NGO Card',
+      'tip-game': 'Tippspiel',
+      'commitments': 'Zusagen',
+      'account': 'Profil',
+      'community': 'Gemeinschaft'
+    }
+  },
+  fr: {
+    title: 'Langue, devise et pays',
+    language: 'Langue',
+    currency: 'Devise d\'affichage',
+    country: 'Pays', hungary: 'Hongrie',
+    close: 'Fermer',
+    nav: 'Actions rapides',
+    soon: 'Bientôt disponible',
+    messageTitle: 'Les messages du profil seront bientôt disponibles.',
+    help: 'La navigation et ces commandes utilisent la langue choisie. Les autres textes peuvent rester en hongrois ou en anglais. Le choix de devise ne convertit pas encore les montants et ne modifie ni les prix, ni les paiements, ni les règlements. Le pays est un réglage distinct pour la boutique.',
+    items: {
+      'shopping-assistant': 'Assistant shopping',
+      'offerwall': 'Missions pour des dons',
+      'messages-upcoming': 'Messages',
+      'ngo-card': 'NGO Card',
+      'tip-game': 'Jeu de pronostics',
+      'commitments': 'Engagements',
+      'account': 'Profil',
+      'community': 'Communauté'
+    }
+  }
+};
+      var currencySelect = document.getElementById('sharity-slc-currency');
+      var close = sheet.querySelector('[data-slc-close]');
+      function render() {
+        var copy = SLC_COPY[language];
+        [bar, sheet, btn].forEach(function (el) { el.lang = language; });
+        btn.setAttribute('aria-label', copy.title);
+        btn.querySelector('.sharity-slc__label').textContent = language.toUpperCase() + ' · ' + currency;
+        sheet.setAttribute('aria-label', copy.title);
+        sheet.querySelector('[data-slc-title]').textContent = copy.title;
+        sheet.querySelector('[data-slc-section-language]').textContent = copy.language;
+        sheet.querySelector('[data-slc-section-currency]').textContent = copy.currency;
+        sheet.querySelector('[data-slc-section-country]').textContent = copy.country;
+        sheet.querySelector('[data-slc-help]').textContent = copy.help;
+        sheet.querySelector('[data-slc-country=hu] .sharity-slc__row-name').textContent = copy.hungary;
+        close.setAttribute('aria-label', copy.close);
+        bar.setAttribute('aria-label', copy.nav);
+        Object.keys(copy.items).forEach(function (key) {
+          var item = bar.querySelector('[data-bar="' + key + '"]');
+          if (item && item.children[1]) item.children[1].textContent = copy.items[key];
+        });
+        var messages = bar.querySelector('[data-bar="messages-upcoming"]');
+        messages.setAttribute('aria-label', copy.items['messages-upcoming'] + ' (' + copy.soon + ')');
+        messages.setAttribute('title', copy.messageTitle);
+        messages.querySelector('.bar-coming-soon').textContent = copy.soon;
+        sheet.querySelectorAll('[data-slc-language]').forEach(function (el) {
+          var active = el.getAttribute('data-slc-language') === language;
+          el.classList.toggle('sharity-slc__row--active', active);
+          if (el.tagName === 'BUTTON') { el.disabled = false; el.setAttribute('aria-pressed', String(active)); }
+          else { if (active) el.setAttribute('aria-current', 'true'); else el.removeAttribute('aria-current'); }
+          var check = el.querySelector('.sharity-slc__row-check');
+          if (check) check.hidden = !active;
+        });
+        currencySelect.disabled = false;
+        currencySelect.value = currency;
+        applyPreferenceHrefs();
+      }
+      // PHP fallback links retain their original lang/country behavior. Remove only
+      // transient preference fields so an inbound selection cannot override the next click.
+      sheet.querySelectorAll('a[href]').forEach(function (link) {
+        var href = link.getAttribute('href');
+        var hashAt = href.indexOf('#');
+        var hash = hashAt === -1 ? '' : href.slice(hashAt);
+        var head = hashAt === -1 ? href : href.slice(0, hashAt);
+        var queryAt = head.indexOf('?');
+        if (queryAt === -1) return;
+        var kept = head.slice(queryAt + 1).split('&').filter(function (field) {
+          var key = new URLSearchParams(field).keys().next().value;
+          return key !== 'ui_lang' && key !== 'ui_currency';
+        }).join('&');
+        link.setAttribute('href', head.slice(0, queryAt) + (kept ? '?' + kept : '') + hash);
+      });
+      sheet.querySelectorAll('[data-slc-language]').forEach(function (el) {
+        el.addEventListener('click', function () {
+          var next = el.getAttribute('data-slc-language');
+          if (LANGUAGES.indexOf(next) === -1) return;
+          language = next; persist(); render();
+          // HU/EN anchors continue their existing navigation, including no-JS fallback.
+        });
+      });
+      currencySelect.addEventListener('change', function () {
+        if (CURRENCIES.indexOf(currencySelect.value) === -1) return;
+        currency = currencySelect.value; persist(); render();
+      });
+      function closeSheet() {
+        sheet.classList.remove('is-open'); backdrop.classList.remove('is-open');
+        sheet.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.focus();
+      }
+      btn.addEventListener('click', function (event) {
+        event.stopPropagation(); sheet.hidden = false;
+        sheet.classList.add('is-open'); backdrop.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true'); close.focus();
+      });
+      close.addEventListener('click', closeSheet);
+      backdrop.addEventListener('click', closeSheet);
+      document.addEventListener('keydown', function (event) {
+        if (sheet.hidden) return;
+        if (event.key === 'Escape') { event.preventDefault(); closeSheet(); }
+        if (event.key === 'Tab') {
+          var items = Array.prototype.slice.call(sheet.querySelectorAll('a[href],button:not([disabled]),select:not([disabled])'));
+          var first = items[0], last = items[items.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         }
-        function closeSheet() {
-            sheet.classList.remove('is-open');
-            backdrop.classList.remove('is-open');
-        }
-
-        btn.addEventListener('click', function(e) { e.stopPropagation(); openSheet(); });
-        backdrop.addEventListener('click', closeSheet);
-        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSheet(); });
+      });
+      persist(); render();
     })();
     </script>
 

@@ -1,3 +1,17 @@
+## 2026-11-01 Sharity P2w share-template hash sync
+
+Only impactshop-ngo-card.php's approved share-template hash and manifest
+checksum change. Guard logic/inventory unchanged; full existing hash checker
+and six negative cases pass. See P2w protected change record and notes.
+No deployment/activation; unrelated protected paths remain byte-identical.
+
+## 2026-11-01 Sharity P3b inventory extension
+
+The approved new Notes-owned display FX reader joins the existing protected
+file inventory. Only its hash, the config self-hash and manifest checksum change;
+guard logic and release rules stay unchanged. See protected change record
+`2026-10-31-sharity-international-preferences.md` P3b. No deployment/activation.
+
 ## 2026-10-29 — meglévő Impact Shop műveletek osztálykiemelése
 
 A valóban eltérő éles Offerwall shared pont/szint/decay port megőrzéséhez
@@ -952,9 +966,73 @@ Az Impact Shop donationpoints egyszerűsített candidate új runtimefájljai a m
 
 A jóváhagyott50%/MNB-szabály hat meglévő runtime fájlt érint; a meglévő hashjegyzék ezek tényleges tartalmát követi. A védett fájllista, guard-kód, jogosultsági és release-modell nem változik. Célzott money/provider/SQL teszt és független review; részletek a2026-10-29-es points change record és termékterv alatt.
 
+### 2026-11-02 Donation D1 source inventory
+
+Existing guard inventory extends to the new donation price loader and package JSON only. No policy/guard behavior change. See protected-change-records/2026-11-02-sharity-donation-prices.md for scope and acceptance.
+
+### 2026-11-02 D2a donation quote pin
+
+Existing inventory only: refresh sharity-ngo-donations.php after owner-bound quote and explicit additive CLI schema tests. No config/rule changes, no unrelated baseline refresh. Protected record and validation: docs/protected-change-records/2026-11-02-sharity-donation-prices.md. Runtime activation remains OFF.
+
+## 2026-11-02 — D2b célzott donation inventory
+
+A meglévő Bástya inventory három új saját fájlra bővül: sharity-ngo-donations/stripe-checkout.php, composer.json, composer.lock. Config önhash/oldalkocsik frissülnek; idegen hash és szabály változatlan. 197 offline valódi SDK-vizsgálat és független review, részletek a 2026-11-02-es donation protected-recordban. Nincs új guard, runtime-loader, endpoint vagy aktiválás.
+
+## 2026-11-02 — D2c célzott donation inventory
+
+Csak sharity-ngo-donations/orders.php került a meglévő védelembe; config önhash és checksumoldalkocsik frissültek, idegen pin/szabály változatlan. Teljes tényleges inventory és6 izolált hash-eset sikeres.77 valódi MariaDB-ellenőrzés és független scoped review; nincs loader/route/aktiválás. Részletes előállapot, scope, kockázat, rollback és kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §57. Korábbi pénzügyi adat megmarad.
+
+## 2026-11-02 D2d célzott inventory
+
+Két új saját donation-modul: http.php/runtime.php, meglévő donation loader pin és config önhash/oldalkocsik. Idegen pin és guard-szabály változatlan. Teljes inventory+6 hash-eset sikeres; auth/SDK/párhuzamos SQL határ célzottan tesztelt, független review blokkoló nélkül. Nincs telepítés/aktiválás. Koherencia, funkciólista, rollback és kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §58.
+
+
+### 2026-11-02 D2e — aláírt webhook és session-helyreállítás
+
+Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit inbox-séma/GET-only recovery.174 valódi MariaDB-,207 HTTP- és10 loader/konfigurációs ellenőrzés sikeres; független forrásreview blokkoló nélkül. Nincs valós providerhívás, pénzügyi könyvelés, szavazat vagy aktiválás. A kontrollált saját tesztkonténer eltávolítva. Teljes scope, kockázat, javítás, költség és kiadási/UI/rollback lista: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §59. Hermes037 egyhívásos becslés0,003256799USD, tényleges díj ismeretlen; fő működési hibáit Codex javította. További pénzügyi egyeztetés/account/UI/D3/D4 és VB7/Sharing12 nyitott. Forráskész nem merge/deploy/aktiválás.
+
+D2e helyi Bástya-visszaolvasás: teljes meglévő inventory nulla drift;6 izolált negatív/hash eset sikeres. Guardlogika és távoli szabály nem módosult.
+
+
+## 60. D2f — eredeti terhelés/díj olvasó, inaktív (2026-11-02)
+
+N adapter + új admin finance-read CLI + additív loader: eredeti session/PI/charge/balance, Amplifier platform alkalmazásdíj és saját balance legfeljebb5 GET-tel. Pontos minorösszegek, külön tényleges költség/alaprész, külön devizák; refund/dispute/pending jelzés, payment_verified=false és allocation_eligible=false. Nincs adatbázis/pénzügyi író vagy aktiválás.397 offline pénzügyi/CLI ellenőrzés,197 adapterregresszió,12 friss folyamatú loadereset sikeres. Valódi SDK, helyettesített HTTP és CLI WPDB; nem éles/sandbox elfogadás. Független forrásreview blokkoló nélkül, külön futási teszt nélkül.
+
+Részletes szerződés, források, pontos tesztparancsok, release/rollback/kézi UI-checklist és Hermes-javításlista: impactshop-notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §60, PR244. Hermes0381hívás/17451token/becsült0,002093USD, tényleges összköltség ismeretlen; a hibás első tervezetet Codex javította, megtakarítás nem állított. Secretary termékcheckpoint és remote-SHA külön visszaolvasandó.
+
+Következő: teljes refund/dispute/díjkorrekciós mozgás-egyeztetés és tartós pénzügyi napló, nettó80/20-cél és kitettségi tartalék. Account/díj/felelősségi bizonyíték, UI fizetési lánc, D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Az eredeti charge nettója nem refund utáni aktuális nettó. Saját forráscsomag és célzott teszt kész; merge/telepítés/aktiválás/élő elfogadás nem történt. Maincsendablak nincs. Megőrzött átadás: SUBSTACK-HANDOVER.md.
+
+
+### D2g 2026-11-02
+
+Csak a sajat donation stripe-checkout.php es finance-read.php hash frissul; nincs uj guard/modul/idegen pin. Reszletes indok, teszt, release es rollback: protected-change-records/2026-11-02-sharity-donation-prices.md 61. fejezet. Aktivalas nincs.
+
+### D2h 2026-11-02
+
+Termekcommit ada1a5b4. Uj sajat finance-ledger.php inventorybejegyzes es hash; sajat fo loader, finance-read.php, a bizonyitott race miatt orders.php es config onhash/oldalkocsi frissul. Idegen pin es guardlogika valtozatlan. 281 MariaDB (ebbol105 D2h),400 penzugyi/CLI,461 adjustment,13 runtime ellenorzes sikeres. Fuggetlen forrasreview lelet nelkul. Erintett funkciok, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md 63. fejezet. Meg nincs merge/telepites/aktivalas.
+
+
+### D2i 2026-11-02
+
+Termékcommit94344f09. Kizárólag saját finance-ledger.php és finance-read.php két hash frissül, nincs új inventory vagy guardlogika/idegen pin.936 MariaDB-assertion (655 D2i, fixture-checkekkel),401 pénzügyi/CLI+461 adjustment,13 runtime; független review lelet nélkül. Írásmentes admin pénzmozgásleltár, --apply elutasított, platformtételek accountbizonyítékig külön feloldatlanok. Részletek/smoke/release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §64. Nincs merge/telepítés/aktiválás.
+
+
+### D2j 2026-11-02
+
+Termékcommit ee69bdb3. Csak a három saját donation main/orders/http hash és a JSON oldalkocsi checksum frissül. Nincs új inventory, guardlogika vagy idegen pin.101 quote+264 HTTP,950 MariaDB order/finance+18 quote,401 pénzügyi/CLI+461 adjustment+13 runtime,65 webteszt és független forrásreview sikeres. Kiválasztott mód/deviza explicit true, privát owner quote-read; nincs aktiválás. Részletek, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §65. Az első hashfrissítő lépés a checksum-formátum téves feltételezése miatt még írás előtt megállt; a tényleges JSON-oldalkocsi formátummal javítva, a végső ellenőrzés külön.
+
+
+### D2k 2026-11-02
+
+Termékcommit e3164546. Csak a saját donation főmodul hash és a JSON-oldalkocsi frissül. Publikus, írásmentes NGO mód/deviza elérhetőség; hiányzó függőség tilt, accountadat nem látható. 129 quote-assertion,13 frissfolyamat-loader,134 webteszt és célzott TypeScript-ellenőrzés sikeres; két review-lelet javítva és visszaolvasva. Korábbi változatlan DB-bizonyíték újrahasználva. Teljes web-typecheck idegen függőség/cache hibák miatt nem PASS. Nincs új inventory, guardlogika, idegen pin vagy aktiválás. Részletek, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §66.
 ## 2026-11-02 — shopping guard szűk illesztése
 
 A jóváhagyott megerősített Dognet POST a meglévő affiliate-runtime modulban
 konstruál linket; a guard csak e szakaszban engedi, a régi peremeket megtartja.
 Nincs új guard vagy kiadási rendszer. Negatív suite sikeres, éles kiadás még nincs;
 rekord: `protected-change-records/2026-11-02-shopping-purchase.md`.
+
+
+### Sharity §67 — Notes main integrálva
+
+Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.

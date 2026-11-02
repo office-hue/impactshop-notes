@@ -231,6 +231,7 @@
   function applyActionBar(i18n) {
     var bar = document.querySelector('.sharity-action-bar');
     if (!bar) return;
+    if (bar.hasAttribute('data-sharity-preferences-managed')) return;
 
     if (typeof i18n.actionBarLabel === 'string' && i18n.actionBarLabel !== '') {
       bar.setAttribute('aria-label', i18n.actionBarLabel);
