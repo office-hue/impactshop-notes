@@ -49,7 +49,7 @@ function fixture(string $mode = 'direct', string $currency = 'HUF'): array {
         'amount'=>$af,'currency'=>$cc,'amount_refunded'=>0,'refunded'=>false,'refunds'=>$list,'balance_transaction'=>'txn_FEE'];
     $fbt = ['object'=>'balance_transaction','id'=>'txn_FEE','source'=>'fee_SYNTHETIC','type'=>'application_fee','amount'=>$af,'currency'=>$cc,
         'fee'=>0,'net'=>$af,'fee_details'=>[],'created'=>1800000010,'available_on'=>1800600000,'status'=>'available','exchange_rate'=>null];
-    return [$e, ['/v1/checkout/sessions/cs_test_SYNTHETIC'=>$session,'/v1/charges/ch_SYNTHETIC'=>$charge,
+    return [$e, ['/v1/account'=>['object'=>'account','id'=>'acct_PLATFORM','email'=>'PRIVATE_PLATFORM_EMAIL'], '/v1/checkout/sessions/cs_test_SYNTHETIC'=>$session,'/v1/charges/ch_SYNTHETIC'=>$charge,
         '/v1/balance_transactions/txn_CHARGE'=>$bt,'/v1/application_fees/fee_SYNTHETIC'=>$fee,'/v1/balance_transactions/txn_FEE'=>$fbt]];
 }
 $transport = new EvidenceHttp(); Stripe\ApiRequestor::setHttpClient($transport);
@@ -62,7 +62,7 @@ foreach (['direct','amplifier'] as $mode) { foreach (['HUF','EUR','USD','GBP'] a
     check($r['payment']['amount_minor']===$e['snapshot']['amount_minor'] && $r['initial_charge_balance']['gross_minor']===$e['snapshot']['amount_minor'],'exact HUF cents and all minor values');
     check($r['initial_charge_balance']['processing_cost_minor']===($currency==='HUF'?'2000':'20'),'application fee never charged twice');
     check(!$r['adjustments_required'] && !$r['balances_pending'] && !$r['cross_currency'],'clean original facts only');
-    check(count($transport->calls)===($mode==='direct'?3:5),'bounded GET graph');
+    check(count($transport->calls)===($mode==='direct'?3:6),'bounded GET graph');
     foreach ($transport->calls as $i=>$call) {
         check($call['method']==='get' && $call['maxNetworkRetries']===0 && str_starts_with($call['url'],'https://api.stripe.com/v1/'),'GET official SDK no retry');
         check(in_array('Stripe-Version: 2026-10-28.endive',$call['headers'],true),'pinned API');
@@ -71,8 +71,17 @@ foreach (['direct','amplifier'] as $mode) { foreach (['HUF','EUR','USD','GBP'] a
         check(!array_filter($call['headers'],static fn($h)=>str_starts_with($h,'Idempotency-Key:')),'no create key on evidence GET');
     }
     check(!str_contains(json_encode($r),'PRIVATE_') && !isset($r['metadata']),'no PII/description/raw metadata projection');
+    check($mode==='direct' ? !array_key_exists('platform_account_id',$r) : ($r['platform_account_id']??null)==='acct_PLATFORM','platform identity only in Amplifier, direct stays unchanged');
 } }
 [$e,$responses]=fixture('amplifier');
+foreach ([['object'=>'customer','id'=>'acct_PLATFORM'], ['object'=>'account'], ['object'=>'account','id'=>null],
+    ['object'=>'account','id'=>'acct_bad/path'], ['object'=>'account','id'=>'acct_SYNTHETIC'],
+    ['object'=>'account','id'=>'acct_PLATFORM','livemode'=>true], ['object'=>'account','id'=>'acct_PLATFORM','livemode'=>'false']] as $badAccount) {
+    $p=$responses;$p['/v1/account']=$badAccount;fails(fn()=>readEvidence($e,$p));
+}
+$p=$responses;unset($p['/v1/account']);fails(fn()=>readEvidence($e,$p));
+$p=$responses;$p['/v1/account']['livemode']=false;check(readEvidence($e,$p)['platform_account_id']==='acct_PLATFORM','optional provider mode must match');
+$transport->drop='/v1/account';fails(fn()=>readEvidence($e,$responses));$transport->drop=null;
 // Three currency facts, never summed or converted using the reference FX.
 $x=$responses;$x[$B]=array_replace($x[$B],['currency'=>'eur','amount'=>12500,'fee'=>3000,'net'=>9500,'exchange_rate'=>0.25]);
 $x[$B]['fee_details']=[['amount'=>500,'currency'=>'eur','type'=>'stripe_fee'],['amount'=>2500,'currency'=>'eur','type'=>'application_fee']];
@@ -117,13 +126,13 @@ $bad = [
 ];
 foreach ($bad as [$path,$keys,$value]) {
     $p=$responses;$target=&$p[$path];foreach($keys as $key){$target=&$target[$key];}$target=$value;unset($target);
-    fails(static fn()=>readEvidence($e,$p));check(count($transport->calls)<=5,'bad responses stop bounded graph');
+    fails(static fn()=>readEvidence($e,$p));check(count($transport->calls)<=6,'bad responses stop bounded graph');
 }
 foreach ([$C,$F] as $path) { foreach (['refunds','amount_refunded','refunded'] as $key) { $p=$responses;unset($p[$path][$key]);fails(static fn()=>readEvidence($e,$p)); }
     foreach (['object'=>null,'data'=>null,'has_more'=>null] as $key=>$value){$p=$responses;$p[$path]['refunds'][$key]=$value;fails(static fn()=>readEvidence($e,$p));}
     $p=$responses;$p[$path]['refunds']['data']=[['object'=>'incorrect','id'=>'re_SYNTHETIC']];fails(static fn()=>readEvidence($e,$p));
 }
-foreach ([$S,$C,$B,$F,$FB] as $i=>$path) { $transport->drop=$path;fails(static fn()=>readEvidence($e,$responses));check(count($transport->calls)===$i+1,'network failure no retry or fallback'); }$transport->drop=null;
+foreach ([$S,$C,$B,'/v1/account',$F,$FB] as $i=>$path) { $transport->drop=$path;fails(static fn()=>readEvidence($e,$responses));check(count($transport->calls)===$i+1,'network failure no retry or fallback'); }$transport->drop=null;
 $p=$x;$p[$B]['exchange_rate']=null;fails(static fn()=>readEvidence($e,$p));
 $p=$x;$p[$FB]['exchange_rate']=null;fails(static fn()=>readEvidence($e,$p));
 [$direct,$p]=fixture();$p[$C]['application_fee']='fee_SYNTHETIC';fails(static fn()=>readEvidence($direct,$p));
@@ -174,7 +183,7 @@ $stored=['order_id'=>$e['order_id'],'quote_id'=>$e['quote_id'],'subject_ref'=>'h
     'state'=>'session_recorded','provider_session_id'=>'cs_test_SYNTHETIC','result_json'=>json_encode($result),'envelope_json'=>json_encode($e)];
 $wpdb=new EvidenceDb();$wpdb->row=$stored;
 sharity_donation_cli_payment_inspect([],['order'=>$e['order_id']]);
-check($factoryCalls===1 && count($transport->calls)===5 && $wpdb->writes===0,'CLI read-only with recorded session');
+check($factoryCalls===1 && count($transport->calls)===6 && $wpdb->writes===0,'CLI read-only with recorded session');
 $projection=json_decode(WP_CLI::$lines[0],true,64,JSON_THROW_ON_ERROR);
 check($projection['order_id']===$e['order_id'] && $projection['payment_verified']===false && !str_contains(WP_CLI::$lines[0],'subject_ref'),'CLI minimal non-settlement output');
 foreach ([[[],[]],[['do_BAD'],[]],[[],['order'=>'do_BAD']],[[],['order'=>$e['order_id'],'session'=>'cs_test_OTHER']]] as [$args,$assoc]) {

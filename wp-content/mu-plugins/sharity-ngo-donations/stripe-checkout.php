@@ -222,7 +222,7 @@ final class Sharity_Stripe_Checkout_Adapter
     }
 
     /** Original charge evidence only, never a final ledger/allocation or payout authorization.
-     * At most five GETs; no provider writes/retries. Caller must be outside a DB transaction.
+     * At most six GETs (the extra platform identity read is Amplifier-only); no provider writes/retries. Caller must be outside a DB transaction.
      * Historical readback ignores current activation/quote expiry and follows provider links.
      */
     public function retrievePaymentEvidence(string $sessionId, array $e): array
@@ -230,7 +230,7 @@ final class Sharity_Stripe_Checkout_Adapter
         $this->validateEnvelope($e);
         if (!$this->validSessionId($sessionId, $e['snapshot']['livemode'])) { throw new RuntimeException('DONATION_INVALID_SESSION_ID'); }
         // Removing a per-request header alone would inherit a client-level account.
-        if ($this->stripe->getStripeAccount() !== null) { throw new RuntimeException('DONATION_EVIDENCE_UNSAFE_CONFIG'); }
+        if ($this->stripe->getStripeAccount() !== null || $this->stripe->getStripeContext() !== null) { throw new RuntimeException('DONATION_EVIDENCE_UNSAFE_CONFIG'); }
         $options = $e['options']; unset($options['idempotency_key']);
         $platform = $options; unset($platform['stripe_account']);
         try {
@@ -277,6 +277,12 @@ final class Sharity_Stripe_Checkout_Adapter
             if ($expectedFee === 0) {
                 if ($charge['application_fee'] !== null || $bt['application_fee_minor'] !== '0') { throw new RuntimeException(); }
             } else {
+                // fee.account identifies the NGO. The credential's own account owns the platform legs.
+                $owner = $this->stripe->accounts->retrieve(null, [], $platform)->toArray();
+                if (($owner['object'] ?? null) !== 'account' || !is_string($owner['id'] ?? null)
+                    || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $owner['id']) || $owner['id'] === $e['snapshot']['account_id']
+                    || (array_key_exists('livemode', $owner) && $owner['livemode'] !== $e['snapshot']['livemode'])) { throw new RuntimeException(); }
+                $result['platform_account_id'] = $owner['id'];
                 $afId = $charge['application_fee'];
                 if (!$this->evidenceId($afId, 'fee')) { throw new RuntimeException(); }
                 $fee = $this->stripe->applicationFees->retrieve($afId, [], $platform)->toArray();
@@ -311,7 +317,7 @@ final class Sharity_Stripe_Checkout_Adapter
     }
 
     /** Complete bounded resource lists, NOT an atomic snapshot or settlement authorization.
-     * At most 40 GETs (two original reads + three collections of up to ten pages).
+     * At most 42 GETs (two original reads + three collections of up to ten pages).
      * All external calls remain outside any caller-owned DB transaction.
      */
     public function retrieveAdjustmentEvidence(string $sessionId, array $e): array

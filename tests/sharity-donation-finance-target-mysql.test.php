@@ -65,6 +65,64 @@ try {
     $persistedAmp=targetSave($ampOrder);$a=$persistedAmp['target'];
     check($persistedAmp['persisted']&&$a['policy']['donation_mode']==='amplifier'&&$a['connected_totals']['HUF']['net_before_application_fee_minor']==='48000'&&$a['connected_totals']['HUF']['net_minor']==='38000','persisted Amplifier retains fee separately, no double deduction');
     check($a['provisional_split']===null&&$a['unscoped_platform_movement_count']===2&&targetSave($ampOrder)===$persistedAmp,'persisted unknown platform and counterleg stays null, replay exact');
+    // D2p: real registration and target of verified platform fee/refund, preserving legacy observations.
+    $nativeStart=$checks;$nativeGets=$financeHttp->gets;$nativePosts=calls();$scoped=$ampData;$scoped['original']['platform_account_id']='acct_PLATFORM';
+    $verified=reconcileFixture($ampOrder,$scoped);$inv=sharity_donation_finance_reconcile($ampOrder['order_id'],$now);
+    check(count($inv['movements'])===3 && $inv['unscoped_platform_movements']===[],'legacy and verified native platform legs counted once');
+    check(!in_array('platform_account_unverified',$inv['unresolved'],true),'verified native legs resolve account scope only');
+    foreach($inv['movements'] as $m){check(count($m['observations'])===2,'both provenance records retained after supersession');}
+    check(financeCount()>0 && sharity_donation_finance_read($ampOrder['order_id'],$verified['digest'])===$verified,'immutable verified evidence readback');
+    fails(fn()=>targetDry($ampOrder),'DONATION_TARGET_REGISTRY_MISMATCH');
+    $p=movementProposal($ampOrder);$count=movementCount();
+    $record=sharity_donation_finance_record_movements($ampOrder['order_id'],$p,$now);
+    check(count($record['movements'])===3 && movementCount()===$count+2 && $record['unscoped_platform_movement_count']===0,'two verified platform legs registered beside existing NGO charge');
+    check(sharity_donation_finance_record_movements($ampOrder['order_id'],$p,$now+7)===$record,'verified native batch replay exact');
+    $new=targetSave($ampOrder);$t=$new['target'];
+    check($t['connected_totals']===$a['connected_totals'] && $t['platform_totals']['acct_PLATFORM']['HUF']===['gross_minor'=>'9900','processing_cost_minor'=>'0','application_fee_minor'=>'0','net_minor'=>'9900'],'platform balance separate from NGO and donor income');
+    check($t['provisional_split']===null && in_array('amplifier_counterleg_not_proven',$t['unresolved'],true) && !$t['allocation_eligible'],'verified platform does not invent NGO counterleg or authorize allocation');
+    check(targetSave($ampOrder)===$new,'platform target full persisted replay');
+    // Null/malformed/current-NGO platform identity and contradictory old/new native facts are not accepted.
+    foreach(['account','null','malformed','same-ngo','gross','currency','source','refund-scope'] as $case){
+        $bad=$scoped;
+        if($case==='account'){$bad['original']['platform_account_id']='acct_OTHER';}
+        if($case==='null'){$bad['original']['platform_account_id']=null;}
+        if($case==='malformed'){$bad['original']['platform_account_id']='acct_bad/path';}
+        if($case==='same-ngo'){$bad['original']['platform_account_id']=$ampData['original']['account_id'];}
+        if($case==='gross'){$bad['original']['application_fee']['initial_balance']['gross_minor']='10001';$bad['original']['application_fee']['initial_balance']['net_minor']='10001';}
+        if($case==='currency'){$bad['original']['application_fee']['initial_balance']['currency']='EUR';}
+        if($case==='source'){$bad['fee_refunds'][0]['id']='fr_CHANGED';$bad['fee_refunds'][0]['balance']['source_id']='fr_CHANGED';}
+        if($case==='refund-scope'){$bad['fee_refunds'][0]['balance']['scope']='connected';}
+        $added=reconcileFixture($ampOrder,$bad);
+        fails(fn()=>sharity_donation_finance_reconcile($ampOrder['order_id'],$now),in_array($case,['account','gross','currency','source'],true)?'DONATION_RECONCILE_CONFLICT':'DONATION_RECONCILE_UNAVAILABLE');
+        removeReconcileFixture($added);
+    }
+    // Contradiction across only one legacy and one verified observation must also fail.
+    removeReconcileFixture($verified);$bad=$scoped;$bad['original']['application_fee']['initial_balance']['gross_minor']='10002';$bad['original']['application_fee']['initial_balance']['net_minor']='10002';
+    $added=reconcileFixture($ampOrder,$bad);fails(fn()=>sharity_donation_finance_reconcile($ampOrder['order_id'],$now),'DONATION_RECONCILE_CONFLICT');removeReconcileFixture($added);
+    $verified=reconcileFixture($ampOrder,$scoped);
+    // A direct observation cannot acquire invented platform identity.
+    $bad=$data;$bad['original']['platform_account_id']='acct_PLATFORM';$added=reconcileFixture($o,$bad);
+    fails(fn()=>sharity_donation_finance_reconcile($o['order_id'],$now),'DONATION_RECONCILE_UNAVAILABLE');removeReconcileFixture($added);
+    check($financeHttp->gets===$nativeGets&&calls()===$nativePosts,'account-scoped reads/writes make no provider call');
+    // Two actual connections cannot claim the same platform movement for another order.
+    $oldSnapshot=$snapshot;$snapshot=array_replace($snapshot,['donation_mode'=>'amplifier','votes'=>500,'package_id'=>'starter','price_book_version'=>'amplifier-net80-v1:HUF','policy_version'=>'amplifier-net80-v1']);
+    try{$other=financeOrder('platform-race');}finally{$snapshot=$oldSnapshot;}
+    $otherData=$scoped;$otherData['original']['order_id']=$other['order_id'];$otherData['original']['session_id']=$other['provider_session_id'];$otherData['original']['initial_charge_balance']['id']='txn_OTHERAMP';
+    $otherSaved=reconcileFixture($other,$otherData);$nativeGets=$financeHttp->gets;$nativePosts=calls();$pa=movementProposal($ampOrder);$pb=movementProposal($other);$count=movementCount();
+    $raceResult=backingRace(fn($slot)=>sharity_donation_finance_record_movements(($slot===0?$ampOrder:$other)['order_id'],$slot===0?$pa:$pb,$now),'START TRANSACTION');
+    check(isset($raceResult[0]['value']) && ($raceResult[1]['error']??'')==='DONATION_MOVEMENT_CONFLICT' && movementCount()===$count,'native platform ownership rejects competing order, whole loser batch rolled back');
+    removeReconcileFixture($otherSaved);
+    // Same transaction ID on another actual account is an independent provider identity.
+    $otherData['original']['platform_account_id']='acct_OTHERPLATFORM';reconcileFixture($other,$otherData);
+    $rr=sharity_donation_finance_record_movements($other['order_id'],movementProposal($other),$now);
+    check(count($rr['movements'])===3 && movementCount()===$count+3,'same txn IDs on distinct actual accounts remain isolated');
+    // Separate native platform settlement currency, never reference-FX-converted into NGO balance.
+    $fxInventory=$inv;
+    foreach($fxInventory['movements'] as &$m){if($m['facts']['account_id']==='acct_PLATFORM'){$m['facts']['currency']='EUR';}}unset($m);
+    $fxTarget=sharity_donation_target_compute($fxInventory,sharity_donation_order_decode($ampOrder)['snapshot']);
+    check($fxTarget['platform_totals']['acct_PLATFORM']['EUR']['net_minor']==='9900' && $fxTarget['connected_totals']===$t['connected_totals'],'native currencies stay in independent buckets');
+    check($financeHttp->gets===$nativeGets&&calls()===$nativePosts,'account-scoped registry/target makes no provider call');
+    echo 'D2p platform MariaDB: '.($checks-$nativeStart)." checks; verified scope, legacy conflicts, replay, separate totals and two-connection ownership\n";
     // Full body integrity: intact digest column does not hide a damaged registry body.
     $mt=sharity_donation_movement_table();$original=$wpdb->db->query($wpdb->prepare("SELECT facts_json FROM `{$mt}` WHERE order_id=%s LIMIT 1",$full['order_id']))->fetch_assoc()['facts_json'];
     $wpdb->db->query($wpdb->prepare("UPDATE `{$mt}` SET facts_json='{}' WHERE order_id=%s AND facts_json=%s",$full['order_id'],$original));

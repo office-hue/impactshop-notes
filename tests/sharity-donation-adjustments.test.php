@@ -50,17 +50,22 @@ foreach(['direct','amplifier'] as $mode){foreach(['HUF','EUR','USD','GBP'] as $c
     [$e,$p]=abase($mode,$currency);$r=adjustmentRead($e,$p);
     check($r['resources_complete'] && $r['unresolved']===[] && !$r['atomic_snapshot'],'complete fetched lists are not atomic');
     check(!$r['allocation_eligible'] && !$r['payment_verified'] && !$r['settlement_reconciled'],'no accounting permission');
-    check($r['original']['payment']['amount_minor']===$e['snapshot']['amount_minor'] && count($transport->calls)===($mode==='direct'?8:13),'units and bounded base readback');
+    check($r['original']['payment']['amount_minor']===$e['snapshot']['amount_minor'] && count($transport->calls)===($mode==='direct'?8:15),'units and bounded base readback');
     foreach($transport->calls as $call){
         check($call['method']==='get' && $call['maxNetworkRetries']===0,'GET only no retry');
         check(in_array('Stripe-Version: 2026-10-28.endive',$call['headers'],true),'pinned API');
-        $platform=str_contains($call['path'],'application_fees')||$call['path']===$FB;
+        $platform=str_contains($call['path'],'application_fees')||$call['path']===$FB||$call['path']==='/v1/account';
         $scope=array_values(array_filter($call['headers'],static fn($h)=>str_starts_with($h,'Stripe-Account:')));
         check($scope===($platform?[]:['Stripe-Account: acct_SYNTHETIC']),'right account per call');
         check(!array_filter($call['headers'],static fn($h)=>str_starts_with($h,'Idempotency-Key:')),'no creation key');
     }
     check(!str_contains(json_encode($r),'PRIVATE_'),'minimal fields only');
 }}
+[$e,$p]=abase('amplifier');$accountReads=0;
+adjustmentFails($e,$p,static function($r,$path)use(&$accountReads){
+    if($path==='/v1/account' && ++$accountReads===2){$r['id']='acct_CHANGED';}return $r;
+});
+check($accountReads===2,'second original read verifies same platform identity');
 [$e,$p]=abase();$p[$C]['amount_refunded']=600;
 $p[$R]=alist([arefund('re_A',100)],true);$p[$R.'#re_A']=alist([arefund('re_B',200)],true);$p[$R.'#re_B']=alist([arefund('re_C',300)]);
 $r=adjustmentRead($e,$p);check(count($r['refunds'])===3 && $r['unresolved']===[],'all pages retained, cumulative refund matches');

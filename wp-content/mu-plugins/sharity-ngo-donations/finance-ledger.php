@@ -189,10 +189,11 @@ function sharity_donation_finance_movement(array $b, string $source, string $rol
         'balance_transaction_id' => sharity_donation_finance_id($b['id'] ?? null, 'txn'), 'source_id' => $source,
         'movement_role' => $role, 'provider_type' => $b['type'] ?? null, 'currency' => $b['currency'] ?? null];
     if (!in_array($facts['currency'], ['HUF', 'EUR', 'USD', 'GBP'], true)) { throw new RuntimeException(); }
+    if ($account !== null && !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $account)) { throw new RuntimeException(); }
     $types = ['refund' => ['refund', 'payment_refund'], 'refund_reversal' => ['refund_failure', 'payment_failure_refund', 'payment_refund', 'adjustment'],
         'dispute' => ['adjustment'], 'application_fee_refund' => ['application_fee_refund']];
     if (isset($types[$role])) {
-        if (($b['source_id'] ?? null) !== $source || ($b['scope'] ?? null) !== ($account === null ? 'platform' : 'connected')
+        if (($b['source_id'] ?? null) !== $source || ($b['scope'] ?? null) !== ($role === 'application_fee_refund' ? 'platform' : 'connected')
             || !in_array($facts['provider_type'], $types[$role], true)) { throw new RuntimeException(); }
     } elseif ($facts['provider_type'] !== null || isset($b['source_id']) || isset($b['scope'])) { throw new RuntimeException(); }
     foreach (['gross_minor', 'total_fee_minor', 'net_minor', 'application_fee_minor', 'processing_cost_minor'] as $key) {
@@ -246,7 +247,7 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             $bytes = (int) $item['evidence_bytes']; $total += $bytes;
             if ($bytes > SHARITY_DONATION_FINANCE_MAX_BYTES || $total > 16 * 1024 * 1024) { throw new RuntimeException('DONATION_RECONCILE_LIMIT'); }
         }
-        $movements = []; $digests = []; $unresolved = ['cross_order_movement_registry_not_applied', 'backing_not_reconciled']; $paymentBindings = [];
+        $movements = []; $digests = []; $unresolved = ['cross_order_movement_registry_not_applied', 'backing_not_reconciled']; $paymentBindings = []; $platformIds = [];
         $expectedOriginal = ['evidence_version' => 1, 'scope' => 'original_charge_only', 'order_id' => $orderId,
             'session_id' => $order['provider_session_id'], 'account_id' => $snapshot['account_id'],
             'livemode' => $snapshot['livemode'], 'donation_mode' => $snapshot['donation_mode'], 'payment_verified' => false, 'allocation_eligible' => false,
@@ -270,6 +271,14 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             }
             $original = $e['original'] ?? [];
             foreach ($expectedOriginal as $key => $value) { if (($original[$key] ?? null) !== $value) { throw new RuntimeException(); } }
+            $platformAccount = null;
+            if (array_key_exists('platform_account_id', $original)) {
+                $platformAccount = sharity_donation_finance_id($original['platform_account_id'], 'acct');
+                if (strlen($platformAccount) > 128 || $platformAccount === $snapshot['account_id'] || $snapshot['donation_mode'] !== 'amplifier'
+                    || ($original['evidence_state'] ?? null) !== 'original_charge_observed') { throw new RuntimeException(); }
+                $platformIds[$platformAccount] = true;
+                if (count($platformIds) > 1) { throw new RuntimeException('DONATION_RECONCILE_CONFLICT'); }
+            }
             foreach (['refunds', 'disputes', 'fee_refunds', 'unresolved'] as $key) {
                 if (!is_array($e[$key] ?? null) || !array_is_list($e[$key])) { throw new RuntimeException(); }
             }
@@ -304,8 +313,7 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             };
             $add($original['initial_charge_balance'], $charge, 'charge', $snapshot['account_id']);
             if ($fee !== null) {
-                $unresolved[] = 'platform_account_unverified';
-                $add($fee['initial_balance'], $feeId, 'application_fee', null);
+                $add($fee['initial_balance'], $feeId, 'application_fee', $platformAccount);
             }
             if (($original['failure_balance_transaction_id'] ?? null) !== null) { $unresolved[] = 'charge_failure_balance_not_projected'; }
             foreach ($e['refunds'] as $refund) {
@@ -323,9 +331,24 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             foreach ($e['fee_refunds'] as $refund) {
                 $source = sharity_donation_finance_id($refund['id'] ?? null, 'fr');
                 if ($feeId === null || ($refund['fee_id'] ?? null) !== $feeId || ($refund['connected_credit_verified'] ?? null) !== false || !array_key_exists('balance', $refund)) { throw new RuntimeException(); }
-                if ($refund['balance'] !== null) { $add($refund['balance'], $source, 'application_fee_refund', null); }
+                if ($refund['balance'] !== null) { $add($refund['balance'], $source, 'application_fee_refund', $platformAccount); }
                 $unresolved[] = 'observed_fee_refund_connected_credit_unreconciled';
             }
+        }
+        // Do not infer old account scopes. Supersede an unscoped leg only when the
+        // same native transaction is independently observed with matching immutable facts.
+        foreach ($movements as $key => $legacy) {
+            $f = $legacy['facts'];
+            if ($f['account_id'] !== null || $platformIds === []) { continue; }
+            $account = array_key_first($platformIds);
+            $knownKey = sharity_donation_finance_json(['stripe', $f['livemode'], $account, $f['balance_transaction_id']]);
+            if (!isset($movements[$knownKey])) { continue; }
+            $expected = $f; $expected['account_id'] = $account;
+            if (sharity_donation_finance_json($expected) !== sharity_donation_finance_json($movements[$knownKey]['facts'])) {
+                throw new RuntimeException('DONATION_RECONCILE_CONFLICT');
+            }
+            $movements[$knownKey]['observations'] += $legacy['observations'];
+            unset($movements[$key]);
         }
         if ($index === []) { $unresolved[] = 'observations_missing'; }
         ksort($movements, SORT_STRING); ksort($digests, SORT_STRING); $known = []; $unscoped = []; $financial = [];
@@ -334,6 +357,7 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
             $financial[] = $movement['financial_digest'];
             if ($movement['facts']['account_id'] === null) { $unscoped[] = $movement; } else { $known[] = $movement; }
         }
+        if ($unscoped !== []) { $unresolved[] = 'platform_account_unverified'; }
         sort($financial, SORT_STRING); $unresolved = array_values(array_unique($unresolved)); sort($unresolved, SORT_STRING);
         $evidenceSet = hash('sha256', sharity_donation_finance_json(array_keys($digests)));
         $financialSet = hash('sha256', sharity_donation_finance_json($financial));
@@ -1069,14 +1093,24 @@ function sharity_donation_target_sum(int $a, int $b): int
 }
 function sharity_donation_target_compute(array $inventory, array $snapshot): array
 {
-    $totals = []; $chargeCurrencies = []; $refs = [];
+    $totals = []; $chargeCurrencies = []; $refs = []; $platformTotals = [];
     $unresolved = array_values(array_diff($inventory['unresolved'],['cross_order_movement_registry_not_applied']));
     $unresolved[] = 'future_liability_not_proven';
     $fields = ['gross_minor','processing_cost_minor','application_fee_minor','net_minor'];
     foreach ($inventory['movements'] as $m) {
         $f = $m['facts']; $c = $f['currency'];
-        if ($f['order_id'] !== $inventory['order_id'] || $f['account_id'] !== $snapshot['account_id'] || $f['livemode'] !== $snapshot['livemode']
-            || !in_array($f['movement_role'],['charge','refund','refund_reversal','dispute'],true)) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
+        if ($f['order_id'] !== $inventory['order_id'] || $f['livemode'] !== $snapshot['livemode']) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
+        if (in_array($f['movement_role'], ['application_fee','application_fee_refund'], true)) {
+            if ($snapshot['donation_mode'] !== 'amplifier' || $f['account_id'] === $snapshot['account_id']) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
+            $account = sharity_donation_finance_id($f['account_id'], 'acct');
+            if (strlen($account) > 128) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
+            $platformTotals[$account][$c] ??= array_fill_keys($fields, 0);
+            if (count($platformTotals) !== 1) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
+            foreach ($fields as $key) { $platformTotals[$account][$c][$key] = sharity_donation_target_sum($platformTotals[$account][$c][$key], sharity_donation_finance_minor($f[$key])); }
+            $refs[] = $m['financial_digest'];
+            continue;
+        }
+        if ($f['account_id'] !== $snapshot['account_id'] || !in_array($f['movement_role'],['charge','refund','refund_reversal','dispute'],true)) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
         if ($f['movement_role'] === 'charge') { $chargeCurrencies[] = $c; }
         $totals[$c] ??= array_fill_keys($fields,0);
         foreach ($fields as $key) { $totals[$c][$key] = sharity_donation_target_sum($totals[$c][$key],sharity_donation_finance_minor($f[$key])); }
@@ -1089,6 +1123,10 @@ function sharity_donation_target_compute(array $inventory, array $snapshot): arr
         $bucket['observed_deficit_minor'] = max(0,-$bucket['net_before_application_fee_minor']);
         foreach ($bucket as &$n) { $n = (string)$n; } unset($n);
     } unset($bucket);
+    foreach ($platformTotals as &$currencies) {
+        ksort($currencies, SORT_STRING);
+        foreach ($currencies as &$bucket) { foreach ($bucket as &$n) { $n = (string) $n; } unset($n); } unset($bucket);
+    } unset($currencies);
     $coherent = count($totals) === 1;
     if (!$coherent) { $unresolved[] = 'settlement_currencies_require_executed_fx'; }
     $split = null;
@@ -1101,13 +1139,13 @@ function sharity_donation_target_compute(array $inventory, array $snapshot): arr
         if ($coherent) { $split = ['currency'=>$settlementCurrency,'ngo_minor'=>(string)max(0,(int)$totals[$settlementCurrency]['net_before_application_fee_minor']),'fund_minor'=>'0']; }
     } else {
         if ($snapshot['donation_mode'] !== 'amplifier' || $snapshot['policy_version'] !== 'amplifier-net80-v1') { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
-        // Current adapter does not prove the platform account or the NGO fee-refund counterleg.
-        // Preserve all connected totals, but do not manufacture a reconciled 80/20 target.
-        $unresolved[] = 'amplifier_platform_and_counterleg_not_proven';
+        // Platform debit alone does not prove NGO credit or total future liability.
+        $unresolved[] = $platformTotals === [] || $inventory['unscoped_platform_movements'] !== []
+            ? 'amplifier_platform_and_counterleg_not_proven' : 'amplifier_counterleg_not_proven';
     }
     $unresolved = array_values(array_unique($unresolved)); sort($unresolved,SORT_STRING);
     $policy = array_intersect_key($snapshot,array_flip(['policy_version','donation_mode','ngo_slug','account_id','livemode','currency','amount_minor','package_id','votes','price_book_version','binding_version']));
-    return ['target_version'=>1,'order_id'=>$inventory['order_id'],'status'=>'reconciliation_required',
+    return ($platformTotals === [] ? [] : ['platform_totals'=>$platformTotals]) + ['target_version'=>1,'order_id'=>$inventory['order_id'],'status'=>'reconciliation_required',
         'policy'=>$policy,'policy_digest'=>hash('sha256',sharity_donation_finance_json($policy)),
         'evidence_set_digest'=>$inventory['evidence_set_digest'],'financial_inventory_digest'=>$inventory['financial_inventory_digest'],
         'economic_digest'=>hash('sha256',sharity_donation_finance_json([$policy,$inventory['financial_inventory_digest']])),

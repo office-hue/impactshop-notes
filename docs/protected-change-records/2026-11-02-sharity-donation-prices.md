@@ -531,3 +531,78 @@ external mutation. Foundation bank ownership is already user-confirmed, not re-a
 Separate Foundation Connect onboarding/account proof still required. No new main window,
 merge, deployment, activation, real payment or financial acceptance occurred.
 SUBSTACK-HANDOVER.md remains a preserved reference, not an active authoring task.
+
+
+## 72. D2p - account-scoped platform financial movements (implementation)
+
+Pre-change N b93bc5391, A 3d5c2c410, both clean. No main window or main operation.
+Approved existing donation financial path: retrieve actual platform identity, retain it
+in sanitized observations, register application-fee/refund transactions in the existing
+account-scoped registry, and preserve separate connected/platform target totals.
+Hermes049 is first drafter; Codex integrates, tests and obtains targeted source review.
+Coherence: fee.account denotes NGO, never platform. Legacy observations remain immutable;
+only a matching newly verified movement can remove duplicate unscoped representation.
+Risks: identity substitution, double counting historical+new evidence, cross-order reuse,
+wrong-account collateral and treating platform debit as NGO credit. Reuse existing SDK
+pins, exact money, native registry/source locks and full readback; no schema or new guard.
+Unknown counterleg/liability keeps Amplifier unresolved. No provider POST, activation,
+order/points/votes/fund mutation. Existing direct path must remain compatible.
+Planned checks: mocked pinned SDK GET identity/scope/mode/no PII; native MariaDB mixed
+legacy/new facts, replay/conflicts/account isolation and separate target totals.
+Release remains exact-file from accepted merge SHA, dependency first, same staging bytes
+production, private source backup/CAS/readback. No live release in this package.
+Rollback restores only own unchanged release files; observations/registered movements and
+later financial events remain. Manual post-release UI checklist: direct and Amplifier
+availability unchanged, own order status readable, four languages and prior checkout
+return unaffected. No UI acceptance claimed by backend tests.
+
+### D2p implemented contract and verification
+
+Existing adapter now adds one platform-scoped GET /v1/account on the paid Amplifier
+path only: max6 original /42 adjustment GETs, API2026-10-28.endive, SDK22.1.0,
+zero retries/idempotency keys/provider POST. Frozen-order key mode validation remains;
+account object/id/optional livemode, account!=NGO and inherited context are checked.
+Only original.platform_account_id is retained; no contact/bank/raw account payload.
+The second original read detects a platform change; direct projection/GET count unchanged.
+
+Existing immutable ledger/registry now retain actual platform identity for fee/refund
+movements. Missing historical identity stays unknown. A verified native transaction
+supersedes the legacy unscoped view only with exact same non-account economic facts;
+both provenance observations remain and contradictory facts fail. No historical row
+rewrite or inferred scope for an unobserved legacy leg. Existing native source mutex,
+provider/live/account/transaction uniqueness and full batch/readback are reused unchanged.
+Target computation keeps platform account/currency buckets separate from connected
+payment totals, without double-counting application fee as income/cost. Direct target
+remains unchanged; Amplifier counterleg/liability unresolved, all readiness false.
+No new schema/helper/framework, no live binding or financial operation execution.
+
+Actual tests: PHP lint and diffcheck; original finance/CLI437; adjustments495;
+checkout197; fresh runtime13. Real disposable MariaDB10.11.19:1340 assertions total,
+including D2p66 (target153 total), movement110, backing127, reconcile655. Two native
+connections reject cross-order reuse; same transaction ID on a different actual account
+is separate; mixed legacy/known facts, missing registry, exact replay and separate
+platform currency verified. Existing uncertain-commit/fault tests are injected failures,
+not physical network failures. No sandbox/live money, deployment or UI acceptance.
+Independent d2i_source_review inspected actual source and three test diffs, final no
+findings; reviewer did not execute tests. No new full plan audit needed for this
+already-approved account identity gap; prior financial audits remain applicable.
+
+Hermes049 execution ee630e9b-dfed-4867-b381-98acafb64130, task SHA
+ a91f86400da6e71b4ea95852b69bd948e0717066e8c5bf0ecc357cf65935a3e4:
+1completed call,42522input+6571output=49093tokens, estimated USD0.0050095136;
+actual invoice and total Codex/reviewer cost unknown, no savings claim. Concept and
+selected target/identity structure partially used. Codex repaired scope validation,
+legacy contradiction handling/provenance, direct compatibility, and completed actual
+SDK/native tests absent from draft. No redispatch/JEV/fallback. Pending/terminal
+Secretary memory remote_ack. First SDK test attempt exposed two old five-GET assertions
+(bound and ordered injected failures); diagnosis was stale fixture graph, updated to the
+new six-GET path including account, preserving no-retry checks; final run passed.
+
+Current live account read (separate authorized read-only check) still finds Zrt with
+zero connected NGOs. Foundation bank ownership is already confirmed by Arnold, not an
+NGO-account verification. Next financial work: verified NGO fee-refund counterleg,
+complete liability, actual covered correction lifecycle and Foundation onboarding;
+then direct HUF pilot, Amplifier votes/fund, other currencies/history/remaining plan.
+Source-ready for this package, not full goal, merge, deployment or activation.
+Own exact source/hash publication and remote readback recorded separately in Secretary.
+SUBSTACK-HANDOVER.md retained as reference only.

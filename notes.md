@@ -8734,3 +8734,18 @@ Exact proof/CLI, limitations, deployment/rollback and manual UI checklist: prote
 2026-11-02-sharity-donation-prices.md section71. Global switches unchanged, Amplifier enable
 refused, no live account/payment/activation. User-confirmed Foundation bank need not be
 reconfirmed; separate NGO account proof still missing. Source/push/merge/deploy distinct.
+
+
+## D2p platform financial identity - 2026-11-02
+
+Existing adapter/ledger now verify actual platform account for Amplifier application-fee
+and refund movements, register them in the existing native ledger and retain separate
+account/currency target totals. Historical unscoped evidence is superseded only by an
+exact matching verified native leg; no duplicated money or invented NGO credit. Direct
+projection unchanged; Amplifier counterleg/liability and activation remain unresolved.
+Actual1340 MariaDB assertions (66D2p),437financeCLI/495adjustment/197checkout/13runtime,
+independent source+test review no findings, no reviewer test execution. Hermes049 one
+call49093tokens, estimated USD0.0050095136; partial reuse with substantial Codex repair,
+actual total cost unknown. Details, failure diagnosis, source/release/rollback and manual
+UI checklist: docs/protected-change-records/2026-11-02-sharity-donation-prices.md section72.
+No main window, provider write, new schema, merge, deployment or financial activation.
