@@ -971,3 +971,7 @@ Termékcommit bd17406b457456e15f600f9ad6fccbacda8cd45d. Kizárólag saját finan
 ## D2m backing — saját baseline (2026-11-02)
 
 Termékcommit `bd38f6626d274dc4689cd23fa4a2d1420abf43c3`. Kizárólag saját donation finance-ledger/read két hash és manifest-oldalkocsi frissül; nincs új modul/inventory vagy idegen pin/guardlogika.1187 valódi MariaDB assertion (127backing),401offline financial/CLI,13runtime, független forrás- és tesztreview javítások után leletmentes. Pontos scope/CLI, saját operátori proof korlátai, funkciólista, kiadás/rollback/kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §69. Prepared-only belső foglalás, nem igazolt pénz vagy végrehajtható allokáció. Mainművelet, telepítés, aktiválás nincs.
+
+## D2n target — saját baseline (2026-11-02)
+
+Termékcommit057107ec75483b37ac48165646e0c8dea46568c0. Kizárólag a két saját finance-ledger/read hash, generated_at és manifestchecksum változik; eredeti timestamp és idegen pinek megmaradnak. Új inventory/guardlogika nincs.1274MariaDB (87új target),401offlineCLI,13runtime, független forrásreview leletmentes. Részlet, funkciólista és kiadás/rollback/kézi UI: protected-change-records/2026-11-02-sharity-donation-prices.md §70. Előzetes nettó cél és ismeretlen teljes liability külön; nem aktivált vagy pénzügyileg elfogadott.
