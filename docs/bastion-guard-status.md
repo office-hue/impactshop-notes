@@ -909,3 +909,12 @@ Csak sharity-ngo-donations/orders.php került a meglévő védelembe; config ön
 ## 2026-11-02 D2d célzott inventory
 
 Két új saját donation-modul: http.php/runtime.php, meglévő donation loader pin és config önhash/oldalkocsik. Idegen pin és guard-szabály változatlan. Teljes inventory+6 hash-eset sikeres; auth/SDK/párhuzamos SQL határ célzottan tesztelt, független review blokkoló nélkül. Nincs telepítés/aktiválás. Koherencia, funkciólista, rollback és kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §58.
+
+
+### 2026-11-02 D2e — aláírt webhook és session-helyreállítás
+
+Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit inbox-séma/GET-only recovery.174 valódi MariaDB-,207 HTTP- és10 loader/konfigurációs ellenőrzés sikeres; független forrásreview blokkoló nélkül. Nincs valós providerhívás, pénzügyi könyvelés, szavazat vagy aktiválás. A kontrollált saját tesztkonténer eltávolítva. Teljes scope, kockázat, javítás, költség és kiadási/UI/rollback lista: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §59. Hermes037 egyhívásos becslés0,003256799USD, tényleges díj ismeretlen; fő működési hibáit Codex javította. További pénzügyi egyeztetés/account/UI/D3/D4 és VB7/Sharing12 nyitott. Forráskész nem merge/deploy/aktiválás.
+
+Védelmi kiterjesztés kizárólag új saját `wp-content/mu-plugins/sharity-ngo-donations/webhook.php`; runtime.php és fő donation loader saját pinje frissül. Idegen pin/CI/guardlogika változatlan; meglévő inventory és negatív/hash teszt következik.
+
+D2e helyi Bástya-visszaolvasás: teljes meglévő inventory nulla drift;6 izolált negatív/hash eset sikeres. Guardlogika és távoli szabály nem módosult.
