@@ -200,9 +200,12 @@ try {
         $wpdb->db->query($restore); check(sharity_donation_finance_schema_apply(),'explicit fixture repair verified');
     }
     require __DIR__ . '/sharity-donation-finance-reconcile-mysql.test.php';
+    require __DIR__ . '/sharity-donation-finance-movements-mysql.test.php';
     check(calls() >= $beforePosts && !isset($data['allocation_minor']), 'no settlement claim');
     echo 'Donation finance MariaDB: '.($checks-$financeStart)." checks; parallel connections, uncertain INSERT, no provider POST during record\n";
 } finally {
     $wpdb->failOn = ''; $wpdb->failure = ''; $wpdb->db->query('DROP TABLE IF EXISTS `'.$financeTable.'`');
+    $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_movement_table().'`');
+    unset($options[SHARITY_DONATION_MOVEMENT_SCHEMA_OPTION]);
     unset($options[SHARITY_DONATION_FINANCE_SCHEMA_OPTION]); Stripe\ApiRequestor::setHttpClient($transport);
 }

@@ -29,6 +29,7 @@ class OrderDb
         $this->db = new mysqli('127.0.0.1', 'root', 'isolated-donation-test-only', 'donation_test', $port);
         $this->db->set_charset('utf8mb4');
     }
+    public function __get(string $name) { return $name === 'dbh' ? $this->db : null; }
     public function prepare(string $sql, ...$args): string {
         if (count($args) === 1 && is_array($args[0])) { $args = $args[0]; }
         $i = 0;

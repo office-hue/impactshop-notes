@@ -30,7 +30,8 @@ function sharity_donation_cli_finance_schema(array $args, array $assoc): void
 {
     try {
         if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $assoc !== ['apply' => true]
-            || !function_exists('sharity_donation_finance_schema_apply') || !sharity_donation_finance_schema_apply()) { throw new RuntimeException(); }
+            || !function_exists('sharity_donation_finance_schema_apply') || !sharity_donation_finance_schema_apply()
+            || !function_exists('sharity_donation_movement_schema_apply') || !sharity_donation_movement_schema_apply()) { throw new RuntimeException(); }
         WP_CLI::line('DONATION_FINANCE_SCHEMA_READY');
     } catch (Throwable $error) { WP_CLI::error('DONATION_FINANCE_SCHEMA_UNAVAILABLE'); }
 }
@@ -53,12 +54,19 @@ function sharity_donation_cli_payment_record(array $args, array $assoc): void
 function sharity_donation_cli_payment_reconcile(array $args, array $assoc): void
 {
     try {
-        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || array_keys($assoc) !== ['order']
+        $record = array_key_exists('record-movements', $assoc); $keys = array_keys($assoc); sort($keys);
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $keys !== ($record ? ['order', 'record-movements'] : ['order'])
             || !is_string($assoc['order']) || !preg_match('/^do_[a-f0-9]{32}$/D', $assoc['order'])
-            || !function_exists('sharity_donation_finance_reconcile')) { throw new RuntimeException(); }
-        WP_CLI::line(json_encode(sharity_donation_finance_reconcile($assoc['order'], time()), JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+            || !function_exists('sharity_donation_finance_reconcile')
+            || ($record && (!is_string($assoc['record-movements']) || !preg_match('/^[a-f0-9]{64}$/D', $assoc['record-movements'])
+                || !function_exists('sharity_donation_finance_record_movements')))) { throw new RuntimeException(); }
+        $result = $record ? sharity_donation_finance_record_movements($assoc['order'], $assoc['record-movements'], time())
+            : sharity_donation_finance_reconcile($assoc['order'], time());
+        WP_CLI::line(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
     } catch (Throwable $error) {
-        WP_CLI::error(in_array($error->getMessage(), ['DONATION_RECONCILE_LIMIT', 'DONATION_RECONCILE_CONFLICT'], true) ? $error->getMessage() : 'DONATION_RECONCILE_UNAVAILABLE');
+        WP_CLI::error(in_array($error->getMessage(), ['DONATION_RECONCILE_LIMIT', 'DONATION_RECONCILE_CONFLICT',
+            'DONATION_MOVEMENT_STALE', 'DONATION_MOVEMENT_EMPTY', 'DONATION_MOVEMENT_CONFLICT',
+            'DONATION_MOVEMENT_UNAVAILABLE', 'DONATION_FINANCE_PACKET_TOO_SMALL'], true) ? $error->getMessage() : 'DONATION_RECONCILE_UNAVAILABLE');
     }
 }
 

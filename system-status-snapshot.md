@@ -2262,3 +2262,10 @@ Kért NGO-ra korlátozott publikus mode/currency/bounds/árlista; meglévő form
 ### Sharity §67 — Notes main integrálva
 
 Saját merge8c1800e9, távoli main d5ff78fe; külön jóváhagyott ablak felszabadítva. Hat docs/hash konfliktus rendezve, main shopping/auth és saját lokalizáció megőrizve;72 PHP+38 Chrome+guard sikeres. Nincs PR-merge/telepítés/aktiválás. Részletek: protected-change-records/2026-11-02-sharity-donation-prices.md §67.
+
+
+## 68. D2l — tartós pénzmozgás-regiszter (2026-11-02)
+
+A meglévő Notes finance-ledger/read explicit, digesthez kötött CLI-regisztrációval bővült. Provider/livemode/actual-account/balance-transaction egyedi azonosság, pontos immutable tények, egy pinned mysqli-tranzakcióban teljes batch, order/evidence stale-check és bizonytalan commit teljes visszaolvasása. Ismeretlen platformaccount külön feloldatlan; minden pénzügyi readiness false, nincs allokáció vagy fedezeti állítás.1060 MariaDB assertion (ebből110regiszter),401offline pénzügyi/CLI,13runtime és lint/diffcheck sikeres; független kód-/tesztreview leletmentes. A commit-hibák célzott fault injection, nem fizikai hálózatszakítás. Saját tesztkonténer eltávolítva. Hermes045 elvetett, használható patch nélkül;35663token, becsült0.003381651USD, tényleges összköltség ismeretlen; újrahívás nincs. A synthetic ID és packet tesztelvárás diagnosztizált javítása, pontos funkciólista/kiadás/rollback/kézi checklist: Notes docs/protected-change-records/2026-11-02-sharity-donation-prices.md §68.
+
+Saját commit/push/PR és Secretary readback külön; nincs PR-merge/telepítés/aktiválás/pénzügyi elfogadás. Nincs nyitott csendablak. Következő: közös likvid backing és egyeztetési műveletek, hiteles accountkötés, directHUF majd Amplifier/D3/D4 és további devizák. A teljes §62 cél, affiliate/Offerwall és VB7/Sharing12 továbbra nyitott. A korábbi A07913e78b végrehajtott CI-checkjei sikeresek, kihagyott check nem PASS; ez nem oldja a helyi teljes shopping-Bástya függőséghiányát vagy az élő elfogadást. SUBSTACK-HANDOVER.md megőrzött hivatkozás.
