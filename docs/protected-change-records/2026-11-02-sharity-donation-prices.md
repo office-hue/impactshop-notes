@@ -45,3 +45,5 @@ via existing exact-file release. No production Composer/shared vendor changes.
 Hermes031 drafted A UI only; N pricing authored by Codex. One completed call,
 14551 tokens, estimated USD0.001997177 (not invoice), no retry. Codex actual
 cost unknown. Usage/integration/repair status recorded in Secretary.
+
+Protected files touched (approved additive inventory only): docs/bastion-guard-status.md, docs/impactshop-guard-config.json, docs/impactshop-guard-config.sha256, docs/impactshop-guard-hashes.json, docs/impactshop-guard-hashes.sha256. Smoke: real existing guard checker and six negative/checksum cases passed. Existing pin diff restricted to config and its checksum; two new own files added. Rollback: own metadata commit to 71e934800 bytes, no runtime operation.

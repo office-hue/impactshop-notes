@@ -887,3 +887,7 @@ hibás kódjavaslat elvetve. Codex-költség ismeretlen. Secretary
 `docs/protected-change-records/2026-10-31-sharity-international-preferences.md` P2s.
 Következő P2t: WP kifelé menő preferenciaátadás meglévő útja; Hermes020 még nincs
 kiadva. P3–P7 pénzügyi terv változatlan, teljes ág nem release-ready.
+
+## 2026-11-02 Donation D1 inventory extension
+
+Added only sharity-ngo-donations.php and its amplifier-packages.json to the existing source inventory. Config self-hash and sidecars follow; unrelated pins unchanged. No new guard/helper or rule weakening. Source validation and live acceptance boundaries: [D1 record](protected-change-records/2026-11-02-sharity-donation-prices.md).

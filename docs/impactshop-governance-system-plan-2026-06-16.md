@@ -965,3 +965,7 @@ Az Impact Shop donationpoints egyszerűsített candidate új runtimefájljai a m
 ### 2026-10-29 — Célzott MNB/CJ hash-szinkron
 
 A jóváhagyott50%/MNB-szabály hat meglévő runtime fájlt érint; a meglévő hashjegyzék ezek tényleges tartalmát követi. A védett fájllista, guard-kód, jogosultsági és release-modell nem változik. Célzott money/provider/SQL teszt és független review; részletek a2026-10-29-es points change record és termékterv alatt.
+
+### 2026-11-02 Donation D1 source inventory
+
+Existing guard inventory extends to the new donation price loader and package JSON only. No policy/guard behavior change. See protected-change-records/2026-11-02-sharity-donation-prices.md for scope and acceptance.
