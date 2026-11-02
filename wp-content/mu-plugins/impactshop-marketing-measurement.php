@@ -19,6 +19,11 @@ function impactshop_marketing_measurement_enabled(): bool
 function impactshop_marketing_measurement_route(string $path): ?string
 {
     $routes = [
+        '/reklamozoknak' => 'sharity-app.advertisers',
+        '/palyazati-tajekoztato' => 'sharity-app.grants',
+        '/partner-api' => 'sharity-app.partner-api',
+        '/impact-challenge' => 'sharity-app.impact-challenge',
+        '/ngo-guides/jogi-dokumentumok' => 'sharity-app.ngo-guides',
         '/impactshop' => 'sharity-app.impactshop', '/rolunk' => 'sharity-app.about',
         '/cegeknek' => 'sharity-app.companies', '/befektetoknek' => 'sharity-app.investors',
         '/ngo-guides' => 'sharity-app.ngo-guides', '/ngo-guides/impact-shop' => 'sharity-app.ngo-guides',
@@ -48,7 +53,7 @@ function impactshop_marketing_measurement_collect(WP_REST_Request $request): WP_
     $body = json_decode($request->get_body(), true);
     if (!is_array($body) || count($body) !== 2 || ($body['schemaVersion'] ?? null) !== 2
         || !isset($body['routeId']) || !is_string($body['routeId'])
-        || !in_array($body['routeId'], ['sharity-app.impactshop', 'sharity-app.about', 'sharity-app.companies', 'sharity-app.investors', 'sharity-app.ngo-guides'], true)) {
+        || !in_array($body['routeId'], ['sharity-app.impactshop', 'sharity-app.about', 'sharity-app.companies', 'sharity-app.investors', 'sharity-app.ngo-guides', 'sharity-app.advertisers', 'sharity-app.grants', 'sharity-app.partner-api', 'sharity-app.impact-challenge'], true)) {
         return $reply(400);
     }
     $response = wp_remote_post('https://sharity-legal-production.up.railway.app/api/marketing/measurement/events', [
