@@ -462,3 +462,14 @@ talált blokkoló hibát; nem natív modell-végrehajtási vagy lifecycle receip
 
 A jelen DOCSYNC csak a már ellenőrzött aktiválást rögzíti. Saját
 commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a szöveg.
+
+
+## 2026-11-02 — NGO Card központi hírolvasó
+
+Saját `feat/ngo-card-news-20261102` ág a d5ff78fe alapról. Additív GET-only
+`impactshop-ngo-card-news.php`: meglévő központi opció/filter, tisztított 200
+Unicode karakter és opcionális HTTPS-link, no-store/null eltávolítás. A régi
+Card/admin, JYSK és pénzügyi működés változatlan. PHP lint és izolált 13 assertion
+sikeres; nincs élő írás. Az új fájl a meglévő Bástya inventory/hash/modellben
+szerepel; külön guard nincs. Forrásjelölt, PR/merge/telepítés még nincs.
+Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.

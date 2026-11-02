@@ -2056,3 +2056,14 @@ commit/push/PR/merge állapotát a kiadási visszaolvasás igazolja, nem ez a sz
 ## 2026-10-29 — Impact Shop simplified points
 
 Saját worktree d953e525 alapon; két üzleti tábla, egyszeri award/fullrefund, komplexkorrekció kézi, kattintási jutalom0. Helyi candidate és valódi izolált SQLteszt elkészült; push/PR/merge/deploy/aktiválás ebben a checkpointban még nincs. Újhost we040 Miniútvonalon elérhető; prod/staging közösDB eltérőprefix. Providerfinalauthority (CJ/Dognet) és teljesdrain nemigazolt, ezért laneek nemaktiválhatók. [Terv](docs/dev-plans/impactshop-donation-proportional-points-source-r1-2026-10-13.md).
+
+
+## 2026-11-02 — NGO Card központi hírolvasó
+
+Saját `feat/ngo-card-news-20261102` ág a d5ff78fe alapról. Additív GET-only
+`impactshop-ngo-card-news.php`: meglévő központi opció/filter, tisztított 200
+Unicode karakter és opcionális HTTPS-link, no-store/null eltávolítás. A régi
+Card/admin, JYSK és pénzügyi működés változatlan. PHP lint és izolált 13 assertion
+sikeres; nincs élő írás. Az új fájl a meglévő Bástya inventory/hash/modellben
+szerepel; külön guard nincs. Forrásjelölt, PR/merge/telepítés még nincs.
+Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
