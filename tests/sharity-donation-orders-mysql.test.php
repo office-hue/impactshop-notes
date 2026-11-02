@@ -110,6 +110,28 @@ function race(callable $operation, string $barrierOn = ''): array {
     }
 }
 require __DIR__ . '/../wp-content/mu-plugins/sharity-ngo-donations/orders.php';
+
+// D2d HTTP + real store/SDK integration; canonical auth transport is stubbed.
+class WP_REST_Response {
+    public array $headers = [];
+    public function __construct(public array $body, public int $status = 200) {}
+    public function header($k, $v): void { $this->headers[$k] = $v; }
+}
+class WP_REST_Request {
+    public array $url = [];
+    public function __construct(public array $json, public string $key) {}
+    public function get_json_params(): array { return $this->json; }
+    public function get_header($k): string { return $k === 'idempotency-key' ? $this->key : ''; }
+    public function is_json_content_type(): bool { return true; }
+    public function get_url_params(): array { return $this->url; }
+}
+class ImpactShop_Sharity_Web_Session {
+    public static ?string $subject = null;
+    public static function authenticate_request($request): array { return ['subject_ref' => self::$subject]; }
+}
+function sharity_donation_runtime_adapter(): Sharity_Stripe_Checkout_Adapter { return $GLOBALS['adapter']; }
+require __DIR__ . '/../wp-content/mu-plugins/sharity-ngo-donations/http.php';
+
 $wpdb = new OrderDb((int) $port);
 check($wpdb->ddls === 0, 'no migration at load');
 check(sharity_donation_quote_schema_apply(), 'quote fixture schema');
@@ -225,6 +247,28 @@ try {
     $differentResult = array_replace($result, ['session_id' => 'cs_test_OTHER']);
     fails(fn() => sharity_donation_order_save_result($subject, $first['order_id'], $differentResult, $now), 'ORDER_RESULT_CONFLICT');
     fails(fn() => sharity_donation_order_save_result($subject, $first['order_id'], array_replace($result, ['checkout_url' => 'https://evil.test/c/pay/x']), $now), 'ORDER_RESULT_INVALID');
+    ImpactShop_Sharity_Web_Session::$subject = $subject;
+    foreach (['hu', 'en', 'de', 'fr'] as $locale) {
+        $request = new WP_REST_Request(['quote_id' => fixtureQuote(), 'locale' => $locale], 'http-' . $locale . '-' . $nonce);
+        $before = calls(); $response = sharity_donation_order_handle($request);
+        check($response->status === 200 && $response->body['order']['state'] === 'session_recorded' && calls() === $before + 1, 'HTTP to durable claim and real SDK: ' . $locale);
+        $id = $response->body['order']['id'];
+        $stored = sharity_donation_order_read($subject, 'order_id', $id);
+        check(json_decode($stored['envelope_json'], true)['locale'] === $locale && $response->body['order']['payment_verified'] === false, 'locale frozen, no payment proof');
+        $options[SHARITY_DONATION_ORDERS_ENABLED] = '0';
+        check(sharity_donation_order_handle($request)->body === $response->body && calls() === $before + 1, 'HTTP replay while off no second POST');
+        $request->url = ['id' => $id];
+        ImpactShop_Sharity_Web_Session::$subject = $other;
+        check(sharity_donation_order_status_handle($request)->status === 404, 'HTTP cannot read other owner');
+        ImpactShop_Sharity_Web_Session::$subject = $subject;
+        check(sharity_donation_order_status_handle($request)->body === $response->body, 'HTTP own status after disable');
+        $options[SHARITY_DONATION_ORDERS_ENABLED] = '1';
+    }
+    $request = new WP_REST_Request(['quote_id' => fixtureQuote(), 'locale' => 'en'], 'http-uncertain-' . $nonce);
+    $transport->drop = true; $before = calls();
+    check(sharity_donation_order_handle($request)->status === 202, 'HTTP provider uncertainty returned as pending reconciliation');
+    $transport->drop = false;
+    check(sharity_donation_order_handle($request)->status === 202 && calls() === $before + 1, 'HTTP uncertainty replay never re-POSTs');
     // Schema drift rejection must preserve rows and clear readiness. Fixture-only ALTER.
     $table = sharity_donation_order_table(); $beforeRows = $wpdb->db->query("SELECT COUNT(*) AS n FROM `{$table}`")->fetch_assoc()['n'];
     $wpdb->db->query("ALTER TABLE `{$table}` DROP INDEX quote_id");

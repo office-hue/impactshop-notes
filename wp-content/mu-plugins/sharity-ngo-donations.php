@@ -1,10 +1,20 @@
 <?php
 /**
- * Sharity donations: package prices and owner-bound quotes. No payment, wallet or ledger writer.
+ * Sharity donations: prices, owner-bound quotes and disabled-by-default checkout.
+ * No wallet, allocation or ledger writer. Checkout status is not payment proof.
  * The read route exposes prices, never payment availability or connected accounts.
  * Weekly publication is opt-in and runs AFTER the existing FX refresh hook.
  */
 declare(strict_types=1);
+
+// Dependency-first exact-file release: an incomplete bundle must not break
+// existing prices/quotes. Loading definitions does not load Stripe or migrate.
+add_action('plugins_loaded', static function (): void {
+    $directory = __DIR__ . '/sharity-ngo-donations/';
+    $files = ['stripe-checkout.php', 'orders.php', 'runtime.php', 'http.php'];
+    foreach ($files as $file) { if (!is_readable($directory . $file)) { return; } }
+    foreach ($files as $file) { require_once $directory . $file; }
+});
 
 const SHARITY_DONATION_PRICES_ENABLED = 'sharity_donation_prices_enabled';
 
