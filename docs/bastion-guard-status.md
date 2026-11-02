@@ -918,3 +918,10 @@ Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit 
 Védelmi kiterjesztés kizárólag új saját `wp-content/mu-plugins/sharity-ngo-donations/webhook.php`; runtime.php és fő donation loader saját pinje frissül. Idegen pin/CI/guardlogika változatlan; meglévő inventory és negatív/hash teszt következik.
 
 D2e helyi Bástya-visszaolvasás: teljes meglévő inventory nulla drift;6 izolált negatív/hash eset sikeres. Guardlogika és távoli szabály nem módosult.
+
+
+## 2026-11-02 D2f — célzott donation olvasó inventory
+
+Csak új saját sharity-ngo-donations/finance-read.php kerül a meglévő inventoryba; a saját stripe-checkout.php, fő loader és config önhash/oldalkocsik követik. Idegen pin/guardlogika változatlan. Scope, kockázat, funkciólista, tesztek, kézi checklist és rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §60.397 pénzügyi/CLI +197 adapter +12 loader ellenőrzés sikeres, független forrásreview blokkoló nélkül; nincs pénzügyi író vagy aktiválás.
+
+D2f védelmi visszaolvasás: az első inventoryfutás kizárólag a saját config.sha256 kimaradt pinjét jelezte. A konkrét pin javítása után teljes inventory nulla drift és6 izolált hash/checksum eset sikeres; idegen pin változatlan.
