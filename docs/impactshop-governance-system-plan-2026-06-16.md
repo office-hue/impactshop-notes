@@ -951,3 +951,10 @@ Az Impact Shop donationpoints egyszerűsített candidate új runtimefájljai a m
 ### 2026-10-29 — Célzott MNB/CJ hash-szinkron
 
 A jóváhagyott50%/MNB-szabály hat meglévő runtime fájlt érint; a meglévő hashjegyzék ezek tényleges tartalmát követi. A védett fájllista, guard-kód, jogosultsági és release-modell nem változik. Célzott money/provider/SQL teszt és független review; részletek a2026-10-29-es points change record és termékterv alatt.
+
+## 2026-11-02 — shopping guard szűk illesztése
+
+A jóváhagyott megerősített Dognet POST a meglévő affiliate-runtime modulban
+konstruál linket; a guard csak e szakaszban engedi, a régi peremeket megtartja.
+Nincs új guard vagy kiadási rendszer. Negatív suite sikeres, éles kiadás még nincs;
+rekord: `protected-change-records/2026-11-02-shopping-purchase.md`.

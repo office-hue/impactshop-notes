@@ -514,3 +514,82 @@ $impactshopTestOptions['impactshop_sharity_affiliate_cj_canary_enabled'] = '0';
 assert_true(impactshop_sharity_affiliate_cj_issue($cjRequest)->get_status() === 403, 'CJ canary defaults fail-closed');
 
 echo "sharity affiliate runtime test: PASS\n";
+
+// Confirmed shopping uses the canonical owner-bound session, never the web subject HMAC.
+class ImpactShop_Sharity_Web_Session {
+    public static $active = true;
+    public static $owner = true;
+    public static function authenticate_request($request) {
+        return self::$active ? ['pseudo_id'=>'abcdefgh1234', 'subject_ref'=>'different-web-hmac',
+            'session_hash'=>str_repeat('s',64), 'owner_grant_hash'=>self::$owner ? str_repeat('a',64) : ''] : null;
+    }
+    public static function owner_grant_active($hash, $pseudo, $lock = false) { return self::$owner; }
+}
+function sharity_points_impactshop_bind_subject($pseudo) { return ['success'=>$pseudo === 'abcdefgh1234']; }
+function isb_get_shops() { return [['shop_slug'=>'test-shop','site'=>'https://shop.example',
+    'dognet_base'=>'https://go.dognet.com/?cid=357&chid=26081&refid=publisher','deeplink_param'=>'url','network_source'=>'dognet']]; }
+class ShoppingPurchaseFakeWpdb extends ImpactshopAffiliateFakeWpdb {
+    public $last_error = '';
+    public $activeNgo = true;
+    public $loseCommit = false;
+    public $race = false;
+    public $reconnect_retries = 5;
+    public function get_var($q) { return $q === 'SELECT CONNECTION_ID()' ? '123' : parent::get_var($q); }
+    public function get_results($query, ...$rest) {
+        return $this->activeNgo ? [['sharity_ngo_id'=>'7','slug'=>'chosen-ngo','name'=>'Chosen NGO']] : [];
+    }
+    public function get_row($q, ...$rest) {
+        if (strpos($q['query'], 'impact_sharity_web_sessions') !== false) {
+            return ['pseudo_id'=>'abcdefgh1234','owner_grant_hash'=>str_repeat('a',64), 'status'=>'active','expires_at_utc'=>gmdate('Y-m-d H:i:s',time()+3600)];
+        }
+        if (strpos($q['query'], 'SELECT *') !== false) {
+            foreach ($this->rows as $row) { if ($row['request_key_hash'] === $q['args'][0]) return $row; }
+            return null;
+        }
+        return parent::get_row($q);
+    }
+    public function query($q) {
+        if ($q === 'COMMIT' && $this->loseCommit) { $this->rows=[]; return false; }
+        return parent::query($q);
+    }
+    public function insert($t, $data) { $r=parent::insert($t,$data); return $this->race ? false : $r; }
+}
+$wpdb = new ShoppingPurchaseFakeWpdb();
+$impactshopTestOptions['impactshop_sharity_affiliate_runtime_enabled']='1';
+$impactshopTestOptions['impactshop_sharity_shopping_purchase_enabled']='1';
+$headers=['x-sharity-service-authorization'=>'Bearer '.str_repeat('K',43)];
+$purchase=['authoritySnapshotId'=>'sharity-shopping-production-v2-20261102-01',
+    'confirmationId'=>'12345678-1234-4123-8123-123456789abc','disclosureVersion'=>'shopping-purchase-v1',
+    'merchantInput'=>'https://shop.example/product?variant.id=red&variant_id=blue&sku=a&sku=b&id=red%252Fblue',
+    'ngoId'=>'7','partnerKey'=>'test-shop','programRef'=>'dognet:test-shop','providerKey'=>'dognet'];
+$call=static function ($p) use ($headers) { return impactshop_shopping_dognet_activate(new ImpactshopAffiliateFakeRequest($headers,[],$p)); };
+$r=$call($purchase); assert_true($r->get_status()===200, 'confirmed purchase issued');
+parse_str(parse_url($r->get_data()['redirectUrl'],PHP_URL_QUERY),$query);
+assert_true($query['url']===$purchase['merchantInput'], 'product query lossless');
+assert_true($query['cid']==='357' && $query['chid']==='26081' && strpos($query['d1'],'sat1_')===0, 'exact program and SAT1');
+$row=array_values($wpdb->rows)[0];
+assert_true($row['subject_ref']===impactshop_sharity_affiliate_subject_ref('abcdefgh1234') && $row['ngo_ref']==='chosen-ngo','authenticated identity and chosen NGO');
+assert_true(strtotime($row['delete_after'].' UTC')-strtotime($row['redirected_at'].' UTC')===3888000,'45 day correlation retention');
+assert_true($call($purchase)->get_data()===$r->get_data() && count($wpdb->rows)===1,'repeat reuses one intent');
+$changed=$purchase; $changed['merchantInput'].='&size=2';
+assert_true($call($changed)->get_status()===409,'same UUID different product conflict');
+$changed['confirmationId']='22345678-1234-4123-8123-123456789abc';
+assert_true($call($changed)->get_status()===200 && count($wpdb->rows)===2,'different confirmation distinct intent');
+$wpdb->rows[$row['activation_id']]['intent_expires_at']='2000-01-01 00:00:00';
+assert_true($call($purchase)->get_status()===410,'expired confirmation not reissued');
+$wpdb->activeNgo=false; assert_true($call($changed)->get_status()===422,'NGO rechecked before repeat'); $wpdb->activeNgo=true;
+ImpactShop_Sharity_Web_Session::$owner=false; assert_true($call($changed)->get_status()===401,'legacy unbound session rejected');
+ImpactShop_Sharity_Web_Session::$owner=true; ImpactShop_Sharity_Web_Session::$active=false;
+assert_true($call($changed)->get_status()===401,'revoked session rejected'); ImpactShop_Sharity_Web_Session::$active=true;
+$wpdb->missingSchemaColumn='request_payload_hash'; assert_true($call($changed)->get_status()===503,'missing migration fails closed'); $wpdb->missingSchemaColumn='';
+$impactshopTestOptions['impactshop_sharity_shopping_purchase_enabled']='0'; assert_true($call($changed)->get_status()===403,'OFF no activation');
+$impactshopTestOptions['impactshop_sharity_shopping_purchase_enabled']='1';
+$wpdb=new ShoppingPurchaseFakeWpdb(); $wpdb->loseCommit=true; assert_true($call($purchase)->get_status()===503,'unconfirmed absent commit never releases URL');
+$wpdb=new ShoppingPurchaseFakeWpdb(); $wpdb->race=true; assert_true($call($purchase)->get_status()===200 && count($wpdb->rows)===1,'unique race readback no second insert');
+$shop=isb_get_shops()[0];
+foreach (['https://evil.example/product','https://shop.example/a#x','https://shop.example/a?d1=foreign','https://shop.example/a\\b'] as $url) {
+    assert_true(impactshop_shopping_dognet_binding($shop,$url)===null,'unsafe or mismatched destination rejected');
+}
+$shop['dognet_base'].='&cid=other'; assert_true(impactshop_shopping_dognet_binding($shop,$purchase['merchantInput'])===null,'duplicate base parameter rejected');
+assert_true(is_wp_error(impactshop_sharity_affiliate_validate_context(['shop'=>'test-shop','ngo'=>'chosen-ngo','pseudo'=>'ABCDEF123456','provider'=>'dognet','source'=>'shopping-confirmed-v1'])),'legacy GET cannot create confirmed source');
+echo "confirmed shopping purchase tests: PASS\n";
