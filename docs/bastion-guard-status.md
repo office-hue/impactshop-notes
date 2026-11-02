@@ -901,3 +901,7 @@ Validation:72 isolated quote cases,33 existing price checks, PHP lint;18 actual 
 ## 2026-11-02 — D2b célzott donation inventory
 
 A meglévő Bástya inventory három új saját fájlra bővül: sharity-ngo-donations/stripe-checkout.php, composer.json, composer.lock. Config önhash/oldalkocsik frissülnek; idegen hash és szabály változatlan. 197 offline valódi SDK-vizsgálat és független review, részletek a 2026-11-02-es donation protected-recordban. Nincs új guard, runtime-loader, endpoint vagy aktiválás.
+
+## 2026-11-02 — D2c célzott donation inventory
+
+Csak sharity-ngo-donations/orders.php került a meglévő védelembe; config önhash és checksumoldalkocsik frissültek, idegen pin/szabály változatlan. Teljes tényleges inventory és6 izolált hash-eset sikeres.77 valódi MariaDB-ellenőrzés és független scoped review; nincs loader/route/aktiválás. Részletes előállapot, scope, kockázat, rollback és kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §57. Korábbi pénzügyi adat megmarad.
