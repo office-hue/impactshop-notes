@@ -5,13 +5,12 @@
  */
 declare(strict_types=1);
 
-function sharity_donation_runtime_adapter(): Sharity_Stripe_Checkout_Adapter
+function sharity_donation_runtime_sdk(): void
 {
     try {
         $vendor = __DIR__ . '/sdk/stripe-22.1.0/vendor';
         $root = realpath($vendor . '/stripe/stripe-php/lib');
-        if ($root === false || !is_file($vendor . '/autoload.php')
-            || !defined('SHARITY_DONATIONS_STRIPE_KEY') || !is_string(SHARITY_DONATIONS_STRIPE_KEY)) {
+        if ($root === false || !is_file($vendor . '/autoload.php')) {
             throw new RuntimeException();
         }
         // WordPress plugins may already have loaded another Stripe version.
@@ -28,12 +27,19 @@ function sharity_donation_runtime_adapter(): Sharity_Stripe_Checkout_Adapter
         require_once $vendor . '/autoload.php';
         if (!class_exists(Stripe\StripeClient::class) || !class_exists(Stripe\Stripe::class)
             || Stripe\Stripe::VERSION !== Sharity_Stripe_Checkout_Adapter::SDK_VERSION) { throw new RuntimeException(); }
-        $client = Sharity_Stripe_Checkout_Adapter::client(SHARITY_DONATIONS_STRIPE_KEY);
-        $adapter = new Sharity_Stripe_Checkout_Adapter($client);
+        if (!class_exists(Stripe\Webhook::class) || !class_exists(Stripe\WebhookSignature::class)) { throw new RuntimeException(); }
         $checkClasses();
-        return $adapter;
     } catch (Throwable $error) {
         // Never retain the original exception: it may include credentials/paths.
         throw new RuntimeException('DONATION_RUNTIME_UNAVAILABLE');
     }
+}
+
+function sharity_donation_runtime_adapter(): Sharity_Stripe_Checkout_Adapter
+{
+    sharity_donation_runtime_sdk();
+    try {
+        if (!defined('SHARITY_DONATIONS_STRIPE_KEY') || !is_string(SHARITY_DONATIONS_STRIPE_KEY)) { throw new RuntimeException(); }
+        return new Sharity_Stripe_Checkout_Adapter(Sharity_Stripe_Checkout_Adapter::client(SHARITY_DONATIONS_STRIPE_KEY));
+    } catch (Throwable $error) { throw new RuntimeException('DONATION_RUNTIME_UNAVAILABLE'); }
 }

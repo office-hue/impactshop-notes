@@ -2194,3 +2194,8 @@ Hermes0351hívás,19007token, becsült0,00243971USD; séma részben átvéve, m�
 ## 2026-11-02 D2d — checkout/státusz forrás, kapcsolók OFF
 
 Kanonikus owner auth, pontos upstream quote_id+locale, URL-only státusz, privát/no-store, SDK nélküli replay és kikapcsolt státusz. Új lazy SDK22.1.0 loader fix artifacthelyen, explicit order-schema --apply, részleges bundle megőrzi ár/quote útvonalat. A59+tsc; N207 HTTP,7 valódi SDK-loader-szcenárió,99 tényleges MariaDB/HTTP/store/SDK ellenőrzés,72 quote+33 ár és guard inventory+6 eset sikeres; független review blokkoló nélkül. SDK HTTP helyettesített, nincs élő hívás vagy aktiválás. Hermes036 részleges átvétel/javítás,17518token,becsült0,002130401USD; tényleges összköltség ismeretlen. Részletes scope/kockázat/folytatás/rollback/kézi UI-checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §58. Webhook, pénzügyi egyeztetés, NGO-evidence, UI és D3/D4 nyitott; nincs merge/deploy.
+
+
+### 2026-11-02 D2e — aláírt webhook és session-helyreállítás
+
+Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit inbox-séma/GET-only recovery.174 valódi MariaDB-,207 HTTP- és10 loader/konfigurációs ellenőrzés sikeres; független forrásreview blokkoló nélkül. Nincs valós providerhívás, pénzügyi könyvelés, szavazat vagy aktiválás. A kontrollált saját tesztkonténer eltávolítva. Teljes scope, kockázat, javítás, költség és kiadási/UI/rollback lista: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §59. Hermes037 egyhívásos becslés0,003256799USD, tényleges díj ismeretlen; fő működési hibáit Codex javította. További pénzügyi egyeztetés/account/UI/D3/D4 és VB7/Sharing12 nyitott. Forráskész nem merge/deploy/aktiválás.

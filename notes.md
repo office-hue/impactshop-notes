@@ -8592,3 +8592,15 @@ Saját N d60239aa / A78912de74. Új belső HTTP-modul kapcsolja a kanonikus Web 
 ## 2026-11-02 D2d — checkout/státusz forrás, kapcsolók OFF
 
 Kanonikus owner auth, pontos upstream quote_id+locale, URL-only státusz, privát/no-store, SDK nélküli replay és kikapcsolt státusz. Új lazy SDK22.1.0 loader fix artifacthelyen, explicit order-schema --apply, részleges bundle megőrzi ár/quote útvonalat. A59+tsc; N207 HTTP,7 valódi SDK-loader-szcenárió,99 tényleges MariaDB/HTTP/store/SDK ellenőrzés,72 quote+33 ár és guard inventory+6 eset sikeres; független review blokkoló nélkül. SDK HTTP helyettesített, nincs élő hívás vagy aktiválás. Hermes036 részleges átvétel/javítás,17518token,becsült0,002130401USD; tényleges összköltség ismeretlen. Részletes scope/kockázat/folytatás/rollback/kézi UI-checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §58. Webhook, pénzügyi egyeztetés, NGO-evidence, UI és D3/D4 nyitott; nincs merge/deploy.
+
+
+## D2e — kezdés: hiteles Checkout-eseményfogadás és bizonytalan kísérlet rendezése
+
+Koherencia: új webhookmodul, a saját SDK-loader szűk szétválasztása, saját modullista; explicit inbox-séma és egyeseményes CLI. Az eredeti kapcsolt account/rendelés az authority, a publikus tulajdonosi státusz változatlan. Nincs pénzügyi allokáció, szavazat, új cron vagy szolgáltatói írás. Kockázat: hamisított/ismételt értesítés, elveszett adatbázis-visszaigazolás, idegen account/SDK és hibás sikerjelzés. Védelem: valódi SDK-aláírás, befagyasztott rendelési egyezés, minimális egyedi inbox, visszaolvasás, GET-only rendezés, payment_verified=false. Hermes037 első kidolgozás; Codex integráció/teszt és független célzott review.
+
+Ellenőrzés: aláírás/lejárat/test-live/account, duplikáció/párhuzamosság/bizonytalan commit tényleges izolált MariaDB-n, kulcs nélküli signature loader, meglévő checkout/státusz regresszió. Rollback csak saját kódra, adatokat és régi callbackek feldolgozhatóságát megtartva; telepítésig nincs éles változás. Kézi UI checklist kiadáskor: adományoldal és meglévő belépés/státusz változatlan, sikeroldal nem állít könyvelt adományt; sandboxban checkout kikapcsolása után korábbi esemény még fogadható. Éles UI és szolgáltatói próba most nincs.
+
+
+### 2026-11-02 D2e — aláírt webhook és session-helyreállítás
+
+Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit inbox-séma/GET-only recovery.174 valódi MariaDB-,207 HTTP- és10 loader/konfigurációs ellenőrzés sikeres; független forrásreview blokkoló nélkül. Nincs valós providerhívás, pénzügyi könyvelés, szavazat vagy aktiválás. A kontrollált saját tesztkonténer eltávolítva. Teljes scope, kockázat, javítás, költség és kiadási/UI/rollback lista: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §59. Hermes037 egyhívásos becslés0,003256799USD, tényleges díj ismeretlen; fő működési hibáit Codex javította. További pénzügyi egyeztetés/account/UI/D3/D4 és VB7/Sharing12 nyitott. Forráskész nem merge/deploy/aktiválás.

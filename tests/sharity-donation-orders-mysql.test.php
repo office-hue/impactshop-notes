@@ -118,18 +118,19 @@ class WP_REST_Response {
     public function header($k, $v): void { $this->headers[$k] = $v; }
 }
 class WP_REST_Request {
-    public array $url = [];
+    public array $url = []; public string $raw = ""; public string $signature = "";
     public function __construct(public array $json, public string $key) {}
     public function get_json_params(): array { return $this->json; }
-    public function get_header($k): string { return $k === 'idempotency-key' ? $this->key : ''; }
+    public function get_header($k): string { return $k === 'idempotency-key' ? $this->key : ($k === 'stripe-signature' ? $this->signature : ''); }
     public function is_json_content_type(): bool { return true; }
+    public function get_body(): string { return $this->raw; }
     public function get_url_params(): array { return $this->url; }
 }
 class ImpactShop_Sharity_Web_Session {
     public static ?string $subject = null;
     public static function authenticate_request($request): array { return ['subject_ref' => self::$subject]; }
 }
-function sharity_donation_runtime_adapter(): Sharity_Stripe_Checkout_Adapter { return $GLOBALS['adapter']; }
+function sharity_donation_runtime_adapter(): Sharity_Stripe_Checkout_Adapter { $GLOBALS['runtimeFactoryCalls'] = ($GLOBALS['runtimeFactoryCalls'] ?? 0) + 1; return $GLOBALS['adapter']; }
 require __DIR__ . '/../wp-content/mu-plugins/sharity-ngo-donations/http.php';
 
 $wpdb = new OrderDb((int) $port);
@@ -269,6 +270,7 @@ try {
     check(sharity_donation_order_handle($request)->status === 202, 'HTTP provider uncertainty returned as pending reconciliation');
     $transport->drop = false;
     check(sharity_donation_order_handle($request)->status === 202 && calls() === $before + 1, 'HTTP uncertainty replay never re-POSTs');
+    require __DIR__ . '/sharity-donation-webhook-mysql.test.php';
     // Schema drift rejection must preserve rows and clear readiness. Fixture-only ALTER.
     $table = sharity_donation_order_table(); $beforeRows = $wpdb->db->query("SELECT COUNT(*) AS n FROM `{$table}`")->fetch_assoc()['n'];
     $wpdb->db->query("ALTER TABLE `{$table}` DROP INDEX quote_id");

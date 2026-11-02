@@ -14,6 +14,8 @@ add_action('plugins_loaded', static function (): void {
     $files = ['stripe-checkout.php', 'orders.php', 'runtime.php', 'http.php'];
     foreach ($files as $file) { if (!is_readable($directory . $file)) { return; } }
     foreach ($files as $file) { require_once $directory . $file; }
+    // Additive receiver: a missing new file must not remove existing callbacks.
+    if (is_readable($directory . 'webhook.php')) { require_once $directory . 'webhook.php'; }
 });
 
 const SHARITY_DONATION_PRICES_ENABLED = 'sharity_donation_prices_enabled';

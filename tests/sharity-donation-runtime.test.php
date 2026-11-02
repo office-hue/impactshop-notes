@@ -19,7 +19,7 @@ function removeTree(string $path): void {
 $checks = 0;
 try {
     copy($source . '/sharity-ngo-donations.php',$fixture . '/sharity-ngo-donations.php');
-    foreach (['http.php','runtime.php','orders.php','stripe-checkout.php'] as $f) { copy($source.'/sharity-ngo-donations/'.$f,$fixture.'/sharity-ngo-donations/'.$f); }
+    foreach (['http.php','runtime.php','orders.php','stripe-checkout.php','webhook.php'] as $f) { copy($source.'/sharity-ngo-donations/'.$f,$fixture.'/sharity-ngo-donations/'.$f); }
     $runner = <<<'CHILD'
 <?php
 $case=$argv[1];$hooks=[];$routes=[];
@@ -38,6 +38,20 @@ if($case==='missing-http'){
  rename(__DIR__.'/sharity-ngo-donations/http.off',__DIR__.'/sharity-ngo-donations/http.php');echo "OK\n";exit;
 }
 requireTrue(in_array('sharity/v1/donations/checkout',$routes,true),'complete definitions register checkout');
+if(str_starts_with($case,'webhook-')){
+ requireTrue(in_array('sharity/v1/donations/webhook',$routes,true),'webhook registered');
+ if($case!=='webhook-no-config'){define('SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET','whsec_SYNTHETICLOCALTESTONLY');define('SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE',$case==='webhook-invalid-mode'?'false':false);}
+ if($case==='webhook-no-key'){
+  sharity_donation_runtime_sdk();$raw=json_encode(['id'=>'evt_SYNTHETIC','object'=>'event','type'=>'charge.succeeded']);
+  $sig=Stripe\WebhookSignature::generateSignatureHeader($raw,SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET);
+  requireTrue(sharity_donation_webhook_verify($raw,$sig)['id']==='evt_SYNTHETIC','real signature verification without API key');
+  requireTrue(!defined('SHARITY_DONATIONS_STRIPE_KEY'),'no API key needed');
+ }else{
+  try{sharity_donation_webhook_verify('{}','synthetic');throw new RuntimeException('configuration accepted');}
+  catch(RuntimeException $e){requireTrue($e->getMessage()==='WEBHOOK_CONFIG_UNAVAILABLE' && $e->getPrevious()===null,'missing/bad config fails safely');}
+ }
+ echo "OK\n";exit;
+}
 if($case!=='missing-key'){define('SHARITY_DONATIONS_STRIPE_KEY',$case==='invalid-key'?'invalid':'rk_test_SYNTHETICNOTACREDENTIAL');}
 if($case==='foreign-class'){eval('namespace Stripe; class Stripe {}');}
 try{
@@ -59,7 +73,7 @@ CHILD;
     };
     $run('missing-sdk');$run('missing-http');
     $dest=$fixture.'/sharity-ngo-donations/sdk/stripe-22.1.0/vendor';copyTree($vendor,$dest);
-    foreach(['missing-key','invalid-key','foreign-class','success'] as $case){$run($case);}
+    foreach(['webhook-no-config','webhook-invalid-mode','webhook-no-key','missing-key','invalid-key','foreign-class','success'] as $case){$run($case);}
     $stripeFile=$dest.'/stripe/stripe-php/lib/Stripe.php';$original=file_get_contents($stripeFile);
     if(!str_contains($original,"const VERSION = '22.1.0'")){throw new RuntimeException('SDK version fixture not found');}
     file_put_contents($stripeFile,str_replace("const VERSION = '22.1.0'","const VERSION = '0.0.0'",$original));$run('wrong-version');
