@@ -934,3 +934,8 @@ Csak a sajat donation stripe-checkout.php es finance-read.php hash frissul; ninc
 ### D2h 2026-11-02
 
 Termekcommit ada1a5b4. Uj sajat finance-ledger.php inventorybejegyzes es hash; sajat fo loader, finance-read.php, a bizonyitott race miatt orders.php es config onhash/oldalkocsi frissul. Idegen pin es guardlogika valtozatlan. 281 MariaDB (ebbol105 D2h),400 penzugyi/CLI,461 adjustment,13 runtime ellenorzes sikeres. Fuggetlen forrasreview lelet nelkul. Erintett funkciok, smoke, release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md 63. fejezet. Meg nincs merge/telepites/aktivalas.
+
+
+### D2i 2026-11-02
+
+Termékcommit94344f09. Kizárólag saját finance-ledger.php és finance-read.php két hash frissül, nincs új inventory vagy guardlogika/idegen pin.936 MariaDB-assertion (655 D2i, fixture-checkekkel),401 pénzügyi/CLI+461 adjustment,13 runtime; független review lelet nélkül. Írásmentes admin pénzmozgásleltár, --apply elutasított, platformtételek accountbizonyítékig külön feloldatlanok. Részletek/smoke/release/rollback: protected-change-records/2026-11-02-sharity-donation-prices.md §64. Nincs merge/telepítés/aktiválás.
