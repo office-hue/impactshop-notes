@@ -19,7 +19,7 @@ function removeTree(string $path): void {
 $checks = 0;
 try {
     copy($source . '/sharity-ngo-donations.php',$fixture . '/sharity-ngo-donations.php');
-    foreach (['http.php','runtime.php','orders.php','stripe-checkout.php','webhook.php'] as $f) { copy($source.'/sharity-ngo-donations/'.$f,$fixture.'/sharity-ngo-donations/'.$f); }
+    foreach (['http.php','runtime.php','orders.php','stripe-checkout.php','webhook.php','finance-read.php'] as $f) { copy($source.'/sharity-ngo-donations/'.$f,$fixture.'/sharity-ngo-donations/'.$f); }
     $runner = <<<'CHILD'
 <?php
 $case=$argv[1];$hooks=[];$routes=[];
@@ -27,6 +27,8 @@ function add_action($hook,$cb,...$args):void{$GLOBALS['hooks'][$hook][]=$cb;}
 function register_rest_route($ns,$path,$args):void{$GLOBALS['routes'][]=$ns.$path;}
 function requireTrue($ok,$why):void{if(!$ok)throw new RuntimeException($why);}
 if($case==='missing-http'){rename(__DIR__.'/sharity-ngo-donations/http.php',__DIR__.'/sharity-ngo-donations/http.off');}
+if($case==='missing-finance'){rename(__DIR__.'/sharity-ngo-donations/finance-read.php',__DIR__.'/sharity-ngo-donations/finance-read.off');}
+if($case==='missing-webhook'){rename(__DIR__.'/sharity-ngo-donations/webhook.php',__DIR__.'/sharity-ngo-donations/webhook.off');}
 require __DIR__.'/sharity-ngo-donations.php';
 requireTrue(!class_exists('Stripe\\StripeClient',false),'main load must not load SDK');
 foreach($hooks['plugins_loaded'] as $cb){$cb();}
@@ -38,6 +40,13 @@ if($case==='missing-http'){
  rename(__DIR__.'/sharity-ngo-donations/http.off',__DIR__.'/sharity-ngo-donations/http.php');echo "OK\n";exit;
 }
 requireTrue(in_array('sharity/v1/donations/checkout',$routes,true),'complete definitions register checkout');
+if($case==='missing-finance' || $case==='missing-webhook'){
+ requireTrue(in_array('sharity/v1/donations/status/(?P<id>do_[a-f0-9]{32})',$routes,true),'historical status remains');
+ if($case==='missing-finance'){requireTrue(in_array('sharity/v1/donations/webhook',$routes,true),'callback remains');rename(__DIR__.'/sharity-ngo-donations/finance-read.off',__DIR__.'/sharity-ngo-donations/finance-read.php');}
+ else{requireTrue(function_exists('sharity_donation_cli_payment_inspect'),'finance definitions load without webhook');rename(__DIR__.'/sharity-ngo-donations/webhook.off',__DIR__.'/sharity-ngo-donations/webhook.php');}
+ echo "OK\n";exit;
+}
+requireTrue(function_exists('sharity_donation_cli_payment_inspect'),'finance definitions loaded without SDK');
 if(str_starts_with($case,'webhook-')){
  requireTrue(in_array('sharity/v1/donations/webhook',$routes,true),'webhook registered');
  if($case!=='webhook-no-config'){define('SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET','whsec_SYNTHETICLOCALTESTONLY');define('SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE',$case==='webhook-invalid-mode'?'false':false);}
@@ -71,7 +80,7 @@ CHILD;
         $out=[];$code=0;exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg($fixture.'/run.php').' '.escapeshellarg($case).' 2>&1',$out,$code);
         if($code!==0 || $out!==['OK']){throw new RuntimeException('Runtime case '.$case.' failed: '.implode("\n",$out));}$checks++;
     };
-    $run('missing-sdk');$run('missing-http');
+    $run('missing-sdk');$run('missing-http');$run('missing-finance');$run('missing-webhook');
     $dest=$fixture.'/sharity-ngo-donations/sdk/stripe-22.1.0/vendor';copyTree($vendor,$dest);
     foreach(['webhook-no-config','webhook-invalid-mode','webhook-no-key','missing-key','invalid-key','foreign-class','success'] as $case){$run($case);}
     $stripeFile=$dest.'/stripe/stripe-php/lib/Stripe.php';$original=file_get_contents($stripeFile);

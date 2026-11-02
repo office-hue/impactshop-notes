@@ -16,6 +16,7 @@ add_action('plugins_loaded', static function (): void {
     foreach ($files as $file) { require_once $directory . $file; }
     // Additive receiver: a missing new file must not remove existing callbacks.
     if (is_readable($directory . 'webhook.php')) { require_once $directory . 'webhook.php'; }
+    if (is_readable($directory . 'finance-read.php')) { require_once $directory . 'finance-read.php'; }
 });
 
 const SHARITY_DONATION_PRICES_ENABLED = 'sharity_donation_prices_enabled';

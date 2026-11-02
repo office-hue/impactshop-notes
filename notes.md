@@ -8604,3 +8604,19 @@ Ellenőrzés: aláírás/lejárat/test-live/account, duplikáció/párhuzamossá
 ### 2026-11-02 D2e — aláírt webhook és session-helyreállítás
 
 Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit inbox-séma/GET-only recovery.174 valódi MariaDB-,207 HTTP- és10 loader/konfigurációs ellenőrzés sikeres; független forrásreview blokkoló nélkül. Nincs valós providerhívás, pénzügyi könyvelés, szavazat vagy aktiválás. A kontrollált saját tesztkonténer eltávolítva. Teljes scope, kockázat, javítás, költség és kiadási/UI/rollback lista: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §59. Hermes037 egyhívásos becslés0,003256799USD, tényleges díj ismeretlen; fő működési hibáit Codex javította. További pénzügyi egyeztetés/account/UI/D3/D4 és VB7/Sharing12 nyitott. Forráskész nem merge/deploy/aktiválás.
+
+
+## D2f — kezdés: tényleges eredeti Stripe-terhelés és díjak olvasása
+
+Koherencia: meglévő SDK-adapter read-only bővítése és explicit admin payment-inspect CLI; session→PaymentIntent→charge→balance transaction, Amplifiernél a platform alkalmazásdíja külön. A díjkétszerezés és külön devizák összeadása konkrét pénzkockázat, ezért az eredeti kötés és teljes díjrészletezés ellenőrzött. Hermes038 első kidolgozó. Nincs új DB-tábla, közös infrastruktúra, provider-írás, pénzügyi allokáció, szavazat vagy aktiválás; az új pénzügyi napló az egyeztetett korrekciós szerződéssel következik. Az eredeti terhelés adata nem a refund/dispute utáni aktuális egyenleg; ezt a visszaadott állapot egyértelműen jelöli.
+
+Célzott teszt: valódi rögzített SDK, helyettesített HTTP, pontos account és platform scope, teljes lánc/összeg/díj/FX konzisztencia, hiány/pending/refund/dispute, PII- és hibaszűrés. Rollback saját adapter/CLI/loader/pinek; rendelés/inbox/pénzügyi adatok és korábbi callbackek megmaradnak. Későbbi UI-checklist: a fizetési felület még OFF, meglévő státusz nem állít allokációt/kifizetést. Most nincs UI/éles provider próba.
+
+
+## 60. D2f — eredeti terhelés/díj olvasó, inaktív (2026-11-02)
+
+N adapter + új admin finance-read CLI + additív loader: eredeti session/PI/charge/balance, Amplifier platform alkalmazásdíj és saját balance legfeljebb5 GET-tel. Pontos minorösszegek, külön tényleges költség/alaprész, külön devizák; refund/dispute/pending jelzés, payment_verified=false és allocation_eligible=false. Nincs adatbázis/pénzügyi író vagy aktiválás.397 offline pénzügyi/CLI ellenőrzés,197 adapterregresszió,12 friss folyamatú loadereset sikeres. Valódi SDK, helyettesített HTTP és CLI WPDB; nem éles/sandbox elfogadás. Független forrásreview blokkoló nélkül, külön futási teszt nélkül.
+
+Részletes szerződés, források, pontos tesztparancsok, release/rollback/kézi UI-checklist és Hermes-javításlista: impactshop-notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §60, PR244. Hermes0381hívás/17451token/becsült0,002093USD, tényleges összköltség ismeretlen; a hibás első tervezetet Codex javította, megtakarítás nem állított. Secretary termékcheckpoint és remote-SHA külön visszaolvasandó.
+
+Következő: teljes refund/dispute/díjkorrekciós mozgás-egyeztetés és tartós pénzügyi napló, nettó80/20-cél és kitettségi tartalék. Account/díj/felelősségi bizonyíték, UI fizetési lánc, D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Az eredeti charge nettója nem refund utáni aktuális nettó. Saját forráscsomag és célzott teszt kész; merge/telepítés/aktiválás/élő elfogadás nem történt. Maincsendablak nincs. Megőrzött átadás: SUBSTACK-HANDOVER.md.

@@ -992,3 +992,12 @@ Két új saját donation-modul: http.php/runtime.php, meglévő donation loader 
 Saját új donation/webhook.php, kulcs nélküli signature SDK-loader, explicit inbox-séma/GET-only recovery.174 valódi MariaDB-,207 HTTP- és10 loader/konfigurációs ellenőrzés sikeres; független forrásreview blokkoló nélkül. Nincs valós providerhívás, pénzügyi könyvelés, szavazat vagy aktiválás. A kontrollált saját tesztkonténer eltávolítva. Teljes scope, kockázat, javítás, költség és kiadási/UI/rollback lista: docs/protected-change-records/2026-11-02-sharity-donation-prices.md §59. Hermes037 egyhívásos becslés0,003256799USD, tényleges díj ismeretlen; fő működési hibáit Codex javította. További pénzügyi egyeztetés/account/UI/D3/D4 és VB7/Sharing12 nyitott. Forráskész nem merge/deploy/aktiválás.
 
 D2e helyi Bástya-visszaolvasás: teljes meglévő inventory nulla drift;6 izolált negatív/hash eset sikeres. Guardlogika és távoli szabály nem módosult.
+
+
+## 60. D2f — eredeti terhelés/díj olvasó, inaktív (2026-11-02)
+
+N adapter + új admin finance-read CLI + additív loader: eredeti session/PI/charge/balance, Amplifier platform alkalmazásdíj és saját balance legfeljebb5 GET-tel. Pontos minorösszegek, külön tényleges költség/alaprész, külön devizák; refund/dispute/pending jelzés, payment_verified=false és allocation_eligible=false. Nincs adatbázis/pénzügyi író vagy aktiválás.397 offline pénzügyi/CLI ellenőrzés,197 adapterregresszió,12 friss folyamatú loadereset sikeres. Valódi SDK, helyettesített HTTP és CLI WPDB; nem éles/sandbox elfogadás. Független forrásreview blokkoló nélkül, külön futási teszt nélkül.
+
+Részletes szerződés, források, pontos tesztparancsok, release/rollback/kézi UI-checklist és Hermes-javításlista: impactshop-notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §60, PR244. Hermes0381hívás/17451token/becsült0,002093USD, tényleges összköltség ismeretlen; a hibás első tervezetet Codex javította, megtakarítás nem állított. Secretary termékcheckpoint és remote-SHA külön visszaolvasandó.
+
+Következő: teljes refund/dispute/díjkorrekciós mozgás-egyeztetés és tartós pénzügyi napló, nettó80/20-cél és kitettségi tartalék. Account/díj/felelősségi bizonyíték, UI fizetési lánc, D3/D4, affiliate/Offerwall és VB7/Sharing12 nyitott. Az eredeti charge nettója nem refund utáni aktuális nettó. Saját forráscsomag és célzott teszt kész; merge/telepítés/aktiválás/élő elfogadás nem történt. Maincsendablak nincs. Megőrzött átadás: SUBSTACK-HANDOVER.md.
