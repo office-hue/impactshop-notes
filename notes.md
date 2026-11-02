@@ -8714,3 +8714,9 @@ Saját Notes finance-ledger/read explicit, privát proofból importált frame/so
 1187 tényleges MariaDB assertion, ebből127 új backing,401 offline pénzügyi/CLI,13runtime, lint/diffcheck. Független forrásreview három konkrét javítással és regressziós teszttel; reviewer nem futtatott tesztet. Hermes046 egy partial/output-limit hívás, megőrzött fragmentumok részleges hasznosítása és jelentős Codex-javítás; használat/költség unknown, nem0. Pending/terminal remote_ack, nincs újrahívás/JEV/fallback. Pontos proof/API, korlátok, hibaesetek, release/rollback és kézi checklist: Notes `docs/protected-change-records/2026-11-02-sharity-donation-prices.md` §69. A megvalósítás a connected-account keretére korlátozott; ismeretlen platformaccount nem engedélyezett.
 
 Nincs mainművelet/telepítés/aktiválás. Saját commit/push/readback következik.
+
+- 2026-11-02: D2n indul, tényleges mozgásokból levezetett tartós egyeztetési cél; saját N8084ea4a/A b612f05e3. Hermes047 első draft, lásd védett változásrekord §70; csendablak nincs, main/éles pénz nem érintett.
+
+## 70. D2n — tartós, pontos, előzetes elszámolási cél (2026-11-02)
+
+Notes finance-ledger/read: explicit target séma és `finance-target --order=<id> [--apply=<digest>]`. Validált eredeti policy, teljes scoped mozgáshalmaz/body, devizánkénti signed nettó és közvetlen NGO-cél; metadata revision nem új economic_generation. Hiányzó platform/NGO-ellenoldal mellett Amplifier cél null; teljes liability unknown, readiness false. Pinned transaction, stale-check és teljes uncertain-commit readback.1274valódiMariaDB/87target,401offlineCLI,13runtime; független review leletmentes, nem saját reviewerfutás. Hermes04759521token, becsült0.006462365USD, részben átvett és jelentősen javított, nincs újrahívás. Részlet, funkciólista, kiadás/rollback/kézi checklist: protected-change-records/2026-11-02-sharity-donation-prices.md §70. Saját forrás, nem telepített/aktivált/financialPASS; nincs mainművelet vagy nyitott csendablak.

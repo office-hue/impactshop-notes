@@ -202,12 +202,15 @@ try {
     require __DIR__ . '/sharity-donation-finance-reconcile-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-movements-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-backing-mysql.test.php';
+    require __DIR__ . '/sharity-donation-finance-target-mysql.test.php';
     check(calls() >= $beforePosts && !isset($data['allocation_minor']), 'no settlement claim');
     echo 'Donation finance MariaDB: '.($checks-$financeStart)." checks; parallel connections, uncertain INSERT, no provider POST during record\n";
 } finally {
     $wpdb->failOn = ''; $wpdb->failure = ''; $wpdb->db->query('DROP TABLE IF EXISTS `'.$financeTable.'`');
     $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_movement_table().'`');
     foreach (['claims','sources','frames'] as $kind) { $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_backing_table($kind).'`'); }
+    $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_target_table().'`');
+    unset($options[SHARITY_DONATION_TARGET_SCHEMA_OPTION]);
     unset($options[SHARITY_DONATION_BACKING_SCHEMA_OPTION]);
     unset($options[SHARITY_DONATION_MOVEMENT_SCHEMA_OPTION]);
     unset($options[SHARITY_DONATION_FINANCE_SCHEMA_OPTION]); Stripe\ApiRequestor::setHttpClient($transport);
