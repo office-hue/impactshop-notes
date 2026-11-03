@@ -8876,3 +8876,16 @@ USD0.0037556246 becsült, tényleges/teljes ráfordítás ismeretlen; részleges
 kiadás/rollback és költség: protected change record §80 végrehajtási blokk.
 D2u/D2v még helyi; nincs mainablak/merge/telepítés/aktiválás/élő elfogadás.
 Teljes Sharity pénzügyi és nemzetköziesítési cél nyitott.
+
+## 2026-11-03 — D2w platform alkalmazásdíj-esemény, helyi forrás
+
+Külön platform receiver/secret és pontos fee→charge→eredetiorder kapcsolat;
+meglévő inbox/drain, signed refund progress és tényleges debit bizonyíték.
+2775 natív MariaDB (317 új),17runtime,197checkout,521adjustments; független
+forrásreview leletmentes. Hiányos refundbalance fixture diagnosztizálva,
+pending/expanded út külön tesztelve; termékvédelem változatlanul szigorú.
+Hermes058: 51423 token, USD 0.0052695006 becsült; teljes/actual költség ismeretlen.
+Részleges irányátvétel, jelentős helyi újraírás; teljes koherencia, teszt,
+kiadás/rollback és kézi lista a protected record §81-ben. Nincs pénzmozgatás,
+ütemezés, mainablak, merge, telepítés, aktiválás vagy élő elfogadás.
+D2u/D2v publikálási válasz függ, D2w még nem annak jóváhagyott része.

@@ -38,23 +38,130 @@ function sharity_donation_webhook_read(string $id): ?array
 }
 
 /** The SDK verifies exactly the raw request body; no API key/provider call. */
-function sharity_donation_webhook_verify(string $raw, string $header): array
+function sharity_donation_webhook_verify(string $raw, string $header, bool $platform = false): array
 {
     if ($raw === '' || $header === '' || strlen($raw) > 262144 || strlen($header) > 8192) {
         throw new RuntimeException('WEBHOOK_INVALID_REQUEST');
     }
-    if (!defined('SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET') || !is_string(SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET)
-        || !preg_match('/^whsec_[A-Za-z0-9]+$/D', SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET)
-        || !defined('SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE') || !is_bool(SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE)) {
-        throw new RuntimeException('WEBHOOK_CONFIG_UNAVAILABLE');
-    }
+    $secretName = $platform ? 'SHARITY_DONATIONS_STRIPE_PLATFORM_WEBHOOK_SECRET' : 'SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET';
+    $modeName = $platform ? 'SHARITY_DONATIONS_STRIPE_PLATFORM_WEBHOOK_LIVEMODE' : 'SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE';
+    if (!defined($secretName) || !is_string(constant($secretName)) || !preg_match('/^whsec_[A-Za-z0-9]+$/D',constant($secretName))
+        || !defined($modeName) || !is_bool(constant($modeName))
+        || ($platform && defined('SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET')
+            && constant($secretName) === SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET)) { throw new RuntimeException('WEBHOOK_CONFIG_UNAVAILABLE'); }
     sharity_donation_runtime_sdk();
     try {
-        $data = Stripe\Webhook::constructEvent($raw, $header, SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET, 300)->toArray();
+        $data = Stripe\Webhook::constructEvent($raw, $header, constant($secretName), 300)->toArray();
         if (($data['object'] ?? null) !== 'event' || !is_string($data['id'] ?? null) || strlen($data['id']) > 255
             || !preg_match('/^evt_[A-Za-z0-9]+$/D', $data['id']) || !is_string($data['type'] ?? null)) { throw new RuntimeException(); }
+        if ($platform && (array_key_exists('account',$data) || ($data['livemode'] ?? null) !== constant($modeName)
+            || ($data['api_version'] ?? null) !== Sharity_Stripe_Checkout_Adapter::API_VERSION
+            || !is_int($data['created'] ?? null) || $data['created'] < 1 || $data['created'] > time()+300)) { throw new RuntimeException(); }
         return $data;
     } catch (Throwable $error) { throw new RuntimeException('WEBHOOK_INVALID_REQUEST'); }
+}
+
+/** Platform application fee events have their own signing source and endpoint. */
+function sharity_donation_platform_type(string $type): ?string
+{
+    if (in_array($type,['application_fee.created','application_fee.refunded'],true)) { return 'application_fee'; }
+    return $type === 'application_fee.refund.updated' ? 'fee_refund' : null;
+}
+
+function sharity_donation_platform_notification(array $event, string $kind, ?object $transport): ?array
+{
+    if (!defined('SHARITY_DONATIONS_STRIPE_PLATFORM_ACCOUNT_ID') || !is_string(SHARITY_DONATIONS_STRIPE_PLATFORM_ACCOUNT_ID)
+        || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',SHARITY_DONATIONS_STRIPE_PLATFORM_ACCOUNT_ID)) { throw new RuntimeException('WEBHOOK_CONFIG_UNAVAILABLE'); }
+    $r = $event['data']['object'] ?? null; $refund = $kind === 'fee_refund';
+    if (!is_array($r) || ($r['object'] ?? null) !== $kind
+        || !sharity_donation_lifecycle_id($r['id'] ?? null,$refund ? 'fr' : 'fee')
+        || !is_int($r['amount'] ?? null) || $r['amount'] < 1 || $r['amount'] > 99999999999999
+        || !in_array($r['currency'] ?? null,['huf','eur','usd','gbp'],true)
+        || !is_int($r['created'] ?? null) || $r['created'] < 1 || $r['created'] > $event['created']) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    $feeId = $refund ? ($r['fee'] ?? null) : $r['id'];
+    if (!sharity_donation_lifecycle_id($feeId,'fee')) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    $balance = $r['balance_transaction'] ?? null;
+    if (is_array($balance)) { $balance = $balance['id'] ?? false; }
+    if ($balance !== null && !sharity_donation_lifecycle_id($balance,'txn')) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    if (!$refund && (($r['livemode'] ?? null) !== $event['livemode']
+        || !is_int($r['amount_refunded'] ?? null) || $r['amount_refunded'] < 0 || $r['amount_refunded'] > $r['amount']
+        || !is_string($r['account'] ?? null) || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$r['account'])
+        || !sharity_donation_lifecycle_id($r['charge'] ?? null,'ch') || ($r['originating_transaction'] ?? null) !== null)) {
+        throw new RuntimeException('WEBHOOK_CONTEXT_INVALID');
+    }
+    sharity_donation_order_autocommit();
+    $lookup = sharity_donation_webhook_bounded_read(static fn()=>sharity_donation_runtime_adapter()
+        ->notificationApplicationFee($feeId,$event['livemode']),hrtime(true)/1e9+5,$transport,null,3);
+    $charge = $lookup['charge'];
+    if ($lookup['platform_account_id'] !== SHARITY_DONATIONS_STRIPE_PLATFORM_ACCOUNT_ID
+        || $lookup['currency'] !== strtoupper($r['currency'])
+        || (!$refund && ($lookup['account_id'] !== $r['account'] || $charge['id'] !== $r['charge']
+            || $lookup['amount_minor'] !== (string)$r['amount']))) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    $id = $charge['metadata']['order_id'] ?? null;
+    if (!(is_string($id) && str_starts_with($id,'do_'))) { return null; }
+    if (!preg_match('/^do_[a-f0-9]{32}$/D',$id)) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    $order = sharity_donation_webhook_order($id); $e = sharity_donation_order_decode($order); $snapshot = $e['snapshot'];
+    if ($order['state'] !== 'session_recorded' || !is_string($order['provider_session_id'])
+        || $snapshot['donation_mode'] !== 'amplifier' || $snapshot['account_id'] !== $lookup['account_id']
+        || $snapshot['livemode'] !== $event['livemode'] || ($charge['amount'] ?? null) !== (int)$snapshot['amount_minor']
+        || ($charge['currency'] ?? null) !== strtolower($snapshot['currency'])
+        || ($charge['application_fee_amount'] ?? null) !== $e['payload']['payment_intent_data']['application_fee_amount']
+        || !sharity_donation_lifecycle_id($charge['payment_intent'] ?? null,'pi')) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    foreach ($e['payload']['metadata'] as $key=>$value) {
+        if (($charge['metadata'][$key] ?? null) !== $value) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    }
+    sharity_donation_order_status($order['subject_ref'],$id,time());
+    return ['event_id'=>$event['id'],'event_type'=>$event['type'],'event_created'=>$event['created'],
+        'api_version'=>$event['api_version'],'source_scope'=>'platform','platform_account_id'=>$lookup['platform_account_id'],
+        'order_id'=>$id,'quote_id'=>$e['quote_id'],'session_id'=>$order['provider_session_id'],
+        'account_id'=>$snapshot['account_id'],'livemode'=>$snapshot['livemode'],'charge_id'=>$charge['id'],
+        'payment_intent_id'=>$charge['payment_intent'],'resource_type'=>$kind,'resource_id'=>$r['id'],'fee_id'=>$feeId,
+        'fee_amount_minor'=>$lookup['amount_minor'],'fee_currency'=>$lookup['currency'],'balance_id'=>$balance,
+        'refund_floor_minor'=>$refund ? null : (string)$r['amount_refunded'],'refund_amount_minor'=>$refund ? (string)$r['amount'] : null];
+}
+
+/** Signed progress is compared to actual same-currency fee evidence, not used as money. */
+function sharity_donation_platform_matches(array $i, array $evidence): bool
+{
+    $o = $evidence['original'] ?? []; $fee = $o['application_fee'] ?? [];
+    if (($i['source_scope'] ?? null) !== 'platform' || ($o['donation_mode'] ?? null) !== 'amplifier'
+        || ($i['platform_account_id'] ?? null) !== ($o['platform_account_id'] ?? null)
+        || ($i['account_id'] ?? null) !== ($o['account_id'] ?? null) || ($i['livemode'] ?? null) !== ($o['livemode'] ?? null)
+        || ($i['charge_id'] ?? null) !== ($o['charge_id'] ?? null) || ($i['payment_intent_id'] ?? null) !== ($o['payment_intent_id'] ?? null)
+        || ($i['fee_id'] ?? null) !== ($fee['id'] ?? null) || ($i['fee_amount_minor'] ?? null) !== ($fee['amount_minor'] ?? null)
+        || ($i['fee_currency'] ?? null) !== ($fee['currency'] ?? null)) { return false; }
+    if (($i['resource_type'] ?? null) === 'application_fee') {
+        $floor=$i['refund_floor_minor'] ?? null; $actual=$fee['refund_state']['amount_refunded_minor'] ?? null;
+        return $i['resource_id'] === $fee['id'] && is_string($floor) && is_string($actual)
+            && preg_match('/^(0|[1-9][0-9]{0,13})$/D',$floor) && preg_match('/^(0|[1-9][0-9]{0,13})$/D',$actual)
+            && (int)$actual >= (int)$floor && ($i['balance_id'] === null || $i['balance_id'] === ($fee['initial_balance']['id'] ?? null));
+    }
+    if (($i['resource_type'] ?? null) !== 'fee_refund') { return false; }
+    foreach ($evidence['fee_refunds'] ?? [] as $r) {
+        if (($r['id'] ?? null) === $i['resource_id'] && ($r['fee_id'] ?? null) === $fee['id']
+            && ($r['amount_minor'] ?? null) === $i['refund_amount_minor'] && ($r['currency'] ?? null) === $i['fee_currency']
+            && is_array($r['balance'] ?? null) && ($i['balance_id'] === null || $i['balance_id'] === ($r['balance']['id'] ?? null))) { return true; }
+    }
+    return false;
+}
+
+function sharity_donation_platform_webhook_handle(WP_REST_Request $request, ?object $transport = null): WP_REST_Response
+{
+    try {
+        $raw=$request->get_body(); $header=$request->get_header('stripe-signature');
+        if (!is_string($raw) || !is_string($header)) { throw new RuntimeException('WEBHOOK_INVALID_REQUEST'); }
+        $event=sharity_donation_webhook_verify($raw,$header,true);
+        if (get_option(SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION,'') !== '1') { throw new RuntimeException('WEBHOOK_SCHEMA_UNAVAILABLE'); }
+        $kind=sharity_donation_platform_type($event['type']);
+        $note=$kind === null ? null : sharity_donation_platform_notification($event,$kind,$transport);
+        if ($note !== null) { sharity_donation_webhook_store($note,time()); }
+        return sharity_donation_quote_private(['ok'=>true,'received'=>true,'ignored'=>$note===null]);
+    } catch (Throwable $error) {
+        $code=$error->getMessage();
+        if (in_array($code,['WEBHOOK_INVALID_REQUEST','WEBHOOK_CONTEXT_INVALID'],true)) { return sharity_donation_quote_error('WEBHOOK_INVALID_REQUEST',400); }
+        if ($code==='WEBHOOK_EVENT_CONFLICT') { return sharity_donation_quote_error($code,409); }
+        return sharity_donation_quote_error('WEBHOOK_UNAVAILABLE',503);
+    }
 }
 
 /** Explicit connected-order event set; platform/account/payout notifications are separate. */
@@ -168,6 +275,7 @@ function sharity_donation_lifecycle_status_reached(string $kind, $before, array 
 function sharity_donation_lifecycle_matches(array $row, array $evidence): bool
 {
     $identity = json_decode($row['identity_json'], true, 16, JSON_THROW_ON_ERROR);
+    if (sharity_donation_platform_type($identity['event_type'] ?? '') !== null) { return sharity_donation_platform_matches($identity,$evidence); }
     $kind = sharity_donation_lifecycle_type($identity['event_type'] ?? '');
     if ($kind === null) { return str_starts_with($identity['event_type'] ?? '', 'checkout.session.'); }
     if (($identity['resource_type'] ?? null) !== $kind
@@ -375,6 +483,7 @@ function sharity_donation_webhook_handle(WP_REST_Request $request, ?object $tran
         $raw = $request->get_body(); $header = $request->get_header('stripe-signature');
         if (!is_string($raw) || !is_string($header)) { throw new RuntimeException('WEBHOOK_INVALID_REQUEST'); }
         $event = sharity_donation_webhook_verify($raw, $header);
+        if (sharity_donation_platform_type($event['type']) !== null) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
         if (get_option(SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION, '') !== '1') { throw new RuntimeException('WEBHOOK_SCHEMA_UNAVAILABLE'); }
         if (in_array($event['type'], ['account.updated','account.application.deauthorized'], true)) {
             sharity_donation_webhook_account_apply(sharity_donation_webhook_account_notification($event),time());
@@ -779,6 +888,8 @@ add_action('sharity_donation_finance_drain', static function (): void {
 add_action('rest_api_init', static function (): void {
     register_rest_route('sharity/v1', '/donations/webhook', ['methods' => 'POST',
         'permission_callback' => '__return_true', 'callback' => 'sharity_donation_webhook_handle']);
+    register_rest_route('sharity/v1','/donations/platform-webhook',['methods'=>'POST',
+        'permission_callback'=>'__return_true','callback'=>'sharity_donation_platform_webhook_handle']);
 });
 if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('sharity donations webhook-schema', static function (array $args, array $assoc): void {

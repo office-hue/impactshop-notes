@@ -55,6 +55,24 @@ if($case==='missing-finance' || $case==='missing-webhook'){
  echo "OK\n";exit;
 }
 requireTrue(function_exists('sharity_donation_cli_payment_inspect'),'finance definitions loaded without SDK');
+if(str_starts_with($case,'platform-')){
+ requireTrue(in_array('sharity/v1/donations/platform-webhook',$routes,true),'separate platform route registered');
+ define('SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET','whsec_CONNECTEDSYNTHETIC');
+ if($case!=='platform-no-config'){
+  define('SHARITY_DONATIONS_STRIPE_PLATFORM_WEBHOOK_SECRET',$case==='platform-shared-secret'?'whsec_CONNECTEDSYNTHETIC':'whsec_PLATFORMSYNTHETIC');
+  define('SHARITY_DONATIONS_STRIPE_PLATFORM_WEBHOOK_LIVEMODE',$case==='platform-invalid-mode'?'false':false);
+ }
+ if($case==='platform-no-key'){
+  sharity_donation_runtime_sdk();$raw=json_encode(['id'=>'evt_SYNTHETIC','object'=>'event','type'=>'application_fee.created','created'=>time(),'livemode'=>false,'api_version'=>Sharity_Stripe_Checkout_Adapter::API_VERSION]);
+  $sig=Stripe\WebhookSignature::generateSignatureHeader($raw,SHARITY_DONATIONS_STRIPE_PLATFORM_WEBHOOK_SECRET);
+  requireTrue(sharity_donation_webhook_verify($raw,$sig,true)['id']==='evt_SYNTHETIC','platform signature without API key');
+  requireTrue(!defined('SHARITY_DONATIONS_STRIPE_KEY'),'signature does not need key');
+ }else{
+  try{sharity_donation_webhook_verify('{}','synthetic',true);throw new RuntimeException('accepted config');}
+  catch(RuntimeException $e){requireTrue($e->getMessage()==='WEBHOOK_CONFIG_UNAVAILABLE','missing/bad/shared platform config rejected');}
+ }
+ echo "OK\n";exit;
+}
 if(str_starts_with($case,'webhook-')){
  requireTrue(in_array('sharity/v1/donations/webhook',$routes,true),'webhook registered');
  if($case!=='webhook-no-config'){define('SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET','whsec_SYNTHETICLOCALTESTONLY');define('SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE',$case==='webhook-invalid-mode'?'false':false);}
@@ -90,7 +108,7 @@ CHILD;
     };
     $run('missing-sdk');$run('missing-http');$run('missing-finance');$run('missing-ledger');$run('missing-webhook');
     $dest=$fixture.'/sharity-ngo-donations/sdk/stripe-22.1.0/vendor';copyTree($vendor,$dest);
-    foreach(['webhook-no-config','webhook-invalid-mode','webhook-no-key','missing-key','invalid-key','foreign-class','success'] as $case){$run($case);}
+    foreach(['platform-no-config','platform-invalid-mode','platform-shared-secret','platform-no-key','webhook-no-config','webhook-invalid-mode','webhook-no-key','missing-key','invalid-key','foreign-class','success'] as $case){$run($case);}
     $stripeFile=$dest.'/stripe/stripe-php/lib/Stripe.php';$original=file_get_contents($stripeFile);
     if(!str_contains($original,"const VERSION = '22.1.0'")){throw new RuntimeException('SDK version fixture not found');}
     file_put_contents($stripeFile,str_replace("const VERSION = '22.1.0'","const VERSION = '0.0.0'",$original));$run('wrong-version');

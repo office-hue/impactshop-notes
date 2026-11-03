@@ -56,10 +56,39 @@ final class Sharity_Stripe_Checkout_Adapter
                 'stripe_version'=>self::API_VERSION, 'max_network_retries'=>0])->toArray();
             if (($c['object'] ?? null) !== 'charge' || ($c['id'] ?? null) !== $id
                 || ($c['livemode'] ?? null) !== $live) { throw new RuntimeException(); }
-            $out = array_intersect_key($c, array_flip(['id','object','livemode','payment_intent','amount','currency']));
+            $out = array_intersect_key($c, array_flip(['id','object','livemode','payment_intent','amount','currency','application_fee','application_fee_amount']));
             $out['metadata'] = is_array($c['metadata'] ?? null)
                 ? array_intersect_key($c['metadata'], array_flip(['order_id','quote_id','policy_version','donation_mode','package_id'])) : [];
             return $out;
+        } catch (Throwable $error) { throw new RuntimeException('DONATION_NOTIFICATION_UNAVAILABLE'); }
+    }
+
+    /** Three exact GETs: credential owner, platform fee, connected charge.
+     * The caller supplies one shared deadline/cap and performs no transaction. */
+    public function notificationApplicationFee(string $id, bool $live): array
+    {
+        try {
+            if (!$this->evidenceId($id,'fee') || $this->stripe->getStripeAccount() !== null
+                || $this->stripe->getStripeContext() !== null
+                || !preg_match('/^(rk|sk)_(test|live)_[A-Za-z0-9]+$/D',$this->stripe->getApiKey(),$mode)
+                || ($mode[2] === 'live') !== $live) { throw new RuntimeException(); }
+            $opts = ['stripe_version'=>self::API_VERSION,'max_network_retries'=>0];
+            $owner = $this->stripe->accounts->retrieve(null,[],$opts)->toArray();
+            $fee = $this->stripe->applicationFees->retrieve($id,[],$opts)->toArray();
+            if (($owner['object'] ?? null) !== 'account' || !is_string($owner['id'] ?? null)
+                || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$owner['id'])
+                || (array_key_exists('livemode',$owner) && $owner['livemode'] !== $live)
+                || ($fee['object'] ?? null) !== 'application_fee' || ($fee['id'] ?? null) !== $id
+                || ($fee['livemode'] ?? null) !== $live || !is_string($fee['account'] ?? null)
+                || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$fee['account']) || $owner['id'] === $fee['account']
+                || !$this->evidenceId($fee['charge'] ?? null,'ch')
+                || ($fee['originating_transaction'] ?? null) !== null) { throw new RuntimeException(); }
+            $amount = (string)$this->evidenceMoney($fee['amount'] ?? null,1);
+            $currency = $this->evidenceCurrency($fee['currency'] ?? null);
+            $charge = $this->notificationCharge($fee['charge'],$fee['account'],$live);
+            if (($charge['application_fee'] ?? null) !== $id) { throw new RuntimeException(); }
+            return ['platform_account_id'=>$owner['id'],'fee_id'=>$id,'account_id'=>$fee['account'],
+                'amount_minor'=>$amount,'currency'=>$currency,'charge'=>$charge];
         } catch (Throwable $error) { throw new RuntimeException('DONATION_NOTIFICATION_UNAVAILABLE'); }
     }
 

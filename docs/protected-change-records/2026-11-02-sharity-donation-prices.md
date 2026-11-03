@@ -1049,3 +1049,106 @@ valódi fedezet/végrehajtás, platformfee/payout-életciklus, Foundation accoun
 HUF pilot, Amplifier, további devizák, history/V2-publisher, affiliate/Offerwall
 és nyelvi elfogadás, VB7/Sharing12 nyitott. SUBSTACK-HANDOVER.md megőrzött
 hivatkozás, nem aktív feladat.
+
+
+## 81. D2w — platform alkalmazásdíj-esemény, előkészítés (2026-11-03)
+
+A jóváhagyott §62.4 következő önálló része, első kidolgozó Hermes058.
+A meglévő webhook/SDK adapter és drain bővül a platform alkalmazásdíj három
+eseményével, külön explicit endpoint/signing scope mellett. A payout batchhez
+külön balance-item authority szükséges, ebből nem találgatunk rendelést.
+Konkrét kockázat: platform/NGO-scope keverése, idegen vagy elavult refund
+lezárása, webhookból pénzgyártás, duplikáció/ACK után elveszett értesítés.
+Meglévő inbox, bounded GET/readback, eredeti rendelés és pénzügyi megfigyelés
+újrahasználata; nincs pénzmozgatás, új queue, automatikus aktiválás vagy APIkulcs.
+Érintett funkció: signed receiver, fee/charge SDK lookup, evidence matching,
+meglévő drain; quote/checkout és régi connected/account/poll ág megmarad.
+Kiadás existing exact-file/backup/CAS: függőség és inaktív endpoint előbb,
+sandbox/próba után külön platform signing/event configuration. Rollback
+új event-bekötést/indítást állít le, korábbi receipt és feldolgozás megmarad.
+UI kiadás után: saját pénzügyi nézet fee-refund után frissül, eredeti deviza és
+időpont helyes, nincs kész kifizetés/banki beérkezés ígéret. Még nincs tesztPASS.
+
+### D2w végrehajtás és ellenőrzés
+
+A két meglévő termékfájl változott: `sharity-ngo-donations/webhook.php` és
+`stripe-checkout.php`. A `/wp-json/sharity/v1/donations/platform-webhook`
+külön platform receiver, nem a connected endpoint átnevezése. Konfiguráció:
+`SHARITY_DONATIONS_STRIPE_PLATFORM_WEBHOOK_SECRET`,
+`SHARITY_DONATIONS_STRIPE_PLATFORM_WEBHOOK_LIVEMODE` (boolean),
+`SHARITY_DONATIONS_STRIPE_PLATFORM_ACCOUNT_ID`. Secretérték nem kerül repóba.
+A connected secret azonossága, top-level account, hibás livemode/API/verzió/
+aláírás tiltott. `application_fee.created` és `application_fee.refunded`
+application_fee objektum; `application_fee.refund.updated` fee_refund objektum.
+Hivatalos forrás: https://docs.stripe.com/connect/webhooks ,
+https://docs.stripe.com/api/events/types és
+https://docs.stripe.com/api/fee_refunds/object .
+
+Legfeljebb három GET, közös 5s keret, nulla retry és adatbáziszároláson kívül:
+platform account → platform application fee → pontos connected charge.
+Credential owner/config, key-mode, fee/account/charge, eredeti amplifier
+rendelés, összeg/fizetési deviza, frozen metadata és payload-alkalmazásdíj
+ellenőrzött. A fee saját devizája megmarad, nem címkézzük át a charge
+pénznemére. Csak minimális receipt tárolódik az eredeti inboxban; duplikált
+azonosság, eltérő eventtartalom és elveszett INSERT ACK teljes readbackkel
+kezelve. Nyers szolgáltatói payload, ügyfél/bankadat nem kerül az inboxba.
+
+Az existing drain a tényleges pénzügyi bizonyítékkal hasonlítja össze az
+értesítést. Az aggregate refund-floor nem lehet újabb, mint a visszaolvasott
+összeg; a konkrét refundhoz azonos fee/fr/amount/currency és kibontott debit
+kell. Csak txn-azonosító esetén függő marad. Az új checkout/binding tiltása
+után a régi fizetés értesítése tovább feldolgozható. Pénzügyi készültség
+hamis marad: receipt/megfigyelés/provizórikus cél nem tényleges allokáció,
+fedezetfelszabadítás, banki kifizetés vagy elfogadás. Nincs új séma, queue,
+scheduler, provider POST, szavazat vagy aktuális fizetési aktiválás.
+
+Tényleges ellenőrzés: 2775 natív MariaDB check, ebből317 platform-fee;
+17 friss runtime eset,197 SDK checkout,521 adjustments (a CLI442 és D2q26
+ellenőrzése is lefutott), PHP lint és diff. Az eredeti actual DB harnessbe
+bekötött új `tests/sharity-donation-platform-fee-mysql.test.php` külön
+aláírás/scope/account, duplikáció/conflict/lostACK, stale/refund, tiltás utáni
+feldolgozás, rossz eredeti kapcsolat, hiányos bizonyíték és nulla POST esetet
+fed. Offline pinned SDK és saját izolált MariaDB10.11.19: ez nem Stripe
+sandbox vagy élő elfogadás. Független célzott forrásreview leletmentes;
+a reviewer nem futtatott tesztet. A két korábbi pénzügyi tervaudit megmarad.
+
+Diagnózis: a szintetikus refund-lista nem adta vissza a kért expanded balance
+objektumot. A feldolgozó helyesen pendinget jelzett. A teszt előbb ezt,
+majd a kibontott debit után az observedet ellenőrzi; nincs termékvédelem-
+lazítás. A teszt nem létező finance_latest hívása a meglévő pontos
+finance_read(order,digest) visszaolvasásra cserélve. A diagnosztikai kimenet
+eltávolítva. Nem történt vak szolgáltatói retry vagy új Hermes-generálás.
+
+Hermes058:1hívás,44325input+7098output=51423token,cache768;
+becsült USD0.0052695006, tényleges számla és Codex/review teljes ráfordítás
+ismeretlen. Execution581fdece-bbdd-4ee8-bcef-ac831c957e34; pending/terminal
+remote_ack. TaskSHA3dabe0e0679a1d3add2c0ba992b8afedfeef8f9d1420f65aca100d0a7396c41c.
+Csak a külön receiver/minimális receipt/lookup iránya átvett. Jelentős helyi
+újraírás kellett a téves refunded objektum, nem létező SDK-hívás/placeholder,
+hiányzó platform/eredetiorder/FX/signed-progress ellenőrzés és nem bekötött
+hibás tesztek miatt. A megőrzött javaslat nem termék-PASS; megtakarítás nincs
+igazolva. Nem volt JEV, fallback vagy új kiadási rendszer.
+
+Kiadás a meglévő merge/exact-file úton: saját két fájl és privát konfiguráció
+mentése/friss hash → adapter → kompatibilis receiver → fájl/runtime readback
+→ sandboxban külön platform endpoint/secret és három eventtípus → aláírás,
+receipt/drain és saját állapot visszaolvasása → külön engedélyezett élő
+platform konfiguráció. A rossz endpointon érkező platform event400, hiányos
+új konfiguráció503; nincs csendes pénzügyi ACK. Nincs új DDL; a korábbi
+inbox/finance sémák szükségesek. Stripe-secretet kizárólag privát configba.
+Providerbekötés után rollback nem törölhet receiptet, nem válthat ignored
+ACK-ra: új indítások/bekötés szünetel, a meglévő kompatibilis feldolgozás és
+retry/readback út megmarad. A saját SDK-adapter önálló visszaállítása csak
+az új receiver használatának megszűnése után lehetséges. DB-visszatekerés nincs.
+
+Kézi UI kiadás után: saját rendelés pénzügyi nézetén eredeti összeg/deviza és
+frissítés helyes; fee-refund nem kész NGO-kifizetés vagy banki beérkezés;
+checkout tiltásakor a korábbi rendelés olvasható; nyelvválasztó és másik NGO
+változatlan. Éles UI/sandbox/provider próba ebben a körben nem történt.
+Mainablak, merge, telepítés és aktiválás nincs. Nyilvános D2u/D2v-jóváhagyás
+még függ; D2w nincs benne az abban megnevezett négy commitban. A teljes cél
+nyitott: payout/balance-item authority, ütemezés, valódi fedezett végrehajtás,
+NGO-account/directHUF, Amplifier, további devizák, history/V2-publisher,
+affiliate/Offerwall és teljes nyelvi elfogadás, VB7/Sharing12. Következő
+önálló pénzügyi hiány a payout authority; nincs találgatott order-hozzárendelés.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív feladat.

@@ -358,6 +358,7 @@ try {
         $wpdb->failOn='';$wpdb->failure='';$wpdb->db->rollback();
         foreach($hidden as$id=>$state){$wpdb->db->query($wpdb->prepare("UPDATE `".sharity_donation_order_table()."` SET state=%s WHERE order_id=%s",$state,$id));}
     }
+    require __DIR__.'/sharity-donation-platform-fee-mysql.test.php';
     echo 'Donation checkout drain MariaDB: '.($checks-$drainStart)." checks; real races, signed events, bounded offline SDK, no money execution\n";
 } finally {
     $wpdb->failOn='';$wpdb->failure='';$wpdb->db->query("DROP TABLE IF EXISTS `{$wpdb->options}`");$options=$originalOptions;
