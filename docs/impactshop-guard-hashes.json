@@ -357,15 +357,15 @@
     "wp-content/mu-plugins/sharity-support-finance-read.php": "91d85ec553b370176904db46d79ec6648b981ea08011ce39ca00b91abbbc71e8",
     "wp-content/mu-plugins/sharity-ngo-donations.php": "34d396adef63c4e6c177b32544128a69a396eeca807f31dfaf7bd882ec64e654",
     "wp-content/mu-plugins/sharity-ngo-donations/amplifier-packages.json": "b60fac091567c30c6c25eb8804d7c5dd3fbf64629ae35566ee1a24f2a37a7ffc",
-    "wp-content/mu-plugins/sharity-ngo-donations/stripe-checkout.php": "b6d3d0d9c58d7370e1f3d50e8f2e79c0501915f114be219a100c76741b0e60f5",
+    "wp-content/mu-plugins/sharity-ngo-donations/stripe-checkout.php": "c1d09d2ea116cf9c6184cb85a8216f6d7a2c7cb6b2d9ae786d3218021fd4356c",
     "wp-content/mu-plugins/sharity-ngo-donations/composer.json": "1e0e57f27d1e81a8bfa54f925a8a70797bf64283499cc4fd94d431af9961a65c",
     "wp-content/mu-plugins/sharity-ngo-donations/composer.lock": "2d2b655405e32c2c7e6ad7cef7511408be91842ffa3a257c09e08a0fd62ddc81",
     "wp-content/mu-plugins/sharity-ngo-donations/orders.php": "14aad7d7f01142e2c84f7c0a5de067ebe51d46a4904b5ff2ae4e397cb323be17",
     "wp-content/mu-plugins/sharity-ngo-donations/http.php": "1a1c18e07f909a21f743de99cd99aa9459971eb35c464a9d7847df629ce20f33",
     "wp-content/mu-plugins/sharity-ngo-donations/runtime.php": "ac1614f7b7aca14e8947384c7f8dbc3c169103e79dbc5a721852bb06afdf9b0a",
     "wp-content/mu-plugins/sharity-ngo-donations/webhook.php": "c5222c74e6781641a62b26b096304fc62b77366487f4130a847e01b0c441a6a3",
-    "wp-content/mu-plugins/sharity-ngo-donations/finance-read.php": "0ceddf642a48be15166c2372f6b674efe4e369a34d34e7e3283746c044e8def0",
-    "wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php": "e12fb06c62391d9a3c018f83a3925c1d3d66ad369c09c7b0afa7ec9ab9995dd3"
+    "wp-content/mu-plugins/sharity-ngo-donations/finance-read.php": "d6a80e3c6d1f66fde3782384fbb4393a69d6e88512ceee7609ef8769c01fa2eb",
+    "wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php": "ac76a1725c79677a6886b0427c464e62224a6f7c7ab57be0bf9d67cfba95e3c6"
   },
   "generated_at": "2026-11-02T22:18:36.670677Z"
 }

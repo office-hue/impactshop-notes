@@ -1137,3 +1137,14 @@ leletmentes, reviewer nem futtatott tesztet. Részletek és kézi kiadási lista
 protected record §78. Új poll schedule nincs; állapot forráskész, helyi, nem
 merge-elt/telepített/aktivált vagy pénzügyileg elfogadott. Saját tesztkonténer
 eltávolítva és hiánya visszaolvasva.
+
+
+## 2026-11-03 — D2aa saját pénzügyi forrásazonosság
+
+Termékcommit a2c1ec31098449f8608b2f81c9e65f11e6ec96a7. Kizárólag a saját
+finance-ledger.php/finance-read.php/stripe-checkout.php három hash és manifest
+checksum változik; inventory/guardlogika/idegen pin érintetlen.4395 natív DB
+(886 új),447finance-read,17runtime,197checkout; független stale-clock P1
+javítva és visszaolvasva. Koherencia/séma/kiadás/rollback/kézi UI: protected
+record§87. Alapból OFF, zero live provider request, nincs mainablak,merge,
+telepítés,aktiválás vagy pénzügyi elfogadás.
