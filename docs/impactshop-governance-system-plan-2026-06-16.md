@@ -1191,3 +1191,14 @@ protected record §91: koherencia, kockázat, funkciók, kiadás, rollback, UI-l
 Megfigyelési számítás, nem jóváírás vagy aktiválás; mainablak/deploy nincs.
 - wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `7351a01518d1c90330d03b27e5b9e8a3e5dd13944eefc09063dde83004956fa3`
 - wp-content/mu-plugins/sharity-ngo-donations/finance-read.php: `21eaf9769c0fd1ee293083ce5ccf789580cd0802296f45ba8ecacdc7c402b5b0`
+
+
+## 2026-11-03 — D2ae külön platformfedezet
+
+Termék1098d5b3. Kizárólag a saját finance-ledger.php hash és manifest-checksum
+frissül; inventory, metadata, guardlogika és minden idegen pin változatlan.
+8487MariaDB (175D2ae), lint/diff, független source review; a determinisztikus
+író-race tesztlelet javítva és újrafuttatva. Scope/kockázat/kiadás/rollback
+és UI-lista: protected record§93. Új platform claim után kompatibilis
+reader maradjon; nincs DB-visszaállítás új eseményekre. Nincs mainablak/deploy.
+- wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `bd2d8f601c2d76836a6a78a67becab8940b0fd30e1fae10dfd071805d82ea82b`
