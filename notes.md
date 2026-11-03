@@ -9036,3 +9036,16 @@ tényleges teljes díj/megtakarítás ismeretlen, Secretary terminal ACK visszao
 Scope/kockázat/teszt/compatible rollback és UI-lista: protected record§94.
 Új indítás leállhat; régi pénzügyi eseményeket és kompatibilis olvasót megőrizzük.
 Forrás helyi; mainablak, merge, telepítés és élő elfogadás nincs.
+
+
+## P4a — közös affiliate/Offerwall policy, 2026-11-03
+
+Tiszta, verziózott NGO-ráta és külön donorszorzó; kötelező R/C/Q-ból pontos
+int64 kumulatív NGO/Sharity-cél. A hiteles capture és a cash-claim/allokáció
+még következő feladat; ez önmagában nem könyvel és nem aktivál. Régi policy,
+pontok/szavazatok, Stripe direct/Amplifier változatlan. 740 tényleges PHP-check,
+PHP-lint/diff, független source review blokkoló nélkül. Hermes072 raw patch
+elvetve/jelentős Codex-javítás, 13017 token, 1 API, becsült USD0.0019047756;
+tényleges teljes díj/megtakarítás ismeretlen, terminal ACK külön visszaolvasva.
+Scope/kockázat/teszt/rollback/UI: protected record§96. Nincs mainablak, új
+nyilvános publikálás, telepítés vagy aktiválás.

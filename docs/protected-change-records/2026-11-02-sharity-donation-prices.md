@@ -1993,3 +1993,52 @@ a dispatch ezt rekonstruálja. Régi claim újrafoglalása nem támasztja fel a 
 A §54/§62 exact-file release-sorrend megmarad. Teljes jövőbeli kötelezettség,
 fizetett grant/cast/fundrelease és aktiválás továbbra nyitott. Nyilvános N-push
 csak a pontos új csomagra kapott engedély után; remote jelenleg d5e68157.
+
+
+## 96. P4a közös affiliate/Offerwall policy — célzottan ellenőrzött forrás (2026-11-03)
+
+Jóváhagyott delivery§52.4 új sharity-support-policy.php és célzott PHP-teszt.
+Additív tiszta függvények: befagyasztott NGO-/donorszint, ráták és kumulált
+R/C/Q/B/NGO/Sharity számítás. Nincs route/hook/cron/DB/provider/aktiválás,
+legacy writer vagy pont/szavazat módosítása. A későbbi meglévő capture/import
+adapter oldja fel és tárolja a hiteles szerverforrást; a digest önmagában nem
+hitelesíti az inputot vagy a fedezetet. A régi Offerwall-policy érintetlen.
+Kockázat: hibás arány, minor-egység, túlcsordulás, dupla díj, részletkerekítés,
+mai szinttel újraszámítás. Ellenőrzés: rátamátrix, pontos BIGINT-határok,
+hiányos/hamis alakú authority, kumulatív cél és negatív alap elutasítása.
+Új modul a meglévő Bástya-inventoryba kerül; idegen pin és guardlogika nem változik.
+Kiadás később meglévő exact-file mentés/CAS/readback úton, capture előtt.
+Rollback most saját, még nem hívott modul eltávolítása; későbbi tárolt policyk
+után az azokat értő olvasó megmarad. Pénzügyi adatok nem állnak vissza.
+UI-checklist kiadáskor: Impact Shop/Offerwall nyitás és régi pont/szavazat működés
+változatlan, a tiszta modul önmagában nem ígér vagy ír új adományt. Most nincs
+telepítés vagy UI-elfogadás; futási eredmény az integráció után következik.
+
+
+Tényleges eredmény: `php tests/sharity-support-policy.test.php` 740 sikeres
+ellenőrzés; két PHP-lint és diff-check sikeres. Két forrás, három NGO-szint,
+hat külön pénzügyi donorszorzó, négy deviza; pontos BIGINT-határok, nulla és
+teljesen foglalt alap, negatív fedezet és gyenge PHP-típuskonverzió elutasítása,
+részletek kumulált kerekítése, befagyasztott policy és változatlan authority.
+Nincs DB-/providerhívás. A donor-szorzók a tényleges Level Manager szerződését
+követik: 1/1,05/1,10/1,15/1,20/1,25; pontszámítást nem változtatnak.
+A célösszeg nem könyvelés: a hiteles capture, banki egyeztetés, teljes Q és
+közös cash-claim/allokáció külön következő P4/P5 feladat. Régi adatot nem ír át.
+
+Független /root/d2i_source_review blokkolót nem talált: int64-biztos egyszeri
+kerekítés, explicit bemenetek, szigorú snapshot és világos authority-határ.
+Saját tesztet nem futtatott. Egy hatást nem bizonyító hook-assert eltávolítva;
+a végső tesztfutás 740, nem a korábbi 741. Új termékkódhiba miatti retry nincs.
+
+Hermes072 execution432aaa6b-f435-4e25-963f-ce8bdcae2b40,
+taskSHA d21d7c45fef9077087284c76e6eac625b93d39f9782b02356e9a4bc93588cc48.
+4488 input + 8529 output = 13017 token, 768 cache-read, 1 API;
+becsült USD0.0019047756, tényleges/teljes költség és megtakarítás ismeretlen.
+Raw patch elvetve, szerkezeti javaslat részben hasznosítva; jelentős Codex-javítás:
+kétszeres nevező és köztes kerekítés, nulla tiltása, kitalált legacy mező,
+fölösleges általános nagyegész-segéd, hibás SHA/időellenőrzés és futtathatatlan
+szintetikus tesztek helyett kis tiszta modul. Nincs újragenerálás/fallback/JEV.
+Terminal Secretary ACK külön visszaolvasva:
+chk-ee75ee40-6945-4e15-9a05-5217f68a1a38. Az átvétel külön product-checkpointba kerül.
+A commit és meglévő guard-inventory célzott frissítése külön készül. Nincs
+mainablak, nyilvános új push, telepítés, aktiválás vagy pénzügyi elfogadás.
