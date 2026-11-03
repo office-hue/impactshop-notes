@@ -334,6 +334,7 @@ try {
     $adapter = $fixtureAdapter;
     require __DIR__ . '/sharity-donation-webhook-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-ledger-mysql.test.php';
+    require __DIR__ . '/sharity-donation-account-events-mysql.test.php';
     // Schema drift rejection must preserve rows and clear readiness. Fixture-only ALTER.
     $table = sharity_donation_order_table(); $beforeRows = $wpdb->db->query("SELECT COUNT(*) AS n FROM `{$table}`")->fetch_assoc()['n'];
     $wpdb->db->query("ALTER TABLE `{$table}` DROP INDEX quote_id");

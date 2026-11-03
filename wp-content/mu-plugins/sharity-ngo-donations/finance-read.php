@@ -178,9 +178,9 @@ function sharity_donation_account_binding_payload(array $d, array $p, int $now):
         'account_evidence'=>$d, 'provider_observation'=>$p];
 }
 
-function sharity_donation_account_option_read(callable $query, string $table): array
+function sharity_donation_account_option_read(callable $query, string $table, bool $lock = false): array
 {
-    $rows = $query("SELECT option_value FROM `{$table}` WHERE option_name = ?", ['sharity_donation_accounts_v1']);
+    $rows = $query("SELECT option_value FROM `{$table}` WHERE option_name = ?" . ($lock ? " FOR UPDATE" : ""), ['sharity_donation_accounts_v1']);
     if (count($rows) > 1) { throw new RuntimeException(); }
     if (!$rows) { return [null, []]; }
     $raw = $rows[0]['option_value'];
@@ -194,6 +194,37 @@ function sharity_donation_account_option_read(callable $query, string $table): a
         if (is_array($v)) { foreach ($v as $x) { $walk($x); } }
     }; $walk($map);
     return [$raw, $map];
+}
+
+function sharity_donation_account_key(string $account, bool $live): string
+{
+    if (!preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$account)) { throw new RuntimeException('DONATION_ACCOUNT_STORAGE_UNAVAILABLE'); }
+    return hash('sha256',($live ? 'live:' : 'test:') . $account);
+}
+
+/** Reserved non-NGO map member is part of the same whole-option CAS as bindings. */
+function sharity_donation_account_notice(array $map, string $account, bool $live): ?array
+{
+    if (!array_key_exists('_account_events',$map)) { return null; }
+    if (!is_array($map['_account_events'])) { throw new RuntimeException('DONATION_ACCOUNT_STORAGE_UNAVAILABLE'); }
+    $key = sharity_donation_account_key($account,$live);
+    if (!array_key_exists($key,$map['_account_events'])) { return null; }
+    $n = $map['_account_events'][$key];
+    if (!is_array($n) || count($n) !== 5 || ($n['account_id'] ?? null) !== $account || ($n['livemode'] ?? null) !== $live
+        || !is_int($n['created'] ?? null) || $n['created'] < 1
+        || !is_string($n['event_id'] ?? null) || !preg_match('/^evt_[A-Za-z0-9]{1,251}$/D',$n['event_id'])
+        || !is_string($n['digest'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D',$n['digest'])) { throw new RuntimeException('DONATION_ACCOUNT_STORAGE_UNAVAILABLE'); }
+    return $n;
+}
+
+function sharity_donation_account_epoch(string $account, bool $live): ?string
+{
+    if (!defined('SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION')
+        || get_option(SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION,'') !== '1') { throw new RuntimeException('DONATION_ACCOUNT_EVENTS_UNAVAILABLE'); }
+    global $wpdb; [, $query] = sharity_donation_backing_db();
+    if (!is_string($wpdb->options) || !preg_match('/^[A-Za-z0-9_]+$/D',$wpdb->options)) { throw new RuntimeException('DONATION_ACCOUNT_STORAGE_UNAVAILABLE'); }
+    [, $map] = sharity_donation_account_option_read($query,$wpdb->options);
+    return sharity_donation_account_notice($map,$account,$live)['digest'] ?? null;
 }
 
 function sharity_donation_account_seal(array $binding, string $request): array
@@ -222,6 +253,14 @@ function sharity_donation_account_change(string $ngo, string $expect, array $req
         if (!$unique) { throw new RuntimeException(); }
         [$raw,$map] = sharity_donation_account_option_read($query,$table);
         $old = $map[$ngo] ?? null;
+        if ($request['kind'] === 'bind') {
+            if ($payload === null || !array_key_exists('authority_epoch',$request)) { throw new RuntimeException('DONATION_ACCOUNT_STALE'); }
+            $notice = sharity_donation_account_notice($map,$payload['account_id'],$payload['livemode']);
+            $started = sharity_donation_quote_timestamp($payload['authority_verified_started_at_utc'] ?? null);
+            if (($notice['digest'] ?? null) !== $request['authority_epoch'] || $started === null
+                || ($notice !== null && $started <= $notice['created'])) { throw new RuntimeException('DONATION_ACCOUNT_STALE'); }
+        }
+
         $digest = hash('sha256',sharity_donation_finance_json([$ngo,$expect,$request]));
         if (is_array($old) && ($old['account_request_digest'] ?? null) === $digest) {
             if (($old['binding_version'] ?? null) !== sharity_donation_account_seal($old,$digest)['binding_version']) { throw new RuntimeException(); }
@@ -266,10 +305,13 @@ function sharity_donation_account_bind(string $ngo, string $path, string $expect
     $clock = $clock ?? static fn(): int => time(); $now = $clock();
     $d = sharity_donation_backing_read_proof($path);
     sharity_donation_account_proof($d,$ngo,$now);
+    $epoch = sharity_donation_account_epoch($d['account_id'],$d['livemode']);
+    $started = $clock();
     $p = $adapter->inspectAccount($d['account_id']);
     sharity_donation_account_proof($d,$ngo,$clock());
     $payload = sharity_donation_account_binding_payload($d,$p,$clock());
-    return sharity_donation_account_change($ngo,$expect,['kind'=>'bind','proof'=>$d],$payload);
+    $payload['authority_verified_started_at_utc'] = gmdate('Y-m-d\TH:i:s\Z',$started);
+    return sharity_donation_account_change($ngo,$expect,['kind'=>'bind','proof'=>$d,'authority_epoch'=>$epoch],$payload);
 }
 
 function sharity_donation_cli_account(array $args, array $assoc, string $operation): void
@@ -291,7 +333,7 @@ function sharity_donation_cli_account(array $args, array $assoc, string $operati
         WP_CLI::line(json_encode($result,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
     } catch (Throwable $error) {
         $allowed = ['ARGUMENTS','INSPECT_UNAVAILABLE','MODEL_UNPROVEN','PROOF_EXPIRED','PROOF_INVALID','AMPLIFIER_UNAVAILABLE',
-            'PROVIDER_UNPROVEN','STALE','WRITE_UNCONFIRMED','STORAGE_UNAVAILABLE'];
+            'PROVIDER_UNPROVEN','STALE','WRITE_UNCONFIRMED','STORAGE_UNAVAILABLE','EVENTS_UNAVAILABLE'];
         $code = $error->getMessage();
         WP_CLI::error(in_array(str_replace('DONATION_ACCOUNT_','',$code),$allowed,true) ? $code : 'DONATION_ACCOUNT_UNAVAILABLE');
     }
@@ -322,6 +364,15 @@ function sharity_donation_cli_webhook_finance_schema(array $args, array $assoc):
         WP_CLI::line('DONATION_WEBHOOK_FINANCE_SCHEMA_READY');
     } catch (Throwable $error) { WP_CLI::error('DONATION_WEBHOOK_FINANCE_SCHEMA_UNAVAILABLE'); }
 }
+function sharity_donation_cli_webhook_account_schema(array $args, array $assoc): void
+{
+    try {
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $assoc !== ['apply'=>true]
+            || !function_exists('sharity_donation_webhook_account_schema_apply')
+            || !sharity_donation_webhook_account_schema_apply()) { throw new RuntimeException(); }
+        WP_CLI::line('DONATION_WEBHOOK_ACCOUNT_SCHEMA_READY');
+    } catch (Throwable $error) { WP_CLI::error('DONATION_WEBHOOK_ACCOUNT_SCHEMA_UNAVAILABLE'); }
+}
 function sharity_donation_cli_finance_poll(array $args, array $assoc): void
 {
     try {
@@ -331,6 +382,7 @@ function sharity_donation_cli_finance_poll(array $args, array $assoc): void
     } catch (Throwable $error) { WP_CLI::error('DONATION_POLL_UNAVAILABLE'); }
 }
 if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('sharity donations webhook-account-schema','sharity_donation_cli_webhook_account_schema');
     WP_CLI::add_command('sharity donations finance-poll','sharity_donation_cli_finance_poll');
     WP_CLI::add_command('sharity donations finance-drain','sharity_donation_cli_finance_drain');
     WP_CLI::add_command('sharity donations webhook-finance-schema','sharity_donation_cli_webhook_finance_schema');

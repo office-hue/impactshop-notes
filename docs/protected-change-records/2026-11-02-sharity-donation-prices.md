@@ -952,3 +952,100 @@ leletmentes, reviewer nem futtatott tesztet. Részletek és kézi kiadási lista
 protected record §78. Új poll schedule nincs; állapot forráskész, helyi, nem
 merge-elt/telepített/aktivált vagy pénzügyileg elfogadott. Saját tesztkonténer
 eltávolítva és hiánya visszaolvasva.
+
+
+## 80. D2v — accountváltozás/leválasztás előkészítése (2026-11-03)
+
+A jóváhagyott62.4 következő része; első kidolgozó Hermes057. Publisher valós
+V2 export nélkül nem kap új telepítőt. Érintett a meglévő Connect receiver,
+minimális inbox, account option/CAS és quote/dispatch jogosultság, szükség
+esetén explicit additív séma. Account.updated/deauthorized, fiók/livemode,
+duplikáció/late event és friss bind verseny; régi rendelés/status/refund marad.
+Kockázat: elavult újfizetési engedély, idegen NGO tiltása, ACK után elveszett
+tiltás, párhuzamos bind visszaállása. Nincs pénzügyi POST/allokáció/szavazat.
+Teszt: signed negatív/replay/context, tényleges kétkapcsolatos DB-verseny,
+uncertain write readback, explicit séma, historikus order regresszió.
+Kiadás meglévő exact-file úton, saját backup/CAS, explicit séma, majd konkrét
+event selection; végső kompatibilis sorrend megvalósítás után pontosítandó.
+Rollback új indítást leállíthat, fogadott tiltást/eseményt nem töröl; régi
+receiver nem ACKolhat feldolgozatlan új accounteseményt. UI: érintett NGO-nál
+új fizetés tiltott, saját korábbi rendelés olvasható, más NGO és nyelv/deviza/
+belépés működik. Erre a csomagra még nincs teszt/telepítés/aktiválás.
+
+## 80. D2v — account-esemény és újfizetési engedély (2026-11-03)
+
+A jóváhagyott §62.4 része elkészült a saját Notes-worktree-ben. A meglévő
+`sharity-ngo-donations/webhook.php` kezeli az `account.updated` és
+`account.application.deauthorized` aláírt Connect-eseményt. A top-level
+account/livemode/API-verzió és a megfelelő account/application objektum
+ellenőrzött; az application `ca_` azonosítója nem az accountból származik.
+Nyers account-, ügyfél- és bankadat nincs az inboxban. Hivatalos szerződés:
+https://docs.stripe.com/connect/webhooks és https://docs.stripe.com/api/events/types .
+
+Az inbox harmadik, explicit sémaalakja egy nullable `account_key` mezőt ad,
+az order/session account-eseménynél NULL; a történeti sorok megmaradnak.
+`sharity donations webhook-account-schema --apply` nélkül nincs DDL.
+Az account-sorokat a meglévő order-only drain/poll eleve kizárja; nem lesz
+belőlük pénzügyi megfigyelés, movement, allokáció vagy fizetésbizonyíték.
+
+A minimális receipt és a matching NGO/livemode binding lejáratása egyetlen
+rögzített mysqli-kapcsolaton, tranzakcióban történik. Metadata-lock alatt
+mindkét tábla tényleges InnoDB engine-je, az inbox pontos sémája és az
+option_name egyedisége ellenőrzött. Commit/rollback után ac=1, tx=0 és teljes
+visszaolvasás kell az ACK-hoz; a saját, még nem commitolt sor nem bizonyíték.
+A teljes accounts-option CAS megőrzi a többi szervezetet. Még nem kötött
+account is tartós eseményhatárt hagy, ezért a közben indult account-bind
+nem állíthat vissza régi engedélyt. A bind szolgáltatói GET-je zár nélkül
+fut, előtte rögzített epoch és kezdési idő mellett. Késői, régebbi esemény
+nem érvényteleníti az utána kezdett friss ellenőrzést; azonos másodpercnél
+új ellenőrzés kell. Ismételt esemény nem tiltja újra a későbbi friss bindet.
+Az új quote és prepared-dispatch a meglévő lejárat/version ellenőrzéssel
+leáll; a tulajdonos korábbi rendelése tovább olvasható.
+
+Tényleges teszt: 2458 natív MariaDB check, ebből 87 account-event;
+90 account-binding/CAS, 442 finance/CLI, 13 friss runtime forgatókönyv.
+Aláírt események, idegen account/livemode, késői esemény, duplicate/conflict,
+unbound barrier, valódi kétkapcsolatos bind/event verseny, INSERT/commit
+ACK-hiba, rollback false/throw/no-op, mindkét MyISAM engine és hiányzó
+unique key, stale schemaflag, prepared-dispatch tiltása és nulla új provider
+POST ellenőrizve. A pinned SDK HTTP-je offline, MariaDB10.11.19 izolált;
+nem Stripe sandbox vagy élő elfogadás. PHP lint és diff ellenőrizve.
+Egy fixture-hiba javult: a negatív séma próba char(63) helyett adatmegőrző
+char(65)-öt használ. Nem történt production adat-/providerhívás.
+
+Független forrásreview két lelete javítva: nyitott tranzakcióból téves ACK,
+és nemtranzakciós options miatti részleges commit. Célzott visszaolvasás
+után nincs további konkrét lelet; reviewer nem futtatott tesztet. A két
+korábbi pénzügyi tervaudit újrahasználva, nincs új pénzügyi policy.
+Hermes057: egy hívás, 28305 input + 6790 output = 35095 token, cache768;
+becsült USD0.0037556246, tényleges számla/Codex/review-ráfordítás ismeretlen.
+Execution046550ec-b813-4a44-b43e-56aa25030ee0, pending/terminal remote_ack.
+Csak a meglévő receiver/minimális receipt/CAS iránya átvett. Jelentős helyi
+javítás: application/account azonosítás, object livemode, fake orderID,
+duplikáció előtti tartós tiltás, egytranzakciós receipt, unbound bind-race,
+valós CLI/séma és tesztek. Nincs újragenerálás, JEV vagy fallback.
+
+Kiadási sorrend a meglévő exact-file úton: ellenőrzött merge-SHA → saját
+fájlok, accounts-opció és inbox konzisztens privát mentése → új indítások
+szüneteltetése → kompatibilis webhook.php, majd finance-read.php → explicit
+webhook-account-schema --apply → séma/engine/index és történeti sorok
+visszaolvasása → sandboxban signed account-event és friss bind próba →
+Connect endpoint két új eseményének bekötése → NGO/mód/deviza szerinti
+engedély friss igazolása. A provider event-kiválasztás önmagában nem pénzügyi
+aktiválás. Féltelepítésben az account-ág 503-at ad; nincs HTTP-migráció.
+A régi order/refund feldolgozás folytatható. Rollback új indítást állít le;
+a fogadott account-eseményt/tiltást és kompatibilis receivert meg kell őrizni.
+Régi, account-eseményt ignored=true-val ACKoló webhookra visszaállni nem
+szabad. Új pénzügyi adatok fölé régi DB-mentés nem tölthető.
+
+Kézi UI-checklist kiadás után: az érintett NGO adományozási oldalán új
+quote/checkout nem indul lejárt engedéllyel; a saját rendelés állapota
+olvasható; frissen ellenőrzött új kötésnél a megfelelő mód/deviza elérhető;
+a másik NGO, belépés és nyelvválasztás változatlan. Ez még nem futott élőben.
+Forrás és helyi teszt kész; mainablak/merge/telepítés/aktiválás/élő pénzügyi
+elfogadás nincs. D2u nyilvános Notes-publikálása továbbra külön függő kérés;
+az új D2v sem kapott külön nyilvános publikálási jóváhagyást. A teljes cél,
+valódi fedezet/végrehajtás, platformfee/payout-életciklus, Foundation account,
+HUF pilot, Amplifier, további devizák, history/V2-publisher, affiliate/Offerwall
+és nyelvi elfogadás, VB7/Sharing12 nyitott. SUBSTACK-HANDOVER.md megőrzött
+hivatkozás, nem aktív feladat.

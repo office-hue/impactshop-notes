@@ -3,6 +3,8 @@ declare(strict_types=1);
 // Pinned real SDK, synthetic transport only. Optional isolated MariaDB adds native CAS coverage.
 require getenv('SHARITY_DONATION_SDK_AUTOLOAD') ?: __DIR__.'/../tmp/sharity-donation-sdk/vendor/autoload.php';
 const WP_CLI = true;
+const SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION='sharity_donation_webhook_account_schema_v1';
+$GLOBALS['optionFixture'][SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION]='1';
 class WP_CLI { public static array $commands=[], $lines=[]; public static function add_command($n,$f):void{self::$commands[$n]=$f;} public static function line($v):void{self::$lines[]=$v;} public static function error($e):void{throw new RuntimeException($e);} }
 function add_action(...$a):void{}
 function wp_cache_delete($key,$group):void{$GLOBALS['cacheDeletes'][]=[$key,$group];}

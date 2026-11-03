@@ -8863,3 +8863,16 @@ record §78. Forrás még helyi; mainablak, merge, telepítés, aktiválás ninc
 Nyitott: platform fee/account/payout életciklus, ütemezés, valódi fedezett
 végrehajtás, NGO-account és HUF pilot, Amplifier, további devizák, teljes
 nyelvi/affiliate/Offerwall cél, VB7/Sharing12 eltérések és éles elfogadás.
+
+## 2026-11-03 — D2v account-esemény, helyi forrás
+
+A meglévő signed Connect receiver atomikusan rögzíti az accountváltozást/
+leválasztást és lejáratja a megfelelő újfizetési engedélyt. Friss bind epoch/CAS,
+minimal receipt, explicit schema3; történeti order/status megmarad.
+2458 MariaDB (87 új), 90 account/CAS, 442 CLI, 13 runtime; független review
+két tranzakciós lelete javítva és visszaolvasva. Hermes057: 35095 token,
+USD0.0037556246 becsült, tényleges/teljes ráfordítás ismeretlen; részleges
+átvétel, jelentős helyi javítás. Koherencia, kockázat, teljes teszt, kézi UI,
+kiadás/rollback és költség: protected change record §80 végrehajtási blokk.
+D2u/D2v még helyi; nincs mainablak/merge/telepítés/aktiválás/élő elfogadás.
+Teljes Sharity pénzügyi és nemzetköziesítési cél nyitott.

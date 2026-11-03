@@ -6,6 +6,7 @@
 declare(strict_types=1);
 const SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION = 'sharity_donation_webhooks_schema_v1';
 const SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION = 'sharity_donation_webhook_finance_schema_v1';
+const SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION = 'sharity_donation_webhook_account_schema_v1';
 const SHARITY_DONATION_DRAIN_CURSOR_OPTION = 'sharity_donation_finance_drain_cursor_v1';
 const SHARITY_DONATION_POLL_CURSOR_OPTION = 'sharity_donation_finance_poll_cursor_v1';
 function sharity_donation_webhook_table(): string { global $wpdb; return $wpdb->prefix . 'sharity_donation_webhooks_v1'; }
@@ -247,6 +248,127 @@ function sharity_donation_webhook_store(array $note, int $now): void
         || $row['order_id'] !== $note['order_id'] || $row['session_id'] !== $note['session_id']) { throw new RuntimeException('WEBHOOK_EVENT_CONFLICT'); }
 }
 
+/** Account object is not persisted; the application id is independent of account id. */
+function sharity_donation_webhook_account_notification(array $event): array
+{
+    $type = $event['type'] ?? null; $object = $event['data']['object'] ?? null;
+    if (!in_array($type, ['account.updated','account.application.deauthorized'], true)
+        || !sharity_donation_lifecycle_id($event['id'] ?? null, 'evt')
+        || !is_bool($event['livemode'] ?? null) || $event['livemode'] !== SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE
+        || !is_string($event['account'] ?? null) || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $event['account'])
+        || ($event['api_version'] ?? null) !== Sharity_Stripe_Checkout_Adapter::API_VERSION
+        || !is_int($event['created'] ?? null) || $event['created'] < 1 || $event['created'] > time() + 300
+        || !is_array($object)) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    if ($type === 'account.updated') {
+        if (($object['object'] ?? null) !== 'account' || ($object['id'] ?? null) !== $event['account']) {
+            throw new RuntimeException('WEBHOOK_CONTEXT_INVALID');
+        }
+    } elseif (($object['object'] ?? null) !== 'application' || !sharity_donation_lifecycle_id($object['id'] ?? null, 'ca')) {
+        throw new RuntimeException('WEBHOOK_CONTEXT_INVALID');
+    }
+    return ['kind'=>'account','event_id'=>$event['id'],'event_type'=>$type,'event_created'=>$event['created'],
+        'api_version'=>$event['api_version'],'account_id'=>$event['account'],'livemode'=>$event['livemode'],'object_id'=>$object['id']];
+}
+
+/** Receipt and the shared authority CAS commit together. No provider call or retry.
+ * A binding created concurrently either loses its CAS or is inspected/expired here.
+ * Even an unbound account leaves a durable barrier for an in-flight verification. */
+function sharity_donation_webhook_account_apply(array $note, int $now): void
+{
+    if (get_option(SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION, '') !== '1'
+        || !function_exists('sharity_donation_account_notice')) { throw new RuntimeException('WEBHOOK_SCHEMA_UNAVAILABLE'); }
+    $json = sharity_donation_finance_json($note); $digest = hash('sha256', $json);
+    $key = sharity_donation_account_key($note['account_id'], $note['livemode']);
+    global $wpdb; $table = sharity_donation_webhook_table(); $options = $wpdb->options;
+    if (!preg_match('/^[A-Za-z0-9_]+$/D', $table) || !preg_match('/^[A-Za-z0-9_]+$/D', $options)) { throw new RuntimeException('WEBHOOK_UNAVAILABLE'); }
+    [$db,$query] = sharity_donation_backing_db();
+    $guard = static function (array $row) use ($note,$json,$digest,$key): void {
+        if ($row['event_id'] !== $note['event_id'] || $row['order_id'] !== null || $row['session_id'] !== null
+            || ($row['account_key'] ?? null) !== $key || $row['identity_json'] !== $json || $row['identity_digest'] !== $digest) {
+            throw new RuntimeException('WEBHOOK_EVENT_CONFLICT');
+        }
+    };
+    $conflict = false; $schemaVerified = false;
+    try {
+        if (!$db->begin_transaction()) { throw new RuntimeException(); }
+        // Hold metadata locks before checking both engines and keys. A stale option
+        // flag cannot make a nontransactional table part of this atomic operation.
+        foreach ([$options,$table] as $locked) {
+            $query("SELECT 1 FROM `{$locked}` LIMIT 0");
+            $status = $query('SHOW TABLE STATUS WHERE Name = ?',[$locked]);
+            if (count($status) !== 1 || $status[0]['Engine'] !== 'InnoDB') { throw new RuntimeException(); }
+        }
+        if (sharity_donation_webhook_schema_shape($query) !== 3) { throw new RuntimeException(); }
+        $groups = [];
+        foreach ($query("SHOW INDEX FROM `{$options}`") as $index) { $groups[$index['Key_name']][] = $index; }
+        $unique = false;
+        foreach ($groups as $group) {
+            if (count($group) === 1 && $group[0]['Column_name'] === 'option_name'
+                && (int)$group[0]['Non_unique'] === 0 && $group[0]['Sub_part'] === null) { $unique = true; }
+        }
+        if (!$unique) { throw new RuntimeException(); }
+        $schemaVerified = true;
+        [$raw,$map] = sharity_donation_account_option_read($query,$options,true);
+        $rows = $query("SELECT * FROM `{$table}` WHERE event_id = ?", [$note['event_id']]);
+        if ($rows) {
+            $guard($rows[0]); if (!$db->rollback()) { throw new RuntimeException(); }
+        } else {
+            $previous = sharity_donation_account_notice($map,$note['account_id'],$note['livemode']);
+            if ($previous === null || $note['event_created'] >= $previous['created']) {
+                $map['_account_events'][$key] = ['account_id'=>$note['account_id'],'livemode'=>$note['livemode'],
+                    'created'=>$note['event_created'],'event_id'=>$note['event_id'],'digest'=>$digest];
+            }
+            foreach ($map as $slug => $binding) {
+                if ($slug === '_account_events' || !is_array($binding)
+                    || ($binding['account_id'] ?? null) !== $note['account_id'] || ($binding['livemode'] ?? null) !== $note['livemode']) { continue; }
+                $start = sharity_donation_quote_timestamp($binding['authority_verified_started_at_utc'] ?? null);
+                // Second precision: equal timestamps conservatively require fresh verification.
+                if ($start !== null && $start > $note['event_created']) { continue; }
+                $binding['verified_until'] = '1970-01-01T00:00:00Z';
+                $map[$slug] = sharity_donation_account_seal($binding, $digest);
+            }
+            $encoded = serialize($map);
+            if (strlen($encoded) > 1048576) { throw new RuntimeException(); }
+            if ($raw === null) {
+                $query("INSERT INTO `{$options}` (option_name,option_value,autoload) VALUES (?,?,?)", ['sharity_donation_accounts_v1',$encoded,'no']);
+            } else {
+                $query("UPDATE `{$options}` SET option_value = ? WHERE option_name = ? AND BINARY option_value = ?", [$encoded,'sharity_donation_accounts_v1',$raw]);
+            }
+            [$saved] = sharity_donation_account_option_read($query,$options);
+            if ($saved !== $encoded) { throw new RuntimeException(); }
+            $query("INSERT INTO `{$table}` (event_id,order_id,session_id,account_key,identity_json,identity_digest,received_at_utc)
+                VALUES (?,NULL,NULL,?,?,?,?)", [$note['event_id'],$key,$json,$digest,gmdate('Y-m-d H:i:s',$now)]);
+            $guard($query("SELECT * FROM `{$table}` WHERE event_id = ?",[$note['event_id']])[0]);
+            $state = $query('SELECT @@autocommit AS ac, @@in_transaction AS tx')[0] ?? [];
+            if ((string)($state['ac'] ?? '') !== '1' || (string)($state['tx'] ?? '') !== '1') { throw new RuntimeException(); }
+            if (!$db->commit()) { throw new RuntimeException(); }
+        }
+        $state = $query('SELECT @@autocommit AS ac, @@in_transaction AS tx')[0] ?? [];
+        if ((string)($state['ac'] ?? '') !== '1' || (string)($state['tx'] ?? '') !== '0') { throw new RuntimeException(); }
+    } catch (Throwable $error) {
+        $conflict = $error->getMessage() === 'WEBHOOK_EVENT_CONFLICT';
+        // A receipt visible only to this connection is not commit proof. Failed or
+        // ineffective rollback prohibits ACK, even when the subsequent SELECT works.
+        try {
+            if (!$db->rollback()) { throw new RuntimeException(); }
+            $state = $query('SELECT @@autocommit AS ac, @@in_transaction AS tx')[0] ?? [];
+            if ((string)($state['ac'] ?? '') !== '1' || (string)($state['tx'] ?? '') !== '0') { throw new RuntimeException(); }
+        } catch (Throwable $unclosed) { throw new RuntimeException('WEBHOOK_STORE_UNCONFIRMED'); }
+    } finally {
+        foreach (['sharity_donation_accounts_v1','alloptions','notoptions'] as $cache) { wp_cache_delete($cache,'options'); }
+    }
+    if (!$schemaVerified) { throw new RuntimeException('WEBHOOK_SCHEMA_UNAVAILABLE'); }
+    if ($conflict) { throw new RuntimeException('WEBHOOK_EVENT_CONFLICT'); }
+    // The receipt proves the entire transaction, including expiry. A later valid bind
+    // may have superseded it; never expire that newer authority again on a replay.
+    $rows = $query("SELECT * FROM `{$table}` WHERE event_id = ?",[$note['event_id']]);
+    if (count($rows) !== 1) { throw new RuntimeException('WEBHOOK_STORE_UNCONFIRMED'); }
+    $guard($rows[0]);
+    [, $actual] = sharity_donation_account_option_read($query,$options);
+    $notice = sharity_donation_account_notice($actual,$note['account_id'],$note['livemode']);
+    if ($notice === null || $notice['created'] < $note['event_created']) { throw new RuntimeException('WEBHOOK_STORE_UNCONFIRMED'); }
+}
+
 function sharity_donation_webhook_handle(WP_REST_Request $request, ?object $transport = null): WP_REST_Response
 {
     try {
@@ -254,6 +376,10 @@ function sharity_donation_webhook_handle(WP_REST_Request $request, ?object $tran
         if (!is_string($raw) || !is_string($header)) { throw new RuntimeException('WEBHOOK_INVALID_REQUEST'); }
         $event = sharity_donation_webhook_verify($raw, $header);
         if (get_option(SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION, '') !== '1') { throw new RuntimeException('WEBHOOK_SCHEMA_UNAVAILABLE'); }
+        if (in_array($event['type'], ['account.updated','account.application.deauthorized'], true)) {
+            sharity_donation_webhook_account_apply(sharity_donation_webhook_account_notification($event),time());
+            return sharity_donation_quote_private(['ok'=>true,'received'=>true,'ignored'=>false]);
+        }
         $note = sharity_donation_webhook_notification($event, $transport);
         if ($note !== null) { sharity_donation_webhook_store($note, time()); }
         return sharity_donation_quote_private(['ok' => true, 'received' => true, 'ignored' => $note === null]);
@@ -330,22 +456,31 @@ function sharity_donation_webhook_schema_apply(): bool
     } catch (Throwable $error) { return false; }
 }
 
-/** The existing inbox has two explicit schema shapes. Never repair an unknown one. */
-function sharity_donation_webhook_schema_shape(): int
+/** The existing inbox has three explicit schema shapes. Never repair an unknown one. */
+function sharity_donation_webhook_schema_shape(?callable $query = null): int
 {
     global $wpdb; $table = sharity_donation_webhook_table();
-    $status = $wpdb->get_row($wpdb->prepare('SHOW TABLE STATUS WHERE Name = %s', $table), ARRAY_A);
-    $columns = $wpdb->get_results("SHOW FULL COLUMNS FROM `{$table}`", ARRAY_A);
-    $indexes = $wpdb->get_results("SHOW INDEX FROM `{$table}`", ARRAY_A);
-    if ($wpdb->last_error !== '' || ($status['Engine'] ?? '') !== 'InnoDB' || !is_array($columns) || !is_array($indexes)) { return 0; }
+    if ($query === null) {
+        $status = $wpdb->get_row($wpdb->prepare('SHOW TABLE STATUS WHERE Name = %s', $table), ARRAY_A);
+        $columns = $wpdb->get_results("SHOW FULL COLUMNS FROM `{$table}`", ARRAY_A);
+        $indexes = $wpdb->get_results("SHOW INDEX FROM `{$table}`", ARRAY_A);
+        if ($wpdb->last_error !== '') { return 0; }
+    } else {
+        $status = $query('SHOW TABLE STATUS WHERE Name = ?',[$table])[0] ?? null;
+        $columns = $query("SHOW FULL COLUMNS FROM `{$table}`");
+        $indexes = $query("SHOW INDEX FROM `{$table}`");
+    }
+    if (($status['Engine'] ?? '') !== 'InnoDB' || !is_array($columns) || !is_array($indexes)) { return 0; }
     $expected = ['event_id'=>['varchar(255)','ascii_bin'], 'order_id'=>['char(35)','ascii_bin'],
         'session_id'=>['varchar(255)','ascii_bin'], 'identity_json'=>['longtext','utf8mb4_bin'],
         'identity_digest'=>['char(64)','ascii_bin'], 'received_at_utc'=>['datetime',null], 'recovered_at_utc'=>['datetime',null]];
-    $version = count($columns) === 10 ? 2 : 1;
-    if ($version === 2) { $expected += ['observation_digest'=>['char(64)','ascii_bin'], 'observed_at_utc'=>['datetime',null], 'last_attempt_at_utc'=>['datetime',null]]; }
+    $version = count($columns) === 11 ? 3 : (count($columns) === 10 ? 2 : 1);
+    if ($version >= 2) { $expected += ['observation_digest'=>['char(64)','ascii_bin'], 'observed_at_utc'=>['datetime',null], 'last_attempt_at_utc'=>['datetime',null]]; }
+    if ($version === 3) { $expected['account_key'] = ['char(64)','ascii_bin']; }
     if (count($columns) !== count($expected)) { return 0; }
     foreach ($columns as $c) {
-        $nullable = in_array($c['Field'], ['recovered_at_utc','observation_digest','observed_at_utc','last_attempt_at_utc'], true);
+        $nullable = in_array($c['Field'], ['recovered_at_utc','observation_digest','observed_at_utc','last_attempt_at_utc'], true)
+            || ($version === 3 && in_array($c['Field'], ['order_id','session_id','account_key'], true));
         if (!isset($expected[$c['Field']]) || [$c['Type'],$c['Collation']] !== $expected[$c['Field']]
             || $c['Null'] !== ($nullable ? 'YES' : 'NO') || $c['Default'] !== null || $c['Extra'] !== '') { return 0; }
     }
@@ -374,9 +509,32 @@ function sharity_donation_webhook_finance_schema_apply(): bool
                     ADD COLUMN last_attempt_at_utc datetime NULL");
             } catch (Throwable $uncertain) { /* DDL ACK may be lost; inspect the exact shape below. */ }
         }
-        if (sharity_donation_webhook_schema_shape() !== 2) { return false; }
+        if (sharity_donation_webhook_schema_shape() < 2) { return false; }
         update_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION, '1', false);
         return get_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION, '') === '1';
+    } catch (Throwable $error) { return false; }
+}
+
+/** Explicit compatible schema upgrade; NULL order/session only for account receipts. */
+function sharity_donation_webhook_account_schema_apply(): bool
+{
+    try {
+        sharity_donation_order_autocommit();
+        update_option(SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION,'0',false);
+        if (get_option(SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION,'') !== '0'
+            || !sharity_donation_webhook_finance_schema_apply()) { return false; }
+        if (sharity_donation_webhook_schema_shape() === 2) {
+            global $wpdb; $table = sharity_donation_webhook_table();
+            try {
+                $wpdb->query("ALTER TABLE `{$table}`
+                    MODIFY COLUMN order_id char(35) CHARACTER SET ascii COLLATE ascii_bin NULL,
+                    MODIFY COLUMN session_id varchar(255) CHARACTER SET ascii COLLATE ascii_bin NULL,
+                    ADD COLUMN account_key char(64) CHARACTER SET ascii COLLATE ascii_bin NULL");
+            } catch (Throwable $uncertain) { /* Verify exact shape, never blindly repeat. */ }
+        }
+        if (sharity_donation_webhook_schema_shape() !== 3) { return false; }
+        update_option(SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION,'1',false);
+        return get_option(SHARITY_DONATION_WEBHOOK_ACCOUNT_SCHEMA_OPTION,'') === '1';
     } catch (Throwable $error) { return false; }
 }
 
