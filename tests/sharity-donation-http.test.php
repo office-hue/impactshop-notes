@@ -154,4 +154,30 @@ foreach ([null,[],'../x','dq_'.str_repeat('a',32)."\n",'dq_'.str_repeat('A',32)]
 $cli=WP_CLI::$commands['sharity donations order-schema'];resetCase();$cli([],[]);check($calls===[] && end(WP_CLI::$messages)[0]==='error','CLI requires apply');
 $cli([],['apply'=>true]);check(callNames()===['schema'] && end(WP_CLI::$messages)[0]==='success','explicit CLI schema');
 resetCase();$schemaOk=false;$cli([],['apply'=>true]);check(callNames()===['schema'] && end(WP_CLI::$messages)[0]==='error','failed schema reported');
+// Optional module absent: owned reads stay usable with explicit unavailable.
+resetCase(); $r=request(); $r->url=['id'=>'do_'.str_repeat('b',32)];
+$out=sharity_donation_order_status_handle($r); expectResponse($out,200);
+check($out->body['financial']['status']==='unavailable' && $out->body['financial']['settlement']===null,'missing finance module explicit, never zero');
+check($out->body['order']===resultFixture('prepared'),'legacy order shape unchanged');
+if (!function_exists('sharity_donation_financial_read')) {
+    function sharity_donation_financial_read($subject,$id,$now):array {
+        $GLOBALS['calls'][]=['financial',$subject,$id];
+        if($GLOBALS['financialError']??false){throw new RuntimeException('PRIVATE_FINANCE');}
+        return ['version'=>1,'status'=>'pending','snapshot_at_utc'=>null,'settlement'=>null,'provisional_split'=>null,
+            'settlement_reconciled'=>false,'payout_verified'=>false,'ngo_bank_received'=>false];
+    }
+}
+foreach(['id','quote_id']as$field){
+    $handler=$field==='id'?'sharity_donation_order_status_handle':'sharity_donation_order_status_by_quote_handle';
+    resetCase();$r=request();$r->url=[$field=>($field==='id'?'do_':'dq_').str_repeat('b',32)];$r->query=[$field=>'evil','subject_ref'=>'evil'];
+    $out=$handler($r);expectResponse($out,200);
+    check(callNames()===['auth',$field==='id'?'status':'status_quote','financial'],'auth and owned read before finance');
+    check($calls[2][1]===ImpactShop_Sharity_Web_Session::$answer['subject_ref']&&$calls[2][2]===resultFixture()['id'],'finance uses canonical owner/order, never query');
+    check($out->body['financial']['status']==='pending'&&$out->body['order']===resultFixture('prepared'),'additive financial shape');
+    $calls=[];$storeError=new RuntimeException('ORDER_NOT_FOUND');expectResponse($handler($r),404);check(!in_array('financial',callNames(),true),'foreign/unknown no financial access');
+    resetCase();ImpactShop_Sharity_Web_Session::$answer=null;expectResponse($handler($r),401);check(callNames()===['auth'],'unauthenticated no finance');
+    resetCase();$financialError=true;$out=$handler($r);expectResponse($out,200);check($out->body['financial']['status']==='unavailable','optional reader failure explicit');$financialError=false;
+}
+resetCase();$out=sharity_donation_order_handle(request());expectResponse($out,200);
+check(!isset($out->body['financial'])&&!in_array('financial',callNames(),true),'checkout POST never invokes finance reader');
 echo "PASS donation HTTP boundary {$checks} checks; mocked auth/store only, no provider\n";

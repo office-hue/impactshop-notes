@@ -14,6 +14,19 @@ class TargetMysqli extends BackingMysqli {
     }
 }
 function targetConnection(string $fault=''):TargetMysqli{global $wpdb,$port;$wpdb->db->close();$db=new TargetMysqli('127.0.0.1','root','isolated-donation-test-only','donation_test',(int)$port);$db->set_charset('utf8mb4');$db->fault=$fault;$wpdb->db=$db;return$db;}
+// Reject all writes, transaction commands and locking reads during the real projection.
+class FinancialReadMysqli extends TargetMysqli {
+    public int $readQueries=0;
+    private function readOnly(string $sql):void { $this->readQueries++; if(!str_starts_with($sql,'SELECT ')||preg_match('/FOR UPDATE|LOCK IN SHARE/i',$sql)){throw new RuntimeException('unexpected financial read SQL');} }
+    public function query(string $sql,int $result_mode=MYSQLI_STORE_RESULT):mysqli_result|bool { $this->readOnly($sql);return parent::query($sql,$result_mode); }
+    public function prepare(string $sql):mysqli_stmt|false { $this->readOnly($sql);return parent::prepare($sql); }
+}
+function financialRead(array $o,?string $subject=null,?int $at=null):array {
+    global $wpdb,$port,$now;
+    $wpdb->db->close();$db=new FinancialReadMysqli('127.0.0.1','root','isolated-donation-test-only','donation_test',(int)$port);$db->set_charset('utf8mb4');$wpdb->db=$db;
+    try{$result=sharity_donation_financial_read($subject??$o['subject_ref'],$o['order_id'],$at??$now);check($db->readQueries<=5,'bounded stored SQL only');return$result;}
+    finally{targetConnection();}
+}
 try {
     check(sharity_donation_movement_schema_apply()&&sharity_donation_target_schema_apply(),'explicit target schema');
     [$o,$data,$saved]=targetFixture('BASE');$id=$o['order_id'];$gets=$financeHttp->gets;$posts=calls();$opts=$options;$before=targetCount();
@@ -224,5 +237,50 @@ try {
     sharity_donation_cli_finance_target([],['order'=>$id]);$cli=json_decode(end(WP_CLI::$lines),true);check($cli['proposal_digest']===targetDry($o)['proposal_digest'],'CLI exact target dry-run');
     sharity_donation_cli_finance_target([],['order'=>$id,'apply'=>$cli['proposal_digest']]);check(json_decode(end(WP_CLI::$lines),true)['persisted'],'CLI exact digest apply');
     fails(fn()=>sharity_donation_target_sum(999999999999999,1),'DONATION_TARGET_LIMIT');
+    $readStart=$checks;[$readOrder]=targetFixture('OWNERREAD');$readId=$readOrder['order_id'];
+    $getsBefore=$financeHttp->gets;$postsBefore=calls();$optsBefore=$options;
+    check(financialRead($readOrder)['status']==='pending','no target is pending, not zero or failure');
+    $readSaved=targetSave($readOrder);$view=financialRead($readOrder);
+    check($view['version']===1&&$view['status']==='snapshot'&&$view['snapshot_at_utc']===gmdate('Y-m-d\TH:i:s\Z',$now),'persisted snapshot date');
+    check($view['settlement']===[['currency'=>'HUF','inter_account_credit_minor'=>'0','donor_gross_minor'=>'50000','processing_cost_minor'=>'2000','application_fee_minor'=>'0','net_minor'=>'48000','observed_deficit_minor'=>'0']],'direct original gross fallback and exact minor values');
+    check($view['provisional_split']===['currency'=>'HUF','ngo_minor'=>'48000','fund_minor'=>'0'],'existing provisional target, not new arithmetic');
+    foreach(['settlement_reconciled','payout_verified','ngo_bank_received']as$flag){check($view[$flag]===false,'no financial acceptance '.$flag);}
+    $json=json_encode($view);foreach(['acct_','txn_','subject','digest','platform_totals','unresolved','policy']as$private){check(!str_contains($json,$private),'no private field '.$private);}
+    check(financialRead($readOrder,null,$now+100)===$view,'GET does not restamp historical data');
+    check(financialRead($readOrder,'hmac-sha256:'.str_repeat('f',64))['status']==='unavailable','other owner cannot read amounts');
+    check(financialRead($readOrder,'bad')['status']==='unavailable','invalid owner rejected');
+    $options[SHARITY_DONATION_ORDERS_ENABLED]='0';check(financialRead($readOrder)===$view,'historical read after disabling new checkout');$options=$optsBefore;
+    unset($options[SHARITY_DONATION_TARGET_SCHEMA_OPTION]);check(financialRead($readOrder)['status']==='unavailable','missing schema explicit');$options=$optsBefore;
+    check(financialRead($full)['settlement'][0]['net_minor']==='-2000'&&financialRead($full)['settlement'][0]['observed_deficit_minor']==='2000','refund deficit remains signed');
+    $multi=financialRead($fx);check(count($multi['settlement'])===2&&$multi['provisional_split']===null,'currencies not relabelled or combined');
+    $ampView=financialRead($fxq);check($ampView['settlement'][0]['currency']==='EUR'&&$ampView['settlement'][0]['donor_gross_minor']==='0','interaccount credit is not donor gross');
+    check($ampView['settlement'][0]['inter_account_credit_minor']==='1','actual native credit is explicit, not hidden in net');
+    $tt=sharity_donation_target_table();$raw=$wpdb->db->query($wpdb->prepare("SELECT document,digest,created_at_utc FROM `{$tt}` WHERE order_id=%s",$readId))->fetch_assoc();
+    foreach(['version','policy','payment-currency','minor','negative-zero','credit-pair','credit-invalid','credit-null','overflow','flag','split-currency','negative-split','missing-split','fifth-currency','future','zero-date','digest']as$case){
+        $doc=json_decode($raw['document'],true);$stamp=$raw['created_at_utc'];
+        if($case==='version'){$doc['target_version']=2;}
+        if($case==='policy'){$doc['policy']['votes']=1;$doc['policy_digest']=hash('sha256',sharity_donation_finance_json($doc['policy']));}
+        if($case==='payment-currency'){$doc['payment_currency']='USD';}
+        if($case==='minor'){$doc['connected_totals']['HUF']['gross_minor']=50000;}
+        if($case==='negative-zero'){$doc['connected_totals']['HUF']['net_minor']='-0';}
+        if($case==='credit-pair'){$doc['connected_totals']['HUF']['donor_gross_minor']='50000';}
+        if($case==='credit-invalid'){$doc['connected_totals']['HUF']['donor_gross_minor']='50000';$doc['connected_totals']['HUF']['inter_account_credit_minor']='-0';}
+        if($case==='credit-null'){$doc['connected_totals']['HUF']['donor_gross_minor']='50000';$doc['connected_totals']['HUF']['inter_account_credit_minor']=null;}
+        if($case==='overflow'){$doc['connected_totals']['HUF']['net_minor']='1000000000000000';}
+        if($case==='flag'){$doc['payment_verified']=true;}
+        if($case==='split-currency'){$doc['provisional_split']['currency']='EUR';}
+        if($case==='negative-split'){$doc['provisional_split']['ngo_minor']='-1';}
+        if($case==='missing-split'){unset($doc['provisional_split']);}
+        if($case==='fifth-currency'){$doc['connected_totals']=array_fill_keys(['HUF','EUR','USD','GBP','JPY'],$doc['connected_totals']['HUF']);}
+        if($case==='future'){$stamp=gmdate('Y-m-d H:i:s',$now+1);}
+        if($case==='zero-date'){$stamp='0000-00-00 00:00:00';}
+        $body=sharity_donation_finance_json($doc);$hash=$case==='digest'?str_repeat('0',64):hash('sha256',$body);
+        $wpdb->db->query($wpdb->prepare("UPDATE `{$tt}` SET document=%s,digest=%s,created_at_utc=%s WHERE order_id=%s",$body,$hash,$stamp,$readId));
+        $bad=financialRead($readOrder);check($bad['status']==='unavailable'&&$bad['settlement']===null&&$bad['provisional_split']===null,'corruption not partial success '.$case);
+    }
+    $wpdb->db->query($wpdb->prepare("UPDATE `{$tt}` SET document=%s,digest=%s,created_at_utc=%s WHERE order_id=%s",$raw['document'],$raw['digest'],$raw['created_at_utc'],$readId));
+    check(financialRead($readOrder)===$view&&sharity_donation_webhook_order($readId)===$readOrder,'restored fixture exact, order unchanged');
+    check($financeHttp->gets===$getsBefore&&calls()===$postsBefore&&$options===$optsBefore,'no provider or option writes');
+    echo 'D2s financial owner read MariaDB: '.($checks-$readStart)." checks\n";
     echo 'Donation target MariaDB: '.($checks-$targetStart)." checks; exact net, per-currency, registry, stale and native concurrent/commit faults\n";
 } finally {targetConnection();}

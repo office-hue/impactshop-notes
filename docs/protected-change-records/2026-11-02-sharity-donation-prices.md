@@ -775,3 +775,45 @@ D2r lezáró helyi ellenőrzés: teljes meglévő protected inventory nulla drif
 izolált hash/checksum eset PASS; kizárólag webhook.php/finance-read.php saját pinje
 változott. Guardlogika/inventory/idegen pin érintetlen. A saját loopback/tmpfs MariaDB-
 konténer eltávolítva és hiánya visszaolvasva; nincs image pull vagy közös függőségírás.
+
+
+## 76. D2s — saját rendelés tárolt pénzügyi nézete (előkészítés, 2026-11-03)
+
+Saját N324c6e65/A015b5e00d. D2r nyilvános push külön jóváhagyásra vár; ez a
+helyi implementációt nem állítja meg. Hermes053 csak már közzétett d45-ből
+byteazonos, szűrt forrást kap. Első kidolgozás, nem előre megoldott patch.
+Scope: existing finance-ledger.php owner-only bounded snapshot reader, két
+existing HTTP GET top-level financial mező és célzott HTTP/native DB teszt.
+Checkout POST és belső order-status változatlan; nincs rekurzió, provider/DDL/
+DML/zárolás/új személyes előzmény, explicit unavailable részleges telepítéskor.
+Kockázat: idegen rendelés pénzadata, hamis aktuális/fizetett/NGO-bank állítás,
+sérült vagy más policy alatti snapshot, float egységhiba. Azonos tulajdonosi
+404/no-store, validált signed minor értékek és történeti dátum; nincs account/
+providerazonosító vagy nyers napló a válaszban. Provisional nem kifizetett.
+Funkciópróba: mindkét saját státusz GET, auth-first/idegen/hibás adatok/hiányos
+modul, tárolt régi target/refund, nulla írás és providerhívás; meglévő POST és
+readonly működés kikapcsolt új indításnál. Kézi UI kiadáskor: login/saját státusz,
+négy nyelv/összeg, dátum és előzetes felirat, nulla téves siker vagy fizetésindítás.
+Existing exact-file rollout: kompatibilis olvasó előbb, HTTP után, web parser
+később. Saját fájl/pin rollback, pénzügyi adatok megőrzése, séma nem változik.
+Nincs mainablak, provider írás, merge/deploy/aktiválás.
+
+
+### D2s helyi integráció — 2026-11-03
+
+Saját két pénzügyi PHP-fájl és három teszt változik, új séma/modul nélkül.
+Két meglévő authenticated GET owner-only snapshot; eredeti order/checkout
+megmarad. Hiányos modul/séma/adat explicit unavailable, tárolt target dátummal,
+eredeti signed minor/deviza; nincs provider/írás/zár/új hosszú előzmény.
+1839 natív MariaDB (72 új),309 HTTP,437 finance/CLI,13 runtime sikeres;
+web65+scoped TypeScript sikeres. Review: rejtett credit és null→0 lelet javítva/tesztelve, végső független visszaolvasás leletmentes; reviewer nem futtatott tesztet.
+Hermes053 részben átvett, helyben javított;41968token,becsültUSD0.004442802,
+tényleges/Codex-összköltség ismeretlen. Nincs retry/fallback/JEV.
+Részletes szerződés/érintettség/backup/rollback/UI-checklist:
+protected-change-records/2026-11-02-sharity-donation-prices.md§76.
+D2r324c6e65 már remote-visszaolvasott; D2s még helyi, nem commit/push/release.
+Nincs nyitott csendablak, merge, telepítés, aktiválás vagy élő elfogadás.
+
+A technikai díj visszaírása külön signed minor mező; a történeti v1-ben csak
+a credit/donor_gross mezőpár teljes hiánya jelenti a0 visszaírást. Jelen lévő
+null vagy hibás érték unavailable; nincs új pénzügyi számítás.

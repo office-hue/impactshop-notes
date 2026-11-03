@@ -8778,3 +8778,23 @@ részleges átvétel jelentős Codex-javítással, nincs redispatch/JEV/fallback
 Szerződés, kockázat, kiadás, rollback és kézi UI-checklist: protected-record §75.
 Saját termék és kétpin-baseline külön commit; nincs main/merge/deploy/aktiválás.
 A teljes adományozás/Amplifier/affiliate/Offerwall/nyelvi cél, VB7/Sharing12 nyitott.
+
+
+### D2s helyi integráció — 2026-11-03
+
+Saját két pénzügyi PHP-fájl és három teszt változik, új séma/modul nélkül.
+Két meglévő authenticated GET owner-only snapshot; eredeti order/checkout
+megmarad. Hiányos modul/séma/adat explicit unavailable, tárolt target dátummal,
+eredeti signed minor/deviza; nincs provider/írás/zár/új hosszú előzmény.
+1839 natív MariaDB (72 új),309 HTTP,437 finance/CLI,13 runtime sikeres;
+web65+scoped TypeScript sikeres. Review: rejtett credit és null→0 lelet javítva/tesztelve, végső független visszaolvasás leletmentes; reviewer nem futtatott tesztet.
+Hermes053 részben átvett, helyben javított;41968token,becsültUSD0.004442802,
+tényleges/Codex-összköltség ismeretlen. Nincs retry/fallback/JEV.
+Részletes szerződés/érintettség/backup/rollback/UI-checklist:
+protected-change-records/2026-11-02-sharity-donation-prices.md§76.
+D2r324c6e65 már remote-visszaolvasott; D2s még helyi, nem commit/push/release.
+Nincs nyitott csendablak, merge, telepítés, aktiválás vagy élő elfogadás.
+
+A technikai díj visszaírása külön signed minor mező; a történeti v1-ben csak
+a credit/donor_gross mezőpár teljes hiánya jelenti a0 visszaírást. Jelen lévő
+null vagy hibás érték unavailable; nincs új pénzügyi számítás.

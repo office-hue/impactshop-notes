@@ -293,7 +293,9 @@ try {
         ImpactShop_Sharity_Web_Session::$subject = $other;
         check(sharity_donation_order_status_handle($request)->status === 404, 'HTTP cannot read other owner');
         ImpactShop_Sharity_Web_Session::$subject = $subject;
-        check(sharity_donation_order_status_handle($request)->body === $response->body, 'HTTP own status after disable');
+        $read = sharity_donation_order_status_handle($request);
+        check($read->body['order'] === $response->body['order'] && $read->body['ok'] === true
+            && $read->body['financial']['status'] === 'unavailable', 'HTTP own status after disable, optional finance missing');
         $options[SHARITY_DONATION_ORDERS_ENABLED] = '1';
     }
     $request = new WP_REST_Request(['quote_id' => fixtureQuote(), 'locale' => 'en'], 'http-uncertain-' . $nonce);

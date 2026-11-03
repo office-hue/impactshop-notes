@@ -35,9 +35,9 @@ function sharity_donation_order_map_error(Throwable $error): WP_REST_Response
     return sharity_donation_quote_error($code, $status);
 }
 
-function sharity_donation_order_response(array $status): WP_REST_Response
+function sharity_donation_order_response(array $status, ?array $financial = null): WP_REST_Response
 {
-    return sharity_donation_quote_private(['ok' => true, 'order' => $status],
+    return sharity_donation_quote_private(['ok' => true, 'order' => $status] + ($financial === null ? [] : ['financial'=>$financial]),
         $status['state'] === 'reconciliation_required' ? 202 : 200);
 }
 
@@ -67,6 +67,18 @@ function sharity_donation_order_handle(WP_REST_Request $request): WP_REST_Respon
     } catch (Throwable $error) { return sharity_donation_order_map_error($error); }
 }
 
+/** Optional finance file may be absent during exact-file rollout. */
+function sharity_donation_order_financial(string $subject, string $orderId, int $now): array
+{
+    if (is_callable('sharity_donation_financial_read')) {
+        try { return sharity_donation_financial_read($subject, $orderId, $now); }
+        catch (Throwable $error) { /* Preserve the owned historical order response. */ }
+    }
+    return ['version'=>1, 'status'=>'unavailable', 'snapshot_at_utc'=>null,
+        'settlement'=>null, 'provisional_split'=>null, 'settlement_reconciled'=>false,
+        'payout_verified'=>false, 'ngo_bank_received'=>false];
+}
+
 function sharity_donation_order_status_handle(WP_REST_Request $request): WP_REST_Response
 {
     $session = sharity_donation_order_authorize($request);
@@ -75,7 +87,8 @@ function sharity_donation_order_status_handle(WP_REST_Request $request): WP_REST
         // WP's merged request['id'] can be overridden by query/JSON. URL only.
         $id = $request->get_url_params()['id'] ?? null;
         if (!is_string($id) || !preg_match('/^do_[a-f0-9]{32}$/D', $id)) { return sharity_donation_quote_error('INVALID_REQUEST', 400); }
-        return sharity_donation_order_response(sharity_donation_order_status($session['subject_ref'], $id, time()));
+        $now = time(); $status = sharity_donation_order_status($session['subject_ref'], $id, $now);
+        return sharity_donation_order_response($status, sharity_donation_order_financial($session['subject_ref'], $status['id'], $now));
     } catch (Throwable $error) { return sharity_donation_order_map_error($error); }
 }
 
@@ -87,7 +100,8 @@ function sharity_donation_order_status_by_quote_handle(WP_REST_Request $request)
         // URL route param only; merged query/JSON values must never select the quote.
         $quoteId = $request->get_url_params()['quote_id'] ?? null;
         if (!is_string($quoteId) || !preg_match('/^dq_[a-f0-9]{32}$/D', $quoteId)) { return sharity_donation_quote_error('INVALID_REQUEST', 400); }
-        return sharity_donation_order_response(sharity_donation_order_by_quote($session['subject_ref'], $quoteId, time()));
+        $now = time(); $status = sharity_donation_order_by_quote($session['subject_ref'], $quoteId, $now);
+        return sharity_donation_order_response($status, sharity_donation_order_financial($session['subject_ref'], $status['id'], $now));
     } catch (Throwable $error) { return sharity_donation_order_map_error($error); }
 }
 

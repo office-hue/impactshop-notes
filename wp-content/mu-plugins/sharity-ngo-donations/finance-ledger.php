@@ -1235,6 +1235,79 @@ function sharity_donation_target_read(callable $q, string $where, array $params)
         || $time===false || $time->format('Y-m-d H:i:s')!==$r['created_at_utc'] || (int)$r['economic_generation']>(int)$r['revision']) { throw new RuntimeException('DONATION_TARGET_CONFLICT'); }
     return $r;
 }
+/** D2s: owner-only projection of the last persisted target. Never a live
+ * provider check or a recomputation. No transaction, write, lock or SDK call. */
+function sharity_donation_financial_read_base(string $status): array
+{
+    return ['version'=>1, 'status'=>$status, 'snapshot_at_utc'=>null,
+        'settlement'=>null, 'provisional_split'=>null, 'settlement_reconciled'=>false,
+        'payout_verified'=>false, 'ngo_bank_received'=>false];
+}
+
+function sharity_donation_financial_read(string $subject, string $orderId, int $now): array
+{
+    try {
+        if (!preg_match('/^do_[a-f0-9]{32}$/D', $orderId) || $now < 1) { throw new RuntimeException(); }
+        $order = sharity_donation_order_read($subject, 'order_id', $orderId);
+        if ($order === null) { throw new RuntimeException(); }
+        // Keep the internal order_status/public contract free of financial reads.
+        $public = sharity_donation_order_public($order, $now);
+        $snapshot = sharity_donation_order_decode($order)['snapshot'];
+        if (get_option(SHARITY_DONATION_TARGET_SCHEMA_OPTION) !== '1') { throw new RuntimeException(); }
+        if ($public['state'] !== 'session_recorded') { return sharity_donation_financial_read_base('pending'); }
+        [, $q] = sharity_donation_backing_db();
+        $saved = sharity_donation_target_read($q, 'WHERE order_id = ? ORDER BY revision DESC LIMIT 1', [$orderId]);
+        if ($saved === null) { return sharity_donation_financial_read_base('pending'); }
+        $target = json_decode($saved['document'], true, 64, JSON_THROW_ON_ERROR);
+        $policy = array_intersect_key($snapshot, array_flip(['policy_version','donation_mode','ngo_slug','account_id','livemode','currency','amount_minor','package_id','votes','price_book_version','binding_version']));
+        $policyJson = sharity_donation_finance_json($policy);
+        if (($target['target_version'] ?? null) !== 1 || ($target['order_id'] ?? null) !== $orderId
+            || ($target['status'] ?? null) !== 'reconciliation_required'
+            || sharity_donation_finance_json($target['policy'] ?? null) !== $policyJson
+            || ($target['policy_digest'] ?? null) !== hash('sha256', $policyJson)
+            || ($target['payment_currency'] ?? null) !== $snapshot['currency']
+            || ($target['full_liability_status'] ?? null) !== 'unknown') { throw new RuntimeException(); }
+        foreach (['payment_verified','allocation_eligible','settlement_reconciled','activation_allowed'] as $flag) {
+            if (($target[$flag] ?? null) !== false) { throw new RuntimeException(); }
+        }
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $saved['created_at_utc'], new DateTimeZone('UTC'));
+        if (!$date || $date->format('Y-m-d H:i:s') !== $saved['created_at_utc']
+            || $date->getTimestamp() < 1 || $date->getTimestamp() > $now) { throw new RuntimeException(); }
+        $totals = $target['connected_totals'] ?? null;
+        if (!is_array($totals) || count($totals) < 1 || count($totals) > 4
+            || !is_string($target['connected_settlement_currency'] ?? null)
+            || !isset($totals[$target['connected_settlement_currency']])) { throw new RuntimeException(); }
+        ksort($totals, SORT_STRING); $rows = [];
+        foreach ($totals as $currency => $bucket) {
+            if (!in_array($currency, ['HUF','EUR','USD','GBP'], true) || !is_array($bucket)) { throw new RuntimeException(); }
+            // V1 adds these two fields together only for a fee-refund credit.
+            if (array_key_exists('inter_account_credit_minor', $bucket) !== array_key_exists('donor_gross_minor', $bucket)) { throw new RuntimeException(); }
+            $credit = array_key_exists('inter_account_credit_minor', $bucket) ? $bucket['inter_account_credit_minor'] : '0';
+            sharity_donation_finance_minor($credit);
+            $row = ['currency'=>$currency, 'inter_account_credit_minor'=>$credit];
+            foreach (['donor_gross_minor','processing_cost_minor','application_fee_minor','net_minor','observed_deficit_minor'] as $field) {
+                $value = $field === 'donor_gross_minor' && !array_key_exists($field, $bucket) ? ($bucket['gross_minor'] ?? null) : ($bucket[$field] ?? null);
+                $number = sharity_donation_finance_minor($value);
+                if ($field === 'observed_deficit_minor' && $number < 0) { throw new RuntimeException(); }
+                $row[$field] = $value;
+            }
+            $rows[] = $row;
+        }
+        if (!array_key_exists('provisional_split', $target)) { throw new RuntimeException(); }
+        $split = $target['provisional_split'];
+        if ($split !== null) {
+            if (!is_array($split) || count($totals) !== 1
+                || ($split['currency'] ?? null) !== $target['connected_settlement_currency']
+                || sharity_donation_finance_minor($split['ngo_minor'] ?? null) < 0
+                || sharity_donation_finance_minor($split['fund_minor'] ?? null) < 0
+                || ($snapshot['donation_mode'] === 'direct' && $split['fund_minor'] !== '0')) { throw new RuntimeException(); }
+            $split = ['currency'=>$split['currency'], 'ngo_minor'=>$split['ngo_minor'], 'fund_minor'=>$split['fund_minor']];
+        }
+        return array_replace(sharity_donation_financial_read_base('snapshot'), [
+            'snapshot_at_utc'=>$date->format('Y-m-d\TH:i:s\Z'), 'settlement'=>$rows, 'provisional_split'=>$split]);
+    } catch (Throwable $error) { return sharity_donation_financial_read_base('unavailable'); }
+}
+
 /** CLI-only dry-run/apply. No provider call; no backing mutation or funds release. */
 function sharity_donation_finance_target(string $orderId, int $now, string $applyDigest=''): array
 {
