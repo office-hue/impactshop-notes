@@ -2552,3 +2552,16 @@ Hermes066/067: becsültUSD0.0060688446/0.0061410076, teljes költség ismeretlen
 jelentős Codex javítás.067outbox acknowledged külön readbackkel.
 Részletes kockázat/teszt/séma/kiadás/rollback: protected record §90.
 Nincs mainablak/merge/telepítés/aktiválás, public N új csomagjai helyiek.
+
+
+## D3a — Amplifier szavazati célszámítás, 2026-11-03
+
+Eredeti fizetési grossból számított, deduplikált refundarány; vitás hold külön.
+Trusted vote-target CLI, csak tárolt megfigyelésből, no grant/write/provider.
+8312MariaDB(689D3a),447finance-read,17runtime,lint/diff; független source review
+lezárt. Hermes068 részben átvéve, jelentős integrációs javítás;43608 token,
+1API, becsültUSD0.004612335, tényleges költség/megtakarítás ismeretlen;
+Secretary terminal külön remote-readback igazolt. Részletek/rollback/UI:
+protected-change-records/2026-11-02-sharity-donation-prices.md §91.
+Nyilvános push függő, mainablak/merge/deploy/aktiválás nincs. Az élő Stripe
+connected-account lista üres; tartós jogosultság és teljes pénzügyi cél nyitott.

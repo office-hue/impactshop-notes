@@ -2602,3 +2602,129 @@ function sharity_donation_fee_account(string $op,string $digest,array $input,int
         return[sharity_donation_fee_account_result($account,$apply),$read];
     });
 }
+
+/** Order-backed vote arithmetic only; no grant, wallet mutation or financial acceptance. */
+function sharity_donation_vote_target(string $orderId, int $now): array
+{
+    try {
+        if (PHP_INT_SIZE < 8 || $now < 1 || !preg_match('/^do_[a-f0-9]{32}$/D', $orderId)) { throw new RuntimeException(); }
+        $order = sharity_donation_webhook_order($orderId);
+        $status = sharity_donation_order_status($order['subject_ref'], $orderId, $now);
+        if ($order['state'] !== 'session_recorded' || $status['state'] !== 'session_recorded') { throw new RuntimeException(); }
+        $snapshot = sharity_donation_order_decode($order)['snapshot'];
+        $inventory = sharity_donation_finance_reconcile($orderId, $now);
+        // The accepted payment nominal is the denominator, never a settlement/FX balance.
+        $gross = (int) $snapshot['amount_minor']; $votes = $snapshot['votes'];
+        $refunds = []; $disputes = []; $reasons = []; $totalBytes = 0; $paidSeen = false;
+        global $wpdb; $table = sharity_donation_finance_table();
+        foreach ($inventory['evidence_digests'] as $digest) {
+            $limit = SHARITY_DONATION_FINANCE_MAX_BYTES + 1;
+            $row = $wpdb->get_row($wpdb->prepare("SELECT id, order_id, account_id, livemode, donation_mode, provider_session_id, SUBSTRING(CAST(canonical_json AS BINARY),1,{$limit}) AS canonical_json, digest, observed_at_utc FROM `{$table}` WHERE order_id = %s AND digest = %s", $orderId, $digest), ARRAY_A);
+            if ($wpdb->last_error !== '' || !is_array($row) || !is_string($row['canonical_json'] ?? null)) { throw new RuntimeException(); }
+            $bytes = strlen($row['canonical_json']); $totalBytes += $bytes;
+            if ($bytes > SHARITY_DONATION_FINANCE_MAX_BYTES || $totalBytes > 16 * 1024 * 1024) { throw new RuntimeException('DONATION_VOTE_TARGET_LIMIT'); }
+            sharity_donation_finance_receipt($row, ['order_id' => $orderId, 'account_id' => $snapshot['account_id'],
+                'livemode' => $snapshot['livemode'] ? '1' : '0', 'donation_mode' => $snapshot['donation_mode'],
+                'provider_session_id' => $order['provider_session_id'], 'digest' => $digest]);
+            $e = json_decode($row['canonical_json'], true, 64, JSON_THROW_ON_ERROR);
+            if (!is_array($e) || sharity_donation_finance_json($e) !== $row['canonical_json']) { throw new RuntimeException(); }
+            $original = $e['original'];
+            foreach (['order_id' => $orderId, 'account_id' => $snapshot['account_id'], 'livemode' => $snapshot['livemode'],
+                'session_id' => $order['provider_session_id'], 'donation_mode' => $snapshot['donation_mode'],
+                'payment' => ['amount_minor' => $snapshot['amount_minor'], 'currency' => $snapshot['currency']]] as $key => $value) {
+                if (($original[$key] ?? null) !== $value) { throw new RuntimeException(); }
+            }
+            // A historical unpaid observation does not override a later proven charge.
+            if ($original['evidence_state'] === 'payment_pending') { continue; }
+            $paidSeen = true;
+            $localSucceeded = 0; $localNonfailed = 0; $localComplete = true;
+            foreach ($e['refunds'] as $r) {
+                $id = sharity_donation_finance_id($r['id'] ?? null, 're');
+                if (!isset($r['amount_minor'], $r['currency'], $r['status'], $r['created'])) {
+                    $reasons[] = 'refund_nominal_missing'; $localComplete = false; continue;
+                }
+                $amount = sharity_donation_finance_minor($r['amount_minor']); $state = $r['status'];
+                if ($amount <= 0 || $amount > $gross || $r['currency'] !== $snapshot['currency']
+                    || !is_int($r['created']) || $r['created'] <= 0
+                    || !in_array($state, ['pending', 'requires_action', 'succeeded', 'failed', 'canceled'], true)) {
+                    throw new RuntimeException('DONATION_VOTE_TARGET_CONFLICT');
+                }
+                $facts = [$r['amount_minor'], $r['currency'], $r['created']];
+                if (isset($refunds[$id]) && $refunds[$id]['facts'] !== $facts) { throw new RuntimeException('DONATION_VOTE_TARGET_CONFLICT'); }
+                $refunds[$id] ??= ['facts' => $facts, 'amount' => $amount, 'states' => []];
+                $refunds[$id]['states'][$state] = true;
+                if ($state === 'succeeded') { $localSucceeded += $amount; }
+                if (!in_array($state, ['failed', 'canceled'], true)) { $localNonfailed += $amount; }
+            }
+            // The charge and list are separate service reads: an aggregate gap is not a refund.
+            $aggregate = $original['charge_refund_state']['amount_refunded_minor'] ?? null;
+            if ($aggregate === null) { $reasons[] = 'refund_aggregate_missing'; }
+            elseif ($localComplete) {
+                $aggregate = sharity_donation_finance_minor($aggregate);
+                if ($aggregate < $localSucceeded || $aggregate > $localNonfailed || $aggregate > $gross) {
+                    $reasons[] = 'refund_aggregate_mismatch';
+                }
+            }
+            if (($original['disputed'] ?? null) === true && $e['disputes'] === []) { $reasons[] = 'dispute_history_missing'; }
+            if (!is_bool($original['disputed'] ?? null)) { $reasons[] = 'dispute_history_missing'; }
+            foreach ($e['disputes'] as $d) {
+                $id = sharity_donation_finance_id($d['id'] ?? null, '(?:dp|du)');
+                if (!isset($d['amount_minor'], $d['currency'], $d['created'], $d['status'])) { $reasons[] = 'dispute_nominal_missing'; continue; }
+                $amount = sharity_donation_finance_minor($d['amount_minor']); $state = $d['status'];
+                if ($amount <= 0 || !in_array($d['currency'], ['HUF', 'EUR', 'USD', 'GBP'], true)
+                    || !is_int($d['created']) || $d['created'] <= 0
+                    || !in_array($state, ['warning_needs_response', 'warning_under_review', 'warning_closed', 'needs_response',
+                        'under_review', 'won', 'lost', 'appeal_needs_response', 'appeal_under_review', 'prevented'], true)) {
+                    throw new RuntimeException('DONATION_VOTE_TARGET_CONFLICT');
+                }
+                $facts = [$d['amount_minor'], $d['currency'], $d['created']];
+                if (isset($disputes[$id]) && $disputes[$id]['facts'] !== $facts) { throw new RuntimeException('DONATION_VOTE_TARGET_CONFLICT'); }
+                $disputes[$id] ??= ['facts' => $facts, 'states' => []]; $disputes[$id]['states'][$state] = true;
+                if (in_array($state, ['won', 'lost'], true) && $d['balances'] === []) { $reasons[] = 'dispute_balance_missing'; }
+            }
+        }
+        ksort($refunds, SORT_STRING); ksort($disputes, SORT_STRING);
+        $confirmed = 0; $confirmedIds = []; $refundHold = false;
+        foreach ($refunds as $id => $r) {
+            // Pending -> one terminal outcome is compatible in either observation order.
+            $terminal = array_intersect(array_keys($r['states']), ['succeeded', 'failed', 'canceled']);
+            if (count($terminal) > 1) { throw new RuntimeException('DONATION_VOTE_TARGET_CONFLICT'); }
+            if ($terminal === []) { $refundHold = true; continue; }
+            if (isset($r['states']['succeeded'])) { $confirmed += $r['amount']; $confirmedIds[] = $id; }
+        }
+        if ($confirmed > $gross) { throw new RuntimeException('DONATION_VOTE_TARGET_CONFLICT'); }
+        if ($refundHold) { $reasons[] = 'refund_pending'; }
+        $disputeHold = false;
+        foreach ($disputes as $d) {
+            $states = array_keys($d['states']);
+            $closed = array_intersect($states, ['won', 'warning_closed', 'prevented']);
+            // These observations have no resource update sequence. Mixed closed/open
+            // histories may be a reopened dispute; only unambiguous closed-only proof releases.
+            if (count($states) !== 1 || count($closed) !== 1) { $disputeHold = true; }
+            if (count($states) > 1) { $reasons[] = 'dispute_history_ambiguous'; }
+        }
+        foreach ($reasons as $reason) { if (str_starts_with($reason, 'dispute_')) { $disputeHold = true; } }
+        if ($disputeHold) { $reasons[] = 'dispute_hold'; }
+        if (!$paidSeen) { $reasons[] = 'payment_not_observed'; }
+        $unavailable = !$paidSeen || $refundHold;
+        foreach ($reasons as $reason) {
+            if (str_starts_with($reason, 'refund_')) { $unavailable = true; }
+        }
+        // A dispute hold is not a final refund/revocation: keep the arithmetic separate.
+        $target = $snapshot['donation_mode'] === 'direct' ? 0 : ($unavailable ? null : intdiv($votes * ($gross - $confirmed), $gross));
+        $reasons = array_values(array_unique($reasons)); sort($reasons, SORT_STRING);
+        $result = ['vote_target_version' => 1, 'scope' => 'persisted_observations_only', 'order_id' => $orderId,
+            'donation_mode' => $snapshot['donation_mode'], 'policy_digest' => hash('sha256', sharity_donation_finance_json($snapshot)),
+            'original_votes' => $votes, 'original_gross_minor' => $snapshot['amount_minor'], 'payment_currency' => $snapshot['currency'],
+            'confirmed_refund_gross_minor' => (string) $confirmed, 'confirmed_refund_ids' => $confirmedIds,
+            'remaining_vote_target' => $target, 'remaining_vote_target_status' => $target === null ? 'unavailable' : ($disputeHold || $unavailable ? 'held' : 'observed'),
+            'dispute_hold' => $disputeHold, 'reasons' => $reasons, 'evidence_set_digest' => $inventory['evidence_set_digest'],
+            'grant_supported' => false, 'activation_allowed' => false, 'execute_supported' => false, 'allocation_eligible' => false,
+            'payment_verified' => false, 'settlement_reconciled' => false, 'financial_acceptance' => false, 'atomic_snapshot' => false];
+        $result['target_digest'] = hash('sha256', sharity_donation_finance_json($result));
+        return $result;
+    } catch (Throwable $error) {
+        $allowed = ['DONATION_VOTE_TARGET_LIMIT', 'DONATION_VOTE_TARGET_CONFLICT', 'DONATION_RECONCILE_LIMIT', 'DONATION_RECONCILE_CONFLICT'];
+        throw new RuntimeException(in_array($error->getMessage(), $allowed, true) ? $error->getMessage() : 'DONATION_VOTE_TARGET_UNAVAILABLE');
+    }
+}

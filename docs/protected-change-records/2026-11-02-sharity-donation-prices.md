@@ -1809,3 +1809,69 @@ Rollback: új fee-account indítás leállítása, kompatibilis accounted-olvas�
 régi eseményfeldolgozás megtartása. Élő pénzügyi sor fölé nincs DB-restore;
 korábbi accounted-et nem értő ledger nem másolható vakon vissza.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.
+
+
+## 91. D3a — rendeléshez kötött szavazati célszámítás, előkészítés
+
+Jóváhagyott D3 része; első draft Hermes068, Codex integrál/tesztel. Additív,
+csak olvasó függvény a meglévő finance-ledgerben és trusted vote-target CLI a
+finance-readben. Nem módosít sémát, tárcát, pontot, castot, flaget, rendelést
+vagy szolgáltatót. Fő kockázat: fizetési és settlement egység összekeverése,
+dupla refund, függő/vitás állapot hamis véglegesítése. Kanonikus snapshot,
+pontos eredeti devizás refund és külön dispute-hold szükséges. A két érintett
+modul jelenlegi olvasó/CLI szerződése megmarad; saját hashük csak célzott
+ellenőrzés után, külön commitban frissül. Nincs új guard/release-mechanizmus.
+A korábbi pénzügyi tervaudit megmarad; új pénz- vagy jogosultsági írás nincs.
+
+Teszt: saját izolált MariaDB, offline SDK, ötféle csomag/négy deviza,
+részleges/teljes/refund státuszátmenet, eltérő settlement, idempotens és
+sorrendfüggetlen megfigyelések, sérült adatok, dispute, szigorú CLI, nulla írás.
+Rollback: csak saját két fájl előző kompatibilis byte-jai; új DB-adat nincs.
+Kiadás a meglévő Notes exact-file út, függvény előbb, CLI utána; jelenleg
+nem fut telepítés. UI checklist a későbbi kiadáskor: /adomanyozas/<ngo>
+meglévő két út/összeg/nyelv/belépés és saját rendelés olvasása változatlan;
+az új CLI nem ad új látható szavazatot. Éles UI-próba még nem történt.
+
+
+### D3a eredmény és érvényes határ — 2026-11-03
+
+Az új vote-target a rögzített rendelés eredeti fizetési összegét használja;
+FX/settlement/díj nem változtatja meg a szavazati arányt. Egyedi sikeres refund
+összege egyszer számít. Pending→egyetlen terminal kompatibilis, eltérő terminal
+vagy immutable tény hibás. Hiányzó nominális adat/aggregate vagy pending esetén
+az Amplifier-cél nem állapítható meg; közvetlen adomány szavazata0. A dispute
+külön hold, nem végleges szavazatnullázás. Bizonytalan újranyitási sorrend nem
+oldódik fel helyi sorszám/idő alapján. A meglévő reconcile által validált,
+rögzített digesthalmazt olvassa vissza szigorú byte/hash/header ellenőrzéssel.
+Nincs új tábla, migráció, providerhívás, pont/tárca/cast/flag/pénzügyi írás.
+Minden grant/execute/activation/financial-acceptance jelzőfalse; ez megfigyelési
+célszámítás, nem kiadott jogosultság vagy végleges pénzügyi állapot.
+
+Ténylegesen futott: `SHARITY_DONATION_TEST_PORT=33387 php -d memory_limit=512M
+tests/sharity-donation-orders-mysql.test.php`: 8312 sikeres valós izolált
+MariaDB-ellenőrzés, ebből689 D3a. Öt csomag/négy deviza, kerekítés, ismétlés,
+eltérő beérkezési sorrend, state transition, FX, hiányos/sérült bizonylat,
+vita, refund aggregate és no-write SQL-tranzakció. Finance-read447, runtime17,
+PHP lint és diff-check sikeres. Az első, alap128MiB futás a már meglévő nagy
+SDK-fixture-nél memóriahibával állt le, nem PASS; csak helyi processzlimit nőtt.
+Független célzott source review nem talált fennmaradó hibát; tesztet a reviewer
+nem futtatott. A meglévő reconcile által már tiltott incomplete-paid-evidence
+lelet visszavonva, külön regresszió bizonyítja a tényleges tiltást.
+
+Hermes068 execution c5768669-cb5f-4ef2-9477-86a356ac2126: 36531 input +7077
+output=43608 token,1 API, becsültUSD0.004612335. Tényleges teljes díj és
+megtakarítás ismeretlen. A javaslat alapja részben átvéve, jelentős Codex
+javítás: rossz settlement denominator; rendezetlen digest/újrafelfedezett set;
+státuszfüggő refund dedupe; hiányzó aggregate-ellenőrzés; dispute holdból
+végleges nulla; hiányzó CLI-regisztráció és hibás/hiányos teszt. Nincs újragenerálás,
+fallback vagy JEV. Secretary terminal remote ACK és külön readback:
+chk-e33e9e5d-ff2b-4b04-bdf6-0ed4599a67ab. A termékátvétel külön checkpoint.
+
+Következő: tartós, rendeléshez kötött fizetett jogosultság és atomi cast/refund/
+zárás; ugyanazon bizonyíték nem lesz másodszor jóváírható, generikus earn/spend
+nem adhat fizetett jogosultságot. Fedezett pénzügyi felszabadítás/allokáció,
+alapcredit és aktiválás továbbra külön nyitott feltétel. A direct pilothoz a
+Stripe élő connected-account lista friss olvasása üres; a már jóváhagyott
+alapítványi bankszámlatulajdont nem kérdezzük újra. Nincs élő Stripe-írás.
+Nyilvános N-push külön pontos engedélyre vár; mainablak nincs. Kiadás/merge/
+aktiválás/UI- és pénzügyi elfogadás nem történt. Teljes goal nyitott.

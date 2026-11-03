@@ -200,6 +200,7 @@ try {
         $wpdb->db->query($restore); check(sharity_donation_finance_schema_apply(),'explicit fixture repair verified');
     }
     require __DIR__ . '/sharity-donation-finance-reconcile-mysql.test.php';
+    require __DIR__ . '/sharity-donation-vote-target-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-movements-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-backing-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-target-mysql.test.php';

@@ -573,3 +573,20 @@ function sharity_donation_cli_fee_account(array $args,array $assoc): void
 if(defined('WP_CLI')&&WP_CLI&&class_exists('WP_CLI')){
     WP_CLI::add_command('sharity donations fee-account','sharity_donation_cli_fee_account');
 }
+
+/** Trusted local arithmetic inspection; no write/apply variant. */
+function sharity_donation_cli_vote_target(array $args, array $assoc): void
+{
+    try {
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || array_keys($assoc) !== ['order']
+            || !is_string($assoc['order']) || !preg_match('/^do_[a-f0-9]{32}$/D', $assoc['order'])
+            || !function_exists('sharity_donation_vote_target')) { throw new RuntimeException(); }
+        WP_CLI::line(sharity_donation_finance_json(sharity_donation_vote_target($assoc['order'], time())));
+    } catch (Throwable $error) {
+        $allowed = ['DONATION_VOTE_TARGET_LIMIT', 'DONATION_VOTE_TARGET_CONFLICT', 'DONATION_RECONCILE_LIMIT', 'DONATION_RECONCILE_CONFLICT'];
+        WP_CLI::error(in_array($error->getMessage(), $allowed, true) ? $error->getMessage() : 'DONATION_VOTE_TARGET_UNAVAILABLE');
+    }
+}
+if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
+    WP_CLI::add_command('sharity donations vote-target', 'sharity_donation_cli_vote_target');
+}
