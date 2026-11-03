@@ -1087,3 +1087,17 @@ Existing rollout/rollback/manual UI checklist and costs: protected change record
 The local pin-update assertion first compared JSON key order; it stopped before any write.
 Corrected to compare the exact two-key set; no foreign pin or guard was changed.
 No main window, live money, deployment or activation.
+
+## D2r Checkout observation — own reviewed baseline (2026-11-03)
+
+Product11dd44d3a84c028a84bd1127a52e74bec12c89a4. Only the own webhook.php and
+finance-read.php pins and manifest checksum change; inventory, metadata, foreign pins
+and guard logic are unchanged. Bounded inbox processing uses existing finance authority,
+no provider POST, execution or activation. Actual1767 native DB checks (360 drain),
+437 CLI,13 runtime, PHP lint; independent final readback closed both review findings.
+Full protected inventory zero drift and6 hash/checksum cases passed. Existing scope,
+release, rollback, UI checklist and costs: protected record section75. The first staged
+wrapper reported unavailable product guards while the two separate own pins were unstaged;
+direct staged guards then passed. Baseline audit requires the existing explicit protected
+change record/rollback/smoke environment; its first invocation without them was rejected.
+This does not weaken or replace the guard. No main, deployment or activation.
