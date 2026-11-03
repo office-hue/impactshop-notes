@@ -817,3 +817,69 @@ Nincs nyitott csendablak, merge, telepítés, aktiválás vagy élő elfogadás.
 A technikai díj visszaírása külön signed minor mező; a történeti v1-ben csak
 a credit/donor_gross mezőpár teljes hiánya jelenti a0 visszaírást. Jelen lévő
 null vagy hibás érték unavailable; nincs új pénzügyi számítás.
+
+
+## 77. D2t — kapcsolt fiók későbbi fizetési értesítései (előkészítés, 2026-11-03)
+
+Saját N4a595238; Hermes054 első javaslat, kizárólag a nyilvános324c6e65
+byteazonos webhook/adapter és két szintetikus teszt. A D2s nyilvános push
+külön jóváhagyásra vár; mainablak nincs. Cél: charge/refund/dispute értesítés
+után a meglévő bounded drain friss szolgáltatói bizonyítékot olvas és a
+meglevő előzetes kimutatást frissíti. Értesítésből nincs közvetlen könyvelés.
+Érintett funkciók: aláírás-ellenőrzött inbox, minimális eseményazonosság,
+kapcsolt charge pontos GET-azonosítása, eredeti rendeléshez kötés, drain.
+Kockázat: klónozott metadata másik fizetést kapcsolhatna rendeléshez; refund
+vagy vita nincs még a visszaolvasott listában; API-hiba téves ACK-ja eseményt
+veszíthet; régi értesítés felülírhatná az aktuális állapotot. Követelmény:
+friss session/charge/PI egyezés és erőforrásazonosság a pénzügyi projekció
+előtt, hiba esetén függő állapot. A refund/dispute szűk charge-GET feloldása
+csak érvényes aláírás után, rövid időkerettel, tranzakción kívül lehetséges;
+az eredeti Checkout fogadás providerfüggetlen marad. Nincs általános queue,
+ütemezés, új auth, saját pénzügyi algoritmus vagy élő provider POST.
+Teszt: meglévő izolált MariaDB/offline SDK, signed→drain lánc, ismétlés és
+elveszett ACK, idegen account/mód/forrás/metadata, hiányzó késői erőforrás,
+régi Checkout és nulla POST. Publikus readiness továbbra false.
+Kiadás: kompatibilis adapter előbb, webhook utána; meglévő exact-file út,
+privát saját fájlmentés/friss előállapot-hash és readback. Csak ellenőrzött
+fogadó után bővülhet a szolgáltatói eseménylista. Rollback saját fájlra,
+a már tárolt értesítések/finance adatok megtartásával; korábbi kód nem kaphat
+új értesítést, amelyet csak ACK-val eldobna. Nincs DB-visszatöltés új eseményre.
+Kézi kiadási ellenőrzés: saját rendelés refund/vita után tárolt dátummal és
+helyes devizával olvasható; nincs téves banki beérkezés vagy kifizetési állítás.
+Platform-díj/account/payout események, elveszett értesítés catch-up, valódi
+fedezett végrehajtás, merge/deploy/aktiválás és pénzügyi elfogadás nyitott.
+
+
+### D2t helyi lezárás — 2026-11-03
+
+Meglévő webhook.php + stripe-checkout.php:15 explicit connected charge/refund/
+dispute típus, ugyanabban az inboxban, új séma/queue/scheduler nélkül. Refund/
+dispute aláírás/context után pontos charge-GET, legfeljebb1 kérés,5s időkeret,
+tranzakción kívül. Checkout-fogadás eredeti, providerfüggetlen szerződésű.
+Minimális signed állapot és balance-ID-k megmaradnak. Drain a friss, eredeti
+session charge/PI és konkrét refund/dispute azonosságát, az állapot előrehaladását
+és valamennyi jelzett balance-ID jelenlétét ellenőrzi a projekció/marker előtt.
+Hiányos, elavult vagy össze nem vethető újranyitott állapot pending; régi
+értesítés nem állítja vissza a refund előtti összeget. Nincs provider POST,
+allokáció, payout, szavazat, közösalap-írás vagy readiness-aktiválás.
+Végső2116 natív MariaDB-ellenőrzés (277 új lifecycle),197 Checkout,437 finance/
+CLI,521 adjustment és13 friss runtime sikeres. Offline SDK+izolált DB; nem
+valódi Stripe/sandbox/production bizonyíték. Egy köztes új tesztben hibás
+settlements mezőnév volt; a szerződés szerinti settlement-re javítva. Review
+elavult resource-state/balance false-completion leletét javítottuk, célzott
+regresszió és független visszaolvasás igazolja; reviewer nem futtatott tesztet.
+Hermes054:1 hívás,35011 input+7662 output=42673 token, becsültUSD0.004580485;
+tényleges díj és teljes Codex/review-költség ismeretlen. Részleges koncepcióátvétel,
+jelentős helyi javítás: draft kihagyta a refundfeloldást, hibásan véglegesített
+pending eseményt, szükségtelen ismételt providerlistákat és üres/no-op patch-et
+adott, tesztet nem adott. Nincs újragenerálás, JEV, retry vagy fallback.
+A delegálási pending/terminal remote_ack. Termékcheckpoint külön readbackkel.
+Kiadási/rollback/kézi UI-szerződés: protected record§77. Adapter→webhook exact-file,
+majd szolgáltatói event selection; rollbackkor új eventdelivery leáll vagy
+kompatibilis fogadó marad, tárolt eseményeket nem törlünk. Sem régi Checkout
+nem veszhet el, sem korábbi fogadó nem dobhatja ACK-val az új értesítéseket.
+Nyitott: platform application_fee/account/payout, catch-up/ütemezés, valódi
+felelősség/fedezet/korrekció, direct HUF pilot→Amplifier→további devizák,
+nyelvi/affiliate/Offerwall cél, VB7/Sharing12. D2r324c6e65 már közzétéve;
+D2s06f0d4db+4a595238 nyilvános push automatikus visszautasítás után külön
+jóváhagyásra vár, D2t is helyi. Mainablak nincs; merge/deploy/aktiválás nincs.

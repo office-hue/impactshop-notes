@@ -55,9 +55,146 @@ function sharity_donation_webhook_verify(string $raw, string $header): array
     } catch (Throwable $error) { throw new RuntimeException('WEBHOOK_INVALID_REQUEST'); }
 }
 
-/** null means a verified event outside this narrowly configured receiver. */
-function sharity_donation_webhook_notification(array $event): ?array
+/** Explicit connected-order event set; platform/account/payout notifications are separate. */
+function sharity_donation_lifecycle_type(string $type): ?string
 {
+    if (in_array($type, ['charge.succeeded','charge.updated','charge.captured','charge.refunded','charge.failed','charge.expired'], true)) { return 'charge'; }
+    if (in_array($type, ['refund.created','refund.updated','refund.failed','charge.refund.updated'], true)) { return 'refund'; }
+    if (in_array($type, ['charge.dispute.created','charge.dispute.updated','charge.dispute.closed',
+        'charge.dispute.funds_withdrawn','charge.dispute.funds_reinstated'], true)) { return 'dispute'; }
+    return null;
+}
+
+function sharity_donation_lifecycle_id($id, string $prefix): bool
+{
+    return is_string($id) && strlen($id) <= 255 && preg_match('/^' . $prefix . '_[A-Za-z0-9]+$/D', $id) === 1;
+}
+
+/** Signed notification only; metadata proposes an order, the drain proves the charge. */
+function sharity_donation_lifecycle_notification(array $event, string $kind, ?object $transport): ?array
+{
+    $r = $event['data']['object'] ?? null;
+    if (!is_bool($event['livemode'] ?? null) || $event['livemode'] !== SHARITY_DONATIONS_STRIPE_WEBHOOK_LIVEMODE
+        || ($event['api_version'] ?? null) !== Sharity_Stripe_Checkout_Adapter::API_VERSION
+        || !is_int($event['created'] ?? null) || $event['created'] < 1 || $event['created'] > time() + 300
+        || !is_string($event['account'] ?? null) || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $event['account'])
+        || !is_array($r) || ($r['object'] ?? null) !== $kind
+        || !sharity_donation_lifecycle_id($r['id'] ?? null, ['charge'=>'ch','refund'=>'re','dispute'=>'(dp|du)'][$kind])
+        || (array_key_exists('livemode', $r) && $r['livemode'] !== $event['livemode'])) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    $charge = $r;
+    if ($kind !== 'charge') {
+        // Expanded nested objects are not trusted for ownership. Re-read the exact ID.
+        $ref = $r['charge'] ?? null; $id = is_array($ref) ? ($ref['id'] ?? null) : $ref;
+        if (!sharity_donation_lifecycle_id($id, 'ch')) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+        sharity_donation_order_autocommit();
+        $charge = sharity_donation_webhook_bounded_read(static fn() => sharity_donation_runtime_adapter()
+            ->notificationCharge($id, $event['account'], $event['livemode']), hrtime(true) / 1e9 + 5, $transport, null, 1);
+    }
+    $id = $charge['metadata']['order_id'] ?? null;
+    if (!(is_string($id) && str_starts_with($id, 'do_'))) { return null; }
+    if (!preg_match('/^do_[a-f0-9]{32}$/D', $id)) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    $order = sharity_donation_webhook_order($id); $e = sharity_donation_order_decode($order); $snapshot = $e['snapshot'];
+    if ($order['state'] !== 'session_recorded' || !is_string($order['provider_session_id'])) {
+        throw new RuntimeException('WEBHOOK_RECOVERY_UNCONFIRMED');
+    }
+    sharity_donation_order_status($order['subject_ref'], $id, time());
+    if ($event['account'] !== $snapshot['account_id'] || $event['livemode'] !== $snapshot['livemode']
+        || ($charge['livemode'] ?? null) !== $snapshot['livemode']
+        || ($charge['amount'] ?? null) !== (int)$snapshot['amount_minor']
+        || ($charge['currency'] ?? null) !== strtolower($snapshot['currency'])
+        || !sharity_donation_lifecycle_id($charge['payment_intent'] ?? null, 'pi')) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    foreach ($e['payload']['metadata'] as $key => $value) {
+        if (($charge['metadata'][$key] ?? null) !== $value) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    }
+    if ($kind !== 'charge' && array_key_exists('payment_intent', $r) && $r['payment_intent'] !== null) {
+        $pi = is_array($r['payment_intent']) ? ($r['payment_intent']['id'] ?? null) : $r['payment_intent'];
+        if ($pi !== $charge['payment_intent']) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    }
+    // Preserve only the minimum signed progress facts, never raw financial/customer data.
+    $status = $kind === 'charge' ? null : ($r['status'] ?? null);
+    $allowed = $kind === 'refund' ? ['pending','requires_action','succeeded','failed','canceled']
+        : ['warning_needs_response','warning_under_review','warning_closed','needs_response','under_review','won','lost',
+            'appeal_needs_response','appeal_under_review','prevented'];
+    if ($kind !== 'charge' && ($status !== null || $kind === 'dispute') && !in_array($status,$allowed,true)) {
+        throw new RuntimeException('WEBHOOK_CONTEXT_INVALID');
+    }
+    $refs = $kind === 'refund' ? [$r['balance_transaction'] ?? null,$r['failure_balance_transaction'] ?? null]
+        : ($kind === 'dispute' ? ($r['balance_transactions'] ?? null) : []);
+    if (!is_array($refs) || !array_is_list($refs) || count($refs)>2) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+    $balances=[];
+    foreach ($refs as $ref) {
+        if ($ref === null) { continue; }
+        $bid = is_array($ref) ? ($ref['id'] ?? null) : $ref;
+        if (!sharity_donation_lifecycle_id($bid,'txn') || in_array($bid,$balances,true)) { throw new RuntimeException('WEBHOOK_CONTEXT_INVALID'); }
+        $balances[]=$bid;
+    }
+    sort($balances,SORT_STRING);
+    $refundFloor = $kind === 'charge' ? ($r['amount_refunded'] ?? null) : null;
+    if ($kind === 'charge' && (!is_int($refundFloor) || $refundFloor<0 || $refundFloor>$snapshot['amount_minor'])) {
+        throw new RuntimeException('WEBHOOK_CONTEXT_INVALID');
+    }
+    return ['event_id'=>$event['id'],'event_type'=>$event['type'],'event_created'=>$event['created'],
+        'api_version'=>$event['api_version'],'order_id'=>$id,'quote_id'=>$e['quote_id'],
+        'session_id'=>$order['provider_session_id'],'account_id'=>$snapshot['account_id'],'livemode'=>$snapshot['livemode'],
+        'resource_type'=>$kind,'resource_id'=>$r['id'],'charge_id'=>$charge['id'],'payment_intent_id'=>$charge['payment_intent'],
+        'resource_status'=>$status,'balance_ids'=>$balances,'refund_floor_minor'=>$refundFloor===null?null:(string)$refundFloor];
+}
+
+/** Conservative progress only: incomparable/reopened states need another read or reconciliation. */
+function sharity_donation_lifecycle_status_reached(string $kind, $before, array $current): bool
+{
+    $after=$current['status'] ?? null;
+    if (!is_string($after)) { return false; }
+    if ($before === $after) { return true; }
+    if ($kind === 'refund') {
+        if ($before === null || in_array($before,['pending','requires_action'],true)) {
+            return in_array($after,['pending','requires_action','succeeded','failed','canceled'],true);
+        }
+        return $before === 'succeeded' && $after === 'failed' && is_array($current['failure_balance'] ?? null);
+    }
+    $later = [
+        'warning_needs_response'=>['warning_under_review','warning_closed','needs_response','under_review','won','lost','prevented'],
+        'warning_under_review'=>['warning_closed','needs_response','under_review','won','lost','prevented'],
+        'needs_response'=>['under_review','won','lost','prevented','appeal_needs_response','appeal_under_review'],
+        'under_review'=>['won','lost','prevented','appeal_needs_response','appeal_under_review'],
+        'appeal_needs_response'=>['appeal_under_review','won','lost'], 'appeal_under_review'=>['won','lost'],
+    ];
+    return is_string($before) && in_array($after,$later[$before] ?? [],true);
+}
+
+/** A notice cannot complete or project money merely because metadata names an order. */
+function sharity_donation_lifecycle_matches(array $row, array $evidence): bool
+{
+    $identity = json_decode($row['identity_json'], true, 16, JSON_THROW_ON_ERROR);
+    $kind = sharity_donation_lifecycle_type($identity['event_type'] ?? '');
+    if ($kind === null) { return str_starts_with($identity['event_type'] ?? '', 'checkout.session.'); }
+    if (($identity['resource_type'] ?? null) !== $kind
+        || ($identity['charge_id'] ?? null) !== ($evidence['original']['charge_id'] ?? null)
+        || ($identity['payment_intent_id'] ?? null) !== ($evidence['original']['payment_intent_id'] ?? null)) { return false; }
+    $resource = $identity['resource_id'] ?? null;
+    if ($kind === 'charge') {
+        $floor=$identity['refund_floor_minor'] ?? null;
+        $actual=$evidence['original']['charge_refund_state']['amount_refunded_minor'] ?? null;
+        return $resource === $identity['charge_id'] && is_string($floor) && is_string($actual)
+            && preg_match('/^(0|[1-9][0-9]{0,14})$/D',$floor) && preg_match('/^(0|[1-9][0-9]{0,14})$/D',$actual)
+            && (int)$actual >= (int)$floor;
+    }
+    if (!is_string($resource) || !array_key_exists('resource_status',$identity)
+        || !is_array($identity['balance_ids'] ?? null)) { return false; }
+    foreach ($evidence[$kind === 'refund' ? 'refunds' : 'disputes'] ?? [] as $r) {
+        if (($r['id'] ?? null) !== $resource || !sharity_donation_lifecycle_status_reached($kind,$identity['resource_status'],$r)) { continue; }
+        $current = $kind === 'refund' ? [$r['balance'] ?? null,$r['failure_balance'] ?? null] : ($r['balances'] ?? []);
+        $ids=[];foreach($current as $b){if(is_array($b)&&is_string($b['id']??null)){$ids[]=$b['id'];}}
+        return array_diff($identity['balance_ids'],$ids) === [];
+    }
+    return false;
+}
+
+/** null means a verified event outside this narrowly configured receiver. */
+function sharity_donation_webhook_notification(array $event, ?object $transport = null): ?array
+{
+    $kind = sharity_donation_lifecycle_type($event['type']);
+    if ($kind !== null) { return sharity_donation_lifecycle_notification($event, $kind, $transport); }
     if (!in_array($event['type'], ['checkout.session.completed', 'checkout.session.async_payment_succeeded',
         'checkout.session.async_payment_failed', 'checkout.session.expired'], true)) { return null; }
     $s = $event['data']['object'] ?? null;
@@ -109,14 +246,14 @@ function sharity_donation_webhook_store(array $note, int $now): void
         || $row['order_id'] !== $note['order_id'] || $row['session_id'] !== $note['session_id']) { throw new RuntimeException('WEBHOOK_EVENT_CONFLICT'); }
 }
 
-function sharity_donation_webhook_handle(WP_REST_Request $request): WP_REST_Response
+function sharity_donation_webhook_handle(WP_REST_Request $request, ?object $transport = null): WP_REST_Response
 {
     try {
         $raw = $request->get_body(); $header = $request->get_header('stripe-signature');
         if (!is_string($raw) || !is_string($header)) { throw new RuntimeException('WEBHOOK_INVALID_REQUEST'); }
         $event = sharity_donation_webhook_verify($raw, $header);
         if (get_option(SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION, '') !== '1') { throw new RuntimeException('WEBHOOK_SCHEMA_UNAVAILABLE'); }
-        $note = sharity_donation_webhook_notification($event);
+        $note = sharity_donation_webhook_notification($event, $transport);
         if ($note !== null) { sharity_donation_webhook_store($note, time()); }
         return sharity_donation_quote_private(['ok' => true, 'received' => true, 'ignored' => $note === null]);
     } catch (Throwable $error) {
@@ -244,19 +381,20 @@ function sharity_donation_webhook_finance_schema_apply(): bool
 
 /** One private CurlClient per bounded scope. No SDK class is required on file load.
  * The optional offline transport/clock are only callable-code test seams, not HTTP inputs. */
-function sharity_donation_webhook_bounded_read(callable $operation, float $deadline, ?object $transport = null, ?callable $clock = null)
+function sharity_donation_webhook_bounded_read(callable $operation, float $deadline, ?object $transport = null, ?callable $clock = null, int $cap = 63)
 {
     $clock = $clock ?? static fn(): float => hrtime(true) / 1e9;
     sharity_donation_runtime_sdk();
     $prior = Stripe\ApiRequestor::httpClient();
+    if ($cap < 1 || $cap > 63) { throw new RuntimeException('DONATION_DRAIN_READ_LIMIT'); }
     $inner = $transport ?? new Stripe\HttpClient\CurlClient();
-    $bounded = new class($inner, $deadline, $clock) implements Stripe\HttpClient\ClientInterface {
+    $bounded = new class($inner, $deadline, $clock, $cap) implements Stripe\HttpClient\ClientInterface {
         private int $gets = 0;
-        public function __construct(private object $inner, private float $deadline, private $clock) {}
+        public function __construct(private object $inner, private float $deadline, private $clock, private int $cap) {}
         public function request($method, $url, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null) {
             $left = $this->deadline - ($this->clock)();
             if ($method !== 'get' || !is_string($url) || !str_starts_with($url, 'https://api.stripe.com/v1/')
-                || $hasFile !== false || $apiMode !== 'v1' || $maxNetworkRetries !== 0 || $left < 1 || $this->gets >= 63) {
+                || $hasFile !== false || $apiMode !== 'v1' || $maxNetworkRetries !== 0 || $left < 1 || $this->gets >= $this->cap) {
                 throw new RuntimeException('DONATION_DRAIN_READ_LIMIT');
             }
             $this->gets++;
@@ -380,6 +518,13 @@ function sharity_donation_checkout_drain(int $now, ?object $transport = null, ?c
                 sharity_donation_finance_receipt($saved,$receipt);
                 $evidence = json_decode($saved['canonical_json'],true,64,JSON_THROW_ON_ERROR);
                 if (($evidence['original']['evidence_state'] ?? null) !== 'original_charge_observed') { $result['pending'] += count($valid); return; }
+                $matched = [];
+                foreach ($valid as $r) {
+                    if (sharity_donation_lifecycle_matches($r, $evidence)) { $matched[] = $r; }
+                    else { $result['pending']++; }
+                }
+                if (!$matched) { return; }
+                $valid = $matched;
                 $inventory = sharity_donation_finance_reconcile($orderId,$now);
                 sharity_donation_finance_record_movements($orderId,$inventory['movement_proposal_digest'],$now);
                 $target = sharity_donation_finance_target($orderId,$now);

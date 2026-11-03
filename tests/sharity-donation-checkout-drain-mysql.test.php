@@ -33,7 +33,7 @@ class DrainHttp implements Stripe\HttpClient\ClientInterface {
         if($this->drop){throw new RuntimeException('PRIVATE_PROVIDER_ERROR');}
         if($this->onRequest!==null){($this->onRequest)();}
         $path=parse_url($url,PHP_URL_PATH);
-        if($path==='/v1/refunds'||$path==='/v1/disputes'){return [json_encode(['object'=>'list','data'=>[],'has_more'=>false]),200,[]];}
+        if(!isset($this->responses[$path])&&($path==='/v1/refunds'||$path==='/v1/disputes')){return [json_encode(['object'=>'list','data'=>[],'has_more'=>false]),200,[]];}
         if(!isset($this->responses[$path])){throw new RuntimeException('unexpected synthetic path');}
         return [json_encode($this->responses[$path]),200,[]];
     }
@@ -56,6 +56,28 @@ function drainOrder(string $tag,bool $pending=false,bool $attempted=false):array
     if($pending){$p='/v1/checkout/sessions/'.$virtual['provider_session_id'];$drainHttp->responses[$p]['payment_status']='unpaid';$drainHttp->responses[$p]['payment_intent']=null;}
     return[$o,$event];
 }
+// Signed lifecycle requests use an explicit callable-code transport seam, never request data.
+class LifecycleLookupHttp implements Stripe\HttpClient\ClientInterface {
+    public int $gets=0;public bool $drop=false;public array $charge=[];public string $account='';
+    public function request($m,$u,$h,$p,$f,$a='v1',$r=null){
+        global $wpdb;$this->gets++;
+        check($m==='get'&&$u==='https://api.stripe.com/v1/charges/'.$this->charge['id']&&$p===[]&&!$f&&$r===0,'receipt exact charge GET only');
+        check(in_array('Stripe-Account: '.$this->account,$h,true),'receipt exact connected account');
+        check($wpdb->db->query('SELECT @@in_transaction AS tx')->fetch_assoc()['tx']==='0','receipt GET outside transaction');
+        if($this->drop){throw new RuntimeException('SYNTHETIC_PROVIDER_ERROR');}
+        return[json_encode($this->charge),200,[]];
+    }
+}
+function lifecycleEvent(array $o,string $type,?array $resource=null):array {
+    global $drainHttp;$ev=checkoutEvent($o);$ev['type']=$type;
+    $ev['data']['object']=$resource??$drainHttp->responses['/v1/charges/ch_'.substr($o['order_id'],3)];return$ev;
+}
+function lifecycleDeliver(array $ev,?object $http=null,?string $signature=null):WP_REST_Response {
+    $raw=json_encode($ev);$req=new WP_REST_Request([], '');$req->raw=$raw;
+    $req->signature=$signature??Stripe\WebhookSignature::generateSignatureHeader($raw,SHARITY_DONATIONS_STRIPE_WEBHOOK_SECRET);
+    return sharity_donation_webhook_handle($req,$http);
+}
+function lifecycleDrain():array {global $wpdb,$now,$drainHttp;$wpdb->db->query("DELETE FROM `{$wpdb->options}` WHERE option_name='".SHARITY_DONATION_DRAIN_CURSOR_OPTION."'");return sharity_donation_checkout_drain($now,$drainHttp);}
 try {
     drainReset();[$o,$event]=drainOrder('drain-success');$beforeOrder=$o;$posts=calls();$prior=Stripe\ApiRequestor::httpClient();
     $options[SHARITY_DONATION_ORDERS_ENABLED]='0';unset($options['sharity_donation_accounts_v1']);
@@ -153,6 +175,99 @@ try {
     $r=sharity_donation_checkout_drain($now,$drainHttp,$clock);
     check($r['budget_exhausted']&&$r['observed']===0&&sharity_donation_webhook_read($ev['id'])['observation_digest']===null,'late reply never completes event');
     foreach([[['unexpected'],[]],[[],['apply'=>true]],[[],['limit'=>'6']]]as[$args,$assoc]){fails(fn()=>sharity_donation_cli_finance_drain($args,$assoc),'DONATION_DRAIN_UNAVAILABLE');}
+    $lifecycleStart=$checks;
+    drainReset();[$o,$checkout]=drainOrder('lifecycle');$suffix=substr($o['order_id'],3);$cp='/v1/charges/ch_'.$suffix;
+    $charge=$drainHttp->responses[$cp];$lookup=new LifecycleLookupHttp();$lookup->charge=$charge;$lookup->account=$binding['account_id'];
+    $lookup->account=sharity_donation_order_decode($o)['snapshot']['account_id'];$beforePosts=calls();
+    $refund=['object'=>'refund','id'=>'re_'.$suffix,'charge'=>$charge['id'],'payment_intent'=>$charge['payment_intent'],
+        'amount'=>10000,'currency'=>'huf','created'=>1800000020,'status'=>'succeeded','failure_balance_transaction'=>null,
+        'balance_transaction'=>['object'=>'balance_transaction','id'=>'txn_REFUND'.$suffix,'source'=>'re_'.$suffix,'type'=>'refund',
+            'amount'=>-10000,'currency'=>'huf','fee'=>0,'net'=>-10000,'fee_details'=>[],
+            'created'=>1800000020,'available_on'=>1800600000,'status'=>'available','exchange_rate'=>null],
+        'metadata'=>['order_id'=>'do_'.str_repeat('a',32)],'instructions_email'=>'PRIVATE_EMAIL'];
+    $dispute=['object'=>'dispute','id'=>'du_'.$suffix,'charge'=>$charge['id'],'payment_intent'=>$charge['payment_intent'],
+        'amount'=>50000,'currency'=>'huf','created'=>1800000020,'status'=>'warning_closed','livemode'=>false,'balance_transactions'=>[],
+        'evidence'=>['customer_name'=>'PRIVATE_PERSON']];
+    $signed=lifecycleEvent($o,'refund.created',$refund);$before=inboxCount();$gets=$lookup->gets;
+    check(lifecycleDeliver($signed,$lookup,'invalid')->status===400&&$lookup->gets===$gets,'bad signature never resolves charge');
+    foreach(['account'=>null,'api_version'=>'old','livemode'=>true]as$key=>$value){$bad=$signed;$bad[$key]=$value;check(lifecycleDeliver($bad,$lookup)->status===400&&$lookup->gets===$gets,'bad context before GET '.$key);}
+    $lookup->drop=true;check(lifecycleDeliver($signed,$lookup)->status===503&&inboxCount()===$before,'lookup error no ACK or inbox write');$lookup->drop=false;
+    $wpdb->db->begin_transaction();$gets=$lookup->gets;check(lifecycleDeliver($signed,$lookup)->status===503&&$lookup->gets===$gets,'receipt cannot GET under transaction');$wpdb->db->rollback();
+    // Notification receipt writes only the minimal inbox identity, never target/allocation.
+    $prior=Stripe\ApiRequestor::httpClient();$gets=$lookup->gets;$beforeTarget=targetCount($o['order_id']);
+    check(lifecycleDeliver($signed,$lookup)->status===200&&$lookup->gets===$gets+1,'refund without livemode resolves one exact charge');
+    check(Stripe\ApiRequestor::httpClient()===$prior&&targetCount($o['order_id'])===$beforeTarget,'receipt restores client and does not project');
+    $saved=sharity_donation_webhook_read($signed['id']);
+    check(!str_contains($saved['identity_json'],'PRIVATE_')&&!str_contains($saved['identity_json'],'metadata')&&!str_contains($saved['identity_json'],$subject),'receipt excludes raw identity/customer data');
+    $repeat=$signed;$repeat['data']['object']['instructions_email']='changed@example.invalid';$count=inboxCount();
+    check(lifecycleDeliver($repeat,$lookup)->status===200&&inboxCount()===$count&&sharity_donation_webhook_read($signed['id'])===$saved,'duplicate immutable minimal notification');
+    $bad=$signed;$bad['created']--;check(lifecycleDeliver($bad,$lookup)->status===409,'same ID changed identity conflicts');
+    $wpdb->failOn='INSERT INTO `'.$inbox.'`';$wpdb->failure='lost_ack';$lost=lifecycleEvent($o,'refund.updated',$refund);
+    check(lifecycleDeliver($lost,$lookup)->status===200,'lifecycle insert lost ACK exact readback');$wpdb->failOn='';$wpdb->failure='';
+    // The normal checkout can advance; absent refund/dispute notices must remain pending.
+    $r=lifecycleDrain();check($r['observed']===1&&$r['pending']===2,'missing related resources do not complete');
+    $beforeTarget=targetCount($o['order_id']);$r=lifecycleDrain();
+    check($r['observed']===0&&targetCount($o['order_id'])===$beforeTarget&&sharity_donation_webhook_read($signed['id'])['observation_digest']===null,'missing resource alone cannot mutate target');
+    $stale=$refund;$stale['status']='pending';$stale['balance_transaction']=null;
+    $drainHttp->responses[$cp]['refunds']['data']=[$stale];$drainHttp->responses['/v1/refunds']['data']=[$stale];
+    $beforeTarget=targetCount($o['order_id']);$r=lifecycleDrain();
+    check($r['observed']===0&&$r['pending']===2&&targetCount($o['order_id'])===$beforeTarget,'known refund ID stale state/balance cannot complete');
+    $drainHttp->responses[$cp]['amount_refunded']=10000;$drainHttp->responses[$cp]['refunds']['data']=[$refund];
+    $drainHttp->responses['/v1/refunds']['data']=[$refund];
+    $r=lifecycleDrain();check($r['observed']===2&&$r['retryable']===0,'later actual refund completes pending notifications');
+    $view=sharity_donation_financial_read($subject,$o['order_id'],$now);
+    check($view['settlement'][0]['net_minor']==='38000','actual refund reduces stored owner net, not notification amount');
+    $d=lifecycleEvent($o,'charge.dispute.created',$dispute);check(lifecycleDeliver($d,$lookup)->status===200,'signed dispute resolves charge');
+    $beforeTarget=targetCount($o['order_id']);$r=lifecycleDrain();check($r['pending']===1&&targetCount($o['order_id'])===$beforeTarget,'missing dispute stays pending');
+    $stale=$dispute;$stale['status']='warning_needs_response';$drainHttp->responses['/v1/disputes']['data']=[$stale];
+    $r=lifecycleDrain();check($r['observed']===0&&$r['pending']===1&&targetCount($o['order_id'])===$beforeTarget,'known dispute ID stale state cannot complete');
+    $drainHttp->responses['/v1/disputes']['data']=[$dispute];$r=lifecycleDrain();check($r['observed']===1,'known dispute completes on current evidence');
+    $notice=sharity_donation_webhook_read($d['id']);$receipt=sharity_donation_finance_read($o['order_id'],$notice['observation_digest']);
+    $actual=json_decode($receipt['canonical_json'],true);$identity=json_decode($notice['identity_json'],true);
+    $identity['resource_status']='warning_needs_response';$notice['identity_json']=json_encode($identity);
+    check(sharity_donation_lifecycle_matches($notice,$actual),'older open dispute can complete against known later closed state');
+    $identity['balance_ids']=['txn_MISSING'];$notice['identity_json']=json_encode($identity);
+    check(!sharity_donation_lifecycle_matches($notice,$actual),'same state missing signed dispute movement remains pending');
+    $actual['disputes'][0]['balances'][]=['id'=>'txn_MISSING'];
+    check(sharity_donation_lifecycle_matches($notice,$actual),'signed dispute movement present satisfies progress');
+    $notice=sharity_donation_webhook_read($signed['id']);$identity=json_decode($notice['identity_json'],true);$identity['resource_status']='failed';$notice['identity_json']=json_encode($identity);
+    check(!sharity_donation_lifecycle_matches($notice,$actual),'failed refund notification cannot complete against older success');
+    $identity['resource_status']='pending';$notice['identity_json']=json_encode($identity);
+    check(sharity_donation_lifecycle_matches($notice,$actual),'old pending refund can complete against success with signed balance IDs');
+    $identity['balance_ids'][]='txn_FAILURE';$notice['identity_json']=json_encode($identity);
+    check(!sharity_donation_lifecycle_matches($notice,$actual),'missing signed refund reversal remains pending');
+    $late=lifecycleEvent($o,'charge.succeeded',$charge);$late['created']-=3600;
+    check(lifecycleDeliver($late)->status===200,'late charge notification accepted');lifecycleDrain();
+    $view=sharity_donation_financial_read($subject,$o['order_id'],$now);check($view['settlement'][0]['net_minor']==='38000','late event cannot restore pre-refund amount');
+    $refundNotice=$charge;$refundNotice['amount_refunded']=20000;$floorEvent=lifecycleEvent($o,'charge.refunded',$refundNotice);
+    check(lifecycleDeliver($floorEvent)->status===200,'signed charge refund watermark retained');$beforeTarget=targetCount($o['order_id']);$r=lifecycleDrain();
+    check($r['observed']===0&&$r['pending']===1&&targetCount($o['order_id'])===$beforeTarget,'charge refund notice ahead of actual aggregate remains pending');
+    $wpdb->db->query($wpdb->prepare("DELETE FROM `{$inbox}` WHERE event_id=%s",$floorEvent['id']));
+    $clone=$charge;$clone['id']='ch_CLONED';$bad=lifecycleEvent($o,'charge.updated',$clone);
+    check(lifecycleDeliver($bad)->status===200,'cloned metadata is a proposal only');$beforeTarget=targetCount($o['order_id']);$r=lifecycleDrain();
+    check($r['observed']===0&&$r['pending']===1&&targetCount($o['order_id'])===$beforeTarget&&sharity_donation_webhook_read($bad['id'])['observed_at_utc']===null,'same PI wrong charge cannot complete or project');
+    $wpdb->db->query($wpdb->prepare("DELETE FROM `{$inbox}` WHERE event_id=%s",$bad['id']));
+    // Supported connected-account types share this exact path; platform and unrelated resources do not.
+    foreach(['charge.succeeded','charge.updated','charge.captured','charge.refunded','charge.failed','charge.expired',
+        'refund.created','refund.updated','refund.failed','charge.refund.updated','charge.dispute.created','charge.dispute.updated',
+        'charge.dispute.closed','charge.dispute.funds_withdrawn','charge.dispute.funds_reinstated']as$type){
+        $kind=sharity_donation_lifecycle_type($type);$ev=lifecycleEvent($o,$type,$kind==='refund'?$refund:($kind==='dispute'?$dispute:$charge));
+        check(lifecycleDeliver($ev,$lookup)->status===200,'supported lifecycle '.$type);
+    }
+    $bad=lifecycleEvent($o,'charge.updated',$charge);$bad['data']['object']['metadata']['order_id']='do_bad';check(lifecycleDeliver($bad)->status===400,'malformed claimed order not ignored');
+    $unrelated=lifecycleEvent($o,'charge.updated',$charge);$unrelated['data']['object']['metadata']=[];check(lifecycleDeliver($unrelated)->body['ignored']===true,'unrelated charge ignored');
+    $bad=$signed;$bad['data']['object']['charge']=null;check(lifecycleDeliver($bad,$lookup)->status===400,'missing charge not successful discard');
+    $bad=$signed;$bad['data']['object']['payment_intent']='pi_FOREIGN';check(lifecycleDeliver($bad,$lookup)->status===400,'refund PI mismatch');
+    $expanded=$signed;$expanded['id']='evt_EXPANDED';$expanded['data']['object']['charge']=['id'=>$charge['id'],'object'=>'charge','metadata'=>['order_id'=>'do_FOREIGN']];
+    check(lifecycleDeliver($expanded,$lookup)->status===200,'expanded charge metadata ignored in favor of exact GET');
+    $lookup->charge['metadata']=[];$unrelated=$signed;$unrelated['id']='evt_UNRELATED';check(lifecycleDeliver($unrelated,$lookup)->body['ignored']===true,'unrelated resolved refund ignored');$lookup->charge=$charge;
+    $options[SHARITY_DONATION_ORDERS_ENABLED]='0';unset($options['sharity_donation_accounts_v1']);
+    check(lifecycleDeliver(lifecycleEvent($o,'refund.updated',$refund),$lookup)->status===200,'historical lifecycle accepts after disabling checkout');
+    check(calls()===$beforePosts,'lifecycle receipt/drain never calls provider POST');
+    $time=100.0;$stub->gets=0;
+    sharity_donation_webhook_bounded_read(static function():void{$c=Stripe\ApiRequestor::httpClient();$c->request('get','https://api.stripe.com/v1/account',[],[],false,'v1',0);fails(fn()=>$c->request('get','https://api.stripe.com/v1/account',[],[],false,'v1',0),'DONATION_DRAIN_READ_LIMIT');},105,$stub,$clock,1);
+    check($stub->gets===1,'notification wrapper enforces one GET');
+    echo 'Donation lifecycle MariaDB: '.($checks-$lifecycleStart)." checks; signed notifications, exact charge, delayed evidence, zero POST\n";
     echo 'Donation checkout drain MariaDB: '.($checks-$drainStart)." checks; real races, signed events, bounded offline SDK, no money execution\n";
 } finally {
     $wpdb->failOn='';$wpdb->failure='';$wpdb->db->query("DROP TABLE IF EXISTS `{$wpdb->options}`");$options=$originalOptions;

@@ -42,6 +42,27 @@ final class Sharity_Stripe_Checkout_Adapter
         $this->now = $now ?? static fn(): int => time();
     }
 
+    /** One exact connected-charge GET to resolve a signed refund/dispute notification.
+     * Caller verifies signature and applies the one-request timeout wrapper first.
+     * No customer details or arbitrary metadata escape the adapter. */
+    public function notificationCharge(string $id, string $account, bool $live): array
+    {
+        try {
+            if (!$this->evidenceId($id, 'ch') || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $account)
+                || $this->stripe->getStripeAccount() !== null
+                || !preg_match('/^(rk|sk)_(test|live)_[A-Za-z0-9]+$/D', $this->stripe->getApiKey(), $mode)
+                || ($mode[2] === 'live') !== $live) { throw new RuntimeException(); }
+            $c = $this->stripe->charges->retrieve($id, [], ['stripe_account'=>$account,
+                'stripe_version'=>self::API_VERSION, 'max_network_retries'=>0])->toArray();
+            if (($c['object'] ?? null) !== 'charge' || ($c['id'] ?? null) !== $id
+                || ($c['livemode'] ?? null) !== $live) { throw new RuntimeException(); }
+            $out = array_intersect_key($c, array_flip(['id','object','livemode','payment_intent','amount','currency']));
+            $out['metadata'] = is_array($c['metadata'] ?? null)
+                ? array_intersect_key($c['metadata'], array_flip(['order_id','quote_id','policy_version','donation_mode','package_id'])) : [];
+            return $out;
+        } catch (Throwable $error) { throw new RuntimeException('DONATION_NOTIFICATION_UNAVAILABLE'); }
+    }
+
     /** Platform-authenticated GETs only. No identity/contact/bank data leaves this adapter. */
     public function inspectAccount(string $accountId): array
     {

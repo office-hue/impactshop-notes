@@ -60,7 +60,7 @@ foreach ($variants as [$path, $value]) {
 $unknown = $event; $unknown['data']['object']['client_reference_id'] = $unknown['data']['object']['metadata']['order_id'] = 'do_' . str_repeat('d',32);
 check(deliver($unknown)->status === 503, 'unknown own order not acknowledged as safely stored');
 check(inboxCount() === $before, 'wrong context writes nothing');
-$unrelated = $event; $unrelated['type'] = 'charge.succeeded';
+$unrelated = $event; $unrelated['type'] = 'customer.created';
 check(deliver($unrelated)->body['ignored'] === true, 'out of scope verified event ignored');
 $unrelated = $event; $unrelated['data']['object']['metadata'] = []; $unrelated['data']['object']['client_reference_id'] = null;
 check(deliver($unrelated)->body['ignored'] === true, 'unrelated merchant checkout ignored');
