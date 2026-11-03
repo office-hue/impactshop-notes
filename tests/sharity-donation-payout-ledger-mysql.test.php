@@ -158,5 +158,6 @@ try {
         $wpdb->db->query("ALTER TABLE `{$pt}` {$restore}");check(sharity_donation_payout_schema_apply(),'fixture schema restore');
     }
     check(calls()===$posts+1,'only explicit synthetic order fixture created one offline Checkout; payout operations no POST');
+    require __DIR__.'/sharity-donation-payout-owner-mysql.test.php';
     echo 'Donation payout ledger MariaDB: '.($checks-$payoutStart)." checks; two real connections, offline SDK, no payout/bank acceptance\n";
 }finally{$wpdb->failOn='';$wpdb->failure='';$wpdb->db->rollback();$wpdb->db->query('SET autocommit=1');$wpdb->db->query("DROP TABLE IF EXISTS `{$pt}`");unset($options[SHARITY_DONATION_PAYOUT_SCHEMA_OPTION]);Stripe\ApiRequestor::setHttpClient($transport);}

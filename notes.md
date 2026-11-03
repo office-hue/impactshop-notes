@@ -8948,3 +8948,17 @@ USD0.004303572,actual/full unknown,jelentős Codex javítás. Részletek:
 protected record §87. Saját tesztkonténer eltávolítva. Nincs éles kérés,
 mainablak, merge, telepítés, aktiválás vagy pénzügyi elfogadás.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás; nem aktív szerkesztési feladat.
+
+
+## 2026-11-03 — D2ab: saját kifizetési bizonyíték a státusznézeten
+
+Két N PHP-fájl és A státusz/DTO/copy: egy read-only snapshotból eredeti owner/
+account/live/movement/payout kapcsolat, csak saját nettó, nincs batch/ID/PII;
+failed/reversal/dupla membership tilt, ismeretlen díj/FX nem kifizetett összeg.
+Nincs új tábla, provider-hívás, allokáció, banki elfogadás vagy aktiválás.
+4853 MariaDB (458 új),342HTTP,17runtime,154web ellenőrzés sikeres.
+Review P2 meta/tie javítva és visszaolvasva. Hermes06432721token,
+becsült USD0.0034463156; actual/full ismeretlen, jelentős Codex javítás.
+Secretary§87 távolról ACK, §88 külön mentendő. Nincs csendablak.
+Részletes scope/teszt/kiadás/rollback: protected record §88 (A delivery §88).
+SUBSTACK-HANDOVER.md megőrzendő, nem aktív szerkesztés.

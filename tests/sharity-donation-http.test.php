@@ -180,4 +180,24 @@ foreach(['id','quote_id']as$field){
 }
 resetCase();$out=sharity_donation_order_handle(request());expectResponse($out,200);
 check(!isset($out->body['financial'])&&!in_array('financial',callNames(),true),'checkout POST never invokes finance reader');
+check(!isset($out->body['payouts']),'checkout has no payout projection');
+if (!function_exists('sharity_donation_payout_owner')) {
+    function sharity_donation_payout_owner($subject,$id,$now):array {
+        $GLOBALS['calls'][]=['payouts',$subject,$id];
+        if($GLOBALS['payoutError']??false){throw new RuntimeException('PRIVATE_PAYOUT');}
+        return ['version'=>1,'status'=>'pending','records'=>[],'bank_receipt'=>false];
+    }
+}
+foreach(['id','quote_id']as$field){
+    $handler=$field==='id'?'sharity_donation_order_status_handle':'sharity_donation_order_status_by_quote_handle';
+    resetCase();$r=request();$r->url=[$field=>($field==='id'?'do_':'dq_').str_repeat('b',32)];$r->query=['subject_ref'=>'evil'];
+    $out=$handler($r);expectResponse($out,200);
+    check(callNames()===['auth',$field==='id'?'status':'status_quote','financial','payouts'],'payout after canonical owned read only');
+    check($calls[3][1]===ImpactShop_Sharity_Web_Session::$answer['subject_ref']&&$calls[3][2]===resultFixture()['id'],'payout canonical owner/order');
+    check($out->body['payouts']['status']==='pending','additive payout sibling');
+    $calls=[];$storeError=new RuntimeException('ORDER_NOT_FOUND');expectResponse($handler($r),404);check(!in_array('payouts',callNames(),true),'foreign owner no payout access');
+    resetCase();$payoutError=true;$out=$handler($r);expectResponse($out,200);check($out->body['payouts']['status']==='unavailable'&&$out->body['order']===resultFixture('prepared'),'reader failure preserves historical order');$payoutError=false;
+}
+resetCase();$out=sharity_donation_order_handle(request());expectResponse($out,200);
+check(!isset($out->body['payouts'])&&!in_array('payouts',callNames(),true),'checkout POST never calls payout reader');
 echo "PASS donation HTTP boundary {$checks} checks; mocked auth/store only, no provider\n";

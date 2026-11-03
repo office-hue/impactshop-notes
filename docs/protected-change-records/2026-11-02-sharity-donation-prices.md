@@ -1477,3 +1477,95 @@ fedezet és konkrét művelet jóváhagyása. Pénzmozgató próba most nem futo
 Rollbackkor dispatch OFF, attempted/receipt/claim nem törölhető; a működő
 recovery és a történeti webhook marad. A teljes termékcél és korábbi UI
 checklist nyitott. Nincs mainablak/merge/deploy/aktiválás/élő elfogadás.
+
+
+## 88. D2ab — saját adományhoz kötött kifizetési bizonyíték (2026-11-03)
+
+N kiinduló HEAD515a279c, A635eca775, tiszta saját worktree. A meglévő
+payout-megfigyelés és egyedi movement-registry kapcsolata most a tulajdonos
+státusznézetén is olvasható. N finance-ledger.php/http.php és A donations.ts,
+donation-copy.ts/NgoDonationClient.tsx; kapcsolódó meglévő tesztek és egy új
+MariaDB-teszt. Új tábla, migráció, provider-hívás, scheduler vagy infrastruktúra
+nem készült. A D2aa egyszeri pénzmozgató CLI és foglalása változatlan.
+
+Koherencia/kockázat: a teljes batch összege nem a támogató saját adománya.
+Egyetlen pinned mysqli READ ONLY/REPEATABLE READ pillanat tartalmazza az
+owner/order, eredeti account/livemode, pénzügyi provenance, registry és
+payoutbizonyíték olvasását. A meglévő CLI-reconcile belső olvasása közösen
+használható, külön tranzakciót nem nyit. Legfeljebb256 megfigyelés,4MiB/sor,
+16MiB/account és50 kimeneti rekord; méretindex a JSON-letöltés előtt.
+Túllépés unavailable, nem csonkolt vagy nulla pénzügyi siker.
+
+Az owned GET (order és quote alapján) opcionális payouts mezőt ad; hiányzó
+modul/séma vagy hibás projektor nem veszi el a történeti rendelést. A checkout
+POST nem hívja. A válasz csak saját deviza/pontos nettó contribution,
+ellenőrizhető payout_minor vagy null, megfigyelési UTC és szűk állapot.
+Nincs provider/account/balance ID, másik order, teljes batchösszeg vagy PII.
+A bank_receipt végig false; a korábbi pénzügyi készültségi flagek változatlanok.
+
+Pozitív payout_minor csak teljes automatikus standard, egyeztetett, ismert
+mozgásokból álló batch, azonos tényleges deviza, nulla külön payoutdíj és
+nem negatív tagok esetén. Az összeg a saját nettó; ismeretlen tétel, díj,
+FX vagy negatív batchtag esetén további egyeztetés, nincs önkényes díjfelosztás.
+Ugyanazon mozgás két payoutban mindkettőt unresolved állapotba teszi.
+A megfigyelések nem adódnak össze. Bármely tárolt failed/canceled/failure-leg/
+reversal (másik payout original_payout kapcsolata is) tiltja a pozitív állítást;
+égi paid bizonyíték újraolvasása nem támasztja fel a kifizetést.
+
+A paid_observed történeti szolgáltatói megfigyelés, nem aktuális lekérdezés,
+NGO-bankbeérkezés vagy teljes pénzügyi elfogadás. A rangsor pénzügyileg azonos
+adatból a teljesebb bizonyítékot választja, nem helyi ID/idő szerinti
+szolgáltatói időrendet. A dátum a kiválasztott bizonylat rögzítési ideje.
+Forrás: [Stripe payout object](https://docs.stripe.com/api/payouts/object),
+[automatic payout membership](https://docs.stripe.com/api/balance_transactions/list).
+A Stripe dokumentációs connector transporthibája után a két hivatalos lapot
+olvastuk; nincs vak újrahívás vagy SDK-váltás.
+
+A négynyelvű, meglévő arculatú nézet a tárolt pénzügyi összesítéstől független:
+HU/EN/DE/FR, eredeti elszámolási pénznem, pontos minor egység; nincs hozzávetőleges
+FX átnevezve tényleges kifizetésnek. Frissítés csak GET, új checkoutot nem indít.
+
+Tényleges teszt: saját loopback/tmpfs MariaDB10.11.19 + rögzített SDK offline
+HTTP-fake,4853 check, ebből458 D2ab. Négy natív deviza, helyes/idegen owner,
+account/live, közös batch, díj/FX/negatív/ismeretlen tétel, duplikált bizonyíték,
+failed/reversal és stale paid, hiányzó séma, sérült hash, méret/sorszámkorlát,
+két valódi kapcsolat közbeni append, nulla owner-read POST/DDL/írás.
+HTTP342; runtime17; web154 célzott teszt; PHP lint és diff-check sikeres.
+A köztes hibák tesztfixture string árfolyam/hibás szintetikus ID/globális névütközés,
+valamint téves gombfelirat voltak; javítva, a végső futások warning nélküliek.
+Saját D2ab konténer eltávolítva és hiánya visszaolvasva. Nem teljes typecheck,
+böngészős design-elfogadás, Stripe sandbox vagy élő pénzügyi lánc.
+
+Független review P2: a pending→available meta pénzügyi konfliktussá vált;
+majd azonosmásodperces tie esetén a teljesebb bizonyíték nem nyert. Javítva
+pénzügyi mezővetülettel és bizonyítékteljesség-ranggal,0/1 másodperces
+regresszióval. A reviewer visszaolvasta, lezárta; más konkrét lelet nincs.
+Reviewer tesztet nem futtatott, nincs általános security/runtime PASS.
+
+Hermes064 executionf86ad116-c10d-4e66-a49b-b15c8d84fbde,
+task15cf937345b8a8bfcdaa95033e7fd6b437697bfb378b50143e661509bc2844b1;
+26956input+5765output=32721token,1API,becsült USD0.0034463156.
+Tényleges számla és teljes Codex/review költség ismeretlen. A HTTP/DTO-váz
+részben átvéve; bruttó/nettó keverés, két külön snapshot, batchadat-szivárgás
+és használhatatlan tesztrész miatt jelentős Codex javítás/újraírás. Megtakarítás
+nem igazolt; nincs retry/JEV/fallback. A delegálás két eseménye remote_ack.
+
+Kiadás/rollback: az elfogadott merge-SHA-ról meglévő exact-file backup/CAS,
+előbb ledger majd HTTP; web READY/próba után csak Sharity-aliasok. A séma
+D2y-ból változatlan, nincs új sémaapply. Régi backend/web együtt használható,
+ismeretlen opcionális mező nem fizetési hiba. Rollback saját fájl/webalias;
+bizonylat, pénzügyi adat és korábbi webhook nem törlődik, checkout/fee/vote/
+alap kapcsoló nem aktiválódik. Post-deploy: bejelentkezett saját/másik owner,
+két status GET private no-store, missing reader, négy nyelv,320/375px/200% zoom,
+hosszú feliratok, nulla automatikus POST; kézi UI-elfogadás még nyitott.
+
+Nincs nyitott mainablak, merge, telepítés vagy aktiválás. A friss, csak olvasási
+Stripe Connect lista továbbra üres; a Foundation pilothoz külön connected
+account és díj/felelősség/fedezet szükséges. A banki tulajdont nem kérdeztük újra.
+D2aa nyilvános pushját az auto-review korábbi, csak D2u–D2z-re érvényes
+engedély miatt elutasította; új kérdés függő, ezt nem kerültük meg.
+Secretary§87 most tényleges remote ACK: chk-c77a9f56-9480-4d52-9069-0fa30dfd11ec,
+2026-11-03T11:35:56.307Z, idempotency sharity-intl-87-d2aa515a279c-docsync9b67f7509.
+A régi külön D2y outboxot nem játszottuk újra. A §88 termék-checkpoint külön
+mentendő commit/readback után; pending és remote ACK nem felcserélhető.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.
