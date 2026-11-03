@@ -882,7 +882,8 @@ GQL;
         $eventDate = self::field($item, 'event-date');
         $statusRaw = strtolower(self::field($item, 'action-status'));
         $sid = self::field($item, 'sid');
-        if (preg_match('/^sat1_[A-Za-z0-9_-]{43}$/D', $sid)) {
+        $opaqueAttribution = preg_match('/^sat1_[A-Za-z0-9_-]{43}$/D', $sid) === 1;
+        if ($opaqueAttribution) {
             $correlation = function_exists('impactshop_sharity_affiliate_correlate')
                 ? impactshop_sharity_affiliate_correlate($sid) : null;
             if (!is_array($correlation) || ($correlation['provider_key'] ?? '') !== 'cj'
@@ -903,7 +904,7 @@ GQL;
             return null;
         }
 
-        $parts = array_pad(preg_split('~[|~]~', $sid), 2, '');
+        $parts = array_pad(preg_split('/[|~]/', $sid), 2, '');
         $ngoSlug = sanitize_title($parts[0]);
         $pseudoFromSid = self::extract_pseudo_from_sid($sid);
         $pseudoId = $pseudoFromSid !== '' ? $pseudoFromSid : self::pseudo_from_sid($sid, $actionId);
@@ -918,12 +919,23 @@ GQL;
             return null;
         }
 
+        $timestamp = strtotime($eventDate);
+        $dateParts = date_parse($eventDate);
+        if ($timestamp === false || $timestamp <= 0 || $dateParts['error_count'] > 0
+            || $dateParts['warning_count'] > 0 || !empty($dateParts['relative'])
+            || !checkdate((int) $dateParts['month'], (int) $dateParts['day'], (int) $dateParts['year'])) {
+            self::queue_failure($item, 'invalid commission event date');
+            return null;
+        }
+
         $currency = strtoupper(self::field($item, 'commission-currency') ?: 'USD');
         $rate = self::get_exchange_rate($currency);
         if ($rate <= 0) {
             $rate = (float) apply_filters('impactshop_cj_fx_fallback', 390.0, $currency);
         }
-        $donationMultiplier = $pseudoFromSid !== '' ? self::resolve_donation_multiplier($pseudoFromSid, $timestamp) : 1.0;
+        // The SAT1-derived legacy row key is correlation only, not a donor identity.
+        $donationMultiplier = !$opaqueAttribution && $pseudoFromSid !== ''
+            ? self::resolve_donation_multiplier($pseudoFromSid, $timestamp) : 1.0;
         $amountHuf = (int) round($amount * $rate * $donationMultiplier);
 
         $status = self::normalize_status($statusRaw);
@@ -931,8 +943,6 @@ GQL;
             self::queue_failure($item, 'corrected commissions require manual handling');
             return null;
         }
-
-        $timestamp = strtotime($eventDate) ?: time();
 
         return [
             'source_ref'   => 'CJ:' . $actionId,
@@ -1838,7 +1848,7 @@ GRAPHQL;
 
     private static function extract_pseudo_from_sid(string $sid): string
     {
-        $parts = preg_split('~[|~]~', $sid);
+        $parts = preg_split('/[|~]/', $sid);
         if (is_array($parts) && isset($parts[1])) {
             $clean = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) $parts[1]));
             if ($clean !== '') {

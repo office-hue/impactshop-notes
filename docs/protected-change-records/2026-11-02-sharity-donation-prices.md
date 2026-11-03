@@ -2042,3 +2042,61 @@ Terminal Secretary ACK külön visszaolvasva:
 chk-ee75ee40-6945-4e15-9a05-5217f68a1a38. Az átvétel külön product-checkpointba kerül.
 A commit és meglévő guard-inventory célzott frissítése külön készül. Nincs
 mainablak, nyilvános új push, telepítés, aktiválás vagy pénzügyi elfogadás.
+
+
+## 97. P4b — CJ eseményidő és SAT1 szorzóhatár (2026-11-03)
+
+A jóváhagyott CJ-hibajavítás két igazolt hibájának célzott kezelése: a régi
+normalizer a timestamp inicializálása előtt kér szorzót, és a SAT1-tokenből
+képzett technikai hash-t valós donorazonosítóként használja. A legacy ledger
+NGO-korrelációja és stabil technikai pseudo-mezője megmarad; hash alapján nincs
+szintkeresés vagy bónusz. Az eseményidő előbb ellenőrzött; hibás/relatív dátum
+nem helyettesíthető mai idővel. Az érvényes régi SID történeti lookupja megmarad.
+
+Scope: impactshop-cj.php normalize_commission, meglévő extract_pseudo_from_sid
+szétválasztója és izolált regresszió.
+Közvetlen összefüggő hibakeresés Codexnél a cost-aware kivétele szerint;
+nincs szükséges új Hermes/JEV-hívás vagy párhuzamos patchgenerálás.
+A canonical rang/donor authority külön read-only feltárás, nem új policydöntés.
+Érintett: CJ sync/replay→legacy ledger normalizálás, régi NGO-összegközlés.
+Változatlan: providerkérés, cursor/dedupe, redirect/SAT1 token, pontcapture,
+points_event, policy, nyelvek/devizaválasztó, donor/NGO-szintszabályok.
+Kockázat: történeti dátum hibás elutasítása vagy SAT1 sorazonosság változása;
+teszt explicit időzóna/törtrész, valódi SID history, synthetic SAT1 nincs lookup,
+invaliddate karantén, régi technikai pseudo/NGO/source_ref megőrzése.
+
+Kiadás meglévő exact-file út, friss hash/mentés/CAS/readback; nem most.
+Rollback saját CJ-fájl mentéséből, új ledgeradat felülírása nélkül; korábbi
+hibás összegek esetleges rendezése külön bizonylatos feladat, nincs bulk replay.
+Kézi UI-checklist kiadáskor: Impact Shop és NGO-kártya nyitás; változatlan
+nyelv/devizaválasztó és affiliate átirányítás; nincs új jutalom/váratlan összeg.
+A fix nem teszi a régi float/statikusFX ledgerágat pontos pénzügyi authorityvé;
+eredeti deviza/korrekció/új snapshot és cash-journal továbbra nyitott.
+Nincs mainablak, távoli/public írás, telepítés vagy aktiválás. Teszt alább.
+
+
+Az első valódi normalizálási teszt a meglévő két `~[|~]~` mintánál megállt:
+`preg_split(): Unknown modifier ']'`. Ugyanazon SID-út mindkét mintája `/[|~]/`
+lett; a teszt mindkét korábbi elválasztót ellenőrzi. Nem elnémított figyelmeztetés.
+A javítás utáni tényleges eredmény: `php tests/impactshop-cj-normalization.test.php`
+36 sikeres ellenőrzés, PHP warningtól hibázó handlerrel. A tényleges normalizer
+és history-lookup szintetikus DB-vel futott: event-time előbb átadva; Bronze
+1050 az1000HUF-ból; SAT1 ugyanazt a technikai sort adja1000HUF-fal, donorlookup
+nélkül; invalid/relative/calendar dátum karantén, bearer nincs failurequeueban.
+Meglévő `tests/impactshop-points-provider-adapters.test.php` és
+`tests/impactshop-points-attribution.test.php` sikeres, két PHP-lint/diff-check
+sikeres. Nincs valós DB/provider vagy élő import; nem teljes pénzügyi elfogadás.
+
+Külön read-only affiliate_inventory vizsgálat: donor-authority a jelenleg
+kijelzett `user_points.current_level`; hiány/SQLhiba nem Basic. A negyedéves
+weighted ads tally csak votes DESC, nincs igazolt deterministic tie-break;
+a záró quarters_results is ezt örökli. A külön campaign/cast fund ngo_id tie-ja
+nem helyettesíti ezt a forrást. Arnold döntése: a szinthatárt átlépő holtverseny minden tagja a magasabb
+szintet kapja. A pozitív súlyozott szavazatú holtversenycsoport legjobb helye
+dönt; nulla szavazat továbbra Base. Nincs múltbeli snapshot-átírás. A későbbi
+capture és aktuális kijelzés ezt a szabályt együtt alkalmazza.
+Nincs új Hermes/JEV/providerhívás; Codex/review teljes költség ismeretlen.
+
+Független d2i_source_review: a három kapcsolt CJ-javításon és36teszten konkrét
+blokkolót nem talált; a bearerhatár, időpont és SID-regex visszaolvasva.
+Reviewer nem futtatott tesztet. A fenti legacy pénzügyi hiányok nyitottak.

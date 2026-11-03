@@ -9049,3 +9049,20 @@ elvetve/jelentős Codex-javítás, 13017 token, 1 API, becsült USD0.0019047756;
 tényleges teljes díj/megtakarítás ismeretlen, terminal ACK külön visszaolvasva.
 Scope/kockázat/teszt/rollback/UI: protected record§96. Nincs mainablak, új
 nyilvános publikálás, telepítés vagy aktiválás.
+
+
+## P4b — CJ eseményidő és donorazonosság, 2026-11-03
+
+A legacy normalizer az ellenőrzött eseményidővel kér szorzót. A SAT1-ből képzett
+technikai row key nem donor, ezért nem kér szintbónuszt. A futó teszt feltárta
+és kijavította a két hibás SID-regexet is.36új normalizálási ellenőrzés,
+meglévő provider-adapter és attribution suites, PHP-lint/diff sikeres.
+Részletes scope/risk/rollback/UI és futási korlát: protected record§97.
+Régi float/statikusFX/történeti fallback nem teljes pénzügyi authority;
+teljes CJ-currency/correction/capture/journal továbbra nyitott.
+Nincs új Hermes/JEV-hívás; a közvetlen hibajavítás/review teljes költsége ismeretlen.
+A rank-authority read-only leltár szinthatár-tie döntési hiányt igazolt;
+Arnold a magasabb szintet választotta a holtverseny minden tagjának. A nulla
+szavazat Base; történeti snapshot megmarad, a pontmodul nem változott.
+Független CJ source review blokkoló nélkül; reviewer nem futtatott tesztet.
+Nincs mainablak, merge, publicpush, telepítés vagy aktiválás.
