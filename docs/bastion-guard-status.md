@@ -1117,3 +1117,12 @@ checksum változik; inventory/guardlogika/idegen pin érintetlen.4395 natív DB
 javítva és visszaolvasva. Koherencia/séma/kiadás/rollback/kézi UI: protected
 record§87. Alapból OFF, zero live provider request, nincs mainablak,merge,
 telepítés,aktiválás vagy pénzügyi elfogadás.
+
+
+### 2026-11-03 D2ab saját hashfrissítés
+
+Csak a tesztelt donation finance-ledger.php és http.php két hashértéke
+frissül a d333997d termékcommit után. A konfiguráció és idegen pin változatlan.
+4853MariaDB/342HTTP/17runtime/154web; review P2 lezárva.
+Kockázat, pontos határ, kiadás/rollback és UI checklist: protected record §88.
+Ez forrásbaseline, nem telepítési vagy éles elfogadás.
