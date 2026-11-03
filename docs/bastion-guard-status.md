@@ -1050,3 +1050,14 @@ guard inventory nulla drift és6 checksum eset sikeresen ellenőrizve.
 Forrásmunka; nincs mainablak, merge/deploy/aktiválás vagy pénzügyi elfogadás.
 
 D2t termékcommit:946d8c2c4ef01a1fba4bbd549e1f57d85a21b54b.
+
+
+## 2026-11-03 — D2v saját account-event baseline
+
+Termékcommit98a8d2bec46cca38c830a53e112c77769a22c588. Csak a saját donation
+webhook.php és finance-read.php két hash és manifest-checksum változik;
+inventory/guardlogika/idegen pin megmarad.2458 natív MariaDB (87 új),90
+account/CAS,442 CLI,13 runtime; független source-review két lelete javítva,
+végső visszaolvasás lelet nélkül. Pontos koherencia/kockázat/érintettség,
+séma/kiadási sorrend/kompatibilis rollback és kézi UI: protected record §80.
+Nincs mainművelet, publikálás, telepítés vagy aktiválás.
