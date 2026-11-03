@@ -9092,3 +9092,28 @@ publicpush, merge, telepítés, aktiválás vagy pénzügyi elfogadás.
 
 Független forrásreview konkrét blokkoló nélkül, saját futtatás nélkül;
 élő quarter/dependency és böngészős elfogadás a későbbi kiadásnál szükséges.
+
+## P4d — közös banki jóváírás-foglalás, 2026-11-03
+
+Új belső `sharity-support-finance.php`: a bank/provider + fogadó accountref +
+valódi credit-ID egyetlen keretet azonosít az affiliate/Offerwall számára.
+Pontos signed64 minor-sztringek, változatlan bizonylatreferencia/digest,
+globális műveletazonosság, kumulált történeti felhasználás. Refund vagy payout
+nem szabadítja vissza a keretet. A hívó mysqli-tranzakciója egyesíti a claimet
+és saját naplóját; a helper nem commitol, és eredménye `pending_commit`.
+Explicit DDL, két tábla séma-/index-/engine-ellenőrzése; mindkét MDL a vizsgálat
+előtt. Bizonytalan commit után friss kapcsolatos, teljes tartalmi readback kell.
+
+131 tényleges, izolált MariaDB10.11.19 check és két PHP-lint sikeres. Valós
+kétkapcsolatos capacity/duplicate/global-ID race, commitACK-vesztés,
+kapcsolatvesztés, közös consumer-rollback, régi read-view és párhuzamos ALTER
+ellenőrizve. Független review egy MDL-sorrendi hibát talált; javítás és
+visszaolvasás lezárta, reviewer saját tesztet nem futtatott.
+
+Hermes075: részben használt struktúra/teszttémák, a hibás SQL/pénz-/séma-/
+zársorrend miatt jelentős Codex-javítás. 1 API,10464input+12005output,
+768cache-read,22469total; becsült USD0.0030812236, tényleges/full díj és
+megtakarítás ismeretlen. Nincs JEV/retry/fallback. Részletek: protected record§100.
+Nincs importbekötés, CLI, providerhívás, migráció, pénzmozgatás vagy élesítés.
+A jelenlegi V1 import még nem használja ezt; élő leltár/legacy-credit migráció
+és a tényleges fogyasztó ugyanazon TX-es bekötése a következő határ.

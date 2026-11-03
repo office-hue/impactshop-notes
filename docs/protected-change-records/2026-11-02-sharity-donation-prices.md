@@ -2198,3 +2198,68 @@ Pure policy termékcommit: e5ade4bc. A wrapper a különválasztott saját
 unstaged card miatt unavailable volt; a két natív --mode staged ellenőrzés
 sikeres (a másik saját lane megőrzéséről advisory), tartalom/secret/diff rendben.
 A protected UI külön commitban követi; semmilyen guard nem lett kikapcsolva.
+
+## 100. P4d — közös banki jóváírás-foglalás, implementáció előtt (2026-11-03)
+
+Jóváhagyott delivery§52.4: új `sharity-support-finance.php`, belső közös
+credit/claim tároló az affiliate és Offerwall számára. Hermes075 első draft;
+Codex integrál, célzott valós MariaDB és független review. Konkrét kár:
+ugyanazon banki beérkezés két forrásból történő újrafelhasználása, részleges
+commit, bizonytalan eredmény utáni dupla könyvelés. A forrásfüggetlen bankkulcs,
+historikusan elfogyasztott keret és append-only műveletazonosság kezeli ezt.
+A helper a hívó rögzített mysqli-tranzakcióját használja, nem nyit/zár sajátot.
+
+Első forráscsomag belső regisztráció/foglalás/olvasás és explicit sémaművelet;
+nincs HTTP/cron/providerhívás, automatikus DDL, importbekötés, pénzmozgatás,
+szavazat vagy aktiválás. Nem állítja, hogy a jelenlegi V1 import már védett.
+Az élő leltár és régi creditek bizonylatos átvezetése a bekötés/aktiválás
+előfeltétele marad; az SSH-hitelesítési blokk ezt érinti. Új dependency/policy
+nem változtatja a callbackokat, pontot, régi történeti rátát vagy pénzadatot.
+
+Meglévő Bástya inventory csak az új saját modulra bővül a kész forrás után;
+termék és hash külön commit. Kiadási út: meglévő Notes exact-file staging,
+függőség OFF, explicit DDL és séma/index/engine-visszaolvasás, később fogyasztó
+ugyanazon tranzakcióval és közös zársorrenddel. Új hívók nélkül nincs runtime
+hatás. Rollback csak saját modul/pin; már létrejött pénzügyi sorok nem törölhetők.
+UI-próba e belső csomaghoz nincs; későbbi integrációkor a kézi dry-run/exact
+approval/expected-version, korábbi refund és callback-folyamat ellenőrzendő.
+
+### P4d — tényleges integráció és ellenőrzés
+
+Érintett termékfájlok: `wp-content/mu-plugins/sharity-support-finance.php`,
+`tests/sharity-support-finance-mysql.test.php`. Registry tábla a terv szerinti
+`{prefix}sharity_support_cash_claims`; az idempotens részfelhasználás külön
+`{prefix}sharity_support_cash_claim_operations`. Belső API: `credit_identity`,
+`register_credit`, `claim`, `lookup`, `lookup_credit`, `schema_sql`,
+`apply_schema` (default false), `verify_schema`. Regisztráció/foglalás csak
+valós aktív caller-TX-ben; bármely hiba caller rollbackot igényel. A callernek
+a claimet saját settlement/root/allocation zárjai előtt, többcreditnél rendezett
+credit-key sorrendben kell kérnie. Siker nem commit-igazolás. Unknown commit
+után friss kapcsolatos credit+operation és saját journal-visszaolvasás; nincs
+vakon ismételt import. Provider/account-ref canonical azonosságát az importáló
+ellenőrzi; az opaque referencia/hash önmagában nem hiteles banki bizonylat.
+
+Az első javított helyi futás126check PASS; a független source review egy valódi
+MDL/engine-versenyt jelzett. Javítás: a két tábla tranzakció-élettartamú MDL-je
+még az engine/schema-vizsgálat előtt. Determinisztikus különkapcsolatos ALTER
+próba az engine-read és első SHOW között mindkét átállást blokkolja; a caller
+regisztrációja rollbackelhető marad. Végleges131check és2lint PASS;
+review readback: finding lezárva, további scoped blocker nincs, reviewer nem
+futtatott tesztet. `SHARITY_FINANCE_TEST_PORT=<isolated-port> php
+tests/sharity-support-finance-mysql.test.php`; kizárólag donation_test loopback,
+randomprefix, végül táblatakarítás. Nincs éles pénzügyi elfogadás.
+
+Hermes075 execution74521a33-91ef-44eb-aeaf-767d501de872;
+task SHA da15fbabd5df0b0259f82f619dcc588b13a2e39eb6ae6f69c7657f8d4663c290;
+1API/22469token,becsültUSD0.0030812236, actual/full cost és megtakarítás
+ismeretlen. Jelentős helyi korrekció: hibás SQL-placeholderírás, lexikografikus
+pénz-összehasonlítás, rossz key-lista/digestellenőrzés, felszínes sémaellenőrzés,
+fordított lockorder és hiányos tesztek. Nem indult újragenerálás/JEV/fallback.
+Terminal Secretary chk-ccbbef9d-60bf-47f0-9a1a-879b897149e8 visszaolvasva.
+
+Kiadási smoke később: semmilyen include/HTTP alatt nincs DDL vagy könyvelés;
+csak explicit finance migráció; fennálló adatok/count/sum és InnoDB/index
+elő-/utóellenőrzése, bank-ID nélküli régi sor mellett érintett import OFF.
+A modul jelenléte nem kapcsol be importot. Régi/V2 allokáció, frozenpolicy,
+NGO-authority és személyes history nem változott. Csak saját forrás/pin
+rollback; meglevő credit/operation sor, banki bizonyíték nem törölhető.
