@@ -1217,3 +1217,14 @@ preflight quarter/dependency, cache, kompatibilis rollback és UI-lista.
 Policy dependency előbb, card utána; rollout még nincs. Nincs pénzügyi írás.
 - `wp-content/mu-plugins/sharity-support-policy.php`: `225f1b56d17f051092a3b9c3a18010cc94132e6529cabdb84451f78366efc2d5`
 - `wp-content/mu-plugins/impactshop-ngo-card.php`: `426a50dd5c7e98487b5c5a02fedf7aefd338742fc24b3c894f810fe55870b791`
+
+## 2026-11-03 — P4d banki jóváírás-foglalás
+
+Termék ea82fcc1; a meglévő inventory kizárólag az új saját
+`wp-content/mu-plugins/sharity-support-finance.php` modullal bővül. Config önhash,
+checksum és új modulhash változik; idegen pin, repo/host metadata és guardlogika
+megmarad. 131 valódi izolált MariaDB check,2lint,független source review és MDL
+javítás readback; protected record§100. Új runtime-hívó/CLI, éles migráció vagy
+importaktiválás nincs. A jelenlegi V1 import nem használja még a közös keretet.
+Rollback saját release/inventory; történeti pénzügyi sorokat nem töröl.
+Új modul SHA256: `6b24bb4003081615abd7e21e317d9c1c8e4d444f09b570cfc662e4ce41c35bec`.
