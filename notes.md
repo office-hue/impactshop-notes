@@ -8431,3 +8431,7 @@ WP PR #248 merge-elt; a Mini szárazpróbája távoli írás előtt megállt a s
 config-checksum kihagyott hash-sora miatt. Két hashfájl célzott korrekciója;
 plugin és minden más baseline változatlan. Telepítés/aktiválás még nincs.
 Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
+
+
+## 2026-11-03 – Sharity jogi dokumentumindex R3 előkészítése
+A HU/EN jogi index a kilenc nyilvános R3 PDF-hez kapcsolódik; a Win4Good archív és az angol oldalon a magyar PDF-nyelv jelölt. Saját worktree, két védett HTML, terméklogika érintetlen. Koherencia, kockázat, backup/CAS/rollback és kézi UI checklist: `docs/protected-change-records/2026-11-03-sharity-legal-documents-r3.md`. Állapot: helyi forrás; merge/deploy/éles smoke még nem történt. Az éles PDF-elérhetőség a telepítés előfeltétele.
