@@ -203,6 +203,7 @@ try {
     require __DIR__ . '/sharity-donation-finance-movements-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-backing-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-target-mysql.test.php';
+    require __DIR__ . '/sharity-donation-checkout-drain-mysql.test.php';
     check(calls() >= $beforePosts && !isset($data['allocation_minor']), 'no settlement claim');
     echo 'Donation finance MariaDB: '.($checks-$financeStart)." checks; parallel connections, uncertain INSERT, no provider POST during record\n";
 } finally {

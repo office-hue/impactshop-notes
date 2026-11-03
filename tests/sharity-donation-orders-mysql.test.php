@@ -19,12 +19,12 @@ function fails(callable $call, string $code): void {
 }
 class OrderDb
 {
-    public string $prefix; public string $last_error = '';
+    public string $prefix; public string $options; public string $last_error = '';
     public mysqli $db; public string $failOn = ''; public string $failure = '';
     public ?string $barrier = null; public int $slot = 0; public string $barrierOn = ''; public bool $barrierUsed = false;
     public int $ddls = 0; public $afterRead = null;
     public function __construct(int $port) {
-        $this->prefix = $GLOBALS['testPrefix'];
+        $this->prefix = $GLOBALS['testPrefix']; $this->options=$this->prefix.'options';
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         $this->db = new mysqli('127.0.0.1', 'root', 'isolated-donation-test-only', 'donation_test', $port);
         $this->db->set_charset('utf8mb4');

@@ -674,3 +674,104 @@ acceptance. Next: full-liability/covered correction lifecycle, separate Foundati
 account verification, direct HUF acceptance, then Amplifier votes/fund and remaining scope.
 Foundation bank ownership remains confirmed; no duplicate onboarding question or live write.
 SUBSTACK-HANDOVER.md retained as reference only.
+
+
+## 75. D2r — értesítéstől pénzügyi megfigyelésig (előkészítés, 2026-11-02)
+
+Kiindulás N d45d536b / A fd058397a, tiszta saját worktree-k. Az előző R2
+UserCard-only csomag forrása feltöltött; a teljes §62 pénzügyi cél változatlan.
+A következő konkrét hiány: a hiteles Checkout-inbox és a meglévő pénzügyi
+GET/napló/mozgásregiszter/cél még külön kézi lépés. Hermes052 az első kidolgozó;
+a javaslat nem teszt vagy átvétel.
+
+Koherencia és érintettség: csak saját donation webhook.php, runtime.php,
+finance-read.php és célzott tesztek. A négy meglévő Checkout-eseményből korlátos
+admin drain és külön WP-Cron callback készül; nincs automatikus ütemezés vagy
+HTTP-migráció. A meglévő inbox additív, explicit frissítése megőrzi az eredeti
+azonosságot és a régi recovery-t. A pénzügyi napló/regiszter/cél meglévő
+szerződését használja; nincs általános queue vagy új külső POST.
+
+Konkrét kockázatok: kétszer feldolgozott értesítés, elveszett nyugta, migráció
+után kieső régi recovery, későn érkező esemény téves lezárása, ismételten hibás
+sor miatti éhezés, túl hosszú SDK-hívás és más Stripe-plugin HTTP-állapotának
+módosítása. Célzott valódi DB-/offline SDK-teszt és független forrásreview kell.
+A legfeljebb öt rendeléses futás 60 s szolgáltatói keretet és rövid HTTP-timeoutot
+kap; a transport minden kilépésnél visszaáll. Nem állíthatunk pénzügyi véglegességet,
+könyvelést, kifizetést, szavazatot vagy aktiválást.
+
+A teljes refund/dispute/account/payout eseménykör, kiesett értesítések periodikus
+pótlása, saját pénzügyi státuszfelület és végrehajtható fedezet továbbra megvalósítandó.
+Kiadás: meglévő exact-file, előállapot-hash és privát mentés; kompatibilis runtime/
+webhook/CLI, explicit additív séma, readback, majd külön scheduler-beállítás.
+Rollback: csak saját fájl/ütemezés, új inbox/finance adat nem törölhető, régi
+checkout/webhook/owner status marad. Funkciópróba: signature/recovery/history,
+hiányos és teljes pénzügyi olvasás, dedupe/verseny/hibajavítás, időkeret és nulla
+provider POST. Kézi UI-checklist kiadáskor: NGO-adományoldal, login és saját
+státusz négy nyelven; nincs téves kész/kifizetett állítás, preferenciaváltás nem
+indít fizetést. Most nincs merge, telepítés, scheduler vagy aktiválás.
+
+### D2r tényleges eredmény
+
+A végleges termékdiff csak webhook.php és finance-read.php; runtime.php változatlan.
+A webhook-inbox három nullable mezővel bővül: observation_digest, observed_at_utc,
+last_attempt_at_utc. A régi és az új pontos séma elfogadott; ismeretlen séma tilt.
+DDL kizárólag `wp sharity donations webhook-finance-schema --apply` parancsra;
+hiányzó vagy extra argumentum nem ír. A meglévő `webhook-schema` is elfogadja az
+új alakot. HTTP-betöltés nem migrál, ütemezés nem jön létre automatikusan.
+
+`wp sharity donations finance-drain` vagy a külön névterű cron callback legfeljebb
+öt rendelést és rendelésenként öt függő értesítést dolgoz fel. Az existing options
+opaque kurzora natív CAS/readback alapján halad és körbefordul. A legutóbb próbált
+esemény ideje külön marad a sikeres megfigyeléstől: a hibás esemény megőrződik,
+de nem szorítja ki tartósan az ugyanazon rendeléshez tartozó későbbit.
+A meglévő recovery, kanonikus finance-record, registry és immutable provisional
+target szerződés után csak a futás elején kiválasztott esemény kap teljes receipt-
+ellenőrzött markert. Nem fizetett állapot függő marad, nem nulla adományként zárul.
+
+A privát, lazán betöltött SDK-transport csak hivatalos Stripe GET-et enged,
+rendelésenként legfeljebb63-at, retry nélkül. Az egész batch szolgáltatói kerete60s,
+HTTP-timeout legfeljebb5s/connect2s, a maradék kerettel szűkítve; kilépéskor a
+korábbi transport visszaáll. A keret nem folyamatmegszakító és nem bizonyít kemény
+60s teljes futásidőt: a helyi DB-művelet/zárvárakozás ideje külön futási feltétel,
+éles scheduler-próbában ellenőrizendő. Nincs provider POST, pénz-/szavazat-/alap-
+végrehajtás vagy új pénzügyi jogosultság; readiness false marad.
+
+Tényleges végső ellenőrzés: izolált MariaDB10.11.19, két kapcsolat/fork/barrier,
+1767 assertion PASS, ebből360 D2r; a suite részszámai átfednek, nem összeadandók.
+Első futás1723/316 sikeres volt, a két review-javítás után a végső1767/360 újra
+lefutott. A fizikai Stripe-hálózat helyett a rögzített SDK offline HTTP-válaszokat
+kapott, az elveszett ACK fault injection. Lefedve: séma/DDL-argumentum/old rows,
+ismétlés, hiányzó session recovery, nem fizetett állapot, providerhiba, cursor-
+konfliktus, két drain versenye, későn érkező esemény, öt poison utáni hatodik valid,
+korrupt completion-időbélyeg, GET-/időkeret és transport-visszaállítás.
+A meglévő437 finance/CLI és13 friss processzes runtime ellenőrzés sikeres; PHP
+lint/diff sikeres. Független forrásreview két lelete javítva és visszaolvasva;
+a reviewer tesztet nem futtatott. Nincs új teljes tervaudit vagy sandbox/live PASS.
+
+Hermes052 execution9b0d2bfe-c296-4e48-85f6-81e014aa57f8, input SHA
+b336c9dcbc0c15970211ff0cc38d6cf782f26ed5c051e3cb1d72f872f8486f79:
+1completed hívás,35279input+10809output=46088token,768cached; becsült
+USD0.0051217166. Tényleges számla és Codex/reviewer összköltség ismeretlen.
+Részleges átvétel, jelentős javítás: nem alkalmazható patch/undefined placeholder,
+séma-kompatibilitás, hiányzó-session recovery, kurzor/liveness, lazy SDK-betöltés,
+privát transport/budget és hibás fixture-ek. Nem volt újragenerálás/JEV/fallback.
+A delegálás pending/terminal remote_ack; végső termékcheckpoint külön readbackkel.
+
+Kiadási sorrend: saját kompatibilis webhook → CLI; kikapcsolt worker mellett
+inbox+options és érintett finance táblák konzisztens mentése, friss remote hash,
+explicit séma/parancs, engine/index/readback, staging batch, azonos productionbyte.
+Csak ezután külön scheduler bejegyzés, futási idő és hibaszámlálók ellenőrzésével.
+Rollbackkor új workerindítás leáll, a már eltárolt esemény/megfigyelés/movement/target
+megmarad; előző webhook a nullable bővítéssel kompatibilis, régi schema-apply-t
+nem futtatjuk az új táblára. Nincs DB-visszaállítás új események fölé.
+Kézi UI-checklist kiadás után: NGO-adományoldal és belépés; saját rendelés olvasása;
+HU/EN/DE/FR és fizetési deviza; frissítés/preferenciaváltás nem indít fizetést;
+nincs téves kifizetett állítás vagy publikus alapnövekmény. Most nem futott élő UI.
+Teljes refund/dispute/payout/account eseménykör, catch-up, owner pénzügyi státusz,
+fedezett végrehajtás és a §62 cél többi része nyitott. SUBSTACK-HANDOVER.md csak
+megőrzött hivatkozás. Nincs mainablak, merge, telepítés, aktiválás vagy élő elfogadás.
+
+D2r lezáró helyi ellenőrzés: teljes meglévő protected inventory nulla drift és6
+izolált hash/checksum eset PASS; kizárólag webhook.php/finance-read.php saját pinje
+változott. Guardlogika/inventory/idegen pin érintetlen. A saját loopback/tmpfs MariaDB-
+konténer eltávolítva és hiánya visszaolvasva; nincs image pull vagy közös függőségírás.

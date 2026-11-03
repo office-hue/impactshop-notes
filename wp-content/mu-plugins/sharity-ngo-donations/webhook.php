@@ -5,6 +5,8 @@
  */
 declare(strict_types=1);
 const SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION = 'sharity_donation_webhooks_schema_v1';
+const SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION = 'sharity_donation_webhook_finance_schema_v1';
+const SHARITY_DONATION_DRAIN_CURSOR_OPTION = 'sharity_donation_finance_drain_cursor_v1';
 function sharity_donation_webhook_table(): string { global $wpdb; return $wpdb->prefix . 'sharity_donation_webhooks_v1'; }
 
 /** Internal authority: call only after provider signature verification or from CLI.
@@ -184,29 +186,222 @@ function sharity_donation_webhook_schema_apply(): bool
             recovered_at_utc datetime NULL,
             PRIMARY KEY (event_id), KEY order_id (order_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin") === false) { return false; }
-        $status = $wpdb->get_row($wpdb->prepare('SHOW TABLE STATUS WHERE Name = %s', $table), ARRAY_A);
-        $columns = $wpdb->get_results("SHOW FULL COLUMNS FROM `{$table}`", ARRAY_A);
-        $indexes = $wpdb->get_results("SHOW INDEX FROM `{$table}`", ARRAY_A);
-        if ($wpdb->last_error !== '' || ($status['Engine'] ?? '') !== 'InnoDB' || !is_array($columns) || !is_array($indexes)) { return false; }
-        $expected = ['event_id' => ['varchar(255)', 'ascii_bin'], 'order_id' => ['char(35)', 'ascii_bin'],
-            'session_id' => ['varchar(255)', 'ascii_bin'], 'identity_json' => ['longtext', 'utf8mb4_bin'],
-            'identity_digest' => ['char(64)', 'ascii_bin'], 'received_at_utc' => ['datetime', null], 'recovered_at_utc' => ['datetime', null]];
-        if (count($columns) !== count($expected)) { return false; }
-        foreach ($columns as $c) {
-            if (!isset($expected[$c['Field']]) || [$c['Type'], $c['Collation']] !== $expected[$c['Field']]
-                || $c['Null'] !== ($c['Field'] === 'recovered_at_utc' ? 'YES' : 'NO') || $c['Default'] !== null || $c['Extra'] !== '') { return false; }
-        }
-        $actual = [];
-        foreach ($indexes as $i) {
-            if ($i['Sub_part'] !== null || $i['Index_type'] !== 'BTREE') { return false; }
-            $actual[$i['Key_name']][] = [$i['Column_name'], (int) $i['Non_unique'], (int) $i['Seq_in_index']];
-        }
-        ksort($actual);
-        if ($actual !== ['PRIMARY' => [['event_id', 0, 1]], 'order_id' => [['order_id', 1, 1]]]) { return false; }
+        if (sharity_donation_webhook_schema_shape() === 0) { return false; }
         update_option(SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION, '1', false);
         return get_option(SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION, '') === '1';
     } catch (Throwable $error) { return false; }
 }
+
+/** The existing inbox has two explicit schema shapes. Never repair an unknown one. */
+function sharity_donation_webhook_schema_shape(): int
+{
+    global $wpdb; $table = sharity_donation_webhook_table();
+    $status = $wpdb->get_row($wpdb->prepare('SHOW TABLE STATUS WHERE Name = %s', $table), ARRAY_A);
+    $columns = $wpdb->get_results("SHOW FULL COLUMNS FROM `{$table}`", ARRAY_A);
+    $indexes = $wpdb->get_results("SHOW INDEX FROM `{$table}`", ARRAY_A);
+    if ($wpdb->last_error !== '' || ($status['Engine'] ?? '') !== 'InnoDB' || !is_array($columns) || !is_array($indexes)) { return 0; }
+    $expected = ['event_id'=>['varchar(255)','ascii_bin'], 'order_id'=>['char(35)','ascii_bin'],
+        'session_id'=>['varchar(255)','ascii_bin'], 'identity_json'=>['longtext','utf8mb4_bin'],
+        'identity_digest'=>['char(64)','ascii_bin'], 'received_at_utc'=>['datetime',null], 'recovered_at_utc'=>['datetime',null]];
+    $version = count($columns) === 10 ? 2 : 1;
+    if ($version === 2) { $expected += ['observation_digest'=>['char(64)','ascii_bin'], 'observed_at_utc'=>['datetime',null], 'last_attempt_at_utc'=>['datetime',null]]; }
+    if (count($columns) !== count($expected)) { return 0; }
+    foreach ($columns as $c) {
+        $nullable = in_array($c['Field'], ['recovered_at_utc','observation_digest','observed_at_utc','last_attempt_at_utc'], true);
+        if (!isset($expected[$c['Field']]) || [$c['Type'],$c['Collation']] !== $expected[$c['Field']]
+            || $c['Null'] !== ($nullable ? 'YES' : 'NO') || $c['Default'] !== null || $c['Extra'] !== '') { return 0; }
+    }
+    $actual = [];
+    foreach ($indexes as $i) {
+        if ($i['Sub_part'] !== null || $i['Index_type'] !== 'BTREE') { return 0; }
+        $actual[$i['Key_name']][] = [$i['Column_name'],(int)$i['Non_unique'],(int)$i['Seq_in_index']];
+    }
+    ksort($actual);
+    return $actual === ['PRIMARY'=>[['event_id',0,1]],'order_id'=>[['order_id',1,1]]] ? $version : 0;
+}
+
+function sharity_donation_webhook_finance_schema_apply(): bool
+{
+    try {
+        sharity_donation_order_autocommit();
+        update_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION, '0', false);
+        if (get_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION, '') !== '0'
+            || !sharity_donation_webhook_schema_apply()) { return false; }
+        if (sharity_donation_webhook_schema_shape() === 1) {
+            global $wpdb; $table = sharity_donation_webhook_table();
+            try {
+                $wpdb->query("ALTER TABLE `{$table}`
+                    ADD COLUMN observation_digest char(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+                    ADD COLUMN observed_at_utc datetime NULL,
+                    ADD COLUMN last_attempt_at_utc datetime NULL");
+            } catch (Throwable $uncertain) { /* DDL ACK may be lost; inspect the exact shape below. */ }
+        }
+        if (sharity_donation_webhook_schema_shape() !== 2) { return false; }
+        update_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION, '1', false);
+        return get_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION, '') === '1';
+    } catch (Throwable $error) { return false; }
+}
+
+/** One private CurlClient per bounded scope. No SDK class is required on file load.
+ * The optional offline transport/clock are only callable-code test seams, not HTTP inputs. */
+function sharity_donation_webhook_bounded_read(callable $operation, float $deadline, ?object $transport = null, ?callable $clock = null)
+{
+    $clock = $clock ?? static fn(): float => hrtime(true) / 1e9;
+    sharity_donation_runtime_sdk();
+    $prior = Stripe\ApiRequestor::httpClient();
+    $inner = $transport ?? new Stripe\HttpClient\CurlClient();
+    $bounded = new class($inner, $deadline, $clock) implements Stripe\HttpClient\ClientInterface {
+        private int $gets = 0;
+        public function __construct(private object $inner, private float $deadline, private $clock) {}
+        public function request($method, $url, $headers, $params, $hasFile, $apiMode = 'v1', $maxNetworkRetries = null) {
+            $left = $this->deadline - ($this->clock)();
+            if ($method !== 'get' || !is_string($url) || !str_starts_with($url, 'https://api.stripe.com/v1/')
+                || $hasFile !== false || $apiMode !== 'v1' || $maxNetworkRetries !== 0 || $left < 1 || $this->gets >= 63) {
+                throw new RuntimeException('DONATION_DRAIN_READ_LIMIT');
+            }
+            $this->gets++;
+            if ($this->inner instanceof Stripe\HttpClient\CurlClient) {
+                $this->inner->setTimeout((int)min(5, floor($left)))->setConnectTimeout((int)min(2, floor($left)));
+            }
+            try { $reply = $this->inner->request($method, $url, $headers, $params, false, 'v1', 0); }
+            catch (Throwable $error) { throw new RuntimeException('DONATION_DRAIN_READ_UNAVAILABLE'); }
+            if (($this->clock)() >= $this->deadline) { throw new RuntimeException('DONATION_DRAIN_READ_LIMIT'); }
+            return $reply;
+        }
+    };
+    try { Stripe\ApiRequestor::setHttpClient($bounded); return $operation(); }
+    finally { Stripe\ApiRequestor::setHttpClient($prior); }
+}
+
+/** Opaque round-robin cursor in the existing options table, independent of WP caches.
+ * CAS only coordinates scanning, never authorizes a financial write. */
+function sharity_donation_webhook_cursor(?string $next = null, ?string $expected = null): ?string
+{
+    global $wpdb; $table = $wpdb->options;
+    if (!is_string($table) || !preg_match('/^[A-Za-z0-9_]+$/D', $table)) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
+    sharity_donation_order_autocommit();
+    $read = static function () use ($wpdb,$table): ?string {
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT option_value FROM `{$table}` WHERE option_name = %s LIMIT 2", SHARITY_DONATION_DRAIN_CURSOR_OPTION), ARRAY_A);
+        if ($wpdb->last_error !== '' || !is_array($rows) || count($rows) > 1) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
+        if (!$rows) { return null; }
+        $v = $rows[0]['option_value'];
+        if (!is_string($v) || ($v !== '' && !preg_match('/^do_[a-f0-9]{32}$/D', $v))) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
+        return $v;
+    };
+    if ($next === null) { return $read(); }
+    if ($next !== '' && !preg_match('/^do_[a-f0-9]{32}$/D', $next)) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
+    try {
+        if ($expected === null) {
+            $wpdb->query($wpdb->prepare("INSERT INTO `{$table}` (option_name,option_value,autoload) VALUES (%s,%s,'no')", SHARITY_DONATION_DRAIN_CURSOR_OPTION, $next));
+        } else {
+            $wpdb->query($wpdb->prepare("UPDATE `{$table}` SET option_value = %s WHERE option_name = %s AND BINARY option_value = BINARY %s", $next, SHARITY_DONATION_DRAIN_CURSOR_OPTION, $expected));
+        }
+    } catch (Throwable $uncertain) { /* Confirm exact value below, never blindly retry. */ }
+    if ($read() !== $next) { throw new RuntimeException('DONATION_DRAIN_CURSOR_CONFLICT'); }
+    return $next;
+}
+
+/** Failed events remain pending but cannot forever displace later events of the same order. */
+function sharity_donation_webhook_observation_attempt(array $row, int $now): void
+{
+    sharity_donation_order_autocommit();
+    global $wpdb; $table = sharity_donation_webhook_table(); $at = gmdate('Y-m-d H:i:s',$now);
+    try {
+        $wpdb->query($wpdb->prepare("UPDATE `{$table}` SET last_attempt_at_utc = GREATEST(COALESCE(last_attempt_at_utc,%s),%s)
+            WHERE event_id = %s AND identity_digest = %s",$at,$at,$row['event_id'],$row['identity_digest']));
+    } catch (Throwable $uncertain) { /* Read progress before doing external work. */ }
+    $saved = sharity_donation_webhook_read($row['event_id']);
+    $time = $saved['last_attempt_at_utc'] ?? null;
+    $date = is_string($time) ? DateTimeImmutable::createFromFormat('!Y-m-d H:i:s',$time,new DateTimeZone('UTC')) : false;
+    if ($saved === null || $saved['identity_json'] !== $row['identity_json'] || $saved['identity_digest'] !== $row['identity_digest']
+        || $date === false || $date->format('Y-m-d H:i:s') !== $time || strcmp($time,$at) < 0) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+}
+
+/** Complete exactly the captured event, never all events for an order. */
+function sharity_donation_webhook_observation_done(array $before, array $receipt, int $now): void
+{
+    global $wpdb; $table = sharity_donation_webhook_table();
+    sharity_donation_order_autocommit();
+    if ($receipt['order_id'] !== $before['order_id']) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    try {
+        $wpdb->query($wpdb->prepare("UPDATE `{$table}` SET observation_digest = %s, observed_at_utc = %s
+            WHERE event_id = %s AND identity_digest = %s AND observation_digest IS NULL AND observed_at_utc IS NULL",
+            $receipt['digest'], gmdate('Y-m-d H:i:s',$now), $before['event_id'], $before['identity_digest']));
+    } catch (Throwable $uncertain) { /* Full identity + saved observation readback decides. */ }
+    $after = sharity_donation_webhook_read($before['event_id']);
+    if ($after === null) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    foreach (['event_id','order_id','session_id','identity_json','identity_digest','received_at_utc'] as $k) {
+        if ($after[$k] !== $before[$k]) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    }
+    if (!is_string($after['observation_digest']) || !preg_match('/^[a-f0-9]{64}$/D',$after['observation_digest'])
+        || !is_string($after['observed_at_utc'])) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    $at = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s',$after['observed_at_utc'],new DateTimeZone('UTC'));
+    if ($at === false || $at->format('Y-m-d H:i:s') !== $after['observed_at_utc']) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    // A concurrent successful processor may have recorded a different valid snapshot.
+    $saved = sharity_donation_finance_read($before['order_id'],$after['observation_digest']);
+    if ($saved === null) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    $o = sharity_donation_webhook_order($before['order_id']); $e = sharity_donation_order_decode($o)['snapshot'];
+    sharity_donation_finance_receipt($saved, ['order_id'=>$before['order_id'],'provider_session_id'=>$before['session_id'],
+        'account_id'=>$e['account_id'],'livemode'=>$e['livemode'] ? '1' : '0','donation_mode'=>$e['donation_mode'],'digest'=>$after['observation_digest']]);
+}
+
+function sharity_donation_checkout_drain(int $now, ?object $transport = null, ?callable $clock = null): array
+{
+    $clock = $clock ?? static fn(): float => hrtime(true) / 1e9;
+    $deadline = $clock() + 60;
+    if ($now < 1 || $now > 253402300799 || get_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION,'') !== '1'
+        || !function_exists('sharity_donation_finance_target')) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    sharity_donation_order_autocommit();
+    global $wpdb; $table = sharity_donation_webhook_table();
+    $cursor = sharity_donation_webhook_cursor();
+    $orders = $wpdb->get_results($wpdb->prepare("SELECT DISTINCT order_id FROM `{$table}` WHERE observation_digest IS NULL AND order_id > %s ORDER BY order_id LIMIT 5", $cursor ?? ''), ARRAY_A);
+    if ($wpdb->last_error !== '' || !is_array($orders)) { throw new RuntimeException('DONATION_DRAIN_UNAVAILABLE'); }
+    $result = ['orders'=>0,'observed'=>0,'pending'=>0,'retryable'=>0,'budget_exhausted'=>false,'financial_readiness'=>false];
+    if (!$orders) { if ($cursor !== null && $cursor !== '') { sharity_donation_webhook_cursor('', $cursor); } return $result; }
+    foreach ($orders as $candidate) {
+        if ($clock() >= $deadline) { $result['budget_exhausted'] = true; break; }
+        $orderId = $candidate['order_id']; $result['orders']++;
+        try {
+            $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM `{$table}` WHERE order_id = %s AND observation_digest IS NULL ORDER BY last_attempt_at_utc, event_id LIMIT 5", $orderId), ARRAY_A);
+            if ($wpdb->last_error !== '' || !is_array($rows)) { throw new RuntimeException(); }
+            $valid = [];
+            sharity_donation_webhook_bounded_read(static function () use ($rows,$orderId,$now,&$valid,&$result): void {
+                foreach ($rows as $r) {
+                    try {
+                        sharity_donation_webhook_observation_attempt($r,$now);
+                        sharity_donation_webhook_recover($r['event_id'],$now); $valid[] = $r;
+                    }
+                    catch (Throwable $e) { $result['retryable']++; }
+                }
+                if (!$valid) { return; }
+                $receipt = sharity_donation_finance_record($orderId,sharity_donation_runtime_adapter(),$now);
+                $saved = sharity_donation_finance_read($orderId,$receipt['digest']);
+                if ($saved === null) { throw new RuntimeException(); }
+                sharity_donation_finance_receipt($saved,$receipt);
+                $evidence = json_decode($saved['canonical_json'],true,64,JSON_THROW_ON_ERROR);
+                if (($evidence['original']['evidence_state'] ?? null) !== 'original_charge_observed') { $result['pending'] += count($valid); return; }
+                $inventory = sharity_donation_finance_reconcile($orderId,$now);
+                sharity_donation_finance_record_movements($orderId,$inventory['movement_proposal_digest'],$now);
+                $target = sharity_donation_finance_target($orderId,$now);
+                $applied = sharity_donation_finance_target($orderId,$now,$target['proposal_digest']);
+                if (($applied['persisted'] ?? false) !== true || $applied['proposal_digest'] !== $target['proposal_digest']) { throw new RuntimeException(); }
+                foreach ($valid as $r) {
+                    sharity_donation_webhook_observation_done($r,$receipt,$now); $result['observed']++;
+                }
+            },$deadline,$transport,$clock);
+        } catch (Throwable $error) { $result['retryable']++; }
+        $cursor = sharity_donation_webhook_cursor($orderId,$cursor);
+    }
+    $result['budget_exhausted'] = $result['budget_exhausted'] || $clock() >= $deadline;
+    return $result;
+}
+
+add_action('sharity_donation_finance_drain', static function (): void {
+    try {
+        $r = sharity_donation_checkout_drain(time());
+        if ($r['retryable'] > 0) { error_log('Sharity donation finance drain: retryable=' . $r['retryable']); }
+    } catch (Throwable $error) { error_log('Sharity donation finance drain unavailable; inbox retained.'); }
+});
 
 add_action('rest_api_init', static function (): void {
     register_rest_route('sharity/v1', '/donations/webhook', ['methods' => 'POST',

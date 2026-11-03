@@ -8763,3 +8763,18 @@ call44510tokens, estimated USD0.0043327466, partial reuse/substantial repair; to
 unknown. Test container removed. Full contract, limitations, rollout/rollback and manual
 UI checklist: protected change record2026-11-02-sharity-donation-prices.md section73.
 No main operation, provider POST, new schema, merge/deploy/activation or financial PASS.
+
+## Sharity D2r — Checkout-inbox pénzügyi feldolgozás, 2026-11-02
+
+Saját webhook/finance CLI: explicit hárommezős inbox-migráció, öt rendelés/öt
+esemény, CAS-kurzor, hibás események rotációja; meglévő GET-megfigyelés → regiszter
+→ előzetes cél → teljes marker-readback. Nulla provider POST/pénz/szavazat/alap-
+végrehajtás, nincs automatikus schedule, minden pénzügyi readiness false.
+Végső1767 natív MariaDB ellenőrzés (360 drain),437 CLI,13 runtime sikeres;
+két review-lelet javítva és függetlenül visszaolvasva. Offline SDK és fault injection,
+nem élő pénzügyi elfogadás. A60s szolgáltatói keret nem kemény teljes DB-runtime limit.
+Hermes052: 1 hívás, 46088 token, becsült USD0.0051217166, tényleges összköltség ismeretlen;
+részleges átvétel jelentős Codex-javítással, nincs redispatch/JEV/fallback.
+Szerződés, kockázat, kiadás, rollback és kézi UI-checklist: protected-record §75.
+Saját termék és kétpin-baseline külön commit; nincs main/merge/deploy/aktiválás.
+A teljes adományozás/Amplifier/affiliate/Offerwall/nyelvi cél, VB7/Sharing12 nyitott.

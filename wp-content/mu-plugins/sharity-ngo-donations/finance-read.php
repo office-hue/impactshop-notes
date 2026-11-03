@@ -304,3 +304,25 @@ if (defined('WP_CLI') && WP_CLI) {
         });
     }
 }
+
+function sharity_donation_cli_finance_drain(array $args, array $assoc): void
+{
+    try {
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $assoc !== []
+            || !function_exists('sharity_donation_checkout_drain')) { throw new RuntimeException(); }
+        WP_CLI::line(json_encode(sharity_donation_checkout_drain(time()),JSON_THROW_ON_ERROR));
+    } catch (Throwable $error) { WP_CLI::error('DONATION_DRAIN_UNAVAILABLE'); }
+}
+function sharity_donation_cli_webhook_finance_schema(array $args, array $assoc): void
+{
+    try {
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $assoc !== ['apply'=>true]
+            || !function_exists('sharity_donation_webhook_finance_schema_apply')
+            || !sharity_donation_webhook_finance_schema_apply()) { throw new RuntimeException(); }
+        WP_CLI::line('DONATION_WEBHOOK_FINANCE_SCHEMA_READY');
+    } catch (Throwable $error) { WP_CLI::error('DONATION_WEBHOOK_FINANCE_SCHEMA_UNAVAILABLE'); }
+}
+if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('sharity donations finance-drain','sharity_donation_cli_finance_drain');
+    WP_CLI::add_command('sharity donations webhook-finance-schema','sharity_donation_cli_webhook_finance_schema');
+}
