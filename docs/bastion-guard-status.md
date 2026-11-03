@@ -1193,3 +1193,14 @@ a szomszédos pénzügyi olvasó canonical ownership adataival. Csak az új modu
 protected record§96 adja a kockázatot, későbbi exact-file kiadást és rollbacket.
 Most nincs runtime-bekötés, könyvelés, mainablak vagy éles telepítés.
 Modul SHA256: `9d8c05bd37cd9a7b2a41d57da15462e5607765f94a3bf9e6226079ebda13c425`.
+
+
+## 2026-11-03 — P4b CJ normalizer javítás
+
+Termék c0fedaf8; kizárólag a saját impactshop-cj.php hash és manifest-checksum
+frissül. Inventory, metadata, idegen pin és guardlogika változatlan.36újCJ-test,
+meglévő provider-adapter és attribúcióteszt, lint/diff és független review sikeres.
+A source review nem állít saját futást. Protected record§97: scope, első regexhiba,
+rollback és UI-checklist. Nincs új lookup/hash-alapú donor, pontmódosítás vagy
+pénzügyi authority-állítás. Forráskész, nincs mainablak/merge/deploy/aktiválás.
+CJ SHA256: `d89835ea663bda7fa0ae826bd13ae0924e6aaed4e7386f1e3d76ed5e8dba081d`.
