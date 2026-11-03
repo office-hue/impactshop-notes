@@ -15,6 +15,7 @@ const RATES = ['affiliate' => ['base' => 5000, 'rising' => 5500, 'legend' => 600
 const MULTIPLIERS = ['basic' => 10000, 'bronze' => 10500, 'silver' => 11000, 'gold' => 11500, 'platinum' => 12000, 'legend' => 12500];
 const INPUT_KEYS = ['source', 'ngo_slug', 'tier', 'donor_level', 'captured_at_utc', 'ngo_quarter_key', 'ngo_authority', 'donor_authority'];
 const MAX_MINOR = '9223372036854775807';
+const NGO_RANK_POLICY_VERSION = 'ngo_current_quarter_votes_ties_v1';
 final class PolicyViolation extends \DomainException {}
 
 function exact_keys(array $value, array $keys): void
@@ -94,6 +95,41 @@ function minor($value): int
         throw new PolicyViolation('SUPPORT_POLICY_AMOUNT');
     }
     return (int)$value;
+}
+
+/** Already canonical UI counts only. This does not resolve or authenticate authority. */
+function current_quarter_ranks(array $groups): array
+{
+    $votes = [];
+    foreach ($groups as $row) {
+        if (!is_array($row) || !isset($row['slug']) || !is_string($row['slug'])
+            || $row['slug'] === '' || strlen($row['slug']) > 190
+            || preg_match('/[\x00-\x1f\x7f]/', $row['slug']) || !array_key_exists('votes', $row)) {
+            throw new PolicyViolation('SUPPORT_POLICY_VOTES');
+        }
+        // SQL SUM values are decimal strings. Never coerce float, bool or null.
+        $count = is_int($row['votes']) && $row['votes'] >= 0 ? $row['votes'] : minor($row['votes']);
+        $slug = $row['slug'];
+        $previous = $votes[$slug] ?? 0;
+        if ($previous > PHP_INT_MAX - $count) { throw new PolicyViolation('SUPPORT_POLICY_VOTES'); }
+        $votes[$slug] = $previous + $count;
+    }
+    // Competition rank, not dense rank: 100, 90, 90, 80 -> 1, 2, 2, 4.
+    $descending = $votes;
+    uasort($descending, static fn(int $a, int $b): int => $b <=> $a);
+    $map = $tiers = [];
+    $active = 0; $rank = 0; $previous = null;
+    foreach ($descending as $slug => $count) {
+        if ($count === 0) { $map[$slug] = 0; $tiers[$slug] = 'base'; continue; }
+        ++$active;
+        if ($previous !== $count) { $rank = $active; }
+        $previous = $count;
+        $map[$slug] = $rank;
+        $tiers[$slug] = $rank <= 3 ? 'legend' : ($rank <= 10 ? 'rising' : 'base');
+    }
+    ksort($votes, SORT_STRING); ksort($map, SORT_STRING); ksort($tiers, SORT_STRING);
+    return ['map' => $map, 'tiers' => $tiers, 'votes' => $votes, 'active_total' => $active,
+        'policy_version' => NGO_RANK_POLICY_VERSION];
 }
 
 /**

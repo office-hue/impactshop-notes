@@ -2100,3 +2100,96 @@ Nincs új Hermes/JEV/providerhívás; Codex/review teljes költség ismeretlen.
 Független d2i_source_review: a három kapcsolt CJ-javításon és36teszten konkrét
 blokkolót nem talált; a bearerhatár, időpont és SID-regex visszaolvasva.
 Reviewer nem futtatott tesztet. A fenti legacy pénzügyi hiányok nyitottak.
+
+
+## 98. P4c — holtverseny és aktuális authority (2026-11-03, integráció előtt)
+
+Jóváhagyott tie-policy: pozitív csoport legjobb versenyrangja, minden határ-tie
+magasabb tier; nulla Base, history változatlan. A meglévő support-policy modul
+közös rank/authority olvasója és a kártya collect_challenge_rank_map bekötése
+készül. Hermes073 első draft, Codex integráció és tényleges teszt.
+Read-only pénzügyi adapter csak a hívó meglévő natív tranzakcióján: tényleges
+current_level, aktívquarter és annak súlyozott szavazata, nincs seed vagy mai
+szinttel történeti backfill. Hiány/SQLhiba nem Base. Nincs új tábla/route/hook,
+pont/szavazatírás, providerhívás, pénzügyi allokáció vagy aktiválás.
+
+Konkrét kockázat: boundarytie véletlen NGO-t emel; alias dupla rang; nulla
+szavazat Legenddé válik; SQLhiba álsiker; inkonzisztens többtáblás authority;
+személyes actor pénzügyi snapshotba másolása; részleges telepítés UI-hibája.
+A kártya összegei/rátái/markupja/designja változatlan. A snapshot olvasása nem
+annak tartós roothoz rendelése: azt a következő capture writer végzi ugyanazon
+tranzakcióban. Teljes R/C/Q-fedezet továbbra külön pénzügyi authority.
+Célzott két egymást követő interface/authority tervaudit, majd futó teszt és
+source review. Korábbi teljes pénzügyi auditok változatlan részei újrahasználtak.
+
+Kiadás: új policy-függőség előbb, kártya utána, meglévő exact-file backup/CAS;
+finance capture csak ellenőrzött függőséggel, UI korábbi read fallbackja
+kompatibilis marad részleges telepítésben. Most nincs éles telepítés.
+Rollback: saját kompatibilis fájlok, nincs adatbázis-visszatekerés. Későbbi
+persisted policyból régi tier sosem számolható újra. UI-checklist kiadáskor:
+NGO-kártya top3/top10 határt érintő tie minden tagja azonos magasabb badge,
+normál/zero ág, változatlan pénzek és nyelv/devizaválasztó/akciólink/design.
+Szintetikus pénzügyi teszt nem élő banki vagy jutalomelfogadás.
+
+### 98.a Audit utáni szűkítés, írás előtt
+
+A két egymást követő független audit után a kiadható P4c-a csak pure rang és
+UI. A pénzügyi current-authority reader nem kerül be: az aktív tranzakció
+tényleges read-view/izolációja és a külső canonicalizer eredete/koherenciája
+nyitott. Nem építünk ezek helyett új infrastruktúrát; a capture-writer csomag
+köteles rendezni őket. Nincs új DB-teszt vagy konténer ehhez a pure/UI csomaghoz.
+
+A kártya csak a tárolt, aktív időablakú quartert olvassa, nincs seedelő helper
+és all-time rang. Hibás/hiányzó quarter, SQLhiba vagy hiányzó pure függőség
+esetén a rebuild a legelején nullt ad: meglévő stale-cache/503 út, nem ál-Base.
+Érvényes üres negyedév Base; a pénzügyi sor nélküli jóváhagyott NGO is a
+challengeRankMap szerinti rangot kapja, nulla pénzösszege változatlan.
+A kártya meglévő sanitize_title/optional canonicalizer lánca UI-only marad;
+nem válik pénzügyi authorityvé. Alias-szavazatok összeadása rangolás előtt.
+Funkciólista: NGO-card REST/dataset/share/embed/widget/wallet badge és rank;
+pont-, szavazat-, pénzügyi írás, provider, checkout, cron, admin workflow és
+CSS/markup nem változik. Ugyanazon összegeket és linkeket viselkedési teszt
+hasonlítja össze a rangadat változása mellett. Snapshot/arány/szorzó változatlan.
+
+### 98.b Tényleges ellenőrzés és Hermes-átvétel
+
+`php tests/sharity-support-policy.test.php`: 780 check;
+`php tests/impactshop-ngo-rank.test.php`:99 check,
+ugyanez `no-alias`:99 check. Mindkét termékfájl lint és git diff-check sikeres.
+Az actual kártyagyűjtő/rebuild/cache tesztje a PHP-forrást tölti; WP/SQL csak
+szintetikus fixture, nem valós MySQL vagy éles UI. Tesztek: két határtie, alias
+összevonás/hiány, zero/validempty, invalidquarter/window/query/error/overflow,
+hiányzó policy, korai readfailure, pénzügyi sor nélküli jóváhagyott NGO,
+változatlan amount/CTA/rate/milestone és meglévő stale viselkedés.
+A pénzügyi reader elhagyása miatt nincs konténerindítás/imagepull/DB-sémaírás;
+a meglévő MariaDB image csak read-only inventoryban szerepelt.
+
+Hermes073 execution8e4f63cd-05dc-4eca-a83a-74b6af3f92bd, taskSHA
+8372c6726cacde6302bcfe8d31d17b304bd388e02c2dca045136e3588d637ed1;
+13465input+6672output=20137token,768cache-read,1API; estimatedUSD0.0023837086.
+Tényleges/full cost és megtakarítás ismeretlen. Terminal completed csak draft:
+chk-557bc34c-837c-441a-9416-9389b96d55a7 függetlenül visszaolvasva.
+Adoption részleges rangötlet/UI-irány; felesleges dense-rank kör, téves
+tesztelvárások, hiányos tesztfájlok és nem igazolt pénzügyi reader kihagyva.
+Codex jelentős integráció/teszt. Nincs retry/fallback/JEV vagy második generálás.
+
+Kiadás előtt: tényleges current-quarter option/active row/időablak és policy
+függőség visszaolvasása; policy előbb, kártya utána; csak célzott dataset-cache
+ürítés az ellenőrzött fájlkiadás után. Részleges kiadás a korábbi stale/503
+állapotot használja, nem dob fatal hibát; hiányzó aktív quartert nem seedelünk.
+Kézi UI: NGO share/embed/widget/wallet kártyán 3/4 és10/11 tie badge;
+pénz nélküli, de szavazatos NGO; nulla/üres quarter; változatlan összegek,
+akciólinkek, nyelv/devizaválasztó és elrendezés; hibás forrásnál nem új Base.
+Rollback saját card/policy byte+pinek, adatbázis-visszatekerés nélkül.
+
+Független d2i_source_review a végleges termékdiffben konkrét blokkolót nem
+talált; az actual vote schema int-egysége, alias/rank/amount/link/stale és
+MU betöltési sorrend ellenőrizve. Saját tesztfuttatást nem állít.
+A dokumentum első diff-checkje egy sorvégi szóközt jelzett; javítva.
+
+Érintett fájlok: `wp-content/mu-plugins/sharity-support-policy.php` (pure),
+`wp-content/mu-plugins/impactshop-ngo-card.php` (protected UI),
+`tests/sharity-support-policy.test.php`, `tests/impactshop-ngo-rank.test.php`.
+Az első staged audit a mixed app-content/protected commitot és a change record
+hiányzó pontos fájlnevét jelezte. Javítás: a pure policy és protected UI külön
+termékcommit, guard külön commit; a pontos saját scope fent rögzítve.

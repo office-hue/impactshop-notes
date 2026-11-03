@@ -2623,3 +2623,29 @@ Arnold a magasabb szintet választotta a holtverseny minden tagjának. A nulla
 szavazat Base; történeti snapshot megmarad, a pontmodul nem változott.
 Független CJ source review blokkoló nélkül; reviewer nem futtatott tesztet.
 Nincs mainablak, merge, publicpush, telepítés vagy aktiválás.
+
+
+## P4c-a — holtversenyes NGO-szint, 2026-11-03
+
+A pozitív szavazatú NGO rangja 1 + a nála több szavazatú NGO-k száma; a 3/4.
+és 10/11. határon a teljes holtverseny magasabb badge-et kap. Nulla Base.
+A közös pure függvény a már feloldott aliasokat összeadja, pontos egész
+számokkal. A valódi kártya mindkét item-builder ága ezt olvassa; pénzügyi sor
+nélküli NGO is rangsorolható, a nulla összege nem változik. Nincs all-time vagy
+pénzből számított helyettesítő rang. Hibás current quarter / SQL / dependency
+esetén a meglévő stale-cache/503 út; validempty esetén Base.
+
+780 pure policy-check és 99+99 valódi PHP-kártyacheck (synthetic WP, alias
+segéddel és anélkül), PHP-lint/diff sikeres. Nincs valódi DB vagy böngészős
+elfogadás; a kártyaösszeg/CTA/cached failure viselkedés futtatva. A pénzügyi
+authority-reader nem kész: a tényleges tranzakció read-view és a külső
+canonicalizer forrásának igazolását nem helyettesítjük. Két egymást követő
+audit alapján szűkített csomag; teljes capture/allokáció változatlanul nyitott.
+Hermes073 részben átvéve, hibás/hiányos reader és tesztek helyett célzott Codex
+javítás; 20137 token, 1 API, becsült USD0.0023837086, tényleges/teljes díj
+és megtakarítás ismeretlen. Terminal Secretary ACK külön visszaolvasva.
+Scope/risk/rollback/UI és audit: protected record§98. Nincs mainablak,
+publicpush, merge, telepítés, aktiválás vagy pénzügyi elfogadás.
+
+Független forrásreview konkrét blokkoló nélkül, saját futtatás nélkül;
+élő quarter/dependency és böngészős elfogadás a későbbi kiadásnál szükséges.

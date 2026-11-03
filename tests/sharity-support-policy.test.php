@@ -114,4 +114,39 @@ check(assert_snapshot_valid($x)===$s,'stored object key order irrelevant');
 $new=make_snapshot(input('offerwall','legend','legend'));
 check(allocate($s,'HUF','100','0','0')['ngo_cumulative_target_minor']==='50'
     && allocate($new,'HUF','100','0','0')['ngo_cumulative_target_minor']==='87','later capture cannot rewrite frozen earlier contract');
+// Approved tie policy: count higher NGOs, not distinct vote totals.
+function ranks(array $counts): array {
+    $rows = [];
+    foreach ($counts as $slug => $votes) $rows[] = ['slug'=>$slug, 'votes'=>$votes];
+    return \sharity_support_policy\current_quarter_ranks($rows);
+}
+$r = ranks(['a'=>'100','b'=>'90','c'=>'80','d'=>'80','e'=>'70','zero'=>'0']);
+check($r['map'] === ['a'=>1,'b'=>2,'c'=>3,'d'=>3,'e'=>5,'zero'=>0], '3/4 tie uses competition rank');
+check($r['tiers']['c']==='legend' && $r['tiers']['d']==='legend' && $r['tiers']['e']==='rising', 'all top-three boundary ties get Legend');
+check($r['tiers']['zero']==='base' && $r['active_total']===5, 'zero does not compete');
+$counts=[];
+for ($i=1;$i<=9;$i++) $counts['n'.$i] = 110-$i;
+$counts += ['ten'=>50,'eleven'=>50,'twelve'=>40];
+$r = ranks($counts);
+check($r['map']['ten']===10 && $r['map']['eleven']===10 && $r['map']['twelve']===12, '10/11 boundary tie does not dense-rank the next group');
+check($r['tiers']['ten']==='rising' && $r['tiers']['eleven']==='rising' && $r['tiers']['twelve']==='base', 'both boundary NGOs receive Rising');
+check(ranks(array_fill_keys(['a','b','c','d','e'],1))['map']===['a'=>1,'b'=>1,'c'=>1,'d'=>1,'e'=>1], 'more than three first-place ties all win');
+check(ranks(['zero'=>0])['tiers']===['zero'=>'base'] && ranks([])['active_total']===0, 'empty and only-zero inputs valid');
+$rows=[]; foreach ($counts as $slug=>$votes) $rows[]=['slug'=>$slug,'votes'=>$votes];
+$baseline=\sharity_support_policy\current_quarter_ranks($rows);
+for ($i=0;$i<count($rows);$i++) {
+    $rotated=array_merge(array_slice($rows,$i),array_slice($rows,0,$i));
+    check(\sharity_support_policy\current_quarter_ranks(array_reverse($rotated))===$baseline, 'input and tie order never decide rank');
+}
+$merged=\sharity_support_policy\current_quarter_ranks([['slug'=>'a','votes'=>'30'],['slug'=>'a','votes'=>30],['slug'=>'b','votes'=>50]]);
+check($merged['map']===['a'=>1,'b'=>2] && $merged['votes']['a']===60 && $merged['active_total']===2, 'resolved aliases count once and combine before ranking');
+check(ranks(['max'=>'9223372036854775807','below'=>'9223372036854775806'])['map']===['below'=>2,'max'=>1], 'BIGINT comparison remains exact');
+foreach ([null,true,false,1.0,-1,'-1','01','1.0','1e3',' 1','9223372036854775808'] as $bad) {
+    rejects(fn()=>ranks(['a'=>$bad]), 'invalid votes do not become zero or positive');
+}
+rejects(fn()=>\sharity_support_policy\current_quarter_ranks([['slug'=>'a','votes'=>PHP_INT_MAX],['slug'=>'a','votes'=>1]]), 'alias sum cannot overflow');
+foreach ([[],['slug'=>'a'],['votes'=>1],['slug'=>'','votes'=>1],['slug'=>null,'votes'=>1],['slug'=>"bad\nslug",'votes'=>1]] as $row) {
+    rejects(fn()=>\sharity_support_policy\current_quarter_ranks([$row]),'invalid rank row');
+}
+check(assert_snapshot_valid($s)===$s && allocate($s,'HUF','100','0','0')['ngo_cumulative_target_minor']==='50', 'ranking cannot rewrite frozen policy');
 echo "Support policy: {$checks} checks passed; pure PHP, no DB/network/activation\n";
