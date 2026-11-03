@@ -1026,3 +1026,14 @@ wrapper reported unavailable product guards while the two separate own pins were
 direct staged guards then passed. Baseline audit requires the existing explicit protected
 change record/rollback/smoke environment; its first invocation without them was rejected.
 This does not weaken or replace the guard. No main, deployment or activation.
+
+
+## 2026-11-03 — D2s saját pénzügyi olvasó baseline
+
+Csak sharity-ngo-donations/finance-ledger.php és http.php saját pinje változik.
+Új modul/inventory/policy/guardlogika nincs.1839 natív DB (72 D2s),309 HTTP,
+437 finance/CLI,13 runtime,65 web és scoped TypeScript sikeres. A credit
+megjelenítés és a null→0 review-lelet javítva; végső független visszaolvasás leletmentes; reviewer nem futtatott tesztet.
+Koherencia/érintettség/kockázat/saját rollback/kézi UI-checklist: protected record§76.
+Két existing GET, eredeti owner/POST és pénzügyi adatok megőrzése. Nincs
+mainművelet/merge/telepítés/aktiválás vagy pénzügyi elfogadás.
