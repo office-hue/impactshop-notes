@@ -541,3 +541,18 @@ if(defined('WP_CLI')&&WP_CLI){
     WP_CLI::add_command('sharity donations fee-execute','sharity_donation_cli_fee_execute');
     WP_CLI::add_command('sharity donations fee-recover','sharity_donation_cli_fee_recover');
 }
+
+/** Historical local reconciliation; intentionally no adapter, transport or dispatch switch. */
+function sharity_donation_cli_fee_reconcile(array $args,array $assoc): void
+{
+    try{
+        $keys=array_keys($assoc);sort($keys);
+        if(!defined('WP_CLI')||!WP_CLI||$args!==[]||$keys!==['digest','operation']
+            ||!is_string($assoc['operation'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['operation'])
+            ||!is_string($assoc['digest'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['digest'])){throw new RuntimeException('DONATION_FEE_INPUT');}
+        WP_CLI::line(sharity_donation_finance_json(sharity_donation_fee_reconcile($assoc['operation'],$assoc['digest'],time())));
+    }catch(Throwable $e){WP_CLI::error(str_starts_with($e->getMessage(),'DONATION_')?$e->getMessage():'DONATION_FEE_UNAVAILABLE');}
+}
+if(defined('WP_CLI')&&WP_CLI&&class_exists('WP_CLI')){
+    WP_CLI::add_command('sharity donations fee-reconcile','sharity_donation_cli_fee_reconcile');
+}

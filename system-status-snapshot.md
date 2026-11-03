@@ -2519,3 +2519,16 @@ becsült USD0.0034463156; actual/full ismeretlen, jelentős Codex javítás.
 Secretary§87 távolról ACK, §88 külön mentendő. Nincs csendablak.
 Részletes scope/teszt/kiadás/rollback: protected record §88 (A delivery §88).
 SUBSTACK-HANDOVER.md megőrzendő, nem aktív szerkesztés.
+
+
+## 2026-11-03 — D2ac: kétoldali díjkorrekció-egyeztetés
+
+Eredeti provider-receipt + regisztrált platformdebit/NGO-credit alapján
+op és claim atomikusan confirmed. Teljes foglalás megmarad, nincs providerhívás,
+felszabadítás, új fizetés vagy aktiválás. 6167 MariaDB(1314 új),447finance-read,
+17runtime, lint/diffcheck sikeres; független review konkrét lelet nélkül.
+Hermes065 nem adott patch-et;28402token, becsültUSD0.0026302276, actual/full
+ismeretlen, natív Codex megvalósítás. Részletek/rollback: protected record§89.
+Secretary§88 ACK visszaolvasva;§89 külön mentendő. Nincs mainablak/merge/deploy.
+D2aa/D2ab nyilvános engedély még függő, D2ac is csak helyi forrás.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztés.

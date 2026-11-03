@@ -1569,3 +1569,88 @@ Secretary§87 most tényleges remote ACK: chk-c77a9f56-9480-4d52-9069-0fa30dfd11
 A régi külön D2y outboxot nem játszottuk újra. A §88 termék-checkpoint külön
 mentendő commit/readback után; pending és remote ACK nem felcserélhető.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.
+
+
+## 89. D2ac — díjkorrekció két tényleges pénzmozgásának megerősítése (2026-11-03)
+
+Kiindulás: saját N b5fe4150c985e33562517f55d8b5bcbbaf009d0f és A
+db17ae6f68e7ffcdf36ff99894328387fc29a164, tiszta munkafák, nincs mainablak.
+A D2aa provider-receipt mellé a meglévő finance-ledger.php most ellenőrzi
+az eredeti platformlevonást és a hozzá kifejezetten kapcsolt NGO-jóváírást.
+A finance-read.php új admin CLI-je:
+`wp sharity donations fee-reconcile --operation=<64hex> --digest=<64hex>`.
+A CLI csak tárolt adatot egyeztet; nincs adapter, Stripe GET/POST, cron,
+HTTP-író, új tábla, automatikus sémafrissítés vagy új aktiválási kapcsoló.
+
+Eredeti rendelés/account/live/session és kanonikus státusz, változatlan
+operation/request/receipt, refund/fee/összeg/deviza/created azonosság szükséges.
+Mindkét oldalon konkrét available balance-tétel és az eredeti rendeléshez
+regisztrált teljes pénzügyi facts/digest kell. A helyi megfigyelési sorrend
+nem szolgáltatói időrend. Összeg/idő hasonlóságból nincs kapcsolat. Eltérő
+elszámolási deviza, hiányzó vagy pending ellenoldal nem megerősítés.
+A platform tényleges költsége nem lépheti túl az eredeti költségkorlátot;
+az NGO-creditnek a visszatérített összeggel pontosan meg kell egyeznie.
+Az új parancs a már kikapcsolt checkout/dispatch történeti ügyét is kezelheti.
+
+Egy pinned mysqli tranzakció: frame → order → megfigyelések → rendezett
+movement-kulcsok → operation/claim. Az attempted/unknown művelet és saját
+claim egyszerre confirmed lesz. Prepared vagy eltérő állapotpár tiltott.
+Minden eredeti dokumentum, digest, forrásallokáció, összeg és időpont megmarad.
+A confirmed claim a kapacitásban továbbra pontosan egyszer szerepel, az
+operation nem von le külön újabb összeget. Teljes foglalás, a fel nem használt
+költségkorlát is megmarad; már elköltött pénz nem válik újra rendelkezésre
+állóvá. A két UPDATE közti hiba rollbacket, bizonytalan commit teljes
+operation+claim+receipt+movement visszaolvasást kap. Nincs újraküldési jog.
+A confirmed állapotot a GET-only fee-recover megőrzi; fee-execute nem POSTol.
+
+Kimenet: `correction_confirmed`, két admin movement-hivatkozás/digest és az
+érintetlen reserved_minor. Settlement/allocation/activation/retained-cash/
+NGO-bank-receipt/backing-released továbbra false. Ez a korrekció pénzmozgásainak
+igazolása, nem teljes elszámolás vagy felszabadítható egyenleg. Későbbi
+korrekciógeneráció és az új retained-cash bizonyítékhoz kötött claim-rendezés
+még nyitott; a régi claim ezek hiányában nem cserélhető vagy törölhető.
+Az adományozás, Amplifier-szavazat és közös alap nem aktiválódott.
+
+Tényleges tesztek: 6167 MariaDB-ellenőrzés, ebből1314 D2ac; két valódi
+kapcsolat versenye, hiányzó/idegen/sérült adatok, pending és nem regisztrált
+mozgás, négy natív deviza, unknown rendezés, második UPDATE-hiba,
+COMMIT előtti/utáni válaszvesztés és sérült readback. Külön pozitív eset:
+10 minor tényleges költség az50-es korláton belül is teljes450 foglalást hagy.
+447 finance-read/offline SDK és17 friss-process runtime ellenőrzés, PHP-lint
+és diffcheck sikeres. Az első DB-futás6129 check volt; a költségkorlát pozitív
+esetének bővítése indokolta a végső ismétlést. Nem volt javítási tesztbukás.
+A saját loopback/tmpfs MariaDB-konténer eltávolítva, hiánya visszaolvasva.
+Független forrásreview: nincs konkrét javítandó lelet; reviewer nem futtatott
+runtime-tesztet és nem állított pénzügyi elfogadást. Nincs webkód-változás,
+így a változatlan154 web/342HTTP korábbi eredményeit nem futtattuk újra.
+
+Hermes065 execution d08561ca-9038-4116-a26d-82e6b6959d07;
+inputSHA83b23e078a7f66042a4c09a223498c904a4d5af46de98daffbb52fb86db35a92.
+27286 input+1116 output=28402 token,1 API, becsült USD0.0026302276.
+Tényleges számla és teljes Codex/review költség ismeretlen. A terminális
+válasz elkészült, de patch helyett hiányzó helper-kivonatokat jelzett.
+Nincs átvett termékkód, nincs igazolt megtakarítás; Codex a létező mintával
+implementált, nem indult második fizetős hívás/JEV/fallback. A tanulság:
+következő kivonatba minden ténylegesen hivatkozott reader/séma/harness kell,
+nem nagyobb teljes kézikönyv. A Hermes pending és terminal eseménye remote_ack.
+
+Kiadás: elfogadott merge-SHA, ugyanazon tesztelt byte-ok staging/production,
+meglévő exact-file mentés/CAS/readback. Előbb ledger, utána CLI; schema-apply
+nem szükséges. Először csak izolált/sandbox adatokon ellenőrzött adminparancs.
+Új dispatch/checkout ettől nem engedélyezett. Nincs élő parancs/próbapénz.
+Rollback előtt állítsuk le az új fee-reconcile indítását. Ha confirmed sor
+már keletkezett, a confirmed olvasását és foglalásszámítását meg kell őrizni
+kompatibilis helyreállításban: régi, ezt elutasító ledger vak visszamásolása
+nem megfelelő. Pénzügyi adatot vagy confirmed állapotot nem írunk vissza
+mentésből; korábbi webhook/recovery és foglalás fennmarad. A kiadási művelet,
+backup/CAS és ilyen production-rollback ebben a körben nem futott.
+
+Secretary§88 távolról visszaolvasott ACK:
+chk-7c3733b0-9090-474a-a6a9-77305b05e6cc,
+2026-11-03T12:22:59.499Z, sharity-intl-88-d2abb5fe4150-webdb17ae6f6.
+A §89 termék-checkpoint saját commit/readback után mentendő. A korábbi D2y
+outboxot nem játszottuk újra. A D2aa/D2ab nyilvános közzététel konkrét
+engedélykérése még függő; D2ac sem került a nyilvános repóba. Az auto-review
+korábbi tiltását nem kerültük meg. A mainágakat és PR-merge-et nem érintettük;
+telepítés, aktiválás, valódi payment/payout/banki elfogadás nincs.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.
