@@ -28,7 +28,7 @@ Az új plugin és `tests/impactshop-ngo-card-news-test.php` mellett csak saját
 dokumentáció és a meglévő inventory pontos egyfájlos bővítése változik:
 `docs/impactshop-guard-config.json`, config SHA-256, guard-hashes és checksum,
 `docs/impactshop-protected-files.json`. A hashjegyzékben kizárólag az új plugin
-és a módosított config hash-e frissül; más baseline nem kap új lenyomatot.
+és a módosított config, valamint annak checksumfájlja hash-e frissül; más baseline nem kap új lenyomatot.
 A canonical repo/root/main és deploy-modell nem változik. Új guard nincs.
 A lokális és CI protected-touch ugyanazt a bővített modellt olvassa.
 
@@ -76,3 +76,22 @@ minden más runtime-hash változatlan. Meglévő izolált
 helyi fixture-t jelölnek; valódi host preflight/telepítés nem történt.
 
 Státusz: helyi forrásjelölt; merge/telepítés/aktiválás nincs.
+
+## Telepítési szárazpróba utáni checksum-javítás
+
+A PR #248 merge-je `eb741123dd1837e3915215d7aa847a8e6489ba11`. A saját, tiszta
+Mini-release worktree guardos szárazpróbája távoli írás előtt megállt:
+a helyes config-checksum új lenyomata kimaradt a guard-hashjegyzékből.
+A javítás csak a `docs/impactshop-guard-hashes.json` megfelelő sorát és a
+jegyzék checksumját igazítja a már merge-elt config-checksumhoz. Más
+baseline és a plugin SHA-256 változatlan. Nincs hashátfogó újragenerálás.
+
+Kockázat: hibás baseline elfedhetne idegen változást; ezért az exact előző
+érték, az egyetlen módosult hash és az összes konfigurált fájl egyezése
+ellenőrzött. Rollback a kis forráscommit revertje, élő változás nincs.
+A meglévő guardos szárazpróba csak a normál merge után ismételhető a Minin.
+
+A korrekció célzott ellenőrzése sikeres: exact egyetlen hashkülönbség, minden
+létező konfigurált fájl hash-egyezése, mindkét checksum és változatlan plugin;
+PHP fixture 13 assertion, staged protected-touch és commit-lane. Ez továbbra
+sem sikeres Mini szárazpróba vagy éles telepítés.

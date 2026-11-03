@@ -2067,3 +2067,10 @@ Card/admin, JYSK és pénzügyi működés változatlan. PHP lint és izolált 1
 sikeres; nincs élő írás. Az új fájl a meglévő Bástya inventory/hash/modellben
 szerepel; külön guard nincs. Forrásjelölt, PR/merge/telepítés még nincs.
 Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
+
+### NGO Card hírek — exact-release checksum javítása
+
+WP PR #248 merge-elt; a Mini szárazpróbája távoli írás előtt megállt a saját
+config-checksum kihagyott hash-sora miatt. Két hashfájl célzott korrekciója;
+plugin és minden más baseline változatlan. Telepítés/aktiválás még nincs.
+Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
