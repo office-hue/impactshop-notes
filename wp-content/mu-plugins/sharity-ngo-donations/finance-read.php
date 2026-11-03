@@ -489,3 +489,55 @@ if(defined('WP_CLI')&&WP_CLI){
     WP_CLI::add_command('sharity donations fee-schema','sharity_donation_cli_fee_schema');
     WP_CLI::add_command('sharity donations fee-prepare','sharity_donation_cli_fee_prepare');
 }
+
+/** One bounded manual command: exact fee endpoint, zero automatic retries, at most one POST. */
+function sharity_donation_fee_bounded(callable $work,string $fee,bool $write,?object $transport=null)
+{
+    if(!preg_match('/^fee_[A-Za-z0-9]{1,251}$/D',$fee)){throw new RuntimeException('DONATION_FEE_INPUT');}
+    sharity_donation_runtime_sdk();$prior=Stripe\ApiRequestor::httpClient();
+    $inner=$transport??new Stripe\HttpClient\CurlClient();
+    $bounded=new class($inner,$fee,$write) implements Stripe\HttpClient\ClientInterface {
+        private float $deadline;private int $gets=0;private int $posts=0;
+        public function __construct(private object $inner,private string $fee,private bool $write){$this->deadline=hrtime(true)/1e9+60;}
+        public function request($method,$url,$headers,$params,$hasFile,$apiMode='v1',$maxNetworkRetries=null){
+            $base='https://api.stripe.com/v1/application_fees/'.$this->fee;$left=$this->deadline-hrtime(true)/1e9;
+            $get=$method==='get'&&in_array($url,['https://api.stripe.com/v1/account',$base,$base.'/refunds'],true);
+            $post=$this->write&&$method==='post'&&$url===$base.'/refunds';
+            if($hasFile!==false||$apiMode!=='v1'||$maxNetworkRetries!==0||$left<1||(!$get&&!$post)
+                ||($get&&++$this->gets>23)||($post&&++$this->posts>1)){throw new RuntimeException('DONATION_FEE_PROVIDER');}
+            foreach($headers as $h){if(preg_match('/^Stripe-(Account|Context):/i',$h)){throw new RuntimeException('DONATION_FEE_PROVIDER');}}
+            if($this->inner instanceof Stripe\HttpClient\CurlClient){$this->inner->setTimeout((int)min(5,floor($left)))->setConnectTimeout((int)min(2,floor($left)));}
+            try{$r=$this->inner->request($method,$url,$headers,$params,false,'v1',0);}catch(Throwable $e){throw new RuntimeException('DONATION_FEE_PROVIDER');}
+            if(hrtime(true)/1e9>=$this->deadline){throw new RuntimeException('DONATION_FEE_PROVIDER');}return $r;
+        }
+    };
+    try{Stripe\ApiRequestor::setHttpClient($bounded);return $work();}
+    finally{Stripe\ApiRequestor::setHttpClient($prior);}
+}
+function sharity_donation_cli_fee_action(array $args,array $assoc,bool $execute,?object $transport=null): void
+{
+    try{
+        $keys=array_keys($assoc);sort($keys);
+        if(!defined('WP_CLI')||!WP_CLI||$args!==[]||$keys!==['digest','operation']
+            ||!is_string($assoc['operation'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['operation'])
+            ||!is_string($assoc['digest'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['digest'])){throw new RuntimeException('DONATION_FEE_INPUT');}
+        if($execute&&get_option('sharity_donation_fee_execution_enabled','0')!=='1'){throw new RuntimeException('DONATION_FEE_DISPATCH_DISABLED');}
+        [$row,$d]=sharity_donation_fee_context($assoc['operation'],$assoc['digest']);
+        $result=sharity_donation_fee_bounded(static function()use($assoc,$execute){
+            $adapter=sharity_donation_runtime_adapter();
+            return $execute?sharity_donation_fee_execute($assoc['operation'],$assoc['digest'],$adapter,time())
+                :sharity_donation_fee_recover($assoc['operation'],$assoc['digest'],$adapter,time());
+        },$d['request']['fee_id'],$execute,$transport);
+        WP_CLI::line(json_encode($result,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+    }catch(Throwable $e){
+        $codes=['DONATION_FEE_INPUT','DONATION_FEE_DISPATCH_DISABLED','DONATION_FEE_ATTEMPT_UNCERTAIN','DONATION_FEE_STALE',
+            'DONATION_FEE_CONFLICT','DONATION_FEE_SOURCE','DONATION_FEE_UNRESOLVED','DONATION_BACKING_EXPIRED','DONATION_BACKING_INSUFFICIENT'];
+        WP_CLI::error(in_array($e->getMessage(),$codes,true)?$e->getMessage():'DONATION_FEE_UNAVAILABLE');
+    }
+}
+function sharity_donation_cli_fee_execute(array $a,array $b): void {sharity_donation_cli_fee_action($a,$b,true);}
+function sharity_donation_cli_fee_recover(array $a,array $b): void {sharity_donation_cli_fee_action($a,$b,false);}
+if(defined('WP_CLI')&&WP_CLI){
+    WP_CLI::add_command('sharity donations fee-execute','sharity_donation_cli_fee_execute');
+    WP_CLI::add_command('sharity donations fee-recover','sharity_donation_cli_fee_recover');
+}

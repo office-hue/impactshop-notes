@@ -2492,3 +2492,16 @@ docs/protected-change-records/2026-11-02-sharity-donation-prices.md §85.
 Ez helyi forrás, nem publikus push/merge/deploy/aktiválás vagy élő pénzügyi
 elfogadás. Nincs nyitott mainablak; a saját A fetch tíz konfliktusa előkészítendő.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.
+
+
+## 2026-11-03 — D2aa egyszeri díjkorrekció és helyreállítás
+
+Három saját PHP-fájl; default-off manual fee-execute/GET-only fee-recover,
+immutable request+külön receipt, strict commit ACK, atomikus attempted claim,
+friss fedezeti expiry; foglalás nem szabadul fel.4395 MariaDB (886 új),447
+finance-read,17runtime,197checkout sikeres. Review P1 stale clock javítva és
+visszaolvasva; nincs további konkrét lelet. Hermes06339138token,becsült
+USD0.004303572,actual/full unknown,jelentős Codex javítás. Részletek:
+protected record §87. Saját tesztkonténer eltávolítva. Nincs éles kérés,
+mainablak, merge, telepítés, aktiválás vagy pénzügyi elfogadás.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás; nem aktív szerkesztési feladat.

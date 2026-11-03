@@ -204,6 +204,7 @@ try {
     require __DIR__ . '/sharity-donation-finance-backing-mysql.test.php';
     require __DIR__ . '/sharity-donation-finance-target-mysql.test.php';
     require __DIR__ . '/sharity-donation-fee-prepare-mysql.test.php';
+    require __DIR__ . '/sharity-donation-fee-execute-mysql.test.php';
     require __DIR__ . '/sharity-donation-checkout-drain-mysql.test.php';
     require __DIR__ . '/sharity-donation-payout-ledger-mysql.test.php';
     check(calls() >= $beforePosts && !isset($data['allocation_minor']), 'no settlement claim');
@@ -214,6 +215,7 @@ try {
     foreach (['claims','sources','frames'] as $kind) { $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_backing_table($kind).'`'); }
     $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_target_table().'`');
     $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_fee_table().'`');
+    $wpdb->db->query('DROP TABLE IF EXISTS `'.sharity_donation_fee_receipt_table().'`');
     unset($options[SHARITY_DONATION_FEE_SCHEMA_OPTION]);
     unset($options[SHARITY_DONATION_TARGET_SCHEMA_OPTION]);
     unset($options[SHARITY_DONATION_BACKING_SCHEMA_OPTION]);

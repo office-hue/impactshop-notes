@@ -1387,3 +1387,93 @@ engedélyezett fetch eredménye1f34de904, merge-tree tíz tartalmi konfliktus;
 integráció nélkül azonnal felszabadítva, saját A e48f5bf1c tiszta maradt.
 Nincs nyitott ablak. Régi publikus engedély D2s/t-ig; új csomagok kérdése
 külön függ. A teljes termékcél és a kiadási/rollback/UI lista fent változatlan.
+
+
+## §87 — D2aa előkészített díjkorrekció végrehajtása (folyamatban)
+
+Koherencia és határ: meglévő finance-ledger/finance-read/Stripe adapter; kézi CLI,
+alapból tiltott végrehajtás. Új HTTP/cron nincs. A frozen operation+backing claim
+egy tranzakcióban vált attempted állapotba, csak igazolt COMMIT-válasz jogosít
+egy POST-ra. A korábbi GET/checkout/ledger szerződések megmaradnak.
+Konkrét kockázat: dupla pénzmozgás elveszett ACK után, idegen account/fee,
+elavult cél vagy fedezet, receipt mint téves pénzügyi elfogadás.
+Az eredeti dokumentum/digest változatlan, külön egyedi receipt marad;
+a claim nem szabadul fel. A meglévő közös tranzakció opcionális szigorú
+commit-ellenőrzése az egyetlen megosztott viselkedési kiegészítés.
+Teszt: valódi izolált MariaDB verseny/ACK/rollback/readback + szintetikus SDK
+HTTP, nulla élő provider-kérés. Post-release: default-off, pontos schema,
+korábbi payment-inspect/fee-prepare és disabled melletti readback.
+Rollback: először új dispatch tiltása; saját fájlok exact-file mentése/CAS;
+receipt/attempt/claim megmarad, történeti webhook és olvasás tovább működik.
+Kézi UI checklist majd kiadáskor: saját NGO-adományoldal és saját rendelés
+státusza tovább olvasható, nincs automatikus fizetés/refund/plusz szavazat.
+Ez még implementáció, teszt/review/commit/telepítés/aktiválás nem igazolt.
+
+
+### D2aa végleges forrás és ellenőrzés — 2026-11-03
+
+Meglévő három PHP-fájl bővült; új termékmodul vagy SDK nincs. A fee-schema
+explicit --apply új, operation_id szerint egyedi immutable receipt táblát
+készít; a régi operations/claims mezőit és dokumentumait nem írja át.
+A régi fee-prepare dry-run/azonos digest eredménye megmarad. A fee-execute
+--operation=<64hex> --digest=<64hex> csak a pontos tárolt kérelemre és
+sharity_donation_fee_execution_enabled='1' mellett indulhat; default OFF.
+Nincs új bekapcsoló CLI, cron vagy HTTP-végpont. A régi checkout-kapcsoló
+nem tilthatja a történeti pénzügyi ügy rendezését. A fee-recover ugyanilyen
+azonosítókkal GET-only, kikapcsolt dispatch mellett is használható.
+
+A platform/account/fee/mód/deviza és teljes refundlista ellenőrzése után
+friss frame/source/target/observation/movement-egyezés kell; az operation
+és claim attempted állapota ugyanabban a pinned tranzakcióban íródik.
+Csak sikeres COMMIT-ACK + teljes readback enged egyetlen POST-ot. UPDATE-,
+commit- vagy readback-bizonytalanság nem enged új POST-ot; új kulcs nincs.
+A request/digest/idempotencykey változatlan, a receipt külön marad.
+A CLI 60s határidő, legfeljebb23 GET/1 POST, kérésenként legfeljebb5s,
+retries0, fix platform fee endpoint, Stripe-Account/Context tiltás.
+
+A provider_recorded csak a refund erőforrás igazolt létét jelöli. A backing
+attempted foglalása teljes összegben megmarad; nincs allocation, szavazat,
+settlement vagy NGO-bankbeérkezés. A fee-recover teljes listát kér (max10x100),
+csak egy pontos operation/fee/account/currency/amount match fogadható el;
+hiány/ambiguity/hiányos lapozás nem pénzügyi siker. A nullable/későbbi balance
+nem az immutable receipt része: a valódi platform-debit és NGO-credit
+egyeztetése külön következő csomag. Sikertelen restore esetén receipt vagy
+pénzügyi napló nem törölhető, a régi 50/50 út nem aktiválható.
+
+Primer szerződés: [Stripe fee refund](https://docs.stripe.com/api/fee_refunds/create),
+[list](https://docs.stripe.com/api/fee_refunds/list),
+[idempotency](https://docs.stripe.com/api/idempotent_requests).
+A telepített22.1.0 SDK ApplicationFeeService endpointjait is visszaolvastuk.
+
+Tényleges ellenőrzés: SHARITY_DONATION_TEST_PORT=13390 php -d memory_limit=512M
+ tests/sharity-donation-orders-mysql.test.php — 4395 check, ebből886 új.
+Két valódi DB-kapcsolat, UPDATE-ACK/commit előtti-utáni/readback hiba,
+provider-válaszvesztés, receipt INSERT/ACK, stale target/expiry, négy natív
+deviza, hibás account/currency/amount/fee, második oldal/hiányos lista,
+receipt-corruption és engine drift szerepel. Valódi SDK, szintetikus HTTP;
+nem fizikai hálózatszakítás és nem Stripe sandbox/élő pénzügyi elfogadás.
+Finance-read447, runtime17, checkout197 és PHP lint/diff-check sikeres.
+Saját loopback/tmpfs MariaDB-konténer eltávolítva, hiánya visszaolvasva.
+
+Független review P1: GET/lock-várakozás alatt lejárhat a retained proof.
+Javítva: friss óra a lock/source/attempt és post-commit POST előtt;
+minimum frame/source expiry, read/lock/aftercommit regressziók zero POST.
+Reviewer visszaolvasta és lezárta, más konkrét lelet nincs; nem futtatott
+tesztet, ez nem független runtime vagy általános biztonsági PASS.
+
+Hermes063 execution1bc30d16-9974-4184-8c83-7f3231935824,
+taskbc9730edbdb5dce0de4ab058167fde24818ed1e85dd4eb148b345044bc4e1e0c;
+30984input+8154output=39138token,1API,becsült USD0.004303572.
+Tényleges számla és teljes Codex/review költség ismeretlen. Csak a
+manual execute/recover és SDK irány részleges átvétele; hibás helperhívások,
+immutable document mutáció, nem atomi attempt és disabled recovery miatt
+jelentős helyi újraírás, nincs igazolt megtakarítás. Nincs retry/JEV/fallback;
+pending/terminal Hermes esemény remote_ack; termék-checkpoint külön mentve.
+
+Forráskész, helyi. Kiadás: elfogadott merge SHA, exact-file backup/CAS,
+SDK változatlan, új adapter/ledger majd CLI, default OFF, explicit fee-schema
+--apply, engine/PK/tartalom visszaolvasás, sandboxlánc, külön account/díj/
+fedezet és konkrét művelet jóváhagyása. Pénzmozgató próba most nem futott.
+Rollbackkor dispatch OFF, attempted/receipt/claim nem törölhető; a működő
+recovery és a történeti webhook marad. A teljes termékcél és korábbi UI
+checklist nyitott. Nincs mainablak/merge/deploy/aktiválás/élő elfogadás.

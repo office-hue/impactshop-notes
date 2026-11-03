@@ -42,6 +42,83 @@ final class Sharity_Stripe_Checkout_Adapter
         $this->now = $now ?? static fn(): int => time();
     }
 
+    /** Validate the original platform/connected fee, outside DB locks. No Stripe-Account header. */
+    public function verifyApplicationFeeRefund(array $d,string $account,bool $beforeWrite): void
+    {
+        try{
+            $this->feeRequest($d);
+            $opts=['stripe_version'=>self::API_VERSION,'max_network_retries'=>0];
+            $owner=$this->stripe->accounts->retrieve(null,[],$opts)->toArray();
+            $fee=$this->stripe->applicationFees->retrieve($d['request']['fee_id'],[],$opts)->toArray();
+            if(($owner['object']??null)!=='account'||($owner['id']??null)!==$d['platform_account_id']
+                ||(isset($owner['livemode'])&&$owner['livemode']!==$d['livemode'])
+                ||($fee['object']??null)!=='application_fee'||($fee['id']??null)!==$d['request']['fee_id']
+                ||($fee['account']??null)!==$account||$account===$d['platform_account_id']
+                ||($fee['livemode']??null)!==$d['livemode']||($fee['originating_transaction']??null)!==null
+                ||$this->evidenceCurrency($fee['currency']??null)!==$d['currency']
+                ||(string)$this->evidenceMoney($fee['amount']??null,1)!==$d['candidate']['amount_minor']){throw new RuntimeException();}
+            $refunded=$this->evidenceMoney($fee['amount_refunded']??null);
+            if($refunded>$fee['amount']||($beforeWrite&&(string)$refunded!==$d['candidate']['amount_refunded_minor'])){throw new RuntimeException();}
+            // A complete list catches an additional refund before aggregate fields catch up.
+            if($beforeWrite){
+                $refunds=$this->adjustmentList(fn($p)=>$this->stripe->applicationFees->allRefunds($fee['id'],$p,$opts),[],'fee_refund',['fr']);
+                $sum=0;
+                foreach($refunds as $r){
+                    if(($r['fee']??null)!==$fee['id']||$this->evidenceCurrency($r['currency']??null)!==$d['currency']){throw new RuntimeException();}
+                    $sum+=$this->evidenceMoney($r['amount']??null,1);
+                }
+                if($sum!==$refunded){throw new RuntimeException();}
+            }
+        }catch(Throwable $e){throw new RuntimeException('DONATION_FEE_PROVIDER');}
+    }
+    private function feeRequest(array $d): void
+    {
+        $r=$d['request']??[];$op=$d['operation_id']??null;
+        if(!is_string($op)||!preg_match('/^[a-f0-9]{64}$/D',$op)||!$this->evidenceId($r['fee_id']??null,'fee')
+            ||!is_string($r['amount_minor']??null)||!preg_match('/^[1-9][0-9]{0,11}$/D',$r['amount_minor'])
+            ||($r['metadata']??null)!==['sharity_operation'=>$op]||($d['idempotency_key']??null)!=='sharity:fee-refund:'.$op
+            ||!is_string($d['platform_account_id']??null)||!preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$d['platform_account_id'])
+            ||!in_array($d['currency']??null,['HUF','EUR','USD','GBP'],true)||!is_bool($d['livemode']??null)
+            ||$this->stripe->getStripeAccount()!==null||$this->stripe->getStripeContext()!==null
+            ||!preg_match('/^(rk|sk)_(test|live)_[A-Za-z0-9]+$/D',$this->stripe->getApiKey(),$mode)
+            ||($mode[2]==='live')!==$d['livemode']){throw new RuntimeException();}
+    }
+    private function feeReceipt(array $d,array $r): array
+    {
+        if(($r['object']??null)!=='fee_refund'||!$this->evidenceId($r['id']??null,'fr')
+            ||($r['fee']??null)!==$d['request']['fee_id']||($r['metadata']['sharity_operation']??null)!==$d['operation_id']
+            ||(string)$this->evidenceMoney($r['amount']??null,1)!==$d['request']['amount_minor']
+            ||$this->evidenceCurrency($r['currency']??null)!==$d['currency']){throw new RuntimeException();}
+        // balance_transaction may arrive later; immutable receipt is acknowledgement, not settlement.
+        return ['id'=>$r['id'],'fee_id'=>$r['fee'],'amount_minor'=>(string)$r['amount'],'currency'=>$d['currency'],
+            'created'=>$this->adjustmentCreated($r),'operation_id'=>$d['operation_id'],
+            'platform_account_id'=>$d['platform_account_id'],'livemode'=>$d['livemode']];
+    }
+    /** Caller must own an acknowledged durable attempt; never call again after uncertainty. */
+    public function createApplicationFeeRefund(array $d): array
+    {
+        try{
+            $this->feeRequest($d);$r=$d['request'];
+            $refund=$this->stripe->applicationFees->createRefund($r['fee_id'],['amount'=>(int)$r['amount_minor'],'metadata'=>$r['metadata']],
+                ['stripe_version'=>self::API_VERSION,'max_network_retries'=>0,'idempotency_key'=>$d['idempotency_key']])->toArray();
+            return $this->feeReceipt($d,$refund);
+        }catch(Throwable $e){throw new RuntimeException('DONATION_FEE_PROVIDER');}
+    }
+    /** Complete original-fee list; ambiguity cannot become a second POST or successful receipt. */
+    public function findApplicationFeeRefunds(array $d): array
+    {
+        try{
+            $this->feeRequest($d);$opts=['stripe_version'=>self::API_VERSION,'max_network_retries'=>0];
+            $all=$this->adjustmentList(fn($p)=>$this->stripe->applicationFees->allRefunds($d['request']['fee_id'],$p,$opts),[],'fee_refund',['fr']);
+            $found=[];
+            foreach($all as $r){
+                if(($r['fee']??null)!==$d['request']['fee_id']||$this->evidenceCurrency($r['currency']??null)!==$d['currency']){throw new RuntimeException();}
+                if(($r['metadata']['sharity_operation']??null)===$d['operation_id']){$found[]=$this->feeReceipt($d,$r);}
+            }
+            return $found;
+        }catch(Throwable $e){throw new RuntimeException('DONATION_FEE_PROVIDER');}
+    }
+
     /** One exact connected-charge GET to resolve a signed refund/dispute notification.
      * Caller verifies signature and applies the one-request timeout wrapper first.
      * No customer details or arbitrary metadata escape the adapter. */
