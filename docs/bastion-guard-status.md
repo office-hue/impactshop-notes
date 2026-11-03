@@ -1070,3 +1070,13 @@ Védelmi lista, idegen forrás, policy és release-út nem változott. 2775 nat�
 MariaDB check (317 új), 17 runtime, 197 checkout és 521 adjustment ellenőrzés;
 független review leletmentes. Kiadás/rollback/kézi UI: protected record §81.
 A baseline nem jelent távoli feltöltést, merge-et, telepítést vagy aktiválást.
+
+
+## 2026-11-03 — D2x saját payout-olvasó forrásazonosság
+
+Termék8c2ed8b5; csak donation stripe-checkout.php/finance-read.php két saját
+hash és manifest-checksum változik. Inventory/guardlogika/idegen pin megmarad.
+741payout,442CLI,197checkout,521adjustment(+26counterleg),17runtime sikeres;
+független review FX-előjel javítása visszaolvasva. Koherencia/kockázat,
+kiadás/rollback és kézi UI: protected record§82. Nincs DB-írás, mainablak,
+publikálás, telepítés vagy aktiválás; teljes pénzügyi cél nyitott.
