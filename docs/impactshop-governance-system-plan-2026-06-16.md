@@ -1157,3 +1157,14 @@ frissül a d333997d termékcommit után. A konfiguráció és idegen pin változ
 4853MariaDB/342HTTP/17runtime/154web; review P2 lezárva.
 Kockázat, pontos határ, kiadás/rollback és UI checklist: protected record §88.
 Ez forrásbaseline, nem telepítési vagy éles elfogadás.
+
+
+## 2026-11-03 — D2ac saját pénzügyi egyeztetési forrás
+
+Termékcommit d64a23ea; kizárólag az alábbi két saját hash és a manifestchecksum
+frissül. Nincs config/pin/idegen fájl változás, általános újrahash-elés.
+6167 MariaDB(1314 D2ac),447finance-read,17runtime; független source-review
+konkrét lelet nélkül. Részletes scope, kiadás és confirmed-kompatibilis
+rollback: protected record§89. Nincs mainablak, merge, telepítés vagy aktiválás.
+- wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `8777ba89e261dcd9cddf3abfd0ce0806c3cf1e2f94c4854ec31ee9285973a2c3`
+- wp-content/mu-plugins/sharity-ngo-donations/finance-read.php: `9e5954bee8b61d5802eb6fa4a365bebd3c74c1279731c288dac1cf9e5372540e`
