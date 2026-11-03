@@ -1037,3 +1037,16 @@ megjelenítés és a null→0 review-lelet javítva; végső független visszaol
 Koherencia/érintettség/kockázat/saját rollback/kézi UI-checklist: protected record§76.
 Két existing GET, eredeti owner/POST és pénzügyi adatok megőrzése. Nincs
 mainművelet/merge/telepítés/aktiválás vagy pénzügyi elfogadás.
+
+
+## 2026-11-03 — D2t saját lifecycle baseline
+
+Csak a saját donation stripe-checkout.php és webhook.php pinje frissül,
+existing inventory/guardlogika/idegen hash változatlan.2116 natív DB (277 D2t),
+197 adapter,437 CLI,521 adjustment,13 runtime sikeres; stale state/balance
+review-lelet javítva és célzottan visszaolvasva. Koherencia, kockázat, scope,
+kiadás/rollback és kézi UI-checklist: protected change record§77. A tényleges
+guard inventory nulla drift és6 checksum eset sikeresen ellenőrizve.
+Forrásmunka; nincs mainablak, merge/deploy/aktiválás vagy pénzügyi elfogadás.
+
+D2t termékcommit:946d8c2c4ef01a1fba4bbd549e1f57d85a21b54b.
