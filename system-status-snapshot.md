@@ -2532,3 +2532,23 @@ ismeretlen, natív Codex megvalósítás. Részletek/rollback: protected record�
 Secretary§88 ACK visszaolvasva;§89 külön mentendő. Nincs mainablak/merge/deploy.
 D2aa/D2ab nyilvános engedély még függő, D2ac is csak helyi forrás.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztés.
+
+
+## D2ad előkészítés — 2026-11-03
+
+Két audit után a cash-korrekció/successor terv pontosítva; implementáció és
+aktuális teszt még nincs. Scope/kockázat/kiadás/rollback: protected record§90.
+Hermes066/067 javaslat javításigényes,067 nem adott patch-et; nincs újrahívás.
+Nincs mainablak, merge, deploy, aktiválás vagy élő pénzmozgatás.
+
+
+## D2ad — helyi elszámolási forráskész, 2026-11-03
+
+Fee-account: tényleges spend + maradó tartalék, immutable napló és új cash
+frame/op/claim egy tranzakcióban; későbbi korrekció új fedezetből.
+7623MariaDB(1456új),447finance-read,17runtime; független review javítva.
+Valódi gap-lock holtpont exact revision1 anchorral javítva; nincsen új retry.
+Hermes066/067: becsültUSD0.0060688446/0.0061410076, teljes költség ismeretlen,
+jelentős Codex javítás.067outbox acknowledged külön readbackkel.
+Részletes kockázat/teszt/séma/kiadás/rollback: protected record §90.
+Nincs mainablak/merge/telepítés/aktiválás, public N új csomagjai helyiek.

@@ -38,12 +38,14 @@ function backingRequest(array $o,array $p,array $receipt,string $amount,string $
         'allocations'=>[['source_key'=>$source??sharity_donation_backing_source_key($p['sources'][0],$p['frame']),'amount_minor'=>$amount]]];
 }
 function backingReserve(array $r,int $offset=0): array { global $now;$d=sharity_donation_backing_reserve($r['order_id'],$r,'',$now+$offset);return sharity_donation_backing_reserve($r['order_id'],$r,$d['proposal_digest'],$now+$offset); }
-function backingClear(): void {global $wpdb;foreach(['claims','sources','frames'] as $k){$wpdb->db->query('DELETE FROM `'.sharity_donation_backing_table($k).'`');}}
+function backingClear(): void {global $wpdb;
+    $t=sharity_donation_fee_accounting_table();if($wpdb->db->query($wpdb->prepare('SHOW TABLE STATUS WHERE Name = %s',$t))->num_rows){$wpdb->db->query('DELETE FROM `'.$t.'`');}
+    foreach(['claims','sources','frames'] as $k){$wpdb->db->query('DELETE FROM `'.sharity_donation_backing_table($k).'`');}}
 class BackingMysqli extends mysqli {
-    public $beforeLock=null;public string $fault='';public bool $committed=false;public bool $armed=false;public string $barrier='';public string $barrierNeedle='ORDER BY revision DESC LIMIT 1 FOR UPDATE';public int $slot=0;
+    public $beforeLock=null;public string $fault='';public bool $committed=false;public bool $armed=false;public string $barrier='';public string $barrierNeedle='frame_key = ? AND revision = 1 FOR UPDATE';public int $slot=0;
     public function prepare(string $sql): mysqli_stmt|false {
         if(str_contains($sql,'SUBSTRING(CAST(document AS BINARY)') && str_contains($sql,'SELECT *')){throw new RuntimeException('unbounded backing document projection');}
-        if($this->beforeLock!==null && str_contains($sql,'ORDER BY revision DESC LIMIT 1 FOR UPDATE')){$hook=$this->beforeLock;$this->beforeLock=null;$hook();}
+        if($this->beforeLock!==null && str_contains($sql,'frame_key = ? AND revision = 1 FOR UPDATE')){$hook=$this->beforeLock;$this->beforeLock=null;$hook();}
 
         if($this->barrier!=='' && !$this->armed && str_contains($sql,$this->barrierNeedle)){
             $this->armed=true;file_put_contents($this->barrier.'/ready-'.$this->slot,'ready');$until=microtime(true)+5;
@@ -60,7 +62,7 @@ class BackingMysqli extends mysqli {
     }
 }
 function backingConnection(string $fault=''):BackingMysqli {global $wpdb,$port;$wpdb->db->close();$db=new BackingMysqli('127.0.0.1','root','isolated-donation-test-only','donation_test',(int)$port);$db->set_charset('utf8mb4');$db->fault=$fault;$wpdb->db=$db;return$db;}
-function backingRace(callable $fn,string $needle='ORDER BY revision DESC LIMIT 1 FOR UPDATE'):array {
+function backingRace(callable $fn,string $needle='frame_key = ? AND revision = 1 FOR UPDATE'):array {
     $dir=sys_get_temp_dir().'/sharity-backing-race-'.bin2hex(random_bytes(6));mkdir($dir,0700);
     try {return race(static function($slot)use($fn,$dir,$needle){$db=backingConnection();$db->barrier=$dir;$db->barrierNeedle=$needle;$db->slot=$slot;return$fn($slot);});}
     finally {foreach(glob($dir.'/*') as $f){unlink($f);}rmdir($dir);}

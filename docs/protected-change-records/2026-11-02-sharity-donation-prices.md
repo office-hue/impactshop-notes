@@ -1654,3 +1654,158 @@ engedélykérése még függő; D2ac sem került a nyilvános repóba. Az auto-r
 korábbi tiltását nem kerültük meg. A mainágakat és PR-merge-et nem érintettük;
 telepítés, aktiválás, valódi payment/payout/banki elfogadás nincs.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.
+
+## 90. D2ad — korrekció utáni fedezet és következő generáció (2026-11-03, előzetes)
+
+Kiindulás A7e306c2c6 / Na0544e04, tiszta saját munkafák. Az1f34de904 main
+már a b1b95c554 integrációs commitban szerepel; nincs új mainművelet vagy
+nyitott csendablak. D2ac6167DB/447CLI/17runtime korábbi, változatlan kódhoz
+kötött bizonyíték; az alábbi változásra még nem termékteszt-PASS.
+
+Érintett: N finance-ledger.php, finance-read.php, meglévő MySQL harness és
+új célzott fee-accounting teszt. A web/UI, Stripe adapter, reward/pont/ingyenes
+szavazat, más NGO és meglévő guardlogika változatlan. Admin fee-account
+készül; nincs új HTTP/cron/providerhívás. Az eddigi fee-execute/recover/reconcile
+és backing-import/reserve kapacitáskezelésének kompatibilitása ellenőrzendő.
+Kockázat: kétszeri pénzlevonás, elköltött pénz újbóli fedezete, maradó díjhold
+elvesztése, régi operation összekeverése az utóddal, részleges DB-commit.
+
+Az immutable v1 frame/source/claim/operation/request/receipt nem változik.
+Egy szűk új fee_accounting_v1 tábla megőrzi a régi operation/digest/claim,
+receipt és mindkét natív pénzmozgás bizonyítékát, régi/új frame-hivatkozást,
+forrásonként elköltött és megmaradó összeget. OperationPK; frame+revision
+unique; frame+residual index. Explicit fee-schema --apply; HTTP alatt nincs
+DDL. Hiányzó új tábla mellett régi folyamat működik; accounted állapot
+csak pontos saját accounting bizonyítékkal olvasható.
+
+Számítás: tényleges spend = refund + igazolt költség; eredeti hold = spend
++ residual. Minden eredeti forráson ugyanez, residual ugyanott marad. Az új
+retained cash már tartalmazza a kiadást; a kapacitásból csak aktív hold,
+fennmaradó residual és más fennálló kötelezettség vonódik le. Példa100 cash,
+20refund+5díjkorlát, tényleges díj2: cash78, residual3, szabad75; új11hold
+után64. Nincs újabb22 levonás vagy a régi25 teljes felszabadítása.
+
+Minden eredeti claim-frame r forrásegyenlegére B(r):
+`új retained <= B(r) - sum(spend, ahol eredeti claim-frame >= r)`.
+Minden ilyen korlát egyszerre érvényes, a current retained monoton csökken
+és az eredeti principalból sem költhető kétszer. Accounting-időpontból nem
+következtetünk arra, hogy egy banki snapshot tartalmazta-e már a terhelést.
+Példa A f1=100 spend22; rendes import f2=78; B innen spend22:
+min(100-44,78-22)=56. Két, egyaránt80-as baseline-ról induló22-es spend
+után36 marad akkor is, ha az eredeti principal100 volt. Minden korábbi,
+nulla residualú rekord is része a számításnak. Bounded1024rekord/16MiB
+és256forrás; túllépés explicit hiba, nincs részösszeg vagy eldobott hold.
+Valós, friss, ellenőrzött pénzmegtartási bizonylat továbbra szükséges;
+operator assertion nem provider_verified/retained_cash_verified vagy aktiválás.
+
+Az új fee-account privát JSON-ból dry-run vagy pontos proposal-digesttel
+apply. Frame→sources→orders→evidence/movements→operation/claim zár, pinned
+mysqli, egy tranzakció. Új frame+immutable accounting+op/claim accounted
+állapot atomikus. Dry-run nem ír. Későbbi prepare csak igazolt accounted
+előd után cserélheti az aktuális claimet; régi operation/idempotenciakulcs,
+request, receipt és időpont megmarad. Utód csak új tényleges kumulált célra,
+friss targetre és külön szabad fedezetből. Régi execute nem POSTol; recovery
+GET-only. Postcommit/válaszvesztés bizonyítéka immutable régi operation,
+accounting, receipt, historical frame és movement; a közben létrejött utód
+claim nem követelhető a régi tartalommal és nem írható felül.
+
+Két egymást követő független tervaudit készült, közben javítással. Első:
+Hermes066 pénzmegmaradási/történeti/per-source/verziós hibái javítva. Második:
+accounting-revíziós kétszeri levonás és utód miatti postcommit readback-verseny
+javítva. A claim-frame korlátot a második reviewer külön visszaellenőrizte,
+konkrét ellenpéldát nem talált. Ez statikus audit, nem végrehajtási PASS.
+
+Hermes06664279token/1API/becsültUSD0.0060688446; design jelentősen javítva.
+Hermes06767306token/1API/becsültUSD0.0061410076; patch helyett forráshiányt
+állított, bár több hivatkozott teljes függvény a kivonatban szerepelt.
+Nincs átvett termékkód, nincs igazolt megtakarítás; Codex integráció szükséges,
+új fizetős újraküldés/JEV/fallback nincs. Tényleges és teljes költség ismeretlen.
+066pending/terminal remote_ack;067pending remote_ack,terminal queued_pending,
+outbox a97eb713-d1ed-48b4-9ebe-664cd7c9f932. Ezt nem tekintjük távoli ACK-nak.
+
+Célzott teszt: native MariaDB kétkapcsolatos account/prepare és utód-readback,
+100/78/75/64, két forrás/sameframe/több generáció, postcash-import, valódi
+költség/residual, sérült/hiányzó/idegen proof, v1-kompatibilitás, explicit
+schema/limit, minden INSERT/UPDATE/COMMIT hiba és nulla providerhívás.
+Kiadás: meglévő exact-file staging→production ugyanazon byte-okkal, előbb
+kompatibilis olvasó, explicit séma és readback, végül admin CLI. Az új
+mód sem adományt, sem közös alapot nem aktivál. Rollback új account-indítás
+leállítása; accounted adat után csak azt értő kompatibilis olvasó, nincs
+pénzügyi DB-visszatekerés vagy régi50/50 aktiválás. UI-regressziós ellenőrzés
+telepítéskor: régi donation saját státusz/belépés megmarad, nem jelenik meg
+új fizetési ígéret; pénzügyi acceptance külön valós provider/banki lánc.
+
+### D2ad végrehajtási eredmény — 2026-11-03
+
+A fenti előzetes terv megvalósult a két saját PHP-fájlban és a meglévő
+MySQL-harnesshez csatlakozó fee-accounting regresszióban. Új opcionális
+`sharity_donation_fee_accounting_v1` tábla, csak `fee-schema --apply` hozza
+létre. Az új adminművelet:
+
+```text
+wp sharity donations fee-account --operation=<operation_id> --digest=<operation_digest> --input=<private-canonical-json>
+wp sharity donations fee-account --operation=<operation_id> --digest=<operation_digest> --input=<private-canonical-json> --apply=<proposal_digest>
+```
+
+Input: `version=1`, `cash_proof` a meglévő v1 fedezeti szerződés szerint,
+`spent_allocations` az eredeti source_key-k pontos spent_minor sztringjeivel.
+Dry-run: `state=accounting_proposal, accounting_recorded=false`; tárolt/replay:
+`state=correction_accounted, accounting_recorded=true`. Minden aktiválási,
+settlement/allokációs, bankbeérkezési és teljes fedezetigazolási flag hamis.
+Az új készpénzállítás nem szolgáltatói vagy banki ellenőrzés.
+
+Az adatbázisteszt konkrét InnoDB-holtpontot azonosított: a latest-frame
+range-lockra váró kérés supremum lockja akadályozta az új revision INSERT-et.
+A hét érintett író út most előbb a meglévő revision1 pontos PRIMARY sorát
+fogja, majd a legújabb frame-et. Nincs új zártábla, retry vagy migráció ehhez.
+Meglévő frame hiányzó anchorral hibát ad; a még nem létező első frame
+párhuzamos létrehozására ez nem ígér holtpontmentességet. A vesztes tranzakció
+ott továbbra visszaolvasást/egyértelmű hibát igényel, nem részleges sikert.
+
+A review három javítása: az evidence-meta lista digest szerinti keresése;
+frame-lock után ismételt accounted-state olvasás (nincs confirmed demótálás);
+postcommitkor az eredeti exact accounted claim vagy a validált későbbi
+operation/claim/target/frame/accounting kapcsolat igazolása. Egy új utód nem
+írhatja át az eredeti requestet és nem hamisíthatja meg annak visszaolvasását.
+A szárazpróba státusza különbözik a már rögzített eredménytől.
+
+Tényleges végső ellenőrzések:
+- `SHARITY_DONATION_TEST_PORT=13390 php -d memory_limit=512M tests/sharity-donation-orders-mysql.test.php`: **7623** sikeres ellenőrzés, ebből **1456 D2ad**. Izolált MariaDB10.11.19, két valódi kapcsolat, offline hivatalos SDK/HTTP-fixture; élő Stripe-hívás nélkül.
+- `php tests/sharity-donation-finance-read.test.php`: **447** sikeres ellenőrzés.
+- `php tests/sharity-donation-runtime.test.php`: **17** frissfolyamatos eset sikeres.
+- Érintett PHP-lint és `git diff --check` sikeres; a forrásreview javításait független reviewer visszaolvasta, további konkrét hibát nem talált. A reviewer nem duplikálta a futási teszteket.
+
+A regresszió négy devizát, két teljes execute→match→account generációt,
+shared same-frame és átfedő frame-eket, két eredeti forrást, már levont cash
+snapshotot, maradó tartalékot és v1 opcionális séma-kompatibilitást fed.
+INSERT/UPDATE/COMMIT/ACK-hiba, hibás claim-visszaolvasás, commit utáni utód,
+reconcile–account verseny, régi execute tiltása és GET-only recovery is futott.
+A hibaszimuláció csak helyi szintetikus adatot módosít. A tesztfejlesztésben
+provider-fixture/lista/azonosító, SQL-kampó és include-változó ütközés javult;
+a működő termékszerződés ezek miatt nem lett lazítva. Az első hibás runtime
+fájlnév nem futott teszt; a fenti létező runtime-parancs valóban sikeres.
+
+Hermes066: 64279 token, 1 API, becsült USD0.0060688446; tervjavaslat jelentősen
+javítva két egymást követő független audit között. Hermes067: 67306 token,
+1 API, becsült USD0.0061410076; nem adott átvehető patch-et. Codex írta és
+integrálta a végső kódot/tesztet. Igazolt megtakarítás nincs, teljes tényleges
+költség ismeretlen. Nincs új fizetős retry/fallback/JEV. A067 saját outbox
+`a97eb713-d1ed-48b4-9ebe-664cd7c9f932` pontos replay és külön readback után
+acknowledged; távoli checkpoint `chk-e970811b-63f1-47ce-8e05-23ec62d22bac`,
+2026-11-03T13:32:28.618Z. A helyi Hermes-checkpoint régi queued_pending
+jelölése történeti; nem írtuk át. Secretary termék-checkpoint külön mentendő.
+
+Forráskiadás: a saját két pin külön hash-commitban követi a tesztelt terméket.
+A nyilvános N #244 távoli feje továbbra1f0819ce; D2aa–D2ad publikálása külön
+pontos jóváhagyásra vár. Mindkét PR draft/open és ütköző a mostani olvasáskor;
+nincs mainfetch/integráció/merge vagy nyitott csendablak. Kiadás és aktiválás
+nem történt. Teljes donation/release/fedezeti/szavazati elfogadás továbbra nyitott.
+
+Következő terméklépés a fennálló visszakövetelési kötelezettség bizonyítása és
+fedezett felszabadítás/allokáció, majd rendeléshez kötött fizetett szavazati ág;
+az accounted önmagában nem engedi egyiket sem. Direct HUF account-pilot,
+nyelvi éles kiadás és a többi már jóváhagyott ág saját függőségei megmaradnak.
+Rollback: új fee-account indítás leállítása, kompatibilis accounted-olvasók és
+régi eseményfeldolgozás megtartása. Élő pénzügyi sor fölé nincs DB-restore;
+korábbi accounted-et nem értő ledger nem másolható vakon vissza.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.

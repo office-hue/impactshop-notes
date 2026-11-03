@@ -156,5 +156,6 @@ try{
         fails(fn()=>sharity_donation_cli_fee_execute($a,$b),'DONATION_FEE_INPUT');fails(fn()=>sharity_donation_cli_fee_recover($a,$b),'DONATION_FEE_INPUT');
     }
     require __DIR__.'/sharity-donation-fee-reconcile-mysql.test.php';
+    require __DIR__.'/sharity-donation-fee-accounting-mysql.test.php';
     echo 'Donation fee execution MariaDB: '.($checks-$feeExecStart)." checks; durable attempt + GET recovery; synthetic Stripe only\n";
 }finally{feeExecConnection();backingClear();$options=$feeExecOptions;Stripe\ApiRequestor::setHttpClient($feeExecPrior);unlink($feeExecLog);}

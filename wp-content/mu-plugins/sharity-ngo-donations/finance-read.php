@@ -556,3 +556,20 @@ function sharity_donation_cli_fee_reconcile(array $args,array $assoc): void
 if(defined('WP_CLI')&&WP_CLI&&class_exists('WP_CLI')){
     WP_CLI::add_command('sharity donations fee-reconcile','sharity_donation_cli_fee_reconcile');
 }
+
+/** Explicit private proof input; neither dry-run nor apply makes a provider call. */
+function sharity_donation_cli_fee_account(array $args,array $assoc): void
+{
+    try{
+        $keys=array_keys($assoc);sort($keys);$apply=array_key_exists('apply',$assoc);
+        if(!defined('WP_CLI')||!WP_CLI||$args!==[]||$keys!==($apply?['apply','digest','input','operation']:['digest','input','operation'])
+            ||!is_string($assoc['input'])||!is_string($assoc['operation'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['operation'])
+            ||!is_string($assoc['digest'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['digest'])
+            ||($apply&&(!is_string($assoc['apply'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['apply'])))){throw new RuntimeException('DONATION_FEE_INPUT');}
+        $input=sharity_donation_backing_read_proof($assoc['input']);
+        WP_CLI::line(sharity_donation_finance_json(sharity_donation_fee_account($assoc['operation'],$assoc['digest'],$input,time(),$apply?$assoc['apply']:'')));
+    }catch(Throwable $e){WP_CLI::error(str_starts_with($e->getMessage(),'DONATION_')?$e->getMessage():'DONATION_FEE_UNAVAILABLE');}
+}
+if(defined('WP_CLI')&&WP_CLI&&class_exists('WP_CLI')){
+    WP_CLI::add_command('sharity donations fee-account','sharity_donation_cli_fee_account');
+}
