@@ -1171,3 +1171,14 @@ frissül; inventory, metadata, guardlogika és minden idegen pin változatlan.
 és UI-lista: protected record§93. Új platform claim után kompatibilis
 reader maradjon; nincs DB-visszaállítás új eseményekre. Nincs mainablak/deploy.
 - wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `bd2d8f601c2d76836a6a78a67becab8940b0fd30e1fae10dfd071805d82ea82b`
+
+
+## 2026-11-03 — D2af saját foglalás-átvezetés
+
+Termék ee36ffe7. Egyetlen saját finance-ledger.php hash és manifest-checksum
+frissül; inventory/metadata/idegen pin/guardlogika változatlan. 9033MariaDB
+(546új), lint/diff és független source review. Protected record§94 tartalmazza
+a kockázatot, forrásonkénti principal/cost határt, compatible rollbacket és
+UI-listát. Exhausted/átvezetett adat után régi olvasó nem állítható vissza;
+új indítás leállhat, korábbi ügyek drainje megmarad. Nincs mainablak vagy deploy.
+- wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `0b66929252a2fcdb37cf47f08eb1ab641aa535ddd69abde2ae4b4dbfcc8ea1b5`
