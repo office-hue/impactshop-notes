@@ -194,4 +194,9 @@ foreach (['result_json'=>'{}','provider_session_id'=>'cs_test_OTHER','envelope_j
 $wpdb->row=$stored;
 foreach ([['ac'=>0,'tx'=>0],['ac'=>1,'tx'=>1]] as $tx) {$wpdb->transaction=$tx;$n=$factoryCalls;fails(static fn()=>sharity_donation_cli_payment_inspect([],['order'=>$e['order_id']]));check($factoryCalls===$n,'no SDK/provider under DB transaction');}
 check($wpdb->writes===0 && count(WP_CLI::$lines)===1,'no DB/flags writes or partial error payload');
+check(isset(WP_CLI::$commands['sharity donations finance-poll']),'poll CLI registered');
+foreach([[[],['unexpected'=>true]],[['arg'],[]],[[],[]]]as[$args,$assoc]){
+    fails(fn()=>sharity_donation_cli_finance_poll($args,$assoc),'DONATION_POLL_UNAVAILABLE');
+}
+check($wpdb->writes===0,'poll partial installation and bad arguments never write or call provider');
 echo "PASS donation original financial evidence and CLI: {$checks} checks; real SDK, offline HTTP, WPDB transport mocked, no settlement acceptance\n";

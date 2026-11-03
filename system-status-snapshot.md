@@ -2395,3 +2395,33 @@ felelősség/fedezet/korrekció, direct HUF pilot→Amplifier→további devizá
 nyelvi/affiliate/Offerwall cél, VB7/Sharing12. D2r324c6e65 már közzétéve;
 D2s06f0d4db+4a595238 nyilvános push automatikus visszautasítás után külön
 jóváhagyásra vár, D2t is helyi. Mainablak nincs; merge/deploy/aktiválás nincs.
+
+
+### D2u helyi ellenőrzés — 2026-11-03
+
+A már eltárolt sessionök kimaradt értesítés nélkül is visszaolvashatók a
+`sharity donations finance-poll` paranccsal. Külön, nem ütemezett
+`sharity_donation_finance_poll` hook; legfeljebb 5 rendelés és 63 GET/rendelés,
+közös 60 másodperces providerkeret. A függő inboxsor a signed-progress drain
+hatáskörében marad; GET után friss ellenőrzés történik. Később érkező notice
+függő maradhat egy korábbi előzetes target mellett, nem vész el vagy ACKolódik.
+Az eredeti pipeline két szűk lépése és a két opcióra korlátozott CAS-kurzor
+közös; új pénzügyi algoritmus, séma, queue, ütemezés vagy provider POST nincs.
+Prepared/attempted mentett session nélkül továbbra külön egyeztetést igényel.
+
+Tényleges ellenőrzés: 2371 natív MariaDB check, ebből 255 új polling;
+442 finance/CLI és 13 friss runtime sikeres. Kimaradt eredeti/refund notice,
+ismétlés, két valódi kapcsolat, mérgezett sor, wrap, lost ACK, CAS, kapcsolók
+utáni történeti olvasás, időkeret és nulla POST ellenőrizve. Offline SDK és
+izolált DB, nem sandbox/élő elfogadás. Két új teszt-fixture hibát javítottunk:
+elvárt hibakód, majd a race-harness kapcsolatcseréje után régi closure-hivatkozás.
+A független célzott forrásreview nem talált új hibát; reviewer nem futtatott tesztet.
+Hermes055: 1 hívás, 30545 input + 3251 output = 33796 token, becsült
+USD 0.003371277; tényleges számla és teljes Codex/review-ráfordítás ismeretlen.
+Részleges átvétel: scan/CLI/hook; duplikált cursor/pipeline helyett újrahasználat,
+pending notice ellenőrzés és hiányzó tesztek helyben. Nincs újrahívás/JEV/fallback.
+Delegálás pending/terminal remote_ack. Kiadás/rollback/kézi lista: protected
+record §78. Forrás még helyi; mainablak, merge, telepítés, aktiválás nincs.
+Nyitott: platform fee/account/payout életciklus, ütemezés, valódi fedezett
+végrehajtás, NGO-account és HUF pilot, Amplifier, további devizák, teljes
+nyelvi/affiliate/Offerwall cél, VB7/Sharing12 eltérések és éles elfogadás.

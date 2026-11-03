@@ -883,3 +883,60 @@ felelősség/fedezet/korrekció, direct HUF pilot→Amplifier→további devizá
 nyelvi/affiliate/Offerwall cél, VB7/Sharing12. D2r324c6e65 már közzétéve;
 D2s06f0d4db+4a595238 nyilvános push automatikus visszautasítás után külön
 jóváhagyásra vár, D2t is helyi. Mainablak nincs; merge/deploy/aktiválás nincs.
+
+
+## 78. D2u — kimaradt értesítés utáni visszaolvasás (előkészítés, 2026-11-03)
+
+Kiindulás N35c8150d/Ade7a72794, tiszta saját ágak. A D2s/D2t négy
+commitját Arnold külön jóváhagyta, a nyilvános #244 ágon visszaolvasottak;
+a §77 korábbi függő publikálási állapotát ez felváltja. Mainablak nincs.
+Hermes055 első draft: meglévő webhook/finance CLI és szintetikus DB-teszt.
+Cél: session_recorded rendelés valódi bizonyítékának korlátos visszaolvasása
+kimaradt webhook esetén, a meglevő megfigyelés/movement/előzetes target úton.
+Érintett: új explicit finance-poll CLI és nem ütemezett WP-Cron callback;
+meglévő drain pipeline szűk újrahasználata. Nem új queue vagy pénzügyi algoritmus.
+Kockázat: megkettőzött pénztétel, éhező sor, más account/session keveredése,
+elveszett cursor-ACK, providerhívás DB-zár alatt, régi értesítés téves lezárása.
+Korlát: legfeljebb5 rendelés,63 GET/rendelés, közös60s providerkeret; kizárólag
+GET, nincs inboxgyártás vagy -lezárás, nincs automatikus ütemezés/aktiválás.
+Prepared/attempted mentett session nélkül nem visszaállított fizetés.
+Teszt: natív izolált MariaDB/offline SDK, kimaradt eredeti/refund értesítés,
+ismétlés, poison és körbeforduló cursor, CAS/ACK, időkeret, kapcsolók utáni
+történeti olvasás, régi drain, nulla provider POST. Readiness false marad.
+Kiadás: webhook függvény előbb, CLI utána; kikapcsolt scheduler; meglévő
+exact-file út friss hash/privát mentés/readback mellett. Aktiválás később
+külön runtime-próbával. Rollbackkor csak saját callback ütemezése áll le
+és saját fájl áll vissza; megfigyelés/pénzügyi sor megmarad.
+Kézi kiadási lista: saját rendelés pénzügyi nézete helyes eredeti devizát
+és megfigyelési időt mutasson; visszatérítés után ne maradjon régi nettó,
+ne állítson NGO-bankbeérkezést vagy kifizetést. Élő vizsgálat még nem futott.
+
+
+### D2u helyi ellenőrzés — 2026-11-03
+
+A már eltárolt sessionök kimaradt értesítés nélkül is visszaolvashatók a
+`sharity donations finance-poll` paranccsal. Külön, nem ütemezett
+`sharity_donation_finance_poll` hook; legfeljebb 5 rendelés és 63 GET/rendelés,
+közös 60 másodperces providerkeret. A függő inboxsor a signed-progress drain
+hatáskörében marad; GET után friss ellenőrzés történik. Később érkező notice
+függő maradhat egy korábbi előzetes target mellett, nem vész el vagy ACKolódik.
+Az eredeti pipeline két szűk lépése és a két opcióra korlátozott CAS-kurzor
+közös; új pénzügyi algoritmus, séma, queue, ütemezés vagy provider POST nincs.
+Prepared/attempted mentett session nélkül továbbra külön egyeztetést igényel.
+
+Tényleges ellenőrzés: 2371 natív MariaDB check, ebből 255 új polling;
+442 finance/CLI és 13 friss runtime sikeres. Kimaradt eredeti/refund notice,
+ismétlés, két valódi kapcsolat, mérgezett sor, wrap, lost ACK, CAS, kapcsolók
+utáni történeti olvasás, időkeret és nulla POST ellenőrizve. Offline SDK és
+izolált DB, nem sandbox/élő elfogadás. Két új teszt-fixture hibát javítottunk:
+elvárt hibakód, majd a race-harness kapcsolatcseréje után régi closure-hivatkozás.
+A független célzott forrásreview nem talált új hibát; reviewer nem futtatott tesztet.
+Hermes055: 1 hívás, 30545 input + 3251 output = 33796 token, becsült
+USD 0.003371277; tényleges számla és teljes Codex/review-ráfordítás ismeretlen.
+Részleges átvétel: scan/CLI/hook; duplikált cursor/pipeline helyett újrahasználat,
+pending notice ellenőrzés és hiányzó tesztek helyben. Nincs újrahívás/JEV/fallback.
+Delegálás pending/terminal remote_ack. Kiadás/rollback/kézi lista: protected
+record §78. Forrás még helyi; mainablak, merge, telepítés, aktiválás nincs.
+Nyitott: platform fee/account/payout életciklus, ütemezés, valódi fedezett
+végrehajtás, NGO-account és HUF pilot, Amplifier, további devizák, teljes
+nyelvi/affiliate/Offerwall cél, VB7/Sharing12 eltérések és éles elfogadás.

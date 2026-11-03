@@ -7,6 +7,7 @@ declare(strict_types=1);
 const SHARITY_DONATION_WEBHOOKS_SCHEMA_OPTION = 'sharity_donation_webhooks_schema_v1';
 const SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION = 'sharity_donation_webhook_finance_schema_v1';
 const SHARITY_DONATION_DRAIN_CURSOR_OPTION = 'sharity_donation_finance_drain_cursor_v1';
+const SHARITY_DONATION_POLL_CURSOR_OPTION = 'sharity_donation_finance_poll_cursor_v1';
 function sharity_donation_webhook_table(): string { global $wpdb; return $wpdb->prefix . 'sharity_donation_webhooks_v1'; }
 
 /** Internal authority: call only after provider signature verification or from CLI.
@@ -413,13 +414,14 @@ function sharity_donation_webhook_bounded_read(callable $operation, float $deadl
 
 /** Opaque round-robin cursor in the existing options table, independent of WP caches.
  * CAS only coordinates scanning, never authorizes a financial write. */
-function sharity_donation_webhook_cursor(?string $next = null, ?string $expected = null): ?string
+function sharity_donation_webhook_cursor(?string $next = null, ?string $expected = null, string $option = SHARITY_DONATION_DRAIN_CURSOR_OPTION): ?string
 {
+    if (!in_array($option, [SHARITY_DONATION_DRAIN_CURSOR_OPTION, SHARITY_DONATION_POLL_CURSOR_OPTION], true)) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
     global $wpdb; $table = $wpdb->options;
     if (!is_string($table) || !preg_match('/^[A-Za-z0-9_]+$/D', $table)) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
     sharity_donation_order_autocommit();
-    $read = static function () use ($wpdb,$table): ?string {
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT option_value FROM `{$table}` WHERE option_name = %s LIMIT 2", SHARITY_DONATION_DRAIN_CURSOR_OPTION), ARRAY_A);
+    $read = static function () use ($wpdb,$table,$option): ?string {
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT option_value FROM `{$table}` WHERE option_name = %s LIMIT 2", $option), ARRAY_A);
         if ($wpdb->last_error !== '' || !is_array($rows) || count($rows) > 1) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
         if (!$rows) { return null; }
         $v = $rows[0]['option_value'];
@@ -430,9 +432,9 @@ function sharity_donation_webhook_cursor(?string $next = null, ?string $expected
     if ($next !== '' && !preg_match('/^do_[a-f0-9]{32}$/D', $next)) { throw new RuntimeException('DONATION_DRAIN_CURSOR_UNAVAILABLE'); }
     try {
         if ($expected === null) {
-            $wpdb->query($wpdb->prepare("INSERT INTO `{$table}` (option_name,option_value,autoload) VALUES (%s,%s,'no')", SHARITY_DONATION_DRAIN_CURSOR_OPTION, $next));
+            $wpdb->query($wpdb->prepare("INSERT INTO `{$table}` (option_name,option_value,autoload) VALUES (%s,%s,'no')", $option, $next));
         } else {
-            $wpdb->query($wpdb->prepare("UPDATE `{$table}` SET option_value = %s WHERE option_name = %s AND BINARY option_value = BINARY %s", $next, SHARITY_DONATION_DRAIN_CURSOR_OPTION, $expected));
+            $wpdb->query($wpdb->prepare("UPDATE `{$table}` SET option_value = %s WHERE option_name = %s AND BINARY option_value = BINARY %s", $next, $option, $expected));
         }
     } catch (Throwable $uncertain) { /* Confirm exact value below, never blindly retry. */ }
     if ($read() !== $next) { throw new RuntimeException('DONATION_DRAIN_CURSOR_CONFLICT'); }
@@ -483,6 +485,26 @@ function sharity_donation_webhook_observation_done(array $before, array $receipt
         'account_id'=>$e['account_id'],'livemode'=>$e['livemode'] ? '1' : '0','donation_mode'=>$e['donation_mode'],'digest'=>$after['observation_digest']]);
 }
 
+/** Shared observation and projection stages. Callers decide evidence eligibility. */
+function sharity_donation_webhook_finance_observe(string $orderId, int $now): array
+{
+    $receipt = sharity_donation_finance_record($orderId,sharity_donation_runtime_adapter(),$now);
+    $saved = sharity_donation_finance_read($orderId,$receipt['digest']);
+    if ($saved === null) { throw new RuntimeException(); }
+    sharity_donation_finance_receipt($saved,$receipt);
+    $evidence = json_decode($saved['canonical_json'],true,64,JSON_THROW_ON_ERROR);
+    return [$receipt, $evidence];
+}
+
+function sharity_donation_webhook_finance_project(string $orderId, int $now): void
+{
+    $inventory = sharity_donation_finance_reconcile($orderId,$now);
+    sharity_donation_finance_record_movements($orderId,$inventory['movement_proposal_digest'],$now);
+    $target = sharity_donation_finance_target($orderId,$now);
+    $applied = sharity_donation_finance_target($orderId,$now,$target['proposal_digest']);
+    if (($applied['persisted'] ?? false) !== true || $applied['proposal_digest'] !== $target['proposal_digest']) { throw new RuntimeException(); }
+}
+
 function sharity_donation_checkout_drain(int $now, ?object $transport = null, ?callable $clock = null): array
 {
     $clock = $clock ?? static fn(): float => hrtime(true) / 1e9;
@@ -512,11 +534,7 @@ function sharity_donation_checkout_drain(int $now, ?object $transport = null, ?c
                     catch (Throwable $e) { $result['retryable']++; }
                 }
                 if (!$valid) { return; }
-                $receipt = sharity_donation_finance_record($orderId,sharity_donation_runtime_adapter(),$now);
-                $saved = sharity_donation_finance_read($orderId,$receipt['digest']);
-                if ($saved === null) { throw new RuntimeException(); }
-                sharity_donation_finance_receipt($saved,$receipt);
-                $evidence = json_decode($saved['canonical_json'],true,64,JSON_THROW_ON_ERROR);
+                [$receipt, $evidence] = sharity_donation_webhook_finance_observe($orderId,$now);
                 if (($evidence['original']['evidence_state'] ?? null) !== 'original_charge_observed') { $result['pending'] += count($valid); return; }
                 $matched = [];
                 foreach ($valid as $r) {
@@ -525,11 +543,7 @@ function sharity_donation_checkout_drain(int $now, ?object $transport = null, ?c
                 }
                 if (!$matched) { return; }
                 $valid = $matched;
-                $inventory = sharity_donation_finance_reconcile($orderId,$now);
-                sharity_donation_finance_record_movements($orderId,$inventory['movement_proposal_digest'],$now);
-                $target = sharity_donation_finance_target($orderId,$now);
-                $applied = sharity_donation_finance_target($orderId,$now,$target['proposal_digest']);
-                if (($applied['persisted'] ?? false) !== true || $applied['proposal_digest'] !== $target['proposal_digest']) { throw new RuntimeException(); }
+                sharity_donation_webhook_finance_project($orderId,$now);
                 foreach ($valid as $r) {
                     sharity_donation_webhook_observation_done($r,$receipt,$now); $result['observed']++;
                 }
@@ -540,6 +554,62 @@ function sharity_donation_checkout_drain(int $now, ?object $transport = null, ?c
     $result['budget_exhausted'] = $result['budget_exhausted'] || $clock() >= $deadline;
     return $result;
 }
+
+/** Catch up saved sessions without inventing notifications. Pending notices stay with
+ * the drain, which checks their signed progress before projection. No scheduler on load. */
+function sharity_donation_finance_poll(int $now, ?object $transport = null, ?callable $clock = null): array
+{
+    $clock = $clock ?? static fn(): float => hrtime(true) / 1e9;
+    $deadline = $clock() + 60;
+    if ($now < 1 || $now > 253402300799 || get_option(SHARITY_DONATION_WEBHOOK_FINANCE_SCHEMA_OPTION, '') !== '1'
+        || !function_exists('sharity_donation_finance_target')) { throw new RuntimeException('DONATION_POLL_UNAVAILABLE'); }
+    sharity_donation_order_autocommit();
+    global $wpdb;
+    $ordersTable = sharity_donation_order_table(); $inbox = sharity_donation_webhook_table();
+    $cursor = sharity_donation_webhook_cursor(null,null,SHARITY_DONATION_POLL_CURSOR_OPTION);
+    $result = ['orders' => 0, 'observed' => 0, 'pending' => 0, 'retryable' => 0,
+        'budget_exhausted' => false, 'financial_readiness' => false];
+    $sql = $wpdb->prepare("SELECT o.order_id FROM `{$ordersTable}` o
+        WHERE o.state = 'session_recorded' AND provider_session_id IS NOT NULL AND o.order_id > %s
+        AND NOT EXISTS (SELECT 1 FROM `{$inbox}` i WHERE i.order_id = o.order_id AND i.observation_digest IS NULL)
+        ORDER BY o.order_id ASC LIMIT 5", $cursor ?? '');
+    $orders = $wpdb->get_results($sql, ARRAY_A);
+    if ($wpdb->last_error !== '' || !is_array($orders)) { throw new RuntimeException('DONATION_POLL_UNAVAILABLE'); }
+    if (!$orders) {
+        if ($cursor !== null && $cursor !== '') { sharity_donation_webhook_cursor('', $cursor,SHARITY_DONATION_POLL_CURSOR_OPTION); }
+        return $result;
+    }
+    foreach ($orders as $candidate) {
+        if ($clock() >= $deadline) { $result['budget_exhausted'] = true; break; }
+        $orderId = (string) $candidate['order_id'];
+        $result['orders']++;
+        try {
+            $outcome = sharity_donation_webhook_bounded_read(
+                static function () use ($orderId,$now,$wpdb,$inbox): string {
+                    [, $evidence] = sharity_donation_webhook_finance_observe($orderId,$now);
+                    if (($evidence['original']['evidence_state'] ?? null) !== 'original_charge_observed') { return 'pending'; }
+                    $pending = $wpdb->get_results($wpdb->prepare("SELECT event_id FROM `{$inbox}` WHERE order_id = %s AND observation_digest IS NULL LIMIT 1",$orderId),ARRAY_A);
+                    if ($wpdb->last_error !== '' || !is_array($pending)) { throw new RuntimeException('DONATION_POLL_UNAVAILABLE'); }
+                    if ($pending) { return 'pending'; }
+                    sharity_donation_webhook_finance_project($orderId,$now);
+                    return 'observed';
+                },
+                $deadline, $transport, $clock, 63);
+            if ($outcome === 'observed') { $result['observed']++; } else { $result['pending']++; }
+        } catch (Throwable $error) {
+            $result['retryable']++;
+        }
+        $cursor = sharity_donation_webhook_cursor($orderId,$cursor,SHARITY_DONATION_POLL_CURSOR_OPTION);
+    }
+    $result['budget_exhausted'] = $result['budget_exhausted'] || $clock() >= $deadline;
+    return $result;
+}
+add_action('sharity_donation_finance_poll', static function (): void {
+    try {
+        $r = sharity_donation_finance_poll(time());
+        if ($r['retryable'] > 0) { error_log('Sharity donation finance poll: retryable=' . $r['retryable']); }
+    } catch (Throwable $error) { error_log('Sharity donation finance poll unavailable; orders retained.'); }
+});
 
 add_action('sharity_donation_finance_drain', static function (): void {
     try {

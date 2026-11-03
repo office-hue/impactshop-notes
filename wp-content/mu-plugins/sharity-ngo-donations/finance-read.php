@@ -322,7 +322,16 @@ function sharity_donation_cli_webhook_finance_schema(array $args, array $assoc):
         WP_CLI::line('DONATION_WEBHOOK_FINANCE_SCHEMA_READY');
     } catch (Throwable $error) { WP_CLI::error('DONATION_WEBHOOK_FINANCE_SCHEMA_UNAVAILABLE'); }
 }
+function sharity_donation_cli_finance_poll(array $args, array $assoc): void
+{
+    try {
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $assoc !== []
+            || !function_exists('sharity_donation_finance_poll')) { throw new RuntimeException(); }
+        WP_CLI::line(json_encode(sharity_donation_finance_poll(time()), JSON_THROW_ON_ERROR));
+    } catch (Throwable $error) { WP_CLI::error('DONATION_POLL_UNAVAILABLE'); }
+}
 if (defined('WP_CLI') && WP_CLI) {
+    WP_CLI::add_command('sharity donations finance-poll','sharity_donation_cli_finance_poll');
     WP_CLI::add_command('sharity donations finance-drain','sharity_donation_cli_finance_drain');
     WP_CLI::add_command('sharity donations webhook-finance-schema','sharity_donation_cli_webhook_finance_schema');
 }

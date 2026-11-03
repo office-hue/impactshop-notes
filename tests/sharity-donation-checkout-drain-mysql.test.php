@@ -268,6 +268,96 @@ try {
     sharity_donation_webhook_bounded_read(static function():void{$c=Stripe\ApiRequestor::httpClient();$c->request('get','https://api.stripe.com/v1/account',[],[],false,'v1',0);fails(fn()=>$c->request('get','https://api.stripe.com/v1/account',[],[],false,'v1',0),'DONATION_DRAIN_READ_LIMIT');},105,$stub,$clock,1);
     check($stub->gets===1,'notification wrapper enforces one GET');
     echo 'Donation lifecycle MariaDB: '.($checks-$lifecycleStart)." checks; signed notifications, exact charge, delayed evidence, zero POST\n";
+    // D2u: independent polling of stored sessions when no signed event arrived.
+    $pollStart=$checks;$hidden=[];
+    $hide=function()use(&$hidden,&$wpdb):void{
+        $t=sharity_donation_order_table();
+        foreach($wpdb->get_results("SELECT order_id,state FROM `{$t}` WHERE state <> 'poll_fixture'",ARRAY_A)as$row){$hidden[$row['order_id']]=$row['state'];}
+        $wpdb->db->query("UPDATE `{$t}` SET state='poll_fixture' WHERE state <> 'poll_fixture'");
+    };
+    $pollReset=function()use(&$wpdb):void{$wpdb->db->query("DELETE FROM `{$wpdb->options}` WHERE option_name='".SHARITY_DONATION_POLL_CURSOR_OPTION."'");};
+    $withoutNotice=function(array $event)use(&$wpdb,$inbox):void{$wpdb->db->query($wpdb->prepare("DELETE FROM `{$inbox}` WHERE event_id=%s",$event['id']));};
+    try {
+        $hide();drainReset();[$o,$ev]=drainOrder('poll-original');$withoutNotice($ev);$pollReset();
+        $posts=calls();$count=inboxCount();$prior=Stripe\ApiRequestor::httpClient();$beforeOrder=sharity_donation_webhook_order($o['order_id']);
+        $options[SHARITY_DONATION_ORDERS_ENABLED]='0';unset($options['sharity_donation_accounts_v1']);
+        $r=sharity_donation_finance_poll($now,$drainHttp);
+        check($r['orders']===1&&$r['observed']===1&&$r['retryable']===0&&!$r['financial_readiness'],'poll observes missing checkout notification after switches off');
+        check(inboxCount()===$count&&sharity_donation_webhook_order($o['order_id'])===$beforeOrder&&calls()===$posts,'poll preserves inbox/order and never POSTs');
+        check(Stripe\ApiRequestor::httpClient()===$prior,'poll restores SDK client');
+        check(sharity_donation_financial_read($subject,$o['order_id'],$now)['settlement'][0]['net_minor']==='48000','missing notification exact stored NGO net');
+        $targets=targetCount($o['order_id']);$pollReset();$r=sharity_donation_finance_poll($now,$drainHttp);
+        check($r['observed']===1&&targetCount($o['order_id'])===$targets,'identical poll creates no second target');
+        $suffix=substr($o['order_id'],3);$cp='/v1/charges/ch_'.$suffix;
+        $refund=['id'=>'re_POLL','object'=>'refund','charge'=>'ch_'.$suffix,'payment_intent'=>'pi_'.$suffix,
+            'amount'=>10000,'currency'=>'huf','created'=>1800000020,'status'=>'succeeded',
+            'balance_transaction'=>['id'=>'txn_POLL','object'=>'balance_transaction','type'=>'refund','source'=>'re_POLL',
+                'amount'=>-10000,'currency'=>'huf','fee'=>0,'net'=>-10000,'fee_details'=>[],
+                'created'=>1800000020,'available_on'=>1800600000,'status'=>'available','exchange_rate'=>null]];
+        $drainHttp->responses[$cp]['amount_refunded']=10000;$drainHttp->responses[$cp]['refunds']['data']=[$refund];
+        $drainHttp->responses['/v1/refunds']=['object'=>'list','data'=>[$refund],'has_more'=>false];
+        $pollReset();$r=sharity_donation_finance_poll($now,$drainHttp);
+        check($r['observed']===1&&sharity_donation_financial_read($subject,$o['order_id'],$now)['settlement'][0]['net_minor']==='38000','missed refund notification updates from real GET evidence');
+        check(inboxCount()===$count,'poll never invents notification');
+        $targets=targetCount($o['order_id']);$pollReset();sharity_donation_finance_poll($now,$drainHttp);
+        check(targetCount($o['order_id'])===$targets,'repeated refund not duplicated');
+        $gets=$drainHttp->gets;$r=sharity_donation_finance_poll($now,$drainHttp);
+        check($r['orders']===0&&$drainHttp->gets===$gets&&sharity_donation_webhook_cursor(null,null,SHARITY_DONATION_POLL_CURSOR_OPTION)==='','end of range wraps without GET');
+        check(sharity_donation_finance_poll($now,$drainHttp)['observed']===1,'next scan returns to saved order');
+        // Already-known pending notification belongs to the signed-progress drain.
+        check(deliver($ev)->status===200,'late synthetic notification accepted');$pollReset();$gets=$drainHttp->gets;
+        check(sharity_donation_finance_poll($now,$drainHttp)['orders']===0&&$drainHttp->gets===$gets,'poll does not bypass pending signed progress');
+        $withoutNotice($ev);$pollReset();$arrived=false;
+        $drainHttp->onRequest=function()use(&$arrived,$ev):void{if(!$arrived){$arrived=true;check(deliver($ev)->status===200,'notification arrives during provider GET');}};
+        $targets=targetCount($o['order_id']);$r=sharity_donation_finance_poll($now,$drainHttp);$drainHttp->onRequest=null;
+        check($r['pending']===1&&$r['observed']===0&&targetCount($o['order_id'])===$targets,'late pending notification retains drain authority');
+        $withoutNotice($ev);
+        $hide();drainReset();[$p,$pe]=drainOrder('poll-unpaid',true);$withoutNotice($pe);$pollReset();
+        $r=sharity_donation_finance_poll($now,$drainHttp);check($r['pending']===1&&targetCount($p['order_id'])===0,'unpaid never zero-money target');
+        $hide();drainReset();$prepared=newOrder('poll-prepared');$attempted=pendingOrder('poll-attempted');$pollReset();$gets=$drainHttp->gets;
+        check(sharity_donation_finance_poll($now,$drainHttp)['orders']===0&&$drainHttp->gets===$gets,'prepared and attempted are not guessed/retried');
+        $hide();drainReset();$batch=[];
+        for($i=0;$i<7;$i++){[$x,$xe]=drainOrder('poll-batch-'.$i);$withoutNotice($xe);$batch[$x['order_id']]=$x;}
+        ksort($batch);$posts=calls();$ids=array_keys($batch);$poison=$ids[0];$t=sharity_donation_order_table();
+        $wpdb->db->query($wpdb->prepare("UPDATE `{$t}` SET result_json='{}' WHERE order_id=%s",$poison));$pollReset();
+        $r=sharity_donation_finance_poll($now,$drainHttp);check($r['orders']===5&&$r['observed']===4&&$r['retryable']===1,'max5 and poison cannot starve valid following orders');
+        $r=sharity_donation_finance_poll($now,$drainHttp);check($r['orders']===2&&$r['observed']===2,'remaining range processed');
+        check(sharity_donation_finance_poll($now,$drainHttp)['orders']===0,'range wraps separately');
+        $pollReset();$drainHttp->drop=true;$prior=Stripe\ApiRequestor::httpClient();$r=sharity_donation_finance_poll($now,$drainHttp);$drainHttp->drop=false;
+        check($r['orders']===5&&$r['retryable']===5&&$r['observed']===0&&Stripe\ApiRequestor::httpClient()===$prior,'provider errors bounded and transport restored');
+        $pollReset();$ticks=0;$gets=$drainHttp->gets;
+        $clockPast=static function()use(&$ticks):float{return $ticks++===0?100.0:161.0;};
+        $r=sharity_donation_finance_poll($now,$drainHttp,$clockPast);
+        check($r['budget_exhausted']&&$r['orders']===0&&$drainHttp->gets===$gets,'common deadline stops before first GET');
+        // Cursor mutation is the same native CAS/readback used by drain, isolated by allowlist.
+        $pollReset();$wpdb->failOn='INSERT INTO `'.$wpdb->options.'`';$wpdb->failure='lost_ack';
+        check(sharity_donation_webhook_cursor($ids[0],null,SHARITY_DONATION_POLL_CURSOR_OPTION)===$ids[0],'poll cursor insert lost ACK readback');
+        $wpdb->failOn='';$wpdb->failure='';
+        fails(fn()=>sharity_donation_webhook_cursor($ids[1],$ids[6],SHARITY_DONATION_POLL_CURSOR_OPTION),'DONATION_DRAIN_CURSOR_CONFLICT');
+        check(sharity_donation_webhook_cursor(null,null,SHARITY_DONATION_POLL_CURSOR_OPTION)===$ids[0],'stale cursor cannot overwrite');
+        fails(fn()=>sharity_donation_webhook_cursor(null,null,'arbitrary-option'),'DONATION_DRAIN_CURSOR_UNAVAILABLE');
+        $wpdb->db->begin_transaction();$gets=$drainHttp->gets;
+        fails(fn()=>sharity_donation_finance_poll($now,$drainHttp),'ORDER_TRANSACTION_UNSAFE');
+        check($drainHttp->gets===$gets&&$wpdb->db->query('SELECT @@in_transaction tx')->fetch_assoc()['tx']==='1','poll preserves caller transaction without GET');$wpdb->db->rollback();
+        check(calls()===$posts,'all polling contains no provider POST');
+        $hide();drainReset();[$raceOrder,$raceEvent]=drainOrder('poll-race');$withoutNotice($raceEvent);$pollReset();$posts=calls();
+        $raceResults=race(static fn()=>sharity_donation_finance_poll($now,$drainHttp),'WHERE order_id =');
+        check(targetCount($raceOrder['order_id'])===1&&inboxCount()===0,'two real polling connections persist one target without event');
+        foreach($raceResults as$rr){check(isset($rr['value'])||($rr['error']??null)==='DONATION_DRAIN_CURSOR_CONFLICT','parallel polling result explicit');}
+        $current=sharity_donation_webhook_cursor(null,null,SHARITY_DONATION_POLL_CURSOR_OPTION);$next='do_'.str_repeat('f',32);$otherDb=new OrderDb((int)$port);
+        $otherDb->query($otherDb->prepare("UPDATE `{$otherDb->options}` SET option_value=%s WHERE option_name=%s",$next,SHARITY_DONATION_POLL_CURSOR_OPTION));$otherDb->db->close();
+        fails(fn()=>sharity_donation_webhook_cursor('',$current,SHARITY_DONATION_POLL_CURSOR_OPTION),'DONATION_DRAIN_CURSOR_CONFLICT');
+        check(sharity_donation_webhook_cursor(null,null,SHARITY_DONATION_POLL_CURSOR_OPTION)===$next,'other connection cursor cannot regress');
+        $pollReset();$time=100.0;$clock=static function()use(&$time):float{return $time;};$prior=Stripe\ApiRequestor::httpClient();
+        $drainHttp->onRequest=static function()use(&$time):void{$time+=61;};$targets=targetCount($raceOrder['order_id']);
+        $r=sharity_donation_finance_poll($now,$drainHttp,$clock);$drainHttp->onRequest=null;
+        check($r['budget_exhausted']&&$r['retryable']===1&&$r['observed']===0&&targetCount($raceOrder['order_id'])===$targets,'late provider reply cannot project');
+        check(Stripe\ApiRequestor::httpClient()===$prior&&calls()===$posts,'poll late/race preserves transport and no POST');
+        echo 'Donation finance poll MariaDB: '.($checks-$pollStart)." checks; missing notifications, bounded fair scan, no execution\n";
+    } finally {
+        $wpdb->failOn='';$wpdb->failure='';$wpdb->db->rollback();
+        foreach($hidden as$id=>$state){$wpdb->db->query($wpdb->prepare("UPDATE `".sharity_donation_order_table()."` SET state=%s WHERE order_id=%s",$state,$id));}
+    }
     echo 'Donation checkout drain MariaDB: '.($checks-$drainStart)." checks; real races, signed events, bounded offline SDK, no money execution\n";
 } finally {
     $wpdb->failOn='';$wpdb->failure='';$wpdb->db->query("DROP TABLE IF EXISTS `{$wpdb->options}`");$options=$originalOptions;
