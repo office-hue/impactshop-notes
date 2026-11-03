@@ -1149,3 +1149,14 @@ protected-change-records/2026-11-02-sharity-donation-prices.md §90.
 Nincs mainművelet/telepítés/aktiválás.
 - wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `08d60796bd2e4fb377ee6621c2c3769f26604d93f31d25d41ddc994fc4b00717`
 - wp-content/mu-plugins/sharity-ngo-donations/finance-read.php: `07a908905d1adce9e976e6ee93a2d0859f85a532fc0551bb77d8468725ca1742`
+
+
+## 2026-11-03 — D3a saját szavazati célszámítás
+
+Termék27588b50; csak két érintett forráshash és a manifest checksum frissül.
+Nincs új modul/inventory/guard-logika vagy idegen pin módosítása. 8312MariaDB
+(689D3a),447finance-read,17runtime és független source review igazolt;
+protected record §91: koherencia, kockázat, funkciók, kiadás, rollback, UI-lista.
+Megfigyelési számítás, nem jóváírás vagy aktiválás; mainablak/deploy nincs.
+- wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `7351a01518d1c90330d03b27e5b9e8a3e5dd13944eefc09063dde83004956fa3`
+- wp-content/mu-plugins/sharity-ngo-donations/finance-read.php: `21eaf9769c0fd1ee293083ce5ccf789580cd0802296f45ba8ecacdc7c402b5b0`
