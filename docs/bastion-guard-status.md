@@ -1137,3 +1137,15 @@ konkrét lelet nélkül. Részletes scope, kiadás és confirmed-kompatibilis
 rollback: protected record§89. Nincs mainablak, merge, telepítés vagy aktiválás.
 - wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `8777ba89e261dcd9cddf3abfd0ce0806c3cf1e2f94c4854ec31ee9285973a2c3`
 - wp-content/mu-plugins/sharity-ngo-donations/finance-read.php: `9e5954bee8b61d5802eb6fa4a365bebd3c74c1279731c288dac1cf9e5372540e`
+
+
+## 2026-11-03 — D2ad saját korrekcióelszámolási forrás
+
+Termék35d0c673. Csak a két tesztelt donation forrás saját hashértéke és a
+meglévő manifest checksum változik; inventory/metadata/idegen pin/guardlogika
+változatlan.7623MariaDB(1456új),447CLI,17runtime,lint/diff és független
+review javításai igazoltak. Scope/teszt/mentés/kiadás/rollback/UI-checklist:
+protected-change-records/2026-11-02-sharity-donation-prices.md §90.
+Nincs mainművelet/telepítés/aktiválás.
+- wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `08d60796bd2e4fb377ee6621c2c3769f26604d93f31d25d41ddc994fc4b00717`
+- wp-content/mu-plugins/sharity-ngo-donations/finance-read.php: `07a908905d1adce9e976e6ee93a2d0859f85a532fc0551bb77d8468725ca1742`
