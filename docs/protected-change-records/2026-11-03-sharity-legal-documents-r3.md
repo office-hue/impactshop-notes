@@ -38,3 +38,21 @@ Telepítés után: HU/EN jogi index HTTP/render; kilenc PDF HTTP/content-type/ha
 
 ## Aktuális állapot
 Helyi forrás-előkészítés. Éles backup/CAS, guarded deploy, HTTP/hash smoke és kézi UI-elfogadás még nem történt. A külön jogi L2 a két új JYSK irat pontos szövegét jóváhagyta; a csomag másik 17 PDF-je változatlan R2. GA4 éles beállítása 2 hónap / újraindítás kikapcsolva, visszaolvasva; a Google 24 órás érvényesülést jelez.
+
+
+## 2026-11-03 – merge utáni reviewed baseline egyeztetés
+
+A két HTML már a `3d81c7b66aa574e2e33baa0a5e0bdb91874949d8` mainban van. A Mini guarded dry-run távoli írás előtt megállt: „Non-interactive auto-approve tiltva: protected runtime/shell drift észlelve”, kizárólag e két HTML-re. Bizonyíték: az ügy `evidence/publication-r3/WP-GUARDED-DRY-RUN.log` fájlja, snapshot `deploy-20261103-215618`. A manifest még a régi tartalmak hashét őrizte.
+
+Ez a kiegészítés kizárólag `docs/impactshop-guard-hashes.json` két már reviewzott HTML-bejegyzését és a hozzá tartozó `docs/impactshop-guard-hashes.sha256` checksumot egyezteti a merge-elt forráshoz. Normál reviewed baseline update: nincs policy-, inventory-, más pin-, jogosultság-, guardlogika- vagy programkódváltozás; nincs emergency/manual bypass. A meglévő felhatalmazás és a kétfájlos deploy-kör nem bővül.
+
+- `wp-content/mu-plugins/impactshop-ngo-guides/jogi-dokumentumok.html`: `fee9791226a805ca455965a9a641604ba8da2c2370e926d3ebdef8dd7ef12bee` → `c0b1d9f31bc5b27ae39779fe90b2722ace4031a7be1de976b69a7e3aa88d1426`.
+- `wp-content/mu-plugins/impactshop-ngo-guides/jogi-dokumentumok-en.html`: `28a10c3ba57955932cab7b87f029b1e29fc1b0342cd91f9d88ab6ffc4ae838a6` → `bbeb21276cd507267563370b79430f2fcc8fe640619136bfd5b7dfd219682d7d`.
+
+Statikus ellenőrzés: a 169 elemű `hashes` map pontosan két kulcsa változik; a JSON minden más bájtja változatlan. Mindkét HTML byteazonos az alapcommit tartalmával, egyik sem része e patchnek. Az új manifest SHA256 `b4ced6211d803f813bfed12a96288695c023da12c6f081a20b7163fb34d4333e`; a checksum sora repo-relatív `docs/impactshop-guard-hashes.json` névre mutat. A meglévő többi pin és szabály változatlan. Ez helyi statikus bizonyíték, nem ismételt Mini dry-run vagy éles smoke PASS.
+
+Érintettség/kockázat: kizárólag a reviewed tartalom hash-baseline-ja; egy téves hash hibás tartalmat fogadtatna el, ezért a JSON-kétkulcsosságot és a merge-elt HTML-bájtazonosságot külön ellenőriztük. A korábbi route-/guide-/print-/JSON-smoke és kézi HU/EN, kilenc PDF, archív Win4Good UI-checklist változatlan. Következő lépés a külön fixág reviewja és main merge után az eredeti guarded dry-run; sikere itt nem előlegezett.
+
+Rollback: saját fixcommit visszavonásával a két hashfájlt együtt az alapcommit verziójára állítani; a már merge-elt HTML-t nem szabad e metadata-rollback részeként visszaírni. Ez visszahozhatja az eredeti driftblokkot, nem engedély annak megkerülésére. Éles fájlírás nem történt; a korábban rögzített valódi backup/CAS/rollback-rend megmarad.
+
+A metadata-kiegészítés kötelező smoke scope-ja: `deploy:guard-preflight`, `deploy:checksum-verify`; a korábbi guide/JYSK render/print/JSON scope megmarad.
