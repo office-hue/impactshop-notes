@@ -1061,3 +1061,12 @@ account/CAS,442 CLI,13 runtime; független source-review két lelete javítva,
 végső visszaolvasás lelet nélkül. Pontos koherencia/kockázat/érintettség,
 séma/kiadási sorrend/kompatibilis rollback és kézi UI: protected record §80.
 Nincs mainművelet, publikálás, telepítés vagy aktiválás.
+
+## 2026-11-03 — D2w saját forrásazonosság
+
+Kizárólag a b1675b81-ben tesztelt donation webhook.php és stripe-checkout.php
+két értéke frissült a meglévő hash-térképben, majd annak saját checksumja.
+Védelmi lista, idegen forrás, policy és release-út nem változott. 2775 natív
+MariaDB check (317 új), 17 runtime, 197 checkout és 521 adjustment ellenőrzés;
+független review leletmentes. Kiadás/rollback/kézi UI: protected record §81.
+A baseline nem jelent távoli feltöltést, merge-et, telepítést vagy aktiválást.
