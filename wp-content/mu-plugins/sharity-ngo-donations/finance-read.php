@@ -458,3 +458,34 @@ function sharity_donation_cli_payout_reconcile(array $args, array $assoc): void
             ? $error->getMessage() : 'DONATION_PAYOUT_UNAVAILABLE');
     }
 }
+
+
+function sharity_donation_cli_fee_schema(array $args,array $assoc): void
+{
+    if(!defined('WP_CLI')||!WP_CLI||$args!==[]||$assoc!==['apply'=>true]
+        ||!function_exists('sharity_donation_fee_schema_apply')||!sharity_donation_fee_schema_apply()){
+        WP_CLI::error('DONATION_FEE_SCHEMA_UNAVAILABLE');return;
+    }
+    WP_CLI::line('DONATION_FEE_SCHEMA_READY');
+}
+function sharity_donation_cli_fee_prepare(array $args,array $assoc): void
+{
+    try{
+        $keys=array_keys($assoc);sort($keys);$apply=array_key_exists('apply',$assoc);
+        if(!defined('WP_CLI')||!WP_CLI||$args!==[]||$keys!==($apply?['apply','input','order']:['input','order'])
+            ||!is_string($assoc['order'])||!preg_match('/^do_[a-f0-9]{32}$/D',$assoc['order'])||!is_string($assoc['input'])
+            ||($apply&&(!is_string($assoc['apply'])||!preg_match('/^[a-f0-9]{64}$/D',$assoc['apply'])))
+            ||!function_exists('sharity_donation_fee_prepare')){throw new RuntimeException();}
+        $proof=sharity_donation_backing_read_proof($assoc['input']);
+        $result=sharity_donation_fee_prepare($assoc['order'],$proof,time(),$apply?$assoc['apply']:'');
+        WP_CLI::line(json_encode($result,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+    }catch(Throwable $e){
+        $codes=['DONATION_FEE_INPUT','DONATION_FEE_MODE','DONATION_FEE_UNRESOLVED','DONATION_FEE_CONFLICT','DONATION_FEE_STALE','DONATION_FEE_SOURCE',
+            'DONATION_BACKING_INSUFFICIENT','DONATION_BACKING_EXPIRED','DONATION_BACKING_SOURCE_CONFLICT','DONATION_BACKING_PROOF_PERMISSION'];
+        WP_CLI::error(in_array($e->getMessage(),$codes,true)?$e->getMessage():'DONATION_FEE_UNAVAILABLE');
+    }
+}
+if(defined('WP_CLI')&&WP_CLI){
+    WP_CLI::add_command('sharity donations fee-schema','sharity_donation_cli_fee_schema');
+    WP_CLI::add_command('sharity donations fee-prepare','sharity_donation_cli_fee_prepare');
+}

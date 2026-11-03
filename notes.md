@@ -8915,3 +8915,18 @@ Hermes06039396token, USD0.005073068 becsült, actual/full költség ismeretlen;
 részleges vázátvétel és jelentős helyi javítás, igazolt megtakarítás nincs.
 Koherencia/kockázat/séma/kiadás/rollback/kézi UI: protected record§83.
 Nincs mainablak/merge/telepítés/aktiválás; teljes Sharity-cél nyitott.
+
+
+## D2z — atomikus díjkorrekció-előkészítés, 2026-11-03
+
+Finance ledger/read + célzott tesztek; exact fee-schema --apply és privát
+fee-prepare dry-run/digest. Eredeti natív platformfee, nettó80/20 cél,
+operation+retained backing egy pinned tranzakcióban; zero provider POST.
+3509 natív MariaDB (156 új),447CLI,17runtime sikeres; független P2 review
+pending/legacy lelet javítva/visszaolvasva, korábbi history nem törlődik.
+Hermes06175201token,becsült USD0.00774865,actual/full ismeretlen; jelentős
+helyi javítás, megtakarítás nem igazolt. Részletek, kiadás/rollback/UI:
+docs/protected-change-records/2026-11-02-sharity-donation-prices.md §85.
+Ez helyi forrás, nem publikus push/merge/deploy/aktiválás vagy élő pénzügyi
+elfogadás. Nincs nyitott mainablak; a saját A fetch tíz konfliktusa előkészítendő.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztési feladat.

@@ -869,7 +869,8 @@ function sharity_donation_backing_transaction(bool $apply,int $now,callable $wor
     } catch (Throwable $e) {
         if ($active && $db instanceof mysqli) { try { $db->rollback(); } catch (Throwable $ignored) {} }
         $allowed=['STALE','SOURCE_UNPROVEN','SOURCE_CONFLICT','CLAIM_CONFLICT','INSUFFICIENT','EXPIRED','PROOF_MALFORMED','LIMIT'];
-        throw new RuntimeException(in_array(str_replace('DONATION_BACKING_','',$e->getMessage()),$allowed,true)?$e->getMessage():'DONATION_BACKING_UNAVAILABLE');
+        $feeCodes=['DONATION_FEE_INPUT','DONATION_FEE_STALE','DONATION_FEE_SOURCE','DONATION_FEE_CONFLICT'];
+        throw new RuntimeException(in_array($e->getMessage(),$feeCodes,true)||in_array(str_replace('DONATION_BACKING_','',$e->getMessage()),$allowed,true)?$e->getMessage():'DONATION_BACKING_UNAVAILABLE');
     }
 }
 function sharity_donation_backing_match(callable $q,string $kind,array $expected,string $where,array $params): void
@@ -955,13 +956,15 @@ function sharity_donation_backing_import(array $input,string $applyDigest,int $n
                 $orders=sharity_donation_order_table();$or=$q("SELECT * FROM `{$orders}` WHERE order_id = ? FOR UPDATE",[$s['order_id']]);
                 if(count($or)!==1){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
                 $snapshot=sharity_donation_order_decode($or[0])['snapshot'];
-                if($or[0]['state']!=='session_recorded'||$snapshot['account_id']!==$f['account_id']||$snapshot['livemode']!==$f['livemode']){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+                if($or[0]['state']!=='session_recorded'||$snapshot['livemode']!==$f['livemode']){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+                $role=$snapshot['account_id']===$f['account_id']?'charge':'application_fee';
+                if($role==='application_fee'&&$snapshot['donation_mode']!=='amplifier'){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
                 $mt=sharity_donation_movement_table();$mr=$q("SELECT order_id,SUBSTRING(CAST(facts_json AS BINARY),1,65537) AS facts_json,financial_digest FROM `{$mt}` WHERE provider = ? AND livemode = ? AND account_id = ? AND balance_transaction_id = ? FOR UPDATE",[$f['provider'],$f['livemode']?'1':'0',$f['account_id'],$s['native_id']]);
                 if(count($mr)!==1 || strlen($mr[0]['facts_json'])>65536 || $mr[0]['order_id']!==$s['order_id'] || $mr[0]['financial_digest']!==$s['evidence']['sha256'] || hash('sha256',$mr[0]['facts_json'])!==$mr[0]['financial_digest']) { throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN'); }
                 $facts=json_decode($mr[0]['facts_json'],true,32,JSON_THROW_ON_ERROR);
                 if($facts['provider']!==$f['provider']||$facts['livemode']!==$f['livemode']||$facts['account_id']!==$f['account_id']
                     ||$facts['order_id']!==$s['order_id']||$facts['balance_transaction_id']!==$s['native_id']
-                    ||$facts['movement_role']!=='charge'||$facts['currency']!==$f['currency']||$facts['net_minor']!==$s['principal_minor']){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+                    ||$facts['movement_role']!==$role||$facts['currency']!==$f['currency']||$facts['net_minor']!==$s['principal_minor']){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
             }
         }
         // Existing claims survive a decrease; the deficit is recorded, not silently hidden.
@@ -988,7 +991,7 @@ function sharity_donation_backing_import(array $input,string $applyDigest,int $n
 function sharity_donation_backing_claim_proof(array $p): array
 {
     sharity_donation_backing_keys($p,['version','order_id','kind','frame_key','frame_revision','frame_digest','target_generation','amount_minor','allocations']);
-    if($p['version']!==1 || !in_array($p['kind'],['liability','correction','payout'],true) || !is_int($p['frame_revision']) || $p['frame_revision']<1 || $p['frame_revision']>2147483647){throw new RuntimeException('DONATION_BACKING_PROOF_MALFORMED');}
+    if($p['version']!==1 || !in_array($p['kind'],['liability','correction','payout','fee_refund'],true) || !is_int($p['frame_revision']) || $p['frame_revision']<1 || $p['frame_revision']>2147483647){throw new RuntimeException('DONATION_BACKING_PROOF_MALFORMED');}
     sharity_donation_backing_string($p['order_id'],'/^do_[a-f0-9]{32}$/D');
     foreach(['frame_key','frame_digest','target_generation'] as $k){sharity_donation_backing_string($p[$k],'/^[a-f0-9]{64}$/D');}
     $amount=sharity_donation_backing_amount($p['amount_minor']);
@@ -1011,7 +1014,7 @@ function sharity_donation_backing_target(array $inventory): string
 
 function sharity_donation_backing_reserve(string $orderId,array $input,string $applyDigest,int $now): array
 {
-    $proof=sharity_donation_backing_claim_proof($input);$json=sharity_donation_finance_json($proof);$digest=hash('sha256',$json);
+    $proof=sharity_donation_backing_claim_proof($input);if($proof['kind']==='fee_refund'){throw new RuntimeException('DONATION_BACKING_PROOF_MALFORMED');}$json=sharity_donation_finance_json($proof);$digest=hash('sha256',$json);
     if($proof['order_id']!==$orderId || ($applyDigest!==''&&!hash_equals($digest,$applyDigest))){throw new RuntimeException('DONATION_BACKING_STALE');}
     sharity_donation_order_autocommit();$order=sharity_donation_webhook_order($orderId);$snapshot=sharity_donation_order_decode($order)['snapshot'];
     $inventory=sharity_donation_finance_reconcile($orderId,$now);$apply=$applyDigest!=='';
@@ -1706,5 +1709,211 @@ function sharity_donation_payout_reconcile(string $id,string $account,bool $live
     } catch (Throwable $error) {
         if ($active && $db instanceof mysqli) { try { $db->rollback(); } catch (Throwable $ignored) {} }
         throw new RuntimeException(in_array($error->getMessage(),['DONATION_PAYOUT_CONFLICT','DONATION_PAYOUT_LIMIT'],true)?$error->getMessage():'DONATION_PAYOUT_UNAVAILABLE');
+    }
+}
+
+// Fee corrections are prepared locally. Dispatch and final settlement are separate steps.
+const SHARITY_DONATION_FEE_SCHEMA_OPTION = 'sharity_donation_fee_operations_schema_v1';
+function sharity_donation_fee_table(): string { global $wpdb; return $wpdb->prefix . 'sharity_donation_fee_operations_v1'; }
+function sharity_donation_fee_schema_valid(callable $q): bool
+{
+    $t=sharity_donation_fee_table();$q("SELECT 1 FROM `{$t}` LIMIT 0");
+    $s=$q('SHOW TABLE STATUS WHERE Name = ?',[$t]);
+    if(count($s)!==1||$s[0]['Engine']!=='InnoDB'||$s[0]['Collation']!=='utf8mb4_bin'){return false;}
+    $expected=['operation_id'=>['char(64)','ascii_bin'],'order_id'=>['char(35)','ascii_bin'],
+        'economic_generation'=>['int unsigned',null],'claim_key'=>['char(64)','ascii_bin'],
+        'digest'=>['char(64)','ascii_bin'],'document'=>['longtext','utf8mb4_bin'],
+        'state'=>['varchar(12)','ascii_bin'],'created_at_utc'=>['datetime',null]];
+    $cols=$q("SHOW FULL COLUMNS FROM `{$t}`");if(count($cols)!==count($expected)){return false;}
+    foreach($cols as $c){if(!isset($expected[$c['Field']])||[preg_replace('/int\([0-9]+\)/','int',$c['Type']),$c['Collation']]!==$expected[$c['Field']]
+        ||$c['Null']!=='NO'||$c['Default']!==null||$c['Extra']!==''){return false;}}
+    $actual=array_map(static fn($r)=>[$r['Key_name'],(int)$r['Seq_in_index'],$r['Column_name'],(int)$r['Non_unique'],$r['Sub_part'],$r['Index_type']],$q("SHOW INDEX FROM `{$t}`"));
+    $want=[['PRIMARY',1,'operation_id',0,null,'BTREE'],['order_generation',1,'order_id',0,null,'BTREE'],['order_generation',2,'economic_generation',0,null,'BTREE']];
+    sort($actual);sort($want);return $actual===$want;
+}
+function sharity_donation_fee_schema_apply(): bool
+{
+    try{
+        [$db,$q]=sharity_donation_backing_db();$t=sharity_donation_fee_table();
+        update_option(SHARITY_DONATION_FEE_SCHEMA_OPTION,'0',false);
+        if(get_option(SHARITY_DONATION_FEE_SCHEMA_OPTION)!=='0'){return false;}
+        $q("CREATE TABLE IF NOT EXISTS `{$t}` (
+            operation_id char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            order_id char(35) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            economic_generation int unsigned NOT NULL,
+            claim_key char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            digest char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            document longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            state varchar(12) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            created_at_utc datetime NOT NULL,
+            PRIMARY KEY(operation_id), UNIQUE KEY order_generation(order_id,economic_generation)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin");
+        if(!sharity_donation_fee_schema_valid($q)){return false;}
+        update_option(SHARITY_DONATION_FEE_SCHEMA_OPTION,'1',false);
+        return get_option(SHARITY_DONATION_FEE_SCHEMA_OPTION)==='1';
+    }catch(Throwable $e){return false;}
+}
+function sharity_donation_fee_row(callable $q,string $operation): ?array
+{
+    $t=sharity_donation_fee_table();
+    $rows=$q("SELECT operation_id,order_id,economic_generation,claim_key,digest,state,created_at_utc,SUBSTRING(CAST(document AS BINARY),1,65537) AS document FROM `{$t}` WHERE operation_id = ?",[$operation]);
+    if($rows===[]){return null;}if(count($rows)!==1){throw new RuntimeException('DONATION_FEE_CONFLICT');}
+    $r=array_map(static fn($v)=>is_int($v)?(string)$v:$v,$rows[0]);
+    $d=json_decode($r['document'],true,32,JSON_THROW_ON_ERROR);
+    $time=DateTimeImmutable::createFromFormat('!Y-m-d H:i:s',$r['created_at_utc'],new DateTimeZone('UTC'));
+    if(strlen($r['document'])>65536||!is_array($d)||sharity_donation_finance_json($d)!==$r['document']
+        ||hash('sha256',$r['document'])!==$r['digest']||($d['operation_id']??null)!==$r['operation_id']
+        ||($d['order_id']??null)!==$r['order_id']||(string)($d['economic_generation']??'')!==$r['economic_generation']
+        ||($d['claim_key']??null)!==$r['claim_key']||!in_array($r['state'],['prepared','attempted','unknown'],true)
+        ||!$time||$time->format('Y-m-d H:i:s')!==$r['created_at_utc']){throw new RuntimeException('DONATION_FEE_CONFLICT');}
+    return $r;
+}
+
+/** Resolve original nominal fee and every already observed refund; never add observations as cash. */
+function sharity_donation_fee_candidate(array $order,array $snapshot,array $inventory,array $target): array
+{
+    if($snapshot['donation_mode']!=='amplifier'){throw new RuntimeException('DONATION_FEE_MODE');}
+    if($target['provisional_split']===null||$inventory['unscoped_platform_movements']!==[]
+        ||array_diff($target['unresolved'],['backing_not_reconciled','future_liability_not_proven','payment_pending_observed'])!==[]){throw new RuntimeException('DONATION_FEE_UNRESOLVED');}
+    $currency=$target['provisional_split']['currency'];$platforms=$target['platform_totals']??[];
+    if(count($platforms)!==1||$snapshot['currency']!==$currency){throw new RuntimeException('DONATION_FEE_UNRESOLVED');}
+    $account=array_key_first($platforms);
+    if(array_keys($platforms[$account])!==[$currency]){throw new RuntimeException('DONATION_FEE_UNRESOLVED');}
+    $original=null;$refunds=[];$reported=0;$completeAmounts=[];
+    foreach($inventory['evidence_digests'] as $digest){
+        $row=sharity_donation_finance_read($order['order_id'],$digest);
+        if($row===null||strlen($row['canonical_json'])>SHARITY_DONATION_FINANCE_MAX_BYTES||hash('sha256',$row['canonical_json'])!==$digest){throw new RuntimeException('DONATION_FEE_STALE');}
+        $e=json_decode($row['canonical_json'],true,64,JSON_THROW_ON_ERROR);$o=$e['original'];
+        // Reconcile already validates pending rows and exact-facts legacy supersession.
+        // Neither can supply current completeness; at least one complete scoped observation is required below.
+        if($o['evidence_state']==='payment_pending'){continue;}
+        $fee=$o['application_fee']??null;
+        if(!is_array($fee)||(isset($o['platform_account_id'])&&$o['platform_account_id']!==$account)||$fee['currency']!==$currency){throw new RuntimeException('DONATION_FEE_UNRESOLVED');}
+        $amount=sharity_donation_finance_minor($fee['amount_minor']);$b=$fee['initial_balance'];
+        $id=sharity_donation_finance_id($fee['id'],'fee');
+        if($amount<1||$b['currency']!==$currency||$b['gross_minor']!==(string)$amount){throw new RuntimeException('DONATION_FEE_UNRESOLVED');}
+        $identity=['fee_id'=>$id,'amount_minor'=>(string)$amount,'balance_id'=>$b['id']];
+        if($original!==null&&$original!==$identity){throw new RuntimeException('DONATION_FEE_CONFLICT');}$original=$identity;
+        $refunded=sharity_donation_finance_minor($fee['refund_state']['amount_refunded_minor']??null);
+        if($refunded<0||$refunded>$amount){throw new RuntimeException('DONATION_FEE_CONFLICT');}
+        $reported=max($reported,$refunded);
+        foreach($e['fee_refunds'] as $r){
+            $n=sharity_donation_finance_minor($r['amount_minor']);
+            if($n<=0||$r['fee_id']!==$id||$r['currency']!==$currency||isset($refunds[$r['id']])&&$refunds[$r['id']]!==$n){throw new RuntimeException('DONATION_FEE_CONFLICT');}
+            $refunds[$r['id']]=$n;
+        }
+        // A complete observation must actually enumerate the latest known nominal fee refunds.
+        $own=0;foreach($e['fee_refunds'] as $r){$own=sharity_donation_target_sum($own,(int)$r['amount_minor']);}
+        if($own===$refunded&&!$e['balances_pending']&&$e['resources_complete']&&($o['platform_account_id']??null)===$account){$completeAmounts[$refunded]=true;}
+    }
+    $sum=0;foreach($refunds as $n){$sum=sharity_donation_target_sum($sum,$n);}
+    if($original===null||!isset($completeAmounts[$reported])||$sum!==$reported){throw new RuntimeException('DONATION_FEE_UNRESOLVED');}
+    $native=$platforms[$account][$currency];
+    if((int)$native['gross_minor']!==(int)$original['amount_minor']-$reported){throw new RuntimeException('DONATION_FEE_CONFLICT');}
+    $delta=sharity_donation_target_sum((int)$native['net_minor'],-(int)$target['provisional_split']['fund_minor']);
+    if($delta<0||$delta>(int)$original['amount_minor']-$reported){throw new RuntimeException('DONATION_FEE_UNRESOLVED');}
+    return $original+['account_id'=>$account,'currency'=>$currency,'amount_refunded_minor'=>(string)$reported,
+        'refund_minor'=>(string)$delta,'cumulative_refund_minor'=>(string)($reported+$delta)];
+}
+
+/** Atomic operation + reserved platform backing. No provider request or financial allocation. */
+function sharity_donation_fee_prepare(string $orderId,array $input,int $now,string $applyDigest=''): array
+{
+    try{
+        sharity_donation_backing_keys($input,['version','frame_key','frame_revision','frame_digest','fee_cost_bound_minor','fee_cost_proof','allocations']);
+        if($input['version']!==1||!is_int($input['frame_revision'])||$input['frame_revision']<1||$input['frame_revision']>2147483647){throw new RuntimeException('DONATION_FEE_INPUT');}
+        foreach(['frame_key','frame_digest'] as $k){sharity_donation_backing_string($input[$k],'/^[a-f0-9]{64}$/D');}
+        $cost=sharity_donation_backing_amount($input['fee_cost_bound_minor']);sharity_donation_backing_reference($input['fee_cost_proof']);
+        if(get_option(SHARITY_DONATION_FEE_SCHEMA_OPTION)!=='1'||get_option(SHARITY_DONATION_TARGET_SCHEMA_OPTION)!=='1'
+            ||get_option(SHARITY_DONATION_BACKING_SCHEMA_OPTION)!=='1'||get_option(SHARITY_DONATION_MOVEMENT_SCHEMA_OPTION)!=='1'){throw new RuntimeException();}
+        sharity_donation_order_autocommit();$order=sharity_donation_webhook_order($orderId);$snapshot=sharity_donation_order_decode($order)['snapshot'];
+        $inventory=sharity_donation_finance_reconcile($orderId,$now);$target=sharity_donation_target_compute($inventory,$snapshot);
+        $candidate=sharity_donation_fee_candidate($order,$snapshot,$inventory,$target);$targetJson=sharity_donation_finance_json($target);$targetDigest=hash('sha256',$targetJson);
+        $amount=(int)$candidate['refund_minor'];$held=sharity_donation_backing_sum($amount,$cost);
+        $claim=['version'=>1,'order_id'=>$orderId,'kind'=>'fee_refund','frame_key'=>$input['frame_key'],
+            'frame_revision'=>$input['frame_revision'],'frame_digest'=>$input['frame_digest'],
+            'target_generation'=>sharity_donation_backing_target($inventory),'amount_minor'=>(string)$held,'allocations'=>$input['allocations']];
+        if($amount>0){$claim=sharity_donation_backing_claim_proof($claim);}
+        elseif($cost!==0||$input['allocations']!==[]){throw new RuntimeException('DONATION_FEE_INPUT');}
+        $apply=$applyDigest!=='';
+        if($apply&&!preg_match('/^[a-f0-9]{64}$/D',$applyDigest)){throw new RuntimeException('DONATION_FEE_INPUT');}
+        return sharity_donation_backing_transaction($apply,$now,static function($q)use($input,$candidate,$targetJson,$targetDigest,$claim,$inventory,$order,$snapshot,$orderId,$now,$apply,$applyDigest,$amount,$held):array{
+            // The shared frame and all its source identities precede the order/movement locks.
+            $frame=sharity_donation_backing_row($q,'frames','WHERE frame_key = ? ORDER BY revision DESC LIMIT 1 FOR UPDATE',[$input['frame_key']]);
+            if($frame===null||$frame['digest']!==$input['frame_digest']||(int)$frame['revision']!==$input['frame_revision']){throw new RuntimeException('DONATION_FEE_STALE');}
+            $fp=json_decode($frame['document'],true,32,JSON_THROW_ON_ERROR);$f=$fp['frame'];
+            if($f['account_id']!==$candidate['account_id']||$f['livemode']!==$snapshot['livemode']||$f['currency']!==$candidate['currency']){throw new RuntimeException('DONATION_FEE_SOURCE');}
+            if(sharity_donation_backing_time($f['as_of_utc'])>$now||sharity_donation_backing_time($f['expires_at_utc'])<=$now){throw new RuntimeException('DONATION_BACKING_EXPIRED');}
+            $sources=[];
+            foreach($fp['sources'] as $s){
+                $key=sharity_donation_backing_source_key($s,$f);$sources[$key]=$s;$identity=sharity_donation_finance_json(sharity_donation_backing_source_identity($s,$f));
+                sharity_donation_backing_match($q,'sources',['source_key'=>$key,'frame_key'=>$input['frame_key'],'document'=>$identity,'digest'=>hash('sha256',$identity)],'WHERE source_key = ? FOR UPDATE',[$key]);
+                if((int)$s['retained_minor']>0&&sharity_donation_backing_time($s['expires_at_utc'])<=$now){throw new RuntimeException('DONATION_BACKING_EXPIRED');}
+            }
+            $ot=sharity_donation_order_table();$ft=sharity_donation_finance_table();$mt=sharity_donation_movement_table();
+            $locked=$q("SELECT * FROM `{$ot}` WHERE order_id = ? FOR UPDATE",[$orderId]);
+            if(count($locked)!==1||array_map(static fn($v)=>is_int($v)?(string)$v:$v,$locked[0])!==$order){throw new RuntimeException('DONATION_FEE_STALE');}
+            foreach([$ot,$ft,$mt] as $t){$q("SELECT 1 FROM `{$t}` LIMIT 0");$s=$q('SHOW TABLE STATUS WHERE Name = ?',[$t]);if(count($s)!==1||$s[0]['Engine']!=='InnoDB'){throw new RuntimeException();}}
+            if(!sharity_donation_fee_schema_valid($q)||!sharity_donation_target_schema_valid($q)||!sharity_donation_movement_schema_valid($q)){throw new RuntimeException();}
+            $rows=$q("SELECT account_id,livemode,donation_mode,provider_session_id,digest,SHA2(canonical_json,256) AS actual FROM `{$ft}` FORCE INDEX(order_digest) WHERE order_id = ? ORDER BY digest LIMIT 257 FOR UPDATE",[$orderId]);
+            if(array_column($rows,'digest')!==$inventory['evidence_digests']||array_column($rows,'actual')!==$inventory['evidence_digests']){throw new RuntimeException('DONATION_FEE_STALE');}
+            foreach($rows as $r){if($r['account_id']!==$snapshot['account_id']||(string)$r['livemode']!==($snapshot['livemode']?'1':'0')||$r['donation_mode']!==$snapshot['donation_mode']||$r['provider_session_id']!==$order['provider_session_id']){throw new RuntimeException('DONATION_FEE_STALE');}}
+            $rows=$q("SELECT provider,livemode,account_id,balance_transaction_id,order_id,financial_digest,SHA2(facts_json,256) AS actual FROM `{$mt}` FORCE INDEX(order_id) WHERE order_id = ? ORDER BY provider,livemode,account_id,balance_transaction_id LIMIT 4097 FOR UPDATE",[$orderId]);
+            $want=[];foreach($inventory['movements'] as $m){$f=$m['facts'];$want[]=['provider'=>$f['provider'],'livemode'=>$f['livemode']?'1':'0','account_id'=>$f['account_id'],'balance_transaction_id'=>$f['balance_transaction_id'],'order_id'=>$orderId,'financial_digest'=>$m['financial_digest'],'actual'=>$m['financial_digest']];}
+            $actual=array_map(static fn($r)=>array_map(static fn($v)=>is_int($v)?(string)$v:$v,$r),$rows);
+            $sort=static fn($a,$b)=>strcmp(sharity_donation_finance_json($a),sharity_donation_finance_json($b));usort($actual,$sort);usort($want,$sort);
+            if(count($want)>4096||$actual!==$want){throw new RuntimeException('DONATION_FEE_STALE');}
+            $saved=sharity_donation_target_read($q,'WHERE order_id = ? ORDER BY revision DESC LIMIT 1 FOR UPDATE',[$orderId]);
+            if($saved===null||$saved['digest']!==$targetDigest||$saved['document']!==$targetJson){throw new RuntimeException('DONATION_FEE_STALE');}
+            $op=hash('sha256',sharity_donation_finance_json([$orderId,'application_fee_refund',$saved['economic_generation'],$candidate['cumulative_refund_minor']]));
+            $key=hash('sha256',sharity_donation_finance_json([$orderId,'fee_refund']));
+            $request=['fee_id'=>$candidate['fee_id'],'amount_minor'=>$candidate['refund_minor'],'metadata'=>['sharity_operation'=>$op]];
+            $document=['version'=>1,'operation_id'=>$op,'order_id'=>$orderId,'economic_generation'=>(int)$saved['economic_generation'],
+                'target_digest'=>$targetDigest,'target_revision'=>(int)$saved['revision'],'evidence_set_digest'=>$inventory['evidence_set_digest'],
+                'financial_inventory_digest'=>$inventory['financial_inventory_digest'],'platform_account_id'=>$candidate['account_id'],'livemode'=>$snapshot['livemode'],
+                'currency'=>$candidate['currency'],'candidate'=>$candidate,'request'=>$request,'request_digest'=>hash('sha256',sharity_donation_finance_json($request)),
+                'idempotency_key'=>'sharity:fee-refund:'.$op,'claim_key'=>$key,'claim'=>$claim,
+                'fee_cost_bound_minor'=>$input['fee_cost_bound_minor'],'fee_cost_proof'=>$input['fee_cost_proof']];
+            $json=sharity_donation_finance_json($document);$digest=hash('sha256',$json);
+            if(strlen($json)>65536){throw new RuntimeException('DONATION_FEE_INPUT');}
+            if($apply&&!hash_equals($digest,$applyDigest)){throw new RuntimeException('DONATION_FEE_STALE');}
+            $base=['proposal_digest'=>$digest,'refund_minor'=>$candidate['refund_minor'],'currency'=>$candidate['currency'],
+                'provider_action'=>'none','activation_allowed'=>false,'settlement_reconciled'=>false,'allocation_eligible'=>false,'retained_cash_verified'=>false];
+            $old=sharity_donation_backing_row($q,'claims','WHERE claim_key = ? FOR UPDATE',[$key]);
+            if($amount===0){if($old!==null){throw new RuntimeException('DONATION_FEE_CONFLICT');}return [$base+['state'=>'no_correction','operation_id'=>null,'prepared'=>false],static function($q):void{}];}
+            $claimJson=sharity_donation_finance_json($claim);$claimDigest=hash('sha256',$claimJson);
+            $opRow=sharity_donation_fee_row($q,$op);
+            $expectedClaim=['claim_key'=>$key,'frame_key'=>$input['frame_key'],'order_id'=>$orderId,'kind'=>'fee_refund',
+                'digest'=>$claimDigest,'document'=>$claimJson,'state'=>'prepared','created_at_utc'=>gmdate('Y-m-d H:i:s',$now)];
+            if($old!==null){$expectedClaim['created_at_utc']=$old['created_at_utc'];}
+            if(($old===null)!==($opRow===null)||$old!==null&&(sharity_donation_finance_json($old)!==sharity_donation_finance_json($expectedClaim)||$opRow['document']!==$json||$opRow['digest']!==$digest||$opRow['state']!=='prepared')){throw new RuntimeException('DONATION_FEE_CONFLICT');}
+            $capacity=sharity_donation_backing_capacity($q,$fp);
+            if((int)$capacity['deficit_minor']>0){throw new RuntimeException('DONATION_BACKING_INSUFFICIENT');}
+            if($old===null){
+                if((int)$capacity['available_minor']<$held){throw new RuntimeException('DONATION_BACKING_INSUFFICIENT');}
+                foreach($claim['allocations'] as $a){
+                    $s=$sources[$a['source_key']]??null;
+                    if($s===null||$s['kind']==='order_receipt'&&($s['order_id']!==$orderId||$s['native_id']!==$candidate['balance_id'])){throw new RuntimeException('DONATION_FEE_SOURCE');}
+                    if(($capacity['source_available'][$a['source_key']]??-1)<(int)$a['amount_minor']){throw new RuntimeException('DONATION_BACKING_INSUFFICIENT');}
+                }
+            }
+            $opRow??=['operation_id'=>$op,'order_id'=>$orderId,'economic_generation'=>$saved['economic_generation'],'claim_key'=>$key,
+                'digest'=>$digest,'document'=>$json,'state'=>'prepared','created_at_utc'=>$expectedClaim['created_at_utc']];
+            $readback=static function($q)use($expectedClaim,$key,$opRow,$op):void{
+                sharity_donation_backing_match($q,'claims',$expectedClaim,'WHERE claim_key = ?',[$key]);
+                if(sharity_donation_finance_json(sharity_donation_fee_row($q,$op))!==sharity_donation_finance_json($opRow)){throw new RuntimeException('DONATION_FEE_CONFLICT');}
+            };
+            if($apply&&$old===null){
+                sharity_donation_backing_insert($q,'claims',$expectedClaim);$t=sharity_donation_fee_table();
+                $q("INSERT INTO `{$t}` (operation_id,order_id,economic_generation,claim_key,digest,document,state,created_at_utc) VALUES (?,?,?,?,?,?,?,?)",array_values($opRow));
+            }
+            if($apply){$readback($q);}
+            return [$base+['state'=>'prepared','operation_id'=>$op,'prepared'=>$apply||$old!==null,'reserved_minor'=>(string)$held,
+                'created_at_utc'=>$opRow['created_at_utc'],'idempotency_key'=>$document['idempotency_key'],'request_digest'=>$document['request_digest']],$readback];
+        });
+    }catch(Throwable $e){
+        $allowed=['DONATION_FEE_INPUT','DONATION_FEE_MODE','DONATION_FEE_UNRESOLVED','DONATION_FEE_CONFLICT','DONATION_FEE_STALE','DONATION_FEE_SOURCE',
+            'DONATION_BACKING_INSUFFICIENT','DONATION_BACKING_EXPIRED','DONATION_BACKING_SOURCE_CONFLICT'];
+        throw new RuntimeException(in_array($e->getMessage(),$allowed,true)?$e->getMessage():'DONATION_FEE_UNAVAILABLE');
     }
 }

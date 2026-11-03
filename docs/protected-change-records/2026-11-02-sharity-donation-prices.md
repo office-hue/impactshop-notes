@@ -1300,3 +1300,90 @@ vagy pénzügyi elfogadás. D2u/v/w publikálási kérdése függ; D2x/y nincs b
 Következő: igazolt NGO-kifizetési hozzárendelés/banki egyeztetés, fennálló
 fedezet és végrehajtás, valamint a teljes §62 cél. SUBSTACK-HANDOVER.md
 megőrzendő hivatkozás, nem aktív feladat.
+
+
+## 85. D2z — díjkorrekció előkészítése (folyamatban, 2026-11-03)
+
+Jóváhagyott §62.3–62.4; N kiindulás d1ca3601. Érintett finance-ledger/read,
+meglévő natív MySQL/CLI harness és saját új fee-prepare teszt. Az eredeti
+account/order/fee és tényleges egyező devizájú mozgás alapján pozitív,
+fennmaradó díjra korlátos visszatérítési művelet előkészítése. Közös platform
+fedezet és a prepared művelet egy tranzakcióban; külső POST nélkül.
+Koherencia: meglévő target/reconcile/backing és pinned mysqli; új általános
+keretrendszer nincs. Meglévő receipt/import szűken az adott Amplifier eredeti
+platformdíjának natív jóváírására bővül; a kapcsolt charge-út megmarad.
+Kockázat: hibás nettó/díj, kettős foglalás, idegen account/pénz, stale cél,
+részleges commit/ACK. Védelem: teljes natív forrásazonosság, shared frame
+zársorrend, atomi operation+claim, pontos visszaolvasás; unknown díj nem nulla.
+Határ: nincs checkout, webhook, UI, pont, szavazat, scheduler, kifizetés vagy
+alapfelszabadítás-változás. Az operátori igazolás nem provider/banki bizonyíték;
+a settlement/aktiválási jelzők hamisak maradnak. Meglévő schema csak explicit
+CLI, hiányos telepítés nem veheti el a történeti olvasókat.
+Kiadás majd merge-SHA/exact-file: saját ledger/read/config/érintett táblák
+privát mentése, kompatibilis kód, explicit fee-schema, index/engine/readback,
+stagingben szintetikus dry-run/apply. Nincs éles pénzmozgás e csomagból.
+Rollback a saját kód; korábbi operation/claim/bizonylat nem törölhető és
+prepared foglalás nem engedhető el bizonytalan dispatch fölött. Kézi UI
+kiadás után: adományozás két módja, saját státusz, HU/EN/DE/FR, refresh/belépés,
+változatlan összeg és automatikus POST hiánya; élő UI most nem ellenőrzött.
+Hermes061 első draft részben hibás és hiányos, nem alkalmazva egészben;
+Codex a használható operation/CLI szándékot átveszi, pénzügyet/tranzakciót
+és teszteket javít. Teszt- és kiadási PASS ebben a kezdő rekordban nincs.
+
+
+### D2z forrás- és ellenőrzési eredmény — 2026-11-03
+
+A fee-schema kizárólag pontos --apply kapcsolóval migrál. A fee-prepare
+privát inputból, dry-run digest visszaigazolásával egyetlen pinned mysqli
+tranzakcióban rögzíti az immutable operationt és a prepared fedezetfoglalást.
+A meglévő regiszter/target/frame teljes tartalma és előállapota visszaolvasott;
+az eredeti platformfee receipt csak saját rendeléshez használható.
+Generic backing-reserve nem készíthet önálló fee_refund foglalást.
+Az idempotenciakulcs az order/gazdasági generáció/kumulált cél függvénye;
+nincs provider POST, automatikus retry vagy scheduler. Az aktuális prepared
+művelet nem aktiválás és nem teljes pénzügyi véglegesség. A dispatcher,
+attempted/unknown egyeztetése, tartós lezárás és tartalékfelszabadítás még
+következő megvalósítás; addig a foglalás nem szabadul fel.
+
+A korrekció a meglévő nettó 80/20 célhoz és tényleges platformnettóhoz képest
+számít; már megfigyelt refundot nem ismétel. Az eredeti díj még fennmaradó
+összege felső határ. Csak egyező tényleges payment/fee/split deviza állhat
+előkészítésbe; hiányos FX bizonyíték tilt. A díjköltség igazolt felső korlátja
+külön foglalt; hiányzó korlát nem nulla. A proof operátori állítás, nem
+Stripe/banki visszaigazolás; minden acceptance/aktiválási jelző hamis.
+
+Tényleges végső teszt: SHARITY_DONATION_TEST_PORT=53160 php -d memory_limit=512M
+tests/sharity-donation-orders-mysql.test.php — 3509 assertion, ebből156 új
+D2z. Négy deviza, nettó/cost/refund/zero, privát scope, két valódi kapcsolat
+azonos és versengő kérelme, stale frame/evidence, expiry, generic bypass,
+commit előtt/után és második INSERT hibainjektálás, teljes corrupt readback,
+schema ismétlés/drift szerepel. Ez nem fizikai hálózatszakítási vagy Stripe
+sandbox/élő próba. A fixture-előkészítés offline SDK checkoutját külön
+számolja a teszt; a díj-előkészítő alatt nulla GET/POST történik.
+Finance/CLI447, fresh runtime17, PHP lint/diff-check sikeres.
+
+Javítások: kezdeti tesztharness táblatakarítás, négydevizás fixture-limit és
+régi racing order téves újrahasználata; termékben a nem létező original
+balance.scope elvárás és az oszlopsorrendre érzékeny claim replay.
+Független review P2: régi pending/legacy megfigyelés örök blokkolása.
+Javítva kizárólag a reconcile által már validált/superseded történelemre;
+aktuális scoped+complete+notpending bizonyíték és teljes natív regiszter
+marad kötelező. HISTORY regresszió előbb tilt, majd későbbi pontos bizonyíték
+után400 minor, a régi sorok megőrzésével. Reviewer célzott visszaolvasással
+lezárta; más konkrét double-use/ACK hibát nem talált, tesztet nem futtatott.
+
+Hermes061: execution614d966f-7898-404b-9b9c-b52c80a1dd90,
+task SHA721e2c89227862dc5df6278452ec46f44e0c7bb5e5ce00c774a18633adb49f8e.
+1 API;65252input+9949output=75201token; becsült USD0.00774865.
+Tényleges számla és teljes Codex/review-költség ismeretlen. Rossz nettó cél,
+hiányzó atomi foglalás, nem létező segédek és teszthiány miatt csak az
+operation/CLI-szándék részleges átvétele; jelentős Codex újraírás. Nincs
+igazolt megtakarítás, újragenerálás, JEV vagy fallback. Pending/terminal
+Hermes események remote_ack; termék-checkpoint külön mentendő.
+
+Forráskész helyi csomag, nincs új N-push/main/merge/deploy/aktiválás.
+A csendablak másik, A worktree-re szólt: 10:09:30–10:09:52 UTC,
+engedélyezett fetch eredménye1f34de904, merge-tree tíz tartalmi konfliktus;
+integráció nélkül azonnal felszabadítva, saját A e48f5bf1c tiszta maradt.
+Nincs nyitott ablak. Régi publikus engedély D2s/t-ig; új csomagok kérdése
+külön függ. A teljes termékcél és a kiadási/rollback/UI lista fent változatlan.
