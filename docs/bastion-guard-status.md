@@ -1080,3 +1080,14 @@ hash és manifest-checksum változik. Inventory/guardlogika/idegen pin megmarad.
 független review FX-előjel javítása visszaolvasva. Koherencia/kockázat,
 kiadás/rollback és kézi UI: protected record§82. Nincs DB-írás, mainablak,
 publikálás, telepítés vagy aktiválás; teljes pénzügyi cél nyitott.
+
+
+## 2026-11-03 — D2y saját payout-bizonylat forrásazonosság
+
+Termék5c9beb1d36b93db287d296dd0a4583c22c8afb7e; kizárólag donation
+finance-ledger.php/finance-read.php két hash és manifest-checksum frissül.
+Védelmi lista/guardlogika/idegen pin megmarad.3353 natív MariaDB (578 új),
+442CLI,17runtime; két független review-lelet és regresszió visszaolvasva.
+Koherencia/kockázat/explicit séma/kiadás/rollback/kézi UI: protected record§83.
+Tartós bizonyíték és read-only riport, nem kifizetés/allokáció/bankbeérkezés.
+Nincs mainablak/merge/publikálás/telepítés/aktiválás vagy élő elfogadás.
