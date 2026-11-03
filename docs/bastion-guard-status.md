@@ -1204,3 +1204,16 @@ A source review nem állít saját futást. Protected record§97: scope, első r
 rollback és UI-checklist. Nincs új lookup/hash-alapú donor, pontmódosítás vagy
 pénzügyi authority-állítás. Forráskész, nincs mainablak/merge/deploy/aktiválás.
 CJ SHA256: `d89835ea663bda7fa0ae826bd13ae0924e6aaed4e7386f1e3d76ed5e8dba081d`.
+
+
+## 2026-11-03 — P4c-a holtversenyes kártyarangsor
+
+Pure termék e5ade4bc, protected UI c73653f3. Csak a két saját modulhash és
+manifestchecksum frissül; inventory, metadata és idegen pin változatlan.
+780 pure policy +99+99 actual PHP card check, négy lint, független source
+review; a két egymást követő tervaudit alapján financialauthority-reader nem
+került be. Protected record§98: actual scope, wrapper/native audit különbség,
+preflight quarter/dependency, cache, kompatibilis rollback és UI-lista.
+Policy dependency előbb, card utána; rollout még nincs. Nincs pénzügyi írás.
+- `wp-content/mu-plugins/sharity-support-policy.php`: `225f1b56d17f051092a3b9c3a18010cc94132e6529cabdb84451f78366efc2d5`
+- `wp-content/mu-plugins/impactshop-ngo-card.php`: `426a50dd5c7e98487b5c5a02fedf7aefd338742fc24b3c894f810fe55870b791`
