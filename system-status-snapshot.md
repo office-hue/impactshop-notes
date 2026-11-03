@@ -2078,3 +2078,8 @@ Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
 
 ## 2026-11-03 – Sharity jogi dokumentumindex R3 előkészítése
 A HU/EN jogi index a kilenc nyilvános R3 PDF-hez kapcsolódik; a Win4Good archív és az angol oldalon a magyar PDF-nyelv jelölt. Saját worktree, két védett HTML, terméklogika érintetlen. Koherencia, kockázat, backup/CAS/rollback és kézi UI checklist: `docs/protected-change-records/2026-11-03-sharity-legal-documents-r3.md`. Állapot: helyi forrás; merge/deploy/éles smoke még nem történt. Az éles PDF-elérhetőség a telepítés előfeltétele.
+
+
+## 2026-11-03 – Sharity jogi index R3 reviewed hash-baseline
+
+A két jóváhagyott HU/EN HTML már main `3d81c7b66aa574e2e33baa0a5e0bdb91874949d8`. A Mini guarded dry-run az elavult két manifest-hash miatt, távoli írás előtt megállt. Csak `docs/impactshop-guard-hashes.json` két hashértéke és a repo-relatív `docs/impactshop-guard-hashes.sha256` checksum frissül; HTML, guard/policy/programkód és minden más pin változatlan. A 169 hashből pontosan két kulcs változik, az eredeti HTML-ek byteazonossága és a checksum helyileg ellenőrzött. Normál reviewed baseline update, nem bypass vagy policyváltozás. Külön fixág-integráció, merge és új guarded dry-run még szükséges; nincs deploy/aktiválási PASS. Részletek és rollback: `docs/protected-change-records/2026-11-03-sharity-legal-documents-r3.md`.
