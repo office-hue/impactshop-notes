@@ -9008,3 +9008,17 @@ Secretary terminal külön remote-readback igazolt. Részletek/rollback/UI:
 protected-change-records/2026-11-02-sharity-donation-prices.md §91.
 Nyilvános push függő, mainablak/merge/deploy/aktiválás nincs. Az élő Stripe
 connected-account lista üres; tartós jogosultság és teljes pénzügyi cél nyitott.
+
+
+## D2ae — önálló platformkötelezettség, 2026-11-03
+
+A jóváhagyott D2aa–D2ad/D3a tíz commit d5e68157-ig már publikálva és
+visszaolvasva; a PR244 safe-audit sikeres. Új D2ae: a meglévő reserve út
+külön platform liability kindja, natív account/deviza/regiszterbizonyítékkal;
+közös cash, NGO-liability, fee correction és accounted residual együtt számít.
+8487 tényleges MariaDB-ellenőrzés (175új), source review lelet nélkül,
+teszt-race review javítva és újrafuttatva. Hermes070 részben átvéve;
+becsültUSD0.005063968, teljes költség/megtakarítás ismeretlen.
+Részletes scope/kockázat/teszt/release/rollback/UI: protected record§93.
+Új claim után csak kompatibilis olvasóra rollback; nincs DB-visszatekerés.
+Nincs grant, full-liability bizonyítás, alaprelease, mainablak vagy élesítés.

@@ -1875,3 +1875,63 @@ Stripe élő connected-account lista friss olvasása üres; a már jóváhagyott
 alapítványi bankszámlatulajdont nem kérdezzük újra. Nincs élő Stripe-írás.
 Nyilvános N-push külön pontos engedélyre vár; mainablak nincs. Kiadás/merge/
 aktiválás/UI- és pénzügyi elfogadás nem történt. Teljes goal nyitott.
+
+
+## 93. D2ae — külön platformkötelezettség foglalása (2026-11-03)
+
+A d5e68157 alapról, a jóváhagyott adományozási scope-on belül. A meglévő
+`backing-reserve` új `kind=platform` értéke ugyanazon Amplifier-rendeléshez
+külön foglalást tárolhat az NGO `liability` és a díjkorrekció `fee_refund`
+foglalása mellett. Új séma, végpont, providerhívás vagy aktiváló kapcsoló nincs.
+Az operator által kért foglalás nem állítja a teljes jövőbeli kötelezettség
+igazolását; `prepared_only`, a pénzügyi/aktiválási jelzők továbbra hamisak.
+
+Koherencia/kockázat: a platform és tényleges elszámolási deviza az eredeti
+Amplifier-rendelés saját, validált natív application_fee/refund bizonyítékából
+származik. Pontosan egy eredeti fee, egy platformaccount és deviza kell;
+NGO-account, hiányzó/ellentmondó/azonosítatlan platform nem használható.
+Új foglalás előtt frame → eredeti order → megfigyelés és teljes natív regiszter
+zárolás/azonosság-ellenőrzés történik, a regiszter body SHA256-ja is egyezzen.
+A saját rendelés platformbevétele és igazolt saját biztosíték felhasználható;
+idegen NGO/rendelés pénze nem. Minden más foglalás és a már elszámolt
+korrekció maradó tartaléka ugyanabból a közös kapacitásból fogy.
+
+Érintett funkciók: claim-kind validálás, natív platformhatár, új reserve-regiszter
+ellenőrzés; régi NGO-foglalás és fee_refund külön műveleti út változatlan.
+A visszaolvasott régi claim történeti foglalás, nem aktuális fedezetigazolás:
+a későbbi cashcsökkenés hiányát a meglévő frame/capacity kimutatás megőrzi.
+
+Tényleges végső ellenőrzés: `SHARITY_DONATION_TEST_PORT=33387 php -d
+memory_limit=512M tests/sharity-donation-orders-mysql.test.php`: 8487 sikeres
+ellenőrzés, ebből175 D2ae. Négy deviza; saját platformbevétel/biztosíték;
+rossz account/deviza/livemode/regiszterbody; idegen bevétel; elavulás/lejárat;
+két valódi író versenye (külön rendelések és liability–fee correction),
+azonos claim ismétlése; elveszett ACK/sérült readback; 1550+40=1590 maradó
+fedezet,1551 elutasítás. Minden provider transport helyettesített; nincs élő
+pénzmozgás vagy pénzügyi elfogadás. PHP lint/diff sikeres. A régi hibás-adat
+fixture `vote-target-mysql:35` amount_minor figyelmeztetése megjelent; nem
+termékfutási hiba és nem lett elhallgatva. A meglévő447 CLI/17runtime eredmény
+változatlan forrásokra újrahasznált, most nem új futás.
+
+Független source review: termékkódban nincs lelet. A tesztreview a dry-runra
+eső race-barriert jelezte; javítva előre számított digesttel és közvetlen
+apply hívásokkal, reviewer fix-readback + utána8487 tényleges ellenőrzés.
+Hermes070 részben átvéve, jelentős javítással: hiányzó natív registry-check,
+nem létező expiry/currency helper, hibás receipt-tiltás és futtathatatlan
+fixture/race javaslat javítva. 1API,43914input+5867output=49781token;
+becsültUSD0.005063968, tényleges/teljes költség és megtakarítás ismeretlen.
+Terminal Secretary ACK külön visszaolvasva: chk-db5c9c9e-f1b1-451d-8961-8b16f769159a.
+
+Kiadás/rollback: a §54/§62 meglévő exact-file útja, ellenőrzött merge-SHA,
+saját fájl privát mentése/CAS és távoli hash/readback. Mivel új claim-kind
+jelenhet meg a DB-ben, ilyen sor létrejötte után régi, azt nem olvasó
+finance-ledger nem állítható vissza: az új indítás leáll, a kompatibilis olvasó
+és korábbi műveletek rendezése megmarad. Pénzügyi DB-t nem töltünk vissza új
+események fölé. Most nincs mainablak, merge, telepítés vagy aktiválás.
+Kézi kiadási checklist: UI/nyelvek/checkout/bejelentkezés változatlan;
+foglalás nem jelent szavazatot, pontot, alapnövekményt vagy NGO-kifizetést;
+külön account–díj–felelősség és teljes fedezeti bizonyíték továbbra szükséges.
+A korábban jóváhagyott1f0819ce→d5e68157 tíz commit már nyilvánosan feltöltve,
+PR244 exact head visszaolvasva, safe-audit sikeres. Ez az új D2ae csomag külön
+helyi folytatás; publikálás/merge/élesítés állapotát a Secretary tartja pontosan.
+SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztés.

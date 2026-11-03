@@ -206,6 +206,7 @@ try {
     require __DIR__ . '/sharity-donation-finance-target-mysql.test.php';
     require __DIR__ . '/sharity-donation-fee-prepare-mysql.test.php';
     require __DIR__ . '/sharity-donation-fee-execute-mysql.test.php';
+    require __DIR__ . '/sharity-donation-platform-liability-mysql.test.php';
     require __DIR__ . '/sharity-donation-checkout-drain-mysql.test.php';
     require __DIR__ . '/sharity-donation-payout-ledger-mysql.test.php';
     check(calls() >= $beforePosts && !isset($data['allocation_minor']), 'no settlement claim');

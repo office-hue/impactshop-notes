@@ -1013,7 +1013,7 @@ function sharity_donation_backing_import_locked(callable $q,array $proof,string 
 function sharity_donation_backing_claim_proof(array $p): array
 {
     sharity_donation_backing_keys($p,['version','order_id','kind','frame_key','frame_revision','frame_digest','target_generation','amount_minor','allocations']);
-    if($p['version']!==1 || !in_array($p['kind'],['liability','correction','payout','fee_refund'],true) || !is_int($p['frame_revision']) || $p['frame_revision']<1 || $p['frame_revision']>2147483647){throw new RuntimeException('DONATION_BACKING_PROOF_MALFORMED');}
+    if($p['version']!==1 || !in_array($p['kind'],['liability','correction','payout','fee_refund','platform'],true) || !is_int($p['frame_revision']) || $p['frame_revision']<1 || $p['frame_revision']>2147483647){throw new RuntimeException('DONATION_BACKING_PROOF_MALFORMED');}
     sharity_donation_backing_string($p['order_id'],'/^do_[a-f0-9]{32}$/D');
     foreach(['frame_key','frame_digest','target_generation'] as $k){sharity_donation_backing_string($p[$k],'/^[a-f0-9]{64}$/D');}
     $amount=sharity_donation_backing_amount($p['amount_minor']);
@@ -1034,17 +1034,42 @@ function sharity_donation_backing_target(array $inventory): string
         'evidence_set_digest'=>$inventory['evidence_set_digest'],'financial_inventory_digest'=>$inventory['financial_inventory_digest']]));
 }
 
+/** Platform liability is separate from both NGO liability and fee-refund operations.
+ * Account/currency come from this order's native evidence, never from the input frame.
+ * Registration is rechecked under the shared frame/order locks before a new hold.
+ */
+function sharity_donation_backing_platform(array $inventory,array $snapshot): array
+{
+    if($snapshot['donation_mode']!=='amplifier'||$snapshot['policy_version']!=='amplifier-net80-v1'
+        ||$inventory['unscoped_platform_movements']!==[]||count($inventory['movements'])>4096){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+    $account=null;$currency=null;$originals=0;
+    foreach($inventory['movements'] as $m){
+        $f=$m['facts'];
+        if(!in_array($f['movement_role'],['application_fee','application_fee_refund'],true)){continue;}
+        if($f['provider']!=='stripe'||$f['order_id']!==$inventory['order_id']||$f['livemode']!==$snapshot['livemode']
+            ||!preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$f['account_id'])||$f['account_id']===$snapshot['account_id']
+            ||!in_array($f['currency'],['HUF','EUR','USD','GBP'],true)
+            ||($account!==null&&$account!==$f['account_id'])||($currency!==null&&$currency!==$f['currency'])){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+        $account=$f['account_id'];$currency=$f['currency'];
+        if($f['movement_role']==='application_fee'){$originals++;}
+    }
+    if($originals!==1){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+    return ['account_id'=>$account,'currency'=>$currency];
+}
+
 function sharity_donation_backing_reserve(string $orderId,array $input,string $applyDigest,int $now): array
 {
     $proof=sharity_donation_backing_claim_proof($input);if($proof['kind']==='fee_refund'){throw new RuntimeException('DONATION_BACKING_PROOF_MALFORMED');}$json=sharity_donation_finance_json($proof);$digest=hash('sha256',$json);
     if($proof['order_id']!==$orderId || ($applyDigest!==''&&!hash_equals($digest,$applyDigest))){throw new RuntimeException('DONATION_BACKING_STALE');}
     sharity_donation_order_autocommit();$order=sharity_donation_webhook_order($orderId);$snapshot=sharity_donation_order_decode($order)['snapshot'];
     $inventory=sharity_donation_finance_reconcile($orderId,$now);$apply=$applyDigest!=='';
-    return sharity_donation_backing_transaction($apply,$now,static function($q)use($proof,$json,$digest,$apply,$order,$snapshot,$inventory,$orderId,$now):array{
+    $platform=$proof['kind']==='platform'?sharity_donation_backing_platform($inventory,$snapshot):null;
+    return sharity_donation_backing_transaction($apply,$now,static function($q)use($proof,$json,$digest,$apply,$order,$snapshot,$inventory,$orderId,$now,$platform):array{
         $frame=sharity_donation_backing_latest_locked($q,$proof['frame_key']);
         if($frame===null){throw new RuntimeException('DONATION_BACKING_STALE');}
         $fp=json_decode($frame['document'],true,32,JSON_THROW_ON_ERROR);$f=$fp['frame'];
-        if($f['account_id']!==$snapshot['account_id']||$f['livemode']!==$snapshot['livemode']){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+        if($f['account_id']!==($platform['account_id']??$snapshot['account_id'])||$f['livemode']!==$snapshot['livemode']
+            ||($platform!==null&&$f['currency']!==$platform['currency'])){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
         $sources=[];
         foreach($fp['sources'] as $s){
             $id=sharity_donation_backing_source_key($s,$f);$sources[$id]=$s;$identity=sharity_donation_finance_json(sharity_donation_backing_source_identity($s,$f));
@@ -1061,6 +1086,18 @@ function sharity_donation_backing_reserve(string $orderId,array $input,string $a
             if(sharity_donation_backing_time($f['expires_at_utc'])<=$now||sharity_donation_backing_time($f['as_of_utc'])>$now){throw new RuntimeException('DONATION_BACKING_EXPIRED');}
             $ot=sharity_donation_finance_table();$e=$q("SELECT digest,SHA2(canonical_json,256) AS actual FROM `{$ot}` FORCE INDEX (order_digest) WHERE order_id = ? ORDER BY digest LIMIT 257 FOR UPDATE",[$orderId]);
             if(array_column($e,'digest')!==$inventory['evidence_digests']||array_column($e,'actual')!==$inventory['evidence_digests']||$e===[]){throw new RuntimeException('DONATION_BACKING_STALE');}
+            if($platform!==null){
+                // A stored observation alone is not registered cash. Validate the complete native
+                // registry and bodies, including any disappeared or foreign-order movement.
+                $mt=sharity_donation_movement_table();
+                $rows=$q("SELECT provider,livemode,account_id,balance_transaction_id,order_id,financial_digest,SHA2(facts_json,256) AS actual FROM `{$mt}` FORCE INDEX(order_id) WHERE order_id = ? ORDER BY provider,livemode,account_id,balance_transaction_id LIMIT 4097 FOR UPDATE",[$orderId]);
+                $want=[];foreach($inventory['movements'] as $m){$mf=$m['facts'];$want[]=['provider'=>$mf['provider'],'livemode'=>$mf['livemode']?'1':'0',
+                    'account_id'=>$mf['account_id'],'balance_transaction_id'=>$mf['balance_transaction_id'],'order_id'=>$orderId,
+                    'financial_digest'=>$m['financial_digest'],'actual'=>$m['financial_digest']];}
+                $actual=array_map(static fn($r)=>array_map(static fn($v)=>is_int($v)?(string)$v:$v,$r),$rows);
+                $sort=static fn($a,$b)=>strcmp(sharity_donation_finance_json($a),sharity_donation_finance_json($b));usort($actual,$sort);usort($want,$sort);
+                if($actual!==$want){throw new RuntimeException('DONATION_BACKING_SOURCE_UNPROVEN');}
+            }
             $capacity=sharity_donation_backing_capacity($q,$fp);
             if((int)$capacity['deficit_minor']>0||(int)$capacity['available_minor']<(int)$proof['amount_minor']){throw new RuntimeException('DONATION_BACKING_INSUFFICIENT');}
             foreach($fp['sources'] as $s){if((int)$s['retained_minor']>0 && sharity_donation_backing_time($s['expires_at_utc'])<=$now){throw new RuntimeException('DONATION_BACKING_EXPIRED');}}
