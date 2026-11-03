@@ -940,3 +940,15 @@ record §78. Forrás még helyi; mainablak, merge, telepítés, aktiválás ninc
 Nyitott: platform fee/account/payout életciklus, ütemezés, valódi fedezett
 végrehajtás, NGO-account és HUF pilot, Amplifier, további devizák, teljes
 nyelvi/affiliate/Offerwall cél, VB7/Sharing12 eltérések és éles elfogadás.
+
+
+## 2026-11-03 — D2u saját polling baseline
+
+Termékcommit abfc63dedfe3243fd365a3b336346d44436be1d9. Csak saját webhook.php
+és finance-read.php pin; inventory, guardlogika, idegen hash változatlan.
+2371 natív DB (255 új polling), 442 CLI, 13 runtime; teljes valódi guard
+inventory nulla drift és 6 checksum eset ellenőrizve. Független source-review
+leletmentes, reviewer nem futtatott tesztet. Részletek és kézi kiadási lista:
+protected record §78. Új poll schedule nincs; állapot forráskész, helyi, nem
+merge-elt/telepített/aktivált vagy pénzügyileg elfogadott. Saját tesztkonténer
+eltávolítva és hiánya visszaolvasva.

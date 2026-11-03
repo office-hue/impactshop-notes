@@ -1125,3 +1125,15 @@ guard inventory nulla drift és6 checksum eset sikeresen ellenőrizve.
 Forrásmunka; nincs mainablak, merge/deploy/aktiválás vagy pénzügyi elfogadás.
 
 D2t termékcommit:946d8c2c4ef01a1fba4bbd549e1f57d85a21b54b.
+
+
+## 2026-11-03 — D2u saját polling baseline
+
+Termékcommit abfc63dedfe3243fd365a3b336346d44436be1d9. Csak saját webhook.php
+és finance-read.php pin; inventory, guardlogika, idegen hash változatlan.
+2371 natív DB (255 új polling), 442 CLI, 13 runtime; teljes valódi guard
+inventory nulla drift és 6 checksum eset ellenőrizve. Független source-review
+leletmentes, reviewer nem futtatott tesztet. Részletek és kézi kiadási lista:
+protected record §78. Új poll schedule nincs; állapot forráskész, helyi, nem
+merge-elt/telepített/aktivált vagy pénzügyileg elfogadott. Saját tesztkonténer
+eltávolítva és hiánya visszaolvasva.
