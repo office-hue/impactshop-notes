@@ -2464,3 +2464,16 @@ Részleges átvétel, hiányzó batchlogika és tesztek helyben. Koherencia,
 kockázat, kiadás/rollback és kézi UI: protected record §82. Nincs új séma,
 scheduler, mainablak/merge/deploy/aktiválás. D2u/v/w közös publikálási
 jóváhagyása függ; D2x nincs benne. Teljes Sharity-cél nyitott.
+
+
+## 2026-11-03 — D2y tartós kifizetési bizonyíték, helyi forrás
+
+Explicit payout séma, kanonikus idempotens record és pontos account/live/BT
+alapú read-only orderkapcsolat; saját debit/failure és unmatched megmarad.
+Nincs találgatott payoutallokáció vagy bankbeérkezési állítás.3353 natív
+MariaDB check (578 új),442CLI,17runtime sikeres; két független review-lelet
+javítva/regresszióval visszaolvasva. Saját DB-konténer eltávolítva/readback.
+Hermes06039396token, USD0.005073068 becsült, actual/full költség ismeretlen;
+részleges vázátvétel és jelentős helyi javítás, igazolt megtakarítás nincs.
+Koherencia/kockázat/séma/kiadás/rollback/kézi UI: protected record§83.
+Nincs mainablak/merge/telepítés/aktiválás; teljes Sharity-cél nyitott.

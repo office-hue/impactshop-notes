@@ -1367,3 +1367,344 @@ function sharity_donation_finance_target(string $orderId, int $now, string $appl
         throw new RuntimeException(in_array($e->getMessage(),$codes,true)?$e->getMessage():'DONATION_TARGET_UNAVAILABLE');
     }
 }
+
+/**
+ * D2y: durable provider payout observation. Never a bank receipt, posting or funding source.
+ * Payout debit and failure facts are stored as evidence only, never as donor funding.
+ */
+const SHARITY_DONATION_PAYOUT_SCHEMA_OPTION = 'sharity_donation_payout_schema_v1';
+const SHARITY_DONATION_PAYOUT_MAX_BYTES = 4 * 1024 * 1024;
+
+function sharity_donation_payout_table(): string
+{
+    global $wpdb;
+    return $wpdb->prefix . 'sharity_donation_payouts_v1';
+}
+
+/** Exact read-only topology check shared by apply, record and reconcile. */
+function sharity_donation_payout_schema_valid(callable $read): bool
+{
+    $table = sharity_donation_payout_table();
+    $status=$read("SHOW TABLE STATUS WHERE Name = '{$table}'");
+    if (count($status)!==1 || ($status[0]['Engine']??null)!=='InnoDB') { return false; }
+    $columns = $read("SHOW FULL COLUMNS FROM `{$table}`");
+    $expected = ['id' => ['bigint unsigned', null], 'account_id' => ['varchar(128)', 'ascii_bin'],
+        'livemode' => ['tinyint(1)', null], 'account_scope' => ['varchar(9)', 'ascii_bin'],
+        'payout_id' => ['varchar(255)', 'ascii_bin'], 'canonical_json' => ['longtext', 'utf8mb4_bin'],
+        'digest' => ['char(64)', 'ascii_bin'], 'observed_at_utc' => ['datetime', null]];
+    if (!is_array($columns) || count($columns) !== count($expected)) { return false; }
+    foreach ($columns as $c) {
+        $name = $c['Field'];
+        if (!isset($expected[$name])) { return false; }
+        $type = $c['Type'];
+        if ($name === 'id') { $type = preg_replace('/^bigint\([0-9]+\) unsigned$/D', 'bigint unsigned', $type); }
+        if ($type !== $expected[$name][0] || $c['Collation'] !== $expected[$name][1]
+            || $c['Null'] !== 'NO' || $c['Default'] !== null
+            || $c['Extra'] !== ($name === 'id' ? 'auto_increment' : '')) { return false; }
+    }
+    $indexes = $read("SHOW INDEX FROM `{$table}`");
+    if (!is_array($indexes)) { return false; }
+    $topology = array_map(static fn($i) => [$i['Key_name'], (int) $i['Seq_in_index'], $i['Column_name'],
+        (int) $i['Non_unique'], $i['Sub_part'], $i['Index_type']], $indexes);
+    $required = [['PRIMARY', 1, 'id', 0, null, 'BTREE'], ['account_payout_digest', 1, 'account_id', 0, null, 'BTREE'],
+        ['account_payout_digest', 2, 'livemode', 0, null, 'BTREE'], ['account_payout_digest', 3, 'payout_id', 0, null, 'BTREE'],
+        ['account_payout_digest', 4, 'digest', 0, null, 'BTREE']];
+    sort($topology); sort($required);
+    return $topology === $required;
+}
+
+/** Explicit CLI migration only; incompatible tables are never altered or repaired here. */
+function sharity_donation_payout_schema_apply(): bool
+{
+    try {
+        sharity_donation_order_autocommit();
+        update_option(SHARITY_DONATION_PAYOUT_SCHEMA_OPTION, '0', false);
+        if (get_option(SHARITY_DONATION_PAYOUT_SCHEMA_OPTION, '') !== '0') { return false; }
+        global $wpdb; $table = sharity_donation_payout_table();
+        if ($wpdb->query("CREATE TABLE IF NOT EXISTS `{$table}` (
+            id bigint unsigned NOT NULL AUTO_INCREMENT,
+            account_id varchar(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            livemode tinyint(1) NOT NULL,
+            account_scope varchar(9) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            payout_id varchar(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            canonical_json longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+            digest char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+            observed_at_utc datetime NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY account_payout_digest (account_id, livemode, payout_id, digest)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin") === false || $wpdb->last_error !== '') { return false; }
+        $status = $wpdb->get_row($wpdb->prepare('SHOW TABLE STATUS WHERE Name = %s', $table), ARRAY_A);
+        if ($wpdb->last_error !== '' || ($status['Engine'] ?? '') !== 'InnoDB') { return false; }
+        if (!sharity_donation_payout_schema_valid(static function (string $sql) use ($wpdb): array {
+            $rows = $wpdb->get_results($sql, ARRAY_A);
+            if ($wpdb->last_error !== '' || !is_array($rows)) { throw new RuntimeException(); }
+            return $rows;
+        })) { return false; }
+        update_option(SHARITY_DONATION_PAYOUT_SCHEMA_OPTION, '1', false);
+        return get_option(SHARITY_DONATION_PAYOUT_SCHEMA_OPTION, '') === '1';
+    } catch (Throwable $error) { return false; }
+}
+
+function sharity_donation_payout_read(string $accountId, bool $live, string $payoutId, string $digest): ?array
+{
+    global $wpdb; $table = sharity_donation_payout_table();
+    $row = $wpdb->get_row($wpdb->prepare("SELECT id,account_id,livemode,account_scope,payout_id,digest,observed_at_utc, SUBSTRING(CAST(canonical_json AS BINARY),1,4194305) AS canonical_json FROM `{$table}` WHERE account_id = %s AND livemode = %d AND payout_id = %s AND digest = %s",
+        $accountId, $live ? 1 : 0, $payoutId, $digest), ARRAY_A);
+    if ($wpdb->last_error !== '' || ($row !== null && !is_array($row))) { throw new RuntimeException('DONATION_PAYOUT_UNAVAILABLE'); }
+    return $row;
+}
+
+/** Whole-row identity and content verification; never acceptance on INSERT alone. */
+function sharity_donation_payout_receipt(?array $row, array $expected): array
+{
+    if ($row === null) { throw new RuntimeException('DONATION_PAYOUT_UNAVAILABLE'); }
+    foreach ($expected as $key => $value) {
+        if (!array_key_exists($key, $row) || (string) $row[$key] !== (string) $value) { throw new RuntimeException('DONATION_PAYOUT_UNAVAILABLE'); }
+    }
+    $id = $row['id'] ?? null; if (is_int($id)) { $id=(string)$id; }
+    $time = $row['observed_at_utc'] ?? null; $stamp = $row['canonical_json'] ?? null;
+    if (!is_string($id) || !preg_match('/^[1-9][0-9]{0,19}$/D', $id) || !is_string($time) || !is_string($stamp)
+        || !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/D', $time)
+        || !hash_equals((string) ($row['digest'] ?? ''), hash('sha256', $stamp))) { throw new RuntimeException('DONATION_PAYOUT_UNAVAILABLE'); }
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $time, new DateTimeZone('UTC'));
+    if ($date === false || $date->format('Y-m-d H:i:s') !== $time) { throw new RuntimeException('DONATION_PAYOUT_UNAVAILABLE'); }
+    try { $decoded = json_decode($stamp, true, 64, JSON_THROW_ON_ERROR); } catch (Throwable $error) { throw new RuntimeException('DONATION_PAYOUT_UNAVAILABLE'); }
+    if (!is_array($decoded) || !is_array($decoded['items'] ?? null) || !is_array($decoded['payout'] ?? null)
+        || !is_array($decoded['funding_totals'] ?? null)) { throw new RuntimeException('DONATION_PAYOUT_UNAVAILABLE'); }
+    if (strlen($stamp)>SHARITY_DONATION_PAYOUT_MAX_BYTES || !in_array($row['account_scope']??null,['connected','platform'],true)
+        || !in_array((string)($row['livemode']??''),['0','1'],true)) { throw new RuntimeException(); }
+    $validated=sharity_donation_payout_evidence($decoded,$row['payout_id'],$row['account_id'],(string)$row['livemode']==='1',$row['account_scope']);
+    if ($stamp!==sharity_donation_finance_json($validated)) { throw new RuntimeException(); }
+    return ['id' => $id, 'account_id' => $row['account_id'], 'livemode' => $row['livemode'],
+        'payout_id' => $row['payout_id'], 'digest' => $row['digest'], 'observed_at_utc' => $time];
+}
+
+
+/** Explicit provider read outside any DB transaction, then durable evidence with full readback. */
+function sharity_donation_payout_record(string $payoutId, string $accountId, bool $live, string $scope, Sharity_Stripe_Checkout_Adapter $adapter, int $observedAt, ?object $transport=null): array
+{
+    try {
+        if (get_option(SHARITY_DONATION_PAYOUT_SCHEMA_OPTION, '') !== '1' || $observedAt < 1 || $observedAt > 253402300799
+            || !in_array($scope, ['connected', 'platform'], true)
+            || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $accountId)
+            || !preg_match('/^po_[A-Za-z0-9]{1,252}$/D', $payoutId)) { throw new RuntimeException(); }
+        sharity_donation_order_autocommit();
+        global $wpdb;
+        if (!sharity_donation_payout_schema_valid(static function(string $sql) use($wpdb):array {
+            $rows=$wpdb->get_results($sql,ARRAY_A);
+            if ($wpdb->last_error!=='' || !is_array($rows)) { throw new RuntimeException(); }
+            return $rows;
+        })) { throw new RuntimeException(); }
+        // D2x contract already excludes retries and provider writes; bound it again here.
+        $evidence = sharity_donation_webhook_bounded_read(
+            static fn() => $adapter->retrievePayoutEvidence($payoutId, $accountId, $live, $scope),
+            hrtime(true) / 1e9 + 60, $transport, null, 15);
+        $canonical = sharity_donation_payout_evidence($evidence, $payoutId, $accountId, $live, $scope);
+        $json = sharity_donation_finance_json($canonical);
+        if (strlen($json) > SHARITY_DONATION_PAYOUT_MAX_BYTES) { throw new RuntimeException('DONATION_PAYOUT_EVIDENCE_TOO_LARGE'); }
+        $digest = hash('sha256', $json);
+        $expected = ['account_id' => $accountId, 'livemode' => $live ? '1' : '0', 'account_scope' => $scope,
+            'payout_id' => $payoutId, 'canonical_json' => $json, 'digest' => $digest];
+        sharity_donation_order_autocommit();
+        $existing = sharity_donation_payout_read($accountId, $live, $payoutId, $digest);
+        if ($existing !== null) { return sharity_donation_payout_receipt($existing, $expected); }
+        global $wpdb; $table = sharity_donation_payout_table();
+        $insert = $expected + ['observed_at_utc' => gmdate('Y-m-d H:i:s', $observedAt)];
+        $sql = $wpdb->prepare("INSERT INTO `{$table}` (`" . implode('`,`', array_keys($insert)) . '`) VALUES ('
+            . implode(',', array_fill(0, count($insert), '%s')) . ')', ...array_values($insert));
+        $packet = $wpdb->get_row('SELECT @@max_allowed_packet AS packet_bytes', ARRAY_A);
+        if ($wpdb->last_error !== '' || !is_string($sql) || !ctype_digit((string) ($packet['packet_bytes'] ?? ''))) { throw new RuntimeException(); }
+        if ((int) $packet['packet_bytes'] <= strlen($sql) + 1024) { throw new RuntimeException('DONATION_PAYOUT_PACKET_TOO_SMALL'); }
+        try { $wpdb->query($sql); } catch (Throwable $uncertain) { /* Unique identity readback decides; never blind reinsert. */ }
+        return sharity_donation_payout_receipt(sharity_donation_payout_read($accountId, $live, $payoutId, $digest), $expected);
+    } catch (Throwable $error) {
+        $code = in_array($error->getMessage(), ['DONATION_PAYOUT_EVIDENCE_TOO_LARGE', 'DONATION_PAYOUT_PACKET_TOO_SMALL',
+            'DONATION_PAYOUT_UNAVAILABLE', 'DONATION_PAYOUT_LIMIT'], true) ? $error->getMessage() : 'DONATION_PAYOUT_UNAVAILABLE';
+        throw new RuntimeException($code);
+    }
+}
+
+
+/** Normalize the D2x allowlist without changing native money or provider identity. */
+function sharity_donation_payout_balance(array $b): array
+{
+    if (!array_key_exists('source_id',$b) || ($b['source_id']!==null && (!is_string($b['source_id'])
+        || !preg_match('/^[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9]{1,252}$/D',$b['source_id']) || strlen($b['source_id'])>255))
+        || !is_string($b['type']??null) || !preg_match('/^[a-z][a-z0-9_]{0,63}$/D',$b['type'])
+        || !is_array($b['fee_details']??null) || count($b['fee_details'])>100) { throw new RuntimeException(); }
+    $raw=$b;unset($raw['source_id'],$raw['type'],$raw['scope']);
+    // This existing helper validates only the monetary/metadata projection here.
+    $m=sharity_donation_finance_movement($raw,$b['source_id']??'','payout_evidence',null,[]);
+    $money=['currency','gross_minor','total_fee_minor','net_minor','application_fee_minor','processing_cost_minor','fee_details'];
+    foreach (array_slice($money,1,5) as $key) { if (abs((int)$m['facts'][$key])>999999999999) { throw new RuntimeException(); } }
+    return ['id'=>$b['id'],'source_id'=>$b['source_id'],'type'=>$b['type']]
+        +array_intersect_key($m['facts'],array_flip($money))+$m['observed_metadata'];
+}
+
+/** Stored observations are revalidated, including all derived totals/flags. */
+function sharity_donation_payout_evidence(array $e,string $id,string $account,bool $live,string $scope): array
+{
+    if (($e['evidence_version']??null)!==1 || ($e['account_id']??null)!==$account || ($e['livemode']??null)!==$live
+        || ($e['account_scope']??null)!==$scope || !in_array($scope,['connected','platform'],true)) { throw new RuntimeException(); }
+    foreach (['order_attribution_verified','ngo_bank_received','allocation_eligible'] as $flag) {
+        if (($e[$flag]??null)!==false) { throw new RuntimeException(); }
+    }
+    $p=$e['payout']??null;
+    if (!is_array($p) || ($p['id']??null)!==$id || ($p['livemode']??null)!==$live
+        || !in_array($p['currency']??null,['HUF','EUR','USD','GBP'],true) || !is_bool($p['automatic']??null)
+        || !in_array($p['method']??null,['standard','instant'],true) || !in_array($p['type']??null,['bank_account','card'],true)
+        || !in_array($p['status']??null,['pending','in_transit','paid','failed','canceled'],true)
+        || !in_array($p['reconciliation_status']??null,['completed','in_progress','not_applicable'],true)
+        || !is_int($p['created']??null) || $p['created']<1 || !is_int($p['arrival_date']??null) || $p['arrival_date']<1) { throw new RuntimeException(); }
+    $amount=sharity_donation_finance_minor($p['amount_minor']??null);
+    if ($amount===0 || abs($amount)>999999999999) { throw new RuntimeException(); }
+    foreach (['balance_transaction_id'=>'txn','failure_balance_transaction_id'=>'txn','original_payout_id'=>'po','reversed_by_id'=>'po'] as $key=>$prefix) {
+        if (!array_key_exists($key,$p) || ($p[$key]!==null && (!is_string($p[$key]) || !preg_match('/^'.$prefix.'_[A-Za-z0-9]{1,251}$/D',$p[$key])))) { throw new RuntimeException(); }
+    }
+    if ($amount<0 && $p['original_payout_id']===null) { throw new RuntimeException(); }
+    $p=array_intersect_key($p,array_flip(['id','livemode','amount_minor','currency','automatic','method','type','status',
+        'reconciliation_status','created','arrival_date','balance_transaction_id','failure_balance_transaction_id','original_payout_id','reversed_by_id']));
+    $out=['evidence_version'=>1,'account_id'=>$account,'account_scope'=>$scope,'livemode'=>$live,'payout'=>$p];$unresolved=[];
+    foreach (['payout_balance'=>'balance_transaction_id','failure_balance'=>'failure_balance_transaction_id'] as $name=>$ref) {
+        if (!array_key_exists($name,$e) || ($e[$name]!==null && !is_array($e[$name]))) { throw new RuntimeException(); }
+        $b=$e[$name]===null?null:sharity_donation_payout_balance($e[$name]);
+        if (($b===null)!==($p[$ref]===null)) { throw new RuntimeException(); }
+        if ($b!==null) {
+            $expect=($name==='payout_balance'?-1:1)*$amount;
+            if ($b['id']!==$p[$ref] || $b['source_id']!==$id
+                || !in_array($b['type'],$name==='payout_balance'?['payout']:['payout_failure','payout_cancel'],true)
+                || (((int)$b['gross_minor']<=>0)!==($expect<=>0))
+                || ($b['currency']===$p['currency'] && ($b['gross_minor']!==(string)$expect || ($b['exchange_rate']!==null && (float)$b['exchange_rate']!==1.0)))
+                || ($b['currency']!==$p['currency'] && $b['exchange_rate']===null)) { throw new RuntimeException(); }
+            if ($b['status']!=='available') { $unresolved[]='payout_balance_pending'; }
+        }
+        $out[$name]=$b;
+    }
+    $debit=$out['payout_balance'];$failure=$out['failure_balance'];
+    if ($debit===null) { $unresolved[]='payout_balance_missing'; }
+    if ($debit!==null && $failure!==null && $debit['id']===$failure['id']) { throw new RuntimeException(); }
+    if ($p['status']!=='paid') { $unresolved[]='payout_not_paid'; }
+    if (in_array($p['status'],['failed','canceled'],true)) {
+        if ($failure===null) { $unresolved[]='payout_failure_balance_missing'; }
+    } elseif ($failure!==null) { $unresolved[]='payout_failure_observed'; }
+    if ($p['original_payout_id']!==null || $p['reversed_by_id']!==null) { $unresolved[]='payout_reversal_requires_reconciliation'; }
+    $complete=$p['automatic'] && $p['method']==='standard' && $p['reconciliation_status']==='completed';
+    if (!is_array($e['items']??null) || !array_is_list($e['items']) || count($e['items'])>1000 || (!$complete && $e['items']!==[])) { throw new RuntimeException(); }
+    $items=[];$totals=[];$own=false;
+    foreach ($e['items'] as $raw) {
+        if (!is_array($raw)) { throw new RuntimeException(); }$b=sharity_donation_payout_balance($raw);
+        if (isset($items[$b['id']])) { throw new RuntimeException(); }$items[$b['id']]=$b;
+        if ($b['id']===$p['balance_transaction_id']) {
+            if (sharity_donation_finance_json($b)!==sharity_donation_finance_json($debit)) { throw new RuntimeException(); }
+            $own=true;continue;
+        }
+        if ($b['id']===$p['failure_balance_transaction_id']
+            && sharity_donation_finance_json($b)!==sharity_donation_finance_json($failure)) { throw new RuntimeException(); }
+        if (in_array($b['type'],['payout','payout_failure','payout_cancel'],true)) { $unresolved[]='other_payout_movement_in_batch'; }
+        if ($b['status']!=='available') { $unresolved[]='batch_balance_pending'; }
+        $cc=$b['currency'];$totals[$cc]??=['gross_minor'=>0,'total_fee_minor'=>0,'net_minor'=>0];
+        foreach (array_keys($totals[$cc]) as $key) { $totals[$cc][$key]+=(int)$b[$key]; }
+    }
+    $balanced=$complete && $debit!==null && count($totals)===1 && isset($totals[$debit['currency']])
+        && $totals[$debit['currency']]['net_minor']===-(int)$debit['net_minor'];
+    if (!$complete) { $unresolved[]=$p['automatic'] && $p['method']==='standard' && $p['reconciliation_status']==='in_progress'
+        ?'payout_reconciliation_pending':'payout_membership_unavailable'; }
+    elseif (!$balanced) { $unresolved[]='payout_batch_totals_unreconciled'; }
+    foreach ($totals as &$v) { foreach ($v as &$n) { $n=(string)$n; }unset($n); }unset($v);
+    sort($unresolved);$unresolved=array_values(array_unique($unresolved));
+    $derived=['membership_complete'=>$complete,'own_payout_row_included'=>$own,'funding_totals'=>$totals,
+        'batch_totals_reconciled'=>$balanced,'provider_paid_observed'=>$p['status']==='paid','unresolved'=>$unresolved];
+    foreach ($derived as $key=>$v) {
+        if (!array_key_exists($key,$e) || sharity_donation_finance_json($e[$key])!==sharity_donation_finance_json($v)) { throw new RuntimeException(); }
+    }
+    return $out+['items'=>array_values($items)]+$derived+['order_attribution_verified'=>false,'ngo_bank_received'=>false,'allocation_eligible'=>false];
+}
+
+/** Selected immutable observation + one consistent existing financial-registry snapshot. */
+function sharity_donation_payout_reconcile(string $id,string $account,bool $live,string $digest,int $now): array
+{
+    $db=null;$active=false;
+    try {
+        if (get_option(SHARITY_DONATION_PAYOUT_SCHEMA_OPTION)!=='1' || get_option(SHARITY_DONATION_MOVEMENT_SCHEMA_OPTION)!=='1'
+            || !preg_match('/^po_[A-Za-z0-9]{1,252}$/D',$id) || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$account)
+            || !preg_match('/^[a-f0-9]{64}$/D',$digest) || $now<1 || $now>253402300799) { throw new RuntimeException(); }
+        [$db,$q]=sharity_donation_backing_db();$q('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+        $q('START TRANSACTION READ ONLY');$active=true;
+        $pt=sharity_donation_payout_table();$mt=sharity_donation_movement_table();
+        foreach ([$pt,$mt] as $table) {
+            $q("SELECT 1 FROM `{$table}` LIMIT 0");$status=$q('SHOW TABLE STATUS WHERE Name = ?',[$table]);
+            if (count($status)!==1 || $status[0]['Engine']!=='InnoDB') { throw new RuntimeException(); }
+        }
+        if (!sharity_donation_payout_schema_valid($q) || !sharity_donation_movement_schema_valid($q)) { throw new RuntimeException(); }
+        $rows=$q("SELECT id,account_id,livemode,account_scope,payout_id,digest,observed_at_utc,
+            SUBSTRING(CAST(canonical_json AS BINARY),1,".(SHARITY_DONATION_PAYOUT_MAX_BYTES+1).") AS canonical_json
+            FROM `{$pt}` WHERE account_id=? AND livemode=? AND payout_id=? AND digest=?",[$account,$live?'1':'0',$id,$digest]);
+        if (count($rows)!==1) { throw new RuntimeException(); }$row=$rows[0];
+        $receipt=sharity_donation_payout_receipt($row,['account_id'=>$account,'livemode'=>$live?'1':'0','payout_id'=>$id,'digest'=>$digest]);
+        $e=json_decode($row['canonical_json'],true,64,JSON_THROW_ON_ERROR);
+        $items=[];$unmatched=[];$byOrder=[];$mapped=[];$own=[];
+        foreach ($e['items'] as $b) {
+            if ($b['id']===$e['payout']['balance_transaction_id'] || $b['id']===$e['payout']['failure_balance_transaction_id']) { continue; }
+            if (in_array($b['type'],['payout','payout_failure','payout_cancel'],true)) { $own[]=$b;continue; }
+            $items[$b['id']]=$b;
+        }
+        if ($items!==[]) {
+            $params=array_merge([$live?'1':'0',$account],array_keys($items));$marks=implode(',',array_fill(0,count($items),'?'));
+            $where="WHERE provider='stripe' AND livemode=? AND account_id=? AND balance_transaction_id IN ({$marks})";
+            $meta=$q("SELECT balance_transaction_id,OCTET_LENGTH(facts_json) AS bytes FROM `{$mt}` {$where} LIMIT 1001",$params);
+            $bytes=0;foreach ($meta as $m) {
+                $size=(int)$m['bytes'];$bytes+=$size;
+                if ($size<1 || $size>SHARITY_DONATION_FINANCE_MAX_BYTES || $bytes>16*1024*1024) { throw new RuntimeException('DONATION_PAYOUT_LIMIT'); }
+            }
+            if (count($meta)>1000) { throw new RuntimeException('DONATION_PAYOUT_LIMIT'); }
+            $registered=$q("SELECT * FROM `{$mt}` {$where} LIMIT 1001",$params);
+            if (count($registered)!==count($meta)) { throw new RuntimeException(); }
+            foreach ($registered as $m) {
+                $f=json_decode($m['facts_json'],true,64,JSON_THROW_ON_ERROR);$tid=$m['balance_transaction_id'];
+                if (!is_array($f) || !isset($items[$tid]) || isset($mapped[$tid]) || !preg_match('/^do_[a-f0-9]{32}$/D',$m['order_id'])
+                    || $m['facts_json']!==sharity_donation_finance_json($f) || !hash_equals($m['financial_digest'],hash('sha256',$m['facts_json']))
+                    || ($f['provider']??null)!=='stripe' || ($f['livemode']??null)!==$live || ($f['account_id']??null)!==$account
+                    || ($f['balance_transaction_id']??null)!==$tid || ($f['order_id']??null)!==$m['order_id']) { throw new RuntimeException('DONATION_PAYOUT_CONFLICT'); }
+                $b=$items[$tid];
+                foreach (['source_id','currency','gross_minor','total_fee_minor','net_minor','application_fee_minor','processing_cost_minor','fee_details'] as $key) {
+                    if (!array_key_exists($key,$f) || sharity_donation_finance_json($f[$key])!==sharity_donation_finance_json($b[$key])) { throw new RuntimeException('DONATION_PAYOUT_CONFLICT'); }
+                }
+                $type=$f['provider_type']??null;
+                if (($type!==null && $type!==$b['type']) || ($type===null && !in_array($b['type'],
+                    ($f['movement_role']??null)==='charge'?['charge','payment']:(($f['movement_role']??null)==='application_fee'?['application_fee']:[]),true))) { throw new RuntimeException('DONATION_PAYOUT_CONFLICT'); }
+                $mapped[$tid]=true;$byOrder[$m['order_id']][]=$m;
+            }
+        }
+        foreach ($items as $tid=>$b) { if (!isset($mapped[$tid])) { $unmatched[]=$b; } }
+        $orders=[];
+        foreach ($byOrder as $orderId=>$matches) {
+            // Reuse original order/envelope and observation provenance, not current binding.
+            $inventory=sharity_donation_finance_reconcile($orderId,$now);$known=[];
+            foreach ($inventory['movements'] as $m) { $f=$m['facts'];if ($f['account_id']===$account && $f['livemode']===$live) { $known[$f['balance_transaction_id']]=$m; } }
+            $contributions=[];$totals=[];
+            foreach ($matches as $m) {
+                $tid=$m['balance_transaction_id'];$origin=$known[$tid]??null;
+                if ($origin===null || $origin['financial_digest']!==$m['financial_digest']
+                    || sharity_donation_finance_json($origin['facts'])!==$m['facts_json']) { throw new RuntimeException('DONATION_PAYOUT_CONFLICT'); }
+                $b=$items[$tid];$contributions[]=$b+['movement_role'=>$origin['facts']['movement_role']];
+                $totals[$b['currency']]??=['gross_minor'=>0,'total_fee_minor'=>0,'net_minor'=>0];
+                foreach (array_keys($totals[$b['currency']]) as $key) { $totals[$b['currency']][$key]+=(int)$b[$key]; }
+            }
+            foreach ($totals as &$v) { foreach ($v as &$n) { $n=(string)$n; }unset($n); }unset($v);
+            $orders[]=['order_id'=>$orderId,'contributions'=>$contributions,'batch_contribution_totals'=>$totals,
+                'payout_allocation_minor'=>null,'payout_allocation_verified'=>false];
+        }
+        if ((string)($q('SELECT @@in_transaction AS tx')[0]['tx']??'')!=='1') { throw new RuntimeException(); }
+        $q('ROLLBACK');$active=false;
+        return ['payout_report_version'=>1,'scope'=>'selected_observation_registry_snapshot','receipt'=>$receipt,
+            'payout'=>$e['payout'],'payout_balance'=>$e['payout_balance'],'failure_balance'=>$e['failure_balance'],
+            'provider_paid_observed'=>$e['provider_paid_observed'],'membership_complete'=>$e['membership_complete'],
+            'batch_totals_reconciled'=>$e['batch_totals_reconciled'],'funding_totals'=>$e['funding_totals'],
+            'matched_orders'=>$orders,'unmatched_items'=>$unmatched,'other_payout_movements'=>$own,
+            'movement_matching_complete'=>$e['membership_complete'] && count($items)>0 && $unmatched===[] && $own===[],
+            'unresolved'=>$e['unresolved'],'ngo_bank_received'=>false,'allocation_eligible'=>false,'payout_allocation_verified'=>false];
+    } catch (Throwable $error) {
+        if ($active && $db instanceof mysqli) { try { $db->rollback(); } catch (Throwable $ignored) {} }
+        throw new RuntimeException(in_array($error->getMessage(),['DONATION_PAYOUT_CONFLICT','DONATION_PAYOUT_LIMIT'],true)?$error->getMessage():'DONATION_PAYOUT_UNAVAILABLE');
+    }
+}

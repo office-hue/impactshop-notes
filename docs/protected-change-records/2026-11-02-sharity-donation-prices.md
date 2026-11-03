@@ -1229,3 +1229,74 @@ annak. Nincs csendablak/main/merge/deploy/aktiválás vagy pénzügyi elfogadás
 Következő: tartós payout-bizonylat és igazolt order/balance kapcsolat, majd
 a teljes §62 cél; ez az olvasó nem zárja le azokat. SUBSTACK-HANDOVER.md
 megőrzendő hivatkozás, nem aktív feladat.
+
+
+## 83. D2y — tartós payout-bizonylat és pontos mozgáskapcsolat (2026-11-03)
+
+A meglévő finance-ledger.php és finance-read.php bővül; a dedikált
+sharity_donation_payouts_v1 tábla az order nélküli/többorderes szolgáltatói
+batch változatlan bizonyítékát tartja. Egyedi account/live/payout/digest,
+natív decimális sztring pénz és eredeti source/type; első UTC megfigyelés.
+Kizárólag explicit `wp sharity donations payout-schema --apply` végez DDL-t;
+az eltérő InnoDB/mező/index séma hibás, nincs automatikus javítás/adattörlés.
+
+Trusted CLI: `payout-record --payout=po_... --account=acct_... --mode=test
+--scope=connected` (élő/platform csak a megfelelő külön hiteles accounttal),
+majd `payout-reconcile --payout=po_... --account=acct_... --mode=test
+--digest=<receipt-digest>`. A record a D2x 60s/15GET olvasóját tranzakción
+kívül használja; legfeljebb4MiB allowlist, valós SQL-packet korlát, teljes
+INSERT-readback. Ismétlés és elveszett ACK ugyanazt a sort/időpontot adja.
+Ügyfél-/bankadat és nyers providerpayload nem kerül bele.
+
+A riport egy repeatable-read, read-only natív DB-pillanatképen ellenőrzi a
+pontos stripe/live/account/balance-transaction egyezést, a kanonikus registry
+tényeket és az eredeti order/envelope/finance observation provenienciát.
+Azonos ID eltérő pénzzel/devizával/source-szal konfliktus, nem csendes unmatched.
+Ismeretlen vagy más account tétele látható unmatched; saját payout/failure
+bizonylat és más payoutmozgás külön megmarad. A rendeléshez rendelt batch-
+hozzájárulás nem önkényes payoutdíj-allokáció: payout_allocation_minor=null,
+payout_allocation_verified/ngo_bank_received/allocation_eligible=false.
+A provider paid és batchösszeg-egyezés külön állapot, nem bankbeérkezés.
+Nincs provider POST, business/order/movement írás, pénzmozgatás, scheduler,
+publikus API, új authréteg vagy felületi módosítás.
+
+Tényleges teszt: `SHARITY_DONATION_TEST_PORT=64141 php -d memory_limit=512M
+tests/sharity-donation-orders-mysql.test.php`3353 sikeres ellenőrzés, ebből
+578 payout; két valódi kapcsolat ismétlési/párhuzamos próbái, elveszett ACK,
+sérült readback, pontos/idegen/conflicting mozgás és eredeti bizonyítékhiány,
+manual/instant, failure/reversal/FX,4deviza×2scope,4MiB és valós packetkorlát,
+sémaismétlés és inkompatibilis séma. 442 finance/CLI és17 friss runtime,
+PHP lint és diff-check sikeres. Pinned valódi SDK offline HTTP-val, helyi
+MariaDB10.11.19; nem Stripe-sandbox/élő PASS. Saját címkézett konténer
+sharity-d2y-20261103 törölve és hiánya visszaolvasva; más konténer, közös
+függőség vagy szolgáltatói adat nem változott. Az első DB-futás sikeres.
+
+Független célzott source-review két lelete az első futás előtt javítva:
+natív integer receipt-ID string normalizálás; a batch saját failure sorának
+teljes tényazonossága a külön failure_balance ellen. Mindkét javítás és
+regresszió visszaolvasva/lezárva; reviewer tesztet nem futtatott.
+Hermes060:1hívás,23044input+16352output=39396token,cache0;
+becsült USD0.005073068, tényleges számla és teljes Codex/review-ráfordítás
+ismeretlen. Execution5ebc85fd-1e74-46ab-ab0f-e922facff536,
+taskSHAaf7c5885fd9426779adbc5a35575fa4e85c4ef9bbeb700dffee14810854d133a;
+pending/terminal remote_ack. Séma/receipt/record/CLI-váz részben átvett;
+téves helperargumentumok, rövid ID-korlát, negatív payout, hibás tesztút,
+hiányzó provenance és nem futtatható free-function hívások helyben javítva.
+Jelentős helyi újraírás, igazolt megtakarítás nincs. Nincs újragenerálás,
+JEV, fallback, új fizetős szolgáltatás vagy általános release-rendszer.
+
+Kiadás: saját merge-SHA/exact-file út; friss távoli hash, privát kétfájl- és
+érintett tábla/config-mentés. D2x adapter előfeltétel, kompatibilis ledger
+előbb, CLI utána; explicit payout-schema --apply, engine/index/mező readback,
+majd engedélyezett sandbox payout-record/reconcile és teljes readback.
+Élő import csak eredeti élő account/payout hitelesítése után. Ez továbbra
+bizonylat, nem allokációs/pénzkifizetési aktiválás. Rollback saját kódra
+korlátozott, az új tárolt bizonyíték megmarad; új események fölé régi DB-mentés
+nem tölthető. A korábbi webhook/order feldolgozás fennmarad.
+Kiadás utáni kézi lista: saját adományoldal/státusz belépés/nyelv/összeg,
+NGO-izoláció és eddigi működés megmarad; nincs új bankbeérkezési ígéret.
+Ez a kézi/élő lista még nem futott. Nincs mainablak, merge/deploy/aktiválás
+vagy pénzügyi elfogadás. D2u/v/w publikálási kérdése függ; D2x/y nincs benne.
+Következő: igazolt NGO-kifizetési hozzárendelés/banki egyeztetés, fennálló
+fedezet és végrehajtás, valamint a teljes §62 cél. SUBSTACK-HANDOVER.md
+megőrzendő hivatkozás, nem aktív feladat.

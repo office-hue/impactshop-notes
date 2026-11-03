@@ -123,6 +123,9 @@ if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('sharity donations payment-record', 'sharity_donation_cli_payment_record');
     WP_CLI::add_command('sharity donations payment-inspect', 'sharity_donation_cli_payment_inspect');
     WP_CLI::add_command('sharity donations payout-inspect','sharity_donation_cli_payout_inspect');
+    WP_CLI::add_command('sharity donations payout-schema','sharity_donation_cli_payout_schema');
+    WP_CLI::add_command('sharity donations payout-record','sharity_donation_cli_payout_record');
+    WP_CLI::add_command('sharity donations payout-reconcile','sharity_donation_cli_payout_reconcile');
 }
 
 function sharity_donation_cli_finance_target(array $args, array $assoc): void
@@ -407,4 +410,51 @@ if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('sharity donations finance-poll','sharity_donation_cli_finance_poll');
     WP_CLI::add_command('sharity donations finance-drain','sharity_donation_cli_finance_drain');
     WP_CLI::add_command('sharity donations webhook-finance-schema','sharity_donation_cli_webhook_finance_schema');
+}
+
+function sharity_donation_cli_payout_schema(array $args, array $assoc): void
+{
+    try {
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $assoc !== ['apply' => true]
+            || !function_exists('sharity_donation_payout_schema_apply') || !sharity_donation_payout_schema_apply()) { throw new RuntimeException(); }
+        WP_CLI::line('DONATION_PAYOUT_SCHEMA_READY');
+    } catch (Throwable $error) { WP_CLI::error('DONATION_PAYOUT_SCHEMA_UNAVAILABLE'); }
+}
+
+function sharity_donation_cli_payout_record(array $args, array $assoc, ?object $transport=null): void
+{
+    try {
+        $keys = array_keys($assoc); sort($keys);
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $keys !== ['account', 'mode', 'payout', 'scope']
+            || !is_string($assoc['mode']) || !in_array($assoc['mode'], ['test', 'live'], true)
+            || !is_string($assoc['scope']) || !in_array($assoc['scope'], ['connected', 'platform'], true)
+            || !is_string($assoc['payout']) || !preg_match('/^po_[A-Za-z0-9]{1,252}$/D', $assoc['payout'])
+            || !is_string($assoc['account']) || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $assoc['account'])
+            || !function_exists('sharity_donation_payout_record') || !function_exists('sharity_donation_runtime_adapter')) { throw new RuntimeException(); }
+        $receipt = sharity_donation_payout_record($assoc['payout'], $assoc['account'], $assoc['mode'] === 'live', $assoc['scope'],
+            sharity_donation_runtime_adapter(), time(), $transport);
+        WP_CLI::line(json_encode($receipt, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    } catch (Throwable $error) {
+        $code = in_array($error->getMessage(), ['DONATION_PAYOUT_EVIDENCE_TOO_LARGE', 'DONATION_PAYOUT_PACKET_TOO_SMALL'], true)
+            ? $error->getMessage() : 'DONATION_PAYOUT_UNAVAILABLE';
+        WP_CLI::error($code);
+    }
+}
+
+function sharity_donation_cli_payout_reconcile(array $args, array $assoc): void
+{
+    try {
+        $keys = array_keys($assoc); sort($keys);
+        if (!defined('WP_CLI') || !WP_CLI || $args !== [] || $keys !== ['account', 'digest', 'mode', 'payout']
+            || !is_string($assoc['mode']) || !in_array($assoc['mode'], ['test', 'live'], true)
+            || !is_string($assoc['digest']) || !preg_match('/^[a-f0-9]{64}$/D', $assoc['digest'])
+            || !is_string($assoc['payout']) || !preg_match('/^po_[A-Za-z0-9]{1,252}$/D', $assoc['payout'])
+            || !is_string($assoc['account']) || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D', $assoc['account'])
+            || !function_exists('sharity_donation_payout_reconcile')) { throw new RuntimeException(); }
+        $result = sharity_donation_payout_reconcile($assoc['payout'], $assoc['account'], $assoc['mode'] === 'live', $assoc['digest'], time());
+        WP_CLI::line(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
+    } catch (Throwable $error) {
+        WP_CLI::error(in_array($error->getMessage(), ['DONATION_PAYOUT_CONFLICT', 'DONATION_PAYOUT_LIMIT'], true)
+            ? $error->getMessage() : 'DONATION_PAYOUT_UNAVAILABLE');
+    }
 }
