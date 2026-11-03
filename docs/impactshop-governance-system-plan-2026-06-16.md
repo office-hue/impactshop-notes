@@ -1213,3 +1213,14 @@ a kockázatot, forrásonkénti principal/cost határt, compatible rollbacket és
 UI-listát. Exhausted/átvezetett adat után régi olvasó nem állítható vissza;
 új indítás leállhat, korábbi ügyek drainje megmarad. Nincs mainablak vagy deploy.
 - wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `0b66929252a2fcdb37cf47f08eb1ab641aa535ddd69abde2ae4b4dbfcc8ea1b5`
+
+
+## 2026-11-03 — P4a közös felosztási policy
+
+Termék fd629b5e; új saját sharity-support-policy.php a meglévő inventoryban,
+a szomszédos pénzügyi olvasó canonical ownership adataival. Csak az új modul
+és a saját inventory-config hash változik; minden más pin és metadata megmarad.
+740 tényleges PHP-check, lint/diff, független source review blokkoló nélkül;
+protected record§96 adja a kockázatot, későbbi exact-file kiadást és rollbacket.
+Most nincs runtime-bekötés, könyvelés, mainablak vagy éles telepítés.
+Modul SHA256: `9d8c05bd37cd9a7b2a41d57da15462e5607765f94a3bf9e6226079ebda13c425`.
