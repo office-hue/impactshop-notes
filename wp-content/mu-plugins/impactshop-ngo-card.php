@@ -491,6 +491,14 @@ final class ImpactShop_NGO_Card_API
 
     private static function rebuild_dataset(): ?array
     {
+        // No all-time/money rank in place of missing current-quarter data.
+        // Keep the existing stale-cache / unavailable response on read failure.
+        $challengeRanks = self::collect_challenge_rank_map();
+        if ($challengeRanks === null) {
+            return null;
+        }
+        $challengeRankMap = $challengeRanks['map'];
+        $rankActiveTotal = $challengeRanks['active_total'];
         $rate = impactshop_get_huf_rate();
         if ($rate <= 0) {
             $rate = 392.0;
@@ -525,12 +533,6 @@ final class ImpactShop_NGO_Card_API
             self::maybe_seed_approved_slugs($rows);
         }
 
-        $challengeRanks = self::collect_challenge_rank_map();
-        $challengeRankMap = $challengeRanks['map'] ?? [];
-        $challengeActiveTotal = (int) ($challengeRanks['active_total'] ?? 0);
-        $useChallengeRank = $challengeActiveTotal > 0;
-        $rankActiveTotal = $useChallengeRank ? $challengeActiveTotal : null;
-
         foreach ($rows as $row) {
             $slug = sanitize_title($row['ngo_slug'] ?? ($row['ngo'] ?? ''));
             if ($slug === '') {
@@ -562,11 +564,10 @@ final class ImpactShop_NGO_Card_API
                 $itemDonationRate = impactshop_mode_donation_rate($mode);
                 $amount    = (int) round($rawAmount * $itemDonationRate);
             }
-            if ($useChallengeRank) {
-                $rankValue = $challengeRankMap[$slug] ?? 0;
-                $mode = impactshop_rank_mode_for_position($rankValue, $rankActiveTotal);
-                $itemDonationRate = impactshop_mode_donation_rate($mode);
-            }
+            $rankSlug = function_exists('impactshop_canonical_ngo_slug') ? impactshop_canonical_ngo_slug($slug) : $slug;
+            $rankValue = $challengeRankMap[$rankSlug] ?? 0;
+            $mode = impactshop_rank_mode_for_position($rankValue, $rankActiveTotal);
+            $itemDonationRate = impactshop_mode_donation_rate($mode);
 
             if ($amount < 0) {
                 $amount = 0;
@@ -639,7 +640,9 @@ final class ImpactShop_NGO_Card_API
                     continue;
                 }
 
-                $mode = impactshop_rank_mode_for_position(0, $rankActiveTotal);
+                $rankSlug = function_exists('impactshop_canonical_ngo_slug') ? impactshop_canonical_ngo_slug($approvedSlug) : $approvedSlug;
+                $rankValue = $challengeRankMap[$rankSlug] ?? 0;
+                $mode = impactshop_rank_mode_for_position($rankValue, $rankActiveTotal);
                 $amount = 0;
                 $amountData = [
                     'huf'           => 0,
@@ -661,10 +664,10 @@ final class ImpactShop_NGO_Card_API
                     'tombola_url'      => self::tombola_url($approvedSlug),
                     'video_support_url'=> self::video_support_url($approvedSlug),
                     'amount'           => $amountData,
-                    'rank'             => 0,
+                    'rank'             => $rankValue,
                     'mode'             => $mode,
                     'donation_rate'    => impactshop_mode_donation_rate($mode),
-                    'badge_status'     => self::badge_status_for($approvedSlug, 0, $amount, false, $rankActiveTotal),
+                    'badge_status'     => self::badge_status_for($approvedSlug, $rankValue, $amount, false, $rankActiveTotal),
                     'next_milestone'   => self::calculate_milestone($amount, $milestones),
                     'last_updated'     => gmdate('c', $latestTs),
                     'share_url'        => self::share_url($approvedSlug),
@@ -1034,72 +1037,57 @@ final class ImpactShop_NGO_Card_API
         return $rows;
     }
 
-    private static function collect_challenge_rank_map(): array
+    /** UI projection only; never use this cached WP read as financial authority. */
+    private static function collect_challenge_rank_map(): ?array
     {
-        $quarterKey = function_exists('impactshop_ads_get_active_quarter') ? impactshop_ads_get_active_quarter() : '';
-        $tally = [];
-
-        if (function_exists('impactshop_ads_calculate_tally')) {
-            $tally = impactshop_ads_calculate_tally($quarterKey !== '' ? $quarterKey : null);
-        } else {
-            global $wpdb;
-            $table = $wpdb->prefix . 'impactshop_ads_votes';
-            $tableExists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
-            if (!$tableExists) {
-                return ['map' => [], 'active_total' => 0];
-            }
-
-            if ($quarterKey !== '') {
-                $tally = $wpdb->get_results(
-                    $wpdb->prepare(
-                        "SELECT ngo_slug, SUM(vote_weight) as votes
-                         FROM {$table}
-                         WHERE quarter_key = %s
-                         GROUP BY ngo_slug
-                         ORDER BY votes DESC",
-                        $quarterKey
-                    ),
-                    ARRAY_A
-                );
-            } else {
-                $tally = $wpdb->get_results(
-                    "SELECT ngo_slug, SUM(vote_weight) as votes
-                     FROM {$table}
-                     GROUP BY ngo_slug
-                     ORDER BY votes DESC",
-                    ARRAY_A
-                );
-            }
+        if (!function_exists('sharity_support_policy\\current_quarter_ranks')) {
+            return null; // Partial release: dependency first, then this card.
         }
-
-        if (!is_array($tally) || !$tally) {
-            return ['map' => [], 'active_total' => 0];
+        $quarterKey = get_option('impactshop_ads_current_quarter', '');
+        if (!is_string($quarterKey) || !preg_match('/^[0-9]{4}Q[1-4]$/D', $quarterKey)) {
+            return null;
         }
-
-        $rankMap = [];
-        $rank = 1;
+        global $wpdb;
+        $quarter = $wpdb->get_row($wpdb->prepare(
+            "SELECT start_at, end_at, status FROM {$wpdb->prefix}impactshop_ads_quarters WHERE quarter_key = %s",
+            $quarterKey
+        ), ARRAY_A);
+        if ($wpdb->last_error !== '' || !is_array($quarter) || ($quarter['status'] ?? '') !== 'active') {
+            return null;
+        }
+        foreach (['start_at', 'end_at'] as $field) {
+            if (!isset($quarter[$field]) || !is_string($quarter[$field])) { return null; }
+            $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $quarter[$field], new DateTimeZone('UTC'));
+            if ($date === false || $date->format('Y-m-d H:i:s') !== $quarter[$field]) { return null; }
+        }
+        $now = gmdate('Y-m-d H:i:s');
+        if ($quarter['start_at'] > $now || $quarter['end_at'] < $now || $quarter['end_at'] < $quarter['start_at']) {
+            return null;
+        }
+        $tally = $wpdb->get_results($wpdb->prepare(
+            "SELECT ngo_slug, SUM(vote_weight) AS votes
+             FROM {$wpdb->prefix}impactshop_ads_votes WHERE quarter_key = %s GROUP BY ngo_slug",
+            $quarterKey
+        ), ARRAY_A);
+        if ($wpdb->last_error !== '' || !is_array($tally)) { return null; }
+        $groups = [];
         foreach ($tally as $row) {
-            $votes = (int) ($row['votes'] ?? 0);
-            if ($votes <= 0) {
-                continue;
-            }
-            $slug = sanitize_title($row['ngo_slug'] ?? '');
-            if ($slug === '') {
-                continue;
-            }
-            if (function_exists('impactshop_canonical_ngo_slug')) {
+            if (!is_array($row) || !isset($row['ngo_slug']) || !is_string($row['ngo_slug'])
+                || !array_key_exists('votes', $row)) { return null; }
+            // Preserve the card's existing alias interpretation; no new normalizer.
+            $slug = sanitize_title($row['ngo_slug']);
+            if ($slug !== '' && function_exists('impactshop_canonical_ngo_slug')) {
                 $slug = impactshop_canonical_ngo_slug($slug);
             }
-            if ($slug === '') {
-                continue;
-            }
-            if (!isset($rankMap[$slug])) {
-                $rankMap[$slug] = $rank;
-                $rank++;
-            }
+            if (!is_string($slug) || $slug === '') { return null; }
+            $groups[] = ['slug' => $slug, 'votes' => $row['votes']];
         }
-
-        return ['map' => $rankMap, 'active_total' => count($rankMap)];
+        try {
+            $ranks = \sharity_support_policy\current_quarter_ranks($groups);
+            return ['map' => $ranks['map'], 'active_total' => $ranks['active_total']];
+        } catch (\sharity_support_policy\PolicyViolation $e) {
+            return null;
+        }
     }
 
     private static function logo_url(string $slug): string

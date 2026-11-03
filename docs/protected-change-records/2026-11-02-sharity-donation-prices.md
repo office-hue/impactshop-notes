@@ -2193,3 +2193,8 @@ A dokumentum első diff-checkje egy sorvégi szóközt jelzett; javítva.
 Az első staged audit a mixed app-content/protected commitot és a change record
 hiányzó pontos fájlnevét jelezte. Javítás: a pure policy és protected UI külön
 termékcommit, guard külön commit; a pontos saját scope fent rögzítve.
+
+Pure policy termékcommit: e5ade4bc. A wrapper a különválasztott saját
+unstaged card miatt unavailable volt; a két natív --mode staged ellenőrzés
+sikeres (a másik saját lane megőrzéséről advisory), tartalom/secret/diff rendben.
+A protected UI külön commitban követi; semmilyen guard nem lett kikapcsolva.
