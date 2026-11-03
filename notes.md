@@ -8889,3 +8889,16 @@ Részleges irányátvétel, jelentős helyi újraírás; teljes koherencia, tesz
 kiadás/rollback és kézi lista a protected record §81-ben. Nincs pénzmozgatás,
 ütemezés, mainablak, merge, telepítés, aktiválás vagy élő elfogadás.
 D2u/D2v publikálási válasz függ, D2w még nem annak jóváhagyott része.
+
+
+## 2026-11-03 — D2x kifizetési bizonylat olvasó, helyi forrás
+
+Pontos account/mode, teljes automatic-standard batch és debit/failure
+balance; natív összeg/díj/deviza, közös60s/15GET, nincs írás vagy banki
+elfogadás.741 payout,442 CLI,197checkout,521adjustment(+26counterleg),
+17runtime sikeres. Független review FX-előjel lelete javítva/visszaolvasva.
+Hermes05921282token, becsült USD0.0020263516; actual/teljes költség ismeretlen.
+Részleges átvétel, hiányzó batchlogika és tesztek helyben. Koherencia,
+kockázat, kiadás/rollback és kézi UI: protected record §82. Nincs új séma,
+scheduler, mainablak/merge/deploy/aktiválás. D2u/v/w közös publikálási
+jóváhagyása függ; D2x nincs benne. Teljes Sharity-cél nyitott.

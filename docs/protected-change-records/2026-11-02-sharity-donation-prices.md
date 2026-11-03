@@ -1152,3 +1152,80 @@ NGO-account/directHUF, Amplifier, további devizák, history/V2-publisher,
 affiliate/Offerwall és teljes nyelvi elfogadás, VB7/Sharing12. Következő
 önálló pénzügyi hiány a payout authority; nincs találgatott order-hozzárendelés.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív feladat.
+
+
+## 82. D2x — payout/balance-item olvasó, előkészítés (2026-11-03)
+
+A §62.4/62.7 kifizetési bizonyítékához szükséges SDK-olvasó és trusted CLI,
+első draft Hermes059. Meglévő stripe-checkout.php/finance-read.php és célzott
+payout teszt; bounded GET, pontos platform/connected account, teljes batch,
+natív deviza és díj, változás miatti újraolvasási hiba. Kockázat: részlista
+vagy paid flag téves bankbeérkezésként, más account/payout mozgásának keverése,
+refund/díj kihagyása. Manual/instant payout összetétele nem találgatható.
+Nincs séma/pénzállapot/scheduler/provider POST. A későbbi tartós payout-
+kapcsolat és értesítésfeldolgozás ettől még nem kész. Koherencia: régi order/
+finance API és UI változatlan; új kizárólag admin CLI, történeti olvasás.
+Kiadás existing merge/exact-file: két saját fájl mentés/friss hash, adapter
+előbb/CLI utána, readback és engedélyezett sandbox-olvasás; rollback a két
+saját fájl, pénzügyi adat változatlan. Kézi UI: nincs új felület; meglévő
+saját rendelés és nyelvválasztó változatlan, banki beérkezés nem ígérhető.
+Még nincs megvalósítási vagy teszt-PASS.
+
+
+### D2x végrehajtás és review
+
+Új `payout-inspect --payout=po_… --account=acct_… --mode=test|live
+--scope=connected|platform` csak trusted WP-CLI-n. A meglévő SDK-adapter
+pontos credential/account/mode ellenőrzés után a payoutot, debit/failure
+balance-ot és a teljes automatikus batch-et olvassa. Közös 60s/15GET keret,
+legfeljebb10×100 tétel, nincs retry vagy szolgáltatói hívás DB-tranzakcióban.
+Hiányos/lapozáskorlátos/ismétlődő lista és közben változó payout hibát ad;
+manual/instant összetétel explicit unavailable. Natív pénzegység, előjeles
+korrekció, tényleges díj, devizánkénti összeg és eredeti source/txn megmarad;
+nyers payload, bank-/ügyféladat és description nem jut a válaszba.
+A saját payout-debit a listában megmarad, de nem finanszírozza önmagát.
+Az összegegyezés a debit nettójához mér, a payoutdíjat egyszer veszi figyelembe.
+FX-adat bizonyíték, nem átváltási algoritmus. A provider paid jelzés és
+batch_totals_reconciled külön mező; order_attribution_verified,
+ngo_bank_received, allocation_eligible mindig false. Nincs DB-írás, új séma,
+scheduler, pénzmozgatás, publikus API vagy felületi módosítás.
+
+Tényleges parancsok: `php tests/sharity-donation-payouts.test.php`741 payout
+ellenőrzés (+442 meglévő finance/CLI), `php tests/sharity-donation-stripe-checkout.test.php`197,
+`php tests/sharity-donation-adjustments.test.php`521 (+26 counterleg),
+`php tests/sharity-donation-runtime.test.php`17 friss process; PHP lint és
+diff-check sikeres. Pinned valódi SDK, offline HTTP, WPDB mock; nincs Stripe
+sandbox/élő elfogadás. Ehhez az írásmentes bővítéshez új DB-harness nem készült.
+A korábbi D2w MariaDB-eredmény nem új D2x-adatbázisteszt.
+Független forrásreview egy FX előjelhibát talált: eltérő devizájú debit vagy
+failure return fordított irányát a régi conversion helper nem ellenőrizte.
+Az új payout-ág explicit előjelvizsgálata és pozitív/negatív reversal-payout
+regresszió javítja; az ellenkező fundingösszeg sem adhat hamis egyezést.
+A reviewer célzottan visszaolvasta és lezárta a leletet; tesztet nem futtatott.
+
+Hermes059:1hívás,16610input+4672output=21282token,cache4608;
+becsült USD0.0020263516, tényleges számla/Codex/review összköltség ismeretlen.
+Execution5276a146-10dc-464b-8818-8d345421b8b2; pending/terminal remote_ack.
+TaskSHA334ecdab4c73ba36118c303daa3e82a9a7b479d0c7f090d460b166adc9f05700.
+Részleges projection/CLI-irányátvétel; a hiányzó pagination/balance/összegzés/
+végső readback/teszt, téves kötelező account.livemode és nem igazolt
+credential-mode helyben javult. A placeholder nem kész implementáció;
+nincs újragenerálás/JEV/fallback vagy igazolt megtakarítás. A Stripe CLI
+nincs telepítve; új globális csomag helyett a hivatalos dokumentációt olvastuk.
+Források: https://docs.stripe.com/api/payouts/object ,
+https://docs.stripe.com/api/balance_transactions/list ,
+https://docs.stripe.com/payouts/reconciliation .
+
+Kiadás/rollback: a fenti meglévő exact-file út és két saját fájl mentése;
+adapter előbb, CLI utána, hash/runtime readback, majd engedélyezett sandbox
+payout-olvasás. Nincs DDL és nem szükséges új funkciókapcsoló. Hiányzó új
+adaptermetódus vagy bounded wrapper hibát ad, régi payment-inspect megmarad.
+Csak a két saját fájl állítandó vissza; pénzügyi adat nem változik.
+Kézi UI kiadás után: meglévő adományoldal és saját rendelés belépés/nyelv/
+összeg/státusz változatlan, másik NGO adata nem látható; a payout paid jelzés
+nem új bankbeérkezési ígéret. Élő UI/sandbox teszt most nem történt.
+D2u/v/w nyilvános feltöltésének hatcommit-os jóváhagyása függ; D2x nem része
+annak. Nincs csendablak/main/merge/deploy/aktiválás vagy pénzügyi elfogadás.
+Következő: tartós payout-bizonylat és igazolt order/balance kapcsolat, majd
+a teljes §62 cél; ez az olvasó nem zárja le azokat. SUBSTACK-HANDOVER.md
+megőrzendő hivatkozás, nem aktív feladat.

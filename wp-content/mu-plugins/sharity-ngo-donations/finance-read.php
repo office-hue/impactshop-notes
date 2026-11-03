@@ -2,6 +2,26 @@
 /** Trusted local WP-CLI evidence inspection and explicit observation storage. No settlement or activation. */
 declare(strict_types=1);
 
+/** Trusted operator inspection only. No write or browser/owner endpoint. */
+function sharity_donation_cli_payout_inspect(array $args,array $assoc,?object $transport=null): void
+{
+    try {
+        $keys=array_keys($assoc);sort($keys);
+        if (!defined('WP_CLI') || !WP_CLI || $args!==[] || $keys!==['account','mode','payout','scope']
+            || !is_string($assoc['account']) || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$assoc['account'])
+            || !is_string($assoc['payout']) || strlen($assoc['payout'])>255 || !preg_match('/^po_[A-Za-z0-9]+$/D',$assoc['payout'])
+            || !in_array($assoc['mode'],['test','live'],true) || !in_array($assoc['scope'],['connected','platform'],true)
+            || !function_exists('sharity_donation_webhook_bounded_read')) { throw new RuntimeException(); }
+        sharity_donation_order_autocommit();
+        $result=sharity_donation_webhook_bounded_read(static fn()=>sharity_donation_runtime_adapter()
+            ->retrievePayoutEvidence($assoc['payout'],$assoc['account'],$assoc['mode']==='live',$assoc['scope']),
+            hrtime(true)/1e9+60,$transport,null,15);
+        WP_CLI::line(json_encode($result,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+    } catch (Throwable $error) {
+        WP_CLI::error($error->getMessage()==='DONATION_PAYOUT_LIMIT' ? 'DONATION_PAYOUT_LIMIT' : 'DONATION_PAYOUT_UNAVAILABLE');
+    }
+}
+
 function sharity_donation_cli_payment_inspect(array $args, array $assoc): void
 {
     try {
@@ -102,6 +122,7 @@ if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('sharity donations finance-schema', 'sharity_donation_cli_finance_schema');
     WP_CLI::add_command('sharity donations payment-record', 'sharity_donation_cli_payment_record');
     WP_CLI::add_command('sharity donations payment-inspect', 'sharity_donation_cli_payment_inspect');
+    WP_CLI::add_command('sharity donations payout-inspect','sharity_donation_cli_payout_inspect');
 }
 
 function sharity_donation_cli_finance_target(array $args, array $assoc): void

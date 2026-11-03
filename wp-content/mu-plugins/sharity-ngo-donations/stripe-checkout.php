@@ -92,6 +92,125 @@ final class Sharity_Stripe_Checkout_Adapter
         } catch (Throwable $error) { throw new RuntimeException('DONATION_NOTIFICATION_UNAVAILABLE'); }
     }
 
+    /** Read provider payout facts and its complete automatic batch; no order allocation.
+     * Caller applies the existing shared 60s/15GET bound, outside any DB transaction. */
+    public function retrievePayoutEvidence(string $id, string $account, bool $live, string $scope): array
+    {
+        try {
+            if (PHP_INT_SIZE < 8 || !$this->evidenceId($id,'po')
+                || !preg_match('/^acct_[A-Za-z0-9]{1,123}$/D',$account) || !in_array($scope,['connected','platform'],true)
+                || $this->stripe->getStripeAccount() !== null || $this->stripe->getStripeContext() !== null
+                || !preg_match('/^(rk|sk)_(test|live)_[A-Za-z0-9]+$/D',$this->stripe->getApiKey(),$keyMode)
+                || ($keyMode[2] === 'live') !== $live) { throw new RuntimeException(); }
+            $opts=['stripe_version'=>self::API_VERSION,'max_network_retries'=>0];
+            if ($scope === 'connected') { $opts['stripe_account']=$account; }
+            $owner=$this->stripe->accounts->retrieve(null,[],$opts)->toArray();
+            if (($owner['object'] ?? null) !== 'account' || ($owner['id'] ?? null) !== $account
+                || (array_key_exists('livemode',$owner) && $owner['livemode'] !== $live)) { throw new RuntimeException(); }
+            $p=$this->payoutFacts($this->stripe->payouts->retrieve($id,[],$opts)->toArray(),$id,$live);
+            $unresolved=[]; $balances=[];
+            foreach (['balance_transaction_id'=>['payout'],'failure_balance_transaction_id'=>['payout_failure','payout_cancel']] as $field=>$types) {
+                $ref=$p[$field]; $balance=null;
+                if ($ref !== null) {
+                    $balance=$this->payoutBalance($this->stripe->balanceTransactions->retrieve($ref,[],$opts)->toArray());
+                    if ($balance['id'] !== $ref || $balance['source_id'] !== $id || !in_array($balance['type'],$types,true)) { throw new RuntimeException(); }
+                    $expected=($field === 'balance_transaction_id' ? -1 : 1)*(int)$p['amount_minor'];
+                    // FX changes magnitude, never the direction of a payout debit or return.
+                    if (((int)$balance['gross_minor'] <=> 0) !== ($expected <=> 0)) { throw new RuntimeException(); }
+                    $this->evidenceConversion($balance,$p['currency'],$expected);
+                    if ($balance['status'] !== 'available') { $unresolved[]='payout_balance_pending'; }
+                }
+                $balances[$field]=$balance;
+            }
+            $debit=$balances['balance_transaction_id'];$failure=$balances['failure_balance_transaction_id'];
+            if ($debit === null) { $unresolved[]='payout_balance_missing'; }
+            if ($failure !== null && $debit !== null && $failure['id'] === $debit['id']) { throw new RuntimeException(); }
+            if (in_array($p['status'],['failed','canceled'],true)) {
+                $unresolved[]='payout_not_paid';
+                if ($failure === null) { $unresolved[]='payout_failure_balance_missing'; }
+            } elseif ($failure !== null) { $unresolved[]='payout_failure_observed'; }
+            if ($p['status'] !== 'paid') { $unresolved[]='payout_not_paid'; }
+            if ($p['original_payout_id'] !== null || $p['reversed_by_id'] !== null) { $unresolved[]='payout_reversal_requires_reconciliation'; }
+            $capable=$p['automatic'] && $p['method']==='standard' && $p['reconciliation_status']==='completed';
+            $items=[];$totals=[];$complete=false;$ownIncluded=false;
+            if ($capable) {
+                $params=['payout'=>$id,'limit'=>100];$seen=[];
+                for ($page=0;$page<10;$page++) {
+                    $list=$this->stripe->balanceTransactions->all($params,$opts)->toArray();
+                    if (($list['object'] ?? null)!=='list' || !is_bool($list['has_more'] ?? null)
+                        || !is_array($list['data'] ?? null) || !array_is_list($list['data']) || count($list['data'])>100
+                        || ($list['has_more'] && $list['data']===[])) { throw new RuntimeException(); }
+                    foreach ($list['data'] as $raw) {
+                        if (!is_array($raw)) { throw new RuntimeException(); }
+                        $item=$this->payoutBalance($raw);$tid=$item['id'];
+                        if (isset($seen[$tid])) { throw new RuntimeException(); }
+                        $seen[$tid]=true;$items[]=$item;
+                        if ($tid === $p['balance_transaction_id']) {
+                            if ($item !== $debit) { throw new RuntimeException(); }
+                            $ownIncluded=true;continue; // Keep the row but don't count this debit as funding itself.
+                        }
+                        if (in_array($item['type'],['payout','payout_failure','payout_cancel'],true)) {
+                            $unresolved[]='other_payout_movement_in_batch';
+                        }
+                        if ($item['status']!=='available') { $unresolved[]='batch_balance_pending'; }
+                        $cc=$item['currency'];$totals[$cc]??=['gross_minor'=>0,'total_fee_minor'=>0,'net_minor'=>0];
+                        foreach (array_keys($totals[$cc]) as $k) { $totals[$cc][$k]+=(int)$item[$k]; }
+                    }
+                    if (!$list['has_more']) { $complete=true;break; }
+                    $params['starting_after']=$list['data'][count($list['data'])-1]['id'];
+                }
+                if (!$complete) { throw new RuntimeException('DONATION_PAYOUT_LIMIT'); }
+            } else { $unresolved[]=$p['automatic'] && $p['method']==='standard' && $p['reconciliation_status']==='in_progress'
+                ? 'payout_reconciliation_pending' : 'payout_membership_unavailable'; }
+            // Changes seen during the read invalidate this observation; no silent retry.
+            if ($this->payoutFacts($this->stripe->payouts->retrieve($id,[],$opts)->toArray(),$id,$live)!==$p) { throw new RuntimeException(); }
+            $balanced=$complete && $debit!==null && count($totals)===1 && isset($totals[$debit['currency']])
+                && $totals[$debit['currency']]['net_minor']===-(int)$debit['net_minor'];
+            if ($complete && !$balanced) { $unresolved[]='payout_batch_totals_unreconciled'; }
+            foreach ($totals as &$bucket) { foreach ($bucket as &$amount) { $amount=(string)$amount; } unset($amount); } unset($bucket);
+            ksort($totals);usort($items,static fn($a,$b)=>strcmp($a['id'],$b['id']));
+            $unresolved=array_values(array_unique($unresolved));sort($unresolved);
+            return ['evidence_version'=>1,'account_id'=>$account,'account_scope'=>$scope,'livemode'=>$live,
+                'payout'=>$p,'payout_balance'=>$debit,'failure_balance'=>$failure,'items'=>$items,
+                'membership_complete'=>$complete,'own_payout_row_included'=>$ownIncluded,
+                'funding_totals'=>$totals,'batch_totals_reconciled'=>$balanced,
+                'provider_paid_observed'=>$p['status']==='paid','unresolved'=>$unresolved,
+                'order_attribution_verified'=>false,'ngo_bank_received'=>false,'allocation_eligible'=>false];
+        } catch (Throwable $error) {
+            throw new RuntimeException($error->getMessage()==='DONATION_PAYOUT_LIMIT' ? 'DONATION_PAYOUT_LIMIT' : 'DONATION_PAYOUT_UNAVAILABLE');
+        }
+    }
+
+    private function payoutFacts(array $p,string $id,bool $live): array
+    {
+        if (($p['object'] ?? null)!=='payout' || ($p['id'] ?? null)!==$id || ($p['livemode'] ?? null)!==$live
+            || !is_bool($p['automatic'] ?? null) || !in_array($p['method'] ?? null,['standard','instant'],true)
+            || !in_array($p['type'] ?? null,['bank_account','card'],true)
+            || !in_array($p['status'] ?? null,['pending','in_transit','paid','failed','canceled'],true)
+            || !in_array($p['reconciliation_status'] ?? null,['completed','in_progress','not_applicable'],true)
+            || !is_int($p['created'] ?? null) || $p['created']<1 || !is_int($p['arrival_date'] ?? null) || $p['arrival_date']<1) { throw new RuntimeException(); }
+        $money=$this->evidenceMoney($p['amount'] ?? null,-999999999999);if ($money===0) { throw new RuntimeException(); }
+        $out=['id'=>$id,'livemode'=>$live,'amount_minor'=>(string)$money,'currency'=>$this->evidenceCurrency($p['currency'] ?? null)];
+        foreach (['automatic','method','type','status','reconciliation_status','created','arrival_date'] as $field) { $out[$field]=$p[$field]; }
+        foreach (['balance_transaction'=>'txn','failure_balance_transaction'=>'txn','original_payout'=>'po','reversed_by'=>'po'] as $field=>$prefix) {
+            if (!array_key_exists($field,$p) || ($p[$field]!==null && !$this->evidenceId($p[$field],$prefix))) { throw new RuntimeException(); }
+            $out[$field.'_id']=$p[$field];
+        }
+        if ($money<0 && $out['original_payout_id']===null) { throw new RuntimeException(); }
+        return $out;
+    }
+
+    private function payoutBalance(array $b): array
+    {
+        if (!$this->evidenceId($b['id'] ?? null,'txn') || !array_key_exists('source',$b)
+            || ($b['source']!==null && (!is_string($b['source']) || strlen($b['source'])>255
+                || !preg_match('/^[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9]+$/D',$b['source'])))
+            || !is_string($b['type'] ?? null) || !preg_match('/^[a-z][a-z0-9_]{0,63}$/D',$b['type'])
+            || !is_array($b['fee_details'] ?? null) || count($b['fee_details'])>100) { throw new RuntimeException(); }
+        return $this->evidenceBalance($b,$b['id'],$b['source'],[$b['type']],true)
+            + ['source_id'=>$b['source'],'type'=>$b['type']];
+    }
+
     /** Platform-authenticated GETs only. No identity/contact/bank data leaves this adapter. */
     public function inspectAccount(string $accountId): array
     {
@@ -590,7 +709,7 @@ final class Sharity_Stripe_Checkout_Adapter
     }
 
     /** Project only arithmetic facts; discard descriptions, customer/card data and raw payloads. */
-    private function evidenceBalance(array $b, string $id, string $source, array $types, bool $signed = false): array
+    private function evidenceBalance(array $b, string $id, ?string $source, array $types, bool $signed = false): array
     {
         $amount = $this->evidenceMoney($b['amount'] ?? null, $signed ? -999999999999 : 1);
         $fee = $this->evidenceMoney($b['fee'] ?? null, $signed ? -999999999999 : 0);
