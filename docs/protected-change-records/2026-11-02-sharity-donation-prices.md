@@ -1935,3 +1935,61 @@ A korábban jóváhagyott1f0819ce→d5e68157 tíz commit már nyilvánosan felt�
 PR244 exact head visszaolvasva, safe-audit sikeres. Ez az új D2ae csomag külön
 helyi folytatás; publikálás/merge/élesítés állapotát a Secretary tartja pontosan.
 SUBSTACK-HANDOVER.md megőrzendő hivatkozás, nem aktív szerkesztés.
+
+
+## 94. D2af — platformfoglalás átvezetése díjkorrekcióhoz (2026-11-03)
+
+Koherencia és kockázat a módosítás előtt: kizárólag a meglévő finance-ledger
+privát fee-prepare / fee-execute és közös capacity útját érinti. A saját rendelés
+platformfoglalásának főösszege azonos forráson átvezethető a pontos szerveroldali
+fee-refund művelethez, a maradó foglalás megőrzésével. További díjhoz új szabad
+fedezet kell. Konkrét kockázat: dupla foglalás, foglalás elvesztése, ismételt
+átvezetés, részleges commit, hibás dispatch-replay. A közös frame→order zársorrend
+és a meglévő explicit apply-digest marad; előtte/utána teljes claim a változatlan
+műveleti dokumentumban. Nulla maradék explicit exhausted állapot; általános nulla
+foglalás továbbra tiltott. Új tábla, provider, UI, pont/szavazat/alapírás nincs.
+
+A Hermes071 javaslat hibás egész-foglalás-kivezetését és a capacityt megtörő
+állapotait nem alkalmazzuk. A meglévő tranzakcióba javított integráció készül.
+A teszt és source review alább rögzítve; pénzügyi vagy release-PASS nincs. Rollback: új indítás
+leállítható; átvezetett/exhausted sor után kompatibilis olvasó és drain megőrzendő.
+Új pénzügyi esemény fölé DB-mentést visszatölteni tilos. Kézi kiadási checklist:
+adományoldal, belépés, HU/EN/DE/FR választó változatlan; foglalás nem könyvelt
+adomány, nem szavazat, nem NGO-kifizetés. Nem indult mainablak vagy telepítés.
+
+Tényleges ellenőrzés: `SHARITY_DONATION_TEST_PORT=33387 php -d memory_limit=512M
+tests/sharity-donation-orders-mysql.test.php`: 9033 sikeres ellenőrzés,
+ebből546 D2af. Négy deviza; saját bevétel/biztosíték; részleges/egész/forrásonkénti
+átvezetés; külön díjfedezet; két teljes correction/accounting generation; régi
+GET recovery; provider uncertainty; két actual writer (digest fork előtt);
+platform-update/claim-insert/op-insert/commit/readback hibák és atomi rollback.
+Valós izolált MariaDB, rögzített SDK szintetikus transporttal, nincs élő pénzmozgás.
+Az első futás a teszt full-row kulcssorrendű összevetésén hibázott; canonical
+JSON-ra javítva. A meglévő feeAccountObserve fixture natív devizamezője pontosítva,
+hogy a négydevizás teszt ne HUF-adatot használjon. Termékkód futási javítás nem
+kellett. A régi vote-target:35 malformed fixture amount_minor warning megjelent;
+a futás nem warningmentes. Nincs általános tesztrendszer-átalakítás.
+
+Független /root/d2i_source_review konkrét termékblokkolót nem talált; a mechanikus
+tesztlelet javítását visszaolvasta, saját tesztet nem futtatott. Az összes régi
+fee/backing/accounting teszt ténylegesen lefutott a fenti harnessben; külön
+447finance-read/17runtime korábbi eredménye újrahasznált, nem új futás.
+Saját sharity-d2af-mariadb konténer leállítva/eltávolítva, hiánya visszaolvasva.
+
+Hermes071 terminal completed, execution6f9b26eb-18da-4073-95f3-2cc511bd9711,
+taskSHA9dee3da04a9bb3cf29dde946b8cc3317b5d552b5d9b16ee4ab15df29f1308ac6.
+63152input+7470output=70622token,1API, becsültUSD0.007106372; tényleges/teljes
+költség és megtakarítás ismeretlen. A patch elvetve: teljes foglalás hibás
+kivezetése, kétszer levont átsorolási kapacitás, state-mezőbe nem férő és
+capacityt megtörő állapot, nem működő replay, kitalált fixture-ek. Codex a már
+átadott interfészt és előtte/utána tanú elvét a meglévő tranzakcióba integrálta;
+jelentős javítási igény, nincs újragenerálás/retry/fallback/JEV. Secretary terminal
+ACK külön visszaolvasva: chk-e8cd2887-b010-4cc5-8d28-65083baf499f.
+
+A változatlan old inputból készülő opdoc nem kap új mezőt. Az új opcionális
+`platform_liability_digest` pontos saját pre-state-et jelent; az átvezetés
+összegét a szerver határozza meg. Az új opdoc megőrzi mindkét teljes claimet,
+a dispatch ezt rekonstruálja. Régi claim újrafoglalása nem támasztja fel a pénzt.
+A §54/§62 exact-file release-sorrend megmarad. Teljes jövőbeli kötelezettség,
+fizetett grant/cast/fundrelease és aktiválás továbbra nyitott. Nyilvános N-push
+csak a pontos új csomagra kapott engedély után; remote jelenleg d5e68157.

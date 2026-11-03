@@ -38,6 +38,7 @@ function feeAccountObserve(array $o,array $p,array $data,string $cost='10'):arra
     $h->refunds=array_map(static fn($r)=>['object'=>'fee_refund','id'=>$r['id'],'fee'=>$r['fee_id'],'amount'=>(int)$r['amount_minor'],'currency'=>strtolower($r['currency'])],$data['fee_refunds']);
     $options['sharity_donation_fee_execution_enabled']='1';feeExec($p,$h);$old=$data['fee_refunds'];
     [, $data]=feeMatchData($o,$d,$data,$h,static function(&$x)use($old,$cost,$d):void{$r=&$x['fee_refunds'][0];$r['balance']=reconcileBalance($r['balance']['id'],$r['id'],'application_fee_refund',(string)-(int)$d['request']['amount_minor'],$cost,'platform');
+        $r['balance']['currency']=$d['currency'];foreach($r['balance']['fee_details']as&$detail){$detail['currency']=$d['currency'];}unset($detail);
         foreach(['balance','connected_credit']as$leg){$r[$leg]['created']=$GLOBALS['now']-9;$r[$leg]['available_on']=$GLOBALS['now']-8;}
         unset($r);$x['fee_refunds']=array_merge($old,$x['fee_refunds']);$x['original']['application_fee']['refund_state']['amount_refunded_minor']=(string)array_sum(array_column($x['fee_refunds'],'amount_minor'));
     });feeMatch($p);return[$d,$h,$data];

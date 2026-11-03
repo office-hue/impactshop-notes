@@ -9022,3 +9022,17 @@ becsültUSD0.005063968, teljes költség/megtakarítás ismeretlen.
 Részletes scope/kockázat/teszt/release/rollback/UI: protected record§93.
 Új claim után csak kompatibilis olvasóra rollback; nincs DB-visszatekerés.
 Nincs grant, full-liability bizonyítás, alaprelease, mainablak vagy élesítés.
+
+
+## D2af — foglalás átvezetése díjkorrekcióhoz, 2026-11-03
+
+A meglévő platformhold saját főösszege ugyanazon TX-ben fee-refund foglalássá
+válhat; a maradó tartalék számít, a többletdíj friss fedezetet kér. Immutable
+before/after tanú, replay/dispatch egyszer, exhausted nulla külön. Nincs új
+séma, grant, alaprelease vagy aktiválás. 9033 valós MariaDB-check (546új),
+független source review blokkoló nélkül; első teszt kulcssorrendhibája javítva.
+Hermes071 patch elvetve, jelentős Codex integráció; becsültUSD0.007106372,
+tényleges teljes díj/megtakarítás ismeretlen, Secretary terminal ACK visszaolvasva.
+Scope/kockázat/teszt/compatible rollback és UI-lista: protected record§94.
+Új indítás leállhat; régi pénzügyi eseményeket és kompatibilis olvasót megőrizzük.
+Forrás helyi; mainablak, merge, telepítés és élő elfogadás nincs.
