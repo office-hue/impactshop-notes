@@ -22,9 +22,11 @@ const provider={slug:'fixture-ngo',name:'Shop $& <b>civil</b>',summary:'Részlet
 let browser;
 before(async()=>{browser=await chromium.launch({channel:'chrome',headless:true,proxy:{server:'http://127.0.0.1:9'}});});
 after(async()=>{await browser?.close();});
-async function fixture({language='hu',lateBar=false,deferred=false,status=200,message='',data=provider,denied=false,missing=false,currency='GBP',fx=null,blocked=false,clock=false,width=375}={}) {
+async function fixture({language='hu',lateBar=false,deferred=false,status=200,message='',data=provider,denied=false,missing=false,currency='GBP',fx=null,blocked=false,clock=false,width=375,storageBlocked=false,cookieCurrency=null,noQuery=false}={}) {
  const context=await browser.newContext({viewport:{width,height:850}});
  if(blocked)await context.addInitScript(()=>{Storage.prototype.getItem=Storage.prototype.setItem=()=>{throw Error('blocked');};Object.defineProperty(document,'cookie',{get(){throw Error('blocked');},set(){throw Error('blocked');}});});
+ if(cookieCurrency!==null)await context.addCookies([{name:'sharity_display_currency',value:cookieCurrency,url:base}]);
+ if(storageBlocked)await context.addInitScript(()=>{Storage.prototype.getItem=Storage.prototype.setItem=()=>{throw Error('blocked');};});
  const page=await context.newPage();page.setDefaultTimeout(5000);if(clock)await page.clock.install({time:new Date()});const errors=[],escaped=[],requests=[];let apiCalls=0,fxCalls=0,release;
  const held=new Promise(resolve=>{release=resolve;});
  const bar=execFileSync('php',[resolve(root,'tests/fixtures/impactshop-action-bar-render.php'),base+'?ui_lang='+language+'&ui_currency='+currency],{encoding:'utf8'});
@@ -42,7 +44,7 @@ async function fixture({language='hu',lateBar=false,deferred=false,status=200,me
   if(url.hostname==='fonts.googleapis.com')return route.fulfill({contentType:'text/css',body:''});
   escaped.push(req.url());return route.abort();
  });
- await page.goto(base+'?ui_lang='+language+'&ui_currency='+currency,{waitUntil:'domcontentloaded'});
+ await page.goto(base+(noQuery?'':'?ui_lang='+language+'&ui_currency='+currency),{waitUntil:'domcontentloaded'});
  if(!deferred)await page.waitForFunction(()=>[...document.querySelectorAll('[data-ngo-card]')].every(el=>!el.querySelector('.impact-ngo-card--loading')));
  return {page,context,errors,escaped,requests,release,apiCalls:()=>apiCalls,fxCalls:()=>fxCalls};
 }
@@ -205,4 +207,15 @@ test('cached FX expires on an open page and late dock keeps data/view counts sta
  await late.page.evaluate(()=>document.body.insertAdjacentHTML('beforeend','<select id="sharity-slc-currency"><option value="USD" selected>USD</option></select>'));
  await language(late,'hu');await late.page.waitForFunction(()=>document.querySelectorAll('[data-ngo-converted]:not([hidden])').length===5);
  assert.equal(late.fxCalls(),1);assert.equal(late.apiCalls(),3);assert.equal((await events(late)).filter(e=>e.event==='card_view').length,3);await finish(late);
+});
+
+test('standalone cards read the shared currency cookie when storage is blocked and no dock or query is present',async()=>{
+ for(const currency of ['EUR','USD','GBP']){
+  const f=await fixture({lateBar:true,noQuery:true,storageBlocked:true,cookieCurrency:currency,data:structured,fx:datedFx()});
+  await f.page.waitForFunction(()=>document.querySelectorAll('[data-ngo-converted]:not([hidden])').length===5);
+  const value={EUR:3.09,USD:3.86,GBP:2.47}[currency];
+  assert.ok((await f.page.locator('#compact [data-ngo-converted]').textContent()).startsWith('\u2248 '+new Intl.NumberFormat('hu-HU',{style:'currency',currency}).format(value)));
+  assert.equal(f.fxCalls(),1);assert.equal(f.apiCalls(),3);
+  await finish(f);
+ }
 });

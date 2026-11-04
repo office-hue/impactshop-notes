@@ -650,7 +650,7 @@
     const query = new URLSearchParams(location.search).getAll('ui_currency');
     if(query.length === 1 && supported.includes(query[0])) return query[0];
     try {
-      const cookies = document.cookie.split(';').map(s=>s.trim()).filter(s=>s.startsWith('sharity_ui_currency='));
+      const cookies = document.cookie.split(';').map(s=>s.trim()).filter(s=>s.startsWith('sharity_display_currency='));
       if(cookies.length === 1) { const value=decodeURIComponent(cookies[0].split('=')[1]); if(supported.includes(value)) return value; }
       const saved=JSON.parse(localStorage.getItem('sharity_ui_preferences_v1'));
       if(saved && supported.includes(saved.displayCurrency)) return saved.displayCurrency;
