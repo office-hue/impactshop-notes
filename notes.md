@@ -1,3 +1,7 @@
+## 2026-11-04 — Szűrt Sharity nyelvi release, forrásjelölt
+
+HU/EN/DE/FR és tájékoztató deviza a saját release-ágon; 69 böngészőteszt, 150 FX-állítás, 9 szintaxis-ellenőrzés sikeres. Pénzügyi/rangsorhunkok és idegen WIP megmaradnak. Nincs merge/telepítés/aktiválás. Scope, kockázat, rollback és UI-checklist: `docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md`.
+
 ## 2026-11-02 — Publikus marketingmérés útvonalkiegészítés
 
 A két meglévő measurement MU-fájl listája kiegészült a reklámozói,
