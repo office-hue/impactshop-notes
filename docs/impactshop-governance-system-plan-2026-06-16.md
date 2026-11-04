@@ -978,3 +978,6 @@ Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
 ## 2026-11-03 – Sharity R3 két HTML-digest reviewed baseline update
 
 A már merge-elt két jogi index változatlan bájtjaihoz igazítjuk a `docs/impactshop-guard-hashes.json` pontosan két hashét és a külső checksumot (`docs/impactshop-guard-hashes.sha256`, repo-relatív név). A Mini guarded dry-run két konkrét driftje a kiadás előtt így normál reviewzott metadata-korrekcióval rendezhető; nincs policy-, engedély-, inventory-, más pin-, guardkód- vagy kiadási mechanizmus-változás, emergency kivétel sem. Statikus kétkulcsosság/HTML-bájtazonosság/checksum kontroll kész; új dry-run és éles smoke még nem futott. A meglévő védett változtatási lap kiegészítése rögzíti a pontos hash-eket, a hibahelyet és a páros metadata-rollbacket: `docs/protected-change-records/2026-11-03-sharity-legal-documents-r3.md`.
+
+
+2026-11-04: NGO standalone shared-currency cookie correction updates only the impactshop-ngo-card.js source pin and checksum. No guard logic or foreign pin changes. Existing12 Chrome runtime tests pass; source/guard admission does not claim deployment or complete live UI acceptance. Protected record: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
