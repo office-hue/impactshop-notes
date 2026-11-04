@@ -1,3 +1,18 @@
+## Sharity — Impact Shop kártyasorok, 2026-11-04
+
+A három meglévő Netflix-shortcode saját feliratai HU/EN/DE/FR nyelven,
+élő dock-váltással, blokkolt tárolás mellett is. Eredeti partner-/terméknév,
+árszöveg, kuponkód, link, tracking és provider-kérés változatlan. Saját cache-
+verzió, általános cache-törlés nélkül; pénzszámítás és reward nem változik.
+6 új valódi PHP/Chrome teszt + 10 meglévő preferenciateszt sikeres, PHP-lint
+és diff-check rendben; 320/375px és desktop, DE/FR képek megtekintve.
+Nem teljes Elementor/éles vagy valódi 200%-os böngészőzoom-elfogadás.
+Hermes082 fordításai részben átvéve; hibás patch/no-op observer és hiányzó
+tesztek Codex-integrációval javítva. 37414 token, becsült USD0.00393484;
+tényleges számla és teljes ráfordítás ismeretlen. Részletek a
+`docs/protected-change-records/2026-11-04-sharity-shop-locale.md` fájlban.
+Nincs mainművelet, push/merge, telepítés, aktiválás vagy üzleti írás.
+
 ## Sharity P2w NGO-megosztó oldal — 2026-11-01
 
 A standalone PHP share-template HU/EN/DE/FR szövegei, metaadatai, natív/social
