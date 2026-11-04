@@ -33,3 +33,16 @@ Rollback: before merge revert only the own source/test/hash changes; after a fut
 
 
 Protected tracking files touched by the cookie correction: docs/impactshop-guard-hashes.json, docs/impactshop-guard-hashes.sha256 and docs/bastion-guard-status.md; the only source fingerprint changed is impactshop-ngo-card.js. The original approved multilingual/currency scope includes this existing module and its required fingerprint synchronization. The first protected-touch invocation lacked its explicit scoped override/change-record/rollback/smoke metadata and correctly blocked; the shell mistakenly continued to source publication. PR253 was returned to draft before completing that check. This is not a product guard PASS or deployment acceptance. Use the existing documented protected-touch admission only for this exact own range, with rollback restricted to the own source/pin and NGO-cookie/reference-display/fingerprint smoke scope; do not disable or change guard logic.
+
+
+## 2026-11-04 — NGO runtime: saját telepítés API-ja
+
+A #253 merge 491a18a4 staging cookie-kiadása igazolt: 20261104T181334Z-491a18a4e7cc-d0fd0a9f, JS bb4fa41a…, mód 0444, mentés és idegen WIP megőrizve. Production változatlan. A valódi adamremenye megosztóoldal HTTP200/német/HUF/overflow/JS-hiba próbája jó; átváltása viszont NEM: a root apiBase a szülő productiont hívta, ahol az FX 404. A próba minden nem GET/HEAD kérést blokkolt, üzleti írás nincs.
+
+Jóváhagyott meglévő NGO-scope szűk, Codexnél maradó hibajavítása: impactshop-ngo-card.js alapértelmezett API-ja a betöltött script telepítését követi; explicit apiBase elsőbbsége és az inline/root fallback megmarad. impactshop-ngo-card.php: kizárólag meglévő cacheverzió frissül. Így az alkönyvtáras kártya saját összegét/rangsorát/FX-ét olvassa. Pénzszámítás, adatírás, consent, pont/szavazat és cél-URL nem változik; nincs új helper, guard vagy Hermes/JEV.
+
+A korrigált cookie-útvonalú alkönyvtáras regresszió a régi forráson elbukott; javított JS mellett 22 teszt sikeres. Cacheverzió után a 9 PHP-megosztóteszt és PHP lint ismét sikeres. Szintetikus eredmény, nem éles elfogadás. Költség ismeretlen.
+
+Protected tracking files touched: docs/impactshop-guard-hashes.json, docs/impactshop-guard-hashes.sha256, docs/bastion-guard-status.md. Csak a két saját forráshash/checksum frissül külön commitban; idegen pin/guardlogika változatlan. Meglévő scoped protected-touch admission; rollback csak saját source/pin, smoke: ngo-card-site-api,reference-display,central-fingerprint.
+
+Kiadás: saját PR és friss Git-csendablak; exact merge-SHA staging, JS majd verziózott PHP, meglévő mentés/CAS/readback úton. A két sorrend kompatibilis. Rollback csak saját két release-target, adatbázis/cron nélkül. Kézi UI: root/alkönyvtár/beágyazás, explicit konfiguráció; saját API/FX; négy nyelv, eredeti HUF és dátumos ≈ érték; 320/375 px és desktop. Hiányzó FX őszinte fallback. Forrásjelölt; merge/telepítés és teljes production/Elementor elfogadás még nincs.
