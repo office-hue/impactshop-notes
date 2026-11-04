@@ -22,10 +22,12 @@ const provider={slug:'fixture-ngo',name:'Shop $& <b>civil</b>',summary:'Részlet
 let browser;
 before(async()=>{browser=await chromium.launch({channel:'chrome',headless:true,proxy:{server:'http://127.0.0.1:9'}});});
 after(async()=>{await browser?.close();});
-async function fixture({language='hu',lateBar=false,deferred=false,status=200,message='',data=provider,denied=false,missing=false,currency='GBP',fx=null,blocked=false,clock=false,width=375,storageBlocked=false,cookieCurrency=null,noQuery=false}={}) {
+async function fixture({language='hu',lateBar=false,deferred=false,status=200,message='',data=provider,denied=false,missing=false,currency='GBP',fx=null,blocked=false,clock=false,width=375,storageBlocked=false,cookieCurrency=null,noQuery=false,sitePrefix=''}={}) {
+ const pageBase='https://app.sharity.hu'+sitePrefix+'/profil/';
+ const scriptPath=sitePrefix+'/wp-content/mu-plugins/impactshop-ngo-card.js';
  const context=await browser.newContext({viewport:{width,height:850}});
  if(blocked)await context.addInitScript(()=>{Storage.prototype.getItem=Storage.prototype.setItem=()=>{throw Error('blocked');};Object.defineProperty(document,'cookie',{get(){throw Error('blocked');},set(){throw Error('blocked');}});});
- if(cookieCurrency!==null)await context.addCookies([{name:'sharity_display_currency',value:cookieCurrency,url:base}]);
+ if(cookieCurrency!==null)await context.addCookies([{name:'sharity_display_currency',value:cookieCurrency,url:pageBase}]);
  if(storageBlocked)await context.addInitScript(()=>{Storage.prototype.getItem=Storage.prototype.setItem=()=>{throw Error('blocked');};});
  const page=await context.newPage();page.setDefaultTimeout(5000);if(clock)await page.clock.install({time:new Date()});const errors=[],escaped=[],requests=[];let apiCalls=0,fxCalls=0,release;
  const held=new Promise(resolve=>{release=resolve;});
@@ -33,18 +35,18 @@ async function fixture({language='hu',lateBar=false,deferred=false,status=200,me
  page.on('pageerror',e=>errors.push(e.message));
  await context.route('**/*',async route=>{
   const req=route.request(),url=new URL(req.url());requests.push(req.method());
-  if(url.pathname==='/fixture/ngo.js')return route.fulfill({contentType:'application/javascript; charset=utf-8',body:runtime});
-  if(url.pathname==='/wp-json/sharity-finance/v1/fx-quotes'){fxCalls++;return route.fulfill({status:fx===null?404:200,contentType:'application/json',body:JSON.stringify(fx)});}
-  if(url.pathname.startsWith('/wp-json/impact/v1/ngo-card/')) {
+  if(url.pathname===scriptPath)return route.fulfill({contentType:'application/javascript; charset=utf-8',body:runtime});
+  if(url.pathname===sitePrefix+'/wp-json/sharity-finance/v1/fx-quotes'){fxCalls++;return route.fulfill({status:fx===null?404:200,contentType:'application/json',body:JSON.stringify(fx)});}
+  if(url.pathname.startsWith(sitePrefix+'/wp-json/impact/v1/ngo-card/')) {
    apiCalls++;if(deferred)await held;
    return route.fulfill({status,contentType:'application/json',headers:{'x-cache-status':'HIT'},body:JSON.stringify(status===200?data:{message})});
   }
-  if(req.isNavigationRequest()&&url.origin==='https://app.sharity.hu')return route.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><script>window.dataLayer=[];window.impactConsent=${JSON.stringify(denied?'denied':'granted')};</script>${variants.map(variant=>`<section id="${variant}" data-ngo-card="${missing?'':'fixture-ngo'}" variant="${variant}"></section>`).join('')}${lateBar?'':bar}<script src="/fixture/ngo.js"></script></body></html>`});
+  if(req.isNavigationRequest()&&url.origin==='https://app.sharity.hu')return route.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><script>window.dataLayer=[];window.impactConsent=${JSON.stringify(denied?'denied':'granted')};</script>${variants.map(variant=>`<section id="${variant}" data-ngo-card="${missing?'':'fixture-ngo'}" variant="${variant}"></section>`).join('')}${lateBar?'':bar}<script src="${scriptPath}"></script></body></html>`});
   if(req.resourceType()==='image')return route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/>'});
   if(url.hostname==='fonts.googleapis.com')return route.fulfill({contentType:'text/css',body:''});
   escaped.push(req.url());return route.abort();
  });
- await page.goto(base+(noQuery?'':'?ui_lang='+language+'&ui_currency='+currency),{waitUntil:'domcontentloaded'});
+ await page.goto(pageBase+(noQuery?'':'?ui_lang='+language+'&ui_currency='+currency),{waitUntil:'domcontentloaded'});
  if(!deferred)await page.waitForFunction(()=>[...document.querySelectorAll('[data-ngo-card]')].every(el=>!el.querySelector('.impact-ngo-card--loading')));
  return {page,context,errors,escaped,requests,release,apiCalls:()=>apiCalls,fxCalls:()=>fxCalls};
 }
@@ -218,4 +220,13 @@ test('standalone cards read the shared currency cookie when storage is blocked a
   assert.equal(f.fxCalls(),1);assert.equal(f.apiCalls(),3);
   await finish(f);
  }
+});
+
+// A subdirectory installation must not read the parent site's money or FX API.
+test('standalone runtime uses the script installation path for NGO and FX reads',async()=>{
+ const f=await fixture({sitePrefix:'/impactshop-staging',lateBar:true,noQuery:true,storageBlocked:true,cookieCurrency:'EUR',data:structured,fx:datedFx()});
+ await f.page.waitForFunction(()=>document.querySelectorAll('[data-ngo-converted]:not([hidden])').length===5);
+ assert.equal(f.apiCalls(),3);assert.equal(f.fxCalls(),1);
+ assert.ok((await f.page.locator('#compact [data-ngo-converted]').textContent()).includes('MNB '));
+ await finish(f);
 });

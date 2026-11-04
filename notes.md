@@ -8447,3 +8447,8 @@ A két jóváhagyott HU/EN HTML már main `3d81c7b66aa574e2e33baa0a5e0bdb9187494
 
 
 2026-11-04: NGO standalone currency-cookie fix source candidate; one shared cookie name, no finance/runtime activation. Old source failed the new regression; all12 Chrome fixture tests pass after correction. Seven merged language files separately staged with exact-file readbacks; full UI/production acceptance pending. Details: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
+
+
+## 2026-11-04 — NGO staging API-útvonal javítása
+
+Kis saját API-alapérték/cacheverzió-javítás, 22 célzott teszt és 9 ismételt PHP-renderpróba sikeres. Stagingen talált root-API/FX404 miatt új forrásjelölt; még nem telepített. Scope, saját két fingerprint, valós staging állapot és rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.

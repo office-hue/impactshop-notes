@@ -3,7 +3,10 @@
     selector: "[data-ngo-card]",
     scriptId: "impact-ngo-card-runtime",
     styleId: "impact-ngo-card-style",
-    apiBase: (window.impactNgoCardConfig && window.impactNgoCardConfig.apiBase) || "/wp-json/impact/v1/ngo-card/",
+    apiBase: (window.impactNgoCardConfig && window.impactNgoCardConfig.apiBase) ||
+      (document.currentScript && document.currentScript.src
+        ? new URL("../../wp-json/impact/v1/ngo-card/", document.currentScript.src).href
+        : "/wp-json/impact/v1/ngo-card/"),
     defaultVariant: (window.impactNgoCardConfig && window.impactNgoCardConfig.defaultVariant) || "full",
     enableAppDownload:
       window.impactNgoCardConfig && typeof window.impactNgoCardConfig.enableAppDownload !== "undefined"
