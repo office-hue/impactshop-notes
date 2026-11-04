@@ -816,3 +816,6 @@ Card/admin, JYSK és pénzügyi működés változatlan. PHP lint és izolált 1
 sikeres; nincs élő írás. Az új fájl a meglévő Bástya inventory/hash/modellben
 szerepel; külön guard nincs. Forrásjelölt, PR/merge/telepítés még nincs.
 Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
+
+
+2026-11-04: NGO standalone shared-currency cookie correction updates only the impactshop-ngo-card.js source pin and checksum. No guard logic or foreign pin changes. Existing12 Chrome runtime tests pass; source/guard admission does not claim deployment or complete live UI acceptance. Protected record: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
