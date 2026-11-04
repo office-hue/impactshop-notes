@@ -981,3 +981,8 @@ A már merge-elt két jogi index változatlan bájtjaihoz igazítjuk a `docs/imp
 
 
 2026-11-04: NGO standalone shared-currency cookie correction updates only the impactshop-ngo-card.js source pin and checksum. No guard logic or foreign pin changes. Existing12 Chrome runtime tests pass; source/guard admission does not claim deployment or complete live UI acceptance. Protected record: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
+
+
+## 2026-11-04 — NGO staging API-útvonal javítása
+
+Kis saját API-alapérték/cacheverzió-javítás, 22 célzott teszt és 9 ismételt PHP-renderpróba sikeres. Stagingen talált root-API/FX404 miatt új forrásjelölt; még nem telepített. Scope, saját két fingerprint, valós staging állapot és rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.

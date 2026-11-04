@@ -819,3 +819,6 @@ Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
 
 
 2026-11-04: NGO standalone shared-currency cookie correction updates only the impactshop-ngo-card.js source pin and checksum. No guard logic or foreign pin changes. Existing12 Chrome runtime tests pass; source/guard admission does not claim deployment or complete live UI acceptance. Protected record: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
+
+
+2026-11-04: NGO saját telepítési API-alap és cacheverzió: csak két saját source-hash/checksum, idegen pin és guardlogika változatlan. 22 célzott teszt, majd 9 PHP-megosztóteszt sikeres; teljes éles elfogadás nincs. Scope/rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
