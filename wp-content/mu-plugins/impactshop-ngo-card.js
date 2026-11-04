@@ -504,7 +504,7 @@
       donate: "Adományozok",
       sharePage: "Megosztási oldal",
       appDownload: "ImpactShop app letöltése",
-      collected: "Összegyűjtve",
+      collected: "Becsült támogatás",
       supportCta: "Támogasd az Impact Shopban",
       openNewTab: "Megnyitás új ablakban",
       missingSlug: "NGO slug hiányzik.",
@@ -534,7 +534,7 @@
       donate: "Donate",
       sharePage: "Share page",
       appDownload: "Download the ImpactShop app",
-      collected: "Raised",
+      collected: "Estimated support",
       supportCta: "Support on Impact Shop",
       openNewTab: "Open in new tab",
       missingSlug: "NGO slug missing.",
@@ -564,7 +564,7 @@
       donate: "Spenden",
       sharePage: "Teilen-Seite",
       appDownload: "ImpactShop-App herunterladen",
-      collected: "Gesammelt",
+      collected: "Geschätzte Unterstützung",
       supportCta: "Im Impact Shop unterstützen",
       openNewTab: "In neuem Tab öffnen",
       missingSlug: "NGO-Slug fehlt.",
@@ -594,7 +594,7 @@
       donate: "Faire un don",
       sharePage: "Page de partage",
       appDownload: "Télécharger l’app ImpactShop",
-      collected: "Collectés",
+      collected: "Soutien estimé",
       supportCta: "Soutenir sur Impact Shop",
       openNewTab: "Ouvrir dans un nouvel onglet",
       missingSlug: "Slug d’ONG manquant.",
@@ -634,6 +634,94 @@
     });
   }
 
+  // Legacy card totals are HUF estimates; this display never changes the dataset.
+  const MONEY_COPY = {
+    hu: ['Becsült támogatás, nem könyvelt vagy kifizetett adomány.', 'Az átváltás most nem érhető el.'],
+    en: ['Estimated support, not a booked or paid donation.', 'Conversion is currently unavailable.'],
+    de: ['Geschätzte Unterstützung, keine verbuchte oder ausgezahlte Spende.', 'Umrechnung derzeit nicht verfügbar.'],
+    fr: ['Soutien estimé, pas un don comptabilisé ou versé.', 'Conversion indisponible pour le moment.']
+  };
+  const MONEY_LOCALES = {hu:'hu-HU',en:'en-US',de:'de-DE',fr:'fr-FR'};
+  let fxQuotes = null, fxRequest = null;
+  function displayCurrency() {
+    const supported = ['HUF','EUR','USD','GBP'];
+    const select = document.getElementById('sharity-slc-currency');
+    if(select && supported.includes(select.value)) return select.value;
+    const query = new URLSearchParams(location.search).getAll('ui_currency');
+    if(query.length === 1 && supported.includes(query[0])) return query[0];
+    try {
+      const cookies = document.cookie.split(';').map(s=>s.trim()).filter(s=>s.startsWith('sharity_ui_currency='));
+      if(cookies.length === 1) { const value=decodeURIComponent(cookies[0].split('=')[1]); if(supported.includes(value)) return value; }
+      const saved=JSON.parse(localStorage.getItem('sharity_ui_preferences_v1'));
+      if(saved && supported.includes(saved.displayCurrency)) return saved.displayCurrency;
+    } catch (_) {}
+    return 'HUF';
+  }
+  function hufInteger(raw) {
+    if(typeof raw==='number' && (!Number.isSafeInteger(raw)||raw<0)) return null;
+    if(typeof raw!=='number' && typeof raw!=='string') return null;
+    const text=String(raw);
+    return /^\d{1,30}$/.test(text) ? BigInt(text) : null;
+  }
+  function estimateMarkup(amount, formatted) {
+    const huf=hufInteger(amount && amount.huf);
+    if(huf===null) return escapeHtml(formatted || '—');
+    return `<span data-ngo-estimate data-huf="${huf}"><span data-ngo-original>${escapeHtml(formatted || String(huf)+' Ft')}</span><small data-ngo-converted hidden></small></span>`;
+  }
+  function currentRates() {
+    const q=fxQuotes;
+    if(!q||q.schema_version!=='sharity-fx-quotes-v1'||q.status!=='current'||q.base_currency!=='HUF') return null;
+    if(typeof q.fetched_at!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(q.fetched_at)||typeof q.quote_date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(q.quote_date)) return null;
+    const fetched=Date.parse(q.fetched_at), day=Date.parse(q.quote_date+'T00:00:00Z');
+    if(!Number.isFinite(fetched)||!Number.isFinite(day)||new Date(day).toISOString().slice(0,10)!==q.quote_date||new Date(fetched).toISOString().replace('.000Z','Z')!==q.fetched_at) return null;
+    const localDay=value=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Budapest',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+    const today=Date.parse(localDay(Date.now())+'T00:00:00Z');
+    if(fetched>Date.now()||Date.now()-fetched>36*3600000||q.quote_date>localDay(fetched)||today-day>7*86400000) return null;
+    const rates={};
+    for(const currency of ['EUR','USD','GBP']) {
+      const rate=q.quotes && q.quotes[currency];
+      if(!rate||typeof rate.rate!=='string'||!/^\d{1,24}(?:\.\d{1,6})?$/.test(rate.rate)||typeof rate.unit!=='string'||!/^10{0,6}$/.test(rate.unit)) return null;
+      const parts=rate.rate.split('.'), n=BigInt(parts.join(''));
+      if(n===0n) return null;
+      rates[currency]={n,d:10n**BigInt((parts[1]||'').length)*BigInt(rate.unit)};
+    }
+    return rates;
+  }
+  function renderEstimateMoney() {
+    const currency=displayCurrency(), locale=getLocale(), rates=currentRates();
+    let hasAmount=false;
+    document.querySelectorAll('[data-ngo-estimate]').forEach(node=>{
+      const huf=hufInteger(node.dataset.huf), extra=node.querySelector('[data-ngo-converted]');
+      if(extra) {extra.hidden=true;extra.textContent='';}
+      if(huf===null) return;
+      hasAmount=true;
+      const original=node.querySelector('[data-ngo-original]');
+      if(original) original.textContent=new Intl.NumberFormat(MONEY_LOCALES[locale],{style:'currency',currency:'HUF',maximumFractionDigits:0}).format(huf);
+      if(!extra||currency==='HUF'||!rates) return;
+      const rate=rates[currency], numerator=huf*100n*rate.d, minor=(2n*numerator+rate.n)/(2n*rate.n);
+      const text=new Intl.NumberFormat(MONEY_LOCALES[locale],{style:'currency',currency,minimumFractionDigits:2,maximumFractionDigits:2}).formatToParts(minor/100n).map(p=>p.type==='fraction'?(minor%100n).toString().padStart(2,'0'):p.value).join('');
+      extra.textContent='≈ '+text+' · MNB '+fxQuotes.quote_date;extra.hidden=false;
+    });
+    document.querySelectorAll('[data-ngo-money-note]').forEach(node=>{node.textContent=MONEY_COPY[locale][0]+(currency!=='HUF'&&!rates?' '+MONEY_COPY[locale][1]:'');});
+    if(hasAmount && currency!=='HUF' && !fxRequest) {
+      let endpoint;
+      try {
+        const config=window.impactNgoCardConfig || {}, api=new URL(CONFIG.apiBase,location.href);
+        endpoint=config.fxQuotesUrl || (/\/impact\/v1\/ngo-card\/?$/.test(api.pathname) ? new URL(api.pathname.replace(/impact\/v1\/ngo-card\/?$/,'sharity-finance/v1/fx-quotes'),api.origin).href : null);
+      } catch (_) {}
+      if(!endpoint) {fxRequest=Promise.resolve();return;}
+      fxRequest=fetch(endpoint,{credentials:'same-origin',cache:'no-store'}).then(resp=>resp.ok?resp.json():null).then(value=>{
+        fxQuotes=value;
+        if(currentRates()) {
+          const end=Date.parse(value.quote_date+'T00:00:00Z')+8*86400000;
+          const offset=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Budapest',hour:'numeric',hourCycle:'h23'}).format(new Date(end)))*3600000;
+          const delay=Math.min(Date.parse(value.fetched_at)+36*3600000,end-offset)-Date.now();
+          if(delay>0)setTimeout(renderEstimateMoney,delay+1);
+        }
+      }).catch(()=>{fxQuotes=null;}).then(renderEstimateMoney);
+    }
+  }
+
   function openSafe(url) {
     window.open(url, "_blank", "noopener");
   }
@@ -643,7 +731,7 @@
     if (document.getElementById(CONFIG.styleId)) return;
     const style = document.createElement("style");
     style.id = CONFIG.styleId;
-    style.textContent = STYLES + STYLES_ACCESSIBILITY;
+    style.textContent = STYLES + STYLES_ACCESSIBILITY + `[data-ngo-estimate] { overflow-wrap:anywhere; } [data-ngo-converted] { display:block; font-size:0.7em; margin-top:0.3em; } [data-ngo-converted][hidden] { display:none; } [data-ngo-money-note] { font-size:0.75rem; line-height:1.4; opacity:0.85; }`;
     document.head.appendChild(style);
   }
 
@@ -896,9 +984,9 @@
     const safeBadgeLabel = escapeHtml(badgeLabel);
     const badgeKey = (badge.key || "").replace(/[^a-z0-9_-]/gi, "");
     const safeName = escapeHtml(name);
-    const safeFormattedAmount = escapeHtml(formattedAmount);
-    const safeChallengeFormatted = escapeHtml(challengeFormatted || "0 Ft");
-    const safeTotalFormatted = escapeHtml(totalFormatted || formattedAmount);
+    const safeFormattedAmount = estimateMarkup(amount, formattedAmount);
+    const safeChallengeFormatted = estimateMarkup(challengeAmount, challengeFormatted);
+    const safeTotalFormatted = estimateMarkup(totalDonation, totalFormatted || formattedAmount);
     const tagline = escapeHtml(resolveTagline(name, data));
     const logoUrl = resolveLogoUrl(slug, data);
     const supporters = data.supporters || null;
@@ -993,6 +1081,7 @@
         slug,
         name,
         formattedAmount,
+        amount,
         rank,
         badgeLabel,
         badgeKey,
@@ -1049,6 +1138,7 @@
               : ""
           }
           ${statsHtml}
+          <p class="impact-ngo-card__meta" data-ngo-money-note>${MONEY_COPY[getLocale()][0]}</p>
           <div class="impact-ngo-card__actions">
             ${buildAction("impact-ngo-card__cta", iconLabel("shop", t("shop")), escapeHtml(baseShopUrl))}
             ${buildAction(
@@ -1094,6 +1184,7 @@
     const challengeButtons = el.querySelectorAll(".impact-ngo-card__actions [data-action]");
 
     // Card view tracking
+    renderEstimateMoney();
     if (opts.emitView !== false) {
     trackEvent('card_view', {
       ngo: slug,
@@ -1165,6 +1256,7 @@
       slug,
       name,
       formattedAmount,
+      amount,
       rank,
       shareUrl,
       ctaUrl,
@@ -1177,7 +1269,7 @@
     const displayUpdated = lastUpdated ? `${t("updatedPrefix")}${formatTimestamp(lastUpdated)}` : '';
     const saveLink = shareUrl || ctaUrl;
     const safeName = escapeHtml(name);
-    const safeFormattedAmount = escapeHtml(formattedAmount);
+    const safeFormattedAmount = estimateMarkup(amount, formattedAmount);
     const safeBadgeLabel = escapeHtml(badgeLabel);
     const sanitizedBadgeKey = (badgeKey || '').replace(/[^a-z0-9_-]/gi, '');
     const rankDisplay = rank ? `#${rank}` : '#-';
@@ -1195,6 +1287,7 @@
             </div>
           </div>
         </div>
+        <p data-ngo-money-note>${MONEY_COPY[getLocale()][0]}</p>
         <a class="impact-ngo-card__widget-cta" href="${ctaUrl}" target="_blank" rel="noopener">
           ${t("supportCta")}
         </a>
@@ -1205,6 +1298,7 @@
       </div>
     `;
 
+    renderEstimateMoney();
     if (opts.emitView !== false) {
     trackEvent('card_view', {
       ngo: slug,
@@ -1332,12 +1426,18 @@
     injectStyles();
     const nodes = document.querySelectorAll(CONFIG.selector);
     nodes.forEach((el) => hydrateElement(el));
+    renderEstimateMoney();
+    document.addEventListener("change",event=>{if(event.target.id==='sharity-slc-currency')renderEstimateMoney();});
     // Follow the existing selector, including one inserted after card hydration.
     // Language changes never fetch data or emit another card-view impression.
-    let language = getLocale();
+    let language = getLocale(), currency = displayCurrency();
     const observer = new MutationObserver(() => {
-      const next = getLocale();
-      if (next === language) return;
+      const next = getLocale(), nextCurrency = displayCurrency();
+      if (next === language) {
+        if(nextCurrency !== currency) { currency=nextCurrency;renderEstimateMoney(); }
+        return;
+      }
+      currency=nextCurrency;
       language = next;
       nodes.forEach((el) => {
         const state = cardState.get(el);
@@ -1352,6 +1452,7 @@
         el.lang = next;
         state.locale = next;
       });
+      renderEstimateMoney();
     });
     observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['lang'] });
   }

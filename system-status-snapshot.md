@@ -1,3 +1,14 @@
+## Sharity — NGO reference display, 2026-11-04
+
+Legacy HUF estimates remain visible; four-language ≈dated reference display
+on full/compact/widget and PHP share hero, using one existing FX-cache GET.
+No ledger/rank/rate change, extra view or new runtime file.20 targeted tests
+PASS; syntax/diff PASS, FR320 images inspected. Full live/Elementor/200%zoom
+acceptance remains open. Hermes084 no usable patch, Codex integration;
+31145tokens, estimatedUSD0.002926105, billed/full cost unknown, no redispatch.
+Details/rollback: docs/protected-change-records/2026-11-04-sharity-ngo-reference.md.
+No main window/push/merge/deploy/activation; record113 WIP preserved.
+
 ## Sharity — Sum Pack reference display, 2026-11-04
 
 Original EUR estimate plus dated ≈ reference amount from existing MNB cache;

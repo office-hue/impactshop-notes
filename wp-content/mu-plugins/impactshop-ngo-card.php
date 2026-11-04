@@ -193,17 +193,17 @@ final class ImpactShop_NGO_Card_API
     private const OG_LOGO = 'sharity-logo.png';
     private const BADGE_WINDOW_DAYS = 30;
     private const FRONTEND_SCRIPT_HANDLE = 'impactshop-ngo-card-runtime';
-    private const FRONTEND_SCRIPT_VERSION = '20261101-intl1';
+    private const FRONTEND_SCRIPT_VERSION = '20261104-fx1';
     private const CHALLENGE_CACHE_PREFIX = 'impactshop_ngo_card_challenge_v1_';
     private const CHALLENGE_CACHE_TTL = 300;
     private const CHALLENGE_STALE_TTL = 900;
     private const CHALLENGE_LOCK_TTL = 30;
 
     private const VARIANT_FIELDS = [
-        'compact' => ['slug', 'name', 'announcement', 'amount.formatted', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
+        'compact' => ['slug', 'name', 'announcement', 'amount.formatted', 'amount.huf', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
         'full'    => ['slug', 'name', 'announcement', 'amount.formatted', 'amount.huf', 'amount.eur', 'amount.eur_formatted', 'challenge_amount.formatted', 'challenge_amount.huf', 'challenge_amount.eur', 'challenge_amount.eur_formatted', 'challenge_amount.percentage', 'challenge_amount.donation_pool', 'total_donation.formatted', 'total_donation.huf', 'total_donation.eur', 'total_donation.eur_formatted', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'next_milestone', 'last_updated', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
         'wallet'  => ['slug', 'name', 'announcement', 'amount.huf', 'amount.formatted', 'rank', 'badge_status', 'last_updated', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'share_url', 'logo_url', 'tombola_url', 'video_support_url'],
-        'widget'  => ['slug', 'name', 'announcement', 'amount.formatted', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'last_updated', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
+        'widget'  => ['slug', 'name', 'announcement', 'amount.formatted', 'amount.huf', 'challenge_urls.video', 'challenge_urls.offerwall', 'challenge_urls.shop', 'challenge_urls.donate', 'rank', 'badge_status', 'last_updated', 'share_url', 'cta_url', 'fillout_url', 'go_url', 'requires_fillout', 'logo_url', 'tombola_url', 'video_support_url'],
     ];
 
     private static $lastCacheStatus = 'MISS';
@@ -1300,7 +1300,8 @@ final class ImpactShop_NGO_Card_API
             ]));
             $etagSource .= '|challenge:' . $challengeHash;
         }
-        $etag = sha1($etagSource);
+        // A changed field projection must not reuse a cached formatted-only response.
+        $etag = sha1($etagSource . '|projection:' . implode(',', $allowed));
 
         $data['_cache'] = $cacheMeta;
 
@@ -2341,6 +2342,7 @@ final class ImpactShop_NGO_Card_API
     {
         $slug = $item['slug'];
         $amountFormatted = $item['amount']['formatted'] ?? '';
+        $amountHuf = $item['amount']['huf'] ?? null;
         $rank = (int) ($item['rank'] ?? 0);
         $name = $item['name'] ?? $slug;
         $shareUrl = self::share_url($slug);
@@ -2348,11 +2350,11 @@ final class ImpactShop_NGO_Card_API
         $scriptSrc = self::script_src();
         $copy = [
             'hu' => [
-                'title' => '{name} — {amount} összegyűjtve',
-                'description' => 'A(z) {name} jelenleg #{rank} a Sharity toplistán, eddig {amount} támogatás gyűlt össze. Támogasd te is az Impact Shopban!',
+                'title' => '{name} — {amount} becsült támogatás',
+                'description' => 'A(z) {name} jelenleg #{rank} a Sharity toplistán, a becsült támogatás {amount}. Támogasd te is az Impact Shopban!',
                 'shareTitle' => 'Támogasd {name} ügyét az Impact Shopban',
                 'message' => 'Segítek a(z) {name} ügyén: csatlakozz te is az Impact Shopban! {url}',
-                'amount' => 'Összegyűjtött támogatás',
+                'amount' => 'Becsült támogatás',
                 'cta' => 'Tovább az Impact Shopba',
                 'native' => 'Megosztás natív menüben',
                 'network' => 'Megosztás itt: {network}',
@@ -2371,14 +2373,14 @@ final class ImpactShop_NGO_Card_API
                 'pdfGenerating' => 'PDF készítése…',
                 'pdfError' => 'Nem sikerült a PDF mentése',
                 'pdfLink' => 'Támogasd most online',
-                'currencyNote' => 'Az összeg az eredeti pénznemben látható; a devizaválasztás ezen az oldalon még nem váltja át.',
+                'currencyNote' => 'Becsült támogatás, nem könyvelt vagy kifizetett adomány. Az eredeti HUF-érték megmarad; a ≈ jelű átváltás tájékoztató.',
             ],
             'en' => [
-                'title' => '{name} — {amount} raised',
-                'description' => '{name} is currently #{rank} on the Sharity leaderboard, with {amount} raised. Support them through Impact Shop!',
+                'title' => '{name} — {amount} estimated support',
+                'description' => '{name} is currently #{rank} on the Sharity leaderboard, with estimated support of {amount}. Support them through Impact Shop!',
                 'shareTitle' => 'Support {name} through Impact Shop',
                 'message' => 'I support {name}: join me on Impact Shop! {url}',
-                'amount' => 'Support raised',
+                'amount' => 'Estimated support',
                 'cta' => 'Go to Impact Shop',
                 'native' => 'Open sharing menu',
                 'network' => 'Share on {network}',
@@ -2397,14 +2399,14 @@ final class ImpactShop_NGO_Card_API
                 'pdfGenerating' => 'Creating PDF…',
                 'pdfError' => 'Could not save PDF',
                 'pdfLink' => 'Support online now',
-                'currencyNote' => 'The amount is shown in its original currency; the currency choice does not yet convert it on this page.',
+                'currencyNote' => 'Estimated support, not a booked or paid donation. The original HUF estimate remains; conversion marked ≈ is indicative.',
             ],
             'de' => [
-                'title' => '{name} — {amount} gesammelt',
-                'description' => '{name} liegt derzeit auf Platz {rank} der Sharity-Rangliste, mit {amount} gesammelter Unterstützung. Unterstütze die Organisation im Impact Shop!',
+                'title' => '{name} — {amount} geschätzte Unterstützung',
+                'description' => '{name} liegt derzeit auf Platz {rank} der Sharity-Rangliste, mit geschätzter Unterstützung von {amount}. Unterstütze die Organisation im Impact Shop!',
                 'shareTitle' => 'Unterstütze {name} im Impact Shop',
                 'message' => 'Ich unterstütze {name}: Mach mit im Impact Shop! {url}',
-                'amount' => 'Gesammelte Unterstützung',
+                'amount' => 'Geschätzte Unterstützung',
                 'cta' => 'Zum Impact Shop',
                 'native' => 'Teilen-Menü öffnen',
                 'network' => 'Auf {network} teilen',
@@ -2423,14 +2425,14 @@ final class ImpactShop_NGO_Card_API
                 'pdfGenerating' => 'PDF wird erstellt…',
                 'pdfError' => 'PDF konnte nicht gespeichert werden',
                 'pdfLink' => 'Jetzt online unterstützen',
-                'currencyNote' => 'Der Betrag bleibt in der Originalwährung; die Währungsauswahl rechnet ihn auf dieser Seite noch nicht um.',
+                'currencyNote' => 'Geschätzte Unterstützung, keine verbuchte oder ausgezahlte Spende. Die ursprüngliche HUF-Schätzung bleibt; eine mit ≈ markierte Umrechnung ist unverbindlich.',
             ],
             'fr' => [
-                'title' => '{name} — {amount} collectés',
-                'description' => '{name} occupe la place {rank} du classement Sharity, avec {amount} de soutien collecté. Soutenez cette organisation via Impact Shop !',
+                'title' => '{name} — {amount} de soutien estimé',
+                'description' => '{name} occupe la place {rank} du classement Sharity, avec un soutien estimé de {amount}. Soutenez cette organisation via Impact Shop !',
                 'shareTitle' => 'Soutenez {name} via Impact Shop',
                 'message' => 'Je soutiens {name} : rejoignez-moi sur Impact Shop ! {url}',
-                'amount' => 'Soutien collecté',
+                'amount' => 'Soutien estimé',
                 'cta' => 'Accéder à Impact Shop',
                 'native' => 'Ouvrir le menu de partage',
                 'network' => 'Partager sur {network}',
@@ -2449,7 +2451,7 @@ final class ImpactShop_NGO_Card_API
                 'pdfGenerating' => 'Création du PDF…',
                 'pdfError' => 'Impossible d’enregistrer le PDF',
                 'pdfLink' => 'Soutenir en ligne',
-                'currencyNote' => 'Le montant reste dans sa devise d’origine ; le choix de devise ne le convertit pas encore sur cette page.',
+                'currencyNote' => 'Soutien estimé, pas un don comptabilisé ou versé. L’estimation HUF d’origine reste visible ; la conversion marquée ≈ est indicative.',
             ],
         ];
         // Parse raw query pairs: PHP's $_GET collapses repeated keys.
@@ -2843,7 +2845,7 @@ final class ImpactShop_NGO_Card_API
     <h1 id="ngo-share-title"><?php echo esc_html($name); ?></h1>
     <p data-share-copy="description" aria-live="polite"><?php echo esc_html($description); ?></p>
     <p class="impact-ngo-share__amount" aria-label="<?php echo esc_attr($t('amount')); ?>">
-      <strong><?php echo esc_html($amountFormatted); ?></strong>
+      <strong data-ngo-estimate data-huf="<?php echo esc_attr(is_int($amountHuf) && $amountHuf >= 0 ? (string)$amountHuf : ''); ?>"><span data-ngo-original><?php echo esc_html($amountFormatted); ?></span><small data-ngo-converted hidden></small></strong>
     </p>
     <p class="impact-ngo-share__currency-note" data-share-copy="currencyNote"><?php echo esc_html($t('currencyNote')); ?></p>
     <a class="impact-ngo-share__cta" href="<?php echo esc_url($ctaUrl); ?>" aria-label="<?php echo esc_attr($t('cta') . ' – ' . $name); ?>">

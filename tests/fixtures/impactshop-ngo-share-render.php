@@ -48,4 +48,14 @@ $_COOKIE = json_decode($argv[3] ?? '{}', true);
 if (($argv[4] ?? '') !== 'no-bar') require dirname(__DIR__, 2) . '/wp-content/mu-plugins/impactshop-action-bar.php';
 require dirname(__DIR__, 2) . '/wp-content/mu-plugins/impactshop-ngo-card.php';
 $item = ['slug'=>'fixture-ngo', 'name'=>$argv[2] ?? 'Fixture NGO', 'amount'=>['formatted'=>'12 345 Ft'], 'rank'=>3, 'badge_status'=>['label'=>'Original badge', 'key'=>'base']];
+if (($argv[5] ?? '') === 'fields') {
+    $item['amount']['huf'] = 12345;
+    $result = [];
+    foreach (['full', 'compact', 'widget', 'wallet'] as $variant) {
+        $fields = (new ReflectionMethod(ImpactShop_NGO_Card_API::class, 'variant_fields'))->invoke(null, $variant);
+        $result[$variant] = (new ReflectionMethod(ImpactShop_NGO_Card_API::class, 'filter_fields'))->invoke(null, $item, $fields);
+    }
+    echo json_encode($result); exit;
+}
+if (isset($argv[5])) $item['amount']['huf'] = json_decode($argv[5], true);
 (new ReflectionMethod(ImpactShop_NGO_Card_API::class, 'render_share_template'))->invoke(null, $item);
