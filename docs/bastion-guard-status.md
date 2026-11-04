@@ -1,3 +1,11 @@
+## NGO reference display — 2026-11-04
+
+Productd831e770;20 targeted tests and syntax/diff PASS. Only the two own NGO
+source hashes and inventory checksum changed, all other pins preserved.
+No guard logic or production PASS. Details/rollback:
+protected-change-records/2026-11-04-sharity-ngo-reference.md.
+Source only; not merged/deployed/activated.
+
 ## Sharity Sum Pack reference display — 2026-11-04
 
 Product1f71d14e:8 new PHP/Chrome tests +10 existing preference tests PASS.
