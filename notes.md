@@ -1,3 +1,14 @@
+## Sharity — own Impact Shop page copy, 2026-11-04
+
+Nine actual Elementor widgets now follow HU/EN/DE/FR in the existing overlay,
+including original inline emphasis and exactHU restoration. No database write
+or new runtime module.4new +10preference +2profile test groups PASS; syntax/
+diff PASS. Full live Elementor/font/actual200%zoom acceptance still pending.
+Hermes085 translations partly reused, functional draft repaired locally;
+10878tokens, estimatedUSD0.0012574926, billed/full cost unknown, no retry.
+Details/rollback: docs/protected-change-records/2026-11-04-sharity-shop-page-copy.md.
+Main quiet-window approval pending; no fetch/merge/deploy/activation. Foreign WIP preserved.
+
 ## Sharity — NGO reference display, 2026-11-04
 
 Legacy HUF estimates remain visible; four-language ≈dated reference display
