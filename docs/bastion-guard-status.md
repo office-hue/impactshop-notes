@@ -1,3 +1,11 @@
+## Sharity Sum Pack reference display — 2026-11-04
+
+Product1f71d14e:8 new PHP/Chrome tests +10 existing preference tests PASS.
+Only Sum Pack and action-bar own hashes and inventory checksum updated;
+all other pins unchanged. No guard logic change or production guard-PASS.
+Rollback/details: protected-change-records/2026-11-04-sharity-sum-display.md.
+Not merged, deployed or activated.
+
 ## Sharity carousel locale — 2026-11-04
 
 Termékcommit `69b60908`, 6 saját PHP/Chrome és 10 meglévő választóteszt
