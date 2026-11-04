@@ -1,3 +1,15 @@
+## Sharity — Sum Pack reference display, 2026-11-04
+
+Original EUR estimate plus dated ≈ reference amount from existing MNB cache;
+HU/EN/DE/FR, HUF/EUR/USD/GBP. No static392 conversion or new provider/ledger
+write. Existing query/filter/CTA/dismiss retained; sticky clears actual dock.
+8 new PHP/Chrome tests +10 existing preference tests PASS, lint/diff PASS;
+isolated mobile images checked, full Elementor/production acceptance pending.
+Hermes083 partial adoption and Codex correction;26773tokens, estimated
+USD0.003510416, actual/full cost unknown. One authorized call, no retry.
+Details/rollback: docs/protected-change-records/2026-11-04-sharity-sum-display.md.
+No main window, push/merge, deployment or activation. Record113 WIP preserved.
+
 ## Sharity — Impact Shop kártyasorok, 2026-11-04
 
 A három meglévő Netflix-shortcode saját feliratai HU/EN/DE/FR nyelven,

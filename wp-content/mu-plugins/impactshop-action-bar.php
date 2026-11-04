@@ -708,7 +708,7 @@ function impactshop_action_bar_render(): void
                 <option value="HUF">HUF</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option>
             </select>
         </div>
-        <p class="sharity-slc__help" id="sharity-slc-help" data-slc-help>A navigáció és a választó a kiválasztott nyelvet használja. A többi oldalszöveg egyelőre magyar vagy angol maradhat. A devizaválasztás még nem váltja át az összegeket, és nem módosít árakat, fizetést vagy elszámolást. Az ország külön bolti beállítás.</p>
+        <p class="sharity-slc__help" id="sharity-slc-help" data-slc-help>A nyelvválasztó a Sharity saját felületi szövegeit állítja. A szervezetek és partnerek nevei, valamint saját tartalmaik eredeti nyelven maradhatnak. Az összegek eredeti devizája megmarad; ahol van elérhető referenciaárfolyam, mellette ≈ jelű tájékoztató átváltás látható. A megjelenítési deviza választása nem módosít fizetést vagy elszámolást. Az ország külön bolti beállítás.</p>
         <div class="sharity-slc__section-title" data-slc-section-country><?php echo $current_lang === 'hu' ? 'Ország' : 'Country'; ?></div>
         <div class="sharity-slc__rows">
             <?php foreach ( $slc_countries as $ccode => $cinfo ) :
@@ -821,7 +821,7 @@ var SLC_COPY = {
     nav: 'Sharity gyorsműveletek',
     soon: 'Hamarosan',
     messageTitle: 'A profil üzenetei hamarosan elérhetők.',
-    help: 'A navigáció és a választó a kiválasztott nyelvet használja. A többi oldalszöveg egyelőre magyar vagy angol maradhat. A devizaválasztás még nem váltja át az összegeket, és nem módosít árakat, fizetést vagy elszámolást. Az ország külön bolti beállítás.',
+    help: "A nyelvválasztó a Sharity saját felületi szövegeit állítja. A szervezetek és partnerek nevei, valamint saját tartalmaik eredeti nyelven maradhatnak. Az összegek eredeti devizája megmarad; ahol van elérhető referenciaárfolyam, mellette ≈ jelű tájékoztató átváltás látható. A megjelenítési deviza választása nem módosít fizetést vagy elszámolást. Az ország külön bolti beállítás.",
     items: {
       'shopping-assistant': 'Vásárlási Segéd',
       'offerwall': 'Feladatok adományokért',
@@ -842,7 +842,7 @@ var SLC_COPY = {
     nav: 'Quick actions',
     soon: 'Coming soon',
     messageTitle: 'Profile messages will be available soon.',
-    help: 'Navigation and these controls use the selected language. Other page text may still be Hungarian or English. Currency selection does not yet convert amounts or change prices, payments or settlement. Country is a separate shop setting.',
+    help: "The language selector changes Sharity’s own interface text. Organisation and partner names and their own content may remain in the original language. Amounts retain their original currency; where a reference rate is available, an indicative conversion marked ≈ appears alongside it. Selecting a display currency does not change payments or settlement. Country is a separate shop setting.",
     items: {
       'shopping-assistant': 'Shopping Assistant',
       'offerwall': 'Tasks for donations',
@@ -863,7 +863,7 @@ var SLC_COPY = {
     nav: 'Schnellaktionen',
     soon: 'Bald verfügbar',
     messageTitle: 'Profilnachrichten sind bald verfügbar.',
-    help: 'Die Navigation und diese Auswahl verwenden die gewählte Sprache. Andere Seitentexte können vorerst auf Ungarisch oder Englisch bleiben. Die Währungsauswahl rechnet noch keine Beträge um und ändert weder Preise noch Zahlungen oder Abrechnung. Das Land ist eine separate Shop-Einstellung.',
+    help: "Die Sprachauswahl ändert Sharitys eigene Oberflächentexte. Namen und eigene Inhalte von Organisationen und Partnern können in der Originalsprache bleiben. Beträge behalten ihre ursprüngliche Währung; bei verfügbarem Referenzkurs erscheint daneben eine mit ≈ gekennzeichnete unverbindliche Umrechnung. Die Anzeigewährung ändert weder Zahlungen noch Abrechnungen. Das Land ist eine separate Shop-Einstellung.",
     items: {
       'shopping-assistant': 'Einkaufsassistent',
       'offerwall': 'Aufgaben für Spenden',
@@ -884,7 +884,7 @@ var SLC_COPY = {
     nav: 'Actions rapides',
     soon: 'Bientôt disponible',
     messageTitle: 'Les messages du profil seront bientôt disponibles.',
-    help: 'La navigation et ces commandes utilisent la langue choisie. Les autres textes peuvent rester en hongrois ou en anglais. Le choix de devise ne convertit pas encore les montants et ne modifie ni les prix, ni les paiements, ni les règlements. Le pays est un réglage distinct pour la boutique.',
+    help: "Le sélecteur de langue modifie les textes de l’interface Sharity. Les noms des associations et des partenaires ainsi que leurs propres contenus peuvent rester dans leur langue d’origine. Les montants conservent leur devise d’origine ; lorsqu’un taux de référence est disponible, une conversion indicative marquée ≈ apparaît à côté. La devise d’affichage ne modifie ni les paiements ni les règlements. Le pays est un réglage distinct pour la boutique.",
     items: {
       'shopping-assistant': 'Assistant shopping',
       'offerwall': 'Missions pour des dons',
