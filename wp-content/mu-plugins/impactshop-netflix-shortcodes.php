@@ -460,16 +460,90 @@ if (!function_exists('impactshop_deals_banners_shortcode')) {
 //                     max_items="0" shuffle="0" featured_only="0" new_days="14" deals_badge="1" ga4="1"
 //                     autoplay="1" interval="3000"]
 
+/** Localise only explicitly marked own UI; feed data and tracking stay original.
+ * Shared HTML fragments remain language-neutral. The existing dock is authoritative.
+ */
+function impactshop_netflix_locale_runtime() {
+    if (empty($GLOBALS['impactshop_netflix_locale_used'])) { return; }
+    ?>
+    <script id="impactshop-netflix-locale">
+    (function () {
+      'use strict';
+      if (window.impactshopNetflixText) return;
+      var copy = {
+        hu: {all:'Összes',other:'Egyéb',prev:'Vissza',next:'Előre',coupon:'Kupon',fresh:'Új',image:'Nincs kép',logo:'Logó',deal:'AKCIÓ',offer:'Ajánlat',unavailable:'Szolgáltatás átmenetileg nem elérhető.',partners:'Nincs megjeleníthető partner.',dealsUnavailable:'Ajánlatok nem betölthetők pillanatnyilag.',dealsEmpty:'Nincs megjeleníthető akció.',couponsUnavailable:'Kuponok nem elérhetők jelenleg.',couponsEmpty:'Jelenleg nincs megjeleníthető kupon.',copy:'Másolás',couponAria:'{value} – kupon',forever:'Lejárat: folyamatos',expires:'Lejár: {value}',days:'Lejár: {value} nap',expired:'Lejárt',heading:'Impact Shop ajánlatok'},
+        en: {all:'All',other:'Other',prev:'Previous',next:'Next',coupon:'Coupon',fresh:'New',image:'No image',logo:'Logo',deal:'DEAL',offer:'Offer',unavailable:'Service temporarily unavailable.',partners:'No partner to display.',dealsUnavailable:'Deals cannot be loaded right now.',dealsEmpty:'No offers to display.',couponsUnavailable:'Coupons are currently unavailable.',couponsEmpty:'No coupons to display right now.',copy:'Copy',couponAria:'{value} – coupon',forever:'Expires: ongoing',expires:'Expires: {value}',days:'Expires in {value} days',expired:'Expired',heading:'Impact Shop offers'},
+        de: {all:'Alle',other:'Sonstige',prev:'Zurück',next:'Weiter',coupon:'Gutschein',fresh:'Neu',image:'Kein Bild',logo:'Logo',deal:'ANGEBOT',offer:'Angebot',unavailable:'Dienst vorübergehend nicht verfügbar.',partners:'Kein Partner zum Anzeigen.',dealsUnavailable:'Angebote können derzeit nicht geladen werden.',dealsEmpty:'Keine Angebote zum Anzeigen.',couponsUnavailable:'Gutscheine sind derzeit nicht verfügbar.',couponsEmpty:'Derzeit keine Gutscheine zum Anzeigen.',copy:'Kopieren',couponAria:'{value} – Gutschein',forever:'Gültig: fortlaufend',expires:'Gültig bis: {value}',days:'Läuft in {value} Tagen ab',expired:'Abgelaufen',heading:'Impact-Shop-Angebote'},
+        fr: {all:'Tout',other:'Autres',prev:'Précédent',next:'Suivant',coupon:'Coupon',fresh:'Nouveau',image:'Pas d’image',logo:'Logo',deal:'OFFRE',offer:'Offre',unavailable:'Service temporairement indisponible.',partners:'Aucun partenaire à afficher.',dealsUnavailable:'Impossible de charger les offres pour le moment.',dealsEmpty:'Aucune offre à afficher.',couponsUnavailable:'Les coupons sont indisponibles pour le moment.',couponsEmpty:'Aucun coupon à afficher pour le moment.',copy:'Copier',couponAria:'{value} – coupon',forever:'Expiration : en continu',expires:'Expire : {value}',days:'Expire dans {value} jours',expired:'Expiré',heading:'Offres Impact Shop'}
+      };
+      function valid(value) { return ['hu','en','de','fr'].indexOf(value) !== -1; }
+      function language() {
+        var bar = document.querySelector('.sharity-action-bar');
+        if (bar && valid(bar.lang)) return bar.lang;
+        var lang = 'hu', stored = {}, cookie = null;
+        try { stored = JSON.parse(localStorage.getItem('sharity_ui_preferences_v1')) || {}; } catch (_) {}
+        if (valid(stored.language)) lang = stored.language;
+        try {
+          var fields = document.cookie.split(';').map(function (s) { return s.trim(); }).filter(function (s) { return s.indexOf('sharity_ui_language=') === 0; });
+          if (fields.length === 1) cookie = decodeURIComponent(fields[0].slice('sharity_ui_language='.length));
+          if (valid(cookie)) lang = cookie;
+        } catch (_) {}
+        var query = new URLSearchParams(location.search), legacy = query.getAll('lang'), explicit = query.getAll('ui_lang');
+        if (!valid(cookie) && !valid(stored.language) && legacy.length === 1 && ['hu','en'].indexOf(legacy[0]) !== -1) lang = legacy[0];
+        if (explicit.length === 1 && valid(explicit[0])) lang = explicit[0];
+        return lang;
+      }
+      window.impactshopNetflixText = function (key, value) {
+        return (copy[language()][key] || copy.hu[key] || '').replace('{value}', function () { return value == null ? '' : String(value); });
+      };
+      function render() {
+        var lang = language();
+        document.querySelectorAll('[data-sharity-netflix]').forEach(function (root) { root.lang = lang; });
+        document.querySelectorAll('[data-sharity-netflix-copy]').forEach(function (node) {
+          var key = node.getAttribute('data-sharity-netflix-copy');
+          if (!Object.prototype.hasOwnProperty.call(copy.hu, key)) return;
+          var text = window.impactshopNetflixText(key, node.getAttribute('data-sharity-netflix-value'));
+          var target = node.getAttribute('data-sharity-netflix-target');
+          if (target === 'aria-label' || target === 'title' || target === 'alt') {
+            if (node.getAttribute(target) !== text) node.setAttribute(target, text);
+          } else if (node.textContent !== text) node.textContent = text;
+          node.lang = lang;
+        });
+      }
+      var observed = new WeakSet(), queued = false;
+      function bind() {
+        document.querySelectorAll('.sharity-action-bar').forEach(function (bar) {
+          if (observed.has(bar)) return;
+          observed.add(bar);
+          new MutationObserver(render).observe(bar, {attributes:true,attributeFilter:['lang']});
+        });
+        render();
+      }
+      new MutationObserver(function (records) {
+        if (queued || !records.some(function (record) { return Array.from(record.addedNodes).some(function (node) {
+          return node.nodeType === 1 && (node.matches('.sharity-action-bar,[data-sharity-netflix]') || node.querySelector('.sharity-action-bar,[data-sharity-netflix]'));
+        }); })) return;
+        queued = true;
+        requestAnimationFrame(function () { queued = false; bind(); });
+      }).observe(document.body, {childList:true,subtree:true});
+      bind();
+    })();
+    </script>
+    <?php
+}
+add_action('wp_footer', 'impactshop_netflix_locale_runtime', 21);
+
 if (!function_exists('impactshop_shortcode_netflix')) {
   function impactshop_shortcode_netflix($atts) {
+    $GLOBALS['impactshop_netflix_locale_used'] = true;
     if (!function_exists('sib_load_banners')) {
       error_log('[impactshop_netflix] Missing dependency: sib_load_banners()');
-      return '<div class="netflix-error">Szolgáltatás átmenetileg nem elérhető.</div>';
+      return '<div data-sharity-preferences-managed data-sharity-netflix class="netflix-error" data-sharity-netflix-copy="unavailable">Szolgáltatás átmenetileg nem elérhető.</div>';
     }
 
     if (!function_exists('sib_load_banners')) {
       error_log('[impactshop_netflix] Missing dependency: sib_load_banners()');
-      return '<div class="netflix-error">Szolgáltatás átmenetileg nem elérhető.</div>';
+      return '<div data-sharity-preferences-managed data-sharity-netflix class="netflix-error" data-sharity-netflix-copy="unavailable">Szolgáltatás átmenetileg nem elérhető.</div>';
     }
 
     $a = shortcode_atts([
@@ -490,9 +564,9 @@ if (!function_exists('impactshop_shortcode_netflix')) {
       'interval'      => '3000',
     ], $atts, 'impactshop_netflix');
 
-    if (!function_exists('impactshop_get_shops')) return '<div>Hiányzó függvény: impactshop_get_shops</div>';
+    if (!function_exists('impactshop_get_shops')) return '<div data-sharity-preferences-managed data-sharity-netflix data-sharity-netflix-copy="unavailable">Szolgáltatás átmenetileg nem elérhető.</div>';
     $shops = impactshop_get_shops();
-    if (!$shops) return '<div>Nincs megjeleníthető partner.</div>';
+    if (!$shops) return '<div data-sharity-preferences-managed data-sharity-netflix data-sharity-netflix-copy="partners">Nincs megjeleníthető partner.</div>';
 
     // featured_only
     if ($a['featured_only'] === '1') {
@@ -531,7 +605,7 @@ if (!function_exists('impactshop_shortcode_netflix')) {
       'amb'  => $amb,
       'src'  => $src,
     ];
-    $fragment_key = 'impactshop_fragment_' . md5('impactshop_netflix_' . wp_json_encode($fragment_params));
+    $fragment_key = 'impactshop_fragment_' . md5('impactshop_netflix_locale1_' . wp_json_encode($fragment_params));
     $fragment_cached = get_transient($fragment_key);
     if ($fragment_cached !== false) {
       return $fragment_cached;
@@ -660,20 +734,20 @@ if (!function_exists('impactshop_shortcode_netflix')) {
       }
     </style>
 
-    <div class="<?php echo $uid; ?> impactshop-netflix" data-autoplay="<?php echo esc_attr($autoplay ? '1':'0'); ?>" data-interval="<?php echo esc_attr($interval); ?>">
+    <div data-sharity-preferences-managed data-sharity-netflix class="<?php echo $uid; ?> impactshop-netflix" data-autoplay="<?php echo esc_attr($autoplay ? '1':'0'); ?>" data-interval="<?php echo esc_attr($interval); ?>">
       <div class="ifx-cats" role="tablist">
         <?php if ($a['show_all']==='1'): ?>
-          <div class="ifx-pill <?php echo ($activeCat==='__ALL__')?'active':''; ?>" data-cat="__ALL__">Összes</div>
+          <div class="ifx-pill <?php echo ($activeCat==='__ALL__')?'active':''; ?>" data-cat="__ALL__" data-sharity-netflix-copy="all">Összes</div>
         <?php endif; ?>
         <?php foreach ($bycat as $cat => $_): ?>
-          <div class="ifx-pill <?php echo ($activeCat===$cat)?'active':''; ?>" data-cat="<?php echo esc_attr($cat); ?>"><?php echo esc_html($cat); ?></div>
+          <div class="ifx-pill <?php echo ($activeCat===$cat)?'active':''; ?>" data-cat="<?php echo esc_attr($cat); ?>" <?php if ($cat === 'Egyéb' && trim($a['categories']) === ''): ?>data-sharity-netflix-copy="other"<?php endif; ?>><?php echo esc_html($cat); ?></div>
         <?php endforeach; ?>
       </div>
 
       <div class="ifx-track-wrap">
         <?php if ($a['arrows']==='1'): ?>
-          <div class="ifx-arrow prev" aria-label="Vissza">‹</div>
-          <div class="ifx-arrow next" aria-label="Előre">›</div>
+          <div class="ifx-arrow prev" data-sharity-netflix-copy="prev" data-sharity-netflix-target="aria-label" aria-label="Vissza">‹</div>
+          <div class="ifx-arrow next" data-sharity-netflix-copy="next" data-sharity-netflix-target="aria-label" aria-label="Előre">›</div>
         <?php endif; ?>
         <div class="ifx-track" data-active="<?php echo esc_attr($activeCat); ?>">
           <?php
@@ -699,12 +773,12 @@ if (!function_exists('impactshop_shortcode_netflix')) {
               $out .= '<div class="ifx-card" data-cat="'.esc_attr($cat).'">';
               $out .=   '<a href="'.esc_url($cta).'" aria-label="'.esc_attr($name).'">';
               $badges = '';
-              if ($hasDeal) $badges .= '<span class="ifx-badge">Kupon</span>';
-              if ($isNew)   $badges .= '<span class="ifx-badge new">Új</span>';
+              if ($hasDeal) $badges .= '<span class="ifx-badge" data-sharity-netflix-copy="coupon">Kupon</span>';
+              if ($isNew)   $badges .= '<span class="ifx-badge new" data-sharity-netflix-copy="fresh">Új</span>';
               if ($badges)  $out .= '<div class="ifx-badges">'.$badges.'</div>';
               $out .=     '<div class="ifx-logo-box">';
               if ($img) { $out .= '<img class="ifx-logo" src="'.esc_url($img).'" alt="'.esc_attr($name).'" loading="lazy">'; }
-              else      { $out .= '<div style="color:#666;font:600 12px/1 system-ui">Nincs kép</div>'; }
+              else      { $out .= '<div data-sharity-netflix-copy="image" style="color:#666;font:600 12px/1 system-ui">Nincs kép</div>'; }
               $out .=     '</div>';
               $out .=     '<div class="ifx-name">'.esc_html($name).'</div>';
               $out .=   '</a>';
@@ -822,14 +896,15 @@ if (!defined('ABSPATH')) exit;
 
 if (!function_exists('impact_deals_netflix_shortcode')) {
   function impact_deals_netflix_shortcode($atts) {
+    $GLOBALS['impactshop_netflix_locale_used'] = true;
     if (!function_exists('sib_load_banners')) {
       error_log('[impact_deals_netflix] Missing dependency: sib_load_banners()');
-      return '<div class="netflix-error">Ajánlatok nem betölthetők pillanatnyilag.</div>';
+      return '<div data-sharity-preferences-managed data-sharity-netflix class="netflix-error" data-sharity-netflix-copy="dealsUnavailable">Ajánlatok nem betölthetők pillanatnyilag.</div>';
     }
 
     if (!function_exists('sib_load_banners')) {
       error_log('[impact_deals_netflix] Missing dependency: sib_load_banners()');
-      return '<div class="netflix-error">Ajánlatok nem betölthetők pillanatnyilag.</div>';
+      return '<div data-sharity-preferences-managed data-sharity-netflix class="netflix-error" data-sharity-netflix-copy="dealsUnavailable">Ajánlatok nem betölthetők pillanatnyilag.</div>';
     }
 
     $a = shortcode_atts([
@@ -840,7 +915,7 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       'ga4'       => '1',
     ], $atts, 'impact_deals_netflix');
 
-    $fragment_key = 'impactshop_fragment_' . md5('impact_deals_netflix_' . wp_json_encode($a));
+    $fragment_key = 'impactshop_fragment_' . md5('impact_deals_netflix_locale1_' . wp_json_encode($a));
     $fragment_cached = get_transient($fragment_key);
     if ($fragment_cached !== false) {
       return $fragment_cached;
@@ -1059,13 +1134,13 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
       }
     </style>
 
-    <div class="<?php echo $uid; ?>" tabindex="0">
-      <button class="nav prev" aria-label="Vissza" data-prev>‹</button>
-      <button class="nav next" aria-label="Előre" data-next>›</button>
+    <div data-sharity-preferences-managed data-sharity-netflix class="<?php echo $uid; ?>" tabindex="0">
+      <button class="nav prev" data-sharity-netflix-copy="prev" data-sharity-netflix-target="aria-label" aria-label="Vissza" data-prev>‹</button>
+      <button class="nav next" data-sharity-netflix-copy="next" data-sharity-netflix-target="aria-label" aria-label="Előre" data-next>›</button>
 
       <div class="rail" data-rail>
         <?php if (!$items): ?>
-          <div class="empty">Nincs megjeleníthető akció.</div>
+          <div class="empty" data-sharity-netflix-copy="dealsEmpty">Nincs megjeleníthető akció.</div>
         <?php else: foreach ($items as $d):
           $title = trim((string)($d['title'] ?? ''));
           $pct   = !empty($d['percent']) ? (int)round((float)$d['percent']) : 0;
@@ -1083,9 +1158,9 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
              data-percent="<?php echo esc_attr($pct); ?>"
              data-price="<?php echo esc_attr($pstr); ?>">
             <div class="media">
-              <img src="<?php echo $img; ?>" alt="<?php echo esc_attr($title ?: ($shop ?: 'Ajánlat')); ?>" loading="lazy" decoding="async" />
+              <img src="<?php echo $img; ?>" <?php if (!$title && !$shop): ?>data-sharity-netflix-copy="offer" data-sharity-netflix-target="alt"<?php endif; ?> alt="<?php echo esc_attr($title ?: ($shop ?: 'Ajánlat')); ?>" loading="lazy" decoding="async" />
             </div>
-            <div class="badge"><?php echo $pct ? ('-'.intval($pct).'%') : 'AKCIÓ'; ?></div>
+            <div class="badge" <?php if (!$pct): ?>data-sharity-netflix-copy="deal"<?php endif; ?>><?php echo $pct ? ('-'.intval($pct).'%') : 'AKCIÓ'; ?></div>
             <?php if ($shop): ?><div class="shop"><?php echo esc_html($shop); ?></div><?php endif; ?>
             <?php if ($showLabel): ?><div class="label" title="<?php echo esc_attr($title); ?>"><?php echo esc_html($title); ?></div><?php endif; ?>
             <?php if ($pstr): ?><div class="price"><?php echo esc_html($pstr); ?></div><?php endif; ?>
@@ -1188,14 +1263,15 @@ if (!function_exists('impact_deals_netflix_shortcode')) {
 
 if (!function_exists('impact_coupons_netflix_shortcode')) {
   function impact_coupons_netflix_shortcode($atts) {
+    $GLOBALS['impactshop_netflix_locale_used'] = true;
     if (!function_exists('sib_load_banners')) {
       error_log('[impact_coupons_netflix] Missing dependency: sib_load_banners()');
-      return '<div class="netflix-error">Kuponok nem elérhetők jelenleg.</div>';
+      return '<div data-sharity-preferences-managed data-sharity-netflix class="netflix-error" data-sharity-netflix-copy="couponsUnavailable">Kuponok nem elérhetők jelenleg.</div>';
     }
 
     if (!function_exists('sib_load_banners')) {
       error_log('[impact_coupons_netflix] Missing dependency: sib_load_banners()');
-      return '<div class="netflix-error">Kuponok nem elérhetők jelenleg.</div>';
+      return '<div data-sharity-preferences-managed data-sharity-netflix class="netflix-error" data-sharity-netflix-copy="couponsUnavailable">Kuponok nem elérhetők jelenleg.</div>';
     }
 
     $a = shortcode_atts([
@@ -1210,7 +1286,7 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
       'show_expiry' => '1',     // 1 = visszaszámláló / lejárati info megjelenítése
     ], $atts, 'impact_coupons_netflix');
 
-    if (!function_exists('impactshop_get_shops')) return '<div>Hiányzó függvény: impactshop_get_shops</div>';
+    if (!function_exists('impactshop_get_shops')) return '<div data-sharity-preferences-managed data-sharity-netflix data-sharity-netflix-copy="unavailable">Szolgáltatás átmenetileg nem elérhető.</div>';
 
     $d1  = function_exists('impactshop_q') ? impactshop_q('d1') : (isset($_GET['d1']) ? sanitize_text_field($_GET['d1']) : '');
     $amb = function_exists('impactshop_q') ? impactshop_q('amb') : (isset($_GET['amb']) ? sanitize_text_field($_GET['amb']) : '');
@@ -1223,7 +1299,7 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
       'amb'  => $amb,
       'src'  => $src,
     ];
-    $fragment_key = 'impactshop_fragment_' . md5('impact_coupons_netflix_' . wp_json_encode($fragment_params));
+    $fragment_key = 'impactshop_fragment_' . md5('impact_coupons_netflix_locale1_' . wp_json_encode($fragment_params));
     $fragment_cached = get_transient($fragment_key);
     if ($fragment_cached !== false) {
       return $fragment_cached;
@@ -1251,7 +1327,7 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
       set_transient($cache_key, $coupons, 10 * MINUTE_IN_SECONDS);
     }
 
-    $cj_cache_key = 'impactshop_cj_coupons_v1';
+    $cj_cache_key = 'impactshop_cj_coupons_locale1';
     $cj_cards = get_transient($cj_cache_key);
     if ($cj_cards === false) {
       $cj_cards = [];
@@ -1321,6 +1397,7 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
             'shop_logo' => $logo,
             'category'  => (string)($link['category'] ?? 'CJ kupon'),
             'primary'   => $primary,
+            'primary_copy' => ($promotion_type_raw === '' || strtolower($promotion_type_raw) === 'n/a') ? 'coupon' : '',
             'title'     => $title,
             'code'      => $coupon_code,
             'expiry'    => $expiry,
@@ -1365,11 +1442,11 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
       $title = ''; foreach (['title','name','label','description'] as $k) if (!empty($it[$k])) { $title = trim($it[$k]); break; }
       $code  = ''; foreach (['code','coupon','coupon_code'] as $k)        if (!empty($it[$k])) { $code  = trim($it[$k]); break; }
 
-      $primary = '';
+      $primary = ''; $primary_copy = '';
       if ($pct !== null && $pct > 0)     { $primary = '−'.rtrim(rtrim(number_format($pct,2,'.',''),'0'),'.').'%'; }
       elseif ($amt !== null && $amt > 0) { $primary = '−'.rtrim(rtrim(number_format($amt,2,'.',''),'0'),'.').' '.($cur ?: '€'); }
       elseif ($title)                    { $primary = $title; }
-      else                               { $primary = 'Akció'; }
+      else                               { $primary = 'Akció'; $primary_copy = 'deal'; }
 
       // Érvényesség vége (több lehetséges kulcs)
       $expiry = '';
@@ -1391,6 +1468,7 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
         'shop_logo' => $shop['logo'] ?? '',
         'category'  => $shop['category'] ?? '',
         'primary'   => $primary,
+        'primary_copy' => $primary_copy,
         'title'     => $title,
         'code'      => $code,
         'expiry'    => $expiry,   // ISO (ha ismert)
@@ -1400,7 +1478,7 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
     if ($cj_cards) {
       $cards = array_merge($cards, $cj_cards);
     }
-    if (!$cards) return '<div>Jelenleg nincs megjeleníthető kupon.</div>';
+    if (!$cards) return '<div data-sharity-preferences-managed data-sharity-netflix data-sharity-netflix-copy="couponsEmpty">Jelenleg nincs megjeleníthető kupon.</div>';
 
     $max = max(0, intval($a['max_items']));
     if ($max > 0) $cards = array_slice($cards, 0, $max);
@@ -1468,18 +1546,18 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
       @media (max-width:780px){ .<?php echo $uid; ?> .icn-arrow{ display:none; } }
     </style>
 
-    <div class="<?php echo $uid; ?> impact-coupons-netflix" data-show-expiry="<?php echo $show_expiry ? '1' : '0'; ?>">
+    <div data-sharity-preferences-managed data-sharity-netflix class="<?php echo $uid; ?> impact-coupons-netflix" data-show-expiry="<?php echo $show_expiry ? '1' : '0'; ?>">
       <div class="icn-wrap">
         <?php if ($a['arrows']==='1'): ?>
-          <div class="icn-arrow prev" aria-hidden="true" title="Vissza">‹</div>
-          <div class="icn-arrow next" aria-hidden="true" title="Előre">›</div>
+          <div class="icn-arrow prev" aria-hidden="true" data-sharity-netflix-copy="prev" data-sharity-netflix-target="title" title="Vissza">‹</div>
+          <div class="icn-arrow next" aria-hidden="true" data-sharity-netflix-copy="next" data-sharity-netflix-target="title" title="Előre">›</div>
         <?php endif; ?>
 
         <div class="icn-track">
           <?php foreach ($cards as $c): ?>
             <div class="icn-card"<?php echo $c['expiry'] ? ' data-expiry="'.esc_attr($c['expiry']).'"' : ''; ?>>
               <a href="<?php echo esc_url($c['cta']); ?>"
-                 aria-label="<?php echo esc_attr($c['shop_name'].' – kupon'); ?>"
+                 data-sharity-netflix-copy="couponAria" data-sharity-netflix-target="aria-label" data-sharity-netflix-value="<?php echo esc_attr($c['shop_name']); ?>" aria-label="<?php echo esc_attr($c['shop_name'].' – kupon'); ?>"
                  data-event="coupon_click"
                  data-shop-slug="<?php echo esc_attr($c['shop_slug']); ?>"
                  data-shop-name="<?php echo esc_attr($c['shop_name']); ?>"
@@ -1490,13 +1568,13 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
                     <?php if (!empty($c['shop_logo'])): ?>
                       <img class="icn-logo" src="<?php echo esc_url($c['shop_logo']); ?>" alt="<?php echo esc_attr($c['shop_name']); ?>" loading="lazy" decoding="async">
                     <?php else: ?>
-                      <span style="font:600 12px system-ui;color:#666">Logo</span>
+                      <span data-sharity-netflix-copy="logo" style="font:600 12px system-ui;color:#666">Logo</span>
                     <?php endif; ?>
                   </div>
                   <div class="icn-shop" title="<?php echo esc_attr($c['shop_name']); ?>"><?php echo esc_html($c['shop_name']); ?></div>
                 </div>
 
-                <div class="icn-primary"><?php echo esc_html($c['primary']); ?></div>
+                <div class="icn-primary" <?php if (!empty($c['primary_copy'])): ?>data-sharity-netflix-copy="<?php echo esc_attr($c['primary_copy']); ?>"<?php endif; ?>><?php echo esc_html($c['primary']); ?></div>
                 <?php if (!empty($c['title'])): ?>
                   <div class="icn-title"><?php echo esc_html($c['title']); ?></div>
                 <?php endif; ?>
@@ -1504,7 +1582,7 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
                 <?php if ($a['show_code']==='1' && !empty($c['code'])): ?>
                   <div class="icn-actions">
                     <span class="icn-code"><?php echo esc_html($c['code']); ?></span>
-                    <button type="button" class="icn-copy"
+                    <button type="button" class="icn-copy" data-sharity-netflix-copy="copy"
                             data-event="coupon_copy"
                             data-shop-slug="<?php echo esc_attr($c['shop_slug']); ?>"
                             data-shop-name="<?php echo esc_attr($c['shop_name']); ?>"
@@ -1667,6 +1745,11 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
             // YYYY-MM-DD HH:MM (helyi idő – Europe/Budapest)
             return dt.getFullYear()+'-'+fmt2(dt.getMonth()+1)+'-'+fmt2(dt.getDate())+' '+fmt2(dt.getHours())+':'+fmt2(dt.getMinutes());
           }
+          function countdownLabel(node, key, value, fallback) {
+            node.setAttribute('data-sharity-netflix-copy', key);
+            node.setAttribute('data-sharity-netflix-value', value || '');
+            node.textContent = window.impactshopNetflixText ? window.impactshopNetflixText(key, value) : fallback;
+          }
           function tickCountdown(){
             var cards = track.querySelectorAll('.icn-card');
             cards.forEach(function(card){
@@ -1674,19 +1757,19 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
               var cd  = card.querySelector('.icn-countdown');
               if (!cd) return;
               if (!exp) {
-                cd.textContent = 'Lejárat: folyamatos';
+                countdownLabel(cd, 'forever', '', 'Lejárat: folyamatos');
                 cd.classList.remove('urg-24h','done');
                 return;
               }
               var t = new Date(exp).getTime();
               if (isNaN(t)) {
-                cd.textContent = 'Lejár: '+exp;
+                countdownLabel(cd, 'expires', exp, 'Lejár: '+exp);
                 cd.classList.remove('urg-24h','done');
                 return;
               }
               var left = t - Date.now();
               if (left <= 0) {
-                cd.textContent = 'Lejárt';
+                countdownLabel(cd, 'expired', '', 'Lejárt');
                 cd.classList.add('done');
                 // Rejtés, hogy ne maradjon "szellemkupon"
                 card.style.display = 'none';
@@ -1700,13 +1783,13 @@ if (!function_exists('impact_coupons_netflix_shortcode')) {
               var secs = Math.floor((rem % (60*1000)) / 1000);
 
               if (days >= 7) {
-                cd.textContent = 'Lejár: '+fmtDate(new Date(t));
+                countdownLabel(cd, 'expires', fmtDate(new Date(t)), 'Lejár: '+fmtDate(new Date(t)));
                 cd.classList.remove('urg-24h','done');
               } else if (days >= 1) {
-                cd.textContent = 'Lejár: '+days+' nap';
+                countdownLabel(cd, 'days', String(days), 'Lejár: '+days+' nap');
                 cd.classList.remove('urg-24h','done');
               } else {
-                cd.textContent = 'Lejár: '+fmt2(hrs)+':'+fmt2(mins)+':'+fmt2(secs);
+                countdownLabel(cd, 'expires', fmt2(hrs)+':'+fmt2(mins)+':'+fmt2(secs), 'Lejár: '+fmt2(hrs)+':'+fmt2(mins)+':'+fmt2(secs));
                 cd.classList.toggle('urg-24h', true);
                 cd.classList.remove('done');
               }
@@ -1740,7 +1823,7 @@ add_filter('the_content', function ($content) {
         return $content;
     }
 
-    $block = "\n\n<h2>Impact Shop ajánlatok</h2>\n" . do_shortcode('[impact_deals_netflix limit="12" autoplay="1" interval="4000" ga4="1"]');
+    $block = "\n\n<h2 data-sharity-preferences-managed data-sharity-netflix data-sharity-netflix-copy=\"heading\">Impact Shop ajánlatok</h2>\n" . do_shortcode('[impact_deals_netflix limit="12" autoplay="1" interval="4000" ga4="1"]');
 
     return $content . $block;
 });
@@ -1765,5 +1848,5 @@ add_action('wp_footer', function () {
         return;
     }
 
-    echo "\n<section id=\"impactshop-home-deals\" class=\"impactshop-home-deals\">\n<h2>Impact Shop ajánlatok</h2>\n{$block}\n</section>\n";
+    echo "\n<section id=\"impactshop-home-deals\" class=\"impactshop-home-deals\">\n<h2 data-sharity-preferences-managed data-sharity-netflix data-sharity-netflix-copy=\"heading\">Impact Shop ajánlatok</h2>\n{$block}\n</section>\n";
 });

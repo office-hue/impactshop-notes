@@ -1,3 +1,7 @@
+## 2026-11-04 — Szűrt Sharity nyelvi release, forrásjelölt
+
+HU/EN/DE/FR és tájékoztató deviza a saját release-ágon; 69 böngészőteszt, 150 FX-állítás, 9 szintaxis-ellenőrzés sikeres. Pénzügyi/rangsorhunkok és idegen WIP megmaradnak. Nincs merge/telepítés/aktiválás. Scope, kockázat, rollback és UI-checklist: `docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md`.
+
 ## 2026-10-25 — Notes audit: valódi finding elsőbbsége, rollout visszaállítva
 
 A #225 merge `cab09c88ad2a976a8b774798e685148ad3b4fc22` fája
