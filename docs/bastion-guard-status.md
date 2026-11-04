@@ -1,3 +1,12 @@
+## Sharity carousel locale — 2026-11-04
+
+Termékcommit `69b60908`, 6 saját PHP/Chrome és 10 meglévő választóteszt
+sikeres. Kizárólag az `impactshop-netflix-shortcodes.php` védelmi hash-e és
+a hashleltár checksumja frissült; minden idegen pin byte-azonos maradt.
+Nincs guardlogika-változás vagy teljes éles guard-PASS. Részletek és rollback:
+`protected-change-records/2026-11-04-sharity-shop-locale.md`.
+Nem merge-elt, telepített vagy aktivált csomag.
+
 ## Sharity P3b — 2026-11-01, helyi cache-forráskész
 
 Új Notes-owned publikus FX read/cache, defaultOFF refresh, napi egy atomi
