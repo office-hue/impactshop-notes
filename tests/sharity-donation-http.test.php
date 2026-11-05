@@ -171,9 +171,8 @@ foreach(['id','quote_id']as$field){
     $handler=$field==='id'?'sharity_donation_order_status_handle':'sharity_donation_order_status_by_quote_handle';
     resetCase();$r=request();$r->url=[$field=>($field==='id'?'do_':'dq_').str_repeat('b',32)];$r->query=[$field=>'evil','subject_ref'=>'evil'];
     $out=$handler($r);expectResponse($out,200);
-    check(callNames()===['auth',$field==='id'?'status':'status_quote','financial'],'auth and owned read before finance');
-    check($calls[2][1]===ImpactShop_Sharity_Web_Session::$answer['subject_ref']&&$calls[2][2]===resultFixture()['id'],'finance uses canonical owner/order, never query');
-    check($out->body['financial']['status']==='pending'&&$out->body['order']===resultFixture('prepared'),'additive financial shape');
+    check(callNames()===['auth',$field==='id'?'status':'status_quote'],'partial rollout does not mix standalone financial snapshots');
+    check($out->body['financial']['status']==='unavailable'&&$out->body['order']===resultFixture('prepared'),'additive financial shape');
     $calls=[];$storeError=new RuntimeException('ORDER_NOT_FOUND');expectResponse($handler($r),404);check(!in_array('financial',callNames(),true),'foreign/unknown no financial access');
     resetCase();ImpactShop_Sharity_Web_Session::$answer=null;expectResponse($handler($r),401);check(callNames()===['auth'],'unauthenticated no finance');
     resetCase();$financialError=true;$out=$handler($r);expectResponse($out,200);check($out->body['financial']['status']==='unavailable','optional reader failure explicit');$financialError=false;
@@ -192,12 +191,29 @@ foreach(['id','quote_id']as$field){
     $handler=$field==='id'?'sharity_donation_order_status_handle':'sharity_donation_order_status_by_quote_handle';
     resetCase();$r=request();$r->url=[$field=>($field==='id'?'do_':'dq_').str_repeat('b',32)];$r->query=['subject_ref'=>'evil'];
     $out=$handler($r);expectResponse($out,200);
-    check(callNames()===['auth',$field==='id'?'status':'status_quote','financial','payouts'],'payout after canonical owned read only');
-    check($calls[3][1]===ImpactShop_Sharity_Web_Session::$answer['subject_ref']&&$calls[3][2]===resultFixture()['id'],'payout canonical owner/order');
-    check($out->body['payouts']['status']==='pending','additive payout sibling');
+    check(callNames()===['auth',$field==='id'?'status':'status_quote'],'no separate payout snapshot without grouped reader');
+    check($out->body['payouts']['status']==='unavailable','additive payout sibling');
     $calls=[];$storeError=new RuntimeException('ORDER_NOT_FOUND');expectResponse($handler($r),404);check(!in_array('payouts',callNames(),true),'foreign owner no payout access');
     resetCase();$payoutError=true;$out=$handler($r);expectResponse($out,200);check($out->body['payouts']['status']==='unavailable'&&$out->body['order']===resultFixture('prepared'),'reader failure preserves historical order');$payoutError=false;
 }
 resetCase();$out=sharity_donation_order_handle(request());expectResponse($out,200);
 check(!isset($out->body['payouts'])&&!in_array('payouts',callNames(),true),'checkout POST never calls payout reader');
+// The grouped reader is conditional so partial-rollout cases above genuinely lack it.
+if (!function_exists('sharity_donation_owned_status')) {
+    function sharity_donation_owned_status($subject,$column,$value,$now):array {
+        $GLOBALS['calls'][]=['grouped',$subject,$column,$value];
+        if($GLOBALS['storeError']!==null){throw $GLOBALS['storeError'];}
+        return ['order'=>resultFixture(),'financial'=>['version'=>2,'status'=>'pending'],
+            'payouts'=>['version'=>1,'status'=>'pending','records'=>[],'bank_receipt'=>false]];
+    }
+}
+foreach(['id','quote_id']as$field){
+    resetCase();$r=request();$value=($field==='id'?'do_':'dq_').str_repeat('b',32);$r->url=[$field=>$value];$r->query=[$field=>'evil'];
+    $handler=$field==='id'?'sharity_donation_order_status_handle':'sharity_donation_order_status_by_quote_handle';
+    $out=$handler($r);expectResponse($out,200);
+    check($calls===[['auth'],['grouped',ImpactShop_Sharity_Web_Session::$answer['subject_ref'],$field==='id'?'order_id':'quote_id',$value]],'canonical auth/URL only; one grouped read');
+    check($out->body['financial']['version']===2&&isset($out->body['payouts']),'V2 and own payouts forwarded together');
+    $calls=[];$storeError=new RuntimeException('PRIVATE_DB');expectResponse($handler($r),503);
+    check(callNames()===['auth','grouped'],'group failure has no unlocked fallback');
+}
 echo "PASS donation HTTP boundary {$checks} checks; mocked auth/store only, no provider\n";

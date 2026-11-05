@@ -281,6 +281,92 @@ try {
     $wpdb->db->query($wpdb->prepare("UPDATE `{$tt}` SET document=%s,digest=%s,created_at_utc=%s WHERE order_id=%s",$raw['document'],$raw['digest'],$raw['created_at_utc'],$readId));
     check(financialRead($readOrder)===$view&&sharity_donation_webhook_order($readId)===$readOrder,'restored fixture exact, order unchanged');
     check($financeHttp->gets===$getsBefore&&calls()===$postsBefore&&$options===$optsBefore,'no provider or option writes');
+    // V2 groups the owner, payment and preliminary money in one read-only snapshot.
+    $pending=financeOrder('v2-pending-proof');
+    $v2Start=$checks;$getBaseline=$financeHttp->gets;$postBaseline=calls();$ddlBaseline=$wpdb->ddls;
+    $owned=sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now);
+    $v2=$owned['financial'];
+    check($owned['order']===sharity_donation_order_public($readOrder,$now),'V2 preserves immutable checkout/order');
+    check($v2['version']===2&&$v2['status']==='snapshot'&&$v2['payment']===['verified_at_utc'=>gmdate('Y-m-d\TH:i:s\Z',$now),'currency'=>'HUF','amount_minor'=>'50000'],'V2 original payment from nested stored proof');
+    check($v2['settlement']===$view['settlement']&&$v2['provisional_split']===$view['provisional_split'],'V2 current target uses existing V1 money');
+    check($v2['approved_split']===null&&$v2['bank_receipt']===null&&$v2['reconciliation_status']==='pending','no approval or bank claim without writer');
+    check($v2['adjustment_status']==='none','complete unchanged refund/dispute evidence');
+    check(sharity_donation_owned_status($readOrder['subject_ref'],'quote_id',$readOrder['quote_id'],$now)['financial']===$v2,'quote and ID same snapshot projection');
+    check(sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now+60)['financial']===$v2,'proof timestamp stable across GET');
+    fails(fn()=>sharity_donation_owned_status('hmac-sha256:'.str_repeat('f',64),'order_id',$readId,$now),'ORDER_NOT_FOUND');
+    $currentOptions=$options;unset($options[SHARITY_DONATION_TARGET_SCHEMA_OPTION]);
+    $missing=sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now);
+    check($missing['order']===$owned['order']&&$missing['financial']['payment']===$v2['payment']&&$missing['financial']['settlement']===null,'missing target keeps own order and original payment, not zero money');
+    unset($options[SHARITY_DONATION_FINANCE_SCHEMA_OPTION]);
+    $missing=sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now);
+    check($missing['financial']['status']==='unavailable'&&$missing['order']===$owned['order'],'missing finance schema preserves owned order');$options=$currentOptions;
+    $wpdb->db->query('START TRANSACTION');
+    try {
+        $caller=sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now);
+        check($caller['order']===$owned['order']&&$caller['financial']['status']==='unavailable','unknown caller snapshot exposes historical order only');
+        check($wpdb->db->query('SELECT @@in_transaction AS tx')->fetch_assoc()['tx']==='1','caller transaction not committed or rolled back');
+        try { sharity_donation_backing_db();throw new LogicException('writer accepted transaction'); }
+        catch (RuntimeException $expected) { check(true,'writer adapter still refuses active caller transaction'); }
+    } finally { $wpdb->db->rollback(); }
+    check(sharity_donation_owned_status($pending['subject_ref'],'order_id',$pending['order_id'],$now)['financial']['payment']===null,'recorded session alone not payment proof');
+    $refund=$readData??json_decode(sharity_donation_finance_read($readId,sharity_donation_finance_reconcile($readId,$now)['evidence_digests'][0])['canonical_json'],true);
+    $refund['refunds']=[['id'=>'re_STATUS','amount_minor'=>'10000','currency'=>'HUF','created'=>1800000010,'status'=>'succeeded',
+        'balance'=>reconcileBalance('txn_STATUSREFUND','re_STATUS','refund','-10000'),'failure_balance'=>null]];
+    $refund['original']['charge_refund_state']['amount_refunded_minor']='10000';
+    // Actual second connection commits a refund after the owner read. The first GET must keep the older whole snapshot.
+    $firstConnection=$wpdb;$inserted=null;
+    $firstConnection->afterRead=function($sql)use(&$inserted,$firstConnection,$readOrder,$refund){
+        if($inserted!==null||!str_contains($sql,'WHERE `order_id`'))return;
+        $firstConnection->afterRead=null;$second=new OrderDb((int)$GLOBALS['port']);$GLOBALS['wpdb']=$second;
+        try{$inserted=reconcileFixture($readOrder,$refund);}finally{$second->db->close();$GLOBALS['wpdb']=$firstConnection;}
+    };
+    $beforeRefund=sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now);
+    $firstConnection->afterRead=null;
+    check($inserted!==null&&$beforeRefund['financial']===$v2,'two-connection refund race does not mix current adjustment with older target');
+    $afterRefund=sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now)['financial'];
+    check($afterRefund['payment']===$v2['payment']&&$afterRefund['adjustment_status']==='partial_refund','refund does not erase original payment');
+    check($afterRefund['settlement']===null&&$afterRefund['provisional_split']===null,'new evidence invalidates old target before worker runs');
+    removeReconcileFixture($inserted);
+    $incomplete=$refund;$incomplete['resources_complete']=false;$incompleteSaved=reconcileFixture($readOrder,$incomplete);
+    $incompleteView=sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now)['financial'];
+    check($incompleteView['payment']===$v2['payment']&&$incompleteView['adjustment_status']==='unknown'&&$incompleteView['settlement']===null,'incomplete adjustment keeps independently proven original payment only');
+    removeReconcileFixture($incompleteSaved);
+    $ft=sharity_donation_finance_table();$proof=sharity_donation_finance_read($readId,sharity_donation_finance_reconcile($readId,$now)['evidence_digests'][0]);
+    $wpdb->db->query($wpdb->prepare("UPDATE `{$ft}` SET digest=%s WHERE id=%s",str_repeat('0',64),$proof['id']));
+    check(sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now)['financial']['payment']===null,'corrupt receipt cannot prove payment');
+    $wpdb->db->query($wpdb->prepare("UPDATE `{$ft}` SET digest=%s WHERE id=%s",$proof['digest'],$proof['id']));
+    $fullRefund=$refund;$fullRefund['refunds'][0]['amount_minor']='50000';$fullRefund['refunds'][0]['balance']=reconcileBalance('txn_STATUSFULL','re_STATUS','refund','-50000');
+    $fullRefund['original']['charge_refund_state']['amount_refunded_minor']='50000';$fullSaved=reconcileFixture($readOrder,$fullRefund);
+    check(sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now)['financial']['adjustment_status']==='full_refund','full refund separate from original payment');removeReconcileFixture($fullSaved);
+    $dispute=$refund;$dispute['refunds']=[];$dispute['original']['charge_refund_state']['amount_refunded_minor']='0';$dispute['original']['disputed']=true;
+    $dispute['disputes']=[['id'=>'dp_STATUS','amount_minor'=>'50000','currency'=>'HUF','created'=>1800000010,'status'=>'needs_response','balances'=>[]]];
+    $openSaved=reconcileFixture($readOrder,$dispute);
+    check(sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now)['financial']['adjustment_status']==='disputed','unambiguous open dispute visible');
+    $dispute['original']['disputed']=false;$dispute['disputes'][0]['status']='warning_closed';$closedSaved=reconcileFixture($readOrder,$dispute);
+    check(sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now)['financial']['adjustment_status']==='unknown','mixed open/closed evidence is not a local-ID timeline');
+    removeReconcileFixture($openSaved);removeReconcileFixture($closedSaved);
+    // The real transaction refuses DML; the callback is test-only and issues no provider call.
+    $readOnlyRejected=false;$wpdb->afterRead=function($sql)use(&$readOnlyRejected,$readId){
+        if(!str_contains($sql,'WHERE `order_id`'))return;$GLOBALS['wpdb']->afterRead=null;
+        try{$GLOBALS['wpdb']->db->query("UPDATE `".sharity_donation_order_table()."` SET state=state WHERE order_id='".$readId."'");}
+        catch(mysqli_sql_exception $e){$readOnlyRejected=$e->getCode()===1792;}
+    };
+    sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now);
+    check($readOnlyRejected,'actual grouped transaction rejects a write attempt');$wpdb->afterRead=null;
+    $pinned=$wpdb;$replacement=null;
+    $pinned->afterRead=function($sql)use(&$replacement){
+        if(!str_contains($sql,'WHERE `order_id`'))return;$GLOBALS['wpdb']->afterRead=null;
+        $replacement=new OrderDb((int)$GLOBALS['port']);$GLOBALS['wpdb']=$replacement;
+    };
+    try{fails(fn()=>sharity_donation_owned_status($readOrder['subject_ref'],'order_id',$readId,$now),'ORDER_READ_UNAVAILABLE');
+        check($pinned->db->query('SELECT @@in_transaction AS tx')->fetch_assoc()['tx']==='0','connection replacement cannot expose mixed financial state');}
+    finally{if($replacement!==null){$replacement->db->close();}$wpdb=$pinned;$pinned->afterRead=null;}
+    $json=json_encode($owned);foreach(['acct_','txn_','ch_','pi_','subject_ref','canonical_json','digest']as$private){check(!str_contains($json,$private),'V2 projection hides '.$private);}
+    check($financeHttp->gets===$getBaseline&&calls()===$postBaseline&&$wpdb->ddls===$ddlBaseline,'all grouped reads zero provider/SDK/schema writes');
+    check($wpdb->db->query('SELECT @@in_transaction AS tx')->fetch_assoc()['tx']==='0','group-owned transaction released');
+    echo 'V2 grouped financial read MariaDB: '.($checks-$v2Start)." checks\n";
+
+
     echo 'D2s financial owner read MariaDB: '.($checks-$readStart)." checks\n";
     echo 'Donation target MariaDB: '.($checks-$targetStart)." checks; exact net, per-currency, registry, stale and native concurrent/commit faults\n";
 } finally {targetConnection();}

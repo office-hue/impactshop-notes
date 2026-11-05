@@ -1,3 +1,15 @@
+## Sharity donation V2 grouped status — 2026-11-05
+
+Saját GET order/quote: egy pinned InnoDB read-only snapshot az owner/order,
+eredeti fizetési megfigyelés, aktuális target/registry és meglévő payout
+olvasásához. Caller transaction érintetlen; hiányzó pénzügy mellett order
+olvasható. Nincs új séma/helper/provider/írás/approval/bankállítás/aktiválás.
+9083 MySQL assertion (46 újV2),356HTTP,447CLI,17runtime; scopedSol6.1review
+leletei javítva/lezárva. Régi negatív vote-fixture warningja dokumentálva.
+Hermes08835912token, becsültUSD0.003592862,nem számla; teljes díj ismeretlen.
+Scope/kiadás/rollback/UI: docs/protected-change-records/2026-11-05-sharity-donation-status-v2.md.
+Source-only; idegen record/output WIP megmarad. Nincs main/quiet/deploy.
+
 ## Sharity — own Impact Shop page copy, 2026-11-04
 
 Nine actual Elementor widgets now follow HU/EN/DE/FR in the existing overlay,

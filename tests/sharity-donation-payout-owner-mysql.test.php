@@ -23,6 +23,8 @@ foreach(['HUF','EUR','USD','GBP']as$cc){
     $r=d2abRead($o);check($r['status']==='snapshot'&&count($r['records'])===1,'owned payout snapshot '.$cc);
     check($r['records'][0]['currency']===$cc&&$r['records'][0]['payout_minor']===$f['net_minor']&&$r['records'][0]['contribution_minor']===$f['net_minor'],'exact own NET '.$cc);
     check($r['records'][0]['bank_receipt']===false&&$r['bank_receipt']===false,'bank receipt never inferred');
+    $group=sharity_donation_owned_status($o['subject_ref'],'order_id',$o['order_id'],$now+120);
+    check($group['payouts']===$r&&$group['financial']['payment']!==null,'grouped status reuses the same own-payout algorithm '.$cc);
     check($r['records'][0]['observed_at_utc']===gmdate('Y-m-d\TH:i:s\Z',$now),'observation not arrival date');
     check(calls()===$before&&count($h->calls)===$beforeGet&&d2yCount()===$rows&&$wpdb->ddls===$ddl,'owner GET has no provider/row/DDL mutation');
     $j=json_encode($r);foreach(['po_','acct_','txn_','ch_','PRIVATE_','order_id','payout_amount_minor']as$secret){check(!str_contains($j,$secret),'no batch/provider identity '.$secret);}
