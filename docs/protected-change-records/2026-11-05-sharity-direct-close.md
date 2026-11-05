@@ -87,3 +87,13 @@ SHARITY_DONATION_SDK_VENDOR; nincs közös vendor-módosítás. Kizárólag
 a11új donation-forrás kerül a meglévő guardleltárba; a guardlogika és
 minden régi védett bejegyzés változatlan. Független integrációs review
 lezárva: kiválasztott41fájl donorbyte-azonos, nincs aktiválási rövidítés.
+
+## Protected files touched és smoke
+
+A külön védelmi commitban csak az impactshop-guard-config.json és saját
+checksumja, az impactshop-guard-hashes.json és saját checksumja, valamint
+bastion-guard-status.md változik. A meglévő bejegyzések megmaradnak; csak
+a 11 új donation fájl regisztrációja és a config saját digestje frissül.
+Smoke: donation:direct-huf, finance:manual-close, guard:inventory.
+Rollback: csak e saját kiadáshoz tartozó fájl/pointer állítható vissza;
+új rendelés OFF, korábbi státusz/webhook/egyeztetés megmarad.
