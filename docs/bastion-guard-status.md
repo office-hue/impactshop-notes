@@ -1,3 +1,12 @@
+## 2026-11-05 — Direct HUF saját forrásleltár
+
+A 11 új donation modul/manifest a meglévő config/hash leltárba került.
+Minden korábbi védett bejegyzés és guardlogika változatlan; nincs általános
+újrahash-elés. Termékcommit: c40892f1. 9169 DB-, 461 CLI-, 356 HTTP- és
+17 runtime-ellenőrzés, PHP lint és független review lezárva. Ez forráskész
+állapot, nem telepítés vagy aktiválás. Scope/rollback/smoke:
+`docs/protected-change-records/2026-11-05-sharity-direct-close.md`.
+
 ## 2026-11-04 — Szűrt Sharity nyelvi release, forrásjelölt
 
 HU/EN/DE/FR és tájékoztató deviza a saját release-ágon; 69 böngészőteszt, 150 FX-állítás, 9 szintaxis-ellenőrzés sikeres. Pénzügyi/rangsorhunkok és idegen WIP megmaradnak. Nincs merge/telepítés/aktiválás. Scope, kockázat, rollback és UI-checklist: `docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md`.
