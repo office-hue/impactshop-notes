@@ -1,3 +1,10 @@
+## 2026-11-05 — tesztfixture whitespace CI-javítás
+
+A #244 safe-audit a már publikus HTML-fixture 12 üres sorának tabjai miatt
+bukott. Csak ezek törölve; érdemi markup és szöveg byte-szinten változatlan
+whitespace nélkül. A meglévő négy nyelvi/markup tesztcsoport sikeres.
+Termékkód, pénzügy és éles állapot nem változott.
+
 ## Sharity donation V2 grouped status — 2026-11-05
 
 Saját GET order/quote: egy pinned InnoDB read-only snapshot az owner/order,
