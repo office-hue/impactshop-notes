@@ -68,3 +68,17 @@ Forráskész; nincs push/merge/telepítés/aktiválás vagy pénzmozgatás. A te
 Direct/Amplifier cél nyitott: kézi záróíró, valós account/díj/felelősség,
 fedezet és tényleges kifizetési lánc továbbra szükséges. Az izolált konténer
 leállítva/törölve; idegen protected-record/output WIP megőrizve.
+
+Érintett fájlok: finance-ledger.php,http.php, saját tesztek; saját metaadatként
+bastion-guard-status.md,impactshop-guard-hashes.json és impactshop-guard-hashes.sha256.
+Smoke checklist a forráshoz: fent dokumentált own GET/refund/kapcsolat/TX és
+checksum-verify; deploy:guard-preflight az aktiválás előtt a meglévő kiadási út.
+A forrás-pin ellenőrzése nem futtatott éles deploy-preflight PASS.
+
+Publikálási ellenőrzés: a pontos409a2db6..de9bdb9d tartomány47 saját blobja
+natív secret-content-scan PASS. Az általános audit más távoli objektumok helyi
+hiánya, majd a donor idegen WIP-je miatt nem értékelte a termékguardot; nincs
+fetch vagy helperjavítás. Külön tiszta, saját helyi detached audit-checkoutban
+commit-lane és manifest-checksum sikeres. A teljes korábbi nyelvi tartomány
+HTML fixture whitespace-ja diff-check észrevétel marad; a mostani két commit
+saját diff-checkje tiszta. Nem állítunk a teljes tartományra általános PASS-t.
