@@ -1253,3 +1253,14 @@ javítás readback; protected record§100. Új runtime-hívó/CLI, éles migrác
 importaktiválás nincs. A jelenlegi V1 import nem használja még a közös keretet.
 Rollback saját release/inventory; történeti pénzügyi sorokat nem töröl.
 Új modul SHA256: `6b24bb4003081615abd7e21e317d9c1c8e4d444f09b570cfc662e4ce41c35bec`.
+
+
+## 2026-11-05 — Donation V2 grouped owner read
+
+Termék2856426d; csak két saját forráshash és a manifestchecksum frissül.
+Inventory/metadata/guardlogika/idegen pinek változatlanok.9083MariaDB,356HTTP,
+447financeCLI,17runtime; Sol6.1review javítások lezárva. Scope, régi fixture
+warning, kiadás/rollback/kézi UI: protected-change-records/2026-11-05-sharity-donation-status-v2.md.
+Nincs mainművelet, migráció, telepítés, aktiválás vagy pénzmozgatás.
+- wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php: `c76b8e2c3a2e5896fd8f3789284c72cd31f577fd9223e463ed4ab9ee7c4b2286`
+- wp-content/mu-plugins/sharity-ngo-donations/http.php: `f222b727302fd7c778d52593c0824b47f678e7dd800fea94f628cf1d46642525`
