@@ -1,3 +1,14 @@
+## 2026-11-05 — Direct HUF saját kiadási kivágás
+
+Main9fcafb3b, donor2e4fe8c9:11meglévő donation termékfájl és30teszt,
+csak Direct aktiválási scope. Finance-close9169DB/461CLI/356HTTP/17runtime
+és független source-review érvényes donor bizonyíték; release-target
+9169DB/461CLI/356HTTP/17runtime és lint/diff sikeres. Scoped független
+release-integrációs review szerint nincs fennmaradó blokkoló. Nincs új séma/API/guardlogika, idegen
+WIP/affiliate/Offerwall/szavazási kód nem kerül át. Részletek és rollback:
+docs/protected-change-records/2026-11-05-sharity-direct-close.md.
+Forráskivágás, nem merge/deploy/aktiválás. A Git-csendablak felszabadítva.
+
 ## 2026-11-04 — Szűrt Sharity nyelvi release, forrásjelölt
 
 HU/EN/DE/FR és tájékoztató deviza a saját release-ágon; 69 böngészőteszt, 150 FX-állítás, 9 szintaxis-ellenőrzés sikeres. Pénzügyi/rangsorhunkok és idegen WIP megmaradnak. Nincs merge/telepítés/aktiválás. Scope, kockázat, rollback és UI-checklist: `docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md`.
