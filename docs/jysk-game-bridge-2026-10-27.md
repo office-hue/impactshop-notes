@@ -1,5 +1,57 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-11-07 — tízes névsorhoz igazított privát profil, jutalmazás zárva
+
+A már telepített bridge nem változott: SHA256
+`92af8b62c22882eafacb3079ac09e6bc589bdd1d44adfb2bc42165b4fc2d12fd`.
+A közös pont/szint modulok élő byte-jai a #238 merge-elt változatával egyeznek:
+`97284633b1518a14f1a8aad83986f208c435da3cf819145db3b2d496c3b9f747` és
+`79b990732bd675856ca44f83feb49c0491924a7a4324090763c649772257c7f8`.
+A #238 meglévő JYSK award/replay/conflict/commit-ACK SQL-bizonyítéka használható;
+a régi query-hookos SQL-suite-ra nincs új PASS. Közös runtime-fájl nem lett írva.
+
+- A saját `/home/sharityh/jysk-game/config.json` mentése után előhash-védett
+  atomi csere történt. Előhash `e027030d…`, utóhash
+  `1777891a64156165eac3aa004b4d0e4ca2b70ccb2cc00f4d49212c0a11b7346b`.
+  Külön WP-folyamat privateProfile=ready eredményt és az új fájlhash-t olvasta.
+  Policy `c19d76239a83ef98e694c951e5bfad1f7fedc6bc4eb09e895ca776e39814db86`;
+  új producer `0f828ef41783dfaee27f4c367cbb9c99dc45926c`, régi kettő megmaradt.
+  A szolgáltatási és subject-kulcs változatlan, profil0600/könyvtár0700.
+- NGO_IDS tíz pontos azonosító, TEST_SUBJECTS egy korábbi valódi owner-callback
+  és most aktív owner-binding alapján besorolt subject. A publikus JYSK-roster
+  tíz bejegyzése egyezik. Friss böngészős login ebben a körben nincs igazolva.
+  ENABLED=true, REWARDS_ENABLED=false, TRANSACTION_READY=false maradt.
+- Valódi wpdb/read_only0/nincs db.php, a négy érintett writer-tábla InnoDB;
+  event-ID, pseudo/dedupe és pseudo egyedi indexek frissen ellenőrizve. Ez
+  tranzakciós előfeltétel, nem élő pontjóváírási acceptance.
+- Saját kilenc JYSK-tábla natív single-transaction snapshotja elkészült,0600:
+  `/home/sharityh/jysk-game/game-launch-20261107/native-snapshot-20261107-r1.sql`.
+  SQL SHA256 `16749c5a8a3c71603eeb70c78f30a73e6a5cf58d47508ba6ebc489f9c226f4df`.
+  A mentés helyben AES-GCM titkosítva, külön0600 kulccsal; ciphertext SHA256
+  `5dcc594cc318b423944e34371ea330eadb60ac681bef718a2ea36ac177401e4f`.
+- Hálózatmentes helyi MariaDB10.11.19 restore és kilenc CHECK TABLE sikeres;
+  image `sha256:d769e37960821dfdcf096954f6e7ac89f747e116c1bba98e48edd265dfc7deae`.
+  Egy owner-binding, egy session/nonce; reward/results/prizes/prize_events0.
+  A pontos ideiglenes konténer eltávolítva, a titkosított mentés megőrizve.
+  Production restore nem történt. A kisebb helyi startup-keret két sikertelen
+  próbája után diagnózis és1GiB memória/512MiB tmpfs mellett sikeres új próba;
+  a sikertelen próbák nem PASS-ok. A kezdeti WP-CLI export negatív opcionális
+  flaghibáját a minimális natív export oldotta meg, új helper nélkül.
+
+App game V6/inactive/000, roster1/10; egy technikai subject besorolva, részvétel
+és pont nincs. Intake V27/public1/submission0/maintenance1/hold1, cutoff változatlan.
+A VGYFMSZ szerepel Arnold technikai felvételi utasítására, eredeti hiánypótlási
+státusza változatlan. Csak külön kikapcsolási utasítás, még ARM előtt: kilences
+snapshot import + ugyanazon WP NGO_IDS readback. Válaszhiány nem automatikus döntés.
+
+Következő kapu november9.10:00 Budapest: végleges névsor, friss owner-login,
+friss backup/restore és activation riportok, majd readiness/reward true,
+game111→preflight→ARM5percen belül. A pontírás november9.12:00 előtt mindkét
+szerveroldali időkapun tiltott. Az élő35pontos technikai próba csak utána fut.
+Rollback: game acceptance0, szükség esetén publish0 és WP reward=false;
+ENABLED maradtrue. Nincs shared core rollback, ponttörlés, terminal close vagy
+production DB-visszatöltés. Most nincs build, kódtelepítés, ARM vagy csendablak.
+
 ## 2026-10-29 — jóváhagyott kérdésbank, app éles, jutalmazás zárva
 
 Ez felülírja a lentebbi app/approval-pending részállapotot. A teljes október29-i

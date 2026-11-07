@@ -1,3 +1,18 @@
+## 2026-11-07 — JYSK roster prepared; game remains inactive
+
+App0f828ef4… / dpl_3byQwsYo9sTPAyh4mTtDVHbFNqZC unchanged. Game V6/inactive/000,
+roster1/10, testSubject1, participants0. Own private WP profile CAS/backup and
+new-process readback verified: SHA1777891a…, current policyc19d7623… and producer
+added, old producers/keys retained; rewards/transaction=false. No WP/core deploy.
+Actual writer engine/index prerequisites checked; live point acceptance pending.
+Nine own WP tables encrypted and restored in network-none local MariaDB;
+CHECK TABLE9/9 verified, exact temporary container removed. Earlier failed
+export/startup attempts diagnosed, never reported as PASS. No production restore.
+VGYFMSZ included by explicit technical enrollment; pending registry unchanged.
+Any exclusion requires a separate instruction and inactive roster/WP-list update
+before ARM. Nov9 10:00 Budapest final checkpoint, starts12:00; fresh browser
+login, current activation evidence and arm still pending. No quiet window held.
+
 ## 2026-10-29 — JYSK approved questions deployed; rewards still off
 
 Full105question partner approval confirmed by Arnold. Closed/empty Turso policy
