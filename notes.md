@@ -1,3 +1,17 @@
+## 2026-11-07 — JYSK tízes névsor és privát profil előkészítve
+
+Saját profil mentett/előhash-védett atomi cseréje és új process readback: SHA
+`1777891a64156165eac3aa004b4d0e4ca2b70ccb2cc00f4d49212c0a11b7346b`;
+aktuális c19d7623… policy, producer0f828ef4… hozzáadva, korábbi producerek/kulcsok
+megmaradtak. NGO10/test1 egyezik az app snapshotjával. Rewards/transaction=false,
+game V6/inactive/000, friss böngészős login és élő pontacceptance nincs.
+Kilenc saját WP-tábla snapshotja titkosítva; hálózatmentes helyi MariaDB restore
+és CHECK TABLE9/9 sikeres, pontos saját konténer eltávolítva. A kezdeti export/
+startup hibák diagnózisa megőrizve; a sikertelen próbák nem PASS-ok. A #238-cal
+egyező közös pont/szint modulok és a bridge nem lettek írva. VGYFMSZ szerepel,
+külön kikapcsolás csak ARM előtt. Részletek: docs/jysk-game-bridge-2026-10-27.md.
+Indítási listaellenőrzés november9.10:00, időkapu12:00 Budapest; nincs csendablak.
+
 ## 2026-11-05 — Direct HUF saját kiadási kivágás
 
 Main9fcafb3b, donor2e4fe8c9:11meglévő donation termékfájl és30teszt,
