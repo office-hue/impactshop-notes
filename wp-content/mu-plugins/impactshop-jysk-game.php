@@ -13,6 +13,8 @@ final class Impactshop_Jysk_Game
 {
     public const CALLBACK = 'https://jysk.sharity.hu/api/jysk/game/session/callback';
     public const CLIENT = 'jysk_2026';
+    public const PROFILE = 'https://app.sharity.hu/profil/?jysk_return=1';
+    public const LOGIN_START = 'https://jysk.sharity.hu/api/jysk/game/session/start';
     public const PRIVATE_CONFIG = '/home/sharityh/jysk-game/config.json';
     private static array $wire = [];
     private static ?array $profile = null;
@@ -293,7 +295,8 @@ final class Impactshop_Jysk_Game
             }
             $pseudo = impactshop_identity_profile_cookie();
             if ($pseudo === '' || !impactshop_identity_owner_authorized($pseudo)) {
-                throw new RuntimeException('owner_required');
+                // Start a fresh PKCE round after login; never keep the old two-minute code alive.
+                return new WP_REST_Response(null, 303, ['Location' => self::PROFILE, 'Cache-Control' => 'no-store, private', 'Referrer-Policy' => 'no-referrer']);
             }
             $subject = hash_hmac('sha256', self::CLIENT . ':' . $pseudo, self::key('SUBJECT_KEY'));
             $grant = impactshop_identity_owner_hash(impactshop_identity_owner_cookie());
@@ -314,6 +317,51 @@ final class Impactshop_Jysk_Game
             return new WP_REST_Response(null, 302, ['Location' => self::CALLBACK . '?code=' . $code . '&state=' . rawurlencode($request->get_param('state')), 'Cache-Control' => 'no-store, private', 'Referrer-Policy' => 'no-referrer']);
         } catch (Throwable $error) {
             return self::response($request, ['error' => 'handoff_unavailable'], 403);
+        }
+    }
+
+    /** A navigation marker only: ownership is still independently required by handoff. */
+    public static function profileReturnTarget(string $host, string $method, string $uri): ?string
+    {
+        if (!self::enabled() || $host !== 'app.sharity.hu' || $method !== 'GET'
+            || parse_url($uri, PHP_URL_PATH) !== '/profil/') {
+            return null;
+        }
+        $fields = [];
+        foreach (explode('&', (string) parse_url($uri, PHP_URL_QUERY)) as $pair) {
+            $parts = explode('=', $pair, 2);
+            $key = urldecode($parts[0]);
+            if (!in_array($key, ['jysk_return', 'bridge_target', 'impactshop_profile_return_complete'], true)
+                || array_key_exists($key, $fields)) {
+                return null;
+            }
+            $fields[$key] = urldecode($parts[1] ?? '');
+        }
+        if (($fields['jysk_return'] ?? '') !== '1'
+            || isset($fields['bridge_target']) && !in_array($fields['bridge_target'], ['account', 'restore'], true)
+            || isset($fields['impactshop_profile_return_complete']) && $fields['impactshop_profile_return_complete'] !== '1'
+            || !function_exists('impactshop_identity_profile_cookie')
+            || !function_exists('impactshop_identity_owner_authorized')) {
+            return null;
+        }
+        $pseudo = impactshop_identity_profile_cookie();
+        if ($pseudo !== '' && ($fields['impactshop_profile_return_complete'] ?? '') === '1'
+            && function_exists('impactshop_identity_profile_state')) {
+            // Native restore issues a pending grant. This subsequent GET must
+            // perform the same cookie-bound activation as the profile page.
+            impactshop_identity_profile_state($pseudo);
+        }
+        return $pseudo !== '' && impactshop_identity_owner_authorized($pseudo) ? self::LOGIN_START : null;
+    }
+
+    public static function completeProfileReturn(): void
+    {
+        $target = self::profileReturnTarget((string) ($_SERVER['HTTP_HOST'] ?? ''),
+            (string) ($_SERVER['REQUEST_METHOD'] ?? ''), (string) ($_SERVER['REQUEST_URI'] ?? ''));
+        if ($target !== null) {
+            nocache_headers();
+            wp_redirect($target, 303);
+            exit;
         }
     }
 
@@ -1092,6 +1140,7 @@ final class Impactshop_Jysk_Game
 }
 
 add_action('rest_api_init', [Impactshop_Jysk_Game::class, 'register']);
+add_action('template_redirect', [Impactshop_Jysk_Game::class, 'completeProfileReturn'], 0);
 add_filter('rest_pre_serve_request', [Impactshop_Jysk_Game::class, 'serve'], PHP_INT_MAX, 4);
 
 /** Existing authenticated WP-CLI transport; no browser/admin writer endpoint. */

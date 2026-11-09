@@ -8,7 +8,7 @@ $GLOBALS['routes'] = [];
 $GLOBALS['clock'] = strtotime('2026-11-15T12:00:00Z');
 $GLOBALS['owner'] = true;
 $GLOBALS['earning'] = true;
-function add_action(...$args): void {}
+function add_action(...$args): void { $GLOBALS['actions'][] = $args; }
 function add_filter(...$args): void {}
 function register_rest_route($namespace, $path, $args): void { $GLOBALS['routes'][] = $namespace . $path; }
 function wp_json_encode($data, $options = 0) { return json_encode($data, $options); }
@@ -21,6 +21,11 @@ function impactshop_identity_owner_hash($token) { return hash('sha256', $token);
 function impactshop_identity_owner_pseudo_hash($pseudo) { return hash('sha256', $pseudo); }
 function impactshop_identity_owner_grant_table() { return 'wp_identity_grants'; }
 function impactshop_identity_owner_authorized($pseudo) { return $GLOBALS['owner']; }
+function impactshop_identity_profile_state($pseudo) {
+    $GLOBALS['profile_state_calls'] = ($GLOBALS['profile_state_calls'] ?? 0) + 1;
+    if ($GLOBALS['pending_owner'] ?? false) { $GLOBALS['owner'] = true; }
+    return $GLOBALS['owner'] ? 'active' : 'invalid_or_revoked';
+}
 class WP_REST_Response
 {
     public function __construct(public $data, public int $status = 200, public array $headers = []) {}
@@ -367,8 +372,25 @@ check(Bridge::service($req)->status === 401, 'expired timestamp denied');
 
 $GLOBALS['owner'] = false;
 $r = Bridge::handoff(new FixtureRequest('/jysk-game/v1/handoff', ['client_id' => Bridge::CLIENT, 'redirect_uri' => Bridge::CALLBACK, 'state' => str_repeat('s', 43), 'code_challenge' => str_repeat('x', 43), 'code_challenge_method' => 'S256']));
-check($r->status === 403, 'raw pseudo cookie is insufficient');
+check($r->status === 303 && $r->headers['Location'] === Bridge::PROFILE, 'raw pseudo cannot connect; login goes to own profile without a grant');
+check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1') === null, 'profile marker does not replace owner proof');
+check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1&bridge_target=restore&impactshop_profile_return_complete=1') === null, 'completion without valid owner remains unauthorized');
+$GLOBALS['pending_owner'] = true;
+check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1&bridge_target=restore&impactshop_profile_return_complete=1') === Bridge::LOGIN_START, 'subsequent completion GET activates native pending owner even before profile fetch returns');
+$GLOBALS['pending_owner'] = false;
+$returnHooks = array_values(array_filter($GLOBALS['actions'], fn($hook) => $hook[0] === 'template_redirect' && $hook[1] === [Bridge::class, 'completeProfileReturn']));
+check(count($returnHooks) === 1 && $returnHooks[0][2] < 1, 'JYSK completion runs before shared priority-one completion');
 $GLOBALS['owner'] = true;
+check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1') === Bridge::LOGIN_START, 'existing owner returns to fresh JYSK handshake');
+check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1&bridge_target=restore&impactshop_profile_return_complete=1') === Bridge::LOGIN_START, 'restored owner returns after native completion');
+check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1&bridge_target=account&impactshop_profile_return_complete=1') === Bridge::LOGIN_START, 'new account native completion returns');
+foreach (['/profil/', '/profil/?return=https%3A%2F%2Fsharity.hu', '/profil/?jysk_return=1&return=https%3A%2F%2Fsharity.hu', '/profil/?jysk_return=1&selection_intent=other', '/profil/?jysk_return=1&prctx=other', '/profil/?jysk_return=1&jysk_return=1', '/profil/?jysk_return[]=1', '/other/?jysk_return=1', '/profil/?jysk_return=1&bridge_target=other'] as $uri) {
+    check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', $uri) === null, 'unrelated or ambiguous profile route untouched: ' . $uri);
+}
+check(Bridge::profileReturnTarget('other.sharity.hu', 'GET', '/profil/?jysk_return=1') === null, 'foreign host not intercepted');
+check(Bridge::profileReturnTarget('app.sharity.hu', 'POST', '/profil/?jysk_return=1') === null, 'profile save POST untouched');
+$invalid = Bridge::handoff(new FixtureRequest('/jysk-game/v1/handoff', ['client_id' => 'other']));
+check($invalid->status === 403, 'invalid handoff still denied, not redirected');
 $db = freshDb();
 $verifier = str_repeat('v', 64);
 $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');

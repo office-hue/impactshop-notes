@@ -1,3 +1,21 @@
+## 2026-11-09 — JYSK profilkapcsolódás és visszatérés javítása
+
+A kijelentkezett/lejárt tulajdonosi kapcsolat reprodukálhatóan nyers 403 JSON-ra
+vezetett; a közös profilbefejezés a JYSK visszatérési célt nem őrizte meg.
+A saját bridge validált handoffja ilyenkor a meglévő profiloldalra vezet.
+A pontos JYSK-jelölővel, owner-ellenőrzéssel új handshake indul; a natív pending
+aktiválás és a korábbi közös hookot megelőző sorrend célzottan ellenőrzött.
+Az app hibás/lejárt callbackje a játékhoz tér vissza érthető hibaüzenettel.
+Közös identity PHP/JS, pontozás, névsor, kapuk és séma változatlan.
+Független review: két finding javítva, delta-review szerint nincs fennmaradó
+P1/P2. PHP: 219 determinisztikus állítás és 14 privátprofil-fixture sikeres;
+ezek nem élő owner-login vagy pontjóváírási bizonyítékok.
+Kiadás: saját WP bridge egyfájlos guarded release, majd egy app build/promote.
+Rollback: előző bridge mentése és dpl_GHusmaTGzSmijtGrumP8uPtZPQMM, külön
+alias/cron és kapu-readback. Nincs DB-restore vagy új ARM.
+Éles elfogadás még szükséges: kijelentkezett kapcsolódás → profil → tényleges
+tulajdonosi belépés/visszaállítás → JYSK kapcsolódott állapot.
+
 ## 2026-11-07 — JYSK tízes névsor és privát profil előkészítve
 
 Saját profil mentett/előhash-védett atomi cseréje és új process readback: SHA

@@ -619,3 +619,25 @@ Kézi UI checklist az engedélyezett staging/éles kiadás után:
   tűnjön el; más profil és legacy olvasottság ne kapjon mellékhatást.
 - Kontroll: meglévő profil/identity, Ads Watch, Offerwall, szavazás és
   `/jysk-riport/` route/print/JSON maradjon a kanonikus baseline szerint.
+# 2026-11-09 — JYSK profil-visszatérés célzott javítása
+
+Érintett fájlok: impactshop-jysk-game.php, a saját bridge-fixture és kizárólag
+annak impactshop-guard-hashes.json bejegyzése/checksumja. Smoke scope:
+identity_and_points; a felsorolt regressziós területek nem új élő ponttesztek.
+Felhatalmazás: Arnold kérte a reprodukált kapcsolódási/visszatérési hiba javítását
+és kiadását. Érintett: kizárólag a JYSK handoff és a saját, fix jysk_return=1
+profil-visszatérési ág. Közös identity PHP/JS, pontkezelő, TLS és séma változatlan.
+Koherencia: validált handoff tulajdonosi munkamenet nélkül a profiloldalra vezet;
+igazolt owner után új JYSK handshake indul, nem a kétperces régi PKCE folytatódik.
+Kockázat: idegen visszatérés elfogása vagy owner nélküli session. Védelem:
+pontos host/GET/profil út és query-allowlist, fix visszatérési cím, változatlan
+owner-ellenőrzés; nincs dinamikus redirect target vagy pontírás. Negatív teszt:
+idegen host/út/query/return, hiányzó owner, malformed handoff.
+Kiadás előtt célzott PHP-tesztek és független diffreview; egyfájlos guarded
+release előhash/backup/utóhash mellett. Rollback a saját elődfájl mentése,
+nem DB-restore. UI checklist: kijelentkezve kapcsolódás → profil; valódi belépés
+→ JYSK visszatérés → kapcsolódott állapot; idegen profilút változatlan.
+Forrásellenőrzés: PHP-lint, 219 determinisztikus bridge-állítás és 14 privátprofil
+eset sikeres. Független review két findingje javítva: priority 0, valamint az
+egzakt completion GET natív pending-owner aktiválása külön owner-ellenőrzéssel.
+A delta-review nem talált fennmaradó P1/P2-t. Ez nem telepítési vagy élő auth-PASS.
