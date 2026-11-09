@@ -27,7 +27,8 @@ function impactshop_profile_ui_render(): void
     body.impactshop-profile-ui .impactshop-profile-strip{box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:end;gap:12px;max-width:820px;margin:24px auto 0;font:inherit}
     body.impactshop-profile-ui .impactshop-profile-strip label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;margin:0}
     body.impactshop-profile-ui .impactshop-profile-strip select{box-sizing:border-box;min-height:44px;width:auto;max-width:100%;border:2px solid #171421;border-radius:12px;padding:8px 12px;background:#fffdf7;color:#171421;font:inherit;cursor:pointer}
-    body.impactshop-profile-ui #sharity-slc-btn{position:static!important;transform:none!important;display:inline-flex;min-width:44px;min-height:44px;box-sizing:border-box;border-radius:12px;margin:0;flex-shrink:0}
+    /* Keep the original controller nodes/listeners, without exposing the retired country UI. */
+    body.impactshop-profile-ui #sharity-slc-btn,body.impactshop-profile-ui #sharity-slc-sheet,body.impactshop-profile-ui #sharity-slc-backdrop{display:none!important}
     body.impactshop-profile-ui .sharity-action-bar,body.impactshop-profile-ui .sharity-action-bar > a,body.impactshop-profile-ui .sharity-action-bar > button{box-sizing:border-box}
     body.impactshop-profile-ui .sharity-action-bar [data-bar="messages-upcoming"]{display:none!important}
     body.impactshop-profile-ui .sharity-action-bar [data-bar="my-causes"]{background:#fff0f3}
@@ -95,10 +96,10 @@ function impactshop_profile_ui_render(): void
       var info = document.createElement('details'), summary = document.createElement('summary'), help = document.createElement('p');
       info.appendChild(summary); info.appendChild(help); strip.appendChild(info);
       var helpCopy = {
-        hu: ['Mit állítok be?', 'A nyelv a Sharity felületi szövegeit állítja. A deviza csak tájékoztató megjelenítés: fizetést és elszámolást nem módosít. Az ország külön bolti beállítás.'],
-        en: ['About these settings', 'Language changes Sharity interface text. Display currency is indicative only: payments and settlement are unchanged. Country is a separate shop setting.'],
-        de: ['Zu diesen Einstellungen', 'Die Sprache ändert Sharitys Oberflächentexte. Die Anzeigewährung dient nur der Information: Zahlungen und Abrechnungen bleiben unverändert. Das Land ist eine separate Shop-Einstellung.'],
-        fr: ['À propos des réglages', 'La langue modifie les textes de l’interface Sharity. La devise d’affichage est indicative : les paiements et règlements restent inchangés. Le pays est un réglage distinct pour la boutique.']
+        hu: ['Mit állítok be?', 'A nyelv a Sharity felületi szövegeit állítja. A deviza csak tájékoztató megjelenítés: fizetést és elszámolást nem módosít.'],
+        en: ['About these settings', 'Language changes Sharity interface text. Display currency is indicative only: payments and settlement are unchanged.'],
+        de: ['Zu diesen Einstellungen', 'Die Sprache ändert Sharitys Oberflächentexte. Die Anzeigewährung dient nur der Information: Zahlungen und Abrechnungen bleiben unverändert.'],
+        fr: ['À propos des réglages', 'La langue modifie les textes de l’interface Sharity. La devise d’affichage est indicative : les paiements et règlements restent inchangés.']
       };
       panel.parentNode.insertBefore(strip, panel);
       var causes = document.createElement('a'); causes.href = 'https://sharity.hu/sajat-sharity';
