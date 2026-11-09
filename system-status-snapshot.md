@@ -1,3 +1,11 @@
+## 2026-11-09 — JYSK fiókjelzés és kódmentési form átirányítás
+
+Opt-in saját profilprefix és szűk JYSK form-action CSP javítás forráskész.
+224 bridge-állítás + PHP code-save/lint + 8 célzott Chrome-eset sikeres;
+független review nincs blokkoló. Még nem merge/új deployment.
+Éles kódmegjelenítés/mentés a #261/#262 után felhasználó által igazolt;
+form továbbirányítása még javítandó. Pontok/névsor/gates/séma változatlan.
+
 ## 2026-11-09 — JYSK profilkapcsolódás és visszatérés javítása
 
 A kijelentkezett/lejárt tulajdonosi kapcsolat reprodukálhatóan nyers 403 JSON-ra

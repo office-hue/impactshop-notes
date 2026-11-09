@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { before, after, test } from 'node:test';
 import { execFileSync } from 'node:child_process';
+import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -15,6 +16,46 @@ const headings = {hu:'Az impactod egy helyen', en:'Your impact in one place', de
 let browser;
 before(async () => { browser = await chromium.launch({channel:'chrome',headless:true,proxy:{server:'http://127.0.0.1:9'}}); });
 after(async () => { await browser?.close(); });
+
+test('code-save: real HTTP POST/303 chain reaches JYSK without forwarding credentials; unrelated origins stay blocked', async()=>{
+ const source=readFileSync(resolve(root,'wp-content/mu-plugins/impactshop-identity-panel.php'),'utf8');
+ const policy=source.match(/header\("Content-Security-Policy: ([^"\n]+)"\)/)[1];
+ assert.ok(policy.endsWith("form-action 'self' https://jysk.sharity.hu"));
+ const rendered=JSON.parse(execFileSync('php',[resolve(root,'tests/impactshop-profile-code-save.test.php'),'--request'],{
+  input:JSON.stringify({action:'reveal',url:'https://app.sharity.hu/profil/?jysk_return=1'}),encoding:'utf8'}));
+ // This test needs real loopback redirects; the suite's blocked proxy is for mocked HTTP.
+ const localBrowser=await chromium.launch({channel:'chrome',headless:true});
+ try { for(const allowed of [false,true]) {
+  const received=[], violations=[];
+  const target=createServer((req,res)=>{received.push({method:req.method,url:req.url});res.setHeader('Content-Type','text/html');res.end('<h1>JYSK fixture</h1>');});
+  await new Promise(r=>target.listen(0,'127.0.0.1',r));
+  const targetOrigin='http://127.0.0.1:'+target.address().port;
+  let origin, posted=false;
+  const server=createServer((req,res)=>{
+   if(req.url==='/profil/belepesi-kod/') {
+    res.setHeader('Content-Type','text/html');
+    res.setHeader('Content-Security-Policy',allowed?policy.replace('https://jysk.sharity.hu',targetOrigin):policy);
+    return res.end(rendered.html.replaceAll('https://app.sharity.hu',origin));
+   }
+   if(req.method==='POST')posted=true;
+   res.statusCode=303;res.setHeader('Location',req.method==='POST'?origin+'/profil/?jysk_return=1':targetOrigin+'/api/jysk/game/session/start');res.end();
+  });
+  await new Promise(r=>server.listen(0,'127.0.0.1',r)); origin='http://127.0.0.1:'+server.address().port;
+  const context=await localBrowser.newContext({serviceWorkers:'block'});
+  try {
+   const page=await context.newPage();
+   await page.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+   page.on('console',m=>{if(m.text().includes('form-action'))violations.push(m.text());});
+   await page.goto(origin+'/profil/belepesi-kod/');
+   await page.getByRole('button',{name:'Mentés a jelszókezelőbe és tovább'}).click();
+   if(allowed)await page.getByRole('heading',{name:'JYSK fixture'}).waitFor();
+   else await page.waitForTimeout(300);
+   assert.equal(posted,true);
+   assert.deepEqual(received,allowed?[{method:'GET',url:'/api/jysk/game/session/start'}]:[]);
+   assert.equal(violations.length>0,!allowed);
+  } finally {await context.close();await Promise.all([new Promise(r=>server.close(r)),new Promise(r=>target.close(r))]);}
+ } } finally {await localBrowser.close();}
+});
 async function fixture(language, {legacy = '', core = false, noBar = false, onPost, apiData = {}, beforeLoad, profileData = {}, contract = "2", onProfile, compact = false, initialUrl, pointsData = {points_total:1234,level:{current:'basic'},benefits:{donation_multiplier:1.25,vote_weight_ad:7,discount_percent:12}}, vacationData = {active:false,remaining_activations:2}, viewport = {width:375,height:850}} = {}) {
  const context = await browser.newContext({viewport,serviceWorkers:'block'});
  if (beforeLoad) await context.addInitScript(beforeLoad);

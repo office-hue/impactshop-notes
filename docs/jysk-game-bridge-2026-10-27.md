@@ -1,5 +1,21 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-11-09 — kapcsolódott fiókjelzés és mentési továbbirányítás
+
+A context csak explicit includeProfileHint=true kérésre adja a hitelesített
+grant pseudo első öt karakterét. Régi kérésre a válaszalak változatlan;
+anonim/lejárt session nem kap azonosítót. Nincs új endpoint vagy pontírás.
+A code-reveal form-action CSP pontosan a JYSK-originre bővül: a mentési POST
+saját WP marad, a 303-lánc JYSK hopja GET. Ezt valódi helyi HTTP/Chrome-próba
+reprodukálta; másik origin tiltott. A kézi továbbhivatkozás megmarad.
+Ellenőrzés: 224 bridge-állítás, PHP code-save és lint, 8 Chrome-eset sikeres.
+Független delta-review: nincs blokkoló lelet. Ez forráskész, még nem kiadott.
+Kiadás: saját bridge és identity PHP pontos guarded fájlkiadása, majd app;
+mentés, előhash/CAS/utóhash és 0444. Rollback/UI lista a
+protected-change-records/2026-11-09-jysk-profile-hint.md fájlban.
+A #261/#262 kódgenerálási javítás már kiadott; felhasználó igazolta a kód
+megjelenítését/mentését, a form továbbirányítását ez a korrekció kezeli.
+
 ## 2026-11-09 — közös profilkód javításának kiadási sorrendje
 
 A JYSK app profil-linkje b487e281 forrásból már jysk_return=1 jelzéssel éles.

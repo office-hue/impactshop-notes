@@ -1,3 +1,10 @@
+## 2026-11-09 — JYSK profilprefix és form-return
+
+Csak saját bridge és identity-panel PHP érintett digestje frissül a review után;
+nincs új guard, protected út vagy közös hash-újragenerálás. 224 bridge-állítás,
+PHP code-save/lint és 8 Chrome-eset sikeres, független review nincs blokkoló.
+Koherencia/kockázat/UI/rollback: 2026-11-09-jysk-profile-hint protected record.
+
 ## 2026-11-05 — Direct HUF saját forrásleltár
 
 A 11 új donation modul/manifest a meglévő config/hash leltárba került.
