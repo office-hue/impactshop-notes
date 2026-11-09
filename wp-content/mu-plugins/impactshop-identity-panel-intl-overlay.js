@@ -427,6 +427,24 @@
   // P2o: known static copy in the full profile. Auth/status controls and
   // monetary amounts require their separate localization packages.
   var PROFILE_COPY = {
+  "Vissza a JYSK játékhoz": ["Back to the JYSK game", "Zurück zum JYSK-Spiel", "Retour au jeu JYSK"],
+  "Adatok frissítése": ["Refresh profile data", "Profildaten aktualisieren", "Actualiser les données du profil"],
+  "Meglévő belépési kód mentése (opcionális)": ["Save an existing login code (optional)", "Vorhandenen Anmeldecode speichern (optional)", "Enregistrer un code de connexion existant (facultatif)"],
+  "Új belépési kód készül. Ha volt korábbi kódod, az érvénytelenné válik. Folytatod?": [
+    "A new login code will be created. Any previous code will become invalid. Continue?",
+    "Ein neuer Anmeldecode wird erstellt. Ein bisheriger Code wird ungültig. Fortfahren?",
+    "Un nouveau code de connexion sera créé. Tout ancien code deviendra invalide. Continuer ?"
+  ],
+  "Nem kell saját jelszót kitalálnod. A kapott belépési kód a profilod kulcsa: a következő oldalon mentsd el a jelszókezelődbe vagy őrizd meg biztonságosan.": [
+    "You do not need to invent a password. The generated login code is the key to your profile: save it in your password manager on the next page or keep it somewhere safe.",
+    "Du musst kein Passwort erfinden. Der erzeugte Anmeldecode ist der Schlüssel zu deinem Profil: Speichere ihn auf der nächsten Seite im Passwortmanager oder bewahre ihn sicher auf.",
+    "Vous n’avez pas à inventer un mot de passe. Le code généré est la clé de votre profil : enregistrez-le dans votre gestionnaire de mots de passe sur la page suivante ou conservez-le en lieu sûr."
+  ],
+  "Első látogatáskor automatikusan kapsz azonosítót. A frissítés a böngészőben megőrzött profil adatait tölti újra, nem másik azonosító kérésére szolgál. A profil megőrzéséhez mentsd el a belépési kódodat.": [
+    "You receive an identifier automatically on your first visit. Refresh reloads the profile kept in this browser; it does not request a different identifier. Save your login code to keep access to your profile.",
+    "Beim ersten Besuch erhältst du automatisch eine Kennung. Aktualisieren lädt das in diesem Browser gespeicherte Profil neu und fordert keine andere Kennung an. Speichere deinen Anmeldecode, um den Zugriff zu behalten.",
+    "Un identifiant est créé automatiquement lors de votre première visite. Actualiser recharge le profil conservé dans ce navigateur sans demander un autre identifiant. Sauvegardez votre code de connexion pour conserver l’accès à votre profil."
+  ],
   "Az impactod egy helyen": [
     "Your impact in one place",
     "Dein Impact an einem Ort",
@@ -591,7 +609,7 @@
     '[data-role="badges-empty"]', '[data-role="copy-pseudo"]',
     '[data-role="refresh-profile"]', '[data-role="save-password-manager"]',
     '[data-role="points-info-trigger"]', '[data-role="referral-copy"]',
-    '[data-role="referral-info-trigger"]'
+    '[data-role="referral-info-trigger"]', '[data-role="jysk-return"]'
   ].join(',');
 
   function profileCopyLanguage() {
@@ -629,6 +647,11 @@
       document.head.appendChild(style);
     }
     roots.forEach(function(root) {
+      root.querySelectorAll('[data-code-confirm]').forEach(function(el) {
+        var value = el.getAttribute('data-code-confirm');
+        var text = profileStaticText(value, language);
+        if (text !== null && text !== value) el.setAttribute('data-code-confirm', text);
+      });
       root.querySelectorAll(PROFILE_STATIC_SELECTORS).forEach(function(el) {
         var known = false;
         // Do not replace elements: the restore heading contains its own info button.
@@ -751,7 +774,11 @@
     nicknameSavedLabel: ["Mentve", "Saved", "Gespeichert", "Enregistré"],
     nicknameSaveLabel: ["Mentés", "Save", "Speichern", "Enregistrer"],
     restoreLabel: ["Belépés", "Sign in", "Anmelden", "Se connecter"],
-    codeRevealLabel: ["Belépési kód megjelenítése", "Show login code", "Anmeldecode anzeigen", "Afficher le code de connexion"],
+    codeRevealLabel: ["Új belépési kód készítése", "Create a new login code", "Neuen Anmeldecode erstellen", "Créer un nouveau code de connexion"],
+    codeReload: ["A kód készítéséhez töltsd újra a profiloldalt.", "Reload the profile page to create a code.", "Lade die Profilseite neu, um einen Code zu erstellen.", "Rechargez la page du profil pour créer un code."],
+    codeMissingForSave: ["Add meg a már elmentett belépési kódodat, vagy külön kérj új kódot a profiloldalon.", "Enter your saved login code, or separately request a new code on the profile page.", "Gib deinen gespeicherten Anmeldecode ein oder fordere auf der Profilseite separat einen neuen Code an.", "Saisissez votre code enregistré ou demandez séparément un nouveau code sur la page du profil."],
+    profileRefreshed: ["Profiladatok frissítve.", "Profile refreshed.", "Profil aktualisiert.", "Profil actualisé."],
+    profileRefreshFailed: ["Nem sikerült frissíteni a profiladatokat. Próbáld újra.", "Could not refresh your profile. Please try again.", "Das Profil konnte nicht aktualisiert werden. Versuche es erneut.", "Impossible d’actualiser le profil. Réessayez."],
   "greetingWithName": [
     "Szia {0}! Üdvözöllek a Sharity oldalán.",
     "Hi {0}! Welcome to Sharity.",
@@ -926,7 +953,7 @@
     "save-nickname": ["nicknameSaveLabel", "nicknameSavingLabel", "nicknameSavedLabel"],
     "nickname-status": ["restoreLoginRequired", "nicknameSaveFailedStatus", "nicknameSaveErrorStatus", "nicknameSaved"],
     "restore-status": ["invalidPseudo", "invalidRecoveryFormat", "loginInProgress", "loginFailed", "loginSuccess", "loginSuccessRedirecting", "loginError"],
-    "status": ["profileStatus1", "profileStatus2", "profileStatus3", "profileStatus4", "profileStatus5", "profileStatus6", "profileStatus7", "profileStatus8", "profileStatus9", "profileStatus10", "profileStatus11", "profileStatus12", "profileStatus13", "profileStatus14", "profileStatus15", "profileStatus16", "profileStatus17", "profileStatus18", "profileStatus19", "profileStatus20", "profileStatus21", "profileStatus22", "profileStatus23", "profileStatus24", "profileStatus25", "profileStatus26", "profileStatus27", "profileStatus28", "profileStatus29", "profileStatus30", "statusLoginRequiredForCode", "codeGenerationFailed", "codePageOpened", "invalidPseudo", "invalidRecoveryFormat", "loginInProgress", "loginFailed", "loginSuccess", "loginSuccessRedirecting", "loginError", "nicknameLoginRequired", "nicknameSaving", "nicknameSaveFailed", "nicknameSaved", "nicknameSaveError"],
+    "status": ["codeReload", "codeMissingForSave", "profileRefreshed", "profileRefreshFailed", "profileStatus1", "profileStatus2", "profileStatus3", "profileStatus4", "profileStatus5", "profileStatus6", "profileStatus7", "profileStatus8", "profileStatus9", "profileStatus10", "profileStatus11", "profileStatus12", "profileStatus13", "profileStatus14", "profileStatus15", "profileStatus16", "profileStatus17", "profileStatus18", "profileStatus19", "profileStatus20", "profileStatus21", "profileStatus22", "profileStatus23", "profileStatus24", "profileStatus25", "profileStatus26", "profileStatus27", "profileStatus28", "profileStatus29", "profileStatus30", "statusLoginRequiredForCode", "codeGenerationFailed", "codePageOpened", "invalidPseudo", "invalidRecoveryFormat", "loginInProgress", "loginFailed", "loginSuccess", "loginSuccessRedirecting", "loginError", "nicknameLoginRequired", "nicknameSaving", "nicknameSaveFailed", "nicknameSaved", "nicknameSaveError"],
     'greeting': ['greetingWithoutName', 'greetingWithName'],
     'votes-available': ['votesLoginRequired', 'votesExpired', 'votesBindingPending', 'votesUnavailable'],
     'votes-state': ['votesStateActive', 'votesStateLegacyReadOnly', 'votesStateInvalidOrRevoked', 'votesStateBindingPending', 'votesStateUnavailable'],
