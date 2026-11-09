@@ -8516,6 +8516,10 @@ A két jóváhagyott HU/EN HTML már main `3d81c7b66aa574e2e33baa0a5e0bdb9187494
 2026-11-04: NGO standalone currency-cookie fix source candidate; one shared cookie name, no finance/runtime activation. Old source failed the new regression; all12 Chrome fixture tests pass after correction. Seven merged language files separately staged with exact-file readbacks; full UI/production acceptance pending. Details: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
 
 
+## 2026-11-09 — nyolc JYSK NGO Card: additív katalóguskiegészítés
+
+Saját `impactshop-ngo-card-directory.php` és47állításos offlinefixture; nincs legacy/VB/ledger/identity módosítás. Csak `card_directory=1` sikeres publikus katalógushívásra, teljes primaryforrás + pontos nativeapprovalhoz kötött nyilvános metadata. Saját blokk, nem globális guard-PASS; részletes authority/kiadás/rollback: `docs/ngo-card-directory-jysk-2026-11-09.md`. NativeCardok létrejöttek; új modul merge/telepítés és modern snapshotpublikáció még nincs igazolva.
+
 ## 2026-11-04 — NGO staging API-útvonal javítása
 
 Kis saját API-alapérték/cacheverzió-javítás, 22 célzott teszt és 9 ismételt PHP-renderpróba sikeres. Stagingen talált root-API/FX404 miatt új forrásjelölt; még nem telepített. Scope, saját két fingerprint, valós staging állapot és rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
@@ -8538,7 +8542,3 @@ Kiadási delta: #261 merge dc38f300, mindhárom fájl exact-release kiadva.
 szűk JS-kompatibilitás és a valós alakot modellező fixture javul. A szerver
 továbbra is numerikus v2 JSON-kérést és a meglévő owner/nonce/origin ellenőrzést
 kér. A kód első élő megjelenítése még nem igazolt; a tesztowner lejárt.
-
-## 2026-11-09 — nyolc JYSK NGO Card: additív katalóguskiegészítés
-
-Saját `impactshop-ngo-card-directory.php` és47állításos offlinefixture; nincs legacy/VB/ledger/identity módosítás. Csak `card_directory=1` sikeres publikus katalógushívásra, teljes primaryforrás + pontos nativeapprovalhoz kötött nyilvános metadata. Saját blokk, nem globális guard-PASS; részletes authority/kiadás/rollback: `docs/ngo-card-directory-jysk-2026-11-09.md`. NativeCardok létrejöttek; új modul merge/telepítés és modern snapshotpublikáció még nincs igazolva.

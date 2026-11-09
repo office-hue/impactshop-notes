@@ -9,3 +9,5 @@ Smoke scope: dokumentációs diff-check és natív secret/protected-touch/commit
 Rollback: csak e saját append és a jelen change record visszavonása normál commitban, idegen bejegyzések megőrzésével. Deploy vagy éles adat-visszaállítás nem része ennek.
 
 Főágátvétel: Arnold külön Git-ablakában a rögzített 388bc972 mainből új saját ág készült, miután a natív commit-lane elutasította a vegyes incoming merge-commitot. A három közös dokumentum minden főági bejegyzése megmaradt; minden más main-fájl blobja változatlan. A Card modul/config/teszt byte-azonos az előző review-zott csomaggal, a célzott PHP-fixture ismét 47/47, lint sikeres. Külön forrás- és dokumentációs commit készül, nincs force-push vagy szabálymódosítás. Ez nem telepítési bizonyíték.
+
+Dokumentációs delta: a három saját Card-állapotszakasz a fájlvég helyett stabil korábbi fejezethatár elé került. Minden alapfájl teljes szövege megmaradt. A b05834f8 főágról API-n olvasott három dokumentummal a natív merge-file próba mindhárom esetben konfliktusmentes; nincs új Git fetch/integráció, runtime- vagy guardmódosítás.
