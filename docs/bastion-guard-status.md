@@ -1,3 +1,7 @@
+## 2026-11-09 — Profil: mobil/telepítési felület
+
+Már védett profil-UI adapter, változatlan pwa_shell/mobile_shell_runtime modell. Csak saját pluginhash és külső checksum frissül, új guard/config/CI nincs.26 offline UI-eset és független review sikeres; natív PWA delegate egyetlen prompt, eredeti identity/actionbar/PWA byte-ok megmaradnak. Koherencia, érintett funkciók, kiadás, rollback és kézi UI: docs/protected-change-records/2026-11-09-profile-mobile-install-ui.md. Ez forrásbizonyíték; merge/deploy/éles elfogadás külön.
+
 ## 2026-11-09 — JYSK profilprefix és form-return
 
 Csak saját bridge és identity-panel PHP érintett digestje frissül a review után;
