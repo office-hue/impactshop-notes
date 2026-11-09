@@ -233,7 +233,7 @@
         // FactLens context and decide whether its signed return takes precedence.
         // The password-manager form and all nonmatching routes remain unchanged.
         if (current.origin === "https://app.sharity.hu" && current.pathname === "/profil/" &&
-            returns.length === 1 && ["https://sharity.hu/sajat-sharity", "https://sharity.hu/vasarlasi-seged"].includes(returns[0]) &&
+            returns.length === 1 && ["https://sharity.hu/sajat-sharity", "https://sharity.hu/vasarlasi-seged", "https://sharity.hu/hatas-korok"].includes(returns[0]) &&
             !hasSelection && !hasReturnArray && completion &&
             completion.origin === current.origin && completion.pathname === "/profil/" &&
             !completion.username && !completion.password &&

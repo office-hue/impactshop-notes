@@ -16,6 +16,15 @@ alias/cron és kapu-readback. Nincs DB-restore vagy új ARM.
 Éles elfogadás még szükséges: kijelentkezett kapcsolódás → profil → tényleges
 tulajdonosi belépés/visszaállítás → JYSK kapcsolódott állapot.
 
+## 2026-11-09 — Körök Profil-visszatérés: saját forrásjavítás
+
+A két meglévő JS/PHP lista a pontos Körök-returnnel bővül, meglévő session-
+starttal; signed FactLens-kontextus elsőbbsége megmarad. Célzott regressziók
+és kiadási/rollback/UI scope: docs/protected-change-records/2026-11-09-korok-profile-return.md.
+108+108 PHP-eset, 33 offline böngészőteszt, lint/static/route-path sikeres;
+független review: nincs P1/P2. Forráskész; merge, hosting-paritás és kiadás függő.
+Impi OFF, a main-csendablak felszabadítva.
+
 ## 2026-11-07 — JYSK roster prepared; game remains inactive
 
 App0f828ef4… / dpl_3byQwsYo9sTPAyh4mTtDVHbFNqZC unchanged. Game V6/inactive/000,

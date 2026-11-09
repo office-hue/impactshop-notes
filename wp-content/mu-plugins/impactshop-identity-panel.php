@@ -2109,7 +2109,7 @@ function impactshop_identity_is_user_card_completion(): bool
         }
         $fields[$key] = urldecode($parts[1] ?? '');
     }
-    if (!in_array($fields['return'] ?? '', ['https://sharity.hu/sajat-sharity', 'https://sharity.hu/vasarlasi-seged'], true) ||
+    if (!in_array($fields['return'] ?? '', ['https://sharity.hu/sajat-sharity', 'https://sharity.hu/vasarlasi-seged', 'https://sharity.hu/hatas-korok'], true) ||
         ($fields['impactshop_profile_return_complete'] ?? '') !== '1' ||
         !in_array($fields['bridge_target'] ?? '', ['account', 'restore'], true) ||
         array_key_exists('selection_intent', $_GET) || array_key_exists('prctx', $_GET)) {
@@ -2143,7 +2143,11 @@ function impactshop_identity_maybe_complete_profile_return(): void
     $native_fallback = impactshop_identity_profile_native_fallback($ui_target);
     $target = impactshop_factlens_profile_return_target($ui_target, $native_fallback);
     if (!$had_context && $target === $native_fallback && impactshop_identity_is_user_card_completion()) {
-        $intent = ($_GET['return'] ?? '') === 'https://sharity.hu/vasarlasi-seged' ? 'vasarlasi-seged' : 'sajat-sharity';
+        $intent = [
+            'https://sharity.hu/sajat-sharity' => 'sajat-sharity',
+            'https://sharity.hu/vasarlasi-seged' => 'vasarlasi-seged',
+            'https://sharity.hu/hatas-korok' => 'hatas-korok',
+        ][$_GET['return']];
         $target = 'https://sharity.hu/api/sharity/session/start?return_intent=' . $intent . '&profile_return=1';
     }
     if (!is_string($target) || $target === '') {
