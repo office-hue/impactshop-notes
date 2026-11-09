@@ -313,6 +313,8 @@
         votesStateDisplay.textContent = states[identityState] || states.unavailable;
       }
       const mutationAllowed = identityState === "active";
+      const jyskReturn = root.querySelector('[data-role=jysk-return]');
+      if (jyskReturn) jyskReturn.hidden = !mutationAllowed;
       [
         root.querySelector("[data-role=nickname-input]"),
         root.querySelector("[data-role=save-nickname]"),
@@ -1249,9 +1251,27 @@
 
     const refreshBtn = root.querySelector("[data-role=refresh-profile]");
     if (refreshBtn) {
-      refreshBtn.addEventListener("click", function(){
+      refreshBtn.addEventListener("click", async function(){
+        if (refreshBtn.disabled) return;
+        refreshBtn.disabled = true;
         setStatus("Frissítés folyamatban…");
-        fetchProfile().then(refreshPointsSection);
+        try {
+          invalidateProfileCache();
+          const data = await fetchProfile();
+          if (!data) {
+            setStatus("Nem sikerült frissíteni a profiladatokat. Próbáld újra.", true);
+            return;
+          }
+          if (data.identity_state !== "active") {
+            // applyProfileData already renders pending/revoked state. Do not
+            // turn an incomplete connection into a success message.
+            return;
+          }
+          await refreshPointsSection();
+          setStatus("Profiladatok frissítve.");
+        } finally {
+          refreshBtn.disabled = false;
+        }
       });
     }
 
@@ -1317,22 +1337,29 @@
           setStatus("A belépési kódhoz előbb biztonságosan kapcsolódj a fiókodhoz.", true);
           return;
         }
+        if (generateCodeBtn.disabled) return;
+        if (!window.impactshopIdentityPanel || window.impactshopIdentityPanel.codeSaveContract !== 2) {
+          setStatus("A kód készítéséhez töltsd újra a profiloldalt.", true);
+          return;
+        }
+        if (!window.confirm(generateCodeBtn.getAttribute("data-code-confirm") || "Új belépési kód készül. Ha volt korábbi kódod, az érvénytelenné válik. Folytatod?")) return;
         generateCodeBtn.disabled = true;
         const originalLabel = generateCodeBtn.textContent;
         generateCodeBtn.textContent = "Kód készítése…";
         try {
-          const res = await postWithNonce(restBase + "/identity/code/generate", {}, "include");
+          const res = await postWithNonce(restBase + "/identity/code/generate", {
+            code_save_contract: 2,
+            confirm_generation: true,
+            profile_return_url: window.location.href
+          }, "include");
           const data = (res._data !== undefined) ? res._data : await res.json().catch(function(){ return {}; });
           if (!res.ok || !data || !data.reveal_url) {
             setStatus((data && data.message) ? data.message : "A belépési kód létrehozása nem sikerült.", true);
             return;
           }
-          const revealWindow = window.open(data.reveal_url, "_blank", "noopener,noreferrer");
-          if (!revealWindow) {
-            window.location.href = data.reveal_url;
-            return;
-          }
-          setStatus("A biztonságos kódoldal megnyílt.");
+          // A noopener popup returns null even when opened. Never request the
+          // single-use reveal twice by treating that as a blocked popup.
+          window.location.assign(data.reveal_url);
         } catch (e) {
           setStatus("A belépési kód létrehozása nem sikerült.", true);
         } finally {
@@ -1476,39 +1503,41 @@
         return;
       }
       const pseudo = pseudoDisplay ? pseudoDisplay.textContent.trim() : "";
-      const recovery = recoveryDisplay ? recoveryDisplay.textContent.trim() : "";
+      const recovery = savePassword ? savePassword.value.trim() : "";
       if (!pseudo || pseudo === "—" || !recovery || recovery === "—") {
         if (e && typeof e.preventDefault === "function") {
           e.preventDefault();
         }
-        setStatus("A mentéshez előbb nyisd meg a biztonságos belépési kódoldalt.", true);
+        setStatus("Add meg a már elmentett belépési kódodat, vagy külön kérj új kódot a profiloldalon.", true);
         if (generateCodeBtn) {
-          generateCodeBtn.click();
+          generateCodeBtn.focus();
+        } else {
+          const manageProfile = root.querySelector('[data-role=manage-profile]');
+          if (manageProfile) manageProfile.focus();
         }
+        return;
+      }
+      if (!window.impactshopIdentityPanel || window.impactshopIdentityPanel.codeSaveContract !== 2 ||
+          !saveForm || !saveForm.querySelector('[name="impactshop_identity_code_save_contract"][value="2"]')) {
+        setStatus("A kód készítéséhez töltsd újra a profiloldalt.", true);
+        return;
+      }
+      if (!/^[A-Z0-9]{12}$/.test(normalizeRecovery(recovery))) {
+        setStatus("Érvénytelen belépési kód formátum.", true);
+        savePassword.focus();
         return;
       }
       syncSaveFields(pseudo, recovery);
       if (saveReturn) {
-        saveReturn.value = getBridgeCompletionUrl("account") || window.location.href;
+        saveReturn.value = window.location.href;
       }
       if (!saveForm) {
         setStatus("A mentés ezen a nézeten nem érhető el.", true);
         return;
       }
-      tryCredentialStore(pseudo, recovery);
-      triggerPasswordManagerSave(pseudo, recovery);
-      const bridgeCompletionUrl = getBridgeCompletionUrl("account");
-      if (bridgeCompletionUrl) {
-        setStatus("Jelszókezelő mentés indítva. Visszaléptetünk…");
-      } else {
-        setStatus("Jelszókezelő mentés indítva.");
-      }
-      awardCredentialsSave(pseudo);
-      if (bridgeCompletionUrl) {
-        setTimeout(function(){
-          navigateAfterIdentityAction(bridgeCompletionUrl, "");
-        }, 900);
-      }
+      // One normal POST -> 303 -> GET. No code generation, iframe, reward
+      // request or client-side reconstruction of the return context.
+      HTMLFormElement.prototype.submit.call(saveForm);
     }
     if (saveForm) {
       saveForm.addEventListener("submit", handleSavePassword);

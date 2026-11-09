@@ -2148,3 +2148,11 @@ A két jóváhagyott HU/EN HTML már main `3d81c7b66aa574e2e33baa0a5e0bdb9187494
 ## 2026-11-04 — NGO staging API-útvonal javítása
 
 Kis saját API-alapérték/cacheverzió-javítás, 22 célzott teszt és 9 ismételt PHP-renderpróba sikeres. Stagingen talált root-API/FX404 miatt új forrásjelölt; még nem telepített. Scope, saját két fingerprint, valós staging állapot és rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
+## 2026-11-09 — profilkód-javítás kiadásra előkészítve
+
+Identity-panel PHP/JS és intl-overlay: egy reveal-navigáció, külön megerősített
+kódgenerálás, nem mutáló mentés és validált nyers return megőrzése. 28/28 helyi
+böngészőteszt; PHP szerződés/route és korábbi visszatérési regressziók sikeresek;
+független review után nincs nyitott lelet. Forráskész, még nem telepített.
+Háromfájlos guardolt kiadás és célzott élő próba következik; nincs új app-build.
+Scope/rollback/UI: docs/protected-change-records/2026-11-09-jysk-profile-code-save.md.

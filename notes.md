@@ -8504,3 +8504,16 @@ A két jóváhagyott HU/EN HTML már main `3d81c7b66aa574e2e33baa0a5e0bdb9187494
 ## 2026-11-04 — NGO staging API-útvonal javítása
 
 Kis saját API-alapérték/cacheverzió-javítás, 22 célzott teszt és 9 ismételt PHP-renderpróba sikeres. Stagingen talált root-API/FX404 miatt új forrásjelölt; még nem telepített. Scope, saját két fingerprint, valós staging állapot és rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
+
+## 2026-11-09 — profilkód megjelenítésének és mentésének javítása
+
+A kód egyszeri oldalát egyetlen navigáció nyitja meg; a mentés normál POST/303,
+nyers, validált visszatérési címmel. Üres mentés nem generál kódot és nem ad pontot.
+Új kód csak külön megerősítéssel, aktív tulajdonosnak készül. Adatfrissítés nem
+cserél profilazonosítót. A JYSK pontos kontextusa aktív profillal visszalinket kap.
+28/28 helyi böngészős eset, PHP szerződés/útvonal és korábbi 126 visszatérési,
+219 bridge-állítás; független review javításai lezárva. Ez még nem élő elfogadás.
+Kiadás: három pontos fájl, PHP → JS → intl-overlay, mentés/előhash/utóhash/0444.
+Koherencia, rollback és kézi UI-lista: docs/protected-change-records/2026-11-09-jysk-profile-code-save.md.
+Forráskész, PR/merge/telepítés függő. A JYSK app b487e281 visszatérési linkje
+már külön kiadásban éles; ez a közös profilkód javításának állapota.

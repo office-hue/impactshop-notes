@@ -1380,6 +1380,67 @@ function impactshop_identity_current_url(): string
  *
  * @return void
  */
+/**
+ * Carry the original first-party return context without rebuilding its query.
+ * This is navigation data, not authority: the existing return bridge still
+ * verifies its signed context and browser ownership on the subsequent GET.
+ */
+function impactshop_identity_code_save_return($url): ?string
+{
+    if (!is_string($url) || $url === '' || strlen($url) > 4096 ||
+        preg_match('/[\x00-\x20\x7f\\\\]/', $url) ||
+        preg_match('/%(?![0-9a-f]{2})/i', $url) ||
+        preg_match('/[\x00-\x1f\x7f\\\\]/', rawurldecode($url))) {
+        return null;
+    }
+    $parts = wp_parse_url($url);
+    $home = wp_parse_url(home_url('/'));
+    if (!is_array($parts) || !is_array($home) || isset($parts['user']) || isset($parts['pass']) ||
+        ($parts['scheme'] ?? '') !== ($home['scheme'] ?? '') ||
+        ($parts['host'] ?? '') !== ($home['host'] ?? '') ||
+        ($parts['port'] ?? null) !== ($home['port'] ?? null)) {
+        return null;
+    }
+    $path = $parts['path'] ?? '/';
+    // Never POST/return to the already consumed one-time reveal page.
+    if (impactshop_identity_profile_route_path($path) === '/profil/belepesi-kod') {
+        return null;
+    }
+    $routing = ['return', 'bridge_target', 'impactshop_profile_return_complete', 'jysk_return', 'selection_intent', 'prctx'];
+    $values = [];
+    $query = $parts['query'] ?? '';
+    if (str_contains($query, ';')) {
+        return null;
+    }
+    foreach (explode('&', $query) as $pair) {
+        if ($pair === '') continue;
+        [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
+        $key = urldecode($key);
+        // Reject PHP-normalized aliases, arrays and duplicates, not repair them.
+        $base = str_replace([' ', '.'], '_', explode('[', $key, 2)[0]);
+        if (!in_array($base, $routing, true)) continue;
+        if ($key !== $base || array_key_exists($key, $values) || $value === '') return null;
+        $values[$key] = urldecode($value);
+    }
+    if ((isset($values['bridge_target']) && !in_array($values['bridge_target'], ['account', 'restore'], true)) ||
+        (isset($values['jysk_return']) && $values['jysk_return'] !== '1') ||
+        (isset($values['impactshop_profile_return_complete']) && $values['impactshop_profile_return_complete'] !== '1') ||
+        (isset($values['selection_intent'], $values['impactshop_profile_return_complete']))) {
+        return null;
+    }
+    // Selection must run through the existing client startup, not an earlier
+    // server completion redirect. Non-profile shortcode pages keep their URL.
+    $profile = impactshop_identity_profile_environment_path('', true);
+    if (in_array($path, [$profile, rtrim($profile, '/')], true) &&
+        isset($values['bridge_target']) && !isset($values['selection_intent']) &&
+        !isset($values['impactshop_profile_return_complete'])) {
+        $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+        $base = $fragment !== '' ? substr($url, 0, -strlen($fragment)) : $url;
+        return $base . (str_contains($base, '?') ? '&' : '?') . 'impactshop_profile_return_complete=1' . $fragment;
+    }
+    return $url;
+}
+
 function impactshop_identity_handle_password_manager_save(): void
 {
     if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
@@ -1387,6 +1448,15 @@ function impactshop_identity_handle_password_manager_save(): void
     }
     if (empty($_POST['impactshop_identity_save_intent'])) {
         return;
+    }
+
+    if (($_POST['impactshop_identity_code_save_contract'] ?? '') === '2') {
+        $return = $_POST['impactshop_identity_return'] ?? '';
+        $redirect = impactshop_identity_code_save_return(is_string($return) ? wp_unslash($return) : null);
+        // This handler only navigates. It never reads/stores submitted passwords
+        // or rotates a code, and never consumes a reveal/return grant on POST.
+        wp_safe_redirect($redirect ?? home_url('/profil/'), 303);
+        exit;
     }
 
     $return_url = '';
@@ -1424,6 +1494,15 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '<span class="impactshop-profile-intro__kicker">Sharity · Human Touch</span>';
     $html .= '<h2>Az impactod egy helyen</h2>';
     $html .= '<p>Itt találod a profilodat, a pontjaidat és az elkölthető szavazataidat. A fiókod automatikusan létrejön, neked csak a belépési kódodat érdemes elmentened.</p>';
+    if (($_GET['jysk_return'] ?? null) === '1' &&
+        array_diff(array_keys($_GET), ['jysk_return', 'bridge_target', 'impactshop_profile_return_complete']) === [] &&
+        impactshop_identity_code_save_return($current_url) !== null) {
+        // First-visit ownership can become active after this HTML was served.
+        // Offer the existing handshake then, without forcing a new code or
+        // skipping the user's opportunity to save it. No signed return lane
+        // or selection context is replaced by this JYSK-only link.
+        $html .= '<p><a class="impactshop-identity-link" data-role="jysk-return" href="https://jysk.sharity.hu/api/jysk/game/session/start" hidden>Vissza a JYSK játékhoz</a></p>';
+    }
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-card">';
     $html .= '<div class="impactshop-identity-header">';
@@ -1445,18 +1524,19 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '<div class="impactshop-identity-row">';
     $html .= '<code class="impactshop-identity-value" data-role="pseudo-display">' . $pseudo_id . '</code>';
     $html .= '<button type="button" data-role="copy-pseudo">Másolás</button>';
-    $html .= '<button type="button" data-role="refresh-profile">Frissítés</button>';
+    $html .= '<button type="button" data-role="refresh-profile">Adatok frissítése</button>';
     $html .= '</div>';
-    $html .= '<p class="impactshop-identity-hint">Ezzel kapcsoljuk össze az adományt és a jutalmakat.</p>';
+    $html .= '<p class="impactshop-identity-hint">Első látogatáskor automatikusan kapsz azonosítót. A frissítés a böngészőben megőrzött profil adatait tölti újra, nem másik azonosító kérésére szolgál. A profil megőrzéséhez mentsd el a belépési kódodat.</p>';
     $html .= '<div class="impactshop-identity-row">';
-    $html .= '<button type="button" data-role="generate-code">Belépési kód megjelenítése</button>';
+    $html .= '<button type="button" data-role="generate-code" data-code-confirm="Új belépési kód készül. Ha volt korábbi kódod, az érvénytelenné válik. Folytatod?">Új belépési kód készítése</button>';
     $html .= '</div>';
-    $html .= '<p class="impactshop-identity-hint">A belépési kód csak külön, egyszeri biztonságos oldalon jelenik meg. Mentsd el a jelszókezelődbe.</p>';
+    $html .= '<p class="impactshop-identity-hint">Nem kell saját jelszót kitalálnod. A kapott belépési kód a profilod kulcsa: a következő oldalon mentsd el a jelszókezelődbe vagy őrizd meg biztonságosan.</p>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-save">';
-    $html .= '<label class="impactshop-identity-save__label">Mentés jelszókezelőbe (opcionális)</label>';
+    $html .= '<label class="impactshop-identity-save__label">Meglévő belépési kód mentése (opcionális)</label>';
     $html .= '<form class="impactshop-identity-row" data-role="save-form" method="post" action="' . esc_url(home_url('/')) . '" autocomplete="on">';
     $html .= '<input type="hidden" name="impactshop_identity_save_intent" value="1" />';
+    $html .= '<input type="hidden" name="impactshop_identity_code_save_contract" value="2" />';
     $html .= '<input type="hidden" name="impactshop_identity_return" data-role="save-return" value="' . esc_attr($current_url) . '" />';
     $html .= '<input type="text" name="username" data-role="save-username" autocomplete="username" placeholder="Azonosító" value="' . $pseudo_id . '" />';
     $html .= '<input type="password" name="password" data-role="save-password" autocomplete="current-password" placeholder="Belépési kód" value="" />';
@@ -1542,7 +1622,7 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '<button type="button" data-role="restore-submit">Belépés</button>';
     $html .= '<p class="impactshop-identity-hint" data-role="restore-status"></p>';
     $html .= '</div>';
-    $html .= '<p class="impactshop-identity-status" data-role="status"></p>';
+    $html .= '<p class="impactshop-identity-status" data-role="status" role="status" aria-live="polite"></p>';
     $html .= '</div></div>';
 
     return $html;
@@ -1587,17 +1667,19 @@ function impactshop_identity_id_shortcode(): string
     $html .= '<p class="impactshop-identity-hint" data-role="greeting"></p>';
     $html .= '<form class="impactshop-identity-row" data-role="save-form" method="post" action="' . esc_url(home_url('/')) . '" autocomplete="on">';
     $html .= '<input type="hidden" name="impactshop_identity_save_intent" value="1" />';
+    $html .= '<input type="hidden" name="impactshop_identity_code_save_contract" value="2" />';
     $html .= '<input type="hidden" name="impactshop_identity_return" data-role="save-return" value="' . esc_attr($current_url) . '" />';
     $html .= '<code class="impactshop-identity-value" data-role="pseudo-display">' . $pseudo_id . '</code>';
     $html .= '<input type="text" class="impactshop-identity-save-ghost" name="username" data-role="save-username" autocomplete="username" value="' . $pseudo_id . '" />';
-    $html .= '<input type="password" class="impactshop-identity-save-ghost" name="password" data-role="save-password" autocomplete="current-password" value="" />';
+    $html .= '<input type="password" name="password" data-role="save-password" autocomplete="current-password" placeholder="Meglévő belépési kód" aria-label="Meglévő belépési kód" value="" />';
     $html .= '<button type="button" data-role="copy-pseudo">Másolás</button>';
     $html .= '<button type="submit" data-role="save-password-manager">Mentés</button>';
     $html .= '</form>';
+    $html .= '<p class="impactshop-identity-status" data-role="status" role="status" aria-live="polite"></p>';
     $html .= '<span class="impactshop-identity-hidden" data-role="recovery-display"></span>';
     $html .= '<div class="impactshop-identity-actions">';
     $profile_action_url = impactshop_identity_canonical_profile_url();
-    $html .= '<a class="impactshop-identity-link" href="' . esc_url($profile_action_url) . '" target="_blank" rel="noopener">A fiókom kezelése</a>';
+    $html .= '<a class="impactshop-identity-link" data-role="manage-profile" href="' . esc_url($profile_action_url) . '" target="_blank" rel="noopener">A fiókom kezelése</a>';
     $html .= '<a class="impactshop-identity-link impactshop-identity-link--muted" data-role="identity-restore-link" href="' . esc_url($restore_url) . '" target="_blank" rel="noopener">Belépés meglévő fiókba</a>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-compact" data-role="points-compact" hidden>';
@@ -1698,6 +1780,7 @@ function impactshop_identity_panel_register_assets(): void
 .impactshop-identity-actions { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
 .impactshop-identity-link { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 12px; border: 2px solid #171421; background: #c9ff3d; color: #171421; text-decoration: none; box-shadow: 3px 3px 0 #171421; }
 .impactshop-identity-link:hover { background: #f6c4d8; }
+.impactshop-identity-link[data-role="jysk-return"][hidden] { display: none !important; }
 .impactshop-identity-link--muted { background: #dfd2ff; color: #171421; box-shadow: 3px 3px 0 #171421; }
 .impactshop-identity-link--muted:hover { background: #f6c4d8; }
 .impactshop-identity-hidden { display: none; }
@@ -1753,6 +1836,7 @@ CSS;
     wp_localize_script('impactshop-identity-panel', 'impactshopIdentityPanel', [
         'restBase'  => esc_url_raw(rest_url('impact/v1')),
         'restNonce' => wp_create_nonce('wp_rest'),
+        'codeSaveContract' => 2,
     ]);
 
     // The profile shortcode renders in page content, after wp_head. Enqueue
@@ -1852,6 +1936,7 @@ function impactshop_identity_profile_update(WP_REST_Request $request): WP_REST_R
     if (!impactshop_identity_request_same_origin()) {
         return new WP_REST_Response(['message' => 'A kérés forrása nem engedélyezett.'], 403);
     }
+
     $params = (array)$request->get_json_params();
     $pseudo_id = isset($params['pseudo_id']) ? strtolower((string)$params['pseudo_id']) : '';
     $nickname = isset($params['nickname']) ? (string)$params['nickname'] : '';
@@ -1978,6 +2063,15 @@ function impactshop_identity_profile_restore(WP_REST_Request $request): WP_REST_
 /** Generate a portable sign-in code and issue a one-time reveal grant. */
 function impactshop_identity_code_generate(WP_REST_Request $request): WP_REST_Response
 {
+    // Compatibility only, not authorization. Old clients could generate a code
+    // while merely saving; refuse those before any recovery state is changed.
+    if ($request->get_param('code_save_contract') !== 2 || $request->get_param('confirm_generation') !== true) {
+        return new WP_REST_Response(['message' => 'A kód készítéséhez töltsd újra a profiloldalt.', 'code' => 'code_save_reload_required'], 409);
+    }
+    $return_url = impactshop_identity_code_save_return($request->get_param('profile_return_url'));
+    if ($return_url === null) {
+        return new WP_REST_Response(['message' => 'A visszatérési cím nem érvényes. Nyisd meg újra a profiloldalt.'], 400);
+    }
     $nonce = (string) $request->get_header('X-WP-Nonce');
     if ($nonce === '' || !wp_verify_nonce($nonce, 'wp_rest')) {
         return new WP_REST_Response(['message' => 'A művelet lejárt. Töltsd újra az oldalt.'], 403);
@@ -1997,12 +2091,16 @@ function impactshop_identity_code_generate(WP_REST_Request $request): WP_REST_Re
         return new WP_REST_Response(['message' => 'Túl sok kódgenerálás. Próbáld újra később.'], 429);
     }
 
+    if (get_option('impactshop_identity_code_generation_paused', false)) {
+        return new WP_REST_Response(['message' => 'Új belépési kód most nem készíthető. A meglévő kód továbbra is használható.'], 503);
+    }
     $code = impactshop_identity_profile_generate_recovery_code();
     impactshop_identity_profile_store_code_hash($pseudo_id, $code);
     $grant = bin2hex(random_bytes(32));
     set_transient('impactshop_identity_reveal_' . hash('sha256', $grant), [
         'pseudo_id' => $pseudo_id,
         'code' => $code,
+        'profile_return_url' => $return_url,
     ], 60);
     if (PHP_VERSION_ID >= 70300) {
         setcookie('impactshop_identity_reveal', $grant, [
@@ -2319,12 +2417,15 @@ function impactshop_identity_render_code_page(): void
         $pseudo = '';
         $code = '';
     }
+    $return_url = impactshop_identity_code_save_return(is_array($payload) ? ($payload['profile_return_url'] ?? null) : null) ?? home_url('/profil/');
     status_header(200);
     echo '<!doctype html><html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Belépési kód</title><style>body{margin:0;background:#f8fafc;color:#0f172a;font:16px/1.5 system-ui,sans-serif}.wrap{max-width:560px;margin:12vh auto;padding:28px}.card{background:#fff;border:1px solid #cbd5e1;border-radius:20px;padding:28px;box-shadow:0 16px 40px #0f172a1a}h1{margin-top:0}.code{display:block;margin:20px 0;padding:18px;border-radius:12px;background:#e0f2fe;color:#075985;font:700 24px ui-monospace,monospace;letter-spacing:.08em;word-break:break-word}.hint{color:#475569}</style></head><body><main class="wrap"><section class="card"><h1>Belépési kód</h1>';
     if ($pseudo !== '' && $code !== '') {
-        echo '<p>Az alábbi kód a pseudo ID-hoz tartozik. Mentsd el a jelszókezelődbe.</p><p><strong>Pseudo ID:</strong> ' . esc_html($pseudo) . '</p><code class="code">' . esc_html($code) . '</code><form method="post" action="" autocomplete="on"><input type="hidden" name="username" autocomplete="username" value="' . esc_attr($pseudo) . '"><input type="password" name="password" autocomplete="new-password" value="' . esc_attr($code) . '" style="position:absolute;left:-9999px"><button type="submit">Mentés a jelszókezelőbe</button></form><p class="hint">Ez az oldal egyszeri megjelenítésre szolgált. Bezárás után a kódot innen nem lehet újra kiolvasni.</p>';
+        // The generated form posts to the normal save handler, not this
+        // consumed reveal URL. No JavaScript or third-party code runs here.
+        echo '<p>A profilod elkészült. Az azonosítót és ezt a belépési kódot együtt őrizd meg; ezekkel később másik eszközön is beléphetsz.</p><p><strong>Azonosító:</strong> ' . esc_html($pseudo) . '</p><code class="code">' . esc_html($code) . '</code><form method="post" action="' . esc_url(home_url('/')) . '" autocomplete="on"><input type="hidden" name="impactshop_identity_save_intent" value="1"><input type="hidden" name="impactshop_identity_code_save_contract" value="2"><input type="hidden" name="impactshop_identity_return" value="' . esc_attr($return_url) . '"><input type="text" name="username" autocomplete="username" aria-label="Azonosító" readonly value="' . esc_attr($pseudo) . '"><input type="password" name="password" autocomplete="new-password" aria-label="Belépési kód" readonly value="' . esc_attr($code) . '"><button type="submit">Mentés a jelszókezelőbe és tovább</button></form><p><a href="' . esc_url($return_url) . '">Elmentettem más módon – tovább</a></p><p class="hint">A böngésző felajánlhatja a mentést; fogadd el, vagy másold ki biztonságos helyre az azonosítót és a kódot. Ez az oldal csak egyszer jeleníti meg a kódot.</p>';
     } else {
-        echo '<p>Ez a biztonságos kódmegjelenítés lejárt vagy már felhasználtad. A profiloldalról kérj új kódot.</p>';
+        echo '<p>Ez a biztonságos kódmegjelenítés lejárt vagy már felhasználtad. Ha már elmentetted a kódot, nincs szükség újra. Új kód készítése érvényteleníti a korábbit.</p><p><a href="' . esc_url(home_url('/profil/')) . '">Vissza a profilhoz</a></p>';
     }
     echo '</section></main></body></html>';
     exit;
