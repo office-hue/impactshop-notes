@@ -61,7 +61,12 @@ if (($argv[1] ?? '') !== '--request') {
         $input['url'] = str_replace('sajat-sharity', 'vasarlasi-seged', $input['url'] ?? TEST_ENTRY);
         $shoppingCases[] = [$name, $input, is_string($expected) ? str_replace('sajat-sharity', 'vasarlasi-seged', $expected) : $expected];
     }
-    $cases = array_merge($cases, $shoppingCases);
+    $roomCases = [];
+    foreach ($cases as [$name, $input, $expected]) {
+        $input['url'] = str_replace('sajat-sharity', 'hatas-korok', $input['url'] ?? TEST_ENTRY);
+        $roomCases[] = [$name, $input, is_string($expected) ? str_replace('sajat-sharity', 'hatas-korok', $expected) : $expected];
+    }
+    $cases = array_merge($cases, $shoppingCases, $roomCases);
     foreach ($cases as [$name, $input, $expected]) {
         $result = run_request($input);
         $native = ($input['home'] ?? 'https://app.sharity.hu') . '/profil/#impactshop-restore-title';
