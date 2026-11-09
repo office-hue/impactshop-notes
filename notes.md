@@ -1,3 +1,11 @@
+## 2026-11-09 — Profil: régi felső fejléc eltávolítása
+
+Felhasználói képes utasítás: csak a profilról a régi logó/menü/Adományozok sáv eltűnik. Egyetlen pontos Elementor-header CSS wp_head-ben, profil-only gate; telepítési dialog header és más oldalak megmaradnak.3 célzott böngészőeset és PHP lint sikeres, auth/return kód byte-azonos. Előző saját lezáró doc-WIP külön bb6d44c6 stash-ben. Scope/rollback/UI: docs/protected-change-records/2026-11-09-profile-retired-header.md. Forrásmódosítás, még nem telepített.
+
+## 2026-11-09 — Profil: mobil elrendezés és új telepítési súgó
+
+B05834f8 alap, fix/profile-mobile-install-ui-20261109. Csak a profil-UI plugin változik: egy zöld telepítési indító/súgó, régi mobil/desktop/a11y vezérlők profil-only rejtése, valós dock-mérés és mobil szöveg/mezőjavítás. Identity/actionbar/PWA és visszatérés byte-azonos.26/26 offline böngészőteszt sikeres18.847s, független review iPad-finding javítva/visszaellenőrizve. Nincs új profil/pont/kód vagy élő írás. Kiadás egyfájlos backup/CAS/rollback út, részletek: docs/protected-change-records/2026-11-09-profile-mobile-install-ui.md. Korábbi három doc-WIP stash21634b8b változatlan.
+
 ## 2026-11-09 — Profil: régi országvezérlő elrejtése
 
 A388bc972 alapról saját fix/profile-ui-preferences-20261109. Csak a profiladapter CSS-e és négy help-mondata változik; eredeti controller DOM/listenerek és minden core/actionbar/PWA byte marad.22/22 célzott offline UI-teszt és lint/diff sikeres. A live WP még legacy controller; az adapter szerződése egyezik a jelenlegi közös kulcsokkal és fieldwise preferenciákkal, amelyeket az élő Vásárlási Segéd Next-bundle is tartalmaz. Kizárólag saját pluginhash/manifestchecksum frissítve. Részletes bizonyíték, rollback és kézi lista: docs/protected-change-records/2026-11-09-profile-ui-country-removal.md. A forráscommit nem push/deploy vagy új éles acceptance.

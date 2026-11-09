@@ -17,6 +17,14 @@ function impactshop_profile_ui_should_render(): bool
         && in_array(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), ['/profil', '/profil/'], true);
 }
 
+function impactshop_profile_ui_retired_header_style(): void
+{
+    if (impactshop_profile_ui_should_render()) {
+        echo '<style id="impactshop-profile-retired-header">body header.elementor-location-header[data-elementor-type="header"]{display:none!important}</style>';
+    }
+}
+add_action('wp_head', 'impactshop_profile_ui_retired_header_style', 20);
+
 function impactshop_profile_ui_render(): void
 {
     if (!impactshop_profile_ui_should_render()) {
@@ -42,9 +50,34 @@ function impactshop_profile_ui_render(): void
     body.impactshop-profile-ui .impactshop-profile-strip details p{margin:0 0 8px}
     body.impactshop-profile-ui .sharity-slc__sheet{max-height:85vh;max-height:85dvh;overflow-y:auto}
     body.impactshop-profile-ui .sharity-slc__row{min-height:44px;box-sizing:border-box}
-    body.impactshop-profile-ui #impactshop-pwa-install,body.impactshop-profile-ui #impactshop-pwa-reopen{width:48px;height:48px;border-radius:14px}
-    body.impactshop-profile-ui .impactshop-mobile-utility__toggle{width:44px;min-height:44px}
-    @media(max-width:768px){body.impactshop-profile-ui .impactshop-mobile-utility{bottom:calc(var(--sharity-action-bar-height,126px) + env(safe-area-inset-bottom,0px) + 50px)}body.impactshop-profile-ui .impactshop-profile-strip{gap:10px;margin:20px 12px 0}}
+    body.impactshop-profile-install-ui{padding-bottom:calc(var(--profile-ui-dock-clearance,148px) + 88px)}
+    body.impactshop-profile-install-ui #impactshop-pwa-install,body.impactshop-profile-install-ui #impactshop-pwa-reopen,body.impactshop-profile-install-ui #impactshop-mobile-utility{display:none!important}
+    body.impactshop-profile-install-ui .impactshop-profile-shell{box-sizing:border-box;width:calc(100% - 32px);max-width:820px}
+    body.impactshop-profile-install-ui .impactshop-profile-intro{box-sizing:border-box}
+    body.impactshop-profile-install-ui .impactshop-profile-intro::after{z-index:0}
+    body.impactshop-profile-install-ui .impactshop-profile-intro > *{position:relative;z-index:1}
+    body.impactshop-profile-install-ui .impactshop-identity-card input,body.impactshop-profile-install-ui .impactshop-identity-card select{box-sizing:border-box;min-width:0;max-width:100%}
+    body.impactshop-profile-install-ui .impactshop-identity-panel button,body.impactshop-profile-install-ui .sharity-action-bar > a{min-width:0;overflow-wrap:anywhere;white-space:normal}
+    body.impactshop-profile-install-ui .sharity-action-bar > a > span{min-width:0;max-width:100%}
+    body.impactshop-profile-install-ui .impactshop-identity-panel :is(button,input,select,a){scroll-margin-bottom:calc(var(--profile-ui-dock-clearance,148px) + 88px)}
+    #impactshop-profile-install button{box-sizing:border-box;font:inherit;cursor:pointer;color:#150f26;border:2px solid #150f26}
+    #impactshop-profile-install button:focus-visible{outline:3px solid #6d3bf5;outline-offset:3px}
+    #impactshop-profile-install [hidden],#impactshop-profile-install[hidden]{display:none!important}
+    #impactshop-profile-install-launcher{position:fixed;right:16px;bottom:calc(var(--profile-ui-dock-clearance,148px) + 16px);z-index:10020;width:44px;height:44px;padding:10px;border-radius:50%;background:#c6ff3d;box-shadow:4px 4px 0 #150f26}
+    #impactshop-profile-install-launcher svg{display:block;width:20px;height:20px}
+    #impactshop-profile-install-dialog{box-sizing:border-box;position:fixed;inset:auto 12px calc(var(--profile-ui-dock-clearance,148px) + 16px);width:calc(100% - 24px);max-width:448px;max-height:calc(100dvh - var(--profile-ui-dock-clearance,148px) - 40px);overflow:auto;margin:0 auto;padding:20px;border:2px solid #150f26;border-radius:18px;background:#fff;color:#150f26;box-shadow:6px 6px 0 #6d3bf5;text-align:left;font:inherit}
+    #impactshop-profile-install-dialog::backdrop{background:rgba(21,15,38,.25)}
+    #impactshop-profile-install-dialog header{display:flex;align-items:flex-start;gap:12px}
+    #impactshop-profile-install-dialog header > div{min-width:0;flex:1}
+    #impactshop-profile-install-dialog h2{font-size:24px;line-height:1.2;color:inherit;margin:8px 0 0;overflow-wrap:anywhere}
+    #impactshop-profile-install-dialog p{font-size:14px;line-height:1.6;margin:12px 0}
+    #impactshop-profile-install-dialog [data-install-copy=eyebrow]{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6d3bf5;margin:0}
+    #impactshop-profile-install-close{flex:0 0 44px;min-height:44px;border-radius:10px;background:#faf9f6;font-size:24px!important}
+    #impactshop-profile-install-now{min-height:44px;padding:10px 16px;border-radius:12px;background:#c6ff3d;font-weight:700!important;box-shadow:3px 3px 0 #150f26}
+    #impactshop-profile-install-now:disabled{opacity:.6;cursor:wait}
+    #impactshop-profile-install-dialog footer{border-top:2px solid #150f261a;margin-top:20px;padding-top:12px}
+    body.sharity-consent-blocking #impactshop-profile-install{display:none!important}
+    @media(max-width:768px){body.impactshop-profile-ui .impactshop-profile-strip{gap:10px;margin:20px 16px 0}body.impactshop-profile-install-ui .sharity-action-bar > a{padding-left:4px;padding-right:4px}}
     </style>
     <script id="impactshop-profile-ui">
     (function () {
@@ -199,6 +232,70 @@ function impactshop_profile_ui_render(): void
         persist();
       }
       render(); document.body.classList.add('impactshop-profile-ui');
+    })();
+    </script>
+    <script id="impactshop-profile-install-ui">
+    (function () {
+      'use strict';
+      // Presentation only: the existing PWA delegate remains the sole prompt owner.
+      if (!document.querySelector('.impactshop-identity-panel') || !document.getElementById('impactshop-pwa-install') || document.getElementById('impactshop-profile-install')) return;
+      var root = document.createElement('div');
+      root.id = 'impactshop-profile-install';
+      root.innerHTML = '<button id="impactshop-profile-install-launcher" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button><dialog id="impactshop-profile-install-dialog" aria-labelledby="impactshop-profile-install-title"><header><div><p data-install-copy="eyebrow"></p><h2 id="impactshop-profile-install-title" data-install-copy="title"></h2></div><button id="impactshop-profile-install-close" type="button">×</button></header><p data-install-copy="text"></p><button id="impactshop-profile-install-now" type="button" data-role="pwa-install" hidden></button><footer><strong data-install-copy="guideTitle"></strong><p data-install-copy="guide"></p></footer></dialog>';
+      document.body.appendChild(root);
+      var launcher = document.getElementById('impactshop-profile-install-launcher');
+      var dialog = document.getElementById('impactshop-profile-install-dialog');
+      var close = document.getElementById('impactshop-profile-install-close');
+      var install = document.getElementById('impactshop-profile-install-now');
+      // A browser without modal support keeps its working legacy controls.
+      if (typeof dialog.showModal !== 'function') { root.remove(); return; }
+      document.body.classList.add('impactshop-profile-install-ui');
+      var promptEvent = null, pending = false, installed = false;
+      var dock = document.querySelector('.sharity-action-bar[data-sharity-quick-dock]');
+      function measureDock() {
+        var clearance = dock && dock.getClientRects().length ? Math.max(0,Math.ceil(innerHeight - dock.getBoundingClientRect().top)) : 0;
+        var value = clearance+'px';
+        if (document.body.style.getPropertyValue('--profile-ui-dock-clearance') !== value) document.body.style.setProperty('--profile-ui-dock-clearance',value);
+      }
+      if (dock && typeof ResizeObserver === 'function') new ResizeObserver(measureDock).observe(dock);
+      var copy = {
+        hu: ['Sharity telepítése','Sharity a készülékeden','Telepítsd, hogy mindig kéznél legyen.','A Sharity egy ikonról megnyitható webalkalmazásként is használható. A telepítés ingyenes, és nem változtatja meg a böngészőben használt fiókodat.','Telepítési súgó bezárása','Telepítés most','iPhone vagy iPad','Nyomd meg a Megosztás gombot, válaszd a Hozzáadás a Főképernyőhöz lehetőséget, majd a Hozzáadás gombot.','Android','A böngésző menüjében válaszd az Alkalmazás telepítése vagy a Hozzáadás a kezdőképernyőhöz lehetőséget.','Safari Macen','A Megosztás menüben vagy a Fájl menüben válaszd a Hozzáadás a Dockhoz lehetőséget.','Firefox','A Sharityt könyvjelzőként vagy parancsikonként mentheted el; a böngészőben nem minden esetben jelenik meg alkalmazás-telepítés.','Számítógép','A címsorban keresd a telepítés ikonját, vagy a böngésző menüjében válaszd az Alkalmazás telepítése lehetőséget.'],
+        en: ['Install Sharity','Sharity on your device','Install it to keep it close at hand.','You can use Sharity as a web app launched from an icon. Installation is free and does not change the account you use in your browser.','Close installation help','Install now','iPhone or iPad','Tap Share, choose Add to Home Screen, then tap Add.','Android','In your browser menu, choose Install app or Add to Home Screen.','Safari on Mac','In the Share or File menu, choose Add to Dock.','Firefox','You can save Sharity as a bookmark or shortcut; app installation is not always available in this browser.','Computer','Look for the install icon in the address bar, or choose Install app in the browser menu.'],
+        de: ['Sharity installieren','Sharity auf deinem Gerät','Installiere Sharity und habe es immer griffbereit.','Du kannst Sharity als Web-App über ein Symbol öffnen. Die Installation ist kostenlos und ändert dein Browserkonto nicht.','Installationshilfe schließen','Jetzt installieren','iPhone oder iPad','Tippe auf Teilen, dann auf Zum Home-Bildschirm und anschließend auf Hinzufügen.','Android','Wähle im Browsermenü App installieren oder Zum Startbildschirm hinzufügen.','Safari auf dem Mac','Wähle im Menü Teilen oder Ablage die Option Zum Dock hinzufügen.','Firefox','Du kannst Sharity als Lesezeichen oder Verknüpfung speichern; eine App-Installation wird in diesem Browser nicht immer angeboten.','Computer','Suche in der Adressleiste nach dem Installationssymbol oder wähle im Browsermenü App installieren.'],
+        fr: ['Installer Sharity','Sharity sur votre appareil','Installez Sharity pour l’avoir à portée de main.','Sharity peut être utilisé comme une application web accessible depuis une icône. L’installation est gratuite et ne change pas votre compte dans le navigateur.','Fermer l’aide à l’installation','Installer maintenant','iPhone ou iPad','Touchez Partager, puis Sur l’écran d’accueil, puis Ajouter.','Android','Dans le menu du navigateur, choisissez Installer l’application ou Ajouter à l’écran d’accueil.','Safari sur Mac','Dans le menu Partager ou Fichier, choisissez Ajouter au Dock.','Firefox','Vous pouvez enregistrer Sharity comme marque-page ou raccourci ; l’installation d’une application n’est pas toujours disponible dans ce navigateur.','Ordinateur','Cherchez l’icône d’installation dans la barre d’adresse ou choisissez Installer l’application dans le menu du navigateur.']
+      };
+      function isStandalone() { return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+      function render() {
+        measureDock();
+        var select = document.getElementById('impactshop-profile-language');
+        var language = select && copy[select.value] ? select.value : 'hu';
+        var text = copy[language], ua = navigator.userAgent;
+        var ios = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+        var guide = ios ? 6 : /android/i.test(ua) ? 8 : /macintosh/i.test(ua) && /safari/i.test(ua) && !/chrome|crios|edg/i.test(ua) ? 10 : /firefox/i.test(ua) ? 12 : 14;
+        root.lang = language;
+        launcher.setAttribute('aria-label',text[0]); close.setAttribute('aria-label',text[4]); install.textContent = text[5];
+        [['eyebrow',1],['title',2],['text',3],['guideTitle',guide],['guide',guide+1]].forEach(function (entry) { root.querySelector('[data-install-copy="'+entry[0]+'"]').textContent = text[entry[1]]; });
+        install.hidden = !promptEvent; install.disabled = pending;
+        root.hidden = installed || isStandalone();
+        if ((root.hidden || document.body.classList.contains('sharity-consent-blocking')) && dialog.open) dialog.close();
+      }
+      launcher.addEventListener('click', function () { render(); if (!root.hidden && !dialog.open && !document.body.classList.contains('sharity-consent-blocking')) { dialog.showModal(); close.focus(); } });
+      close.addEventListener('click', function () { dialog.close(); });
+      dialog.addEventListener('close', function () { if (!root.hidden) launcher.focus(); });
+      // Do not consume or prompt this event; the old PWA listener owns that operation.
+      window.addEventListener('beforeinstallprompt', function (event) { promptEvent = event; pending = false; render(); });
+      install.addEventListener('click', function (event) {
+        if (!promptEvent || pending) { event.preventDefault(); event.stopPropagation(); return; }
+        pending = true; install.disabled = true;
+        var choice = promptEvent.userChoice;
+        // Let this single click bubble to the existing PWA delegate.
+        Promise.resolve(choice).then(function () { promptEvent = null; pending = false; render(); }, function () { promptEvent = null; pending = false; render(); });
+      });
+      window.addEventListener('appinstalled', function () { installed = true; promptEvent = null; render(); });
+      window.addEventListener('resize', render);
+      document.addEventListener('change', function (event) { if (event.target.id === 'impactshop-profile-language') render(); });
+      new MutationObserver(render).observe(document.body, {attributes:true,attributeFilter:['class']});
+      render();
     })();
     </script>
     <?php
