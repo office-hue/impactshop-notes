@@ -8538,3 +8538,7 @@ Kiadási delta: #261 merge dc38f300, mindhárom fájl exact-release kiadva.
 szűk JS-kompatibilitás és a valós alakot modellező fixture javul. A szerver
 továbbra is numerikus v2 JSON-kérést és a meglévő owner/nonce/origin ellenőrzést
 kér. A kód első élő megjelenítése még nem igazolt; a tesztowner lejárt.
+
+## 2026-11-09 — nyolc JYSK NGO Card: additív katalóguskiegészítés
+
+Saját `impactshop-ngo-card-directory.php` és47állításos offlinefixture; nincs legacy/VB/ledger/identity módosítás. Csak `card_directory=1` sikeres publikus katalógushívásra, teljes primaryforrás + pontos nativeapprovalhoz kötött nyilvános metadata. Saját blokk, nem globális guard-PASS; részletes authority/kiadás/rollback: `docs/ngo-card-directory-jysk-2026-11-09.md`. NativeCardok létrejöttek; új modul merge/telepítés és modern snapshotpublikáció még nincs igazolva.

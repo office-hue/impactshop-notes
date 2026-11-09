@@ -1,0 +1,80 @@
+[
+  {
+    "slug": "herosz-fehervari-allatotthon-alapitvany",
+    "name": "HEROSZ Fehérvári Állatotthon Alapítvány",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://www.fehervariallatotthon.hu/",
+    "details_url": "https://www.fehervariallatotthon.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/herosz-fehervari-allatotthon-alapitvany/kartya",
+    "short_mission": "Állatotthon működtetése, állatvédelem, valamint oktató és közösségi programok."
+  },
+  {
+    "slug": "egeszsegdokk-kozhasznu-alapitvany",
+    "name": "EGÉSZSÉGDOKK Közhasznú Alapítvány",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://egeszsegdokk.hu/",
+    "details_url": "https://egeszsegdokk.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/egeszsegdokk-kozhasznu-alapitvany/kartya",
+    "short_mission": "Gyermek- és ifjúságaddiktológiai rehabilitáció."
+  },
+  {
+    "slug": "fehervar-rugby-club-sportegyesulet",
+    "name": "Fehérvár Rugby Club Sportegyesület",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://fehervarrugby.hu/",
+    "details_url": "https://fehervarrugby.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/fehervar-rugby-club-sportegyesulet/kartya"
+  },
+  {
+    "slug": "szocialis-erdekeket-partolo-emberek-kozossege-kozhasznu-egyesulet",
+    "name": "Szociális Érdekeket Pártoló Emberek Közössége Közhasznú Egyesület",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://www.szepekegyesulet.hu/",
+    "details_url": "https://www.szepekegyesulet.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/szocialis-erdekeket-partolo-emberek-kozossege-kozhasznu-egyesulet/kartya",
+    "short_mission": "Gyermekvédelmi és szociális ellátások, valamint kapcsolódó közösségi szolgáltatások támogatása."
+  },
+  {
+    "slug": "aranybulla-konyvtar-alapitvany",
+    "name": "„Aranybulla” Könyvtár Alapítvány",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://aranybullakonyvtar.hu/",
+    "details_url": "https://aranybullakonyvtar.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/aranybulla-konyvtar-alapitvany/kartya",
+    "short_mission": "Könyvtári és közösségi tér működtetése, gyermek- és családi programok szervezése."
+  },
+  {
+    "slug": "david-kornel-kosarlabda-akademia-alapitvany",
+    "name": "Dávid Kornél Kosárlabda Akadémia Alapítvány",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://davidkornelakademia.hu/",
+    "details_url": "https://davidkornelakademia.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/david-kornel-kosarlabda-akademia-alapitvany/kartya"
+  },
+  {
+    "slug": "gardonyi-geza-muvelodesi-haz-es-konyvtar-egyesulet",
+    "name": "Gárdonyi Géza Művelődési Ház és Könyvtár Egyesület",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://ggmuvhaz.hu/",
+    "details_url": "https://ggmuvhaz.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/gardonyi-geza-muvelodesi-haz-es-konyvtar-egyesulet/kartya",
+    "short_mission": "Kulturális, könyvtári és közösségi programok szervezése."
+  },
+  {
+    "slug": "vakok-es-gyengenlatok-fejleszto-magansegito-szervezete",
+    "name": "Vakok és Gyengénlátók Fejlesztő Magánsegítő Szervezete",
+    "is_active": true,
+    "city": "Székesfehérvár",
+    "website_url": "https://vgyfmsz.hu/",
+    "details_url": "https://vgyfmsz.hu/",
+    "share_url": "https://sharity.hu/ngo-kartyak/vakok-es-gyengenlatok-fejleszto-magansegito-szervezete/kartya",
+    "short_mission": "Fogyatékossággal élő emberek és családjaik támogatása."
+  }
+]

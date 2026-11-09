@@ -2174,3 +2174,7 @@ Scope/rollback/UI: docs/protected-change-records/2026-11-09-jysk-profile-code-sa
 #261/dc38f300 három profilfájlja telepített, forrásbyte-ok HTTP-ból egyeznek.
 Az éles localize string/number eltérés miatt célzott JS-korrekció következik;
 nem állítunk még sikeres élő kódgenerálást vagy teljes profil-visszatérést.
+
+## 2026-11-09 — nyolc JYSK NGO Card: additív katalóguskiegészítés
+
+Saját `impactshop-ngo-card-directory.php` és47állításos offlinefixture; nincs legacy/VB/ledger/identity módosítás. Csak `card_directory=1` sikeres publikus katalógushívásra, teljes primaryforrás + pontos nativeapprovalhoz kötött nyilvános metadata. Saját blokk, nem globális guard-PASS; részletes authority/kiadás/rollback: `docs/ngo-card-directory-jysk-2026-11-09.md`. NativeCardok létrejöttek; új modul merge/telepítés és modern snapshotpublikáció még nincs igazolva.
