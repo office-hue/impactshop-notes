@@ -23,10 +23,11 @@ const jyskSuffix = '?jysk_return=1&bridge_target=account&prctx=prctx_fixture&opa
 let browser;
 before(async()=>{browser=await chromium.launch({channel:'chrome',headless:true,proxy:{server:'http://127.0.0.1:9'}});});
 after(async()=>{await browser?.close();});
-async function fixture(kind,{url=base+suffix, width=390, standalone=false, blocked=false, disabled=false, restoreDenied=false, stored, cookies=[]}={}) {
- const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
+async function fixture(kind,{url=base+suffix, width=390, height=900, standalone=false, blocked=false, disabled=false, restoreDenied=false, stored, cookies=[], userAgent, touchPoints=0}={}) {
+ const context=await browser.newContext({viewport:{width,height},serviceWorkers:'block',...(userAgent?{userAgent}:{})});
  await context.addCookies(cookies.map(([name,value])=>({name,value,url:base})));
- await context.addInitScript(({standalone,blocked,stored})=>{
+ await context.addInitScript(({standalone,blocked,stored,touchPoints})=>{
+  Object.defineProperty(navigator,'maxTouchPoints',{value:touchPoints,configurable:true});
   history.replaceState({keep:'unaltered'},'',location.href);
   if(stored) localStorage.setItem('sharity_ui_preferences_v1',JSON.stringify(stored));
   if(standalone){const original=matchMedia;window.matchMedia=q=>q==='(display-mode: standalone)'?{matches:true,addEventListener(){},addListener(){}}:original(q);}
@@ -35,7 +36,7 @@ async function fixture(kind,{url=base+suffix, width=390, standalone=false, block
   window.PasswordCredential=class { constructor(data){Object.assign(this,data);} };
   Object.defineProperty(navigator,'credentials',{value:{store(credential){credentialStores.push(credential);return Promise.resolve(credential);}},configurable:true});
   window.installCalls=0; window.alerts=[]; window.alert=text=>alerts.push(text);
- },{standalone,blocked,stored});
+ },{standalone,blocked,stored,touchPoints});
  const page=await context.newPage();page.setDefaultTimeout(5000);const errors=[], posts=[], escapes=[], navigations=[], navigationRequests=[], phpResults=[];let generatedReturn;
  page.on('pageerror',e=>errors.push(e.message));
  await context.route('**/*',async route=>{
@@ -133,23 +134,63 @@ for(const kind of ['legacy','managed']) {
  test(`${kind}: blocked optional preference storage still switches without navigation`,async()=>{
   const f=await fixture(kind,{blocked:true,url:base+'?ui_lang=de&ui_currency=EUR&return=a%2fb'});assert.equal(await f.page.locator('#impactshop-profile-language').inputValue(),'de');await switchAll(f.page);assert.equal(f.navigations.length,1);await finish(f);
  });
- test(`${kind}: PWA native prompt, collapse, consent and standalone ownership`,async()=>{
+ test(`${kind}: one modern install control, native prompt once, modal focus and consent`,async()=>{
   const mobile=await fixture(kind);const {page}=mobile;
-  for(const width of [320,390])for(const lang of ['hu','en','de','fr']){
-   await page.setViewportSize({width,height:900});await page.locator('#impactshop-profile-language').selectOption(lang);
-   const dock=await page.locator('.sharity-action-bar').boundingBox(), utility=await page.locator('#impactshop-mobile-utility').boundingBox();
-   assert.ok(utility.y+utility.height<=dock.y,`${width}/${lang}: PWA overlaps dock ${JSON.stringify({dock,utility})}`);
+  const launcher=page.locator('#impactshop-profile-install-launcher'),dialog=page.locator('#impactshop-profile-install-dialog');
+  const initialPosts=structuredClone(mobile.posts), history=await page.evaluate(()=>({state:window.history.state,length:window.history.length,url:location.href}));
+  for(const width of [320,390,768,1280])for(const lang of ['hu','en','de','fr']){
+   await page.setViewportSize({width,height:740});await page.locator('#impactshop-profile-language').selectOption(lang);
+   for(const id of ['impactshop-pwa-install','impactshop-pwa-reopen','impactshop-mobile-utility'])assert.equal(await page.locator('#'+id).isVisible(),false);
+   assert.equal(await launcher.count(),1);
+   const dock=await page.locator('.sharity-action-bar').boundingBox(),button=await launcher.boundingBox();
+   assert.ok(button.width>=44&&button.height>=44);
+   assert.ok(button.y+button.height<=dock.y,`${width}/${lang}: install overlaps dock ${JSON.stringify({dock,button,height:await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--sharity-action-bar-height'))})}`);
+   await launcher.click();assert.equal(await dialog.isVisible(),true);
+   assert.equal(await page.locator('#impactshop-profile-install-close').evaluate(e=>e===document.activeElement),true);
+   const rect=await dialog.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width&&rect.y>=0&&rect.y+rect.height<=740);
+   assert.equal(await page.locator('#impactshop-profile-install-now').isVisible(),false,'no invented native prompt');
+   await page.keyboard.press('Escape');assert.equal(await dialog.isVisible(),false);
+   assert.equal(await launcher.evaluate(e=>e===document.activeElement),true);
   }
   await page.locator('#impactshop-profile-language').selectOption('hu');
   if(process.env.PROFILE_UI_SCREENSHOTS_DIR){mkdirSync(process.env.PROFILE_UI_SCREENSHOTS_DIR,{recursive:true});await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:resolve(process.env.PROFILE_UI_SCREENSHOTS_DIR,kind+'-mobile.png')});}
-  await page.evaluate(()=>{const event=new Event('beforeinstallprompt',{cancelable:true});event.prompt=()=>{installCalls++;};event.userChoice=Promise.resolve({outcome:'dismissed'});window.dispatchEvent(event);});
-  await page.locator('[data-role=pwa-mobile-install]').click();assert.equal(await page.evaluate(()=>installCalls),1);
-  await page.locator('[data-role=pwa-mobile-toggle]').click();assert.equal(await page.locator('#impactshop-mobile-utility').getAttribute('data-state'),'collapsed');
-  await page.locator('[data-role=pwa-mobile-toggle]').click();assert.equal(await page.locator('#impactshop-mobile-utility').getAttribute('data-state'),'open');
-  assert.ok((await page.locator('[data-role=pwa-mobile-toggle]').boundingBox()).width>=44);
-  await page.evaluate(()=>document.body.classList.add('sharity-consent-blocking'));assert.equal(await page.locator('#impactshop-mobile-utility').isVisible(),false);await finish(mobile);
-  const desktop=await fixture(kind,{width:1280});if(process.env.PROFILE_UI_SCREENSHOTS_DIR){await desktop.page.evaluate(()=>scrollTo(0,0));await desktop.page.screenshot({path:resolve(process.env.PROFILE_UI_SCREENSHOTS_DIR,kind+'-desktop.png')});}assert.equal(await desktop.page.locator('#impactshop-pwa-install').isVisible(),true);assert.ok((await desktop.page.locator('#impactshop-pwa-install').boundingBox()).width>=44);await finish(desktop);
-  const standalone=await fixture(kind,{standalone:true});for(const id of ['impactshop-pwa-install','impactshop-pwa-reopen','impactshop-mobile-utility'])assert.equal(await standalone.page.locator('#'+id).isVisible(),false);await finish(standalone);
+  await page.evaluate(()=>{const event=new Event('beforeinstallprompt',{cancelable:true});event.prompt=()=>{installCalls++;};event.userChoice=new Promise(resolve=>window.resolveInstall=resolve);window.dispatchEvent(event);});
+  await launcher.click();assert.equal(await page.locator('#impactshop-profile-install-now').isVisible(),true);
+  await page.evaluate(()=>{const button=document.getElementById('impactshop-profile-install-now');button.click();button.click();});
+  assert.equal(await page.evaluate(()=>installCalls),1);assert.equal(await page.locator('#impactshop-profile-install-now').isDisabled(),true);
+  await page.evaluate(()=>resolveInstall({outcome:'dismissed'}));await page.waitForFunction(()=>document.getElementById('impactshop-profile-install-now').hidden);
+  assert.deepEqual(await page.evaluate(()=>alerts),[]);
+  await page.locator('#impactshop-profile-install-close').click();assert.equal(await dialog.isVisible(),false);
+  await launcher.click();await page.evaluate(()=>document.body.classList.add('sharity-consent-blocking'));
+  await page.waitForFunction(()=>!document.getElementById('impactshop-profile-install-dialog').open);
+  assert.equal(await launcher.isVisible(),false);assert.equal(await page.locator('#impactshop-mobile-utility').isVisible(),false);
+  await page.evaluate(()=>document.body.classList.remove('sharity-consent-blocking'));assert.equal(await launcher.isVisible(),true);
+  assert.deepEqual(await page.evaluate(()=>({state:window.history.state,length:window.history.length,url:location.href})),history);
+  assert.deepEqual(mobile.posts,initialPosts);assert.equal(mobile.navigations.length,1);
+  await page.evaluate(()=>dispatchEvent(new Event('appinstalled')));assert.equal(await launcher.isVisible(),false);await finish(mobile);
+  const standalone=await fixture(kind,{standalone:true});for(const id of ['impactshop-profile-install','impactshop-pwa-install','impactshop-pwa-reopen','impactshop-mobile-utility'])assert.equal(await standalone.page.locator('#'+id).isVisible(),false);await finish(standalone);
+ });
+ test(`${kind}: profile layout fits small screens and final form stays reachable`,async()=>{
+  const f=await fixture(kind),{page}=f;
+  for(const [width,height] of [[320,568],[390,844],[768,390],[1280,740]])for(const lang of ['hu','en','de','fr']){
+   await page.setViewportSize({width,height});await page.locator('#impactshop-profile-language').selectOption(lang);
+   const overflow=await page.locator('.impactshop-identity-panel input:visible, .impactshop-identity-panel button:visible, .sharity-action-bar > a:visible').evaluateAll(elements=>elements.filter(e=>{const r=e.getBoundingClientRect();return r.left<0||r.right>innerWidth+1||e.scrollWidth>e.clientWidth+1;}).map(e=>e.getAttribute('data-role')||e.getAttribute('data-bar')));
+   assert.deepEqual(overflow,[],`${width}/${lang}: overflow`);
+   await page.locator('[data-role=restore-submit]').evaluate(e=>e.scrollIntoView({block:'center'}));
+   const last=await page.locator('[data-role=restore-submit]').boundingBox(),dock=await page.locator('.sharity-action-bar').boundingBox();
+   assert.ok(last.y>=0&&last.y+last.height<=dock.y,`${width}/${lang}: final action obscured ${JSON.stringify({last,dock})}`);
+  }
+  await finish(f);
+ });
+ test(`${kind}: Safari installation guide preserves the raw profile destination`,async()=>{
+  for(const userAgent of ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile Safari/604.1','Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15 Version/18.0 Safari/605.1.15']){
+  const f=await fixture(kind,{userAgent,touchPoints:5});
+  await f.page.locator('#impactshop-profile-install-launcher').click();
+  assert.match(await f.page.locator('[data-install-copy=guide]').textContent(),/Megosztás.*Főképernyőhöz/);
+  assert.equal(await f.page.locator('#impactshop-profile-install-now').isVisible(),false);
+  await f.page.locator('#impactshop-profile-install-close').click();assert.equal(f.page.url(),base+suffix);
+  assert.equal(await f.page.evaluate(()=>installCalls),0);await finish(f);
+  }
  });
  for(const denied of [false,true])test(`${kind}: real restore ${denied?'rejection':'completion'} remains unchanged after UI choices`,async()=>{
   const f=await fixture(kind,{url:base+'?bridge_target=restore&return='+encodeURIComponent('https://sharity.hu/hatas-korok'),restoreDenied:denied});await switchAll(f.page);
