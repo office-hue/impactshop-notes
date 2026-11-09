@@ -856,3 +856,7 @@ csak az identity JS digest és manifest-checksum követi a review-zott korrekci�
 Végső helyi eredmény:21/21 UI-eset sikeres (37.173s), PHP plugin/fixture lint és profile-code-save szerződésteszt sikeres. Exact owner/hash/csoport/checksum és összes idegen digest/core byte-megőrzés igazolt; protected-touch és deploy-wpcontent-map-bastion fixture sikeres, diff-check tiszta. Commit/push/CI/deploy és éles elfogadás még nincs.
 
 Saját feat/jysk-profile-ui-integration-20261109, alap580876b1. A kész donor három fájlja átvéve; új profilra szűkített MU-adapter, identity PHP/JS/overlay és actionbar/PWA érintetlen. Teszt az aktuális v2 generálás/reveal/natív save és JYSK nyers context szerint bővítve, élő profil/pont nélkül. Új exact owner/hash és meglévő PWA/mobile protected csoport; guardkód változatlan. Ellenőrzés, kockázat, rollback és kézi UI lista: docs/protected-change-records/2026-11-09-profile-ui-integration.md. Forrásmunka; ebből még nincs commit/push/merge/telepítés/éles acceptance.
+
+## 2026-11-09 — nyolc JYSK NGO Card: additív katalóguskiegészítés
+
+Saját `impactshop-ngo-card-directory.php` és47állításos offlinefixture; nincs legacy/VB/ledger/identity módosítás. Csak `card_directory=1` sikeres publikus katalógushívásra, teljes primaryforrás + pontos nativeapprovalhoz kötött nyilvános metadata. Saját blokk, nem globális guard-PASS; részletes authority/kiadás/rollback: `docs/ngo-card-directory-jysk-2026-11-09.md`. NativeCardok létrejöttek; új modul merge/telepítés és modern snapshotpublikáció még nincs igazolva.
