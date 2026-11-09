@@ -85,7 +85,7 @@ async function switchAll(page){for(const lang of ['de','fr','en','hu'])await pag
 test('PHP exact host/path and execution-context gate',()=>{
  const file=resolve(root,'wp-content/mu-plugins/impactshop-profile-ui.php');
  const script=`define('ABSPATH','/');function add_action(...$x){}function is_admin(){return getenv('CTX')==='admin';}function wp_doing_ajax(){return getenv('CTX')==='ajax';}function wp_doing_cron(){return getenv('CTX')==='cron';}define('REST_REQUEST',getenv('CTX')==='rest');$_SERVER['HTTP_HOST']=getenv('HOST');$_SERVER['REQUEST_URI']=getenv('URI');require $argv[1];impactshop_profile_ui_render();`;
- for(const [host,path,ctx,expected] of [['app.sharity.hu','/profil','',true],['app.sharity.hu','/profil/?x=1','',true],['app.sharity.hu','/profil//','',false],['app.sharity.hu','/profil/child','',false],['app.sharity.hu','/impactshop/','',false],['sharity.hu','/profil/','',false],['app.sharity.hu:443','/profil/','',false],...['admin','ajax','cron','rest'].map(x=>['app.sharity.hu','/profil/',x,false])]){
+ for(const [host,path,ctx,expected] of [['app.sharity.hu','/profil','',true],['app.sharity.hu','/profil/?x=1','',true],['app.sharity.hu','/profil//','',false],['app.sharity.hu','/profil/child','',false],['app.sharity.hu','/','',false],['app.sharity.hu','/impact-challenge/','',false],['app.sharity.hu','/impactshop/','',false],['sharity.hu','/profil/','',false],['app.sharity.hu:443','/profil/','',false],...['admin','ajax','cron','rest'].map(x=>['app.sharity.hu','/profil/',x,false])]){
   const output=execFileSync('php',['-r',script,file],{env:{...process.env,HOST:host,URI:path,CTX:ctx},encoding:'utf8'});assert.equal(output.includes('id="impactshop-profile-ui"'),expected,`${host}${path} ${ctx}`);
  }
 });
@@ -107,21 +107,28 @@ for(const kind of ['legacy','managed']) {
   assert.equal(await page.locator('.sharity-action-bar a:visible').count(),8);assert.equal(await page.locator('[data-bar=messages-upcoming]').count(),1);assert.equal(await page.locator('[data-bar=messages-upcoming]').isVisible(),false);
   assert.equal(await page.locator('[data-bar=my-causes]').getAttribute('href'),'https://sharity.hu/sajat-sharity');assert.equal(await page.locator('[data-bar=account]').getAttribute('href'),base+'#impactshop-account-top');
   assert.equal(await page.locator('#impactshop-profile-strip').evaluate(el=>el.nextElementSibling===window.savedPanel),true);
-  assert.equal(await page.locator('#sharity-slc-btn').evaluate(el=>getComputedStyle(el).position),'static');
+  assert.equal(await page.locator('#sharity-slc-btn').isVisible(),false);
   // The original same-page profile handler keeps query bytes, and history Back still works.
   await page.evaluate(()=>history.pushState({probe:1},'',location.pathname+location.search+'#probe'));
   await page.locator('[data-bar=account]').click();assert.equal(page.url(),base+suffix);
   await page.goBack();assert.ok(page.url().endsWith('#probe'));await page.goForward();assert.equal(page.url(),base+suffix);
   await finish(f);
  });
- test(`${kind}: country sheet retains original handlers and visible focus target`,async()=>{
-  const f=await fixture(kind);await f.page.locator('#sharity-slc-btn').click();
-  const close=f.page.locator('#sharity-slc-sheet button').filter({hasText:'×'});
-  assert.equal(await close.count(),1);await close.click();
-  assert.equal(await f.page.evaluate(()=>document.activeElement.id),'sharity-slc-btn');
-  await f.page.locator('#sharity-slc-btn').click();await f.page.keyboard.press('Shift+Tab');
-  assert.equal(await f.page.evaluate(()=>document.activeElement.getBoundingClientRect().height>0),true);
-  await f.page.keyboard.press('Escape');assert.equal(await f.page.evaluate(()=>document.activeElement.id),'sharity-slc-btn');await finish(f);
+ test(`${kind}: retired country UI stays absent from visible and keyboard controls`,async()=>{
+  const f=await fixture(kind),{page}=f;await switchAll(page);
+  for(const id of ['sharity-slc-btn','sharity-slc-sheet','sharity-slc-backdrop']) {
+   assert.equal(await page.locator('#'+id).count(),1,'original controller node retained');
+   assert.equal(await page.locator('#'+id).isVisible(),false);
+  }
+  assert.equal(await page.locator('#impactshop-profile-strip select:visible').count(),2);
+  for(const lang of ['hu','en','de','fr']){
+   await page.locator('#impactshop-profile-language').selectOption(lang);
+   await page.locator('#impactshop-profile-language').focus();await page.keyboard.press('Tab');
+   assert.equal(await page.locator('#impactshop-profile-strip select').nth(1).evaluate(e=>e===document.activeElement),true);
+   await page.keyboard.press('Tab');assert.equal(await page.locator('#impactshop-profile-strip summary').evaluate(e=>e===document.activeElement),true);
+   assert.doesNotMatch(await page.locator('#impactshop-profile-strip details p').textContent(),/ország|country|Land|pays/i);
+  }
+  assert.equal(f.navigations.length,1);assert.equal(f.posts.filter(p=>!p.path.endsWith('/selection-intent/complete')).length,0);await finish(f);
  });
  test(`${kind}: blocked optional preference storage still switches without navigation`,async()=>{
   const f=await fixture(kind,{blocked:true,url:base+'?ui_lang=de&ui_currency=EUR&return=a%2fb'});assert.equal(await f.page.locator('#impactshop-profile-language').inputValue(),'de');await switchAll(f.page);assert.equal(f.navigations.length,1);await finish(f);
@@ -210,6 +217,31 @@ for(const kind of ['legacy','managed']) {
   assert.equal(f.navigations.length,4);assert.equal(f.posts.length,1);await finish(f);
  });
 }
+
+test('legacy adapter and current shared controller have fieldwise preference parity',async()=>{
+ const cases=[
+  {url:base+'?lang=en&opaque=a+b&opaque=a%20b#keep'},
+  {url:base+'?lang=en&opaque=x#keep',stored:{language:'de',displayCurrency:'EUR'}},
+  {url:base+'?ui_lang=fr&ui_currency=USD&opaque=x%2fy#keep',stored:{language:'de',displayCurrency:'EUR'},cookies:[['sharity_ui_language','hu'],['sharity_display_currency','GBP']]},
+  {url:base+'?ui_lang=de&ui_lang=fr&ui_currency=USD&opaque=x#keep',stored:{language:'en',displayCurrency:'GBP'}},
+  {url:base+'?ui_lang=invalid&ui_currency=invalid&opaque=x#keep',stored:{language:'fr',displayCurrency:'EUR'},cookies:[['sharity_ui_language','de'],['sharity_display_currency','USD']]},
+ ];
+ for(const input of cases){
+  const result=[];
+  for(const kind of ['legacy','managed']){
+   const f=await fixture(kind,input);
+   const capture=()=>f.page.evaluate(()=>({url:location.href,history:history.state,language:document.querySelector('#impactshop-profile-language').value,currency:document.querySelectorAll('#impactshop-profile-strip select')[1].value,stored:JSON.parse(localStorage.getItem('sharity_ui_preferences_v1')),cookies:document.cookie.split(';').map(x=>x.trim()).filter(x=>/^sharity_(ui_language|display_currency)=/.test(x)).sort(),links:[...document.querySelectorAll('.sharity-action-bar a[href]')].map(x=>[x.dataset.bar,x.getAttribute('href')])}));
+   result.push([await capture()]);
+   for(const language of ['hu','en','de','fr'])for(const currency of ['HUF','EUR','USD','GBP']){
+    await f.page.locator('#impactshop-profile-language').selectOption(language);
+    await f.page.locator('#impactshop-profile-strip select').nth(1).selectOption(currency);
+    const current=await capture();assert.deepEqual(current.stored,{language,displayCurrency:currency});result[result.length-1].push(current);
+   }
+   assert.deepEqual(f.posts,[]);assert.equal(f.navigations.length,1);await finish(f);
+  }
+  assert.deepEqual(result[0],result[1],JSON.stringify(input));
+ }
+});
 
 for(const kind of ['legacy','managed'])test(`${kind}: legacy lang=en cannot override repeated explicit UI language choices`,async()=>{
  const f=await fixture(kind,{url:base+'?lang=en&return=a%2fb'});

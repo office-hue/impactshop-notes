@@ -1,3 +1,7 @@
+## 2026-11-09 — Profil: régi országvezérlő elrejtése
+
+A388bc972 alapról saját fix/profile-ui-preferences-20261109. Csak a profiladapter CSS-e és négy help-mondata változik; eredeti controller DOM/listenerek és minden core/actionbar/PWA byte marad.22/22 célzott offline UI-teszt és lint/diff sikeres. A live WP még legacy controller; az adapter szerződése egyezik a jelenlegi közös kulcsokkal és fieldwise preferenciákkal, amelyeket az élő Vásárlási Segéd Next-bundle is tartalmaz. Kizárólag saját pluginhash/manifestchecksum frissítve. Részletes bizonyíték, rollback és kézi lista: docs/protected-change-records/2026-11-09-profile-ui-country-removal.md. A forráscommit nem push/deploy vagy új éles acceptance.
+
 ## 2026-11-09 — Profil UI integráció a jelenlegi v2 profilhoz
 
 Végső helyi eredmény:21/21 UI-eset sikeres (37.173s), PHP plugin/fixture lint és profile-code-save szerződésteszt sikeres. Exact owner/hash/csoport/checksum és összes idegen digest/core byte-megőrzés igazolt; protected-touch és deploy-wpcontent-map-bastion fixture sikeres, diff-check tiszta. Commit/push/CI/deploy és éles elfogadás még nincs.
