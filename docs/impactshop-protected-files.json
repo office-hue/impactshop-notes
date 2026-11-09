@@ -89,7 +89,8 @@
     "wp-content/mu-plugins/impactshop-partner-api.php",
     "wp-content/mu-plugins/sharity-decay-manager.php",
     "wp-content/mu-plugins/sharity-vacation-manager.php",
-    "wp-content/mu-plugins/impactshop-ngo-card-news.php"
+    "wp-content/mu-plugins/impactshop-ngo-card-news.php",
+    "wp-content/mu-plugins/impactshop-profile-ui.php"
   ],
   "additive_globs": [
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
@@ -223,12 +224,14 @@
     "pwa_shell": [
       "wp-content/mu-plugins/impactshop-pwa.php",
       "wp-content/mu-plugins/impactshop-pwa-push.php",
-      "sw.js"
+      "sw.js",
+      "wp-content/mu-plugins/impactshop-profile-ui.php"
     ],
     "mobile_shell_runtime": [
       "wp-content/mu-plugins/impactshop-action-bar.php",
       "wp-content/mu-plugins/impactshop-pwa.php",
-      "sw.js"
+      "sw.js",
+      "wp-content/mu-plugins/impactshop-profile-ui.php"
     ],
     "identity_and_points": [
       "wp-content/mu-plugins/impactshop-jysk-game.php",
