@@ -17,6 +17,14 @@ function impactshop_profile_ui_should_render(): bool
         && in_array(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), ['/profil', '/profil/'], true);
 }
 
+function impactshop_profile_ui_retired_header_style(): void
+{
+    if (impactshop_profile_ui_should_render()) {
+        echo '<style id="impactshop-profile-retired-header">body header.elementor-location-header[data-elementor-type="header"]{display:none!important}</style>';
+    }
+}
+add_action('wp_head', 'impactshop_profile_ui_retired_header_style', 20);
+
 function impactshop_profile_ui_render(): void
 {
     if (!impactshop_profile_ui_should_render()) {

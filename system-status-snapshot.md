@@ -1,3 +1,7 @@
+## 2026-11-09 — Profil: régi fejléc forráskorrekció
+
+Alap550a03dd, fix/profile-retired-header-20261109. A profil-UI egyetlen scoped CSS-szabálya wp_head-ben rejti a régi Elementor fejlécet. PHP lint és3 célzott UI-eset sikeres; core/return/alsó sáv/telepítési dialog változatlan. Source e2c188618f341f531c84008334bbbb296f3b1e84238e62cbed6f272164ff3b21, merge/deploy még nincs. Részletek a profile-retired-header protected recordban.
+
 ## 2026-11-09 — Profil: mobil/telepítés forrásjavítás
 
 Forrás: fix/profile-mobile-install-ui-20261109, b05834f8 alap. Egyetlen runtime-fájl: impactshop-profile-ui.php, SHA2d96364760a7fca9d32a437349dbf5099c25ddac211d056df86b2e108460e69f.26 offline UI-eset és független review sikeres; az iPad-súgó finding rendezett. Belépési/mentési/return controller, pont és játék nem változik. Merge/telepítés/élő új UI-elfogadás még nincs. Scope/rollback/UI-lista a profile-mobile-install-ui protected recordban. Korábbi doc-WIP külön megőrizve.

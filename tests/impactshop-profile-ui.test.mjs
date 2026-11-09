@@ -85,9 +85,10 @@ async function switchAll(page){for(const lang of ['de','fr','en','hu'])await pag
 
 test('PHP exact host/path and execution-context gate',()=>{
  const file=resolve(root,'wp-content/mu-plugins/impactshop-profile-ui.php');
- const script=`define('ABSPATH','/');function add_action(...$x){}function is_admin(){return getenv('CTX')==='admin';}function wp_doing_ajax(){return getenv('CTX')==='ajax';}function wp_doing_cron(){return getenv('CTX')==='cron';}define('REST_REQUEST',getenv('CTX')==='rest');$_SERVER['HTTP_HOST']=getenv('HOST');$_SERVER['REQUEST_URI']=getenv('URI');require $argv[1];impactshop_profile_ui_render();`;
+ const script=`define('ABSPATH','/');function add_action(...$x){}function is_admin(){return getenv('CTX')==='admin';}function wp_doing_ajax(){return getenv('CTX')==='ajax';}function wp_doing_cron(){return getenv('CTX')==='cron';}define('REST_REQUEST',getenv('CTX')==='rest');$_SERVER['HTTP_HOST']=getenv('HOST');$_SERVER['REQUEST_URI']=getenv('URI');require $argv[1];impactshop_profile_ui_retired_header_style();impactshop_profile_ui_render();`;
  for(const [host,path,ctx,expected] of [['app.sharity.hu','/profil','',true],['app.sharity.hu','/profil/?x=1','',true],['app.sharity.hu','/profil//','',false],['app.sharity.hu','/profil/child','',false],['app.sharity.hu','/','',false],['app.sharity.hu','/impact-challenge/','',false],['app.sharity.hu','/impactshop/','',false],['sharity.hu','/profil/','',false],['app.sharity.hu:443','/profil/','',false],...['admin','ajax','cron','rest'].map(x=>['app.sharity.hu','/profil/',x,false])]){
   const output=execFileSync('php',['-r',script,file],{env:{...process.env,HOST:host,URI:path,CTX:ctx},encoding:'utf8'});assert.equal(output.includes('id="impactshop-profile-ui"'),expected,`${host}${path} ${ctx}`);
+  assert.equal(output.includes('id="impactshop-profile-retired-header"'),expected,'header style has the same exact route gate');
  }
 });
 for(const kind of ['legacy','managed']) {
@@ -136,6 +137,7 @@ for(const kind of ['legacy','managed']) {
  });
  test(`${kind}: one modern install control, native prompt once, modal focus and consent`,async()=>{
   const mobile=await fixture(kind);const {page}=mobile;
+  assert.equal(await page.locator('header.elementor-location-header[data-elementor-type=header]').isVisible(),false);
   const launcher=page.locator('#impactshop-profile-install-launcher'),dialog=page.locator('#impactshop-profile-install-dialog');
   const initialPosts=structuredClone(mobile.posts), history=await page.evaluate(()=>({state:window.history.state,length:window.history.length,url:location.href}));
   for(const width of [320,390,768,1280])for(const lang of ['hu','en','de','fr']){
@@ -146,6 +148,7 @@ for(const kind of ['legacy','managed']) {
    assert.ok(button.width>=44&&button.height>=44);
    assert.ok(button.y+button.height<=dock.y,`${width}/${lang}: install overlaps dock ${JSON.stringify({dock,button,height:await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--sharity-action-bar-height'))})}`);
    await launcher.click();assert.equal(await dialog.isVisible(),true);
+   assert.equal(await dialog.locator('header').isVisible(),true,'installation help header survives');
    assert.equal(await page.locator('#impactshop-profile-install-close').evaluate(e=>e===document.activeElement),true);
    const rect=await dialog.boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=width&&rect.y>=0&&rect.y+rect.height<=740);
    assert.equal(await page.locator('#impactshop-profile-install-now').isVisible(),false,'no invented native prompt');
