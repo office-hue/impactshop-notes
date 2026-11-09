@@ -2394,7 +2394,9 @@ function impactshop_identity_render_code_page(): void
     header('Pragma: no-cache');
     header('Vary: Cookie');
     header('Referrer-Policy: no-referrer');
-    header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+    // Chromium also checks the POST's 303 redirect chain against form-action.
+    // Credentials stay in the first-party POST; the fixed JYSK hop is GET only.
+    header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'none'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self' https://jysk.sharity.hu");
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
 

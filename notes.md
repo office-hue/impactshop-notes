@@ -1,3 +1,12 @@
+## 2026-11-09 — JYSK fiókjelzés és kódmentési form átirányítás
+
+Saját ötkarakteres azonosító opt-in signed contextből; régi kliens kompatibilis.
+A jelszómentő form CSP-je blokkolta a cross-origin 303-at. Helyi Chrome
+reprodukció és fix: csak a JYSK-origin engedett, kód kizárólag a WP POST-ban.
+224 bridge-állítás, PHP code-save/lint és 8 célzott Chrome-teszt sikeres;
+független review nincs blokkoló. Forráskész; merge/új kiadás még nincs.
+Scope, kockázat, UI és rollback: docs/protected-change-records/2026-11-09-jysk-profile-hint.md.
+
 ## 2026-11-09 — JYSK profilkapcsolódás és visszatérés javítása
 
 A kijelentkezett/lejárt tulajdonosi kapcsolat reprodukálhatóan nyers 403 JSON-ra

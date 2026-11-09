@@ -402,8 +402,15 @@ check(strtotime($r->data['expiresAt']) === $GLOBALS['clock'] + 900, 'session has
 check(Bridge::service(request('exchange', $exchange))->status === 403, 'code consumed exactly once');
 $session = ['subject' => $r->data['subject'], 'sessionToken' => $r->data['sessionToken']];
 check(Bridge::service(request('context', $session))->status === 200, 'context validates session and owner');
+$legacyContext = Bridge::service(request('context', $session));
+check(!array_key_exists('profileHint', $legacyContext->data), 'older app context shape remains unchanged');
+$hintContext = Bridge::service(request('context', $session + ['includeProfileHint' => true, 'pseudo' => 'attacker9999']));
+check($hintContext->status === 200 && $hintContext->data['profileHint'] === 'abcde', 'profile hint is first five characters of verified owner, not caller input');
+check(!str_contains(json_encode($hintContext->data), 'abcdef123456'), 'full profile identifier is not exposed in context');
+check(strlen($hintContext->headers['X-JYSK-Signature'] ?? $hintContext->headers['x-jysk-signature'] ?? '') === 64, 'profile hint response is signed');
 $db->generation = 'new-owner-generation';
 check(Bridge::service(request('context', $session))->status === 403, 'old session cannot revive on new handoff');
+check(Bridge::service(request('context', $session + ['includeProfileHint' => true]))->status === 403, 'expired owner cannot read a profile hint');
 $db->generation = 'generation';
 check(Bridge::service(request('messages', $session))->data === ['messages' => []], 'legacy messages not implicitly published');
 check(Bridge::service(request('messages/delivered', $session + ['messageId' => '1']))->status === 403, 'unmapped delivery ack denied');

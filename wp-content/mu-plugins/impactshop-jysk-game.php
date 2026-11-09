@@ -1108,6 +1108,11 @@ final class Impactshop_Jysk_Game
                     $data = ['revoked' => true];
                 } else {
                     $data = ['subject' => $body['subject'], 'sessionToken' => $body['sessionToken'], 'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $session['expires']), 'earningAllowed' => self::earning($session['grant'])];
+                    // Opt-in keeps the strict response contract of deployed older apps intact.
+                    // Only the authenticated session's profile is used, never a caller pseudo.
+                    if (($body['includeProfileHint'] ?? false) === true) {
+                        $data['profileHint'] = substr($session['grant']['pseudo'], 0, 5);
+                    }
                 }
             } elseif ($path === 'award' || $path === 'reward-status') {
                 $data = self::reward($body, $path === 'award');

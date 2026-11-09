@@ -186,7 +186,7 @@
     "wp-content/mu-plugins/sharity-ngo-donations/webhook.php"
   ],
   "hashes": {
-    "wp-content/mu-plugins/impactshop-jysk-game.php": "3dcaf6f4687faf8b4ad36fe3f933414b34b5b06518dd6edfcf0d9e88561361ab",
+    "wp-content/mu-plugins/impactshop-jysk-game.php": "a4119824032eec2197839ce5b96ce9637ef2e661035d56c45b513c33a149b62f",
     "docs/impactshop-guard-config.json": "74628aa430246de8a185515e4f1ec29d993bd989e357cf1813781407bf702d1e",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
@@ -214,7 +214,7 @@
     "wp-content/mu-plugins/impactshop-ngo-card.js": "e8392f261904729b0c069c96f7e32413d265102188cbf23024250b9b2aba3639",
     "wp-content/mu-plugins/impactshop-go-bridge.php": "ff6e33eba855848aa0b50f25c66d4caafbe08f3884a43c5ed0958f5ec4b8b572",
     "wp-content/mu-plugins/impactshop-sum-pack.php": "4d6728c5c75602241f63c24ff51875a64b546bafddb42328c67ae8170e809fa9",
-    "wp-content/mu-plugins/impactshop-identity-panel.php": "826479bd1845ffd2ed431ec547a94190ac17a02d588861b3a69ffe9accfdb740",
+    "wp-content/mu-plugins/impactshop-identity-panel.php": "8887fa0660ae64d01bf48d33332c8596ce7d0c043f798aa1076e9202942e4469",
     "wp-content/mu-plugins/impactshop-identity-panel.js": "85efa5c4e617f0cd21b2306c002737cd085fb6800fa21f742e27673359dbdf18",
     "wp-content/mu-plugins/000-impactshop-owner-policy.php": "370608ba08bf75ec537846669f67f81bf45b863c55b0ac47b96a52a86372705c",
     "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php": "433f26fd21af69aa84c75535c5f5228af4ca661be39335e180bf616f872461e0",
