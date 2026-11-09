@@ -831,6 +831,10 @@ Guard és negatív suite sikeres. A három módosított runtime hash frissítve;
 telepítési PASS nincs. Részletek: `protected-change-records/2026-11-02-shopping-purchase.md`.
 
 
+## 2026-11-09 — nyolc JYSK NGO Card: additív katalóguskiegészítés
+
+Saját `impactshop-ngo-card-directory.php` és47állításos offlinefixture; nincs legacy/VB/ledger/identity módosítás. Csak `card_directory=1` sikeres publikus katalógushívásra, teljes primaryforrás + pontos nativeapprovalhoz kötött nyilvános metadata. Saját blokk, nem globális guard-PASS; részletes authority/kiadás/rollback: `docs/ngo-card-directory-jysk-2026-11-09.md`. NativeCardok létrejöttek; új modul merge/telepítés és modern snapshotpublikáció még nincs igazolva.
+
 ## 2026-11-02 — NGO Card központi hírolvasó
 
 Saját `feat/ngo-card-news-20261102` ág a d5ff78fe alapról. Additív GET-only
