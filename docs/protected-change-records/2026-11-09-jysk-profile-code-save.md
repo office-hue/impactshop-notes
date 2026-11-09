@@ -45,3 +45,11 @@ Nincs adat-, kódhash- vagy pontreset. Forrás WIP; nem merge-elt, nem telepíte
 Kézi UI lista: JYSK kapcsolódás → profil → kód megjelenítése → azonosító/kód
 mentése → tovább a játékra → bontás/újracsatlakozás. Másik böngészőben mentett
 azonosító+kód belépés. A kód újratöltése továbbra sem jelenítheti meg újra.
+
+Éles delta: a #261 három fájlja mentéssel/CAS-szal kiadva. HTTP-visszaolvasás
+igazolta, hogy a wp_localize_script a codeSaveContract értéket szövegként adja.
+A kliens kizárólag a 2 vagy "2" értéket fogadja el; a JSON-kérés továbbra is
+numerikus 2, a szerver hitelesítése változatlan. A böngészőfixture alapértéke
+a valós WordPress-szöveg lett. Ez egy JS-fájlos kiadási korrekció, a meglévő
+PHP/overlay byte-jai maradnak; az előző szigorú JS-változat nem működő rollback.
+A valós string-markerrel futtatott hét célzott Chrome code-save eset sikeres.

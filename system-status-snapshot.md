@@ -2156,3 +2156,7 @@ böngészőteszt; PHP szerződés/route és korábbi visszatérési regressziók
 független review után nincs nyitott lelet. Forráskész, még nem telepített.
 Háromfájlos guardolt kiadás és célzott élő próba következik; nincs új app-build.
 Scope/rollback/UI: docs/protected-change-records/2026-11-09-jysk-profile-code-save.md.
+
+#261/dc38f300 három profilfájlja telepített, forrásbyte-ok HTTP-ból egyeznek.
+Az éles localize string/number eltérés miatt célzott JS-korrekció következik;
+nem állítunk még sikeres élő kódgenerálást vagy teljes profil-visszatérést.

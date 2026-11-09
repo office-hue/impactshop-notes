@@ -15,7 +15,7 @@ const headings = {hu:'Az impactod egy helyen', en:'Your impact in one place', de
 let browser;
 before(async () => { browser = await chromium.launch({channel:'chrome',headless:true,proxy:{server:'http://127.0.0.1:9'}}); });
 after(async () => { await browser?.close(); });
-async function fixture(language, {legacy = '', core = false, noBar = false, onPost, apiData = {}, beforeLoad, profileData = {}, contract = 2, onProfile, compact = false, initialUrl, pointsData = {points_total:1234,level:{current:'basic'},benefits:{donation_multiplier:1.25,vote_weight_ad:7,discount_percent:12}}, vacationData = {active:false,remaining_activations:2}, viewport = {width:375,height:850}} = {}) {
+async function fixture(language, {legacy = '', core = false, noBar = false, onPost, apiData = {}, beforeLoad, profileData = {}, contract = "2", onProfile, compact = false, initialUrl, pointsData = {points_total:1234,level:{current:'basic'},benefits:{donation_multiplier:1.25,vote_weight_ad:7,discount_percent:12}}, vacationData = {active:false,remaining_activations:2}, viewport = {width:375,height:850}} = {}) {
  const context = await browser.newContext({viewport,serviceWorkers:'block'});
  if (beforeLoad) await context.addInitScript(beforeLoad);
  const page = await context.newPage(); const errors = [], escaped = [], posts = [], navigations = [], navigationRequests = [];

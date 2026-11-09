@@ -840,3 +840,5 @@ rögzíti a kiadás. 28/28 offline böngészőteszt, PHP szerződés/route, 126 
 return és 219 bridge-állítás; független review lezárva. Nem élő auth-PASS.
 Protected files touched, rollback és smoke scope: a 2026-11-09-jysk-profile-code-save
 change record. Meglévő tulajdonosi, nonce/origin és egyszeri reveal védelem marad.
+Kiadási delta: az éles WordPress string v2 markerét a JS szűken elfogadja;
+csak az identity JS digest és manifest-checksum követi a review-zott korrekciót.

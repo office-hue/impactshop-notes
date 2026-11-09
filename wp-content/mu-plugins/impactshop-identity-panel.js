@@ -1338,7 +1338,7 @@
           return;
         }
         if (generateCodeBtn.disabled) return;
-        if (!window.impactshopIdentityPanel || window.impactshopIdentityPanel.codeSaveContract !== 2) {
+        if (!window.impactshopIdentityPanel || ![2, "2"].includes(window.impactshopIdentityPanel.codeSaveContract)) {
           setStatus("A kód készítéséhez töltsd újra a profiloldalt.", true);
           return;
         }
@@ -1517,7 +1517,7 @@
         }
         return;
       }
-      if (!window.impactshopIdentityPanel || window.impactshopIdentityPanel.codeSaveContract !== 2 ||
+      if (!window.impactshopIdentityPanel || ![2, "2"].includes(window.impactshopIdentityPanel.codeSaveContract) ||
           !saveForm || !saveForm.querySelector('[name="impactshop_identity_code_save_contract"][value="2"]')) {
         setStatus("A kód készítéséhez töltsd újra a profiloldalt.", true);
         return;

@@ -8517,3 +8517,9 @@ Kiadás: három pontos fájl, PHP → JS → intl-overlay, mentés/előhash/utó
 Koherencia, rollback és kézi UI-lista: docs/protected-change-records/2026-11-09-jysk-profile-code-save.md.
 Forráskész, PR/merge/telepítés függő. A JYSK app b487e281 visszatérési linkje
 már külön kiadásban éles; ez a közös profilkód javításának állapota.
+
+Kiadási delta: #261 merge dc38f300, mindhárom fájl exact-release kiadva.
+Éles HTTP-próba kimutatta a WordPress szöveges codeSaveContract=2 értékét;
+szűk JS-kompatibilitás és a valós alakot modellező fixture javul. A szerver
+továbbra is numerikus v2 JSON-kérést és a meglévő owner/nonce/origin ellenőrzést
+kér. A kód első élő megjelenítése még nem igazolt; a tesztowner lejárt.
