@@ -1,5 +1,24 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-11-09 — közös profilkód javításának kiadási sorrendje
+
+A JYSK app profil-linkje b487e281 forrásból már jysk_return=1 jelzéssel éles.
+A külön közös identity-javítás a kódoldal dupla megnyitását és a mentés miatti
+észrevétlen kódrotációt kezeli. A szerveroldali v2 támogatás előbb kerül ki,
+utána a JS és az intl-overlay, fájlonkénti friss előhash/mentés/CAS/utóhash mellett.
+A 60 másodperces egyszeri reveal, owner, nonce/origin és restore megmarad.
+Mentés után a validált eredeti query/signed return kontextus tovább él.
+Egy JYSK-visszalink csak a pontos JYSK-kontextus aktív profiljához látszik.
+Nincs bridge-, pont-, névsor-, kapu- vagy adatbázisséma-változtatás.
+
+Éles smoke: egy korábban engedélyezett technikai profil kódoldalának első
+megnyitása, mentés/tovább, ugyanazon azonosítóval visszalépés és JYSK-kapcsolódás.
+Titok nem kerül logba vagy képernyőképbe. A natív napi bónusz korábbi engedélye
+megmarad; JYSK-pont/szavazat nélkül tesztelünk. Egyszeri oldal újratöltése továbbra
+sem fedhet fel kódot. Más profil kódja nem kérhető. Böngészős jelszókezelő-prompt
+nem garantálható. Kiadás/rollback és kézi lista a protected change recordban.
+
+
 ## 2026-11-07 — tízes névsorhoz igazított privát profil, jutalmazás zárva
 
 A már telepített bridge nem változott: SHA256

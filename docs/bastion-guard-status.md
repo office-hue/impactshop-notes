@@ -831,3 +831,12 @@ Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
 
 
 2026-11-04: NGO saját telepítési API-alap és cacheverzió: csak két saját source-hash/checksum, idegen pin és guardlogika változatlan. 22 célzott teszt, majd 9 PHP-megosztóteszt sikeres; teljes éles elfogadás nincs. Scope/rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
+## 2026-11-09 — profilkód: célzott protected forráslezárás
+
+Meglévő identity-panel PHP/JS és intl-overlay módosul a jóváhagyott incidensben.
+Csak a két már leltározott identity-panel digest és a manifest-checksum frissül;
+guardlogika és idegen hash nem változik. Az overlay pontos kiadási hashét is
+rögzíti a kiadás. 28/28 offline böngészőteszt, PHP szerződés/route, 126 korábbi
+return és 219 bridge-állítás; független review lezárva. Nem élő auth-PASS.
+Protected files touched, rollback és smoke scope: a 2026-11-09-jysk-profile-code-save
+change record. Meglévő tulajdonosi, nonce/origin és egyszeri reveal védelem marad.

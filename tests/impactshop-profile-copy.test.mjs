@@ -15,10 +15,10 @@ const headings = {hu:'Az impactod egy helyen', en:'Your impact in one place', de
 let browser;
 before(async () => { browser = await chromium.launch({channel:'chrome',headless:true,proxy:{server:'http://127.0.0.1:9'}}); });
 after(async () => { await browser?.close(); });
-async function fixture(language, {legacy = '', core = false, noBar = false, onPost, apiData = {}, beforeLoad, profileData = {}, pointsData = {points_total:1234,level:{current:'basic'},benefits:{donation_multiplier:1.25,vote_weight_ad:7,discount_percent:12}}, vacationData = {active:false,remaining_activations:2}, viewport = {width:375,height:850}} = {}) {
+async function fixture(language, {legacy = '', core = false, noBar = false, onPost, apiData = {}, beforeLoad, profileData = {}, contract = 2, onProfile, compact = false, initialUrl, pointsData = {points_total:1234,level:{current:'basic'},benefits:{donation_multiplier:1.25,vote_weight_ad:7,discount_percent:12}}, vacationData = {active:false,remaining_activations:2}, viewport = {width:375,height:850}} = {}) {
  const context = await browser.newContext({viewport,serviceWorkers:'block'});
  if (beforeLoad) await context.addInitScript(beforeLoad);
- const page = await context.newPage(); const errors = [], escaped = [], posts = [], navigations = [];
+ const page = await context.newPage(); const errors = [], escaped = [], posts = [], navigations = [], navigationRequests = [];
  page.on('pageerror', e => errors.push(e.message));
  await page.route('**/*', async route => {
   const request = route.request(), url = new URL(request.url());
@@ -26,11 +26,12 @@ async function fixture(language, {legacy = '', core = false, noBar = false, onPo
    return route.fulfill({contentType:'application/javascript; charset=utf-8',body:assets[url.pathname.includes('overlay')?'overlay':'core']});
   }
   if (request.isNavigationRequest() && url.host === 'app.sharity.hu') {
+   navigationRequests.push({url:request.url(),method:request.method(),body:request.postData()});
    if (url.pathname !== '/profil/' || url.searchParams.has('impactshop_profile_return_complete')) { navigations.push(request.url()); return route.fulfill({contentType:'text/html',body:'Mock destination'}); }
-   let body = execFileSync('php',[resolve(root,'tests/fixtures/impactshop-profile-copy-render.php'),request.url()],{encoding:'utf8'});
+   let body = execFileSync('php',[resolve(root,'tests/fixtures/impactshop-profile-copy-render.php'),request.url()],{encoding:'utf8',env:{...process.env,PROFILE_COPY_COMPACT:compact?'1':'0'}});
    if (noBar) body = body.slice(0,body.indexOf('<nav class="sharity-action-bar"'));
    return route.fulfill({contentType:'text/html; charset=utf-8',body:`<!doctype html><html lang="hu"><body>${body}
-    <script>window.impactshopIdentityPanel={restNonce:'fixture'};</script>
+    <script>window.impactshopIdentityPanel={restNonce:'fixture',codeSaveContract:${JSON.stringify(contract)}};</script>
     ${core?'<script src="/fixture/core.js"></script>':''}<script src="/fixture/overlay.js"></script></body></html>`});
   }
   if (core && url.host === 'app.sharity.hu' && url.pathname.startsWith('/wp-json/')) {
@@ -40,6 +41,7 @@ async function fixture(language, {legacy = '', core = false, noBar = false, onPo
     if (onPost) return onPost(route, url);
    }
    if (url.pathname.endsWith('/identity/profile')) {
+    if (request.method() === 'GET' && onProfile) return onProfile(route);
     body = {pseudo_id:'abcdef123456',nickname:'Profilod',identity_state:'active',votes_available:17,...profileData};
     if (request.method() === 'POST') {status=422;body={message:'Fixture rejection'};}
    }
@@ -51,12 +53,92 @@ async function fixture(language, {legacy = '', core = false, noBar = false, onPo
   }
   escaped.push(request.url()); return route.abort();
  });
- await page.goto(`https://app.sharity.hu/profil/?ui_lang=${language}&ui_currency=GBP${legacy?'&lang='+legacy:''}&return=a%20b%2f~#account`);
- if (!noBar) await page.waitForFunction(text=>document.querySelector('.impactshop-profile-intro h2')?.textContent===text,headings[language]);
- return {page,context,errors,escaped,posts,navigations};
+ await page.goto(initialUrl || `https://app.sharity.hu/profil/?ui_lang=${language}&ui_currency=GBP${legacy?'&lang='+legacy:''}&return=a%20b%2f~#account`);
+ if (!noBar && !compact) await page.waitForFunction(text=>document.querySelector('.impactshop-profile-intro h2')?.textContent===text,headings[language]);
+ return {page,context,errors,escaped,posts,navigations,navigationRequests};
 }
 async function finish(f) { assert.deepEqual(f.errors,[]); assert.deepEqual(f.escaped,[]); await f.context.close(); }
 async function settle(page) { await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))); }
+
+test('code-save: JYSK return is visible only for an active owner and exact JYSK context', async()=>{
+ for(const state of ['binding_pending','invalid_or_revoked','unavailable','active']) {
+  const f=await fixture('hu',{core:true,noBar:true,initialUrl:'https://app.sharity.hu/profil/?jysk_return=1',profileData:{identity_state:state}});
+  await active(f);
+  const link=f.page.locator('[data-role=jysk-return]');
+  assert.equal(await link.count(),1);
+  assert.equal(await link.isVisible(),state==='active');
+  if(state!=='active') assert.equal(await link.evaluate(e=>getComputedStyle(e).display),'none');
+  assert.equal(await link.getAttribute('href'),'https://jysk.sharity.hu/api/jysk/game/session/start');
+  assert.deepEqual(f.posts,[]);await finish(f);
+ }
+ const other=await fixture('hu',{core:true,noBar:true,initialUrl:'https://app.sharity.hu/profil/?jysk_return=1&return=https%3A%2F%2Fapp.sharity.hu%2Fhatas-korok%2F'});
+ assert.equal(await other.page.locator('[data-role=jysk-return]').count(),0);await finish(other);
+});
+
+test('code-save: compact panel exposes saved-code field and non-destructive missing-code guidance',async()=>{
+ const f=await fixture('hu',{core:true,compact:true});
+ await f.page.waitForFunction(()=>!document.querySelector('[data-role=save-password-manager]').disabled);
+ assert.equal(await f.page.locator('[data-role=save-password]').isVisible(),true);
+ await f.page.locator('[data-role=save-password-manager]').click();
+ assert.match(await f.page.locator('[data-role=status]').textContent(),/Add meg a már elmentett/);
+ assert.equal(await f.page.locator('[data-role=manage-profile]').evaluate(e=>e===document.activeElement),true);
+ assert.deepEqual(f.posts,[]);assert.deepEqual(f.navigations,[]);await finish(f);
+});
+test('code-save: blank save never generates, grants points or opens another page', async()=>{
+ const f=await fixture('hu',{core:true});await active(f);
+ let dialogs=0;f.page.on('dialog',async d=>{dialogs++;await d.dismiss();});
+ await f.page.locator('[data-role=save-password-manager]').click();await settle(f.page);
+ assert.deepEqual(f.posts,[]);assert.deepEqual(f.navigations,[]);assert.equal(dialogs,0);
+ assert.match(await f.page.locator('[data-role=status]').textContent(),/Add meg a már elmentett/);
+ assert.equal(await f.page.locator('[data-role=generate-code]').evaluate(e=>e===document.activeElement),true);
+ await finish(f);
+});
+test('code-save: typed code submits exactly one native form with unmodified raw return',async()=>{
+ const f=await fixture('hu',{core:true});await active(f);const original=f.page.url();
+ await f.page.locator('[data-role=save-password]').fill('ABCD-EFGH-IJKL');
+ await f.page.locator('[data-role=save-password-manager]').click();
+ await f.page.waitForURL('https://app.sharity.hu/');
+ const reqs=f.navigationRequests.filter(r=>r.method==='POST');assert.equal(reqs.length,1);
+ const body=new URLSearchParams(reqs[0].body);
+ assert.equal(body.get('impactshop_identity_return'),original);
+ assert.equal(body.get('impactshop_identity_code_save_contract'),'2');
+ assert.equal(body.get('username'),'abcdef123456');assert.equal(body.get('password'),'ABCD-EFGH-IJKL');
+ assert.deepEqual(f.posts,[]);await finish(f);
+});
+test('code-save: explicit generation needs confirmation and requests only one reveal',async()=>{
+ const f=await fixture('hu',{core:true,onPost:(route,url)=>{
+  assert.equal(url.pathname,'/wp-json/impact/v1/identity/code/generate');
+  return route.fulfill({contentType:'application/json',body:JSON.stringify({reveal_url:'https://app.sharity.hu/profil/belepesi-kod/'})});
+ }});await active(f);const original=f.page.url();
+ f.page.once('dialog',d=>d.dismiss());await f.page.locator('[data-role=generate-code]').click();assert.equal(f.posts.length,0);
+ f.page.once('dialog',d=>d.accept());await f.page.locator('[data-role=generate-code]').click();
+ await f.page.waitForURL('**/profil/belepesi-kod/');
+ assert.equal(f.posts.length,1);assert.deepEqual(f.posts[0].body,{code_save_contract:2,confirm_generation:true,profile_return_url:original});
+ assert.equal(f.navigationRequests.filter(r=>r.url.includes('/belepesi-kod/')).length,1);
+ assert.equal(f.context.pages().length,1);await finish(f);
+});
+test('code-save: new client on old server asks to reload without write',async()=>{
+ const f=await fixture('hu',{core:true,contract:null});await active(f);
+ await f.page.locator('[data-role=generate-code]').click();
+ assert.match(await f.page.locator('[data-role=status]').textContent(),/töltsd újra/);
+ await f.page.locator('[data-role=save-password]').fill('ABCD-EFGH-IJKL');
+ await f.page.locator('[data-role=save-password-manager]').click();await settle(f.page);
+ assert.deepEqual(f.posts,[]);assert.deepEqual(f.navigations,[]);await finish(f);
+});
+test('code-save: refresh bypasses cached profile and does not report failed or pending success',async()=>{
+ let reads=0, mode='active';
+ const f=await fixture('hu',{core:true,onProfile:route=>{
+  reads++;return route.fulfill({status:mode==='error'?503:200,contentType:'application/json',body:JSON.stringify({pseudo_id:'abcdef123456',identity_state:mode==='pending'?'binding_pending':'active',votes_available:0})});
+ }});await active(f);const initial=reads;
+ await f.page.locator('[data-role=refresh-profile]').click();
+ await f.page.waitForFunction(()=>document.querySelector('[data-role=status]').textContent==='Profiladatok frissítve.');assert.equal(reads,initial+1);
+ mode='error';await f.page.locator('[data-role=refresh-profile]').click();
+ await f.page.waitForFunction(()=>document.querySelector('[data-role=status]').textContent.includes('Nem sikerült frissíteni'));
+ mode='pending';await f.page.locator('[data-role=refresh-profile]').click();
+ await f.page.waitForFunction(()=>!document.querySelector('[data-role=refresh-profile]').disabled);
+ assert.equal(reads,initial+3);assert.notEqual(await f.page.locator('[data-role=status]').textContent(),'Profiladatok frissítve.');
+ assert.deepEqual(f.posts,[]);await finish(f);
+});
 
 test('four languages with either legacy page language; original markup, fields, return and dynamic state preserved', async () => {
  for (const legacy of ['', 'en']) for (const language of Object.keys(headings)) {
@@ -64,7 +146,7 @@ test('four languages with either legacy page language; original markup, fields, 
   assert.equal(await page.locator('.impactshop-identity-header > h3').textContent(),{hu:'Profilod',en:'Your profile',de:'Dein Profil',fr:'Votre profil'}[language]);
   assert.equal(await page.locator('[data-role=save-nickname]').textContent(),{hu:'Mentés',en:'Save',de:'Speichern',fr:'Enregistrer'}[language]);
   assert.equal(await page.locator('[data-role=restore-submit]').textContent(),{hu:'Belépés',en:'Sign in',de:'Anmelden',fr:'Se connecter'}[language]);
-  assert.equal(await page.locator('[data-role=generate-code]').textContent(),{hu:'Belépési kód megjelenítése',en:'Show login code',de:'Anmeldecode anzeigen',fr:'Afficher le code de connexion'}[language]);
+  assert.equal(await page.locator('[data-role=generate-code]').textContent(),{hu:'Új belépési kód készítése',en:'Create a new login code',de:'Neuen Anmeldecode erstellen',fr:'Créer un nouveau code de connexion'}[language]);
   assert.equal(await page.locator('#impactshop-restore-title button').count(),1);
   assert.equal(await page.locator('#impactshop-restore-title button').getAttribute('aria-describedby'),'impactshop-signin-help');
   assert.equal(await page.locator('[data-role=restore-recovery]').getAttribute('type'),'password');
@@ -317,23 +399,23 @@ test('restore validates locally, preserves credentials and resets labels across 
   assert.equal(f.posts.length,1);await finish(f);
  }
 });
-test('code reveal preserves popup target/options and same-window fallback; failed requests restore current language',async()=>{
- for(const outcome of ['popup','fallback','rejected','network']) {
+test('code reveal uses one same-window navigation; failed requests restore current language',async()=>{
+ for(const outcome of ['success','rejected','network']) {
   const held=heldPost(),f=await fixture('de',{core:true,onPost:held.handler});const {page}=f;await active(f);
-  await page.evaluate(fallback=>{window.openCalls=[];window.open=(...args)=>{window.openCalls.push(args);return fallback?null:{};};},outcome==='fallback');
+  const original=page.url();let confirmation='';page.once('dialog',async d=>{confirmation=d.message();await d.accept();});
   await page.locator('[data-role=generate-code]').click();await held.pending;await settle(page);
+  assert.match(confirmation,/bisheriger Code wird ungültig/);
   assert.equal(await page.locator('[data-role=generate-code]').textContent(),'Code wird erstellt…');
   await language(page,'fr');assert.equal(await page.locator('[data-role=generate-code]').textContent(),'Génération du code…');
   const reveal='https://app.sharity.hu/mock-reveal?code=fixture';
   held.release(outcome==='network'?{abort:true}:outcome==='rejected'?{status:422,body:{}}:{body:{reveal_url:reveal}});
-  if(outcome==='fallback'){await page.waitForURL(reveal);assert.deepEqual(f.navigations,[reveal]);}
+  if(outcome==='success'){await page.waitForURL(reveal);assert.deepEqual(f.navigations,[reveal]);assert.equal(f.context.pages().length,1);}
   else {
    await page.waitForFunction(()=>!document.querySelector('[data-role=generate-code]').disabled);await settle(page);
-   assert.equal(await page.locator('[data-role=generate-code]').textContent(),'Afficher le code de connexion');
-   assert.equal(await page.locator('[data-role=status]').textContent(),outcome==='popup'?"La page de code sécurisée s'est ouverte.":'Échec de la création du code de connexion.');
-   assert.deepEqual(await page.evaluate(()=>window.openCalls),outcome==='popup'?[[reveal,'_blank','noopener,noreferrer']]:[]);
+   assert.equal(await page.locator('[data-role=generate-code]').textContent(),'Créer un nouveau code de connexion');
+   assert.equal(await page.locator('[data-role=status]').textContent(),'Échec de la création du code de connexion.');
   }
-  assert.deepEqual(f.posts,[{path:'/wp-json/impact/v1/identity/code/generate',body:{}}]);await finish(f);
+  assert.deepEqual(f.posts,[{path:'/wp-json/impact/v1/identity/code/generate',body:{code_save_contract:2,confirm_generation:true,profile_return_url:original}}]);await finish(f);
  }
 });
 test('shared status retains existing local messages across languages without partially translating server text',async()=>{
