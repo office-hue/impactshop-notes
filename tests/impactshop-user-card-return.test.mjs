@@ -154,7 +154,6 @@ test('new JS with legacy PHP fallback is safe but does not activate the correcti
 
 const otherUrls = [
   entry.replace(encodeURIComponent('https://sharity.hu/sajat-sharity'), encodeURIComponent('https://sharity.hu/vallalasok')),
-  entry.replace(encodeURIComponent('https://sharity.hu/sajat-sharity'), encodeURIComponent('https://sharity.hu/hatas-korok')),
   'https://app.sharity.hu/profil/?bridge_target=restore&bridge_context=fixture-signed-context',
   entry + '&selection_intent=fixture-intent',
   entry + '&selection_intent=',
@@ -189,3 +188,35 @@ for (const contextState of [undefined, 'valid', 'invalid']) {
     assert.equal(result.calls.filter(call => call.url.includes('/points/earn')).length, 0);
   });
 }
+
+for (const contextState of [undefined, 'valid', 'invalid', 'empty']) {
+  test('Korok restore preserves server completion and signed-context priority: ' + contextState, async () => {
+    const roomEntry = entry.replaceAll('sajat-sharity', 'hatas-korok');
+    const result = await replay(current, roomEntry, { contextState });
+    const expected = contextState === 'valid' ? 'https://factlens.eu/factlens/vb-prod/'
+      : contextState ? 'https://app.sharity.hu/profil/#impactshop-restore-title'
+      : target.replace('sajat-sharity', 'hatas-korok');
+    assert.equal(result.url, expected);
+    assert.equal(result.navigations.length, 2);
+    assert.equal(new URL(result.navigations[0]).searchParams.get('return'), 'https://sharity.hu/hatas-korok');
+    assert.equal(result.resolutions[0].resolverCalls.length, 1);
+    assert.equal(result.calls.filter(call => call.url.includes('/identity/restore')).length, 1);
+    assert.equal(result.calls.filter(call => call.url.includes('/points/earn')).length, 0);
+  });
+}
+
+test('Korok account save keeps the existing password-manager form and returns through PHP', async () => {
+  const roomEntry = entry.replaceAll('sajat-sharity', 'hatas-korok').replace('bridge_target=restore', 'bridge_target=account');
+  const old = await replay(baseline, roomEntry, { action: 'save' });
+  const result = await replay(current, roomEntry, { action: 'save' });
+  assert.equal(result.url, target.replace('sajat-sharity', 'hatas-korok'));
+  assert.equal(result.hiddenReturn, old.hiddenReturn);
+  assert.equal(result.resolutions[0].resolverCalls.length, 1);
+});
+
+test('Korok failed restore stays on the profile with its error', async () => {
+  const roomEntry = entry.replaceAll('sajat-sharity', 'hatas-korok');
+  const result = await replay(current, roomEntry, { denied: true });
+  assert.equal(result.url, roomEntry);
+  assert.deepEqual(result.navigations, []);
+});
