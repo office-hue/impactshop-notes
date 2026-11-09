@@ -367,7 +367,7 @@
     "wp-content/mu-plugins/sharity-ngo-donations/runtime.php": "ac1614f7b7aca14e8947384c7f8dbc3c169103e79dbc5a721852bb06afdf9b0a",
     "wp-content/mu-plugins/sharity-ngo-donations/stripe-checkout.php": "c1d09d2ea116cf9c6184cb85a8216f6d7a2c7cb6b2d9ae786d3218021fd4356c",
     "wp-content/mu-plugins/sharity-ngo-donations/webhook.php": "c5222c74e6781641a62b26b096304fc62b77366487f4130a847e01b0c441a6a3",
-    "wp-content/mu-plugins/impactshop-profile-ui.php": "0ae18e682194b8d9577440b68ee28e97ee5975415e8a0ab87b4909ba6c6959cf"
+    "wp-content/mu-plugins/impactshop-profile-ui.php": "87bd745dc522035d2aac02d4aa78ec7f4e0964340607395bf09f77be5225cf63"
   },
   "generated_at": "2026-09-11T04:44:20+00:00"
 }

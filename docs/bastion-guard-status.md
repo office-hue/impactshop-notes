@@ -860,3 +860,8 @@ csak az identity JS digest és manifest-checksum követi a review-zott korrekci�
 Végső helyi eredmény:21/21 UI-eset sikeres (37.173s), PHP plugin/fixture lint és profile-code-save szerződésteszt sikeres. Exact owner/hash/csoport/checksum és összes idegen digest/core byte-megőrzés igazolt; protected-touch és deploy-wpcontent-map-bastion fixture sikeres, diff-check tiszta. Commit/push/CI/deploy és éles elfogadás még nincs.
 
 Saját feat/jysk-profile-ui-integration-20261109, alap580876b1. A kész donor három fájlja átvéve; új profilra szűkített MU-adapter, identity PHP/JS/overlay és actionbar/PWA érintetlen. Teszt az aktuális v2 generálás/reveal/natív save és JYSK nyers context szerint bővítve, élő profil/pont nélkül. Új exact owner/hash és meglévő PWA/mobile protected csoport; guardkód változatlan. Ellenőrzés, kockázat, rollback és kézi UI lista: docs/protected-change-records/2026-11-09-profile-ui-integration.md. Forrásmunka; ebből még nincs commit/push/merge/telepítés/éles acceptance.
+
+
+## 2026-11-09 — Profil: régi országvezérlő elrejtése
+
+A388bc972 alapról saját fix/profile-ui-preferences-20261109. Csak a profiladapter CSS-e és négy help-mondata változik; eredeti controller DOM/listenerek és minden core/actionbar/PWA byte marad.22/22 célzott offline UI-teszt és lint/diff sikeres. A live WP még legacy controller; az adapter szerződése egyezik a jelenlegi közös kulcsokkal és fieldwise preferenciákkal, amelyeket az élő Vásárlási Segéd Next-bundle is tartalmaz. Kizárólag saját pluginhash/manifestchecksum frissítve. Részletes bizonyíték, rollback és kézi lista: docs/protected-change-records/2026-11-09-profile-ui-country-removal.md. A forráscommit nem push/deploy vagy új éles acceptance.
