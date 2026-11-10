@@ -1328,6 +1328,9 @@ function impactshop_vb2026_truncate(?string $value, int $limit = 320): ?string
 
 function impactshop_vb2026_ensure_catalog_sync(): void
 {
+    if (defined('IMPACTSHOP_NGO_CATALOG_RECOVERY') && IMPACTSHOP_NGO_CATALOG_RECOVERY === true) {
+        return;
+    }
     $lastSync = get_transient(IMPACTSHOP_VB2026_NGO_SYNC_TRANSIENT);
     if ($lastSync && is_numeric($lastSync) && ((int) $lastSync + IMPACTSHOP_VB2026_NGO_SYNC_TTL) > time()) {
         return;
@@ -1362,8 +1365,15 @@ function impactshop_vb2026_ensure_catalog_sync(): void
         return;
     }
 
-    impactshop_vb2026_upsert_catalog_rows($rows, $datasetItems);
-    set_transient(IMPACTSHOP_VB2026_NGO_SYNC_TRANSIENT, time(), IMPACTSHOP_VB2026_NGO_SYNC_TTL);
+    try {
+        if (impactshop_vb2026_upsert_catalog_rows($rows, $datasetItems, true)) {
+            set_transient(IMPACTSHOP_VB2026_NGO_SYNC_TRANSIENT, time(), IMPACTSHOP_VB2026_NGO_SYNC_TTL);
+        }
+    } catch (Throwable $e) {
+        $code = $e instanceof RuntimeException && preg_match('/^catalog_[a-z0-9_]+$/D', $e->getMessage())
+            ? $e->getMessage() : 'catalog_sync_failed';
+        error_log($code);
+    }
 }
 
 function impactshop_vb2026_catalog_sync_passes_publish_gate(array $rows): bool
@@ -1405,14 +1415,14 @@ function impactshop_vb2026_parse_csv_rows(string $csv): array
     }
     fwrite($stream, $csv);
     rewind($stream);
-    $header = fgetcsv($stream);
+    $header = fgetcsv($stream, null, ',', '"', chr(92));
     if (!$header) {
         fclose($stream);
         return [];
     }
     $header = array_map(static fn($value) => trim((string) $value), $header);
     $rows = [];
-    while (($row = fgetcsv($stream)) !== false) {
+    while (($row = fgetcsv($stream, null, ',', '"', chr(92))) !== false) {
         if (!$row || count(array_filter($row, static fn($value) => trim((string) $value) !== '')) === 0) {
             continue;
         }
@@ -1426,7 +1436,7 @@ function impactshop_vb2026_parse_csv_rows(string $csv): array
     return $rows;
 }
 
-function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems): void
+function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems, bool $sync = false): bool
 {
     global $wpdb;
     $catalogTable = $wpdb->prefix . 'sharity_ngo_catalog';
@@ -1454,11 +1464,13 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems)
     $featuredBySlug = is_array($featuredTruth['by_slug'] ?? null) ? $featuredTruth['by_slug'] : [];
     $featuredByName = is_array($featuredTruth['by_name'] ?? null) ? $featuredTruth['by_name'] : [];
 
+    $batch = [];
     foreach ($rows as $row) {
-        $ngoId = absint($row['Azonosító'] ?? 0);
+        $rawId = trim((string) ($row['Azonosító'] ?? ''));
+        $ngoId = (int) $rawId;
         $name = trim((string) ($row['Név'] ?? ''));
-        if ($ngoId <= 0 || $name === '') {
-            continue;
+        if (!ctype_digit($rawId) || $ngoId < 1 || $ngoId > 2147482647 || $name === '') {
+            throw new RuntimeException('catalog_csv_identity_invalid');
         }
 
         $nameKey = impactshop_vb2026_name_key($name);
@@ -1512,69 +1524,38 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems)
             'campaign_count' => $campaignCount,
         ]));
 
-        $existing = $wpdb->get_row($wpdb->prepare(
-            "SELECT id, source_row_hash FROM {$catalogTable} WHERE sharity_ngo_id = %d LIMIT 1",
-            $ngoId
-        ), ARRAY_A);
-        if (is_array($existing) && ($existing['source_row_hash'] ?? '') === $hash) {
-            $wpdb->update(
-                $catalogTable,
-                [
-                    'source_last_synced_at' => $now,
-                    'updated_at' => $now,
-                ],
-                ['id' => (int) $existing['id']],
-                ['%s', '%s'],
-                ['%d']
-            );
-        } else {
-            $data = [
-                'sharity_ngo_id' => $ngoId,
-                'slug' => $slug,
-                'slug_source' => $slugSource,
-                'name' => $name,
-                'postal_code' => trim((string) ($row['Székhely - Irányítószám'] ?? '')) ?: null,
-                'city' => trim((string) ($row['Székhely - Város'] ?? '')) ?: null,
-                'county' => null,
-                'category_label' => trim((string) ($row['Kategóriák'] ?? '')) ?: null,
-                'legal_status_label' => trim((string) ($row['Jogállás'] ?? '')) ?: null,
-                'short_mission' => $shortMission,
-                'website_url' => impactshop_vb2026_safe_url($row['Honlap'] ?? ''),
-                'raw_logo_url' => impactshop_vb2026_safe_url($row['Logó'] ?? ''),
-                'raw_cover_image_url' => impactshop_vb2026_safe_url($row['Kép'] ?? ''),
-                'logo_url' => $logoUrl,
-                'cover_image_url' => $coverUrl,
-                'share_url' => $shareUrl,
-                'details_url' => $detailsUrl,
-                'campaign_count' => $campaignCount,
-                'source_status_label' => trim((string) ($row['Státusz'] ?? '')) ?: null,
-                'is_active' => $isActive,
-                'source_created_at' => $createdAt,
-                'source_last_synced_at' => $now,
-                'source_row_hash' => $hash,
-                'created_at' => is_array($existing) ? null : $now,
-                'updated_at' => $now,
-            ];
-
-            if (is_array($existing)) {
-                unset($data['created_at']);
-                $wpdb->update($catalogTable, $data, ['id' => (int) $existing['id']]);
-            } else {
-                $wpdb->insert($catalogTable, $data);
-            }
-        }
-
+        $data = [
+            'sharity_ngo_id' => $ngoId,
+            'slug' => $slug,
+            'slug_source' => $slugSource,
+            'name' => $name,
+            'postal_code' => trim((string) ($row['Székhely - Irányítószám'] ?? '')) ?: null,
+            'city' => trim((string) ($row['Székhely - Város'] ?? '')) ?: null,
+            'county' => null,
+            'category_label' => trim((string) ($row['Kategóriák'] ?? '')) ?: null,
+            'legal_status_label' => trim((string) ($row['Jogállás'] ?? '')) ?: null,
+            'short_mission' => $shortMission,
+            'website_url' => impactshop_vb2026_safe_url($row['Honlap'] ?? ''),
+            'raw_logo_url' => impactshop_vb2026_safe_url($row['Logó'] ?? ''),
+            'raw_cover_image_url' => impactshop_vb2026_safe_url($row['Kép'] ?? ''),
+            'logo_url' => $logoUrl,
+            'cover_image_url' => $coverUrl,
+            'share_url' => $shareUrl,
+            'details_url' => $detailsUrl,
+            'campaign_count' => $campaignCount,
+            'source_status_label' => trim((string) ($row['Státusz'] ?? '')) ?: null,
+            'is_active' => $isActive,
+            'source_created_at' => $createdAt,
+            'source_last_synced_at' => $now,
+            'source_row_hash' => $hash,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
         $featuredRank = is_array($featuredEntry) ? (int) ($featuredEntry['rank'] ?? 0) : 0;
         $featured = ($featuredRank > 0 && $featuredRank <= 10) ? 1 : 0;
         $priority = $featured ? max(1, $featuredRank) : 1000 + $ngoId;
         $badge = $featured ? 'TOP 10' : null;
-        $flagExists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$flagsTable} WHERE campaign_key = %s AND sharity_ngo_id = %d LIMIT 1",
-            IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY,
-            $ngoId
-        ));
-        if (!$flagExists) {
-            $wpdb->insert($flagsTable, [
+        $flag = [
                 'campaign_key' => IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY,
                 'sharity_ngo_id' => $ngoId,
                 'is_featured' => $featured,
@@ -1588,29 +1569,113 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems)
                 'campaign_state' => 'active',
                 'updated_by' => null,
                 'updated_at' => $now,
-            ]);
-        } else {
-            $wpdb->query($wpdb->prepare(
-                "UPDATE {$flagsTable}
-                 SET is_featured = %d,
-                     is_race_visible = %d,
-                     display_priority = %d,
-                     hero_badge = %s,
-                     campaign_copy_short = %s,
-                     allow_user_selection = %d,
-                     updated_at = %s
-                 WHERE campaign_key = %s AND sharity_ngo_id = %d",
-                $featured,
-                $featured,
-                $priority,
-                $badge,
-                $featured ? 'VB2026 kiemelt szervezet' : null,
-                $isActive,
-                $now,
-                IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY,
-                $ngoId
-            ));
+            ];
+        $batch[] = [$data, $flag];
+    }
+
+    $db = $wpdb->dbh;
+    if (!$db instanceof mysqli || !preg_match('/^[a-zA-Z0-9_]+$/D', $wpdb->prefix)) {
+        throw new RuntimeException('catalog_connection_invalid');
+    }
+    $query = static function (string $sql) use ($db) {
+        try { $result = $db->query($sql); }
+        catch (Throwable $e) { throw new RuntimeException('catalog_sql_failed'); }
+        if ($result === false) { throw new RuntimeException('catalog_sql_failed'); }
+        return $result;
+    };
+    $quote = static fn($v): string => $v === null ? 'NULL' : "'" . $db->real_escape_string((string) $v) . "'";
+    $database = $query('SELECT DATABASE(), @@in_transaction')->fetch_row();
+    if (!$database[0] || (int) $database[1] !== 0) { throw new RuntimeException('catalog_transaction_context'); }
+    $lock = 'ngo-enroll:' . substr(hash('sha256', $database[0] . ':' . $wpdb->prefix), 0, 40);
+    if ((int) $query('SELECT GET_LOCK(' . $quote($lock) . ', 0)')->fetch_row()[0] !== 1) {
+        throw new RuntimeException('catalog_writer_busy');
+    }
+    $transaction = false;
+    try {
+        foreach ([$catalogTable, $flagsTable, $wpdb->prefix . 'options'] as $table) {
+            $engine = $query('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=' . $quote($table))->fetch_row();
+            if (strtolower((string) ($engine[0] ?? '')) !== 'innodb') { throw new RuntimeException('catalog_requires_innodb'); }
         }
+        $query('START TRANSACTION');
+        $transaction = true;
+        $options = $wpdb->prefix . 'options';
+        if ($sync) {
+            $last = $query('SELECT option_value FROM ' . $options . ' WHERE option_name=' . $quote('_transient_' . IMPACTSHOP_VB2026_NGO_SYNC_TRANSIENT))->fetch_row();
+            if ($last && is_numeric($last[0]) && (int) $last[0] + IMPACTSHOP_VB2026_NGO_SYNC_TTL > time()) {
+                $query('ROLLBACK'); $transaction = false;
+                return false;
+            }
+        }
+        $raw = $query('SELECT option_value FROM ' . $options . ' WHERE option_name=' . $quote('impactshop_jysk_ngo_enrollment_v1'))->fetch_row();
+        $reserved = [];
+        if ($raw) {
+            $reservation = json_decode($raw[0], true);
+            if (!is_array($reservation) || ($reservation['version'] ?? null) !== 1
+                || !preg_match('/^[a-f0-9]{64}$/D', (string) ($reservation['planDigest'] ?? ''))
+                || !is_string($reservation['appliedAt'] ?? null) || !is_array($reservation['entries'] ?? null)
+                || count($reservation['entries']) !== 8) { throw new RuntimeException('catalog_reservation_invalid'); }
+            $ids = $slugs = $names = [];
+            foreach ($reservation['entries'] as $entry) {
+                if (!is_array($entry) || !is_int($entry['ngo_id'] ?? null) || $entry['ngo_id'] < 1 || $entry['ngo_id'] > 2147482647
+                    || !is_string($entry['slug'] ?? null) || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/D', $entry['slug'])
+                    || !is_string($entry['name'] ?? null) || trim($entry['name']) === ''
+                    || !is_string($entry['website_url'] ?? null) || !filter_var($entry['website_url'], FILTER_VALIDATE_URL)
+                    || parse_url($entry['website_url'], PHP_URL_SCHEME) !== 'https') { throw new RuntimeException('catalog_reservation_invalid'); }
+                $key = impactshop_vb2026_name_key($entry['name']);
+                if ($key === '' || isset($ids[$entry['ngo_id']]) || isset($slugs[$entry['slug']]) || isset($names[$key])) {
+                    throw new RuntimeException('catalog_reservation_invalid');
+                }
+                $ids[$entry['ngo_id']] = $slugs[$entry['slug']] = $names[$key] = true;
+                $reserved[] = $entry;
+            }
+        }
+        // Check FINAL projected identities before any writes, even identical CSV mappings.
+        $seenIds = $seenSlugs = [];
+        foreach ($batch as [$data]) {
+            $id = $data['sharity_ngo_id']; $slug = $data['slug'];
+            if ($id < 1 || $id > 2147482647 || isset($seenIds[$id]) || isset($seenSlugs[$slug])) {
+                throw new RuntimeException('catalog_batch_identity_conflict');
+            }
+            $seenIds[$id] = $seenSlugs[$slug] = true;
+            foreach ($reserved as $entry) {
+                if ($id === $entry['ngo_id'] || $slug === $entry['slug']
+                    || impactshop_vb2026_name_key($data['name']) === impactshop_vb2026_name_key($entry['name'])) {
+                    throw new RuntimeException('catalog_reserved_identity_conflict_id_' . $id);
+                }
+            }
+        }
+        $write = static function (string $table, array $data, ?int $id = null) use ($query, $quote): void {
+            $assign = [];
+            foreach ($data as $key => $value) { $assign[] = $key . '=' . $quote($value); }
+            $query(($id === null ? 'INSERT INTO ' : 'UPDATE ') . $table . ' SET ' . implode(',', $assign)
+                . ($id === null ? '' : ' WHERE id=' . $id));
+        };
+        foreach ($batch as [$data, $flag]) {
+            $existing = $query('SELECT id,source_row_hash FROM ' . $catalogTable . ' WHERE sharity_ngo_id=' . $data['sharity_ngo_id'])->fetch_assoc();
+            if ($existing && $existing['source_row_hash'] === $data['source_row_hash']) {
+                $write($catalogTable, ['source_last_synced_at' => $now, 'updated_at' => $now], (int) $existing['id']);
+            } else {
+                if ($existing) { unset($data['created_at']); }
+                $write($catalogTable, $data, $existing ? (int) $existing['id'] : null);
+            }
+            $existingFlag = $query('SELECT id FROM ' . $flagsTable . ' WHERE campaign_key=' . $quote(IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY)
+                . ' AND sharity_ngo_id=' . $data['sharity_ngo_id'])->fetch_row();
+            if ($existingFlag) {
+                $flag = array_intersect_key($flag, array_flip(['is_featured', 'is_race_visible', 'display_priority', 'hero_badge', 'campaign_copy_short', 'allow_user_selection', 'updated_at']));
+                // Preserve the old prepare(%s, null) representation on existing flags.
+                $flag['hero_badge'] ??= '';
+                $flag['campaign_copy_short'] ??= '';
+            }
+            $write($flagsTable, $flag, $existingFlag ? (int) $existingFlag[0] : null);
+        }
+        try { $query('COMMIT'); }
+        catch (Throwable $e) { throw new RuntimeException('catalog_commit_uncertain_readback_required'); }
+        $transaction = false;
+        return true;
+    } finally {
+        // Never reconnect: losing the session loses the transaction, not its atomicity.
+        if ($transaction) { try { $db->query('ROLLBACK'); } catch (Throwable $ignored) {} }
+        try { $db->query('SELECT RELEASE_LOCK(' . $quote($lock) . ')'); } catch (Throwable $ignored) {}
     }
 }
 

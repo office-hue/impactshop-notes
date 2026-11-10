@@ -90,7 +90,8 @@
     "wp-content/mu-plugins/sharity-decay-manager.php",
     "wp-content/mu-plugins/sharity-vacation-manager.php",
     "wp-content/mu-plugins/impactshop-ngo-card-news.php",
-    "wp-content/mu-plugins/impactshop-profile-ui.php"
+    "wp-content/mu-plugins/impactshop-profile-ui.php",
+    "scripts/jysk-ngo-catalog-enroll.php"
   ],
   "additive_globs": [
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",
@@ -244,7 +245,8 @@
       "wp-content/mu-plugins/impactshop-vote-purchase.php",
       "wp-content/mu-plugins/impact-gamification.php",
       "wp-content/mu-plugins/sharity-points*.php",
-      "wp-content/mu-plugins/sharity-level-manager.php"
+      "wp-content/mu-plugins/sharity-level-manager.php",
+      "scripts/jysk-ngo-catalog-enroll.php"
     ],
     "community_route": [
       "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
