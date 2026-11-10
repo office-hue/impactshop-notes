@@ -1208,34 +1208,31 @@ function impactshop_identity_profile_state(string $pseudo_id): string
 }
 
 /**
- * Read the current pseudo's available votes without creating or changing a
- * row. The value is intentionally scoped to the current cookie only.
+ * Read the authenticated profile's shared votes through the common reader.
+ * Unavailable storage is distinct from a successfully read empty wallet.
  *
  * @param string $pseudo_id Current pseudo ID.
- * @return int
+ * @return int|null
  */
-function impactshop_identity_profile_votes_available(string $pseudo_id): int
+function impactshop_identity_profile_votes_available(string $pseudo_id): ?int
 {
     if ($pseudo_id === '' || !impactshop_identity_profile_valid_pseudo($pseudo_id)) {
-        return 0;
+        return null;
     }
-
-    global $wpdb;
-    $table = $wpdb->prefix . 'impactshop_ads_user_votes';
-    $raw = $wpdb->get_var($wpdb->prepare(
-        "SELECT available_votes FROM {$table} WHERE pseudo_id = %s LIMIT 1",
-        $pseudo_id
-    ));
-    if ($wpdb->last_error !== '' || $raw === null || !is_scalar($raw)) {
-        return 0;
+    if (!is_callable(['ImpactShop_Sharity_Web_Session', 'read_shared_wallet_for_pseudo'])) {
+        return null;
     }
-
-    $raw = trim((string) $raw);
-    if (!preg_match('/^-?\d+$/', $raw)) {
-        return 0;
+    $wallet = ImpactShop_Sharity_Web_Session::read_shared_wallet_for_pseudo($pseudo_id);
+    if (!is_array($wallet)
+        || ($wallet['scope'] ?? null) !== 'sharity_shared'
+        || ($wallet['source_status'] ?? null) !== 'shared'
+        || !isset($wallet['available'])
+        || !is_int($wallet['available'])
+        || $wallet['available'] < 0
+        || $wallet['available'] > 9007199254740991) {
+        return null;
     }
-
-    return max(0, (int) $raw);
+    return $wallet['available'];
 }
 
 /**
@@ -1573,7 +1570,7 @@ function impactshop_identity_panel_shortcode(): string
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-block impactshop-identity-votes" data-role="votes-summary">';
     $html .= '<h4>Elkölthető szavazatok</h4>';
-    $html .= '<strong data-role="votes-available">' . (isset($profile['votes_available']) && $profile['votes_available'] !== null ? esc_html((string) $profile['votes_available']) : 'Belépés szükséges') . '</strong>';
+    $html .= '<strong data-role="votes-available">' . (isset($profile['votes_available']) ? esc_html((string) $profile['votes_available']) : (($profile['identity_state'] ?? '') === 'active' ? 'Átmenetileg nem elérhető' : 'Belépés szükséges')) . '</strong>';
     $html .= '<p class="impactshop-identity-hint" data-role="votes-state"></p>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-block impactshop-identity-history">';
@@ -1694,7 +1691,7 @@ function impactshop_identity_id_shortcode(): string
     $html .= '<div class="impactshop-identity-progress-text" data-role="points-compact-text"></div>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-compact impactshop-identity-votes" data-role="votes-summary">';
-    $html .= '<span class="impactshop-identity-summary__label">Elkölthető szavazatok</span> <strong data-role="votes-available">' . (isset($profile['votes_available']) && $profile['votes_available'] !== null ? esc_html((string) $profile['votes_available']) : 'Belépés szükséges') . '</strong>';
+    $html .= '<span class="impactshop-identity-summary__label">Elkölthető szavazatok</span> <strong data-role="votes-available">' . (isset($profile['votes_available']) ? esc_html((string) $profile['votes_available']) : (($profile['identity_state'] ?? '') === 'active' ? 'Átmenetileg nem elérhető' : 'Belépés szükséges')) . '</strong>';
     $html .= '<span class="impactshop-identity-hint" data-role="votes-state"></span>';
     $html .= '</div>';
     $html .= '<div class="impactshop-identity-block impactshop-identity-message" data-role="broadcast-message" hidden>';

@@ -859,6 +859,14 @@ Kiadási delta: az éles WordPress string v2 markerét a JS szűken elfogadja;
 csak az identity JS digest és manifest-checksum követi a review-zott korrekciót.
 
 
+## 2026-11-10 — Profil közös egyenlegolvasó
+
+A két meglévő identity-panel protected fájl jóváhagyott szűk legacy touchja,
+csak saját két digest frissítésével. Guard/identity policy és gazdasági writer
+változatlan. Tényleges tesztek, korábbi fixture-hibák, koherencia, rollback és
+kézi UI-lista: protected-change-records/2026-11-10-profile-canonical-balance.md.
+Forrásmunka; éles egyenlegelfogadás és telepítés függő.
+
 ## 2026-11-09 — Profil UI integráció a jelenlegi v2 profilhoz
 
 Végső helyi eredmény:21/21 UI-eset sikeres (37.173s), PHP plugin/fixture lint és profile-code-save szerződésteszt sikeres. Exact owner/hash/csoport/checksum és összes idegen digest/core byte-megőrzés igazolt; protected-touch és deploy-wpcontent-map-bastion fixture sikeres, diff-check tiszta. Commit/push/CI/deploy és éles elfogadás még nincs.
