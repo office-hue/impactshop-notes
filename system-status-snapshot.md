@@ -2198,3 +2198,21 @@ Scope/rollback/UI: docs/protected-change-records/2026-11-09-jysk-profile-code-sa
 #261/dc38f300 három profilfájlja telepített, forrásbyte-ok HTTP-ból egyeznek.
 Az éles localize string/number eltérés miatt célzott JS-korrekció következik;
 nem állítunk még sikeres élő kódgenerálást vagy teljes profil-visszatérést.
+
+## 2026-11-10 — legacy átvezetés: forrás és izolált bizonyíték
+
+Saját feat/legacy-votes-retirement-20261110, alap a4b113d8. Új permanent
+closure/capture modul és szűk régi belépőlezárás, új V2 változatlan.125 célzott
+ellenőrzés összesen, benne50 valódi InnoDB; három gazdasági tábla izolált
+restore/CHECK TABLE/összesítő egyezés sikeres. Production egyenlegírás0,
+nincs seal/apply, üzenet vagy push. PR/merge/telepítés/aktiválás még külön.
+Kiadási/rollback/UI szerződés: protected-change-records/2026-11-10-legacy-votes-transfer.md.
+
+Jóváhagyott MyISAM-korrekció helyben kész: seal/snapshot BEGIN előtt,
+immutable prepared manifest, applied hint nélkül; ledger+wallet+forrásnullázás
+egy InnoDB-tranzakció. Hiányzó/sérült/olvashatatlan registry mellett csak
+diagnózis, blokkolt apply.25 pure+27 fake-native+31 caller és100 MyISAM-options/
+100 InnoDB-options natív ellenőrzés PASS; own options restore is tesztelt.
+ON UPDATE timestamp és registry SQL-read lelet javítva, független review lezárt.
+Saját tesztkonténer eltávolítva. Közös táblamotor és runtime-digest változatlan.
+PR/merge/telepítés, seal és gazdasági átvezetés még nincs.

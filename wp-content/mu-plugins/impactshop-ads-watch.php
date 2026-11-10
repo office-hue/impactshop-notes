@@ -2076,6 +2076,9 @@ function impactshop_ads_watch_status(WP_REST_Request $request): WP_REST_Response
 
 function impactshop_ads_watch_view(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
+    }
     $pseudo_id = impactshop_ads_watch_get_pseudo_from_request($request);
     if ($pseudo_id === '') {
         return new WP_REST_Response([
@@ -2296,6 +2299,9 @@ function impactshop_ads_watch_view(WP_REST_Request $request): WP_REST_Response
 
 function impactshop_ads_watch_education(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
+    }
     $pseudo_id = impactshop_ads_watch_get_pseudo_from_request($request);
     if ($pseudo_id === '') {
         return new WP_REST_Response([
@@ -2636,6 +2642,9 @@ function impactshop_ads_watch_set_auto_vote(WP_REST_Request $request): WP_REST_R
 
 function impactshop_ads_watch_allocate_votes(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
+    }
     $pseudo_id = impactshop_ads_watch_get_pseudo_from_request($request);
     if ($pseudo_id === '') {
         return new WP_REST_Response([
@@ -3243,6 +3252,9 @@ function impactshop_ads_watch_get_user_votes(string $pseudo_id): int
     ));
 
     if ($votes === null) {
+        if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+            return 0;
+        }
         $wpdb->insert($table_votes, [
             'pseudo_id' => $pseudo_id,
             'available_votes' => 0,
@@ -3255,6 +3267,9 @@ function impactshop_ads_watch_get_user_votes(string $pseudo_id): int
 
 function impactshop_ads_watch_add_votes(string $pseudo_id, int $votes): int
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        throw new RuntimeException('legacy_votes_retired');
+    }
     $votes = max(0, $votes);
     if ($votes === 0) {
         return impactshop_ads_watch_get_user_votes($pseudo_id);
@@ -3397,6 +3412,9 @@ function impactshop_ads_watch_get_streak_multiplier(int $streak_days): float
 
 function impactshop_ads_watch_spend_votes(string $pseudo_id, int $votes): array
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        return ['ok' => false, 'error' => 'legacy_votes_retired'];
+    }
     $votes = max(0, $votes);
     if ($votes === 0) {
         return ['ok' => false, 'remaining' => impactshop_ads_watch_get_user_votes($pseudo_id)];

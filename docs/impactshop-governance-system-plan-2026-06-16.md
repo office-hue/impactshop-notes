@@ -999,3 +999,21 @@ A már merge-elt két jogi index változatlan bájtjaihoz igazítjuk a `docs/imp
 ## 2026-11-04 — NGO staging API-útvonal javítása
 
 Kis saját API-alapérték/cacheverzió-javítás, 22 célzott teszt és 9 ismételt PHP-renderpróba sikeres. Stagingen talált root-API/FX404 miatt új forrásjelölt; még nem telepített. Scope, saját két fingerprint, valós staging állapot és rollback: docs/protected-change-records/2026-11-04-sharity-intl-ui-release.md.
+
+## 2026-11-10 — régi keretek végleges lezárása és audit
+
+A jóváhagyott gazdasági átvezetés új permanent closure/late-event modulja
+a meglévő pontos owner/config/protected/hash modellbe kerül. Csak érintett
+saját digest és külső checksum frissül; nincs új guard vagy release-rendszer.
+Központi ledger+options audit,1:1 átvezetés privát CLI-ről, V2 ág megőrzött.
+Koherencia/teszt/backup/rollback/UI: protected-change-records/2026-11-10-legacy-votes-transfer.md.
+Forrás/teszt/review, nem éles telepítés vagy gazdasági végrehajtás.
+
+Jóváhagyott MyISAM-korrekció helyben kész: seal/snapshot BEGIN előtt,
+immutable prepared manifest, applied hint nélkül; ledger+wallet+forrásnullázás
+egy InnoDB-tranzakció. Hiányzó/sérült/olvashatatlan registry mellett csak
+diagnózis, blokkolt apply.25 pure+27 fake-native+31 caller és100 MyISAM-options/
+100 InnoDB-options natív ellenőrzés PASS; own options restore is tesztelt.
+ON UPDATE timestamp és registry SQL-read lelet javítva, független review lezárt.
+Saját tesztkonténer eltávolítva. Közös táblamotor és runtime-digest változatlan.
+PR/merge/telepítés, seal és gazdasági átvezetés még nincs.

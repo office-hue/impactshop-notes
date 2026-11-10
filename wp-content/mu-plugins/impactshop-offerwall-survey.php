@@ -191,6 +191,9 @@ function impactshop_offerwall_survey_register_routes(): void
 
 function impactshop_offerwall_survey_submit(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
+    }
     $providers = function_exists('impactshop_offerwall_get_providers') ? impactshop_offerwall_get_providers() : [];
     $provider = $providers['internal_survey'] ?? [];
     $secret = impactshop_offerwall_survey_secret($provider);
