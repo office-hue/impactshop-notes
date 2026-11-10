@@ -1,3 +1,13 @@
+## 2026-11-10 — legacy REST-határ, célzott hookjavítás
+
+Éles ACF trace410→NULL oka igazolt, saját priority20 lokálisan tesztelt;
+30 retirement/25 migrátor/31 actual-caller PASS, native WP/ACF in-memory
+két410. Új modulhash067c00de; csak saját leltárdigest/checksum változik,
+guardmodell/CI/V2/wallet/ledger nem. Javítás nem merge-elt vagy telepített.
+Az előző11fájlos/webkiadás és seal éles; apply0,330/501124 privát pillanatkép.
+Új saját runtimehash telepítése után új snapshot/hash kell; nincs aktív ablak.
+Scope/rollback/UI: docs/protected-change-records/2026-11-10-legacy-votes-transfer.md.
+
 ## 2026-11-10 — Profil közös egyenlegolvasó, helyben tesztelt
 
 PHP adapter + JS a közös sharity_shared egyenleget használja, hiba nem nulla.
