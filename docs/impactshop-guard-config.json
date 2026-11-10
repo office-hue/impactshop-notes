@@ -1080,6 +1080,18 @@
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
       "owner_branch": "main"
+    },
+    {
+      "path": "scripts/jysk-ngo-catalog-enroll.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
+      "path": "scripts/jysk-ngo-catalog-reservation-schema.sql",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
     }
   ],
   "emergency_override": {

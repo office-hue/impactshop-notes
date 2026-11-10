@@ -8584,3 +8584,15 @@ diagnózis, blokkolt apply.25 pure+27 fake-native+31 caller és100 MyISAM-option
 ON UPDATE timestamp és registry SQL-read lelet javítva, független review lezárt.
 Saját tesztkonténer eltávolítva. Közös táblamotor és runtime-digest változatlan.
 PR/merge/telepítés, seal és gazdasági átvezetés még nincs.
+
+## 2026-11-10 — JYSK nyolc NGO: szűk felvételi forráscsomag
+
+Saját feat/jysk-ngo-catalog-enrollment-20261110, alap8067f57b. A katalógusimporter és az új, WP-bootstrap nélküli plan/apply/status operátor közös natív DB-lockot és tranzakciót használ; pontos nyolcas, tartós ID/slug-foglalás, teljes batch ütközésvizsgálat és recovery. Meglévő identitás, JYSK/pont/szavazat/ledger nem írható át.124 izolált MariaDB/valódi-wpdb ellenőrzés,47 directory-állítás és principal-binding sikeres; két patchreview-lelet javítva, független visszaellenőrzés lezárva. Az új operátor a meglévő Bástya inventory/protected modellben szerepel, csak saját forrás- és kapcsolódó confighashek változnak; nincs guardlogika vagy engedélyszabály-módosítás. Forráskész, még nem merge-elt/telepített; éles ID-kiosztás és aktiválás nincs. A pontos live authority/referenciainventory és előállapot, külön apply-jóváhagyás hátravan. Rollback, tényleges tesztek és még nem futott UI/smoke: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
+
+## 2026-11-10 — JYSK foglalás: MyISAM-kompatibilitási korrekció
+
+A #270 merge-elt, de nem telepített: élő wp_options MyISAM, ezért a korábbi InnoDB-követelmény megállítaná a szinkront. Arnold külön engedélyével saját fix/jysk-enrollment-myisam-options-20261110 ágban explicit, elkülönített InnoDB reservation SQL és arra kötött operator/importer készült. Nincs közös options/üzleti tábla átalakítás vagy automatikus migráció. 149 izolált valódi MariaDB-assertion sikeres MyISAM options mellett; két egymást követő korrigált tervaudit lezárult. A teljes enrollment CLI és tranzakciós író options-írásmentes; meglévő dataset-cache mellékhatás külön kezelt, sync-cache csak commit után. Független kódreview nyitott P1/P2 nélkül; teljes hashinventory/hat negatív checksum-eset és protected-touch sikeres. Forrás helyi, nem merge-elt/telepített; élő schema és ID-kiosztás nincs. Részletek, külön jóváhagyási sorrend és rollback: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
+
+## 2026-11-10 — JYSK katalógus: történeti inaktív ütközések
+
+A #271 utáni normál szinkron ütközés miatt megállt; engedélyezett exact rollback és külön readback után a régi runtime szinkronja ismét működik,342/246 azonosság megmaradt, nulla új ID. Saját javítóágon a már tárolt tulajdonoshoz kötött, inaktív régi elutasított sorok diagnosztizált kihagyása; ismeretlen/aktív/foglalási konfliktus továbbra atomi blokk.168 izolált DB-állítás és független review nyitott P1/P2 nélkül. Forráskész, új merge/telepítés/felvétel nincs. Részletek: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
