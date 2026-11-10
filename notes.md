@@ -8566,6 +8566,24 @@ szűk JS-kompatibilitás és a valós alakot modellező fixture javul. A szerver
 továbbra is numerikus v2 JSON-kérést és a meglévő owner/nonce/origin ellenőrzést
 kér. A kód első élő megjelenítése még nem igazolt; a tesztowner lejárt.
 
+## 2026-11-10 — régi keretek végleges lezárása, helyi implementáció
+
+Jóváhagyott 1:1 közös-wallet átvezetéshez a régi start/reward/spend utak zárva,
+hiteles késői callback csak tartós kézi elszámolási receipt. Aktuális élő
+ow2_/ow2s_ dispatch és UI-lock válaszforma megőrzött.31 actual-function,
+17 pure,27 fake-native és50 valódi InnoDB-eset sikeres; izolált restore3tábla
+OK, saját RAM-konténer eltávolítva. Független review lezárt, nyitott lelet0.
+Éles írás/telepítés/átvezetés még nincs. Részletek, rollback és kézi UI:
+docs/protected-change-records/2026-11-10-legacy-votes-transfer.md.
+
+Jóváhagyott MyISAM-korrekció helyben kész: seal/snapshot BEGIN előtt,
+immutable prepared manifest, applied hint nélkül; ledger+wallet+forrásnullázás
+egy InnoDB-tranzakció. Hiányzó/sérült/olvashatatlan registry mellett csak
+diagnózis, blokkolt apply.25 pure+27 fake-native+31 caller és100 MyISAM-options/
+100 InnoDB-options natív ellenőrzés PASS; own options restore is tesztelt.
+ON UPDATE timestamp és registry SQL-read lelet javítva, független review lezárt.
+Saját tesztkonténer eltávolítva. Közös táblamotor és runtime-digest változatlan.
+PR/merge/telepítés, seal és gazdasági átvezetés még nincs.
 
 ## 2026-11-10 — JYSK nyolc NGO: szűk felvételi forráscsomag
 

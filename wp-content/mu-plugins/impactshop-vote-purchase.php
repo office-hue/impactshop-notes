@@ -401,6 +401,9 @@ function impactshop_vote_purchase_get_amount_minor($amount_display, string $curr
 
 function impactshop_vote_purchase_start(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
+    }
     if (!impactshop_vote_purchase_is_configured()) {
         return new WP_REST_Response(['error' => 'not_configured'], 503);
     }
@@ -632,6 +635,27 @@ function impactshop_vote_purchase_webhook(): WP_REST_Response
         return new WP_REST_Response(['error' => 'invalid_payload'], 400);
     }
 
+    if (!class_exists('Sharity_Legacy_Votes_Retirement')) {
+        return new WP_REST_Response(['code' => 'legacy_retirement_unavailable'], 503);
+    }
+    if (Sharity_Legacy_Votes_Retirement::blocked()) {
+        $session = $event['data']['object'] ?? [];
+        $meta = $session['metadata'] ?? [];
+        $order = (string) ($meta['order_id'] ?? '');
+        // A signature proves the event body, not that the payment was independently settled.
+        if ($order === '' || !is_string($event['id'] ?? null)) {
+            return new WP_REST_Response(['code' => 'invalid_legacy_event'], 400);
+        }
+        if ($event['type'] !== 'checkout.session.completed') {
+            return new WP_REST_Response(['code' => 'unsupported_legacy_event'], 400);
+        }
+        return Sharity_Legacy_Votes_Retirement::capture('stripe', $event['id'], 'checkout_completed', [
+            'order_id' => $order, 'transaction_id' => (string) ($session['id'] ?? ''),
+            'amount' => (string) ($session['amount_total'] ?? ''), 'currency' => (string) ($session['currency'] ?? ''),
+            'status' => (string) ($session['payment_status'] ?? ''),
+        ], 'signed_payload');
+    }
+
     if ($event['type'] === 'checkout.session.completed') {
         $session = $event['data']['object'] ?? [];
         $meta = $session['metadata'] ?? [];
@@ -677,6 +701,9 @@ function impactshop_vote_purchase_verify_stripe_signature(string $payload, strin
 
 function impactshop_vote_purchase_fulfill(string $order_id, array $stripe_payload): void
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        throw new RuntimeException('legacy_votes_retired');
+    }
     global $wpdb;
     $table = $wpdb->prefix . 'impactshop_vote_purchases';
     $order = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE order_id = %s", $order_id), ARRAY_A);

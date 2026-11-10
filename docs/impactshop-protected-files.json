@@ -1,6 +1,7 @@
 {
   "version": 1,
   "protected_globs": [
+    "wp-content/mu-plugins/impactshop-sharity-legacy-votes-retirement.php",
     "scripts/check-protected-file-touch.sh",
     "scripts/check-commit-lane.sh",
     "scripts/guarded-push.sh",

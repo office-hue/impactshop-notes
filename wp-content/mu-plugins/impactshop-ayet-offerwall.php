@@ -540,6 +540,21 @@ function impactshop_ayet_offerwall_offer_allowed(array $offer): bool
 
 function impactshop_ayet_callback(WP_REST_Request $request): WP_REST_Response
 {
+    // Reserved v2 ownership survives off/rollback and precedes all legacy logs/writes.
+    $external = (string) $request->get_param('external_identifier');
+    $start = (string) $request->get_param('custom_1');
+    if (str_starts_with($external, 'ow2_') || str_starts_with($start, 'ow2s_')) {
+        if (class_exists('ImpactShop_Sharity_Offerwall_V2')) {
+            return ImpactShop_Sharity_Offerwall_V2::callback($request);
+        }
+        return new WP_REST_Response(['ok' => false, 'error' => 'v2_inbox_unavailable'], 503);
+    }
+    if (!class_exists('Sharity_Legacy_Votes_Retirement')) {
+        return new WP_REST_Response(['code' => 'legacy_retirement_unavailable'], 503);
+    }
+    if (Sharity_Legacy_Votes_Retirement::blocked()) {
+        return impactshop_ayet_retired_callback($request);
+    }
     $ip = impactshop_ayet_resolve_ip($request);
     if (!impactshop_ayet_ip_allowed($ip)) {
         impactshop_ayet_log('warn', 'blocked_ip', ['ip' => $ip]);
@@ -649,8 +664,53 @@ function impactshop_ayet_callback(WP_REST_Request $request): WP_REST_Response
     return new WP_REST_Response(['status' => 'ok'], 200);
 }
 
+/** Authenticate one query map; never use a differently merged request to build the receipt. */
+function impactshop_ayet_retired_callback(WP_REST_Request $request): WP_REST_Response
+{
+    if ($request->get_body_params() || $request->get_json_params()) {
+        return new WP_REST_Response(['code' => 'ambiguous_legacy_parameters'], 400);
+    }
+    $params = $request->get_query_params();
+    foreach ($params as $value) if (!is_scalar($value)) return new WP_REST_Response(['code' => 'invalid_legacy_parameters'], 400);
+    $signature = (string) ($request->get_header('x-ayetstudios-security-hash') ?: ($params['security_hash'] ?? ''));
+    unset($params['security_hash'], $params['rest_route']);
+    $params = array_map('strval', $params);
+    $raw = (string) ($_SERVER['QUERY_STRING'] ?? ''); $rawMap = []; $rawParts = []; $rawValid = $raw !== '';
+    foreach (explode('&', $raw) as $pair) {
+        if ($pair === '') continue;
+        [$key, $value] = array_pad(explode('=', $pair, 2), 2, '');
+        $key = urldecode($key);
+        if (!preg_match('/^[a-zA-Z0-9_-]+$/D', $key) || array_key_exists($key, $rawMap)) { $rawValid = false; break; }
+        $rawMap[$key] = urldecode($value);
+        if (!in_array($key, ['rest_route', 'security_hash'], true)) $rawParts[] = $pair;
+    }
+    unset($rawMap['rest_route'], $rawMap['security_hash']); ksort($rawMap); $sorted = $params; ksort($sorted);
+    // Even a correctly signed raw query must resolve to exactly the receipt's parameter map.
+    $rawValid = $rawValid && $rawMap === $sorted;
+    $canonical = impactshop_ayet_build_sorted_query($params);
+    $valid = AYET_API_KEY !== '' && $signature !== '' && (
+        hash_equals(hash_hmac('sha256', $canonical, AYET_API_KEY), $signature)
+        || ($rawValid && hash_equals(hash_hmac('sha256', implode('&', $rawParts), AYET_API_KEY), $signature))
+    );
+    if (!$valid || !impactshop_ayet_ip_allowed(impactshop_ayet_resolve_ip($request))) {
+        return new WP_REST_Response(['code' => 'invalid_legacy_signature'], 403);
+    }
+    $tx = (string) ($params['transaction_id'] ?? ''); $pseudo = (string) ($params['external_identifier'] ?? '');
+    if (!preg_match('/^[a-z0-9]{10,12}$/D', $pseudo)) return new WP_REST_Response(['code' => 'invalid_legacy_pseudo'], 400);
+    $callbackType = (string) ($params['callback_type'] ?? '');
+    $reversal = ($params['reversal'] ?? '') === '1' || str_starts_with($tx, 'r-') || in_array(strtolower($callbackType), ['chargeback', 'reversal'], true);
+    return Sharity_Legacy_Votes_Retirement::capture('ayet', $tx, $reversal ? 'reversal' : 'conversion', [
+        'pseudo_id' => $pseudo, 'transaction_id' => $tx, 'original_transaction_id' => $reversal ? preg_replace('/^r-/', '', $tx) : $tx,
+        'payout_usd' => (string) ($params['payout_usd'] ?? ''), 'currency_amount' => (string) ($params['currency_amount'] ?? ''),
+        'offer_id' => (string) ($params['offer_id'] ?? ''), 'status' => $callbackType,
+    ], 'signed_payload');
+}
+
 function impactshop_ayet_surveys(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) {
+        return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
+    }
     $pseudo_id = '';
     if (function_exists('impactshop_identity_profile_cookie')) {
         $pseudo_id = (string) impactshop_identity_profile_cookie();
@@ -706,6 +766,7 @@ function impactshop_ayet_surveys(WP_REST_Request $request): WP_REST_Response
 
 function impactshop_ayet_handle_reversal(string $pseudo_id, string $transaction_id, string $offer_name): void
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) throw new RuntimeException('legacy_votes_retired');
     global $wpdb;
     $table = $wpdb->prefix . 'impactshop_offerwall_completions';
     $row = $wpdb->get_row($wpdb->prepare(
@@ -880,6 +941,7 @@ function impactshop_ayet_send_decline_message(string $pseudo_id): void
 
 function impactshop_ayet_revoke_votes(string $pseudo_id, int $votes): void
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) throw new RuntimeException('legacy_votes_retired');
     if ($votes <= 0) {
         return;
     }

@@ -390,6 +390,7 @@ function impactshop_offerwall_signature_valid(array $params, array $provider): b
 
 function impactshop_offerwall_build_iframe_url(array $provider, string $pseudo_id): string
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) return '';
     $base = trim((string) ($provider['iframe_url'] ?? ''));
     if ($base === '' || $pseudo_id === '') {
         return '';
@@ -425,6 +426,7 @@ function impactshop_offerwall_build_iframe_url(array $provider, string $pseudo_i
 
 function impactshop_offerwall_get_iframe_url(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
     $provider_key = (string) $request['provider'];
     $providers = impactshop_offerwall_get_providers();
     if (empty($providers[$provider_key]) || empty($providers[$provider_key]['enabled'])) {
@@ -446,6 +448,8 @@ function impactshop_offerwall_get_iframe_url(WP_REST_Request $request): WP_REST_
 
 function impactshop_offerwall_handle_postback(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement')) return new WP_REST_Response(['code' => 'legacy_retirement_unavailable'], 503);
+    if (Sharity_Legacy_Votes_Retirement::blocked()) return impactshop_offerwall_retired_postback($request);
     $provider_key = (string) $request['provider'];
     $providers = impactshop_offerwall_get_providers();
     if (empty($providers[$provider_key]) || empty($providers[$provider_key]['enabled'])) {
@@ -649,6 +653,30 @@ function impactshop_offerwall_handle_postback(WP_REST_Request $request): WP_REST
     return new WP_REST_Response(['status' => 'ok'], 200);
 }
 
+/** Disabled old providers still accept authenticated receipts, without any old reward hooks. */
+function impactshop_offerwall_retired_postback(WP_REST_Request $request): WP_REST_Response
+{
+    $key = (string) $request['provider']; $providers = impactshop_offerwall_get_providers(); $provider = $providers[$key] ?? [];
+    $params = [];
+    foreach ([$request->get_query_params(), $request->get_body_params(), $request->get_json_params() ?: []] as $map) {
+        foreach ($map as $name => $value) {
+            if (!is_scalar($value) || (array_key_exists($name, $params) && $params[$name] !== (string) $value)) return new WP_REST_Response(['code' => 'ambiguous_legacy_parameters'], 400);
+            $params[$name] = (string) $value;
+        }
+    }
+    $signature = (string) ($params[(string) ($provider['signature_param'] ?? 'signature')] ?? '');
+    if (($provider['postback_secret'] ?? '') === '' || $signature === '' || !impactshop_offerwall_signature_valid($params, $provider)) return new WP_REST_Response(['code' => 'invalid_legacy_signature'], 403);
+    $tx = (string) ($params['transaction_id'] ?? $params['tx_id'] ?? $params['transaction'] ?? $params['trans_id'] ?? '');
+    $pseudo = (string) ($params['pseudo_id'] ?? $params['sub_id'] ?? $params['user_id'] ?? $params['ext_user_id'] ?? $params['subid_1'] ?? $params['subid1'] ?? '');
+    $status = (string) ($params['status'] ?? $params['event'] ?? '');
+    $reversal = in_array($status, ['2', 'reversed', 'reversal', 'canceled', 'cancelled', 'rejected'], true);
+    // Some old signatures cover only the transaction reference. All facts need manual provider verification.
+    return Sharity_Legacy_Votes_Retirement::capture($key, $tx, $reversal ? 'reversal' : 'conversion', [
+        'pseudo_id' => $pseudo, 'transaction_id' => $tx, 'amount' => (string) ($params['payout'] ?? $params['amount'] ?? $params['amount_usd'] ?? ''),
+        'currency' => (string) ($params['currency'] ?? ''), 'status' => $status, 'offer_id' => (string) ($params['offer_id'] ?? ''),
+    ], 'transaction_reference_only');
+}
+
 function impactshop_offerwall_get_config(): WP_REST_Response
 {
     $providers = impactshop_offerwall_get_providers();
@@ -684,6 +712,7 @@ function impactshop_offerwall_get_adslot_override(WP_REST_Request $request): str
 
 function impactshop_offerwall_get_offers(WP_REST_Request $request): WP_REST_Response
 {
+    if (!class_exists('Sharity_Legacy_Votes_Retirement') || Sharity_Legacy_Votes_Retirement::blocked()) return new WP_REST_Response(['code' => 'legacy_votes_retired'], 410);
     $provider_key = (string) $request['provider'];
     $providers = impactshop_offerwall_get_providers();
     if (empty($providers[$provider_key]) || empty($providers[$provider_key]['enabled'])) {

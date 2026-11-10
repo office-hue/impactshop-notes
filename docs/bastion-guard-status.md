@@ -882,6 +882,23 @@ Saját feat/jysk-profile-ui-integration-20261109, alap580876b1. A kész donor h�
 
 A388bc972 alapról saját fix/profile-ui-preferences-20261109. Csak a profiladapter CSS-e és négy help-mondata változik; eredeti controller DOM/listenerek és minden core/actionbar/PWA byte marad.22/22 célzott offline UI-teszt és lint/diff sikeres. A live WP még legacy controller; az adapter szerződése egyezik a jelenlegi közös kulcsokkal és fieldwise preferenciákkal, amelyeket az élő Vásárlási Segéd Next-bundle is tartalmaz. Kizárólag saját pluginhash/manifestchecksum frissítve. Részletes bizonyíték, rollback és kézi lista: docs/protected-change-records/2026-11-09-profile-ui-country-removal.md. A forráscommit nem push/deploy vagy új éles acceptance.
 
+## 2026-11-10 — régi keretek átvezetése, célzott modulvédelem
+
+Az új impactshop-sharity-legacy-votes-retirement.php a meglévő owner/config,
+protected modell és hashleltár pontos bejegyzését kapja. Guardlogika nem változik,
+idegen hash nem frissül.31 actual-function +17 pure +27 fake-native +50 izolált
+InnoDB-eset és háromtáblás restore sikeres; review lezárt. Éles hash-lock,
+telepítés vagy migráció ebből nem következik. Koherencia/kockázat/rollback/UI:
+docs/protected-change-records/2026-11-10-legacy-votes-transfer.md.
+
+Jóváhagyott MyISAM-korrekció helyben kész: seal/snapshot BEGIN előtt,
+immutable prepared manifest, applied hint nélkül; ledger+wallet+forrásnullázás
+egy InnoDB-tranzakció. Hiányzó/sérült/olvashatatlan registry mellett csak
+diagnózis, blokkolt apply.25 pure+27 fake-native+31 caller és100 MyISAM-options/
+100 InnoDB-options natív ellenőrzés PASS; own options restore is tesztelt.
+ON UPDATE timestamp és registry SQL-read lelet javítva, független review lezárt.
+Saját tesztkonténer eltávolítva. Közös táblamotor és runtime-digest változatlan.
+PR/merge/telepítés, seal és gazdasági átvezetés még nincs.
 
 ## 2026-11-10 — JYSK nyolc NGO: szűk felvételi forráscsomag
 
