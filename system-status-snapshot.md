@@ -1,3 +1,11 @@
+## 2026-11-10 — Profil közös egyenlegolvasó, helyben tesztelt
+
+PHP adapter + JS a közös sharity_shared egyenleget használja, hiba nem nulla.
+Valódi cross-repo PHP és17 böngészős egyenleg/9 aktuális save-restore eset sikeres.
+Régi return fixture48/50, két korábbi form-szerződés; nem teljes PASS. Nincs
+gazdasági adatírás, telepítés vagy aktiválás. Részletes forrás/rollback/UI:
+docs/protected-change-records/2026-11-10-profile-canonical-balance.md.
+
 ## 2026-11-09 — Profil: régi fejléc forráskorrekció
 
 Alap550a03dd, fix/profile-retired-header-20261109. A profil-UI egyetlen scoped CSS-szabálya wp_head-ben rejti a régi Elementor fejlécet. PHP lint és3 célzott UI-eset sikeres; core/return/alsó sáv/telepítési dialog változatlan. Source e2c188618f341f531c84008334bbbb296f3b1e84238e62cbed6f272164ff3b21, merge/deploy még nincs. Részletek a profile-retired-header protected recordban.

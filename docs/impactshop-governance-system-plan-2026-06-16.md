@@ -1,3 +1,10 @@
+## 2026-11-10 — közös szavazategyenleg olvasása
+
+A meglévő Profil PHP/JS saját digestje és checksumja követi a jóváhagyott
+shared-reader adapterjavítást; nincs új guard, policy vagy kiadási út.
+Koherencia/teszt/rollback/UI: protected-change-records/2026-11-10-profile-canonical-balance.md.
+Éles státusz nem következik a helyi hashfrissítésből.
+
 ## 2026-11-09 — Profil UI integráció a jelenlegi v2 profilhoz
 
 Végső helyi eredmény:21/21 UI-eset sikeres (37.173s), PHP plugin/fixture lint és profile-code-save szerződésteszt sikeres. Exact owner/hash/csoport/checksum és összes idegen digest/core byte-megőrzés igazolt; protected-touch és deploy-wpcontent-map-bastion fixture sikeres, diff-check tiszta. Commit/push/CI/deploy és éles elfogadás még nincs.

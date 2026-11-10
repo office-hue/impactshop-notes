@@ -288,10 +288,11 @@
       identityState = data && allowed.indexOf(String(data.identity_state || "")) !== -1
         ? String(data.identity_state)
         : "unavailable";
+      const balanceAvailable = identityState === "active" && data &&
+        Number.isSafeInteger(data.votes_available) && data.votes_available >= 0;
       if (votesAvailableDisplay) {
-        if (identityState === "active" && data && Number.isFinite(Number(data.votes_available))) {
-          const votes = Math.max(0, Math.round(Number(data.votes_available)));
-          votesAvailableDisplay.textContent = votes.toLocaleString("hu-HU");
+        if (balanceAvailable) {
+          votesAvailableDisplay.textContent = data.votes_available.toLocaleString("hu-HU");
         } else if (identityState === "legacy_read_only") {
           votesAvailableDisplay.textContent = "Belépés szükséges";
         } else if (identityState === "invalid_or_revoked") {
@@ -310,7 +311,9 @@
           binding_pending: "A biztonságos eszközkapcsolás még folyamatban van.",
           unavailable: "A profiladatok most nem érhetők el. Próbáld újra később."
         };
-        votesStateDisplay.textContent = states[identityState] || states.unavailable;
+        votesStateDisplay.textContent = identityState === "active" && !balanceAvailable
+          ? "Az egyenleg most nem érhető el. Próbáld újra később."
+          : states[identityState] || states.unavailable;
       }
       const mutationAllowed = identityState === "active";
       const jyskReturn = root.querySelector('[data-role=jysk-return]');

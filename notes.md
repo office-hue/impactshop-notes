@@ -1,3 +1,14 @@
+## 2026-11-10 — Profil közös szavazategyenlege
+
+Saját fix/sharity-canonical-balance-read-20261110, alap75647555. A Profil PHP
+a közös shared-readerre áll, a JS int/null különbséget tart; korábbi identity/
+save/return és gazdasági writer változatlan. Adapter és valódi cross-repo PHP,
+17 böngészős egyenlegeset és9 aktuális save/restore sikeres. Régi return-suite
+két stale-form fixture hibája külön rögzítve; nincs teljes PASS. Személyes53/163
+egyeztetés és kiadás függő. Független review javítása utáni rechecken nincs új
+nyitott lelet. Koherencia, rollback, smoke és UI:
+docs/protected-change-records/2026-11-10-profile-canonical-balance.md.
+
 ## 2026-11-09 — Profil: régi felső fejléc eltávolítása
 
 Felhasználói képes utasítás: csak a profilról a régi logó/menü/Adományozok sáv eltűnik. Egyetlen pontos Elementor-header CSS wp_head-ben, profil-only gate; telepítési dialog header és más oldalak megmaradnak.3 célzott böngészőeset és PHP lint sikeres, auth/return kód byte-azonos. Előző saját lezáró doc-WIP külön bb6d44c6 stash-ben. Scope/rollback/UI: docs/protected-change-records/2026-11-09-profile-retired-header.md. Forrásmódosítás, még nem telepített.

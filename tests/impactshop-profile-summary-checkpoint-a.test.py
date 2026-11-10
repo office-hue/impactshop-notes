@@ -27,10 +27,12 @@ assert all(state in PHP for state in (
 ))
 
 votes = section(PHP, "function impactshop_identity_profile_votes_available", "function impactshop_identity_profile_response_headers")
-assert "SELECT available_votes" in votes
+assert "read_shared_wallet_for_pseudo" in votes
+assert "impactshop_ads_user_votes" not in votes
 assert "INSERT" not in votes.upper()
 assert "UPDATE" not in votes.upper()
-assert "max(0, (int) $raw)" in votes
+assert "return null;" in votes
+assert "'sharity_shared'" in votes
 
 assert "impactshop_identity_is_profile_route" in ADS
 assert "impactshop_identity_profile_home_path" in PHP
