@@ -190,7 +190,7 @@
     "scripts/jysk-ngo-catalog-reservation-schema.sql"
   ],
   "hashes": {
-    "wp-content/mu-plugins/impactshop-sharity-legacy-votes-retirement.php": "a92f2dd2cc1a296af92746958e5183c633da98ea074d9ebd6d3b84ad1482eef3",
+    "wp-content/mu-plugins/impactshop-sharity-legacy-votes-retirement.php": "067c00def020dc5d30da44896c8eec221f4ef79c706897151293196f9c651433",
     "wp-content/mu-plugins/impactshop-jysk-game.php": "a4119824032eec2197839ce5b96ce9637ef2e661035d56c45b513c33a149b62f",
     "docs/impactshop-guard-config.json": "44a1b72e2e0ad2c963aae6a39a7b9133d65729105423ab8d09354ab453372112",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",

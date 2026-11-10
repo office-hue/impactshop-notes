@@ -102,6 +102,9 @@ REST-olvasó/handoff útvonalainak pre-dispatch sorrendje változik20-ra.
 Az ACF, WordPress/WooCommerce, más route, template-hook, writer, callbackcapture,
 pont/szavazat/ledger és V2 runtime byte-változatlan. Új párhuzamos guard helyett
 a már jóváhagyott saját lezárás javítása, az ACF vendor módosítása nélkül.
+Kísérő leltár: docs/impactshop-guard-hashes.json egyetlen saját runtime-digestje
+és docs/impactshop-guard-hashes.sha256 ellenőrzőösszege frissül; más digest,
+config vagy guardmodell nem változik. Ez külön ops commit ugyanabban a PR-ben.
 Kockázat: későbbi szűrőválasz felülírása; ezt a meglévő nem-null válasz megőrzése
 védi. Nullát visszaadó ACF után csak a két pontos lezárt út ad410-et.
 
