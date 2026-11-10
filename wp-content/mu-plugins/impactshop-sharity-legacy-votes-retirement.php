@@ -126,12 +126,13 @@ final class Sharity_Legacy_Votes_Retirement
                 wp_die('A régi Impact Challenge végleg lezárult. <a href="https://sharity.hu/sajat-sharity">Szívügyeim megnyitása</a>', 'Lezárt játék', ['response' => 410]);
             }
         }, -1000);
+        // ACF's priority-10 filter can reset an earlier REST short-circuit to null.
         add_filter('rest_pre_dispatch', static function ($result, $server, $request) {
             if ($result !== null) return $result;
             $route = $request->get_route();
             if (($route === '/sharity/v1/offerwall/read-model' || preg_match('~^/impact-challenge/offerwall/ow_[a-f0-9]{40}$~D', $route)) && self::blocked()) return self::response();
             return $result;
-        }, 0, 3);
+        }, 20, 3);
     }
 }
 Sharity_Legacy_Votes_Retirement::bootstrap();

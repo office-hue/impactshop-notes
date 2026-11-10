@@ -91,3 +91,36 @@ költhető. Új Offerwall V2, profilreturn/save/restore, NGO Card, üzenetek/dok
 Ez helyi forrás/teszt/review és backup/restore bizonyíték, nem merge/deploy,
 lezárás/átvezetés vagy éles elfogadás. Teljes futási szerződés:
 ai-agent docs/user-card/LEGACY-VOTES-TRANSFER.md.
+# 2026-11-10 — lezárási hook sorrendjének célzott korrekciója
+
+Éles, írásmentes callbacktrace: saját priority0 lezárás NULL→410;
+ACF class-acf-rest-api.php:26 priority10 410→NULL. A később lefutó régi
+read_model ezért503/offerwall_read_disabled választ ad. Nem böngészőcache-hiba.
+
+Koherencia/érintettség: kizárólag a saját retirement modul pontos régi
+REST-olvasó/handoff útvonalainak pre-dispatch sorrendje változik20-ra.
+Az ACF, WordPress/WooCommerce, más route, template-hook, writer, callbackcapture,
+pont/szavazat/ledger és V2 runtime byte-változatlan. Új párhuzamos guard helyett
+a már jóváhagyott saját lezárás javítása, az ACF vendor módosítása nélkül.
+Kockázat: későbbi szűrőválasz felülírása; ezt a meglévő nem-null válasz megőrzése
+védi. Nullát visszaadó ACF után csak a két pontos lezárt út ad410-et.
+
+Előhash a telepített saját modulnál
+`a92f2dd2cc1a296af92746958e5183c633da98ea074d9ebd6d3b84ad1482eef3`.
+Kiadás merge után egy exact-file csere, friss hash/mentés/CAS/mód/owner/cache
+és HTTP410 readback; nincs új webbuild vagy artifact-repin (a modul nem tagja
+az Offerwall15 fájlos artifactnak). Backup legalább7nap a korábbi kivétel szerint.
+Rollback csak saját változatlan utóhashből, lezárást megtartó korábbi modulra;
+nem teljes DB-restore. Új sourcehash miatt apply előtt új privát snapshot/hash
+jóváhagyás szükséges; az eredeti330/501124 snapshot még nem került átvezetésre.
+
+Ellenőrzési terv: priority10 válasznullázó regresszió (előbb RED), majd410
+mindkét régi út; V2 változatlan; korábbi403 megmarad; PHP lint, meglévő retirement
+és migrátor unit/actual-caller teszt, saját digest + guard-checksum ellenőrzés.
+Tényleges eredmény: RED reprodukció után30 retirement+25 migrátor és31
+actual-caller PASS; PHP lint tiszta, ai/Notes tükör byteazonos. Éles WP/ACF
+CLI-folyamatban csak memóriában módosított sorrenddel mindkét régi út410;
+ez nem web-SAPI deploy-PASS. Gazdasági natív bizonyíték változatlanul újrahasznált.
+Kézi UI telepítés után: Profil és Szívügyeim megnyílik, közös egyenleg és NGO-
+kártyák látszanak; a régi játék nem indul el. Ne küldj vásárlást vagy partner-
+callbacket próbaként. Most nincs éles fájlcsere, apply vagy nyugalmi ablak.

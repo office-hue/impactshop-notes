@@ -1,3 +1,16 @@
+## 2026-11-10 — ACF felülírja a régi lezárási REST-választ
+
+Írásmentes éles callbacktrace igazolta: saját priority0 guard410 válaszát az
+ACF priority10 nullázza. Saját retirement hook20-ra áll, vendor és minden más
+route/writer változatlan. Ai-agent tükör és30 hook/retirement +25 migrátor
+teszt, Notes31 actual-caller és lint sikeres. Native WP/ACF CLI-ben csak
+memóriában átrendezve két régi út410; éles fájl nem változott ettől.
+Kis javítás, nincs új webbuild. Még nincs commit/merge/deploy. Az előző kiadás
+11PHP+web és seal már éles, gazdasági apply0; a következő fájlcsere után új
+snapshotjóváhagyás kell. Részletes protected scope/rollback/UI a meglévő
+2026-11-10-legacy-votes-transfer change record végén. Saját korábbi két doc-WIP
+80b9fdb6 stashben marad; nincs blanket pop vagy idegen munka felülírása.
+
 ## 2026-11-10 — Profil közös szavazategyenlege
 
 Saját fix/sharity-canonical-balance-read-20261110, alap75647555. A Profil PHP
