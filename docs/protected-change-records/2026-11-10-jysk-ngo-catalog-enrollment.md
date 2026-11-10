@@ -7,6 +7,7 @@ A két előzetes független tervaudit az ai-agent saját Card-tervének §13.5�
 
 ## Érintett fájlok / protected files touched
 - wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php: a meglévő projekció megtartása; teljes feldolgozott batch ellenőrzése, DB/prefix-szintű közös lock, native mysqli tranzakció, foglalási konfliktus, recovery.
+- scripts/jysk-ngo-catalog-reservation-schema.sql: külön jóváhagyandó, explicit CREATE; nincs automatikus futtatás vagy meglévő táblamódosítás.
 - scripts/jysk-ngo-catalog-enroll.php: pontosan nyolc NGO plan/apply/status; WP-bootstrap nélküli olvasás; kizárólag explicit apply írhat.
 - tests/impactshop-vb2026-ngo-catalog-sync-test.php: valódi wpdb és MariaDB, saját eldobható loopback/tmpfs adatbázis; kizárólag szintetikus rekordok.
 - A meglévő Bástya config/hash/model és checksum: új operátori fájl inventoryja, az ellenőrzött katalógusforrás pontos hash-e. Nincs guardlogika-, engedély-, emergency- vagy külső deployszabály-változás.
@@ -41,7 +42,7 @@ A privát input alakja:
 
 A plan új véletlen ID-jelölteket ad a pozitív 1..2147482647 tartományban. Ezek nem kiosztott ID-k. Apply nem sorsol újra, nem frissít régi sorokat. A jóváhagyás a teljes tervdigestről szól. A DB-prestate minden catalog/flag mezőt köt, kivéve az importer pusztán periodikus source_last_synced_at/updated_at időbélyegeit; a canonical referenciasorok külön kötöttek.
 
-Sikeres commit után a kimenet committed-readback-required. Új kapcsolatból külön status kötelező; bizonytalan commit nem újraapply. Ugyanaz az alkalmazott terv később readback-only. Status recovery vagy időközben eltűnt CSV mellett is olvas; új apply normál hash nélkül nem indul. A reservation tartós raw JSON, autoload=no; nincs törlés/ID-újrafelhasználás.
+Sikeres commit után a kimenet committed-readback-required. Új kapcsolatból külön status kötelező; bizonytalan commit nem újraapply. Ugyanaz az alkalmazott terv később readback-only. Status recovery vagy időközben eltűnt CSV mellett is olvas; új apply normál hash nélkül nem indul. A reservation tartós raw JSON a külön InnoDB foglalási táblában; nincs törlés/ID-újrafelhasználás.
 
 ## Teszt és független review
 2026-11-10 helyi eredmény:
@@ -79,3 +80,30 @@ Mindhárom PHP-fájl lintje, a teljes tényleges Bástya hashinventory és hat n
 ### Rögzített main-integráció, PR #270
 
 A 3267e172792cbcc62fb8e0c9a1cac57b336eaa7d main saját ágba integrálása Arnold külön Git-ablakában megkezdődött; az ablak 1.54 másodperces readback után felszabadult. Az egyetlen konfliktus a docs/impactshop-guard-hashes.sha256 volt: a mindkét fél pontos hashmódosítását megőrző JSON alapján újraszámítva. Az incoming impactshop-identity-panel.php/.js és profiltesztek byte-ra a rögzített mainnel egyeznek; az operátor, a katalógus és a saját DB-teszt byte-ra a 5828778157e9cdd837f0a0eb3fd580f90f19823c headen ellenőrzött változat. Az idegen profiljavítás változatlan átvétel, nem új saját javítás. A teljes egyesített Bástya hashinventory/hat negatív checksum-eset és staged diff-check sikeres. A változatlan termékkód 124+47 tesztbizonyítékát újrahasználtuk; új élő teszt, telepítés és ID-kiosztás nincs.
+
+## MyISAM éles eltérés javítása — a #270 utáni aktuális kiadás
+
+A #270 merge-je 7e6ffbe2221b882f7c8826d446b844b954700578, tree 64033278edf64eca039384b32cf6ec685e3ce7c3. Nem telepítettük: két külön WP-bootstrap nélküli SELECT igazolta, hogy a közös wp_options MyISAM, a catalog és campaign_flags InnoDB, a korábbi reservation opció nincs jelen. A #270 mindhárom táblára InnoDB-t követelt, így éles szinkronra alkalmatlan. Az eredeti 124 állítás az InnoDB-fixture-re volt érvényes, nem erre a hostra.
+
+Arnold engedélyezte a kizárólag nyolc szervezet foglalására szolgáló külön InnoDB-táblás javítás kidolgozását. Saját ág fix/jysk-enrollment-myisam-options-20261110, alap a fenti merge. A közös wp_options és a meglévő üzleti táblák átalakítása tiltott; nincs új ID vagy élő adatírás engedélyezve.
+
+### Tárolás és olvasási határ
+
+A scripts/jysk-ngo-catalog-reservation-schema.sql az egyetlen új táblát definiálja: wp_sharity_ngo_enrollment_reservations. reservation_key VARCHAR(64) ASCII/binary elsődleges kulcs, payload LONGTEXT utf8mb4, ENGINE=InnoDB. A fix kulcs impactshop_jysk_ngo_enrollment_v1; az egyetlen JSON rekord továbbra a tervdigestet és a pontos nyolc kötést tartalmazza. Az operátor és az importer ezt használja közös tranzakció/zár alatt. Hiányzó vagy nem InnoDB tábla megállít; ismeretlen rekordkulcs vagy több reservation nem fogadható el. A legacy reservation opció jelenléte külön hibát ad, nincs csendes migráció. A runtime-ellenőrzés már az új tárolási markert is megköveteli.
+
+Az enrollment teljes CLI és az importer tranzakciós írója nem módosítja a MyISAM options táblát. A teljes ensure_catalog_sync előkészítő get_dataset_items(true) hívása továbbra meglévő dataset-cache írást végezhet; azt a későbbi tranzakció rollbackje nem vonja vissza. Ez nem authority-adat. A saját sync-transiens frissítése csak igazolt commit után következhet. Hamis/exception cacheeredmény külön catalog_sync_cache_refresh_failed diagnózis; a már commitolt catalog+flags+reservation megmarad. Nincs új dataset-olvasó vagy cache-rendszer.
+
+### Elkülönített kiadás és rollback
+
+1. A végleges SQL és célpont külön jóváhagyása után az üres új tábla létrehozható; csak a pontos wp_ prefixű igazolt adatbázison. Nincs IF NOT EXISTS, ALTER vagy automatikus WP-init migráció. Meglévő azonos nevű táblánál megállás és readback. A CREATE implicit commitú művelet, nem az enrollment tranzakció része; külön schema-readback szükséges. Bizonytalan CREATE után nincs vak ismétlés.
+2. Új runtime telepítése csak külön exact-file csomaggal, mentéssel/CAS-szal/guarded deployjal. Régi importer az üres új táblát nem olvassa. Új runtime hiányában az operator nem fogadja el a régi markerű fájlt. A #270 hibás runtime nem köztes kiadási lépés.
+3. Friss forrás, reference inventory és kiosztási felhatalmazás után új plan; annak exact digest-jére külön live apply-engedély. Nyolc catalog+nyolc flags+egy reservation közös tranzakció, új kapcsolatból status. Az új tábla puszta létezése sem ID-kiosztási engedély, sem aktív felvétel.
+4. Felvétel előtt a runtime visszaállhat az igazolt eredeti fájlra, ha nincs reservation vagy saját jysk_enrollment sor és idegen drift. Az üres új táblát nem kell visszaállításkor törölni. Felvétel után csak a foglalást és olvasókat megőrző sync-disabled recovery; nincs régi importer, reservation-törlés vagy teljes DB-restore.
+
+### Audit és célzott teszt
+
+Két egymást követő független deltatervaudit (jysk_enrollment_plan_audit1/2) lezárult. Az első cache-commit pontosítását, majd a második előkészítő dataset-cache határát korrigáltuk; második visszaellenőrzés után nincs nyitott P1/P2 tervlelet. A review nem tesztfutás.
+
+149 izolált MariaDB/valódi-wpdb állítás sikeres, MyISAM options mellett. Mind17 enrollment-íráspont rollbackje, kapcsolatvesztés, COMMIT-válaszvesztés/külön status, idempotencia, régi importer projekció, reservation ütközés, nem InnoDB/hiányzó tábla, legacy opció, régi runtime tiltása, teljes CLI, két saját cachehibamód és commit utáni frissítés vizsgált. Az előkészítő dataset-cache mellékhatást szintetikus stub szemlélteti; ez nem a teljes dataset-implementáció teszt-PASS-a. Három PHP lint sikeres. Független implementációs review (jysk_enrollment_patch_review) nyitott P1/P2 nélkül; a reviewer forrást olvasott, nem futtatott tesztet. Teljes Bástya hashinventory és hat negatív/checksum-eset, protected-touch és diff-check sikeres. Az inventory első futása a saját új config két még nem frissített pinjét jelezte; csak e két pontos hash korrigálása után lett sikeres, idegen hash nem változott. A protected-touch első hívásában csoportnevek helyett a tényleges smoke-tageket kellett megadni; a korrigált hívás sikeres. A tagek tervezett éles érintettséget jelölnek, nem lefutott UI-próbát.
+
+Állapot: helyi javítás, nem commitolt/pusholt/merge-elt, nem telepített, nincs éles schema vagy ID. Az eredeti authority/reference és természetes M10 utáni UI/readback feltételek megmaradnak. A top-two tábla és törzsátalakítás továbbra kívül esik ezen a csomagon.
