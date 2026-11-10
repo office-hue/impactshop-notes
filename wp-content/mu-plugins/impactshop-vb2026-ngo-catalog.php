@@ -1366,13 +1366,22 @@ function impactshop_vb2026_ensure_catalog_sync(): void
     }
 
     try {
-        if (impactshop_vb2026_upsert_catalog_rows($rows, $datasetItems, true)) {
-            set_transient(IMPACTSHOP_VB2026_NGO_SYNC_TRANSIENT, time(), IMPACTSHOP_VB2026_NGO_SYNC_TTL);
-        }
+        $committed = impactshop_vb2026_upsert_catalog_rows($rows, $datasetItems, true);
     } catch (Throwable $e) {
         $code = $e instanceof RuntimeException && preg_match('/^catalog_[a-z0-9_]+$/D', $e->getMessage())
             ? $e->getMessage() : 'catalog_sync_failed';
         error_log($code);
+        return;
+    }
+    // Cache is not transactional authority. Failure cannot undo a committed catalog batch.
+    if ($committed) {
+        try {
+            if (!set_transient(IMPACTSHOP_VB2026_NGO_SYNC_TRANSIENT, time(), IMPACTSHOP_VB2026_NGO_SYNC_TTL)) {
+                error_log('catalog_sync_cache_refresh_failed');
+            }
+        } catch (Throwable $e) {
+            error_log('catalog_sync_cache_refresh_failed');
+        }
     }
 }
 
@@ -1592,13 +1601,17 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems,
     }
     $transaction = false;
     try {
-        foreach ([$catalogTable, $flagsTable, $wpdb->prefix . 'options'] as $table) {
+        $reservationTable = $wpdb->prefix . 'sharity_ngo_enrollment_reservations';
+        foreach ([$catalogTable, $flagsTable, $reservationTable] as $table) {
             $engine = $query('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=' . $quote($table))->fetch_row();
             if (strtolower((string) ($engine[0] ?? '')) !== 'innodb') { throw new RuntimeException('catalog_requires_innodb'); }
         }
         $query('START TRANSACTION');
         $transaction = true;
         $options = $wpdb->prefix . 'options';
+        if ($query('SELECT option_name FROM ' . $options . ' WHERE option_name=' . $quote('impactshop_jysk_ngo_enrollment_v1'))->num_rows !== 0) {
+            throw new RuntimeException('catalog_legacy_reservation_requires_review');
+        }
         if ($sync) {
             $last = $query('SELECT option_value FROM ' . $options . ' WHERE option_name=' . $quote('_transient_' . IMPACTSHOP_VB2026_NGO_SYNC_TRANSIENT))->fetch_row();
             if ($last && is_numeric($last[0]) && (int) $last[0] + IMPACTSHOP_VB2026_NGO_SYNC_TTL > time()) {
@@ -1606,10 +1619,13 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems,
                 return false;
             }
         }
-        $raw = $query('SELECT option_value FROM ' . $options . ' WHERE option_name=' . $quote('impactshop_jysk_ngo_enrollment_v1'))->fetch_row();
+        $reservationRows = $query('SELECT reservation_key,payload FROM ' . $reservationTable . ' ORDER BY reservation_key')->fetch_all(MYSQLI_ASSOC);
         $reserved = [];
-        if ($raw) {
-            $reservation = json_decode($raw[0], true);
+        if ($reservationRows) {
+            if (count($reservationRows) !== 1 || $reservationRows[0]['reservation_key'] !== 'impactshop_jysk_ngo_enrollment_v1') {
+                throw new RuntimeException('catalog_reservation_invalid');
+            }
+            $reservation = json_decode($reservationRows[0]['payload'], true);
             if (!is_array($reservation) || ($reservation['version'] ?? null) !== 1
                 || !preg_match('/^[a-f0-9]{64}$/D', (string) ($reservation['planDigest'] ?? ''))
                 || !is_string($reservation['appliedAt'] ?? null) || !is_array($reservation['entries'] ?? null)

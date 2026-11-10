@@ -9,7 +9,8 @@ declare(strict_types=1);
 
 final class JyskNgoEnrollment
 {
-    public const OPTION = 'impactshop_jysk_ngo_enrollment_v1';
+    public const RESERVATION_KEY = 'impactshop_jysk_ngo_enrollment_v1';
+    public const RESERVATION_TABLE = 'sharity_ngo_enrollment_reservations';
     public const INPUT_SHA = 'db4db03c3802d21034877b2375ad1d5198af19d88c8cdb4427014626aaee7d1a';
     public const MAX_ID = 2147482647;
     private const SLUGS = [
@@ -79,10 +80,11 @@ final class JyskNgoEnrollment
 
     private function schema(array $input): void
     {
-        foreach (['sharity_ngo_catalog', 'sharity_ngo_campaign_flags', 'options'] as $suffix) {
+        foreach (['sharity_ngo_catalog', 'sharity_ngo_campaign_flags', self::RESERVATION_TABLE] as $suffix) {
             $row = $this->rows('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?', [$this->table($suffix)]);
             if (count($row) !== 1 || strtolower($row[0]['ENGINE']) !== 'innodb') { throw new RuntimeException('schema_requires_innodb'); }
         }
+        $this->rejectLegacyReservation();
         // Caller must classify ALL discovered NGO-like columns, not silently ignore new consumers.
         $columns = $this->rows("SELECT TABLE_NAME,COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND (COLUMN_NAME LIKE '%ngo%id%' OR COLUMN_NAME LIKE '%beneficiary%') ORDER BY TABLE_NAME,COLUMN_NAME");
         $actual = array_map(static fn($r) => $r['TABLE_NAME'] . '.' . $r['COLUMN_NAME'], $columns);
@@ -93,6 +95,13 @@ final class JyskNgoEnrollment
                 || !in_array($classification, ['canonical', 'different-namespace'], true)) {
                 throw new RuntimeException('reference_classification_required');
             }
+        }
+    }
+
+    private function rejectLegacyReservation(): void
+    {
+        if ($this->rows('SELECT option_name FROM ' . $this->table('options') . ' WHERE option_name=?', [self::RESERVATION_KEY])) {
+            throw new RuntimeException('legacy_reservation_requires_review');
         }
     }
 
@@ -116,6 +125,7 @@ final class JyskNgoEnrollment
         if ($input['directory']['sha256'] !== self::INPUT_SHA) { throw new RuntimeException('not_the_approved_eight'); }
         $source = file_get_contents($input['runtime']['path']);
         if (!str_contains($source, 'catalog_reserved_identity_conflict_id_')
+            || !str_contains($source, 'sharity_ngo_enrollment_reservations')
             || preg_match('/define\s*\(\s*[\'"]IMPACTSHOP_NGO_CATALOG_RECOVERY[\'"]\s*,\s*true/i', $source)) {
             throw new RuntimeException('normal_runtime_required');
         }
@@ -170,7 +180,7 @@ final class JyskNgoEnrollment
         }
         ksort($refs);
         return ['catalog' => $catalog, 'flags' => $flags, 'references' => $refs,
-            'reservation' => $this->rows('SELECT option_value,autoload FROM ' . $this->table('options') . ' WHERE option_name=?', [self::OPTION])];
+            'reservation' => $this->rows('SELECT reservation_key,payload FROM ' . $this->table(self::RESERVATION_TABLE) . ' ORDER BY reservation_key')];
     }
 
     private function collision(array $entries, array $existing): void
@@ -236,9 +246,11 @@ final class JyskNgoEnrollment
 
     private function result(array $plan): array
     {
-        $rows = $this->rows('SELECT option_value FROM ' . $this->table('options') . ' WHERE option_name=?', [self::OPTION]);
+        $this->rejectLegacyReservation();
+        $rows = $this->rows('SELECT reservation_key,payload FROM ' . $this->table(self::RESERVATION_TABLE) . ' ORDER BY reservation_key');
         if (!$rows) { return ['status' => 'not-applied', 'writes' => false]; }
-        $reservation = json_decode($rows[0]['option_value'], true, 64, JSON_THROW_ON_ERROR);
+        if (count($rows) !== 1 || $rows[0]['reservation_key'] !== self::RESERVATION_KEY) { throw new RuntimeException('reservation_conflict'); }
+        $reservation = json_decode($rows[0]['payload'], true, 64, JSON_THROW_ON_ERROR);
         $bindings = array_map(static fn($e) => array_intersect_key($e, array_flip(['ngo_id','slug','name','website_url'])), $plan['entries']);
         if (($reservation['planDigest'] ?? '') !== $plan['digest'] || ($reservation['entries'] ?? null) !== $bindings) {
             throw new RuntimeException('reservation_conflict');
@@ -292,8 +304,8 @@ final class JyskNgoEnrollment
             }
             $bindings = array_map(static fn($e) => array_intersect_key($e, array_flip(['ngo_id','slug','name','website_url'])), $plan['entries']);
             $reservation = ['version'=>1,'planDigest'=>$plan['digest'],'entries'=>$bindings,'appliedAt'=>gmdate('c')];
-            $this->sql('INSERT INTO ' . $this->table('options') . ' (option_name,option_value,autoload) VALUES (?,?,?)',
-                [self::OPTION,json_encode($reservation, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),'no']);
+            $this->sql('INSERT INTO ' . $this->table(self::RESERVATION_TABLE) . ' (reservation_key,payload) VALUES (?,?)',
+                [self::RESERVATION_KEY,json_encode($reservation, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)]);
             try { $this->sql('COMMIT'); }
             catch (Throwable $e) { throw new RuntimeException('commit_uncertain_run_status_with_new_connection'); }
             $tx = false;

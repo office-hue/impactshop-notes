@@ -47,7 +47,24 @@ function remove_accents($s) { return iconv('UTF-8', 'ASCII//TRANSLIT', $s); }
 function sanitize_title($s) { return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(remove_accents($s))), '-'); }
 function esc_url_raw($s) { return filter_var($s, FILTER_VALIDATE_URL) ? $s : ''; }
 function get_transient($key) { return false; } // Deliberately stale cache.
-function set_transient(...$args) { $GLOBALS['transientWrites']++; }
+function set_transient($key,$value,$ttl) {
+    $GLOBALS['transientWrites']++;
+    if (($GLOBALS['cacheMode'] ?? '') === 'throw') { throw new RuntimeException('synthetic_cache_failure'); }
+    if (($GLOBALS['cacheMode'] ?? '') === 'false') { return false; }
+    foreach (['_transient_' . $key => $value, '_transient_timeout_' . $key => time()+$ttl] as $name=>$v) {
+        q('INSERT INTO jysk_enroll_options (option_name,option_value,autoload) VALUES (?,?,?) ON DUPLICATE KEY UPDATE option_value=VALUES(option_value)',[$name,(string)$v,'no']);
+    }
+    return true;
+}
+class ImpactShop_NGO_Card_API {
+    public static function get_dataset_items($refresh) {
+        // Model the existing pre-transaction cache side effect; not a dataset implementation test.
+        if (!empty($GLOBALS['prepareCacheWrite'])) {
+            q('INSERT INTO jysk_enroll_options (option_name,option_value,autoload) VALUES (?,?,?) ON DUPLICATE KEY UPDATE option_value=VALUES(option_value)', ['_transient_fixture_dataset','prepared','no']);
+        }
+        return [];
+    }
+}
 function is_wp_error($v) { return false; }
 function wp_remote_get(...$args) { $GLOBALS['httpReads']++; return ['body' => $GLOBALS['csvBody'] ?? '']; }
 function wp_remote_retrieve_body($v) { return $v['body']; }
@@ -99,17 +116,20 @@ $wpdb = connection(); $db = $wpdb->dbh;
 function q(string $sql, array $args = []) { global $db; $r = $db->execute_query($sql, $args ?: null); if ($r === false) { throw new RuntimeException('fixture_sql_error'); } return $r; }
 function snapshot(): string {
     $out = [];
-    foreach (['sharity_ngo_catalog','sharity_ngo_campaign_flags','options','votes','preferences','ledger','jysk_payload'] as $s) {
+    foreach (['sharity_ngo_catalog','sharity_ngo_campaign_flags','sharity_ngo_enrollment_reservations','options','votes','preferences','ledger','jysk_payload'] as $s) {
         $out[$s] = q('SELECT * FROM jysk_enroll_' . $s . ' ORDER BY 1')->fetch_all(MYSQLI_ASSOC);
     }
     return json_encode($out, JSON_THROW_ON_ERROR);
 }
-foreach (['sharity_ngo_catalog','sharity_ngo_campaign_flags','options','votes','preferences','ledger','jysk_payload'] as $s) { q('DROP TABLE IF EXISTS jysk_enroll_' . $s); }
+foreach (['sharity_ngo_catalog','sharity_ngo_campaign_flags','sharity_ngo_enrollment_reservations','options','votes','preferences','ledger','jysk_payload'] as $s) { q('DROP TABLE IF EXISTS jysk_enroll_' . $s); }
 $source = file_get_contents(dirname(__DIR__) . '/wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php');
 preg_match_all('/CREATE TABLE \{\$(catalog|flags)\} \((.*?)\) \{\$charset\}/s', $source, $ddl, PREG_SET_ORDER);
 check(count($ddl) === 2, 'DDL is the actual product schema');
 foreach ($ddl as $m) { q('CREATE TABLE jysk_enroll_' . ($m[1] === 'catalog' ? 'sharity_ngo_catalog' : 'sharity_ngo_campaign_flags') . ' (' . $m[2] . ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'); }
-q('CREATE TABLE jysk_enroll_options (option_id BIGINT AUTO_INCREMENT PRIMARY KEY,option_name VARCHAR(191) UNIQUE,option_value LONGTEXT,autoload VARCHAR(20)) ENGINE=InnoDB');
+q('CREATE TABLE jysk_enroll_options (option_id BIGINT AUTO_INCREMENT PRIMARY KEY,option_name VARCHAR(191) UNIQUE,option_value LONGTEXT,autoload VARCHAR(20)) ENGINE=MyISAM');
+$reservationDdl=file_get_contents(dirname(__DIR__) . '/scripts/jysk-ngo-catalog-reservation-schema.sql');
+q(str_replace('wp_sharity_ngo_enrollment_reservations','jysk_enroll_sharity_ngo_enrollment_reservations',$reservationDdl));
+check(q("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='jysk_enroll_options'")->fetch_row()[0] === 'MyISAM','fixture matches live options engine');
 foreach (['votes','preferences','ledger','jysk_payload'] as $s) {
     q('CREATE TABLE jysk_enroll_' . $s . ' (id INT PRIMARY KEY,ngo_id INT,content TEXT) ENGINE=InnoDB');
     q('INSERT INTO jysk_enroll_' . $s . " VALUES (1,28,'unchanged historical synthetic reference')");
@@ -163,6 +183,26 @@ q('ALTER TABLE jysk_enroll_sharity_ngo_campaign_flags ENGINE=MyISAM');
 blocked(fn()=>$op->plan($input),'schema_requires_innodb');
 blocked(fn()=>impactshop_vb2026_upsert_catalog_rows([$row],[]),'catalog_requires_innodb');
 q('ALTER TABLE jysk_enroll_sharity_ngo_campaign_flags ENGINE=InnoDB');
+q('ALTER TABLE jysk_enroll_sharity_ngo_enrollment_reservations ENGINE=MyISAM');
+blocked(fn()=>$op->plan($input),'schema_requires_innodb');
+blocked(fn()=>impactshop_vb2026_upsert_catalog_rows([$row],[]),'catalog_requires_innodb');
+q('ALTER TABLE jysk_enroll_sharity_ngo_enrollment_reservations ENGINE=InnoDB');
+q('RENAME TABLE jysk_enroll_sharity_ngo_enrollment_reservations TO jysk_enroll_reservation_missing');
+blocked(fn()=>$op->plan($input),'schema_requires_innodb');
+blocked(fn()=>impactshop_vb2026_upsert_catalog_rows([$row],[]),'catalog_requires_innodb');
+check((int)q("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='jysk_enroll_sharity_ngo_enrollment_reservations'")->fetch_row()[0]===0,'no implicit migration');
+q('RENAME TABLE jysk_enroll_reservation_missing TO jysk_enroll_sharity_ngo_enrollment_reservations');
+q('INSERT INTO jysk_enroll_options (option_name,option_value,autoload) VALUES (?,?,?)',[JyskNgoEnrollment::RESERVATION_KEY,'{}','no']);
+$legacyState=snapshot();
+blocked(fn()=>$op->plan($input),'legacy_reservation_requires_review');
+blocked(fn()=>impactshop_vb2026_upsert_catalog_rows([$row],[]),'catalog_legacy_reservation_requires_review');
+check(snapshot()===$legacyState,'legacy option never silently migrated or overwritten');
+q('DELETE FROM jysk_enroll_options WHERE option_name=?',[JyskNgoEnrollment::RESERVATION_KEY]);
+$runtimePath=$input['runtime']['path']; $runtimeOriginal=file_get_contents($runtimePath);
+file_put_contents($runtimePath,str_replace('sharity_ngo_enrollment_reservations','old_storage',$runtimeOriginal));
+$oldRuntime=$input; $oldRuntime['runtime']['sha256']=hash_file('sha256',$runtimePath);
+blocked(fn()=>$op->plan($oldRuntime),'normal_runtime_required');
+file_put_contents($runtimePath,$runtimeOriginal);
 $before = snapshot(); $plan = $op->plan($input);
 check(count($plan['entries']) === 8 && snapshot() === $before, 'plan reads only');
 check($op->status($plan)['status'] === 'not-applied' && snapshot() === $before, 'status reads only');
@@ -224,10 +264,10 @@ foreach (['ninth','duplicate','negative','metadata'] as $case) {
     check(snapshot() === $before,'invalid fixed plan never writes: '.$case);
 }
 // Every one of the 17 writes can fail without partial catalog/flags/reservation.
-foreach (['sharity_ngo_catalog','sharity_ngo_campaign_flags','options'] as $suffix) {
-    $ids = $suffix === 'options' ? [null] : array_column($plan['entries'],'ngo_id');
+foreach (['sharity_ngo_catalog','sharity_ngo_campaign_flags','sharity_ngo_enrollment_reservations'] as $suffix) {
+    $ids = $suffix === 'sharity_ngo_enrollment_reservations' ? [null] : array_column($plan['entries'],'ngo_id');
     foreach ($ids as $id) {
-        $condition = $id === null ? "NEW.option_name='impactshop_jysk_ngo_enrollment_v1'" : 'NEW.sharity_ngo_id=' . $id;
+        $condition = $id === null ? "NEW.reservation_key='impactshop_jysk_ngo_enrollment_v1'" : 'NEW.sharity_ngo_id=' . $id;
         q("CREATE TRIGGER jysk_enroll_fault BEFORE INSERT ON jysk_enroll_" . $suffix . " FOR EACH ROW BEGIN IF " . $condition . " THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic failure'; END IF; END");
         blocked(fn()=>$op->apply($plan,$plan['digest']), 'enrollment_sql_failed');
         check(snapshot() === $before, 'all writes rolled back at ' . $suffix);
@@ -249,9 +289,10 @@ check($fresh->status($plan)['count'] === 8, 'independent connection sees eight')
 $after = snapshot(); check($fresh->apply($plan,$plan['digest'])['writes'] === false && snapshot() === $after, 'repeat apply readback only');
 check((int) q('SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_catalog')->fetch_row()[0] === 9, 'catalog delta exactly eight');
 check((int) q('SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_campaign_flags')->fetch_row()[0] === 9, 'flags delta exactly eight');
-check((int) q("SELECT COUNT(*) FROM jysk_enroll_options WHERE option_name='impactshop_jysk_ngo_enrollment_v1' AND autoload='no'")->fetch_row()[0] === 1, 'one durable non-autoload reservation');
+check((int) q("SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_enrollment_reservations WHERE reservation_key='impactshop_jysk_ngo_enrollment_v1'")->fetch_row()[0] === 1, 'one durable transactional reservation');
 check(impactshop_vb2026_upsert_catalog_rows([$row],[]) === true, 'later unchanged CSV allowed');
 check(snapshot() === $after, 'unchanged CSV preserves all eight and history');
+check(json_decode($before,true)['options'] === json_decode($after,true)['options'],'complete enrollment leaves MyISAM options unchanged');
 $entry = $plan['entries'][0];
 $collisions = [
     [['Azonosító'=>(string)$entry['ngo_id'],'Név'=>'Other NGO'],[]],
@@ -263,12 +304,12 @@ foreach ($collisions as [$conflict,$dataset]) {
     check(snapshot() === $after, 'collision rejects even earlier batch writes');
 }
 blocked(fn()=>impactshop_vb2026_upsert_catalog_rows([$row,$row],[]), 'catalog_batch_identity_conflict');
-$raw = q('SELECT option_value FROM jysk_enroll_options WHERE option_name=?',[JyskNgoEnrollment::OPTION])->fetch_row()[0];
-q('UPDATE jysk_enroll_options SET option_value=? WHERE option_name=?',['{}',JyskNgoEnrollment::OPTION]);
+$raw = q('SELECT payload FROM jysk_enroll_sharity_ngo_enrollment_reservations WHERE reservation_key=?',[JyskNgoEnrollment::RESERVATION_KEY])->fetch_row()[0];
+q('UPDATE jysk_enroll_sharity_ngo_enrollment_reservations SET payload=? WHERE reservation_key=?',['{}',JyskNgoEnrollment::RESERVATION_KEY]);
 $invalidState = snapshot();
 blocked(fn()=>impactshop_vb2026_upsert_catalog_rows([$row],[]),'catalog_reservation_invalid');
 check(snapshot() === $invalidState, 'invalid reservation fails closed');
-q('UPDATE jysk_enroll_options SET option_value=? WHERE option_name=?',[$raw,JyskNgoEnrollment::OPTION]);
+q('UPDATE jysk_enroll_sharity_ngo_enrollment_reservations SET payload=? WHERE reservation_key=?',[$raw,JyskNgoEnrollment::RESERVATION_KEY]);
 check((int) q('SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_catalog c JOIN jysk_enroll_sharity_ngo_campaign_flags f ON f.sharity_ngo_id=c.sharity_ngo_id WHERE c.is_active=1 AND f.allow_public_listing=1 AND f.campaign_state=?',['active'])->fetch_row()[0] === 9, 'actual public join sees eight');
 check((int) q('SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_campaign_flags WHERE allow_user_selection=1')->fetch_row()[0] === 1, 'VB selection not expanded');
 check((int) q('SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_campaign_flags WHERE is_featured=1 OR is_race_visible=1')->fetch_row()[0] === 0, 'no race rights');
@@ -279,6 +320,35 @@ for ($n=1000;$n<1025;$n++) { $GLOBALS['csvBody'].="$n,Fixture $n,Aktív\n"; }
 $GLOBALS['csvBody'].=$entry['ngo_id'].",Conflict,Aktív\n";
 $beforeFailedSync=snapshot(); impactshop_vb2026_ensure_catalog_sync();
 check(snapshot() === $beforeFailedSync && $transientWrites === 0,'full sync failure cannot set success freshness');
+// Preparation can cache data before a later failed transaction; do not claim total options immutability.
+$GLOBALS['prepareCacheWrite']=true;
+impactshop_vb2026_ensure_catalog_sync();
+check((int)q("SELECT COUNT(*) FROM jysk_enroll_options WHERE option_name='_transient_fixture_dataset'")->fetch_row()[0]===1,'preparation cache survives later reservation conflict');
+q("DELETE FROM jysk_enroll_options WHERE option_name='_transient_fixture_dataset'");
+$GLOBALS['prepareCacheWrite']=false;
+check(snapshot()===$beforeFailedSync && $transientWrites===0,'transaction failure leaves data and own success freshness unchanged');
+// Successful commit followed by failed cache update remains committed and reservation-protected.
+$GLOBALS['csvBody']="Azonosító,Név,Státusz\n";
+for ($n=1000;$n<1025;$n++) { $GLOBALS['csvBody'].="$n,Fixture $n,Aktív\n"; }
+$cacheLog=$base . '/cache-errors.log'; file_put_contents($cacheLog,'');
+$previousErrorLog=ini_set('error_log',$cacheLog);
+foreach (['false','throw','success'] as $cacheMode) {
+    $GLOBALS['cacheMode']=$cacheMode;
+    impactshop_vb2026_ensure_catalog_sync();
+    check((int)q('SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_catalog WHERE sharity_ngo_id BETWEEN 1000 AND 1024')->fetch_row()[0]===25,'catalog commit survives cache outcome '.$cacheMode);
+    check($fresh->status($plan)['count']===8,'reservation survives cache outcome '.$cacheMode);
+    if ($cacheMode !== 'success') {
+        check((int)q("SELECT COUNT(*) FROM jysk_enroll_options WHERE option_name LIKE '_transient%'")->fetch_row()[0]===0,'failed cache is not success freshness');
+        blocked(fn()=>impactshop_vb2026_upsert_catalog_rows([$conflict],$dataset),'catalog_reserved_identity_conflict');
+    }
+}
+ini_set('error_log',$previousErrorLog);
+check(substr_count(file_get_contents($cacheLog),'catalog_sync_cache_refresh_failed')===2,'false and thrown cache failures have separate sanitized diagnostics');
+check((int)q("SELECT COUNT(*) FROM jysk_enroll_options WHERE option_name IN ('_transient_impactshop_vb2026_ngo_catalog_last_sync_v1','_transient_timeout_impactshop_vb2026_ngo_catalog_last_sync_v1')")->fetch_row()[0]===2,'successful cache updates only existing freshness pair');
+// Remove only these local cache-probe fixtures before the unchanged public reader checks.
+q('DELETE FROM jysk_enroll_sharity_ngo_catalog WHERE sharity_ngo_id BETWEEN 1000 AND 1024');
+q('DELETE FROM jysk_enroll_sharity_ngo_campaign_flags WHERE sharity_ngo_id BETWEEN 1000 AND 1024');
+$transientWrites=0;
 define('IMPACTSHOP_NGO_CATALOG_RECOVERY', true);
 $beforeRecovery = snapshot(); $beforeHttp = $httpReads;
 impactshop_vb2026_ensure_catalog_sync();
