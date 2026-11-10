@@ -75,3 +75,7 @@ Ezek az éles/UI lépések még nem futottak. Ez a forráscsomag nem kezeli a to
 ### Végső helyi forrásellenőrzés
 
 Mindhárom PHP-fájl lintje, a teljes tényleges Bástya hashinventory és hat negatív/checksum fixture, a meglévő deploy-wpcontent-map-bastion izolált szerződésteszt és a diff-check sikeres. A protected-touch ellenőrzés a jóváhagyott saját változást, a rollbacket és a következő élő smoke határát fogadta el. A smoke tag-ek tervezett érintettséget jelölnek, nem lefutott élő próbát. Guard-/CI-logika nem változott. Saját, nem titkos eredmény: tmp/jysk-ngo-card-directory-20261109/enrollment-test/source-validation.json.
+
+### Rögzített main-integráció, PR #270
+
+A 3267e172792cbcc62fb8e0c9a1cac57b336eaa7d main saját ágba integrálása Arnold külön Git-ablakában megkezdődött; az ablak 1.54 másodperces readback után felszabadult. Az egyetlen konfliktus a docs/impactshop-guard-hashes.sha256 volt: a mindkét fél pontos hashmódosítását megőrző JSON alapján újraszámítva. Az incoming impactshop-identity-panel.php/.js és profiltesztek byte-ra a rögzített mainnel egyeznek; az operátor, a katalógus és a saját DB-teszt byte-ra a 5828778157e9cdd837f0a0eb3fd580f90f19823c headen ellenőrzött változat. Az idegen profiljavítás változatlan átvétel, nem új saját javítás. A teljes egyesített Bástya hashinventory/hat negatív checksum-eset és staged diff-check sikeres. A változatlan termékkód 124+47 tesztbizonyítékát újrahasználtuk; új élő teszt, telepítés és ID-kiosztás nincs.
