@@ -49,7 +49,7 @@ function sharity_ui_lock_rest_locked_response(string $message, int $status = 503
         'success' => false,
         'error' => 'impact_challenge_paused',
         'message' => $message,
-        'restart_url' => 'https://factlens.eu/vb2026/',
+        'restart_url' => 'https://sharity.hu/sajat-sharity',
     ], $status);
 }
 
@@ -150,7 +150,7 @@ add_action('wp_head', function () {
        . 'body.impact-challenge-is-paused #btn-watch-ad,body.impact-challenge-is-paused #btn-allocate-votes,body.impact-challenge-is-paused #btn-change-ngo,body.impact-challenge-is-paused #btn-show-more-ngos,body.impact-challenge-is-paused #btn-show-all-ngos,body.impact-challenge-is-paused .btn-quick-vote,body.impact-challenge-is-paused #auto-vote-enabled,body.impact-challenge-is-paused #vote-amount-input,body.impact-challenge-is-paused .step-pill,body.impact-challenge-is-paused [data-role="ads-watch-tab"],body.impact-challenge-is-paused #presence-confirm,body.impact-challenge-is-paused #btn-skip-education,body.impact-challenge-is-paused #btn-skip-video,body.impact-challenge-is-paused #btn-resume-ad{pointer-events:none!important;opacity:.45!important;filter:grayscale(1)!important}'
        . 'body.impact-challenge-is-paused #btn-watch-ad .btn-text::after{content:" (szünetel)";}'
        . 'body.impact-challenge-is-paused #ads-watch-video,body.impact-challenge-is-paused #ads-watch-ngo,body.impact-challenge-is-paused #ads-watch-vote{position:relative}'
-       . 'body.impact-challenge-is-paused #ads-watch-video::after,body.impact-challenge-is-paused #ads-watch-ngo::after,body.impact-challenge-is-paused #ads-watch-vote::after{content:"A játék átmenetileg szünetel.";position:absolute;inset:auto 16px 16px auto;padding:8px 12px;border-radius:999px;background:rgba(15,23,42,.86);color:#fff;font-size:12px;font-weight:700;letter-spacing:.02em}'
+       . 'body.impact-challenge-is-paused #ads-watch-video::after,body.impact-challenge-is-paused #ads-watch-ngo::after,body.impact-challenge-is-paused #ads-watch-vote::after{content:"A régi játék lezárult.";position:absolute;inset:auto 16px 16px auto;padding:8px 12px;border-radius:999px;background:rgba(15,23,42,.86);color:#fff;font-size:12px;font-weight:700;letter-spacing:.02em}'
        . '@media(max-width:768px){.impact-challenge-maintenance{margin:14px 0 18px;padding:20px 16px;border-radius:22px}.impact-challenge-maintenance__copy{font-size:15px}.impact-challenge-maintenance__actions{flex-direction:column}.impact-challenge-maintenance__link{width:100%}}'
        . '</style>';
 }, 9999);
@@ -176,24 +176,24 @@ add_action('wp_footer', function () {
            . 'banner.id="impact-challenge-maintenance-banner";'
            . 'banner.className="impact-challenge-maintenance";'
            . 'banner.innerHTML=' . wp_json_encode(
-               '<div class="impact-challenge-maintenance__eyebrow">Átmeneti szünet</div>'
-               . '<h2 class="impact-challenge-maintenance__title">Az Impact Challenge hamarosan újraindul.</h2>'
-               . '<div class="impact-challenge-maintenance__copy">A mai aktivitás és szavazás átmenetileg le van állítva, ezért az oldalon az aktivitási gombok most nem használhatók. Addig nézz be az új játékunkba, ahol már elindult a következő élmény.</div>'
-               . '<div class="impact-challenge-maintenance__actions"><a class="impact-challenge-maintenance__link" href="https://factlens.eu/vb2026/" target="_blank" rel="noopener">Ugrás az új játékhoz: factlens.eu/vb2026</a></div>'
+               '<div class="impact-challenge-maintenance__eyebrow">Lezárt játék</div>'
+               . '<h2 class="impact-challenge-maintenance__title">A régi Impact Challenge végleg lezárult.</h2>'
+               . '<div class="impact-challenge-maintenance__copy">A régi aktivitási és szavazási lehetőségek lezárultak. A közös szavazategyenlegedet a Szívügyeim oldalon követheted.</div>'
+               . '<div class="impact-challenge-maintenance__actions"><a class="impact-challenge-maintenance__link" href="https://sharity.hu/sajat-sharity" target="_blank" rel="noopener">Szívügyeim megnyitása</a></div>'
                . '<div class="impact-challenge-maintenance__meta"><span>A mai szavazatok: 0</span><span>Rangsor: 2026.06.30. 23:59:59</span><span>Aktivitási gombok: fagyasztva</span></div>'
            ) . ';'
            . 'root.insertBefore(banner,root.firstChild);'
            . '}'
            . 'var messageText=document.querySelector(\'[data-role="ads-watch-message-text"]\');'
-           . 'if(messageText){messageText.textContent="Hamarosan újraindulunk. Addig látogass el az új játékunk oldalára: factlens.eu/vb2026";}'
+           . 'if(messageText){messageText.textContent="A régi Impact Challenge lezárult. A közös egyenleged a Szívügyeim oldalon követhető.";}'
            . 'var liveActivity=document.getElementById("live-activity-value");'
            . 'if(liveActivity){liveActivity.textContent="0 szavazat";}'
            . 'var chance=document.getElementById("chance-value");'
-           . 'if(chance){chance.textContent="hamarosan";}'
+           . 'if(chance){chance.textContent="lezárult";}'
            . 'var availableVotesInline=document.getElementById("available-votes-inline");'
            . 'if(availableVotesInline){availableVotesInline.textContent="0";}'
            . 'var voteInput=document.getElementById("vote-amount-input");'
-           . 'if(voteInput){voteInput.value="";voteInput.placeholder="A játék szünetel";}'
+           . 'if(voteInput){voteInput.value="";voteInput.placeholder="A régi játék lezárult";}'
            . 'var autoVote=document.getElementById("auto-vote-enabled");'
            . 'if(autoVote){autoVote.checked=false;}'
            . '});'
@@ -250,7 +250,7 @@ add_filter('rest_pre_dispatch', function ($result, $server, $request) {
         '/impact/v1/ads-watch/set-auto-vote',
     ], true)) {
         return sharity_ui_lock_rest_locked_response(
-            'Az Impact Challenge átmenetileg szünetel. Hamarosan újraindulunk, addig nézz be az új játékunkhoz: https://factlens.eu/vb2026/'
+            'A régi Impact Challenge végleg lezárult. A közös egyenleged a Szívügyeimben követhető: https://sharity.hu/sajat-sharity'
         );
     }
 
@@ -258,68 +258,61 @@ add_filter('rest_pre_dispatch', function ($result, $server, $request) {
 }, 10, 3);
 
 add_filter('rest_post_dispatch', function ($response, $server, $request) {
-    if (!$response instanceof WP_REST_Response) {
-        return $response;
-    }
-
-    if (!sharity_ui_lock_is_impact_challenge_rest_request($request)) {
+    if (!sharity_ui_lock_is_impact_challenge_rest_request($request) || !($response instanceof WP_HTTP_Response)) {
         return $response;
     }
 
     $route = (string) $request->get_route();
     $method = strtoupper((string) $request->get_method());
+    $data = $response->get_data();
+    if (!is_array($data)) {
+        return $response;
+    }
 
     if ($route === '/impact/v1/ads-watch/status' && $method === 'GET') {
-        $data = $response->get_data();
-        if (is_array($data)) {
-            $data['today_views'] = 0;
-            $data['available_votes'] = 0;
-            $data['auto_vote_enabled'] = false;
-            $data['lock_notice'] = [
-                'title' => 'Az Impact Challenge hamarosan újraindul.',
-                'subtitle' => 'A mai aktivitás és szavazás most szünetel.',
-                'restart_url' => 'https://factlens.eu/vb2026/',
-                'frozen_at' => SHARITY_UI_LOCK_VOTE_CUTOFF,
-            ];
-            $response->set_data($data);
-        }
+        $data['today_views'] = 0;
+        $data['available_votes'] = 0;
+        $data['auto_vote_enabled'] = false;
+        $data['lock_notice'] = 'A régi Impact Challenge végleg lezárult.';
+        $response->set_data($data);
         return $response;
     }
 
     if ($route === '/impact/v1/ads-watch/tally' && $method === 'GET') {
-        $frozen = sharity_ui_lock_get_frozen_tally();
-        $rows = $frozen['rows'];
-        $pool = (int) ($frozen['donation_pool'] ?? 500000);
+        $snapshot = sharity_ui_lock_get_frozen_tally();
+        $rows = (array) ($snapshot['rows'] ?? []);
         $total_votes = 0;
+        foreach ($rows as $row) {
+            $total_votes += (int) ($row['votes'] ?? 0);
+        }
 
+        $result = [];
         foreach ($rows as $index => $row) {
             $votes = (int) ($row['votes'] ?? 0);
-            $total_votes += $votes;
-            $rows[$index]['rank'] = $index + 1;
-            $rows[$index]['percentage'] = $total_votes > 0 ? 0 : 0;
-            $rows[$index]['allocation_huf'] = 0;
+            $percentage = $total_votes > 0 ? round(($votes / $total_votes) * 100, 2) : 0;
+            $amount = $total_votes > 0
+                ? (int) round(($votes / $total_votes) * (int) ($snapshot['donation_pool'] ?? 0))
+                : 0;
+
+            $result[] = [
+                'rank' => $index + 1,
+                'ngo_slug' => (string) ($row['ngo_slug'] ?? ''),
+                'ngo_name' => (string) ($row['ngo_name'] ?? ''),
+                'ngo_logo' => (string) ($row['ngo_logo'] ?? ''),
+                'votes' => $votes,
+                'percentage' => $percentage,
+                'amount' => $amount,
+            ];
         }
 
-        if ($total_votes > 0) {
-            foreach ($rows as $index => $row) {
-                $votes = (int) ($row['votes'] ?? 0);
-                $ratio = $votes / $total_votes;
-                $rows[$index]['percentage'] = round($ratio * 100, 2);
-                $rows[$index]['allocation_huf'] = (int) round($pool * $ratio);
-            }
-        }
-
-        $response->set_data([
-            'success' => true,
-            'items' => $rows,
-            'donation_pool' => $pool,
-            'total_votes' => $total_votes,
-            'quarter_key' => $frozen['quarter_key'],
-            'frozen_at' => $frozen['cutoff'],
-            'lock_title' => 'Az Impact Challenge hamarosan újraindul.',
-            'lock_subtitle' => 'A rangsor a 2026.06.30. 23:59:59 állapotot mutatja.',
-            'restart_url' => 'https://factlens.eu/vb2026/',
-        ]);
+        $data['total_votes'] = $total_votes;
+        $data['donation_pool'] = (int) ($snapshot['donation_pool'] ?? ($data['donation_pool'] ?? 0));
+        $data['quarter_key'] = $snapshot['quarter_key'] ?? ($data['quarter_key'] ?? null);
+        $data['tally'] = $result;
+        $data['lock_notice'] = 'A régi szavazás lezárult.';
+        $data['frozen_at'] = SHARITY_UI_LOCK_VOTE_CUTOFF;
+        $data['lock_subtitle'] = 'A rangsor a 2026.06.30. 23:59:59 állapotot mutatja.';
+        $response->set_data($data);
         return $response;
     }
 
