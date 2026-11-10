@@ -1645,20 +1645,52 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems,
                 $reserved[] = $entry;
             }
         }
-        // Check FINAL projected identities before any writes, even identical CSV mappings.
-        $seenIds = $seenSlugs = [];
+        // Reservation/ID checks cover EVERY input, including historical rejected rows.
+        $seenIds = $bySlug = [];
         foreach ($batch as [$data]) {
             $id = $data['sharity_ngo_id']; $slug = $data['slug'];
-            if ($id < 1 || $id > 2147482647 || isset($seenIds[$id]) || isset($seenSlugs[$slug])) {
+            if ($id < 1 || $id > 2147482647 || isset($seenIds[$id])) {
                 throw new RuntimeException('catalog_batch_identity_conflict');
             }
-            $seenIds[$id] = $seenSlugs[$slug] = true;
+            $seenIds[$id] = $data;
+            $bySlug[$slug][] = $id;
             foreach ($reserved as $entry) {
                 if ($id === $entry['ngo_id'] || $slug === $entry['slug']
                     || impactshop_vb2026_name_key($data['name']) === impactshop_vb2026_name_key($entry['name'])) {
                     throw new RuntimeException('catalog_reserved_identity_conflict_id_' . $id);
                 }
             }
+        }
+        $storedBySlug = $storedById = $storedFlags = [];
+        foreach ($query('SELECT sharity_ngo_id,slug,name FROM ' . $catalogTable)->fetch_all(MYSQLI_ASSOC) as $stored) {
+            $storedBySlug[$stored['slug']] = $stored;
+            $storedById[(int) $stored['sharity_ngo_id']] = $stored;
+        }
+        foreach ($query('SELECT sharity_ngo_id,allow_user_selection,is_featured,is_race_visible FROM ' . $flagsTable
+            . ' WHERE campaign_key=' . $quote(IMPACTSHOP_VB2026_NGO_CAMPAIGN_KEY))->fetch_all(MYSQLI_ASSOC) as $flag) {
+            $storedFlags[(int) $flag['sharity_ngo_id']] = $flag;
+        }
+        $skipped = [];
+        foreach ($batch as [$data]) {
+            $id = $data['sharity_ngo_id']; $slug = $data['slug'];
+            $owner = $storedBySlug[$slug] ?? null;
+            if (!$owner) {
+                if (count($bySlug[$slug]) > 1) { throw new RuntimeException('catalog_batch_identity_conflict'); }
+                continue;
+            }
+            if ((int) $owner['sharity_ngo_id'] === $id) { continue; }
+            $ownerInput = $seenIds[(int) $owner['sharity_ngo_id']] ?? null;
+            $flag = $storedFlags[$id] ?? null;
+            // The old importer rejected these INSERTs but retained inactive flags. Preserve
+            // that established owner and the old flags; never choose a winner by CSV order.
+            if ($data['is_active'] !== 0 || isset($storedById[$id]) || !$flag
+                || (int) $flag['allow_user_selection'] !== 0 || (int) $flag['is_featured'] !== 0
+                || (int) $flag['is_race_visible'] !== 0 || !$ownerInput || $ownerInput['slug'] !== $slug
+                || impactshop_vb2026_name_key($ownerInput['name']) !== impactshop_vb2026_name_key($owner['name'])
+                || impactshop_vb2026_name_key($data['name']) !== impactshop_vb2026_name_key($owner['name'])) {
+                throw new RuntimeException('catalog_batch_identity_conflict');
+            }
+            $skipped[$id] = true;
         }
         $write = static function (string $table, array $data, ?int $id = null) use ($query, $quote): void {
             $assign = [];
@@ -1667,6 +1699,7 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems,
                 . ($id === null ? '' : ' WHERE id=' . $id));
         };
         foreach ($batch as [$data, $flag]) {
+            if (isset($skipped[$data['sharity_ngo_id']])) { continue; }
             $existing = $query('SELECT id,source_row_hash FROM ' . $catalogTable . ' WHERE sharity_ngo_id=' . $data['sharity_ngo_id'])->fetch_assoc();
             if ($existing && $existing['source_row_hash'] === $data['source_row_hash']) {
                 $write($catalogTable, ['source_last_synced_at' => $now, 'updated_at' => $now], (int) $existing['id']);
@@ -1687,6 +1720,9 @@ function impactshop_vb2026_upsert_catalog_rows(array $rows, array $datasetItems,
         try { $query('COMMIT'); }
         catch (Throwable $e) { throw new RuntimeException('catalog_commit_uncertain_readback_required'); }
         $transaction = false;
+        foreach (array_keys($skipped) as $id) {
+            error_log('catalog_legacy_inactive_collision_skipped_id_' . $id);
+        }
         return true;
     } finally {
         // Never reconnect: losing the session loses the transaction, not its atomicity.

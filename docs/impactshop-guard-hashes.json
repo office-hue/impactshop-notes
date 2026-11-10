@@ -346,7 +346,7 @@
     "tests/impactshop-guard-rollback-truth.test.sh": "600e56326cf1b041786c90502aa0888ca89ad6f7b1fe8d00adc308a08cbb5756",
     ".github/workflows/ci.yml": "c32ce57eaf58ce4ef78f06440125c204b1186434cb1b2105b6ee78505a3a7d34",
     "tests/impactshop-guard-preflight-detached.test.sh": "840852a898f89f6b24c0db3004c9f8dab2f27f8a2ebb667d6a4df8ee1a836208",
-    "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "04297580872477c222cf99350a6529fa487709ebd16129a567f299a87a74aab2",
+    "wp-content/mu-plugins/impactshop-vb2026-ngo-catalog.php": "43547e58096395f3b2872eec349c02b32fc3ca09f659d575c2c12d0b8af37976",
     ".deploy.production.env": "3f3b07818d773750664f640f84016af849671ca2cb7585961d1cddd224b24ec7",
     ".deploy.staging.env": "46f796b70a0960d7cc45eb31ffe6a3c3842c0563af143352390e91a7cb3d30f9",
     "bin/preflight-check.sh": "d4c35ab8f6fd96cee0e4a84bfdfa912bade1c0168184b8ddae32859fa5caabc6",
