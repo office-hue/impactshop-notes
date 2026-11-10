@@ -8554,3 +8554,8 @@ Kiadási delta: #261 merge dc38f300, mindhárom fájl exact-release kiadva.
 szűk JS-kompatibilitás és a valós alakot modellező fixture javul. A szerver
 továbbra is numerikus v2 JSON-kérést és a meglévő owner/nonce/origin ellenőrzést
 kér. A kód első élő megjelenítése még nem igazolt; a tesztowner lejárt.
+
+
+## 2026-11-10 — JYSK nyolc NGO: szűk felvételi forráscsomag
+
+Saját feat/jysk-ngo-catalog-enrollment-20261110, alap8067f57b. A katalógusimporter és az új, WP-bootstrap nélküli plan/apply/status operátor közös natív DB-lockot és tranzakciót használ; pontos nyolcas, tartós ID/slug-foglalás, teljes batch ütközésvizsgálat és recovery. Meglévő identitás, JYSK/pont/szavazat/ledger nem írható át.124 izolált MariaDB/valódi-wpdb ellenőrzés,47 directory-állítás és principal-binding sikeres; két patchreview-lelet javítva, független visszaellenőrzés lezárva. Az új operátor a meglévő Bástya inventory/protected modellben szerepel, csak saját forrás- és kapcsolódó confighashek változnak; nincs guardlogika vagy engedélyszabály-módosítás. Forráskész, még nem merge-elt/telepített; éles ID-kiosztás és aktiválás nincs. A pontos live authority/referenciainventory és előállapot, külön apply-jóváhagyás hátravan. Rollback, tényleges tesztek és még nem futott UI/smoke: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
