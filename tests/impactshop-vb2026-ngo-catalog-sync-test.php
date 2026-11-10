@@ -156,6 +156,45 @@ impactshop_vb2026_upsert_catalog_rows($goldenRows,$goldenDataset); impactshop_vb
 check(q('SELECT * FROM jysk_enroll_sharity_ngo_catalog ORDER BY sharity_ngo_id')->fetch_all(MYSQLI_ASSOC) === $legacyRows,'exact old catalog projection preserved');
 check(q('SELECT * FROM jysk_enroll_sharity_ngo_campaign_flags ORDER BY sharity_ngo_id')->fetch_all(MYSQLI_ASSOC) === $legacyFlags,'exact old flag projection preserved');
 q('TRUNCATE jysk_enroll_sharity_ngo_catalog'); q('TRUNCATE jysk_enroll_sharity_ngo_campaign_flags');
+// Regression from the live CSV shape: inactive collisions already rejected by the old importer.
+// Synthetic identities only; initialize the exact historical catalog + orphan flag state.
+$legacyCollisionRows = [
+    ['Azonosító'=>'207','Név'=>'Retired placeholder','Státusz'=>'Inaktív'],
+    ['Azonosító'=>'200','Név'=>'Retired placeholder','Státusz'=>'Inaktív'],
+    ['Azonosító'=>'199','Név'=>'Retired placeholder','Státusz'=>'Inaktív'],
+    ['Azonosító'=>'140','Név'=>'Synthetic rescue','Státusz'=>'Aktív'],
+    ['Azonosító'=>'135','Név'=>'Synthetic rescue','Státusz'=>'Inaktív'],
+];
+// Two legacy passes establish its existing null-to-empty flag normalization too.
+legacy_catalog_fixture($legacyCollisionRows, []); legacy_catalog_fixture($legacyCollisionRows, []);
+$legacyCollisionBefore = snapshot();
+$collisionLog = $base . '/legacy-collisions.log'; file_put_contents($collisionLog, '');
+$previousLog = ini_set('error_log', $collisionLog);
+check(impactshop_vb2026_upsert_catalog_rows(array_reverse($legacyCollisionRows), []) === true, 'known inactive collision does not block refresh, independent of input order');
+check(snapshot() === $legacyCollisionBefore, 'existing owners and all historical flags preserved exactly');
+check(substr_count(file_get_contents($collisionLog), 'catalog_legacy_inactive_collision_skipped_id_') === 3, 'every rejected historical row has an explicit sanitized diagnostic');
+$withFresh = array_merge($legacyCollisionRows, [['Azonosító'=>'300','Név'=>'Fresh unrelated NGO','Státusz'=>'Aktív']]);
+check(impactshop_vb2026_upsert_catalog_rows($withFresh, []) === true, 'unrelated valid record still refreshes');
+check((int)q('SELECT COUNT(*) FROM jysk_enroll_sharity_ngo_catalog WHERE sharity_ngo_id=300')->fetch_row()[0] === 1, 'unrelated record stored once');
+q('DELETE FROM jysk_enroll_sharity_ngo_catalog WHERE sharity_ngo_id=300');
+q('DELETE FROM jysk_enroll_sharity_ngo_campaign_flags WHERE sharity_ngo_id=300');
+foreach (['new-id','active','no-owner-in-batch','owner-renamed','missing-flag','selectable-flag','duplicate-id'] as $case) {
+    $probe = $legacyCollisionRows;
+    if ($case === 'new-id') { $probe[1]['Azonosító']='201'; }
+    elseif ($case === 'active') { $probe[1]['Státusz']='Aktív'; }
+    elseif ($case === 'no-owner-in-batch') { array_shift($probe); }
+    elseif ($case === 'owner-renamed') { $probe[0]['Név']='Renamed owner'; }
+    elseif ($case === 'missing-flag') { q('DELETE FROM jysk_enroll_sharity_ngo_campaign_flags WHERE sharity_ngo_id=200'); }
+    elseif ($case === 'selectable-flag') { q('UPDATE jysk_enroll_sharity_ngo_campaign_flags SET allow_user_selection=1 WHERE sharity_ngo_id=200'); }
+    else { $probe[] = $probe[1]; }
+    $state = snapshot();
+    blocked(fn()=>impactshop_vb2026_upsert_catalog_rows($probe, []), 'catalog_batch_identity_conflict');
+    check(snapshot() === $state, 'conflict remains atomic: ' . $case);
+    if ($case === 'missing-flag') { legacy_catalog_fixture([$legacyCollisionRows[1]], []); }
+    if ($case === 'selectable-flag') { q('UPDATE jysk_enroll_sharity_ngo_campaign_flags SET allow_user_selection=0 WHERE sharity_ngo_id=200'); }
+}
+ini_set('error_log', $previousLog);
+q('TRUNCATE jysk_enroll_sharity_ngo_catalog'); q('TRUNCATE jysk_enroll_sharity_ngo_campaign_flags');
 $row = ['Azonosító'=>'28','Név'=>'Existing NGO','Státusz'=>'Aktív','Honlap'=>'https://existing.example.test/'];
 check(impactshop_vb2026_upsert_catalog_rows([$row], []) === true, 'ordinary import');
 check(impactshop_vb2026_upsert_catalog_rows([$row], []) === true, 'unchanged hash zero affected update succeeds');

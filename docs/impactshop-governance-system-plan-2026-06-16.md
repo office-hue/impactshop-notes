@@ -1008,3 +1008,7 @@ Saját feat/jysk-ngo-catalog-enrollment-20261110, alap8067f57b. A katalógusimpo
 ## 2026-11-10 — JYSK foglalás: MyISAM-kompatibilitási korrekció
 
 A #270 merge-elt, de nem telepített: élő wp_options MyISAM, ezért a korábbi InnoDB-követelmény megállítaná a szinkront. Arnold külön engedélyével saját fix/jysk-enrollment-myisam-options-20261110 ágban explicit, elkülönített InnoDB reservation SQL és arra kötött operator/importer készült. Nincs közös options/üzleti tábla átalakítás vagy automatikus migráció. 149 izolált valódi MariaDB-assertion sikeres MyISAM options mellett; két egymást követő korrigált tervaudit lezárult. A teljes enrollment CLI és tranzakciós író options-írásmentes; meglévő dataset-cache mellékhatás külön kezelt, sync-cache csak commit után. Független kódreview nyitott P1/P2 nélkül; teljes hashinventory/hat negatív checksum-eset és protected-touch sikeres. Forrás helyi, nem merge-elt/telepített; élő schema és ID-kiosztás nincs. Részletek, külön jóváhagyási sorrend és rollback: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
+
+## 2026-11-10 — JYSK inaktív katalógusütközés javítása
+
+Csak a már védett importer pontos forráshash-e és az inventory checksumja követi a célzott javítást. Modell/config/guardlogika és idegen pinek változatlanok.168 izolált DB-állítás, független forrásreview; telepítés külön jóváhagyás. Koherencia/rollback/UI: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
