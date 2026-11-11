@@ -172,7 +172,7 @@ final class Impactshop_Jysk_Game
             'methods' => 'GET', 'permission_callback' => '__return_true',
             'callback' => [self::class, 'handoff'],
         ]);
-        foreach (['exchange', 'context', 'revoke', 'award', 'reward-status', 'messages', 'messages/delivered', 'results'] as $path) {
+        foreach (['exchange', 'context', 'revoke', 'disconnect', 'award', 'reward-status', 'messages', 'messages/delivered', 'results'] as $path) {
             register_rest_route('jysk-game/v1', '/' . $path, [
                 'methods' => 'POST', 'permission_callback' => '__return_true',
                 'callback' => [self::class, 'service'],
@@ -424,12 +424,20 @@ final class Impactshop_Jysk_Game
 
     private static function earning(array $grant): bool
     {
-        return self::config('REWARDS_ENABLED', false) === true
-            && self::transactionReady()
-            && class_exists('Sharity_Points_Manager')
-            && method_exists('Sharity_Points_Manager', 'award_points_for_pseudo')
-            && class_exists('Sharity_Level_Manager')
+        return self::rewardUnavailableReason() === null
             && apply_filters('sharity_can_earn_points', true, $grant['pseudo'], 'bonus');
+    }
+
+    private static function rewardUnavailableReason(): ?string
+    {
+        if (self::config('REWARDS_ENABLED', false) !== true) {
+            return 'rewards_disabled';
+        }
+        if (!self::transactionReady()) {
+            return 'writer_not_ready';
+        }
+        return class_exists('Sharity_Points_Manager') && method_exists('Sharity_Points_Manager', 'award_points_for_pseudo')
+            && class_exists('Sharity_Level_Manager') ? null : 'reward_manager_unavailable';
     }
 
     private static function session(array $body): array
@@ -446,6 +454,60 @@ final class Impactshop_Jysk_Game
             throw new RuntimeException('invalid_session');
         }
         return ['grant' => $grant, 'expires' => (int) $row['expires']];
+    }
+
+    /** Normal disconnect invalidates browser access without cancelling accepted awards. */
+    private static function endSession(array $body, bool $revoke): array
+    {
+        $keys = array_keys($body);
+        sort($keys);
+        if ($keys !== ['sessionToken', 'subject'] || !is_string($body['subject']) || !is_string($body['sessionToken'])
+            || !preg_match('/^[a-f0-9]{64}$/D', $body['subject']) || !preg_match('/^[a-f0-9]{64}$/D', $body['sessionToken'])) {
+            throw new RuntimeException('invalid_session');
+        }
+        $before = self::session($body);
+        $result = self::locked(hash('sha256', 'session:' . $body['subject']), static function ($assert) use ($body, $before, $revoke): array {
+            global $wpdb;
+            foreach (['grants', 'sessions', 'codes'] as $name) {
+                $engine = self::scalar($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', self::table($name)));
+                if (strtoupper((string) $engine) !== 'INNODB') {
+                    throw new RuntimeException('session_storage_unavailable');
+                }
+            }
+            $assert();
+            self::query('START TRANSACTION');
+            try {
+                $grant = self::row($wpdb->prepare('SELECT * FROM ' . self::table('grants') . ' WHERE subject=%s FOR UPDATE', $body['subject']));
+                $assert();
+                if (!$grant || !hash_equals($before['grant']['generation'], $grant['generation'])) {
+                    throw new RuntimeException('invalid_session');
+                }
+                // The session and central owner must still be valid after acquiring the row lock.
+                self::session($body);
+                $assert();
+                $generation = bin2hex(random_bytes(32));
+                $sql = 'UPDATE ' . self::table('grants') . ' SET generation=%s' . ($revoke ? ',revoked=1' : '') . ' WHERE subject=%s AND generation=%s';
+                if (self::query($wpdb->prepare($sql, $generation, $body['subject'], $grant['generation'])) !== 1) {
+                    throw new RuntimeException('session_generation_changed');
+                }
+                $assert();
+                self::query($wpdb->prepare('DELETE FROM ' . self::table('sessions') . ' WHERE subject=%s', $body['subject']));
+                $assert();
+                self::query($wpdb->prepare('DELETE FROM ' . self::table('codes') . ' WHERE subject=%s', $body['subject']));
+                $assert();
+                self::query('COMMIT');
+                $assert();
+            } catch (Throwable $error) {
+                // Never continue transaction cleanup on a different connection.
+                try { $assert(); $wpdb->query('ROLLBACK'); } catch (Throwable $ignored) { /* uncertain result requires readback */ }
+                throw $error;
+            }
+            return $revoke ? ['revoked' => true] : ['disconnected' => true];
+        });
+        if ($result !== ($revoke ? ['revoked' => true] : ['disconnected' => true])) {
+            throw new RuntimeException('session_operation_busy');
+        }
+        return $result;
     }
 
     private static function exchange(array $body): array
@@ -588,7 +650,7 @@ final class Impactshop_Jysk_Game
         $base = ['eventId' => $payload['eventId'], 'payloadHash' => $hash, 'points' => $payload['points']];
         $mapping = self::row($wpdb->prepare('SELECT * FROM ' . self::table('grants') . ' WHERE subject=%s', $payload['subject']));
         if (!$mapping) {
-            return $base + ['state' => 'policy_blocked'];
+            return $base + self::rewardDecision($payload, 'policy_blocked', 'grant_mapping_missing');
         }
         // All technical events share one subject lock: their authorization is
         // 35 real points in total, not 35 points on every campaign date.
@@ -605,10 +667,10 @@ final class Impactshop_Jysk_Game
                 return self::transactionReady() ? $receipt : ['state' => 'unknown'];
             }
             if (!$write) {
+                if (!self::transactionReady()) {
+                    return self::rewardDecision($payload, 'unknown', 'writer_not_ready');
+                }
                 if ($claim) {
-                    if (!self::transactionReady()) {
-                        return ['state' => 'unknown'];
-                    }
                     $assert();
                     self::query($wpdb->prepare('UPDATE ' . self::table('rewards') . " SET state='absent' WHERE event_id=%s AND payload_hash=%s", $payload['eventId'], $hash));
                     $assert();
@@ -617,31 +679,43 @@ final class Impactshop_Jysk_Game
             }
             $grant = self::grant($payload['subject']);
             if (!$grant) {
-                return ['state' => 'policy_blocked'];
+                return self::rewardDecision($payload, 'policy_blocked', 'grant_inactive');
             }
             // Request timestamp tolerance never authorizes an award before the
             // actual server-clock campaign start. Late outbox drain stays valid.
             if (time() < (new DateTimeImmutable('2026-11-09T11:00:00Z'))->getTimestamp()) {
-                return ['state' => 'policy_blocked'];
+                return self::rewardDecision($payload, 'policy_blocked', 'campaign_not_started');
             }
             $tests = self::config('TEST_SUBJECTS', []);
             $technical = is_array($tests) && in_array($payload['subject'], $tests, true);
             $testAllowed = $payload['isTest'] ? ($technical && count($tests) === 1) : !$technical;
-            if (!$testAllowed || !self::earning($grant) || $payload['policyHash'] !== self::config('POLICY_HASH', '')
-                || !in_array($payload['producerSha'], self::config('PRODUCER_SHAS', []), true)
-                || !in_array($payload['ngoId'], self::config('NGO_IDS', []), true)) {
-                return ['state' => 'policy_blocked'];
+            foreach (['test_membership' => !$testAllowed, 'policy_mismatch' => $payload['policyHash'] !== self::config('POLICY_HASH', ''),
+                'producer_not_allowed' => !in_array($payload['producerSha'], self::config('PRODUCER_SHAS', []), true),
+                'ngo_not_allowed' => !in_array($payload['ngoId'], self::config('NGO_IDS', []), true)] as $reason => $blocked) {
+                if ($blocked) {
+                    return self::rewardDecision($payload, 'policy_blocked', $reason);
+                }
+            }
+            $unavailable = self::rewardUnavailableReason();
+            if ($unavailable !== null) {
+                return self::rewardDecision($payload, 'unknown', $unavailable);
+            }
+            if (!apply_filters('sharity_can_earn_points', true, $grant['pseudo'], 'bonus')) {
+                return self::rewardDecision($payload, 'policy_blocked', 'earning_policy');
             }
             if ($payload['isTest']) {
                 $used = self::scalar($wpdb->prepare("SELECT COALESCE(SUM(GREATEST(points,0)),0) FROM {$wpdb->prefix}point_transactions WHERE pseudo_id=%s AND source_type='jysk_campaign' AND LEFT(dedupe_key,10)=%s", $grant['pseudo'], 'jysk_2026:'));
                 $assert();
-                if (!is_numeric($used) || (int) $used < 0 || (int) $used + $payload['points'] > 35) {
-                    return ['state' => 'policy_blocked'];
+                if (!is_numeric($used) || (int) $used < 0) {
+                    return self::rewardDecision($payload, 'unknown', 'technical_cap_unavailable');
+                }
+                if ((int) $used + $payload['points'] > 35) {
+                    return self::rewardDecision($payload, 'policy_blocked', 'technical_cap_exhausted');
                 }
             }
             // Never replay an ambiguous prior call. Status/reconciliation resolves it.
             if ($claim && $claim['state'] !== 'absent') {
-                return ['state' => 'unknown'];
+                return self::rewardDecision($payload, 'unknown', 'prior_award_uncertain');
             }
             $assert();
             self::query('START TRANSACTION');
@@ -667,7 +741,9 @@ final class Impactshop_Jysk_Game
             ], 'jysk_2026:' . $payload['eventId']);
             $assert();
             if (empty($answer['success'])) {
-                return ['state' => ($answer['error'] ?? '') === 'earning_blocked' ? 'policy_blocked' : 'unknown'];
+                return ($answer['error'] ?? '') === 'earning_blocked'
+                    ? self::rewardDecision($payload, 'policy_blocked', 'earning_policy')
+                    : self::rewardDecision($payload, 'unknown', 'writer_result_unknown');
             }
             $receipt = self::receipt($payload, $grant);
             if (!$receipt || $receipt['state'] !== 'confirmed') {
@@ -677,6 +753,15 @@ final class Impactshop_Jysk_Game
             return ['state' => 'confirmed'];
         });
         return $base + $result;
+    }
+
+    /** Fixed decision metadata only; logging cannot turn a failed award into success. */
+    private static function rewardDecision(array $payload, string $state, string $reason): array
+    {
+        try {
+            error_log(wp_json_encode(['time' => gmdate('Y-m-d\TH:i:s\Z'), 'eventId' => $payload['eventId'], 'state' => $state, 'reason' => $reason]));
+        } catch (Throwable $ignored) { /* existing PHP logging may be unavailable */ }
+        return ['state' => $state];
     }
 
     /** No request-side migration. Old bridge deployments tolerate these additive tables. */
@@ -1100,19 +1185,15 @@ final class Impactshop_Jysk_Game
             $path = substr($request->get_route(), strlen('/jysk-game/v1/'));
             if ($path === 'exchange') {
                 $data = self::exchange($body);
-            } elseif ($path === 'context' || $path === 'revoke') {
+            } elseif ($path === 'revoke' || $path === 'disconnect') {
+                $data = self::endSession($body, $path === 'revoke');
+            } elseif ($path === 'context') {
                 $session = self::session($body);
-                if ($path === 'revoke') {
-                    global $wpdb;
-                    self::query($wpdb->prepare('UPDATE ' . self::table('grants') . ' SET revoked=1 WHERE subject=%s', $body['subject']));
-                    $data = ['revoked' => true];
-                } else {
-                    $data = ['subject' => $body['subject'], 'sessionToken' => $body['sessionToken'], 'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $session['expires']), 'earningAllowed' => self::earning($session['grant'])];
-                    // Opt-in keeps the strict response contract of deployed older apps intact.
-                    // Only the authenticated session's profile is used, never a caller pseudo.
-                    if (($body['includeProfileHint'] ?? false) === true) {
-                        $data['profileHint'] = substr($session['grant']['pseudo'], 0, 5);
-                    }
+                $data = ['subject' => $body['subject'], 'sessionToken' => $body['sessionToken'], 'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $session['expires']), 'earningAllowed' => self::earning($session['grant'])];
+                // Opt-in keeps the strict response contract of deployed older apps intact.
+                // Only the authenticated session's profile is used, never a caller pseudo.
+                if (($body['includeProfileHint'] ?? false) === true) {
+                    $data['profileHint'] = substr($session['grant']['pseudo'], 0, 5);
                 }
             } elseif ($path === 'award' || $path === 'reward-status') {
                 $data = self::reward($body, $path === 'award');

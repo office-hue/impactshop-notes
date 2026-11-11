@@ -1,5 +1,9 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-11-11 — Normál bontás és késői pont
+
+Új HMAC disconnect: subject/sessionToken → disconnected:true. Normál bontás sessiont/kódot zár és generációt vált, a késői elfogadott jutalom grantja megmarad. A valódi revoke/owner és35 teljes tesztpontlimit megmarad. Sorzár, generáció, reconnecttiltás/kapcsolatazonosság és commit/ACK védett. Technikai readinesshiba unknown; authoritative absent csak igazolt writerről, claim nélkül is. Négymezős reward ABI, részletes fix okkód csak szervernaplóban. Profil/return/controller nem változik. PHP280/private14/results19, MariaDB lifecycle36 sikeres; legacy manager SQL-hibainjektálás nem PASS. Kész forrásreview P2 fixture-óra javítva, terméklelet nincs. Scope/kiadás/rollback/UI: protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md. Merge/telepítés még nincs; #275 horgony megmarad.
+
 ## 2026-11-11 — Meglévő fiók: belépési horgony
 
 Arnold kérésére a PROFILE konstans a változatlan

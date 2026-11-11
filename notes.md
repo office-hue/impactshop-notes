@@ -1,3 +1,7 @@
+## 2026-11-11 — JYSK: bontás és függő pont
+
+Normál disconnect megtartja a késői jutalom grantját; valódi revoke/owner-tiltás megmarad. Sorzár/generáció/kapcsolatvédelem, authoritative absent/readiness és titokmentes oknapló. PHP280/private14/results19 és izolált valós MariaDB lifecycle36 sikeres. Régi teljes SQL-hibainjektálás az új manager-port miatt nem PASS; explicit célzott mód. Független forrásreview P2 fixture-óra javítva; terméklelet nincs. Egy bridge-fájl, meglévő #275 horgony megmarad; shared profile/manager/séma változatlan. Részletek és rollback/UI-lista: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md. Merge/deploy még nincs; retired-header WIP megőrizve.
+
 ## 2026-11-11 — JYSK: meglévő fiók belépési horgonya
 
 Felhasználói kérésre kizárólag a JYSK bridge PROFILE célja kapja a már létező #impactshop-signin horgonyt. A jysk_return=1, session/start, PKCE, tulajdonos-ellenőrzés és visszatérés byte-azonos. Shared identity/PWA/profilvezérlő nem változik. Forrás-előkészítés; merge/kiadás még nincs. Kockázat, célzott teszt és UI/rollback: docs/jysk-game-bridge-2026-10-27.md. A korábbi retired-header dokumentum-WIP külön, változatlan marad.
