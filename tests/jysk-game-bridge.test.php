@@ -51,6 +51,8 @@ class wpdb
     public ?array $code = null;
     public ?array $session = null;
     public bool $grantActive = true;
+    public bool $centralOwner = true;
+    public ?array $transactionSnapshot = null;
     public string $generation = 'generation';
     public int $connection = 71;
     public int $owner = 71;
@@ -79,6 +81,12 @@ class wpdb
     {
         [$query, $args] = $this->record($sql);
         if ($this->last_error !== '') { return false; }
+        if ($query === 'START TRANSACTION') { $this->transactionSnapshot = [$this->generation, $this->grantActive, $this->session, $this->code]; }
+        if ($query === 'ROLLBACK' && $this->transactionSnapshot !== null) {
+            [$this->generation, $this->grantActive, $this->session, $this->code] = $this->transactionSnapshot;
+            $this->transactionSnapshot = null;
+        }
+        if ($query === 'COMMIT') { $this->transactionSnapshot = null; }
         if (str_contains($query, 'RELEASE_LOCK') && $this->releaseThrows) { throw new RuntimeException('release_failed'); }
         if (str_contains($query, 'INSERT IGNORE INTO wp_jysk_game_nonces')) {
             if (isset($this->nonces[$args[0]])) { return 0; }
@@ -95,6 +103,13 @@ class wpdb
         }
         if (str_contains($query, 'INSERT INTO wp_jysk_game_sessions')) { $this->session = ['token_hash' => $args[0], 'subject' => $args[1], 'generation' => $args[2], 'expires' => $args[3]]; }
         if (str_contains($query, 'UPDATE wp_jysk_game_grants SET revoked=1')) { $this->grantActive = false; }
+        if (str_contains($query, 'UPDATE wp_jysk_game_grants SET generation=')) {
+            if ($this->generation !== $args[2]) { return 0; }
+            $this->generation = $args[0];
+            if (str_contains($query, ',revoked=1')) { $this->grantActive = false; }
+        }
+        if (str_contains($query, 'DELETE FROM wp_jysk_game_sessions WHERE subject=')) { $this->session = null; }
+        if (str_contains($query, 'DELETE FROM wp_jysk_game_codes WHERE subject=')) { $this->code = null; }
         return 1;
     }
     public function get_var($sql)
@@ -110,14 +125,17 @@ class wpdb
     }
     public function get_row($sql, $mode)
     {
-        [$query] = $this->record($sql);
+        [$query, $args] = $this->record($sql);
         if (str_contains($query, 'SELECT pseudo FROM')) { return ['pseudo' => 'abcdef123456']; }
         if (str_contains($query, 'SELECT * FROM wp_jysk_game_grants')) { return ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation]; }
-        if (str_contains($query, 'INNER JOIN wp_identity_grants')) { return $this->grantActive ? ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation] : null; }
+        if (str_contains($query, 'INNER JOIN wp_identity_grants')) { return $this->grantActive && $this->centralOwner ? ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation] : null; }
         if (str_contains($query, 'FROM wp_jysk_game_rewards')) { return $this->claim; }
         if (str_contains($query, 'FROM wp_point_transactions')) { return $this->receipt; }
         if (str_contains($query, 'FROM wp_jysk_game_codes')) { return $this->code; }
-        if (str_contains($query, 'FROM wp_jysk_game_sessions')) { return $this->session; }
+        if (str_contains($query, 'FROM wp_jysk_game_sessions')) {
+            return $this->session && $this->session['token_hash'] === $args[0] && $this->session['subject'] === $args[1]
+                && $this->session['expires'] > $args[2] ? $this->session : null;
+        }
         if (str_contains($query, 'FROM wp_jysk_game_message_map')) { return null; }
         return null;
     }
@@ -161,7 +179,7 @@ class Sharity_Level_Manager {}
 $source = file_get_contents(__DIR__ . '/../wp-content/mu-plugins/impactshop-jysk-game.php');
 $source = preg_replace('/^<\?php/', '', $source);
 $source = str_replace('declare(strict_types=1);', '', $source);
-eval('namespace JyskFixture; use \\RuntimeException; use \\Throwable; use \\DateTimeImmutable; use \\DateTimeZone; use \\WP_REST_Response; use \\Sharity_Points_Manager; function time() { return $GLOBALS["clock"]; } ' . $source);
+eval('namespace JyskFixture; use \\RuntimeException; use \\Throwable; use \\DateTimeImmutable; use \\DateTimeZone; use \\WP_REST_Response; use \\Sharity_Points_Manager; function time() { return $GLOBALS["clock"]; } function error_log($message) { $GLOBALS["decision_log"][] = json_decode($message, true, 16, JSON_THROW_ON_ERROR); return true; } ' . $source);
 use JyskFixture\Impactshop_Jysk_Game as Bridge;
 $checks = 0;
 function check($condition, string $name): void
@@ -200,10 +218,11 @@ check(Bridge::signature($fixture['timestamp'], $fixture['nonce'], $fixture['meth
 check(Bridge::payloadHash(Bridge::payload(json_decode($fixture['rawRequest'], true))) === $fixture['payloadHash'], 'cross-language canonical payload fixture');
 check(hash_hmac('sha256', "response\n" . $fixture['nonce'] . "\n" . $fixture['status'] . "\n" . hash('sha256', $fixture['rawResponse']), hex2bin($fixture['serviceKeyHex'])) === $fixture['responseSignature'], 'cross-language response fixture');
 Bridge::register();
-check(count($GLOBALS['routes']) === 9 && in_array('jysk-game/v1/results', $GLOBALS['routes'], true), 'isolated endpoint inventory includes signed results');
+check(count($GLOBALS['routes']) === 10 && in_array('jysk-game/v1/results', $GLOBALS['routes'], true)
+    && in_array('jysk-game/v1/disconnect', $GLOBALS['routes'], true), 'isolated endpoint inventory includes signed results and disconnect');
 $db = freshDb();
 $r = Bridge::service(request('award', payload()));
-check($r->data['state'] === 'policy_blocked' && Sharity_Points_Manager::$calls === 0, 'transaction readiness defaults closed');
+check($r->data['state'] === 'unknown' && Sharity_Points_Manager::$calls === 0, 'transaction readiness defaults unknown without awarding');
 define('JYSK_GAME_TRANSACTION_READY', true);
 
 $db = freshDb();
@@ -346,7 +365,10 @@ check(Bridge::service(request('reward-status', payload()))->data['state'] === 'a
 foreach (['engine' => 'MyISAM', 'readOnly' => '1', 'missingIndex' => true] as $property => $value) {
     $db = freshDb(); $db->$property = $value;
     $calls = Sharity_Points_Manager::$calls;
-    check(Bridge::service(request('award', payload()))->data['state'] === 'policy_blocked' && Sharity_Points_Manager::$calls === $calls, 'actual transaction readiness rejects ' . $property);
+    check(Bridge::service(request('award', payload()))->data['state'] === 'unknown' && Sharity_Points_Manager::$calls === $calls, 'actual transaction readiness defers ' . $property);
+    check(Bridge::service(request('reward-status', payload()))->data['state'] === 'unknown' && $db->claim === null, 'no-claim readback cannot prove absence with ' . $property);
+    $db->$property = (new wpdb())->$property;
+    check(Bridge::service(request('reward-status', payload()))->data['state'] === 'absent' && Sharity_Points_Manager::$calls === $calls, 'recovered writer proves absence without awarding ' . $property);
 }
 foreach (['points' => 1000, 'isTest' => true, 'policyHash' => str_repeat('f', 64), 'producerSha' => str_repeat('f', 40), 'ngoId' => 'other'] as $field => $value) {
     $db = freshDb(); $p = payload(); $p[$field] = $value;
@@ -373,6 +395,8 @@ check(Bridge::service($req)->status === 401, 'expired timestamp denied');
 $GLOBALS['owner'] = false;
 $r = Bridge::handoff(new FixtureRequest('/jysk-game/v1/handoff', ['client_id' => Bridge::CLIENT, 'redirect_uri' => Bridge::CALLBACK, 'state' => str_repeat('s', 43), 'code_challenge' => str_repeat('x', 43), 'code_challenge_method' => 'S256']));
 check($r->status === 303 && $r->headers['Location'] === Bridge::PROFILE, 'raw pseudo cannot connect; login goes to own profile without a grant');
+check($r->headers['Location'] === 'https://app.sharity.hu/profil/?jysk_return=1#impactshop-signin', 'existing-account entry targets the existing signin anchor and preserves JYSK return marker');
+check(str_contains(file_get_contents(__DIR__ . '/../wp-content/mu-plugins/impactshop-identity-panel.php'), 'id="impactshop-signin"'), 'signin target exists without changing shared identity rendering');
 check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1') === null, 'profile marker does not replace owner proof');
 check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1&bridge_target=restore&impactshop_profile_return_complete=1') === null, 'completion without valid owner remains unauthorized');
 $GLOBALS['pending_owner'] = true;
@@ -416,6 +440,54 @@ check(Bridge::service(request('messages', $session))->data === ['messages' => []
 check(Bridge::service(request('messages/delivered', $session + ['messageId' => '1']))->status === 403, 'unmapped delivery ack denied');
 Bridge::service(request('revoke', $session));
 check(Bridge::service(request('context', $session))->status === 403, 'revocation invalidates context');
+
+function browserSession(wpdb $db): array {
+    $body = ['subject' => str_repeat('a', 64), 'sessionToken' => str_repeat('f', 64)];
+    $db->session = ['token_hash' => hash('sha256', $body['sessionToken']), 'subject' => $body['subject'], 'generation' => $db->generation, 'expires' => $GLOBALS['clock'] + 900];
+    $db->code = ['subject' => $body['subject'], 'generation' => $db->generation];
+    return $body;
+}
+$db = freshDb(); $session = browserSession($db); $beforeGeneration = $db->generation;
+$r = Bridge::service(request('disconnect', $session));
+check($r->status === 200 && $r->data === ['disconnected' => true], 'normal disconnect has exact signed ACK');
+check($db->session === null && $db->code === null && $db->generation !== $beforeGeneration && $db->grantActive, 'disconnect clears browser access but retains award grant');
+check(Bridge::service(request('context', $session))->status === 403, 'disconnected token cannot access context');
+$calls = Sharity_Points_Manager::$calls;
+check(Bridge::service(request('award', payload()))->data['state'] === 'confirmed', 'same grant still accepts already queued award after disconnect');
+check(Bridge::service(request('award', payload()))->data['state'] === 'confirmed' && Sharity_Points_Manager::$calls === $calls + 1, 'late award replay never doubles credit');
+$db = freshDb(); $session = browserSession($db);
+check(Bridge::service(request('revoke', $session))->data === ['revoked' => true] && !$db->grantActive, 'real revoke remains terminal for the grant');
+$calls = Sharity_Points_Manager::$calls;
+check(Bridge::service(request('award', payload()))->data['state'] === 'policy_blocked' && Sharity_Points_Manager::$calls === $calls, 'real revoke still forbids a future award');
+foreach (['extra', 'token', 'subject', 'expired', 'generation', 'owner'] as $case) {
+    $db = freshDb(); $session = browserSession($db);
+    if ($case === 'extra') { $session['extra'] = true; }
+    if ($case === 'token') { $session['sessionToken'] = str_repeat('0', 64); }
+    if ($case === 'subject') { $session['subject'] = str_repeat('0', 64); }
+    if ($case === 'expired') { $db->session['expires'] = $GLOBALS['clock']; }
+    if ($case === 'generation') { $db->generation = 'new-owner-generation'; }
+    if ($case === 'owner') { $db->centralOwner = false; }
+    $before = [$db->session, $db->code, $db->generation, $db->grantActive];
+    check(Bridge::service(request('disconnect', $session))->status === 403, 'invalid disconnect blocked: ' . $case);
+    check([$db->session, $db->code, $db->generation, $db->grantActive] === $before, 'invalid disconnect never changes grant/access: ' . $case);
+}
+foreach (['START TRANSACTION', 'FOR UPDATE', 'UPDATE wp_jysk_game_grants SET generation=', 'DELETE FROM wp_jysk_game_sessions', 'DELETE FROM wp_jysk_game_codes', 'COMMIT'] as $fault) {
+    $db = freshDb(); $session = browserSession($db); $before = [$db->session, $db->code, $db->generation, $db->grantActive]; $db->fail = $fault;
+    check(Bridge::service(request('disconnect', $session))->status === 503, 'disconnect storage failure never reports success: ' . $fault);
+    check([$db->session, $db->code, $db->generation, $db->grantActive] === $before, 'disconnect transaction rolls back: ' . $fault);
+    check($db->reconnect_retries === 5, 'disconnect restores connection settings: ' . $fault);
+}
+$db = freshDb(); $session = browserSession($db); $db->busy = true;
+check(Bridge::service(request('disconnect', $session))->status === 503 && $db->session !== null, 'busy disconnect never fakes success');
+$db = freshDb(); $db->centralOwner = false;
+check(Bridge::service(request('award', payload()))->data['state'] === 'policy_blocked', 'central owner denial still prevents delayed award');
+$GLOBALS['decision_log'] = []; $db = freshDb(); $GLOBALS['earning'] = false;
+check(Bridge::service(request('award', payload()))->data['state'] === 'policy_blocked', 'real earning filter remains policy denial');
+$GLOBALS['earning'] = true;
+$log = end($GLOBALS['decision_log']);
+check(array_keys($log) === ['time', 'eventId', 'state', 'reason'] && $log['reason'] === 'earning_policy', 'decision log contains only fixed metadata and the actual reason');
+check($log['eventId'] === payload()['eventId'] && !str_contains(json_encode($log), 'abcdef123456')
+    && !str_contains(json_encode($log), payload()['subject']), 'decision log identifies event without leaking profile data');
 define('JYSK_GAME_TEST_SUBJECTS', [str_repeat('a', 64)]);
 $db = freshDb();
 $p = payload(); $p['isTest'] = true; $p['dayIndex'] = 0; $p['occurredAt'] = '2026-11-09T10:59:59.000Z';
