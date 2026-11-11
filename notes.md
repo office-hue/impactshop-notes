@@ -1,3 +1,7 @@
+## 2026-11-11 — JYSK: meglévő fiók belépési horgonya
+
+Felhasználói kérésre kizárólag a JYSK bridge PROFILE célja kapja a már létező #impactshop-signin horgonyt. A jysk_return=1, session/start, PKCE, tulajdonos-ellenőrzés és visszatérés byte-azonos. Shared identity/PWA/profilvezérlő nem változik. Forrás-előkészítés; merge/kiadás még nincs. Kockázat, célzott teszt és UI/rollback: docs/jysk-game-bridge-2026-10-27.md. A korábbi retired-header dokumentum-WIP külön, változatlan marad.
+
 ## 2026-11-09 — Profil: régi felső fejléc eltávolítása
 
 Felhasználói képes utasítás: csak a profilról a régi logó/menü/Adományozok sáv eltűnik. Egyetlen pontos Elementor-header CSS wp_head-ben, profil-only gate; telepítési dialog header és más oldalak megmaradnak.3 célzott böngészőeset és PHP lint sikeres, auth/return kód byte-azonos. Előző saját lezáró doc-WIP külön bb6d44c6 stash-ben. Scope/rollback/UI: docs/protected-change-records/2026-11-09-profile-retired-header.md. Forrásmódosítás, még nem telepített.

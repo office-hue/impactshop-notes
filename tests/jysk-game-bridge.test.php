@@ -373,6 +373,8 @@ check(Bridge::service($req)->status === 401, 'expired timestamp denied');
 $GLOBALS['owner'] = false;
 $r = Bridge::handoff(new FixtureRequest('/jysk-game/v1/handoff', ['client_id' => Bridge::CLIENT, 'redirect_uri' => Bridge::CALLBACK, 'state' => str_repeat('s', 43), 'code_challenge' => str_repeat('x', 43), 'code_challenge_method' => 'S256']));
 check($r->status === 303 && $r->headers['Location'] === Bridge::PROFILE, 'raw pseudo cannot connect; login goes to own profile without a grant');
+check($r->headers['Location'] === 'https://app.sharity.hu/profil/?jysk_return=1#impactshop-signin', 'existing-account entry targets the existing signin anchor and preserves JYSK return marker');
+check(str_contains(file_get_contents(__DIR__ . '/../wp-content/mu-plugins/impactshop-identity-panel.php'), 'id="impactshop-signin"'), 'signin target exists without changing shared identity rendering');
 check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1') === null, 'profile marker does not replace owner proof');
 check(Bridge::profileReturnTarget('app.sharity.hu', 'GET', '/profil/?jysk_return=1&bridge_target=restore&impactshop_profile_return_complete=1') === null, 'completion without valid owner remains unauthorized');
 $GLOBALS['pending_owner'] = true;

@@ -1,3 +1,7 @@
+## 2026-11-11 — JYSK belépési horgony, forrás-előkészítés
+
+Egyetlen runtime-konstans változik: a hitelesítésre visszaküldött látogató a meglévő profil belépési részéhez érkezzen. Csak #impactshop-signin töredék; visszatérési paraméterek és minden hitelesítési/pontozási függvény változatlan. Merge/telepítés/élő kattintásos elfogadás nincs. Részletek és rollback: docs/jysk-game-bridge-2026-10-27.md.
+
 ## 2026-11-09 — Profil: régi fejléc forráskorrekció
 
 Alap550a03dd, fix/profile-retired-header-20261109. A profil-UI egyetlen scoped CSS-szabálya wp_head-ben rejti a régi Elementor fejlécet. PHP lint és3 célzott UI-eset sikeres; core/return/alsó sáv/telepítési dialog változatlan. Source e2c188618f341f531c84008334bbbb296f3b1e84238e62cbed6f272164ff3b21, merge/deploy még nincs. Részletek a profile-retired-header protected recordban.

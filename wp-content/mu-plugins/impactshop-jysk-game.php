@@ -13,7 +13,7 @@ final class Impactshop_Jysk_Game
 {
     public const CALLBACK = 'https://jysk.sharity.hu/api/jysk/game/session/callback';
     public const CLIENT = 'jysk_2026';
-    public const PROFILE = 'https://app.sharity.hu/profil/?jysk_return=1';
+    public const PROFILE = 'https://app.sharity.hu/profil/?jysk_return=1#impactshop-signin';
     public const LOGIN_START = 'https://jysk.sharity.hu/api/jysk/game/session/start';
     public const PRIVATE_CONFIG = '/home/sharityh/jysk-game/config.json';
     private static array $wire = [];
