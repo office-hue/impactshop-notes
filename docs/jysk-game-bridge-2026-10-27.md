@@ -1,5 +1,41 @@
 # JYSK game WordPress bridge — elkülönített forrás
 
+## 2026-11-11 — Normál bontás és késői pont
+
+Új HMAC disconnect: subject/sessionToken → disconnected:true. Normál bontás sessiont/kódot zár és generációt vált, a késői elfogadott jutalom grantja megmarad. A valódi revoke/owner és35 teljes tesztpontlimit megmarad. Sorzár, generáció, reconnecttiltás/kapcsolatazonosság és commit/ACK védett. Technikai readinesshiba unknown; authoritative absent csak igazolt writerről, claim nélkül is. Négymezős reward ABI, részletes fix okkód csak szervernaplóban. Profil/return/controller nem változik. PHP280/private14/results19, MariaDB lifecycle36 sikeres; legacy manager SQL-hibainjektálás nem PASS. Kész forrásreview P2 fixture-óra javítva, terméklelet nincs. Scope/kiadás/rollback/UI: protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md. Merge/telepítés még nincs; #275 horgony megmarad.
+
+## 2026-11-11 — Meglévő fiók: belépési horgony
+
+Arnold kérésére a PROFILE konstans a változatlan
+`https://app.sharity.hu/profil/?jysk_return=1` célhoz kizárólag
+`#impactshop-signin` töredéket ad. A horgony a közös profil jelenlegi HTML-jében
+már létezik; új DOM, API, JS, profil vagy adatírás nem szükséges. A gomb továbbra
+is a meglévő session/start → handoff útvonalon indul. Hitelesített tulajdonos
+továbbra is közvetlenül visszakapcsolódik; a bejelentkezést igénylő látogató
+a meglévő fiók belépési részéhez jut. A fragmentet a böngésző nem küldi a
+szervernek; a jysk_return=1 és a szerveres visszatérési ellenőrzések megmaradnak.
+
+Koherencia/kockázat: csak a nem hitelesített handoff 303 Location értéke
+változik; a profilszintű belépés, kódmentés, callback, nonce/PKCE és pontozási
+függvények változatlanok. A konkrét regresszióveszély hibás anchor vagy elveszett
+return marker; mindkettőt pontos URL/DOM-cél teszt védi, a meglévő owner/return
+negatív tesztek változatlanul futnak. A runtime-diff egy sor.
+
+Kiadás csak merge után a meglévő egyfájlos guarded útvonalon, pontos előhash,
+privát mentés, CAS/utóhash és 0444 visszaállítással. Rollback a saját változatlan
+utóhashből az előző bridge-fájl; nincs DB- vagy konfiguráció-visszaállítás.
+Kézi UI-ellenőrzés: JYSK „Van profilom – kapcsolódás” kijelentkezett állapotban
+a profil „Belépés meglévő fiókba” részéhez görgessen; normál meglévő belépés után
+JYSK-ra térjen vissza. Már hitelesített profil kapcsolódása ne kérjen új kódot.
+Ehhez nem kell új profilt/pontot/szavazatot létrehozni. Forrás-előkészítés;
+merge, telepítés és élő UI-elfogadás még nem igazolt.
+
+Helyi ellenőrzés: PHP lint, 226 determinisztikus bridge-állítás, 14 virtuális
+privátkonfigurációs eset, a teljes aktuális protected hash-leltár és hat izolált
+hash/checksum eset, valamint deploy-wpcontent-map Bástya sikeres. Nincs éles
+profil/pont vagy új munkamenet. A saját bridge digestje és az azt tartalmazó
+leltár checksumja frissült; más protected-fájl hash-e nem változott.
+
 ## 2026-11-09 — kapcsolódott fiókjelzés és mentési továbbirányítás
 
 A context csak explicit includeProfileHint=true kérésre adja a hitelesített

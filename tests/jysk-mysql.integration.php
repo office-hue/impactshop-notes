@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 $configFile = getenv('JYSK_MYSQL_CONFIG') ?: '';
 $wpdbFile = getenv('JYSK_WPDB_FILE') ?: '';
+$sessionOnly = ($argv[1] ?? '') === '--session-lifecycle-only';
 if (getenv('JYSK_MYSQL_SANDBOX_CONFIRM') !== 'LOCAL_JYSK_ONLY'
     || !is_file($configFile) || is_link($configFile) || (fileperms($configFile) & 0777) !== 0600) {
     throw new RuntimeException('Explicit private local sandbox configuration required');
@@ -184,6 +185,7 @@ function snapshot(wpdb $db): array {
         (int) $db->get_var('SELECT COUNT(*) FROM jysk_test_point_transactions'),
         (int) $db->get_var('SELECT COUNT(*) FROM jysk_test_level_history')];
 }
+if (!$sessionOnly) {
 resetRows();
 check(award()['success'] === true, 'real award succeeds');
 check(snapshot($wpdb)[0][0]['points_total'] === '2000' && snapshot($wpdb)[1] === 1 && snapshot($wpdb)[2] === 1, 'real totals ledger and level history committed');
@@ -266,6 +268,7 @@ check(snapshot($wpdb)[0][0]['points_total'] === '2000' && snapshot($wpdb)[1] ===
 resetRows(); $answers = parallel(array_map(fn($i) => 'jysk:parallel-' . $i, range(1, 6)));
 check(count(array_filter($answers, fn($r) => ($r['success'] ?? false) === true)) === 6, 'distinct concurrent events all succeed');
 check(snapshot($wpdb)[0][0]['points_total'] === '2025' && snapshot($wpdb)[1] === 6 && snapshot($wpdb)[2] === 1, 'atomic increments do not lose updates or duplicate level history');
+}
 
 $bridge = loadBridge(); $bridge::install();
 sql($wpdb, 'CREATE TABLE IF NOT EXISTS jysk_test_identity_grants(grant_hash char(64) PRIMARY KEY,pseudo_hash char(64) NOT NULL,state varchar(24) NOT NULL,revoked_at datetime NULL,expires_at datetime NOT NULL) ENGINE=InnoDB ' . $wpdb->get_charset_collate());
@@ -284,10 +287,14 @@ resetBridge();
 check((new ReflectionMethod($bridge, 'transactionReady'))->invoke(null) === true, 'actual engine writer and complete unique indices accepted');
 sql($wpdb, 'ALTER TABLE jysk_test_jysk_game_rewards ENGINE=MyISAM');
 check((new ReflectionMethod($bridge, 'transactionReady'))->invoke(null) === false, 'nontransactional claim engine rejected');
+check(bridgeReward(bridgePayload(), false)['state'] === 'unknown', 'no-claim readback cannot prove absence on nontransactional storage');
 sql($wpdb, 'ALTER TABLE jysk_test_jysk_game_rewards ENGINE=InnoDB');
 sql($wpdb, 'ALTER TABLE jysk_test_point_transactions DROP INDEX uniq_dedupe_pseudo');
 check((new ReflectionMethod($bridge, 'transactionReady'))->invoke(null) === false, 'missing canonical economic unique index rejected');
+check(bridgeReward(bridgePayload(), false)['state'] === 'unknown', 'no-claim readback cannot prove absence without the unique ledger index');
 sql($wpdb, 'ALTER TABLE jysk_test_point_transactions ADD UNIQUE KEY uniq_dedupe_pseudo(pseudo_id,dedupe_key)');
+check(bridgeReward(bridgePayload(), false)['state'] === 'absent', 'restored writer proves absence without awarding');
+if (!$sessionOnly) {
 check(bridgeReward(bridgePayload())['state'] === 'confirmed', 'bridge claim and actual canonical award confirm');
 check(bridgeReward(bridgePayload())['state'] === 'confirmed' && snapshot($wpdb)[1] === 1, 'bridge economic replay does not double credit');
 $different = bridgePayload(); $different['ngoId'] = 'ngo-2';
@@ -326,7 +333,116 @@ check(bridgeReward(bridgePayload(0, true, true))['state'] === 'confirmed', 'tech
 $GLOBALS['clock'] += 86400;
 check(bridgeReward(bridgePayload(0, true, false, 7))['state'] === 'policy_blocked' && snapshot($wpdb)[1] === 6, 'technical cap persists across campaign days');
 check((int) $wpdb->get_var("SELECT points_total FROM jysk_test_user_points WHERE pseudo_id='abcdeffedcba'") === 35, 'technical SQL ledger total is exactly 35');
+}
+// Session teardown uses the same real SQL connection and central owner proof.
+$GLOBALS['clock'] = strtotime('2026-11-15T12:00:00Z');
+function sqlBrowserSession(wpdb $db, string $generation = ''): array {
+    $subject = str_repeat('a', 64);
+    $generation = $generation ?: (string) $db->get_var($db->prepare('SELECT generation FROM jysk_test_jysk_game_grants WHERE subject=%s', $subject));
+    $token = bin2hex(random_bytes(32));
+    sql($db, $db->prepare('INSERT INTO jysk_test_jysk_game_sessions(token_hash,subject,generation,expires) VALUES(%s,%s,%s,%d)', hash('sha256', $token), $subject, $generation, $GLOBALS['clock'] + 900));
+    sql($db, $db->prepare('INSERT INTO jysk_test_jysk_game_codes(token_hash,subject,generation,challenge,expires) VALUES(%s,%s,%s,%s,%d)', hash('sha256', 'code-' . $token), $subject, $generation, str_repeat('x', 43), $GLOBALS['clock'] + 120));
+    return ['subject' => $subject, 'sessionToken' => $token];
+}
+function teardownBrowserSession(array $body, bool $revoke = false): array {
+    return (new ReflectionMethod(loadBridge(), 'endSession'))->invoke(null, $body, $revoke);
+}
+function accessSnapshot(wpdb $db): array {
+    return array_map(fn($table) => $db->get_results('SELECT * FROM jysk_test_jysk_game_' . $table . ' ORDER BY 1', ARRAY_A), ['grants', 'sessions', 'codes']);
+}
+function replaceSqlHandoff(wpdb $db, string $generation): array {
+    sql($db, 'START TRANSACTION');
+    sql($db, $db->prepare('UPDATE jysk_test_jysk_game_grants SET generation=%s,revoked=0 WHERE subject=%s', $generation, str_repeat('a', 64)));
+    sql($db, $db->prepare('DELETE FROM jysk_test_jysk_game_sessions WHERE subject=%s', str_repeat('a', 64)));
+    sql($db, $db->prepare('DELETE FROM jysk_test_jysk_game_codes WHERE subject=%s', str_repeat('a', 64)));
+    $body = sqlBrowserSession($db, $generation);
+    sql($db, 'COMMIT');
+    return $body;
+}
+resetBridge(); $session = sqlBrowserSession($wpdb); $before = accessSnapshot($wpdb);
+check(teardownBrowserSession($session) === ['disconnected' => true], 'normal SQL disconnect confirms commit');
+$after = accessSnapshot($wpdb);
+check($after[0][0]['revoked'] === '0' && $after[0][0]['generation'] !== $before[0][0]['generation'] && $after[1] === [] && $after[2] === [], 'SQL disconnect retains grant and atomically removes browser access');
+check(bridgeReward(bridgePayload())['state'] === 'confirmed' && bridgeReward(bridgePayload())['state'] === 'confirmed' && snapshot($wpdb)[1] === 1, 'delayed award after real disconnect is credited once');
+resetBridge(); $session = sqlBrowserSession($wpdb);
+check(teardownBrowserSession($session, true) === ['revoked' => true], 'real SQL revoke confirms');
+check(bridgeReward(bridgePayload())['state'] === 'policy_blocked' && snapshot($wpdb)[1] === 0, 'real SQL revoke still prevents later award');
+
+foreach ([false, true] as $revoke) {
+    resetBridge(); $session = sqlBrowserSession($wpdb); $observer = connection(); $hit = false; $newSession = null;
+    $fault = static function ($query) use (&$hit, &$newSession, $observer) {
+        global $wpdb;
+        if (!$hit && str_contains($query, 'FROM jysk_test_jysk_game_grants') && str_contains($query, 'FOR UPDATE')) {
+            $hit = true;
+            check($wpdb->get_var('SELECT @@in_transaction') === '1', 'stale teardown overlaps another actual handoff transaction');
+            $newSession = replaceSqlHandoff($observer, str_repeat('f', 64));
+        }
+        return $query;
+    };
+    $error = null;
+    try { teardownBrowserSession($session, $revoke); } catch (Throwable $e) { $error = $e->getMessage(); }
+    $fault = null;
+    check($hit && $error === 'invalid_session', 'old disconnect/revoke cannot cross a newer handoff generation');
+    $after = accessSnapshot($observer);
+    check($after[0][0]['revoked'] === '0' && $after[0][0]['generation'] === str_repeat('f', 64)
+        && count($after[1]) === 1 && $after[1][0]['token_hash'] === hash('sha256', $newSession['sessionToken']) && count($after[2]) === 1,
+        'new handoff grant/session/code survives stale request rollback');
+    $observer->close();
+}
+resetBridge(); $session = sqlBrowserSession($wpdb); $observer = connection(); $hit = false;
+$fault = static function ($query) use (&$hit, $observer) {
+    if (!$hit && str_starts_with($query, 'UPDATE jysk_test_jysk_game_grants SET generation=')) {
+        $hit = true;
+        sql($observer, 'SET innodb_lock_wait_timeout=1');
+        check($observer->query("UPDATE jysk_test_jysk_game_grants SET generation='blocked' WHERE subject='" . str_repeat('a', 64) . "'") === false,
+            'independent handoff cannot write while teardown holds grant row lock');
+    }
+    return $query;
+};
+check(teardownBrowserSession($session) === ['disconnected' => true] && $hit, 'row-locked teardown completes after concurrent writer timeout');
+$fault = null; $observer->close();
+foreach (['DELETE FROM jysk_test_jysk_game_codes', 'COMMIT'] as $point) {
+    resetBridge(); $session = sqlBrowserSession($wpdb); $before = accessSnapshot($wpdb); $hit = false;
+    $fault = static function ($query) use (&$hit, $point) {
+        if (!$hit && str_starts_with($query, $point)) { $hit = true; return 'SELECT * FROM jysk_teardown_rollback_fault'; }
+        return $query;
+    };
+    $threw = false;
+    try { teardownBrowserSession($session); } catch (Throwable $e) { $threw = true; }
+    $fault = null;
+    check($hit && $threw && accessSnapshot($wpdb) === $before, 'real teardown rollback preserves every access row: ' . $point);
+}
+resetBridge(); $session = sqlBrowserSession($wpdb); $observer = connection(); $before = accessSnapshot($observer); $hit = false;
+$fault = static function ($query) use (&$hit, $observer) {
+    global $wpdb;
+    if (!$hit && str_starts_with($query, 'UPDATE jysk_test_jysk_game_grants SET generation=')) {
+        $hit = true; check($wpdb->reconnect_retries === 0, 'teardown disables automatic reconnect before losing its row lock');
+        sql($observer, 'KILL CONNECTION ' . (int) $wpdb->dbh->thread_id);
+    }
+    return $query;
+};
+$threw = false;
+try { teardownBrowserSession($session); } catch (Throwable $e) { $threw = true; }
+$fault = null;
+check($hit && $threw && accessSnapshot($observer) === $before, 'actual teardown connection loss rolls back and never returns ACK');
+$wpdb = connection(); $observer->close();
+resetBridge(); $session = sqlBrowserSession($wpdb); $hit = false;
+$fault = static function ($query) use (&$hit) {
+    global $wpdb;
+    if (!$hit && $query === 'COMMIT') { $hit = true; check(mysqli_query($wpdb->dbh, 'COMMIT') === true, 'teardown commit reached the server before lost ACK'); return 'SELECT * FROM jysk_teardown_commit_ack_lost'; }
+    return $query;
+};
+$threw = false;
+try { teardownBrowserSession($session); } catch (Throwable $e) { $threw = true; }
+$fault = null; $after = accessSnapshot($wpdb);
+check($hit && $threw && $after[0][0]['revoked'] === '0' && $after[1] === [] && $after[2] === [], 'lost teardown ACK remains uncertain despite committed disconnect');
+resetBridge(); $session = sqlBrowserSession($wpdb); sql($wpdb, "UPDATE jysk_test_identity_grants SET expires_at='2000-01-01 00:00:00'");
+$threw = false;
+try { teardownBrowserSession($session); } catch (Throwable $e) { $threw = true; }
+check($threw && bridgeReward(bridgePayload())['state'] === 'policy_blocked' && snapshot($wpdb)[1] === 0, 'expired central owner is never bypassed by disconnect or delayed reward');
+
 // The new result writer runs on the same local-only SQL connection, never staging.
+if (!$sessionOnly) {
 $GLOBALS['clock'] = strtotime('2026-11-30T12:00:00Z'); $fault = null;
 $legacy = file_get_contents(__DIR__ . '/../wp-content/mu-plugins/impactshop-vote-jysk.php');
 foreach (['messages' => 'impact_vote_messages', 'targets' => 'impact_vote_message_targets'] as $variable => $table) {
@@ -421,6 +537,8 @@ $answers=[];
 foreach($workers as [$proc,$pipes]) { $out=stream_get_contents($pipes[1]); $err=stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]); check(proc_close($proc)===0 && $err==='','result worker exited cleanly'); $answers[]=json_decode(trim($out),true,16,JSON_THROW_ON_ERROR); }
 check(count(array_filter($answers,fn($r)=>($r['state']??'')==='published'))>=1,'one concurrent result publisher completes');
 check(count(array_filter($answers,fn($r)=>isset($r['error']) && $r['error']!=='results_version_conflict'))===0 && array_diff(array_column($answers,'state'),['published','busy'])===[] && (int)$wpdb->get_var('SELECT COUNT(*) FROM jysk_test_jysk_game_prizes')===3,'concurrent approvals cannot duplicate seed, draw or messages');
-echo json_encode(['result' => 'PASS', 'checks' => $checks, 'scope' => 'target wpdb + canonical points + durable results/notifications; local MariaDB only',
+}
+echo json_encode(['result' => 'PASS', 'checks' => $checks, 'scope' => $sessionOnly ? 'JYSK session lifecycle, authoritative absence and one idempotent delayed canonical award; local MariaDB only' : 'target wpdb + canonical points + durable results/notifications; local MariaDB only',
     'server' => $wpdb->get_var('SELECT VERSION()'), 'wpdbSha256' => hash_file('sha256', $wpdbFile), 'productionWritten' => false,
-    'limitations' => ['WP boot, owner authentication, HTTP/TLS and downstream hook execution not exercised', 'fixture clock only; production source and time unchanged', 'not a production deployment or activation proof']]), "\n";
+    'limitations' => ['WP boot, owner authentication, HTTP/TLS and downstream hook execution not exercised', 'fixture clock only; production source and time unchanged', 'not a production deployment or activation proof',
+        ...($sessionOnly ? ['legacy manager fault suite and results suite not run by this focused mode; manager uses a newer SQL port outside wpdb query filters'] : [])]]), "\n";
