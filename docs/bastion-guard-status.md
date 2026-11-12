@@ -911,3 +911,16 @@ A #270 merge-elt, de nem telepített: élő wp_options MyISAM, ezért a korábbi
 ## 2026-11-10 — JYSK inaktív katalógusütközés javítása
 
 Csak a már védett importer pontos forráshash-e és az inventory checksumja követi a célzott javítást. Modell/config/guardlogika és idegen pinek változatlanok.168 izolált DB-állítás, független forrásreview; telepítés külön jóváhagyás. Koherencia/rollback/UI: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
+
+## 2026-11-12 — NGO-választó paritás: védett forráscsomag
+
+A meglévő katalógus és affiliate runtime perimeter megmarad; csak két saját
+forrásdigest és a manifest társ-checksum frissül. Új guard/config/helper nincs.
+Explicit campaign+eligibility publikus projekció, tiltott választásnál disabled
+UI, 401-only auth-intent, GET/zárolt POST percent-slug byte-paritás/128 limit.
+PHP lint/projekció/affiliate/principal-binding, 6 inline-JS ág és affiliate
+bastion tamper sikeres. Két saját forrásdigest, manifest-checksum és
+protected-touch guard PASS; eredeti dirty dokumentumprefixek byte-egyeznek.
+Ez nem élő smoke vagy release-engedély. Valódi WP
+sanitize_title és kézi UI még függő. Pontos scope, backup/rollback és smoke tagek:
+docs/protected-change-records/2026-11-12-ngo-selector-parity.md.

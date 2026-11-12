@@ -2245,3 +2245,14 @@ A #270 merge-elt, de nem telepített: élő wp_options MyISAM, ezért a korábbi
 ## 2026-11-10 — JYSK katalógus: történeti inaktív ütközések
 
 A #271 utáni normál szinkron ütközés miatt megállt; engedélyezett exact rollback és külön readback után a régi runtime szinkronja ismét működik,342/246 azonosság megmaradt, nulla új ID. Saját javítóágon a már tárolt tulajdonoshoz kötött, inaktív régi elutasított sorok diagnosztizált kihagyása; ismeretlen/aktív/foglalási konfliktus továbbra atomi blokk.168 izolált DB-állítás és független review nyitott P1/P2 nélkül. Forráskész, új merge/telepítés/felvétel nincs. Részletek: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
+
+## 2026-11-12 — NGO-katalógus paritás: helyi forrás és teszt
+
+Két meglévő védett WP-forrás szűk, jóváhagyott módosítása: teljes/kiemelt
+katalógus campaign+allow_user_selection projekció, fail-closed választási UI,
+401-re szűkített auth-intent és kanonikus percent-slug shopping GET/POST paritás.
+Meglévő kampány/region/listing, owner és gazdasági szabály változatlan.
+Három célzott PHP-futás, két PHP lint, 6 inline-JS teszt és affiliate bastion
+negatív próbák PASS; kapcsolt web43 eset+typecheck PASS. Valódi WP sanitize_title,
+élő böngésző és production elfogadás nincs igazolva; merge/deploy még külön.
+Rollback/érintettség/megőrzött snapshot és UI: docs/protected-change-records/2026-11-12-ngo-selector-parity.md.

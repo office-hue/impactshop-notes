@@ -8616,3 +8616,17 @@ A #270 merge-elt, de nem telepített: élő wp_options MyISAM, ezért a korábbi
 ## 2026-11-10 — JYSK katalógus: történeti inaktív ütközések
 
 A #271 utáni normál szinkron ütközés miatt megállt; engedélyezett exact rollback és külön readback után a régi runtime szinkronja ismét működik,342/246 azonosság megmaradt, nulla új ID. Saját javítóágon a már tárolt tulajdonoshoz kötött, inaktív régi elutasított sorok diagnosztizált kihagyása; ismeretlen/aktív/foglalási konfliktus továbbra atomi blokk.168 izolált DB-állítás és független review nyitott P1/P2 nélkül. Forráskész, új merge/telepítés/felvétel nincs. Részletek: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
+
+## 2026-11-12 — NGO-választók: helyi paritásjavítás
+
+Saját fix/ngo-selector-parity-20261112, alap c52e96b6: a publikus teljes és
+kiemelt katalógus explicit kampányt és választási flaget ad; a statikus UI
+hiányzó/tiltott flag mellett nem kínál választást, auth-intent csak 401 után.
+Shopping GET/zárolt POST ugyanazt a kisbetűs percent-slugot fogadja 128 byte-ig,
+byte-változatlan tárolással. Nincs NGO-ID-, kampányengedély- vagy pénzügyi írás.
+PHP lint, projekció/affiliate/principal-binding, 6 inline-JS ág és affiliate
+bastion tamper PASS; kapcsolódó web43 célzott eset és typecheck sikeres.
+Valódi WordPress sanitize_title roundtrip, élő UI/telepítés/elfogadás függő.
+Csak két saját forráshash és társ-checksum frissül; meglévő WIP megőrzött.
+Koherencia, kockázat, rollback, max2 napos snapshot-retenció és külön kézi UI:
+docs/protected-change-records/2026-11-12-ngo-selector-parity.md.
