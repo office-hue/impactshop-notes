@@ -506,6 +506,13 @@ function impactshop_shopping_purchase_session($request)
         && preg_match('/^[a-z0-9]{10,12}$/D', (string) ($session['pseudo_id'] ?? '')) ? $session : null;
 }
 
+/** Canonical opaque NGO token; do not decode or regenerate catalogue slugs. */
+function impactshop_shopping_valid_ngo_slug($slug): bool
+{
+    return is_string($slug) && strlen($slug) <= 128
+        && preg_match('/^(?:[a-z0-9]|%[0-9a-f]{2})+(?:-(?:[a-z0-9]|%[0-9a-f]{2})+)*$/D', $slug) === 1;
+}
+
 function impactshop_shopping_ngos($request)
 {
     global $wpdb;
@@ -519,7 +526,7 @@ function impactshop_shopping_ngos($request)
     $ngos = [];
     foreach ($rows as $row) {
         if (preg_match('/^[1-9][0-9]*$/D', (string) $row['sharity_ngo_id'])
-            && preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/D', (string) $row['slug'])) {
+            && impactshop_shopping_valid_ngo_slug($row['slug'])) {
             $ngos[] = ['ngoId' => (string) $row['sharity_ngo_id'], 'slug' => (string) $row['slug'], 'name' => (string) $row['name']];
         }
     }
@@ -629,7 +636,7 @@ function impactshop_shopping_dognet_activate($request)
         }
         $ngos = $wpdb->get_results($wpdb->prepare("SELECT slug FROM {$wpdb->prefix}sharity_ngo_catalog WHERE sharity_ngo_id=%s AND is_active=1 FOR UPDATE", $p['ngoId']), ARRAY_A);
         if ($wpdb->last_error !== '' || !is_array($ngos)) { throw new RuntimeException('ngo_unavailable'); }
-        if (count($ngos) !== 1 || strlen($ngos[0]['slug']) > 128 || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/D', $ngos[0]['slug'])) {
+        if (count($ngos) !== 1 || !impactshop_shopping_valid_ngo_slug($ngos[0]['slug'])) {
             $wpdb->query('ROLLBACK'); return $fail('ngo_inactive', 422);
         }
         $payloadHash = hash('sha256', json_encode([$subject,$p['ngoId'],$ngos[0]['slug'],$p['partnerKey'],$p['programRef'],$binding,$p['merchantInput'],$p['disclosureVersion']], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));

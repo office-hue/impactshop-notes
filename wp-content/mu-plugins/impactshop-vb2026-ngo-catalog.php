@@ -820,6 +820,10 @@ function impactshop_vb2026_catalog_render_page(): string
         const logo = item.logo_url
           ? `<img src="${escapeHtml(item.logo_url)}" alt="${escapeHtml(item.name)}">`
           : escapeHtml((item.name || '?').slice(0, 2).toUpperCase());
+        const selectable = item.is_active === true && item.allow_user_selection === true && item.campaign === campaign;
+        const selectAction = selectable
+          ? `<button type="button" class="btn btn--primary" data-select-ngo="${escapeHtml(item.ngo_id)}">Támogatom ezt az ügyet</button>`
+          : '<button type="button" class="btn" disabled>Ebben a kampányban most nem választható</button>';
         return `
           <article class="ngo-card" data-ngo-id="${escapeHtml(item.ngo_id)}">
             <div class="ngo-card__head">
@@ -833,7 +837,7 @@ function impactshop_vb2026_catalog_render_page(): string
             <div class="ngo-card__mission">${escapeHtml(item.short_mission || 'Ehhez a szervezethez hamarosan részletesebb bemutató is érkezik.')}</div>
             <div class="ngo-card__meta">${escapeHtml(item.legal_status_label || 'Jogállás nélkül')}</div>
             <div class="card-actions">
-              <button type="button" class="btn btn--primary" data-select-ngo="${escapeHtml(item.ngo_id)}">Támogatom ezt az ügyet</button>
+              ${selectAction}
               ${details}
               ${share}
               ${website}
@@ -984,6 +988,10 @@ function impactshop_vb2026_catalog_render_page(): string
           await loadCatalog();
           await loadFeatured();
         } catch (error) {
+          if (error?.status !== 401) {
+            alert(error.message || 'A választás most nem sikerült.');
+            return;
+          }
           try {
             const payload = await fetchJson(`${restBase}/vb2026/selection-intent`, {
               method: 'POST',
@@ -1797,7 +1805,7 @@ function impactshop_vb2026_catalog_query(array $filters, int $page, int $perPage
 
     $total = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) {$baseFrom}", ...$params));
     $rows = $wpdb->get_results($wpdb->prepare(
-        "SELECT c.*, cf.is_featured, cf.is_race_visible, cf.hero_badge, cf.allow_public_listing, cf.allow_user_selection
+        "SELECT c.*, cf.campaign_key, cf.is_featured, cf.is_race_visible, cf.hero_badge, cf.allow_public_listing, cf.allow_user_selection
          {$baseFrom}
          ORDER BY cf.is_featured DESC, cf.display_priority ASC, c.name ASC
          LIMIT %d OFFSET %d",
@@ -1831,6 +1839,8 @@ function impactshop_vb2026_catalog_row_to_public_item(array $row, int $selectedN
         'ngo_id' => (int) $row['sharity_ngo_id'],
         'slug' => (string) $row['slug'],
         'name' => (string) $row['name'],
+        'campaign' => (string) ($row['campaign_key'] ?? ''),
+        'allow_user_selection' => (int) ($row['allow_user_selection'] ?? 0) === 1,
         'city' => (string) ($row['city'] ?? ''),
         'category_label' => (string) ($row['category_label'] ?? ''),
         'legal_status_label' => (string) ($row['legal_status_label'] ?? ''),
@@ -1854,7 +1864,7 @@ function impactshop_vb2026_get_featured_items(string $campaignKey, int $limit = 
     $catalog = $wpdb->prefix . 'sharity_ngo_catalog';
     $flags = $wpdb->prefix . 'sharity_ngo_campaign_flags';
     $rows = $wpdb->get_results($wpdb->prepare(
-        "SELECT c.*, cf.is_featured, cf.is_race_visible, cf.hero_badge, cf.display_priority
+        "SELECT c.*, cf.campaign_key, cf.allow_user_selection, cf.is_featured, cf.is_race_visible, cf.hero_badge, cf.display_priority
          FROM {$catalog} c
          INNER JOIN {$flags} cf
            ON cf.sharity_ngo_id = c.sharity_ngo_id

@@ -531,12 +531,13 @@ function isb_get_shops() { return [['shop_slug'=>'test-shop','site'=>'https://sh
 class ShoppingPurchaseFakeWpdb extends ImpactshopAffiliateFakeWpdb {
     public $last_error = '';
     public $activeNgo = true;
+    public $ngoSlug = 'chosen-ngo';
     public $loseCommit = false;
     public $race = false;
     public $reconnect_retries = 5;
     public function get_var($q) { return $q === 'SELECT CONNECTION_ID()' ? '123' : parent::get_var($q); }
     public function get_results($query, ...$rest) {
-        return $this->activeNgo ? [['sharity_ngo_id'=>'7','slug'=>'chosen-ngo','name'=>'Chosen NGO']] : [];
+        return $this->activeNgo ? [['sharity_ngo_id'=>'7','slug'=>$this->ngoSlug,'name'=>'Chosen NGO']] : [];
     }
     public function get_row($q, ...$rest) {
         if (strpos($q['query'], 'impact_sharity_web_sessions') !== false) {
@@ -563,6 +564,22 @@ $purchase=['authoritySnapshotId'=>'sharity-shopping-production-v2-20261102-01',
     'merchantInput'=>'https://shop.example/product?variant.id=red&variant_id=blue&sku=a&sku=b&id=red%252Fblue',
     'ngoId'=>'7','partnerKey'=>'test-shop','programRef'=>'dognet:test-shop','providerKey'=>'dognet'];
 $call=static function ($p) use ($headers) { return impactshop_shopping_dognet_activate(new ImpactshopAffiliateFakeRequest($headers,[],$p)); };
+// These exercise the product GET + locked POST validation and stored reference.
+// sanitize_title above is only a legacy-context stub, not proof of real WP slug roundtrip.
+foreach (['chosen-ngo', 'civil-%c3%a1rviz', '%e2%9d%a4-alapitvany', str_repeat('a', 128)] as $slug) {
+    $wpdb = new ShoppingPurchaseFakeWpdb(); $wpdb->ngoSlug = $slug;
+    $catalogResponse = impactshop_shopping_ngos(new ImpactshopAffiliateFakeRequest($headers, [], []));
+    assert_true($catalogResponse->get_status() === 200 && $catalogResponse->get_data()['data']['ngos'][0]['slug'] === $slug, 'GET preserves opaque canonical slug');
+    assert_true($call($purchase)->get_status() === 200, 'POST accepts same canonical slug');
+    assert_true(array_values($wpdb->rows)[0]['ngo_ref'] === $slug, 'POST stores exact canonical bytes without decoding');
+}
+foreach (['Civil', 'civil-%C3%A1', 'civil-%c', 'civil-%zz', 'civil--ngo', 'civil/ngo', "civil-ngo\n", str_repeat('a', 129)] as $slug) {
+    $wpdb = new ShoppingPurchaseFakeWpdb(); $wpdb->ngoSlug = $slug;
+    $catalogResponse = impactshop_shopping_ngos(new ImpactshopAffiliateFakeRequest($headers, [], []));
+    assert_true($catalogResponse->get_data()['data']['ngos'] === [], 'GET omits noncanonical or overlong slug');
+    assert_true($call($purchase)->get_status() === 422 && count($wpdb->rows) === 0, 'POST rejects invalid slug before intent insertion');
+}
+$wpdb = new ShoppingPurchaseFakeWpdb();
 $r=$call($purchase); assert_true($r->get_status()===200, 'confirmed purchase issued');
 parse_str(parse_url($r->get_data()['redirectUrl'],PHP_URL_QUERY),$query);
 assert_true($query['url']===$purchase['merchantInput'], 'product query lossless');
