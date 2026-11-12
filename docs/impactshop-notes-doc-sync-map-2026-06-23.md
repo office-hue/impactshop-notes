@@ -479,13 +479,13 @@ szerepel; külön guard nincs. Forrásjelölt, PR/merge/telepítés még nincs.
 Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
 
 
-## 2026-11-12 — Watchdog jutalommegfigyelés, forrásjelölt
+## 2026-11-12 — Watchdog jutalommegfigyelés, aktivált; részleges éles elfogadás
 
 A PR278 default-off eseménymegfigyelést ad a belépés/profil/megosztás/videó,
 API/feedback/streak és a meglévő purchase bonus_once pontkezelő hívásaihoz.
 Utóbbi lefedi az első vásárlási, boltfelfedezési és ajánlási bónuszok hívásait
 a tartós entitlement kapu után. A manager, dedupe és jutalomargumentumok változatlanok.
 A célzott eredeti/módosított producer parity és izolált SQL-vizsgálatok sikeresek;
-ez nem telepítési, aktiválási vagy éles teljesítményelfogadás.
+Az öt fájl exact-file telepített és a tábla explicit migrált; két monitor-konstans aktív. 12 hook/25 forráskötés ellenőrzött; a 22:00-s természetes kör valódi pontesemény/kanonikus jóváírás egyezését igazolta. A webes/recorder p95 és a teljes rendszer elfogadása továbbra is függő; lásd a notes.md és system-status-snapshot.md legfrissebb bejegyzését.
 Forrás és korlátok: [változásnapló](protected-change-records/2026-11-12-reward-observations.md).
 A registry régi lastVerifiedAt dátuma változatlan; ez csak a saját érintett térkép frissítése.
