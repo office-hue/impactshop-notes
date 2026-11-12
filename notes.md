@@ -1,3 +1,13 @@
+## 2026-11-12 — Vásárlási bónuszok megfigyelése, célzott kiegészítés
+
+Forrásmunka a 91b8cc6835859168dcdfd5cbc742fd2b985ae912 HEAD-ről. A meglévő bonus_once managerhívás kap default-off before/after megfigyelést, az előtte álló tartós entitlement/dedupe return változatlan. A cron/reconcile, gazdasági kapuk, jutalmak, metadata és dedupe változatlan; az eredeti17 earning +admin golden és16 új bonus parity eset sikeres. A hiányzó/kikapcsolt/hibás helper, success/earning_blocked/ledger_write_failed/commit_unconfirmed, meglévő entitlement return és referral lezárás azonos az előképpel. Forrásjelölt a PR-ben; nincs telepítés vagy aktiválás. Részletek: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+## 2026-11-12 — Pontjutalom-megfigyelés, kikapcsolt forrásjelölt
+
+A három producer éles preimage-egyezése után 17 meglévő hívás kapott külön before/after megfigyelést. Új helper default-off, explicit CLI séma; manager, jutalom, válasz és retirement változatlan. PHP protokollstub és16 izolált producer parity sikeres. Valódi izolált MariaDB helper/exporter próba és32 párhuzamos megfigyelés sikeres; a bizonyított recorder-sorzár15ms statement-limittel gyorsan unknown. Tartós éles recorder-hibafolyam és éles elfogadás még nincs; merge/deploy/aktiválás nincs. Scope, leltár, rollout/rollback és függő UI: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+Opcionális operátori konstans a már létező, tulajdonoshoz kötött loghoz; 6 izolált log-célteszt sikeres. A webes naplózás és az új bájtok visszaolvasásának bizonyítása még függő; nincs új journal vagy tárhelyírás.
+
 ## 2026-11-11 — JYSK: bontás és függő pont
 
 Normál disconnect megtartja a késői jutalom grantját; valódi revoke/owner-tiltás megmarad. Sorzár/generáció/kapcsolatvédelem, authoritative absent/readiness és titokmentes oknapló. PHP280/private14/results19 és izolált valós MariaDB lifecycle36 sikeres. Régi teljes SQL-hibainjektálás az új manager-port miatt nem PASS; explicit célzott mód. Független forrásreview P2 fixture-óra javítva; terméklelet nincs. Egy bridge-fájl, meglévő #275 horgony megmarad; shared profile/manager/séma változatlan. Részletek és rollback/UI-lista: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md. Merge/deploy még nincs; retired-header WIP megőrizve.

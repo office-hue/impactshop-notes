@@ -1,3 +1,9 @@
+## 2026-11-12 — Default-off pontjutalom-megfigyelés
+
+Új helper pontos védett út és identity_and_points smoke-hozzárendelés; a meglévő védelmek változatlanok. A három éles preimage-egyező producer minimális before/after hívása és saját helper/config digest frissül; nincs manager/retirement vagy más forrás újrahash-elés. A leltár forrásállapot, nem éles telepítés. Protokollstub +16 producer parity sikeres; izolált valódi MariaDB helper/exporter/index/32 párhuzamos próba sikeres.15ms saját statement-limit védi a recorder-sorzárat; éles UI/terhelés és tartós hibafolyam bizonyítása függő. Scope/rollback: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+Opcionális operátori konstans a már létező, tulajdonoshoz kötött loghoz; 6 izolált log-célteszt sikeres. A webes naplózás és az új bájtok visszaolvasásának bizonyítása még függő; nincs új journal vagy tárhelyírás.
+
 ## 2026-11-09 — Profil: régi Elementor fejléc
 
 Meglévő profil-UI adapter és változatlan protected modell. Csak saját pluginhash/checksum frissül. Pontos profilgate, wp_head CSS, telepítési dialog-header megőrzés3 célzott böngészőesetben ellenőrzött. Auth/return/actionbar/PWA byte-ok változatlanok. Scope/rollback/UI: docs/protected-change-records/2026-11-09-profile-retired-header.md. Élő kiadás még nincs.

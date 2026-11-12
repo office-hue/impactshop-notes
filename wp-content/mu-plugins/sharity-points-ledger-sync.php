@@ -340,8 +340,15 @@ function sharity_points_impactshop_bonus_once(string|int $subject, int $points, 
             && (int) $row['points'] === $points && $row['type'] === $type, 'transaction_id' => (int) $row['id']];
     }
     $manager = new Sharity_Points_Manager();
-    return $pseudo ? $manager->award_points_for_pseudo($subject, $points, $type, $source, $metadata, $key)
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('cron.purchase_bonus.' . ($pseudo ? 'pseudo' : 'user'),
+            $pseudo ? 'pseudo' : 'user', $subject, $points, $type, $source, $metadata, $key) : null;
+    $result = $pseudo ? $manager->award_points_for_pseudo($subject, $points, $type, $source, $metadata, $key)
         : $manager->award_points($subject, $points, $type, $source, $metadata, $key);
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $result);
+    }
+    return $result;
 }
 
 function sharity_points_decode_meta($raw): array

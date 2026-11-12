@@ -253,7 +253,14 @@ function sharity_award_streaks_for_user(int $user_id, Sharity_Points_Manager $ma
 
     $weekly_key = wp_date('Y-m', $now);
     if (sharity_has_consecutive_weeks($weeks, 4, $now)) {
-        $manager->award_points(
+        $reward_observation = class_exists('Sharity_Reward_Observation', false)
+            ? Sharity_Reward_Observation::beforeAward('cron.streak.user', 'user', $user_id,
+            30,
+            'streak_bonus',
+            $weekly_key,
+            ['source_type' => 'streak', 'period' => 'weekly', 'weeks' => array_values($weeks)],
+            'streak_weekly:' . $weekly_key) : null;
+        $reward_observation_result = $manager->award_points(
             $user_id,
             30,
             'streak_bonus',
@@ -261,11 +268,21 @@ function sharity_award_streaks_for_user(int $user_id, Sharity_Points_Manager $ma
             ['source_type' => 'streak', 'period' => 'weekly', 'weeks' => array_values($weeks)],
             'streak_weekly:' . $weekly_key
         );
+        if ($reward_observation !== null) {
+            Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+        }
     }
 
     $monthly_key = wp_date('Y-m', $now);
     if (sharity_has_consecutive_months($months, 2, $now)) {
-        $manager->award_points(
+        $reward_observation = class_exists('Sharity_Reward_Observation', false)
+            ? Sharity_Reward_Observation::beforeAward('cron.streak.user', 'user', $user_id,
+            50,
+            'streak_bonus',
+            $monthly_key,
+            ['source_type' => 'streak', 'period' => 'monthly', 'months' => array_values($months)],
+            'streak_monthly:' . $monthly_key) : null;
+        $reward_observation_result = $manager->award_points(
             $user_id,
             50,
             'streak_bonus',
@@ -273,6 +290,9 @@ function sharity_award_streaks_for_user(int $user_id, Sharity_Points_Manager $ma
             ['source_type' => 'streak', 'period' => 'monthly', 'months' => array_values($months)],
             'streak_monthly:' . $monthly_key
         );
+        if ($reward_observation !== null) {
+            Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+        }
     }
 }
 
@@ -284,7 +304,14 @@ function sharity_award_streaks_for_pseudo(string $pseudo_id, Sharity_Points_Mana
 
     $weekly_key = wp_date('Y-m', $now);
     if (sharity_has_consecutive_weeks($weeks, 4, $now)) {
-        $manager->award_points_for_pseudo(
+        $reward_observation = class_exists('Sharity_Reward_Observation', false)
+            ? Sharity_Reward_Observation::beforeAward('cron.streak.pseudo', 'pseudo', $pseudo_id,
+            30,
+            'streak_bonus',
+            $weekly_key,
+            ['source_type' => 'streak', 'period' => 'weekly', 'weeks' => array_values($weeks)],
+            'streak_weekly:' . $weekly_key) : null;
+        $reward_observation_result = $manager->award_points_for_pseudo(
             $pseudo_id,
             30,
             'streak_bonus',
@@ -292,11 +319,21 @@ function sharity_award_streaks_for_pseudo(string $pseudo_id, Sharity_Points_Mana
             ['source_type' => 'streak', 'period' => 'weekly', 'weeks' => array_values($weeks)],
             'streak_weekly:' . $weekly_key
         );
+        if ($reward_observation !== null) {
+            Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+        }
     }
 
     $monthly_key = wp_date('Y-m', $now);
     if (sharity_has_consecutive_months($months, 2, $now)) {
-        $manager->award_points_for_pseudo(
+        $reward_observation = class_exists('Sharity_Reward_Observation', false)
+            ? Sharity_Reward_Observation::beforeAward('cron.streak.pseudo', 'pseudo', $pseudo_id,
+            50,
+            'streak_bonus',
+            $monthly_key,
+            ['source_type' => 'streak', 'period' => 'monthly', 'months' => array_values($months)],
+            'streak_monthly:' . $monthly_key) : null;
+        $reward_observation_result = $manager->award_points_for_pseudo(
             $pseudo_id,
             50,
             'streak_bonus',
@@ -304,6 +341,9 @@ function sharity_award_streaks_for_pseudo(string $pseudo_id, Sharity_Points_Mana
             ['source_type' => 'streak', 'period' => 'monthly', 'months' => array_values($months)],
             'streak_monthly:' . $monthly_key
         );
+        if ($reward_observation !== null) {
+            Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+        }
     }
 }
 
