@@ -1,3 +1,9 @@
+## 2026-11-12 22:00 Budapest — Watchdog megfigyelés aktivált, részleges éles elfogadás
+
+PR278 merge `e4357f11`: az öt ellenőrzött MU-fájl exact-file CAS-kiadása és az explicit megfigyelésitábla-migráció megtörtént. A manager és a jutalmazási argumentumok változatlanok. A két monitor-konstans pontos konfiguráció-mentés/CAS/lint után aktív; a 12 producer-hook és 25 telepített forráskötés runtime-ellenőrzött. A három új pontforrás bizonyított lefedettségi kezdete 21:57:14 Budapest; a 22:00-s természetes központi futás valódi ponteseményt kanonikus jóváírással egyeztetett. Időzített/API forrás aktuálisan idle_verified, naplózási lefedettségi rés nincs. Ez nem UI- vagy p95-elfogadás.
+
+Központi runtime: ai-agent Mini generáció17 / `34cf14d8`, ötperces ciklus; friss természetes heartbeat ACK. A webes p95 és a recorder p95≤5ms még nincs megfelelő természetes mintával elfogadva. VB szavazatfogadó, JYSK néhány üzleti/bizonylati ügy és folyamatos profil-session továbbra is külön nyitott; teljes rendszer-PASS nincs. A Mini ismét 20 GiB alatti szabad helye valódi kapacitási kockázat. Nincs tesztjutalom, replay vagy auth-kivétel. Scope, mentés és rollback: [változásrekord](docs/protected-change-records/2026-11-12-reward-observations.md). Secretary: `wrk-watchdog-rewards-20261112`.
+
 ## 2026-11-12 — Vásárlási bónuszmegfigyelés, helyi kiegészítés
 
 Egyetlen termékfájl: ledger-sync bonus_once, a meglévő entitlement return után. First_purchase, shop_discovery, referral pseudo/user és referred_bonus megfigyelése; cron/manager/gazdasági argumentum változatlan. Az eredeti17 earning golden16 eset és az új bonus golden16 eset preimage parity sikeres. Csak saját ledger-sync digest/checksum frissül; aktív coverage és természetes UI nem igazolt, nincs telepítés vagy aktiválás. Scope/rollback/UI: docs/protected-change-records/2026-11-12-reward-observations.md.

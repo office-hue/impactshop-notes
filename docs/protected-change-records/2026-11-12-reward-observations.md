@@ -251,3 +251,13 @@ címkével sikeres; ez scope-ellenőrzés, nem a címkék éles UI-futtatása.
 A manifest checksum sikeres, minden idegen digest byte-azonos, diff-check tiszta.
 Új MariaDB/éles gazdasági futás nem indult; a korábbi helper eredmény nem
 minősül e bónuszok éles aktiválásának. A delta a meglévő Notes PR278 része; élesítés és aktiválás továbbra sem történt.
+
+## Éles aktiválás — 2026-11-12 22:00 Budapest
+
+Az öt kiválasztott fájl exact-file CAS-telepítése és az additív tábla explicit migrációja kész. A globális CI/hash-lista eltérését Arnold csak az öt ellenőrzött fájl kiadására engedte kivételként; közös baseline-t nem írtunk át. A két monitor-konstans hozzáadásán kívül a wp-config korábbi byte-jai változatlanok: előző SHA `888220f875b917218bda805b01bf30cc3df21f2824be521f5bfc2f4e9fc69992`, új SHA `f168576087edb72b6fe91e1e362b43eda3e5ff19f3e7552b99da93d65d0ebf47`. A privát hibanapló 0600, írás/visszaolvasás és kezdőcursor igazolt; a megfigyelési hibát nem rejtjük el.
+
+Tizenkét regisztrált producer-hook és 25 forráshash ellenőrzött. A runtime-ACK SHA `4f91518e7b687da78217ab5306209818ac5d1f8593280f50f6945ae91daaff1c`; a reader-private utó-SHA `9053cd4fb4bfa75a4e199208773249a2bcc8c17bac291982bda049b872cc70f2`. Titok és raw üzleti selector nem része ennek a rekordnak. A három új forrás lefedettségi kezdete 21:57:14 Budapest. A 22:00-s természetes R2-kör point-events receipt_confirmed, point-api/cron idle_verified; a hibafolyam gapje null. Nincs mesterséges jutalom és a manager változatlan.
+
+Rollback: csak a két hozzáadott define pontos, friss SHA-val ellenőrzött visszavonása; a privát wp-config-mentés és a hozzá illő reader-private előzmény megmaradt. A megfigyelési táblát, jutalmat és kézbesítési előzményt nem töröljük. Idegen konfigurációváltozásra nem telepítünk régi teljes fájlt. A Mini R2→R1 visszaállítása külön koordinátoros művelet, előbb heartbeat-cadence3600, utána órás cron.
+
+Nyitott kézi/forgalmi elfogadás: webes/API p95, recorder p95≤5ms; UI-t nem nyilvánítunk teszteltnek egy CLI- vagy idle-eredményből. A VB fogadó kikapcsoltsága, JYSK/PITR/profil-korlát és a Mini valós tárhelyhiánya nem lett csendben megoldottnak jelölve. A source-ready, merged, installed, activated és teljes production-accepted állapot külön marad.
