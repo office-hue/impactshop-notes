@@ -1,0 +1,21 @@
+# JYSK — normál bontás és késői jutalom
+
+Jóváhagyott cél és alap: normál bontás ne tiltsa le a már elfogadott jutalmat; ea73d8bf63a146b2073c116ee77571f23c3f7059. A #275 saját belépési horgonya megmarad; retired-header dokumentum-WIP érintetlen. Két egymást követő független tervaudit az app-repo jysk-rejected-points-diagnosis-plan-20261111 tervében.
+
+Koherencia/érintettség: egy runtime-fájl, wp-content/mu-plugins/impactshop-jysk-game.php. Új HMAC POST disconnect: pontos subject/sessionToken bemenet és disconnected:true ACK, session/kód érvénytelenítés, generációváltás, grant megmarad a függő jutalomhoz. Valódi revoke és központi owner-tiltás megmarad. A böngészős session/revoke külső formája az appban változatlan. Shared profile/return, manager, séma és kulcs nem módosul.
+
+Protected files touched: wp-content/mu-plugins/impactshop-jysk-game.php, docs/impactshop-guard-hashes.json, docs/impactshop-guard-hashes.sha256. Felhasználói explicit implementációs jóváhagyás a jelen kapcsolódó javításra. Smoke: identity_and_points, deploy_guard. Meglévő kiadási smoke-scope: route:profil, route:impact-challenge, route:factlens-vb-prod, flow:profile-return-account, flow:profile-return-restore, flow:points-jump, flow:message-popup, flow:legacy-pool-visibility. Ezek a meglévő product guard címkéi, nem elvégzett új éles PASS-ok; a közös route-ok kezelőforrása változatlan. Az érintett JYSK-flow külön célzottan ellenőrzendő.
+
+Kockázat/védelem: grant-sorzár és generáció-újraellenőrzés védi az új handoffot. Reconnecttiltás/kapcsolatazonosság, igazolt commit és rollback; bizonytalan ACK nem hamis siker. Readiness/managerhiány unknown, valódi policy/producer/NGO/earning/testlimit tiltás policy_blocked. Claim nélküli authoritative absent is writer-readinesshez kötött. Reward ABI négy mező, dedupe és35 teljes tesztpontlimit megmarad. Napló: kizárólag idő/eventId/állapot/fix okkód, nincs profiladat vagy történeti ok kitalálása.
+
+Ellenőrzés: PHP280 determinisztikus bridge-állítás,14 virtuális privátkonfigurációs eset,19 eredményprotokoll-próba; izolált valódi MariaDB10.11.19 + hash-ellenőrzött wpdb lifecycle36 sikeres. Kizárólag127.0.0.1/jysk_sandbox/jysk_test; egy idempotens késleltetett jóváírás tényleges managerrel. Éles adat nem íródott. A régi default SQL-suite korábbi wpdb-hibainjektálása nem modellezi a manager új SQL-portját, ezért nem PASS; explicit --session-lifecycle-only mód az új utat vizsgálja. Teljes legacy manager/sorsolási SQL-suite nem újrafuttatott. Független forrásreview egy P2 fixture-óra leletét saját Nov15 órával javítottuk; termékkódhibát nem talált, külön tesztet nem futtatott.
+
+Kiadás: merge után egyetlen bridge-fájl, guardolt exact-file út, friss előhash/backup/CAS/atomi csere/utóhash/0444; ezután app egy build. Friss titkosított adatmentés és izolált restore szükséges; hiányában csak telepítés áll meg. SSH-kulcs nem módosul mhosting-válasz előtt. Nincs új aktiválási flag. Rollback: app előző deployment, szükség szerint bridge saját guarded backupjából friss utóhash/CAS-szal. Lezárt session nem éledhet vissza; pont/nyugta nem törölhető és régi elutasítás nem próbálható újra automatikusan.
+
+Kézi lista: meglévő technikai profil kapcsolódik; normál bontás után régi session érvénytelen; újrakapcsolódva ugyanaz a fiók/civil/teljesítettség és saját üzenetek látszanak; profiloldali visszatérés változatlan. Új profil/pont nem kell. A régi játékos5 pontja külön, saját újrakapcsolódás és egy eseményre kötött reconciliation után rendezhető.
+
+Jelen állapot: helyi forrás és célzott tesztek; teljes protected hash-leltár és6 izolált hash/checksum eset, deploy-map Bástya sikeres. Forrásreview egyetlen P2 lelete javítva és a reviewer deltavisszaolvasásával lezárva. Még nincs merge/telepítés/új élő elfogadás; CI külön rögzítendő.
+
+## Jóváhagyott main-integráció
+
+A rögzített `a41a7ff76b6eb2ba60c772eb695d09f7f1c8e297` main beolvasása után csak a leltár és két státuszdokumentum ütközött; mindkét oldal tartalma megmaradt. A JYSK runtime és tesztfájlok byte-azonosak a felülvizsgált `4a1c06b7` változattal. A mainből örökölt, elavult `docs/impactshop-guard-config.sha256` leltárdigest a tényleges fájlhashre javítva; konfiguráció/guard-viselkedés változatlan. Célzott 280/14/19 PHP-próba újrafuttatva; a korábbi izolált SQL-bizonyíték újrahasználva.

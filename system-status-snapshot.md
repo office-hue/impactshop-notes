@@ -1,3 +1,10 @@
+## 2026-11-11 — JYSK függő jutalom, helyi javítás
+
+Egy bridge-fájl: normál disconnect/valódi revoke, zárolt generáció/kapcsolatvédelem, technikai hiba unknown és claim nélküli writer-ellenőrzés. PHP280/private14/results19 és valódi MariaDB lifecycle36 sikeres. Régi default manager SQL-hibainjektálás nem igazolt; explicit célzott mód. Független review fixture-óra lelet javítva, terméklelet nincs. Új profil/éles pont/kapu/deployment nincs; részletek: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md.
+
+## 2026-11-11 — JYSK belépési horgony, forrás-előkészítés
+
+Egyetlen runtime-konstans változik: a hitelesítésre visszaküldött látogató a meglévő profil belépési részéhez érkezzen. Csak #impactshop-signin töredék; visszatérési paraméterek és minden hitelesítési/pontozási függvény változatlan. Merge/telepítés/élő kattintásos elfogadás nincs. Részletek és rollback: docs/jysk-game-bridge-2026-10-27.md.
 ## 2026-11-10 — legacy REST-határ, célzott hookjavítás
 
 Éles ACF trace410→NULL oka igazolt, saját priority20 lokálisan tesztelt;
