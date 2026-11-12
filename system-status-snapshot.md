@@ -1,3 +1,9 @@
+## 2026-11-12 — Watchdog pontforrások, helyi megfigyelési jelölt
+
+A live-matching events/api/cron 17 earning hívásán default-off megfigyelés, változatlan pénzügyi managerrel. Helper SQL-port stub és16 izolált eredeti/módosított producer parity sikeres. Nem teljes rendszer-PASS: Izolált valódi MariaDB helper/exporter, index-EXPLAIN, elveszett result és32 párhuzamos megfigyelés sikeres; éles tartós hibafolyam, kardinalitás és forgalmi p95 még kiadási feltétel. Nincs migráció, telepítés vagy aktiválás. Részletek: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+Opcionális operátori konstans a már létező, tulajdonoshoz kötött loghoz; 6 izolált log-célteszt sikeres. A webes naplózás és az új bájtok visszaolvasásának bizonyítása még függő; nincs új journal vagy tárhelyírás.
+
 ## 2026-11-11 — JYSK függő jutalom, helyi javítás
 
 Egy bridge-fájl: normál disconnect/valódi revoke, zárolt generáció/kapcsolatvédelem, technikai hiba unknown és claim nélküli writer-ellenőrzés. PHP280/private14/results19 és valódi MariaDB lifecycle36 sikeres. Régi default manager SQL-hibainjektálás nem igazolt; explicit célzott mód. Független review fixture-óra lelet javítva, terméklelet nincs. Új profil/éles pont/kapu/deployment nincs; részletek: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md.

@@ -127,7 +127,14 @@ function sharity_points_award_daily_login(): void
     }
 
     $manager = new Sharity_Points_Manager();
-    $manager->award_points_for_pseudo(
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('events.award_daily_login', 'pseudo', $pseudo,
+        2,
+        'login_daily',
+        $day,
+        ['source_type' => 'session'],
+        'login_daily:' . $pseudo . ':' . $day) : null;
+    $reward_observation_result = $manager->award_points_for_pseudo(
         $pseudo,
         2,
         'login_daily',
@@ -135,6 +142,9 @@ function sharity_points_award_daily_login(): void
         ['source_type' => 'session'],
         'login_daily:' . $pseudo . ':' . $day
     );
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+    }
 
     set_transient($cache_key, 1, HOUR_IN_SECONDS * 12);
 }
@@ -152,7 +162,14 @@ function sharity_points_award_user_login(string $user_login, WP_User $user): voi
 
     $day = gmdate('Y-m-d');
     $manager = new Sharity_Points_Manager();
-    $manager->award_points(
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('events.award_user_login', 'user', $user_id,
+        2,
+        'login_daily',
+        $day,
+        ['source_type' => 'wp_login'],
+        'login_daily:' . $user_id . ':' . $day) : null;
+    $reward_observation_result = $manager->award_points(
         $user_id,
         2,
         'login_daily',
@@ -160,6 +177,9 @@ function sharity_points_award_user_login(string $user_login, WP_User $user): voi
         ['source_type' => 'wp_login'],
         'login_daily:' . $user_id . ':' . $day
     );
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+    }
 }
 
 function sharity_points_track_wallet_download(): void
@@ -184,7 +204,14 @@ function sharity_points_track_wallet_download(): void
     }
 
     $manager = new Sharity_Points_Manager();
-    $manager->award_points_for_pseudo(
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('events.track_wallet_download', 'pseudo', $pseudo,
+        25,
+        'wallet_download',
+        $slug,
+        ['source_type' => 'wallet', 'ngo_slug' => $slug],
+        'wallet_download:' . $pseudo . ':' . $slug) : null;
+    $reward_observation_result = $manager->award_points_for_pseudo(
         $pseudo,
         25,
         'wallet_download',
@@ -192,6 +219,9 @@ function sharity_points_track_wallet_download(): void
         ['source_type' => 'wallet', 'ngo_slug' => $slug],
         'wallet_download:' . $pseudo . ':' . $slug
     );
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+    }
 }
 
 function sharity_points_track_share_page(): void
@@ -228,7 +258,14 @@ function sharity_points_track_share_page(): void
     }
 
     $manager = new Sharity_Points_Manager();
-    $manager->award_points_for_pseudo(
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('events.track_share_page', 'pseudo', $pseudo,
+        10,
+        'share',
+        $slug,
+        ['source_type' => 'share_page', 'ngo_slug' => $slug],
+        'share:' . $pseudo . ':' . $slug . ':' . $today) : null;
+    $reward_observation_result = $manager->award_points_for_pseudo(
         $pseudo,
         10,
         'share',
@@ -236,6 +273,9 @@ function sharity_points_track_share_page(): void
         ['source_type' => 'share_page', 'ngo_slug' => $slug],
         'share:' . $pseudo . ':' . $slug . ':' . $today
     );
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+    }
 }
 
 function sharity_points_rest_event_bridge($response, $handler, WP_REST_Request $request)
@@ -260,7 +300,14 @@ function sharity_points_rest_event_bridge($response, $handler, WP_REST_Request $
         $pseudo = $pseudo !== '' ? strtolower(sanitize_text_field($pseudo)) : sharity_points_get_pseudo_cookie();
         if ($pseudo !== '') {
             $manager = new Sharity_Points_Manager();
-            $manager->award_points_for_pseudo(
+            $reward_observation = class_exists('Sharity_Reward_Observation', false)
+                ? Sharity_Reward_Observation::beforeAward('events.rest_event_bridge', 'pseudo', $pseudo,
+                10,
+                'profile_complete',
+                null,
+                ['source_type' => 'identity_panel'],
+                'profile_complete:' . $pseudo) : null;
+            $reward_observation_result = $manager->award_points_for_pseudo(
                 $pseudo,
                 10,
                 'profile_complete',
@@ -268,10 +315,20 @@ function sharity_points_rest_event_bridge($response, $handler, WP_REST_Request $
                 ['source_type' => 'identity_panel'],
                 'profile_complete:' . $pseudo
             );
+            if ($reward_observation !== null) {
+                Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+            }
 
             $nickname = isset($payload['nickname']) ? trim((string) $payload['nickname']) : '';
             if ($nickname !== '') {
-                $manager->award_points_for_pseudo(
+                $reward_observation = class_exists('Sharity_Reward_Observation', false)
+                    ? Sharity_Reward_Observation::beforeAward('events.rest_event_bridge', 'pseudo', $pseudo,
+                    15,
+                    'nickname',
+                    null,
+                    ['source_type' => 'nickname'],
+                    'nickname:' . $pseudo) : null;
+                $reward_observation_result = $manager->award_points_for_pseudo(
                     $pseudo,
                     15,
                     'nickname',
@@ -279,6 +336,9 @@ function sharity_points_rest_event_bridge($response, $handler, WP_REST_Request $
                     ['source_type' => 'nickname'],
                     'nickname:' . $pseudo
                 );
+                if ($reward_observation !== null) {
+                    Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+                }
             }
         }
     }
@@ -290,7 +350,14 @@ function sharity_points_rest_event_bridge($response, $handler, WP_REST_Request $
             $payload = (array) $request->get_json_params();
             $campaign_id = isset($payload['campaign_id']) ? (string) $payload['campaign_id'] : '';
             $manager = new Sharity_Points_Manager();
-            $manager->award_points_for_pseudo(
+            $reward_observation = class_exists('Sharity_Reward_Observation', false)
+                ? Sharity_Reward_Observation::beforeAward('events.rest_event_bridge', 'pseudo', $pseudo,
+                5,
+                'video_sponsor',
+                $campaign_id !== '' ? $campaign_id : null,
+                ['source_type' => 'impact_vote', 'campaign_id' => $campaign_id],
+                'video_sponsor:' . $pseudo . ':' . $day) : null;
+            $reward_observation_result = $manager->award_points_for_pseudo(
                 $pseudo,
                 5,
                 'video_sponsor',
@@ -298,6 +365,9 @@ function sharity_points_rest_event_bridge($response, $handler, WP_REST_Request $
                 ['source_type' => 'impact_vote', 'campaign_id' => $campaign_id],
                 'video_sponsor:' . $pseudo . ':' . $day
             );
+            if ($reward_observation !== null) {
+                Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+            }
         }
     }
 
@@ -339,7 +409,14 @@ function sharity_points_video_ad(WP_REST_Request $request): WP_REST_Response
     }
 
     $manager = new Sharity_Points_Manager();
-    $manager->award_points_for_pseudo(
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('events.video_ad', 'pseudo', $pseudo,
+        1,
+        'video_ad',
+        null,
+        ['source_type' => 'ad_view'],
+        'video_ad:' . $pseudo . ':' . $today . ':' . ($count + 1)) : null;
+    $reward_observation_result = $manager->award_points_for_pseudo(
         $pseudo,
         1,
         'video_ad',
@@ -347,6 +424,9 @@ function sharity_points_video_ad(WP_REST_Request $request): WP_REST_Response
         ['source_type' => 'ad_view'],
         'video_ad:' . $pseudo . ':' . $today . ':' . ($count + 1)
     );
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $reward_observation_result);
+    }
 
     return new WP_REST_Response(['success' => true], 200);
 }

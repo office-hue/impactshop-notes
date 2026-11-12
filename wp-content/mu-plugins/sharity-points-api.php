@@ -412,7 +412,12 @@ function sharity_points_pseudo_earn(WP_REST_Request $request): WP_REST_Response
     }
 
     $manager = new Sharity_Points_Manager();
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('api.pseudo_earn', 'pseudo', $pseudo_id, $points, $type, $source_id, $metadata, $dedupe_key) : null;
     $result = $manager->award_points_for_pseudo($pseudo_id, $points, $type, $source_id, $metadata, $dedupe_key);
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $result);
+    }
 
     if (!($result['success'] ?? false)) {
         return new WP_REST_Response(['message' => $result['error'] ?? 'Failed'], 400);
@@ -441,7 +446,12 @@ function sharity_points_earn(WP_REST_Request $request): WP_REST_Response
     }
 
     $manager = new Sharity_Points_Manager();
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('api.signed_earn', 'user', $user_id, $points, $type, $source_id, $metadata, $dedupe_key) : null;
     $result = $manager->award_points($user_id, $points, $type, $source_id, $metadata, $dedupe_key);
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $result);
+    }
 
     if (!($result['success'] ?? false)) {
         return new WP_REST_Response(['message' => $result['error'] ?? 'Failed'], 400);
@@ -543,7 +553,12 @@ function sharity_points_webhook_purchase(WP_REST_Request $request): WP_REST_Resp
     }
 
     $manager = new Sharity_Points_Manager();
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('api.signed_purchase', 'pseudo', $pseudo_id, $points, 'purchase', $source_id, $metadata, $dedupe_key) : null;
     $result = $manager->award_points_for_pseudo($pseudo_id, $points, 'purchase', $source_id, $metadata, $dedupe_key);
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $result);
+    }
 
     if (!($result['success'] ?? false)) {
         return new WP_REST_Response(['message' => $result['error'] ?? 'Failed'], 400);
@@ -750,7 +765,12 @@ function sharity_points_user_feedback(WP_REST_Request $request): WP_REST_Respons
 
     $manager = new Sharity_Points_Manager();
     $dedupe_key = sprintf('feedback:user:%d:%s:%d', $user_id, $month_key, $count + 1);
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('api.feedback.user', 'user', $user_id, 20, 'feedback', $month_key, $metadata, $dedupe_key) : null;
     $result = $manager->award_points($user_id, 20, 'feedback', $month_key, $metadata, $dedupe_key);
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $result);
+    }
 
     if (!($result['success'] ?? false)) {
         return new WP_REST_Response(['message' => $result['error'] ?? 'Failed'], 400);
@@ -809,7 +829,12 @@ function sharity_points_pseudo_feedback(WP_REST_Request $request): WP_REST_Respo
 
     $manager = new Sharity_Points_Manager();
     $dedupe_key = sprintf('feedback:pseudo:%s:%s:%d', $pseudo_id, $month_key, $count + 1);
+    $reward_observation = class_exists('Sharity_Reward_Observation', false)
+        ? Sharity_Reward_Observation::beforeAward('api.feedback.pseudo', 'pseudo', $pseudo_id, 20, 'feedback', $month_key, $metadata, $dedupe_key) : null;
     $result = $manager->award_points_for_pseudo($pseudo_id, 20, 'feedback', $month_key, $metadata, $dedupe_key);
+    if ($reward_observation !== null) {
+        Sharity_Reward_Observation::after($reward_observation, $result);
+    }
 
     if (!($result['success'] ?? false)) {
         return new WP_REST_Response(['message' => $result['error'] ?? 'Failed'], 400);

@@ -51,6 +51,7 @@
     "wp-content/mu-plugins/sharity-points-cron.php",
     "wp-content/mu-plugins/sharity-points-discount.php",
     "wp-content/mu-plugins/sharity-points-events.php",
+    "wp-content/mu-plugins/sharity-reward-observation.php",
     "wp-content/mu-plugins/sharity-points-helpers.php",
     "wp-content/mu-plugins/sharity-points-ledger-sync.php",
     "wp-content/mu-plugins/sharity-points-manager.php",
@@ -192,7 +193,7 @@
   "hashes": {
     "wp-content/mu-plugins/impactshop-sharity-legacy-votes-retirement.php": "067c00def020dc5d30da44896c8eec221f4ef79c706897151293196f9c651433",
     "wp-content/mu-plugins/impactshop-jysk-game.php": "63906466e4eaa49d5914b2b1fb04bfbd5bac6b13460f98985786964afbfa6297",
-    "docs/impactshop-guard-config.json": "44a1b72e2e0ad2c963aae6a39a7b9133d65729105423ab8d09354ab453372112",
+    "docs/impactshop-guard-config.json": "a0198f96e7c45389e76e282c7081ea904ccec14b23665f24cc6030335e421f4d",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "bbbd10da51b619a134b9d3147ab2ef9f081ec9b52697c349775c4aefe1584558",
@@ -230,10 +231,10 @@
     "wp-content/mu-plugins/impact-gamification.php": "87831fe01075ef43202d4acde71c07fa67008f52e39d902248b92577e753759a",
     "wp-content/mu-plugins/sharity-level-manager.php": "79b990732bd675856ca44f83feb49c0491924a7a4324090763c649772257c7f8",
     "wp-content/mu-plugins/sharity-points.php": "a70f68036a5997430379d7eea978a606c771a740f14b64369142d404a9060cbd",
-    "wp-content/mu-plugins/sharity-points-api.php": "ed34c5e036cac608290c9b235ff101c131b9979fd41ab020c6efd5e41c4fbbd6",
-    "wp-content/mu-plugins/sharity-points-cron.php": "b25056b549eab62b69e838343543bba2dd3dfff7ede9861392c1669566effe7b",
+    "wp-content/mu-plugins/sharity-points-api.php": "9e4225c549bcc5f8561deb3505fd25e3cb8f0afaf99f19a21f5a79826e16b96b",
+    "wp-content/mu-plugins/sharity-points-cron.php": "9654842eebe87208d5bcde153c1aed5ba5892000f08da89cf6a2eebdb0033d5a",
     "wp-content/mu-plugins/sharity-points-discount.php": "04b5ea9564af5f7d10bfaeb4937e563516e98c6ed927ab3a51a7c7c8791b64ee",
-    "wp-content/mu-plugins/sharity-points-events.php": "1048c656b1a3b149fc391648d426ac26dfd263f1f6884c4a60832c63aca3d3ef",
+    "wp-content/mu-plugins/sharity-points-events.php": "6a60adcd86ac499af268e3b1fb6207f2fba6966bf1daab52ee53962374b00c46",
     "wp-content/mu-plugins/sharity-points-helpers.php": "ac183fad82fa022b71f58fac39f2061ecc3b20d5c43d1c1653439df23345a3bd",
     "wp-content/mu-plugins/sharity-points-ledger-sync.php": "9e55e8ff2ae43bd10c640b407005053b2e5b05ccc93256074a1ff7fd6016637b",
     "wp-content/mu-plugins/sharity-points-manager.php": "97284633b1518a14f1a8aad83986f208c435da3cf819145db3b2d496c3b9f747",
@@ -373,7 +374,8 @@
     "wp-content/mu-plugins/sharity-ngo-donations/webhook.php": "c5222c74e6781641a62b26b096304fc62b77366487f4130a847e01b0c441a6a3",
     "wp-content/mu-plugins/impactshop-profile-ui.php": "e2c188618f341f531c84008334bbbb296f3b1e84238e62cbed6f272164ff3b21",
     "scripts/jysk-ngo-catalog-enroll.php": "0c138bfd2fff453b6b344eedad1e061d93cef7322e67dd94f337a73f08b361c3",
-    "scripts/jysk-ngo-catalog-reservation-schema.sql": "ba875a099bb590cf68c290e0ab1ef493368bddd47cc49220acd0ae6178eeb75d"
+    "scripts/jysk-ngo-catalog-reservation-schema.sql": "ba875a099bb590cf68c290e0ab1ef493368bddd47cc49220acd0ae6178eeb75d",
+    "wp-content/mu-plugins/sharity-reward-observation.php": "cbdf032529d955a144fc2032158c6dec0250f1ec04efd3459f2165a013a34b3f"
   },
   "generated_at": "2026-09-11T04:44:20+00:00"
 }

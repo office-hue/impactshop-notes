@@ -1,3 +1,9 @@
+## 2026-11-12 — Pontjutalom-megfigyelés, kikapcsolt forrásjelölt
+
+A három producer éles preimage-egyezése után 17 meglévő hívás kapott külön before/after megfigyelést. Új helper default-off, explicit CLI séma; manager, jutalom, válasz és retirement változatlan. PHP protokollstub és16 izolált producer parity sikeres. Valódi izolált MariaDB helper/exporter próba és32 párhuzamos megfigyelés sikeres; a bizonyított recorder-sorzár15ms statement-limittel gyorsan unknown. Tartós éles recorder-hibafolyam és éles elfogadás még nincs; merge/deploy/aktiválás nincs. Scope, leltár, rollout/rollback és függő UI: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+Opcionális operátori konstans a már létező, tulajdonoshoz kötött loghoz; 6 izolált log-célteszt sikeres. A webes naplózás és az új bájtok visszaolvasásának bizonyítása még függő; nincs új journal vagy tárhelyírás.
+
 ## 2026-11-11 — JYSK: bontás és függő pont
 
 Normál disconnect megtartja a késői jutalom grantját; valódi revoke/owner-tiltás megmarad. Sorzár/generáció/kapcsolatvédelem, authoritative absent/readiness és titokmentes oknapló. PHP280/private14/results19 és izolált valós MariaDB lifecycle36 sikeres. Régi teljes SQL-hibainjektálás az új manager-port miatt nem PASS; explicit célzott mód. Független forrásreview P2 fixture-óra javítva; terméklelet nincs. Egy bridge-fájl, meglévő #275 horgony megmarad; shared profile/manager/séma változatlan. Részletek és rollback/UI-lista: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md. Merge/deploy még nincs; retired-header WIP megőrizve.

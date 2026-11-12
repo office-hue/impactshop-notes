@@ -57,6 +57,7 @@
     "wp-content/mu-plugins/sharity-level-manager.php",
     "wp-content/mu-plugins/impactshop-jysk-game.php",
     "wp-content/mu-plugins/sharity-points*.php",
+    "wp-content/mu-plugins/sharity-reward-observation.php",
     "wp-content/mu-plugins/impactshop-pwa.php",
     "wp-content/mu-plugins/impactshop-pwa-push.php",
     "sw.js",
@@ -249,7 +250,8 @@
       "wp-content/mu-plugins/sharity-points*.php",
       "wp-content/mu-plugins/sharity-level-manager.php",
       "scripts/jysk-ngo-catalog-enroll.php",
-      "scripts/jysk-ngo-catalog-reservation-schema.sql"
+      "scripts/jysk-ngo-catalog-reservation-schema.sql",
+      "wp-content/mu-plugins/sharity-reward-observation.php"
     ],
     "community_route": [
       "wp-content/mu-plugins/impactshop-hatas-korok-human-touch-route.php",
