@@ -236,7 +236,7 @@
     "wp-content/mu-plugins/sharity-points-discount.php": "04b5ea9564af5f7d10bfaeb4937e563516e98c6ed927ab3a51a7c7c8791b64ee",
     "wp-content/mu-plugins/sharity-points-events.php": "6a60adcd86ac499af268e3b1fb6207f2fba6966bf1daab52ee53962374b00c46",
     "wp-content/mu-plugins/sharity-points-helpers.php": "ac183fad82fa022b71f58fac39f2061ecc3b20d5c43d1c1653439df23345a3bd",
-    "wp-content/mu-plugins/sharity-points-ledger-sync.php": "9e55e8ff2ae43bd10c640b407005053b2e5b05ccc93256074a1ff7fd6016637b",
+    "wp-content/mu-plugins/sharity-points-ledger-sync.php": "330fdd7d529a840dd32e84ad359bd433604609084c26a394c1b418526b7fd6cb",
     "wp-content/mu-plugins/sharity-points-manager.php": "97284633b1518a14f1a8aad83986f208c435da3cf819145db3b2d496c3b9f747",
     "wp-content/mu-plugins/sharity-points-webhooks.php": "8a87b0e450f0ff0594dad5236c02cbf11f85d92c566d9510ac7312f09592b13d",
     "wp-content/mu-plugins/sharity-points-admin.php": "18ade65eafacee78549edea8df76cdaee8244a1c10f805acf6a09f4e056535db",

@@ -39,12 +39,33 @@ if (($argv[1] ?? '') !== 'fixture') {
             $cases++;
         }
     }
+    $bonusCases = 0;
+    foreach (['success', 'earning_blocked', 'ledger_write_failed', 'commit_unconfirmed'] as $result) {
+        $baseline = $hasPreimage ? json_decode(run_process([PHP_BINARY, __FILE__, 'fixture', 'baseline', 'missing', $result, 'bonus']), true, 512, JSON_THROW_ON_ERROR) : null;
+        foreach (['missing', 'off', 'on', 'failed'] as $mode) {
+            $current = json_decode(run_process([PHP_BINARY, __FILE__, 'fixture', 'current', $mode, $result, 'bonus']), true, 512, JSON_THROW_ON_ERROR);
+            if ($baseline !== null) check($current['business'] === $baseline['business'], 'changed purchase bonus business contract: ' . $mode . '/' . $result);
+            check(count($current['business']['calls']) === 6, 'expected six actual manager calls across pseudo/user bonus branches');
+            if ($mode === 'on') {
+                check(count($current['observations']) === 12, 'six purchase bonus calls observed; existing entitlement skipped');
+                foreach ($current['business']['calls'] as $i => $call) {
+                    $before = $current['observations'][$i * 2]; $after = $current['observations'][$i * 2 + 1];
+                    $kind = $call['method'] === 'award_points' ? 'user' : 'pseudo';
+                    check($before['args'][0] === 'cron.purchase_bonus.' . $kind && $before['args'][1] === $kind, 'wrong bonus observation lane');
+                    check(array_slice($before['args'], 2) === $call['args'], 'purchase bonus observation arguments diverged');
+                    check($after['result'] === $current['business']['manager_result'], 'bonus result observation changed');
+                }
+            } else check($current['observations'] === [], 'disabled bonus recorder performed work');
+            $bonusCases++;
+        }
+    }
+    echo "PASS purchase bonus golden arguments ({$bonusCases} isolated cases; first/shop/referral pseudo+user; existing entitlement skipped)\n";
     echo "PASS reward producer golden arguments ({$cases} isolated cases; 17 earning calls, admin excluded; no WP/DB bootstrap)\n";
     echo $hasPreimage ? "PASS response/side-effect parity against pinned live preimages\n" : "NOT RUN original response/side-effect parity: pinned Git object unavailable\n";
     exit;
 }
 
-$version = $argv[2]; $mode = $argv[3]; $resultMode = $argv[4];
+$version = $argv[2]; $mode = $argv[3]; $resultMode = $argv[4]; $fixtureType = $argv[5] ?? 'main';
 define('HOUR_IN_SECONDS', 3600); define('ARRAY_A', 'ARRAY_A');
 $GLOBALS['business'] = ['calls' => [], 'side_effects' => [], 'responses' => []];
 $GLOBALS['observations'] = [];
@@ -81,6 +102,11 @@ class WP_REST_Response {
 }
 class ProducerDbStub {
     public string $prefix = 'synthetic_';
+    public string $last_error = '';
+    public function get_row(string $sql, $format): ?array {
+        return str_contains($sql, 'user_referrals') ? ($GLOBALS['referral_row'] ?? null) : ($GLOBALS['existing_bonus'] ?? null);
+    }
+    public function update(...$args): int { $GLOBALS['business']['side_effects'][] = ['update', $args]; return 1; }
     public function prepare(string $sql, ...$args): string { return $sql; }
     public function get_var(string $sql): int { return 0; }
 }
@@ -107,9 +133,11 @@ function sharity_collect_purchase_weeks(...$args): array { return ['202645','202
 function sharity_collect_purchase_months(...$args): array { return ['2026-11','2026-10']; }
 function sharity_has_consecutive_weeks(...$args): bool { return true; }
 function sharity_has_consecutive_months(...$args): bool { return true; }
-function sharity_points_handle_referral(...$args): void { $GLOBALS['business']['side_effects'][] = ['referral', $args]; }
+if ($fixtureType !== 'bonus') {
+    function sharity_points_handle_referral(...$args): void { $GLOBALS['business']['side_effects'][] = ['referral', $args]; }
+}
 
-$functions = [
+$functions = $fixtureType === 'bonus' ? ['sharity-points-ledger-sync.php' => ['sharity_points_impactshop_sql','sharity_points_impactshop_bonus_once','sharity_points_handle_referral']] : [
     'sharity-points-events.php' => ['sharity_points_award_daily_login','sharity_points_award_user_login','sharity_points_track_wallet_download','sharity_points_track_share_page','sharity_points_rest_event_bridge','sharity_points_video_ad'],
     'sharity-points-api.php' => ['sharity_points_pseudo_earn','sharity_points_earn','sharity_points_webhook_purchase','sharity_points_user_feedback','sharity_points_pseudo_feedback','sharity_points_admin_adjust'],
     'sharity-points-cron.php' => ['sharity_award_streaks_for_user','sharity_award_streaks_for_pseudo'],
@@ -135,6 +163,35 @@ foreach ($functions as $file => $names) {
     check(count($found) === count($names), 'function extraction incomplete');
 }
 function response($value): void { $GLOBALS['business']['responses'][] = $value; }
+if ($fixtureType === 'bonus') {
+    $root = str_repeat('a', 64); $metadata = ['source_type' => 'impactshop_bonus', 'root_id' => $root];
+    response(sharity_points_impactshop_bonus_once('abcdefghij', 100, 'first_purchase', $root, $metadata, 'first_purchase:abcdefghij'));
+    response(sharity_points_impactshop_bonus_once('abcdefghij', 25, 'shop_discovery', $root, $metadata, 'shop_discovery:abcdefghij:fixture-shop'));
+    $GLOBALS['referral_row'] = ['id' => 5, 'referrer_pseudo_id' => 'referrer12', 'referrer_user_id' => 0];
+    response(sharity_points_handle_referral('abcdefghij', 0, $metadata, true));
+    $GLOBALS['referral_row'] = ['id' => 6, 'referrer_pseudo_id' => '', 'referrer_user_id' => 29];
+    response(sharity_points_handle_referral('abcdefghij', 0, $metadata, true));
+    $GLOBALS['existing_bonus'] = ['id' => 99, 'pseudo_id' => 'abcdefghij', 'user_id' => null, 'points' => 100, 'type' => 'first_purchase'];
+    response(sharity_points_impactshop_bonus_once('abcdefghij', 100, 'first_purchase', 'another-root', ['source_type' => 'impactshop_bonus'], 'first_purchase:abcdefghij'));
+    $GLOBALS['existing_bonus']['points'] = 101;
+    response(sharity_points_impactshop_bonus_once('abcdefghij', 100, 'first_purchase', $root, $metadata, 'first_purchase:abcdefghij'));
+    $GLOBALS['referral_row'] = null;
+    response(sharity_points_handle_referral('abcdefghij', 0, $metadata, true));
+    $expected = [
+        ['abcdefghij',100,'first_purchase',$root,$metadata,'first_purchase:abcdefghij'],
+        ['abcdefghij',25,'shop_discovery',$root,$metadata,'shop_discovery:abcdefghij:fixture-shop'],
+        ['referrer12',200,'referral','0',$metadata,'referral:abcdefghij'],
+        ['abcdefghij',50,'referral_bonus','0',$metadata,'referral_bonus:abcdefghij'],
+        [29,200,'referral','0',$metadata,'referral:abcdefghij'],
+        ['abcdefghij',50,'referral_bonus','0',$metadata,'referral_bonus:abcdefghij'],
+    ];
+    check(array_column($GLOBALS['business']['calls'], 'args') === $expected, 'golden original purchase bonus arguments changed');
+    check(array_slice($GLOBALS['business']['responses'], -3) === [['success'=>true,'transaction_id'=>99],['success'=>false,'transaction_id'=>99],true], 'existing bonus entitlement return changed');
+    $GLOBALS['business']['manager_result'] = $GLOBALS['manager_result'];
+    echo json_encode(['business'=>$GLOBALS['business'],'observations'=>$GLOBALS['observations']], JSON_THROW_ON_ERROR);
+    exit;
+}
+
 sharity_points_award_daily_login();
 sharity_points_award_user_login('fixture', new WP_User());
 sharity_points_track_wallet_download();

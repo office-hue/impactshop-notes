@@ -1,3 +1,7 @@
+## 2026-11-12 — Vásárlási bónuszmegfigyelés, helyi kiegészítés
+
+Egyetlen termékfájl: ledger-sync bonus_once, a meglévő entitlement return után. First_purchase, shop_discovery, referral pseudo/user és referred_bonus megfigyelése; cron/manager/gazdasági argumentum változatlan. Az eredeti17 earning golden16 eset és az új bonus golden16 eset preimage parity sikeres. Csak saját ledger-sync digest/checksum frissül; aktív coverage és természetes UI nem igazolt, nincs telepítés vagy aktiválás. Scope/rollback/UI: docs/protected-change-records/2026-11-12-reward-observations.md.
+
 ## 2026-11-12 — Watchdog pontforrások, helyi megfigyelési jelölt
 
 A live-matching events/api/cron 17 earning hívásán default-off megfigyelés, változatlan pénzügyi managerrel. Helper SQL-port stub és16 izolált eredeti/módosított producer parity sikeres. Nem teljes rendszer-PASS: Izolált valódi MariaDB helper/exporter, index-EXPLAIN, elveszett result és32 párhuzamos megfigyelés sikeres; éles tartós hibafolyam, kardinalitás és forgalmi p95 még kiadási feltétel. Nincs migráció, telepítés vagy aktiválás. Részletek: docs/protected-change-records/2026-11-12-reward-observations.md.

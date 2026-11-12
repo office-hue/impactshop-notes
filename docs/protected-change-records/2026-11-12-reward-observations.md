@@ -184,3 +184,70 @@ bizonyítja az összes élő UI-smoke lefutását.
 A meglévő CI-ben a négy PHP-forrás lintje és a két izolált protokoll/parity teszt
 fut. A MariaDB-teszt külön disposable környezetet kér; CI nem tesz úgy, mintha
 éles adatbázisos vagy UI-ellenőrzés történt volna.
+
+
+## Vásárlási bónuszok célzott kiegészítése — 2026-11-12
+
+Az önálló forrásreview feltárta, hogy a `sharity_points_impactshop_reconcile`
+aktív schema/consumer kapui után a first_purchase, shop_discovery és referral
+bónuszok a `sharity_points_impactshop_bonus_once` függvénybe futnak. Az aktív
+referral pseudo és user referrer ága, valamint referred_bonus is ezen halad át.
+A legacy impact_ledger fogyasztó külön kikapcsolt út; abba nem kerül új hívás.
+
+Koherencia/érintett funkciók: a meglévő bonus_once korai kanonikus
+entitlement/dedupe ellenőrzése és return értéke változatlan. Csak az ezután
+következő, változatlan argumentumú shared managerhívás körül lesz megfigyelés.
+Így a másik rooton már teljesített egyszeri bónusz metadata-különbsége nem
+keletkeztet hamis candidate/content-conflict rekordot. A cron fájl és callback
+sorrend, meglévő root/version/needs_reconciliation írások változatlanok.
+Kockázat: recorder hiba csak unknown lefedettséget adhat; jutalom, manager
+válasz és a referral lezárás nem változhat. A helper továbbra is default-off;
+webes tartós logfolyam és a teljes vásárlási callback-család lefedettsége nincs
+ettől igazolva.
+
+Előkép: Git `91b8cc6835859168dcdfd5cbc742fd2b985ae912`, ledger-sync SHA256
+`9e55e8ff2ae43bd10c640b407005053b2e5b05ccc93256074a1ff7fd6016637b`;
+a rögzített 366df47e parity-preimage ugyanennek a fájlnak azonos bájtjait adja.
+Privát, egyfájlos lokális backup: `.codex/backups/watchdog-purchase-observations-20261112/`.
+Rollback: kizárólag e fájl ellenőrzött előképe, a release határán friss CAS és a
+meglévő guarded exact-file út; nincs runtime visszaírás ebben a munkában.
+A saját lokális másolat legfeljebb két napig őrzendő; teljes backup nem érintett.
+
+Funkcióellenőrzés: eredeti 17 earning + admin parity golden megőrzendő;
+first_purchase/shop_discovery, referral pseudo/user és referred bonus exact
+argumentumai/eredményei; meglévő entitlement return esetén nincs új megfigyelés.
+Kézi UI lista kiadás után: Profil ponttörténetben természetes vásárlás bónuszai
+legfeljebb egyszer szerepeljenek; ajánló/ajánlott jóváírás ne ismétlődjön;
+adminisztratív jutalomkapu, összegek és meglévő profil-egyenleg viselkedése
+maradjon változatlan. Ezt most nem futtattuk éles gazdasági eseménnyel.
+
+
+Ellenőrzés: PHP producer parity ugyanabban a meglévő tesztben, az eredeti
+17 earning + admin golden16 izolált esete változatlan és sikeres; külön16
+izolált bonus eset az eredeti366df47e fájllal egyező managerargumentumot,
+returnt és referral update-et bizonyít. Hiányzó/off/on/failed recorder és
+success/earning_blocked/ledger_write_failed/commit_unconfirmed eredmények;
+a már teljesített vagy eltérő tartalmú entitlement return nem hív recordert.
+Új fix lane-ek: `cron.purchase_bonus.pseudo`, `cron.purchase_bonus.user`.
+A reader tulajdonosi térképe és a cron-forrás ledger-sync kötése külön R2
+integráció; ezek nélkül nincs teljes coverage állítás.
+
+Új várható ledger-sync artifact SHA256:
+`330fdd7d529a840dd32e84ad359bd433604609084c26a394c1b418526b7fd6cb`.
+A cron továbbra is `9654842eebe87208d5bcde153c1aed5ba5892000f08da89cf6a2eebdb0033d5a`;
+manager, séma, pénzszámítás és attribution bájtjai változatlanok.
+A leltárban csak a már meglévő ledger-sync hash és a manifest külső
+checksumja frissült; nincs új protected út vagy guardmodell.
+
+Érintett fájlok: `wp-content/mu-plugins/sharity-points-ledger-sync.php`,
+`tests/sharity-reward-producers.test.php`, `docs/impactshop-guard-hashes.json`,
+`docs/impactshop-guard-hashes.sha256` és a saját notes/snapshot/change-record.
+
+
+A célzott PHP lint és a meglévő helper protokoll/SQL-stub teszt sikeres.
+A protected-touch guard a dokumentált, már jóváhagyott scope override-dal,
+konkrét rollbackkel és a modell szerinti nyolc identity_and_points smoke
+címkével sikeres; ez scope-ellenőrzés, nem a címkék éles UI-futtatása.
+A manifest checksum sikeres, minden idegen digest byte-azonos, diff-check tiszta.
+Új MariaDB/éles gazdasági futás nem indult; a korábbi helper eredmény nem
+minősül e bónuszok éles aktiválásának. A delta a meglévő Notes PR278 része; élesítés és aktiválás továbbra sem történt.
