@@ -45,5 +45,14 @@ jobs:
           bash tests/deploy-wpcontent-map-exact-file.test.sh
           bash tests/impactshop-guard-rollback-truth.test.sh
 
+      - name: Reward observation protocol and unchanged producer behavior
+        run: |
+          php -l wp-content/mu-plugins/sharity-reward-observation.php
+          php -l wp-content/mu-plugins/sharity-points-events.php
+          php -l wp-content/mu-plugins/sharity-points-api.php
+          php -l wp-content/mu-plugins/sharity-points-cron.php
+          php tests/sharity-reward-observation.test.php
+          php tests/sharity-reward-producers.test.php
+
       - name: Record bounded scope honestly
         run: echo 'Local fixtures completed. No staging SSH probe, deploy, host installation or production acceptance was performed.'

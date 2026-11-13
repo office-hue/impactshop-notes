@@ -7,6 +7,18 @@ izolált dump/restore checksum-egyezés igazolt. Még nincs kiadás/aktiválás.
 Scope, rollback és kézi UI: docs/protected-change-records/2026-11-13-jysk-profile-persistence.md.
 Csak a bridge saját leltárhash-e és külső checksum frissül; guardmodell változatlan.
 
+## 2026-11-12 22:00 Budapest — Watchdog megfigyelés aktivált, részleges éles elfogadás
+
+PR278 merge `e4357f11`: az öt ellenőrzött MU-fájl exact-file CAS-kiadása és az explicit megfigyelésitábla-migráció megtörtént. A manager és a jutalmazási argumentumok változatlanok. A két monitor-konstans pontos konfiguráció-mentés/CAS/lint után aktív; a 12 producer-hook és 25 telepített forráskötés runtime-ellenőrzött. A három új pontforrás bizonyított lefedettségi kezdete 21:57:14 Budapest; a 22:00-s természetes központi futás valódi ponteseményt kanonikus jóváírással egyeztetett. Időzített/API forrás aktuálisan idle_verified, naplózási lefedettségi rés nincs. Ez nem UI- vagy p95-elfogadás.
+
+Központi runtime: ai-agent Mini generáció17 / `34cf14d8`, ötperces ciklus; friss természetes heartbeat ACK. A webes p95 és a recorder p95≤5ms még nincs megfelelő természetes mintával elfogadva. VB szavazatfogadó, JYSK néhány üzleti/bizonylati ügy és folyamatos profil-session továbbra is külön nyitott; teljes rendszer-PASS nincs. A Mini ismét 20 GiB alatti szabad helye valódi kapacitási kockázat. Nincs tesztjutalom, replay vagy auth-kivétel. Scope, mentés és rollback: [változásrekord](protected-change-records/2026-11-12-reward-observations.md). Secretary: `wrk-watchdog-rewards-20261112`.
+
+## 2026-11-12 — Default-off pontjutalom-megfigyelés
+
+Új helper pontos védett út és identity_and_points smoke-hozzárendelés; a meglévő védelmek változatlanok. A három éles preimage-egyező producer minimális before/after hívása és saját helper/config digest frissül; nincs manager/retirement vagy más forrás újrahash-elés. A leltár forrásállapot, nem éles telepítés. Protokollstub +16 producer parity sikeres; izolált valódi MariaDB helper/exporter/index/32 párhuzamos próba sikeres.15ms saját statement-limit védi a recorder-sorzárat; éles UI/terhelés és tartós hibafolyam bizonyítása függő. Scope/rollback: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+Opcionális operátori konstans a már létező, tulajdonoshoz kötött loghoz; 6 izolált log-célteszt sikeres. A webes naplózás és az új bájtok visszaolvasásának bizonyítása még függő; nincs új journal vagy tárhelyírás.
+
 ## 2026-11-09 — Profil: régi Elementor fejléc
 
 Meglévő profil-UI adapter és változatlan protected modell. Csak saját pluginhash/checksum frissül. Pontos profilgate, wp_head CSS, telepítési dialog-header megőrzés3 célzott böngészőesetben ellenőrzött. Auth/return/actionbar/PWA byte-ok változatlanok. Scope/rollback/UI: docs/protected-change-records/2026-11-09-profile-retired-header.md. Élő kiadás még nincs.

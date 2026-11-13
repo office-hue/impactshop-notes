@@ -7,6 +7,22 @@ PHP301/private19/results19 és izolált, valódi MariaDB session61 sikeres;
 három authtábla saját dump/restore checksum-egyezés igazolt. Éles módosítás
 és aktiválás még nincs; korábbi WIP megőrizve.
 
+## 2026-11-12 22:00 Budapest — Watchdog megfigyelés aktivált, részleges éles elfogadás
+
+PR278 merge `e4357f11`: az öt ellenőrzött MU-fájl exact-file CAS-kiadása és az explicit megfigyelésitábla-migráció megtörtént. A manager és a jutalmazási argumentumok változatlanok. A két monitor-konstans pontos konfiguráció-mentés/CAS/lint után aktív; a 12 producer-hook és 25 telepített forráskötés runtime-ellenőrzött. A három új pontforrás bizonyított lefedettségi kezdete 21:57:14 Budapest; a 22:00-s természetes központi futás valódi ponteseményt kanonikus jóváírással egyeztetett. Időzített/API forrás aktuálisan idle_verified, naplózási lefedettségi rés nincs. Ez nem UI- vagy p95-elfogadás.
+
+Központi runtime: ai-agent Mini generáció17 / `34cf14d8`, ötperces ciklus; friss természetes heartbeat ACK. A webes p95 és a recorder p95≤5ms még nincs megfelelő természetes mintával elfogadva. VB szavazatfogadó, JYSK néhány üzleti/bizonylati ügy és folyamatos profil-session továbbra is külön nyitott; teljes rendszer-PASS nincs. A Mini ismét 20 GiB alatti szabad helye valódi kapacitási kockázat. Nincs tesztjutalom, replay vagy auth-kivétel. Scope, mentés és rollback: [változásrekord](docs/protected-change-records/2026-11-12-reward-observations.md). Secretary: `wrk-watchdog-rewards-20261112`.
+
+## 2026-11-12 — Vásárlási bónuszok megfigyelése, célzott kiegészítés
+
+Forrásmunka a 91b8cc6835859168dcdfd5cbc742fd2b985ae912 HEAD-ről. A meglévő bonus_once managerhívás kap default-off before/after megfigyelést, az előtte álló tartós entitlement/dedupe return változatlan. A cron/reconcile, gazdasági kapuk, jutalmak, metadata és dedupe változatlan; az eredeti17 earning +admin golden és16 új bonus parity eset sikeres. A hiányzó/kikapcsolt/hibás helper, success/earning_blocked/ledger_write_failed/commit_unconfirmed, meglévő entitlement return és referral lezárás azonos az előképpel. Forrásjelölt a PR-ben; nincs telepítés vagy aktiválás. Részletek: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+## 2026-11-12 — Pontjutalom-megfigyelés, kikapcsolt forrásjelölt
+
+A három producer éles preimage-egyezése után 17 meglévő hívás kapott külön before/after megfigyelést. Új helper default-off, explicit CLI séma; manager, jutalom, válasz és retirement változatlan. PHP protokollstub és16 izolált producer parity sikeres. Valódi izolált MariaDB helper/exporter próba és32 párhuzamos megfigyelés sikeres; a bizonyított recorder-sorzár15ms statement-limittel gyorsan unknown. Tartós éles recorder-hibafolyam és éles elfogadás még nincs; merge/deploy/aktiválás nincs. Scope, leltár, rollout/rollback és függő UI: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+Opcionális operátori konstans a már létező, tulajdonoshoz kötött loghoz; 6 izolált log-célteszt sikeres. A webes naplózás és az új bájtok visszaolvasásának bizonyítása még függő; nincs új journal vagy tárhelyírás.
+
 ## 2026-11-11 — JYSK: bontás és függő pont
 
 Normál disconnect megtartja a késői jutalom grantját; valódi revoke/owner-tiltás megmarad. Sorzár/generáció/kapcsolatvédelem, authoritative absent/readiness és titokmentes oknapló. PHP280/private14/results19 és izolált valós MariaDB lifecycle36 sikeres. Régi teljes SQL-hibainjektálás az új manager-port miatt nem PASS; explicit célzott mód. Független forrásreview P2 fixture-óra javítva; terméklelet nincs. Egy bridge-fájl, meglévő #275 horgony megmarad; shared profile/manager/séma változatlan. Részletek és rollback/UI-lista: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md. Merge/deploy még nincs; retired-header WIP megőrizve.

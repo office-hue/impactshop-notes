@@ -272,6 +272,12 @@
       "owner_branch": "main"
     },
     {
+      "path": "wp-content/mu-plugins/sharity-reward-observation.php",
+      "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
+      "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",
+      "owner_branch": "main"
+    },
+    {
       "path": "wp-content/mu-plugins/sharity-points-helpers.php",
       "owner_repo": "https://github.com/office-hue/impactshop-notes.git",
       "owner_root": "/Users/bujdosoarnold/Developer/GitHub/impactshop-notes",

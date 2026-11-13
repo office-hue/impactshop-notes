@@ -6,6 +6,22 @@ results19 és izolált MariaDB session61 + három authtábla restore igazolt.
 PR/merge/telepítés/aktiválás még külön hátravan. Részletes kiadási/rollback/UI:
 docs/protected-change-records/2026-11-13-jysk-profile-persistence.md.
 
+## 2026-11-12 22:00 Budapest — Watchdog megfigyelés aktivált, részleges éles elfogadás
+
+PR278 merge `e4357f11`: az öt ellenőrzött MU-fájl exact-file CAS-kiadása és az explicit megfigyelésitábla-migráció megtörtént. A manager és a jutalmazási argumentumok változatlanok. A két monitor-konstans pontos konfiguráció-mentés/CAS/lint után aktív; a 12 producer-hook és 25 telepített forráskötés runtime-ellenőrzött. A három új pontforrás bizonyított lefedettségi kezdete 21:57:14 Budapest; a 22:00-s természetes központi futás valódi ponteseményt kanonikus jóváírással egyeztetett. Időzített/API forrás aktuálisan idle_verified, naplózási lefedettségi rés nincs. Ez nem UI- vagy p95-elfogadás.
+
+Központi runtime: ai-agent Mini generáció17 / `34cf14d8`, ötperces ciklus; friss természetes heartbeat ACK. A webes p95 és a recorder p95≤5ms még nincs megfelelő természetes mintával elfogadva. VB szavazatfogadó, JYSK néhány üzleti/bizonylati ügy és folyamatos profil-session továbbra is külön nyitott; teljes rendszer-PASS nincs. A Mini ismét 20 GiB alatti szabad helye valódi kapacitási kockázat. Nincs tesztjutalom, replay vagy auth-kivétel. Scope, mentés és rollback: [változásrekord](docs/protected-change-records/2026-11-12-reward-observations.md). Secretary: `wrk-watchdog-rewards-20261112`.
+
+## 2026-11-12 — Vásárlási bónuszmegfigyelés, helyi kiegészítés
+
+Egyetlen termékfájl: ledger-sync bonus_once, a meglévő entitlement return után. First_purchase, shop_discovery, referral pseudo/user és referred_bonus megfigyelése; cron/manager/gazdasági argumentum változatlan. Az eredeti17 earning golden16 eset és az új bonus golden16 eset preimage parity sikeres. Csak saját ledger-sync digest/checksum frissül; aktív coverage és természetes UI nem igazolt, nincs telepítés vagy aktiválás. Scope/rollback/UI: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+## 2026-11-12 — Watchdog pontforrások, helyi megfigyelési jelölt
+
+A live-matching events/api/cron 17 earning hívásán default-off megfigyelés, változatlan pénzügyi managerrel. Helper SQL-port stub és16 izolált eredeti/módosított producer parity sikeres. Nem teljes rendszer-PASS: Izolált valódi MariaDB helper/exporter, index-EXPLAIN, elveszett result és32 párhuzamos megfigyelés sikeres; éles tartós hibafolyam, kardinalitás és forgalmi p95 még kiadási feltétel. Nincs migráció, telepítés vagy aktiválás. Részletek: docs/protected-change-records/2026-11-12-reward-observations.md.
+
+Opcionális operátori konstans a már létező, tulajdonoshoz kötött loghoz; 6 izolált log-célteszt sikeres. A webes naplózás és az új bájtok visszaolvasásának bizonyítása még függő; nincs új journal vagy tárhelyírás.
+
 ## 2026-11-11 — JYSK függő jutalom, helyi javítás
 
 Egy bridge-fájl: normál disconnect/valódi revoke, zárolt generáció/kapcsolatvédelem, technikai hiba unknown és claim nélküli writer-ellenőrzés. PHP280/private14/results19 és valódi MariaDB lifecycle36 sikeres. Régi default manager SQL-hibainjektálás nem igazolt; explicit célzott mód. Független review fixture-óra lelet javítva, terméklelet nincs. Új profil/éles pont/kapu/deployment nincs; részletek: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md.
