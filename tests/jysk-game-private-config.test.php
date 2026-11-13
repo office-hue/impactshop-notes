@@ -40,6 +40,11 @@ $cases = [
     ['same keys', ['raw' => json_encode(array_replace($valid, ['SUBJECT_KEY' => str_repeat('1', 64)]))], 'invalid', false],
     ['multiple technical users', ['raw' => json_encode($valid + ['TEST_SUBJECTS' => [str_repeat('a', 64), str_repeat('b', 64)]])], 'invalid', false],
     ['invalid json', ['raw' => '{'], 'invalid', false],
+    ['per-device settings', ['raw' => json_encode($valid + ['SESSION_MODE' => 'per_device_v1', 'SESSION_TTL_SECONDS' => 31536000])], 'ready', true],
+    ['unknown session mode', ['raw' => json_encode($valid + ['SESSION_MODE' => 'forever'])], 'invalid', false],
+    ['shorter than legacy ttl', ['raw' => json_encode($valid + ['SESSION_TTL_SECONDS' => 899])], 'invalid', false],
+    ['over one year ttl', ['raw' => json_encode($valid + ['SESSION_TTL_SECONDS' => 31536001])], 'invalid', false],
+    ['string ttl', ['raw' => json_encode($valid + ['SESSION_TTL_SECONDS' => '900'])], 'invalid', false],
 ];
 $count = 0;
 foreach ($cases as [$name, $overrides, $status, $enabled]) {
