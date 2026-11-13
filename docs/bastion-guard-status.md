@@ -1,3 +1,12 @@
+## 2026-11-13 — JYSK többeszközös profilkapcsolat
+
+Egy meglévő protected bridge saját grantkötéssel, explicit hozzáadó authsémával,
+azonos subject-zárral; reward ABI/mapping megmarad. PHP301/private19/results19,
+izolált MariaDB10.11.19 + target wpdb session61 sikeres, három authtábla
+izolált dump/restore checksum-egyezés igazolt. Még nincs kiadás/aktiválás.
+Scope, rollback és kézi UI: docs/protected-change-records/2026-11-13-jysk-profile-persistence.md.
+Csak a bridge saját leltárhash-e és külső checksum frissül; guardmodell változatlan.
+
 ## 2026-11-09 — Profil: régi Elementor fejléc
 
 Meglévő profil-UI adapter és változatlan protected modell. Csak saját pluginhash/checksum frissül. Pontos profilgate, wp_head CSS, telepítési dialog-header megőrzés3 célzott böngészőesetben ellenőrzött. Auth/return/actionbar/PWA byte-ok változatlanok. Scope/rollback/UI: docs/protected-change-records/2026-11-09-profile-retired-header.md. Élő kiadás még nincs.

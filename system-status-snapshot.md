@@ -1,3 +1,11 @@
+## 2026-11-13 — JYSK profilmegőrzés, helyi implementáció
+
+Saját eszközgrant, többeszközös mód, maximum365 nap, explicit offline DDL és
+legacy backfill. Régi900 s alap és reward-szerződés megmarad. PHP301/private19/
+results19 és izolált MariaDB session61 + három authtábla restore igazolt.
+PR/merge/telepítés/aktiválás még külön hátravan. Részletes kiadási/rollback/UI:
+docs/protected-change-records/2026-11-13-jysk-profile-persistence.md.
+
 ## 2026-11-11 — JYSK függő jutalom, helyi javítás
 
 Egy bridge-fájl: normál disconnect/valódi revoke, zárolt generáció/kapcsolatvédelem, technikai hiba unknown és claim nélküli writer-ellenőrzés. PHP280/private14/results19 és valódi MariaDB lifecycle36 sikeres. Régi default manager SQL-hibainjektálás nem igazolt; explicit célzott mód. Független review fixture-óra lelet javítva, terméklelet nincs. Új profil/éles pont/kapu/deployment nincs; részletek: docs/protected-change-records/2026-11-11-jysk-pending-reward-disconnect.md.

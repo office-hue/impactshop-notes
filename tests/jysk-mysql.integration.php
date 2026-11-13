@@ -100,7 +100,8 @@ function loadBridge(): string {
         // Same fixture-only namespaced clock technique as the existing unit suite.
         // Production file is never edited and no production database is available.
         $source = str_replace('declare(strict_types=1);', '', substr(file_get_contents(__DIR__ . '/../wp-content/mu-plugins/impactshop-jysk-game.php'), 5));
-        eval('declare(strict_types=1); namespace JyskSqlFixture; use \\RuntimeException; use \\Throwable; use \\DateTimeImmutable; use \\DateTimeZone; use \\Sharity_Points_Manager; function time() { return $GLOBALS["clock"]; } ' . $source);
+        $source = str_replace('__FILE__', var_export(realpath(__DIR__ . '/../wp-content/mu-plugins/impactshop-jysk-game.php'), true), $source);
+        eval('declare(strict_types=1); namespace JyskSqlFixture; use \\RuntimeException; use \\Throwable; use \\DateTimeImmutable; use \\DateTimeZone; use \\Sharity_Points_Manager; function defined($name) { return array_key_exists($name, $GLOBALS["session_config"] ?? []) || \\defined($name); } function constant($name) { return array_key_exists($name, $GLOBALS["session_config"] ?? []) ? $GLOBALS["session_config"][$name] : \\constant($name); } function time() { return $GLOBALS["clock"]; } ' . $source);
     }
     return 'JyskSqlFixture\\Impactshop_Jysk_Game';
 }
@@ -116,6 +117,21 @@ function bridgeReward(array $payload, bool $write = true): array {
     return (new ReflectionMethod(loadBridge(), 'reward'))->invoke(null, $payload, $write);
 }
 $wpdb = connection();
+if (($argv[1] ?? '') === '--session-exchange-worker') {
+    $bridge = loadBridge();
+    $GLOBALS['session_config'] = ['JYSK_GAME_SESSION_MODE' => 'per_device_v1', 'JYSK_GAME_SESSION_TTL_SECONDS' => 31536000];
+    $delayed = false;
+    $fault = static function ($query) use (&$delayed) {
+        if (!$delayed && $query === 'START TRANSACTION') { $delayed = true; usleep(200000); }
+        return $query;
+    };
+    echo "READY\n"; fflush(STDOUT);
+    sql($wpdb, "DO GET_LOCK('jysk_v2_barrier',15)"); sql($wpdb, "DO RELEASE_LOCK('jysk_v2_barrier')");
+    $started = microtime(true);
+    try { $value = (new ReflectionMethod($bridge, 'exchange'))->invoke(null, ['clientId' => $bridge::CLIENT, 'redirectUri' => $bridge::CALLBACK, 'code' => $argv[2], 'codeVerifier' => str_repeat('v', 64)]); $result = ['created' => isset($value['sessionToken'])]; }
+    catch (Throwable $e) { $result = ['error' => $e->getMessage()]; }
+    echo json_encode($result + ['window' => [$started, microtime(true)]]), "\n"; exit;
+}
 if (in_array($argv[1] ?? '', ['--results-worker','--results-approve-worker'], true)) {
     $bridge = loadBridge(); $GLOBALS['clock'] = strtotime('2026-11-30T12:00:00Z');
     $delayed = false;
@@ -270,6 +286,13 @@ check(count(array_filter($answers, fn($r) => ($r['success'] ?? false) === true))
 check(snapshot($wpdb)[0][0]['points_total'] === '2025' && snapshot($wpdb)[1] === 6 && snapshot($wpdb)[2] === 1, 'atomic increments do not lose updates or duplicate level history');
 }
 
+// Each run starts from the original v1 auth schema in this strictly local,
+// exclusively synthetic database, even after a previous v2 test completed.
+foreach (['jysk_game_codes' => ['owner_grant_hash'], 'jysk_game_sessions' => ['owner_grant_hash', 'issued_at']] as $name => $columns) {
+    if (!in_array('jysk_test_' . $name, $existing, true)) { continue; }
+    $present = $wpdb->get_col('SHOW COLUMNS FROM jysk_test_' . $name);
+    foreach ($columns as $column) { if (in_array($column, $present, true)) { sql($wpdb, 'ALTER TABLE jysk_test_' . $name . ' DROP COLUMN ' . $column); } }
+}
 $bridge = loadBridge(); $bridge::install();
 sql($wpdb, 'CREATE TABLE IF NOT EXISTS jysk_test_identity_grants(grant_hash char(64) PRIMARY KEY,pseudo_hash char(64) NOT NULL,state varchar(24) NOT NULL,revoked_at datetime NULL,expires_at datetime NOT NULL) ENGINE=InnoDB ' . $wpdb->get_charset_collate());
 sql($wpdb, 'ALTER TABLE jysk_test_identity_grants CONVERT TO CHARACTER SET utf8mb4 COLLATE ' . $wpdb->collate);
@@ -440,6 +463,72 @@ resetBridge(); $session = sqlBrowserSession($wpdb); sql($wpdb, "UPDATE jysk_test
 $threw = false;
 try { teardownBrowserSession($session); } catch (Throwable $e) { $threw = true; }
 check($threw && bridgeReward(bridgePayload())['state'] === 'policy_blocked' && snapshot($wpdb)[1] === 0, 'expired central owner is never bypassed by disconnect or delayed reward');
+
+// Additive session upgrade/backfill and independent grants on the same isolated DB.
+resetBridge(); $legacySession = sqlBrowserSession($wpdb);
+$GLOBALS['session_config'] = ['JYSK_GAME_ENABLED' => false];
+$status = $bridge::sessionsStatus();
+check($status['schema'] === 'legacy', 'known legacy auth structure before explicit upgrade');
+$expected = array_intersect_key($status, array_flip(['targetHash', 'structureHash', 'sourceHash']));
+$hit = false;
+$fault = static function ($query) use (&$hit) { if (!$hit && str_contains($query, 'ADD COLUMN issued_at')) { $hit = true; return 'SELECT * FROM jysk_partial_upgrade_fault'; } return $query; };
+$failed = false; try { $bridge::upgradeSessions($expected); } catch (Throwable $e) { $failed = true; }
+$fault = null; $partial = $bridge::sessionsStatus();
+check($hit && $failed && $partial['schema'] === 'partial', 'partial DDL is reported without claiming success');
+check((int) $wpdb->get_var('SELECT COUNT(*) FROM jysk_test_jysk_game_sessions WHERE owner_grant_hash IS NULL') === 1, 'partial upgrade never binds a session prematurely');
+$expected = array_intersect_key($partial, array_flip(['targetHash', 'structureHash', 'sourceHash']));
+$upgraded = $bridge::upgradeSessions($expected);
+check($upgraded['schema'] === 'ready' && $upgraded['unboundSessions'] === 0, 'real additive DDL and legacy binding completed');
+$oldRow = $wpdb->get_row('SELECT * FROM jysk_test_jysk_game_sessions LIMIT 1', ARRAY_A);
+check((int) $oldRow['issued_at'] === $GLOBALS['clock'] && (int) $oldRow['expires'] === $GLOBALS['clock'] + 900, 'backfill preserves expiry and derives original issuance');
+check($wpdb->get_var('SELECT @@in_transaction') === '0', 'DDL and backfill leave no transaction open');
+$expected = array_intersect_key($upgraded, array_flip(['targetHash', 'structureHash', 'sourceHash']));
+check($bridge::upgradeSessions($expected)['structureHash'] === $upgraded['structureHash'], 'idempotent upgrade keeps structure unchanged');
+$GLOBALS['session_config'] = ['JYSK_GAME_ENABLED' => true, 'JYSK_GAME_SESSION_MODE' => 'per_device_v1', 'JYSK_GAME_SESSION_TTL_SECONDS' => 31536000];
+$sessionMethod = new ReflectionMethod($bridge, 'session'); $exchangeMethod = new ReflectionMethod($bridge, 'exchange');
+check($sessionMethod->invoke(null, $legacySession)['expires'] === $GLOBALS['clock'] + 900, 'bound old browser remains valid without extension');
+$ownerB = str_repeat('7', 64); $subject = str_repeat('a', 64);
+sql($wpdb, $wpdb->prepare("INSERT INTO jysk_test_identity_grants(grant_hash,pseudo_hash,state,expires_at) VALUES(%s,%s,'active',%s)", $ownerB, hash('sha256', 'abcdef123456'), gmdate('Y-m-d H:i:s', $GLOBALS['clock'] + 3600)));
+sql($wpdb, $wpdb->prepare('UPDATE jysk_test_jysk_game_grants SET grant_hash=%s WHERE subject=%s', $ownerB, $subject));
+$code = str_repeat('8', 64); $verifier = str_repeat('v', 64);
+$challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+sql($wpdb, $wpdb->prepare('INSERT INTO jysk_test_jysk_game_codes(token_hash,subject,generation,challenge,expires,owner_grant_hash) VALUES(%s,%s,%s,%s,%d,%s)', hash('sha256', $code), $subject, $oldRow['generation'], $challenge, $GLOBALS['clock'] + 120, $ownerB));
+$exchangeBody = ['clientId' => $bridge::CLIENT, 'redirectUri' => $bridge::CALLBACK, 'code' => $code, 'codeVerifier' => $verifier];
+$second = $exchangeMethod->invoke(null, $exchangeBody);
+check(strtotime($second['expiresAt']) === $GLOBALS['clock'] + 3600, 'actual exchange caps long TTL by own grant expiry');
+$secondBody = array_intersect_key($second, array_flip(['subject', 'sessionToken']));
+check($sessionMethod->invoke(null, $legacySession)['expires'] === (int) $oldRow['expires'], 'mapping change cannot replace old device own grant');
+$replayed = false; try { $exchangeMethod->invoke(null, $exchangeBody); } catch (Throwable $e) { $replayed = true; }
+check($replayed && (int) $wpdb->get_var('SELECT COUNT(*) FROM jysk_test_jysk_game_sessions') === 2, 'one-use exchange cannot create a second token on replay');
+$parallelCode = str_repeat('9', 64);
+sql($wpdb, $wpdb->prepare('INSERT INTO jysk_test_jysk_game_codes(token_hash,subject,generation,challenge,expires,owner_grant_hash) VALUES(%s,%s,%s,%s,%d,%s)', hash('sha256', $parallelCode), $subject, $oldRow['generation'], $challenge, $GLOBALS['clock'] + 120, $ownerB));
+check($wpdb->get_var("SELECT GET_LOCK('jysk_v2_barrier',0)") === '1', 'parent owns exchange worker start barrier');
+$workers = [];
+for ($i = 0; $i < 2; $i++) {
+    $process = proc_open([PHP_BINARY, __FILE__, '--session-exchange-worker', $parallelCode], [['pipe','r'],['pipe','w'],['pipe','w']], $pipes);
+    check(is_resource($process), 'exchange worker started'); fclose($pipes[0]);
+    check(trim((string) fgets($pipes[1])) === 'READY', 'exchange worker waits at barrier'); $workers[] = [$process, $pipes];
+}
+sql($wpdb, "DO RELEASE_LOCK('jysk_v2_barrier')"); $answers = [];
+foreach ($workers as [$process, $pipes]) {
+    $out = stream_get_contents($pipes[1]); $errors = stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]);
+    check(proc_close($process) === 0 && $errors === '', 'exchange worker exits cleanly'); $answers[] = json_decode(trim($out), true, 8, JSON_THROW_ON_ERROR);
+}
+check(max($answers[0]['window'][0], $answers[1]['window'][0]) < min($answers[0]['window'][1], $answers[1]['window'][1]), 'exchange workers actually overlap');
+check(count(array_filter($answers, fn ($a) => ($a['created'] ?? false) === true)) === 1 && (int) $wpdb->get_var('SELECT COUNT(*) FROM jysk_test_jysk_game_sessions') === 3, 'two concurrent exchanges issue exactly one additional session');
+check(count(array_filter($answers, fn ($a) => isset($a['error']) && !in_array($a['error'], ['invalid_exchange', 'session_operation_busy'], true))) === 0, 'competing exchange fails explicitly or reports busy');
+$before = accessSnapshot($wpdb); $hit = false;
+$fault = static function ($query) use (&$hit) { if (!$hit && $query === 'COMMIT') { $hit = true; return 'SELECT * FROM jysk_v2_rollback_fault'; } return $query; };
+$failed = false; try { teardownBrowserSession($legacySession); } catch (Throwable $e) { $failed = true; }
+$fault = null;
+check($failed && $hit && accessSnapshot($wpdb) === $before, 'per-device transaction rolls back on actual SQL failure');
+check(teardownBrowserSession($legacySession) === ['disconnected' => true] && $sessionMethod->invoke(null, $secondBody)['expires'] === $GLOBALS['clock'] + 3600, 'disconnect one actual token preserves second browser');
+sql($wpdb, $wpdb->prepare("UPDATE jysk_test_identity_grants SET revoked_at='2026-11-15 12:00:00' WHERE grant_hash=%s", $ownerB));
+$denied = false; try { $sessionMethod->invoke(null, $secondBody); } catch (Throwable $e) { $denied = true; }
+check($denied, 'revoked own grant is rejected by actual SQL');
+sql($wpdb, 'UPDATE jysk_test_identity_grants SET revoked_at=NULL');
+check(teardownBrowserSession($secondBody, true) === ['revoked' => true] && (int) $wpdb->get_var('SELECT COUNT(*) FROM jysk_test_jysk_game_sessions') === 0 && (int) $wpdb->get_var('SELECT COUNT(*) FROM jysk_test_jysk_game_codes') === 0, 'global revoke closes every actual browser and pending code');
+unset($GLOBALS['session_config']);
 
 // The new result writer runs on the same local-only SQL connection, never staging.
 if (!$sessionOnly) {
