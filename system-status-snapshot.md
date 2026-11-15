@@ -1,3 +1,10 @@
+## 2026-11-15 — kiadási baseline-javítás, forrásjelölt
+
+Két régi referenciahash a már merge-elt91b8cc68 bájtjaira és a manifest
+külső checksumja frissül. Nincs üzleti/guard-/CI-kód- vagy runtime-módosítás.
+Scope/ellenőrzés/rollback: docs/protected-change-records/2026-11-15-jysk-release-guard-baseline.md.
+Ez nem a profilmegőrzés aktiválása; az csak kézi indításra történhet.
+
 ## 2026-11-13 — JYSK profilmegőrzés, helyi implementáció
 
 Saját eszközgrant, többeszközös mód, maximum365 nap, explicit offline DDL és

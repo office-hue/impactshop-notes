@@ -1,3 +1,11 @@
+## 2026-11-15 — két kiadási baseline-hash célzott követése
+
+Explicit engedéllyel csak a merge-elt91b8cc68 CI/config-checksum-blob két
+referenciája és a manifest külső checksumja frissül. Guard/CI-kód, policy,
+inventory és üzleti fájl változatlan. Scope/teszt/rollback/UI:
+protected-change-records/2026-11-15-jysk-release-guard-baseline.md.
+Forrásjavítás, nem telepítés vagy21:00-s aktiválás.
+
 ## 2026-11-10 — közös szavazategyenleg olvasása
 
 A meglévő Profil PHP/JS saját digestje és checksumja követi a jóváhagyott
