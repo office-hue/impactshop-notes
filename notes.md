@@ -1,3 +1,10 @@
+## 2026-11-15 — két kiadási referenciahash rendezése
+
+Arnold külön engedélyével a merge-elt CI/config-checksum két digestjének
+célzott követése; üzleti fájl, guard/CI-logika és éles állapot változatlan.
+Scope/ellenőrzés/rollback/UI: docs/protected-change-records/2026-11-15-jysk-release-guard-baseline.md.
+Merge és guarded dry-run külön feltétel; aktiválás kézi21:00-s lépés.
+
 ## 2026-11-13 — JYSK többeszközös profilmegőrzés
 
 Jóváhagyott auth-/betöltésjavítás saját ágon. Előzetes kockázat,
