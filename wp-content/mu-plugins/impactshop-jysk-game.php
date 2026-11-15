@@ -19,6 +19,7 @@ final class Impactshop_Jysk_Game
     private static array $wire = [];
     private static ?array $profile = null;
     private static string $profileStatus = 'unread';
+    private static ?array $sessionSchema = null;
 
     private static function profile(): array
     {
@@ -43,11 +44,15 @@ final class Impactshop_Jysk_Game
             return [];
         }
         $value = json_decode($raw, true);
-        $keys = ['ENABLED', 'SERVICE_KEY', 'SUBJECT_KEY', 'REWARDS_ENABLED', 'TRANSACTION_READY', 'POLICY_HASH', 'PRODUCER_SHAS', 'NGO_IDS', 'TEST_SUBJECTS'];
+        $keys = ['ENABLED', 'SERVICE_KEY', 'SUBJECT_KEY', 'REWARDS_ENABLED', 'TRANSACTION_READY', 'POLICY_HASH', 'PRODUCER_SHAS', 'NGO_IDS', 'TEST_SUBJECTS', 'SESSION_MODE', 'SESSION_TTL_SECONDS'];
         if (!is_array($value) || array_is_list($value) || array_diff(array_keys($value), $keys)) {
             return [];
         }
         foreach ($value as $key => $item) {
+            if ($key === 'SESSION_MODE' && !in_array($item, ['legacy', 'per_device_v1'], true)
+                || $key === 'SESSION_TTL_SECONDS' && (!is_int($item) || $item < 900 || $item > 31536000)) {
+                return [];
+            }
             if (in_array($key, ['ENABLED', 'REWARDS_ENABLED', 'TRANSACTION_READY'], true) && !is_bool($item)) {
                 return [];
             }
@@ -87,6 +92,8 @@ final class Impactshop_Jysk_Game
         return ['privateProfile' => self::$profileStatus, 'enabled' => self::enabled(),
             'rewardsEnabled' => self::config('REWARDS_ENABLED', false) === true,
             'transactionFlag' => self::config('TRANSACTION_READY', false) === true,
+            'sessionMode' => self::config('SESSION_MODE', 'legacy'),
+            'sessionTtlSeconds' => self::config('SESSION_TTL_SECONDS', 900),
             'secretsConfigured' => preg_match('/^[a-f0-9]{64}$/D', (string) self::config('SERVICE_KEY', '')) === 1
                 && preg_match('/^[a-f0-9]{64}$/D', (string) self::config('SUBJECT_KEY', '')) === 1
                 && self::config('SERVICE_KEY', '') !== self::config('SUBJECT_KEY', '')];
@@ -161,6 +168,177 @@ final class Impactshop_Jysk_Game
         foreach ($schemas as $name => $schema) {
             self::query('CREATE TABLE IF NOT EXISTS ' . self::table($name) . ' (' . $schema . ') ENGINE=InnoDB ' . $wpdb->get_charset_collate());
         }
+    }
+
+    private static function sessionStructure(bool $refresh = false): array
+    {
+        if (!$refresh && self::$sessionSchema !== null) { return self::$sessionSchema; }
+        $tables = []; $present = 0;
+        foreach (['codes' => ['owner_grant_hash'], 'sessions' => ['owner_grant_hash', 'issued_at']] as $name => $added) {
+            global $wpdb;
+            $rows = self::check($wpdb->get_results('SHOW COLUMNS FROM ' . self::table($name), ARRAY_A));
+            $columns = [];
+            foreach ($rows as $row) { $columns[$row['Field']] = $row; }
+            foreach (['token_hash', 'subject', 'generation', 'expires'] as $required) {
+                if (!isset($columns[$required])) { throw new RuntimeException('session_storage_unavailable'); }
+            }
+            foreach ($added as $column) {
+                if (!isset($columns[$column])) { continue; }
+                $present++;
+                $type = strtolower($columns[$column]['Type']);
+                if ($columns[$column]['Null'] !== 'YES' || ($column === 'owner_grant_hash' ? $type !== 'char(64)' : !preg_match('/^bigint(?:\(20\))?$/D', $type))) {
+                    throw new RuntimeException('session_schema_conflict');
+                }
+            }
+            ksort($columns); $tables[$name] = $columns;
+        }
+        return self::$sessionSchema = ['state' => $present === 0 ? 'legacy' : ($present === 3 ? 'ready' : 'partial'),
+            'hash' => hash('sha256', json_encode($tables, JSON_THROW_ON_ERROR)), 'columns' => $tables];
+    }
+
+    private static function sessionSettings(): array
+    {
+        $mode = self::config('SESSION_MODE', 'legacy'); $ttl = self::config('SESSION_TTL_SECONDS', 900);
+        if (!in_array($mode, ['legacy', 'per_device_v1'], true) || !is_int($ttl) || $ttl < 900 || $ttl > 31536000
+            || $mode === 'legacy' && $ttl !== 900) { throw new RuntimeException('session_configuration_invalid'); }
+        $schema = self::sessionStructure();
+        if ($schema['state'] === 'partial' || $mode !== 'legacy' && $schema['state'] !== 'ready') {
+            throw new RuntimeException('session_schema_unavailable');
+        }
+        return ['perDevice' => $mode === 'per_device_v1', 'bound' => $schema['state'] === 'ready', 'ttl' => $ttl];
+    }
+
+    /** Own central grant; never substitute the latest other device's mapping. */
+    private static function ownerGrant(array $mapping, string $hash, bool $lock = false): ?array
+    {
+        if (!preg_match('/^[a-f0-9]{64}$/D', $hash) || !function_exists('impactshop_identity_owner_grant_table')
+            || !function_exists('impactshop_identity_owner_pseudo_hash')) { return null; }
+        global $wpdb;
+        return self::row($wpdb->prepare('SELECT * FROM ' . impactshop_identity_owner_grant_table()
+            . " WHERE grant_hash=%s AND pseudo_hash=%s AND state='active' AND revoked_at IS NULL AND expires_at>%s"
+            . ($lock ? ' FOR UPDATE' : ''), $hash, impactshop_identity_owner_pseudo_hash($mapping['pseudo']), gmdate('Y-m-d H:i:s')));
+    }
+
+    private static function sessionEarning(array $mapping): bool
+    {
+        $rewardGrant = self::grant($mapping['subject']);
+        return $rewardGrant !== null && self::earning($rewardGrant);
+    }
+
+    /** No DDL or options writes inside this transaction; all auth writers share this lock. */
+    private static function sessionTransaction(string $subject, callable $operation): array
+    {
+        if (!preg_match('/^[a-f0-9]{64}$/D', $subject)) { throw new RuntimeException('invalid_session'); }
+        $result = self::locked(hash('sha256', 'session:' . $subject), static function ($assert) use ($operation): array {
+            global $wpdb;
+            $assert();
+            if ((string) self::scalar('SELECT @@in_transaction') !== '0') { throw new RuntimeException('session_transaction_active'); }
+            foreach (['grants', 'codes', 'sessions'] as $name) {
+                if (strtoupper((string) self::scalar($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', self::table($name)))) !== 'INNODB') {
+                    throw new RuntimeException('session_storage_unavailable');
+                }
+            }
+            $assert(); self::query('START TRANSACTION');
+            try {
+                $value = $operation($assert); $assert(); self::query('COMMIT'); $assert();
+                return $value;
+            } catch (Throwable $error) {
+                try { $assert(); $wpdb->query('ROLLBACK'); } catch (Throwable $ignored) { /* readback required */ }
+                throw $error;
+            }
+        });
+        if (($result['state'] ?? '') === 'busy') { throw new RuntimeException('session_operation_busy'); }
+        return $result;
+    }
+
+    public static function sessionsStatus(): array
+    {
+        global $wpdb;
+        $schema = self::sessionStructure(true); $structure = [];
+        foreach (['grants', 'codes', 'sessions'] as $name) {
+            $structure[$name] = ['engine' => self::scalar($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', self::table($name))),
+                'columns' => self::check($wpdb->get_results('SHOW COLUMNS FROM ' . self::table($name), ARRAY_A)),
+                'indexes' => self::check($wpdb->get_results('SHOW INDEX FROM ' . self::table($name), ARRAY_A))];
+        }
+        return ['schema' => $schema['state'], 'structureHash' => hash('sha256', json_encode($structure, JSON_THROW_ON_ERROR)),
+            'targetHash' => hash('sha256', (string) self::scalar('SELECT @@hostname') . ':' . (string) self::scalar('SELECT @@port') . ':' . (string) self::scalar('SELECT DATABASE()') . ':' . $wpdb->prefix),
+            'sourceHash' => hash_file('sha256', __FILE__), 'mode' => self::config('SESSION_MODE', 'legacy'),
+            'ttlSeconds' => self::config('SESSION_TTL_SECONDS', 900),
+            'sessions' => (int) self::scalar('SELECT COUNT(*) FROM ' . self::table('sessions')),
+            'codes' => (int) self::scalar('SELECT COUNT(*) FROM ' . self::table('codes')),
+            'unboundSessions' => $schema['state'] === 'ready' ? (int) self::scalar('SELECT COUNT(*) FROM ' . self::table('sessions') . ' WHERE owner_grant_hash IS NULL OR issued_at IS NULL') : null];
+    }
+
+    /** Explicit CLI only, with bridge disabled and independently drained at the hosting layer. */
+    public static function upgradeSessions(array $expected): array
+    {
+        self::operatorOnly();
+        if (self::enabled()) { throw new RuntimeException('session_writes_must_be_disabled'); }
+        return self::locked(hash('sha256', 'session-schema-v2'), static function ($assert) use ($expected): array {
+            global $wpdb;
+            $status = self::sessionsStatus();
+            foreach (['targetHash', 'structureHash', 'sourceHash'] as $field) {
+                if (!is_string($expected[$field] ?? null) || !hash_equals($status[$field], $expected[$field])) { throw new RuntimeException('session_upgrade_conflict'); }
+            }
+            if ((string) self::scalar('SELECT @@in_transaction') !== '0') { throw new RuntimeException('session_transaction_active'); }
+            foreach (['grants', 'codes', 'sessions'] as $name) {
+                if (strtoupper((string) self::scalar($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', self::table($name)))) !== 'INNODB') { throw new RuntimeException('session_storage_unavailable'); }
+            }
+            $schema = self::sessionStructure();
+            foreach (['codes' => ['owner_grant_hash' => 'char(64) NULL'], 'sessions' => ['owner_grant_hash' => 'char(64) NULL', 'issued_at' => 'bigint NULL']] as $name => $columns) {
+                foreach ($columns as $column => $definition) {
+                    if (!isset($schema['columns'][$name][$column])) {
+                        $assert(); self::query('ALTER TABLE ' . self::table($name) . ' ADD COLUMN ' . $column . ' ' . $definition); $assert();
+                    }
+                }
+            }
+            if (self::sessionStructure(true)['state'] !== 'ready') { throw new RuntimeException('session_schema_unavailable'); }
+            $assert(); self::query('START TRANSACTION');
+            try {
+                // Fixed original grant/generation, before any new handoff may overwrite the mapping.
+                self::check($wpdb->get_results('SELECT subject FROM ' . self::table('grants') . ' ORDER BY subject FOR UPDATE', ARRAY_A));
+                foreach (['codes', 'sessions'] as $name) {
+                    $assert(); self::query('UPDATE ' . self::table($name) . ' s INNER JOIN ' . self::table('grants')
+                        . ' g ON g.subject=s.subject AND g.generation=s.generation AND g.revoked=0 SET s.owner_grant_hash=g.grant_hash'
+                        . ($name === 'sessions' ? ',s.issued_at=s.expires-900' : '')
+                        . ' WHERE s.owner_grant_hash IS NULL' . ($name === 'sessions' ? ' AND s.issued_at IS NULL' : ''));
+                }
+                $assert(); self::query('COMMIT'); $assert();
+            } catch (Throwable $error) {
+                try { $assert(); $wpdb->query('ROLLBACK'); } catch (Throwable $ignored) { /* readback required */ }
+                throw $error;
+            }
+            return self::sessionsStatus();
+        });
+    }
+
+    public static function revokeIssuedSessions(array $selection): array
+    {
+        self::operatorOnly();
+        if (self::enabled() || array_keys($selection) !== ['sessions', 'codes']) { throw new RuntimeException('session_writes_must_be_disabled'); }
+        foreach ($selection as $hashes) {
+            if (!is_array($hashes) || !array_is_list($hashes) || count($hashes) > 10000 || count(array_unique($hashes, SORT_REGULAR)) !== count($hashes)) { throw new RuntimeException('invalid_session_selection'); }
+            foreach ($hashes as $hash) { if (!is_string($hash) || !preg_match('/^[a-f0-9]{64}$/D', $hash)) { throw new RuntimeException('invalid_session_selection'); } }
+        }
+        return self::locked(hash('sha256', 'session-schema-v2'), static function ($assert) use ($selection): array {
+            global $wpdb;
+            if ((string) self::scalar('SELECT @@in_transaction') !== '0') { throw new RuntimeException('session_transaction_active'); }
+            foreach (['sessions', 'codes'] as $name) {
+                if (strtoupper((string) self::scalar($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', self::table($name)))) !== 'INNODB') { throw new RuntimeException('session_storage_unavailable'); }
+            }
+            $assert(); self::query('START TRANSACTION'); $counts = [];
+            try {
+                foreach ($selection as $name => $hashes) {
+                    sort($hashes); $counts[$name] = 0;
+                    foreach ($hashes as $hash) { $assert(); $counts[$name] += self::query($wpdb->prepare('DELETE FROM ' . self::table($name) . ' WHERE token_hash=%s', $hash)); }
+                }
+                $assert(); self::query('COMMIT'); $assert();
+            } catch (Throwable $error) {
+                try { $assert(); $wpdb->query('ROLLBACK'); } catch (Throwable $ignored) { /* readback required */ }
+                throw $error;
+            }
+            return ['deleted' => $counts];
+        });
     }
 
     public static function register(): void
@@ -301,19 +479,24 @@ final class Impactshop_Jysk_Game
             $subject = hash_hmac('sha256', self::CLIENT . ':' . $pseudo, self::key('SUBJECT_KEY'));
             $grant = impactshop_identity_owner_hash(impactshop_identity_owner_cookie());
             $code = bin2hex(random_bytes(32));
-            $generation = bin2hex(random_bytes(32));
-            global $wpdb;
-            self::query('START TRANSACTION');
-            try {
+            $settings = self::sessionSettings();
+            self::sessionTransaction($subject, static function ($assert) use ($subject, $pseudo, $grant, $code, $request, $settings): array {
+                global $wpdb;
+                if (!self::ownerGrant(['pseudo' => $pseudo], $grant, true)) { throw new RuntimeException('invalid_session'); }
+                $assert();
+                $prior = self::row($wpdb->prepare('SELECT * FROM ' . self::table('grants') . ' WHERE subject=%s FOR UPDATE', $subject));
+                $generation = $settings['perDevice'] && $prior && (int) $prior['revoked'] === 0 ? $prior['generation'] : bin2hex(random_bytes(32));
                 self::query($wpdb->prepare('INSERT INTO ' . self::table('grants') . ' (subject,pseudo,grant_hash,generation,revoked) VALUES (%s,%s,%s,%s,0) ON DUPLICATE KEY UPDATE grant_hash=VALUES(grant_hash),generation=VALUES(generation),revoked=0', $subject, $pseudo, $grant, $generation));
-                self::query($wpdb->prepare('DELETE FROM ' . self::table('sessions') . ' WHERE subject=%s', $subject));
-                self::query($wpdb->prepare('DELETE FROM ' . self::table('codes') . ' WHERE subject=%s', $subject));
-                self::query($wpdb->prepare('INSERT INTO ' . self::table('codes') . ' (token_hash,subject,generation,challenge,expires) VALUES (%s,%s,%s,%s,%d)', hash('sha256', $code), $subject, $generation, $request->get_param('code_challenge'), time() + 120));
-                self::query('COMMIT');
-            } catch (Throwable $error) {
-                $wpdb->query('ROLLBACK');
-                throw $error;
-            }
+                foreach (['sessions', 'codes'] as $name) {
+                    self::query($wpdb->prepare('DELETE FROM ' . self::table($name) . ' WHERE subject=%s' . ($settings['perDevice'] ? ' AND expires<=%d' : ''), ...($settings['perDevice'] ? [$subject, time()] : [$subject])));
+                }
+                if ($settings['bound']) {
+                    self::query($wpdb->prepare('INSERT INTO ' . self::table('codes') . ' (token_hash,subject,generation,challenge,expires,owner_grant_hash) VALUES (%s,%s,%s,%s,%d,%s)', hash('sha256', $code), $subject, $generation, $request->get_param('code_challenge'), time() + 120, $grant));
+                } else {
+                    self::query($wpdb->prepare('INSERT INTO ' . self::table('codes') . ' (token_hash,subject,generation,challenge,expires) VALUES (%s,%s,%s,%s,%d)', hash('sha256', $code), $subject, $generation, $request->get_param('code_challenge'), time() + 120));
+                }
+                return ['created' => true];
+            });
             return new WP_REST_Response(null, 302, ['Location' => self::CALLBACK . '?code=' . $code . '&state=' . rawurlencode($request->get_param('state')), 'Cache-Control' => 'no-store, private', 'Referrer-Policy' => 'no-referrer']);
         } catch (Throwable $error) {
             return self::response($request, ['error' => 'handoff_unavailable'], 403);
@@ -445,15 +628,20 @@ final class Impactshop_Jysk_Game
         global $wpdb;
         $subject = (string) ($body['subject'] ?? '');
         $token = (string) ($body['sessionToken'] ?? '');
-        if (!preg_match('/^[a-f0-9]{64}$/D', $token)) {
+        if (!preg_match('/^[a-f0-9]{64}$/D', $token) || !preg_match('/^[a-f0-9]{64}$/D', $subject)) {
             throw new RuntimeException('invalid_session');
         }
         $row = self::row($wpdb->prepare('SELECT * FROM ' . self::table('sessions') . ' WHERE token_hash=%s AND subject=%s AND expires>%d', hash('sha256', $token), $subject, time()));
-        $grant = self::grant($subject);
-        if (!$row || !$grant || !hash_equals($grant['generation'], $row['generation'])) {
+        if (!$row) { throw new RuntimeException('invalid_session'); }
+        $settings = self::sessionSettings();
+        $grant = $settings['bound'] ? self::row($wpdb->prepare('SELECT * FROM ' . self::table('grants') . ' WHERE subject=%s AND revoked=0', $subject)) : self::grant($subject);
+        if (!$row || !$grant || !hash_equals($grant['generation'], $row['generation'])
+            || $settings['bound'] && (!self::ownerGrant($grant, (string) ($row['owner_grant_hash'] ?? ''))
+                || !isset($row['issued_at']) || (int) $row['issued_at'] > time()
+                || (int) $row['expires'] - (int) $row['issued_at'] > 31536000)) {
             throw new RuntimeException('invalid_session');
         }
-        return ['grant' => $grant, 'expires' => (int) $row['expires']];
+        return ['grant' => $grant, 'expires' => (int) $row['expires'], 'owner_grant_hash' => $settings['bound'] ? $row['owner_grant_hash'] : ($grant['grant_hash'] ?? '')];
     }
 
     /** Normal disconnect invalidates browser access without cancelling accepted awards. */
@@ -466,17 +654,11 @@ final class Impactshop_Jysk_Game
             throw new RuntimeException('invalid_session');
         }
         $before = self::session($body);
-        $result = self::locked(hash('sha256', 'session:' . $body['subject']), static function ($assert) use ($body, $before, $revoke): array {
+        $settings = self::sessionSettings();
+        return self::sessionTransaction($body['subject'], static function ($assert) use ($body, $before, $revoke, $settings): array {
             global $wpdb;
-            foreach (['grants', 'sessions', 'codes'] as $name) {
-                $engine = self::scalar($wpdb->prepare('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s', self::table($name)));
-                if (strtoupper((string) $engine) !== 'INNODB') {
-                    throw new RuntimeException('session_storage_unavailable');
-                }
-            }
+            if (!self::ownerGrant($before['grant'], $before['owner_grant_hash'], true)) { throw new RuntimeException('invalid_session'); }
             $assert();
-            self::query('START TRANSACTION');
-            try {
                 $grant = self::row($wpdb->prepare('SELECT * FROM ' . self::table('grants') . ' WHERE subject=%s FOR UPDATE', $body['subject']));
                 $assert();
                 if (!$grant || !hash_equals($before['grant']['generation'], $grant['generation'])) {
@@ -485,6 +667,10 @@ final class Impactshop_Jysk_Game
                 // The session and central owner must still be valid after acquiring the row lock.
                 self::session($body);
                 $assert();
+                if (!$revoke && $settings['perDevice']) {
+                    if (self::query($wpdb->prepare('DELETE FROM ' . self::table('sessions') . ' WHERE token_hash=%s AND subject=%s', hash('sha256', $body['sessionToken']), $body['subject'])) !== 1) { throw new RuntimeException('invalid_session'); }
+                    return ['disconnected' => true];
+                }
                 $generation = bin2hex(random_bytes(32));
                 $sql = 'UPDATE ' . self::table('grants') . ' SET generation=%s' . ($revoke ? ',revoked=1' : '') . ' WHERE subject=%s AND generation=%s';
                 if (self::query($wpdb->prepare($sql, $generation, $body['subject'], $grant['generation'])) !== 1) {
@@ -495,19 +681,8 @@ final class Impactshop_Jysk_Game
                 $assert();
                 self::query($wpdb->prepare('DELETE FROM ' . self::table('codes') . ' WHERE subject=%s', $body['subject']));
                 $assert();
-                self::query('COMMIT');
-                $assert();
-            } catch (Throwable $error) {
-                // Never continue transaction cleanup on a different connection.
-                try { $assert(); $wpdb->query('ROLLBACK'); } catch (Throwable $ignored) { /* uncertain result requires readback */ }
-                throw $error;
-            }
             return $revoke ? ['revoked' => true] : ['disconnected' => true];
         });
-        if ($result !== ($revoke ? ['revoked' => true] : ['disconnected' => true])) {
-            throw new RuntimeException('session_operation_busy');
-        }
-        return $result;
     }
 
     private static function exchange(array $body): array
@@ -521,22 +696,28 @@ final class Impactshop_Jysk_Game
         $hash = hash('sha256', $body['code']);
         $row = self::row($wpdb->prepare('SELECT * FROM ' . self::table('codes') . ' WHERE token_hash=%s AND expires>%d', $hash, time()));
         $challenge = rtrim(strtr(base64_encode(hash('sha256', $body['codeVerifier'], true)), '+/', '-_'), '=');
-        $grant = $row ? self::grant($row['subject']) : null;
-        if (!$row || !$grant || !hash_equals($row['challenge'], $challenge) || !hash_equals($grant['generation'], $row['generation'])) {
-            throw new RuntimeException('invalid_exchange');
-        }
-        // Conditional delete is the durable one-use claim; failure afterwards burns the code.
-        if (self::query($wpdb->prepare('DELETE FROM ' . self::table('codes') . ' WHERE token_hash=%s AND expires>%d', $hash, time())) !== 1) {
-            throw new RuntimeException('invalid_exchange');
-        }
-        $token = bin2hex(random_bytes(32));
-        $expires = time() + 900;
-        self::query($wpdb->prepare('INSERT INTO ' . self::table('sessions') . ' (token_hash,subject,generation,expires) VALUES (%s,%s,%s,%d)', hash('sha256', $token), $row['subject'], $row['generation'], $expires));
-        $current = self::grant($row['subject']);
-        if (!$current || !hash_equals($current['generation'], $row['generation'])) {
-            throw new RuntimeException('invalid_exchange');
-        }
-        return ['subject' => $row['subject'], 'sessionToken' => $token, 'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $expires), 'earningAllowed' => self::earning($current)];
+        if (!$row) { throw new RuntimeException('invalid_exchange'); }
+        $settings = self::sessionSettings();
+        return self::sessionTransaction($row['subject'], static function ($assert) use ($row, $hash, $challenge, $settings): array {
+            global $wpdb;
+            $mapping = self::row($wpdb->prepare('SELECT * FROM ' . self::table('grants') . ' WHERE subject=%s', $row['subject']));
+            $owner = $mapping ? self::ownerGrant($mapping, (string) ($settings['bound'] ? ($row['owner_grant_hash'] ?? '') : $mapping['grant_hash']), true) : null;
+            $assert();
+            $grant = self::row($wpdb->prepare('SELECT * FROM ' . self::table('grants') . ' WHERE subject=%s FOR UPDATE', $row['subject']));
+            $currentCode = self::row($wpdb->prepare('SELECT * FROM ' . self::table('codes') . ' WHERE token_hash=%s AND expires>%d FOR UPDATE', $hash, time()));
+            if (!$owner || !$grant || (int) $grant['revoked'] !== 0 || !$currentCode || $currentCode !== $row
+                || !hash_equals($row['challenge'], $challenge) || !hash_equals($grant['generation'], $row['generation'])) { throw new RuntimeException('invalid_exchange'); }
+            if (self::query($wpdb->prepare('DELETE FROM ' . self::table('codes') . ' WHERE token_hash=%s AND expires>%d', $hash, time())) !== 1) { throw new RuntimeException('invalid_exchange'); }
+            $token = bin2hex(random_bytes(32)); $issued = time();
+            $expires = min($issued + $settings['ttl'], (new DateTimeImmutable($owner['expires_at'], new DateTimeZone('UTC')))->getTimestamp());
+            if ($expires <= $issued) { throw new RuntimeException('invalid_exchange'); }
+            if ($settings['bound']) {
+                self::query($wpdb->prepare('INSERT INTO ' . self::table('sessions') . ' (token_hash,subject,generation,expires,owner_grant_hash,issued_at) VALUES (%s,%s,%s,%d,%s,%d)', hash('sha256', $token), $row['subject'], $row['generation'], $expires, $row['owner_grant_hash'], $issued));
+            } else {
+                self::query($wpdb->prepare('INSERT INTO ' . self::table('sessions') . ' (token_hash,subject,generation,expires) VALUES (%s,%s,%s,%d)', hash('sha256', $token), $row['subject'], $row['generation'], $expires));
+            }
+            return ['subject' => $row['subject'], 'sessionToken' => $token, 'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $expires), 'earningAllowed' => self::sessionEarning($grant)];
+        });
     }
 
     public static function payload(array $body): array
@@ -1189,7 +1370,7 @@ final class Impactshop_Jysk_Game
                 $data = self::endSession($body, $path === 'revoke');
             } elseif ($path === 'context') {
                 $session = self::session($body);
-                $data = ['subject' => $body['subject'], 'sessionToken' => $body['sessionToken'], 'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $session['expires']), 'earningAllowed' => self::earning($session['grant'])];
+                $data = ['subject' => $body['subject'], 'sessionToken' => $body['sessionToken'], 'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $session['expires']), 'earningAllowed' => self::sessionEarning($session['grant'])];
                 // Opt-in keeps the strict response contract of deployed older apps intact.
                 // Only the authenticated session's profile is used, never a caller pseudo.
                 if (($body['includeProfileHint'] ?? false) === true) {
@@ -1278,6 +1459,33 @@ class Impactshop_Jysk_Game_CLI
             || !is_array($intent['parameters'] ?? null) || count($intent['parameters']) !== count($parameters) || array_diff(array_keys($intent['parameters']), array_keys($parameters))) { throw new RuntimeException('operator_intent_mismatch'); }
         foreach ($parameters as $key => $value) { if ($intent['parameters'][$key] !== $value) { throw new RuntimeException('operator_intent_mismatch'); } }
         return $parameters;
+    }
+
+    public function sessions(array $args, array $options): void
+    {
+        try {
+            $operation = $args[0] ?? '';
+            $allowed = ['status' => [], 'upgrade' => ['intent-file', 'expected-version', 'target-hash', 'structure-hash', 'source-hash'],
+                'revoke-issued' => ['intent-file', 'expected-version', 'input', 'target-hash', 'structure-hash', 'source-hash']];
+            if (count($args) !== 1 || !isset($allowed[$operation]) || array_diff(array_keys($options), $allowed[$operation])) { throw new RuntimeException('invalid_operator_arguments'); }
+            if ($operation === 'status') { $result = Impactshop_Jysk_Game::sessionsStatus(); }
+            else {
+                $authorized = self::authorize('sessions-' . $operation, $options);
+                $expected = ['targetHash' => (string) ($options['target-hash'] ?? ''), 'structureHash' => (string) ($options['structure-hash'] ?? ''), 'sourceHash' => (string) ($options['source-hash'] ?? '')];
+                if (self::version($options) !== 2) { throw new RuntimeException('expected_version_required'); }
+                if ($operation === 'upgrade') { $result = Impactshop_Jysk_Game::upgradeSessions($expected); }
+                else {
+                    $status = Impactshop_Jysk_Game::sessionsStatus();
+                    foreach ($expected as $field => $hash) { if (!hash_equals($status[$field], $hash)) { throw new RuntimeException('session_upgrade_conflict'); } }
+                    $raw = self::input($options['input']);
+                    if (!hash_equals($authorized['input-sha256'], hash('sha256', $raw))) { throw new RuntimeException('operator_input_changed'); }
+                    $selection = json_decode($raw, true, 8, JSON_THROW_ON_ERROR);
+                    if (!is_array($selection)) { throw new RuntimeException('invalid_session_selection'); }
+                    $result = Impactshop_Jysk_Game::revokeIssuedSessions($selection);
+                }
+            }
+            WP_CLI::line(json_encode($result, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+        } catch (Throwable $e) { WP_CLI::error($e->getMessage()); }
     }
 
     public function results(array $args, array $options): void

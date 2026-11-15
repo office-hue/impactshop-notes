@@ -1,3 +1,12 @@
+## 2026-11-13 — JYSK többeszközös profilkapcsolat
+
+Egy meglévő protected bridge saját grantkötéssel, explicit hozzáadó authsémával,
+azonos subject-zárral; reward ABI/mapping megmarad. PHP301/private19/results19,
+izolált MariaDB10.11.19 + target wpdb session61 sikeres, három authtábla
+izolált dump/restore checksum-egyezés igazolt. Még nincs kiadás/aktiválás.
+Scope, rollback és kézi UI: docs/protected-change-records/2026-11-13-jysk-profile-persistence.md.
+Csak a bridge saját leltárhash-e és külső checksum frissül; guardmodell változatlan.
+
 ## 2026-11-12 22:00 Budapest — Watchdog megfigyelés aktivált, részleges éles elfogadás
 
 PR278 merge `e4357f11`: az öt ellenőrzött MU-fájl exact-file CAS-kiadása és az explicit megfigyelésitábla-migráció megtörtént. A manager és a jutalmazási argumentumok változatlanok. A két monitor-konstans pontos konfiguráció-mentés/CAS/lint után aktív; a 12 producer-hook és 25 telepített forráskötés runtime-ellenőrzött. A három új pontforrás bizonyított lefedettségi kezdete 21:57:14 Budapest; a 22:00-s természetes központi futás valódi ponteseményt kanonikus jóváírással egyeztetett. Időzített/API forrás aktuálisan idle_verified, naplózási lefedettségi rés nincs. Ez nem UI- vagy p95-elfogadás.

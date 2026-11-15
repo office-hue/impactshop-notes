@@ -16,7 +16,7 @@ function apply_filters($name, $value, ...$args) { return $GLOBALS['earning']; }
 function wp_strip_all_tags($value) { return strip_tags($value); }
 function status_header($status): void { $GLOBALS['status'] = $status; }
 function impactshop_identity_profile_cookie() { return 'abcdef123456'; }
-function impactshop_identity_owner_cookie() { return str_repeat('d', 64); }
+function impactshop_identity_owner_cookie() { return $GLOBALS['owner_cookie'] ?? str_repeat('d', 64); }
 function impactshop_identity_owner_hash($token) { return hash('sha256', $token); }
 function impactshop_identity_owner_pseudo_hash($pseudo) { return hash('sha256', $pseudo); }
 function impactshop_identity_owner_grant_table() { return 'wp_identity_grants'; }
@@ -50,6 +50,10 @@ class wpdb
     public ?array $receipt = null;
     public ?array $code = null;
     public ?array $session = null;
+    public bool $schemaV2 = false;
+    public array $sessions = [], $codes = [], $ownGrants = [];
+    public string $subject = '';
+    public string $grantHash = '';
     public bool $grantActive = true;
     public bool $centralOwner = true;
     public ?array $transactionSnapshot = null;
@@ -81,9 +85,9 @@ class wpdb
     {
         [$query, $args] = $this->record($sql);
         if ($this->last_error !== '') { return false; }
-        if ($query === 'START TRANSACTION') { $this->transactionSnapshot = [$this->generation, $this->grantActive, $this->session, $this->code]; }
+        if ($query === 'START TRANSACTION') { $this->transactionSnapshot = [$this->generation, $this->grantActive, $this->session, $this->code, $this->sessions, $this->codes, $this->grantHash, $this->subject]; }
         if ($query === 'ROLLBACK' && $this->transactionSnapshot !== null) {
-            [$this->generation, $this->grantActive, $this->session, $this->code] = $this->transactionSnapshot;
+            [$this->generation, $this->grantActive, $this->session, $this->code, $this->sessions, $this->codes, $this->grantHash, $this->subject] = $this->transactionSnapshot;
             $this->transactionSnapshot = null;
         }
         if ($query === 'COMMIT') { $this->transactionSnapshot = null; }
@@ -98,10 +102,17 @@ class wpdb
         if (str_contains($query, "SET state='absent'")) { $this->claim['state'] = 'absent'; }
         if (str_contains($query, "SET state='accepted'")) { $this->claim['state'] = 'accepted'; }
         if (str_contains($query, 'DELETE FROM wp_jysk_game_codes WHERE token_hash')) {
+            if ($this->schemaV2) { $exists = isset($this->codes[$args[0]]); unset($this->codes[$args[0]]); return $exists ? 1 : 0; }
             if ($this->code === null) { return 0; }
             $this->code = null;
         }
         if (str_contains($query, 'INSERT INTO wp_jysk_game_sessions')) { $this->session = ['token_hash' => $args[0], 'subject' => $args[1], 'generation' => $args[2], 'expires' => $args[3]]; }
+        if ($this->schemaV2 && str_contains($query, 'INSERT INTO wp_jysk_game_sessions')) { $this->sessions[$args[0]] = $this->session + ['owner_grant_hash' => $args[4], 'issued_at' => $args[5]]; }
+        if ($this->schemaV2 && str_contains($query, 'INSERT INTO wp_jysk_game_codes')) { $this->codes[$args[0]] = ['token_hash' => $args[0], 'subject' => $args[1], 'generation' => $args[2], 'challenge' => $args[3], 'expires' => $args[4], 'owner_grant_hash' => $args[5]]; }
+        if ($this->schemaV2 && str_contains($query, 'INSERT INTO wp_jysk_game_grants')) { $this->subject = $args[0]; $this->grantHash = $args[2]; $this->generation = $args[3]; $this->grantActive = true; }
+        if ($this->schemaV2 && str_contains($query, 'DELETE FROM wp_jysk_game_sessions WHERE token_hash')) { $exists = isset($this->sessions[$args[0]]); unset($this->sessions[$args[0]]); return $exists ? 1 : 0; }
+        if ($this->schemaV2 && str_contains($query, 'DELETE FROM wp_jysk_game_sessions WHERE subject=')) { $this->sessions = array_filter($this->sessions, fn ($s) => str_contains($query, 'expires<=') && $s['expires'] > $args[1]); }
+        if ($this->schemaV2 && str_contains($query, 'DELETE FROM wp_jysk_game_codes WHERE subject=')) { $this->codes = array_filter($this->codes, fn ($s) => str_contains($query, 'expires<=') && $s['expires'] > $args[1]); }
         if (str_contains($query, 'UPDATE wp_jysk_game_grants SET revoked=1')) { $this->grantActive = false; }
         if (str_contains($query, 'UPDATE wp_jysk_game_grants SET generation=')) {
             if ($this->generation !== $args[2]) { return 0; }
@@ -119,6 +130,7 @@ class wpdb
         if (str_contains($query, 'GET_LOCK')) { return $this->busy ? 0 : 1; }
         if (str_contains($query, 'IS_USED_LOCK')) { return $this->owner; }
         if (str_contains($query, '@@read_only')) { return $this->readOnly; }
+        if (str_contains($query, '@@in_transaction')) { return $this->transactionSnapshot === null ? '0' : '1'; }
         if (str_contains($query, 'SELECT ENGINE')) { return $this->engine; }
         if (str_contains($query, 'SUM(GREATEST(points,0))')) { return $this->technicalTotal; }
         return null;
@@ -127,8 +139,18 @@ class wpdb
     {
         [$query, $args] = $this->record($sql);
         if (str_contains($query, 'SELECT pseudo FROM')) { return ['pseudo' => 'abcdef123456']; }
-        if (str_contains($query, 'SELECT * FROM wp_jysk_game_grants')) { return ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation]; }
-        if (str_contains($query, 'INNER JOIN wp_identity_grants')) { return $this->grantActive && $this->centralOwner ? ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation] : null; }
+        if ($this->schemaV2) {
+            if (str_contains($query, 'FROM wp_identity_grants')) { return $this->centralOwner && isset($this->ownGrants[$args[0]]) && $this->ownGrants[$args[0]] > $GLOBALS['clock'] ? ['expires_at' => gmdate('Y-m-d H:i:s', $this->ownGrants[$args[0]])] : null; }
+            if (str_contains($query, 'FROM wp_jysk_game_grants') || str_contains($query, 'INNER JOIN wp_identity_grants')) {
+                if (!$this->subject || str_contains($query, 'INNER JOIN') && (!isset($this->ownGrants[$this->grantHash]) || $this->ownGrants[$this->grantHash] <= $GLOBALS['clock'] || !$this->grantActive)) return null;
+                return ['subject' => $this->subject, 'pseudo' => 'abcdef123456', 'generation' => $this->generation, 'grant_hash' => $this->grantHash, 'revoked' => $this->grantActive ? 0 : 1];
+            }
+            if (str_contains($query, 'FROM wp_jysk_game_codes')) return isset($this->codes[$args[0]]) && $this->codes[$args[0]]['expires'] > $args[1] ? $this->codes[$args[0]] : null;
+            if (str_contains($query, 'FROM wp_jysk_game_sessions')) return isset($this->sessions[$args[0]]) && $this->sessions[$args[0]]['subject'] === $args[1] && $this->sessions[$args[0]]['expires'] > $args[2] ? $this->sessions[$args[0]] : null;
+        }
+        if (str_contains($query, 'FROM wp_identity_grants')) { return $this->centralOwner ? ['expires_at' => '2027-11-15 12:00:00'] : null; }
+        if (str_contains($query, 'SELECT * FROM wp_jysk_game_grants')) { return ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation, 'grant_hash' => hash('sha256', str_repeat('d', 64)), 'revoked' => $this->grantActive ? 0 : 1]; }
+        if (str_contains($query, 'INNER JOIN wp_identity_grants')) { return $this->grantActive && $this->centralOwner ? ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation, 'grant_hash' => hash('sha256', str_repeat('d', 64)), 'revoked' => 0] : null; }
         if (str_contains($query, 'FROM wp_jysk_game_rewards')) { return $this->claim; }
         if (str_contains($query, 'FROM wp_point_transactions')) { return $this->receipt; }
         if (str_contains($query, 'FROM wp_jysk_game_codes')) { return $this->code; }
@@ -142,6 +164,11 @@ class wpdb
     public function get_results($sql, $mode)
     {
         [$query] = $this->record($sql);
+        if (str_starts_with($query, 'SHOW COLUMNS')) {
+            $rows = array_map(static fn ($field) => ['Field' => $field, 'Type' => $field === 'expires' ? 'bigint(20)' : 'char(64)', 'Null' => 'NO'], ['token_hash', 'subject', 'generation', 'expires', 'challenge']);
+            if ($this->schemaV2) { $rows[] = ['Field' => 'owner_grant_hash', 'Type' => 'char(64)', 'Null' => 'YES']; if (str_contains($query, '_sessions')) $rows[] = ['Field' => 'issued_at', 'Type' => 'bigint(20)', 'Null' => 'YES']; }
+            return $rows;
+        }
         if (str_starts_with($query, 'SHOW INDEX') && !$this->missingIndex) {
             if (str_contains($query, 'point_transactions')) {
                 return [['Non_unique' => 0, 'Key_name' => 'canonical_unique', 'Seq_in_index' => 1, 'Column_name' => 'pseudo_id', 'Sub_part' => null], ['Non_unique' => 0, 'Key_name' => 'canonical_unique', 'Seq_in_index' => 2, 'Column_name' => 'dedupe_key', 'Sub_part' => null]];
@@ -179,7 +206,7 @@ class Sharity_Level_Manager {}
 $source = file_get_contents(__DIR__ . '/../wp-content/mu-plugins/impactshop-jysk-game.php');
 $source = preg_replace('/^<\?php/', '', $source);
 $source = str_replace('declare(strict_types=1);', '', $source);
-eval('namespace JyskFixture; use \\RuntimeException; use \\Throwable; use \\DateTimeImmutable; use \\DateTimeZone; use \\WP_REST_Response; use \\Sharity_Points_Manager; function time() { return $GLOBALS["clock"]; } function error_log($message) { $GLOBALS["decision_log"][] = json_decode($message, true, 16, JSON_THROW_ON_ERROR); return true; } ' . $source);
+eval('namespace JyskFixture; use \\RuntimeException; use \\Throwable; use \\DateTimeImmutable; use \\DateTimeZone; use \\WP_REST_Response; use \\Sharity_Points_Manager; function defined($name) { return array_key_exists($name, $GLOBALS["session_config"] ?? []) || \\defined($name); } function constant($name) { return $GLOBALS["session_config"][$name] ?? \\constant($name); } function time() { return $GLOBALS["clock"]; } function error_log($message) { $GLOBALS["decision_log"][] = json_decode($message, true, 16, JSON_THROW_ON_ERROR); return true; } ' . $source);
 use JyskFixture\Impactshop_Jysk_Game as Bridge;
 $checks = 0;
 function check($condition, string $name): void
@@ -188,7 +215,7 @@ function check($condition, string $name): void
     $checks++;
     if (!$condition) { throw new RuntimeException('FAIL: ' . $name); }
 }
-function freshDb(): wpdb { $GLOBALS['wpdb'] = new wpdb(); return $GLOBALS['wpdb']; }
+function freshDb(): wpdb { (new ReflectionProperty(Bridge::class, 'sessionSchema'))->setValue(null, null); $GLOBALS['wpdb'] = new wpdb(); return $GLOBALS['wpdb']; }
 function payload(): array
 {
     $subject = str_repeat('a', 64);
@@ -525,4 +552,55 @@ check(Bridge::service(request('award', $p))->status === 503 && Sharity_Points_Ma
 $GLOBALS['clock'] -= 86400;
 $db = freshDb();
 check(Bridge::service(request('award', payload()))->data['state'] === 'policy_blocked', 'technical subject cannot erase its classification');
+// V2 fixture: real handlers, separate owner grants/tokens, no live profile data.
+$GLOBALS['session_config'] = ['JYSK_GAME_SESSION_MODE' => 'per_device_v1', 'JYSK_GAME_SESSION_TTL_SECONDS' => 31536000];
+$GLOBALS['clock'] = strtotime('2026-11-15T12:00:00Z');
+$db = freshDb(); $db->schemaV2 = true;
+$ownerA = str_repeat('1', 64); $ownerB = str_repeat('2', 64);
+$hashA = hash('sha256', $ownerA); $hashB = hash('sha256', $ownerB);
+$db->ownGrants = [$hashA => $GLOBALS['clock'] + 31536000, $hashB => $GLOBALS['clock'] + 3600];
+function v2Login(string $owner): array {
+    $GLOBALS['owner_cookie'] = $owner;
+    $verifier = str_repeat('v', 64); $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+    $response = Bridge::handoff(new FixtureRequest('/jysk-game/v1/handoff', ['client_id' => Bridge::CLIENT, 'redirect_uri' => Bridge::CALLBACK,
+        'state' => str_repeat('s', 43), 'code_challenge' => $challenge, 'code_challenge_method' => 'S256']));
+    check($response->status === 302, 'v2 handoff issues only its own code');
+    parse_str(parse_url($response->headers['Location'], PHP_URL_QUERY), $query);
+    $answer = Bridge::service(request('exchange', ['clientId' => Bridge::CLIENT, 'redirectUri' => Bridge::CALLBACK, 'code' => $query['code'], 'codeVerifier' => $verifier]));
+    check($answer->status === 200, 'v2 exchange succeeds');
+    return $answer->data;
+}
+$a = v2Login($ownerA); $generation = $db->generation;
+$b = v2Login($ownerB);
+check($db->generation === $generation && count($db->sessions) === 2, 'second device preserves generation and first session');
+check(strtotime($a['expiresAt']) === $GLOBALS['clock'] + 31536000, 'one year absolute ceiling');
+check(strtotime($b['expiresAt']) === $GLOBALS['clock'] + 3600, 'own shorter grant caps second device');
+$bodyA = array_intersect_key($a, array_flip(['subject', 'sessionToken']));
+$bodyB = array_intersect_key($b, array_flip(['subject', 'sessionToken']));
+check(Bridge::service(request('context', $bodyA))->status === 200, 'first device still reads after second login');
+unset($db->ownGrants[$hashB]);
+check(Bridge::service(request('context', $bodyA))->data['earningAllowed'] === false, 'own valid access does not broaden latest reward-grant authority');
+$db->ownGrants[$hashB] = $GLOBALS['clock'] + 3600;
+unset($db->ownGrants[$hashA]);
+check(Bridge::service(request('context', $bodyA))->status === 403 && Bridge::service(request('context', $bodyB))->status === 200, 'own revoked grant is never substituted by the latest device');
+$GLOBALS['session_config'] = ['JYSK_GAME_SESSION_MODE' => 'legacy', 'JYSK_GAME_SESSION_TTL_SECONDS' => 900];
+check(Bridge::service(request('context', $bodyA))->status === 403, 'switching mode cannot weaken v2 grant binding');
+$GLOBALS['session_config'] = ['JYSK_GAME_SESSION_MODE' => 'per_device_v1', 'JYSK_GAME_SESSION_TTL_SECONDS' => 31536000];
+$db->ownGrants[$hashA] = $GLOBALS['clock'] + 31536000;
+$before = [$db->sessions, $db->generation, $db->grantHash]; $db->fail = 'COMMIT';
+check(Bridge::service(request('disconnect', $bodyA))->status === 503 && [$db->sessions, $db->generation, $db->grantHash] === $before, 'v2 disconnect failure rolls back both devices unchanged');
+$db->fail = '';
+check(Bridge::service(request('disconnect', $bodyA))->data === ['disconnected' => true], 'per-device disconnect acknowledged');
+check(count($db->sessions) === 1 && $db->generation === $generation && $db->grantHash === $hashB, 'disconnect preserves other session and reward mapping');
+check(Bridge::service(request('context', $bodyB))->status === 200, 'other device remains connected');
+check(Bridge::service(request('revoke', $bodyB))->data === ['revoked' => true] && $db->sessions === [] && $db->codes === [], 'global revoke removes every device and pending code');
+$db = freshDb(); $db->schemaV2 = true; $db->ownGrants = [$hashA => $GLOBALS['clock'] + 31536000];
+$a = v2Login($ownerA); $bodyA = array_intersect_key($a, array_flip(['subject', 'sessionToken']));
+$db->sessions[hash('sha256', $a['sessionToken'])]['owner_grant_hash'] = null;
+check(Bridge::service(request('context', $bodyA))->status === 403, 'unbound v2 session requires explicit reconnection');
+$db = freshDb();
+check(Bridge::service(request('exchange', $exchange))->status === 403, 'nonexistent code never creates a session');
+$threw = false; try { (new ReflectionMethod(Bridge::class, 'sessionSettings'))->invoke(null); } catch (Throwable $e) { $threw = $e->getMessage() === 'session_schema_unavailable'; }
+check($threw, 'per-device mode on legacy schema is rejected');
+unset($GLOBALS['session_config'], $GLOBALS['owner_cookie']);
 echo "PASS {$checks} deterministic assertions (no database integration claim)\n";
