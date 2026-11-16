@@ -217,7 +217,7 @@ class ImpactshopAffiliateFakeWpdb
             ) {
                 return array_intersect_key($row, array_flip([
                     'activation_id', 'status', 'intent_expires_at', 'partner_key',
-                    'provider_key', 'provider_program_ref',
+                    'provider_key', 'provider_program_ref', 'provider_scope_ref', 'source_placement',
                 ]));
             }
             if (
@@ -244,7 +244,10 @@ class ImpactshopAffiliateFakeWpdb
         $args = $prepared['args'];
         if (strpos($query, "SET status = 'redirected'") !== false) {
             $cjHandoff = strpos($query, 'handoff_token_hash = %s') !== false;
-            if ($cjHandoff) {
+            $expectedStatus = 'ready_to_redirect'; $expectedSource = null;
+            if ($cjHandoff && strpos($query, 'AND status = %s') !== false) {
+                [$redirectedAt, $deleteAfter, $activationId, $handoffHash, $expectedStatus, $expectedSource, $now] = $args;
+            } elseif ($cjHandoff) {
                 [$redirectedAt, $deleteAfter, $activationId, $handoffHash, $now] = $args;
             } else {
                 [$redirectedAt, $deleteAfter, $activationId, $now] = $args;
@@ -252,7 +255,8 @@ class ImpactshopAffiliateFakeWpdb
             }
             if (
                 !isset($this->rows[$activationId])
-                || $this->rows[$activationId]['status'] !== 'ready_to_redirect'
+                || $this->rows[$activationId]['status'] !== $expectedStatus
+                || ($expectedSource !== null && $this->rows[$activationId]['source_placement'] !== $expectedSource)
                 || $this->rows[$activationId]['intent_expires_at'] <= $now
                 || ($cjHandoff && ($this->rows[$activationId]['handoff_token_hash'] ?? '') !== $handoffHash)
             ) {
@@ -266,7 +270,7 @@ class ImpactshopAffiliateFakeWpdb
         if (strpos($query, "SET status = 'expired'") !== false) {
             $count = 0;
             foreach ($this->rows as &$row) {
-                if ($row['status'] === 'ready_to_redirect' && $row['intent_expires_at'] <= $args[0]) {
+                if (in_array($row['status'], ['ready_to_redirect', 'confirmed_cj_ready'], true) && $row['intent_expires_at'] <= $args[0]) {
                     $row['status'] = 'expired';
                     $count++;
                 }
@@ -538,6 +542,7 @@ class ShoppingPurchaseFakeWpdb extends ImpactshopAffiliateFakeWpdb {
     public $ngoSlug = 'chosen-ngo';
     public $loseCommit = false;
     public $race = false;
+    public $lockedOwner = true;
     public $reconnect_retries = 5;
     public function get_var($q) { return $q === 'SELECT CONNECTION_ID()' ? '123' : parent::get_var($q); }
     public function get_results($query, ...$rest) {
@@ -545,9 +550,9 @@ class ShoppingPurchaseFakeWpdb extends ImpactshopAffiliateFakeWpdb {
     }
     public function get_row($q, ...$rest) {
         if (strpos($q['query'], 'impact_sharity_web_sessions') !== false) {
-            return ['pseudo_id'=>'abcdefgh1234','owner_grant_hash'=>str_repeat('a',64), 'status'=>'active','expires_at_utc'=>gmdate('Y-m-d H:i:s',time()+3600)];
+            return ['pseudo_id'=>'abcdefgh1234','owner_grant_hash'=>str_repeat($this->lockedOwner ? 'a' : 'b',64), 'status'=>'active','expires_at_utc'=>gmdate('Y-m-d H:i:s',time()+3600)];
         }
-        if (strpos($q['query'], 'SELECT *') !== false) {
+        if (strpos($q['query'], 'SELECT *') !== false && strpos($q['query'], 'request_key_hash') !== false) {
             foreach ($this->rows as $row) { if ($row['request_key_hash'] === $q['args'][0]) return $row; }
             return null;
         }
@@ -616,3 +621,72 @@ foreach (['https://evil.example/product','https://shop.example/a#x','https://sho
 $shop['dognet_base'].='&cid=other'; assert_true(impactshop_shopping_dognet_binding($shop,$purchase['merchantInput'])===null,'duplicate base parameter rejected');
 assert_true(is_wp_error(impactshop_sharity_affiliate_validate_context(['shop'=>'test-shop','ngo'=>'chosen-ngo','pseudo'=>'ABCDEF123456','provider'=>'dognet','source'=>'shopping-confirmed-v1'])),'legacy GET cannot create confirmed source');
 echo "confirmed shopping purchase tests: PASS\n";
+
+// CJ shares the confirmed owner/NGO boundary but keeps the opaque, one-use legacy handoff URL shape.
+$oldPublisher = getenv('CJ_PUBLISHER_ID'); $oldWebsite = getenv('CJ_WEBSITE_ID');
+putenv('CJ_PUBLISHER_ID=55555'); putenv('CJ_WEBSITE_ID=101302202');
+$impactshopTestOptions['impactshop_sharity_affiliate_cj_canary_enabled'] = '1';
+$review = ['publisherId'=>'55555','websiteId'=>'101302202','advertiserId'=>'5824323','linkId'=>'15487360',
+    'merchantUrl'=>IMPACTSHOP_SHARITY_AFFILIATE_CJ_MERCHANT,'reviewExpiresAt'=>gmdate('Y-m-d\TH:i:s\Z',time()+3600)];
+$cjPurchase = array_merge($purchase, ['merchantInput'=>IMPACTSHOP_SHARITY_AFFILIATE_CJ_MERCHANT,
+    'partnerKey'=>'unice','programRef'=>IMPACTSHOP_SHARITY_AFFILIATE_CJ_PROGRAM,'providerKey'=>'cj']);
+$cjCall = static function ($p) use ($headers) { return impactshop_sharity_affiliate_cj_issue(new ImpactshopAffiliateFakeRequest($headers,[],$p)); };
+$wpdb = new ShoppingPurchaseFakeWpdb();
+assert_true($cjCall($cjPurchase)->get_status()===422 && count($wpdb->rows)===0,'CJ missing review stays OFF');
+foreach (['reviewExpiresAt'=>'2000-01-01T00:00:00Z','merchantUrl'=>'https://www.unice.com/another-product',
+    'websiteId'=>'999','publisherId'=>'666','linkId'=>'999','advertiserId'=>'999'] as $field=>$bad) {
+    $impactshopTestOptions['impactshop_sharity_affiliate_cj_purchase_review']=array_merge($review,[$field=>$bad]);
+    assert_true($cjCall($cjPurchase)->get_status()===422 && count($wpdb->rows)===0,'CJ invalid/expired review rejected: '.$field);
+}
+$impactshopTestOptions['impactshop_sharity_affiliate_cj_purchase_review']=$review;
+$bad=$cjPurchase; $bad['merchantInput'].='?next=foreign';
+assert_true($cjCall($bad)->get_status()===422,'CJ only exact reviewed target');
+$bad=$cjPurchase; $bad['ngoSlug']=IMPACTSHOP_SHARITY_AFFILIATE_NGO;
+assert_true($cjCall($bad)->get_status()===400 && count($wpdb->rows)===0,'legacy NGO cannot override confirmed choice');
+ImpactShop_Sharity_Web_Session::$owner=false;
+assert_true($cjCall($cjPurchase)->get_status()===401,'CJ ownerless session rejected'); ImpactShop_Sharity_Web_Session::$owner=true;
+$wpdb->lockedOwner=false;
+assert_true($cjCall($cjPurchase)->get_status()===401 && count($wpdb->rows)===0,'CJ locked owner switch rejected'); $wpdb->lockedOwner=true;
+$wpdb->activeNgo=false;
+assert_true($cjCall($cjPurchase)->get_status()===422 && count($wpdb->rows)===0,'CJ inactive NGO rejected'); $wpdb->activeNgo=true;
+$cjResult=$cjCall($cjPurchase); assert_true($cjResult->get_status()===200,'confirmed CJ intent issued');
+$cjData=$cjResult->get_data(); $cjRow=array_values($wpdb->rows)[0];
+assert_true($cjData['contract']==='shopping-confirmed-v1','CJ confirmed marker excludes mixed-version fallback');
+assert_true($cjRow['ngo_ref']==='chosen-ngo' && $cjRow['ngo_ref']!==IMPACTSHOP_SHARITY_AFFILIATE_NGO,'CJ stores selected NGO exactly');
+assert_true($cjRow['subject_ref']===impactshop_sharity_affiliate_subject_ref('abcdefgh1234') && $cjRow['provider_scope_ref']==='55555:101302202','CJ stores owner and configured publisher/site scope');
+assert_true($cjRow['status']==='confirmed_cj_ready' && $cjRow['redirected_at']===null,'CJ issuance alone is not outbound proof');
+assert_true($cjCall($cjPurchase)->get_data()===$cjData && count($wpdb->rows)===1,'duplicate CJ confirmation reuses one opaque handoff');
+$wpdb->ngoSlug='other-ngo';assert_true($cjCall($cjPurchase)->get_status()===409 && count($wpdb->rows)===1,'same CJ confirmation changed NGO conflicts');$wpdb->ngoSlug='chosen-ngo';
+assert_true($call($purchase)->get_status()===409 && count($wpdb->rows)===1,'same confirmation cannot switch provider');
+$cjToken=basename(parse_url($cjData['data']['handoff_url'],PHP_URL_PATH));
+$cjGet=new ImpactshopAffiliateFakeRequest([],['handoffToken'=>$cjToken],[]);
+require __DIR__.'/fixtures/shopping-cj-legacy-handoff.php';
+assert_true(shopping_test_legacy_cj_handoff($cjGet)->get_status()===409 && $wpdb->rows[$cjRow['activation_id']]['status']==='confirmed_cj_ready','exact base GET cannot consume a new confirmed CJ intent');
+$wpdb->rows[$cjRow['activation_id']]['provider_scope_ref']='wrong:site';
+assert_true(impactshop_sharity_affiliate_cj_handoff($cjGet)->get_status()===409,'confirmed CJ GET rejects wrong scope');
+$wpdb->rows[$cjRow['activation_id']]['provider_scope_ref']=$cjRow['provider_scope_ref'];
+$wpdb->rows[$cjRow['activation_id']]['source_placement']='shopping-assistant';
+assert_true(impactshop_sharity_affiliate_cj_handoff($cjGet)->get_status()===409,'confirmed status cannot enter new legacy GET branch');
+$wpdb->rows[$cjRow['activation_id']]['source_placement']='shopping-confirmed-v1';
+$wpdb->rows[$cjRow['activation_id']]['status']='ready_to_redirect';
+assert_true(impactshop_sharity_affiliate_cj_handoff($cjGet)->get_status()===409 && $cjCall($cjPurchase)->get_status()===410,'confirmed source cannot use legacy pending status or idempotent result');
+$wpdb->rows[$cjRow['activation_id']]['status']='confirmed_cj_ready';
+$impactshopTestOptions['impactshop_sharity_affiliate_cj_purchase_review']['reviewExpiresAt']='2000-01-01T00:00:00Z';
+assert_true(impactshop_sharity_affiliate_cj_handoff($cjGet)->get_status()===409 && $wpdb->rows[$cjRow['activation_id']]['status']==='confirmed_cj_ready','CJ rechecks review before outbound');
+assert_true(shopping_test_legacy_cj_handoff($cjGet)->get_status()===409,'exact base GET rejects confirmed row even when review expired');
+$impactshopTestOptions['impactshop_sharity_affiliate_cj_purchase_review']=$review;
+$cjRedirect=impactshop_sharity_affiliate_cj_handoff($cjGet);
+assert_true($cjRedirect->get_status()===303,'confirmed CJ handoff redirects after commit');
+assert_true(strtotime($wpdb->rows[$cjRow['activation_id']]['delete_after'].' UTC')-strtotime($wpdb->rows[$cjRow['activation_id']]['redirected_at'].' UTC')===3888000,'CJ outbound retains binding for existing 45 days');
+assert_true(impactshop_sharity_affiliate_cj_handoff($cjGet)->get_status()===409,'CJ handoff replay denied');
+$wpdb=new ShoppingPurchaseFakeWpdb();$wpdb->loseCommit=true;
+assert_true($cjCall($cjPurchase)->get_status()===503,'CJ unknown absent commit returns no handoff');
+$wpdb=new ShoppingPurchaseFakeWpdb();$wpdb->race=true;
+assert_true($cjCall($cjPurchase)->get_status()===200 && count($wpdb->rows)===1,'CJ unique race resolves via readback without write retry');
+$pending=array_values($wpdb->rows)[0]; $wpdb->rows[$pending['activation_id']]['intent_expires_at']='2000-01-01 00:00:00';
+assert_true(impactshop_sharity_affiliate_retention_cleanup()===true && count($wpdb->rows)===0,'confirmed-only pending state expires and deletes on existing TTL');
+$impactshopTestOptions['impactshop_sharity_affiliate_cj_canary_enabled']='0';
+assert_true($cjCall($cjPurchase)->get_status()===403,'CJ provider OFF enforced');
+$oldPublisher===false ? putenv('CJ_PUBLISHER_ID') : putenv('CJ_PUBLISHER_ID='.$oldPublisher);
+$oldWebsite===false ? putenv('CJ_WEBSITE_ID') : putenv('CJ_WEBSITE_ID='.$oldWebsite);
+echo "confirmed CJ purchase tests: PASS\n";

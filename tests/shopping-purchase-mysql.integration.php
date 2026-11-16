@@ -39,6 +39,7 @@ class WP_Error {}
 class WP_REST_Request {
     public function __construct(public array $body, public string $token) {}
     public function get_json_params() { return $this->body; }
+    public function get_param($key) { return $this->body[$key] ?? null; }
     public function get_header($name) { return $name === 'authorization' ? 'Bearer ' . $this->token : ($name === 'x-sharity-service-authorization' ? 'Bearer ' . str_repeat('k',40) : ''); }
 }
 class WP_REST_Response {
@@ -50,6 +51,7 @@ $options=['impactshop_sharity_affiliate_runtime_enabled'=>'1','impactshop_sharit
     'impactshop_sharity_web_session_service_token'=>str_repeat('k',40),'sharity_points_impactshop_schema'=>'2026-10-29-simple1'];
 function get_option($key,$default=false) { return $GLOBALS['options'][$key] ?? $default; }
 function update_option($key,$value,...$args) { $GLOBALS['options'][$key]=$value; return true; }
+function home_url($path='') { return 'https://app.sharity.hu'.$path; }
 function impactshop_identity_owner_grant_table() { return $GLOBALS['wpdb']->prefix . 'owner_grants'; }
 function impactshop_identity_owner_pseudo_hash($pseudo) { return hash('sha256',$pseudo); }
 function impactshop_identity_grant_storage_ready() { return true; }
@@ -123,11 +125,51 @@ check(callPurchase(payload(5))->get_data()===$r->get_data(),'lost ACK replay sam
 $hit=false;$fault=function($query)use(&$hit,$other){global $wpdb;if(!$hit && str_starts_with($query,'INSERT INTO `impactshop_test_impactshop_affiliate_intents`')){$hit=true;$other->query('KILL CONNECTION '.(int)mysqli_thread_id($wpdb->dbh));}return $query;};
 $r=callPurchase(payload(6));$fault=null;check($hit && $r->get_status()===503,'dead connection gives no URL');
 $wpdb=connection();check(countIntents()===3,'connection death rolls back intent');
+// CJ exercises the same real owner/session transaction and the existing one-use GET handoff.
+putenv('CJ_PUBLISHER_ID=55555'); putenv('CJ_WEBSITE_ID=101302202');
+$options['impactshop_sharity_affiliate_cj_canary_enabled']='1';
+$review=['publisherId'=>'55555','websiteId'=>'101302202','advertiserId'=>'5824323','linkId'=>'15487360',
+    'merchantUrl'=>IMPACTSHOP_SHARITY_AFFILIATE_CJ_MERCHANT,'reviewExpiresAt'=>gmdate('Y-m-d\TH:i:s\Z',time()+3600)];
+function cjPayload($n) { return array_merge(payload($n),['merchantInput'=>IMPACTSHOP_SHARITY_AFFILIATE_CJ_MERCHANT,
+    'partnerKey'=>'unice','programRef'=>IMPACTSHOP_SHARITY_AFFILIATE_CJ_PROGRAM,'providerKey'=>'cj','ngoId'=>'8']); }
+function callCj($p) { return impactshop_sharity_affiliate_cj_issue(new WP_REST_Request($p,$GLOBALS['token'])); }
+function handoffCj($url) { return impactshop_sharity_affiliate_cj_handoff(new WP_REST_Request(['handoffToken'=>basename(parse_url($url,PHP_URL_PATH))],'')); }
+check(callCj(cjPayload(10))->get_status()===422 && countIntents()===3,'CJ without fresh review no write');
+$options['impactshop_sharity_affiliate_cj_purchase_review']=$review;
+$p=cjPayload(10);$p['merchantInput'].='?other=target';check(callCj($p)->get_status()===422 && countIntents()===3,'CJ exact reviewed product only');
+$r=callCj(cjPayload(10));check($r->get_status()===200 && $r->get_data()['contract']==='shopping-confirmed-v1','CJ confirmed contract');
+$cjUrl=$r->get_data()['data']['handoff_url'];
+$row=$wpdb->get_row("SELECT * FROM impactshop_test_impactshop_affiliate_intents WHERE provider_key='cj'",ARRAY_A);
+check($row['ngo_ref']==='ngo-eight' && $row['provider_scope_ref']==='55555:101302202' && $row['status']==='confirmed_cj_ready','CJ stores actual chosen NGO and account/site before outbound');
+check(callCj(cjPayload(10))->get_data()['data']['handoff_url']===$cjUrl && countIntents()===4,'CJ duplicate issues one stable handoff');
+$p=cjPayload(10);$p['ngoId']='7';check(callCj($p)->get_status()===409 && countIntents()===4,'CJ changed NGO conflicts');
+$options['impactshop_sharity_affiliate_cj_purchase_review']['reviewExpiresAt']='2000-01-01T00:00:00Z';
+check(handoffCj($cjUrl)->get_status()===409,'CJ review expiry before GET blocks outbound');
+require __DIR__.'/fixtures/shopping-cj-legacy-handoff.php';
+check(shopping_test_legacy_cj_handoff(new WP_REST_Request(['handoffToken'=>basename(parse_url($cjUrl,PHP_URL_PATH))],''))->get_status()===409,'exact base GET rejects new confirmed intent after review expiry');
+$options['impactshop_sharity_affiliate_cj_purchase_review']=$review;
+check(handoffCj($cjUrl)->get_status()===303 && handoffCj($cjUrl)->get_status()===409,'CJ one-use committed handoff');
+$cjProviderToken=impactshop_sharity_affiliate_provider_token($row['activation_id']);
+check(sharity_points_impactshop_attribution($cjProviderToken,'cj','unice')===hash('sha256',impactshop_sharity_affiliate_subject_ref($pseudo)),'CJ real point account binds selected owner');
+$row=$wpdb->get_row($wpdb->prepare('SELECT * FROM impactshop_test_impactshop_affiliate_intents WHERE activation_id=%s',$row['activation_id']),ARRAY_A);
+check($row['ngo_ref']==='ngo-eight' && strtotime($row['delete_after'])-strtotime($row['redirected_at'])===3888000,'CJ selected NGO retained for original 45 days');
+// Two independently authenticated sessions confirm the same CJ UUID concurrently.
+$wpdb->close();$children=[];
+for($i=0;$i<2;$i++) { $pid=pcntl_fork();check($pid>=0,'CJ fork');if($pid===0){$wpdb=connection();if($i===1)$token=$token2;$out=callCj(cjPayload(11));exit($out->get_status()===200?0:1);} $children[]=$pid; }
+foreach($children as $pid){pcntl_waitpid($pid,$status);check(pcntl_wifexited($status)&&pcntl_wexitstatus($status)===0,'CJ concurrent response');}
+$wpdb=connection();check(countIntents()===5,'concurrent CJ requests create one intent');
+// A lost handoff COMMIT acknowledgement cannot release a provider redirect or repeat the transition.
+$r=callCj(cjPayload(12));check($r->get_status()===200,'CJ acknowledgement fixture');$lostUrl=$r->get_data()['data']['handoff_url'];
+$hit=false;$fault=function($query)use(&$hit){global $wpdb;if(!$hit && $query==='COMMIT'){$hit=true;mysqli_query($wpdb->dbh,'COMMIT');return 'SELECT * FROM deliberately_missing_cj_ack';}return $query;};
+check(handoffCj($lostUrl)->get_status()===409 && $hit,'CJ lost handoff acknowledgement releases no URL');$fault=null;
+check(handoffCj($lostUrl)->get_status()===409 && countIntents()===6,'CJ lost handoff never repeats outbound transition');
+sql("UPDATE impactshop_test_impactshop_affiliate_intents SET intent_expires_at='2000-01-01' WHERE status='confirmed_cj_ready'");
+check(impactshop_sharity_affiliate_retention_cleanup()===true && countIntents()===5,'existing cleanup removes expired confirmed pending state only');
 // Stale/owner-less sessions, lane OFF and absent column all fail without mutation.
 sql("UPDATE impactshop_test_impact_sharity_web_sessions SET owner_grant_hash=NULL");check(callPurchase(payload(7))->get_status()===401,'ownerless session denied');
 sql("UPDATE impactshop_test_impact_sharity_web_sessions SET owner_grant_hash='".$grant."',expires_at_utc='2020-01-01'");check(callPurchase(payload(7))->get_status()===401,'expired session denied');
 sql("UPDATE impactshop_test_impact_sharity_web_sessions SET expires_at_utc=DATE_ADD(NOW(),INTERVAL 1 HOUR)");
 $options['impactshop_sharity_shopping_purchase_enabled']='0';check(callPurchase(payload(7))->get_status()===403,'lane OFF');$options['impactshop_sharity_shopping_purchase_enabled']='1';
 sql('ALTER TABLE impactshop_test_impactshop_affiliate_intents DROP COLUMN request_payload_hash');check(callPurchase(payload(7))->get_status()===503,'missing column no HTTP migration');
-check(countIntents()===3,'failure paths preserve existing intents');
+check(countIntents()===5,'failure paths preserve existing intents');
 $other->close();$wpdb->close();echo "shopping purchase SQL: PASS ($checks checks)\n";
