@@ -494,3 +494,8 @@ A registry régi lastVerifiedAt dátuma változatlan; ez csak a saját érintett
 ## 2026-11-16 — Shopping binding/migráció és Admitad ownership
 
 [Binding és valódi ellenőrzések](protected-change-records/2026-11-16-impactshop-shopping-binding.md) ↔ [Admitad meglévő adspace ownership](protected-change-records/2026-11-16-admitad-ownership.md) → notes/status/Bástya. Saját source-scope, SQL/staging/merge/deploy/activation külön. Registry acceptedSource/lastVerifiedAt és korábbi degraded állapot változatlan; saját Secretary `wrk-impactshop-shopping-binding-20261116`.
+
+
+## 2026-11-16 – Shopping binding SQL és PR-kiegészítés
+
+A korábbi SQL-hiány rendezve: saját eldobható MariaDB10.11.19 + a tényleges target hash-ellenőrzött wpdb forrásával binding40 és purchase53 valódi SQL-ellenőrzés PASS; szintetikus50 külön. Purchase fixture issued_at_utc sémadriftje három tesztsorban javítva, termék-hitelesítés változatlan. PR #282 source/push és kiválasztott CI sikeres az első headen; a SQL-kiegészítés új head/checkreadbacket kap. Merge, staging/UI, telepítés és aktiválás még nincs. Részletek/rollback: `docs/protected-change-records/2026-11-16-impactshop-shopping-binding.md`. Registry és idegen státusz/hash változatlan.

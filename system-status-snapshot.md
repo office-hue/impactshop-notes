@@ -2290,3 +2290,8 @@ Rollback/érintettség/megőrzött snapshot és UI: docs/protected-change-record
 
 ## 2026-11-16 – Shopping R3 binding/migráció: helyi tesztelt draft
 Az első hitelesített gazdasági gyökér nullable v1 NGO/program/scope/subject/snapshot receiptet rögzít ugyanabban a meglévő capture-tranzakcióban; régi null gyökér nincs backfill. Gazdasági dedup cleanup után változatlan, ütközés manual. Két explicit additív migráció külön igazolt binding readiness opcióval. 50 szintetikus SQL-határ fixture és kapcsolódó PHP/affiliate bastion ellenőrzések PASS; nem valódi MySQL. Független review P1 javításával visszaellenőrzött; pontos saját inventory integrálva. SQL/staging/UI és kiadás még függő. A külön új Admitad ownership hook csak statikus meta tag, PHP lint és5helyi ellenőrzés, nem éles hálózati bekötés. DOCSYNC/részletes bizonyíték: `docs/protected-change-records/2026-11-16-impactshop-shopping-binding.md`; ugyanennek rövid bejegyzése a `notes.md` fájlban. Nincs push/merge/deploy vagy provideraktiválás.
+
+
+## 2026-11-16 – Shopping binding SQL és PR-kiegészítés
+
+A korábbi SQL-hiány rendezve: saját eldobható MariaDB10.11.19 + a tényleges target hash-ellenőrzött wpdb forrásával binding40 és purchase53 valódi SQL-ellenőrzés PASS; szintetikus50 külön. Purchase fixture issued_at_utc sémadriftje három tesztsorban javítva, termék-hitelesítés változatlan. PR #282 source/push és kiválasztott CI sikeres az első headen; a SQL-kiegészítés új head/checkreadbacket kap. Merge, staging/UI, telepítés és aktiválás még nincs. Részletek/rollback: `docs/protected-change-records/2026-11-16-impactshop-shopping-binding.md`. Registry és idegen státusz/hash változatlan.

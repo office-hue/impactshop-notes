@@ -950,3 +950,8 @@ docs/protected-change-records/2026-11-12-ngo-selector-parity.md.
 ## 2026-11-16 — Impactshop binding és passzív Admitad ownership
 
 50 szintetikus binding/migráció fixture, legacy affiliate/confirmed/state/provider/attribution/click-no-reward, affiliate Bástya és PHP lint sikeres; független review részleges migrációs lelete javítva és visszaellenőrizve. Valódi SQL/staging/UI nem futott. Az új `impactshop-admitad.php` exact host/path meta hook;5helyi ellenőrzés és lint sikeres, nincs outbound/cron/HTTP/pont writer. Új exact owner/hash/protected bejegyzés a meglévő inventoryban, nem guard-program változás. Részletes smoke/rollback/UI: `protected-change-records/2026-11-16-impactshop-shopping-binding.md` és `protected-change-records/2026-11-16-admitad-ownership.md`.
+
+
+## 2026-11-16 – Shopping binding SQL és PR-kiegészítés
+
+A korábbi SQL-hiány rendezve: saját eldobható MariaDB10.11.19 + a tényleges target hash-ellenőrzött wpdb forrásával binding40 és purchase53 valódi SQL-ellenőrzés PASS; szintetikus50 külön. Purchase fixture issued_at_utc sémadriftje három tesztsorban javítva, termék-hitelesítés változatlan. PR #282 source/push és kiválasztott CI sikeres az első headen; a SQL-kiegészítés új head/checkreadbacket kap. Merge, staging/UI, telepítés és aktiválás még nincs. Részletek/rollback: `docs/protected-change-records/2026-11-16-impactshop-shopping-binding.md`. Registry és idegen státusz/hash változatlan.

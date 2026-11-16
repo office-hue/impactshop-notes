@@ -39,7 +39,7 @@ Lefuttatva, PASS:
 - `php -l`: mind a négy termékfájl, a két módosított és az új PHP fixture.
 - `git diff --check`.
 
-Nem futott: valódi MySQL/WordPress/staging/live/CLI telepítési migráció, UI, provider capture, merge/deploy. Az `IMPACTSHOP_MYSQL_CONFIG`, `IMPACTSHOP_WPDB_FILE`, `IMPACTSHOP_MYSQL_SANDBOX_CONFIRM` konfiguráció nincs megadva; nem kerestünk vagy használtunk production hitelesítést. A meglévő `shopping-purchase-mysql.integration.php` a tényleges explicit migráció hívását kapta meg, de nem állítunk futási PASS-t.
+Az első checkpointkor valódi SQL még nem futott; az alábbi SQL-kiegészítés ezt az ellenőrzési hiányt rendezi. WordPress/staging/live/CLI telepítési migráció, UI, provider capture és deploy továbbra sem futott. Production DB-hitelesítést nem kerestünk vagy használtunk.
 
 Protected inventory: mind a négy termékfájl egyedi hash-elt bejegyzés, és a várt saját driftet megmértük. Manifest/checksum nincs átírva. Független review után a szülő végzi a saját pontos baseline-frissítést és product guardot; addig nincs teljes inventory-PASS vagy publikálhatósági állítás. Új termékmodul nincs, guard/policy nem módosult.
 
@@ -52,3 +52,13 @@ A független reviewer reprodukálta: az affiliate marker átmeneti 0 értéke ko
 Protected files touched: a négy fenti PHP fájl; `docs/impactshop-guard-config.json`, `docs/impactshop-guard-config.sha256`, `docs/impactshop-guard-hashes.json`, `docs/impactshop-guard-hashes.sha256`, `docs/impactshop-protected-files.json` és `docs/bastion-guard-status.md`. Az utóbbi inventory-kiegészítés a külön [Admitad ownership record](2026-11-16-admitad-ownership.md) egy új, passzív MU-pluginját is nyilvántartja. Meglévő guard/CI-program nem változik; nincs általános hash-refresh vagy új védelmi mechanizmus. Csak a négy review-zott termékhash, a config/checksum, a protected modell és az egy új fájl hash-e változik; minden idegen digest és metadata megmarad.
 
 Smoke scope/tag (érintettség, nem mai élő PASS): `route:factlens-vb-prod`, `route:impact-challenge`, `route:profil`, `flow:message-popup`, `flow:points-jump`, `flow:legacy-pool-visibility`, `flow:profile-return-account`, `flow:profile-return-restore`, `route:impactshop`, `flow:saved-offers-open`, `flow:go-deal`, `browser:webkit`, `browser:chrome`, `deploy:guard-preflight`, `deploy:checksum-verify`. Mai tényleges ellenőrzés az itt felsorolt helyi fixture/lint/guard; az összes élő/UI elem külön függő release-ellenőrzés. Rollback a saját commit/file és új schema-adatok megtartása az előző szakasz szerint.
+
+
+## Valódi SQL és publikálási kiegészítés – 2026-11-16
+
+PR: https://github.com/office-hue/impactshop-notes/pull/282. Saját helyi, eldobható MariaDB10.11.19 a már meglévő image-ből; csak 127.0.0.1 port, saját tmpfs adat, 512MiB/1CPU, új véletlen tesztjelszó privát0600 fájlban. Régi konténert és production adatot nem módosít. A target WordPress `class-wpdb.php` írásmentesen visszaolvasott forrása SHA256 `0fd1ffb9a24e9db8cb7370965db379a2fecd985dbeb73d319521cc1bca1bd04c`; nincs wp-config vagy production DB-adat másolás.
+
+- `php tests/impactshop-points-mysql.integration.php --binding-only`: **40 valódi SQL-ellenőrzés PASS**. Tényleges régi→új ALTER, pontosan egyszeri oszlopfelvétel és idempotencia, típus/readiness, második kapcsolaton a COMMIT előtti láthatatlanság, első receipt+event közös tranzakciója, első100pont/cleanup/újraimport0, marker0 kombinációk0írás, event INSERT hibáján teljes rollback. A kiválasztott ág saját tábláit eldobja és üres adatbázist ellenőriz. A meglévő teljes gazdasági suite nem futott újra.
+- `php tests/shopping-purchase-mysql.integration.php`: **53 valódi SQL-ellenőrzés PASS**. Valódi target wpdb, kanonikus `server-patches/impactshop-sharity-web-session.php` SHA256 `18ff99f5068f927d3048ef811e74362dd691a59d0afc5485e3d334a73baa098f`, két kapcsolat, owner/NGO/idempotencia/lost-ACK/KILL/retention/schema ellenőrzés. Első futás az elavult tesztséma hiányzó `issued_at_utc` oszlopán elbukott; három fixture-sor helyreigazítása után PASS. Termékkód és hitelesítési szabály nem változott.
+
+Mindkét célzott futás a szülő integrátornál is sikeres. A szintetikus50, a valódi binding40 és purchase53 külön ellenőrzési kör; nem staging/UI/provider elfogadás. Az új SQL-teszt és fixture-korrekció nem módosít védett termékhash-t. Kiadás előtt a meglévő staging/backup/CAS/CLI/oszlopreadback és kézi UI feltételek továbbra is szükségesek; forrás/push/merge/telepítés/aktiválás külön státusz.

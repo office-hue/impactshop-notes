@@ -75,12 +75,12 @@ foreach($tables as $table) sql('DROP TABLE IF EXISTS impactshop_test_'.$table);
 check(impactshop_sharity_affiliate_install_schema(),'canonical legacy intent schema');
 check(impactshop_shopping_purchase_migrate(),'explicit canonical shopping migration');
 check(impactshop_shopping_purchase_migrate(),'shopping migration idempotent');
-sql('CREATE TABLE impactshop_test_impact_sharity_web_sessions(session_hash CHAR(64) PRIMARY KEY, pseudo_id VARCHAR(12), subject_ref VARCHAR(80), owner_grant_hash CHAR(64), status VARCHAR(24), expires_at_utc DATETIME) ENGINE=InnoDB');
+sql('CREATE TABLE impactshop_test_impact_sharity_web_sessions(session_hash CHAR(64) PRIMARY KEY, pseudo_id VARCHAR(12), subject_ref VARCHAR(80), owner_grant_hash CHAR(64), status VARCHAR(24), issued_at_utc DATETIME NOT NULL, expires_at_utc DATETIME) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_owner_grants(grant_hash CHAR(64) PRIMARY KEY, pseudo_hash CHAR(64), state VARCHAR(24), revoked_at DATETIME NULL, expires_at DATETIME) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_sharity_ngo_catalog(sharity_ngo_id BIGINT PRIMARY KEY, slug VARCHAR(128),name VARCHAR(128),is_active TINYINT) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_user_points(pseudo_id VARCHAR(12) PRIMARY KEY,impactshop_subject_digest BINARY(32) UNIQUE NULL,current_level VARCHAR(24),created_at DATETIME,updated_at DATETIME) ENGINE=InnoDB');
 $token='sw_session_'.str_repeat('A',43); $pseudo='abcdefgh1234'; $grant=str_repeat('b',64);
-$wpdb->insert('impactshop_test_impact_sharity_web_sessions',['session_hash'=>hash('sha256',$token),'pseudo_id'=>$pseudo,'subject_ref'=>'hmac-sha256:'.str_repeat('c',64),'owner_grant_hash'=>$grant,'status'=>'active','expires_at_utc'=>gmdate('Y-m-d H:i:s',time()+3600)]);
+$wpdb->insert('impactshop_test_impact_sharity_web_sessions',['session_hash'=>hash('sha256',$token),'pseudo_id'=>$pseudo,'subject_ref'=>'hmac-sha256:'.str_repeat('c',64),'owner_grant_hash'=>$grant,'status'=>'active','issued_at_utc'=>gmdate('Y-m-d H:i:s'),'expires_at_utc'=>gmdate('Y-m-d H:i:s',time()+3600)]);
 $wpdb->insert('impactshop_test_owner_grants',['grant_hash'=>$grant,'pseudo_hash'=>hash('sha256',$pseudo),'state'=>'active','expires_at'=>gmdate('Y-m-d H:i:s',time()+3600)]);
 sql("INSERT INTO impactshop_test_sharity_ngo_catalog VALUES (7,'ngo-seven','NGO Seven',1),(8,'ngo-eight','NGO Eight',1)");
 function payload($n) { return ['authoritySnapshotId'=>'sharity-shopping-production-v2-20261102-01','confirmationId'=>sprintf('12345678-1234-4123-8123-%012d',$n),
@@ -101,7 +101,7 @@ $p=payload(1);$p['ngoId']='8';check(callPurchase($p)->get_status()===409 && coun
 sql("UPDATE impactshop_test_impactshop_affiliate_intents SET intent_expires_at='2020-01-01'");check(callPurchase(payload(1))->get_status()===410,'expired confirmation');
 // Two sessions for the same owner: no shared session-row lock can serialize these requests.
 $token2='sw_session_'.str_repeat('B',43);
-sql($wpdb->prepare("INSERT INTO impactshop_test_impact_sharity_web_sessions SELECT %s,pseudo_id,subject_ref,owner_grant_hash,status,expires_at_utc FROM impactshop_test_impact_sharity_web_sessions",hash('sha256',$token2)));
+sql($wpdb->prepare("INSERT INTO impactshop_test_impact_sharity_web_sessions SELECT %s,pseudo_id,subject_ref,owner_grant_hash,status,issued_at_utc,expires_at_utc FROM impactshop_test_impact_sharity_web_sessions",hash('sha256',$token2)));
 check(function_exists('pcntl_fork'),'fork available');$wpdb->close();$children=[];
 for($i=0;$i<2;$i++) { $pid=pcntl_fork();check($pid>=0,'fork');if($pid===0){$wpdb=connection();if($i===1)$token=$token2;$out=callPurchase(payload(2));exit($out->get_status()===200?0:1);} $children[]=$pid; }
 foreach($children as $pid){pcntl_waitpid($pid,$status);check(pcntl_wifexited($status)&&pcntl_wexitstatus($status)===0,'concurrent response');}
