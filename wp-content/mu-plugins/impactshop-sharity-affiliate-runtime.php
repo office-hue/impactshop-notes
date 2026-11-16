@@ -17,6 +17,7 @@ const IMPACTSHOP_SHARITY_AFFILIATE_CRON = 'impactshop_sharity_affiliate_retentio
 const IMPACTSHOP_SHARITY_AFFILIATE_CJ_PARTNER = 'unice';
 const IMPACTSHOP_SHARITY_AFFILIATE_CJ_PROGRAM = 'cj-5824323-15487360';
 const IMPACTSHOP_SHARITY_AFFILIATE_CJ_LINK = 'https://www.tkqlhce.com/click-101302202-15487360';
+const IMPACTSHOP_SHARITY_AFFILIATE_CJ_MERCHANT = 'https://www.unice.com/unice-hair-pre-plucked-virgin-hair-body-wave-hd-lace-closure-wigs-amazing-lace-melted-match-all-skin-color-bettyou-series.html';
 const IMPACTSHOP_SHARITY_AFFILIATE_CJ_DISCLOSURE = 'shopping-affiliate-v1';
 const IMPACTSHOP_SHARITY_AFFILIATE_NGO = 'gyoztesek-egyesulete';
 
@@ -350,6 +351,12 @@ function impactshop_sharity_affiliate_private_response($data, $status)
 
 function impactshop_sharity_affiliate_cj_issue($request)
 {
+    // Strictly separate contracts: confirmed requests can never fall back to the fixed legacy NGO.
+    $body = $request->get_json_params();
+    if (is_array($body) && (isset($body['confirmationId']) || isset($body['ngoId']) || isset($body['merchantInput'])
+        || ($body['disclosureVersion'] ?? '') === 'shopping-purchase-v1')) {
+        return impactshop_shopping_confirmed_activate($request, 'cj');
+    }
     if (!impactshop_sharity_affiliate_cj_enabled()) {
         return impactshop_sharity_affiliate_private_response(['ok' => false, 'error' => 'provider_disabled'], 403);
     }
@@ -439,28 +446,46 @@ function impactshop_sharity_affiliate_cj_handoff($request)
     global $wpdb;
     $table = impactshop_sharity_affiliate_table();
     $now = time();
-    $wpdb->query('START TRANSACTION');
+    $guarded = property_exists($wpdb, 'reconnect_retries');
+    $previousReconnect = $guarded ? $wpdb->reconnect_retries : null;
     try {
+        if ($guarded) { $wpdb->reconnect_retries = 0; }
+        $connection = $guarded ? (string) $wpdb->get_var('SELECT CONNECTION_ID()') : '';
+        if (($guarded && ($connection === '' || $wpdb->last_error !== '')) || $wpdb->query('START TRANSACTION') === false) {
+            throw new RuntimeException('begin_failed');
+        }
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT activation_id, status, intent_expires_at, partner_key, provider_key,
-                    provider_program_ref FROM {$table} WHERE handoff_token_hash = %s FOR UPDATE",
+            "SELECT * FROM {$table} WHERE handoff_token_hash = %s FOR UPDATE",
             hash('sha256', $handoffToken)
         ), ARRAY_A);
-        if (!is_array($row) || (string) ($row['status'] ?? '') !== 'ready_to_redirect'
+        if (!is_array($row) || !in_array((string) ($row['status'] ?? ''), ['ready_to_redirect', 'confirmed_cj_ready'], true)
             || strtotime((string) ($row['intent_expires_at'] ?? '') . ' UTC') <= $now
             || (string) ($row['partner_key'] ?? '') !== IMPACTSHOP_SHARITY_AFFILIATE_CJ_PARTNER
             || (string) ($row['provider_key'] ?? '') !== 'cj'
             || (string) ($row['provider_program_ref'] ?? '') !== IMPACTSHOP_SHARITY_AFFILIATE_CJ_PROGRAM) {
             throw new RuntimeException('handoff_unavailable');
         }
+        if (($row['source_placement'] ?? '') === 'shopping-confirmed-v1') {
+            if ($row['status'] !== 'confirmed_cj_ready') { throw new RuntimeException('confirmed_state_mismatch'); }
+            $review = impactshop_shopping_cj_review();
+            if (!$guarded || !impactshop_shopping_purchase_enabled() || !impactshop_shopping_purchase_schema_ready()
+                || (string) get_option('impactshop_sharity_affiliate_binding_schema', '') !== '1'
+                || !$review || ($row['provider_scope_ref'] ?? '') !== $review['scopeRef']) {
+                throw new RuntimeException('confirmed_review_unavailable');
+            }
+        } elseif ($row['status'] !== 'ready_to_redirect') {
+            throw new RuntimeException('legacy_state_mismatch');
+        }
         $updated = $wpdb->query($wpdb->prepare(
             "UPDATE {$table} SET status = 'redirected', redirected_at = %s, delete_after = %s
              WHERE activation_id = %s AND handoff_token_hash = %s
-               AND status = 'ready_to_redirect' AND intent_expires_at > %s",
+               AND status = %s AND source_placement = %s AND intent_expires_at > %s",
             gmdate('Y-m-d H:i:s', $now),
             gmdate('Y-m-d H:i:s', $now + IMPACTSHOP_SHARITY_AFFILIATE_RETENTION),
             (string) $row['activation_id'],
             hash('sha256', $handoffToken),
+            $row['status'],
+            $row['source_placement'],
             gmdate('Y-m-d H:i:s', $now)
         ));
         $providerToken = impactshop_sharity_affiliate_provider_token((string) $row['activation_id']);
@@ -468,7 +493,11 @@ function impactshop_sharity_affiliate_cj_handoff($request)
         if ($updated !== 1 || $location === '') {
             throw new RuntimeException('handoff_transition_failed');
         }
-        $wpdb->query('COMMIT');
+        if (($guarded && ((string) $wpdb->get_var('SELECT CONNECTION_ID()') !== $connection || $wpdb->last_error !== ''))
+            || $wpdb->query('COMMIT') === false
+            || ($guarded && ((string) $wpdb->get_var('SELECT CONNECTION_ID()') !== $connection || $wpdb->last_error !== ''))) {
+            throw new RuntimeException('commit_unconfirmed');
+        }
         $response = new WP_REST_Response(null, 303);
         $response->header('Location', $location);
         $response->header('Cache-Control', 'private, no-store');
@@ -478,6 +507,8 @@ function impactshop_sharity_affiliate_cj_handoff($request)
     } catch (Throwable $error) {
         $wpdb->query('ROLLBACK');
         return impactshop_sharity_affiliate_private_response(['ok' => false, 'error' => 'handoff_unavailable'], 409);
+    } finally {
+        if ($guarded) { $wpdb->reconnect_retries = $previousReconnect; }
     }
 }
 
@@ -595,17 +626,58 @@ function impactshop_shopping_dognet_binding($shop, $merchantUrl)
     return ['cid' => $params['cid'], 'chid' => $params['chid'], 'refid' => $params['refid']];
 }
 
+/** Fresh operator-reviewed evidence only. Request bodies never supply site/account scope. */
+function impactshop_shopping_cj_review()
+{
+    $review = get_option('impactshop_sharity_affiliate_cj_purchase_review', null);
+    if (!is_array($review)) { return null; }
+    $publisher = getenv('CJ_PUBLISHER_ID');
+    if ($publisher === false && defined('CJ_PUBLISHER_ID')) { $publisher = CJ_PUBLISHER_ID; }
+    $website = getenv('CJ_WEBSITE_ID');
+    if ($website === false && defined('CJ_WEBSITE_ID')) { $website = CJ_WEBSITE_ID; }
+    $publisher = is_string($publisher) ? trim($publisher) : '';
+    $website = is_string($website) ? trim($website) : '';
+    if ($website === '') { $website = $publisher; }
+    if (!preg_match('/^[1-9][0-9]{0,19}$/D', $publisher) || $website !== '101302202'
+        || ($review['publisherId'] ?? null) !== $publisher || ($review['websiteId'] ?? null) !== $website
+        || ($review['advertiserId'] ?? null) !== '5824323' || ($review['linkId'] ?? null) !== '15487360'
+        || ($review['merchantUrl'] ?? null) !== IMPACTSHOP_SHARITY_AFFILIATE_CJ_MERCHANT
+        || !is_string($review['reviewExpiresAt'] ?? null)
+        || !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/D', $review['reviewExpiresAt'])) { return null; }
+    $expiry = strtotime($review['reviewExpiresAt']);
+    if ($expiry === false || $expiry <= time() || gmdate('Y-m-d\TH:i:s\Z', $expiry) !== $review['reviewExpiresAt']) { return null; }
+    return ['scopeRef' => $publisher . ':' . $website, 'merchantUrl' => $review['merchantUrl'], 'reviewExpiresAt' => $review['reviewExpiresAt']];
+}
+
+function impactshop_shopping_cj_handoff_token($activationId)
+{
+    $secret = impactshop_sharity_affiliate_secret();
+    return strlen($secret) < 32 ? '' : 'shp1_' . impactshop_sharity_affiliate_b64url(hash_hmac('sha256', "shopping-cj-handoff-v1\0" . $activationId, $secret, true));
+}
+
 function impactshop_shopping_purchase_result($row, $payloadHash, $binding, $merchantUrl)
 {
     if (!is_array($row) || !hash_equals((string) ($row['request_payload_hash'] ?? ''), $payloadHash)) {
         return impactshop_sharity_affiliate_private_response(['ok' => false, 'error' => 'idempotency_conflict'], 409);
     }
-    if ($row['status'] !== 'redirected' || strtotime($row['intent_expires_at'] . ' UTC') <= time()) {
+    if (!in_array($row['status'], ($row['provider_key'] ?? '') === 'cj' ? ['confirmed_cj_ready', 'redirected'] : ['redirected'], true)
+        || strtotime($row['intent_expires_at'] . ' UTC') <= time()) {
         return impactshop_sharity_affiliate_private_response(['ok' => false, 'error' => 'confirmation_expired'], 410);
     }
     $token = impactshop_sharity_affiliate_provider_token($row['activation_id']);
     if ($token === '' || !hash_equals($row['provider_token_hash'], hash('sha256', $token))) {
         return impactshop_sharity_affiliate_private_response(['ok' => false, 'error' => 'token_changed'], 409);
+    }
+    if (($row['provider_key'] ?? '') === 'cj') {
+        $handoff = impactshop_shopping_cj_handoff_token($row['activation_id']);
+        if (($row['source_placement'] ?? '') !== 'shopping-confirmed-v1'
+            || impactshop_shopping_cj_review() !== $binding
+            || $handoff === '' || !hash_equals((string) ($row['handoff_token_hash'] ?? ''), hash('sha256', $handoff))
+            || ($row['provider_scope_ref'] ?? '') !== $binding['scopeRef']) {
+            return impactshop_sharity_affiliate_private_response(['ok' => false, 'error' => 'token_changed'], 409);
+        }
+        return impactshop_sharity_affiliate_private_response(['ok' => true, 'contract' => 'shopping-confirmed-v1',
+            'data' => ['handoff_url' => home_url('/wp-json/sharity/v1/shopping/cj-handoff/' . $handoff)]], 200);
     }
     $url = 'https://go.dognet.com/?' . http_build_query($binding + ['url' => $merchantUrl, 'd1' => $token], '', '&', PHP_QUERY_RFC3986);
     return impactshop_sharity_affiliate_private_response(['ok' => true, 'redirectUrl' => $url], 200);
@@ -613,9 +685,16 @@ function impactshop_shopping_purchase_result($row, $payloadHash, $binding, $merc
 
 function impactshop_shopping_dognet_activate($request)
 {
+    return impactshop_shopping_confirmed_activate($request, 'dognet');
+}
+
+/** Both confirmed providers share the owner lock, selected NGO and durable idempotency boundary. */
+function impactshop_shopping_confirmed_activate($request, $provider)
+{
     global $wpdb;
     $fail = static function ($code, $status = 503) { return impactshop_sharity_affiliate_private_response(['ok' => false, 'error' => $code], $status); };
     if (!impactshop_shopping_purchase_enabled()) { return $fail('activation_disabled', 403); }
+    if ($provider === 'cj' && !impactshop_sharity_affiliate_cj_enabled()) { return $fail('provider_disabled', 403); }
     $session = impactshop_shopping_purchase_session($request);
     if (!$session) { return $fail('login_required', 401); }
     if (!impactshop_shopping_purchase_schema_ready()
@@ -626,14 +705,22 @@ function impactshop_shopping_dognet_activate($request)
     foreach ($p as $v) { if (!is_string($v)) { return $fail('invalid_request', 400); } }
     if (!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/Di', $p['confirmationId'])
         || !preg_match('/^[1-9][0-9]{0,9}$/D', $p['ngoId']) || !preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/D', $p['partnerKey'])
-        || strlen($p['partnerKey']) > 128 || $p['partnerKey'] === 'decathlon' || $p['providerKey'] !== 'dognet'
-        || $p['programRef'] !== 'dognet:' . $p['partnerKey'] || strlen($p['programRef']) > 160
+        || strlen($p['partnerKey']) > 128 || $p['partnerKey'] === 'decathlon' || $p['providerKey'] !== $provider
+        || strlen($p['programRef']) > 160
         || $p['disclosureVersion'] !== 'shopping-purchase-v1'
         || !preg_match('/^sharity-shopping-production-(?:v2|dognet)-[0-9]{8}-[0-9]{2}$/D', $p['authoritySnapshotId'])) { return $fail('invalid_request', 400); }
     // The authenticated BFF verifies current signed authority; WP independently binds its shop/campaign/target.
-    $shops = function_exists('isb_get_shops') ? isb_get_shops() : [];
-    $matches = array_values(array_filter($shops, static function ($s) use ($p) { return ($s['shop_slug'] ?? '') === $p['partnerKey']; }));
-    $binding = count($matches) === 1 ? impactshop_shopping_dognet_binding($matches[0], $p['merchantInput']) : null;
+    if ($provider === 'cj') {
+        $binding = impactshop_shopping_cj_review();
+        if ($p['partnerKey'] !== IMPACTSHOP_SHARITY_AFFILIATE_CJ_PARTNER || $p['programRef'] !== IMPACTSHOP_SHARITY_AFFILIATE_CJ_PROGRAM
+            || !$binding || $p['merchantInput'] !== $binding['merchantUrl']
+            || !preg_match('/^sharity-shopping-production-v2-[0-9]{8}-[0-9]{2}$/D', $p['authoritySnapshotId'])) { return $fail('unsupported_partner', 422); }
+    } else {
+        if ($p['programRef'] !== 'dognet:' . $p['partnerKey']) { return $fail('invalid_request', 400); }
+        $shops = function_exists('isb_get_shops') ? isb_get_shops() : [];
+        $matches = array_values(array_filter($shops, static function ($s) use ($p) { return ($s['shop_slug'] ?? '') === $p['partnerKey']; }));
+        $binding = count($matches) === 1 ? impactshop_shopping_dognet_binding($matches[0], $p['merchantInput']) : null;
+    }
     if (!$binding) { return $fail('unsupported_partner', 422); }
     $subject = impactshop_sharity_affiliate_subject_ref($session['pseudo_id']);
     if ($subject === '' || !function_exists('sharity_points_impactshop_bind_subject')) { return $fail('identity_unavailable'); }
@@ -667,16 +754,19 @@ function impactshop_shopping_dognet_activate($request)
         $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE request_key_hash = %s FOR UPDATE", $key), ARRAY_A);
         if ($wpdb->last_error !== '') { throw new RuntimeException('read_failed'); }
         if (!$row) {
-            if (!impactshop_shopping_purchase_enabled()) { $wpdb->query('ROLLBACK'); return $fail('activation_disabled', 403); }
+            if (!impactshop_shopping_purchase_enabled() || ($provider === 'cj' && (!impactshop_sharity_affiliate_cj_enabled()
+                || impactshop_shopping_cj_review() !== $binding))) { $wpdb->query('ROLLBACK'); return $fail('activation_disabled', 403); }
             $id = 'act1_' . bin2hex(random_bytes(16)); $now = time();
             $row = ['activation_id'=>$id, 'provider_token_hash'=>hash('sha256', impactshop_sharity_affiliate_provider_token($id)),
                 'request_key_hash'=>$key, 'request_payload_hash'=>$payloadHash, 'subject_ref'=>$subject, 'ngo_ref'=>$ngos[0]['slug'],
-                'partner_key'=>$p['partnerKey'], 'provider_key'=>'dognet', 'provider_program_ref'=>$p['programRef'],
-                'provider_scope_ref'=>$binding['chid'],
+                'partner_key'=>$p['partnerKey'], 'provider_key'=>$provider, 'provider_program_ref'=>$p['programRef'],
+                'provider_scope_ref'=>$provider === 'cj' ? $binding['scopeRef'] : $binding['chid'],
                 'authority_snapshot_ref'=>$p['authoritySnapshotId'], 'disclosure_version'=>$p['disclosureVersion'],
-                'source_placement'=>'shopping-confirmed-v1', 'status'=>'redirected', 'created_at'=>gmdate('Y-m-d H:i:s',$now),
+                'source_placement'=>'shopping-confirmed-v1', 'status'=>$provider === 'cj' ? 'confirmed_cj_ready' : 'redirected', 'created_at'=>gmdate('Y-m-d H:i:s',$now),
                 'intent_expires_at'=>gmdate('Y-m-d H:i:s',$now+IMPACTSHOP_SHARITY_AFFILIATE_TTL),
-                'redirected_at'=>gmdate('Y-m-d H:i:s',$now), 'delete_after'=>gmdate('Y-m-d H:i:s',$now+IMPACTSHOP_SHARITY_AFFILIATE_RETENTION)];
+                'redirected_at'=>$provider === 'cj' ? null : gmdate('Y-m-d H:i:s',$now),
+                'delete_after'=>gmdate('Y-m-d H:i:s',$now+($provider === 'cj' ? IMPACTSHOP_SHARITY_AFFILIATE_TTL : IMPACTSHOP_SHARITY_AFFILIATE_RETENTION))];
+            if ($provider === 'cj') { $row['handoff_token_hash'] = hash('sha256', impactshop_shopping_cj_handoff_token($id)); }
             if ($wpdb->insert($table, $row) !== 1) { throw new RuntimeException('insert_failed'); }
         }
         if ((string) $wpdb->get_var('SELECT CONNECTION_ID()') !== $connection || $wpdb->last_error !== '') {
@@ -760,7 +850,7 @@ function impactshop_sharity_affiliate_retention_cleanup()
     $now = gmdate('Y-m-d H:i:s');
     $expired = $wpdb->query($wpdb->prepare(
         "UPDATE {$table} SET status = 'expired'
-         WHERE status = 'ready_to_redirect' AND intent_expires_at <= %s",
+         WHERE status IN ('ready_to_redirect', 'confirmed_cj_ready') AND intent_expires_at <= %s",
         $now
     ));
     $deleted = $wpdb->query($wpdb->prepare(

@@ -2295,3 +2295,17 @@ Az első hitelesített gazdasági gyökér nullable v1 NGO/program/scope/subject
 ## 2026-11-16 – Shopping binding SQL és PR-kiegészítés
 
 A korábbi SQL-hiány rendezve: saját eldobható MariaDB10.11.19 + a tényleges target hash-ellenőrzött wpdb forrásával binding40 és purchase53 valódi SQL-ellenőrzés PASS; szintetikus50 külön. Purchase fixture issued_at_utc sémadriftje három tesztsorban javítva, termék-hitelesítés változatlan. PR #282 source/push és kiválasztott CI sikeres az első headen; a SQL-kiegészítés új head/checkreadbacket kap. Merge, staging/UI, telepítés és aktiválás még nincs. Részletek/rollback: `docs/protected-change-records/2026-11-16-impactshop-shopping-binding.md`. Registry és idegen státusz/hash változatlan.
+
+
+## 2026-11-16 – CJ megerősített fiók/NGO kiegészítés
+
+A páros WP/web source explicit owner/NGO/confirmation szerződéssel elkészült. Vegyes verziójú régi GET P1 külön confirmed_cj_ready állapottal javítva; független review és végleges valódi SQL75 PASS, web64/typecheck/Shopping Bástya PASS. Régi Dognet/CJ szerződés és TTL megmarad, új CJ review/konfiguráció hiányában OFF. Csak a review-zott runtime digestje és checksumja frissült. Protected koherencia/rollback/UI: `docs/protected-change-records/2026-11-16-cj-confirmed-purchase.md`. Forrás még saját ág, nincs új CJ merge/deploy/activation.
+
+
+## 2026-11-16 – Éles binding és kész CJ/Admitad shadow kiadási csomag
+
+PR282 merged0ba3078d; a négy binding/runtime fájl staging+production exact-file telepített, explicit additív migráció kétszer visszaellenőrzött, mindkét readiness1. Meglévő aktiválási flagek változatlanok; SQL40/53 és CJ végleges SQL75 külön, nincs természetes konverziós elfogadás. Privát SQL-mentés és üres staging dump izolált restore-próbája megvan; prod adat nem került helyi gépre. Ownership production release20261116T140458Z-0ba3078de226-472aae0c, meta GET200/1tag; Admitad Under review.
+
+A CJ explicit account/NGO source web PR2101 (64teszt/typecheck/Bástya), páros WP runtime és Admitad read-only shadow (alapból OFF) saját kiadási jelölt. Csak e két PHP exact digestje változik, nincs guard-program vagy idegen hash módosítás. Részletes koherencia/teszt/rollback/UI: `docs/protected-change-records/2026-11-16-cj-confirmed-purchase.md`. CJ új review-opció és Admitad API-konfiguráció nincs beállítva. TradeTracker prototípus nem integrált/merge-jelölt; tulajdonosi2FA/valódi SOAP szerződés kell.
+
+Authority sequence3 44Dognet/1provider publikált, teljes CAS/artifact readback és éles health200/MCP ellenőrzött, lejár2026-11-23T14:47:28.627Z. CJ API400 a konfigurált publisher nevében jogosultsághiányt jelez, UNice nincs megújítva; enabled+lejárt CJ-review külön monitorhiba. Ez nem CJ live PASS. Secretary/DOCSYNC a rétegeket külön tartja; korábbi registry acceptance dátuma változatlan.

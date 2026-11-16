@@ -198,7 +198,7 @@
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "bbbd10da51b619a134b9d3147ab2ef9f081ec9b52697c349775c4aefe1584558",
-    "wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php": "d15a248168d9cdbe6fbb013076ed7980dacedcc472ec1c6ba24a28004aac1aa5",
+    "wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php": "205eaf33f6f097cf1e87f5cfdd268b4f4a729898309d7003665993f183599dd3",
     "wp-content/mu-plugins/impactshop-metrics-ngo.php": "a869a58e1fab412a21fab85544081561430da6fd96f1d8e57ed6189b0aa1aa90",
     "wp-content/mu-plugins/impactshop-ads-watch.php": "cc7c463380685aee1e2f0514a23d1d583b13e9746978e53acc3be51e022708a5",
     "wp-content/mu-plugins/impactshop-ads-watch.js": "d98aee2ee1338fcfaeace1a296b0e6c6995072d79c47e7e8d84c54b769773dd5",
@@ -377,7 +377,7 @@
     "scripts/jysk-ngo-catalog-enroll.php": "0c138bfd2fff453b6b344eedad1e061d93cef7322e67dd94f337a73f08b361c3",
     "scripts/jysk-ngo-catalog-reservation-schema.sql": "ba875a099bb590cf68c290e0ab1ef493368bddd47cc49220acd0ae6178eeb75d",
     "wp-content/mu-plugins/sharity-reward-observation.php": "cbdf032529d955a144fc2032158c6dec0250f1ec04efd3459f2165a013a34b3f",
-    "wp-content/mu-plugins/impactshop-admitad.php": "2cd2313c2931c7de32013d862af1578e0562969b22f123e9c38d4f6558c5930b",
+    "wp-content/mu-plugins/impactshop-admitad.php": "63f7da1cf6d2d4c5143b23e7138dc191cbafda0cb34e5707983dbd97a96be5c6",
     "docs/impactshop-protected-files.json": "a7463639955c12a09db8ba5a6744dd6889d8857eae9f6fc7ad91c08ab983a3d2"
   },
   "generated_at": "2026-09-11T04:44:20+00:00"
