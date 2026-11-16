@@ -73,7 +73,8 @@ $tables=['impactshop_affiliate_intents','impact_sharity_web_sessions','owner_gra
 check(array_diff($wpdb->get_col('SHOW TABLES'),array_map(fn($t)=>'impactshop_test_'.$t,$tables))===[],'no foreign tables');
 foreach($tables as $table) sql('DROP TABLE IF EXISTS impactshop_test_'.$table);
 check(impactshop_sharity_affiliate_install_schema(),'canonical legacy intent schema');
-sql('ALTER TABLE impactshop_test_impactshop_affiliate_intents ADD COLUMN request_payload_hash CHAR(64) NULL');
+check(impactshop_shopping_purchase_migrate(),'explicit canonical shopping migration');
+check(impactshop_shopping_purchase_migrate(),'shopping migration idempotent');
 sql('CREATE TABLE impactshop_test_impact_sharity_web_sessions(session_hash CHAR(64) PRIMARY KEY, pseudo_id VARCHAR(12), subject_ref VARCHAR(80), owner_grant_hash CHAR(64), status VARCHAR(24), expires_at_utc DATETIME) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_owner_grants(grant_hash CHAR(64) PRIMARY KEY, pseudo_hash CHAR(64), state VARCHAR(24), revoked_at DATETIME NULL, expires_at DATETIME) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_sharity_ngo_catalog(sharity_ngo_id BIGINT PRIMARY KEY, slug VARCHAR(128),name VARCHAR(128),is_active TINYINT) ENGINE=InnoDB');
@@ -92,7 +93,8 @@ $first=$r->get_data()['redirectUrl']; parse_str(parse_url($first,PHP_URL_QUERY),
 check($q['url']===payload(1)['merchantInput'],'product query preserved');
 check(sharity_points_impactshop_attribution($q['d1'],'dognet','test-shop')===hash('sha256',impactshop_sharity_affiliate_subject_ref($pseudo)),'real points account binds SAT1');
 $row=$wpdb->get_row('SELECT * FROM impactshop_test_impactshop_affiliate_intents',ARRAY_A);
-check($row['ngo_ref']==='ngo-seven' && $row['subject_ref']===impactshop_sharity_affiliate_subject_ref($pseudo),'actual subject and NGO');
+check($row['ngo_ref']==='ngo-seven' && $row['subject_ref']===impactshop_sharity_affiliate_subject_ref($pseudo)
+    && $row['provider_scope_ref']==='26081','actual subject, NGO and server channel');
 check(strtotime($row['delete_after'])-strtotime($row['created_at'])===3888000,'45 day retention');
 check(callPurchase(payload(1))->get_data()['redirectUrl']===$first && countIntents()===1,'identical replay');
 $p=payload(1);$p['ngoId']='8';check(callPurchase($p)->get_status()===409 && countIntents()===1,'changed NGO conflicts');

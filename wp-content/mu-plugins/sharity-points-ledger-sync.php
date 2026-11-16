@@ -412,6 +412,29 @@ function sharity_points_impactshop_schema_ready(): bool
     return (string) get_option('sharity_points_impactshop_schema', '') === '2026-10-29-simple1';
 }
 
+function sharity_points_impactshop_binding_ready(): bool
+{
+    return (string) get_option('sharity_points_impactshop_binding_schema', '') === '1';
+}
+
+/** Missing retained intent metadata is not a conflict; a different bearer still is. */
+function sharity_points_impactshop_binding_conflict(?string $stored, ?string $incoming, array $event): bool
+{
+    if ($stored === null) {
+        return false; // Historical roots never acquire a new binding.
+    }
+    $binding = json_decode($stored, true);
+    if (!is_array($binding) || ($binding['v'] ?? null) !== 1 || strlen($stored) > 2048) {
+        return true;
+    }
+    $prefix = 'impactshop:' . $event['provider'] . ':';
+    $scope = str_starts_with($event['namespace'], $prefix) ? substr($event['namespace'], strlen($prefix)) : null;
+    return ($incoming !== null && $stored !== $incoming)
+        || ($event['token_digest'] !== '' && ($binding['tokenDigest'] ?? '') !== $event['token_digest'])
+        || ($binding['provider'] ?? '') !== $event['provider']
+        || (($binding['scopeRef'] ?? null) !== null && $binding['scopeRef'] !== $scope);
+}
+
 function sharity_points_impactshop_sql($value)
 {
     global $wpdb;
@@ -468,9 +491,14 @@ function sharity_points_impactshop_prepare(array $input): array
         'reason' => $reason !== '' ? $reason : (!$money['success'] ? $money['error'] : ''),
     ];
     // The token is resolved only on first capture; retries can use the immutable root binding.
-    $event['subject_digest'] = $token === '' ? null : sharity_points_impactshop_attribution($token, $input['provider'], $input['merchant']);
+    $evidence = $token === '' ? ['subject_digest' => null, 'binding' => null]
+        : sharity_points_impactshop_attribution_evidence($token, $input['provider'], $input['merchant']);
+    if (isset($evidence['error'])) {
+        return ['success' => false, 'error' => $evidence['error']];
+    }
+    $event['subject_digest'] = $evidence['subject_digest'];
     $event['payload_digest'] = hash('sha256', wp_json_encode(array_diff_key($event, ['subject_digest' => true])));
-    return ['success' => true, 'event' => $event];
+    return ['success' => true, 'event' => $event, 'binding' => $evidence['binding']];
 }
 
 function sharity_points_impactshop_capture(array $input): array
@@ -490,17 +518,28 @@ function sharity_points_impactshop_capture(array $input): array
         return $prepared;
     }
     $event = $prepared['event'];
-    return (new Sharity_Impactshop_Points_Manager())->impactshop_transaction(function () use ($event): array {
+    $bindingReady = sharity_points_impactshop_binding_ready();
+    if (!$bindingReady && $prepared['binding'] !== null
+        && (json_decode($prepared['binding'], true)['scopeRef'] ?? null) !== null) {
+        return ['success' => false, 'error' => 'binding_schema_unavailable'];
+    }
+    $binding = $bindingReady ? $prepared['binding'] : null;
+    return (new Sharity_Impactshop_Points_Manager())->impactshop_transaction(function () use ($event, $binding, $bindingReady): array {
         global $wpdb;
         $now = gmdate('Y-m-d H:i:s');
         if ($event['root_id'] !== null) {
+            // Only the first INSERT can write metadata; ON DUPLICATE never reattributes.
+            $bindingColumn = $bindingReady ? ', attribution_binding_json' : '';
+            $bindingValue = $bindingReady ? ",NULLIF(%s,'')" : '';
+            $values = [$event['root_id'], $event['provider'], $event['namespace'], $event['subject_digest'] ?? '',
+                $event['original_purchase_at'], $event['merchant'], $now];
+            if ($bindingReady) { $values[] = $binding ?? ''; }
             sharity_points_impactshop_sql($wpdb->query($wpdb->prepare(
                 "INSERT INTO {$wpdb->prefix}impactshop_point_settlements
-                 (root_id, provider, namespace, subject_digest, original_purchase_at, merchant, updated_at)
-                 VALUES (%s,%s,%s,UNHEX(NULLIF(%s,'')),NULLIF(%s,''),%s,%s)
+                 (root_id, provider, namespace, subject_digest, original_purchase_at, merchant, updated_at{$bindingColumn})
+                 VALUES (%s,%s,%s,UNHEX(NULLIF(%s,'')),NULLIF(%s,''),%s,%s{$bindingValue})
                  ON DUPLICATE KEY UPDATE root_id=VALUES(root_id)",
-                $event['root_id'], $event['provider'], $event['namespace'], $event['subject_digest'] ?? '',
-                $event['original_purchase_at'], $event['merchant'], $now
+                ...$values
             )));
             $root = sharity_points_impactshop_sql($wpdb->get_row($wpdb->prepare(
                 "SELECT *, HEX(subject_digest) AS subject_hex FROM {$wpdb->prefix}impactshop_point_settlements WHERE root_id=%s FOR UPDATE", $event['root_id']
@@ -511,7 +550,8 @@ function sharity_points_impactshop_capture(array $input): array
             $conflict = ($event['subject_digest'] !== null && $root['subject_hex'] !== null
                 && strtolower($root['subject_hex']) !== $event['subject_digest'])
                 || ($event['original_purchase_at'] !== '' && $root['original_purchase_at'] !== null && $event['original_purchase_at'] !== $root['original_purchase_at'])
-                || ($event['merchant'] !== '' && $event['merchant'] !== $root['merchant']);
+                || ($event['merchant'] !== '' && $event['merchant'] !== $root['merchant'])
+                || sharity_points_impactshop_binding_conflict($root['attribution_binding_json'] ?? null, $binding, $event);
             // A known complex event already forbids automatic awards, even if
             // its consumer turn follows an original record in the same page.
             if ($conflict || $event['kind'] === 'adjustment' || $event['reason'] !== '') {

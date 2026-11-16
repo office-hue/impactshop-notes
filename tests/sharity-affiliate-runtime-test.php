@@ -196,6 +196,10 @@ class ImpactshopAffiliateFakeWpdb
     {
         $query = $prepared['query'];
         $needle = $prepared['args'][0] ?? '';
+        if (strpos($query, 'SHOW COLUMNS') !== false) {
+            return $needle === $this->missingSchemaColumn ? null
+                : ['Field' => $needle, 'Type' => $needle === 'provider_scope_ref' ? 'varchar(96)' : 'char(64)', 'Null' => 'YES'];
+        }
         if (strpos($query, 'impact_sharity_web_sessions') !== false) {
             return $this->sessions[$needle] ?? null;
         }
@@ -558,6 +562,7 @@ class ShoppingPurchaseFakeWpdb extends ImpactshopAffiliateFakeWpdb {
 $wpdb = new ShoppingPurchaseFakeWpdb();
 $impactshopTestOptions['impactshop_sharity_affiliate_runtime_enabled']='1';
 $impactshopTestOptions['impactshop_sharity_shopping_purchase_enabled']='1';
+$impactshopTestOptions['impactshop_sharity_affiliate_binding_schema']='1';
 $headers=['x-sharity-service-authorization'=>'Bearer '.str_repeat('K',43)];
 $purchase=['authoritySnapshotId'=>'sharity-shopping-production-v2-20261102-01',
     'confirmationId'=>'12345678-1234-4123-8123-123456789abc','disclosureVersion'=>'shopping-purchase-v1',
@@ -584,6 +589,7 @@ $r=$call($purchase); assert_true($r->get_status()===200, 'confirmed purchase iss
 parse_str(parse_url($r->get_data()['redirectUrl'],PHP_URL_QUERY),$query);
 assert_true($query['url']===$purchase['merchantInput'], 'product query lossless');
 assert_true($query['cid']==='357' && $query['chid']==='26081' && strpos($query['d1'],'sat1_')===0, 'exact program and SAT1');
+assert_true(array_values($wpdb->rows)[0]['provider_scope_ref']==='26081', 'confirmed scope is server-defined channel');
 $row=array_values($wpdb->rows)[0];
 assert_true($row['subject_ref']===impactshop_sharity_affiliate_subject_ref('abcdefgh1234') && $row['ngo_ref']==='chosen-ngo','authenticated identity and chosen NGO');
 assert_true(strtotime($row['delete_after'].' UTC')-strtotime($row['redirected_at'].' UTC')===3888000,'45 day correlation retention');

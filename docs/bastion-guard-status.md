@@ -945,3 +945,8 @@ protected-touch guard PASS; eredeti dirty dokumentumprefixek byte-egyeznek.
 Ez nem élő smoke vagy release-engedély. Valódi WP
 sanitize_title és kézi UI még függő. Pontos scope, backup/rollback és smoke tagek:
 docs/protected-change-records/2026-11-12-ngo-selector-parity.md.
+
+
+## 2026-11-16 — Impactshop binding és passzív Admitad ownership
+
+50 szintetikus binding/migráció fixture, legacy affiliate/confirmed/state/provider/attribution/click-no-reward, affiliate Bástya és PHP lint sikeres; független review részleges migrációs lelete javítva és visszaellenőrizve. Valódi SQL/staging/UI nem futott. Az új `impactshop-admitad.php` exact host/path meta hook;5helyi ellenőrzés és lint sikeres, nincs outbound/cron/HTTP/pont writer. Új exact owner/hash/protected bejegyzés a meglévő inventoryban, nem guard-program változás. Részletes smoke/rollback/UI: `protected-change-records/2026-11-16-impactshop-shopping-binding.md` és `protected-change-records/2026-11-16-admitad-ownership.md`.

@@ -8662,3 +8662,9 @@ Valódi WordPress sanitize_title roundtrip, élő UI/telepítés/elfogadás füg
 Csak két saját forráshash és társ-checksum frissül; meglévő WIP megőrzött.
 Koherencia, kockázat, rollback, max2 napos snapshot-retenció és külön kézi UI:
 docs/protected-change-records/2026-11-12-ngo-selector-parity.md.
+
+## 2026-11-16 – Shopping R3 első gazdasági kötés, helyi ellenőrzött draft
+Kijelölt `impactshop-notes-shopping-binding-20261116` worktree, `f17687d60a7d187a2c4666fe40b732704f332a7d` alap. Meglévő intent nullable provider-scope és settlement nullable v1 receipt; első INSERT rögzít, ütközés manual, régi null gyökér nincs backfill. Az eredeti gazdasági digest/formula és 45 napos retention változatlan. Két explicit idempotens CLI migráció, név/típus/nullability readback és külön binding readiness. Célzott 50 szintetikus fixture, legacy affiliate/confirmed purchase/state/provider/attribution/click-no-reward, PHP lint, affiliate bastion és diff-check PASS. Valódi MySQL nincs konfigurálva; SQL/staging/UI/merge/deploy nem futott. Független review részleges migrációs P1 lelet javítva és visszaellenőrizve; felülvizsgált pontos inventory-frissítés a szülő integrációja. DOCSYNC és teljes UI/rollback/checklista: [változtatási lap](docs/protected-change-records/2026-11-16-impactshop-shopping-binding.md). Nincs provider/export/költés/távoli írás.
+
+
+Admitad meglévő saját adspace2888572 Inactive; a tulajdonosi ellenőrzéshez hiányzó statikus meta tag új, exact host/path hookban elkészült. PHP lint és5helyi scope-ellenőrzés sikeres, telepítés és Finish nincs. [Ownership, kockázat és UI/rollback](docs/protected-change-records/2026-11-16-admitad-ownership.md). TradeTracker kötelező2FA-beállításra vár; account/API/program vagy pénzügyi aktiválás nem történt. Nincs új külső Hermes-hívás.

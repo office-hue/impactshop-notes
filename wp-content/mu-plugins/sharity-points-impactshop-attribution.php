@@ -9,25 +9,63 @@ if (!defined('ABSPATH')) {
 /** Existing SAT1 correlation is identity evidence, never donation authority. */
 function sharity_points_impactshop_attribution(string $token, string $provider, string $merchant): ?string
 {
+    return sharity_points_impactshop_attribution_evidence($token, $provider, $merchant)['subject_digest'];
+}
+
+/** Correlation metadata is optional for legacy schemas; it is never economic authority. */
+function sharity_points_impactshop_attribution_evidence(string $token, string $provider, string $merchant): array
+{
+    $empty = ['subject_digest' => null, 'binding' => null];
     if (!preg_match('/^sat1_[A-Za-z0-9_-]{43}$/D', $token) || $merchant === '') {
-        return null;
+        return $empty;
     }
     global $wpdb;
+    $bindingReady = (string) get_option('impactshop_sharity_affiliate_binding_schema', '') === '1';
+    // Read actual nullable metadata even while the readiness marker is being reset.
+    // SELECT * also works on old schemas where the scope column does not yet exist.
     $row = $wpdb->get_row($wpdb->prepare(
-        "SELECT subject_ref, provider_key, partner_key, status, delete_after
-         FROM {$wpdb->prefix}impactshop_affiliate_intents WHERE provider_token_hash=%s LIMIT 1",
+        "SELECT * FROM {$wpdb->prefix}impactshop_affiliate_intents WHERE provider_token_hash=%s LIMIT 1",
         hash('sha256', $token)
     ), ARRAY_A);
     if (!is_array($row) || $row['provider_key'] !== $provider || $row['partner_key'] !== $merchant
         || $row['status'] !== 'redirected' || strtotime($row['delete_after'] . ' UTC') <= time()
         || !preg_match('/^hmac-sha256:[a-f0-9]{64}$/D', $row['subject_ref'])) {
-        return null;
+        return $empty;
+    }
+    if (!$bindingReady && ($row['provider_scope_ref'] ?? null) !== null) {
+        return $empty + ['error' => 'binding_schema_unavailable'];
     }
     $digest = hash('sha256', $row['subject_ref']);
     $pseudo = $wpdb->get_var($wpdb->prepare(
         "SELECT pseudo_id FROM {$wpdb->prefix}user_points WHERE impactshop_subject_digest=UNHEX(%s) LIMIT 1", $digest
     ));
-    return is_string($pseudo) && preg_match('/^[a-z0-9]{10,12}$/D', $pseudo) ? $digest : null;
+    if (!is_string($pseudo) || !preg_match('/^[a-z0-9]{10,12}$/D', $pseudo)) {
+        return $empty;
+    }
+    $result = ['subject_digest' => $digest, 'binding' => null];
+    if (!$bindingReady) {
+        return $result;
+    }
+    $scope = $row['provider_scope_ref'] ?? null;
+    $incomplete = $scope === null ? $result : $empty;
+    foreach (['provider_program_ref' => 160, 'ngo_ref' => 128, 'authority_snapshot_ref' => 160] as $key => $limit) {
+        if (!is_string($row[$key] ?? null) || $row[$key] === '' || strlen($row[$key]) > $limit) {
+            return $incomplete;
+        }
+    }
+    if ($scope !== null && (!is_string($scope) || $scope === '' || strlen($scope) > 96)) {
+        return $empty;
+    }
+    $binding = ['v' => 1, 'provider' => $provider, 'scopeRef' => $scope,
+        'programRef' => $row['provider_program_ref'], 'merchant' => $merchant,
+        'ngoRef' => $row['ngo_ref'], 'subjectDigest' => $digest,
+        'tokenDigest' => hash('sha256', $token), 'snapshotRef' => $row['authority_snapshot_ref']];
+    $json = wp_json_encode($binding);
+    if (!is_string($json) || strlen($json) > 2048) {
+        return $incomplete;
+    }
+    $result['binding'] = $json;
+    return $result;
 }
 
 /** Only call from a previously authenticated owner/session handoff. */

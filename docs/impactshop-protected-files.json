@@ -94,7 +94,8 @@
     "wp-content/mu-plugins/impactshop-ngo-card-news.php",
     "wp-content/mu-plugins/impactshop-profile-ui.php",
     "scripts/jysk-ngo-catalog-enroll.php",
-    "scripts/jysk-ngo-catalog-reservation-schema.sql"
+    "scripts/jysk-ngo-catalog-reservation-schema.sql",
+    "wp-content/mu-plugins/impactshop-admitad.php"
   ],
   "additive_globs": [
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",

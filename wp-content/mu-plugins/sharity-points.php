@@ -370,6 +370,7 @@ function sharity_points_migrate_impactshop(bool $dry_run = false): array
         return ['success' => false, 'error' => 'migration_locked'];
     }
     try {
+        update_option('sharity_points_impactshop_binding_schema', '0', false);
         update_option('sharity_points_impactshop_migration', ['state' => 'started', 'at' => gmdate('c')], false);
         sharity_points_impactshop_sql($wpdb->query('SET SESSION lock_wait_timeout=5'));
         sharity_points_impactshop_sql($wpdb->query('SET SESSION innodb_lock_wait_timeout=5'));
@@ -377,6 +378,17 @@ function sharity_points_migrate_impactshop(bool $dry_run = false): array
         $statements = sharity_points_impactshop_schema_sql($charset);
         foreach ($statements as $sql) {
             sharity_points_impactshop_sql($wpdb->query($sql));
+        }
+        $settlements = $wpdb->prefix . 'impactshop_point_settlements';
+        $bindingColumn = sharity_points_impactshop_sql($wpdb->get_row("SHOW COLUMNS FROM {$settlements} LIKE 'attribution_binding_json'", ARRAY_A));
+        if ($bindingColumn === null) {
+            sharity_points_impactshop_sql($wpdb->query("ALTER TABLE {$settlements} ADD COLUMN attribution_binding_json TEXT NULL, ALGORITHM=INPLACE, LOCK=NONE"));
+        }
+        $bindingColumn = sharity_points_impactshop_sql($wpdb->get_row("SHOW COLUMNS FROM {$settlements} LIKE 'attribution_binding_json'", ARRAY_A));
+        if (!is_array($bindingColumn) || ($bindingColumn['Field'] ?? '') !== 'attribution_binding_json'
+            || strtolower((string) $bindingColumn['Type']) !== 'text'
+            || strtoupper((string) $bindingColumn['Null']) !== 'YES') {
+            throw new RuntimeException('binding_column_unverified');
         }
         $table = $wpdb->prefix . 'user_points';
         $column = $wpdb->get_var("SHOW COLUMNS FROM {$table} LIKE 'impactshop_subject_digest'");
@@ -425,6 +437,10 @@ function sharity_points_migrate_impactshop(bool $dry_run = false): array
         if ((string) get_option('sharity_points_impactshop_schema') !== '2026-10-29-simple1') {
             throw new RuntimeException('schema_option_unverified');
         }
+        update_option('sharity_points_impactshop_binding_schema', '1', false);
+        if (!sharity_points_impactshop_binding_ready()) {
+            throw new RuntimeException('binding_option_unverified');
+        }
         update_option('sharity_points_impactshop_migration', ['state' => 'completed', 'at' => gmdate('c')], false);
         return ['success' => true];
     } catch (Throwable $error) {
@@ -444,6 +460,7 @@ function sharity_points_impactshop_schema_sql(string $charset): array
             provider VARCHAR(16) NOT NULL,
             namespace VARCHAR(96) NOT NULL,
             subject_digest BINARY(32) NULL,
+            attribution_binding_json TEXT NULL,
             original_purchase_at DATETIME NULL,
             merchant VARCHAR(128) NOT NULL DEFAULT '',
             state VARCHAR(16) NOT NULL DEFAULT 'pending',

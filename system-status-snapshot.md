@@ -2287,3 +2287,6 @@ Három célzott PHP-futás, két PHP lint, 6 inline-JS teszt és affiliate basti
 negatív próbák PASS; kapcsolt web43 eset+typecheck PASS. Valódi WP sanitize_title,
 élő böngésző és production elfogadás nincs igazolva; merge/deploy még külön.
 Rollback/érintettség/megőrzött snapshot és UI: docs/protected-change-records/2026-11-12-ngo-selector-parity.md.
+
+## 2026-11-16 – Shopping R3 binding/migráció: helyi tesztelt draft
+Az első hitelesített gazdasági gyökér nullable v1 NGO/program/scope/subject/snapshot receiptet rögzít ugyanabban a meglévő capture-tranzakcióban; régi null gyökér nincs backfill. Gazdasági dedup cleanup után változatlan, ütközés manual. Két explicit additív migráció külön igazolt binding readiness opcióval. 50 szintetikus SQL-határ fixture és kapcsolódó PHP/affiliate bastion ellenőrzések PASS; nem valódi MySQL. Független review P1 javításával visszaellenőrzött; pontos saját inventory integrálva. SQL/staging/UI és kiadás még függő. A külön új Admitad ownership hook csak statikus meta tag, PHP lint és5helyi ellenőrzés, nem éles hálózati bekötés. DOCSYNC/részletes bizonyíték: `docs/protected-change-records/2026-11-16-impactshop-shopping-binding.md`; ugyanennek rövid bejegyzése a `notes.md` fájlban. Nincs push/merge/deploy vagy provideraktiválás.
