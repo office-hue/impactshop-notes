@@ -129,6 +129,7 @@ function impactshop_sharity_affiliate_install_schema()
       ngo_ref varchar(128) NOT NULL,
       partner_key varchar(128) NOT NULL,
       provider_key varchar(32) NOT NULL,
+      provider_scope_ref varchar(96) NULL,
       provider_program_ref varchar(160) NOT NULL,
       authority_snapshot_ref varchar(160) NOT NULL DEFAULT '',
       disclosure_version varchar(64) NOT NULL DEFAULT '',
@@ -492,7 +493,29 @@ function impactshop_shopping_purchase_schema_ready()
 {
     global $wpdb;
     $table = impactshop_sharity_affiliate_table();
-    return $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", 'request_payload_hash')) === 'request_payload_hash';
+    foreach (['request_payload_hash' => 'char(64)', 'provider_scope_ref' => 'varchar(96)'] as $name => $type) {
+        $column = $wpdb->get_row($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $name), ARRAY_A);
+        if ($wpdb->last_error !== '' || !is_array($column) || ($column['Field'] ?? '') !== $name
+            || strtolower((string) $column['Type']) !== $type
+            || strtoupper((string) $column['Null']) !== 'YES') { return false; }
+    }
+    return true;
+}
+
+/** Explicit CLI migration; normal request handling never runs ALTER. */
+function impactshop_shopping_purchase_migrate(): bool
+{
+    global $wpdb;
+    $table = impactshop_sharity_affiliate_table();
+    update_option('impactshop_sharity_affiliate_binding_schema', '0', false);
+    foreach (['request_payload_hash' => 'CHAR(64)', 'provider_scope_ref' => 'VARCHAR(96)'] as $name => $type) {
+        $column = $wpdb->get_row($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $name), ARRAY_A);
+        if ($wpdb->last_error !== '') { return false; }
+        if ($column === null && $wpdb->query("ALTER TABLE {$table} ADD COLUMN {$name} {$type} NULL") === false) { return false; }
+    }
+    if (!impactshop_shopping_purchase_schema_ready()) { return false; }
+    update_option('impactshop_sharity_affiliate_binding_schema', '1', false);
+    return (string) get_option('impactshop_sharity_affiliate_binding_schema', '') === '1';
 }
 
 function impactshop_shopping_purchase_session($request)
@@ -567,7 +590,7 @@ function impactshop_shopping_dognet_binding($shop, $merchantUrl)
         $params[$pair[0]] = rawurldecode($pair[1]);
     }
     if (count($params) !== 3 || !preg_match('/^[1-9][0-9]{0,19}$/D', $params['cid'] ?? '')
-        || !preg_match('/^[A-Za-z0-9_-]{1,128}$/D', $params['chid'] ?? '')
+        || !preg_match('/^[A-Za-z0-9_-]{1,96}$/D', $params['chid'] ?? '')
         || !preg_match('/^[A-Za-z0-9_-]{1,128}$/D', $params['refid'] ?? '')) { return null; }
     return ['cid' => $params['cid'], 'chid' => $params['chid'], 'refid' => $params['refid']];
 }
@@ -595,7 +618,8 @@ function impactshop_shopping_dognet_activate($request)
     if (!impactshop_shopping_purchase_enabled()) { return $fail('activation_disabled', 403); }
     $session = impactshop_shopping_purchase_session($request);
     if (!$session) { return $fail('login_required', 401); }
-    if (!impactshop_shopping_purchase_schema_ready()) { return $fail('schema_unavailable'); }
+    if (!impactshop_shopping_purchase_schema_ready()
+        || (string) get_option('impactshop_sharity_affiliate_binding_schema', '') !== '1') { return $fail('schema_unavailable'); }
     $p = $request->get_json_params();
     $keys = is_array($p) ? array_keys($p) : []; sort($keys);
     if ($keys !== ['authoritySnapshotId','confirmationId','disclosureVersion','merchantInput','ngoId','partnerKey','programRef','providerKey']) { return $fail('invalid_request', 400); }
@@ -648,6 +672,7 @@ function impactshop_shopping_dognet_activate($request)
             $row = ['activation_id'=>$id, 'provider_token_hash'=>hash('sha256', impactshop_sharity_affiliate_provider_token($id)),
                 'request_key_hash'=>$key, 'request_payload_hash'=>$payloadHash, 'subject_ref'=>$subject, 'ngo_ref'=>$ngos[0]['slug'],
                 'partner_key'=>$p['partnerKey'], 'provider_key'=>'dognet', 'provider_program_ref'=>$p['programRef'],
+                'provider_scope_ref'=>$binding['chid'],
                 'authority_snapshot_ref'=>$p['authoritySnapshotId'], 'disclosure_version'=>$p['disclosureVersion'],
                 'source_placement'=>'shopping-confirmed-v1', 'status'=>'redirected', 'created_at'=>gmdate('Y-m-d H:i:s',$now),
                 'intent_expires_at'=>gmdate('Y-m-d H:i:s',$now+IMPACTSHOP_SHARITY_AFFILIATE_TTL),
@@ -677,13 +702,8 @@ function impactshop_shopping_dognet_activate($request)
 
 if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('sharity affiliate migrate-shopping', static function () {
-        global $wpdb;
-        $table = impactshop_sharity_affiliate_table();
-        if (!impactshop_shopping_purchase_schema_ready()) {
-            if ($wpdb->query("ALTER TABLE {$table} ADD COLUMN request_payload_hash CHAR(64) NULL") === false
-                || !impactshop_shopping_purchase_schema_ready()) { WP_CLI::error('Shopping schema migration failed.'); }
-        }
-        WP_CLI::success('Shopping request hash column verified; activation unchanged.');
+        if (!impactshop_shopping_purchase_migrate()) { WP_CLI::error('Shopping schema migration failed.'); }
+        WP_CLI::success('Shopping request hash and binding scope verified; activation unchanged.');
     });
 }
 

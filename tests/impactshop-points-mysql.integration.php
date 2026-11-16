@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 $configFile = getenv('IMPACTSHOP_MYSQL_CONFIG') ?: '';
 $wpdbFile = getenv('IMPACTSHOP_WPDB_FILE') ?: '';
+$bindingOnly = in_array('--binding-only', $argv ?? [], true);
 if (getenv('IMPACTSHOP_MYSQL_SANDBOX_CONFIRM') !== 'LOCAL_IMPACTSHOP_ONLY'
     || !is_file($configFile) || is_link($configFile) || (fileperms($configFile) & 0777) !== 0600) {
     throw new RuntimeException('Explicit private local sandbox configuration required');
@@ -110,8 +111,28 @@ foreach (['user_points','point_transactions','level_history','decay_logs','user_
 }
 check(sharity_points_migrate_impactshop(true)['success'], 'read-only preflight');
 check(!isset($options['sharity_points_impactshop_migration_lock']), 'preflight does not acquire mutable migration lock');
+if ($bindingOnly) {
+    // Existing production-shaped tables, before the additive receipt column existed.
+    foreach (sharity_points_impactshop_schema_sql($wpdb->get_charset_collate()) as $statement) {
+        sql($wpdb, str_replace("            attribution_binding_json TEXT NULL,\n", '', $statement));
+    }
+    check($wpdb->get_row("SHOW COLUMNS FROM impactshop_test_impactshop_point_settlements LIKE 'attribution_binding_json'", ARRAY_A) === null,
+        'legacy settlement table really lacks binding column');
+    $bindingAlters = 0;
+    $fault = static function ($query) use (&$bindingAlters) {
+        if (str_contains($query, 'ALTER TABLE impactshop_test_impactshop_point_settlements ADD COLUMN attribution_binding_json')) { ++$bindingAlters; }
+        return $query;
+    };
+}
 check(sharity_points_migrate_impactshop()['success'], 'explicit additive migration');
 check(sharity_points_migrate_impactshop()['success'], 'migration idempotent');
+if ($bindingOnly) {
+    $fault = null;
+    $column = $wpdb->get_row("SHOW COLUMNS FROM impactshop_test_impactshop_point_settlements LIKE 'attribution_binding_json'", ARRAY_A);
+    check($bindingAlters === 1 && strtolower($column['Type']) === 'text' && $column['Null'] === 'YES', 'one real ALTER, nullable TEXT verified after rerun');
+    check(get_option('sharity_points_impactshop_binding_schema') === '1'
+        && get_option('sharity_points_impactshop_schema') === '2026-10-29-simple1', 'separate points binding readiness, legacy marker preserved');
+}
 sql($wpdb, "CREATE TABLE impactshop_test_impactshop_affiliate_intents(provider_token_hash char(64) PRIMARY KEY, subject_ref varchar(80),provider_key varchar(16),partner_key varchar(128),status varchar(24),delete_after datetime,activation_id varchar(64),ngo_ref varchar(128),provider_program_ref varchar(160),source_placement varchar(64),redirected_at datetime) ENGINE=InnoDB");
 $manager = new Sharity_Impactshop_Points_Manager();
 $pseudo='abcdef123456';
@@ -129,6 +150,92 @@ function captured(array $event): int {
 function total(): int { global $wpdb; return (int)$wpdb->get_var("SELECT points_total FROM impactshop_test_user_points WHERE pseudo_id='abcdef123456'"); }
 function eventRow(int $id): array { global $wpdb; return $wpdb->get_row($wpdb->prepare('SELECT * FROM impactshop_test_impactshop_point_changes WHERE id=%d',$id),ARRAY_A); }
 $run=str_repeat('1',32);
+if ($bindingOnly) {
+    // Load only the actual existing shopping migration functions; no routes or runtime hooks.
+    $affiliateSource = file_get_contents(__DIR__ . '/../wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php');
+    $migrationStart = strpos($affiliateSource, 'function impactshop_shopping_purchase_schema_ready()');
+    $migrationEnd = strpos($affiliateSource, 'function impactshop_shopping_purchase_session(', $migrationStart);
+    eval(substr($affiliateSource, $migrationStart, $migrationEnd - $migrationStart));
+    sql($wpdb, "ALTER TABLE impactshop_test_impactshop_affiliate_intents ADD COLUMN authority_snapshot_ref VARCHAR(160) NOT NULL DEFAULT ''");
+    check(impactshop_shopping_purchase_migrate(), 'actual affiliate migration adds missing scope and request hash');
+    check(impactshop_shopping_purchase_migrate(), 'actual affiliate migration rerun idempotent');
+    $scopeColumn = $wpdb->get_row("SHOW COLUMNS FROM impactshop_test_impactshop_affiliate_intents LIKE 'provider_scope_ref'", ARRAY_A);
+    check(strtolower($scopeColumn['Type']) === 'varchar(96)' && $scopeColumn['Null'] === 'YES'
+        && get_option('impactshop_sharity_affiliate_binding_schema') === '1', 'actual scope type/nullability and readiness verified');
+    sql($wpdb, "UPDATE impactshop_test_impactshop_affiliate_intents SET provider_scope_ref='test',provider_program_ref='partner:test',ngo_ref='ngo-one',authority_snapshot_ref='snapshot-one'");
+    $boundInput = input('binding-order', 'binding-sale');
+    $before = sharity_points_impactshop_prepare($boundInput);
+    $rootId = $before['event']['root_id'];
+    $observer = connection();
+    $transactionalInserts = 0;
+    $fault = static function ($query) use (&$transactionalInserts, $observer, $rootId) {
+        global $wpdb;
+        if (preg_match('/INSERT INTO impactshop_test_impactshop_point_(settlements|changes)/', $query)) {
+            $active = mysqli_fetch_row(mysqli_query($wpdb->dbh, 'SELECT @@in_transaction'));
+            check($active[0] === '1', 'binding root and event INSERT both run inside real transaction');
+            ++$transactionalInserts;
+            if (str_contains($query, 'impactshop_point_changes')) {
+                check((int) $observer->get_var($observer->prepare('SELECT COUNT(*) FROM impactshop_test_impactshop_point_settlements WHERE root_id=%s', $rootId)) === 0,
+                    'other connection cannot see uncommitted first binding');
+            }
+        }
+        return $query;
+    };
+    $boundId = captured($boundInput);
+    $fault = null;
+    $root = $observer->get_row($observer->prepare('SELECT * FROM impactshop_test_impactshop_point_settlements WHERE root_id=%s', $rootId), ARRAY_A);
+    $receipt = $root['attribution_binding_json'];
+    $expected = ['v'=>1,'provider'=>'partner','scopeRef'=>'test','programRef'=>'partner:test','merchant'=>'test',
+        'ngoRef'=>'ngo-one','subjectDigest'=>hash('sha256',impactshop_sharity_affiliate_subject_ref($pseudo)),
+        'tokenDigest'=>hash('sha256',$token),'snapshotRef'=>'snapshot-one'];
+    check($transactionalInserts === 2 && json_decode($receipt,true) === $expected && strlen($receipt) <= 2048,
+        'first committed root has complete bounded canonical receipt');
+    check((int) $observer->get_var($observer->prepare('SELECT COUNT(*) FROM impactshop_test_impactshop_point_changes WHERE root_id=%s', $rootId)) === 1,
+        'root and event become visible after same commit');
+    $observer->close();
+    check(captured($boundInput) === $boundId, 'duplicate binding report selects original event');
+    $applied = $manager->apply_impactshop_event($boundId,$run);
+    check($applied['success'] && $applied['actual_delta'] === 100 && total() === 100, 'bound first award applies exactly once');
+    $intent = $wpdb->get_row($wpdb->prepare('SELECT * FROM impactshop_test_impactshop_affiliate_intents WHERE provider_token_hash=%s',hash('sha256',$token)), ARRAY_A);
+    sql($wpdb,"UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after='2020-01-01'");
+    sql($wpdb,"DELETE FROM impactshop_test_impactshop_affiliate_intents WHERE status='redirected' AND delete_after<=UTC_TIMESTAMP()");
+    check((int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_affiliate_intents') === 0, 'retention cleanup really removes correlation row');
+    $after = sharity_points_impactshop_prepare($boundInput);
+    check($after['binding'] === null && $after['event']['subject_digest'] === null
+        && $after['event']['payload_digest'] === $before['event']['payload_digest'], 'real cleanup leaves economic digest unchanged');
+    check(captured($boundInput) === $boundId && $manager->apply_impactshop_event($boundId,$run)['duplicate'] && total() === 100,
+        'cleanup reimport adds zero points and reuses original event');
+    check($wpdb->get_var($wpdb->prepare('SELECT attribution_binding_json FROM impactshop_test_impactshop_point_settlements WHERE root_id=%s',$rootId)) === $receipt,
+        'cleanup cannot replace original receipt');
+    $nextToken = 'sat1_'.str_repeat('B',43);
+    $intent['provider_token_hash'] = hash('sha256',$nextToken);
+    check($wpdb->insert('impactshop_test_impactshop_affiliate_intents',$intent) === 1, 'new scoped synthetic intent inserted');
+    $rejected = input('marker-order','marker-sale'); $rejected['provider_token']=$nextToken;
+    $counts = static fn() => [(int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_settlements'),
+        (int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_impactshop_point_changes'),
+        (int)$wpdb->get_var('SELECT COUNT(*) FROM impactshop_test_point_transactions'), total()];
+    $beforeCounts = $counts();
+    foreach ([['0','1'],['0','0'],['1','0']] as [$affiliateReady,$pointsReady]) {
+        $options['impactshop_sharity_affiliate_binding_schema']=$affiliateReady;
+        $options['sharity_points_impactshop_binding_schema']=$pointsReady;
+        $result=sharity_points_impactshop_capture($rejected);
+        check(!$result['success'] && $result['error']==='binding_schema_unavailable' && $counts()===$beforeCounts,
+            'partial migration markers '.$affiliateReady.'/'.$pointsReady.' write no root/event/points');
+    }
+    check(impactshop_shopping_purchase_migrate() && sharity_points_migrate_impactshop()['success'], 'both actual migrations recover verified readiness');
+    $rollback=input('binding-rollback','binding-rollback-event'); $rollback['provider_token']=$nextToken;
+    $fault=static fn($query) => str_contains($query,'INSERT INTO impactshop_test_impactshop_point_changes') ? 'INVALID_BINDING_FIXTURE_SQL' : $query;
+    $failed=sharity_points_impactshop_capture($rollback); $fault=null;
+    check(!$failed['success'] && $counts()===$beforeCounts, 'event INSERT failure rolls back first binding root and all points');
+    sql($wpdb,'ALTER TABLE impactshop_test_impactshop_affiliate_intents MODIFY provider_scope_ref VARCHAR(32) NULL');
+    check(!impactshop_shopping_purchase_migrate() && get_option('impactshop_sharity_affiliate_binding_schema')==='0', 'real wrong scope type cannot assert readiness');
+    sql($wpdb,'ALTER TABLE impactshop_test_impactshop_affiliate_intents MODIFY provider_scope_ref VARCHAR(96) NULL');
+    check(impactshop_shopping_purchase_migrate(), 'corrected disposable schema re-verifies readiness');
+    foreach ($owned as $table) { sql($wpdb,'DROP TABLE IF EXISTS impactshop_test_'.$table); }
+    check($wpdb->get_col('SHOW TABLES')===[], 'focused binding fixture leaves disposable database empty');
+    echo "Impact Shop binding SQL integration passed ({$checks} checks); real wpdb/SQL, no live/provider writes\n";
+    exit;
+}
 $award=captured(input('order1','award1'));
 check(captured(input('order1','award1'))===$award,'duplicate capture same row');
 $r=$manager->apply_impactshop_event($award,$run);

@@ -1037,3 +1037,8 @@ A #270 merge-elt, de nem telepített: élő wp_options MyISAM, ezért a korábbi
 ## 2026-11-10 — JYSK inaktív katalógusütközés javítása
 
 Csak a már védett importer pontos forráshash-e és az inventory checksumja követi a célzott javítást. Modell/config/guardlogika és idegen pinek változatlanok.168 izolált DB-állítás, független forrásreview; telepítés külön jóváhagyás. Koherencia/rollback/UI: docs/protected-change-records/2026-11-10-jysk-ngo-catalog-enrollment.md.
+
+
+## 2026-11-16 — Impactshop kötés és Admitad ownership inventory
+
+A jóváhagyott shopping-binding csomag négy meglévő termékfájlja és egy új, passzív Admitad ownership hook felülvizsgált, exact source inventoryt kap. Meglévő guard/CI-program és minden idegen hash változatlan. Koherencia/rollback/UI és valódi SQL-eredmények: `protected-change-records/2026-11-16-impactshop-shopping-binding.md`, `protected-change-records/2026-11-16-admitad-ownership.md`. Ez termékscope-hoz tartozó inventory, nem új DEV- vagy release-rendszer; merge/deploy/aktiválás külön.
