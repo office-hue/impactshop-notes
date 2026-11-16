@@ -377,7 +377,7 @@
     "scripts/jysk-ngo-catalog-enroll.php": "0c138bfd2fff453b6b344eedad1e061d93cef7322e67dd94f337a73f08b361c3",
     "scripts/jysk-ngo-catalog-reservation-schema.sql": "ba875a099bb590cf68c290e0ab1ef493368bddd47cc49220acd0ae6178eeb75d",
     "wp-content/mu-plugins/sharity-reward-observation.php": "cbdf032529d955a144fc2032158c6dec0250f1ec04efd3459f2165a013a34b3f",
-    "wp-content/mu-plugins/impactshop-admitad.php": "2cd2313c2931c7de32013d862af1578e0562969b22f123e9c38d4f6558c5930b",
+    "wp-content/mu-plugins/impactshop-admitad.php": "63f7da1cf6d2d4c5143b23e7138dc191cbafda0cb34e5707983dbd97a96be5c6",
     "docs/impactshop-protected-files.json": "a7463639955c12a09db8ba5a6744dd6889d8857eae9f6fc7ad91c08ab983a3d2"
   },
   "generated_at": "2026-09-11T04:44:20+00:00"

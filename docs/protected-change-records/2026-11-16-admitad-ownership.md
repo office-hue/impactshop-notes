@@ -45,3 +45,9 @@ adspace külön Active/readback állapota szükséges. Kód/merge/deploy/ownersh
 ellenőrzés/programjog/outbound/pont külön állapot.
 
 Protected files touched: `wp-content/mu-plugins/impactshop-admitad.php`, a meglévő guard-config/protected-files inventory és társ hash/checksum fájlok. Egy exact új bejegyzés, meglévő védelmi szabály törlése vagy programváltozás nélkül. Smoke scope: `route:impactshop`, `deploy:guard-preflight`, `deploy:checksum-verify`; a helyi5ellenőrzés nem éles smoke. Rollback és érintett fájl a fenti szakaszokban.
+
+
+## Tényleges kiadás és szolgáltatói kérés
+PR282 merged0ba3078d. Egyedüli production exact-file release `20261116T140458Z-0ba3078de226-472aae0c`; SHA256 `2cd2313c2931c7de32013d862af1578e0562969b22f123e9c38d4f6558c5930b`, távoli lint/hash/0444 és parent0555 readback PASS. Rollback a fenti meglévő script e releaseID/expectedSHA értékeivel. Normál Mozilla böngészőazonosítós Air és szerver GET200, pontosan1meta tag; profil GET200 és0tag. Python-urllib alapazonosító403-at kap; nem általános oldalhiba. A Mitgo ellenőrzés valós elhelyezés jelölése és Finish kérése megtörtént; visszaérkezett az adspace listába, amely még Inactive. Ez pending szolgáltatói ellenőrzés, nem Active/program/outbound/financial PASS. Nincs újraküldés vagy programcsatlakozás.
+
+Újabb szolgáltatói readback: Under review. A kész read-only shadow forrás az új CJ közös rekordban követett, ownership hook változatlan; még nincs új merge/telepítés/API-aktiválás.
