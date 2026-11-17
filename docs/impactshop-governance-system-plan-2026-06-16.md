@@ -1042,3 +1042,7 @@ Csak a már védett importer pontos forráshash-e és az inventory checksumja k�
 ## 2026-11-16 — Impactshop kötés és Admitad ownership inventory
 
 A jóváhagyott shopping-binding csomag négy meglévő termékfájlja és egy új, passzív Admitad ownership hook felülvizsgált, exact source inventoryt kap. Meglévő guard/CI-program és minden idegen hash változatlan. Koherencia/rollback/UI és valódi SQL-eredmények: `protected-change-records/2026-11-16-impactshop-shopping-binding.md`, `protected-change-records/2026-11-16-admitad-ownership.md`. Ez termékscope-hoz tartozó inventory, nem új DEV- vagy release-rendszer; merge/deploy/aktiválás külön.
+
+### 2026-11-17 – Kuponfeed inventory kiegészítés
+
+Az additív defaultOFF kuponmodul bekerült a meglévő protected file inventoryba; új guard vagy jogosultsági rendszer nincs. Koherencia/teszt/rollback/UI: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. Forrásellenőrzött, merge/deploy/aktiválás függő.
