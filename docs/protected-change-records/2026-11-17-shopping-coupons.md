@@ -64,3 +64,28 @@ A globális coupon config/policy hash miatt későbbi CJ-policy/enable a Dognet 
 Hermes egy engedélyezett követelmény+szintetikus csomag: completed, becsült0.00174978USD, nem számla. Transport/fixture-váz részben felhasznált; a hibás scalar-count, DTD/UTF16, alias/scope elgépelés, nem finite timeout és kikapcsolható assert-tesztek helyben javítva/lecserélve; nincs új Hermes-hívás vagy privátforrás-export. Secretary delegálás ACK; termékforrás/merge/deploy/activation külön. Kód saját ágon; commit/PR/CI állapot a kiadási checkpointban. Új telepítés és éles CJ policy/enable nem történt. TradeTracker saját profilból belépett/accepted site481183, API credential jelen van, tényleges SOAP auth/session/kampányjog még külön Q; Admitad site2888572 Inactive/tulajdonellenőrzés szükséges.
 
 Manuális UI checklist az esetleges későbbi CJ-pilothoz: Sharity Vásárlási Segéd → CJ kód/feltételek/lejárat/hálózatnév; másolás nem navigál; inputváltás elrejti a kódot; kuponhiba mellett a partnermegerősítés marad. Jelenleg ezt új CJ-éles kóddal nem futtattuk; a korábbi Dognet-elfogadás újrahasznált előzmény.
+
+
+## 2026-11-17 – CJ default-OFF tényleges kiadás és visszaállítás
+
+Forrás: PR #288, jóváhagyott pontos head `f182a173e91c0e267b18d3a45cf76e83bc39faf9`, merge `a9b1d3e8812dec2c676aa0f5b1876651dced879f`, hét kijelzett CI SUCCESS. Az Air és Mini egyszeri main-fetch visszaolvasva; szűk merge-ablak felszabadítva. A saját tiszta Mini release-worktree detached a merge-commiton. A kiadás a meglévő `bin/impactshop-guard-deploy.sh` útján, fájlonként staging→production történt. Sem új guard, sem általános rsync/deploy/DB-művelet nem készült.
+
+| Cél | Fájl | Release ID | Végső SHA256 / mód |
+| --- | --- | --- | --- |
+| staging | impactshop-cj.php | 20261117T211232Z-a9b1d3e8812d-844167d4 | 9943cf83d1220f1bbe528e75fc801cc6871dfd547e82c5cd119529a96a748b0d /0444 |
+| staging | impactshop-coupon-feed.php | 20261117T211251Z-a9b1d3e8812d-60d0372e | 7ecbcc8f391168a08e72a7857a921d9489fb4f3260b1d4adaecf9be831e029c2 /0444 |
+| production | impactshop-cj.php | 20261117T211325Z-a9b1d3e8812d-608516c3 | 9943cf83d1220f1bbe528e75fc801cc6871dfd547e82c5cd119529a96a748b0d /0444 |
+| production | impactshop-coupon-feed.php | 20261117T211356Z-a9b1d3e8812d-0dc5e8c7 | 7ecbcc8f391168a08e72a7857a921d9489fb4f3260b1d4adaecf9be831e029c2 /0444 |
+
+A guard által ellenőrzött előállapot mindkét célon: CJ `96a6cefe64a958e9d53c7490d7dd733e611ed8f0620d3aab8a59d7d29c3875a2`, feed `c94921bfce38cbc1ae104e42bb5ec2ca8f03459ca0510650368f373b9be237b7`; célfájlonként privát mentés és CAS. Mind a négy release deployed; a staging parent0755, a production parent0555 maradt. A kiadási logok a saját Mini worktree `tmp/cj-release-20261117/` mappájában,0600 fájlokkal vannak; nem secret- vagy provider-response exportok.
+
+Production config/policy serialize-SHA256 előtte/utána azonos: `65d2f4907742401d76645a4b046b3e8bda83b8b0c41c621a5f5dad96d19ee2af` / `73de191668b3520121da2b25940571432ce0e4a5193af38aa4ff17b3e87ed128`. Dognet ON, complete/errornull, checkedAt2026-11-17T20:41:03Z, validUntil2026-11-17T22:41:03Z, órás hook scheduled; valódi telepített projection available/3kupon. CJ callable/implemented, OFF/not_checked; nincs CJ refresh/snapshot. A célzott projection próba HTTP-szűrővel0upstream, staging és production névtelen coupon REST401. A régi116+232 assertion azonos forrástestre újrahasznált bizonyíték. A kiadás WP-bootstrapja lefutott; a meglévő10/11 PHP deprecation stderr sort nem tekintjük új tesztnek vagy hiba nélküli teljesrendszer-elfogadásnak. Production preflight két futásban1, illetve4 lassúválasz-figyelmeztetés (kb2–6.4s), ezért nincs teljesítmény-PASS. Új webbuild/alias/env/authority/pénzügyi írás nem történt.
+
+Kizárólag saját változatlan célhashről végrehajtható production rollback, fordított sorrendben:
+
+```bash
+bin/impactshop-guard-rollback.sh --production --apply --release-id=20261117T211356Z-a9b1d3e8812d-0dc5e8c7 --expected-deployed-sha=7ecbcc8f391168a08e72a7857a921d9489fb4f3260b1d4adaecf9be831e029c2
+bin/impactshop-guard-rollback.sh --production --apply --release-id=20261117T211325Z-a9b1d3e8812d-608516c3 --expected-deployed-sha=9943cf83d1220f1bbe528e75fc801cc6871dfd547e82c5cd119529a96a748b0d
+```
+
+A staging rollback ugyanígy `--staging` és a fenti staging release ID-k használatával. Jelenleg CJ OFF, nem kell a működő Dognetet kikapcsolni vagy policy/configot módosítani e két forrásfájl visszaállításához. Ha később CJ-t aktiváljuk, előbb explicit CJ disable és a globális hashváltozás miatt Dognet refresh/readback szükséges; ezután csak az akkor még egyező saját célhashről szabad rollbackelni. Pénzügyi/full DB restore nincs. Új CJ-UI kuponpilot nem futott: friss programonkénti public+adomány kompatibilitás, purchase-handoff review és teljes OFF-pilot hiányában a hálózat OFF marad. A korábbi Dognet UI-elfogadás előzmény, az új telepítésnek célzott regressziós readbackje van.

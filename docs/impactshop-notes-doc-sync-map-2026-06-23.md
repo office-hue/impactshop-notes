@@ -523,3 +523,8 @@ Authority sequence3 44Dognet/1provider publikált, teljes CAS/artifact readback 
 ## 2026-11-17 – CJ fiók helyreállt, kuponolvasó saját forrás
 
 Friss CJ Dashboard + saját PID101302202 API200; új bounded olvasó írásmentes kvalifikáció45/45rekord, offline116+232assertion és protected0drift/6negatív eset PASS. A kéthálózatos feed-kód saját ág/OFF; commit/PR/CI a kiadási checkpointban, merge/telepítés/aktiválás nincs igazolva. UNice0kupon, új clickOrigin és hiányzó purchase-review miatt nincs éles engedélyhosszabbítás. Forrás/rollback/UI: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. Ez helyi source-bejegyzés; registry acceptedSource/lastVerifiedAt és távoli DOCSYNC acceptance nem változott.
+
+
+## 2026-11-17 – CJ default-OFF telepítés visszaolvasva
+
+PR #288 merge `a9b1d3e8812dec2c676aa0f5b1876651dced879f`; a két saját PHP-fájl existing exact-file guard staging és production kiadása/hash/mód ellenőrzött. CJ implemented/OFF/not_checked; Dognet ON/complete,3kupon, config/policy változatlan, projection0upstream és névtelen REST401. A production lassú preflight-figyelmeztetések megmaradtak, nincs teljesrendszer- vagy CJ-aktiválási PASS. [Pontos kiadások és rollback](protected-change-records/2026-11-17-shopping-coupons.md#2026-11-17--cj-default-off-tényleges-kiadás-és-visszaállítás). Ez célzott helyi forrásfrissítés; a központi registry acceptedSource/lastVerifiedAt és a távoli DOCSYNC acceptance nem változott. A Secretary merge-ACK `chk-1e59e5e7-8cea-4ab2-a24f-3a539ac06b57`; a telepítési readback külön következő checkpoint.
