@@ -211,7 +211,7 @@
     "wp-content/mu-plugins/impactshop-offerwall-survey-data/question_mapping.csv": "8315421f2473d16921c89e6801737955a7ad8ab88049d3b816fa4547fd585ae6",
     "wp-content/mu-plugins/impactshop-offerwall-survey-data/segment_taxonomy.csv": "e820a53daaf98e63cdbd3b49d2013b980c498dd7a58459b37fb1f133f4d590f6",
     "wp-content/mu-plugins/impactshop-click-tracking.php": "665c0b733262c0e728434fc6ee41f628276c9603b3ca1341118d2dfad5ca2594",
-    "wp-content/mu-plugins/impactshop-cj.php": "96a6cefe64a958e9d53c7490d7dd733e611ed8f0620d3aab8a59d7d29c3875a2",
+    "wp-content/mu-plugins/impactshop-cj.php": "9943cf83d1220f1bbe528e75fc801cc6871dfd547e82c5cd119529a96a748b0d",
     "wp-content/mu-plugins/impactshop-auto-banner.php": "1032a0d3846fbee8b91d15f54dd4db6b938b5d50708f8fb190a3ee1bc7fd2a60",
     "wp-content/mu-plugins/impactshop-auto-banner-sync.php": "95a197f439544b273232327fcf28d84b8a481bce619409cb51203dade4d7cb7a",
     "wp-content/mu-plugins/impactshop-adsense-head.php": "dd626269495a0f9e98ac6a99fe973162d40eada58d4905029be3ad63163b4b34",
@@ -381,7 +381,7 @@
     "wp-content/mu-plugins/sharity-reward-observation.php": "cbdf032529d955a144fc2032158c6dec0250f1ec04efd3459f2165a013a34b3f",
     "wp-content/mu-plugins/impactshop-admitad.php": "63f7da1cf6d2d4c5143b23e7138dc191cbafda0cb34e5707983dbd97a96be5c6",
     "docs/impactshop-protected-files.json": "d71bed10645a621adcf32bd88c21178a0ff1becbe7b5d7056d7329afc07d4e00",
-    "wp-content/mu-plugins/impactshop-coupon-feed.php": "c94921bfce38cbc1ae104e42bb5ec2ca8f03459ca0510650368f373b9be237b7",
+    "wp-content/mu-plugins/impactshop-coupon-feed.php": "7ecbcc8f391168a08e72a7857a921d9489fb4f3260b1d4adaecf9be831e029c2",
     "wp-content/mu-plugins/impactshop-partner-finance.php": "e3245c9cf0614131f8cd100adb956fb738422f0bc0a417488d30340a842936f3"
   },
   "generated_at": "2026-09-11T04:44:20+00:00"

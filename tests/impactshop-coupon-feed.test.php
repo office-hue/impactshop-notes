@@ -367,4 +367,127 @@ $GLOBALS['coupon_actions']['rest_api_init']();
 eq($GLOBALS['coupon_route'][0], 'sharity/v1', 'route namespace');
 eq($GLOBALS['coupon_route'][1], '/shopping/coupon-offers', 'route path');
 eq($GLOBALS['coupon_route'][2]['methods'], 'GET', 'route GET only');
+
+
+// CJ seam is absent until this point: the original missing-adapter assertions above remain real.
+if (!class_exists('ImpactShop_CJ')) {
+    class ImpactShop_CJ {
+        static function read_coupon_page($type, $page, $timeout) {
+            $GLOBALS['cj_reads'][] = [$type, $page, $timeout];
+            return ($GLOBALS['cj_responder'])($type, $page, $timeout, count($GLOBALS['cj_reads']));
+        }
+    }
+}
+function cj_binding() { return ['partnerKey'=>'fixture-cj','providerKey'=>'cj','programRef'=>'cj:fixture-cj']; }
+function cj_row($id = '800001', $type = 'Coupon') {
+    return ['link_id'=>$id,'advertiser_id'=>'700001','relationship_status'=>'joined','link_type'=>'Text Link','promotion_type'=>$type,
+        'coupon_code'=>'FIXTURE10','link_name'=>'10 percent off selected items','description'=>'Minimum basket applies.',
+        'promotion_start'=>'2026-01-01 00:00:00.0','promotion_end'=>'2026-12-31 23:59:59.0',
+        'click_url'=>'https://tracking.invalid/private','destination'=>'https://merchant.invalid/'];
+}
+function cj_page($rows = [], $total = null, $page = 1) {
+    return ['page'=>$page,'total'=>$total??count($rows),'returned'=>count($rows),'rows'=>$rows,'websiteId'=>'900000','responseBytes'=>1000];
+}
+function cj_reset($rows = null) {
+    reset_fixture(); $GLOBALS['cj_reads']=[];
+    $policy=policy();
+    $policy['bindings'][]=array_merge(cj_binding(),['providerProgramId'=>'700001','siteOrChannelId'=>'900000','publicationAllowed'=>true,
+        'attributionCompatibility'=>'compatible','checkedAt'=>impactshop_coupon_iso(impactshop_coupon_now()-60),
+        'expiresAt'=>impactshop_coupon_iso(impactshop_coupon_now()+86400),'qualification'=>ack()]);
+    $policy['providers']['cj']=['qualification'=>ack(),'dateTimezone'=>'UTC','emptyStartMeansUnbounded'=>false,
+        'emptyEndMeansOngoing'=>false,'ongoingEndMeansOngoing'=>false];
+    update_option('impactshop_coupon_policy_v1',$policy,false);
+    $GLOBALS['cj_responder']=function($type) use($rows){ return cj_page($type==='coupon'?($rows??[cj_row()]):[]); };
+}
+function cj_project() { return impactshop_coupon_project(cj_binding(),impactshop_coupon_config(),get_option('impactshop_coupon_policy_v1')); }
+function cj_activate() {
+    eq(impactshop_coupon_refresh('cj')['status'],'complete','CJ offline pilot complete');
+    eq(impactshop_coupon_set_enabled('cj',true)['refreshRequired'],true,'CJ explicit enable invalidates snapshot');
+    eq(cj_project()['status'],'unavailable','no old snapshot after enable');
+    $GLOBALS['coupon_time']+=120;
+    eq(impactshop_coupon_refresh('cj')['status'],'complete','CJ enabled refresh complete');
+}
+cj_reset();
+eq(cj_project()['status'],'not_checked','CJ default OFF');
+eq($GLOBALS['cj_reads'],[],'CJ OFF zero provider');
+check(impactshop_coupon_status()['providers']['cj']['implemented'],'CJ seam availability is explicit');
+cj_activate();
+$benefits=cj_project();
+eq($benefits['status'],'available','qualified CJ available');
+eq($benefits['offers'][0]['networkLabel'],'CJ','CJ exact label');
+eq($benefits['offers'][0]['startsAt'],'2026-01-01T00:00:00Z','CJ .0 date is UTC');
+check(strpos(json_encode($benefits),'tracking.invalid')===false,'private CJ URL not projected');
+$reads=count($GLOBALS['cj_reads']);
+eq(request([cj_binding()])->data['items'][0]['benefits']['status'],'available','CJ actual private REST projection');
+eq(count($GLOBALS['cj_reads']),$reads,'CJ REST zero upstream');
+$before=get_option('impactshop_coupon_refresh_state_v1_cj');
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_rate_limit','CJ repeated manual refresh cooldown');
+eq(get_option('impactshop_coupon_refresh_state_v1_cj'),$before,'cooldown preserves complete state');
+eq(count($GLOBALS['cj_reads']),$reads,'cooldown zero provider');
+$GLOBALS['coupon_authorized']=false;
+eq(request([cj_binding()])->get_error_data()['status'],401,'CJ requires service auth');
+eq(count($GLOBALS['cj_reads']),$reads,'CJ anon zero provider');
+cj_reset([]); cj_activate();
+eq(cj_project()['status'],'none','all three complete empty resources give genuine none');
+eq(count($GLOBALS['cj_reads']),6,'exactly three resources per complete scan');
+foreach (['emptyStartMeansUnbounded','emptyEndMeansOngoing','ongoingEndMeansOngoing'] as $flag) {
+    cj_reset(); $p=get_option('impactshop_coupon_policy_v1');unset($p['providers']['cj'][$flag]);update_option('impactshop_coupon_policy_v1',$p,false);
+    eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_qualification_missing','CJ requires explicit date meaning');
+    eq($GLOBALS['cj_reads'],[],'unqualified date zero provider');
+}
+foreach ([['promotion_start',''],['promotion_end',''],['promotion_end','ongoing'],['promotion_end','2026-02-30 00:00:00.0'],
+    ['promotion_start','2026-01-01 00:00:00.5'],['description',str_repeat('x',1001)],['coupon_code','']] as [$field,$value]) {
+    $r=cj_row();$r[$field]=$value;cj_reset([$r]);
+    eq(impactshop_coupon_refresh('cj')['withheldBindings'],1,'unknown/malformed CJ offer withheld');
+    eq(impactshop_coupon_set_enabled('cj',true)->get_error_code(),'coupon_fresh_pilot_required','withheld CJ cannot activate');
+}
+cj_reset();$p=get_option('impactshop_coupon_policy_v1');$p['providers']['cj']['emptyStartMeansUnbounded']=true;
+$p['providers']['cj']['ongoingEndMeansOngoing']=true;$map=$p['providers']['cj'];$b=$p['bindings'][1];$r=cj_row();$r['promotion_start']='';$r['promotion_end']='ongoing';
+$o=impactshop_coupon_normalize_cj($r,$b,$map);eq($o['startsAt'],null,'qualified unbounded start');eq($o['expiryKind'],'ongoing','qualified explicit ongoing');
+$r=cj_row();$r['advertiser_id']='other';eq(impactshop_coupon_normalize_cj($r,$b,$map),false,'CJ exact advertiser');
+cj_reset();$GLOBALS['cj_responder']=function(){return array_merge(cj_page([cj_row()]),['websiteId'=>'900001']);};
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_scope_mismatch','CJ exact own PID');
+cj_reset();$GLOBALS['cj_responder']=function(){throw new RuntimeException('coupon_auth');};
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_auth','CJ auth failure fixed code');
+eq(count($GLOBALS['cj_reads']),1,'CJ auth never retries');
+$GLOBALS['coupon_time']+=120;
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_auth','CJ auth remains suspended');
+eq(count($GLOBALS['cj_reads']),1,'suspended CJ zero provider');
+impactshop_coupon_set_enabled('cj',false);$GLOBALS['cj_responder']=function(){return cj_page();};
+eq(impactshop_coupon_refresh('cj')['status'],'complete','operator config revision permits repaired auth pilot');
+cj_reset();$GLOBALS['cj_responder']=function(){throw new RuntimeException('private provider message fixture-token');};
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_transport','unknown exception redacted');
+cj_reset();$GLOBALS['cj_responder']=function(){return array_merge(cj_page(),['responseBytes'=>1048577]);};
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_limits','CJ aggregate byte cap');
+cj_reset();$GLOBALS['cj_responder']=function(){ $GLOBALS['coupon_clock']=60;return cj_page(); };
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_limits','CJ late response rejected');
+eq(count($GLOBALS['cj_reads']),1,'CJ deadline stops later resources');
+cj_reset();$GLOBALS['cj_responder']=function($type,$page,$timeout,$call){if($call===1){$GLOBALS['coupon_clock']=59.5;}return cj_page();};
+eq(impactshop_coupon_refresh('cj')['status'],'complete','CJ short remaining timeout accepted');
+eq($GLOBALS['cj_reads'][1][2],0.5,'CJ remaining deadline applied to each request');
+cj_reset();$GLOBALS['cj_responder']=function($type,$page){
+    $rows=[];for($i=1;$i<=100;$i++){$rows[]=cj_row((string)(($page-1)*100+$i));}return cj_page($rows,2000,$page);
+};
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_limits','CJ max20 includes all resource pages');
+eq(count($GLOBALS['cj_reads']),20,'CJ no21st request');
+cj_reset();$GLOBALS['cj_responder']=function($type,$page){
+    if($page===2){return cj_page([cj_row('101')],102,2);} $rows=[];for($i=1;$i<=100;$i++){$rows[]=cj_row((string)$i);}return cj_page($rows,101,1);
+};
+check(is_wp_error(impactshop_coupon_refresh('cj')),'CJ changed total rejects partial scan');
+cj_reset();$GLOBALS['cj_responder']=function($type,$page){
+    if($page===2){return cj_page([cj_row('1')],101,2);} $rows=[];for($i=1;$i<=100;$i++){$rows[]=cj_row((string)$i);}return cj_page($rows,101,1);
+};
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_schema_invalid','CJ cross-page duplicate rejects');
+cj_reset();cj_activate();$GLOBALS['coupon_time']+=120;$GLOBALS['cj_responder']=function(){throw new RuntimeException('coupon_transport');};
+check(is_wp_error(impactshop_coupon_refresh('cj')),'CJ refresh fails after good cache');
+eq(cj_project()['status'],'unavailable','CJ failure never falls back to previous cache');
+cj_reset();$p=get_option('impactshop_coupon_policy_v1');$p['bindings'][1]['attributionCompatibility']='unknown';update_option('impactshop_coupon_policy_v1',$p,false);
+eq(impactshop_coupon_refresh('cj')->get_error_code(),'coupon_qualification_missing','CJ incompatible/no eligible scope stops');
+eq($GLOBALS['cj_reads'],[],'CJ unknown compatibility no network');
+cj_reset();impactshop_coupon_refresh('dognet');cj_activate();$GLOBALS['coupon_time']+=120;
+$GLOBALS['coupon_actions']['impactshop_coupon_refresh_v1']();
+eq(get_option('impactshop_coupon_refresh_state_v1_cj')['status'],'complete','existing hourly cron dispatches CJ');
+eq(project()['status'],'available','Dognet stays available after combined cron');
+check(!is_wp_error(impactshop_coupon_set_enabled('cj',false)),'CJ disable existing CLI operation');
+eq(cj_project()['status'],'not_checked','disabled CJ not_checked');
 echo "PASS $assertions assertions (offline; no DB/network)\n";

@@ -983,3 +983,8 @@ Authority sequence3 44Dognet/1provider publikált, teljes CAS/artifact readback 
 ### Coupon REST router fix – 2026-11-17
 
 Csak a saját couponfeed WP core `rest_route` kompatibilitása és célzott negatív tesztje változik;153 assertion PASS. Az egyetlen saját termékfájl hash-e célzottan frissítve; nincs rebaseline vagy guardkód-változás.
+
+
+## 2026-11-17 – CJ coupon read seam / alapból OFF
+
+Meglévő két protected fájl: `impactshop-cj.php` kizárólag additív, bounded új page metódus; `impactshop-coupon-feed.php` CJ read-only adapter, UTC, exact scope és meglévő cache/CLI/cron. A legacy CJ kód bájtra azonos; csak saját két digest és manifest-checksum változik, új guard/inventory/CI nincs. PHP lint,116+232offline assertion, teljes protected inventory0drift és6negatív eset PASS. Egyszeri írásmentes valós parser45/45rekord PASS; nem telepítés/policy/aktiválás. Koherencia, cooldown és Dognet snapshot-frissítési mellékhatás, rollback/UI: `docs/protected-change-records/2026-11-17-shopping-coupons.md`.

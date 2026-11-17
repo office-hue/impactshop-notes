@@ -14,6 +14,9 @@
  * nullStartMeansUnbounded:boolean, nullEndMeansOngoing:boolean,
  * kindMap:{"<type>:<form>":{kind:coupon|sale|free_shipping,
  * redeemMode:code|automatic, applicability:conditions_apply|merchant_wide}}}}}.
+ * providers.cj: {qualification, dateTimezone:"UTC", emptyStartMeansUnbounded:boolean,
+ * emptyEndMeansOngoing:boolean, ongoingEndMeansOngoing:boolean}. Blank/ongoing
+ * semantics are independent; a missing decision never becomes an active offer.
  * Qualification acknowledges actual account/program/site and public traffic rights,
  * plus provider field/date semantics; policy insertion alone is not qualification.
  * No credentials, raw provider responses or financial state are written here.
@@ -86,8 +89,19 @@ function impactshop_coupon_binding_allowed($binding, $now) {
         && $binding['attributionCompatibility'] === 'compatible'
         && impactshop_coupon_stamp($binding['checkedAt']) <= $now && impactshop_coupon_stamp($binding['expiresAt']) > $now;
 }
-function impactshop_coupon_mapping($policy) {
-    $mapping = $policy['providers']['dognet'] ?? null;
+function impactshop_coupon_implemented($provider) {
+    return $provider === 'dognet' || ($provider === 'cj' && is_callable(['ImpactShop_CJ', 'read_coupon_page']));
+}
+function impactshop_coupon_mapping($policy, $provider = 'dognet') {
+    $mapping = $policy['providers'][$provider] ?? null;
+    if ($provider === 'cj') {
+        if (!is_array($mapping) || !impactshop_coupon_ack($mapping['qualification'] ?? null)
+            || ($mapping['dateTimezone'] ?? null) !== 'UTC') { return impactshop_coupon_error('qualification_missing'); }
+        foreach (['emptyStartMeansUnbounded', 'emptyEndMeansOngoing', 'ongoingEndMeansOngoing'] as $field) {
+            if (!is_bool($mapping[$field] ?? null)) { return impactshop_coupon_error('qualification_missing'); }
+        }
+        return $mapping;
+    }
     if (!is_array($mapping) || !impactshop_coupon_ack($mapping['qualification'] ?? null)
         || !is_string($mapping['dateTimezone'] ?? null) || !is_bool($mapping['nullStartMeansUnbounded'] ?? null)
         || !is_bool($mapping['nullEndMeansOngoing'] ?? null) || !is_array($mapping['kindMap'] ?? null)
@@ -234,13 +248,96 @@ function impactshop_coupon_read_dognet($policy, $mapping, $started) {
     }
     return ['records' => $records, 'withheld' => $withheld];
 }
+/** CJ promotion timestamps are UTC; blank dates and ongoing require separate qualified meanings. */
+function impactshop_coupon_cj_date($raw, $emptyAllowed, $ongoingAllowed = false) {
+    if (!is_string($raw)) { return false; }
+    if ($raw === '') { return $emptyAllowed ? null : false; }
+    if (strtolower($raw) === 'ongoing') { return $ongoingAllowed ? null : false; }
+    if (!preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.0{1,3})?$/D', $raw)) { return false; }
+    $wall = substr($raw, 0, 19);
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $wall, new DateTimeZone('UTC'));
+    $errors = DateTimeImmutable::getLastErrors();
+    return $date && (!$errors || !$errors['warning_count'] && !$errors['error_count']) && $date->format('Y-m-d H:i:s') === $wall
+        ? $date->getTimestamp() : false;
+}
+function impactshop_coupon_normalize_cj($row, $binding, $mapping) {
+    $kinds = ['coupon' => 'coupon', 'sale/discount' => 'sale', 'free shipping' => 'free_shipping'];
+    if (!is_array($row) || ($row['relationship_status'] ?? null) !== 'joined'
+        || !is_string($row['link_id'] ?? null) || !preg_match('/^[1-9]\d{0,15}$/D', $row['link_id'])
+        || ($row['advertiser_id'] ?? null) !== $binding['providerProgramId']
+        || !is_string($row['promotion_type'] ?? null) || !isset($kinds[strtolower($row['promotion_type'])])) { return false; }
+    $kind = $kinds[strtolower($row['promotion_type'])];
+    $code = impactshop_coupon_text($row['coupon_code'] ?? null, 128, true);
+    $benefit = impactshop_coupon_text($row['link_name'] ?? null, 160);
+    $conditions = impactshop_coupon_text($row['description'] ?? null, 1000, true);
+    $start = impactshop_coupon_cj_date($row['promotion_start'] ?? null, $mapping['emptyStartMeansUnbounded']);
+    $end = impactshop_coupon_cj_date($row['promotion_end'] ?? null, $mapping['emptyEndMeansOngoing'], $mapping['ongoingEndMeansOngoing']);
+    if ($code === false || $benefit === false || $conditions === false || ($kind === 'coupon' && $code === '')
+        || $start === false || $end === false || ($start !== null && $end !== null && $start >= $end)) { return false; }
+    return ['id' => 'coupon_' . substr(hash('sha256', impactshop_coupon_binding_key($binding) . ':' . $row['link_id']), 0, 32),
+        'kind' => $kind, 'code' => $code === '' ? null : $code, 'benefitText' => $benefit, 'conditionsText' => $conditions,
+        'startsAt' => $start === null ? null : impactshop_coupon_iso($start), 'endsAt' => $end === null ? null : impactshop_coupon_iso($end),
+        'expiryKind' => $end === null ? 'ongoing' : 'dated', 'networkLabel' => 'CJ', 'applicability' => 'conditions_apply'];
+}
+/** Coupon-only caller of the existing CJ credential/normalizer seam; no legacy sync or ledger call. */
+function impactshop_coupon_read_cj($policy, $mapping, $started) {
+    $bindings = [];
+    foreach ($policy['bindings'] as $binding) {
+        if ($binding['providerKey'] !== 'cj' || !impactshop_coupon_binding_allowed($binding, impactshop_coupon_now())) { continue; }
+        if (!preg_match('/^[1-9]\d{0,15}$/D', $binding['siteOrChannelId'])
+            || !preg_match('/^[1-9]\d{0,15}$/D', $binding['providerProgramId'])) { return impactshop_coupon_error('policy_invalid'); }
+        $bindings[] = $binding;
+    }
+    if (!$bindings) { return impactshop_coupon_error('qualification_missing'); }
+    $records = []; $withheld = []; $seen = []; $requests = 0; $bytes = 0;
+    foreach (['coupon', 'sale/discount', 'free shipping'] as $type) {
+        $last = 1; $total = null;
+        for ($page = 1; $page <= $last; $page++) {
+            $remaining = 60 - (impactshop_coupon_clock() - $started);
+            if ($remaining <= 0 || ++$requests > 20) { return impactshop_coupon_error('limits'); }
+            try { $data = ImpactShop_CJ::read_coupon_page($type, $page, min(8, $remaining)); }
+            catch (RuntimeException $e) {
+                $known = ['coupon_auth', 'coupon_rate_limit', 'coupon_transport', 'coupon_limits', 'coupon_schema'];
+                return new WP_Error(in_array($e->getMessage(), $known, true) ? $e->getMessage() : 'coupon_transport', 'Coupon source unavailable.');
+            }
+            if (impactshop_coupon_clock() - $started >= 60) { return impactshop_coupon_error('limits'); }
+            if (!is_array($data) || !is_int($data['responseBytes'] ?? null) || $data['responseBytes'] < 0
+                || !is_int($data['total'] ?? null) || $data['total'] < 0 || $data['total'] > 2000
+                || ($data['page'] ?? null) !== $page || !impactshop_coupon_list($data['rows'] ?? null)
+                || ($data['returned'] ?? null) !== count($data['rows'])
+                || $data['returned'] !== min(100, max(0, $data['total'] - ($page - 1) * 100))) { return impactshop_coupon_error('schema_invalid'); }
+            $bytes += $data['responseBytes'];
+            if ($bytes > 1048576) { return impactshop_coupon_error('limits'); }
+            foreach ($bindings as $binding) {
+                if (($data['websiteId'] ?? null) !== $binding['siteOrChannelId']) { return impactshop_coupon_error('scope_mismatch'); }
+            }
+            if ($total !== null && $total !== $data['total']) { return impactshop_coupon_error('partial'); }
+            $total = $data['total']; $last = max(1, (int) ceil($total / 100));
+            foreach ($data['rows'] as $row) {
+                if (!is_array($row) || ($row['relationship_status'] ?? null) !== 'joined'
+                    || !is_string($row['link_id'] ?? null) || !preg_match('/^[1-9]\d{0,15}$/D', $row['link_id'])
+                    || !is_string($row['advertiser_id'] ?? null) || !preg_match('/^[1-9]\d{0,15}$/D', $row['advertiser_id'])
+                    || !is_string($row['promotion_type'] ?? null) || strtolower($row['promotion_type']) !== $type
+                    || isset($seen[$row['link_id']])) { return impactshop_coupon_error('schema_invalid'); }
+                $seen[$row['link_id']] = true;
+                foreach ($bindings as $binding) {
+                    if ($binding['providerProgramId'] !== $row['advertiser_id']) { continue; }
+                    $key = impactshop_coupon_binding_key($binding);
+                    $offer = impactshop_coupon_normalize_cj($row, $binding, $mapping);
+                    if ($offer === false) { $withheld[$key] = true; } else { $records[$key][] = $offer; }
+                }
+            }
+        }
+    }
+    return ['records' => $records, 'withheld' => $withheld];
+}
 function impactshop_coupon_refresh($provider) {
-    if ($provider !== 'dognet') { return impactshop_coupon_error('adapter_unavailable'); }
+    if (!impactshop_coupon_implemented($provider)) { return impactshop_coupon_error('adapter_unavailable'); }
     $config = impactshop_coupon_config(); $rawPolicy = get_option('impactshop_coupon_policy_v1', null);
     $policy = impactshop_coupon_validate_policy($rawPolicy);
     if (is_wp_error($config)) { return $config; }
     if (is_wp_error($policy)) { return $policy; }
-    $mapping = impactshop_coupon_mapping($policy);
+    $mapping = impactshop_coupon_mapping($policy, $provider);
     if (is_wp_error($mapping)) { return $mapping; }
     $now = impactshop_coupon_now(); $lock = impactshop_coupon_lock($provider, $now);
     if (!$lock) { return impactshop_coupon_error('locked'); }
@@ -248,9 +345,19 @@ function impactshop_coupon_refresh($provider) {
     $stateName = 'impactshop_coupon_refresh_state_v1_' . $provider;
     $state = ['status' => 'refreshing', 'owner' => $lock['owner'], 'attemptedAt' => impactshop_coupon_iso($now), 'configHash' => $configHash, 'policyHash' => $policyHash];
     try {
+        // A scan lasts at most60s.120s between starts leaves a full quiet minute
+        // after its last request, so separate CJ scans cannot exceed25/min.
+        $previous = get_option($stateName, []);
+        // An auth failure stays suspended under the same config/policy until operator repair.
+        if ($provider === 'cj' && ($previous['error'] ?? null) === 'coupon_auth'
+            && ($previous['configHash'] ?? null) === $configHash && ($previous['policyHash'] ?? null) === $policyHash) { return impactshop_coupon_error('auth'); }
+        $attempted = impactshop_coupon_stamp($previous['attemptedAt'] ?? null);
+        if ($provider === 'cj' && $attempted !== false && $attempted + 120 > $now) { return impactshop_coupon_error('rate_limit'); }
         if (!impactshop_coupon_fence($provider, $lock, $configHash, $policyHash)) { return impactshop_coupon_error('publication_fenced'); }
         if (!update_option($stateName, $state, false)) { return impactshop_coupon_error('storage_failed'); }
-        $result = impactshop_coupon_read_dognet($policy, $mapping, impactshop_coupon_clock());
+        $result = $provider === 'cj'
+            ? impactshop_coupon_read_cj($policy, $mapping, impactshop_coupon_clock())
+            : impactshop_coupon_read_dognet($policy, $mapping, impactshop_coupon_clock());
         if (!impactshop_coupon_fence($provider, $lock, $configHash, $policyHash)) { return impactshop_coupon_error('publication_fenced'); }
         if (is_wp_error($result)) {
             impactshop_coupon_cas($stateName, $state, array_merge($state, ['status' => 'failed', 'error' => $result->get_error_code()]));
@@ -276,12 +383,12 @@ function impactshop_coupon_refresh($provider) {
     }
 }
 /** Recheck stored normalized data too: a malformed cache must not escape publicly. */
-function impactshop_coupon_offer_valid($offer) {
+function impactshop_coupon_offer_valid($offer, $provider = 'dognet') {
     if (!is_array($offer) || !is_string($offer['id'] ?? null) || !preg_match('/^coupon_[a-f0-9]{32}$/D', $offer['id'])
         || !in_array($offer['kind'] ?? null, ['coupon', 'sale', 'free_shipping'], true)
         || !in_array($offer['applicability'] ?? null, ['conditions_apply', 'merchant_wide'], true)
         || !in_array($offer['expiryKind'] ?? null, ['dated', 'ongoing'], true)
-        || ($offer['networkLabel'] ?? null) !== 'Dognet' || !array_key_exists('code', $offer)
+        || ($offer['networkLabel'] ?? null) !== ($provider === 'cj' ? 'CJ' : 'Dognet') || !array_key_exists('code', $offer)
         || !array_key_exists('startsAt', $offer) || !array_key_exists('endsAt', $offer)) { return false; }
     foreach (['benefitText' => 160, 'conditionsText' => 1000] as $key => $limit) {
         if (impactshop_coupon_text($offer[$key] ?? null, $limit, $key === 'conditionsText') !== ($offer[$key] ?? null)) { return false; }
@@ -302,11 +409,11 @@ function impactshop_coupon_empty($status, $reason = null, $checkedAt = null) {
 function impactshop_coupon_project($binding, $config, $policy, $now = null) {
     $now = $now === null ? impactshop_coupon_now() : $now;
     $provider = $binding['providerKey'];
-    if ($provider !== 'dognet' || !in_array($provider, $config['enabledProviders'], true)) { return impactshop_coupon_empty('not_checked'); }
+    if (!impactshop_coupon_implemented($provider) || !in_array($provider, $config['enabledProviders'], true)) { return impactshop_coupon_empty('not_checked'); }
     $matched = !is_wp_error($policy) ? impactshop_coupon_policy_binding($policy, $binding) : null;
     if (!$matched || !$matched['publicationAllowed'] || !impactshop_coupon_ack($matched['qualification'] ?? null)) { return impactshop_coupon_empty('unavailable', 'binding_unavailable'); }
     if ($matched['attributionCompatibility'] !== 'compatible') { return impactshop_coupon_empty('unavailable', 'compatibility_unverified'); }
-    if (!impactshop_coupon_binding_allowed($matched, $now) || is_wp_error(impactshop_coupon_mapping($policy))) { return impactshop_coupon_empty('unavailable', 'binding_unavailable'); }
+    if (!impactshop_coupon_binding_allowed($matched, $now) || is_wp_error(impactshop_coupon_mapping($policy, $provider))) { return impactshop_coupon_empty('unavailable', 'binding_unavailable'); }
     $snapshot = get_option('impactshop_coupon_snapshot_v1_' . $provider, null);
     $state = get_option('impactshop_coupon_refresh_state_v1_' . $provider, null);
     $checked = is_array($snapshot) && impactshop_coupon_stamp($snapshot['checkedAt'] ?? null) !== false ? $snapshot['checkedAt'] : null;
@@ -323,7 +430,7 @@ function impactshop_coupon_project($binding, $config, $policy, $now = null) {
     if (!impactshop_coupon_list($snapshot['records'][$key] ?? [])) { return impactshop_coupon_empty('unavailable', 'source_unavailable', $checked); }
     $deadline = min($now + 60, $expires, impactshop_coupon_stamp($matched['expiresAt'])); $offers = [];
     foreach ($snapshot['records'][$key] ?? [] as $offer) {
-        if (!impactshop_coupon_offer_valid($offer)) { return impactshop_coupon_empty('unavailable', 'source_unavailable', $checked); }
+        if (!impactshop_coupon_offer_valid($offer, $provider)) { return impactshop_coupon_empty('unavailable', 'source_unavailable', $checked); }
         $start = $offer['startsAt'] === null ? null : impactshop_coupon_stamp($offer['startsAt']);
         $end = $offer['endsAt'] === null ? null : impactshop_coupon_stamp($offer['endsAt']);
         if ($start !== null && $start > $now) { $deadline = min($deadline, $start); continue; }
@@ -332,7 +439,7 @@ function impactshop_coupon_project($binding, $config, $policy, $now = null) {
         // Explicit public field construction: private snapshot metadata never escapes.
         $offers[] = ['id' => $offer['id'], 'kind' => $offer['kind'], 'code' => $offer['code'], 'benefitText' => $offer['benefitText'],
             'conditionsText' => $offer['conditionsText'], 'startsAt' => $offer['startsAt'], 'endsAt' => $offer['endsAt'],
-            'expiryKind' => $offer['expiryKind'], 'networkLabel' => 'Dognet', 'applicability' => $offer['applicability']];
+            'expiryKind' => $offer['expiryKind'], 'networkLabel' => $provider === 'cj' ? 'CJ' : 'Dognet', 'applicability' => $offer['applicability']];
     }
     usort($offers, function ($a, $b) { return strcmp($a['endsAt'] ?? '9999', $b['endsAt'] ?? '9999') ?: strcmp($a['id'], $b['id']); });
     return ['status' => $offers ? 'available' : 'none', 'coverage' => 'complete', 'checkedAt' => $checked,
@@ -395,10 +502,10 @@ function impactshop_coupon_set_enabled($provider, $enabled) {
     $config = impactshop_coupon_config();
     if (is_wp_error($config)) { return $config; }
     if ($enabled) {
-        if ($provider !== 'dognet') { return impactshop_coupon_error('adapter_unavailable'); }
+        if (!impactshop_coupon_implemented($provider)) { return impactshop_coupon_error('adapter_unavailable'); }
         $policy = impactshop_coupon_validate_policy(get_option('impactshop_coupon_policy_v1', null));
         if (is_wp_error($policy)) { return $policy; }
-        $mapping = impactshop_coupon_mapping($policy);
+        $mapping = impactshop_coupon_mapping($policy, $provider);
         if (is_wp_error($mapping)) { return $mapping; }
         $allowed = false;
         foreach ($policy['bindings'] as $binding) { if ($binding['providerKey'] === $provider && impactshop_coupon_binding_allowed($binding, impactshop_coupon_now())) { $allowed = true; } }
@@ -435,7 +542,7 @@ function impactshop_coupon_status() {
         $state = get_option('impactshop_coupon_refresh_state_v1_' . $provider, []);
         $snapshot = get_option('impactshop_coupon_snapshot_v1_' . $provider, []);
         $lock = get_option('impactshop_coupon_refresh_lock_v1_' . $provider, []);
-        $providers[$provider] = ['implemented' => $provider === 'dognet', 'enabled' => !is_wp_error($config) && in_array($provider, $config['enabledProviders'], true),
+        $providers[$provider] = ['implemented' => impactshop_coupon_implemented($provider), 'enabled' => !is_wp_error($config) && in_array($provider, $config['enabledProviders'], true),
             'refreshStatus' => $state['status'] ?? 'not_checked', 'error' => $state['error'] ?? null, 'checkedAt' => $snapshot['checkedAt'] ?? null,
             'validUntil' => $snapshot['validUntil'] ?? null, 'lockActive' => ($lock['expiresAt'] ?? 0) > impactshop_coupon_now()];
     }
@@ -446,7 +553,10 @@ add_action('rest_api_init', function () {
 });
 add_action('impactshop_coupon_refresh_v1', function () {
     $config = impactshop_coupon_config();
-    if (!is_wp_error($config) && in_array('dognet', $config['enabledProviders'], true)) { impactshop_coupon_refresh('dognet'); }
+    if (is_wp_error($config)) { return; }
+    foreach ($config['enabledProviders'] as $provider) {
+        if (impactshop_coupon_implemented($provider)) { impactshop_coupon_refresh($provider); }
+    }
 });
 if (defined('WP_CLI') && WP_CLI) {
     WP_CLI::add_command('impactshop coupons', function ($args, $assoc) {

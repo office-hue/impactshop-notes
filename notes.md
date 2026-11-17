@@ -8712,3 +8712,8 @@ Az első éles HTTP-próba400-at talált a WP belső routerparamétere miatt. C�
 ## 2026-11-17 – kuponpilot telepített és élesben ellenőrzött
 
 WP285 és web2112/2123 merge-elt; exact-file WP0444, sharity/www új web artifacton, Legal változatlan. Dognet/VisionExpress3kupon canonical resolve/MCP/UI és természetes órás frissítés célzottan elfogadott; public smoke PASS. Natív plugin1.2.0 telepített/enabled, új Work-chat automatikus betöltése még függő. Másik három kuponadapter OFF/nincs implementálva. Részletes commit/hash/release/rollback/teszt és korábbi hiányokat felülíró tények: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. A dokumentáció és Secretary ACK nem általános négyhálózatos vagy teljes rendszer PASS.
+
+
+## 2026-11-17 – CJ kuponolvasó saját ág, OFF
+
+CJ újraaktiválás és saját API200 visszaellenőrzött; új bounded page seam45/45valós rekordot feldolgozott írás nélkül. Offline116+232assertion, két PHP lint és protected0drift/6negatív eset PASS. UNice joined, de0kupon és megváltozott clickOrigin; nincs automatikus review/allowlist/enable. Saját forráság; commit/PR/CI állapot a kiadási checkpointban. Új merge/telepítés/aktiválás nincs igazolva. Dognet-pilot éles állapotát nem módosítottuk. Részletek, kompatibilitás, cooldown, rollback és UI checklist: `docs/protected-change-records/2026-11-17-shopping-coupons.md` CJ fejezet. TradeTracker auth/session Q és Admitad tulajdonellenőrzés külön nyitott.

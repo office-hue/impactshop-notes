@@ -2334,3 +2334,8 @@ A couponfeed élő HTTP400 javítása forráskész,153 célzott assertion PASS; 
 ## 2026-11-17 – kupon C1/C2 célzott éles állapot
 
 Forrás/merge: WP285 + web2112/2123 kész. Telepített/aktivált: WP coupon runtime és web `dpl_Hx1CLoFTyEvNyAeWnGzvc1ULyH3f`, sharity/www visszaolvasva. Minősített Dognet/VisionExpress ON,3kupon, teljes canonical API/MCP/UI és természetes órás refresh igazolt. Public post-cutover smoke PASS. Natív plugin1.2.0 telepített/engedélyezett; új Work-chat betöltési elfogadása nyitott. CJ/Admitad/TradeTracker kuponadapter OFF/nincs implementálva. Bizonyíték és rollback: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. Korábbi globális/provider hibák és registry acceptance nem törölt; nincs teljes rendszer/négyszolgáltatós PASS.
+
+
+## 2026-11-17 – CJ kuponolvasó saját ág, OFF
+
+CJ újraaktiválás és saját API200 visszaellenőrzött; új bounded page seam45/45valós rekordot feldolgozott írás nélkül. Offline116+232assertion, két PHP lint és protected0drift/6negatív eset PASS. UNice joined, de0kupon és megváltozott clickOrigin; nincs automatikus review/allowlist/enable. Saját forráság; commit/PR/CI állapot a kiadási checkpointban. Új merge/telepítés/aktiválás nincs igazolva. Dognet-pilot éles állapotát nem módosítottuk. Részletek, kompatibilitás, cooldown, rollback és UI checklist: `docs/protected-change-records/2026-11-17-shopping-coupons.md` CJ fejezet. TradeTracker auth/session Q és Admitad tulajdonellenőrzés külön nyitott.
