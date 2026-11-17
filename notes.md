@@ -1,3 +1,11 @@
+## 2026-11-17 — Partner pénzügyi adapter, helyi forrásjelölt
+
+Kidolgozási ág: `feat/sharity-partner-finance-20261117`, alap `5ac7e92fba9e674793acf42c3e8ed98bc3028161`. Forráspublikálási cél: saját `feat/sharity-partner-finance-release-20261117` ág a rögzített `8c8ca0a1f7643932a7dac3d06a3e12140c2bb3f9` alapról, kizárólag e csomag saját commitjaival; a donor két meglévő commitja nem része a kiadásnak. Új additív partnerkimutatás-adapter a közös B aláírt `partner-statement` collector műveletéhez; nincs affiliate-runtime/redirect/points/publicDTO módosítás. Két saját InnoDB-tábla, immutable kimutatásrevízió, provider/számla/tranzakció egyediség, pontos HUF/EUR, privát policy szerinti arány, eredeti NGO-kötés. Hiányzó attribúció csak az érintett sort tartja vissza. A teljes kimutatás és egy pontosan egyező bankrész párosítása támogatott; több beérkezésre fel nem osztott kimutatás nem könyvelhető automatikusan.
+
+Helyi ellenőrzés: PHP8.4 szintaxis, 39 pure és 55 valódi izolált MariaDB10.11.19 ellenőrzés az ai-agent saját worktree aktuális B/Offerwall forrásával; valódi Ed25519, közös rögzített kapcsolat, részleges séma, késői SQL-hibás teljes rollback és két folyamat versenye. A meglévő affiliate Bástya-check változatlan runtime mellett sikeres. Nem teljes WordPress-bootstrap, PHP8.3 vagy éles pénzügyi elfogadás; a független forrásreview a jelenlegi B-szerződésnél nem talált P1 leletet.
+
+Hermes egy első draftot adott (`3d0f81d5-ea7b-4ad2-aef6-b739829fd017`), amely az adat- és tranzakciós szerződést megsértette, ezért nem került alkalmazásra. Natív megvalósítás készült új modellhívás nélkül. Becsült díj 0.00245835 USD, nem számlázási adat; Secretary-munkajegy hiányában csak helyi checkpoint, távoli ACK nincs. Nincs commit/push/merge/telepítés/aktiválás. Mentés és meglévő guarded exact-file kiadás, pénzügyi írás után új engedélyezés OFF és kompatibilis előre javítás; napló/jogosultság/foglalás nem törölhető. Részletek: `docs/partner-reconciliation-job.md`, `docs/partner-reconcile-export-spec.md`.
+
 ## 2026-11-15 — két kiadási referenciahash rendezése
 
 Arnold külön engedélyével a merge-elt CI/config-checksum két digestjének
