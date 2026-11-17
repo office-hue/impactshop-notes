@@ -8707,3 +8707,8 @@ Saját feat/impactshop-coupons-20261117 ág, bázis2d1bf82a. Additív default-OF
 ### Coupon HTTP compatibility – 2026-11-17
 
 Az első éles HTTP-próba400-at talált a WP belső routerparamétere miatt. Célzott javítás saját ágban,153 offline assertion PASS; az új deploy/élő200 még nem igazolt. Az eredeti C1 fájl staging/prod telepített, a Vision Express saját policy/cache pilot3kuponnal minősített; más hálózat OFF.
+
+
+## 2026-11-17 – kuponpilot telepített és élesben ellenőrzött
+
+WP285 és web2112/2123 merge-elt; exact-file WP0444, sharity/www új web artifacton, Legal változatlan. Dognet/VisionExpress3kupon canonical resolve/MCP/UI és természetes órás frissítés célzottan elfogadott; public smoke PASS. Natív plugin1.2.0 telepített/enabled, új Work-chat automatikus betöltése még függő. Másik három kuponadapter OFF/nincs implementálva. Részletes commit/hash/release/rollback/teszt és korábbi hiányokat felülíró tények: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. A dokumentáció és Secretary ACK nem általános négyhálózatos vagy teljes rendszer PASS.

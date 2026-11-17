@@ -513,3 +513,8 @@ PR282 merged0ba3078d; a négy binding/runtime fájl staging+production exact-fil
 A CJ explicit account/NGO source web PR2101 (64teszt/typecheck/Bástya), páros WP runtime és Admitad read-only shadow (alapból OFF) saját kiadási jelölt. Csak e két PHP exact digestje változik, nincs guard-program vagy idegen hash módosítás. Részletes koherencia/teszt/rollback/UI: `docs/protected-change-records/2026-11-16-cj-confirmed-purchase.md`. CJ új review-opció és Admitad API-konfiguráció nincs beállítva. TradeTracker prototípus nem integrált/merge-jelölt; tulajdonosi2FA/valódi SOAP szerződés kell.
 
 Authority sequence3 44Dognet/1provider publikált, teljes CAS/artifact readback és éles health200/MCP ellenőrzött, lejár2026-11-23T14:47:28.627Z. CJ API400 a konfigurált publisher nevében jogosultsághiányt jelez, UNice nincs megújítva; enabled+lejárt CJ-review külön monitorhiba. Ez nem CJ live PASS. Secretary/DOCSYNC a rétegeket külön tartja; korábbi registry acceptance dátuma változatlan.
+
+
+## 2026-11-17 – kuponfeed és webes pilot élő visszaolvasása
+
+[Kuponfeed éles kiadási állapot](protected-change-records/2026-11-17-shopping-coupons.md#2026-11-17--tényleges-telepítés-és-célzott-éles-elfogadás): WP285 telepített; web2112/2123 merge-elt és sharity/www éles, Legal változatlan. Kizárólag minősített Dognet/VisionExpress ON,3kupon a canonical resolve/MCP/UI felületen; természetes órás frissítés igazolt. Natív plugin1.2.0 telepített/engedélyezett; új chat automatikus betöltési elfogadása nyitott. CJ/Admitad/TradeTracker kuponadapter OFF/nincs implementálva. Secretary élő ACK `chk-02c8475c-ba4f-448f-aa39-94f2f3e27324`; registry acceptedSource/lastVerifiedAt és globális degraded állapot nem módosított. Ez célzott forrásbejegyzés, nem távoli DOCSYNC ACK.

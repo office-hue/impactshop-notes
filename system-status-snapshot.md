@@ -2329,3 +2329,8 @@ Saját feat/impactshop-coupons-20261117 ág, bázis2d1bf82a. Additív default-OF
 ### Coupon HTTP delta – 2026-11-17
 
 A couponfeed élő HTTP400 javítása forráskész,153 célzott assertion PASS; push/merge/új deploy függő. A web #2112 merge-elt; a jelölt még nem éles, nincs domainátállítás.
+
+
+## 2026-11-17 – kupon C1/C2 célzott éles állapot
+
+Forrás/merge: WP285 + web2112/2123 kész. Telepített/aktivált: WP coupon runtime és web `dpl_Hx1CLoFTyEvNyAeWnGzvc1ULyH3f`, sharity/www visszaolvasva. Minősített Dognet/VisionExpress ON,3kupon, teljes canonical API/MCP/UI és természetes órás refresh igazolt. Public post-cutover smoke PASS. Natív plugin1.2.0 telepített/engedélyezett; új Work-chat betöltési elfogadása nyitott. CJ/Admitad/TradeTracker kuponadapter OFF/nincs implementálva. Bizonyíték és rollback: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. Korábbi globális/provider hibák és registry acceptance nem törölt; nincs teljes rendszer/négyszolgáltatós PASS.
