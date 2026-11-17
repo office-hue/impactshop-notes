@@ -129,6 +129,24 @@ $_SERVER['QUERY_STRING'] = 'bindings=' . str_repeat('x', 8190);
 eq(request()->get_error_data()['status'], 400, 'encoded query cap');
 unset($_SERVER['QUERY_STRING']);
 eq(request(null, ['bindings' => json_encode([binding()]), 'url' => 'https://input.invalid'])->get_error_data()['status'], 400, 'no client URL accepted');
+$route = '/sharity/v1/shopping/coupon-offers';
+$query = json_encode([binding()]);
+foreach (['bindings=' . rawurlencode($query), 'rest_route=' . rawurlencode($route) . '&bindings=' . rawurlencode($query)] as $raw) {
+    $_SERVER['QUERY_STRING'] = $raw;
+    eq(request(null, ['rest_route' => $route, 'bindings' => $query])->status, 200, 'WordPress router parameter accepted with pretty or query transport');
+}
+foreach ([
+    'rest_route=' . rawurlencode($route) . '&rest_route=' . rawurlencode($route) . '&bindings=' . rawurlencode($query),
+    'rest_route=%2Fother&bindings=' . rawurlencode($query),
+    'bindings=' . rawurlencode($query) . '&bindings=' . rawurlencode($query),
+    'bindings=' . rawurlencode($query) . '&url=other',
+] as $raw) {
+    $_SERVER['QUERY_STRING'] = $raw;
+    eq(request(null, ['rest_route' => $route, 'bindings' => $query])->get_error_data()['status'], 400, 'router compatibility preserves exact query and duplicate rejection');
+}
+unset($_SERVER['QUERY_STRING']);
+eq(request(null, ['rest_route' => '/other', 'bindings' => $query])->get_error_data()['status'], 400, 'foreign parsed router path rejected');
+eq(count($GLOBALS['coupon_http']), 0, 'router compatibility remains cache only');
 reset_fixture();
 update_option('impactshop_coupon_config_v1', ['schemaVersion' => 1, 'revision' => 'off', 'enabledProviders' => []], false);
 eq(request()->data['items'][0]['benefits']['status'], 'not_checked', 'OFF is not_checked');
