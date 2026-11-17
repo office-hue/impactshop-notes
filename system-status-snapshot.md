@@ -2317,3 +2317,7 @@ Saját feat/impactshop-coupons-20261117 ág, bázis2d1bf82a. Additív default-OF
 ## 2026-11-17 – Shopping kuponfeed C1 forrásellenőrzés
 
 Új additív `impactshop-coupon-feed.php`, defaultOFF, privát service-auth GET, explicit CLI és saját órás hook; a protected inventory az új fájllal és kizárólag a hozzá tartozó checksumokkal bővült. Legacy pénzügyi/affiliate/guide/JYSK/autobanner forrás változatlan. PHP lint és145 offline assertion PASS; teljes saját protected inventory0drift és6 izolált negatív checksum eset PASS. Független Sol/high review2P2 (UIresume és whitespace) javítás után célzott readbackkel lezárt. A mock nem DB/cron/production elfogadás. Stage/prod telepítés és provideraktiválás még nincs. Rollback/UI checklist: docs/protected-change-records/2026-11-17-shopping-coupons.md.
+
+### Coupon HTTP delta – 2026-11-17
+
+A couponfeed élő HTTP400 javítása forráskész,153 célzott assertion PASS; push/merge/új deploy függő. A web #2112 merge-elt; a jelölt még nem éles, nincs domainátállítás.

@@ -347,10 +347,23 @@ function impactshop_coupon_rest($request) {
     $permission = impactshop_coupon_permission($request);
     if (is_wp_error($permission)) { return $permission; }
     $params = $request->get_query_params();
+    // WordPress adds its routing parameter even for pretty /wp-json/ URLs.
+    $route = '/sharity/v1/shopping/coupon-offers';
+    if (array_key_exists('rest_route', $params)) {
+        if ($params['rest_route'] !== $route) { return new WP_Error('coupon_invalid_request', 'Invalid bindings.', ['status' => 400]); }
+        unset($params['rest_route']);
+    }
     // The actual encoded query catches repeated keys that PHP's parsed params collapse.
     $raw = isset($_SERVER['QUERY_STRING']) ? (string) $_SERVER['QUERY_STRING'] : http_build_query($params, '', '&', PHP_QUERY_RFC3986);
-    if (strlen($raw) > 8192 || count(explode('&', $raw)) !== 1 || !preg_match('/^bindings=/', $raw)
-        || array_keys($params) !== ['bindings'] || !is_string($params['bindings'])) { return new WP_Error('coupon_invalid_request', 'Invalid bindings.', ['status' => 400]); }
+    if (strlen($raw) > 8192 || array_keys($params) !== ['bindings'] || !is_string($params['bindings'])) { return new WP_Error('coupon_invalid_request', 'Invalid bindings.', ['status' => 400]); }
+    $queryKeys = [];
+    foreach (explode('&', $raw) as $part) {
+        $pair = explode('=', $part, 2); $key = $pair[0];
+        if (count($pair) !== 2 || isset($queryKeys[$key]) || !in_array($key, ['bindings', 'rest_route'], true)
+            || ($key === 'rest_route' && urldecode($pair[1]) !== $route)) { return new WP_Error('coupon_invalid_request', 'Invalid bindings.', ['status' => 400]); }
+        $queryKeys[$key] = true;
+    }
+    if (!isset($queryKeys['bindings'])) { return new WP_Error('coupon_invalid_request', 'Invalid bindings.', ['status' => 400]); }
     $bindings = json_decode($params['bindings'], true, 8);
     if (!impactshop_coupon_list($bindings) || count($bindings) < 1 || count($bindings) > 10) { return new WP_Error('coupon_invalid_request', 'Invalid bindings.', ['status' => 400]); }
     // The decoded shape alone would silently accept duplicate JSON object keys.

@@ -17,3 +17,7 @@ UI checklist: a Sharity Vásárlási Segédben a kód feltétellel/lejárattal l
 ## Érintett fájlok / smoke scope
 
 A termékfájl mellett docs/impactshop-protected-files.json, docs/impactshop-guard-config.json és .sha256, docs/impactshop-guard-hashes.json és .sha256, docs/bastion-guard-status.md a meglévő védelmi inventoryt bővíti. Új guardkód vagy általános release rendszer nincs. Smoke tagek: deploy:guard-preflight, deploy:checksum-verify, coupon:cache-only, coupon:offline-contract. A preflight/chksum izolált fixture és readback; éles preflight nem futott.
+
+### Valós HTTP router-kompatibilitás javítása
+
+Az első telepítés valódi HTTP-próbája400-at adott: a WP core a pretty REST útvonalnál is hozzáadja a `rest_route` queryparamétert. Csak az e végponthoz tartozó pontos útvonalat engedjük meg; ismeretlen/dupla paraméter, idegen routerút továbbra is400. Service-auth, binding, provider, cache/cron és pénzügyi út változatlan.153 offline assertion PASS; új pozitív/negatív routeresetek és0upstream. Élő újratelepítés/readback még függő; az eredeti fájlhash rollback-cél.

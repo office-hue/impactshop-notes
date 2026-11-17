@@ -1046,3 +1046,5 @@ A jóváhagyott shopping-binding csomag négy meglévő termékfájlja és egy �
 ### 2026-11-17 – Kuponfeed inventory kiegészítés
 
 Az additív defaultOFF kuponmodul bekerült a meglévő protected file inventoryba; új guard vagy jogosultsági rendszer nincs. Koherencia/teszt/rollback/UI: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. Forrásellenőrzött, merge/deploy/aktiválás függő.
+
+2026-11-17 coupon delta: a saját REST feed a WP core pontos `rest_route` paraméterét elfogadja, a duplikált/ismeretlen queryt továbbra is elutasítja. A meglévő manifestben kizárólag a couponfeed hash-e változik; auth, pénzügyi és külső jogosultsági határ változatlan.
