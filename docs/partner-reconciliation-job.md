@@ -113,13 +113,13 @@ rollback. A forrás, merge, telepítés, aktiválás, banki és címzetti elfoga
 
 Koherencia és érintett fájlok: az új pénzügyi writer egyetlen útja bekerül az
 `impactshop-guard-config.json` és `impactshop-guard-hashes.json` meglévő leltárába;
-a két meglévő külső checksum követi. Guardkód, protected-modell és CI nem változik.
+a config-checksum saját beágyazott hivatkozása és a két meglévő külső checksum követi. Guardkód, protected-modell és CI nem változik.
 A teljes korábbi védett fájllista és minden más forráshash megmarad. A közös
 `docs/bastion-guard-status.md` és governance státusz a tényleges helyi bizonyítékot
 rögzíti. Kockázat az új út kihagyása vagy más fájl téves újrahash-elése; ezt a
 korábbi JSON-nal végzett célzott strukturális összehasonlítás ellenőrzi.
 
-Backup: `tmp/partner-finance-inventory-before/` az eredeti négy fájl saját helyi
+Backup: `tmp/partner-finance-release-inventory-before/` az eredeti négy fájl saját helyi
 másolata, valamint a rögzített Git-alap. Rollback: pénzügyi írás előtt a saját
 négy fájl eredeti bájtjai visszaállíthatók; éles fájlhoz az exact-file saját
 release-mentése szükséges. Pénzügyi írás után a fenti naplómegőrző út érvényes.

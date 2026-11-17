@@ -1,3 +1,9 @@
+## 2026-11-17 — Partner pénzügyi adapter célzott forrásvédelme
+
+Új `impactshop-partner-finance.php`, meglévő B aláírt collector handlerhez és rögzített tranzakciótulajdonoshoz kötve. A betöltés csak regisztrál, HTTP-writer nincs, DDL kizárólag explicit CLI-n és pénzügyi tranzakción kívül. A 39 pure és 55 valódi MariaDB-ellenőrzés része az unsigned művelet elutasítása, pontos számla/deviza/scope, változatlan eredeti NGO-kötés, közös cash-rész ütközése, immutable revízió és részleges séma zárt állapota. Két valódi folyamatból egy alkalmazott/egy előállapot-konfliktus; késői DB-triggerhiba az összes claim/jogosultság/vetület írását visszagörgette. Ezek szintetikus helyi forrásbizonyítékok, nem éles banki elfogadás.
+
+A változatlan affiliate-runtime/boot meglévő Bástya-checkje sikeres. Az új writer egyetlen útja/saját hash-e, a config saját hash-e és a két külső checksum követi a meglévő leltárt; nincs más fájl újrahash-elése. Nincs új guardmodell, release-rendszer vagy CI. A pontos fájlra korlátozott meglévő release backup/CAS/visszaolvasás/0444 utat használ; telepítés még nem történt. A pénzügyi adatok visszaállítása naplótörlés helyett engedélyezés OFF + kompatibilis előre javítás. Scope és ellenőrzés: `docs/partner-reconciliation-job.md`.
+
 ## 2026-11-13 — JYSK többeszközös profilkapcsolat
 
 Egy meglévő protected bridge saját grantkötéssel, explicit hozzáadó authsémával,
