@@ -2339,3 +2339,12 @@ Forrás/merge: WP285 + web2112/2123 kész. Telepített/aktivált: WP coupon runt
 ## 2026-11-17 – CJ kuponolvasó saját ág, OFF
 
 CJ újraaktiválás és saját API200 visszaellenőrzött; új bounded page seam45/45valós rekordot feldolgozott írás nélkül. Offline116+232assertion, két PHP lint és protected0drift/6negatív eset PASS. UNice joined, de0kupon és megváltozott clickOrigin; nincs automatikus review/allowlist/enable. Saját forráság; commit/PR/CI állapot a kiadási checkpointban. Új merge/telepítés/aktiválás nincs igazolva. Dognet-pilot éles állapotát nem módosítottuk. Részletek, kompatibilitás, cooldown, rollback és UI checklist: `docs/protected-change-records/2026-11-17-shopping-coupons.md` CJ fejezet. TradeTracker auth/session Q és Admitad tulajdonellenőrzés külön nyitott.
+
+
+## 2026-11-17 – CJ kuponolvasó merge-elt és telepített, továbbra is OFF
+
+PR #288 pontos `f182a173` headje hét kijelzett sikeres CI-ellenőrzés után merge-elt: `a9b1d3e8812dec2c676aa0f5b1876651dced879f`. Jóváhagyott rövid ablakban egy Air és egy Mini main-fetch ugyanezt igazolta; az ablak azonnal felszabadítva. A korábbi 116+232 assertion és protected0drift/6negatív ellenőrzés az azonos fájlfára újrahasznált, nem új futás.
+
+A meglévő exact-file guard mindkét PHP-fájlt stagingre, majd productionre telepítette, ellenőrzött előhash/mentés/CAS/rollback mellett. Production visszaolvasás: CJ seam callable; mindkét várt SHA256 és0444; parent0555; config/policy fingerprint változatlan. Dognet ON/complete/errornull, checkedAt2026-11-17T20:41:03Z, cache-only projection available/3kupon; CJ implemented/OFF/not_checked,0kupon. A célzott projection0upstream, névtelen REST401 staging és production. A production preflight lassú endpoint-figyelmeztetéseket adott (2–6.4s), nem figyelmeztetésmentes teljesítmény-PASS.
+
+Ez telepített/OFF CJ-forrás, nem CJ-aktiválás vagy teljes négyszolgáltatós elfogadás. UNice0kupon/új clickOrigin/hiányzó purchase-review továbbra nyitott; TradeTracker valódi SOAP auth/session és programjog, Admitad saját site tulajdonellenőrzés és jogosultság külön szükséges. Pontos kiadási azonosítók/rollback: `docs/protected-change-records/2026-11-17-shopping-coupons.md` utolsó fejezet. Webbuild, alias, pénzügyi adat és provider policy nem változott.
