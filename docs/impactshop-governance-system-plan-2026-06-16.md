@@ -1,3 +1,7 @@
+## 2026-11-17 — Partner pénzügyi writer célzott leltárbővítése
+
+Az additív `impactshop-partner-finance.php` saját útja és hash-e bekerül a meglévő protected inventoryba; a config saját hash-e és két külső checksum követi. Minden korábbi inventorybejegyzés/forráshash megmarad, guardkód/protected-modell/CI nem változik. Indok: az új, aláírt és eredeti készpénzhez kötött pénzügyi writer ugyanazt a meglévő forrásvédelmet kapja. Koherencia, kockázat, helyi ellenőrzés, rollback és kézi UI: `docs/partner-reconciliation-job.md`. Nincs telepítés vagy aktiválás.
+
 ## 2026-11-15 — két kiadási baseline-hash célzott követése
 
 Explicit engedéllyel csak a merge-elt91b8cc68 CI/config-checksum-blob két
