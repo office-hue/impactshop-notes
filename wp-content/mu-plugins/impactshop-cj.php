@@ -1044,6 +1044,115 @@ GQL;
         return $data;
     }
 
+    /** One private read; caller owns scan budget, policy and publication. No legacy sync side effects. */
+    public static function read_coupon_page(string $promotionType, int $page, float $timeout): array
+    {
+        $promotionType = strtolower($promotionType);
+        if (!in_array($promotionType, ['coupon', 'sale/discount', 'free shipping'], true)
+            || $page < 1 || $page > 20 || !is_finite($timeout) || $timeout <= 0 || $timeout > 8) {
+            throw new RuntimeException('coupon_schema');
+        }
+        try { $creds = self::get_credentials(true); }
+        catch (RuntimeException $e) { throw new RuntimeException('coupon_auth'); }
+        $auth = $creds['developer_key']; $website = $creds['website_id'];
+        if (!is_string($auth) || trim($auth) === '' || preg_match('/[\r\n]/', $auth)
+            || !is_string($website) || !preg_match('/^[1-9]\d{0,15}$/D', $website)) {
+            throw new RuntimeException('coupon_auth');
+        }
+        $url = 'https://link-search.api.cj.com/v2/link-search?' . http_build_query([
+            'website-id' => $website, 'advertiser-ids' => 'joined', 'promotion-type' => $promotionType,
+            'records-per-page' => 100, 'page-number' => $page,
+        ]);
+        $response = wp_remote_get($url, [
+            'headers' => ['Authorization' => $auth, 'Accept' => 'application/xml'],
+            'timeout' => $timeout, 'sslverify' => true, 'redirection' => 0, 'limit_response_size' => 1048577,
+        ]);
+        if (is_wp_error($response)) { throw new RuntimeException('coupon_transport'); }
+        $http = wp_remote_retrieve_response_code($response);
+        if ($http === 401 || $http === 403) { throw new RuntimeException('coupon_auth'); }
+        if ($http === 429) { throw new RuntimeException('coupon_rate_limit'); }
+        if ($http !== 200) { throw new RuntimeException('coupon_transport'); }
+        $body = wp_remote_retrieve_body($response);
+        if (!is_string($body) || strlen($body) > 1048576) { throw new RuntimeException('coupon_limits'); }
+        // Only the provider's UTF-8 XML contract. Reject UTF-16/NUL and DTD before parsing.
+        if (!preg_match('//u', $body) || strpos($body, "\0") !== false || preg_match('/<!DOCTYPE|<!ENTITY/i', $body)) {
+            throw new RuntimeException('coupon_schema');
+        }
+        if (preg_match('/<\?xml[^?]*encoding\s*=\s*[\"\']([^\"\']+)[\"\']/i', $body, $encoding)
+            && strcasecmp($encoding[1], 'UTF-8') !== 0) { throw new RuntimeException('coupon_schema'); }
+        $previous = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        try {
+            $doc = new DOMDocument();
+            if (!$doc->loadXML($body, LIBXML_NONET | LIBXML_NOCDATA) || libxml_get_errors() || $doc->doctype
+                || !$doc->documentElement || $doc->documentElement->tagName !== 'cj-api') {
+                throw new RuntimeException('coupon_schema');
+            }
+            foreach ($doc->getElementsByTagName('*') as $node) {
+                if ($node->namespaceURI !== null && $node->namespaceURI !== '') { throw new RuntimeException('coupon_schema'); }
+            }
+            $children = static function (DOMElement $node): array {
+                $result = [];
+                foreach ($node->childNodes as $child) {
+                    if ($child instanceof DOMElement) { $result[] = $child; }
+                    elseif ($child->nodeType === XML_TEXT_NODE && trim($child->textContent) !== '') { throw new RuntimeException('coupon_schema'); }
+                }
+                return $result;
+            };
+            $rootChildren = $children($doc->documentElement);
+            if (count($rootChildren) !== 1 || $rootChildren[0]->tagName !== 'links') { throw new RuntimeException('coupon_schema'); }
+            $links = $rootChildren[0]; $meta = [];
+            foreach (['page-number', 'total-matched', 'records-returned'] as $name) {
+                $raw = $links->getAttribute($name);
+                if (!preg_match('/^(?:0|[1-9]\d{0,3})$/D', $raw)) { throw new RuntimeException('coupon_schema'); }
+                $meta[$name] = (int) $raw;
+            }
+            $total = $meta['total-matched']; $returned = $meta['records-returned'];
+            $last = max(1, (int) ceil($total / 100));
+            if ($meta['page-number'] !== $page || $total > 2000 || $returned > 100 || $page > $last
+                || $returned !== min(100, max(0, $total - ($page - 1) * 100))) { throw new RuntimeException('coupon_schema'); }
+            $rows = []; $seen = [];
+            foreach ($children($links) as $link) {
+                if ($link->tagName !== 'link') { throw new RuntimeException('coupon_schema'); }
+                $raw = []; $fields = [];
+                foreach ($children($link) as $field) {
+                    $name = $field->tagName;
+                    if (isset($fields[$name])) { throw new RuntimeException('coupon_schema'); }
+                    $fields[$name] = true;
+                    // Creative markup is not needed by the existing normalized link map.
+                    if (in_array($name, ['link-code-html', 'link-code-javascript', 'ad-content'], true)) { continue; }
+                    if ($field->hasAttributes() || $field->getElementsByTagName('*')->length) { throw new RuntimeException('coupon_schema'); }
+                    $raw[$name] = $field->textContent;
+                }
+                foreach (['advertiser-id', 'link-id', 'link-type', 'relationship-status', 'promotion-type',
+                    'link-name', 'description', 'coupon-code', 'promotion-start-date', 'promotion-end-date'] as $field) {
+                    if (!array_key_exists($field, $raw)) { throw new RuntimeException('coupon_schema'); }
+                }
+                if (!preg_match('/^[1-9]\d{0,15}$/D', $raw['advertiser-id'])
+                    || !preg_match('/^[1-9]\d{0,15}$/D', $raw['link-id'])
+                    || $raw['relationship-status'] !== 'joined' || strtolower($raw['promotion-type']) !== $promotionType
+                    || trim($raw['link-type']) === '' || strtolower($raw['link-type']) === 'product link'
+                    || isset($seen[$raw['link-id']])) { throw new RuntimeException('coupon_schema'); }
+                $seen[$raw['link-id']] = true;
+                if (isset($raw['clickURL'])) {
+                    if (isset($raw['clickUrl']) && $raw['clickUrl'] !== $raw['clickURL']) { throw new RuntimeException('coupon_schema'); }
+                    $raw['clickUrl'] = $raw['clickURL'];
+                }
+                $normalized = self::normalize_link($raw);
+                if ($normalized === null) { throw new RuntimeException('coupon_schema'); }
+                $normalized['relationship_status'] = $raw['relationship-status'];
+                $normalized['link_type'] = $raw['link-type'];
+                $rows[] = $normalized;
+            }
+            if (count($rows) !== $returned) { throw new RuntimeException('coupon_schema'); }
+            return ['page' => $page, 'total' => $total, 'returned' => $returned, 'rows' => $rows,
+                'websiteId' => $website, 'responseBytes' => strlen($body)];
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+    }
+
     private static function request_link_search(array $params): array
     {
         $url = add_query_arg(array_filter($params, static fn($v) => $v !== null && $v !== ''), 'https://link-search.api.cj.com/v2/link-search');
