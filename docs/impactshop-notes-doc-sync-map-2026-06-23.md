@@ -518,3 +518,8 @@ Authority sequence3 44Dognet/1provider publikált, teljes CAS/artifact readback 
 ## 2026-11-17 – kuponfeed és webes pilot élő visszaolvasása
 
 [Kuponfeed éles kiadási állapot](protected-change-records/2026-11-17-shopping-coupons.md#2026-11-17--tényleges-telepítés-és-célzott-éles-elfogadás): WP285 telepített; web2112/2123 merge-elt és sharity/www éles, Legal változatlan. Kizárólag minősített Dognet/VisionExpress ON,3kupon a canonical resolve/MCP/UI felületen; természetes órás frissítés igazolt. Natív plugin1.2.0 telepített/engedélyezett; új chat automatikus betöltési elfogadása nyitott. CJ/Admitad/TradeTracker kuponadapter OFF/nincs implementálva. Secretary élő ACK `chk-02c8475c-ba4f-448f-aa39-94f2f3e27324`; registry acceptedSource/lastVerifiedAt és globális degraded állapot nem módosított. Ez célzott forrásbejegyzés, nem távoli DOCSYNC ACK.
+
+
+## 2026-11-17 – CJ fiók helyreállt, kuponolvasó saját forrás
+
+Friss CJ Dashboard + saját PID101302202 API200; új bounded olvasó írásmentes kvalifikáció45/45rekord, offline116+232assertion és protected0drift/6negatív eset PASS. A kéthálózatos feed-kód saját ág/OFF; commit/PR/CI a kiadási checkpointban, merge/telepítés/aktiválás nincs igazolva. UNice0kupon, új clickOrigin és hiányzó purchase-review miatt nincs éles engedélyhosszabbítás. Forrás/rollback/UI: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. Ez helyi source-bejegyzés; registry acceptedSource/lastVerifiedAt és távoli DOCSYNC acceptance nem változott.
