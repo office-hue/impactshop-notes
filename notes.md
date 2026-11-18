@@ -8755,3 +8755,13 @@ Arnold kezelői futtatása után a privát redaktált eredmény visszaolvasva:6/
 ## 2026-11-18 – TradeTracker oldalolvasó telepítve, feed és provider OFF
 
 PR #290 merge `a11279831939ee6147b7b2f331ecdce05c140af7`; az új standalone PHP existing exact-file guard staging/prod kiadása és hash/lint/betöltés/0444 mód visszaolvasva. TT feed implemented=false/OFF/not_checked, új SOAP-parser live próba és credentialperzisztálás nem történt. Dognet friss természetes checkedAt2026-11-18T05:41:05Z, complete/errornull, cache-only available/3ajánlat/0upstream; CJ/Admitad OFF. Config/policy és parent-mód előtte/utána változatlan; névtelen production feed401. Ez telepített, célzottan visszaellenőrzött OFF olvasó, nem aktivált TT vagy teljes négyszolgáltatós elfogadás. [Pontos kiadási azonosítók, rollback és kézi UI](docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-18--tényleges-default-off-kiadás-és-readback). Nincs webbuild/alias/pénzügyi változás. A közös mainablak már felszabadítva.
+
+
+## 2026-11-18 – TT feed következő saját csomagja előkészítve
+
+A már telepített OFF oldalolvasót használó kuponfeed bővítés célzott interfész- és tesztcsomagja előkészítve; új Hermes-adatátadás/spend kérdése függő, fizetős hívás nem történt. Friss WP-CLI discoveryban TT/Admitad nevű credential constant/env/optionnév nincs; böngésző loginon, titokmásolás/persist nincs. Dátum/null/end-inclusive és publication/adomány-kompatibilitás explicit kvalifikáció marad; unknown nem ajánlat/none. Részlet és minimális fájlscope: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md` utolsó fejezet. Saját featureág, nincs mainablak vagy éles változás.
+
+
+## 2026-11-18 – TT kuponfeed forrásjelölt, éles változás nélkül
+
+A meglévő feed új TT teljes-scan/normalizer/cache-projekciós ága saját featureágon elkészült.178új TT +232meglévő Dognet/CJ offline assertion és PHP-lint sikeres; egy független source-review P2 végső címkehibája javítva és visszaellenőrizve. A standalone kliens változatlan; csak a meglévő feed saját guardhash frissült, inventory0drift+6negatív eset sikeres. Egy engedélyezett szűrt Hermes-hívás becsült0,00189792USD, nem számla; jelentős helyi javítással részben felhasznált, nincs újrahívás. Új server-env/constant bemenet forrásban definiált, tényleges secretpersist/policy/enable/deploy nincs; TT továbbraOFF. Teljes scope/teszt/release/rollback/UI: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md` utolsó fejezet. Source commit/PR következik; mainablak nincs foglalva.

@@ -993,3 +993,8 @@ Meglévő két protected fájl: `impactshop-cj.php` kizárólag additív, bounde
 ## 2026-11-17 – TradeTracker read-only oldalolvasó, saját forrás/OFF
 
 Az új `impactshop-tradetracker.php` pontos saját védelmi bejegyzése az existing model/config/hash/checksum leltárban; guard-/CI-logika nem változik. Szerverhívó által adott credential, fix saját site és hivatalos SOAP1.2 host, session csak processzmemória, saját site/kampány kvalifikáció, teljes példány20call/60s/1MiB és8s/request. Betöltés0HTTP/hook/writer; nincs provider enable, pénzügyi/redirect/NGO ág. Offline valódi osztály323assertion és PHP-lint sikeres. A független Sol/high review egy P2 byte-budget hibáját javítottuk: következő HTTP előtt maradékellenőrzés és maradék+1 letöltési plafon; független readback és323assertion újrafuttatás sikeres, nincs fennmaradó konkrét P1/P2 ebben a javításban. A korábbi natív6HTTP200 külön kvalifikáció, nem új parser-live PASS. Részletes koherencia/hatás/QA/rollback/UI: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md`. Saját forrásjelölt, még nincs commit/merge/telepítés/aktiválás.
+
+
+## 2026-11-18 – TT kuponfeed additív forrásdelta
+
+Meglévő protected `impactshop-coupon-feed.php`, csak saját digest/checksum frissült.178TT+232Dognet/CJ offline és lint/inventory0drift+6negatív eset sikeres; független review P2 címkehiba javítva/readback. Új guard/inventory/release-rendszer nincs; pénzügyi/handoff ág változatlan. Még nem merge/telepítés/aktiválás. Koherencia, hatás, existing release, rollback és UI: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md`.
