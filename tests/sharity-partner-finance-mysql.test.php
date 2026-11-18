@@ -91,6 +91,16 @@ function apply_plan(array $plan): array
     return ImpactShop_Sharity_Bank_Payout::apply($plan,sodium_crypto_sign_detached(ImpactShop_Sharity_Bank_Payout::signing_domain($plan).ImpactShop_Sharity_Bank_Payout::canonical($plan),$secret));
 }
 function run_statement(array $statement,string $id): array { return apply_plan(request_plan($statement,$id)); }
+/** Authority/grant failures are rejected before B enters its result-returning transaction. */
+function rejected_plan(array $plan,string $reason,string $label,string $exception=DomainException::class): void
+{
+    try { apply_plan($plan); }
+    catch (DomainException|RuntimeException $error) {
+        check($error instanceof $exception && $error->getMessage()===$reason,$label.' exact pretransaction rejection');
+        return;
+    }
+    throw new RuntimeException('FAIL accepted: '.$label);
+}
 function fixture(string $id, string $partner='shop', string $currency='EUR'): array
 {
     global $policy;
@@ -134,12 +144,12 @@ try {
     $scopeFixture=fixture('scope-test');
     foreach (['provider'=>'partner','provider_scope_ref'=>'wrong','source_policy_sha256'=>str_repeat('f',64)] as $field=>$wrong) {
         $badPlan=request_plan($scopeFixture,'bad-scope-'.$field);$badPlan['data']['financial_scope'][$field]=$wrong;
-        check(apply_plan($badPlan)['status']==='conflict','signed wrong exact scope '.$field);
+        rejected_plan($badPlan,'bank_exact_operation_grant_required','signed wrong exact scope '.$field);
     }
     $badPlan=request_plan($scopeFixture,'wrong-grant');$badPlan['grant_id']='direct';
-    check(apply_plan($badPlan)['status']==='conflict','signed wrong operation grant');
+    rejected_plan($badPlan,'bank_exact_operation_grant_required','signed wrong operation grant');
     $badPlan=request_plan($scopeFixture,'collector-apply');$badPlan['key_id']='collector';$badPlan['actor']='collector-only';
-    check(apply_plan($badPlan)['status']==='conflict','collector key cannot apply even with exact grant');
+    rejected_plan($badPlan,'bank_command_authority_required','collector key cannot apply even with exact grant',RuntimeException::class);
     check(count_table('sharity_partner_statements')===0&&count_table('sharity_bp_entries')===0&&count_table('sharity_bp_claims')===0,'planning and denied grants no financial writes');
     $bad=fixture('swapped-bank');$bad['bank_account_id']=$bad['financial_scope']['provider_scope_ref'];
     rejected($bad,'swapped-bank','bank identity not provider scope');
