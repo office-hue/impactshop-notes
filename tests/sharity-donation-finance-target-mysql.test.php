@@ -1,6 +1,48 @@
 <?php
 /** Actual isolated MariaDB; no live account or money. */
 declare(strict_types=1);
+// Run the persisted-close currency contract independently when MariaDB is unavailable.
+if (in_array('--manual-close-pure', $argv ?? [], true)) {
+    require __DIR__ . '/../wp-content/mu-plugins/sharity-ngo-donations/finance-ledger.php';
+    $checks = 0;
+    $assert = static function (bool $ok, string $message) use (&$checks): void {
+        $checks++; if (!$ok) { throw new RuntimeException($message); }
+    };
+    $seal = static function (array $raw): array {
+        $digest = hash('sha256', sharity_donation_finance_json($raw));
+        $reference = ['ref'=>'synthetic_close', 'sha256'=>str_repeat('a',64)];
+        $raw['manual_close'] = ['version'=>1, 'source_target_digest'=>$digest,
+            'proposal_digest'=>hash('sha256', sharity_donation_finance_json([$raw['order_id'],$digest,$reference,$raw['provisional_split']])),
+            'evidence_reference'=>$reference, 'approved_at_utc'=>'2026-11-18T00:00:00Z', 'approved_split'=>$raw['provisional_split']];
+        return $raw;
+    };
+    foreach (['HUF','EUR'] as $currency) {
+        foreach (['0','29','1999','48029'] as $minor) {
+            $raw = ['order_id'=>'do_'.str_repeat('a',32), 'payment_currency'=>$currency,
+                'policy'=>['donation_mode'=>'direct','policy_version'=>'direct-net100-v1'],
+                'connected_totals'=>[$currency=>['observed_deficit_minor'=>'0']],
+                'provisional_split'=>['currency'=>$currency,'ngo_minor'=>$minor,'fund_minor'=>'0']];
+            $closed = $seal($raw);
+            $assert(sharity_donation_target_manual_close($closed)['approved_split'] === $raw['provisional_split'], 'exact '.$currency.' minor string');
+            $assert(sharity_donation_target_manual_close($closed) === $closed['manual_close'], 'unchanged historical receipt');
+        }
+    }
+    foreach (['USD','GBP','settlement','fund','deficit','amplifier','negative','fraction','digest'] as $case) {
+        $bad = $raw;
+        if (in_array($case,['USD','GBP'],true)) { $bad['payment_currency']=$case;$bad['provisional_split']['currency']=$case;$bad['connected_totals']=[$case=>['observed_deficit_minor'=>'0']]; }
+        if ($case==='settlement') { $bad['provisional_split']['currency']='HUF'; }
+        if ($case==='fund') { $bad['provisional_split']['fund_minor']='1'; }
+        if ($case==='deficit') { $bad['connected_totals']['EUR']['observed_deficit_minor']='1'; }
+        if ($case==='amplifier') { $bad['policy']=['donation_mode'=>'amplifier','policy_version'=>'amplifier-net80-v1']; }
+        if ($case==='negative') { $bad['provisional_split']['ngo_minor']='-1'; }
+        if ($case==='fraction') { $bad['provisional_split']['ngo_minor']='0.29'; }
+        $bad=$seal($bad);if ($case==='digest') { $bad['manual_close']['proposal_digest']=str_repeat('0',64); }
+        $rejected=false;try { sharity_donation_target_manual_close($bad); } catch (RuntimeException $e) { $rejected=true; }
+        $assert($rejected,'reject '.$case.' close');
+    }
+    echo 'Direct HUF/EUR close pure contract: '.$checks." checks\n";
+    exit(0);
+}
 $targetStart=$checks;
 function targetCount(?string $id=null):int {global $wpdb;return (int)$wpdb->db->query('SELECT COUNT(*) AS n FROM `'.sharity_donation_target_table().'`'.($id===null?'':$wpdb->prepare(' WHERE order_id=%s',$id)))->fetch_assoc()['n'];}
 function targetFixture(string $tag):array {global $now;[$o,$data,$saved]=movementFixture('target'.$tag,'txn_TARGET'.$tag);sharity_donation_finance_record_movements($o['order_id'],movementProposal($o),$now);return[$o,$data,$saved];}
@@ -367,7 +409,7 @@ try {
     echo 'V2 grouped financial read MariaDB: '.($checks-$v2Start)." checks\n";
 
 
-    // Direct HUF operator close: actual transactions, replay and worker/owner compatibility.
+    // Direct HUF/EUR operator close: actual transactions, replay and worker/owner compatibility.
     $closeStart = $checks;
     function directCloseTest(string $id,string $expect,array $ref,int $at,string $apply=''):array {
         global $financeHttp,$options;$gets=$financeHttp->gets;$posts=calls();$opts=$options;$before=sharity_donation_webhook_order($id);
@@ -395,6 +437,34 @@ try {
     check($otherRef['already_closed'] && !$otherRef['evidence_recorded'] && $otherRef['revision']===$closed['revision'] && targetCount($closeId)===$beforeClose+1,'different reference does not create or claim another approval');
     $workerClose=targetSave($closeOrder);
     check($workerClose['proposal_digest']===hash('sha256',sharity_donation_finance_json($closed['target'])) && $workerClose['revision']===$closed['revision'] && $workerClose['target']===$closed['target'],'real worker dry/apply preserves complete closed target');
+    // Native EUR cents use the same immutable close; USD/GBP remain unsupported.
+    $beforeCurrencySnapshot=$snapshot;$beforeCurrencyAccounts=$options['sharity_donation_accounts_v1'];
+    try {
+        foreach (['EUR','USD','GBP'] as $closeCurrency) {
+            $snapshot=$beforeCurrencySnapshot;$snapshot['currency']=$closeCurrency;$snapshot['amount_minor']='50029';
+            $options['sharity_donation_accounts_v1']=$beforeCurrencyAccounts;
+            $options['sharity_donation_accounts_v1']['test-ngo']['currencies'][$closeCurrency]=['min_minor'=>'1','max_minor'=>'1000000'];
+            [$currencyOrder,$currencyData]=targetFixture('CLOSE'.$closeCurrency);$currencyId=$currencyOrder['order_id'];
+            $currencyRaw=targetSave($currencyOrder);$currencyRef=backingRef('close-'.$closeCurrency);$currencyBefore=targetCount($currencyId);
+            if ($closeCurrency!=='EUR') {
+                fails(fn()=>directCloseTest($currencyId,$currencyRaw['proposal_digest'],$currencyRef,$now),'DONATION_CLOSE_STALE');
+                check(targetCount($currencyId)===$currencyBefore,$closeCurrency.' unsupported close never writes');continue;
+            }
+            $currencyDry=directCloseTest($currencyId,$currencyRaw['proposal_digest'],$currencyRef,$now);
+            check(!$currencyDry['persisted'] && targetCount($currencyId)===$currencyBefore,'EUR preview never writes');
+            fails(fn()=>directCloseTest($currencyId,$currencyRaw['proposal_digest'],$currencyRef,$now,str_repeat('0',64)),'DONATION_CLOSE_STALE');
+            $currencyClosed=directCloseTest($currencyId,$currencyRaw['proposal_digest'],$currencyRef,$now,$currencyDry['proposal_digest']);
+            $currencyView=sharity_donation_owned_status($currencyOrder['subject_ref'],'order_id',$currencyId,$now)['financial'];
+            check(sharity_donation_finance_json($currencyView['approved_split'])===sharity_donation_finance_json(['currency'=>'EUR','ngo_minor'=>'48029','fund_minor'=>'0','approved_at_utc'=>gmdate('Y-m-d\TH:i:s\Z',$now)]) && $currencyView['bank_receipt']===null,'EUR exact cents approved without bank claim');
+            $currencyReplay=directCloseTest($currencyId,$currencyRaw['proposal_digest'],$currencyRef,$now+60,$currencyDry['proposal_digest']);
+            check($currencyReplay['already_closed'] && $currencyReplay['revision']===$currencyClosed['revision'] && targetCount($currencyId)===$currencyBefore+1,'EUR replay adds no revision');
+            check(targetSave($currencyOrder)['target']===$currencyClosed['target'],'EUR worker preserves closed target');
+            $currencyData['original']['initial_charge_balance']['status']='pending';reconcileFixture($currencyOrder,$currencyData);
+            $currencyReopened=sharity_donation_owned_status($currencyOrder['subject_ref'],'order_id',$currencyId,$now)['financial'];
+            check($currencyReopened['reconciliation_status']==='reopened' && $currencyReopened['approved_split']===null,'EUR changed evidence hides old approval');
+            check(!directCloseTest($currencyId,$currencyRaw['proposal_digest'],$currencyRef,$now+60,$currencyDry['proposal_digest'])['current_applicable'],'EUR historical replay is not current net');
+        }
+    } finally { $snapshot=$beforeCurrencySnapshot;$options['sharity_donation_accounts_v1']=$beforeCurrencyAccounts; }
     $accountOptions=$options;unset($options['sharity_donation_accounts_v1']);
     check(sharity_donation_owned_status($closeOrder['subject_ref'],'order_id',$closeId,$now)['financial']['approved_split']===$closeView['approved_split'],'new checkout account availability is independent of historical net');$options=$accountOptions;
     $changed=$closeData;$changed['original']['initial_charge_balance']['status']='pending';$changedReceipt=reconcileFixture($closeOrder,$changed);

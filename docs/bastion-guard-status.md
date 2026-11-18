@@ -998,3 +998,6 @@ Az új `impactshop-tradetracker.php` pontos saját védelmi bejegyzése az exist
 ## 2026-11-18 – TT kuponfeed additív forrásdelta
 
 Meglévő protected `impactshop-coupon-feed.php`, csak saját digest/checksum frissült.178TT+232Dognet/CJ offline és lint/inventory0drift+6negatív eset sikeres; független review P2 címkehiba javítva/readback. Új guard/inventory/release-rendszer nincs; pénzügyi/handoff ág változatlan. Még nem merge/telepítés/aktiválás. Koherencia, hatás, existing release, rollback és UI: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md`.
+## 2026-11-18 — Sharity partner V2 és Direct EUR, saját forrásjelölt
+
+Approver/exact-grant könyvelés; változatlan eredeti policy/claim/NGO-kötésű korrekció; bankfüggetlen provider-tranzakció tulajdon. A Direct kézi zárás azonos devizájú HUF/EUR pontos minor-stringekkel bővült. Két saját termékhash célzott frissítése; nincs széles rebaseline. Partner55, Direct25, CLI461, HTTP356 és affiliate Bástya tamper PASS. Valódi SQL, teljes WordPress-bootstrap és cél-PHP NOT RUN; nincs pénzügyi merge/deploy/aktiválás. A teljes pénzmozgási terv még nincs befejezve: cash-backed közös alap, paid-amplifier, TimeWall és teljes banki/Card-lefedettség nyitott forrásmunka is. Részletes scope/kockázat/rollback/UI: `docs/protected-change-records/2026-11-18-sharity-partner-finance-v2.md`.
