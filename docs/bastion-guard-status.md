@@ -983,3 +983,7 @@ Authority sequence3 44Dognet/1provider publikált, teljes CAS/artifact readback 
 ### Coupon REST router fix – 2026-11-17
 
 Csak a saját couponfeed WP core `rest_route` kompatibilitása és célzott negatív tesztje változik;153 assertion PASS. Az egyetlen saját termékfájl hash-e célzottan frissítve; nincs rebaseline vagy guardkód-változás.
+
+## 2026-11-18 — Sharity partner V2 és Direct EUR, saját forrásjelölt
+
+Approver/exact-grant könyvelés; változatlan eredeti policy/claim/NGO-kötésű korrekció; bankfüggetlen provider-tranzakció tulajdon. A Direct kézi zárás azonos devizájú HUF/EUR pontos minor-stringekkel bővült. Két saját termékhash célzott frissítése; nincs széles rebaseline. Partner55, Direct25, CLI461, HTTP356 és affiliate Bástya tamper PASS. Valódi SQL, teljes WordPress-bootstrap és cél-PHP NOT RUN; nincs pénzügyi merge/deploy/aktiválás. A teljes pénzmozgási terv még nincs befejezve: cash-backed közös alap, paid-amplifier, TimeWall és teljes banki/Card-lefedettség nyitott forrásmunka is. Részletes scope/kockázat/rollback/UI: `docs/protected-change-records/2026-11-18-sharity-partner-finance-v2.md`.
