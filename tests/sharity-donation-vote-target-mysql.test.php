@@ -32,8 +32,12 @@ declare(strict_types=1);
         ['id'=>$id,'amount_minor'=>$amount,'currency'=>$currency,'created'=>1800000010,'status'=>$status,'balance'=>null,'failure_balance'=>null];
     $observe = static function (array $o, array $data, array $refunds=[], ?string $aggregate=null): array {
         $data['refunds']=$refunds;
-        $sum=0;foreach($refunds as $r){if(($r['status']??null)==='succeeded'){$sum+=(int)$r['amount_minor'];}}
-        $data['original']['charge_refund_state']['amount_refunded_minor']=$aggregate??(string)$sum;
+        // Incomplete legacy nominal fixtures supply their independent charge aggregate explicitly.
+        if ($aggregate===null) {
+            $sum=0;foreach($refunds as $r){if(($r['status']??null)==='succeeded'){$sum+=(int)$r['amount_minor'];}}
+            $aggregate=(string)$sum;
+        }
+        $data['original']['charge_refund_state']['amount_refunded_minor']=$aggregate;
         return reconcileFixture($o,$data);
     };
     $read = static fn(array $o):array => sharity_donation_vote_target($o['order_id'],$GLOBALS['now']);
