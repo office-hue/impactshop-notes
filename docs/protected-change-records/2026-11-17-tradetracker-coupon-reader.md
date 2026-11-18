@@ -80,3 +80,30 @@ A meglévő `impactshop-coupon-feed.php` kapott TT mapping/date/normalizer/fulls
 Protected files touched: meglévő `impactshop-coupon-feed.php`, csak saját digest a meglévő manifest/checksum alatt; nincs új inventory/guard/CI/release. Koherencia: Dognet/CJ forrásbeli főút megőrzött, TT ág explicit. Érintett funkciók: provider státusz, explicit refresh, meglévő snapshot és service-auth cache-only feed; pénzügyi/NGO/handoff/redirect/legacy sync nem változik. Commit/push/PR/CI után új rövid mainablak csak a pontos merge/fetchhez, azonnali felszabadítással. Egy meglévő exact-file staging→production feedkiadás OFF; friss előhash/backup/CAS/readback. Forráskész/merge/telepítés/aktiválás külön. E csomaghoz új parser-live/valós snapshot/publikáció/policy/kupon+adomány/kéziUI- vagy vásárlási PASS nincs.
 
 Smoke scope: `coupon:offline-contract,tradetracker:bounded-page,deploy:checksum-verify`. Kiadás után pontos hash/lint/betöltés, TT implemented=true de OFF/not_checked, config/policy és Dognet friss cache/3ajánlat/0upstream megőrzése, anonim401. Rollback a feed saját változatlan utóhashéről a korábbi exact-file előállapotra; új releaseID csak valódi telepítés után. TT márOFF, most nem kell provider-disable/config-írás/DB-restore; a standalone olvasó külön telepítve maradhat. Kézi UI: Vásárlási Segéd kupon/másolás/inputváltás/partnermegerősítés, TT-hez nem jelenhet meg igazolatlan ajánlat vagy adomány-CTA; ellenőrzés még függő.
+
+
+## 2026-11-18 – TT kuponfeed telepített, továbbra OFF
+
+A PR #293 végleges `b1b890ac40bc1ce657649de4b9a19a5d307593b4` headjén mind a hat GitHub-check sikeres; merge `5b52787703a6555f00db3168ff77addb176d284a`, GitHub MERGED readback 2026-11-18T10:28:05Z. A külön jóváhagyott rövid ablakban kizárólag merge és egyszeri Air/Mini main-fetch/readback történt; mindkettő ugyanazt a commitot adta, az ablak azonnal felszabadult. A korábbi integráció megőrizte a main `7ec5f6a5` pénzügyi forrásait és digestjeit; ez nem pénzügyi funkcióteszt. A változatlan feed/teszt mellett a korábbi178TT+232Dognet/CJ ellenőrzést újra használtuk; integráció után a teljes protected inventory0drift+6negatív checksum-eset és a közvetlen saját diff-audit sikeres. A push-hook a már mainen lévő idegen történetet is sajátként kezelte; a közvetlen termékaudit után natív push történt, guard-/CI-módosítás nélkül.
+
+A tiszta Mini release checkout detached a merge-elt commiton. A meglévő exact-file guard kizárólag `wp-content/mu-plugins/impactshop-coupon-feed.php` fájlt telepített staging, majd production célra, saját backup/CAS/lint/hash/readback mellett. Mindkét friss előhash `7ecbcc8f391168a08e72a7857a921d9489fb4f3260b1d4adaecf9be831e029c2`; a standalone TT-kliens változatlan `db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2`.
+
+| Cél | Tényleges releaseID | Feed SHA256 | Fájl / parent mód |
+| --- | --- | --- | --- |
+| staging | `20261118T102940Z-5b52787703a6-0a954a5b` | `610658d55d0f4bde0874cdf0fb6debee2b764cc8b4b5a02d3628b311051cb77d` | `0444` / `0755` |
+| production | `20261118T103030Z-5b52787703a6-aafba5a3` | `610658d55d0f4bde0874cdf0fb6debee2b764cc8b4b5a02d3628b311051cb77d` | `0444` / `0555` |
+
+Mindkét célon TT implemented=true, enabled=false, refreshStatus=not_checked; a kliens és két metódusa betöltött. Staging minden providerOFF, nincs órás ütemező. Production Dognet ON/complete/errornull, checkedAt `2026-11-18T09:41:04Z`, validUntil `2026-11-18T11:41:04Z`, órás hook ütemezett; VisionExpress cache-only projekció available/complete/3ajánlat és0upstream. CJ OFF/not_checked, Admitad OFF/nincs feedadapter. A production config fingerprint `65d2f4907742401d76645a4b046b3e8bda83b8b0c41c621a5f5dad96d19ee2af` és policy `73de191668b3520121da2b25940571432ce0e4a5193af38aa4ff17b3e87ed128` előtte/utána azonos; staging fingerprintjei is változatlanok. Névtelen RESTGET staging és production401. WP-CLI meglévő stderr staging11/prod10sor, a redaktált readback a saját ignored `tmp/tt-feed-release-20261118/` alatt; titok vagy valódi kuponkód nincs a rekordban. Staging preflight1lassúsági figyelmeztetés (totals2090ms>2000ms); production preflight5/5OK. Az exact út az általános maintenance/smoke futást kihagyta; a fenti célzott readback külön történt. Ez nem teljesítmény-, teljesrendszer-, új SOAP-parser-live-, kéziUI- vagy vásárlási PASS.
+
+### Feed rollback és fennmaradó aktiválási feltételek
+
+Csak a saját változatlan feed-utóhashről az előző fájlra, a meglévő release mentéséből:
+
+```sh
+bin/impactshop-guard-rollback.sh --production --apply --release-id=20261118T103030Z-5b52787703a6-aafba5a3 --expected-deployed-sha=610658d55d0f4bde0874cdf0fb6debee2b764cc8b4b5a02d3628b311051cb77d
+bin/impactshop-guard-rollback.sh --staging --apply --release-id=20261118T102940Z-5b52787703a6-0a954a5b --expected-deployed-sha=610658d55d0f4bde0874cdf0fb6debee2b764cc8b4b5a02d3628b311051cb77d
+```
+
+Rollback nem történt; TT márOFF, Dognet-disable/config-írás/DB-restore nem kell. Mentések megmaradtak. Nincs credentialpersist, TT policy/mapping-írás, enable, webbuild, alias-, DNS-, Legal- vagy pénzügyi adatváltozás. Az új környezeti/constant bemenetek forrásban definiáltak, nem már meglévő secretként igazoltak. A teljes TT aktiváláshoz új parserrel valódi bounded proof, minősített dátum/null/end-inclusive/resourcejelentés, saját program publication/adomány-kompatibilitás és jóváhagyott tartós szerveroldali hitelesítő-út kell; a korábbi natív6olvasás ezt nem helyettesíti. CJ kupon/handoff és Admitad programjóváhagyás/feedadapter külön nyitott. Kézi UI checklist változatlan: Vásárlási Segéd kupon/másolás/inputváltás/partnermegerősítés; TT-hez igazolatlan ajánlat/adomány-CTA nem jelenhet meg. Ez a kézi kör még függő.
+
+A kiadási dokumentációs delta protected files touched: csak `docs/bastion-guard-status.md`, a jelen rekord, DOCSYNC-map és notes/status; runtime és manifest változatlan. Smoke scope: `docs:release-readback`; a fent rögzített telepítési readback tényeinek egyezését és a saját diff/titokellenőrzést vizsgáljuk, a változatlan teszteket nem ismételjük. Dokumentációs rollback: kizárólag saját új bejegyzések normál revertje, éles állapotmódosítás nélkül.

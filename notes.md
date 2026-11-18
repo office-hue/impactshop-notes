@@ -8768,3 +8768,8 @@ A meglévő feed új TT teljes-scan/normalizer/cache-projekciós ága saját fea
 ## 2026-11-18 — Sharity partner V2 és Direct EUR, saját forrásjelölt
 
 Approver/exact-grant könyvelés; változatlan eredeti policy/claim/NGO-kötésű korrekció; bankfüggetlen provider-tranzakció tulajdon. A Direct kézi zárás azonos devizájú HUF/EUR pontos minor-stringekkel bővült. Két saját termékhash célzott frissítése; nincs széles rebaseline. Partner55, Direct25, CLI461, HTTP356 és affiliate Bástya tamper PASS. Valódi SQL, teljes WordPress-bootstrap és cél-PHP NOT RUN; nincs pénzügyi merge/deploy/aktiválás. A teljes pénzmozgási terv még nincs befejezve: cash-backed közös alap, paid-amplifier, TimeWall és teljes banki/Card-lefedettség nyitott forrásmunka is. Részletes scope/kockázat/rollback/UI: `docs/protected-change-records/2026-11-18-sharity-partner-finance-v2.md`.
+
+
+## 2026-11-18 – TT kuponfeed default-OFF telepítés visszaolvasva
+
+PR #293 merge `5b52787703a6555f00db3168ff77addb176d284a`; existing exact-file guard staging/prod feedkiadás, SHA/lint/betöltés/0444 és parent-visszazárás ellenőrzött. TT implemented=true, deOFF/not_checked; Dognet ON/complete/3cache-ajánlat/0upstream, config/policy változatlan, névtelen feed mindkét célon401. Staging1lassú preflight-warning, prod5/5OK; nincs új parser-live/TT aktiválási/kéziUI/teljesrendszer-PASS. [Kiadások, pontos rollback és nyitott feltételek](docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-18--tt-kuponfeed-telepített-továbbra-off). A mergeablak felszabadult; credentialpersist/policy/enable/webbuild/pénzügyi változás nincs.

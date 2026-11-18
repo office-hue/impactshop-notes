@@ -548,3 +548,10 @@ PR #290 merge `a11279831939ee6147b7b2f331ecdce05c140af7`; új PHP staging/prod t
 ## 2026-11-18 – TT kuponfeed saját forrásjelölt
 
 Meglévő feed additív TT adapter,178új+232meglévő offline ellenőrzés; független P2 címkehiba javítva/visszaellenőrizve. [Forrásdelta, teszt és kiadási határ](protected-change-records/2026-11-17-tradetracker-coupon-reader.md#tt-feed-forrásjelölt--célzott-ellenőrzés-és-kiadási-határ). Nincs új merge/telepítés/secretpersist/policy/enable; központi acceptedSource/lastVerifiedAt vagy remote DOCSYNC acceptance nincs előreléptetve. Ez forrás-WIP, nem aktivált provider.
+
+
+## 2026-11-18 – TT kuponfeed default-OFF telepítés visszaolvasva
+
+PR #293 merge `5b52787703a6555f00db3168ff77addb176d284a`; existing exact-file guard staging/prod feedkiadás, SHA/lint/betöltés/0444 és parent-visszazárás ellenőrzött. TT implemented=true, deOFF/not_checked; Dognet ON/complete/3cache-ajánlat/0upstream, config/policy változatlan, névtelen feed mindkét célon401. Staging1lassú preflight-warning, prod5/5OK; nincs új parser-live/TT aktiválási/kéziUI/teljesrendszer-PASS. [Kiadások, pontos rollback és nyitott feltételek](protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-18--tt-kuponfeed-telepített-továbbra-off). A mergeablak felszabadult; credentialpersist/policy/enable/webbuild/pénzügyi változás nincs.
+
+Ez célzott DOCSYNC-forrásrekord; a központi registry acceptedSource/lastVerifiedAt és a távoli acceptance nincs előreléptetve. A korábbi source-WIP megjegyzések történeti állapotot jelölnek.
