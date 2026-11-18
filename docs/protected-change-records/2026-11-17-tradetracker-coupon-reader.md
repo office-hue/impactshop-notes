@@ -31,3 +31,28 @@ A második, egyetlen legfeljebb1USD Hermes-csomag kifejezetten jóváhagyott: cs
 Új runtime és közvetlen teszt elkészült; PHP-lint,323offline assertion és teljes existing protected inventory0drift+6negatív checksum-eset sikeres. A meglévő detached exact-release preflight izolált tesztje sikeres; ez nem élő staging/prod preflight. Független Sol/high review egy P2-t talált: a következő kérés letöltési korlátja nem a teljes keret maradéka volt. Javítás: HTTP előtt maradékellenőrzés, maradék+1 sentinel korlát, teljes/majdnem teljes keret regressziós tesztek. Független javítás-readback és saját323assertion újrafuttatás sikeres; ebben a javításban nincs további konkrét P1/P2. Az új olvasóval élő parserpróba nem futott. Ez forrásjelölt, még nincs commit/merge/telepítés/aktiválás.
 
 Protected files touched: `wp-content/mu-plugins/impactshop-tradetracker.php`, `docs/impactshop-protected-files.json`, `docs/impactshop-guard-config.json` és checksum/hash társaik. Smoke scope: `coupon:offline-contract,tradetracker:bounded-page,deploy:checksum-verify,deploy:guard-preflight`; ezek helyi ellenőrzések, a telepítési smoke külön, csak valódi kiadáskor jelenthető. Rollback a fenti exact-file terv szerint.
+
+
+## 2026-11-18 – tényleges default-OFF kiadás és readback
+
+A PR #290 pontos `e690f087e8dbe07b71c03138d4d48feaf91c7e58` headje mind a hat GitHub-ellenőrzésen sikeres; merge `a11279831939ee6147b7b2f331ecdce05c140af7`. Arnold külön legfeljebb2perces ablakában merge, egy Air/Mini main-fetch és azonos commit-readback történt, utána az ablak azonnal felszabadult. A deploy már azon kívül futott. Saját Mini exact-release checkout tiszta, detached a merge-elt commiton; nincs idegen WIP-módosítás.
+
+A meglévő `bin/impactshop-guard-deploy.sh` kizárólag az új `wp-content/mu-plugins/impactshop-tradetracker.php` fájlt telepítette, staging után productionre. Mindkét friss előállapot absent; a release saját mentés/CAS/readback mellett készült, nincs kézi rsync/remote writer vagy új kiadási rendszer.
+
+| Cél | Tényleges releaseID | SHA256 | Fájl / parent mód |
+| --- | --- | --- | --- |
+| staging | `20261118T060709Z-a11279831939-8c22e8e6` | `db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2` | `0444` / `0755` |
+| production | `20261118T060821Z-a11279831939-652b4b61` | `db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2` | `0444` / `0555` |
+
+Mindkét oldalon a PHP-lint sikeres, az új osztály és két metódusa betöltött. A forrás323offline assertion és a független review eredményét változatlan kód mellett újra használjuk; nincs új valódi SOAP-parserpróba. A kuponfeed `tradetracker.implemented=false`, enabled=false, refreshStatus=not_checked állapota helyesen változatlan: ez standalone olvasó, nem kész feedadapter. Nincs hitelesítő-elhelyezés vagy aktiválás. Staging minden providerOFF, nincs órás ütemező. Production Dognet ON/complete/errornull, checkedAt `2026-11-18T05:41:05Z`, validUntil `2026-11-18T07:41:05Z`, órás hook ütemezett; cache-only VisionExpress projekció available/complete/3ajánlat,0upstream. CJ OFF/not_checked; Admitad és TT OFF/not_checked. Konfiguráció fingerprint `65d2f4907742401d76645a4b046b3e8bda83b8b0c41c621a5f5dad96d19ee2af`, policy fingerprint `73de191668b3520121da2b25940571432ce0e4a5193af38aa4ff17b3e87ed128`: előtte/utána azonos. A névtelen éles RESTGET401. A WP-CLI meglévő stderr-zaja staging11/prod10sor; a production stdout utólagos5soros kimenete miatt a kiadási JSON objektumot külön dekódoltuk, nem futtattuk újra az olvasást emiatt. A célzott readback nem teljesrendszer-/teljesítmény-/kéziUI- vagy vásárlási PASS.
+
+### Tényleges rollback
+
+Csak a saját változatlan utóhashről, az eredeti absent állapotra, az existing guard útján:
+
+```sh
+bin/impactshop-guard-rollback.sh --production --apply --release-id=20261118T060821Z-a11279831939-652b4b61 --expected-deployed-sha=db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2
+bin/impactshop-guard-rollback.sh --staging --apply --release-id=20261118T060709Z-a11279831939-8c22e8e6 --expected-deployed-sha=db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2
+```
+
+TT márOFF; sem Dognet-disable, sem config/policy-írás vagy DB-restore nem kell ehhez a standalone fájlhoz. Tényleges rollback nem történt. Backupot most nem töröltünk; kézi UI-review még függő a fenti checklist szerint. Webbuild/alias/DNS/Legal/pénzügyi adat változatlan. A teljes négyhálózatos aktiválás továbbra nyitott: új TT-parser élő proof, teljes scan/feed/érvényesség/publication+adomány kompatibilitás és megfelelő titokkezelési felhatalmazás; CJ/Admitad saját korábbi nyitott feltételei külön megmaradnak.

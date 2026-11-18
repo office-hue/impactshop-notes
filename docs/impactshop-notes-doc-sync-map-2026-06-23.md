@@ -538,3 +538,8 @@ A saját adspace2888572 friss böngészős readbackje Under review az Arnold ál
 ## 2026-11-17 – TradeTracker auth/session és két kuponresource kvalifikált
 
 [TT oldalolvasó rekord](protected-change-records/2026-11-17-tradetracker-coupon-reader.md): kezelői natív próba saját accepted site és pontos kampányok mellett6/6HTTP200, voucher/offer minta és explicit trafficflag/időzóna igazolt. Új additív runtime és közvetlen offline teszt forrásjelölt323assertion/PHP-lint/inventory sikeres; egy független review P2-je javítva és visszaellenőrizve. Nincs TT-source commit/merge/deploy/enable vagy új parser-live/publikus/adomány elfogadás. A központi registry acceptedSource/lastVerifiedAt és remote DOCSYNC acceptance nincs módosítva.
+
+
+## 2026-11-18 – TradeTracker standalone olvasó default-OFF kiadása
+
+PR #290 merge `a11279831939ee6147b7b2f331ecdce05c140af7`; új PHP staging/prod telepítés, pontos SHA/lint/betöltés/0444 és változatlan config/policy visszaolvasva. TT feed implemented=false/OFF/not_checked; Dognet friss természetes teljes snapshotból3ajánlat, projection0upstream; CJ/Admitad OFF. [Kiadási rekord és rollback](protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-18--tényleges-default-off-kiadás-és-readback). Ez célzott DOCSYNC-forrásfrissítés; a központi registry acceptedSource/lastVerifiedAt vagy remote acceptance nincs mesterségesen előreléptetve. Új parser-live/aktiválási/kéziUI/teljesrendszer-PASS nincs.

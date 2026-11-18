@@ -8750,3 +8750,8 @@ Arnold kezelői futtatása után a privát redaktált eredmény visszaolvasva:6/
 ### TradeTracker saját forrásjelölt és független javítás-readback
 
 Új explicit PHP oldalolvasó, provider OFF;323offline assertion és lint sikeres, teljes protected inventory0drift+6negatív eset sikeres. Független review egy P2 byte-budget hibája javítva: HTTP előtt maradékellenőrzés, maradék+1 sentinel letöltési plafon; reviewer323assertion újrafuttatás és readback sikeres, további konkrét P1/P2 ebben a javításban nincs. Új parser élő futtatása, teljes scan, feedbekötés, credentialperzisztálás, policy és aktiválás nem történt. Forrásjelölt, commit/PR következik; közös mainablak nincs foglalva. A DOCSYNC központi acceptedSource/lastVerifiedAt nincs módosítva.
+
+
+## 2026-11-18 – TradeTracker oldalolvasó telepítve, feed és provider OFF
+
+PR #290 merge `a11279831939ee6147b7b2f331ecdce05c140af7`; az új standalone PHP existing exact-file guard staging/prod kiadása és hash/lint/betöltés/0444 mód visszaolvasva. TT feed implemented=false/OFF/not_checked, új SOAP-parser live próba és credentialperzisztálás nem történt. Dognet friss természetes checkedAt2026-11-18T05:41:05Z, complete/errornull, cache-only available/3ajánlat/0upstream; CJ/Admitad OFF. Config/policy és parent-mód előtte/utána változatlan; névtelen production feed401. Ez telepített, célzottan visszaellenőrzött OFF olvasó, nem aktivált TT vagy teljes négyszolgáltatós elfogadás. [Pontos kiadási azonosítók, rollback és kézi UI](docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-18--tényleges-default-off-kiadás-és-readback). Nincs webbuild/alias/pénzügyi változás. A közös mainablak már felszabadítva.
