@@ -1052,3 +1052,8 @@ A jóváhagyott shopping-binding csomag négy meglévő termékfájlja és egy �
 Az additív defaultOFF kuponmodul bekerült a meglévő protected file inventoryba; új guard vagy jogosultsági rendszer nincs. Koherencia/teszt/rollback/UI: `docs/protected-change-records/2026-11-17-shopping-coupons.md`. Forrásellenőrzött, merge/deploy/aktiválás függő.
 
 2026-11-17 coupon delta: a saját REST feed a WP core pontos `rest_route` paraméterét elfogadja, a duplikált/ismeretlen queryt továbbra is elutasítja. A meglévő manifestben kizárólag a couponfeed hash-e változik; auth, pénzügyi és külső jogosultsági határ változatlan.
+
+
+### 2026-11-17 – TradeTracker oldalolvasó pontos leltárbővítése
+
+Egy új, alapból nem hívott `wp-content/mu-plugins/impactshop-tradetracker.php` runtime az existing protected model/config és digestek alatt; nincs új guard-/CI-/release-eljárás vagy döntési kapu. Hatás, célzott bizonyíték és existing exact-file rollback/UI: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md`. Forrásállapot saját ág; telepítés és aktiválás külön, még nincs.

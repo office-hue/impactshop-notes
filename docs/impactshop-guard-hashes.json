@@ -191,12 +191,13 @@
     "scripts/jysk-ngo-catalog-reservation-schema.sql",
     "wp-content/mu-plugins/impactshop-admitad.php",
     "wp-content/mu-plugins/impactshop-coupon-feed.php",
-    "wp-content/mu-plugins/impactshop-partner-finance.php"
+    "wp-content/mu-plugins/impactshop-partner-finance.php",
+    "wp-content/mu-plugins/impactshop-tradetracker.php"
   ],
   "hashes": {
     "wp-content/mu-plugins/impactshop-sharity-legacy-votes-retirement.php": "067c00def020dc5d30da44896c8eec221f4ef79c706897151293196f9c651433",
     "wp-content/mu-plugins/impactshop-jysk-game.php": "554d3dbbf1fb428e346822039bf7cfcddbb30df87a2e2a2a24f177a77366e608",
-    "docs/impactshop-guard-config.json": "4c0065eb233cedefe649665b39ae3eaf17e5aee3b4f86b8eede83766a3fae3ec",
+    "docs/impactshop-guard-config.json": "e99f61adf267345c83f2675f861d4687e3f001fdf3f4a887f6f08a884c291af4",
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "bbbd10da51b619a134b9d3147ab2ef9f081ec9b52697c349775c4aefe1584558",
@@ -270,7 +271,7 @@
     "bin/impactshop-guard-deploy.sh": "ec7972f696e1a411550c92bd29b638c1e77d51b1b4dc93f586c23e2a373be194",
     "bin/impactshop-guard-preflight.sh": "360abe38eab321ab9ad72759397c3ec470d8fc39a630fe5e60602485a39bc17e",
     "docs/bastion-protection-extension-plan.md": "c138cf6f1a18fcb8f36c666fd554bc3a1cee9cb3de9c340eecadf30bc2309361",
-    "docs/impactshop-guard-config.sha256": "1353176a2581f96253769016e95b1056e353214f0c1ba91cce479ae72edd0988",
+    "docs/impactshop-guard-config.sha256": "326e2b20544d38d39ae130f376955bbd94b865b5a56b7480dc5e0f2b99182264",
     "wp-content/mu-plugins/impact-arukereso-guard.php": "6707993fde9f3a1c465289ae010c7447edf22010f07ccf802151ee76a7a4df9c",
     "wp-content/mu-plugins/impact-combat-pack.php": "50a1a6b9e22b3fd17035406d8ede87553d206c29252f8dccb63fd5ac1b4a7868",
     "wp-content/mu-plugins/impactshop-ngo-guides/assets/access-control-matrix.md": "08a4d4a5fafc20dd536a6e3925b6bc56a85e941ec6e2070b2391bb9c9a427c0f",
@@ -380,9 +381,10 @@
     "scripts/jysk-ngo-catalog-reservation-schema.sql": "ba875a099bb590cf68c290e0ab1ef493368bddd47cc49220acd0ae6178eeb75d",
     "wp-content/mu-plugins/sharity-reward-observation.php": "cbdf032529d955a144fc2032158c6dec0250f1ec04efd3459f2165a013a34b3f",
     "wp-content/mu-plugins/impactshop-admitad.php": "63f7da1cf6d2d4c5143b23e7138dc191cbafda0cb34e5707983dbd97a96be5c6",
-    "docs/impactshop-protected-files.json": "d71bed10645a621adcf32bd88c21178a0ff1becbe7b5d7056d7329afc07d4e00",
+    "docs/impactshop-protected-files.json": "1c46a922347795b9ccb0adce10df0d98de404c081981f71d8d65c9feb16bb814",
     "wp-content/mu-plugins/impactshop-coupon-feed.php": "7ecbcc8f391168a08e72a7857a921d9489fb4f3260b1d4adaecf9be831e029c2",
-    "wp-content/mu-plugins/impactshop-partner-finance.php": "e3245c9cf0614131f8cd100adb956fb738422f0bc0a417488d30340a842936f3"
+    "wp-content/mu-plugins/impactshop-partner-finance.php": "e3245c9cf0614131f8cd100adb956fb738422f0bc0a417488d30340a842936f3",
+    "wp-content/mu-plugins/impactshop-tradetracker.php": "db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2"
   },
-  "generated_at": "2026-09-11T04:44:20+00:00"
+  "generated_at": "2026-11-17T22:06:30.345174+00:00"
 }

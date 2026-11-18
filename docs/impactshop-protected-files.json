@@ -96,7 +96,8 @@
     "scripts/jysk-ngo-catalog-enroll.php",
     "scripts/jysk-ngo-catalog-reservation-schema.sql",
     "wp-content/mu-plugins/impactshop-admitad.php",
-    "wp-content/mu-plugins/impactshop-coupon-feed.php"
+    "wp-content/mu-plugins/impactshop-coupon-feed.php",
+    "wp-content/mu-plugins/impactshop-tradetracker.php"
   ],
   "additive_globs": [
     "wp-content/mu-plugins/zzz-impactshop-ui-lock.php",

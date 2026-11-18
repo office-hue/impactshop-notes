@@ -528,3 +528,13 @@ Friss CJ Dashboard + saját PID101302202 API200; új bounded olvasó írásmente
 ## 2026-11-17 – CJ default-OFF telepítés visszaolvasva
 
 PR #288 merge `a9b1d3e8812dec2c676aa0f5b1876651dced879f`; a két saját PHP-fájl existing exact-file guard staging és production kiadása/hash/mód ellenőrzött. CJ implemented/OFF/not_checked; Dognet ON/complete,3kupon, config/policy változatlan, projection0upstream és névtelen REST401. A production lassú preflight-figyelmeztetések megmaradtak, nincs teljesrendszer- vagy CJ-aktiválási PASS. [Pontos kiadások és rollback](protected-change-records/2026-11-17-shopping-coupons.md#2026-11-17--cj-default-off-tényleges-kiadás-és-visszaállítás). Ez célzott helyi forrásfrissítés; a központi registry acceptedSource/lastVerifiedAt és a távoli DOCSYNC acceptance nem változott. A Secretary merge-ACK `chk-1e59e5e7-8cea-4ab2-a24f-3a539ac06b57`; a telepítési readback külön következő checkpoint.
+
+
+## 2026-11-17 – Admitad Under review és provider-kvalifikáció
+
+A saját adspace2888572 friss böngészős readbackje Under review az Arnold által beküldött meta-ellenőrzés után; a nyilvános meta-tag előfeltétele GET200/1példányban újra igazolt. TradeTracker saját Sharity-profil/API-oldal hozzáférés megvan, de natív SOAP auth/session még függő; a közös felületi fókusz miatt titokátadás nem történt. CJ UNice aktív program Incentivized Traffic Allowed frissen olvasva, de0kupon/handoff-review miatt OFF. Részletek a notes.md utolsó provider-kvalifikációs bejegyzésében. Helyi source-WIP, nincs új forráspublikálás vagy központi DOCSYNC registry acceptance; acceptedSource/lastVerifiedAt változatlan.
+
+
+## 2026-11-17 – TradeTracker auth/session és két kuponresource kvalifikált
+
+[TT oldalolvasó rekord](protected-change-records/2026-11-17-tradetracker-coupon-reader.md): kezelői natív próba saját accepted site és pontos kampányok mellett6/6HTTP200, voucher/offer minta és explicit trafficflag/időzóna igazolt. Új additív runtime és közvetlen offline teszt forrásjelölt323assertion/PHP-lint/inventory sikeres; egy független review P2-je javítva és visszaellenőrizve. Nincs TT-source commit/merge/deploy/enable vagy új parser-live/publikus/adomány elfogadás. A központi registry acceptedSource/lastVerifiedAt és remote DOCSYNC acceptance nincs módosítva.
