@@ -2329,3 +2329,7 @@ Saját feat/impactshop-coupons-20261117 ág, bázis2d1bf82a. Additív default-OF
 ### Coupon HTTP delta – 2026-11-17
 
 A couponfeed élő HTTP400 javítása forráskész,153 célzott assertion PASS; push/merge/új deploy függő. A web #2112 merge-elt; a jelölt még nem éles, nincs domainátállítás.
+
+## 2026-11-18 — Sharity partner V2 és Direct EUR, saját forrásjelölt
+
+Approver/exact-grant könyvelés; változatlan eredeti policy/claim/NGO-kötésű korrekció; bankfüggetlen provider-tranzakció tulajdon. A Direct kézi zárás azonos devizájú HUF/EUR pontos minor-stringekkel bővült. Két saját termékhash célzott frissítése; nincs széles rebaseline. Partner55, Direct25, CLI461, HTTP356 és affiliate Bástya tamper PASS. Valódi SQL, teljes WordPress-bootstrap és cél-PHP NOT RUN; nincs pénzügyi merge/deploy/aktiválás. A teljes pénzmozgási terv még nincs befejezve: cash-backed közös alap, paid-amplifier, TimeWall és teljes banki/Card-lefedettség nyitott forrásmunka is. Részletes scope/kockázat/rollback/UI: `docs/protected-change-records/2026-11-18-sharity-partner-finance-v2.md`.

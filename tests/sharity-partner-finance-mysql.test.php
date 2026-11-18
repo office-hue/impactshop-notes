@@ -64,33 +64,55 @@ $policyFile=$directory.'/policy.json';
 define('SHARITY_BANK_PAYOUT_POLICY_FILE',$policyFile);
 $pair=sodium_crypto_sign_keypair();$secret=sodium_crypto_sign_secretkey($pair);
 $account=str_repeat('b',64);
-$partner=['revision'=>'contract1','provider'=>'dognet','account_id'=>$account,'source_kind'=>'operator_evidence','ngo_rate_bps'=>6000,'rounding'=>'per_transaction_floor_minor','allow_operator_evidence'=>true];
-$policy=['schema_version'=>1,'amount_scale'=>2,'mode'=>'test','enabled'=>false,'target'=>'local-fixture','legal_entity'=>'fixture-entity',
+$partner=['revision'=>'contract1','provider'=>'dognet','bank_account_id'=>$account,'provider_scope_ref'=>'26081','source_kind'=>'operator_evidence','ngo_rate_bps'=>6000,'rounding'=>'per_transaction_floor_minor','allow_operator_evidence'=>true];
+$policy=['schema_version'=>2,'amount_scale'=>2,'mode'=>'test','enabled'=>false,'target'=>'local-fixture','legal_entity'=>'fixture-entity',
     'accounts'=>[$account=>['legal_entity'=>'fixture-entity','currencies'=>['HUF','EUR'],'aliases'=>[['bank_source'=>'fixture-bank','account_fingerprint'=>str_repeat('a',64)]]]],
-    'recipients'=>[], 'keys'=>['fixture'=>['actor'=>'fixture-collector','roles'=>['collector'],'public_key'=>base64_encode(sodium_crypto_sign_publickey($pair))]],
+    'recipients'=>[], 'keys'=>['fixture'=>['actor'=>'fixture-collector','roles'=>['collector','approver'],'grant_ids'=>['operator','direct','dog'],'public_key'=>base64_encode(sodium_crypto_sign_publickey($pair))]],
     'partners'=>['shop'=>$partner,'shop-other'=>$partner,'direct-shop'=>array_replace($partner,['provider'=>'partner','source_kind'=>'partner_tx','allow_operator_evidence'=>false]),
         'dog-shop'=>array_replace($partner,['source_kind'=>'dognet_intent','provider_scope_ref'=>'26081','allow_operator_evidence'=>false])]];
-file_put_contents($policyFile,json_encode($policy,JSON_THROW_ON_ERROR));chmod($policyFile,0600);
+$policy['keys']['collector']=['actor'=>'collector-only','roles'=>['collector'],'grant_ids'=>['operator'],'public_key'=>base64_encode(sodium_crypto_sign_publickey($pair))];
+$policy['operation_grants']=[];
+foreach(['operator'=>'shop','direct'=>'direct-shop','dog'=>'dog-shop'] as $grant=>$partnerId){
+    $rule=ImpactShop_Partner_Finance::partner_policy($policy,['partner_id'=>$partnerId,'policy_revision'=>'contract1']);
+    $policy['operation_grants'][$grant]=['operation'=>'partner-statement','provider'=>$rule['provider'],'provider_scope_ref'=>$rule['provider_scope_ref'],'source_policy_sha256'=>hash('sha256',ImpactShop_Sharity_Bank_Payout::canonical($rule))];
+}
+function write_policy(): void { global $policyFile,$policy;file_put_contents($policyFile,json_encode($policy,JSON_THROW_ON_ERROR));chmod($policyFile,0600); }
+write_policy();
 function request_plan(array $statement, string $id): array
 {
-    return ImpactShop_Sharity_Bank_Payout::plan(['operation'=>'partner-statement','command_id'=>$id,'actor'=>'fixture-collector','key_id'=>'fixture','expires_at'=>time()+300,'data'=>$statement]);
+    global $policy;
+    $grantId=null;foreach($policy['operation_grants'] as $idKey=>$grant){$scope=array_intersect_key($grant,array_flip(['provider','provider_scope_ref','source_policy_sha256']));if(ImpactShop_Sharity_Bank_Payout::canonical($scope)===ImpactShop_Sharity_Bank_Payout::canonical($statement['financial_scope'])){$grantId=$idKey;break;}}
+    if($grantId===null)throw new RuntimeException('Fixture exact grant missing');
+    return ImpactShop_Sharity_Bank_Payout::plan(['operation'=>'partner-statement','grant_id'=>$grantId,'command_id'=>$id,'actor'=>'fixture-collector','key_id'=>'fixture','expires_at'=>time()+300,'data'=>$statement]);
 }
 function apply_plan(array $plan): array
 {
     global $secret;
-    return ImpactShop_Sharity_Bank_Payout::apply($plan,sodium_crypto_sign_detached(ImpactShop_Sharity_Bank_Payout::DOMAIN.ImpactShop_Sharity_Bank_Payout::canonical($plan),$secret));
+    return ImpactShop_Sharity_Bank_Payout::apply($plan,sodium_crypto_sign_detached(ImpactShop_Sharity_Bank_Payout::signing_domain($plan).ImpactShop_Sharity_Bank_Payout::canonical($plan),$secret));
 }
 function run_statement(array $statement,string $id): array { return apply_plan(request_plan($statement,$id)); }
 function fixture(string $id, string $partner='shop', string $currency='EUR'): array
 {
+    global $policy;
     $digest=hash('sha256','source:'.$id);
-    return ['partner_id'=>$partner,'statement_id'=>$id,'revision'=>1,'previous_revision'=>0,'policy_revision'=>'contract1','currency'=>$currency,'net_minor'=>10001,
+    $rule=ImpactShop_Partner_Finance::partner_policy($policy,['partner_id'=>$partner,'policy_revision'=>'contract1']);
+    return ['partner_id'=>$partner,'statement_id'=>$id,'revision'=>1,'previous_revision'=>0,'bank_account_id'=>$rule['bank_account_id'],'original_statement_key'=>null,'expected_revision'=>0,'financial_scope'=>['provider'=>$rule['provider'],'provider_scope_ref'=>$rule['provider_scope_ref'],'source_policy_sha256'=>hash('sha256',ImpactShop_Sharity_Bank_Payout::canonical($rule))],'policy_revision'=>'contract1','currency'=>$currency,'net_minor'=>10001,
         'cash'=>['bank_source'=>'fixture-bank','account_fingerprint'=>str_repeat('a',64),'bank_tx_id'=>'bank:'.$id,'currency'=>$currency,'net_minor'=>10001,
             'evidence_ref'=>'bank-proof:'.$id,'parts'=>[['part_id'=>'affiliate','classification'=>'impact_shop','net_minor'=>10001]]],
         'part_id'=>'affiliate','evidence_ref'=>'statement-proof:'.$id,'source_digest'=>$digest,'lines'=>[
             ['provider_tx_id'=>$id.':tx-a','net_minor'=>4000,'attribution'=>['ngo_id'=>'ngo-a','evidence_ref'=>'allocation:'.$id,'source_digest'=>$digest]],
             ['provider_tx_id'=>$id.':tx-b','net_minor'=>6001,'attribution'=>['ngo_id'=>'ngo-b','evidence_ref'=>'allocation:'.$id,'source_digest'=>$digest]],
         ]];
+}
+function add_fixture_partner(string $id,array $rule,string $grant): void {
+    global $policy;$policy['partners'][$id]=$rule;
+    $selected=ImpactShop_Partner_Finance::partner_policy($policy,['partner_id'=>$id,'policy_revision'=>$rule['revision']]);
+    $policy['operation_grants'][$grant]=['operation'=>'partner-statement','provider'=>$selected['provider'],'provider_scope_ref'=>$selected['provider_scope_ref'],'source_policy_sha256'=>hash('sha256',ImpactShop_Sharity_Bank_Payout::canonical($selected))];
+    $policy['keys']['fixture']['grant_ids'][]=$grant;write_policy();
+}
+function next_revision(array $s): array {
+    $s['original_statement_key'] = $s['original_statement_key'] ?? hash('sha256',ImpactShop_Sharity_Bank_Payout::canonical([$s['financial_scope']['provider'],$s['bank_account_id'],$s['partner_id'],$s['statement_id']]));
+    $s['expected_revision']=$s['revision'];$s['previous_revision']=$s['revision'];$s['revision']++;return $s;
 }
 function rejected(array $statement,string $id,string $label): void
 {
@@ -109,24 +131,87 @@ try {
     catch(RuntimeException $e){check($e->getMessage()==='partner_schema_migration_inside_transaction','no DDL inside owner transaction');}
     try { ImpactShop_Sharity_Bank_Payout::transaction(static fn()=>ImpactShop_Partner_Finance::handle(['data'=>fixture('unsigned')],$GLOBALS['policy']));check(false,'unsigned rejected'); }
     catch(RuntimeException $e){check($e->getMessage()==='signed_bank_operation_required','unsigned even held/zero statement rejected');}
+    $scopeFixture=fixture('scope-test');
+    foreach (['provider'=>'partner','provider_scope_ref'=>'wrong','source_policy_sha256'=>str_repeat('f',64)] as $field=>$wrong) {
+        $badPlan=request_plan($scopeFixture,'bad-scope-'.$field);$badPlan['data']['financial_scope'][$field]=$wrong;
+        check(apply_plan($badPlan)['status']==='conflict','signed wrong exact scope '.$field);
+    }
+    $badPlan=request_plan($scopeFixture,'wrong-grant');$badPlan['grant_id']='direct';
+    check(apply_plan($badPlan)['status']==='conflict','signed wrong operation grant');
+    $badPlan=request_plan($scopeFixture,'collector-apply');$badPlan['key_id']='collector';$badPlan['actor']='collector-only';
+    check(apply_plan($badPlan)['status']==='conflict','collector key cannot apply even with exact grant');
+    check(count_table('sharity_partner_statements')===0&&count_table('sharity_bp_entries')===0&&count_table('sharity_bp_claims')===0,'planning and denied grants no financial writes');
+    $bad=fixture('swapped-bank');$bad['bank_account_id']=$bad['financial_scope']['provider_scope_ref'];
+    rejected($bad,'swapped-bank','bank identity not provider scope');
     $first=fixture('first');$plan=request_plan($first,'first-command');$r=apply_plan($plan);
     check($r['status']==='applied','actual signed first statement: '.json_encode($r));
     check(totals()===['ngo-a:EUR'=>2400,'ngo-b:EUR'=>3600],'approved 60%, two original NGOs');
     check(apply_plan($plan)['status']==='already_applied'&&count_table('sharity_bp_entries')===2,'signed command replay');
     check(run_statement($first,'first-replay')['status']==='applied'&&count_table('sharity_bp_entries')===2,'same statement revision new command no double grant');
+    $firstStored=json_decode($wpdb->get_var("SELECT original_json FROM pfd_sharity_partner_statements LIMIT 1"),true,64,JSON_THROW_ON_ERROR);
+    check($firstStored['financial_context']['version']===2&&$firstStored['financial_context']['claim']['account_id']===$account,'server-owned immutable rule and stored claim wrapper');
+    check($firstStored['financial_context']['source_policy_sha256']===$first['financial_scope']['source_policy_sha256'],'original selected policy hash frozen');
     $bad=$first;$bad['lines'][0]['net_minor']++;$bad['lines'][1]['net_minor']--;rejected($bad,'changed-rev1','changed revision body');
-    $second=$first;$second['revision']=2;$second['previous_revision']=1;$second['net_minor']=9000;$second['lines'][1]['net_minor']=5000;
+    $second=next_revision($first);$second['net_minor']=9000;$second['lines'][1]['net_minor']=5000;
     check(run_statement($second,'correction')['status']==='applied','negative signed correction');
     check(totals()===['ngo-a:EUR'=>2400,'ngo-b:EUR'=>3000]&&count_table('sharity_partner_statements')===2,'cumulative delta and immutable original history');
-    $bad=$second;$bad['revision']=3;$bad['previous_revision']=2;$bad['lines'][0]['attribution']['ngo_id']='ngo-c';rejected($bad,'remap','NGO remap');
-    $bad=$second;$bad['revision']=3;$bad['previous_revision']=2;$bad['lines'][0]['net_minor']=4001;$bad['net_minor']++;rejected($bad,'growing-capacity','original line capacity');
-    $bad=$second;$bad['revision']=3;$bad['previous_revision']=2;$bad['lines'][0]['provider_tx_id']='new-tx';rejected($bad,'changing-set','original transaction set');
+    $bad=next_revision($second);$bad['lines'][0]['attribution']['ngo_id']='ngo-c';rejected($bad,'remap','NGO remap');
+    $bad=next_revision($second);$bad['lines'][0]['net_minor']=4001;$bad['net_minor']++;rejected($bad,'growing-capacity','original line capacity');
+    $bad=next_revision($second);$bad['lines'][0]['provider_tx_id']='new-tx';rejected($bad,'changing-set','original transaction set');
     $bad=fixture('other-statement','shop-other');$bad['lines'][0]['provider_tx_id']='first:tx-a';rejected($bad,'duplicate-provider-tx','provider transaction across partners');
     $held=fixture('held');$held['lines'][1]['attribution']=[];
     $r=run_statement($held,'held');check($r['status']==='applied'&&$r['lines'][1]['held']===true,'one missing mapping held');
     check($r['lines'][0]['ngo_minor']===2400&&$r['lines'][1]['ngo_minor']===0,'no held amount redistribution');
-    $held['revision']=2;$held['previous_revision']=1;$held['lines'][1]['attribution']=fixture('held')['lines'][1]['attribution'];
+    $held=next_revision($held);$held['lines'][1]['attribution']=fixture('held')['lines'][1]['attribution'];
     check(run_statement($held,'resolve-held')['status']==='applied','later signed evidence resolves held line');
+    $frozen=fixture('frozen');$r=run_statement($frozen,'frozen');check($r['status']==='applied','frozen-context setup');
+    $savedPolicy=$policy;$staleFirst=fixture('stale-rule');
+    $policy['partners']['shop']['ngo_rate_bps']=5000;write_policy();
+    rejected($staleFirst,'stale-first-rule','first issue requires current selected rule hash');
+    $frozen=next_revision($frozen);$frozen['net_minor']=9000;$frozen['lines'][1]['net_minor']=5000;
+    $claimsBefore=count_table('sharity_bp_claims');$r=run_statement($frozen,'frozen-rate-correction');
+    check($r['status']==='applied'&&$r['lines'][1]['ngo_minor']===3000,'correction keeps original 60% despite current 50%');
+    unset($policy['partners']['shop']);$policy['accounts'][$account]['aliases'][0]['account_fingerprint']=str_repeat('d',64);write_policy();
+    $frozen=next_revision($frozen);$frozen['net_minor']=8000;$frozen['lines'][1]['net_minor']=4000;
+    $r=run_statement($frozen,'frozen-without-current-policy');
+    check($r['status']==='applied'&&$r['lines'][1]['ngo_minor']===2400,'original lookup precedes missing current policy and changed bank alias');
+    check(count_table('sharity_bp_claims')===$claimsBefore,'corrections never reclaim cash under current aliases');
+    $policy=$savedPolicy;write_policy();
+    $sourceOriginal=fixture('source-owner');check(run_statement($sourceOriginal,'source-owner')['status']==='applied','canonical source ownership setup');
+    $originalKey=next_revision($sourceOriginal)['original_statement_key'];
+    $canonicalBefore=$wpdb->get_var($wpdb->prepare('SELECT tx_key FROM pfd_sharity_partner_transactions WHERE statement_key=%s ORDER BY provider_tx_id LIMIT 1',$originalKey));
+    $rotatedAccount=str_repeat('e',64);$policy['accounts'][$rotatedAccount]=['legal_entity'=>'fixture-entity','currencies'=>['HUF','EUR'],'aliases'=>[['bank_source'=>'fixture-bank','account_fingerprint'=>str_repeat('f',64)]]];
+    $rotatedRule=$policy['partners']['shop'];$rotatedRule['bank_account_id']=$rotatedAccount;
+    add_fixture_partner('bank-shop',$rotatedRule,'bankrotate');
+    $rotated=fixture('source-owner-rotated','bank-shop');$rotated['cash']['account_fingerprint']=str_repeat('f',64);
+    foreach($rotated['lines'] as $i=>&$line)$line['provider_tx_id']=$sourceOriginal['lines'][$i]['provider_tx_id'];unset($line);
+    rejected($rotated,'bank-rotated-source','same provider principal cannot remint on another receiving bank');
+    $separateRule=$policy['partners']['shop'];$separateRule['provider_scope_ref']='independent-scope';
+    add_fixture_partner('scope-shop',$separateRule,'separate-scope');
+    $separate=fixture('source-owner-separate','scope-shop');foreach($separate['lines'] as $i=>&$line)$line['provider_tx_id']=$sourceOriginal['lines'][$i]['provider_tx_id'];unset($line);
+    check(run_statement($separate,'separate-scope')['status']==='applied','proven independent provider scopes may reuse local transaction IDs');
+    $sourceOriginal=next_revision($sourceOriginal);$sourceOriginal['net_minor']=9000;$sourceOriginal['lines'][1]['net_minor']=5000;
+    check(run_statement($sourceOriginal,'source-owner-correction')['status']==='applied','correction retains frozen owned transaction references');
+    check($wpdb->get_var($wpdb->prepare('SELECT tx_key FROM pfd_sharity_partner_transactions WHERE statement_key=%s ORDER BY provider_tx_id LIMIT 1',$originalKey))===$canonicalBefore,'correction preserves historical row and entry source identity');
+    $historical=fixture('historical-row');foreach($historical['lines'] as &$line)$line['attribution']=[];unset($line);
+    check(run_statement($historical,'historical-row')['status']==='applied','historical wrapped-row fixture');
+    $historicalKey=next_revision($historical)['original_statement_key'];
+    $historicalStored=json_decode($wpdb->get_var($wpdb->prepare('SELECT original_json FROM pfd_sharity_partner_statements WHERE statement_key=%s',$historicalKey)),true,64,JSON_THROW_ON_ERROR);
+    unset($historicalStored['financial_context']['transaction_keys']);
+    foreach($historical['lines'] as $line){$oldKey=hash('sha256',ImpactShop_Sharity_Bank_Payout::canonical([$historical['financial_scope']['provider'],$account,$line['provider_tx_id']]));$wpdb->query($wpdb->prepare('UPDATE pfd_sharity_partner_transactions SET tx_key=%s WHERE statement_key=%s AND provider_tx_id=%s',$oldKey,$historicalKey,$line['provider_tx_id']));}
+    $wpdb->query($wpdb->prepare('UPDATE pfd_sharity_partner_statements SET original_json=%s WHERE statement_key=%s',json_encode($historicalStored,JSON_THROW_ON_ERROR),$historicalKey));
+    $historical=next_revision($historical);$resolved=fixture('historical-row');foreach($historical['lines'] as $i=>&$line)$line['attribution']=$resolved['lines'][$i]['attribution'];unset($line);
+    check(run_statement($historical,'historical-row-correction')['status']==='applied','retained immutable context resolves exact legacy row ID');
+    $historyStored=json_decode($wpdb->get_var($wpdb->prepare('SELECT original_json FROM pfd_sharity_partner_statements WHERE statement_key=%s ORDER BY revision DESC LIMIT 1',$historicalKey)),true,64,JSON_THROW_ON_ERROR);
+    check($historyStored['financial_context']['transaction_keys'][$historical['lines'][0]['provider_tx_id']]===hash('sha256',ImpactShop_Sharity_Bank_Payout::canonical([$historical['financial_scope']['provider'],$account,$historical['lines'][0]['provider_tx_id']])),'legacy row reference frozen without rekey/history rewrite');
+    $legacy=fixture('legacy-proof');check(run_statement($legacy,'legacy-proof')['status']==='applied','legacy proof fixture');
+    $legacyKey=next_revision($legacy)['original_statement_key'];
+    $wpdb->query($wpdb->prepare('UPDATE pfd_sharity_partner_statements SET original_json=%s WHERE statement_key=%s',json_encode($legacy,JSON_THROW_ON_ERROR),$legacyKey));
+    $legacyBefore=$wpdb->get_var($wpdb->prepare('SELECT original_json FROM pfd_sharity_partner_statements WHERE statement_key=%s',$legacyKey));
+    rejected(next_revision($legacy),'legacy-without-proof','legacy correction missing immutable policy evidence');
+    $legacyReissue=fixture('legacy-source-reissue','scope-shop');foreach($legacyReissue['lines'] as $i=>&$line)$line['provider_tx_id']=$legacy['lines'][$i]['provider_tx_id'];unset($line);
+    rejected($legacyReissue,'legacy-ownership-unknown','unproven legacy source scope cannot be guessed for a new source key');
+    check($wpdb->get_var($wpdb->prepare('SELECT original_json FROM pfd_sharity_partner_statements WHERE statement_key=%s',$legacyKey))===$legacyBefore,'legacy original retained unchanged');
     $bad=fixture('bad-digest');$bad['lines'][1]['attribution']['source_digest']=str_repeat('f',64);rejected($bad,'bad-digest','source digest mismatch');
     $bad=fixture('unsupported');$bad['currency']='USD';rejected($bad,'unsupported','unsupported currency');
     $bad=fixture('account');$bad['cash']['account_fingerprint']=str_repeat('f',64);rejected($bad,'wrong-account','account binding');

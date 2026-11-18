@@ -8707,3 +8707,7 @@ Saját feat/impactshop-coupons-20261117 ág, bázis2d1bf82a. Additív default-OF
 ### Coupon HTTP compatibility – 2026-11-17
 
 Az első éles HTTP-próba400-at talált a WP belső routerparamétere miatt. Célzott javítás saját ágban,153 offline assertion PASS; az új deploy/élő200 még nem igazolt. Az eredeti C1 fájl staging/prod telepített, a Vision Express saját policy/cache pilot3kuponnal minősített; más hálózat OFF.
+
+## 2026-11-18 — Sharity partner V2 és Direct EUR, saját forrásjelölt
+
+Approver/exact-grant könyvelés; változatlan eredeti policy/claim/NGO-kötésű korrekció; bankfüggetlen provider-tranzakció tulajdon. A Direct kézi zárás azonos devizájú HUF/EUR pontos minor-stringekkel bővült. Két saját termékhash célzott frissítése; nincs széles rebaseline. Partner55, Direct25, CLI461, HTTP356 és affiliate Bástya tamper PASS. Valódi SQL, teljes WordPress-bootstrap és cél-PHP NOT RUN; nincs pénzügyi merge/deploy/aktiválás. A teljes pénzmozgási terv még nincs befejezve: cash-backed közös alap, paid-amplifier, TimeWall és teljes banki/Card-lefedettség nyitott forrásmunka is. Részletes scope/kockázat/rollback/UI: `docs/protected-change-records/2026-11-18-sharity-partner-finance-v2.md`.
