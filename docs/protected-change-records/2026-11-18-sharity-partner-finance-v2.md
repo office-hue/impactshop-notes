@@ -59,3 +59,9 @@ Tényleges helyi teszt: partner55, Direct-close25, donationCLI461 és HTTP356 el
 Csak e két saját termékfájl inventory-digestje és a manifest checksum frissült. Nincs idegen hash-rebaseline, guardprogram-módosítás vagy runtime-aktiválás. A korábbi négy inventoryfájlt említő terv helyett a meglévő két hashfájl elegendő.
 
 Érintett protected leltárfájlok: `docs/impactshop-guard-hashes.json`, `docs/impactshop-guard-hashes.sha256`, `docs/bastion-guard-status.md`. A manifestben kizárólag a két fent megnevezett saját PHP SHA-256 értéke változott; a többi hash és a történeti timestamp megmaradt. A célzott két hash/manifest-checksum readback ténylegesen PASS, ez nem teljes inventory- vagy éles Bástya-elfogadás.
+
+## Rögzített-main integráció és előzménymegőrzés
+
+Az egyszer rögzített main `6737b60fef223cc92a278402c162ba5a1b3c13c3`; a saját PHP-k és három teszt byteazonosak az első publikált jelölttel. A main új kupon/CJ/TradeTracker és más változásai megmaradtak; a teljes main-hashleltárhoz képest csak a két saját PHP digestje különbözik. A normál Git recovery a publikált `eccf05cacdf06bf27618ca6c04912e3627d2f7fd` előzményt is megőrzi. Független review előre elfogadta az exact `7f18ccfac7ad46311eea33e374e643ed3a0997e5` tree-t; a recovery commit tree/parent visszaolvasása egyezett. Az elutasított nem-fast-forward push nem került megkerülésre; az ezt követő publikálás normál fast-forward, history-átírás nélkül.
+
+A mainből átvett guard inventory miatt a teljes outgoing-range smoke-scope `deploy:checksum-verify,deploy:guard-preflight` címkét is igényel. Tényleges ellenőrzés: `tests/impactshop-guard-preflight-detached.test.sh` izolált mock PASS; a két saját hash, minden main-hash megőrzése és manifest-checksum readback PASS. Ez nem élő host-preflight, remote deploy, staging UI vagy pénzügyi elfogadás. A source-grant és rollback változatlan.
