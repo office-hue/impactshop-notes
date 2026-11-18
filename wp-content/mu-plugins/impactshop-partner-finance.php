@@ -2,7 +2,7 @@
 /**
  * Plugin Name: ImpactShop Partner Finance
  * Description: Signed, revisioned partner statements backed by shared bank receipts.
- * Version: 1.0.0
+ * Version: 2.0.0
  * Author: Sharity
  * Requires PHP: 8.3
  */
@@ -20,7 +20,7 @@ final class ImpactShop_Partner_Finance
     public static function register(): void
     {
         if (class_exists('ImpactShop_Sharity_Bank_Payout')) {
-            ImpactShop_Sharity_Bank_Payout::register_handler('partner-statement', [self::class, 'handle'], 'collector');
+            ImpactShop_Sharity_Bank_Payout::register_handler('partner-statement', [self::class, 'handle'], 'approver');
         }
     }
 
@@ -100,29 +100,36 @@ final class ImpactShop_Partner_Finance
             throw new RuntimeException('partner_schema_not_ready');
         }
         $statement = self::normalize_statement($payload['data'] ?? null);
-        $partner = self::partner_policy($policy, $statement);
-        $policyHash = hash('sha256', self::canonical($partner));
-        $statementKey = self::key([$partner['provider'], $partner['account_id'], $statement['partner_id'], $statement['statement_id']]);
         $statementsTable = $prefix . self::STATEMENTS;
         $transactionsTable = $prefix . self::TRANSACTIONS;
-        $contentHash = hash('sha256', self::canonical($statement));
-        $prior = self::one($db, "SELECT * FROM {$statementsTable} WHERE statement_key=? ORDER BY revision DESC LIMIT 1 FOR UPDATE", [$statementKey]);
-        if ($prior && (int) $prior['revision'] === $statement['revision']) {
-            if (!hash_equals($prior['content_hash'], $contentHash) || !hash_equals($prior['policy_hash'], $policyHash)) {
-                throw new DomainException('partner_revision_content_conflict');
+        // Resolve corrections by immutable identity before consulting today's partner rules.
+        $prior = null;
+        $context = null;
+        if ($statement['original_statement_key'] !== null) {
+            $statementKey = $statement['original_statement_key'];
+            $prior = self::one($db, "SELECT * FROM {$statementsTable} WHERE statement_key=? ORDER BY revision DESC LIMIT 1 FOR UPDATE", [$statementKey]);
+            if (!$prior) {
+                throw new DomainException('partner_original_statement_missing');
             }
-            return json_decode($prior['result_json'], true, 64, JSON_THROW_ON_ERROR);
-        }
-        if (($prior ? (int) $prior['revision'] : 0) !== $statement['previous_revision']
-            || $statement['revision'] !== $statement['previous_revision'] + 1) {
-            throw new DomainException('partner_revision_conflict');
-        }
-        $oldStatement = $prior ? json_decode($prior['original_json'], true, 64, JSON_THROW_ON_ERROR) : null;
-        if ($prior) {
-            if (!hash_equals($prior['policy_hash'], $policyHash)) {
-                throw new DomainException('partner_policy_changed');
+            $stored = json_decode($prior['original_json'], true, 64, JSON_THROW_ON_ERROR);
+            $context = $stored['financial_context'] ?? null;
+            if (!is_array($context) || ($context['version'] ?? null) !== 2 || !is_array($stored['statement'] ?? null)
+                || !is_array($context['claim'] ?? null) || !is_array($context['capacities'] ?? null)
+                || !is_array($context['attribution'] ?? null)) {
+                throw new DomainException('partner_immutable_policy_proof_required');
             }
-            foreach (['currency', 'cash', 'part_id', 'policy_revision'] as $field) {
+            $oldStatement = self::normalize_statement($stored['statement']);
+            $partner = self::partner_policy(['partners' => [$statement['partner_id'] => $context['rule'] ?? null]], $statement);
+            $policyHash = hash('sha256', self::canonical($partner));
+            if ($statementKey !== self::key([$partner['provider'], $partner['bank_account_id'], $oldStatement['partner_id'], $oldStatement['statement_id']])
+                || ($context['original_statement_key'] ?? null) !== $statementKey
+                || !hash_equals($prior['policy_hash'], $policyHash)
+                || ($context['source_policy_sha256'] ?? null) !== $policyHash
+                || ($context['legal_entity'] ?? null) !== ($policy['legal_entity'] ?? null)
+                || ($context['mode'] ?? null) !== ($policy['mode'] ?? null)) {
+                throw new DomainException('partner_original_context_mismatch');
+            }
+            foreach (['partner_id', 'statement_id', 'bank_account_id', 'currency', 'cash', 'part_id', 'policy_revision', 'financial_scope'] as $field) {
                 if (self::canonical($oldStatement[$field]) !== self::canonical($statement[$field])) {
                     throw new DomainException('partner_original_identity_changed');
                 }
@@ -130,30 +137,76 @@ final class ImpactShop_Partner_Finance
             if (array_column($oldStatement['lines'], 'provider_tx_id') !== array_column($statement['lines'], 'provider_tx_id')) {
                 throw new DomainException('partner_original_transaction_set_changed');
             }
+        } else {
+            $partner = self::partner_policy($policy, $statement);
+            $policyHash = hash('sha256', self::canonical($partner));
+            $statementKey = self::key([$partner['provider'], $partner['bank_account_id'], $statement['partner_id'], $statement['statement_id']]);
+            $prior = self::one($db, "SELECT * FROM {$statementsTable} WHERE statement_key=? ORDER BY revision DESC LIMIT 1 FOR UPDATE", [$statementKey]);
         }
-        $claim = ImpactShop_Sharity_Bank_Payout::claim_cash(
-            $statement['cash'], $statement['part_id'], 'impact_shop', 'partner:' . $statementKey
-        );
-        if (($claim['account_id'] ?? null) !== $partner['account_id']
+        $scope = ['provider' => $partner['provider'], 'provider_scope_ref' => $partner['provider_scope_ref'], 'source_policy_sha256' => $policyHash];
+        if ($statement['bank_account_id'] !== $partner['bank_account_id'] || self::canonical($scope) !== self::canonical($statement['financial_scope'])) {
+            throw new DomainException('partner_financial_scope_mismatch');
+        }
+        ImpactShop_Sharity_Bank_Payout::assert_authorized_scope('partner-statement', $scope);
+        $contentHash = hash('sha256', self::canonical($statement));
+        if ($prior && (int) $prior['revision'] === $statement['revision']) {
+            if (!hash_equals($prior['content_hash'], $contentHash) || !hash_equals($prior['policy_hash'], $policyHash)) {
+                throw new DomainException('partner_revision_content_conflict');
+            }
+            return json_decode($prior['result_json'], true, 64, JSON_THROW_ON_ERROR);
+        }
+        if (($prior ? (int) $prior['revision'] : 0) !== $statement['expected_revision']
+            || $statement['revision'] !== $statement['expected_revision'] + 1) {
+            throw new DomainException('partner_revision_conflict');
+        }
+        if ($context !== null) {
+            $claim = ImpactShop_Sharity_Bank_Payout::assert_original_claim($context['claim']);
+        } else {
+            $claim = ImpactShop_Sharity_Bank_Payout::claim_cash($statement['cash'], $statement['part_id'], 'impact_shop', 'partner:' . $statementKey);
+            $context = ['version' => 2, 'original_statement_key' => $statementKey, 'rule' => $partner,
+                'source_policy_sha256' => $policyHash, 'claim' => $claim, 'legal_entity' => $policy['legal_entity'],
+                'mode' => $policy['mode'], 'capacities' => [], 'attribution' => [], 'transaction_keys' => []];
+            foreach ($statement['lines'] as $line) {
+                $context['capacities'][$line['provider_tx_id']] = $line['net_minor'];
+            }
+        }
+        if (($claim['account_id'] ?? null) !== $partner['bank_account_id']
+            || ($claim['legal_entity'] ?? null) !== $context['legal_entity']
+            || ($claim['claim_id'] ?? null) !== 'partner:' . $statementKey
+            || ($claim['channel'] ?? null) !== 'impact_shop'
+            || ($claim['part_id'] ?? null) !== $statement['part_id']
             || ($claim['currency'] ?? null) !== $statement['currency']
             || !is_int($claim['net_minor'] ?? null)
             || ($statement['revision'] === 1 && $claim['net_minor'] !== $statement['net_minor'])
             || $statement['net_minor'] > $claim['net_minor']) {
             throw new DomainException('partner_cash_binding_mismatch');
         }
-        $result = ['statement_id' => $statement['statement_id'], 'revision' => $statement['revision'], 'lines' => [], 'automatic_payment' => false];
+        $result = ['original_statement_key' => $statementKey, 'statement_id' => $statement['statement_id'], 'revision' => $statement['revision'], 'lines' => [], 'automatic_payment' => false];
         $negative = false;
         foreach ($statement['lines'] as $line) {
-            $txKey = self::key([$partner['provider'], $partner['account_id'], $line['provider_tx_id']]);
-            $old = self::one($db, "SELECT * FROM {$transactionsTable} WHERE tx_key=? FOR UPDATE", [$txKey]);
-            if ($old && $old['statement_key'] !== $statementKey) {
-                throw new DomainException('partner_transaction_already_owned');
+            $sourceKey = self::source_key($partner, $context['legal_entity'], $context['mode'], $line['provider_tx_id']);
+            $old = self::owned_transaction($db, $statementsTable, $transactionsTable, $line['provider_tx_id'], $sourceKey, $statementKey);
+            // Corrections retain the exact historical row/entry identity; new rows use source identity.
+            $txKey = $old ? $old['tx_key'] : $sourceKey;
+            if ($old && isset($context['transaction_keys'][$line['provider_tx_id']])
+                && $context['transaction_keys'][$line['provider_tx_id']] !== $txKey) {
+                throw new DomainException('partner_original_transaction_reference_changed');
             }
+            $context['transaction_keys'][$line['provider_tx_id']] = $txKey;
             if (($old && ((int) $old['latest_revision'] !== $statement['previous_revision'] || $line['net_minor'] > (int) $old['original_minor']))
                 || (!$old && $statement['revision'] !== 1)) {
                 throw new DomainException('partner_line_revision_conflict');
             }
+            $capacity = $context['capacities'][$line['provider_tx_id']] ?? null;
+            $frozen = $context['attribution'][$line['provider_tx_id']] ?? null;
+            if (!is_int($capacity) || $line['net_minor'] > $capacity
+                || ($old && ((int) $old['original_minor'] !== $capacity
+                    || !is_array($frozen) || $frozen['ngo_id'] !== $old['ngo_id']
+                    || self::canonical($frozen['binding']) !== self::canonical($old['binding_json'] === null ? null : json_decode($old['binding_json'], true, 64, JSON_THROW_ON_ERROR))))) {
+                throw new DomainException('partner_original_projection_mismatch');
+            }
             $mapping = self::resolve_attribution($db, $prefix, $partner, $statement, $line, $old);
+            $context['attribution'][$line['provider_tx_id']] = ['ngo_id' => $mapping['ngo_id'], 'binding' => $mapping['binding']];
             $ngo = $mapping['ngo_id'];
             $amount = $ngo === null ? 0 : self::share($line['net_minor'], $partner['ngo_rate_bps']);
             $delta = $amount - ($old ? (int) $old['entitlement_minor'] : 0);
@@ -188,19 +241,31 @@ final class ImpactShop_Partner_Finance
             ImpactShop_Sharity_Bank_Payout::invalidate_unsubmitted_holds();
         }
         self::query($db, "INSERT INTO {$statementsTable} (statement_key,revision,content_hash,policy_hash,original_json,result_json) VALUES (?,?,?,?,?,?)", [
-            $statementKey, $statement['revision'], $contentHash, $policyHash, self::canonical($statement), self::canonical($result),
+            $statementKey, $statement['revision'], $contentHash, $policyHash, self::canonical(['statement' => $statement, 'financial_context' => $context]), self::canonical($result),
         ]);
         return $result;
     }
 
     public static function normalize_statement($value): array
     {
-        self::fields($value, ['partner_id', 'statement_id', 'revision', 'previous_revision', 'policy_revision', 'currency', 'net_minor', 'cash', 'part_id', 'evidence_ref', 'source_digest', 'lines']);
+        self::fields($value, ['partner_id', 'statement_id', 'revision', 'previous_revision', 'policy_revision', 'currency', 'net_minor', 'cash', 'part_id', 'evidence_ref', 'source_digest', 'lines', 'bank_account_id', 'financial_scope', 'original_statement_key', 'expected_revision']);
         foreach (['partner_id', 'statement_id', 'policy_revision', 'part_id'] as $field) {
             self::identifier($value[$field]);
         }
         self::reference($value['evidence_ref']);
         self::digest($value['source_digest']);
+        self::digest($value['bank_account_id']);
+        self::fields($value['financial_scope'], ['provider', 'provider_scope_ref', 'source_policy_sha256']);
+        self::identifier($value['financial_scope']['provider']);
+        self::identifier($value['financial_scope']['provider_scope_ref']);
+        self::digest($value['financial_scope']['source_policy_sha256']);
+        if ($value['original_statement_key'] !== null) {
+            self::digest($value['original_statement_key']);
+        }
+        if (!is_int($value['expected_revision']) || $value['expected_revision'] !== $value['previous_revision']
+            || (($value['revision'] === 1) !== ($value['original_statement_key'] === null))) {
+            throw new InvalidArgumentException('partner_original_revision_required');
+        }
         if (!is_int($value['revision']) || $value['revision'] < 1 || $value['revision'] > 2147483647
             || !is_int($value['previous_revision']) || $value['previous_revision'] < 0
             || $value['previous_revision'] !== $value['revision'] - 1) {
@@ -239,9 +304,10 @@ final class ImpactShop_Partner_Finance
         if (!is_array($partner)) {
             throw new InvalidArgumentException('partner_policy_missing');
         }
-        foreach (['revision', 'provider', 'account_id', 'source_kind'] as $field) {
+        foreach (['revision', 'provider', 'source_kind', 'provider_scope_ref'] as $field) {
             self::identifier($partner[$field] ?? null);
         }
+        self::digest($partner['bank_account_id'] ?? null);
         if ($partner['revision'] !== $statement['policy_revision']
             || !in_array($partner['source_kind'], ['partner_tx', 'dognet_intent', 'operator_evidence'], true)
             || ($partner['rounding'] ?? null) !== 'per_transaction_floor_minor'
@@ -249,7 +315,7 @@ final class ImpactShop_Partner_Finance
             || (isset($partner['allow_operator_evidence']) && !is_bool($partner['allow_operator_evidence']))) {
             throw new InvalidArgumentException('partner_policy_invalid');
         }
-        $selected = array_intersect_key($partner, array_flip(['revision', 'provider', 'account_id', 'source_kind', 'ngo_rate_bps', 'rounding', 'provider_scope_ref']));
+        $selected = array_intersect_key($partner, array_flip(['revision', 'provider', 'bank_account_id', 'source_kind', 'ngo_rate_bps', 'rounding', 'provider_scope_ref']));
         $selected['allow_operator_evidence'] = $partner['allow_operator_evidence'] ?? false;
         if ($partner['source_kind'] === 'dognet_intent') {
             if ($partner['provider'] !== 'dognet') {
@@ -258,6 +324,71 @@ final class ImpactShop_Partner_Finance
             self::identifier($selected['provider_scope_ref'] ?? null);
         }
         return $selected;
+    }
+
+    /** Provider-local principal identity never depends on receiving bank or policy revision. */
+    public static function source_key(array $partner, string $legalEntity, string $mode, string $providerTxId): string
+    {
+        self::identifier($partner['provider'] ?? null);
+        self::identifier($partner['provider_scope_ref'] ?? null);
+        self::identifier($legalEntity);
+        self::identifier($providerTxId);
+        if (!in_array($mode, ['test', 'live'], true)) {
+            throw new InvalidArgumentException('partner_invalid_source_mode');
+        }
+        return self::key(['partner-source-v2', $partner['provider'], $partner['provider_scope_ref'], $legalEntity, $mode, $providerTxId]);
+    }
+
+    /**
+     * The existing projection is the ownership registry. Legacy ambiguous ownership holds
+     * the affected statement instead of minting another row under a new bank-derived key.
+     */
+    private static function owned_transaction(mysqli $db, string $statementsTable, string $transactionsTable,
+        string $providerTxId, string $sourceKey, string $statementKey): ?array
+    {
+        $candidates = self::query($db, "SELECT * FROM {$transactionsTable} WHERE provider_tx_id=? FOR UPDATE", [$providerTxId])->get_result()->fetch_all(MYSQLI_ASSOC);
+        $own = null;
+        foreach ($candidates as $candidate) {
+            $owner = self::one($db, "SELECT * FROM {$statementsTable} WHERE statement_key=? ORDER BY revision DESC LIMIT 1 FOR UPDATE", [$candidate['statement_key']]);
+            try {
+                $stored = $owner ? json_decode($owner['original_json'], true, 64, JSON_THROW_ON_ERROR) : null;
+                $context = $stored['financial_context'] ?? null;
+                if (!is_array($context) || ($context['version'] ?? null) !== 2 || !is_array($stored['statement'] ?? null)
+                    || !is_array($context['rule'] ?? null) || !is_array($context['claim'] ?? null)) {
+                    throw new DomainException('partner_source_ownership_unproven');
+                }
+                $original = self::normalize_statement($stored['statement']);
+                $rule = self::partner_policy(['partners' => [$original['partner_id'] => $context['rule']]], $original);
+                $hash = hash('sha256', self::canonical($rule));
+                $scope = ['provider' => $rule['provider'], 'provider_scope_ref' => $rule['provider_scope_ref'], 'source_policy_sha256' => $hash];
+                $legacyRowKey = self::key([$rule['provider'], $rule['bank_account_id'], $providerTxId]);
+                $frozenRowKey = $context['transaction_keys'][$providerTxId] ?? $legacyRowKey;
+                if (($context['original_statement_key'] ?? null) !== $candidate['statement_key']
+                    || $candidate['statement_key'] !== self::key([$rule['provider'], $rule['bank_account_id'], $original['partner_id'], $original['statement_id']])
+                    || ($context['source_policy_sha256'] ?? null) !== $hash || $owner['policy_hash'] !== $hash
+                    || (int) $candidate['latest_revision'] !== $original['revision']
+                    || self::canonical($original['financial_scope']) !== self::canonical($scope)
+                    || $original['bank_account_id'] !== $rule['bank_account_id']
+                    || $frozenRowKey !== $candidate['tx_key']
+                    || ($context['capacities'][$providerTxId] ?? null) !== (int) $candidate['original_minor']
+                    || !in_array($providerTxId, array_column($original['lines'], 'provider_tx_id'), true)
+                    || ($context['claim']['account_id'] ?? null) !== $rule['bank_account_id']
+                    || ($context['claim']['legal_entity'] ?? null) !== ($context['legal_entity'] ?? null)) {
+                    throw new DomainException('partner_source_ownership_unproven');
+                }
+                $candidateKey = self::source_key($rule, $context['legal_entity'], $context['mode'], $providerTxId);
+            } catch (InvalidArgumentException | JsonException | TypeError $error) {
+                throw new DomainException('partner_source_ownership_unproven', 0, $error);
+            }
+            if ($candidateKey !== $sourceKey) {
+                continue; // Independently proven provider scopes may reuse their local transaction IDs.
+            }
+            if ($candidate['statement_key'] !== $statementKey || $own !== null) {
+                throw new DomainException('partner_transaction_already_owned');
+            }
+            $own = $candidate;
+        }
+        return $own;
     }
 
     public static function share(int $minor, int $basisPoints): int
