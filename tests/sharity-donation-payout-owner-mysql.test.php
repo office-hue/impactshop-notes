@@ -81,8 +81,19 @@ for($i=0;$i<256;$i++){$wpdb->db->query($wpdb->prepare("INSERT INTO `{$pt}` (acco
 check(d2abRead($o)['status']==='unavailable','257 rows returns unavailable, no truncation');
 // Snapshot race: failure inserted on second connection during first original-evidence read.
 [$o,$f,$h]=d2abFixture('RACE');d2yRecord($h);$ownerConnection=$wpdb;$inserted=false;
-$ownerConnection->afterRead=function($sql)use(&$inserted,$h,$ownerConnection){
-    if($inserted||!str_contains($sql,'SUBSTRING(CAST(canonical_json'))return;$inserted=true;$ownerConnection->afterRead=null;
+final class OwnerReadRaceMysqli extends mysqli {
+    public $beforeRead=null;
+    public function prepare(string $query):mysqli_stmt|false {
+        if($this->beforeRead!==null){($this->beforeRead)($query);}
+        return parent::prepare($query);
+    }
+}
+$ownerConnection->db->close();
+$ownerConnection->db=new OwnerReadRaceMysqli('127.0.0.1','root','isolated-donation-test-only','donation_test',(int)$port);
+$ownerConnection->db->set_charset('utf8mb4');
+$ownerConnection->db->beforeRead=function($sql)use(&$inserted,$h,$ownerConnection){
+    if($inserted||!str_contains($sql,'SUBSTRING(CAST(canonical_json'))return;$inserted=true;
+    $ownerConnection->db->beforeRead=null;
     $second=new OrderDb((int)$GLOBALS['port']);$GLOBALS['wpdb']=$second;
     try{$x=clone $h;$x->responses['/v1/payouts/po_SYNTHETIC']['status']='failed';$x->pages['']['data']=[];d2yRecord($x,$GLOBALS['now']+1);}finally{$second->db->close();$GLOBALS['wpdb']=$ownerConnection;}
 };
