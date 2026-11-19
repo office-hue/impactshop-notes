@@ -1,3 +1,7 @@
+## 2026-11-19 — BabaMama Expo Stripe fogadó
+
+A kampányhoz kötött, alapból kikapcsolt fogadó külön WordPress-modul. A helyi 66 ellenőrzés sikerült elkülönített MariaDB-n, a rögzített Stripe SDK-val. A kiadási csomag egyetlen inaktív pluginfájl. A fogadási cím, a külön séma és a későbbi Stripe-bekötés feltételei a [kiadási leírásban](docs/babamama-expo-stripe-webhook.md) vannak.
+
 ## 2026-11-19 — Aláírt bankjóváírás és owner/Card adapter
 
 A meglévő Bank V2 journal/cash/claim és a Donation kölcsönzött natív olvasó összekötve; teljes tételkészlet, aktuális kézi zárás, eredeti binding, bankbizonylat-lenyomat és pontos azonos deviza kötelező. Owner csak saját contribution/dátum/deviza, Card direct/amplifier partial; nincs új platformkapacitás vagy párhuzamos főkönyv. PHP8.3.27/MariaDB10.11.19 parent0059645 PASS, owner738/payout1329; valódi konkurencia/rollback/lost-ACK, korrupció/sémakapcsoló és visszaérkezés vizsgált. Független célzott review lezárva; saját konténer eltávolítva. Pontos forrás/loghash, kockázat, rollback és későbbi kézi UI: `docs/protected-change-records/2026-11-19-donation-bank-reconciliation.md`. Telepítés/aktiválás/éles írás nincs. Korábbi notes-WIP változatlanul megőrzött és nem része a commitnak.
