@@ -57,6 +57,7 @@ final class ImpactShop_Ngo_Card_Directory
                 }
                 return $q === '' || str_contains(self::key($entry['name'] . ' ' . ($entry['short_mission'] ?? '')), $q);
             }));
+            $entries = self::with_badges($entries);
             $page = max(1, (int) $request->get_param('page'));
             $perPage = min(100, max(1, (int) ($request->get_param('per_page') ?: 48)));
             $total = count($entries);
@@ -70,6 +71,33 @@ final class ImpactShop_Ngo_Card_Directory
         } catch (Throwable $error) {
             return new WP_Error('impact_card_directory_unavailable', 'A teljes Card-lista átmenetileg nem érhető el.', ['status' => 503]);
         }
+    }
+
+    /** Optional daily tier projection; identity availability is independent. */
+    private static function with_badges(array $entries): array
+    {
+        try {
+            // false rejects expired cache when the native dataset cannot rebuild.
+            // Reuse the existing tier calculation; never derive a tier from rank here.
+            $cards = ImpactShop_NGO_Card_API::get_dataset_items(false);
+            $observedAt = gmdate('c');
+            foreach ($entries as &$entry) {
+                $card = $cards[$entry['slug']] ?? null;
+                if (!is_array($card) || ($card['slug'] ?? null) !== $entry['slug']) { continue; }
+                $badge = $card['badge_status'] ?? null;
+                if (!is_array($badge) || !in_array($badge['key'] ?? null, ['base', 'rising', 'legend'], true)) { continue; }
+                $entry['badge_status'] = ['key' => $badge['key']];
+                if (isset($badge['label']) && is_string($badge['label'])) {
+                    $entry['badge_status']['label'] = mb_substr(trim(wp_strip_all_tags($badge['label'])), 0, 80);
+                }
+                // Observation time of a <=15-minute native dataset, not financial freshness.
+                $entry['badge_fetched_at'] = $observedAt;
+            }
+            unset($entry);
+        } catch (Throwable $error) {
+            // Tier source failure must neither fabricate Base nor hide approved identities.
+        }
+        return $entries;
     }
 
     /** Public identities only. Missing financial NGO IDs stay missing. No writes. */
