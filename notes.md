@@ -1,3 +1,14 @@
+## 2026-11-19 — NGO Card napi besorolás, forrásmunka
+
+A saját `fix/ngo-card-daily-badges-20261119` ág a rögzített b0881d7b alapon
+készült; a jóváhagyott Git-ablak readback után 2,65 másodpercnél felszabadult.
+A teljes Card-directory opcionális tier/idő mezőket kap, natív friss batchből;
+a 25-ös részletrotáció és a WP szintszámítása változatlan.
+Érintett addon/fixture, célzott audit és kiadás/rollback:
+`docs/ngo-card-directory-jysk-2026-11-09.md` 2026-11-19-i szakasz.
+Airen és a Mini saját worktree-jében is sikeres a PHP-lint és mind a 64
+izolált assertion. A natív audit és PR következik; telepítés/adatírás nincs.
+
 ## 2026-11-19 — Friss kuponpilot és jóváhagyott TT-tervcsomag
 
 Friss helyi döntés: Arnold engedélyezte e TT-csomag első draftját Codexszel. Saját ág `feat/impactshop-tt-reference-20261119`, kiinduló `35d7a8ba`. A meglévő TT-osztály két tiszta codec-metódusa kanonikus `tt1-`+64hex alakban veszteségmentesen megőrzi az eredeti SAT1 32bájtját és a tárolt hash szerződését. Nincs új route, cél-link, tartós binding, séma, retention, provideraktiválás vagy külső küldés. PHP-lint,368osztály-,178TT-feed- és232alapellenőrzés sikeres; a meglévő teljes hashleltár0drift és6negatív eset sikeres. Csak a TT-osztály digestje és a manifest checksum változott; idegen pénzügyi hash megőrzött. A külön Sol/high reviewer nem talált konkrét P1/P2 leletet; saját lint/diff-check/368osztálypróbája is sikeres. Részletes kockázat/rollback/UI-lista a meglévő protected rekord végén. Telepítés és új pénzügyi/élő referencia-roundtrip nincs.

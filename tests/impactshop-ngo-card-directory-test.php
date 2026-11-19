@@ -19,7 +19,14 @@ class WP_Error {
 }
 class ImpactShop_NGO_Card_API {
     public static function get_approved_slug_records() { return $GLOBALS['approved']; }
+    public static function get_dataset_items(bool $allowStale = true): array {
+        $GLOBALS['badgeReads']++;
+        if ($allowStale) { throw new RuntimeException('Stale tier source must never be certified fresh'); }
+        if ($GLOBALS['badgeThrows']) { throw new RuntimeException('Tier source unavailable'); }
+        return $GLOBALS['badgeCards'];
+    }
 }
+$badgeCards = []; $badgeReads = 0; $badgeThrows = false;
 $hook = null; $registered = []; $approved = []; $primary = []; $totalOverride = null; $queries = 0; $assertions = 0;
 function add_filter($name, $callback, $priority, $args) {
     if ($name !== 'rest_request_after_callbacks' || $args !== 3) { throw new RuntimeException('Unexpected hook'); }
@@ -53,7 +60,7 @@ foreach ([new WP_REST_Request(), new WP_REST_Request(['card_directory' => '0']),
     new WP_REST_Request(['card_directory' => '1'], 'GET', '/impact/v1/vb2026/featured-ngos')] as $request) {
     check($hook($original, [], $request) === $original, 'non-Card routes are exactly unchanged');
 }
-check($queries === 0, 'ordinary VB/catalog path has no additional reads');
+check($queries === 0 && $badgeReads === 0, 'ordinary VB/catalog path has no additional reads');
 $error = new WP_Error('denied', 'denied', ['status' => 403]);
 check($hook($error, [], new WP_REST_Request(['card_directory' => '1'])) === $error, 'preserve permission error');
 $notFound = new WP_REST_Response([], 404);
@@ -128,6 +135,38 @@ check($county instanceof WP_Error && $county->data['status'] === 400, 'unsupport
 $overflowBase = new WP_REST_Response(['results' => [], 'pagination' => ['total_pages' => 1]], 200);
 $overflow = $hook($overflowBase, [], new WP_REST_Request(['card_directory' => '1', 'page' => 2, 'per_page' => 1]));
 check($overflow instanceof WP_REST_Response && $overflow->data['results'][0]['slug'] === 'new', 'combined last page reachable past native last page');
+// Fresh tier data uses one in-process batch and cannot change catalog identities.
+$registered = $save; $approved = ['new' => ['name' => 'Új szervezet']];
+$badgeReads = 0;
+$badgeCards = [
+    'existing' => ['slug' => 'existing', 'badge_status' => ['key' => 'rising', 'label' => '<b>Rising Mode</b>', 'private' => 'drop'], 'amount' => 999],
+    'new' => ['slug' => 'new', 'badge_status' => ['key' => 'legend', 'label' => 'Legend Mode']],
+];
+$before = time();
+$tiered = call_directory(['per_page' => 100]);
+check($badgeReads === 1, 'single native tier batch per directory request');
+check(count($tiered->data['results']) === 2, 'tiers do not alter identity coverage');
+check($tiered->data['results'][0]['badge_status'] === ['key' => 'rising', 'label' => 'Rising Mode'], 'canonical tier sanitized without leaking other fields');
+check($tiered->data['results'][1]['badge_status']['key'] === 'legend', 'approved supplemental tier is included');
+check(strtotime($tiered->data['results'][0]['badge_fetched_at']) >= $before, 'successful source observation is timestamped');
+check(!isset($tiered->data['results'][0]['amount']), 'tier transfer does not refresh financial details');
+$badgeCards['existing']['badge_status']['key'] = 'legend';
+check(call_directory()->data['results'][0]['badge_status']['key'] === 'legend', 'next batch observes tier transition');
+$badgeCards['existing']['badge_status']['key'] = 'gold';
+check(!isset(call_directory()->data['results'][0]['badge_status']), 'unsupported tier cannot become Base');
+$badgeCards['existing']['badge_status']['key'] = 'base';
+$badgeCards['existing']['slug'] = 'different';
+check(!isset(call_directory()->data['results'][0]['badge_status']), 'dataset slug mismatch cannot mix organizations');
+foreach ([false, true] as $failure) {
+    $badgeCards = []; $badgeThrows = $failure;
+    $missing = call_directory();
+    check($missing instanceof WP_REST_Response && $missing->get_status() === 200, 'tier failure preserves catalog response');
+    check(count($missing->data['results']) === 2, 'tier failure preserves identity coverage');
+    foreach ($missing->data['results'] as $row) {
+        check(!array_key_exists('badge_status', $row) && !array_key_exists('badge_fetched_at', $row), 'missing tier has no fabricated value or fresh timestamp');
+    }
+}
+$badgeThrows = false;
 $primary = []; $registered = []; $approved = [];
 check(call_directory() instanceof WP_Error, 'supplement cannot disguise an empty canonical source');
 echo json_encode(['status' => 'fixture-pass', 'assertions' => $assertions, 'liveWrites' => false]) . "\n";
