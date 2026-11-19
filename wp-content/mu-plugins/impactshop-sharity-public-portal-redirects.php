@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Sharity Public Portal Redirects
- * Description: Additive handoff from retired app portal URLs to the public Sharity home page.
+ * Description: Additive handoff from retired app portal URLs to the BabaMama Expo campaign.
  */
 
 defined('ABSPATH') || exit;
@@ -30,7 +30,7 @@ function impactshop_sharity_public_portal_request_matches(): bool
 }
 
 /**
- * Hand two retired public routes to the new Sharity home page.
+ * Hand two retired public routes to the BabaMama Expo campaign.
  *
  * The Location value is a constant: request query parameters, cookies,
  * profile identifiers and legacy campaign values are deliberately discarded.
@@ -46,7 +46,7 @@ function impactshop_sharity_public_portal_redirect(): void
     }
 
     nocache_headers();
-    wp_redirect('https://sharity.hu/', 302, 'Sharity Public Portal');
+    wp_redirect('https://sharity.hu/babamama-expo', 302, 'Sharity Public Portal');
     exit;
 }
 

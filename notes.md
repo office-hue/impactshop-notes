@@ -8831,3 +8831,8 @@ PR #293 merge `5b52787703a6555f00db3168ff77addb176d284a`; existing exact-file gu
 ## 2026-11-19 — TT referencia-codec kiadva, továbbra OFF
 
 PR #295 merge `db9a8712916904ebcbd7fff8f7a74332c188c5a8`; a szűk merge/fetch ablak felszabadult. Meglévő exact-file guarddal csak a TT-osztály került staging és production célra; új hash/lint/0444/betöltés és pontos 68 karakteres szintetikus roundtrip ellenőrzött. Preflight staging 4/4, production 5/5; config/policy és feed változatlan. Dognet ON/complete/3 cache-ajánlat/0 külső projekciós hívás, TT és CJ OFF, Admitad OFF/nincs adapter; névtelen REST mindkét célon 401. Ez telepített/betöltött codec, még nincs éles hívó, TT-aktiválás vagy vásárlási/elszámolási elfogadás. [Kiadási rekord, rollback és nyitott feltételek](docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-19--tt-referencia-codec-telepítve-továbbra-off). Kézi UI függő, mentés megőrizve; központi DOCSYNC acceptance nincs előreléptetve.
+
+## 2026-11-19 — BabaMama Expo portálcél
+
+A két konkrét QR/NFC portál változási feljegyzése:
+[docs/protected-change-records/2026-11-19-babamama-expo-portal-redirects.md](docs/protected-change-records/2026-11-19-babamama-expo-portal-redirects.md).
