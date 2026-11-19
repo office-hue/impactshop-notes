@@ -40,7 +40,40 @@ if (in_array('--manual-close-pure', $argv ?? [], true)) {
         $rejected=false;try { sharity_donation_target_manual_close($bad); } catch (RuntimeException $e) { $rejected=true; }
         $assert($rejected,'reject '.$case.' close');
     }
-    echo 'Direct HUF/EUR close pure contract: '.$checks." checks\n";
+    // Same immutable receipt contract for both native Amplifier money sides.
+    $directChecks = $checks;
+    foreach (['HUF','EUR'] as $currency) {
+        foreach ([0,1,4,5,29,1999,48029] as $total) {
+            $fund = intdiv($total,5); $ngo = $total-$fund;
+            $ampRaw = ['order_id'=>'do_'.str_repeat('b',32),'payment_currency'=>$currency,'connected_settlement_currency'=>$currency,
+                'policy'=>['donation_mode'=>'amplifier','policy_version'=>'amplifier-net80-v1'],
+                'connected_totals'=>[$currency=>['observed_deficit_minor'=>'0','net_minor'=>(string)$ngo]],
+                'platform_totals'=>['acct_PLATFORM'=>[$currency=>['net_minor'=>(string)$fund]]],
+                'provisional_split'=>['currency'=>$currency,'ngo_minor'=>(string)$ngo,'fund_minor'=>(string)$fund]];
+            $ampClosed=$seal($ampRaw);
+            $assert(sharity_donation_target_manual_close($ampClosed)===$ampClosed['manual_close'],'exact '.$currency.' floor/remainder receipt '.$total);
+        }
+        foreach (['missing-platform','two-platforms','wrong-ngo','wrong-fund','wrong-ratio','deficit','negative-ngo','negative-fund','extra-connected-currency','extra-platform-currency','settlement-fx','wrong-policy','sum-limit'] as $case) {
+            $bad=$ampRaw;
+            if ($case==='missing-platform') { unset($bad['platform_totals']); }
+            if ($case==='two-platforms') { $bad['platform_totals']['acct_OTHER']=$bad['platform_totals']['acct_PLATFORM']; }
+            if ($case==='wrong-ngo') { $bad['connected_totals'][$currency]['net_minor']='38423'; }
+            if ($case==='wrong-fund') { $bad['platform_totals']['acct_PLATFORM'][$currency]['net_minor']='9604'; }
+            if ($case==='wrong-ratio') { $bad['connected_totals'][$currency]['net_minor']=$bad['provisional_split']['ngo_minor']='40000';$bad['platform_totals']['acct_PLATFORM'][$currency]['net_minor']=$bad['provisional_split']['fund_minor']='8029'; }
+            if ($case==='deficit') { $bad['connected_totals'][$currency]['observed_deficit_minor']='1'; }
+            if ($case==='negative-ngo') { $bad['connected_totals'][$currency]['net_minor']=$bad['provisional_split']['ngo_minor']='-1'; }
+            if ($case==='negative-fund') { $bad['platform_totals']['acct_PLATFORM'][$currency]['net_minor']=$bad['provisional_split']['fund_minor']='-1'; }
+            if ($case==='extra-connected-currency') { $bad['connected_totals'][$currency==='HUF'?'EUR':'HUF']=['net_minor'=>'0','observed_deficit_minor'=>'0']; }
+            if ($case==='extra-platform-currency') { $bad['platform_totals']['acct_PLATFORM'][$currency==='HUF'?'EUR':'HUF']=['net_minor'=>'0']; }
+            if ($case==='settlement-fx') { $bad['connected_settlement_currency']=$currency==='HUF'?'EUR':'HUF'; }
+            if ($case==='wrong-policy') { $bad['policy']['policy_version']='direct-net100-v1'; }
+            if ($case==='sum-limit') { $bad['connected_totals'][$currency]['net_minor']=$bad['provisional_split']['ngo_minor']='999999999999999';$bad['platform_totals']['acct_PLATFORM'][$currency]['net_minor']=$bad['provisional_split']['fund_minor']='1'; }
+            $rejected=false;try { sharity_donation_target_manual_close($seal($bad)); } catch (RuntimeException $e) { $rejected=true; }
+            $assert($rejected,'reject '.$currency.' amplifier '.$case);
+        }
+    }
+    echo 'Direct close historical contract: '.$directChecks.'; Amplifier exact-net contract: '.($checks-$directChecks)." checks\n";
+
     exit(0);
 }
 $targetStart=$checks;
@@ -550,6 +583,118 @@ try {
     try{fails(fn()=>directCloseTest($ackOrder['order_id'],$ackRaw['proposal_digest'],$ackRef,$now),'DONATION_CLOSE_UNAVAILABLE');check($wpdb->db->query('SELECT @@in_transaction AS tx')->fetch_assoc()['tx']==='1','close refuses and preserves caller transaction');}finally{$wpdb->db->rollback();}
     check(sharity_donation_webhook_order($closeId)===$closeOrder,'all close scenarios preserve original order');
     echo 'Direct manual close MariaDB: '.($checks-$closeStart)." checks\n";
+
+    // Amplifier close uses fresh original evidence, never the already fully refunded D2q order.
+    $ampCloseStart=$checks;
+    $ampCloseFixture=static function(string $tag,string $currency='HUF',int $cost=2000,bool $balanceFee=true)use($ampData,$ampOrder):array {
+        global $snapshot,$options,$now;
+        $prior=$snapshot;$priorAccounts=$options['sharity_donation_accounts_v1'];
+        $snapshot=sharity_donation_order_decode($ampOrder)['snapshot'];$snapshot['currency']=$currency;
+        $gross=50000;$fee=intdiv($gross,5);$snapshot['amount_minor']=(string)$gross;
+        if ($currency!=='HUF') { $snapshot['price_book_version']='amplifier-net80-v1:2026-11-02:'.$currency; }
+        $options['sharity_donation_accounts_v1']['test-ngo']['currencies'][$currency]=['min_minor'=>'1','max_minor'=>'1000000'];
+        try { $order=financeOrder('amp-close-'.$tag); } finally { $snapshot=$prior;$options['sharity_donation_accounts_v1']=$priorAccounts; }
+        $d=$ampData;
+        array_walk_recursive($d,static function(&$v,$key)use($currency):void { if ($key==='currency') { $v=$currency; } });
+        $d['original']['order_id']=$order['order_id'];$d['original']['session_id']=$order['provider_session_id'];
+        $d['original']['payment']=['amount_minor'=>(string)$gross,'currency'=>$currency];$d['original']['platform_account_id']='acct_PLATFORM';
+        $b=&$d['original']['initial_charge_balance'];$b['id']='txn_AMPCH'.$tag;$b['gross_minor']=(string)$gross;
+        $b['total_fee_minor']=(string)($cost+$fee);$b['processing_cost_minor']=(string)$cost;$b['application_fee_minor']=(string)$fee;$b['net_minor']=(string)($gross-$cost-$fee);
+        $b['fee_details']=[['amount_minor'=>(string)$fee,'currency'=>$currency,'type'=>'application_fee']];
+        if ($cost>0) { $b['fee_details'][]=['amount_minor'=>(string)$cost,'currency'=>$currency,'type'=>'stripe_fee']; } unset($b);
+        $f=&$d['original']['application_fee'];$f['id']='fee_AMP'.$tag;$f['amount_minor']=(string)$fee;$f['refund_state']['amount_refunded_minor']='0';
+        $f['initial_balance']=array_replace($f['initial_balance'],['id'=>'txn_AMPF'.$tag,'gross_minor'=>(string)$fee,'total_fee_minor'=>'0','application_fee_minor'=>'0','processing_cost_minor'=>'0','net_minor'=>(string)$fee,'fee_details'=>[]]);unset($f);
+        $d['fee_refunds']=[];$d['refunds']=[];$d['disputes']=[];$d['unresolved']=[];
+        $refund=$fee-intdiv($gross-$cost,5);
+        if ($balanceFee && $refund>0) {
+            $fr='fr_AMP'.$tag;$debit=reconcileBalance('txn_AMPD'.$tag,$fr,'application_fee_refund',(string)-$refund,'0','platform');
+            $credit=reconcileBalance('txn_AMPC'.$tag,$fr,'adjustment',(string)$refund)+['account_id'=>$d['original']['account_id']];
+            $debit['currency']=$credit['currency']=$currency;
+            $d['fee_refunds']=[['id'=>$fr,'fee_id'=>$d['original']['application_fee']['id'],'amount_minor'=>(string)$refund,'currency'=>$currency,'created'=>1800000010,'connected_credit_verified'=>true,'balance'=>$debit,'connected_credit'=>$credit]];
+            $d['original']['application_fee']['refund_state']['amount_refunded_minor']=(string)$refund;
+        }
+        reconcileFixture($order,$d);sharity_donation_finance_record_movements($order['order_id'],movementProposal($order),$now);
+        return [$order,$d,targetSave($order)];
+    };
+    foreach (['HUF','EUR'] as $ampCurrency) {
+        [$ao,$ad,$ar]=$ampCloseFixture($ampCurrency,$ampCurrency,$ampCurrency==='EUR'?1971:2000);$aid=$ao['order_id'];$aref=backingRef('amp-'.$ampCurrency);
+        $expectedAmp=$ampCurrency==='HUF'?['currency'=>'HUF','ngo_minor'=>'38400','fund_minor'=>'9600']:['currency'=>'EUR','ngo_minor'=>'38424','fund_minor'=>'9605'];
+        check($ar['target']['provisional_split']===$expectedAmp,'fresh native '.$ampCurrency.' rounding and both fee-refund sides');
+        $count=targetCount($aid);$observations=financeCount();$movements=movementCount();
+        $preview=directCloseTest($aid,$ar['proposal_digest'],$aref,$now);
+        check(!$preview['persisted']&&targetCount($aid)===$count&&financeCount()===$observations&&movementCount()===$movements,'amplifier preview changes no financial table');
+        $approved=directCloseTest($aid,$ar['proposal_digest'],$aref,$now,$preview['proposal_digest']);
+        check($approved['scope']==='recorded_amplifier_net_only'&&$approved['persisted']&&$approved['current_applicable']&&targetCount($aid)===$count+1,'exact native '.$ampCurrency.' approved once');
+        check(sharity_donation_finance_json($approved['target']['manual_close']['approved_split'])===sharity_donation_finance_json($expectedAmp)&&$approved['economic_generation']===$ar['economic_generation'],'amplifier immutable receipt retains economic generation');
+        foreach (['payment_verified','allocation_eligible','settlement_reconciled','activation_allowed'] as $flag) { check($approved['target'][$flag]===false,'amplifier keeps '.$flag.' held'); }
+        check($approved['target']['full_liability_minor']===null&&$approved['target']['full_liability_status']==='unknown','amplifier approval cannot release future liability');
+        $av=sharity_donation_owned_status($ao['subject_ref'],'order_id',$aid,$now)['financial'];
+        check($av['reconciliation_status']==='approved'&&sharity_donation_finance_json($av['approved_split'])===sharity_donation_finance_json($expectedAmp+['approved_at_utc'=>gmdate('Y-m-d\TH:i:s\Z',$now)])&&$av['provisional_split']===null&&$av['bank_receipt']===null,'existing V2 approved shape without bank claim');
+        $replay=directCloseTest($aid,$ar['proposal_digest'],$aref,$now+60,$preview['proposal_digest']);
+        check($replay['already_closed']&&$replay['evidence_recorded']&&$replay['revision']===$approved['revision']&&targetCount($aid)===$count+1,'exact amplifier replay retains approval evidence and one revision');
+        check(targetSave($ao)['target']===$approved['target'],'existing target worker preserves full amplifier receipt');
+        if ($ampCurrency==='HUF') { $partialOrder=$ao;$partialData=$ad;$partialRaw=$ar;$partialPreview=$preview;$partialApproved=$approved;$partialRef=$aref; }
+        $ad['original']['initial_charge_balance']['status']='pending';reconcileFixture($ao,$ad);
+        $reopened=sharity_donation_owned_status($ao['subject_ref'],'order_id',$aid,$now)['financial'];
+        check($reopened['reconciliation_status']==='reopened'&&$reopened['approved_split']===null,'new amplifier observation reopens old approval immediately');
+        check(!directCloseTest($aid,$ar['proposal_digest'],$aref,$now+60,$preview['proposal_digest'])['current_applicable'],'historical amplifier replay cannot claim current net');
+    }
+    // A real, fully reflected partial refund needs its own newly reviewed exact split.
+    $pd=$partialData;$pid=$partialOrder['order_id'];$pd['original']['charge_refund_state']['amount_refunded_minor']='1000';
+    $pd['refunds']=[['id'=>'re_AMPPART','amount_minor'=>'1000','currency'=>'HUF','created'=>1800000011,'status'=>'succeeded','balance'=>reconcileBalance('txn_AMPPART','re_AMPPART','refund','-1000'),'failure_balance'=>null]];
+    $pd['fee_refunds'][]=['id'=>'fr_AMPPART','fee_id'=>$pd['original']['application_fee']['id'],'amount_minor'=>'200','currency'=>'HUF','created'=>1800000011,'connected_credit_verified'=>true,
+        'balance'=>reconcileBalance('txn_AMPPARTD','fr_AMPPART','application_fee_refund','-200','0','platform'),
+        'connected_credit'=>reconcileBalance('txn_AMPPARTC','fr_AMPPART','adjustment','200')+['account_id'=>$pd['original']['account_id']]];
+    $pd['original']['application_fee']['refund_state']['amount_refunded_minor']='600';reconcileFixture($partialOrder,$pd);
+    sharity_donation_finance_record_movements($pid,movementProposal($partialOrder),$now);$pr=targetSave($partialOrder);$pref=backingRef('amp-partial');
+    check($pr['target']['provisional_split']===['currency'=>'HUF','ngo_minor'=>'37600','fund_minor'=>'9400'],'complete partial refund has new exact native split');
+    $preview=directCloseTest($pid,$pr['proposal_digest'],$pref,$now);$approved=directCloseTest($pid,$pr['proposal_digest'],$pref,$now,$preview['proposal_digest']);
+    check($approved['current_applicable']&&$approved['revision']>$partialApproved['revision'],'partial refund reviewed as new immutable close');
+    // Computed theoretical split is insufficient until the actual fee-return counterleg exists.
+    [$unequal,,$unequalRaw]=$ampCloseFixture('UNEQUAL','HUF',2000,false);
+    fails(fn()=>directCloseTest($unequal['order_id'],$unequalRaw['proposal_digest'],backingRef('unequal'),$now),'DONATION_CLOSE_CONFLICT');
+    check(targetCount($unequal['order_id'])===1,'unequal actual nets never append approval');
+    [$missing,$missingData]=$ampCloseFixture('MISSING','HUF',2000,false);
+    $missingData['fee_refunds']=[['id'=>'fr_AMPMISSING','fee_id'=>$missingData['original']['application_fee']['id'],'amount_minor'=>'400','currency'=>'HUF','created'=>1800000010,'connected_credit_verified'=>false,'balance'=>reconcileBalance('txn_AMPMISSING','fr_AMPMISSING','application_fee_refund','-400','0','platform')]];
+    $missingData['original']['application_fee']['refund_state']['amount_refunded_minor']='400';$missingData['unresolved']=['fee_refund_connected_credit_unreconciled'];reconcileFixture($missing,$missingData);
+    sharity_donation_finance_record_movements($missing['order_id'],movementProposal($missing),$now);$missingRaw=targetSave($missing);
+    fails(fn()=>directCloseTest($missing['order_id'],$missingRaw['proposal_digest'],backingRef('missing'),$now),'DONATION_CLOSE_STALE');
+    foreach ([$fxq,$lost] as $denied) {
+        $deniedRaw=targetSave($denied);fails(fn()=>directCloseTest($denied['order_id'],$deniedRaw['proposal_digest'],backingRef('fx-loss'),$now),'DONATION_CLOSE_STALE');
+    }
+    [$pending,$pendingData,$pendingRaw]=$ampCloseFixture('PENDING');
+    $pendingData['refunds']=[['id'=>'re_AMPPENDING','amount_minor'=>'1000','currency'=>'HUF','created'=>1800000010,'status'=>'pending','balance'=>null,'failure_balance'=>null]];reconcileFixture($pending,$pendingData);
+    $pendingRaw=targetSave($pending);fails(fn()=>directCloseTest($pending['order_id'],$pendingRaw['proposal_digest'],backingRef('pending'),$now),'DONATION_CLOSE_STALE');
+    [$disputed,$disputedData]=$ampCloseFixture('DISPUTED');$disputedData['original']['disputed']=true;
+    $disputedData['disputes']=[['id'=>'dp_AMPDISPUTED','amount_minor'=>'50000','currency'=>'HUF','created'=>1800000010,'status'=>'needs_response','balances'=>[]]];reconcileFixture($disputed,$disputedData);
+    $disputedRaw=targetSave($disputed);fails(fn()=>directCloseTest($disputed['order_id'],$disputedRaw['proposal_digest'],backingRef('disputed'),$now),'DONATION_CLOSE_STALE');
+    // No-cost original split already exact; fully refunded exact zero can close without negative fees.
+    [$zero,$zd,$zr]=$ampCloseFixture('ZERO','HUF',0);$zid=$zero['order_id'];$zref=backingRef('zero-cost');
+    $zpreview=directCloseTest($zid,$zr['proposal_digest'],$zref,$now);
+    check(directCloseTest($zid,$zr['proposal_digest'],$zref,$now,$zpreview['proposal_digest'])['current_applicable'],'already exact native split needs no synthetic fee refund');
+    $zd['original']['charge_refund_state']['amount_refunded_minor']='50000';$zd['original']['charge_refund_state']['fully_refunded']=true;
+    $zd['refunds']=[['id'=>'re_AMPFULL','amount_minor'=>'50000','currency'=>'HUF','created'=>1800000010,'status'=>'succeeded','balance'=>reconcileBalance('txn_AMPFULL','re_AMPFULL','refund','-50000'),'failure_balance'=>null]];
+    $zd['fee_refunds']=[['id'=>'fr_AMPFULL','fee_id'=>$zd['original']['application_fee']['id'],'amount_minor'=>'10000','currency'=>'HUF','created'=>1800000010,'connected_credit_verified'=>true,
+        'balance'=>reconcileBalance('txn_AMPFULLD','fr_AMPFULL','application_fee_refund','-10000','0','platform'),
+        'connected_credit'=>reconcileBalance('txn_AMPFULLC','fr_AMPFULL','adjustment','10000')+['account_id'=>$zd['original']['account_id']]]];
+    $zd['original']['application_fee']['refund_state']['amount_refunded_minor']='10000';reconcileFixture($zero,$zd);
+    sharity_donation_finance_record_movements($zid,movementProposal($zero),$now);$zr=targetSave($zero);$zpreview=directCloseTest($zid,$zr['proposal_digest'],$zref,$now);
+    $zclosed=directCloseTest($zid,$zr['proposal_digest'],$zref,$now,$zpreview['proposal_digest']);
+    check(sharity_donation_finance_json($zclosed['target']['manual_close']['approved_split'])===sharity_donation_finance_json(['currency'=>'HUF','ngo_minor'=>'0','fund_minor'=>'0']),'complete no-cost full refund closes exact zero, never fee deficit');
+    foreach (['commit-before','commit-after','target-insert'] as $fault) {
+        [$fo,,$fr]=$ampCloseFixture('FAULT'.str_replace('-','',$fault));$fid=$fo['order_id'];$fref=backingRef('amp-'.$fault);$fp=directCloseTest($fid,$fr['proposal_digest'],$fref,$now);
+        targetConnection($fault);
+        try {
+            if ($fault==='commit-after') { check(directCloseTest($fid,$fr['proposal_digest'],$fref,$now,$fp['proposal_digest'])['persisted'],'amplifier lost commit ACK resolved by readback'); }
+            else { fails(fn()=>directCloseTest($fid,$fr['proposal_digest'],$fref,$now,$fp['proposal_digest']),$fault==='commit-before'?'DONATION_CLOSE_CONFLICT':'DONATION_CLOSE_UNAVAILABLE'); }
+        } finally { targetConnection(); }
+        check(targetCount($fid)===($fault==='commit-after'?2:1),'amplifier transaction fault preserves actual outcome '.$fault);
+    }
+    [$aco,,$acr]=$ampCloseFixture('RACE');$acref=backingRef('amp-race');$acp=directCloseTest($aco['order_id'],$acr['proposal_digest'],$acref,$now);
+    $acraces=backingRace(static fn()=>directCloseTest($aco['order_id'],$acr['proposal_digest'],$acref,$GLOBALS['now'],$acp['proposal_digest']),'WHERE order_id = ? FOR UPDATE');
+    check(isset($acraces[0]['value'],$acraces[1]['value'])&&targetCount($aco['order_id'])===2,'two actual amplifier connections append only one approval');
+    check($acraces[0]['value']['revision']===$acraces[1]['value']['revision']&&count(array_filter($acraces,static fn($r)=>!$r['value']['already_closed']))===1,'concurrent amplifier loser reads original approval');
+    echo 'Amplifier manual close MariaDB: '.($checks-$ampCloseStart)." checks\n";
 
     echo 'D2s financial owner read MariaDB: '.($checks-$readStart)." checks\n";
     echo 'Donation target MariaDB: '.($checks-$targetStart)." checks; exact net, per-currency, registry, stale and native concurrent/commit faults\n";
