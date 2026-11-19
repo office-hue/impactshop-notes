@@ -2,7 +2,7 @@
 declare(strict_types=1);
 // Included only in the existing disposable MariaDB harness.
 final class D2yHttp implements Stripe\HttpClient\ClientInterface {
-    public array $responses=[],$pages=[],$calls=[];public $mutate=null;
+    public array $responses=[],$pages=[],$calls=[];public $mutate=null;public string $payoutId='po_SYNTHETIC';
     public function request($m,$u,$h,$p,$f,$a='v1',$r=null){
         global $wpdb;$path=parse_url($u,PHP_URL_PATH);
         check($m==='get'&&$f===false&&$r===0&&$a==='v1','payout reads official GET only, no retry');
@@ -10,7 +10,7 @@ final class D2yHttp implements Stripe\HttpClient\ClientInterface {
         $this->calls[]=['path'=>$path,'params'=>$p,'headers'=>array_values(array_filter($h,static fn($x)=>!str_starts_with(strtolower($x),'authorization:')))];
         if($this->mutate!==null)($this->mutate)($path,$this);
         if($path==='/v1/balance_transactions'){
-            check(($p['payout']??null)==='po_SYNTHETIC'&&($p['limit']??null)===100&&!isset($p['currency'])&&!isset($p['type']),'exact payout filter and bounded whole batch');
+            check(($p['payout']??null)===$this->payoutId&&($p['limit']??null)===100&&!isset($p['currency'])&&!isset($p['type']),'exact payout filter and bounded whole batch');
             $data=$this->pages[$p['starting_after']??'']??null;
         }else{$data=$this->responses[$path]??null;}
         if(!is_array($data))throw new RuntimeException('PRIVATE_PROVIDER_FAILURE');
