@@ -1,3 +1,7 @@
+## 2026-11-19 — Amplifier kiadási hashkötés
+
+A merged31784bc1 finance-ledger forrás SHA8399a3ea rögzítése egyetlen meglévő protected hashbejegyzésben, külső checksum frissítéssel. Nincs guard/config/policy/PHP módosítás; a korábbi natív CI44522431646 SUCCESS érvényes marad. A Mini saját tiszta release-worktree-je és az éles/staging remoteSHA visszaolvasott; az első guard dry-run a régi leltár miatt megállt, távoli írás nincs. Részletes protected record: `docs/protected-change-records/2026-11-19-amplifier-financial-close.md`. Ez még nem telepítési vagy aktiválási elfogadás.
+
 ## 2026-11-17 — Partner pénzügyi writer célzott leltárbővítése
 
 Az additív `impactshop-partner-finance.php` saját útja és hash-e bekerül a meglévő protected inventoryba; a config saját hash-e és két külső checksum követi. Minden korábbi inventorybejegyzés/forráshash megmarad, guardkód/protected-modell/CI nem változik. Indok: az új, aláírt és eredeti készpénzhez kötött pénzügyi writer ugyanazt a meglévő forrásvédelmet kapja. Koherencia, kockázat, helyi ellenőrzés, rollback és kézi UI: `docs/partner-reconciliation-job.md`. Nincs telepítés vagy aktiválás.

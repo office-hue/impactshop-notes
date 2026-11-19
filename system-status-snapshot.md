@@ -1,3 +1,7 @@
+## 2026-11-19 — Amplifier kiadási hashkötés
+
+A merged31784bc1 finance-ledger forrás SHA8399a3ea rögzítése egyetlen meglévő protected hashbejegyzésben, külső checksum frissítéssel. Nincs guard/config/policy/PHP módosítás; a korábbi natív CI44522431646 SUCCESS érvényes marad. A Mini saját tiszta release-worktree-je és az éles/staging remoteSHA visszaolvasott; az első guard dry-run a régi leltár miatt megállt, távoli írás nincs. Részletes protected record: `docs/protected-change-records/2026-11-19-amplifier-financial-close.md`. Ez még nem telepítési vagy aktiválási elfogadás.
+
 ## 2026-11-19 — Amplifier rögzített nettó: helyi implementáció, natív elfogadás függő
 
 Saját `feat/sharity-amplifier-finance-close-20261119`, alap `325163a70f9953a0bbb05ec94c1caea15f55d020`. A meglévő finance-close Amplifierre is alkalmazható kizárólag teljes, azonos HUF/EUR devizájú aktuális rögzített mozgáskészlet és a tényleges NGO/platform nettó pontos80/20 egyezésekor; a történeti Direct receipt és digest változatlan. A közös validátor már írás előtt ellenőrzi a két pénzoldalt; nincs új tábla, provider-, backing-, bank-, fund-, payout- vagy jutalomművelet. A V2 consumer jóváhagyott splitet kaphat, bankreceipt továbbra null; az új megfigyelés a régi jóváhagyást reopened állapotba teszi. TimeWall nem változott.
