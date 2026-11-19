@@ -1,3 +1,14 @@
+## 2026-11-19 — NGO Card napi besorolás, forrásmunka
+
+A saját `fix/ngo-card-daily-badges-20261119` ág a rögzített b0881d7b alapon
+készült; a jóváhagyott Git-ablak readback után 2,65 másodpercnél felszabadult.
+A teljes Card-directory opcionális tier/idő mezőket kap, natív friss batchből;
+a 25-ös részletrotáció és a WP szintszámítása változatlan.
+Érintett addon/fixture, célzott audit és kiadás/rollback:
+`docs/ngo-card-directory-jysk-2026-11-09.md` 2026-11-19-i szakasz.
+Airen és a Mini saját worktree-jében is sikeres a PHP-lint és mind a 64
+izolált assertion. A natív audit és PR következik; telepítés/adatírás nincs.
+
 ## 2026-11-17 — Partner pénzügyi adapter, helyi forrásjelölt
 
 Kidolgozási ág: `feat/sharity-partner-finance-20261117`, alap `5ac7e92fba9e674793acf42c3e8ed98bc3028161`. Izolált forráspublikálási ág: saját `feat/sharity-partner-finance-release-20261117` ág a rögzített `8c8ca0a1f7643932a7dac3d06a3e12140c2bb3f9` alapról, kizárólag e csomag saját commitjaival; a donor két meglévő commitja nem része a kiadásnak. Új additív partnerkimutatás-adapter a közös B aláírt `partner-statement` collector műveletéhez; nincs affiliate-runtime/redirect/points/publicDTO módosítás. Két saját InnoDB-tábla, immutable kimutatásrevízió, provider/számla/tranzakció egyediség, pontos HUF/EUR, privát policy szerinti arány, eredeti NGO-kötés. Hiányzó attribúció csak az érintett sort tartja vissza. A teljes kimutatás és egy pontosan egyező bankrész párosítása támogatott; több beérkezésre fel nem osztott kimutatás nem könyvelhető automatikusan.
