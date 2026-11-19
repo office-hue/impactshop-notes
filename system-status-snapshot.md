@@ -1,7 +1,3 @@
-## 2026-11-19 — TT megerősített vásárlás, OFF forrásjelölt
-
-Saját `feat/impactshop-tt-outbound-20261119` ág: fix VidaXL merchant link, TT POST a meglévő owner/NGO/UUID/COMMIT útban, immutable snapshot és frozen jóváhagyott retention; nincs új tábla/writer vagy aktiválás. Két egymást követő független tervaudit lezárult; WP kódreview két P2-je javítva és célzottan visszaellenőrizve (COMMIT fault célzása, cache-t megkerülő aktuális kapcsoló/review). PHP-lint, régi Dognet/CJ +60 TT eset,368 osztály-,178 TT-feed és232 baseline sikeres; affiliate Bástya és teljes hashleltár0drift/6negatív PASS. Csak a saját két runtime digest/checksum frissül. Valódi SQL NOT RUN, új DB/fullbuild a kb.19/20GB Air/Mini kapacitás mellett nem indult; nincs cleanup, remoteírás, credential-elhelyezés vagy provideraktiválás. Web pár célzottan tesztelt, külön review lezárva. Részletes fájl-, kiadás-, rollback- és UI-lista: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md` R2. DOCSYNC csak forrásjelölt, központi acceptance változatlan.
-
 ## 2026-11-19 — BabaMama Expo Stripe fogadó
 
 A kampányhoz kötött, alapból kikapcsolt fogadó külön WordPress-modul. A helyi 66 ellenőrzés sikerült elkülönített MariaDB-n, a rögzített Stripe SDK-val. A kiadási csomag egyetlen inaktív pluginfájl. A fogadási cím, a külön séma és a későbbi Stripe-bekötés feltételei a [kiadási leírásban](docs/babamama-expo-stripe-webhook.md) vannak.
@@ -2431,3 +2427,7 @@ PR #295 merge `db9a8712916904ebcbd7fff8f7a74332c188c5a8`; a szűk merge/fetch ab
 
 A két portál 302-es célja ebben a forráscsomagban a BabaMama Expo kampányoldal.
 Kiadási és rollback-határ: egyetlen meglévő WordPress-plugin.
+
+## 2026-11-19 — TT megerősített vásárlás, OFF forrásjelölt
+
+Saját `feat/impactshop-tt-outbound-20261119` ág: fix VidaXL merchant link, TT POST a meglévő owner/NGO/UUID/COMMIT útban, immutable snapshot és frozen jóváhagyott retention; nincs új tábla/writer vagy aktiválás. Két egymást követő független tervaudit lezárult; WP kódreview két P2-je javítva és célzottan visszaellenőrizve (COMMIT fault célzása, cache-t megkerülő aktuális kapcsoló/review). PHP-lint, régi Dognet/CJ +60 TT eset,368 osztály-,178 TT-feed és232 baseline sikeres; affiliate Bástya és teljes hashleltár0drift/6negatív PASS. Csak a saját két runtime digest/checksum frissül. Friss privát CI-ben a változatlan #300 forrás valódi PHP8.3/MariaDB10.11.19/WordPress6.9.4 SQL-próbája117 ellenőrzéssel PASS, a web teljes Next-buildje133/133 oldallal PASS; nincs cleanup, remoteírás, credential-elhelyezés vagy provideraktiválás. Web pár célzottan tesztelt, külön review lezárva. Részletes fájl-, kiadás-, rollback- és UI-lista: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md` R2. DOCSYNC csak forrásjelölt, központi acceptance változatlan.
