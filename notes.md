@@ -1,3 +1,9 @@
+## 2026-11-19 — Amplifier review és első natív futás: konkrét javítás
+
+PR298 ed772a25 jelölt; ai-agent PR2179 CI44521795545/financial135552164242 a Bank/partner/WP/fund és meglévő Direct111close regressziókon átment, az új Amplifier-fixture első rendelése NGO_UNAVAILABLE hibával megállt. Oka a teszt HUF min_minor1 értéke, miközben a meglévő HUF quote-contract egészforintos minorhoz100-at kíván; javítva HUF100/EUR1-re. Nem source-/natívPASS, nem vakrerun.
+
+A független kódreview P2-je: a natív balance pending státuszát a régi cél/olvasó nem tekinti heldnek. A javítás Amplifierre szűkítve a meglévő fee_candidate complete/nonpending ellenőrzését read-only újrahasználja; nulla hátralévő fee-refund és minden physicalmovementhez tényleges available megfigyelés kell. Új connected/platform/fee-debit/fee-credit/hibás pendingflag negatív eset és a későbbi available proof utáni lezárás készül. A történeti Direct nem változik. A javított exacthead CI és reviewer-visszaolvasás még szükséges; nincs telepítés/aktiválás.
+
 ## 2026-11-19 — Amplifier rögzített nettóelszámolás: saját munka indul
 
 Saját ág `feat/sharity-amplifier-finance-close-20261119`, alap `325163a70f9953a0bbb05ec94c1caea15f55d020`; tiszta induló állapot, a donor/WIP megőrzött. A meglévő finance-close legkisebb kiegészítése készül: az eredeti HUF/EUR Amplifier-policy mellett csak teljes regisztrált mozgáskészlet és az NGO/platform tényleges nettójának pontos80/20 egyezése zárható. Nincs új főkönyv, provider-/bankművelet, fund-/backing-/payout-/jutalomaktiválás. Két független tervaudit nem talált igazoltP1/P2 leletet; a régi25Direct pure baseline és PHP-lint ténylegesen sikeres. Az első draft külön engedélyezett, szűrt Hermes–Nous csomag, legfeljebb két forduló, meglévő személyes előfizetés, vásárlás/keretemelés nélkül. Új forrás/native elfogadás, PR, deploy és aktiválás jelenleg nincs.

@@ -1496,6 +1496,19 @@ function sharity_donation_finance_close(string $orderId, string $expect, array $
                 || ($snapshot['donation_mode'] === 'direct' && $split['fund_minor'] !== '0')
                 || ($view['adjustment_status'] === 'full_refund' && ($split['ngo_minor'] !== '0' || $split['fund_minor'] !== '0'))
                 || sharity_donation_backing_time($view['snapshot_at_utc']) > $now) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+            if ($snapshot['donation_mode'] === 'amplifier') {
+                // Reuse the existing complete scoped fee/refund proof, without executing it.
+                try { $fee = sharity_donation_fee_candidate($order, $snapshot, $inventory, $raw); }
+                catch (Throwable $unavailable) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+                if ($fee['refund_minor'] !== '0') { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+                foreach ($inventory['movements'] as $movement) {
+                    $available = false;
+                    foreach ($movement['observations'] as $observation) {
+                        if ($observation['status'] === 'available') { $available = true; }
+                    }
+                    if (!$available) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+                }
+            }
             $proposal = hash('sha256', sharity_donation_finance_json([$orderId, $expect, $evidence, $split]));
             if ($apply !== '' && !hash_equals($proposal, $apply)) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
             $raw['manual_close'] = ['version'=>1, 'source_target_digest'=>$expect, 'proposal_digest'=>$proposal,

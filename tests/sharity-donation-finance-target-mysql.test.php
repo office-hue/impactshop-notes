@@ -592,7 +592,7 @@ try {
         $snapshot=sharity_donation_order_decode($ampOrder)['snapshot'];$snapshot['currency']=$currency;
         $gross=50000;$fee=intdiv($gross,5);$snapshot['amount_minor']=(string)$gross;
         if ($currency!=='HUF') { $snapshot['price_book_version']='amplifier-net80-v1:2026-11-02:'.$currency; }
-        $options['sharity_donation_accounts_v1']['test-ngo']['currencies'][$currency]=['min_minor'=>'1','max_minor'=>'1000000'];
+        $options['sharity_donation_accounts_v1']['test-ngo']['currencies'][$currency]=['min_minor'=>$currency==='HUF'?'100':'1','max_minor'=>'1000000'];
         try { $order=financeOrder('amp-close-'.$tag); } finally { $snapshot=$prior;$options['sharity_donation_accounts_v1']=$priorAccounts; }
         $d=$ampData;
         array_walk_recursive($d,static function(&$v,$key)use($currency):void { if ($key==='currency') { $v=$currency; } });
@@ -613,8 +613,8 @@ try {
             $d['fee_refunds']=[['id'=>$fr,'fee_id'=>$d['original']['application_fee']['id'],'amount_minor'=>(string)$refund,'currency'=>$currency,'created'=>1800000010,'connected_credit_verified'=>true,'balance'=>$debit,'connected_credit'=>$credit]];
             $d['original']['application_fee']['refund_state']['amount_refunded_minor']=(string)$refund;
         }
-        reconcileFixture($order,$d);sharity_donation_finance_record_movements($order['order_id'],movementProposal($order),$now);
-        return [$order,$d,targetSave($order)];
+        $saved=reconcileFixture($order,$d);sharity_donation_finance_record_movements($order['order_id'],movementProposal($order),$now);
+        return [$order,$d,targetSave($order),$saved];
     };
     foreach (['HUF','EUR'] as $ampCurrency) {
         [$ao,$ad,$ar]=$ampCloseFixture($ampCurrency,$ampCurrency,$ampCurrency==='EUR'?1971:2000);$aid=$ao['order_id'];$aref=backingRef('amp-'.$ampCurrency);
@@ -652,7 +652,7 @@ try {
     check($approved['current_applicable']&&$approved['revision']>$partialApproved['revision'],'partial refund reviewed as new immutable close');
     // Computed theoretical split is insufficient until the actual fee-return counterleg exists.
     [$unequal,,$unequalRaw]=$ampCloseFixture('UNEQUAL','HUF',2000,false);
-    fails(fn()=>directCloseTest($unequal['order_id'],$unequalRaw['proposal_digest'],backingRef('unequal'),$now),'DONATION_CLOSE_CONFLICT');
+    fails(fn()=>directCloseTest($unequal['order_id'],$unequalRaw['proposal_digest'],backingRef('unequal'),$now),'DONATION_CLOSE_STALE');
     check(targetCount($unequal['order_id'])===1,'unequal actual nets never append approval');
     [$missing,$missingData]=$ampCloseFixture('MISSING','HUF',2000,false);
     $missingData['fee_refunds']=[['id'=>'fr_AMPMISSING','fee_id'=>$missingData['original']['application_fee']['id'],'amount_minor'=>'400','currency'=>'HUF','created'=>1800000010,'connected_credit_verified'=>false,'balance'=>reconcileBalance('txn_AMPMISSING','fr_AMPMISSING','application_fee_refund','-400','0','platform')]];
@@ -668,6 +668,22 @@ try {
     [$disputed,$disputedData]=$ampCloseFixture('DISPUTED');$disputedData['original']['disputed']=true;
     $disputedData['disputes']=[['id'=>'dp_AMPDISPUTED','amount_minor'=>'50000','currency'=>'HUF','created'=>1800000010,'status'=>'needs_response','balances'=>[]]];reconcileFixture($disputed,$disputedData);
     $disputedRaw=targetSave($disputed);fails(fn()=>directCloseTest($disputed['order_id'],$disputedRaw['proposal_digest'],backingRef('disputed'),$now),'DONATION_CLOSE_STALE');
+    foreach (['connected','platform','fee-debit','fee-credit','untrusted-pending-flag'] as $pendingLeg) {
+        [$po,$pe,,$psaved]=$ampCloseFixture('BALANCE'.str_replace('-','',$pendingLeg));$availableEvidence=$pe;
+        removeReconcileFixture($psaved); // Replace only our synthetic observation; no old available proof exists.
+        if (in_array($pendingLeg,['connected','untrusted-pending-flag'],true)) { $pe['original']['initial_charge_balance']['status']='pending'; }
+        if ($pendingLeg==='platform') { $pe['original']['application_fee']['initial_balance']['status']='pending'; }
+        if ($pendingLeg==='fee-debit') { $pe['fee_refunds'][0]['balance']['status']='pending'; }
+        if ($pendingLeg==='fee-credit') { $pe['fee_refunds'][0]['connected_credit']['status']='pending'; }
+        $pe['balances_pending']=$pendingLeg!=='untrusted-pending-flag';reconcileFixture($po,$pe);
+        sharity_donation_finance_record_movements($po['order_id'],movementProposal($po),$now);$pendingTarget=targetSave($po);
+        check($pendingTarget['target']['provisional_split']===['currency'=>'HUF','ngo_minor'=>'38400','fund_minor'=>'9600'],'pending native leg keeps theoretical split separate from approval');
+        fails(fn()=>directCloseTest($po['order_id'],$pendingTarget['proposal_digest'],backingRef('native-pending'),$now),'DONATION_CLOSE_STALE');
+        check(targetCount($po['order_id'])===2,'pending '.$pendingLeg.' writes no approval');
+        reconcileFixture($po,$availableEvidence);sharity_donation_finance_record_movements($po['order_id'],movementProposal($po),$now);$availableTarget=targetSave($po);$availableRef=backingRef('native-available');
+        $availablePreview=directCloseTest($po['order_id'],$availableTarget['proposal_digest'],$availableRef,$now);
+        check(directCloseTest($po['order_id'],$availableTarget['proposal_digest'],$availableRef,$now,$availablePreview['proposal_digest'])['current_applicable'],'actual available proof supersedes pending '.$pendingLeg.' without changing native money');
+    }
     // No-cost original split already exact; fully refunded exact zero can close without negative fees.
     [$zero,$zd,$zr]=$ampCloseFixture('ZERO','HUF',0);$zid=$zero['order_id'];$zref=backingRef('zero-cost');
     $zpreview=directCloseTest($zid,$zr['proposal_digest'],$zref,$now);
