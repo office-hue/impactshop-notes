@@ -2,6 +2,23 @@
 
 A banki bridge előfeltételeként a meglévő payout/report és owner snapshot a saját query-jét adja a belső finance-reconcile olvasónak. Legacy default/DTO/digest változatlan, nincs banki egyeztetés vagy pénzügyi író. Két meglévő natív fixture: fallback-tripwire, aktív caller transaction, kapcsolatcsere, no-write/provider; a korábbi snapshot-race natív prepare horgon. Helyi PHP lint/diffcheck PASS; native SQL még NOT_RUN, az Airen hiányzó SDK/izolált MariaDB miatt a meglévő exact-pin CI szükséges. Független review P2 fixture-hook javítását visszaolvasás lezárta. Részletes scope/ellenőrzés/rollback/UI: `docs/protected-change-records/2026-11-19-donation-pinned-payout-read.md`. Nincs main-/éles ablak, merge/deploy/aktiválás vagy valós bankelfogadás.
 
+## 2026-11-19 — NGO Card napi besorolás, forrásmunka
+
+A saját `fix/ngo-card-daily-badges-20261119` ág a rögzített b0881d7b alapon
+készült; a jóváhagyott Git-ablak readback után 2,65 másodpercnél felszabadult.
+A teljes Card-directory opcionális tier/idő mezőket kap, natív friss batchből;
+a 25-ös részletrotáció és a WP szintszámítása változatlan.
+Érintett addon/fixture, célzott audit és kiadás/rollback:
+`docs/ngo-card-directory-jysk-2026-11-09.md` 2026-11-19-i szakasz.
+Airen és a Mini saját worktree-jében is sikeres a PHP-lint és mind a 64
+izolált assertion. A Card #2171 merge-elt; a WP #297 előző headjén mind a hat
+CI-check sikeres volt. A merge-et a közben változó main miatti dokumentumütközés
+megállította. A natív commit-lane a bejövő pénzügyi kód/hashleltár vegyes merge-commitját
+elutasította. A #11 külön ablakban a függő merge megszakadt, és a már letöltött
+e5bcd9f5 alapból létrejött a saját fix/ngo-card-daily-badges-current-20261119 ág.
+A hash-ellenőrzött hatfájlos delta ide került, minden más főági fájl változatlan.
+Új natív audit és a #297-et kiváltó PR készül; telepítés/adatírás nincs.
+
 ## 2026-11-19 — Amplifier kiadási hashkötés
 
 A merged31784bc1 finance-ledger forrás SHA8399a3ea rögzítése egyetlen meglévő protected hashbejegyzésben, külső checksum frissítéssel. Nincs guard/config/policy/PHP módosítás; a korábbi natív CI44522431646 SUCCESS érvényes marad. A Mini saját tiszta release-worktree-je és az éles/staging remoteSHA visszaolvasott; az első guard dry-run a régi leltár miatt megállt, távoli írás nincs. Részletes protected record: `docs/protected-change-records/2026-11-19-amplifier-financial-close.md`. Ez még nem telepítési vagy aktiválási elfogadás.
