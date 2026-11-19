@@ -69,6 +69,38 @@ function reject($queue, $code, $count, $args = ['voucher', '700001', 0, 100]) {
     ck(count($GLOBALS['requests']) === $count, 'no retry after failure');
 }
 
+// Known byte vectors protect the wire contract independently of a codec roundtrip.
+$referenceVectors = [
+    ['sat1_' . str_repeat('A', 43), 'tt1-' . str_repeat('0', 64)],
+    ['sat1_' . str_repeat('_', 42) . '8', 'tt1-' . str_repeat('f', 64)],
+    ['sat1_AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8',
+        'tt1-000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f'],
+    ['sat1_' . rtrim(strtr(base64_encode(str_repeat("\xfb", 32)), '+/', '-_'), '='),
+        'tt1-' . str_repeat('fb', 32)],
+];
+reset_fixture();
+foreach ($referenceVectors as [$token, $reference]) {
+    ck(ImpactShop_TradeTracker::reference_for_token($token) === $reference, 'known TT reference vector');
+    ck(ImpactShop_TradeTracker::token_for_reference($reference) === $token, 'known original SAT1 vector');
+    ck(strlen($reference) === 68 && preg_match('/^[a-z0-9-]+$/D', $reference), 'TT alphabet and length');
+    ck(ImpactShop_TradeTracker::token_for_reference(ImpactShop_TradeTracker::reference_for_token($token)) === $token,
+        'original token and correlation hash remain recoverable');
+}
+$validToken = $referenceVectors[0][0]; $validReference = $referenceVectors[0][1];
+foreach ([null, false, 123, [], new stdClass(), '', substr($validToken, 1), $validToken . 'A',
+    $validToken . "\n", str_replace('_', '-', $validToken), 'sat1_' . str_repeat('A', 42) . 'B',
+    substr($validToken, 0, -1) . '=', 'sat1_' . str_repeat('A', 42) . '/', "sat1_\0" . str_repeat('A', 42)] as $invalid) {
+    try { ImpactShop_TradeTracker::reference_for_token($invalid); throw new LogicException('Invalid token accepted'); }
+    catch (InvalidArgumentException $e) { ck($e->getMessage() === 'tt_reference', 'fixed token error without input'); }
+}
+foreach ([null, false, 123, [], new stdClass(), '', $validToken, substr($validReference, 1),
+    $validReference . '0', $validReference . "\n", 'tt1-' . str_repeat('F', 64),
+    'tt2-' . str_repeat('0', 64), 'tt1-' . str_repeat('0', 63) . '_', " tt1-" . str_repeat('0', 64)] as $invalid) {
+    try { ImpactShop_TradeTracker::token_for_reference($invalid); throw new LogicException('Invalid reference accepted'); }
+    catch (InvalidArgumentException $e) { ck($e->getMessage() === 'tt_reference', 'fixed reference error without input'); }
+}
+ck($requests === [] && $responses === [], 'codec requires no constructor, credential, HTTP or queued response');
+
 reset_fixture(); ready(page(item())); $c = client(); $r = $c->get_coupon_page('voucher', '700001', 0, 1);
 ck(count($requests) === 4, 'auth site campaign page');
 ck($r['siteId'] === '481183' && $r['campaign']['campaignId'] === '700001' && $r['returned'] === 1, 'exact scope');

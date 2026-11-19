@@ -107,3 +107,64 @@ bin/impactshop-guard-rollback.sh --staging --apply --release-id=20261118T102940Z
 Rollback nem történt; TT márOFF, Dognet-disable/config-írás/DB-restore nem kell. Mentések megmaradtak. Nincs credentialpersist, TT policy/mapping-írás, enable, webbuild, alias-, DNS-, Legal- vagy pénzügyi adatváltozás. Az új környezeti/constant bemenetek forrásban definiáltak, nem már meglévő secretként igazoltak. A teljes TT aktiváláshoz új parserrel valódi bounded proof, minősített dátum/null/end-inclusive/resourcejelentés, saját program publication/adomány-kompatibilitás és jóváhagyott tartós szerveroldali hitelesítő-út kell; a korábbi natív6olvasás ezt nem helyettesíti. CJ kupon/handoff és Admitad programjóváhagyás/feedadapter külön nyitott. Kézi UI checklist változatlan: Vásárlási Segéd kupon/másolás/inputváltás/partnermegerősítés; TT-hez igazolatlan ajánlat/adomány-CTA nem jelenhet meg. Ez a kézi kör még függő.
 
 A kiadási dokumentációs delta protected files touched: csak `docs/bastion-guard-status.md`, a jelen rekord, DOCSYNC-map és notes/status; runtime és manifest változatlan. Smoke scope: `docs:release-readback`; a fent rögzített telepítési readback tényeinek egyezését és a saját diff/titokellenőrzést vizsgáljuk, a változatlan teszteket nem ismételjük. Dokumentációs rollback: kizárólag saját új bejegyzések normál revertje, éles állapotmódosítás nélkül.
+
+### 2026-11-18 — Saját felületi kvalifikáció; TT referenciaeltérés
+
+Arnold befejezte a Mitgo- és TT-belépést. Az Admitad saját adspace2888572 tulajdonosi ellenőrzése külön engedéllyel egyszer beküldve; a frissített saját lista visszaolvasása **Under review**, nem Active. Nincs programcsatlakozás vagy aktiválás. A korábbi TT2FA URL a belépett fiók beállítási oldala volt, ezért az többé nem belépési blokkoló.
+
+A TT saját site481183 / VidaXL18982 accepted; a kampány cashback- és kuponoldalt enged, a saját platformon lévő material2597886 kupon és a kampányhír november17–30. közötti Black Friday akciót jelez. A kupon csak kiválasztott termékekre szól; más marketingcsatornából származó kód nem helyettesítő. A kuponkód nincs ebben a rekordban. A saját kódgenerátor `a=481183` kötést adott, míg a lista előnézete `a=0`: előnézetből nem lesz saját tracking proof.
+
+**Új, reprodukált outbound-kockázat:** a kódgenerátor a szintetikus `sat1_` +43 darab `A` bemenetből eltávolította az aláhúzást, és a generált `r` mezőben is47karakter maradt. A `sat1-` +43 darab `A` kontroll48karakterrel változatlan maradt. Ez nem terméktoken és nem elfogadott új tokenformátum. A [hivatalos TT útmutató](https://static.tradetracker.net/it/support_affiliate/Affiliate-Start-Guide-it_IT.pdf) 16. oldala255karakteres korlátot és aláhúzás nélküli karakterkészletet ad meg. A globális SAT1 vagy a tokenhash csendes átírása ezért tilos; veszteségmentes, providerhez kötött megoldás kell a meglévő korreláció megőrzésével.
+
+A saját linkgenerátor a kampány által közölt `https://www.vidaxl.hu/black-friday` célhoz `c=18982,m=12,a=481183,r=<szintetikus referencia>,u=%2Fblack-friday` alakot adott; a kuponmaterialhoz `m=2597886,u=` alakot. A generált linkeket nem nyitottuk meg; ez csak formátum- és saját-site bizonyíték, nem redirect-, click/report-, konverziós vagy gazdasági elfogadás. A webes aktiválási policy és WP confirmed dispatch továbbra csak Dognet/CJ; a telepített kuponolvasó nem helyettesíti a TT vásárlási/attribúciós illesztést.
+
+Következő: a jóváhagyott eredeti hálózati terv véges TT outbound-csomagja; külön feltétel marad a szerveroldali credentialút, a teljes új parserrel végzett próba, dátum/resource jelentés és a programablakhoz minősített retention. Új tartós kuponcél-kötés csak tényleges C3-szükség és külön egyeztetés után. Most runtime/config/policy/DB, telepítés és aktiválás nem változott; a korábbi410 offline ellenőrzés nem újrafuttatott PASS. A Qoder első tervéhez kész szűrt csomag kiküldési engedélye még függő.
+
+### 2026-11-19 — Új élő olvasási bizonyíték; első draft még nem indult
+
+Production readback: feedSHA `610658d55d0f4bde0874cdf0fb6debee2b764cc8b4b5a02d3628b311051cb77d`, TT-osztálySHA `db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2`, mód0444/szülő0555 és config/policy fingerprint változatlan. Dognet természetes frissítés `2026-11-19T05:41:07Z`, snapshot validUntil `07:41:07Z`, complete/errornull, órás hook ütemezett. WP cache-only VisionExpress available/complete/3ajánlat/0upstream. A meglévő ChatGPT `search_sharity_partners` friss válasza szintén három ajánlatot és teljes lefedettséget adott; authority fresh/complete, a kuponforrás checkedAt ugyanaz. A kliensnek visszaadott rövid projekció külön lejár, ebből nem lesz tartós beváltási garancia. A tényleges MCP-réteg célzottan elfogadott; kézi webes UI, vásárlás, attribúció és gazdasági elszámolás nem igazolt.
+
+TT/CJ OFF/not_checked, Admitad implemented=false/OFF. A TT customer/passphrase és Admitad token env/constant bemenetek jelenlétpróbája a vizsgált WP-CLI környezetben false, értékkiolvasás nélkül; ez nem általános secretleltár. A readback első JSON-feldolgozása a JSON előtti egybájtos kimenet miatt sikertelen volt; a második, markerhez kötött feldolgozás sikeres. Nem volt refresh vagy konfigurációírás.
+
+A szűrt Qoder004 tervcsomag kiküldése kifejezetten jóváhagyva, de a közös natív indító `pending_readback_required` választ adott a másik feladat uncertain foglalása miatt. Saját feladat nem ment ki, saját execution/checkpoint még nincs, új díj vagy retry nem történt. A foglalás érintetlen; másik gép/indító/provider nem kerülőút. A terméktények dokumentálása ettől független. Runtime/manifest/hashregiszter változatlan; a jelen dokumentáció saját bejegyzései normál reverttel visszavonhatók, telepítés nem kell.
+
+### TT referencia-kódolás — szűk helyi implementáció
+
+Arnold külön engedélyezte e munkacsomag első draftjának helyi Codex-kidolgozását. A Qoder004 nem ment ki, a másik feladat foglalása érintetlen. Cél: a ténylegesen megfigyelt aláhúzás-törlés miatt veszteségmentes TT wire-formátum az eredeti SAT1-hoz; a globális SAT1 és a tárolt tokenhash változatlan.
+
+Koherencia/hatás: két tiszta statikus metódus a meglévő `ImpactShop_TradeTracker` osztályban, a meglévő offline osztályteszt bővítésével. Nincs új fájl, függőség, HTTP, constructor/auth, hook/route/cron/option/DB writer vagy linkkibocsátás. A már telepített kuponolvasó meglévő hívói változatlanok. A referencia nem jogosultság: későbbi fogyasztójának a visszafejtett eredeti tokenhez provider/site/campaign/owner/NGO/lejárat kötést is ellenőriznie kell; a dekódolás önmagában nem korrelál és nem aktivál.
+
+Döntés: `tt1-` + a SAT1 eredeti32bájtjának64kisbetűs hex karaktere, összesen68karakter. Ez a dokumentált TT karakterkészlet részhalmaza,255alatt; minden bit megmarad. Mindkét irány szigorúan kanonikus: hibás típus/hossz/prefix/karakter, nagybetűs hex és nemkanonikus base64 padbit elutasítva, fix titokmentes hiba. Nincs csonkolás, karakterelhagyás vagy új tartós mapping/séma/retention. A formátum még nem élő provider-roundtrip bizonyíték.
+
+Kockázat: hibás codec elvesztené az attribúciót; ezért ismert nulla/ff/szekvencia vektor, base64url mínusz/aláhúzás, roundtrip és elutasítási próbák,0HTTP és meglévő olvasó/feed regresszió kell. Célzott független kódreview a kanonikus határra; új pénzügyi binding vagy C3-cél nem készül, ezért a korábbi hálózati terv két auditját nem ismételjük. A mentett helyi előállapot a `35d7a8ba` commit; helyi rollback csak a saját codec/teszt/nyilvántartási diff normál revertje. Későbbi kiadás a meglévő exact-file OFF út mentés/CAS/rollback feltételeivel, külön merge-ablakban; enable nem része e lépésnek.
+
+Elfogadás: tényleges lint, codec+meglévő osztály/feed tesztek és hashleltár; jövőbeli PASS nincs. Kézi UI későbbi telepítés után: Vásárlási Segéd VisionExpress kuponblokk megmarad, TT-hez nem jelenik meg új igazolatlan kupon vagy adomány-CTA; a referencia miatt nincs kattintás/vásárlás. Ez a UI-kör még függő.
+
+Tényleges helyi eredmény: PHP8.4 lint,368osztályellenőrzés (ebből45új codec-állítás),178TT-feed és232baseline állítás sikeres. A meglévő teljes protected hashleltár0drift és6negatív eset sikeres; kizárólag a TT-osztály digestje lett `078b2b1381cae945aa36ff0fd0f3e1dcc17eebc9d0ca5070807669aa1c991caa`, a manifest checksum vele egyező, más hash változatlan. Külön `/root/tt_reference_review`, kért Sol/high, read-only review: konkrét P1/P2 lelet nincs; saját mindkét lint/diff-check/368osztálypróba sikeres. Ez a codec szűk forráskész állapota, nem új pénzügyi binding, telepítés vagy éles TT-roundtrip.
+
+
+### 2026-11-19 — TT referencia-codec telepítve, továbbra OFF
+
+PR #295 pontos headje `40c7a282b850422261f0db13077bf4a76012e6e8`, mind a hat GitHub-check sikeres; squash merge `db9a8712916904ebcbd7fff8f7a74332c188c5a8` (`2026-11-19T08:39:33Z`). Arnold külön merge-ablakában egy Air/Mini main-fetch ugyanazt a merge-et adta vissza; az ablak 6,83 másodperc után felszabadult. A kiadás ezen kívül futott, saját tiszta, detached Mini release worktree-ből.
+
+A meglévő guard kizárólag az `impactshop-tradetracker.php` fájlt telepítette staging, majd production célra. Mindkét frissen visszaolvasott előhash `db93f31e05e4eb9eae3eeaaf61898d6c7adabcf678c4b90fb3312cd4fd4f3ff2`; saját exact-file mentés/CAS/lint/hash/readback történt. Más runtime, manifest, config, policy, DB, hitelesítő, retention, webbuild, alias vagy DNS nem változott.
+
+| Cél | Tényleges releaseID | Utóhash (SHA256) | Fájl / parent mód |
+| --- | --- | --- | --- |
+| staging | `20261119T084146Z-db9a87129169-77ff0a63` | `078b2b1381cae945aa36ff0fd0f3e1dcc17eebc9d0ca5070807669aa1c991caa` | `0444` / `0755` |
+| production | `20261119T084239Z-db9a87129169-1ee8c640` | `078b2b1381cae945aa36ff0fd0f3e1dcc17eebc9d0ca5070807669aa1c991caa` | `0444` / `0555` |
+
+Mindkét cél PHP-lintje és codec-betöltése sikeres; a telepített kóddal végzett szintetikus roundtrip pontos, a referencia 68 karakter. A staging 4/4, a production 5/5 preflight végpontja sikeres, a távoli Bástya-manifest és production origin alignment egyezett. Az exact út az általános maintenance/post-deploy smoke-ot kihagyta; az itt felsorolt célzott readback külön futott. A forrás 368 osztály-, 178 TT-feed- és 232 baseline-ellenőrzését és független review-ját változatlan fájltartalom mellett újra használtuk; nem állítunk újrafuttatást.
+
+Production Dognet ON/complete/errornull, természetes checkedAt `2026-11-19T08:41:05Z`, validUntil `2026-11-19T10:41:05Z`, órás hook ütemezett; VisionExpress cache-only projekció available/complete/3 ajánlat, 0 külső HTTP-hívás. TT implemented=true/OFF/not_checked; CJ OFF, Admitad implemented=false/OFF. Staging minden provider OFF, órás hook nélkül. A staging és production config/policy, feedhash és providerstátusz előtte/utána azonos; production config `65d2f4907742401d76645a4b046b3e8bda83b8b0c41c621a5f5dad96d19ee2af`, policy `73de191668b3520121da2b25940571432ce0e4a5193af38aa4ff17b3e87ed128`. A névtelen kupon-REST mindkét célon 401. A WP-CLI meglévő stderr-zaja staging 11, production 10 sor; az első stdin-alapú eval-file olvasás nem adott JSON-t, a bemenetátadás javítása után a natív eval readback sikeres. Ez nem provider- vagy termékhiba, és nem volt emiatt távoli írásismétlés.
+
+Rollback kizárólag a saját változatlan utóhashről az exact-file mentett előállapotára:
+
+```sh
+bin/impactshop-guard-rollback.sh --production --apply --release-id=20261119T084239Z-db9a87129169-1ee8c640 --expected-deployed-sha=078b2b1381cae945aa36ff0fd0f3e1dcc17eebc9d0ca5070807669aa1c991caa
+bin/impactshop-guard-rollback.sh --staging --apply --release-id=20261119T084146Z-db9a87129169-77ff0a63 --expected-deployed-sha=078b2b1381cae945aa36ff0fd0f3e1dcc17eebc9d0ca5070807669aa1c991caa
+```
+
+TT már OFF; nincs DB-restore vagy config/policy-írás. Tényleges rollback vagy mentéstörlés nem történt. A codec forráskész, merge-elt, telepített és betöltött, célzottan ellenőrzött; nincs még éles hívója, TT-roundtripje, vásárlási/elszámolási vagy teljesrendszer-elfogadása. A későbbi provider/site/program/owner/NGO/lejárat kötés, minősített retention, credentialút, új parser-live proof, coupon+donation kompatibilitás és az előző kézi UI-checklist nyitott marad. A Qoder004 csomag nem ment ki, a helyi Codex-kivétel érvényes, külső költés nincs.
+
+Ez a kiadási dokumentáció csak a meglévő rekordot, Bástya-státuszt, DOCSYNC-mapet és notes/status fájlokat bővíti; runtime/hash/guard/CI delta nincs. Ellenőrzése saját diff és titokscan, a tényleges telepítési tények egyezése; visszavonása saját dokumentációs bejegyzések revertje. A központi DOCSYNC acceptedSource/lastVerifiedAt nem módosult; távoli acceptance nem következik a forrásjegyzetből.

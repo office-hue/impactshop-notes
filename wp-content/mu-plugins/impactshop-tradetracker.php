@@ -25,6 +25,29 @@ final class ImpactShop_TradeTracker
     private $campaigns = [];
     private $failure = null;
 
+    /** Lossless TT-safe wire encoding; the original SAT1 and its stored hash stay unchanged. */
+    public static function reference_for_token($token): string
+    {
+        if (!is_string($token) || !preg_match('/^sat1_[A-Za-z0-9_-]{43}$/D', $token)) {
+            throw new InvalidArgumentException('tt_reference');
+        }
+        $bytes = base64_decode(strtr(substr($token, 5), '-_', '+/') . '=', true);
+        if ($bytes === false || strlen($bytes) !== 32
+            || 'sat1_' . rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=') !== $token) {
+            throw new InvalidArgumentException('tt_reference');
+        }
+        return 'tt1-' . bin2hex($bytes);
+    }
+
+    /** Decoding grants no authority: callers must verify the intent's provider/site/program binding. */
+    public static function token_for_reference($reference): string
+    {
+        if (!is_string($reference) || !preg_match('/^tt1-[a-f0-9]{64}$/D', $reference)) {
+            throw new InvalidArgumentException('tt_reference');
+        }
+        return 'sat1_' . rtrim(strtr(base64_encode(hex2bin(substr($reference, 4))), '+/', '-_'), '=');
+    }
+
     public function __construct($customerID, $passphrase)
     {
         $this->customer = $this->id($customerID);
