@@ -228,18 +228,34 @@ function sharity_donation_finance_movement(array $b, string $source, string $rol
         'observed_metadata' => ['status' => $b['status'], 'created' => $b['created'], 'available_on' => $b['available_on'], 'exchange_rate' => $rate]];
 }
 
-function sharity_donation_finance_reconcile(string $orderId, int $now): array
+/** Optional internal query borrows the caller's pinned transaction; never owns it. */
+function sharity_donation_finance_reconcile(string $orderId, int $now, ?callable $snapshotQuery = null): array
 {
     try {
         if (get_option(SHARITY_DONATION_FINANCE_SCHEMA_OPTION, '') !== '1' || !preg_match('/^do_[a-f0-9]{32}$/D', $orderId)) { throw new RuntimeException(); }
-        $order = sharity_donation_webhook_order($orderId);
-        $status = sharity_donation_order_status($order['subject_ref'], $orderId, $now);
+        if ($snapshotQuery !== null) {
+            $state = $snapshotQuery('SELECT @@autocommit AS ac, @@in_transaction AS tx')[0] ?? [];
+            if ((string)($state['ac'] ?? '') !== '1' || (string)($state['tx'] ?? '') !== '1') { throw new RuntimeException(); }
+            $orders = $snapshotQuery('SELECT * FROM `'.sharity_donation_order_table().'` WHERE order_id = ?', [$orderId]);
+            if (count($orders) !== 1) { throw new RuntimeException(); }
+            $order = array_map(static fn($v) => is_int($v) ? (string)$v : $v, $orders[0]);
+            sharity_donation_order_owner($order['subject_ref']);
+            $status = sharity_donation_order_public($order, $now);
+        } else {
+            $order = sharity_donation_webhook_order($orderId);
+            $status = sharity_donation_order_status($order['subject_ref'], $orderId, $now);
+        }
         if ($order['state'] !== 'session_recorded' || $status['state'] !== 'session_recorded') { throw new RuntimeException(); }
         $envelope = sharity_donation_order_decode($order); $snapshot = $envelope['snapshot'];
         global $wpdb; $table = sharity_donation_finance_table();
         // Fix the local observation set before reading bounded bodies; this is not a provider snapshot.
-        $index = $wpdb->get_results($wpdb->prepare("SELECT id, OCTET_LENGTH(canonical_json) AS evidence_bytes FROM `{$table}` WHERE order_id = %s ORDER BY id LIMIT 257", $orderId), ARRAY_A);
-        if ($wpdb->last_error !== '' || !is_array($index)) { throw new RuntimeException(); }
+        $index = $snapshotQuery !== null
+            ? $snapshotQuery("SELECT id, OCTET_LENGTH(canonical_json) AS evidence_bytes FROM `{$table}` WHERE order_id = ? ORDER BY id LIMIT 257", [$orderId])
+            : $wpdb->get_results($wpdb->prepare("SELECT id, OCTET_LENGTH(canonical_json) AS evidence_bytes FROM `{$table}` WHERE order_id = %s ORDER BY id LIMIT 257", $orderId), ARRAY_A);
+        if (($snapshotQuery === null && $wpdb->last_error !== '') || !is_array($index)) { throw new RuntimeException(); }
+        if ($snapshotQuery !== null) {
+            $index = array_map(static fn($row) => array_map(static fn($v) => is_int($v) ? (string)$v : $v, $row), $index);
+        }
         $total = 0;
         if (count($index) > 256) { throw new RuntimeException('DONATION_RECONCILE_LIMIT'); }
         foreach ($index as $item) {
@@ -256,8 +272,14 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
         foreach ($index as $item) {
             // Bound even a concurrently damaged body before bringing it into PHP memory. No truncation accepted.
             $limit = SHARITY_DONATION_FINANCE_MAX_BYTES + 1;
-            $row = $wpdb->get_row($wpdb->prepare("SELECT id, order_id, account_id, livemode, donation_mode, provider_session_id, SUBSTRING(CAST(canonical_json AS BINARY),1,{$limit}) AS canonical_json, digest, observed_at_utc FROM `{$table}` WHERE order_id = %s AND id = %s", $orderId, $item['id']), ARRAY_A);
-            if ($wpdb->last_error !== '' || !is_array($row) || !is_string($row['canonical_json'] ?? null)
+            if ($snapshotQuery !== null) {
+                $rows = $snapshotQuery("SELECT id, order_id, account_id, livemode, donation_mode, provider_session_id, SUBSTRING(CAST(canonical_json AS BINARY),1,{$limit}) AS canonical_json, digest, observed_at_utc FROM `{$table}` WHERE order_id = ? AND id = ?", [$orderId, $item['id']]);
+                if (count($rows) !== 1) { throw new RuntimeException(); }
+                $row = array_map(static fn($v) => is_int($v) ? (string)$v : $v, $rows[0]);
+            } else {
+                $row = $wpdb->get_row($wpdb->prepare("SELECT id, order_id, account_id, livemode, donation_mode, provider_session_id, SUBSTRING(CAST(canonical_json AS BINARY),1,{$limit}) AS canonical_json, digest, observed_at_utc FROM `{$table}` WHERE order_id = %s AND id = %s", $orderId, $item['id']), ARRAY_A);
+            }
+            if (($snapshotQuery === null && $wpdb->last_error !== '') || !is_array($row) || !is_string($row['canonical_json'] ?? null)
                 || strlen($row['canonical_json']) !== (int) $item['evidence_bytes']) { throw new RuntimeException(); }
             $json = $row['canonical_json']; $e = json_decode($json, true, 64, JSON_THROW_ON_ERROR);
             if (!is_array($e) || sharity_donation_finance_json($e) !== $json) { throw new RuntimeException(); }
@@ -397,6 +419,10 @@ function sharity_donation_finance_reconcile(string $orderId, int $now): array
         $financialSet = hash('sha256', sharity_donation_finance_json($financial));
         $proposal = hash('sha256', sharity_donation_finance_json(['version' => 1, 'operation' => 'record_movements',
             'order_id' => $orderId, 'evidence_set_digest' => $evidenceSet, 'financial_inventory_digest' => $financialSet]));
+        if ($snapshotQuery !== null) {
+            $state = $snapshotQuery('SELECT @@autocommit AS ac, @@in_transaction AS tx')[0] ?? [];
+            if ((string)($state['ac'] ?? '') !== '1' || (string)($state['tx'] ?? '') !== '1') { throw new RuntimeException(); }
+        }
         return ['inventory_version' => 1, 'scope' => 'persisted_observations_only', 'order_id' => $orderId,
             'payment_verified' => false, 'allocation_eligible' => false, 'settlement_reconciled' => false, 'apply_supported' => false, 'atomic_snapshot' => false,
             'observation_count' => count($index), 'evidence_digests' => array_keys($digests),
@@ -1941,7 +1967,7 @@ function sharity_donation_payout_reconcile_snapshot(callable $q,string $id,strin
         $orders=[];
         foreach ($byOrder as $orderId=>$matches) {
             // Reuse original order/envelope and observation provenance, not current binding.
-            $inventory=sharity_donation_finance_reconcile($orderId,$now);$known=[];
+            $inventory=sharity_donation_finance_reconcile($orderId,$now,$q);$known=[];
             foreach ($inventory['movements'] as $m) { $f=$m['facts'];if ($f['account_id']===$account && $f['livemode']===$live) { $known[$f['balance_transaction_id']]=$m; } }
             $contributions=[];$totals=[];
             foreach ($matches as $m) {
@@ -1998,7 +2024,7 @@ function sharity_donation_payout_owner_snapshot(string $subject,string $orderId,
     $public=sharity_donation_order_public($order,$now);$snapshot=sharity_donation_order_decode($order)['snapshot'];
     $result=$base('pending');
     if ($public['state']==='session_recorded') {
-        $inventory=sharity_donation_finance_reconcile($orderId,$now);$own=[];
+        $inventory=sharity_donation_finance_reconcile($orderId,$now,$q);$own=[];
         foreach ($inventory['movements'] as $m) {
             $f=$m['facts'];
             if ($f['account_id']===$snapshot['account_id'] && $f['livemode']===$snapshot['livemode']) { $own[$f['balance_transaction_id']]=true; }

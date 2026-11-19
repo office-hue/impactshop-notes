@@ -1,3 +1,7 @@
+## 2026-11-19 — Payout snapshot kölcsönzött natív olvasó
+
+A banki bridge előfeltételeként a meglévő payout/report és owner snapshot a saját query-jét adja a belső finance-reconcile olvasónak. Legacy default/DTO/digest változatlan, nincs banki egyeztetés vagy pénzügyi író. Két meglévő natív fixture: fallback-tripwire, aktív caller transaction, kapcsolatcsere, no-write/provider; a korábbi snapshot-race natív prepare horgon. Helyi PHP lint/diffcheck PASS; native SQL még NOT_RUN, az Airen hiányzó SDK/izolált MariaDB miatt a meglévő exact-pin CI szükséges. Független review P2 fixture-hook javítását visszaolvasás lezárta. Részletes scope/ellenőrzés/rollback/UI: `docs/protected-change-records/2026-11-19-donation-pinned-payout-read.md`. Nincs main-/éles ablak, merge/deploy/aktiválás vagy valós bankelfogadás.
+
 ## 2026-11-19 — NGO Card napi besorolás, forrásmunka
 
 A saját `fix/ngo-card-daily-badges-20261119` ág a rögzített b0881d7b alapon

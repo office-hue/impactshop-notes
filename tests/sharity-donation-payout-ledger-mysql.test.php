@@ -96,6 +96,47 @@ try {
     check($report['movement_matching_complete']&&count($report['matched_orders'])===1,'verified original order mapped');
     check($report['matched_orders'][0]['order_id']===$o['order_id']&&$report['matched_orders'][0]['batch_contribution_totals']['HUF']['net_minor']===(string)$net,'native contribution not claimed final payout');
     check($report['matched_orders'][0]['payout_allocation_minor']===null,'batch fee never apportioned arbitrarily');
+    // The nested inventory must use the caller's native query, not wpdb's retrying reader.
+    $expectedInventory=sharity_donation_finance_reconcile($o['order_id'],$now);
+    $expectedOwner=sharity_donation_payout_owner($o['subject_ref'],$o['order_id'],$now);
+    [$loanDb,$loanQuery]=sharity_donation_backing_db(true);
+    fails(fn()=>sharity_donation_finance_reconcile($o['order_id'],$now,$loanQuery),'DONATION_RECONCILE_UNAVAILABLE');
+    $loanQuery('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');$loanQuery('START TRANSACTION READ ONLY');
+    $loanReads=[];
+    $loanProbe=static function(string $sql,array $params=[])use($loanQuery,&$loanReads):array{
+        $loanReads[]=$sql;return $loanQuery($sql,$params);
+    };
+    $loanCounts=[d2yCount(),movementCount($o['order_id'])];$loanDdl=$wpdb->ddls;$loanCalls=calls();
+    try{
+        $wpdb->failOn='SELECT';$wpdb->failure='before';
+        check(sharity_donation_finance_reconcile($o['order_id'],$now,$loanProbe)===$expectedInventory,'loaned native inventory equals existing evidence without wpdb fallback');
+        check(sharity_donation_payout_reconcile_snapshot($loanProbe,'po_SYNTHETIC','acct_SYNTHETIC',false,$matched['digest'],$now)===$report,'payout report lends its actual query to nested inventory');
+        $wpdb->failOn='';$wpdb->failure='';
+        $wpdb->afterRead=static function(string $sql)use($wpdb):void{
+            if(str_contains($sql,'FROM `'.sharity_donation_order_table().'`')){$wpdb->failOn='SELECT';$wpdb->failure='before';}
+        };
+        check(sharity_donation_payout_owner_snapshot($o['subject_ref'],$o['order_id'],$now,$loanProbe)===$expectedOwner,'owner authorization precedes native-only nested payout reads');
+        $wpdb->afterRead=null;$wpdb->failOn='';$wpdb->failure='';
+        $brokenLoan=static function(string $sql,array $params=[])use($loanQuery):array{
+            if(str_contains($sql,'evidence_bytes'))throw new RuntimeException('synthetic private reader failure');
+            return $loanQuery($sql,$params);
+        };
+        fails(fn()=>sharity_donation_finance_reconcile($o['order_id'],$now,$brokenLoan),'DONATION_RECONCILE_UNAVAILABLE');
+        check((string)$loanQuery('SELECT @@in_transaction AS tx')[0]['tx']==='1','successful and failed nested reads leave caller transaction open');
+        check(!array_filter($loanReads,static fn($sql)=>preg_match('/^(START|BEGIN|COMMIT|ROLLBACK|SET|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\b/i',$sql)),'loan owns no transaction boundary or write');
+        check([d2yCount(),movementCount($o['order_id'])]===$loanCounts&&$wpdb->ddls===$loanDdl&&calls()===$loanCalls,'loan performs no evidence write, DDL or provider call');
+    }finally{$wpdb->afterRead=null;$wpdb->failOn='';$wpdb->failure='';$loanQuery('ROLLBACK');}
+    // A connection replacement fails through the existing pinned-query guard, never a fallback.
+    $replacementDb=new mysqli('127.0.0.1','root','isolated-donation-test-only','donation_test',(int)$port);
+    $loanQuery('START TRANSACTION READ ONLY');$swapped=false;
+    try{
+        $changedLoan=static function(string $sql,array $params=[])use($loanQuery,$replacementDb,&$swapped,$wpdb):array{
+            if(!$swapped&&str_contains($sql,'evidence_bytes')){$swapped=true;$wpdb->db=$replacementDb;}
+            return $loanQuery($sql,$params);
+        };
+        fails(fn()=>sharity_donation_finance_reconcile($o['order_id'],$now,$changedLoan),'DONATION_RECONCILE_UNAVAILABLE');
+        check($swapped,'connection replacement reached actual evidence-read boundary');
+    }finally{$wpdb->db=$loanDb;$loanQuery('ROLLBACK');$replacementDb->close();}
     $h->pages['']['data'][]=$h->responses[$bp];$r=d2yRecord($h);check(d2yReport($r)['movement_matching_complete'],'own payout row is not unknown funding');
     $mt=sharity_donation_movement_table();$stored=$wpdb->db->query("SELECT * FROM `{$mt}` WHERE balance_transaction_id='txn_D2YORDER'")->fetch_assoc();
     foreach(['source_id'=>'ch_WRONG','currency'=>'EUR','order_id'=>'do_'.str_repeat('f',32)]as$key=>$value){

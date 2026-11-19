@@ -1,3 +1,13 @@
+## 2026-11-19 — Payout snapshot kölcsönzött natív olvasó
+
+A banki bridge előfeltételeként a meglévő payout/report és owner snapshot a saját query-jét adja a belső finance-reconcile olvasónak. Legacy default/DTO/digest változatlan, nincs banki egyeztetés vagy pénzügyi író. Két meglévő natív fixture: fallback-tripwire, aktív caller transaction, kapcsolatcsere, no-write/provider; a korábbi snapshot-race natív prepare horgon. Helyi PHP lint/diffcheck PASS; native SQL még NOT_RUN, az Airen hiányzó SDK/izolált MariaDB miatt a meglévő exact-pin CI szükséges. Független review P2 fixture-hook javítását visszaolvasás lezárta. Részletes scope/ellenőrzés/rollback/UI: `docs/protected-change-records/2026-11-19-donation-pinned-payout-read.md`. Nincs main-/éles ablak, merge/deploy/aktiválás vagy valós bankelfogadás.
+
+## 2026-11-19 — Amplifier exact-file release visszaolvasva
+
+Saját source PR298, CI-pin ai-agent PR2179 és hashbinding PR299 merge-elt. Canonical target we040, meglévő guard-deploy egyetlen finance-ledger.php fájl: staging release20261119T122751Z-e5bcd9f5a427-4a0a86d9, production20261119T122953Z-e5bcd9f5a427-076e2832. Mindkét deployed manifest, source SHA8399a3ea46ed4e234c178ee50fb8e3a3825f856d7b1a2f004a87e84c772279d2, backup SHAe67bfdddaaf3cddd5fc9eac5e75e23e6b009d7c7bb516c7afdf92accc7ea5921 és0444 source visszaolvasva; production parent0555. Target CLI PHP8.4.26 négy szintetikus Direct/Amplifier HUF/EUR szerződésellenőrzés és production öt endpoint smoke sikeres. Korábbi staging ticker4685ms warning megőrzött, nincs SLA-állítás. Korábbi CI44522431646/native135554423118 SUCCESS bizonyíték újrahasznált, változatlan PHP miatt újrafuttatás nélkül.
+
+Nincs valódi pénzügyi close/import, providerhívás, payout/jutalomaktiválás vagy banki/NGO-jóváírás elfogadás. A már rögzített nettó approved split nem bankreceipt. Következő saját ág feat/sharity-donation-bank-reconciliation-20261119; a közös tervben connected-bank→owner/Card bekötési követelmény, két külön egymás utáni tervaudit (nincs igazolt P1/P2), új adapterkód még nincs. A korábbi Amplifier exportengedély kimerült/kizárólagos; új202052byte-os szűrt banki csomag külön igenre vár, nem küldött. Secretary checkpoint chk-1780eab7-f3ae-44a7-99d6-242769eb773e; DOCSYNC registry ACK nem igazolt. TimeWall másik chatnél. Saját notes WIP a következő érdemi commitban vihető, nem új build/release indoka.
+
 ## 2026-11-19 — NGO Card napi besorolás, forrásmunka
 
 A saját `fix/ngo-card-daily-badges-20261119` ág a rögzített b0881d7b alapon
