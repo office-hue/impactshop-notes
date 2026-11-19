@@ -11,6 +11,9 @@ if (!function_exists('impactshop_tradetracker_clock')) {
 
 final class ImpactShop_TradeTracker
 {
+    public const SHOPPING_PARTNER = 'vidaxl';
+    public const SHOPPING_PROGRAM = 'tradetracker-18982';
+    public const SHOPPING_MERCHANT = 'https://www.vidaxl.hu/black-friday';
     private const ENDPOINT = 'https://ws.tradetracker.com/soap-literal-wsi/affiliate';
     private const SOAP = 'http://www.w3.org/2003/05/soap-envelope';
     private const XSI = 'http://www.w3.org/2001/XMLSchema-instance';
@@ -24,6 +27,15 @@ final class ImpactShop_TradeTracker
     private $siteReady = false;
     private $campaigns = [];
     private $failure = null;
+
+    /** Only the merchant landing generated in the own account; no material-specific coupon claim. */
+    public static function merchant_redirect_for_token($token): string
+    {
+        return 'https://tc.tradetracker.net/?' . http_build_query([
+            'c' => '18982', 'm' => '12', 'a' => self::SITE,
+            'r' => self::reference_for_token($token), 'u' => '/black-friday',
+        ], '', '&', PHP_QUERY_RFC3986);
+    }
 
     /** Lossless TT-safe wire encoding; the original SAT1 and its stored hash stay unchanged. */
     public static function reference_for_token($token): string

@@ -201,7 +201,7 @@
     "Hirdetési fiókok integrációja TERV.ini.md": "9ab60a2100f00a832385be0b88f4d8a685d3b05168e0c8f5ace623ede82eb063",
     "impact-hub-system-v1.3.md": "e347cfe6b61312742dd2169bd5fb6db9589ebfe1d1f5266177cdfcd06e5ce292",
     "wp-content/mu-plugins/impactshop-boot.php": "bbbd10da51b619a134b9d3147ab2ef9f081ec9b52697c349775c4aefe1584558",
-    "wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php": "205eaf33f6f097cf1e87f5cfdd268b4f4a729898309d7003665993f183599dd3",
+    "wp-content/mu-plugins/impactshop-sharity-affiliate-runtime.php": "8e34515c7119ec1a310daa4ea4603e7dea32b670821bc2f239b25ff8f83f8569",
     "wp-content/mu-plugins/impactshop-metrics-ngo.php": "a869a58e1fab412a21fab85544081561430da6fd96f1d8e57ed6189b0aa1aa90",
     "wp-content/mu-plugins/impactshop-ads-watch.php": "cc7c463380685aee1e2f0514a23d1d583b13e9746978e53acc3be51e022708a5",
     "wp-content/mu-plugins/impactshop-ads-watch.js": "d98aee2ee1338fcfaeace1a296b0e6c6995072d79c47e7e8d84c54b769773dd5",
@@ -384,7 +384,7 @@
     "docs/impactshop-protected-files.json": "1c46a922347795b9ccb0adce10df0d98de404c081981f71d8d65c9feb16bb814",
     "wp-content/mu-plugins/impactshop-coupon-feed.php": "610658d55d0f4bde0874cdf0fb6debee2b764cc8b4b5a02d3628b311051cb77d",
     "wp-content/mu-plugins/impactshop-partner-finance.php": "78da7cc4ca2190c8af6dc1defd14c62f7fcb9c0253eb1792ec1cf359c8889dac",
-    "wp-content/mu-plugins/impactshop-tradetracker.php": "078b2b1381cae945aa36ff0fd0f3e1dcc17eebc9d0ca5070807669aa1c991caa"
+    "wp-content/mu-plugins/impactshop-tradetracker.php": "df40a0b0b390abd98752226579baf05e11acd71a5a7d6cc7680006180098e11b"
   },
   "generated_at": "2026-11-17T22:06:30.345174+00:00"
 }
