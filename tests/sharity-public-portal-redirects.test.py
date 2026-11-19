@@ -84,7 +84,7 @@ echo 'NO_REDIRECT';
         self.assertRegex(
             self.source,
             re.compile(
-                r"wp_redirect\('https://sharity\.hu/',\s*302,\s*'Sharity Public Portal'\)"
+                r"wp_redirect\('https://sharity\.hu/babamama-expo',\s*302,\s*'Sharity Public Portal'\)"
             ),
         )
         self.assertIn(
@@ -93,7 +93,7 @@ echo 'NO_REDIRECT';
         )
 
     def test_both_portals_redirect_without_query_forwarding(self) -> None:
-        redirect = "REDIRECT|https://sharity.hu/|302|Sharity Public Portal"
+        redirect = "REDIRECT|https://sharity.hu/babamama-expo|302|Sharity Public Portal"
         for uri in (
             "/adomany-automata-portal-1",
             "/adomany-automata-portal-1/",
