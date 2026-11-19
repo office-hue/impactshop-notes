@@ -1385,13 +1385,29 @@ function sharity_donation_target_manual_close(array $target): ?array
     $raw = $target; unset($raw['manual_close']);
     $split = $raw['provisional_split'] ?? null;
     $currency = $raw['payment_currency'] ?? null;
-    if ($m['version'] !== 1 || !is_array($split) || ($raw['policy']['donation_mode'] ?? null) !== 'direct'
-        || ($raw['policy']['policy_version'] ?? null) !== 'direct-net100-v1' || !in_array($currency, ['HUF','EUR'], true)
-        || $split['currency'] !== $currency || $split['fund_minor'] !== '0' || sharity_donation_finance_minor($split['ngo_minor']) < 0
+    $mode = $raw['policy']['donation_mode'] ?? null;
+    if ($m['version'] !== 1 || !is_array($split) || !in_array($currency, ['HUF','EUR'], true)
+        || $split['currency'] !== $currency || sharity_donation_finance_minor($split['ngo_minor']) < 0
+        || !in_array($mode, ['direct','amplifier'], true)
+        || ($raw['policy']['policy_version'] ?? null) !== ($mode === 'direct' ? 'direct-net100-v1' : 'amplifier-net80-v1')
+        || ($mode === 'direct' && $split['fund_minor'] !== '0')
         || ($raw['connected_totals'][$currency]['observed_deficit_minor'] ?? null) !== '0'
         || sharity_donation_finance_json($m['approved_split']) !== sharity_donation_finance_json($split)
         || $m['source_target_digest'] !== hash('sha256', sharity_donation_finance_json($raw))) {
         throw new RuntimeException('DONATION_CLOSE_CONFLICT');
+    }
+    if ($mode === 'amplifier') {
+        $platforms = $raw['platform_totals'] ?? [];
+        if (!is_array($platforms) || count($platforms) !== 1 || array_keys($raw['connected_totals']) !== [$currency]
+            || ($raw['connected_settlement_currency'] ?? null) !== $currency) { throw new RuntimeException('DONATION_CLOSE_CONFLICT'); }
+        $platform = reset($platforms);
+        if (!is_array($platform) || array_keys($platform) !== [$currency]) { throw new RuntimeException('DONATION_CLOSE_CONFLICT'); }
+        $ngo = sharity_donation_finance_minor($raw['connected_totals'][$currency]['net_minor'] ?? null);
+        $fund = sharity_donation_finance_minor($platform[$currency]['net_minor'] ?? null);
+        if ($ngo < 0 || $fund < 0) { throw new RuntimeException('DONATION_CLOSE_CONFLICT'); }
+        $total = sharity_donation_target_sum($ngo, $fund);
+        if ($split['ngo_minor'] !== (string)$ngo || $split['fund_minor'] !== (string)$fund
+            || $fund !== intdiv($total, 5)) { throw new RuntimeException('DONATION_CLOSE_CONFLICT'); }
     }
     sharity_donation_backing_reference($m['evidence_reference']);
     sharity_donation_backing_time($m['approved_at_utc']);
@@ -1420,7 +1436,7 @@ function sharity_donation_finance_close(string $orderId, string $expect, array $
         sharity_donation_order_owner($order['subject_ref']);
         $snapshot = sharity_donation_order_decode($order)['snapshot'];
         $currency = $snapshot['currency'];
-        if ($snapshot['donation_mode'] !== 'direct' || !in_array($currency, ['HUF','EUR'], true)
+        if (!in_array($snapshot['donation_mode'], ['direct','amplifier'], true) || !in_array($currency, ['HUF','EUR'], true)
             || sharity_donation_order_public($order, $now)['state'] !== 'session_recorded') { throw new RuntimeException('DONATION_CLOSE_STALE'); }
         // Replay is a historical fact: fresh economic prerequisites must not erase an ACK.
         $prior = sharity_donation_target_read($q,
@@ -1475,9 +1491,24 @@ function sharity_donation_finance_close(string $orderId, string $expect, array $
                 || $view['settlement'] === null || $view['provisional_split'] === null
                 || $view['provisional_split'] !== $raw['provisional_split']) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
             $split = $view['provisional_split'];
-            if ($split['currency'] !== $currency || $split['fund_minor'] !== '0' || sharity_donation_finance_minor($split['ngo_minor']) < 0
-                || ($view['adjustment_status'] === 'full_refund' && $split['ngo_minor'] !== '0')
+            if ($split['currency'] !== $currency || sharity_donation_finance_minor($split['ngo_minor']) < 0
+                || sharity_donation_finance_minor($split['fund_minor']) < 0
+                || ($snapshot['donation_mode'] === 'direct' && $split['fund_minor'] !== '0')
+                || ($view['adjustment_status'] === 'full_refund' && ($split['ngo_minor'] !== '0' || $split['fund_minor'] !== '0'))
                 || sharity_donation_backing_time($view['snapshot_at_utc']) > $now) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+            if ($snapshot['donation_mode'] === 'amplifier') {
+                // Reuse the existing complete scoped fee/refund proof, without executing it.
+                try { $fee = sharity_donation_fee_candidate($order, $snapshot, $inventory, $raw); }
+                catch (Throwable $unavailable) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+                if ($fee['refund_minor'] !== '0') { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+                foreach ($inventory['movements'] as $movement) {
+                    $available = false;
+                    foreach ($movement['observations'] as $observation) {
+                        if ($observation['status'] === 'available') { $available = true; }
+                    }
+                    if (!$available) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
+                }
+            }
             $proposal = hash('sha256', sharity_donation_finance_json([$orderId, $expect, $evidence, $split]));
             if ($apply !== '' && !hash_equals($proposal, $apply)) { throw new RuntimeException('DONATION_CLOSE_STALE'); }
             $raw['manual_close'] = ['version'=>1, 'source_target_digest'=>$expect, 'proposal_digest'=>$proposal,
@@ -1506,7 +1537,7 @@ function sharity_donation_finance_close(string $orderId, string $expect, array $
             if (sharity_donation_finance_json(sharity_donation_target_read($q, 'WHERE order_id = ? AND revision = ?', [$orderId, $row['revision']])) !== sharity_donation_finance_json($row)) { throw new RuntimeException('DONATION_CLOSE_CONFLICT'); }
         }
         $doc = json_decode($row['document'], true, 64, JSON_THROW_ON_ERROR); $manual = sharity_donation_target_manual_close($doc);
-        return ['scope'=>'recorded_direct_net_only', 'persisted'=>$already || $apply !== '', 'already_closed'=>$already,
+        return ['scope'=>$snapshot['donation_mode'] === 'amplifier' ? 'recorded_amplifier_net_only' : 'recorded_direct_net_only', 'persisted'=>$already || $apply !== '', 'already_closed'=>$already,
             'current_applicable'=>$current, 'evidence_recorded'=>($already || $apply !== '') && sharity_donation_finance_json($manual['evidence_reference']) === sharity_donation_finance_json($evidence),
             'proposal_digest'=>$manual['proposal_digest'], 'revision'=>(int)$row['revision'], 'economic_generation'=>(int)$row['economic_generation'],
             'created_at_utc'=>$row['created_at_utc'], 'target'=>$doc];
