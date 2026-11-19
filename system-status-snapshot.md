@@ -1,3 +1,11 @@
+## 2026-11-19 — Aláírt tételes NGO-bankjóváírás, saját forrás
+
+A meglévő Bank V2 plan/apply/journal/cash/claim és Donation pinned query közös natív tranzakcióban egyezteti a teljes connected payoutot az eredeti NGO/account/binding és aktuális kézi zárás alapján. Meglévő owner financial V2 saját contribution/dátum/deviza, signed Card V2 direct/amplifier partial; nincs új platformkapacitás vagy ledger. PHP8.3.27/MariaDB10.11.19 parent9645 PASS, owner738/payout1329; meglévő4webteszt179 PASS. Az ai-agent korábbi exact-source CI44619095846 SUCCESS, az új10f526db pinhez44622444139 folyamatban. Független source review lezárt.
+
+Impact#304 saját ágban mainc569da29 integrálva10f526db, csak összesített checksum-konfliktus oldva; pénzügyi PHP változatlan SHA256d2c1e32f472e7c589871d9e7f8ccb957fb781067445733adc86156cf7cb9e429. Main minden hashbejegyzése és8idegen notes-WIP-sor megőrzött; csendablak felszabadítva. CI validate/safe-audit/canonical-source-guard sikeres, Guard első futása ezt a hiányzó continuity-frissítést jelölte FAIL-nek. Csak e meglévő állapotdokumentum pótlása, guardgyengítés és új pénzügyi kód nélkül. Részletes kockázat/rollback/későbbi UI: `docs/protected-change-records/2026-11-19-donation-bank-reconciliation.md`.
+
+Nincs mainre merge, telepítés, aktiválás vagy éles banki/NGO-elfogadás. A célhostos kézi UI és valódi bankbizonyíték továbbra külön kiadási elfogadás.
+
 ## 2026-11-19 — Payout snapshot kölcsönzött natív olvasó
 
 A banki bridge előfeltételeként a meglévő payout/report és owner snapshot a saját query-jét adja a belső finance-reconcile olvasónak. Legacy default/DTO/digest változatlan, nincs banki egyeztetés vagy pénzügyi író. Két meglévő natív fixture: fallback-tripwire, aktív caller transaction, kapcsolatcsere, no-write/provider; a korábbi snapshot-race natív prepare horgon. Helyi PHP lint/diffcheck PASS; native SQL még NOT_RUN, az Airen hiányzó SDK/izolált MariaDB miatt a meglévő exact-pin CI szükséges. Független review P2 fixture-hook javítását visszaolvasás lezárta. Részletes scope/ellenőrzés/rollback/UI: `docs/protected-change-records/2026-11-19-donation-pinned-payout-read.md`. Nincs main-/éles ablak, merge/deploy/aktiválás vagy valós bankelfogadás.
