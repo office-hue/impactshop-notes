@@ -1,3 +1,7 @@
+## 2026-11-19 — Amplifier kiadási hashkötés
+
+A merged31784bc1 finance-ledger forrás SHA8399a3ea rögzítése egyetlen meglévő protected hashbejegyzésben, külső checksum frissítéssel. Nincs guard/config/policy/PHP módosítás; a korábbi natív CI44522431646 SUCCESS érvényes marad. A Mini saját tiszta release-worktree-je és az éles/staging remoteSHA visszaolvasott; az első guard dry-run a régi leltár miatt megállt, távoli írás nincs. Részletes protected record: `docs/protected-change-records/2026-11-19-amplifier-financial-close.md`. Ez még nem telepítési vagy aktiválási elfogadás.
+
 ## 2026-11-19 — Amplifier review és első natív futás: konkrét javítás
 
 PR298 ed772a25 jelölt; ai-agent PR2179 CI44521795545/financial135552164242 a Bank/partner/WP/fund és meglévő Direct111close regressziókon átment, az új Amplifier-fixture első rendelése NGO_UNAVAILABLE hibával megállt. Oka a teszt HUF min_minor1 értéke, miközben a meglévő HUF quote-contract egészforintos minorhoz100-at kíván; javítva HUF100/EUR1-re. Nem source-/natívPASS, nem vakrerun.
