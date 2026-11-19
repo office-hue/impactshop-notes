@@ -81,3 +81,9 @@ handler immediately resumes the previous 301 behavior. No data rollback exists.
   Impact surfaces remain available, and remote mode/hash match the release;
 - manual browser check in a private window because an earlier `301` may be
   cached by existing browsers.
+
+## BabaMama Expo · 2026. november 19.
+
+A két portál kampánycélra történő átállítását a
+[BabaMama Expo változási feljegyzése](protected-change-records/2026-11-19-babamama-expo-portal-redirects.md)
+követi.
