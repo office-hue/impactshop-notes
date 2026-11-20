@@ -1,3 +1,7 @@
+## 2026-11-19 — BabaMama Expo Stripe fogadó
+
+A kampányhoz kötött, alapból kikapcsolt fogadó külön WordPress-modul. A helyi 66 ellenőrzés sikerült elkülönített MariaDB-n, a rögzített Stripe SDK-val. A kiadási csomag egyetlen inaktív pluginfájl. A fogadási cím, a külön séma és a későbbi Stripe-bekötés feltételei a [kiadási leírásban](docs/babamama-expo-stripe-webhook.md) vannak.
+
 ## 2026-11-19 — Aláírt tételes NGO-bankjóváírás, saját forrás
 
 A meglévő Bank V2 plan/apply/journal/cash/claim és Donation pinned query közös natív tranzakcióban egyezteti a teljes connected payoutot az eredeti NGO/account/binding és aktuális kézi zárás alapján. Meglévő owner financial V2 saját contribution/dátum/deviza, signed Card V2 direct/amplifier partial; nincs új platformkapacitás vagy ledger. PHP8.3.27/MariaDB10.11.19 parent9645 PASS, owner738/payout1329; meglévő4webteszt179 PASS. Az ai-agent korábbi exact-source CI44619095846 SUCCESS, az új10f526db pinhez44622444139 folyamatban. Független source review lezárt.
