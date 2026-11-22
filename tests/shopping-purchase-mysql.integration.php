@@ -71,7 +71,7 @@ function connection() {
 function sql($query) { global $wpdb; $r=$wpdb->query($query); check($r!==false && $wpdb->last_error==='','sandbox SQL'); return $r; }
 function dbDelta($query) { sql(preg_replace('/\)\s+DEFAULT CHARACTER SET.*$/s', ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4', $query)); }
 $wpdb=connection();
-$tables=['impactshop_affiliate_intents','impact_sharity_web_sessions','owner_grants','sharity_ngo_catalog','user_points'];
+$tables=['impactshop_affiliate_intents','impact_sharity_web_sessions','owner_grants','sharity_ngo_catalog','user_points','options'];
 check(array_diff($wpdb->get_col('SHOW TABLES'),array_map(fn($t)=>'impactshop_test_'.$t,$tables))===[],'no foreign tables');
 foreach($tables as $table) sql('DROP TABLE IF EXISTS impactshop_test_'.$table);
 check(impactshop_sharity_affiliate_install_schema(),'canonical legacy intent schema');
@@ -79,6 +79,7 @@ check(impactshop_shopping_purchase_migrate(),'explicit canonical shopping migrat
 check(impactshop_shopping_purchase_migrate(),'shopping migration idempotent');
 sql('CREATE TABLE impactshop_test_impact_sharity_web_sessions(session_hash CHAR(64) PRIMARY KEY, pseudo_id VARCHAR(12), subject_ref VARCHAR(80), owner_grant_hash CHAR(64), status VARCHAR(24), issued_at_utc DATETIME NOT NULL, expires_at_utc DATETIME) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_owner_grants(grant_hash CHAR(64) PRIMARY KEY, pseudo_hash CHAR(64), state VARCHAR(24), revoked_at DATETIME NULL, expires_at DATETIME) ENGINE=InnoDB');
+sql('CREATE TABLE impactshop_test_options(option_name VARCHAR(191) PRIMARY KEY,option_value LONGTEXT NOT NULL) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_sharity_ngo_catalog(sharity_ngo_id BIGINT PRIMARY KEY, slug VARCHAR(128),name VARCHAR(128),is_active TINYINT) ENGINE=InnoDB');
 sql('CREATE TABLE impactshop_test_user_points(pseudo_id VARCHAR(12) PRIMARY KEY,impactshop_subject_digest BINARY(32) UNIQUE NULL,current_level VARCHAR(24),created_at DATETIME,updated_at DATETIME) ENGINE=InnoDB');
 $token='sw_session_'.str_repeat('A',43); $pseudo='abcdefgh1234'; $grant=str_repeat('b',64);
@@ -165,6 +166,63 @@ check(handoffCj($lostUrl)->get_status()===409 && $hit,'CJ lost handoff acknowled
 check(handoffCj($lostUrl)->get_status()===409 && countIntents()===6,'CJ lost handoff never repeats outbound transition');
 sql("UPDATE impactshop_test_impactshop_affiliate_intents SET intent_expires_at='2000-01-01' WHERE status='confirmed_cj_ready'");
 check(impactshop_sharity_affiliate_retention_cleanup()===true && countIntents()===5,'existing cleanup removes expired confirmed pending state only');
+// TT runs on this same isolated real wpdb/owner transaction; no provider request or live review.
+require_once __DIR__.'/../wp-content/mu-plugins/impactshop-tradetracker.php';
+putenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID=12345');
+$ttStart=countIntents();
+$ttReview=['customerId'=>'12345','siteId'=>'481183','campaignId'=>'18982','partnerKey'=>'vidaxl',
+    'programRef'=>'tradetracker-18982','merchantUrl'=>'https://www.vidaxl.hu/black-friday',
+    'qualificationRef'=>'synthetic-local-sql','referenceReportVerified'=>true,'donationCompatible'=>true,
+    'retentionSeconds'=>2592000,'requiredRetentionSeconds'=>2592000,'reviewExpiresAt'=>gmdate('Y-m-d\TH:i:s\Z',time()+3600)];
+function ttPayload($n) { return array_merge(payload($n),['merchantInput'=>'https://www.vidaxl.hu/black-friday',
+    'partnerKey'=>'vidaxl','programRef'=>'tradetracker-18982','providerKey'=>'tradetracker']); }
+function callTt($p) { return impactshop_shopping_tt_activate(new WP_REST_Request($p,$GLOBALS['token'])); }
+check(callTt(ttPayload(20))->get_status()===403 && countIntents()===$ttStart,'TT default OFF no write');
+$options['impactshop_sharity_affiliate_tt_outbound_enabled']='1';
+check(callTt(ttPayload(20))->get_status()===422 && countIntents()===$ttStart,'TT missing review no write');
+$options['impactshop_sharity_affiliate_tt_purchase_review']=$ttReview;
+function syncTtOptions() {
+    global $wpdb,$options;
+    foreach (['impactshop_sharity_affiliate_runtime_enabled','impactshop_sharity_shopping_purchase_enabled','impactshop_sharity_affiliate_tt_outbound_enabled','impactshop_sharity_affiliate_tt_purchase_review'] as $name) {
+        check($wpdb->replace('impactshop_test_options',['option_name'=>$name,'option_value'=>is_array($options[$name])?serialize($options[$name]):$options[$name]])!==false,'TT own uncached option fixture');
+    }
+}
+syncTtOptions();
+$r=callTt(ttPayload(20));check($r->get_status()===200,'TT real locked transaction');$ttUrl=$r->get_data()['redirectUrl'];
+$row=$wpdb->get_row("SELECT * FROM impactshop_test_impactshop_affiliate_intents WHERE provider_key='tradetracker'",ARRAY_A);
+parse_str(parse_url($ttUrl,PHP_URL_QUERY),$ttQuery);
+check($ttQuery['c']==='18982' && $ttQuery['m']==='12' && $ttQuery['a']==='481183' && $ttQuery['u']==='/black-friday','TT own reviewed merchant route');
+check(hash('sha256',ImpactShop_TradeTracker::token_for_reference($ttQuery['r']))===$row['provider_token_hash'],'TT reference retains original SAT1 hash');
+check($row['provider_scope_ref']==='12345:481183' && $row['ngo_ref']==='ngo-seven' && $row['subject_ref']===impactshop_sharity_affiliate_subject_ref($pseudo),'TT freezes scope owner and chosen NGO');
+check(strtotime($row['delete_after'])-strtotime($row['created_at'])===2592000,'TT approved row retention');
+check(callTt(ttPayload(20))->get_data()['redirectUrl']===$ttUrl && countIntents()===$ttStart+1,'TT stable UUID replay');
+$p=ttPayload(20);$p['ngoId']='8';check(callTt($p)->get_status()===409,'TT cannot switch chosen NGO');
+$p=ttPayload(20);$p['authoritySnapshotId']='sharity-shopping-production-v2-20261103-01';check(callTt($p)->get_status()===409,'TT cannot rebind original authority snapshot');
+$options['impactshop_sharity_affiliate_tt_purchase_review']['retentionSeconds']=3000000;
+check(callTt(ttPayload(20))->get_status()===409,'TT changed review no extension');
+check($wpdb->get_var($wpdb->prepare('SELECT delete_after FROM impactshop_test_impactshop_affiliate_intents WHERE activation_id=%s',$row['activation_id']))===$row['delete_after'],'TT stored expiry unchanged');
+$options['impactshop_sharity_affiliate_tt_purchase_review']=$ttReview;
+sql($wpdb->prepare("UPDATE impactshop_test_impactshop_affiliate_intents SET provider_scope_ref='999:481183' WHERE activation_id=%s",$row['activation_id']));
+check(callTt(ttPayload(20))->get_status()===409,'TT persisted foreign scope rejected');
+sql($wpdb->prepare('UPDATE impactshop_test_impactshop_affiliate_intents SET provider_scope_ref=%s,delete_after=%s WHERE activation_id=%s',$row['provider_scope_ref'],'2000-01-01',$row['activation_id']));
+check(callTt(ttPayload(20))->get_status()===403,'TT expired mapping not reissued');
+sql($wpdb->prepare('UPDATE impactshop_test_impactshop_affiliate_intents SET delete_after=%s WHERE activation_id=%s',$row['delete_after'],$row['activation_id']));
+sql("UPDATE impactshop_test_options SET option_value='0' WHERE option_name='impactshop_sharity_affiliate_tt_outbound_enabled'");
+check(get_option('impactshop_sharity_affiliate_tt_outbound_enabled')==='1' && callTt(ttPayload(20))->get_status()===403,'TT cached ON cannot bypass fresh SQL revocation');
+syncTtOptions();
+$wpdb->close();$children=[];
+for($i=0;$i<2;$i++){ $pid=pcntl_fork();check($pid>=0,'TT fork');if($pid===0){$wpdb=connection();if($i===1)$token=$token2;$out=callTt(ttPayload(21));exit($out->get_status()===200?0:1);} $children[]=$pid; }
+foreach($children as $pid){pcntl_waitpid($pid,$status);check(pcntl_wifexited($status)&&pcntl_wexitstatus($status)===0,'TT concurrent response');}
+$wpdb=connection();check(countIntents()===$ttStart+2,'TT concurrent sessions issue one intent');
+$hit=false;$fault=function($query)use(&$hit,$ttStart){global $wpdb;if(!$hit&&$query==='COMMIT'&&countIntents()===$ttStart+3){$hit=true;mysqli_query($wpdb->dbh,'COMMIT');return 'SELECT * FROM deliberately_missing_tt_ack';}return $query;};
+$r=callTt(ttPayload(22));check($r->get_status()===200 && $hit,'TT lost actual COMMIT resolved by durable readback');$fault=null;
+check(countIntents()===$ttStart+3 && callTt(ttPayload(22))->get_data()['redirectUrl']===$r->get_data()['redirectUrl'],'TT lost acknowledgement does not create second intent');
+$hit=false;$fault=function($query)use(&$hit,$ttStart){if(!$hit&&$query==='COMMIT'&&countIntents()===$ttStart+4){$hit=true;return 'SELECT * FROM deliberately_missing_tt_uncommitted';}return $query;};
+check(callTt(ttPayload(23))->get_status()===503 && $hit,'TT absent COMMIT releases no URL');$fault=null;
+check(countIntents()===$ttStart+3,'TT absent COMMIT preserves intent count');
+$options['impactshop_sharity_affiliate_tt_outbound_enabled']='0';check(callTt(ttPayload(20))->get_status()===403,'TT revocation denies replay');
+sql("DELETE FROM impactshop_test_impactshop_affiliate_intents WHERE provider_key='tradetracker'");
+check(countIntents()===$ttStart,'TT removes only own synthetic rows before legacy failure fixtures');
 // Stale/owner-less sessions, lane OFF and absent column all fail without mutation.
 sql("UPDATE impactshop_test_impact_sharity_web_sessions SET owner_grant_hash=NULL");check(callPurchase(payload(7))->get_status()===401,'ownerless session denied');
 sql("UPDATE impactshop_test_impact_sharity_web_sessions SET owner_grant_hash='".$grant."',expires_at_utc='2020-01-01'");check(callPurchase(payload(7))->get_status()===401,'expired session denied');

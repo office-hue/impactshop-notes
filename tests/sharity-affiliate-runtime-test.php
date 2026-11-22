@@ -546,6 +546,14 @@ class ShoppingPurchaseFakeWpdb extends ImpactshopAffiliateFakeWpdb {
     public $reconnect_retries = 5;
     public function get_var($q) { return $q === 'SELECT CONNECTION_ID()' ? '123' : parent::get_var($q); }
     public function get_results($query, ...$rest) {
+        if (is_array($query) && strpos($query['query'], 'SELECT option_name, option_value') === 0) {
+            $options = $GLOBALS['ttDatabaseOptions'] ?? $GLOBALS['impactshopTestOptions'];
+            $out = [];
+            foreach ($query['args'] as $name) {
+                if (array_key_exists($name, $options)) { $out[] = ['option_name'=>$name, 'option_value'=>is_array($options[$name]) ? serialize($options[$name]) : (string) $options[$name]]; }
+            }
+            return $out;
+        }
         return $this->activeNgo ? [['sharity_ngo_id'=>'7','slug'=>$this->ngoSlug,'name'=>'Chosen NGO']] : [];
     }
     public function get_row($q, ...$rest) {
@@ -690,3 +698,113 @@ assert_true($cjCall($cjPurchase)->get_status()===403,'CJ provider OFF enforced')
 $oldPublisher===false ? putenv('CJ_PUBLISHER_ID') : putenv('CJ_PUBLISHER_ID='.$oldPublisher);
 $oldWebsite===false ? putenv('CJ_WEBSITE_ID') : putenv('CJ_WEBSITE_ID='.$oldWebsite);
 echo "confirmed CJ purchase tests: PASS\n";
+
+// TT uses the confirmed owner transaction and original SAT1 hash; these are synthetic qualifications only.
+require_once __DIR__ . '/../wp-content/mu-plugins/impactshop-tradetracker.php';
+$ttChecks = 0;
+$ttAssert = static function ($ok, $label) use (&$ttChecks) { $ttChecks++; assert_true($ok, 'TT: ' . $label); };
+$oldTtCustomer = getenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID');
+putenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID=12345');
+$ttReview = ['customerId'=>'12345','siteId'=>'481183','campaignId'=>'18982','partnerKey'=>'vidaxl',
+    'programRef'=>'tradetracker-18982','merchantUrl'=>'https://www.vidaxl.hu/black-friday',
+    'qualificationRef'=>'synthetic-offline-only','referenceReportVerified'=>true,'donationCompatible'=>true,
+    'retentionSeconds'=>2592000,'requiredRetentionSeconds'=>2592000,'reviewExpiresAt'=>gmdate('Y-m-d\TH:i:s\Z',time()+3600)];
+$ttPurchase = array_merge($purchase,['merchantInput'=>'https://www.vidaxl.hu/black-friday','partnerKey'=>'vidaxl',
+    'providerKey'=>'tradetracker','programRef'=>'tradetracker-18982']);
+$ttCall = static function ($p) use ($headers) { return impactshop_shopping_tt_activate(new ImpactshopAffiliateFakeRequest($headers,[],$p)); };
+$wpdb = new ShoppingPurchaseFakeWpdb();
+$ttAssert($ttCall($ttPurchase)->get_status()===403 && !$wpdb->rows,'default OFF writes no intent');
+$impactshopTestOptions['impactshop_sharity_affiliate_tt_outbound_enabled']='1';
+$ttAssert($ttCall($ttPurchase)->get_status()===422 && !$wpdb->rows,'missing review writes no intent');
+$impactshopTestOptions['impactshop_sharity_affiliate_tt_purchase_review']=$ttReview;
+foreach (['customerId'=>'999','siteId'=>'999','campaignId'=>'999','partnerKey'=>'other','programRef'=>'dognet:vidaxl',
+    'merchantUrl'=>'https://www.vidaxl.hu/','qualificationRef'=>'','referenceReportVerified'=>1,'donationCompatible'=>false,
+    'retentionSeconds'=>3888001,'requiredRetentionSeconds'=>2592001,'reviewExpiresAt'=>'2000-01-01T00:00:00Z'] as $field=>$bad) {
+    $impactshopTestOptions['impactshop_sharity_affiliate_tt_purchase_review']=array_merge($ttReview,[$field=>$bad]);
+    $ttAssert($ttCall($ttPurchase)->get_status()===422 && !$wpdb->rows,'invalid qualification '.$field);
+}
+foreach ([0,-1,'2592000',2592000.0,null] as $bad) {
+    $impactshopTestOptions['impactshop_sharity_affiliate_tt_purchase_review']=array_merge($ttReview,['requiredRetentionSeconds'=>$bad]);
+    $ttAssert(impactshop_shopping_tt_review()===null,'strict required retention type/range');
+}
+$impactshopTestOptions['impactshop_sharity_affiliate_tt_purchase_review']=$ttReview;
+putenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID');
+$ttAssert(impactshop_shopping_tt_review()===null,'missing server account does not adopt review account');
+putenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID=12345');
+foreach (['merchantInput'=>'https://www.vidaxl.hu/black-friday?other=1','programRef'=>'tradetracker-999','providerKey'=>'cj','partnerKey'=>'other',
+    'authoritySnapshotId'=>'sharity-shopping-production-dognet-20261102-01'] as $field=>$bad) {
+    $p=array_merge($ttPurchase,[$field=>$bad]);
+    $ttAssert($ttCall($p)->get_status()>=400 && !$wpdb->rows,'wrong request binding '.$field);
+}
+$p=$ttPurchase;$p['customerId']='12345';
+$ttAssert($ttCall($p)->get_status()===400 && !$wpdb->rows,'request cannot supply account or review');
+$ttAssert(impactshop_shopping_confirmed_activate(new ImpactshopAffiliateFakeRequest($headers,[],$ttPurchase),'unknown')->get_status()===422,'unknown provider cannot fall into Dognet');
+$wpdb->lockedOwner=false;
+$ttAssert($ttCall($ttPurchase)->get_status()===401 && !$wpdb->rows,'owner switch under lock');$wpdb->lockedOwner=true;
+$wpdb->activeNgo=false;
+$ttAssert($ttCall($ttPurchase)->get_status()===422 && !$wpdb->rows,'inactive NGO under lock');$wpdb->activeNgo=true;
+$r=$ttCall($ttPurchase);$ttAssert($r->get_status()===200,'qualified synthetic request');
+$ttUrl=$r->get_data()['redirectUrl'];$ttRow=array_values($wpdb->rows)[0];
+parse_str(parse_url($ttUrl,PHP_URL_QUERY),$ttQuery);
+$ttAssert(parse_url($ttUrl,PHP_URL_SCHEME)==='https' && parse_url($ttUrl,PHP_URL_HOST)==='tc.tradetracker.net' && parse_url($ttUrl,PHP_URL_PATH)==='/','fixed tracking origin/path');
+$ttAssert(array_keys($ttQuery)===['c','m','a','r','u'] && $ttQuery['c']==='18982' && $ttQuery['m']==='12' && $ttQuery['a']==='481183' && $ttQuery['u']==='/black-friday','own merchant link, not coupon material');
+$ttToken=ImpactShop_TradeTracker::token_for_reference($ttQuery['r']);
+$ttAssert(strlen($ttQuery['r'])===68 && hash('sha256',$ttToken)===$ttRow['provider_token_hash'],'wire reference preserves stored original token hash');
+$ttAssert($ttRow['provider_key']==='tradetracker' && $ttRow['provider_scope_ref']==='12345:481183' && $ttRow['provider_program_ref']==='tradetracker-18982','durable provider/account/site/program');
+$ttAssert($ttRow['ngo_ref']==='chosen-ngo' && $ttRow['subject_ref']===impactshop_sharity_affiliate_subject_ref('abcdefgh1234'),'original authenticated owner and selected NGO');
+$ttAssert(strtotime($ttRow['delete_after'].' UTC')-strtotime($ttRow['created_at'].' UTC')===2592000,'approved per-row retention, not global extension');
+$ttAssert($ttCall($ttPurchase)->get_data()['redirectUrl']===$ttUrl && count($wpdb->rows)===1,'identical UUID replay');
+$p=$ttPurchase;$p['authoritySnapshotId']='sharity-shopping-production-v2-20261103-01';
+$ttAssert($ttCall($p)->get_status()===409 && $wpdb->rows[$ttRow['activation_id']]['authority_snapshot_ref']===$ttRow['authority_snapshot_ref'],'snapshot retry cannot rebind');
+$p=$ttPurchase;$p['ngoId']='8';
+$ttAssert($ttCall($p)->get_status()===409,'UUID cannot switch NGO');
+foreach (['provider_key'=>'dognet','provider_scope_ref'=>'999:481183','provider_program_ref'=>'tradetracker-999',
+    'partner_key'=>'other','subject_ref'=>'hmac-sha256:'.str_repeat('0',64),'ngo_ref'=>'other-ngo',
+    'authority_snapshot_ref'=>'other','source_placement'=>'shopping-assistant','provider_token_hash'=>str_repeat('0',64)] as $field=>$bad) {
+    $wpdb->rows[$ttRow['activation_id']][$field]=$bad;
+    $ttAssert($ttCall($ttPurchase)->get_status()===409,'persisted binding tamper '.$field);
+    $wpdb->rows[$ttRow['activation_id']]=$ttRow;
+}
+$wpdb->rows[$ttRow['activation_id']]['delete_after']='2000-01-01 00:00:00';
+$ttAssert($ttCall($ttPurchase)->get_status()===403,'expired mapping is not reissued');$wpdb->rows[$ttRow['activation_id']]=$ttRow;
+$wpdb->rows[$ttRow['activation_id']]['intent_expires_at']='2000-01-01 00:00:00';
+$ttAssert($ttCall($ttPurchase)->get_status()===410,'expired confirmation is not reissued');$wpdb->rows[$ttRow['activation_id']]=$ttRow;
+$impactshopTestOptions['impactshop_sharity_affiliate_tt_purchase_review']['retentionSeconds']=3000000;
+$ttAssert($ttCall($ttPurchase)->get_status()===409 && $wpdb->rows[$ttRow['activation_id']]['delete_after']===$ttRow['delete_after'],'review change never extends existing row');
+$impactshopTestOptions['impactshop_sharity_affiliate_tt_purchase_review']=$ttReview;
+$ttAssert(impactshop_shopping_purchase_result($ttRow,$ttRow['request_payload_hash'],impactshop_shopping_tt_review(),$ttPurchase['merchantInput'])->get_status()===409,'TT cannot use unscoped legacy result');
+$wpdb=new ShoppingPurchaseFakeWpdb();$wpdb->loseCommit=true;
+$ttAssert($ttCall($ttPurchase)->get_status()===503 && !$wpdb->rows,'lost absent COMMIT never releases URL');
+$wpdb=new ShoppingPurchaseFakeWpdb();$wpdb->race=true;
+$ttAssert($ttCall($ttPurchase)->get_status()===200 && count($wpdb->rows)===1,'unique race readback, no second insert');
+class TtDisableAfterCommitFakeWpdb extends ShoppingPurchaseFakeWpdb {
+    public function query($q) { if ($q==='COMMIT') { $GLOBALS['ttDatabaseOptions']['impactshop_sharity_affiliate_tt_outbound_enabled']='0'; } return parent::query($q); }
+}
+$ttDatabaseOptions=$impactshopTestOptions;
+$wpdb=new TtDisableAfterCommitFakeWpdb();
+$ttAssert($ttCall($ttPurchase)->get_status()===403 && count($wpdb->rows)===1,'uncached post-COMMIT revocation withholds URL from durable row');
+$ttAssert(get_option('impactshop_sharity_affiliate_tt_outbound_enabled')==='1','per-request option cache really remains enabled');
+unset($ttDatabaseOptions);
+class TtReviewAfterCommitFakeWpdb extends ShoppingPurchaseFakeWpdb {
+    public function query($q) { if ($q==='COMMIT') { $GLOBALS['ttDatabaseOptions']['impactshop_sharity_affiliate_tt_purchase_review']['qualificationRef']='changed-proof'; } return parent::query($q); }
+}
+$ttDatabaseOptions=$impactshopTestOptions;$wpdb=new TtReviewAfterCommitFakeWpdb();
+$ttAssert($ttCall($ttPurchase)->get_status()===403 && count($wpdb->rows)===1,'uncached changed review denies committed result');
+$ttAssert(get_option('impactshop_sharity_affiliate_tt_purchase_review')['qualificationRef']==='synthetic-offline-only','review cache really remains unchanged');
+unset($ttDatabaseOptions);
+class TtDisableBeforeInsertFakeWpdb extends ShoppingPurchaseFakeWpdb {
+    public function get_row($q, ...$rest) {
+        $row=parent::get_row($q,...$rest);
+        if (strpos($q['query'],'SELECT *')===0 && strpos($q['query'],'request_key_hash')!==false && strpos($q['query'],'FOR UPDATE')!==false) {
+            $GLOBALS['ttDatabaseOptions']['impactshop_sharity_affiliate_tt_outbound_enabled']='0';
+        }
+        return $row;
+    }
+}
+$ttDatabaseOptions=$impactshopTestOptions;$wpdb=new TtDisableBeforeInsertFakeWpdb();
+$ttAssert($ttCall($ttPurchase)->get_status()===403 && !$wpdb->rows,'uncached revocation before INSERT writes no intent');
+unset($ttDatabaseOptions);
+$impactshopTestOptions['impactshop_sharity_affiliate_tt_outbound_enabled']='0';
+$ttAssert($ttCall($ttPurchase)->get_status()===403,'explicit OFF remains closed');
+putenv($oldTtCustomer===false?'IMPACTSHOP_TRADETRACKER_CUSTOMER_ID':'IMPACTSHOP_TRADETRACKER_CUSTOMER_ID='.$oldTtCustomer);
+echo 'confirmed TT purchase tests: '.$ttChecks." assertions PASS\n";
