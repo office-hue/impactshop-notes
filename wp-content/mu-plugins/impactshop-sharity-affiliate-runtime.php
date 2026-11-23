@@ -626,6 +626,81 @@ function impactshop_shopping_dognet_binding($shop, $merchantUrl)
     return ['cid' => $params['cid'], 'chid' => $params['chid'], 'refid' => $params['refid']];
 }
 
+
+function impactshop_dognet_verified_choice_enabled(string $shop): bool
+{
+    $enabled = get_option('impactshop_dognet_verified_ngo_shops', []);
+    return is_array($enabled) && in_array($shop, $enabled, true);
+}
+
+/** Prepare and commit a Dognet marker for the exact selected NGO before redirecting. */
+function impactshop_dognet_verified_redirect_url(array $shop, string $slug, string $targetUrl): string
+{
+    global $wpdb;
+    if (!function_exists('impactshop_ngo_selector_dognet_choice')
+        || !in_array($_SERVER['REQUEST_METHOD'] ?? '', ['GET', 'POST'], true)) {
+        wp_die('Az NGO-választó jelenleg nem érhető el.', '', ['response' => 503]);
+    }
+    $choice = impactshop_ngo_selector_dognet_choice();
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+        wp_die('Érvénytelen vásárlási kérés.', '', ['response' => 400]);
+    }
+    $merchant = $targetUrl !== '' ? $targetUrl : (string) ($shop['site'] ?? '');
+    $binding = impactshop_shopping_dognet_binding($shop, $merchant);
+    $secret = impactshop_sharity_affiliate_secret();
+    if ($binding === null || $secret === '' || !impactshop_sharity_affiliate_enabled() || !impactshop_shopping_purchase_schema_ready()) {
+        wp_die('Ehhez az ajánlathoz jelenleg nincs ellenőrzött partnerlink.', '', ['response' => 503]);
+    }
+    $id = 'act1_' . bin2hex(random_bytes(16));
+    $token = impactshop_sharity_affiliate_provider_token($id, $secret);
+    $now = time();
+    $table = impactshop_sharity_affiliate_table();
+    $deadline = gmdate('Y-m-d H:i:s', $now + IMPACTSHOP_SHARITY_AFFILIATE_RETENTION);
+    $subject = 'hmac-sha256:' . hash_hmac('sha256', "dognet-guest-v1\0" . $choice['browser_ref'], $secret);
+    $pseudo = $_COOKIE['impactshop_pseudo_id'] ?? null;
+    if ((string) get_option('sharity_points_impactshop_producer_enabled', '0') === '1'
+        && is_string($pseudo) && preg_match('/^[a-z0-9]{10,12}$/Di', $pseudo)
+        && function_exists('impactshop_identity_owner_authorized')
+        && impactshop_identity_owner_authorized(strtolower($pseudo))) {
+        $bound = function_exists('sharity_points_impactshop_bind_subject')
+            ? sharity_points_impactshop_bind_subject(strtolower($pseudo)) : null;
+        if (empty($bound['success'])) {
+            wp_die('A vásárlói azonosítás nem érhető el.', '', ['response' => 503]);
+        }
+        $subject = impactshop_sharity_affiliate_subject_ref($pseudo, $secret);
+    }
+    $record = [
+        'activation_id' => $id, 'provider_token_hash' => hash('sha256', $token),
+        'request_key_hash' => hash('sha256', $id),
+        'subject_ref' => $subject,
+        'ngo_ref' => $choice['id'], 'partner_key' => $slug,
+        'provider_key' => 'dognet', 'provider_program_ref' => 'dognet:' . $binding['cid'],
+        'provider_scope_ref' => $binding['chid'],
+        'authority_snapshot_ref' => 'dognet-verified-ngo-v1',
+        'disclosure_version' => IMPACTSHOP_SHARITY_AFFILIATE_CJ_DISCLOSURE,
+        'source_placement' => 'dognet-verified-ngo-v1', 'status' => 'redirected',
+        'created_at' => gmdate('Y-m-d H:i:s', $now), 'redirected_at' => gmdate('Y-m-d H:i:s', $now),
+        'intent_expires_at' => gmdate('Y-m-d H:i:s', $now + IMPACTSHOP_SHARITY_AFFILIATE_TTL),
+        'delete_after' => $deadline,
+    ];
+    $inserted = $wpdb->insert($table, $record);
+    $persisted = $inserted === 1 ? $wpdb->get_row($wpdb->prepare(
+        "SELECT ngo_ref, provider_scope_ref, status FROM {$table} WHERE activation_id=%s AND provider_token_hash=%s",
+        $id, $record['provider_token_hash']
+    ), ARRAY_A) : null;
+    if ($wpdb->last_error !== '' || $persisted !== [
+        'ngo_ref' => $choice['id'], 'provider_scope_ref' => $binding['chid'], 'status' => 'redirected',
+    ]) {
+        wp_die('A partnerjelölőt nem sikerült menteni.', '', ['response' => 503]);
+    }
+    $params = $binding + ['d1' => $token];
+    if ($targetUrl !== '') {
+        $params['url'] = $targetUrl;
+    }
+    nocache_headers();
+    return add_query_arg($params, 'https://go.dognet.com/');
+}
+
 /** Fresh operator-reviewed evidence only. Request bodies never supply site/account scope. */
 function impactshop_shopping_cj_review()
 {

@@ -206,3 +206,83 @@ function impactshop_ngo_selector_maybe_migrate(): void
     dbDelta($sql);
     update_option('impactshop_ngo_selector_schema', 1, false);
 }
+
+/** A guest's explicit choice is kept in a server-authenticated first-party cookie. */
+function impactshop_ngo_selector_dognet_choice(): array
+{
+    global $wpdb;
+    $name = '__Host-sharity-shop-ngo';
+    $csrfName = '__Host-sharity-shop-choice';
+    $secret = impactshop_sharity_affiliate_secret();
+    if (!is_ssl() || headers_sent() || $secret === '') {
+        wp_die('Az NGO-választó jelenleg nem érhető el.', '', ['response' => 503]);
+    }
+    $signature = static fn(string $body): string => hash_hmac('sha256', "dognet-ngo-choice-v1\0" . $body, $secret);
+    $active = static function (string $id) use ($wpdb): ?array {
+        if (!preg_match('/^[1-9][0-9]{0,9}$/D', $id)) {
+            return null;
+        }
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT sharity_ngo_id, slug FROM {$wpdb->prefix}sharity_ngo_catalog WHERE sharity_ngo_id=%s AND is_active=1 LIMIT 2",
+            $id
+        ), ARRAY_A);
+        return $wpdb->last_error === '' && is_array($rows) && count($rows) === 1
+            && impactshop_shopping_valid_ngo_slug($rows[0]['slug']) ? $rows[0] : null;
+    };
+    $cookieOptions = ['path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax'];
+    $cookie = $_COOKIE[$name] ?? null;
+    if (is_string($cookie) && preg_match('/^([0-9]{1,10})\.([0-9]{10})\.([a-f0-9]{32})\.([a-f0-9]{64})$/D', $cookie, $m)) {
+        $body = $m[1] . '.' . $m[2] . '.' . $m[3];
+        if ((int) $m[2] > time() && hash_equals($signature($body), $m[4]) && ($ngo = $active($m[1])) !== null) {
+            return ['id' => $m[1], 'slug' => $ngo['slug'], 'browser_ref' => $m[3]];
+        }
+    }
+
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    if (!is_string($uri) || !preg_match('~^/(?![/\\\\])[^\x00-\x20\x7f]*$~D', $uri)
+        || str_contains($uri, '\\') || wp_validate_redirect($uri, '') !== $uri) {
+        wp_die('Érvénytelen vásárlási útvonal.', '', ['response' => 400]);
+    }
+    $action = remove_query_arg(['d1', 'ngo', 'impact_ngo_slug'], $uri);
+    nocache_headers();
+    header('Referrer-Policy: no-referrer');
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+        $posted = $_POST['sharity_choice_token'] ?? null;
+        $csrf = $_COOKIE[$csrfName] ?? null;
+        $id = $_POST['sharity_chosen_ngo'] ?? null;
+        if (!is_string($csrf) || !preg_match('/^[a-f0-9]{64}$/D', $csrf)
+            || !is_string($posted) || !hash_equals($csrf, $posted) || !is_string($id) || $active($id) === null) {
+            wp_die('A választás nem érvényes. Indítsd újra a vásárlást.', '', ['response' => 400]);
+        }
+        $until = time() + 30 * DAY_IN_SECONDS;
+        $body = $id . '.' . $until . '.' . bin2hex(random_bytes(16));
+        if (!setcookie($name, $body . '.' . $signature($body), ['expires' => $until] + $cookieOptions)
+            || !setcookie($csrfName, '', ['expires' => time() - 3600] + $cookieOptions)
+            || !wp_safe_redirect($action, 303)) {
+            wp_die('A választás mentése nem sikerült.', '', ['response' => 503]);
+        }
+        exit;
+    }
+    $ngos = $wpdb->get_results(
+        "SELECT sharity_ngo_id, name FROM {$wpdb->prefix}sharity_ngo_catalog WHERE is_active=1 ORDER BY name",
+        ARRAY_A
+    );
+    $csrf = bin2hex(random_bytes(32));
+    if ($wpdb->last_error !== '' || !is_array($ngos) || $ngos === []
+        || !setcookie($csrfName, $csrf, ['expires' => time() + 900] + $cookieOptions)) {
+        wp_die('Az NGO-választó jelenleg nem érhető el.', '', ['response' => 503]);
+    }
+    $options = '<option value="">Válassz szervezetet…</option>';
+    foreach ($ngos as $ngo) {
+        $options .= '<option value="' . esc_attr((string) $ngo['sharity_ngo_id']) . '">' . esc_html($ngo['name']) . '</option>';
+    }
+    wp_die(
+        '<form method="post" action="' . esc_url($action) . '">'
+        . '<p><label for="sharity-chosen-ngo">Kit szeretnél támogatni?</label></p>'
+        . '<p><select name="sharity_chosen_ngo" id="sharity-chosen-ngo" required>' . $options . '</select></p>'
+        . '<input type="hidden" name="sharity_choice_token" value="' . esc_attr($csrf) . '">'
+        . '<button type="submit">Tovább a partnerhez</button></form>',
+        'Szervezet választása',
+        ['response' => 200]
+    );
+}
