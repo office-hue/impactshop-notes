@@ -85,6 +85,8 @@ function sh_d1_maybe_redirect_backend(){
   if(preg_match('~/(?:go|go-deal)/([^/?#]+)~', $req, $m)) $shop = $m[1];
   if(!$shop && isset($_GET['shop'])) $shop = (string)$_GET['shop'];
   if(!$shop || isset($_GET['d1'])) return;
+  if (function_exists('impactshop_dognet_verified_choice_enabled')
+    && impactshop_dognet_verified_choice_enabled(sh_d1_sanitize_slug($shop))) return;
 
   $d1 = sh_d1_for($shop);
   if(!$d1) return; // nincs mit pótolni

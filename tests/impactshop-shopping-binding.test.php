@@ -167,4 +167,43 @@ check(sharity_points_impactshop_capture($legacy)['success'],'affiliate marker of
 $legacyRoot=sharity_points_impactshop_prepare($legacy)['event']['root_id'];
 check($wpdb->roots[$legacyRoot]['attribution_binding_json']===null,'fixture mirrors SQL NULLIF for missing binding');
 check($wpdb->reconnect_retries===5,'real transaction manager restores connection guard');
+function wp_salt($scheme) { return str_repeat('fixture', 8); }
+function is_ssl() { return true; }
+function wp_validate_redirect($url, $fallback) { return $url; }
+function remove_query_arg($keys, $url) { return explode('?', $url, 2)[0]; }
+function nocache_headers() {}
+function wp_die($message, $title, $args) { throw new RuntimeException(strip_tags($message), $args['response']); }
+require __DIR__.'/../wp-content/mu-plugins/impactshop-ngo-selector.php';
+$wpdb = new class {
+    public $last_error = '', $prefix = 'fixture_';
+    public function prepare($format, $id) { return [$format, $id]; }
+    public function get_results($query) {
+        return ($query[1] ?? '') === '101' ? [['sharity_ngo_id'=>'101','slug'=>'confirmed-ngo']] : [];
+    }
+};
+$_SERVER['REQUEST_URI'] = '/go/fixture-shop?d1=999';
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_GET['d1'] = '999';
+check(!impactshop_dognet_verified_choice_enabled('fixture-shop'), 'Dognet choice default off');
+$options['impactshop_dognet_verified_ngo_shops'] = ['fixture-shop'];
+check(impactshop_dognet_verified_choice_enabled('fixture-shop') && !impactshop_dognet_verified_choice_enabled('other-shop'), 'reviewed shop switch only');
+$body = '101.'.(time()+60).'.'.str_repeat('c',32);
+$signature = hash_hmac('sha256', "dognet-ngo-choice-v1\0".$body, wp_salt('auth'));
+$_COOKIE['__Host-sharity-shop-ngo'] = $body.'.'.$signature;
+check(impactshop_ngo_selector_dognet_choice()['id'] === '101', 'active signed choice wins over raw d1');
+$_COOKIE['__Host-sharity-shop-ngo'] = '102'.substr($_COOKIE['__Host-sharity-shop-ngo'], 3);
+try {
+    impactshop_ngo_selector_dognet_choice();
+    check(false, 'tampered choice rejected');
+} catch (RuntimeException $e) {
+    check($e->getCode() === 503, 'tampered cookie or raw d1 cannot bypass selector');
+}
+$_SERVER['REQUEST_METHOD'] = 'POST';
+$_POST = ['sharity_chosen_ngo'=>'101','sharity_choice_token'=>str_repeat('b',64)];
+try {
+    impactshop_ngo_selector_dognet_choice();
+    check(false, 'unauthorized POST rejected');
+} catch (RuntimeException $e) {
+    check($e->getCode() === 400, 'POST must match the chooser CSRF cookie');
+}
 echo "Shopping binding fixtures: {$checks} passed (synthetic SQL boundary, no MySQL)\n";

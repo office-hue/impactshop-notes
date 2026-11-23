@@ -91,6 +91,38 @@ nyilvános CSV-export vagy banki DTO. A tényleges utalási CSV a meglévő B
 `bank-payout export` parancsból, jóváhagyott batch alapján készül, privát fájlba.
 A banktitkot, címzett IBAN-ját és bizonylattartalmat nem szabad DOCSYNC-be másolni.
 
+### Történeti Dognet-kimutatás
+
+A történeti csomag aláírt `partner-statement` adatai a meglévő mezők mellett
+`historical_cash` objektumot tartalmaznak. A `rule_ref` a kanonikus szabályzat
+pontos Git-revíziójához és szabálysorához rendelt belső hivatkozás. Az
+`evidence_sha256` a változatlan privát csomag lenyomata. A csomag tartalmazza
+a dokumentumlenyomatot, hatályt, partnerpolicy-lenyomatot, eredeti Dognet-exportot,
+bankbizonylatot és a tételes egyezést. A `source_digest` és a banki
+`evidence_ref` megőrzi saját szerepét. A pénzügyi azonosító és a bizonylat
+privát marad.
+
+A `rows` a teljes eredeti bankbeérkezés forrástételeit tartalmazza.
+Minden sor mezője `provider_tx_id`, `part_id`, `net_minor`, `disposition`,
+`ngo_id`, `source_policy_sha256`, `priority`. A Dognet eredeti `ID` mezője
+a providerazonosító. A HUF scale-2 kapacitás összege rész és teljes banktétel
+szintjén pontosan egyezik. Első revízióban minden kiválasztott tétel a saját
+teljes eredeti banki részértékével szerepel. Korrekcióban a tételazonosság és
+eredeti felső határ megmarad.
+
+- `eligible`: igazolt NGO és szabálylenyomat. Azonos szabályú sorok közös
+  bankrészt használhatnak. Az elsőbbség az aláírt sorbesorolás része.
+- `held`: saját, változatlan bankrész. Már igazolt numerikus NGO rögzíthető,
+  a szabálylenyomat itt null. Új feldolgozáskor az eredeti sorhoz és összeghez
+  pontos partnergrant és új tételes bizonyíték szükséges.
+- `excluded`: jelölő nélkül végleg kizárt, NGO és szabálylenyomat null.
+  A kizárt sorok közös `unassigned` bankrészbe kerülhetnek.
+
+A teljes felosztás az első jogosultságkönyveléssel azonos tranzakcióban
+rögzül. Minden későbbi rész és revízió ugyanazt a teljes banki felosztást
+és történeti jegyzéket hordozza. A már rögzített historikus NGO-jogosultság
+külön elsőbbséget élvez a következő HUF csomagban.
+
 A régi analitikai export `partner_code,event_id,status,reconcile_status,amount_gross`
 mezői olvasási segédletként megtarthatók. A pénzügyi elfogadásban nincs ±1%
 tolerancia, implicit HUF, kijelzési FX vagy `paid → approved` banki bizonyíték.
