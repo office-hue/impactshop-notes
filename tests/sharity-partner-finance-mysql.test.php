@@ -249,6 +249,98 @@ try {
     $wpdb=new PfdWpdb();$statuses=[];for($i=0;$i<2;$i++)$statuses[]=json_decode(file_get_contents($directory.'/race-'.$i.'.json'),true)['status'];sort($statuses);
     check($statuses===['applied','conflict'],'parallel signed requests serialized with current prestate');
     check((int)$wpdb->get_var("SELECT COUNT(*) FROM pfd_sharity_partner_transactions WHERE provider_tx_id LIKE 'race:%'")===2,'race grants exactly one two-line statement');
+    $historical = fixture('historical', 'shop', 'HUF');
+    $digest = $historical['financial_scope']['source_policy_sha256'];
+    $historical['cash']['net_minor'] = 15001;
+    $historical['cash']['parts'][] = ['part_id'=>'held','classification'=>'impact_shop','net_minor'=>2000];
+    $historical['cash']['parts'][] = ['part_id'=>'excluded','classification'=>'unassigned','net_minor'=>3000];
+    foreach ($historical['lines'] as $i => &$line) $line['attribution']['ngo_id'] = (string) (101 + $i);
+    unset($line);
+    $historical['historical_cash'] = [
+        'rule_ref'=>'contract:abc123:dognet', 'evidence_sha256'=>hash('sha256','fixture evidence'),
+        'rows'=>[
+            ['provider_tx_id'=>'historical:tx-a','part_id'=>'affiliate','net_minor'=>4000,'disposition'=>'eligible','ngo_id'=>'101','source_policy_sha256'=>$digest,'priority'=>true],
+            ['provider_tx_id'=>'historical:tx-b','part_id'=>'affiliate','net_minor'=>6001,'disposition'=>'eligible','ngo_id'=>'102','source_policy_sha256'=>$digest,'priority'=>true],
+            ['provider_tx_id'=>'historical:held','part_id'=>'held','net_minor'=>2000,'disposition'=>'held','ngo_id'=>null,'source_policy_sha256'=>null,'priority'=>false],
+            ['provider_tx_id'=>'historical:excluded','part_id'=>'excluded','net_minor'=>3000,'disposition'=>'excluded','ngo_id'=>null,'source_policy_sha256'=>null,'priority'=>false],
+        ],
+    ];
+    $bad = $historical;
+    $bad['historical_cash']['rows'][3]['net_minor']--;
+    rejected($bad, 'historical-unchanged-after-bad-sum', 'historical sum mismatch');
+    $plan = request_plan($historical, 'historical-plan');
+    $result = apply_plan($plan);
+    check($result['status'] === 'applied' && $result['lines'][0]['ngo_minor'] === 2400, 'historical exact bank part and split');
+    check(apply_plan($plan)['status'] === 'already_applied', 'historical replay');
+    $reserved = ImpactShop_Sharity_Bank_Payout::plan([
+        'operation'=>'cash-import','command_id'=>'historical-excluded-legacy','actor'=>'fixture-collector',
+        'key_id'=>'fixture','expires_at'=>time()+300,'data'=>[
+            'cash'=>$historical['cash'],'part_id'=>'excluded','channel'=>'legacy','claim_id'=>'legacy:excluded',
+        ],
+    ]);
+    $result = apply_plan($reserved);
+    check($result['status'] === 'conflict' && $result['reason'] === 'dognet_history_part_reserved','excluded cannot take legacy route');
+    $late = fixture('historical-late', 'shop', 'HUF');
+    $late['cash'] = $historical['cash'];
+    $late['historical_cash'] = $historical['historical_cash'];
+    $late['lines'] = [$historical['lines'][0]];
+    $late['lines'][0]['attribution']['source_digest'] = $late['source_digest'];
+    $late['lines'][0]['attribution']['ngo_id'] = '105';
+    $late['part_id'] = 'excluded';
+    $late['lines'][0]['provider_tx_id'] = 'historical:excluded';
+    $late['lines'][0]['net_minor'] = $late['net_minor'] = 3000;
+    rejected($late, 'historical-excluded-by-partner', 'excluded cannot receive an NGO');
+    $late['part_id'] = 'held';
+    $late['lines'][0]['provider_tx_id'] = 'historical:held';
+    $late['lines'][0]['net_minor'] = $late['net_minor'] = 2000;
+    $bad = $late;
+    $bad['historical_cash']['rows'][2]['priority'] = true;
+    rejected($bad, 'historical-change-seal', 'existing history cannot be replaced');
+    $alternate = fixture('capture-excluded-on-new-bank', 'shop', 'HUF');
+    $alternate['lines'][0]['provider_tx_id'] = 'historical:excluded';
+    rejected($alternate, 'historical-source-cannot-move', 'sealed source stays reserved across bank parents');
+    check(run_statement($late, 'historical-resolve-held')['status'] === 'applied', 'one exact originally held row can be resolved');
+    $lotStatus = ImpactShop_Sharity_Bank_Payout::status()['source_lots'];
+    check(count(array_filter($lotStatus, static fn($lot) => !empty($lot['historical_priority']))) === 2, 'only the declared historical lots have priority');
+    $ordinary = fixture('newer-huf', 'shop', 'HUF');
+    $ordinary['lines'][0]['attribution']['ngo_id'] = '101';
+    check(run_statement($ordinary, 'newer-huf')['status'] === 'applied', 'newer lot in same NGO and HUF');
+    $policy['enabled'] = true;
+    $policy['keys']['fixture']['roles'][] = 'bank_operator';
+    $policy['recipients']['101'] = ['verified'=>true,'revision'=>1,'currencies'=>['HUF'],'iban'=>'HU42117730161111101800000000'];
+    write_policy();
+    $bank = static function (string $command, array $data): array {
+        return apply_plan(ImpactShop_Sharity_Bank_Payout::plan([
+            'operation'=>$command,'command_id'=>'historical-fixture:'.$command.':'.($data['batch_id'] ?? 'init'),
+            'actor'=>'fixture-collector','key_id'=>'fixture','expires_at'=>time()+300,'data'=>$data,
+        ]));
+    };
+    check($bank('legacy-import',['opening_paid'=>[],'legacy_payments_verified'=>true,'evidence_ref'=>'fixture:opening'])['status'] === 'applied','verified empty fixture opening');
+    $claims = [];
+    foreach ($wpdb->get_results('SELECT id,data_json FROM pfd_sharity_bp_claims ORDER BY id') as $claim) {
+        $claims[$claim['id']] = json_decode($claim['data_json'], true, 64, JSON_THROW_ON_ERROR);
+    }
+    check($bank('import-complete',['inventory_sha256'=>hash('sha256',ImpactShop_Sharity_Bank_Payout::canonical($claims)),'scope_verified'=>true,'evidence_ref'=>'fixture:scope'])['status'] === 'applied','fixture import complete');
+    check($bank('payout-enable',[])['status'] === 'applied','fixture payout authorization enabled');
+    check($bank('budget-prepare',['account_id'=>$account,'currency'=>'HUF','expected_revision'=>0,
+        'allocated_cash_minor'=>20000,'external_commitments_checked'=>true,'amount_scale'=>2,
+        'transition_id'=>'fixture-budget','evidence_ref'=>'fixture:balance','shared_account'=>false])['status'] === 'applied','fixture HUF budget');
+    check($bank('budget-activate',['account_id'=>$account,'currency'=>'HUF','expected_revision'=>1,'transition_id'=>'fixture-budget'])['status'] === 'applied','active HUF budget');
+    $lots = array_values(array_filter(ImpactShop_Sharity_Bank_Payout::status()['source_lots'],
+        static fn($lot) => $lot['ngo_id'] === '101' && $lot['currency'] === 'HUF'));
+    check(count($lots) === 2, 'two source lots for priority fixture');
+    $old = !empty($lots[0]['historical_priority']) ? $lots[0] : $lots[1];
+    $new = !empty($lots[0]['historical_priority']) ? $lots[1] : $lots[0];
+    $batch = static fn(string $id, array $lot): array => [
+        'batch_id'=>$id,'account_id'=>$account,'currency'=>'HUF','period'=>'2026-11',
+        'items'=>[['ngo_id'=>'101','amount_minor'=>2400,'fee_reserve_minor'=>0,
+            'lots'=>[['lot_id'=>$lot['lot_id'],'source_revision'=>$lot['source_revision'],'amount_minor'=>2400]]]],
+    ];
+    $next = $bank('batch-create',$batch('newer-before-history',$new));
+    check($next['status']==='conflict' && $next['reason']==='dognet_history_must_pay_first','cannot reserve newer entitlement first');
+    check($bank('batch-create',$batch('historical-draft',$old))['status']==='applied','historical draft reserves exact lot');
+    $next = $bank('batch-create',$batch('newer-during-history',$new));
+    check($next['status']==='conflict' && $next['reason']==='dognet_history_must_pay_first','historical draft does not count as a paid lot');
     $wpdb->query('ALTER TABLE pfd_sharity_partner_transactions DROP COLUMN binding_json');
     check(!ImpactShop_Partner_Finance::schema_ready(),'partial migration schema not ready');
     rejected(fixture('partial-schema'),'partial-schema','handler never auto migrates');

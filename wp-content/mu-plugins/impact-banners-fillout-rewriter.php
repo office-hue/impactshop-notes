@@ -59,7 +59,7 @@ add_filter('the_content', function($content){
 
   // csak ha tényleg van d1 a kérésben
   $ngo = isset($_GET['d1']) ? sanitize_text_field($_GET['d1']) : '';
-  if ($ngo === '') return $content;
+  if ($ngo === '' && !function_exists('impactshop_dognet_verified_choice_enabled')) return $content;
 
   // gyors ellenőrzés: van-e egyáltalán Fillout link
   if (stripos($content, IMPACT_FILLOUT_HOST) === false) return $content;
@@ -80,6 +80,12 @@ add_filter('the_content', function($content){
       $u_b64= isset($qs['u'])    ? (string)$qs['u'] : '';
 
       if ($shop === '') return $m[0];
+      if (function_exists('impactshop_dognet_verified_choice_enabled') && impactshop_dognet_verified_choice_enabled(sanitize_title($shop))) {
+        $go = home_url('/go-deal/' . rawurlencode(sanitize_title($shop)));
+        if ($u_b64 !== '') $go = add_query_arg('u', $u_b64, $go);
+        return $prefix . esc_url($go) . $suffix;
+      }
+      if ($ngo === '') return $m[0];
 
       // ha van hozzá shop-sorunk, megnézzük, Árukereső-e
       $row = ibfr_find_shop_row($shop);

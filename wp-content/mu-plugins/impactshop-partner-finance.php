@@ -159,6 +159,12 @@ final class ImpactShop_Partner_Finance
             || $statement['revision'] !== $statement['expected_revision'] + 1) {
             throw new DomainException('partner_revision_conflict');
         }
+        if (isset($statement['historical_cash'])
+            || method_exists(ImpactShop_Sharity_Bank_Payout::class, 'bind_dognet_history')) {
+            $historicalRows = ImpactShop_Sharity_Bank_Payout::bind_dognet_history($statement, $context['claim'] ?? null);
+        } else {
+            $historicalRows = null;
+        }
         if ($context !== null) {
             $claim = ImpactShop_Sharity_Bank_Payout::assert_original_claim($context['claim']);
         } else {
@@ -185,7 +191,7 @@ final class ImpactShop_Partner_Finance
         $negative = false;
         foreach ($statement['lines'] as $line) {
             $sourceKey = self::source_key($partner, $context['legal_entity'], $context['mode'], $line['provider_tx_id']);
-            $old = self::owned_transaction($db, $statementsTable, $transactionsTable, $line['provider_tx_id'], $sourceKey, $statementKey);
+            $old = self::owned_transaction($db, $statementsTable, $transactionsTable, $line['provider_tx_id'], $sourceKey, $statementKey, $historicalRows !== null, $context['legal_entity'], $context['mode']);
             // Corrections retain the exact historical row/entry identity; new rows use source identity.
             $txKey = $old ? $old['tx_key'] : $sourceKey;
             if ($old && isset($context['transaction_keys'][$line['provider_tx_id']])
@@ -208,6 +214,14 @@ final class ImpactShop_Partner_Finance
             $mapping = self::resolve_attribution($db, $prefix, $partner, $statement, $line, $old);
             $context['attribution'][$line['provider_tx_id']] = ['ngo_id' => $mapping['ngo_id'], 'binding' => $mapping['binding']];
             $ngo = $mapping['ngo_id'];
+            if ($historicalRows !== null) {
+                $approvedNgo = $historicalRows[$line['provider_tx_id']]['ngo_id'];
+                if (($mapping['binding']['source_kind'] ?? null) !== 'operator_evidence'
+                    || !is_string($ngo) || !preg_match('/^[1-9][0-9]*$/D', $ngo)
+                    || ($approvedNgo !== null && $approvedNgo !== $ngo)) {
+                    throw new DomainException('partner_historical_ngo_evidence_required');
+                }
+            }
             $amount = $ngo === null ? 0 : self::share($line['net_minor'], $partner['ngo_rate_bps']);
             $delta = $amount - ($old ? (int) $old['entitlement_minor'] : 0);
             if ($delta !== 0) {
@@ -248,7 +262,12 @@ final class ImpactShop_Partner_Finance
 
     public static function normalize_statement($value): array
     {
-        self::fields($value, ['partner_id', 'statement_id', 'revision', 'previous_revision', 'policy_revision', 'currency', 'net_minor', 'cash', 'part_id', 'evidence_ref', 'source_digest', 'lines', 'bank_account_id', 'financial_scope', 'original_statement_key', 'expected_revision']);
+        $fields = ['partner_id', 'statement_id', 'revision', 'previous_revision', 'policy_revision', 'currency', 'net_minor', 'cash', 'part_id', 'evidence_ref', 'source_digest', 'lines', 'bank_account_id', 'financial_scope', 'original_statement_key', 'expected_revision'];
+        if (is_array($value) && array_key_exists('historical_cash', $value)) {
+            $fields[] = 'historical_cash';
+            self::fields($value['historical_cash'], ['rule_ref', 'evidence_sha256', 'rows']);
+        }
+        self::fields($value, $fields);
         foreach (['partner_id', 'statement_id', 'policy_revision', 'part_id'] as $field) {
             self::identifier($value[$field]);
         }
@@ -344,7 +363,8 @@ final class ImpactShop_Partner_Finance
      * the affected statement instead of minting another row under a new bank-derived key.
      */
     private static function owned_transaction(mysqli $db, string $statementsTable, string $transactionsTable,
-        string $providerTxId, string $sourceKey, string $statementKey): ?array
+        string $providerTxId, string $sourceKey, string $statementKey, bool $historicalDognet,
+        string $legalEntity, string $mode): ?array
     {
         $candidates = self::query($db, "SELECT * FROM {$transactionsTable} WHERE provider_tx_id=? FOR UPDATE", [$providerTxId])->get_result()->fetch_all(MYSQLI_ASSOC);
         $own = null;
@@ -381,7 +401,11 @@ final class ImpactShop_Partner_Finance
                 throw new DomainException('partner_source_ownership_unproven', 0, $error);
             }
             if ($candidateKey !== $sourceKey) {
-                continue; // Independently proven provider scopes may reuse their local transaction IDs.
+                if ($historicalDognet && $rule['provider'] === 'dognet'
+                    && $context['legal_entity'] === $legalEntity && $context['mode'] === $mode) {
+                    throw new DomainException('partner_historical_provider_identity_conflict');
+                }
+                continue; // Independently proven provider scopes may reuse local transaction IDs.
             }
             if ($candidate['statement_key'] !== $statementKey || $own !== null) {
                 throw new DomainException('partner_transaction_already_owned');

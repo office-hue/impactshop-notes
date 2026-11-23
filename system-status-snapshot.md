@@ -1,3 +1,7 @@
+## 2026-11-23 — Dognet NGO-választás és történeti egyeztetés
+
+Saját forrásjelölt a Dognet-linkútvonal, partnerkimutatás és NGO-útmutató módosítására. A natív CI, a telepítés, az aktiválás és a valós Dognet-visszajelzés külön elfogadandó. [Célzott ellenőrzés és rollback](docs/protected-change-records/2026-11-23-dognet-ngo-settlement.md).
+
 ## 2026-11-19 — BabaMama Expo Stripe fogadó
 
 A kampányhoz kötött, alapból kikapcsolt fogadó külön WordPress-modul. A helyi 66 ellenőrzés sikerült elkülönített MariaDB-n, a rögzített Stripe SDK-val. A kiadási csomag egyetlen inaktív pluginfájl. A fogadási cím, a külön séma és a későbbi Stripe-bekötés feltételei a [kiadási leírásban](docs/babamama-expo-stripe-webhook.md) vannak.

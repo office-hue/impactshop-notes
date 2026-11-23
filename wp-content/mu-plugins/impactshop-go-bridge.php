@@ -63,6 +63,47 @@ add_filter('allowed_redirect_hosts', function ($hosts) {
     return array_unique(array_filter($hosts));
 });
 
+
+/** Handle reviewed Dognet shops before either legacy /go handler can redirect. */
+add_action('template_redirect', static function (): void {
+    if (!function_exists('impactshop_dognet_verified_choice_enabled')) {
+        return;
+    }
+    $path = wp_parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    $matches = [];
+    $localRoute = is_string($path) && preg_match('~^/go(-deal)?(?:/([a-z0-9-]+))?/?$~D', $path, $matches);
+    $queryRoute = is_string($path) && in_array($path, ['/', '/impactshop', '/impactshop/'], true) && isset($_GET['shop']);
+    if (!$localRoute && !$queryRoute && !get_query_var('impactshop_go') && !get_query_var('impactshop_deal')) {
+        return;
+    }
+    $routeShop = sanitize_title($matches[2] ?? (string) get_query_var('impactshop_slug'));
+    $queryShop = isset($_GET['shop']) && is_string($_GET['shop']) ? sanitize_title(wp_unslash($_GET['shop'])) : '';
+    $shop = $queryShop !== '' ? $queryShop : $routeShop;
+    if (!impactshop_dognet_verified_choice_enabled($shop) && !impactshop_dognet_verified_choice_enabled($routeShop)) {
+        return;
+    }
+    if ($routeShop !== '' && $queryShop !== '' && $routeShop !== $queryShop) {
+        wp_die('Érvénytelen partnerlink.', '', ['response' => 400]);
+    }
+    $row = function_exists('isb_find_shop') ? isb_find_shop($shop) : null;
+    if (!is_array($row) && function_exists('impactshop_find_shop')) {
+        $row = impactshop_find_shop($shop);
+    }
+    if (!is_array($row)) {
+        wp_die('Az ajánlat jelenleg nem érhető el.', '', ['response' => 404]);
+    }
+    $isDeal = ($matches[1] ?? '') === '-deal' || (bool) get_query_var('impactshop_deal');
+    $target = $isDeal && isset($_GET['u']) && is_string($_GET['u']) ? wp_unslash($_GET['u']) : '';
+    if ($target !== '' && function_exists('isb_clean_deeplink')) {
+        $target = isb_clean_deeplink($target);
+    }
+    $link = impactshop_dognet_verified_redirect_url($row, $shop, $target);
+    if (!wp_safe_redirect($link, 302)) {
+        wp_die('A partnerhez irányítás nem sikerült.', '', ['response' => 503]);
+    }
+    exit;
+}, 0);
+
 add_filter('impactshop_go_resolve', function ($target, $slug, $isDeal, $query) {
     if ($target) {
         return $target;

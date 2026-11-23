@@ -186,3 +186,24 @@ CAS, bankváltásos ismétlés, külön provider-scope azonos helyi tranzakciój
 történeti sorazonosító megőrzésének ellenőrzéseit tartalmazza, de ezek eredménye **SQL NOT RUN**. A korábbi V1
 39/55 ellenőrzés nem V2 PASS. PHP 8.3, teljes WordPress bootstrap, CI, telepítés
 és aktiválás külön függő; pénzügyi merge/telepítéshez a V2 SQL PASS szükséges.
+
+## Történeti Dognet-bankegyeztetés
+
+A privát kimutatást az eredeti Dognet ID, a számla, a tényleges bankjóváírás
+és a megőrzött NGO-választás alapján készítsd elő. A partner pontos
+elszámolási szabályát és a teljes eredeti banki felosztást az első parancshoz
+rögzítsd. A részletek a [bemeneti szerződésben](partner-reconcile-export-spec.md)
+vannak. A kiválasztott sort csak akkor rendeld numerikus NGO-hoz, ha az eredeti
+forrás és a jóváhagyás bizonyítja. Szabály- vagy azonosítási eltérésnél tartsd
+vissza a sort.
+
+A célrendszeren a sharity partner-finance status és a sharity bank-payout
+status mutatja a séma és a jogosultság állapotát. A bank-payout plan
+privát aláírandó bemenetet készít. A bank-payout apply az aláírt műveletet
+végrehajtja. Bizonytalan eredménynél ugyanazon parancsazonosító status
+visszaolvasása kell. A fennmaradó korábbi utalási átfedést a banki
+nyitóállomány és a korábbi teljesítés pontos egyezése alapján rendezd.
+
+Az ellenőrzött boltok átirányítását az impactshop_dognet_verified_ngo_shops
+opció engedélyezi. Minden útvonalon külön igazold a tényleges szolgáltatói
+visszaadott jelölőt, a hozzárendelés visszaolvasását és a Card jóváírását.
