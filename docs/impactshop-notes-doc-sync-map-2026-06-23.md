@@ -560,3 +560,8 @@ Ez célzott DOCSYNC-forrásrekord; a központi registry acceptedSource/lastVerif
 ## 2026-11-19 — TT referencia-codec kiadva, továbbra OFF
 
 PR #295 merge `db9a8712916904ebcbd7fff8f7a74332c188c5a8`; a szűk merge/fetch ablak felszabadult. Meglévő exact-file guarddal csak a TT-osztály került staging és production célra; új hash/lint/0444/betöltés és pontos 68 karakteres szintetikus roundtrip ellenőrzött. Preflight staging 4/4, production 5/5; config/policy és feed változatlan. Dognet ON/complete/3 cache-ajánlat/0 külső projekciós hívás, TT és CJ OFF, Admitad OFF/nincs adapter; névtelen REST mindkét célon 401. Ez telepített/betöltött codec, még nincs éles hívó, TT-aktiválás vagy vásárlási/elszámolási elfogadás. [Kiadási rekord, rollback és nyitott feltételek](protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-19--tt-referencia-codec-telepítve-továbbra-off). Kézi UI függő, mentés megőrizve; központi DOCSYNC acceptance nincs előreléptetve.
+
+
+## 2026-11-23 — TT vásárlási út telepítve, továbbra OFF
+
+WP [#306](https://github.com/office-hue/impactshop-notes/pull/306) (`70a139e3`) stagingre és élesre, web [#2185](https://github.com/office-hue/ai-agent/pull/2185) (`6159d660`) a Sharity két éles aliasára telepítve. Mindkét rétegben a TT kapcsoló OFF. A közös éles smoke 10/10, a célzott web/MCP próba a Vision Express három ajánlatát és a TT ajánlat és továbbvezetés nélküli állapotát mutatta. Valódi vásárlás, elszámolás és TT-aktiválás függő. [Kiadási rekord és rollback](protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-23--tt-vásárlási-út-telepítve-továbbra-off). Secretary ACK `chk-f279460e-9ae4-4d37-8329-4ba0ff968402`. A központi DOCSYNC registry elfogadása függő.
