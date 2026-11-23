@@ -233,3 +233,21 @@ Tényleges célzott ellenőrzés:
 A webes pár ugyanazon nevű saját ágán fix reviewed landing policy, default-OFF env kapcsoló, zárt POST dispatch, közös raw canonical redirect-ellenőrző és MCP confirmation-handoff készült. Az URL-ellenőrző a már meglévő `shared-url-handoff.ts` modulban van, mert a tisztán fixture attribúciós szerződésbe való elhelyezést a változatlan Bástya helyesen elutasította. A web külön kódreview-jában nincs konkrét P1/P2; az utolsó változás csupán az ellenőrző áthelyezése és a hívók importja. 147 Vitest a policy/BFF/handoff/UI/MCP körben PASS, további 16 változatlan resolve/MCP-route regresszió korábbi PASS újrahasznált; a külön Node attribúciós szerződés 8 tesztje PASS. A UI-próba explicit NGO/consent nélkül 0 POST-ot és egy normalizálható, de nem kanonikus TT URL elutasítását igazolja. Typecheck a végső importáthelyezés után is sikeres. A teljes shopping Bástya a már telepített Node22.23.2/ABI127 alatt PASS; a kezdeti Node26/ABI147 SQLite-hiba környezeti eltérés volt, függőség/cache nem változott.
 
 Jelen állapot: ellenőrzött helyi forrásjelölt, SQL és fullbuild nyitott; saját új commit/PR/merge/telepítés/aktiválás még nincs. A korábbi codec #295 és dokumentáció #296 merge/telepítési bizonyítéka változatlanul újrahasznált. A központi DOCSYNC acceptedSource/lastVerifiedAt nem változott; e bejegyzés forrásjegyzet, távoli acceptance nincs. Az alábbi kiadási út és rollback változatlan; a valódi SQL, biztonságos buildkapacitás és valós TT qualification csak a függő lépéseket tartja vissza.
+
+
+## 2026-11-23 — TT vásárlási út telepítve, továbbra OFF
+
+A #306 (`70a139e32f9144b11c42c9a878ea047642d42ed6`) két meglévő PHP-fájlja a Mini tiszta, detached kiadási példányából ment stagingre, majd sikeres ellenőrzés után élesre. A korábbi forráseredmények, 117 valódi SQL-ellenőrzés és 133 oldalas Next-build, érvényesek a változatlan TT-kódra. Az előző forrásjelölt bejegyzés az akkori állapotot rögzíti.
+
+| Cél | TT-osztály release ID | Affiliate runtime release ID |
+| --- | --- | --- |
+| Staging | `20261123T081539Z-70a139e32f91-c1cc3b51` | `20261123T081553Z-70a139e32f91-c76a91b1` |
+| Éles | `20261123T081722Z-70a139e32f91-71351b13` | `20261123T081739Z-70a139e32f91-858bd997` |
+
+Mind a négy manifest, backup és élő fájl hashét visszaolvastuk. A PHP-fájlok módja 0444, a szülő stagingen 0755, élesben 0555. PHP-lint és szintetikus codec/URL-próba sikeres. Mindkét célon a TT outbound OFF; élesben a TT útvonal 403 `provider_disabled`, a névtelen kuponkérés 401 és a totals 200. A preflight lassú válaszokat jelzett. Az első staging HTTP-próbát a célzott curl-próba tisztázta.
+
+A web #2185 (`6159d6607a94bf4fdbc84c7a92e62bc51c70abd0`) nyolc futásidejű fájlja az akkori éles forrásba került. A `dpl_GpV7LMJXkDiDWkLA3hsJfyXNeGPs` kiadás 5911 forrásfájlját és 61 megőrzött projektbeállítását ellenőriztük. A sharity.hu és www.sharity.hu alias erre a kiadásra mutatott, a Legal változatlan maradt. A webes TT flag hiányzik. A közös éles smoke 10/10 sikeres. A Vision Express a webes resolve és MCP útvonalon három ajánlatot ad; a TT-t a web nem minősíti jogosultnak, az MCP nem ad TT továbbvezető linket. Az eseti smoke szkript MCP fejléc- és státuszelvárásait a tényleges protokoll és válasz alapján tisztáztuk. A próba nem indított valódi vásárlást.
+
+**Rollback.** Kizárólag a saját változatlan kiadási állapotból, a meglévő `bin/impactshop-guard-rollback.sh` úton, célonként előbb az affiliate runtime, majd a TT-osztály, a fenti release ID-val és az elvárt telepített SHA-val. Runtime: `8e34515c7119ec1a310daa4ea4603e7dea32b670821bc2f239b25ff8f83f8569`. Osztály: `df40a0b0b390abd98752226579baf05e11acd71a5a7d6cc7680006180098e11b`. A két Sharity alias visszaállási kiadása `dpl_HrcffEm8SDP5cQz1UzjuqfXejFYH`, külön rövid aliasablakban.
+
+Forrás merge-elve, WordPress és web telepítve és betöltve, a célzott OFF-működés élesben ellenőrizve. TT-aktiválás, kereskedelmi jogosultság, teljes reference/report próba, valódi vásárlás és pénzügyi elfogadás függő. Secretary ACK `chk-ed216063-c524-4c00-be06-4f8e6b667b05` és `chk-f279460e-9ae4-4d37-8329-4ba0ff968402`. A központi DOCSYNC `acceptedSource` és `lastVerifiedAt` értékét ez a forrásjegyzet nem lépteti előre.
