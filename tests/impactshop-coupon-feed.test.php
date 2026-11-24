@@ -185,6 +185,57 @@ $firstChecked = $p['checkedAt']; $GLOBALS['coupon_time'] += 30;
 eq(project()['checkedAt'], $firstChecked, 'cache read retains original complete check time');
 $GLOBALS['coupon_time'] += 7200;
 eq(project()['reason'], 'stale', 'two hour snapshot expiration');
+
+// The confirmed Vision Express correction stays tied to the existing qualified binding.
+$visionRows = [];
+foreach ([16179, 16180, 16181] as $id) {
+    $visionRows[] = array_replace(row($id), ['code' => 'WS2025', 'detailed_description' => 'Legacy provider wording.']);
+}
+$visionRows[] = row(16182);
+reset_fixture($visionRows);
+$visionBinding = binding('visionexpress');
+$visionPolicy = policy();
+$visionPolicy['bindings'][0] = array_replace($visionPolicy['bindings'][0], $visionBinding);
+update_option('impactshop_coupon_policy_v1', $visionPolicy, false);
+eq(impactshop_coupon_refresh('dognet')['status'], 'complete', 'Vision Express feed remains complete');
+$vision = request([$visionBinding])->data['items'][0]['benefits'];
+eq($vision['status'], 'available', 'qualified Vision Express keeps offer access');
+$visionCodes = array_column($vision['offers'], 'code');
+sort($visionCodes);
+eq($visionCodes, ['FIXTURE10', 'WS2026'], 'three legacy rows become one corrected offer, other code preserved');
+$corrected = array_values(array_filter($vision['offers'], function ($offer) { return $offer['code'] === 'WS2026'; }))[0];
+check(strpos($corrected['benefitText'], '20%') !== false && $corrected['applicability'] === 'conditions_apply', 'corrected real benefit is conditional');
+foreach (['teljes árú', 'új kollekciós', 'webshopban', 'nem összevonható', 'Miu Miu, Prada és Persol'] as $term) {
+    check(strpos($corrected['conditionsText'], $term) !== false, 'the verified terms include ' . $term);
+}
+eq($corrected['endsAt'], null, 'no invented commercial expiry');
+eq(count($GLOBALS['coupon_http']), 1, 'projection of the corrected coupon makes no upstream call');
+
+foreach (['publicationAllowed' => false, 'attributionCompatibility' => 'unknown'] as $field => $value) {
+    $revoked = $visionPolicy;
+    $revoked['bindings'][0][$field] = $value;
+    update_option('impactshop_coupon_policy_v1', $revoked, false);
+    eq(request([$visionBinding])->data['items'][0]['benefits']['offers'], [], 'correction respects ' . $field);
+}
+
+reset_fixture([$visionRows[0]]);
+impactshop_coupon_refresh('dognet');
+eq(array_column(project()['offers'], 'code'), ['WS2025'], 'different partner stays outside the correction');
+
+reset_fixture([$visionRows[0], array_replace($visionRows[1], ['code' => 'WS2026'])]);
+update_option('impactshop_coupon_policy_v1', $visionPolicy, false);
+impactshop_coupon_refresh('dognet');
+$both = request([$visionBinding])->data['items'][0]['benefits']['offers'];
+eq(array_column($both, 'code'), ['WS2026'], 'corrected provider code and old code still render only once');
+eq($both[0]['id'], $corrected['id'], 'coupon identity survives the upstream correction');
+
+reset_fixture([$visionRows[0]]);
+$otherChannelPolicy = $visionPolicy;
+$otherChannelPolicy['bindings'][0]['siteOrChannelId'] = '26082';
+update_option('impactshop_coupon_policy_v1', $otherChannelPolicy, false);
+impactshop_coupon_refresh('dognet');
+eq(array_column(request([$visionBinding])->data['items'][0]['benefits']['offers'], 'code'), ['WS2025'], 'different channel stays outside the correction');
+
 reset_fixture();
 $multiline = row();
 $multiline['description'] = "10%\t off\r\n selected   products";
