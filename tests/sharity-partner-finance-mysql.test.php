@@ -304,10 +304,39 @@ try {
     check(count(array_filter($lotStatus, static fn($lot) => !empty($lot['historical_priority']))) === 2, 'only the declared historical lots have priority');
     $ordinary = fixture('newer-huf', 'shop', 'HUF');
     $ordinary['lines'][0]['attribution']['ngo_id'] = '101';
+    $monthly = method_exists(ImpactShop_Sharity_Bank_Payout::class, 'monthly_preview');
+    if ($monthly) {
+        // Keep the NGO's whole-HUF amount equal for both candidate source selections.
+        $ordinary['net_minor'] = $ordinary['cash']['net_minor'] = $ordinary['cash']['parts'][0]['net_minor'] = 6085;
+        $ordinary['lines'][0]['net_minor'] = 84; // 50 minor units at the fixture's 60% rate.
+    }
     check(run_statement($ordinary, 'newer-huf')['status'] === 'applied', 'newer lot in same NGO and HUF');
     $policy['enabled'] = true;
     $policy['keys']['fixture']['roles'][] = 'bank_operator';
     $policy['recipients']['101'] = ['verified'=>true,'revision'=>1,'currencies'=>['HUF'],'iban'=>'HU42117730161111101800000000'];
+    if ($monthly) {
+        $zone = new DateTimeZone('Europe/Budapest');
+        $closedMonth = new DateTimeImmutable('first day of last month 00:00', $zone);
+        $period = $closedMonth->format('Y-m');
+        $policy['monthly_payout'] = [
+            'version'=>1, 'effective_month'=>$period, 'max_wait_months'=>6,
+            'currencies'=>['HUF'=>['account_id'=>$account, 'threshold_minor'=>2400]],
+        ];
+        // In the disposable fixture, move only this NGO's two booked entries into the closed month.
+        $rows = $wpdb->get_results('SELECT id, data_json FROM pfd_sharity_bp_entries');
+        $dated = 0;
+        foreach ($rows as $row) {
+            $entry = json_decode($row['data_json'], true, 64, JSON_THROW_ON_ERROR);
+            if ($entry['ngo_id'] !== '101' || $entry['currency'] !== 'HUF') {
+                continue;
+            }
+            $entry['booked_at_utc'] = $closedMonth->setTimezone(new DateTimeZone('UTC'))->getTimestamp();
+            $wpdb->query($wpdb->prepare('UPDATE pfd_sharity_bp_entries SET data_json=%s WHERE id=%s',
+                ImpactShop_Sharity_Bank_Payout::canonical($entry), $row['id']));
+            $dated++;
+        }
+        check($dated === 2, 'only the two priority fixture entries were moved into the closed month');
+    }
     write_policy();
     $bank = static function (string $command, array $data): array {
         return apply_plan(ImpactShop_Sharity_Bank_Payout::plan([
@@ -336,11 +365,43 @@ try {
         'items'=>[['ngo_id'=>'101','amount_minor'=>2400,'fee_reserve_minor'=>0,
             'lots'=>[['lot_id'=>$lot['lot_id'],'source_revision'=>$lot['source_revision'],'amount_minor'=>2400]]]],
     ];
-    $next = $bank('batch-create',$batch('newer-before-history',$new));
-    check($next['status']==='conflict' && $next['reason']==='dognet_history_must_pay_first','cannot reserve newer entitlement first');
-    check($bank('batch-create',$batch('historical-draft',$old))['status']==='applied','historical draft reserves exact lot');
-    $next = $bank('batch-create',$batch('newer-during-history',$new));
-    check($next['status']==='conflict' && $next['reason']==='dognet_history_must_pay_first','historical draft does not count as a paid lot');
+    if ($monthly) {
+        $preview = ImpactShop_Sharity_Bank_Payout::monthly_preview($period, 'HUF');
+        $items = $preview['items'];
+        check(count($items) === 1 && $items[0]['ngo_id'] === '101' && $items[0]['amount_minor'] === 2400,
+            'one full whole-HUF amount for the verified NGO');
+        $allocation = static fn(array $lot, int $minor): array => [
+            'lot_id'=>$lot['lot_id'], 'source_revision'=>$lot['source_revision'], 'amount_minor'=>$minor,
+        ];
+        check($items[0]['lots'] === [$allocation($old, 2400)], 'monthly selection puts the unpaid Dognet history first');
+        $correct = [
+            'batch_id'=>'historical-monthly', 'account_id'=>$account, 'currency'=>'HUF', 'period'=>$period,
+            'monthly_sha256'=>$preview['monthly_sha256'], 'items'=>[$items[0] + ['fee_reserve_minor'=>0]],
+        ];
+        $wrong = $correct;
+        $wrong['batch_id'] = 'wrong-priority';
+        $wrong['items'][0]['lots'] = [$allocation($old, 2350), $allocation($new, 50)];
+        try {
+            $attempt = $bank('batch-create', $wrong);
+            check($attempt['status'] === 'conflict', 'same amount with wrong source priority cannot be reserved');
+        } catch (DomainException $error) {
+            check($error->getMessage() === 'bank_monthly_selection_changed', 'unsigned draft rejected for the wrong source selection');
+        }
+        check($bank('batch-create', $correct)['status'] === 'applied', 'monthly draft reserves exact historical source');
+        $duplicate = array_replace($correct, ['batch_id'=>'duplicate-monthly']);
+        try {
+            $attempt = $bank('batch-create', $duplicate);
+            check($attempt['status'] === 'conflict', 'second monthly draft does not reserve');
+        } catch (DomainException $error) {
+            check($error->getMessage() === 'bank_monthly_batch_exists', 'second monthly draft rejected during planning');
+        }
+    } else {
+        $next = $bank('batch-create',$batch('newer-before-history',$new));
+        check($next['status']==='conflict' && $next['reason']==='dognet_history_must_pay_first','cannot reserve newer entitlement first');
+        check($bank('batch-create',$batch('historical-draft',$old))['status']==='applied','historical draft reserves exact lot');
+        $next = $bank('batch-create',$batch('newer-during-history',$new));
+        check($next['status']==='conflict' && $next['reason']==='dognet_history_must_pay_first','historical draft does not count as a paid lot');
+    }
     $wpdb->query('ALTER TABLE pfd_sharity_partner_transactions DROP COLUMN binding_json');
     check(!ImpactShop_Partner_Finance::schema_ready(),'partial migration schema not ready');
     rejected(fixture('partial-schema'),'partial-schema','handler never auto migrates');
