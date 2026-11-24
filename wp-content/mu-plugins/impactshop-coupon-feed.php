@@ -587,6 +587,10 @@ function impactshop_coupon_project($binding, $config, $policy, $now = null) {
     if (!empty($snapshot['withheld'][$key])) { return impactshop_coupon_empty('unavailable', 'source_unavailable', $checked); }
     if (!impactshop_coupon_list($snapshot['records'][$key] ?? [])) { return impactshop_coupon_empty('unavailable', 'source_unavailable', $checked); }
     $deadline = min($now + 60, $expires, impactshop_coupon_stamp($matched['expiresAt'])); $offers = [];
+    $correctVisionExpress = $provider === 'dognet'
+        && $matched['partnerKey'] === 'visionexpress' && $matched['programRef'] === 'dognet:visionexpress'
+        && $matched['providerProgramId'] === '223' && $matched['siteOrChannelId'] === '26081';
+    $visionExpressCouponAdded = false;
     foreach ($snapshot['records'][$key] ?? [] as $offer) {
         if (!impactshop_coupon_offer_valid($offer, $provider)) { return impactshop_coupon_empty('unavailable', 'source_unavailable', $checked); }
         $start = $offer['startsAt'] === null ? null : impactshop_coupon_stamp($offer['startsAt']);
@@ -594,6 +598,17 @@ function impactshop_coupon_project($binding, $config, $policy, $now = null) {
         if ($start !== null && $start > $now) { $deadline = min($deadline, $start); continue; }
         if ($end !== null && $end <= $now) { continue; }
         if ($end !== null) { $deadline = min($deadline, $end); }
+        // Dognet confirmed the corrected code for this campaign on 2026-11-24.
+        if ($correctVisionExpress && $offer['kind'] === 'coupon' && in_array($offer['code'], ['WS2025', 'WS2026'], true)) {
+            if ($visionExpressCouponAdded) { continue; }
+            $visionExpressCouponAdded = true;
+            $offer['id'] = 'coupon_' . substr(hash('sha256', $key . ':WS2026'), 0, 32);
+            $offer['code'] = 'WS2026';
+            $offer['benefitText'] = '20% kedvezmény új kollekciós napszemüvegekre';
+            $offer['conditionsText'] = 'Csak a promócióban részt vevő, teljes árú, új kollekciós napszemüvegekre, a webshopban. '
+                . 'Akciós termékekre nem érvényes, más kedvezménnyel nem összevonható. Kizárt márkák: Miu Miu, Prada és Persol.';
+            $offer['applicability'] = 'conditions_apply';
+        }
         // Explicit public field construction: private snapshot metadata never escapes.
         $offers[] = ['id' => $offer['id'], 'kind' => $offer['kind'], 'code' => $offer['code'], 'benefitText' => $offer['benefitText'],
             'conditionsText' => $offer['conditionsText'], 'startsAt' => $offer['startsAt'], 'endsAt' => $offer['endsAt'],

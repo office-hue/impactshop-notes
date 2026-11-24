@@ -2439,3 +2439,7 @@ Kiadási és rollback-határ: egyetlen meglévő WordPress-plugin.
 ## 2026-11-19 — TT megerősített vásárlás, OFF forrásjelölt
 
 Saját `feat/impactshop-tt-outbound-20261119` ág: fix VidaXL merchant link, TT POST a meglévő owner/NGO/UUID/COMMIT útban, immutable snapshot és frozen jóváhagyott retention; nincs új tábla/writer vagy aktiválás. Két egymást követő független tervaudit lezárult; WP kódreview két P2-je javítva és célzottan visszaellenőrizve (COMMIT fault célzása, cache-t megkerülő aktuális kapcsoló/review). PHP-lint, régi Dognet/CJ +60 TT eset,368 osztály-,178 TT-feed és232 baseline sikeres; affiliate Bástya és teljes hashleltár0drift/6negatív PASS. Csak a saját két runtime digest/checksum frissül. Friss privát CI-ben a változatlan #300 forrás valódi PHP8.3/MariaDB10.11.19/WordPress6.9.4 SQL-próbája117 ellenőrzéssel PASS, a web teljes Next-buildje133/133 oldallal PASS; nincs cleanup, remoteírás, credential-elhelyezés vagy provideraktiválás. Web pár célzottan tesztelt, külön review lezárva. Részletes fájl-, kiadás-, rollback- és UI-lista: `docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md` R2. DOCSYNC csak forrásjelölt, központi acceptance változatlan.
+
+## 2026-11-24 — Vision Express WS2026 kupon
+
+Forrásjavítás a Dognet 223 / Sharity 26081 pontos kötésben. A meglévő WordPress REST-vetítés adja át a javított kódot és a kereskedő feltételeit az Impact Shopnak. A [célzott guardolt fájlkiadás](docs/protected-change-records/2026-11-17-shopping-coupons.md) és a ChatGPT Free kuponos elfogadása függőben.

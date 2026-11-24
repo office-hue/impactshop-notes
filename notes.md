@@ -8857,3 +8857,7 @@ Saját `feat/impactshop-tt-outbound-20261119` ág: fix VidaXL merchant link, TT 
 ## 2026-11-23 — TT vásárlási út telepítve, továbbra OFF
 
 WP [#306](https://github.com/office-hue/impactshop-notes/pull/306) (`70a139e3`) stagingre és élesre, web [#2185](https://github.com/office-hue/ai-agent/pull/2185) (`6159d660`) a Sharity két éles aliasára telepítve. Mindkét rétegben a TT kapcsoló OFF. A közös éles smoke 10/10, a célzott web/MCP próba a Vision Express három ajánlatát és a TT ajánlat és továbbvezetés nélküli állapotát mutatta. Valódi vásárlás, elszámolás és TT-aktiválás függő. [Kiadási rekord és rollback](docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md#2026-11-23--tt-vásárlási-út-telepítve-továbbra-off). A központi DOCSYNC registry elfogadása függő.
+
+## 2026-11-24 — Vision Express WS2026
+
+A Dognet visszaigazolta a helyes kódot. A kuponoldali projekció a Vision Express pontos Dognet-kötésén egyetlen WS2026 ajánlatot készít a három eltérő azonosítójú régi sorból. A célzott offline próba és a telepítési út a [kupon kiadási rekordjában](docs/protected-change-records/2026-11-17-shopping-coupons.md) szerepel. Éles visszaolvasás függőben.
