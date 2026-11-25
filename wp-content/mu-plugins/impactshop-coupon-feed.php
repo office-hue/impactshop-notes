@@ -462,6 +462,11 @@ function impactshop_coupon_read_tradetracker($policy, $mapping, $started, $clien
                         || ($previousID !== null && (int) $row['ID'] <= (int) $previousID)) { return impactshop_coupon_error('schema_invalid'); }
                     $previousID = $row['ID'];
                     foreach ($bindings as $key => $binding) {
+                        // The VidaXL pilot authorizes this voucher, not the campaign's other materials.
+                        if ($binding['partnerKey'] === 'vidaxl'
+                            && ($row['resource'] !== 'voucher' || $row['ID'] !== '2597886')) {
+                            continue;
+                        }
                         $offer = impactshop_coupon_tt_normalize($row, $binding, $mapping);
                         if ($offer === false) { $withheld[$key] = true; } else { $records[$key][] = $offer; }
                     }

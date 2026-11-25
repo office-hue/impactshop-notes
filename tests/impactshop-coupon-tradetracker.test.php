@@ -53,8 +53,8 @@ function tt_reset() {
 function tt_read($client = null, $mapping = null, $policy = null, $started = 0.0) {
     return impactshop_coupon_read_tradetracker($policy ?? get_option('impactshop_coupon_policy_v1'), $mapping ?? tt_map(), $started, $client ?? new ImpactShop_TradeTracker());
 }
-function tt_project() {
-    return impactshop_coupon_project(tt_binding(), impactshop_coupon_config(), impactshop_coupon_validate_policy(get_option('impactshop_coupon_policy_v1')));
+function tt_project($binding = null) {
+    return impactshop_coupon_project($binding ?? tt_binding(), impactshop_coupon_config(), impactshop_coupon_validate_policy(get_option('impactshop_coupon_policy_v1')));
 }
 function tt_expect_error($result, $code) { check(is_wp_error($result), 'expected fixed TT error'); eq($result->get_error_code(), 'coupon_' . $code, 'fixed TT error code'); }
 tt_reset(); $client = new ImpactShop_TradeTracker(); $r = tt_read($client); $key = impactshop_coupon_binding_key(tt_binding());
@@ -144,4 +144,41 @@ tt_reset();$cfg=impactshop_coupon_config();$cfg['enabledProviders'][]='tradetrac
 $GLOBALS['tt_page_responder']=function($p){$p['rows'][0]['conditions']='https://private.invalid';return$p;};
 eq(impactshop_coupon_refresh('tradetracker')['status'],'complete','malformed offers retain coverage withholding in complete snapshot');eq(tt_project()['status'],'unavailable','withheld candidate is never false none');
 putenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID');putenv('IMPACTSHOP_TRADETRACKER_PASSPHRASE');
+tt_reset();
+$vidaxl = array_replace(tt_binding('vidaxl', '18982'), ['programRef' => 'tradetracker-18982', 'siteOrChannelId' => '481183']);
+$policy = get_option('impactshop_coupon_policy_v1');
+$policy['bindings'][1] = $vidaxl;
+$policy['providers']['tradetracker']['siteId'] = '481183';
+update_option('impactshop_coupon_policy_v1', $policy, false);
+$GLOBALS['tt_campaign_responder'] = function ($id) {
+    return array_replace(tt_campaign($id), ['siteId' => '481183']);
+};
+$GLOBALS['tt_page_responder'] = function ($page) {
+    $page['siteId'] = '481183';
+    $page['campaign']['siteId'] = '481183';
+    if ($page['resource'] === 'voucher') {
+        $page['rows'][] = tt_row('voucher', '18982', '2597886');
+        $page['returned'] = count($page['rows']);
+    }
+    return $page;
+};
+putenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID=900001');
+putenv('IMPACTSHOP_TRADETRACKER_PASSPHRASE=fixture-only-secret');
+eq(impactshop_coupon_refresh('tradetracker')['status'], 'complete', 'qualified VidaXL read while OFF');
+check(!is_wp_error(impactshop_coupon_set_enabled('tradetracker', true)), 'qualified VidaXL fixture enables');
+$GLOBALS['coupon_time'] += 120;
+eq(impactshop_coupon_refresh('tradetracker')['status'], 'complete', 'VidaXL post-enable refresh');
+$result = tt_project($vidaxl);
+eq($result['status'], 'available', 'VidaXL voucher is publicly projected');
+eq(array_column($result['offers'], 'id'), ['coupon_66be2102d2501404ab2a96fba4734690'], 'only reviewed voucher survives projection');
+$GLOBALS['coupon_time'] += 120;
+$GLOBALS['tt_page_responder'] = function ($page) {
+    $page['siteId'] = '481183';
+    $page['campaign']['siteId'] = '481183';
+    return $page;
+};
+eq(impactshop_coupon_refresh('tradetracker')['status'], 'complete', 'scan completes if the reviewed voucher disappears');
+eq(tt_project($vidaxl)['offers'], [], 'other campaign materials never replace a missing voucher');
+putenv('IMPACTSHOP_TRADETRACKER_CUSTOMER_ID');
+putenv('IMPACTSHOP_TRADETRACKER_PASSPHRASE');
 echo 'TT-specific PASS ' . ($assertions-$ttBaseline) . " assertions; existing baseline $ttBaseline reused (offline; no network)\n";
