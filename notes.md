@@ -8861,3 +8861,7 @@ WP [#306](https://github.com/office-hue/impactshop-notes/pull/306) (`70a139e3`) 
 ## 2026-11-24 — Vision Express WS2026
 
 A Dognet visszaigazolta a helyes kódot. A kuponoldali projekció a Vision Express pontos Dognet-kötésén egyetlen WS2026 ajánlatot készít a három eltérő azonosítójú régi sorból. A célzott offline próba és a telepítési út a [kupon kiadási rekordjában](docs/protected-change-records/2026-11-17-shopping-coupons.md) szerepel. Éles visszaolvasás függőben.
+
+## 2026-11-25 — VidaXL TradeTracker kuponszűrés
+
+Saját forrásjelölt a jóváhagyott VidaXL-kuponanyag kiszűrésére. A PHP-próba és a Bástya-leltár sikeres. A kiadási állapot, a staging és az élesítés visszaolvasása külön követendő. [Védett változás és rollback](docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md).
