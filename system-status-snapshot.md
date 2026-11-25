@@ -2443,3 +2443,7 @@ Saját `feat/impactshop-tt-outbound-20261119` ág: fix VidaXL merchant link, TT 
 ## 2026-11-24 — Vision Express WS2026 kupon
 
 Forrásjavítás a Dognet 223 / Sharity 26081 pontos kötésben. A meglévő WordPress REST-vetítés adja át a javított kódot és a kereskedő feltételeit az Impact Shopnak. A [célzott guardolt fájlkiadás](docs/protected-change-records/2026-11-17-shopping-coupons.md) és a ChatGPT Free kuponos elfogadása függőben.
+
+## 2026-11-25 — VidaXL TradeTracker forrásjelölt
+
+Az offline VidaXL-próba az egyetlen jóváhagyott kuponanyagot adta vissza, és annak hiányában kiszűrte a többi kampányajánlatot. A pilot WordPress-telepítése, API-hozzáférése és pénzügyi átvétele függőben. [Célzott ellenőrzés és rollback](docs/protected-change-records/2026-11-17-tradetracker-coupon-reader.md).
