@@ -1,3 +1,11 @@
+## 2026-11-26 — Sharity-profilaktiválás holtpontvédelme
+
+A valódi MariaDB-holtpontpróba igazolta, hogy az érintett belépési kérés
+lezár, a központi profilkapu nyitva marad, és egy másik profil be tud lépni.
+A bizonytalan rollbacknél és a sütihibánál a központi védelem működik.
+A staging, az éles telepítés és az ütemezett elfogadás függő.
+[Célzott ellenőrzés és visszaállítás](docs/protected-change-records/2026-11-26-profile-activation-deadlock.md).
+
 ## 2026-11-23 — Dognet NGO-választás és történeti egyeztetés
 
 Saját forrásjelölt a Dognet-linkútvonal, partnerkimutatás és NGO-útmutató módosítására. A natív CI, a telepítés, az aktiválás és a valós Dognet-visszajelzés külön elfogadandó. [Célzott ellenőrzés és rollback](docs/protected-change-records/2026-11-23-dognet-ngo-settlement.md).

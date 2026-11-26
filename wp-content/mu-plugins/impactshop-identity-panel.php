@@ -561,6 +561,9 @@ function impactshop_identity_grant_storage_ready(): bool
 {
     static $ready = null;
     global $wpdb;
+    if (!empty($GLOBALS['impactshop_identity_activation_denied'])) {
+        return false;
+    }
     if (function_exists('impactshop_owner_policy_safe_disabled') && impactshop_owner_policy_safe_disabled()) {
         return false;
     }
@@ -828,6 +831,19 @@ function impactshop_identity_owner_authorized(string $pseudo_id): bool
     return true;
 }
 
+/** Return a native session identifier for rollback verification, if available. */
+function impactshop_identity_activation_thread_id($connection): ?int
+{
+    if (!$connection instanceof mysqli) {
+        return null;
+    }
+    try {
+        return $connection->thread_id ?: null;
+    } catch (Error) {
+        return null;
+    }
+}
+
 /** Activate a pending grant only after both cookies are present on a later request. */
 function impactshop_identity_owner_activate_pending(string $pseudo_id): bool
 {
@@ -863,10 +879,19 @@ function impactshop_identity_owner_activate_pending(string $pseudo_id): bool
     if (!impactshop_identity_queue_binding_cookies($pseudo_id, $token, $cookie_expires)) {
         return false;
     }
+    // Only stock wpdb exposes the native failure for this exact statement.
+    // SAVEQUERIES can run callbacks between the driver and wpdb's error read.
+    $connection = get_class($wpdb) === wpdb::class && !(defined('SAVEQUERIES') && SAVEQUERIES)
+        ? $wpdb->dbh
+        : null;
+    $thread_id = impactshop_identity_activation_thread_id($connection);
     if ($wpdb->query('START TRANSACTION') === false) {
         impactshop_identity_expire_binding_cookies($pseudo_id, $token);
         impactshop_identity_mark_safe_disabled();
         return false;
+    }
+    if ($thread_id !== null && ($wpdb->dbh !== $connection || $wpdb->last_query !== 'START TRANSACTION')) {
+        $thread_id = null;
     }
     $row = $wpdb->get_row($wpdb->prepare(
         "SELECT grant_hash, state, created_at, expires_at, supersedes_grant_hash FROM {$table} WHERE grant_hash = %s AND pseudo_hash = %s AND revoked_at IS NULL LIMIT 1 FOR UPDATE",
@@ -925,17 +950,34 @@ function impactshop_identity_owner_activate_pending(string $pseudo_id): bool
             return false;
         }
     }
-    $updated = $wpdb->query($wpdb->prepare(
+    $activation_sql = $wpdb->prepare(
         "UPDATE {$table} SET state = 'active', activated_at = %s, last_seen_at = %s, expires_at = %s WHERE grant_hash = %s AND state = 'pending' AND revoked_at IS NULL",
         impactshop_identity_utc_sql($now),
         impactshop_identity_utc_sql($now),
         impactshop_identity_utc_sql($cookie_expires),
         $hash
-    ));
+    );
+    $updated = $wpdb->query($activation_sql);
     if ($updated !== 1) {
-        $wpdb->query('ROLLBACK');
-        impactshop_identity_expire_binding_cookies($pseudo_id, $token);
-        impactshop_identity_mark_safe_disabled();
+        $GLOBALS['impactshop_identity_activation_denied'] = true;
+        $deadlock = false;
+        if ($updated === false && $thread_id !== null && $wpdb->dbh === $connection
+            && $wpdb->last_query === $activation_sql && $wpdb->last_error !== '') {
+            // Read errno before ROLLBACK clears it. A closed handle is unclassified.
+            try {
+                $deadlock = $connection->errno === 1213 && $connection->thread_id === $thread_id;
+            } catch (Error $error) {
+                $deadlock = false;
+            }
+        }
+        $rolled_back = $wpdb->query('ROLLBACK');
+        $rollback_confirmed = $deadlock && $rolled_back !== false && $wpdb->last_query === 'ROLLBACK'
+            && $wpdb->last_error === '' && $wpdb->dbh === $connection
+            && impactshop_identity_activation_thread_id($connection) === $thread_id;
+        $cookies_expired = impactshop_identity_expire_binding_cookies($pseudo_id, $token);
+        if (!$rollback_confirmed || !$cookies_expired) {
+            impactshop_identity_mark_safe_disabled();
+        }
         return false;
     }
     $new_readback = $wpdb->get_var($wpdb->prepare(
@@ -1164,6 +1206,9 @@ function impactshop_identity_profile_state(string $pseudo_id): string
         // Activation requires the owner and pseudo cookies on a subsequent GET.
         if (impactshop_identity_owner_activate_pending($pseudo_id)) {
             return 'active';
+        }
+        if (!empty($GLOBALS['impactshop_identity_activation_denied'])) {
+            return 'unavailable';
         }
         if (impactshop_identity_owner_authorized($pseudo_id)) {
             return 'active';
