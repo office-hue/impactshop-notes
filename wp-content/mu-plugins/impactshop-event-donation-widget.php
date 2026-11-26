@@ -408,9 +408,14 @@ function impactshop_event_donation_table_name(): string
     return $wpdb->prefix . 'impactshop_event_donations';
 }
 
-function impactshop_event_donation_ensure_ticket_mix_columns(string $table): void
+function impactshop_event_donation_ensure_columns(string $table): bool
 {
     global $wpdb;
+
+    $existing = $wpdb->get_col("SHOW COLUMNS FROM {$table}");
+    if (!$existing || $wpdb->last_error !== '') {
+        return false;
+    }
 
     $columns = [
         'ticket_count' => "ADD COLUMN ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER gdpr_email_consent",
@@ -418,55 +423,19 @@ function impactshop_event_donation_ensure_ticket_mix_columns(string $table): voi
         'supporter_ticket_count' => "ADD COLUMN supporter_ticket_count TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER regular_ticket_count",
         'ticket_serials' => "ADD COLUMN ticket_serials TEXT DEFAULT NULL AFTER supporter_ticket_count",
         'selected_package' => "ADD COLUMN selected_package VARCHAR(20) DEFAULT NULL AFTER ticket_serials",
-    ];
-
-    foreach ($columns as $column => $alterSql) {
-        $exists = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $column));
-        if ($exists === $column) {
-            continue;
-        }
-
-        $wpdb->query("ALTER TABLE {$table} {$alterSql}");
-    }
-}
-
-function impactshop_event_donation_ensure_admin_cert_columns(string $table): void
-{
-    global $wpdb;
-
-    $columns = [
         'cert_manual_confirmed' => "ADD COLUMN cert_manual_confirmed TINYINT(1) NOT NULL DEFAULT 0 AFTER donation_cert_sent_at",
         'cert_manual_confirmed_by' => "ADD COLUMN cert_manual_confirmed_by VARCHAR(120) DEFAULT NULL AFTER cert_manual_confirmed",
         'cert_manual_confirmed_at' => "ADD COLUMN cert_manual_confirmed_at DATETIME DEFAULT NULL AFTER cert_manual_confirmed_by",
-    ];
-
-    foreach ($columns as $column => $alterSql) {
-        $exists = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $column));
-        if ($exists === $column) {
-            continue;
-        }
-
-        $wpdb->query("ALTER TABLE {$table} {$alterSql}");
-    }
-}
-
-function impactshop_event_donation_ensure_bank_transfer_columns(string $table): void
-{
-    global $wpdb;
-
-    $columns = [
         'payment_method' => "ADD COLUMN payment_method ENUM('card','bank_transfer') NOT NULL DEFAULT 'card' AFTER status",
         'transfer_confirmed_by' => "ADD COLUMN transfer_confirmed_by VARCHAR(120) DEFAULT NULL AFTER payment_method",
         'transfer_confirmed_at' => "ADD COLUMN transfer_confirmed_at DATETIME DEFAULT NULL AFTER transfer_confirmed_by",
     ];
-
     foreach ($columns as $column => $alterSql) {
-        $exists = $wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$table} LIKE %s", $column));
-        if ($exists === $column) {
-            continue;
+        if (!in_array($column, $existing, true) && $wpdb->query("ALTER TABLE {$table} {$alterSql}") === false) {
+            return false;
         }
-        $wpdb->query("ALTER TABLE {$table} {$alterSql}");
     }
+    return true;
 }
 
 function impactshop_event_donation_ensure_schema(): void
@@ -474,9 +443,7 @@ function impactshop_event_donation_ensure_schema(): void
     $current = (string) get_option('impactshop_event_donation_schema_version', '');
     $table = impactshop_event_donation_table_name();
     if ($current === IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION) {
-        impactshop_event_donation_ensure_ticket_mix_columns($table);
-        impactshop_event_donation_ensure_admin_cert_columns($table);
-        impactshop_event_donation_ensure_bank_transfer_columns($table);
+        impactshop_event_donation_ensure_columns($table);
         return;
     }
 
@@ -533,9 +500,9 @@ function impactshop_event_donation_ensure_schema(): void
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
-    impactshop_event_donation_ensure_ticket_mix_columns($table);
-    impactshop_event_donation_ensure_admin_cert_columns($table);
-    impactshop_event_donation_ensure_bank_transfer_columns($table);
+    if (!impactshop_event_donation_ensure_columns($table)) {
+        return;
+    }
 
     update_option('impactshop_event_donation_schema_version', IMPACTSHOP_EVENT_DONATION_SCHEMA_VERSION, false);
 }
