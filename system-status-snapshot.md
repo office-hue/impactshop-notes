@@ -1,3 +1,7 @@
+## 2026-11-26 — JYSK pontnyugta-keresés
+
+A pontnyugták meglévő összetett indexet használó olvasása elkészült. A telepítés és az éles elfogadás külön követendő. [Vizsgálat és kiadás](docs/protected-change-records/2026-11-26-jysk-receipt-index.md).
+
 ## 2026-11-26 — Sharity-profilaktiválás holtpontvédelme
 
 A valódi MariaDB-holtpontpróba igazolta, hogy az érintett belépési kérés

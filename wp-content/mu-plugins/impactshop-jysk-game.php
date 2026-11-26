@@ -810,10 +810,23 @@ final class Impactshop_Jysk_Game
     private static function receipt(array $payload, array $grant): ?array
     {
         global $wpdb;
-        $row = self::row($wpdb->prepare("SELECT pseudo_id,points,type,source_id,source_type,metadata FROM {$wpdb->prefix}point_transactions WHERE dedupe_key=%s", 'jysk_2026:' . $payload['eventId']));
-        if (!$row) {
+        // The ledger indexes (user_id, dedupe_key). Search every owner, including NULL for guest profiles.
+        $table = $wpdb->prefix . 'point_transactions';
+        $sql = $wpdb->prepare(
+            "SELECT t.pseudo_id,t.points,t.type,t.source_id,t.source_type,t.metadata
+             FROM (SELECT DISTINCT user_id FROM {$table}) AS owners
+             STRAIGHT_JOIN {$table} AS t ON t.user_id <=> owners.user_id AND t.dedupe_key=%s
+             LIMIT 2",
+            'jysk_2026:' . $payload['eventId']
+        );
+        $rows = self::check($wpdb->get_results($sql, ARRAY_A));
+        if ($rows === []) {
             return null;
         }
+        if (count($rows) > 1) {
+            return ['state' => 'conflict'];
+        }
+        $row = $rows[0];
         $meta = json_decode((string) $row['metadata'], true);
         if ($row['pseudo_id'] !== $grant['pseudo'] || (int) $row['points'] !== $payload['points'] || $row['type'] !== 'bonus'
             || $row['source_type'] !== 'jysk_campaign' || $row['source_id'] !== $payload['eventId']
