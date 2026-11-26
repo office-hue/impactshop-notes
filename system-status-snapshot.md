@@ -1,3 +1,7 @@
+## 2026-11-26 — Az adományozási modul adatbázis-terhelése
+
+A tizenegy oszlopellenőrzés egyetlen olvasást használ. A kiadás és a funkcionális ellenőrzés külön követhető. [Hibajelenség, próba és visszaállítás](docs/protected-change-records/2026-11-26-event-donation-schema-read.md).
+
 ## 2026-11-26 — JYSK pontnyugta-keresés
 
 A pontnyugták meglévő összetett indexet használó olvasása elkészült. A telepítés és az éles elfogadás külön követendő. [Vizsgálat és kiadás](docs/protected-change-records/2026-11-26-jysk-receipt-index.md).
