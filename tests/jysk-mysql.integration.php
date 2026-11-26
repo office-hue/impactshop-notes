@@ -9,6 +9,7 @@ declare(strict_types=1);
 $configFile = getenv('JYSK_MYSQL_CONFIG') ?: '';
 $wpdbFile = getenv('JYSK_WPDB_FILE') ?: '';
 $sessionOnly = ($argv[1] ?? '') === '--session-lifecycle-only';
+$receiptOnly = ($argv[1] ?? '') === '--receipt-only';
 if (getenv('JYSK_MYSQL_SANDBOX_CONFIRM') !== 'LOCAL_JYSK_ONLY'
     || !is_file($configFile) || is_link($configFile) || (fileperms($configFile) & 0777) !== 0600) {
     throw new RuntimeException('Explicit private local sandbox configuration required');
@@ -201,7 +202,7 @@ function snapshot(wpdb $db): array {
         (int) $db->get_var('SELECT COUNT(*) FROM jysk_test_point_transactions'),
         (int) $db->get_var('SELECT COUNT(*) FROM jysk_test_level_history')];
 }
-if (!$sessionOnly) {
+if (!$sessionOnly && !$receiptOnly) {
 resetRows();
 check(award()['success'] === true, 'real award succeeds');
 check(snapshot($wpdb)[0][0]['points_total'] === '2000' && snapshot($wpdb)[1] === 1 && snapshot($wpdb)[2] === 1, 'real totals ledger and level history committed');
@@ -322,6 +323,16 @@ check(bridgeReward(bridgePayload())['state'] === 'confirmed', 'bridge claim and 
 check(bridgeReward(bridgePayload())['state'] === 'confirmed' && snapshot($wpdb)[1] === 1, 'bridge economic replay does not double credit');
 $different = bridgePayload(); $different['ngoId'] = 'ngo-2';
 check(bridgeReward($different)['state'] === 'conflict', 'immutable payload conflict rejected');
+sql($wpdb, "INSERT INTO jysk_test_point_transactions (user_id,pseudo_id,points,type,source_id,source_type,metadata,dedupe_key)
+    SELECT 7,'otherprofile1',points,type,source_id,source_type,metadata,dedupe_key FROM jysk_test_point_transactions");
+check(bridgeReward(bridgePayload(), false)['state'] === 'conflict', 'same key under a second user is ambiguous');
+sql($wpdb, 'DELETE FROM jysk_test_point_transactions WHERE user_id IS NULL');
+check(bridgeReward(bridgePayload())['state'] === 'conflict' && snapshot($wpdb)[1] === 1, 'wrong-owner receipt prevents another credit');
+
+if ($receiptOnly) {
+    echo "PASS isolated MariaDB receipt checks ($checks assertions)\n";
+    exit(0);
+}
 
 resetBridge(); $hit = false;
 $fault = static function ($query) use (&$hit) {

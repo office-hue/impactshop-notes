@@ -48,6 +48,7 @@ class wpdb
     public array $nonces = [];
     public ?array $claim = null;
     public ?array $receipt = null;
+    public ?array $otherReceipt = null;
     public ?array $code = null;
     public ?array $session = null;
     public bool $schemaV2 = false;
@@ -152,7 +153,6 @@ class wpdb
         if (str_contains($query, 'SELECT * FROM wp_jysk_game_grants')) { return ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation, 'grant_hash' => hash('sha256', str_repeat('d', 64)), 'revoked' => $this->grantActive ? 0 : 1]; }
         if (str_contains($query, 'INNER JOIN wp_identity_grants')) { return $this->grantActive && $this->centralOwner ? ['subject' => str_repeat('a', 64), 'pseudo' => 'abcdef123456', 'generation' => $this->generation, 'grant_hash' => hash('sha256', str_repeat('d', 64)), 'revoked' => 0] : null; }
         if (str_contains($query, 'FROM wp_jysk_game_rewards')) { return $this->claim; }
-        if (str_contains($query, 'FROM wp_point_transactions')) { return $this->receipt; }
         if (str_contains($query, 'FROM wp_jysk_game_codes')) { return $this->code; }
         if (str_contains($query, 'FROM wp_jysk_game_sessions')) {
             return $this->session && $this->session['token_hash'] === $args[0] && $this->session['subject'] === $args[1]
@@ -164,6 +164,9 @@ class wpdb
     public function get_results($sql, $mode)
     {
         [$query] = $this->record($sql);
+        if (str_contains($query, 'STRAIGHT_JOIN wp_point_transactions')) {
+            return array_values(array_filter([$this->receipt, $this->otherReceipt]));
+        }
         if (str_starts_with($query, 'SHOW COLUMNS')) {
             $rows = array_map(static fn ($field) => ['Field' => $field, 'Type' => $field === 'expires' ? 'bigint(20)' : 'char(64)', 'Null' => 'NO'], ['token_hash', 'subject', 'generation', 'expires', 'challenge']);
             if ($this->schemaV2) { $rows[] = ['Field' => 'owner_grant_hash', 'Type' => 'char(64)', 'Null' => 'YES']; if (str_contains($query, '_sessions')) $rows[] = ['Field' => 'issued_at', 'Type' => 'bigint(20)', 'Null' => 'YES']; }
@@ -260,6 +263,9 @@ check($db->reconnect_retries === 5, 'retry config restored');
 $calls = Sharity_Points_Manager::$calls;
 $r = Bridge::service(request('award', payload()));
 check($r->data['state'] === 'confirmed' && Sharity_Points_Manager::$calls === $calls, 'economic replay does not re-award');
+$db->otherReceipt = array_merge($db->receipt, ['pseudo_id' => 'other-profile']);
+check(Bridge::service(request('award', payload()))->data['state'] === 'conflict' && Sharity_Points_Manager::$calls === $calls, 'duplicate receipt across owners never awards again');
+$db->otherReceipt = null;
 $db->grantActive = false;
 check(Bridge::service(request('reward-status', payload()))->data['state'] === 'confirmed', 'revoked grant does not hide an already committed receipt');
 $db->grantActive = true;
