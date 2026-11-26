@@ -479,6 +479,12 @@ szerepel; külön guard nincs. Forrásjelölt, PR/merge/telepítés még nincs.
 Részletek: `docs/protected-change-records/2026-11-02-ngo-card-news.md`.
 
 
+## 2026-11-26 — Sharity profilaktiválás
+
+A függő eszközjogosultság igazolt holtpontja kérésenként kezelhető. A forrás,
+az izolált HTTP/MariaDB-ellenőrzés és a staging → éles elfogadás hivatkozása a
+[védett változás rekordja](protected-change-records/2026-11-26-profile-activation-deadlock.md).
+
 ## 2026-11-12 — Watchdog jutalommegfigyelés, aktivált; részleges éles elfogadás
 
 A PR278 default-off eseménymegfigyelést ad a belépés/profil/megosztás/videó,

@@ -1,3 +1,11 @@
+## 2026-11-26 — Sharity-profilaktiválás holtpontvédelme
+
+A valódi MariaDB-holtpontpróba igazolta, hogy az érintett belépési kérés
+lezár, a központi profilkapu nyitva marad, és egy másik profil be tud lépni.
+A bizonytalan rollbacknél és a sütihibánál a központi védelem működik.
+A staging, az éles telepítés és az ütemezett elfogadás függő.
+[Célzott ellenőrzés és visszaállítás](docs/protected-change-records/2026-11-26-profile-activation-deadlock.md).
+
 ## 2026-11-19 — BabaMama Expo Stripe fogadó
 
 A kampányhoz kötött, alapból kikapcsolt fogadó külön WordPress-modul. A helyi 66 ellenőrzés sikerült elkülönített MariaDB-n, a rögzített Stripe SDK-val. A kiadási csomag egyetlen inaktív pluginfájl. A fogadási cím, a külön séma és a későbbi Stripe-bekötés feltételei a [kiadási leírásban](docs/babamama-expo-stripe-webhook.md) vannak.
